@@ -52,7 +52,7 @@ class SystemController extends Controller
 
         $imei = trim((string)($body['imei'] ?? ''));
         $type = trim((string)($body['type'] ?? ''));
-        $data = $body['data'] ?? [];
+        $data = is_array($body['data'] ?? null) ? $body['data'] : [];
 
         if ($imei === '' || $type === '') {
             return $this->errorResponse('invalid_request', 'imei and type are required', 400);
@@ -62,14 +62,28 @@ class SystemController extends Controller
             return $this->errorResponse('mysql_unavailable', 'Event repository is not available', 503);
         }
 
-        $event = $this->eventsRepo->insertForImei($imei, $type, $data);
-        $this->eventsRepo->logToRedis($imei, $event, $this->redis);
+        $event = [
+            'imei' => $imei,
+            'nativeType' => $type,
+            'feature' => null,
+            'nativePayload' => $data,
+            'receivedAt' => (int)round(microtime(true) * 1000),
+        ];
+        $eventId = $this->eventsRepo->insert($event);
+
+        if ($this->redis !== null && $this->redis->isAvailable()) {
+            $this->redis->eventPush($event);
+        }
+        if ($this->watchServer !== null) {
+            $this->watchServer->ingestEvent($event, $eventId);
+        }
 
         return $this->jsonResponse([
             'data' => [
                 'status' => 'simulated',
                 'imei' => $imei,
                 'type' => $type,
+                'id' => $eventId,
             ],
         ], 201);
     }

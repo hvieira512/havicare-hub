@@ -174,6 +174,13 @@ class DeviceCapabilities
         return $this->features;
     }
 
+    public function getFeatureNames(): array
+    {
+        $names = array_keys($this->features);
+        sort($names);
+        return $names;
+    }
+
     public function featureForPassive(string $type): ?string
     {
         foreach ($this->features as $feature => $commands) {
