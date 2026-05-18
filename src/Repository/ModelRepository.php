@@ -2,130 +2,49 @@
 
 namespace App\Repository;
 
-class ModelRepository
+use App\Database\Repository;
+
+class ModelRepository extends Repository
 {
-    private \PDO $pdo;
-    private const COLUMNS = 'm.id, m.supplier_id, s.name AS supplier_name, m.code, m.name, m.protocol, m.transport, m.source_doc, m.enabled, m.passive, m.active, m.features, m.created_at, m.updated_at';
+    private const TABLE = 'models m JOIN suppliers s ON s.id = m.supplier_id';
+    private const COLS = 'm.id, m.supplier_id, s.name AS supplier_name, m.code, m.name, m.protocol, m.transport, m.source_doc, m.enabled, m.passive, m.active, m.features, m.created_at, m.updated_at';
 
-    public function __construct(\PDO $pdo)
+    protected function table(): string
     {
-        $this->pdo = $pdo;
+        return self::TABLE;
     }
 
-    public function findByCode(string $code): ?array
+    protected function columns(): string
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT ' . self::COLUMNS . '
-             FROM models m
-             JOIN suppliers s ON s.id = m.supplier_id
-             WHERE m.code = ?'
-        );
-        $stmt->execute([$code]);
-        $row = $stmt->fetch();
-        return $row ? $this->hydrate($row) : null;
+        return self::COLS;
     }
 
-    public function existsCode(string $code): bool
+    protected function pk(): string
     {
-        $stmt = $this->pdo->prepare('SELECT 1 FROM models WHERE code = ?');
-        $stmt->execute([$code]);
-        return (bool)$stmt->fetchColumn();
+        return 'm.code';
     }
 
-    public function list(array $filters, int $page, int $limit): array
+    protected function hydrate(array $row): array
     {
-        [$where, $params] = $this->buildWhere($filters);
-        $offset = ($page - 1) * $limit;
-        $sql = 'SELECT ' . self::COLUMNS . '
-            FROM models m
-            JOIN suppliers s ON s.id = m.supplier_id'
-            . $where
-            . ' ORDER BY m.code ASC LIMIT :limit OFFSET :offset';
-
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue(':' . $key, $value);
-        }
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-        $stmt->execute();
-
-        return array_map(fn(array $row): array => $this->hydrate($row), $stmt->fetchAll());
+        return [
+            'id' => (int)$row['id'],
+            'supplier_id' => (int)$row['supplier_id'],
+            'supplier_name' => $row['supplier_name'],
+            'code' => $row['code'],
+            'name' => $row['name'],
+            'protocol' => $row['protocol'],
+            'transport' => $row['transport'],
+            'source_doc' => $row['source_doc'],
+            'enabled' => (bool)$row['enabled'],
+            'passive' => $this->decodeJsonArray($row['passive']),
+            'active' => $this->decodeJsonArray($row['active']),
+            'features' => $this->decodeJsonObject($row['features']),
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at'],
+        ];
     }
 
-    public function countFiltered(array $filters): int
-    {
-        [$where, $params] = $this->buildWhere($filters);
-        $stmt = $this->pdo->prepare(
-            'SELECT COUNT(*)
-             FROM models m
-             JOIN suppliers s ON s.id = m.supplier_id'
-            . $where
-        );
-        $stmt->execute($params);
-        return (int)$stmt->fetchColumn();
-    }
-
-    public function insert(array $data): int
-    {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO models
-                (supplier_id, code, name, protocol, transport, source_doc, enabled, passive, active, features)
-             VALUES
-                (:supplier_id, :code, :name, :protocol, :transport, :source_doc, :enabled, :passive, :active, :features)'
-        );
-
-        $stmt->execute($this->serialize($data));
-        return (int)$this->pdo->lastInsertId();
-    }
-
-    public function updateByCode(string $code, array $data): void
-    {
-        if ($data === []) {
-            return;
-        }
-
-        $sets = [];
-        $params = ['code_filter' => $code];
-        foreach ($data as $key => $value) {
-            $sets[] = "m.$key = :$key";
-            $params[$key] = $value;
-        }
-
-        $stmt = $this->pdo->prepare('UPDATE models m SET ' . implode(', ', $sets) . ' WHERE m.code = :code_filter');
-        $stmt->execute($this->serialize($params));
-    }
-
-    public function deleteByCode(string $code): void
-    {
-        $stmt = $this->pdo->prepare('DELETE FROM models WHERE code = ?');
-        $stmt->execute([$code]);
-    }
-
-    public function countDevicesUsingModelCode(string $code): int
-    {
-        $stmt = $this->pdo->prepare(
-            'SELECT COUNT(*)
-             FROM devices d
-             JOIN models m ON m.id = d.model_id
-             WHERE m.code = ?'
-        );
-        $stmt->execute([$code]);
-        return (int)$stmt->fetchColumn();
-    }
-
-    public function allProfiles(): array
-    {
-        $stmt = $this->pdo->query(
-            'SELECT ' . self::COLUMNS . '
-             FROM models m
-             JOIN suppliers s ON s.id = m.supplier_id'
-        );
-
-        return array_map(fn(array $row): array => $this->hydrate($row), $stmt->fetchAll());
-    }
-
-    private function buildWhere(array $filters): array
+    protected function buildWhere(array $filters): array
     {
         $where = [];
         $params = [];
@@ -162,27 +81,7 @@ class ModelRepository
         return [$where ? (' WHERE ' . implode(' AND ', $where)) : '', $params];
     }
 
-    private function hydrate(array $row): array
-    {
-        return [
-            'id' => (int)$row['id'],
-            'supplier_id' => (int)$row['supplier_id'],
-            'supplier_name' => $row['supplier_name'],
-            'code' => $row['code'],
-            'name' => $row['name'],
-            'protocol' => $row['protocol'],
-            'transport' => $row['transport'],
-            'source_doc' => $row['source_doc'],
-            'enabled' => (bool)$row['enabled'],
-            'passive' => $this->decodeJsonArray($row['passive']),
-            'active' => $this->decodeJsonArray($row['active']),
-            'features' => $this->decodeJsonObject($row['features']),
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at'],
-        ];
-    }
-
-    private function serialize(array $data): array
+    protected function serialize(array $data): array
     {
         $serialized = $data;
 
@@ -202,27 +101,113 @@ class ModelRepository
         return $serialized;
     }
 
-    private function decodeJsonArray(mixed $value): array
+    public function findByCode(string $code): ?array
     {
-        if (is_array($value)) {
-            return array_values($value);
-        }
-        if (!is_string($value) || $value === '') {
-            return [];
-        }
-        $decoded = json_decode($value, true);
-        return is_array($decoded) ? array_values($decoded) : [];
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . $this->columns() . '
+             FROM ' . $this->table() . '
+             WHERE m.code = ?'
+        );
+        $stmt->execute([$code]);
+        $row = $stmt->fetch();
+        return $row ? $this->hydrate($row) : null;
     }
 
-    private function decodeJsonObject(mixed $value): array
+    public function existsCode(string $code): bool
     {
-        if (is_array($value)) {
-            return $value;
+        $stmt = $this->pdo->prepare('SELECT 1 FROM models WHERE code = ?');
+        $stmt->execute([$code]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    public function updateByCode(string $code, array $data): void
+    {
+        if ($data === []) {
+            return;
         }
-        if (!is_string($value) || $value === '') {
-            return [];
+
+        $serialized = $this->serialize($data);
+        $sets = [];
+        $params = ['code_filter' => $code];
+        foreach ($serialized as $key => $value) {
+            $sets[] = "m.$key = :$key";
+            $params[$key] = $value;
         }
-        $decoded = json_decode($value, true);
-        return is_array($decoded) ? $decoded : [];
+
+        $stmt = $this->pdo->prepare('UPDATE models m SET ' . implode(', ', $sets) . ' WHERE m.code = :code_filter');
+        $stmt->execute($params);
+    }
+
+    public function deleteByCode(string $code): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM models WHERE code = ?');
+        $stmt->execute([$code]);
+    }
+
+    public function countDevicesUsingModelCode(string $code): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*)
+             FROM devices d
+             JOIN models m ON m.id = d.model_id
+             WHERE m.code = ?'
+        );
+        $stmt->execute([$code]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function allProfiles(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT ' . $this->columns() . '
+             FROM ' . $this->table()
+        );
+
+        return array_map(fn(array $row): array => $this->hydrate($row), $stmt->fetchAll());
+    }
+
+    public function list(array $filters, int $page, int $limit): array
+    {
+        [$where, $params] = $this->buildWhere($filters);
+        $offset = ($page - 1) * $limit;
+
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . $this->columns() . '
+             FROM ' . $this->table()
+            . $where
+            . ' ORDER BY m.code ASC LIMIT :limit OFFSET :offset'
+        );
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return array_map(fn(array $row): array => $this->hydrate($row), $stmt->fetchAll());
+    }
+
+    public function countFiltered(array $filters): int
+    {
+        [$where, $params] = $this->buildWhere($filters);
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM ' . $this->table() . $where
+        );
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function insert(array $data): int
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO models
+                (supplier_id, code, name, protocol, transport, source_doc, enabled, passive, active, features)
+             VALUES
+                (:supplier_id, :code, :name, :protocol, :transport, :source_doc, :enabled, :passive, :active, :features)'
+        );
+
+        $stmt->execute($this->serialize($data));
+        return (int)$this->pdo->lastInsertId();
     }
 }

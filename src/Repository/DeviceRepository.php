@@ -2,44 +2,58 @@
 
 namespace App\Repository;
 
-class DeviceRepository
-{
-    private \PDO $pdo;
-    private const COLUMNS = 'd.imei, d.model_id, d.enabled, d.registered_at, d.updated_at, m.code AS model_code, m.name AS model_name, m.protocol, m.transport, m.enabled AS model_enabled, s.id AS supplier_id, s.name AS supplier_name';
+use App\Database\Repository;
 
-    public function __construct(\PDO $pdo)
+class DeviceRepository extends Repository
+{
+    private const TABLE = 'devices d JOIN models m ON m.id = d.model_id JOIN suppliers s ON s.id = m.supplier_id';
+    private const COLS = 'd.imei, d.model_id, d.enabled, d.registered_at, d.updated_at, m.code AS model_code, m.name AS model_name, m.protocol, m.transport, m.enabled AS model_enabled, s.id AS supplier_id, s.name AS supplier_name';
+
+    protected function table(): string
     {
-        $this->pdo = $pdo;
+        return self::TABLE;
+    }
+
+    protected function columns(): string
+    {
+        return self::COLS;
+    }
+
+    protected function pk(): string
+    {
+        return 'd.imei';
+    }
+
+    protected function hydrate(array $row): array
+    {
+        return [
+            'imei' => $row['imei'],
+            'model_id' => (int)$row['model_id'],
+            'model_code' => $row['model_code'],
+            'model_name' => $row['model_name'],
+            'protocol' => $row['protocol'],
+            'transport' => $row['transport'],
+            'model_enabled' => (bool)$row['model_enabled'],
+            'supplier_id' => (int)$row['supplier_id'],
+            'supplier_name' => $row['supplier_name'],
+            'enabled' => (bool)$row['enabled'],
+            'registered_at' => $row['registered_at'],
+            'updated_at' => $row['updated_at'],
+        ];
     }
 
     public function all(): array
     {
         $stmt = $this->pdo->query(
-            'SELECT ' . self::COLUMNS . '
-             FROM devices d
-             JOIN models m ON m.id = d.model_id
-             JOIN suppliers s ON s.id = m.supplier_id
+            'SELECT ' . $this->columns() . '
+             FROM ' . $this->table() . '
              ORDER BY d.registered_at ASC'
         );
 
         return array_map(fn(array $row): array => $this->hydrate($row), $stmt->fetchAll());
     }
 
-    public function find(string $imei): ?array
-    {
-        $stmt = $this->pdo->prepare(
-            'SELECT ' . self::COLUMNS . '
-             FROM devices d
-             JOIN models m ON m.id = d.model_id
-             JOIN suppliers s ON s.id = m.supplier_id
-             WHERE d.imei = ?'
-        );
-        $stmt->execute([$imei]);
-        $row = $stmt->fetch();
-        return $row ? $this->hydrate($row) : null;
-    }
-
-    public function insert(array $data): void
+    public function insert(array $data): int
     {
         $modelId = $this->resolveModelId($data);
 
@@ -58,6 +72,8 @@ class DeviceRepository
             'enabled' => isset($data['enabled']) ? ($data['enabled'] ? 1 : 0) : 1,
             'registered_at' => $this->toMysqlDatetime($data['registered_at'] ?? 'now'),
         ]);
+
+        return 0;
     }
 
     public function delete(string $imei): void
@@ -110,24 +126,6 @@ class DeviceRepository
         }
 
         return (int)$id;
-    }
-
-    private function hydrate(array $row): array
-    {
-        return [
-            'imei' => $row['imei'],
-            'model_id' => (int)$row['model_id'],
-            'model_code' => $row['model_code'],
-            'model_name' => $row['model_name'],
-            'protocol' => $row['protocol'],
-            'transport' => $row['transport'],
-            'model_enabled' => (bool)$row['model_enabled'],
-            'supplier_id' => (int)$row['supplier_id'],
-            'supplier_name' => $row['supplier_name'],
-            'enabled' => (bool)$row['enabled'],
-            'registered_at' => $row['registered_at'],
-            'updated_at' => $row['updated_at'],
-        ];
     }
 
     private function toMysqlDatetime(string $value): string
