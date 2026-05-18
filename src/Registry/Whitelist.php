@@ -12,12 +12,15 @@ class Whitelist
     private string $filePath;
     private ?DeviceRepository $deviceRepo;
     private ?Migrator $migrator;
+    private int $cacheTtlSeconds;
+    private int $lastLoadedAt = 0;
 
     public function __construct(?string $filePath = null, ?\PDO $pdo = null)
     {
         $this->filePath = $filePath ?? __DIR__ . '/../../config/whitelist.json';
         $this->deviceRepo = $pdo ? new DeviceRepository($pdo) : null;
         $this->migrator = $pdo ? new Migrator($pdo) : null;
+        $this->cacheTtlSeconds = max(1, (int)(getenv('WHITELIST_CACHE_TTL_SECONDS') ?: 3));
         $this->load();
     }
 
@@ -50,6 +53,8 @@ class Whitelist
                 $this->loadFromDatabase();
             }
         }
+
+        $this->lastLoadedAt = time();
     }
 
     private function loadFromFile(): void
@@ -80,16 +85,19 @@ class Whitelist
 
     public function isAuthorized(string $imei): bool
     {
+        $this->ensureFresh();
         return isset($this->devices[$imei]) && $this->devices[$imei]['enabled'] === true;
     }
 
     public function getModel(string $imei): ?string
     {
+        $this->ensureFresh();
         return $this->devices[$imei]['model'] ?? null;
     }
 
     public function all(): array
     {
+        $this->ensureFresh();
         return $this->devices;
     }
 
@@ -179,5 +187,18 @@ class Whitelist
             $this->filePath,
             json_encode($this->devices, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
         );
+    }
+
+    private function ensureFresh(): void
+    {
+        if ($this->deviceRepo === null) {
+            return;
+        }
+
+        if ((time() - $this->lastLoadedAt) < $this->cacheTtlSeconds) {
+            return;
+        }
+
+        $this->loadFromDatabase();
     }
 }

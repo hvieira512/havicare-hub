@@ -269,6 +269,7 @@ cp .env.example .env
 #   MQTT_PUBLISHER_USERNAME, MQTT_PUBLISHER_PASSWORD
 #   MQTT_SMOKE_USERNAME, MQTT_SMOKE_PASSWORD
 #   DEMO_API_ENABLED=true  # optional, enables /demo/simulate and /demo/listener*
+#   WHITELIST_CACHE_TTL_SECONDS=3  # optional, refresh DB-backed whitelist across processes
 make up
 make migrate
 ```
