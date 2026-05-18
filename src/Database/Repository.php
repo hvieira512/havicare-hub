@@ -24,7 +24,7 @@ abstract class Repository
         return $data;
     }
 
-    public function find(string|int $id): ?array
+    public function find(string $id): ?array
     {
         $stmt = $this->pdo->prepare(
             'SELECT ' . $this->columns() . ' FROM ' . $this->table() . ' WHERE ' . $this->pk() . ' = ?'
@@ -77,7 +77,7 @@ abstract class Repository
         return (int)$this->pdo->lastInsertId();
     }
 
-    public function update(string|int $id, array $data): void
+    public function update(string $id, array $data): void
     {
         if ($data === []) {
             return;
@@ -97,7 +97,7 @@ abstract class Repository
         $stmt->execute(['pk' => $id] + $serialized);
     }
 
-    public function delete(string|int $id): void
+    public function delete(string $id): void
     {
         $stmt = $this->pdo->prepare('DELETE FROM ' . $this->table() . ' WHERE ' . $this->pk() . ' = ?');
         $stmt->execute([$id]);
