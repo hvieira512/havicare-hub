@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild logs shell migrate simulate simulate-vivistar-tcp listen-vivistar-tcp worker worker-logs ws api nginx nginx-logs purge ssl-setup redis-cli ps dev dev-ws dev-api
+.PHONY: up down build rebuild logs shell migrate simulate simulate-vivistar-tcp listen-vivistar-tcp worker worker-logs ws api nginx nginx-logs mqtt mqtt-logs mqtt-publisher mqtt-publisher-logs purge ssl-setup redis-cli ps dev dev-ws dev-api smoke-mqtt
 
 up:
 	docker compose up -d
@@ -67,6 +67,21 @@ nginx:
 
 nginx-logs:
 	docker compose logs -f nginx
+
+mqtt:
+	docker compose up -d mosquitto
+
+mqtt-logs:
+	docker compose logs -f mosquitto
+
+mqtt-publisher:
+	docker compose up -d mqtt-publisher
+
+mqtt-publisher-logs:
+	docker compose logs -f mqtt-publisher
+
+smoke-mqtt:
+	bin/smoke-mqtt.sh
 
 purge:
 	docker compose exec api php bin/purge-events.php $(ARGS)
