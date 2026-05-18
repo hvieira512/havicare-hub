@@ -311,26 +311,6 @@ class Client
         }
     }
 
-    public function getStreamLength(): int
-    {
-        if (!$this->available) return 0;
-        try {
-            return (int)$this->redis->xLen('events');
-        } catch (\Throwable $e) {
-            return 0;
-        }
-    }
-
-    public function trimStream(int $maxLen = 10000): void
-    {
-        if (!$this->available) return;
-        try {
-            $this->redis->xTrim('events', $maxLen);
-        } catch (\Throwable $e) {
-            // silent
-        }
-    }
-
     // --- Consumer Groups (worker) ---
 
     public function xGroupCreate(string $group, string $stream, string $id = '0', bool $mkStream = true): bool
@@ -457,10 +437,5 @@ class Client
     public function rateLimitMessage(string $imei): bool
     {
         return $this->rateLimitCheck("msg:$imei", 60);
-    }
-
-    public function rateLimitCommand(string $imei): bool
-    {
-        return $this->rateLimitCheck("cmd:$imei", 30);
     }
 }

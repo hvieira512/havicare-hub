@@ -25,32 +25,11 @@ class ModelRepository
         return $row ? $this->hydrate($row) : null;
     }
 
-    public function findById(int $id): ?array
-    {
-        $stmt = $this->pdo->prepare(
-            'SELECT ' . self::COLUMNS . '
-             FROM models m
-             JOIN suppliers s ON s.id = m.supplier_id
-             WHERE m.id = ?'
-        );
-        $stmt->execute([$id]);
-        $row = $stmt->fetch();
-        return $row ? $this->hydrate($row) : null;
-    }
-
     public function existsCode(string $code): bool
     {
         $stmt = $this->pdo->prepare('SELECT 1 FROM models WHERE code = ?');
         $stmt->execute([$code]);
         return (bool)$stmt->fetchColumn();
-    }
-
-    public function isEnabledByCode(string $code): bool
-    {
-        $stmt = $this->pdo->prepare('SELECT enabled FROM models WHERE code = ?');
-        $stmt->execute([$code]);
-        $value = $stmt->fetchColumn();
-        return $value !== false && (bool)$value;
     }
 
     public function list(array $filters, int $page, int $limit): array

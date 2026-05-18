@@ -126,20 +126,6 @@ class Whitelist
         }
     }
 
-    public function toggle(string $imei, bool $enabled): void
-    {
-        if (!isset($this->devices[$imei])) {
-            return;
-        }
-
-        $this->devices[$imei]['enabled'] = $enabled;
-        if ($this->deviceRepo) {
-            $this->deviceRepo->toggle($imei, $enabled);
-        } else {
-            $this->saveFile();
-        }
-    }
-
     public function update(string $imei, array $data): bool
     {
         if (!isset($this->devices[$imei])) {

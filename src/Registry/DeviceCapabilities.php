@@ -112,46 +112,6 @@ class DeviceCapabilities
         return array_keys(self::$profiles);
     }
 
-    public static function modelName(string $model): string
-    {
-        self::load();
-        return self::$profiles[$model]['name'] ?? $model;
-    }
-
-    public static function supportsAny(string $command): bool
-    {
-        self::load();
-        foreach (self::$profiles as $profile) {
-            if (in_array($command, $profile['passive'] ?? [], true)) {
-                return true;
-            }
-            if (in_array($command, $profile['active'] ?? [], true)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static function allKnownPassive(): array
-    {
-        self::load();
-        $all = [];
-        foreach (self::$profiles as $profile) {
-            $all = array_merge($all, $profile['passive'] ?? []);
-        }
-        return array_values(array_unique($all));
-    }
-
-    public static function allKnownActive(): array
-    {
-        self::load();
-        $all = [];
-        foreach (self::$profiles as $profile) {
-            $all = array_merge($all, $profile['active'] ?? []);
-        }
-        return array_values(array_unique($all));
-    }
-
     // --- Instance ---
 
     private string $model;
@@ -179,16 +139,6 @@ class DeviceCapabilities
         $this->features = $profile['features'] ?? [];
     }
 
-    public function getModel(): string
-    {
-        return $this->model;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
     public function getSupplier(): ?string
     {
         return $this->supplier;
@@ -202,16 +152,6 @@ class DeviceCapabilities
     public function getTransport(): ?string
     {
         return $this->transport;
-    }
-
-    public function getSourceDoc(): ?string
-    {
-        return $this->sourceDoc;
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
     }
 
     public function supportsPassive(string $type): bool
@@ -232,16 +172,6 @@ class DeviceCapabilities
     public function getFeatures(): array
     {
         return $this->features;
-    }
-
-    public function getFeature(string $feature): ?array
-    {
-        return $this->features[$feature] ?? null;
-    }
-
-    public function getFeatureNames(): array
-    {
-        return array_keys($this->features);
     }
 
     public function featureForPassive(string $type): ?string

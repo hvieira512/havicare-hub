@@ -751,19 +751,9 @@ class WatchServer implements MessageComponentInterface
         return $this->whitelist;
     }
 
-    public function getSessions(): array
-    {
-        return $this->sessions;
-    }
-
     public function getDeviceData(string $imei): ?array
     {
         return $this->deviceData[$imei] ?? null;
-    }
-
-    public function getAllDeviceData(): array
-    {
-        return $this->deviceData;
     }
 
     public function getRecentEvents(int $limit = 50, ?int $afterId = null): array
