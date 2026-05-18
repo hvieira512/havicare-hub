@@ -54,6 +54,11 @@ $clientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($mqttConfig['cl
 $clientId = substr($clientIdPrefix . '-' . getmypid(), 0, 23);
 $keepAlive = (int)($mqttConfig['keepalive'] ?? 60);
 $timeout = (float)($mqttConfig['timeout'] ?? 5.0);
+$tlsEnabled = (bool)($mqttConfig['tls_enabled'] ?? false);
+$tlsVerifyPeer = (bool)($mqttConfig['tls_verify_peer'] ?? true);
+$tlsCaFile = (string)($mqttConfig['tls_ca_file'] ?? '');
+$tlsCertFile = (string)($mqttConfig['tls_cert_file'] ?? '');
+$tlsKeyFile = (string)($mqttConfig['tls_key_file'] ?? '');
 
 if ($mqttHost === '') {
     Logger::channel('mqtt-publisher')->error('MQTT_HOST is required when MQTT publisher is enabled');
@@ -94,6 +99,11 @@ $mqtt = new SimpleClient(
     password: $mqttPass,
     keepAlive: $keepAlive,
     timeout: $timeout,
+    tlsEnabled: $tlsEnabled,
+    tlsVerifyPeer: $tlsVerifyPeer,
+    tlsCaFile: $tlsCaFile,
+    tlsCertFile: $tlsCertFile,
+    tlsKeyFile: $tlsKeyFile,
 );
 
 Logger::channel('mqtt-publisher')->info('Starting MQTT publisher');
@@ -102,6 +112,9 @@ Logger::channel('mqtt-publisher')->info(
     "Broker: {$mqttHost}:{$mqttPort}, topic patterns: " .
     ($mqttPrefix === '' ? 'devices/{imei}/telemetry|status|error|command/state' : $mqttPrefix . '/devices/{imei}/...')
 );
+if ($tlsEnabled) {
+    Logger::channel('mqtt-publisher')->info('MQTT TLS is enabled');
+}
 
 $running = true;
 if (extension_loaded('pcntl')) {

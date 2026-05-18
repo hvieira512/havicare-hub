@@ -38,8 +38,12 @@ services:
     container_name: health-mosquitto
     ports:
       - "1883:1883"
+      - "8883:8883"
     volumes:
       - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./config/mosquitto.passwd:/mosquitto/config/passwd:ro
+      - ./config/mosquitto.acl:/mosquitto/config/acl:ro
+      - ./config/ssl:/mosquitto/config/certs:ro
     restart: unless-stopped
 
   ws:
@@ -117,7 +121,14 @@ services:
       DB_HOST: mysql
       MQTT_ENABLED: "true"
       MQTT_HOST: mosquitto
-      MQTT_PORT: 1883
+      MQTT_PORT: ${MQTT_PORT:-1883}
+      MQTT_USERNAME: ${MQTT_USERNAME:-platform_publisher}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-platform_publisher_dev}
+      MQTT_TLS_ENABLED: ${MQTT_TLS_ENABLED:-false}
+      MQTT_TLS_VERIFY_PEER: ${MQTT_TLS_VERIFY_PEER:-true}
+      MQTT_TLS_CA_FILE: ${MQTT_TLS_CA_FILE:-}
+      MQTT_TLS_CERT_FILE: ${MQTT_TLS_CERT_FILE:-}
+      MQTT_TLS_KEY_FILE: ${MQTT_TLS_KEY_FILE:-}
     depends_on:
       redis:
         condition: service_started

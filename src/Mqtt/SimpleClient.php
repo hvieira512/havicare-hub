@@ -11,6 +11,11 @@ class SimpleClient
     private string $password;
     private int $keepAlive;
     private float $timeout;
+    private bool $tlsEnabled;
+    private bool $tlsVerifyPeer;
+    private string $tlsCaFile;
+    private string $tlsCertFile;
+    private string $tlsKeyFile;
     private $socket = null;
 
     public function __construct(
@@ -21,6 +26,11 @@ class SimpleClient
         string $password = '',
         int $keepAlive = 60,
         float $timeout = 5.0,
+        bool $tlsEnabled = false,
+        bool $tlsVerifyPeer = true,
+        string $tlsCaFile = '',
+        string $tlsCertFile = '',
+        string $tlsKeyFile = '',
     ) {
         $this->host = $host;
         $this->port = $port;
@@ -29,6 +39,11 @@ class SimpleClient
         $this->password = $password;
         $this->keepAlive = max(1, $keepAlive);
         $this->timeout = max(1.0, $timeout);
+        $this->tlsEnabled = $tlsEnabled;
+        $this->tlsVerifyPeer = $tlsVerifyPeer;
+        $this->tlsCaFile = $tlsCaFile;
+        $this->tlsCertFile = $tlsCertFile;
+        $this->tlsKeyFile = $tlsKeyFile;
     }
 
     public function publish(string $topic, string $payload, bool $retain = false): void
@@ -66,10 +81,12 @@ class SimpleClient
             return;
         }
 
-        $uri = sprintf('tcp://%s:%d', $this->host, $this->port);
+        $scheme = $this->tlsEnabled ? 'ssl' : 'tcp';
+        $uri = sprintf('%s://%s:%d', $scheme, $this->host, $this->port);
         $errno = 0;
         $errstr = '';
-        $socket = @stream_socket_client($uri, $errno, $errstr, $this->timeout, STREAM_CLIENT_CONNECT);
+        $context = stream_context_create($this->streamContextOptions());
+        $socket = @stream_socket_client($uri, $errno, $errstr, $this->timeout, STREAM_CLIENT_CONNECT, $context);
         if (!is_resource($socket)) {
             throw new \RuntimeException("MQTT connect failed to {$uri}: {$errstr} ({$errno})");
         }
@@ -184,5 +201,31 @@ class SimpleClient
     private function encodeString(string $value): string
     {
         return pack('n', strlen($value)) . $value;
+    }
+
+    private function streamContextOptions(): array
+    {
+        if (!$this->tlsEnabled) {
+            return [];
+        }
+
+        $ssl = [
+            'verify_peer' => $this->tlsVerifyPeer,
+            'verify_peer_name' => $this->tlsVerifyPeer,
+            'allow_self_signed' => !$this->tlsVerifyPeer,
+            'peer_name' => $this->host,
+        ];
+
+        if ($this->tlsCaFile !== '') {
+            $ssl['cafile'] = $this->tlsCaFile;
+        }
+        if ($this->tlsCertFile !== '') {
+            $ssl['local_cert'] = $this->tlsCertFile;
+        }
+        if ($this->tlsKeyFile !== '') {
+            $ssl['local_pk'] = $this->tlsKeyFile;
+        }
+
+        return ['ssl' => $ssl];
     }
 }

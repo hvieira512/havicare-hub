@@ -15,6 +15,10 @@ class Config
     {
         $mqttEnabledRaw = strtolower(trim((string)(getenv('MQTT_ENABLED') ?: 'false')));
         $mqttEnabled = in_array($mqttEnabledRaw, ['1', 'true', 'yes', 'on'], true);
+        $mqttTlsEnabledRaw = strtolower(trim((string)(getenv('MQTT_TLS_ENABLED') ?: 'false')));
+        $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
+        $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
+        $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
 
         return new self([
             'websocket' => [
@@ -51,6 +55,11 @@ class Config
                 'client_id_prefix' => getenv('MQTT_CLIENT_ID_PREFIX') ?: 'health-mqtt',
                 'keepalive' => (int)(getenv('MQTT_KEEPALIVE') ?: 60),
                 'timeout' => (float)(getenv('MQTT_TIMEOUT') ?: 5.0),
+                'tls_enabled' => $mqttTlsEnabled,
+                'tls_verify_peer' => $mqttTlsVerifyPeer,
+                'tls_ca_file' => getenv('MQTT_TLS_CA_FILE') ?: '',
+                'tls_cert_file' => getenv('MQTT_TLS_CERT_FILE') ?: '',
+                'tls_key_file' => getenv('MQTT_TLS_KEY_FILE') ?: '',
             ],
             'public_ws_url' => getenv('WS_SERVER_URL') ?: 'ws://127.0.0.1:8080',
             'device_defaults' => [
