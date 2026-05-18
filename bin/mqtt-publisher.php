@@ -271,23 +271,21 @@ function buildTelemetryPayload(array $event, string $imei, Whitelist $whitelist)
     $caps = $model ? DeviceCapabilities::forModel($model) : null;
 
     return [
-        'schemaVersion' => '1.0',
-        'eventType' => 'telemetry.received',
-        'eventId' => eventIdFromStreamId($streamId),
-        'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($receivedAtMs / 1000))),
-        'imei' => $imei,
-        'model' => $model,
-        'supplier' => $caps?->getSupplier(),
-        'data' => [
-            'feature' => ($event['feature'] ?? '') !== '' ? $event['feature'] : null,
-            'nativeType' => $event['nativeType'] ?? null,
-            'nativePayload' => $event['nativePayload'] ?? new stdClass(),
-            'normalized' => EventNormalizer::normalize(
-                ($event['feature'] ?? '') !== '' ? (string)$event['feature'] : null,
-                isset($event['nativeType']) ? (string)$event['nativeType'] : null,
-                is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : []
-            ),
+        'event' => [
+            'type' => 'telemetry.received',
+            'id' => eventIdFromStreamId($streamId),
         ],
+        'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($receivedAtMs / 1000))),
+        'device' => [
+            'imei' => $imei,
+            'model' => $model,
+            'supplier' => $caps?->getSupplier(),
+        ],
+        'data' => EventNormalizer::normalize(
+            ($event['feature'] ?? '') !== '' ? (string)$event['feature'] : null,
+            isset($event['nativeType']) ? (string)$event['nativeType'] : null,
+            is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : []
+        ),
     ];
 }
 
@@ -301,17 +299,19 @@ function buildStatusPayload(array $event, string $imei, Whitelist $whitelist): a
     $caps = $model ? DeviceCapabilities::forModel($model) : null;
 
     return [
-        'schemaVersion' => '1.0',
-        'eventType' => 'device.status.changed',
-        'eventId' => eventIdFromStreamId($streamId),
+        'event' => [
+            'type' => 'device.status.changed',
+            'id' => eventIdFromStreamId($streamId),
+        ],
         'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($timestampMs / 1000))),
-        'imei' => $imei,
-        'model' => $model,
-        'supplier' => $caps?->getSupplier(),
+        'device' => [
+            'imei' => $imei,
+            'model' => $model,
+            'supplier' => $caps?->getSupplier(),
+        ],
         'data' => [
             'state' => $state,
             'reason' => $event['reason'] ?? null,
-            'protocol' => $event['protocol'] ?? null,
         ],
     ];
 }
@@ -325,18 +325,19 @@ function buildErrorPayload(array $event, string $imei, Whitelist $whitelist): ar
     $caps = $model ? DeviceCapabilities::forModel($model) : null;
 
     return [
-        'schemaVersion' => '1.0',
-        'eventType' => 'integration.error',
-        'eventId' => eventIdFromStreamId($streamId),
+        'event' => [
+            'type' => 'integration.error',
+            'id' => eventIdFromStreamId($streamId),
+        ],
         'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($timestampMs / 1000))),
-        'imei' => $imei,
-        'model' => $model,
-        'supplier' => $caps?->getSupplier(),
+        'device' => [
+            'imei' => $imei,
+            'model' => $model,
+            'supplier' => $caps?->getSupplier(),
+        ],
         'data' => [
             'code' => $event['code'] ?? 'unknown_error',
             'message' => $event['message'] ?? 'Unknown error',
-            'command' => $event['command'] ?? null,
-            'protocol' => $event['protocol'] ?? null,
         ],
     ];
 }
@@ -350,21 +351,19 @@ function buildCommandStatePayload(array $event, string $imei, Whitelist $whiteli
     $caps = $model ? DeviceCapabilities::forModel($model) : null;
 
     return [
-        'schemaVersion' => '1.0',
-        'eventType' => 'command.state.changed',
-        'eventId' => eventIdFromStreamId($streamId),
+        'event' => [
+            'type' => 'command.state.changed',
+            'id' => eventIdFromStreamId($streamId),
+        ],
         'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($timestampMs / 1000))),
-        'imei' => $imei,
-        'model' => $model,
-        'supplier' => $caps?->getSupplier(),
+        'device' => [
+            'imei' => $imei,
+            'model' => $model,
+            'supplier' => $caps?->getSupplier(),
+        ],
         'data' => [
             'state' => $event['state'] ?? null,
             'requestId' => $event['requestId'] ?? null,
-            'nativeType' => $event['type'] ?? null,
-            'feature' => $event['feature'] ?? null,
-            'ident' => $event['ident'] ?? null,
-            'reason' => $event['reason'] ?? null,
-            'protocol' => $event['protocol'] ?? null,
         ],
     ];
 }
