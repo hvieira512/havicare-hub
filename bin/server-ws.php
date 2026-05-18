@@ -84,11 +84,12 @@ if ($redis !== null && $redis->isAvailable()) {
                 $imei = $cmd['imei'];
                 $type = $cmd['type'];
                 $data = $cmd['data'];
+                $requestId = $cmd['requestId'] ?: null;
 
                 if ($cmd['feature'] !== '') {
-                    $sent = $watchServer->sendFeatureCommand($imei, $cmd['feature'], $data);
+                    $sent = $watchServer->sendFeatureCommand($imei, $cmd['feature'], $data, $requestId);
                 } else {
-                    $sent = $watchServer->sendCommand($imei, $type, $data);
+                    $sent = $watchServer->sendCommand($imei, $type, $data, $requestId);
                 }
 
                 Logger::channel('ws-cmd')->info("IMEI=$imei type=$type " . ($sent ? 'sent' : 'failed'));

@@ -13,6 +13,9 @@ class Config
 
     public static function load(): self
     {
+        $mqttEnabledRaw = strtolower(trim((string)(getenv('MQTT_ENABLED') ?: 'false')));
+        $mqttEnabled = in_array($mqttEnabledRaw, ['1', 'true', 'yes', 'on'], true);
+
         return new self([
             'websocket' => [
                 'host' => getenv('WS_HOST') ?: '0.0.0.0',
@@ -37,6 +40,17 @@ class Config
                 'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
                 'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 'database' => 0,
+            ],
+            'mqtt' => [
+                'enabled' => $mqttEnabled,
+                'host' => getenv('MQTT_HOST') ?: '',
+                'port' => (int)(getenv('MQTT_PORT') ?: 1883),
+                'username' => getenv('MQTT_USERNAME') ?: '',
+                'password' => getenv('MQTT_PASSWORD') ?: '',
+                'topic_prefix' => trim((string)(getenv('MQTT_TOPIC_PREFIX') ?: ''), '/'),
+                'client_id_prefix' => getenv('MQTT_CLIENT_ID_PREFIX') ?: 'health-mqtt',
+                'keepalive' => (int)(getenv('MQTT_KEEPALIVE') ?: 60),
+                'timeout' => (float)(getenv('MQTT_TIMEOUT') ?: 5.0),
             ],
             'public_ws_url' => getenv('WS_SERVER_URL') ?: 'ws://127.0.0.1:8080',
             'device_defaults' => [

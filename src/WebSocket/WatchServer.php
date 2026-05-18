@@ -67,6 +67,8 @@ class WatchServer implements MessageComponentInterface
             'adapter' => null,
             'lastCommandType' => null,
             'lastCommandIdent' => null,
+            'lastCommandRequestId' => null,
+            'lastCommandFeature' => null,
         ];
         Logger::channel('watch')->info("New connection: {$conn->resourceId}");
     }
@@ -166,9 +168,25 @@ class WatchServer implements MessageComponentInterface
 
         // If it is a reply to one of our commands (w:reply), always accept it.
         if ($isReplyToServerCommand) {
+            $requestId = $session['lastCommandRequestId'] ?? null;
+            if ($this->isRedisAvailable() && $requestId) {
+                $this->redis->commandStatePush([
+                    'imei' => $imei,
+                    'state' => 'ack',
+                    'type' => $session['lastCommandType'] ?? '',
+                    'feature' => $session['lastCommandFeature'] ?? '',
+                    'requestId' => $requestId,
+                    'ident' => $payload['ident'] ?? '',
+                    'reason' => 'device_reply',
+                    'protocol' => $session['protocol'] ?? '',
+                    'timestamp' => $this->now(),
+                ]);
+            }
             if (($session['protocol'] ?? '') === 'vivistar-iw') {
                 $this->sessions[$rid]['lastCommandType'] = null;
                 $this->sessions[$rid]['lastCommandIdent'] = null;
+                $this->sessions[$rid]['lastCommandRequestId'] = null;
+                $this->sessions[$rid]['lastCommandFeature'] = null;
             }
             Logger::channel('watch')->info("reply IMEI=$imei, type=$type");
             $this->sendPayload($from, $this->buildReply($payload, $payload['data'] ?? []));
@@ -246,6 +264,13 @@ class WatchServer implements MessageComponentInterface
 
         if ($this->isRedisAvailable()) {
             $this->redis->deviceSetOnline($imei);
+            $this->redis->statusPush([
+                'imei' => $imei,
+                'state' => 'online',
+                'reason' => 'login_ok',
+                'protocol' => $this->sessions[$rid]['protocol'] ?? '',
+                'timestamp' => $this->now(),
+            ]);
         }
 
         $this->sendPayload($conn, [
@@ -270,6 +295,19 @@ class WatchServer implements MessageComponentInterface
 
     private function sendLoginError(ConnectionInterface $conn, string $ident, string $imei, string $msg): void
     {
+        $rid = $conn->resourceId;
+        $session = $this->sessions[$rid] ?? [];
+        if ($this->isRedisAvailable() && $imei !== '') {
+            $this->redis->errorPush([
+                'imei' => $imei,
+                'code' => 'login_error',
+                'message' => $msg,
+                'command' => 'login',
+                'protocol' => $session['protocol'] ?? '',
+                'timestamp' => $this->now(),
+            ]);
+        }
+
         $this->sendPayload($conn, [
             'type' => 'login_error',
             'ident' => $ident,
@@ -291,8 +329,16 @@ class WatchServer implements MessageComponentInterface
         $this->sendPayload($conn, $this->buildReply($payload));
     }
 
-    public function sendCommand(string $imei, string $type, array $data = []): bool
+    public function sendCommand(
+        string $imei,
+        string $type,
+        array $data = [],
+        ?string $requestId = null,
+        ?string $feature = null,
+    ): bool
     {
+        $requestId = $requestId ?: bin2hex(random_bytes(8));
+
         if (!isset($this->deviceMap[$imei])) {
             Logger::channel('watch')->warning("sendCommand: IMEI=$imei offline (not on this node)");
             if ($this->isRedisAvailable()) {
@@ -302,6 +348,15 @@ class WatchServer implements MessageComponentInterface
                 } elseif ($node !== $this->redis->getNodeId()) {
                     Logger::channel('watch')->warning("sendCommand: IMEI=$imei is on node $node (future: reroute via Pub/Sub)");
                 }
+                $this->redis->commandStatePush([
+                    'imei' => $imei,
+                    'state' => 'failed',
+                    'type' => $type,
+                    'feature' => $feature ?? '',
+                    'requestId' => $requestId,
+                    'reason' => 'offline_or_not_routable',
+                    'timestamp' => $this->now(),
+                ]);
             }
             return false;
         }
@@ -311,6 +366,18 @@ class WatchServer implements MessageComponentInterface
 
         if (!$session || !$session['caps']->supportsActive($type)) {
             Logger::channel('watch')->warning("sendCommand: $type is not supported for $imei");
+            if ($this->isRedisAvailable()) {
+                $this->redis->commandStatePush([
+                    'imei' => $imei,
+                    'state' => 'failed',
+                    'type' => $type,
+                    'feature' => $feature ?? '',
+                    'requestId' => $requestId,
+                    'reason' => 'command_not_supported',
+                    'protocol' => $session['protocol'] ?? '',
+                    'timestamp' => $this->now(),
+                ]);
+            }
             return false;
         }
 
@@ -327,6 +394,21 @@ class WatchServer implements MessageComponentInterface
         Logger::channel('watch')->info("cmd IMEI=$imei, type=$type, ident=$ident");
         $this->sessions[$conn->resourceId]['lastCommandType'] = $type;
         $this->sessions[$conn->resourceId]['lastCommandIdent'] = $ident;
+        $this->sessions[$conn->resourceId]['lastCommandRequestId'] = $requestId;
+        $this->sessions[$conn->resourceId]['lastCommandFeature'] = $feature;
+        if ($this->isRedisAvailable()) {
+            $this->redis->commandStatePush([
+                'imei' => $imei,
+                'state' => 'dispatched',
+                'type' => $type,
+                'feature' => $feature ?? '',
+                'requestId' => $requestId,
+                'ident' => $ident,
+                'reason' => 'sent_to_device',
+                'protocol' => $session['protocol'] ?? '',
+                'timestamp' => $this->now(),
+            ]);
+        }
         return true;
     }
 
@@ -341,10 +423,10 @@ class WatchServer implements MessageComponentInterface
         return $caps?->resolveFeatureActiveCommand($feature);
     }
 
-    public function sendFeatureCommand(string $imei, string $feature, array $data = []): ?string
+    public function sendFeatureCommand(string $imei, string $feature, array $data = [], ?string $requestId = null): ?string
     {
         $type = $this->resolveFeatureCommand($imei, $feature);
-        if (!$type || !$this->sendCommand($imei, $type, $data)) {
+        if (!$type || !$this->sendCommand($imei, $type, $data, $requestId, $feature)) {
             return null;
         }
 
@@ -366,6 +448,13 @@ class WatchServer implements MessageComponentInterface
                 unset($this->deviceMap[$imei]);
                 if ($this->isRedisAvailable()) {
                     $this->redis->deviceSetOffline($imei);
+                    $this->redis->statusPush([
+                        'imei' => $imei,
+                        'state' => 'offline',
+                        'reason' => 'disconnect',
+                        'protocol' => $this->sessions[$rid]['protocol'] ?? '',
+                        'timestamp' => $this->now(),
+                    ]);
                 }
             }
         }
@@ -401,11 +490,25 @@ class WatchServer implements MessageComponentInterface
 
     private function sendError(ConnectionInterface $conn, array $original, string $error, string $msg = ''): void
     {
+        $rid = $conn->resourceId;
+        $session = $this->sessions[$rid] ?? [];
+        $imei = $original['imei'] ?? ($session['imei'] ?? '');
+        if ($this->isRedisAvailable() && $imei !== '') {
+            $this->redis->errorPush([
+                'imei' => $imei,
+                'code' => $error,
+                'message' => $msg ?: $error,
+                'command' => $original['type'] ?? '',
+                'protocol' => $session['protocol'] ?? '',
+                'timestamp' => $this->now(),
+            ]);
+        }
+
         $this->sendPayload($conn, [
             'type' => 'error',
             'ident' => $original['ident'] ?? '',
             'ref' => 's:reply',
-            'imei' => $original['imei'] ?? '',
+            'imei' => $imei,
             'data' => [
                 'error' => $error,
                 'command' => $original['type'] ?? '',

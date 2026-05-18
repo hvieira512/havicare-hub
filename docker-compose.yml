@@ -33,6 +33,15 @@ services:
       retries: 5
     restart: unless-stopped
 
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: health-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped
+
   ws:
     build: .
     container_name: health-ws
@@ -92,6 +101,27 @@ services:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_started
+    restart: unless-stopped
+
+  mqtt-publisher:
+    build: .
+    container_name: health-mqtt-publisher
+    command: php bin/mqtt-publisher.php
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      REDIS_HOST: redis
+      DB_HOST: mysql
+      MQTT_ENABLED: "true"
+      MQTT_HOST: mosquitto
+      MQTT_PORT: 1883
+    depends_on:
+      redis:
+        condition: service_started
+      mosquitto:
         condition: service_started
     restart: unless-stopped
 

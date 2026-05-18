@@ -136,13 +136,13 @@ class ApiServer
         return $caps?->supportsActive($type) ?? false;
     }
 
-    private function sendCommandToDevice(string $imei, string $type, array $data = []): bool
+    private function sendCommandToDevice(string $imei, string $type, array $data = [], ?string $requestId = null): bool
     {
+        $requestId = $requestId ?: bin2hex(random_bytes(8));
         if ($this->watchServer !== null) {
-            return $this->watchServer->sendCommand($imei, $type, $data);
+            return $this->watchServer->sendCommand($imei, $type, $data, $requestId);
         }
         if ($this->redis !== null && $this->redis->isAvailable()) {
-            $requestId = bin2hex(random_bytes(8));
             $this->redis->commandPublish([
                 'imei' => $imei,
                 'type' => $type,
@@ -170,16 +170,16 @@ class ApiServer
         return $caps?->resolveFeatureActiveCommand($feature);
     }
 
-    private function sendFeatureCommandToDevice(string $imei, string $feature, array $data = []): ?string
+    private function sendFeatureCommandToDevice(string $imei, string $feature, array $data = [], ?string $requestId = null): ?string
     {
         if ($this->watchServer !== null) {
-            return $this->watchServer->sendFeatureCommand($imei, $feature, $data);
+            return $this->watchServer->sendFeatureCommand($imei, $feature, $data, $requestId);
         }
         $type = $this->resolveFeatureCommand($imei, $feature);
         if ($type === null) {
             return null;
         }
-        return $this->sendCommandToDevice($imei, $type, $data) ? $type : null;
+        return $this->sendCommandToDevice($imei, $type, $data, $requestId) ? $type : null;
     }
 
     private function handleRequest(ServerRequestInterface $request): Response
@@ -709,6 +709,7 @@ class ApiServer
 
         $type = (string)$body['type'];
         $data = isset($body['data']) && is_array($body['data']) ? $body['data'] : [];
+        $requestId = bin2hex(random_bytes(8));
 
         if (!$this->deviceSupportsActiveCommand($imei, $type)) {
             return $this->errorResponse('command_not_supported', "Device does not support command $type", 400);
@@ -718,14 +719,14 @@ class ApiServer
             return $this->errorResponse('device_offline', 'Device is offline or cannot be routed right now', 409);
         }
 
-        if (!$this->sendCommandToDevice($imei, $type, $data)) {
+        if (!$this->sendCommandToDevice($imei, $type, $data, $requestId)) {
             return $this->errorResponse('device_offline', 'Device is offline or cannot be routed right now', 409);
         }
 
         return $this->jsonResponse([
             'status' => 'sent',
             'device' => $this->deviceResource($imei),
-            'command' => ['feature' => null, 'nativeType' => $type, 'payload' => $data],
+            'command' => ['feature' => null, 'nativeType' => $type, 'payload' => $data, 'requestId' => $requestId],
         ]);
     }
 
@@ -767,12 +768,13 @@ class ApiServer
 
         $body = json_decode((string)$request->getBody(), true) ?: [];
         $data = isset($body['data']) && is_array($body['data']) ? $body['data'] : [];
+        $requestId = bin2hex(random_bytes(8));
 
         if (!$this->deviceIsOnline($imei)) {
             return $this->errorResponse('device_offline', 'Device is offline or cannot be routed right now', 409);
         }
 
-        $sentType = $this->sendFeatureCommandToDevice($imei, $feature, $data);
+        $sentType = $this->sendFeatureCommandToDevice($imei, $feature, $data, $requestId);
         if (!$sentType) {
             return $this->errorResponse('device_offline', 'Device is offline or cannot be routed right now', 409);
         }
@@ -780,7 +782,7 @@ class ApiServer
         return $this->jsonResponse([
             'status' => 'sent',
             'device' => $this->deviceResource($imei),
-            'command' => ['feature' => $feature, 'nativeType' => $sentType, 'payload' => $data],
+            'command' => ['feature' => $feature, 'nativeType' => $sentType, 'payload' => $data, 'requestId' => $requestId],
         ]);
     }
 

@@ -20,6 +20,7 @@
         "server:ws": "php bin/server-ws.php",
         "server:api": "php bin/server-api.php",
         "worker": "php bin/worker.php",
+        "mqtt:publisher": "php bin/mqtt-publisher.php",
         "simulate": "php simulator/simulate.php",
         "migrate": "php bin/migrate.php --seed",
         "purge": "php bin/purge-events.php"

@@ -148,6 +148,169 @@ class Client
         }
     }
 
+    // --- Device Status Stream ---
+
+    public function statusPush(array $status): string
+    {
+        if (!$this->available) return '0-0';
+        try {
+            return $this->redis->xAdd(
+                'status',
+                '*',
+                [
+                    'imei' => $status['imei'],
+                    'state' => $status['state'],
+                    'reason' => $status['reason'] ?? '',
+                    'protocol' => $status['protocol'] ?? '',
+                    'timestamp' => (string)($status['timestamp'] ?? (int)round(microtime(true) * 1000)),
+                ],
+                5000
+            );
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("statusPush: {$e->getMessage()}");
+            return '0-0';
+        }
+    }
+
+    public function readStatus(string $lastId, int $count = 50): array
+    {
+        if (!$this->available) return [];
+        try {
+            $streams = $this->redis->xRead(['status' => $lastId], $count);
+            if (!$streams) return [];
+
+            $statuses = [];
+            foreach ($streams as $streamName => $streamEvents) {
+                foreach ($streamEvents as $id => $data) {
+                    $statuses[] = [
+                        'streamId' => $id,
+                        'imei' => $data['imei'] ?? '',
+                        'state' => $data['state'] ?? '',
+                        'reason' => $data['reason'] !== '' ? $data['reason'] : null,
+                        'protocol' => $data['protocol'] !== '' ? $data['protocol'] : null,
+                        'timestamp' => isset($data['timestamp']) ? (int)$data['timestamp'] : (int)round(microtime(true) * 1000),
+                    ];
+                }
+            }
+            return $statuses;
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("readStatus: {$e->getMessage()}");
+            return [];
+        }
+    }
+
+    // --- Errors Stream ---
+
+    public function errorPush(array $error): string
+    {
+        if (!$this->available) return '0-0';
+        try {
+            return $this->redis->xAdd(
+                'errors',
+                '*',
+                [
+                    'imei' => $error['imei'] ?? '',
+                    'code' => $error['code'] ?? '',
+                    'message' => $error['message'] ?? '',
+                    'command' => $error['command'] ?? '',
+                    'protocol' => $error['protocol'] ?? '',
+                    'timestamp' => (string)($error['timestamp'] ?? (int)round(microtime(true) * 1000)),
+                ],
+                5000
+            );
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("errorPush: {$e->getMessage()}");
+            return '0-0';
+        }
+    }
+
+    public function readErrors(string $lastId, int $count = 50): array
+    {
+        if (!$this->available) return [];
+        try {
+            $streams = $this->redis->xRead(['errors' => $lastId], $count);
+            if (!$streams) return [];
+
+            $errors = [];
+            foreach ($streams as $streamName => $streamEvents) {
+                foreach ($streamEvents as $id => $data) {
+                    $errors[] = [
+                        'streamId' => $id,
+                        'imei' => $data['imei'] ?? '',
+                        'code' => $data['code'] ?? '',
+                        'message' => $data['message'] ?? '',
+                        'command' => $data['command'] !== '' ? $data['command'] : null,
+                        'protocol' => $data['protocol'] !== '' ? $data['protocol'] : null,
+                        'timestamp' => isset($data['timestamp']) ? (int)$data['timestamp'] : (int)round(microtime(true) * 1000),
+                    ];
+                }
+            }
+            return $errors;
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("readErrors: {$e->getMessage()}");
+            return [];
+        }
+    }
+
+    // --- Command State Stream ---
+
+    public function commandStatePush(array $state): string
+    {
+        if (!$this->available) return '0-0';
+        try {
+            return $this->redis->xAdd(
+                'command_state',
+                '*',
+                [
+                    'imei' => $state['imei'] ?? '',
+                    'state' => $state['state'] ?? '',
+                    'type' => $state['type'] ?? '',
+                    'feature' => $state['feature'] ?? '',
+                    'request_id' => $state['requestId'] ?? '',
+                    'ident' => $state['ident'] ?? '',
+                    'reason' => $state['reason'] ?? '',
+                    'protocol' => $state['protocol'] ?? '',
+                    'timestamp' => (string)($state['timestamp'] ?? (int)round(microtime(true) * 1000)),
+                ],
+                5000
+            );
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("commandStatePush: {$e->getMessage()}");
+            return '0-0';
+        }
+    }
+
+    public function readCommandState(string $lastId, int $count = 50): array
+    {
+        if (!$this->available) return [];
+        try {
+            $streams = $this->redis->xRead(['command_state' => $lastId], $count);
+            if (!$streams) return [];
+
+            $states = [];
+            foreach ($streams as $streamName => $streamEvents) {
+                foreach ($streamEvents as $id => $data) {
+                    $states[] = [
+                        'streamId' => $id,
+                        'imei' => $data['imei'] ?? '',
+                        'state' => $data['state'] ?? '',
+                        'type' => $data['type'] !== '' ? $data['type'] : null,
+                        'feature' => $data['feature'] !== '' ? $data['feature'] : null,
+                        'requestId' => $data['request_id'] !== '' ? $data['request_id'] : null,
+                        'ident' => $data['ident'] !== '' ? $data['ident'] : null,
+                        'reason' => $data['reason'] !== '' ? $data['reason'] : null,
+                        'protocol' => $data['protocol'] !== '' ? $data['protocol'] : null,
+                        'timestamp' => isset($data['timestamp']) ? (int)$data['timestamp'] : (int)round(microtime(true) * 1000),
+                    ];
+                }
+            }
+            return $states;
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("readCommandState: {$e->getMessage()}");
+            return [];
+        }
+    }
+
     public function getStreamLength(): int
     {
         if (!$this->available) return 0;

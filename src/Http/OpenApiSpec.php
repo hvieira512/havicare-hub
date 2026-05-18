@@ -748,6 +748,7 @@ class OpenApiSpec
                                 'properties' => [
                                     'feature' => ['type' => 'string', 'nullable' => true],
                                     'nativeType' => ['type' => 'string'],
+                                    'requestId' => ['type' => 'string', 'nullable' => true],
                                     'payload' => ['type' => 'object', 'additionalProperties' => true],
                                 ],
                             ],
