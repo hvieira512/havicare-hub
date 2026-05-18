@@ -68,6 +68,10 @@ $vivistarTcpServer = new VivistarTcpIngress(
 
 $apiServer = new ApiServer($watchServer, $loop, $apiPort, $apiHost);
 
+$loop->addPeriodicTimer(1.0, function () use ($watchServer): void {
+    $watchServer->sweepCommandTimeouts();
+});
+
 // Note: Redis Stream -> MySQL event persistence is handled by the dedicated worker
 // (bin/worker.php) usando consumer groups XREADGROUP.
 

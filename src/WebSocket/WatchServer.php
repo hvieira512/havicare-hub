@@ -20,6 +20,8 @@ class WatchServer implements MessageComponentInterface
     private array $deviceData;    // imei => latest health data
     private array $eventHistory;   // recent passive events
     private int $nextEventId;
+    private int $commandAckTimeoutMs;
+    private array $pendingCommands; // requestId => metadata
     private Whitelist $whitelist;
     private ?EventRepository $eventsRepo;
     private ?RedisClient $redis;
@@ -37,6 +39,8 @@ class WatchServer implements MessageComponentInterface
         $this->deviceData = [];
         $this->eventHistory = [];
         $this->nextEventId = 1;
+        $this->commandAckTimeoutMs = max(1000, (int)(getenv('COMMAND_ACK_TIMEOUT_MS') ?: 15000));
+        $this->pendingCommands = [];
         $this->whitelist = new Whitelist(pdo: $pdo);
         $this->adapters = new AdapterRegistry();
 
@@ -168,7 +172,7 @@ class WatchServer implements MessageComponentInterface
 
         // If it is a reply to one of our commands (w:reply), always accept it.
         if ($isReplyToServerCommand) {
-            $requestId = $session['lastCommandRequestId'] ?? null;
+            $requestId = $this->resolveRequestIdForAck($rid, $session, $payload);
             if ($this->isRedisAvailable() && $requestId) {
                 $this->redis->commandStatePush([
                     'imei' => $imei,
@@ -187,6 +191,9 @@ class WatchServer implements MessageComponentInterface
                 $this->sessions[$rid]['lastCommandIdent'] = null;
                 $this->sessions[$rid]['lastCommandRequestId'] = null;
                 $this->sessions[$rid]['lastCommandFeature'] = null;
+            }
+            if ($requestId !== null) {
+                unset($this->pendingCommands[$requestId]);
             }
             Logger::channel('watch')->info("reply IMEI=$imei, type=$type");
             $this->sendPayload($from, $this->buildReply($payload, $payload['data'] ?? []));
@@ -396,6 +403,15 @@ class WatchServer implements MessageComponentInterface
         $this->sessions[$conn->resourceId]['lastCommandIdent'] = $ident;
         $this->sessions[$conn->resourceId]['lastCommandRequestId'] = $requestId;
         $this->sessions[$conn->resourceId]['lastCommandFeature'] = $feature;
+        $this->pendingCommands[$requestId] = [
+            'resourceId' => $conn->resourceId,
+            'imei' => $imei,
+            'type' => $type,
+            'feature' => $feature,
+            'ident' => $ident,
+            'protocol' => $session['protocol'] ?? '',
+            'deadlineAt' => $this->now() + $this->commandAckTimeoutMs,
+        ];
         if ($this->isRedisAvailable()) {
             $this->redis->commandStatePush([
                 'imei' => $imei,
@@ -458,6 +474,8 @@ class WatchServer implements MessageComponentInterface
                 }
             }
         }
+
+        $this->failPendingCommandsForResource($rid, 'device_disconnected_before_ack');
         unset($this->sessions[$rid]);
         $this->connections->offsetUnset($conn);
     }
@@ -619,6 +637,110 @@ class WatchServer implements MessageComponentInterface
         $this->eventHistory[] = $event;
         if (count($this->eventHistory) > 200) {
             array_shift($this->eventHistory);
+        }
+    }
+
+    public function sweepCommandTimeouts(): int
+    {
+        if (!$this->isRedisAvailable() || $this->pendingCommands === []) {
+            return 0;
+        }
+
+        $now = $this->now();
+        $timedOut = 0;
+        foreach ($this->pendingCommands as $requestId => $pending) {
+            $deadlineAt = (int)($pending['deadlineAt'] ?? 0);
+            if ($deadlineAt <= 0 || $deadlineAt > $now) {
+                continue;
+            }
+
+            $imei = (string)($pending['imei'] ?? '');
+            if ($imei !== '') {
+                $this->redis->commandStatePush([
+                    'imei' => $imei,
+                    'state' => 'timeout',
+                    'type' => $pending['type'] ?? '',
+                    'feature' => $pending['feature'] ?? '',
+                    'requestId' => (string)$requestId,
+                    'ident' => $pending['ident'] ?? '',
+                    'reason' => 'ack_timeout',
+                    'protocol' => $pending['protocol'] ?? '',
+                    'timestamp' => $now,
+                ]);
+            }
+
+            $resourceId = (int)($pending['resourceId'] ?? 0);
+            if ($resourceId > 0 && isset($this->sessions[$resourceId])) {
+                if (($this->sessions[$resourceId]['lastCommandRequestId'] ?? null) === $requestId) {
+                    $this->sessions[$resourceId]['lastCommandType'] = null;
+                    $this->sessions[$resourceId]['lastCommandIdent'] = null;
+                    $this->sessions[$resourceId]['lastCommandRequestId'] = null;
+                    $this->sessions[$resourceId]['lastCommandFeature'] = null;
+                }
+            }
+
+            unset($this->pendingCommands[$requestId]);
+            $timedOut++;
+        }
+
+        if ($timedOut > 0) {
+            Logger::channel('watch')->warning("Command ACK timeout count={$timedOut}");
+        }
+
+        return $timedOut;
+    }
+
+    private function resolveRequestIdForAck(int $resourceId, array $session, array $payload): ?string
+    {
+        $requestId = $session['lastCommandRequestId'] ?? null;
+        if (is_string($requestId) && $requestId !== '') {
+            return $requestId;
+        }
+
+        $ident = (string)($payload['ident'] ?? '');
+        if ($ident === '') {
+            return null;
+        }
+
+        foreach ($this->pendingCommands as $candidateRequestId => $pending) {
+            if (($pending['ident'] ?? null) !== $ident) {
+                continue;
+            }
+            if ((int)($pending['resourceId'] ?? 0) !== $resourceId) {
+                continue;
+            }
+            return (string)$candidateRequestId;
+        }
+
+        return null;
+    }
+
+    private function failPendingCommandsForResource(int $resourceId, string $reason): void
+    {
+        if (!$this->isRedisAvailable() || $this->pendingCommands === []) {
+            return;
+        }
+
+        foreach ($this->pendingCommands as $requestId => $pending) {
+            if ((int)($pending['resourceId'] ?? 0) !== $resourceId) {
+                continue;
+            }
+
+            $imei = (string)($pending['imei'] ?? '');
+            if ($imei !== '') {
+                $this->redis->commandStatePush([
+                    'imei' => $imei,
+                    'state' => 'failed',
+                    'type' => $pending['type'] ?? '',
+                    'feature' => $pending['feature'] ?? '',
+                    'requestId' => (string)$requestId,
+                    'ident' => $pending['ident'] ?? '',
+                    'reason' => $reason,
+                    'protocol' => $pending['protocol'] ?? '',
+                    'timestamp' => $this->now(),
+                ]);
+            }
+            unset($this->pendingCommands[$requestId]);
         }
     }
 

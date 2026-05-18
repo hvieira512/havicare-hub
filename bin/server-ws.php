@@ -67,6 +67,10 @@ $vivistarTcpServer = new VivistarTcpIngress(
     port: $vivistarTcpPort,
 );
 
+$loop->addPeriodicTimer(1.0, function () use ($watchServer): void {
+    $watchServer->sweepCommandTimeouts();
+});
+
 // --- Redis Command Stream Consumer ---
 // Receives commands from the API process via Redis Stream and sends them to devices.
 
