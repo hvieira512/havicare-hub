@@ -332,25 +332,22 @@ class Client
         try {
             $result = $this->redis->xReadGroup($group, $consumer, ['cmd:stream' => '>'], $count, $blockMs);
             if (!$result) return [];
-
-            $commands = [];
-            foreach ($result as $streamName => $entries) {
-                foreach ($entries as $id => $data) {
-                    $commands[] = [
-                        'streamId' => $id,
-                        'stream' => $streamName,
-                        'imei' => $data['imei'],
-                        'type' => $data['type'],
-                        'data' => json_decode($data['payload'], true) ?? [],
-                        'requestId' => $data['request_id'] ?? '',
-                        'feature' => $data['feature'] ?? '',
-                        'source' => $data['source'] ?? '',
-                    ];
-                }
-            }
-            return $commands;
+            return $this->mapCommandEntries($result, false);
         } catch (\Throwable $e) {
             Logger::channel('redis')->error("commandReadGroup: {$e->getMessage()}");
+            return [];
+        }
+    }
+
+    public function commandReadPending(string $group, string $consumer, int $count = 10): array
+    {
+        if (!$this->available) return [];
+        try {
+            $result = $this->redis->xReadGroup($group, $consumer, ['cmd:stream' => '0'], $count, 1);
+            if (!$result) return [];
+            return $this->mapCommandEntries($result, true);
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("commandReadPending: {$e->getMessage()}");
             return [];
         }
     }
@@ -375,5 +372,26 @@ class Client
     public function rateLimitMessage(string $imei): bool
     {
         return $this->rateLimitCheck("msg:$imei", 60);
+    }
+
+    private function mapCommandEntries(array $result, bool $isPending): array
+    {
+        $commands = [];
+        foreach ($result as $streamName => $entries) {
+            foreach ($entries as $id => $data) {
+                $commands[] = [
+                    'streamId' => $id,
+                    'stream' => $streamName,
+                    'imei' => $data['imei'],
+                    'type' => $data['type'],
+                    'data' => json_decode($data['payload'], true) ?? [],
+                    'requestId' => $data['request_id'] ?? '',
+                    'feature' => $data['feature'] ?? '',
+                    'source' => $data['source'] ?? '',
+                    'isPending' => $isPending,
+                ];
+            }
+        }
+        return $commands;
     }
 }

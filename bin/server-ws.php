@@ -49,10 +49,14 @@ $loop->addPeriodicTimer(1.0, function () use ($watchServer): void {
 if ($redis !== null && $redis->isAvailable()) {
     $redis->xGroupCreate('cmd:worker', 'cmd:stream', '0', true);
     Logger::channel('ws-cmd')->info("Group 'cmd:worker' ready on stream 'cmd:stream'");
+    $consumerName = 'ws:' . (gethostname() ?: 'unknown');
 
-    $loop->addPeriodicTimer(0.5, function () use ($redis, $watchServer) {
+    $loop->addPeriodicTimer(0.5, function () use ($redis, $watchServer, $consumerName) {
         try {
-            $commands = $redis->commandReadGroup('cmd:worker', 'ws:' . gethostname(), 10, 100);
+            $commands = $redis->commandReadPending('cmd:worker', $consumerName, 10);
+            if (empty($commands)) {
+                $commands = $redis->commandReadGroup('cmd:worker', $consumerName, 10, 100);
+            }
             if (empty($commands)) return;
 
             $ackIds = [];
@@ -68,7 +72,8 @@ if ($redis !== null && $redis->isAvailable()) {
                     $sent = $watchServer->sendCommand($imei, $type, $data, $requestId);
                 }
 
-                Logger::channel('ws-cmd')->info("IMEI=$imei type=$type " . ($sent ? 'sent' : 'failed'));
+                $mode = ($cmd['isPending'] ?? false) ? 'pending' : 'new';
+                Logger::channel('ws-cmd')->info("mode=$mode streamId={$cmd['streamId']} IMEI=$imei type=$type " . ($sent ? 'sent' : 'failed'));
                 $ackIds[] = $cmd['streamId'];
             }
 
