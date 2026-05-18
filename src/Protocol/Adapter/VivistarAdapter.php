@@ -24,7 +24,7 @@ class VivistarAdapter implements DeviceAdapterInterface
 
         $body = substr($message, 2, -1);
 
-        if (preg_match('/^AP00(\d{10,20})$/', $body, $m) === 1) {
+        if (preg_match('/^AP00(\d{15})$/', $body, $m) === 1) {
             return [
                 'type' => 'login',
                 'ident' => '',
@@ -35,12 +35,16 @@ class VivistarAdapter implements DeviceAdapterInterface
             ];
         }
 
-        if (preg_match('/^(AP[A-Z0-9]{2})(?:,(.*))?$/', $body, $m) !== 1) {
+        if (preg_match('/^(AP[A-Z0-9]{2})(.*)$/', $body, $m) !== 1) {
             return null;
         }
 
         $type = $m[1];
-        $rawData = $m[2] ?? '';
+        $tail = $m[2] ?? '';
+        if (str_starts_with($tail, ',')) {
+            $tail = substr($tail, 1);
+        }
+        $rawData = $tail;
         $fields = $rawData === '' ? [] : explode(',', $rawData);
         $session = $context['session'] ?? [];
         $imei = $session['imei'] ?? '';
@@ -84,7 +88,17 @@ class VivistarAdapter implements DeviceAdapterInterface
         if (preg_match('/^AP([A-Z0-9]{2})$/', $type, $match) === 1) {
             $replyData = $payload['data'] ?? [];
             $fields = is_array($replyData) ? ($replyData['fields'] ?? []) : [];
-            return $this->formatLine('BP' . $match[1], $fields);
+            $command = 'BP' . $match[1];
+            if (
+                in_array($command, ['BP02', 'BP10'], true)
+                && is_array($replyData)
+                && isset($replyData['unicodeHex'])
+                && is_string($replyData['unicodeHex'])
+            ) {
+                return $this->formatLineWithTail($command, $replyData['unicodeHex']);
+            }
+
+            return $this->formatLine($command, $fields);
         }
 
         if (preg_match('/^BP([A-Z0-9]{2})$/', $type) === 1) {
@@ -124,6 +138,11 @@ class VivistarAdapter implements DeviceAdapterInterface
         ));
 
         return "IW{$command}{$serialized}#";
+    }
+
+    private function formatLineWithTail(string $command, string $tail): string
+    {
+        return "IW{$command}{$tail}#";
     }
 
     private function resolveIdent(array $fields): string
@@ -166,6 +185,23 @@ class VivistarAdapter implements DeviceAdapterInterface
         if ($type === 'AP50') {
             $data['temperature'] = $this->num($fields[0] ?? null);
             $data['battery'] = $this->num($fields[1] ?? null);
+            return;
+        }
+
+        if ($type === 'AP03') {
+            $status = (string)($fields[0] ?? '');
+            if (preg_match('/^\d{11,14}$/', $status) === 1) {
+                $data['gsmSignal'] = $this->num(substr($status, 0, 3));
+                $data['satelliteCount'] = $this->num(substr($status, 3, 3));
+                $data['battery'] = $this->num(substr($status, 6, 3));
+                $data['remainingSpace'] = $this->num(substr($status, 9, 1));
+                $data['fortificationState'] = $this->num(substr($status, 10, 2));
+                if (strlen($status) >= 14) {
+                    $data['workMode'] = $this->num(substr($status, 12, 2));
+                }
+            }
+            $data['steps'] = $this->num($fields[1] ?? null);
+            $data['rollFrequency'] = $this->num($fields[2] ?? null);
         }
     }
 

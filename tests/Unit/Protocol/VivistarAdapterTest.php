@@ -85,4 +85,28 @@ final class VivistarAdapterTest extends TestCase
 
         self::assertSame('IWBPXL,865028000000308,123456,1,2#', $line);
     }
+
+    public function testEncodeOutgoingBuildsAp10UnicodeReplyWithoutComma(): void
+    {
+        $adapter = new VivistarAdapter();
+
+        $line = $adapter->encodeOutgoing([
+            'type' => 'AP10',
+            'data' => ['unicodeHex' => '004C00610074'],
+        ]);
+
+        self::assertSame('IWBP10004C00610074#', $line);
+    }
+
+    public function testEncodeOutgoingBuildsAp02UnicodeReplyWithoutComma(): void
+    {
+        $adapter = new VivistarAdapter();
+
+        $line = $adapter->encodeOutgoing([
+            'type' => 'AP02',
+            'data' => ['unicodeHex' => '4F4D4E00'],
+        ]);
+
+        self::assertSame('IWBP024F4D4E00#', $line);
+    }
 }
