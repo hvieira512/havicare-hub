@@ -594,13 +594,29 @@ if ($protocol === 'vivistar-iw') {
         exit(1);
     }
 
-    if (($response['type'] ?? '') === 'login_ok') {
+    if (($response['type'] ?? '') === 'login') {
+        $bindStatus = (int)($response['data']['bindStatus'] ?? 0);
+        if ($bindStatus !== 1) {
+            echo "[ERROR] Login rejected: bindStatus=$bindStatus";
+            if (!empty($response['data']['error'])) {
+                echo " (" . (string)$response['data']['error'] . ")";
+            }
+            echo "\n";
+            exit(1);
+        }
+        echo "[OK] Login accepted (Wonlex).\n";
+    } elseif (($response['type'] ?? '') === 'login_ok') {
         $sessionToken = $response['data']['sessionToken'] ?? '';
         $capsFromServer = $response['data']['capabilities'] ?? [];
-        echo "[OK] Login accepted. Session: $sessionToken\n";
-        echo "     Capabilities received from server:\n";
-        echo "       Passive: " . count($capsFromServer['passive'] ?? []) . " commands\n";
-        echo "       Active:  " . count($capsFromServer['active'] ?? []) . " commands\n";
+        echo "[OK] Login accepted.\n";
+        if ($sessionToken !== '') {
+            echo "     Session: $sessionToken\n";
+        }
+        if (!empty($capsFromServer)) {
+            echo "     Capabilities received from server:\n";
+            echo "       Passive: " . count($capsFromServer['passive'] ?? []) . " commands\n";
+            echo "       Active:  " . count($capsFromServer['active'] ?? []) . " commands\n";
+        }
     } else {
         echo "[?] Unexpected response: " . json_encode($response) . "\n";
         exit(1);

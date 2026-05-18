@@ -68,11 +68,15 @@ class Whitelist
         $this->devices = [];
         foreach ($raw as $imei => $value) {
             if (is_array($value)) {
-                $this->devices[$imei] = [
+                $entry = [
                     'model' => $value['model'] ?? '',
                     'enabled' => $value['enabled'] ?? true,
                     'registered_at' => $value['registered_at'] ?? null,
                 ];
+                if (isset($value['key']) && is_string($value['key'])) {
+                    $entry['key'] = $value['key'];
+                }
+                $this->devices[$imei] = $entry;
             } else {
                 $this->devices[$imei] = [
                     'model' => (string)$value,
@@ -99,6 +103,23 @@ class Whitelist
     {
         $this->ensureFresh();
         return $this->devices;
+    }
+
+    public function getDeviceSecret(string $imei): ?string
+    {
+        $this->ensureFresh();
+        $entry = $this->devices[$imei] ?? null;
+        if (is_array($entry) && isset($entry['key']) && is_string($entry['key']) && $entry['key'] !== '') {
+            return $entry['key'];
+        }
+
+        $envKey = 'DEVICE_SECRET_' . strtoupper($imei);
+        $env = getenv($envKey);
+        if (is_string($env) && $env !== '') {
+            return $env;
+        }
+
+        return null;
     }
 
     public function register(string $imei, string $model, bool $enabled = true): void

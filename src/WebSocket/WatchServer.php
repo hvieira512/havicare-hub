@@ -66,7 +66,6 @@ class WatchServer implements MessageComponentInterface
             'imei' => null,
             'model' => null,
             'caps' => null,
-            'sessionToken' => null,
             'protocol' => null,
             'adapter' => null,
             'lastCommandType' => null,
@@ -119,6 +118,10 @@ class WatchServer implements MessageComponentInterface
                 $this->handleLogin($from, $payload, $detectedProtocol);
             } elseif (in_array($type, ['login_error', 'login_ok'], true)) {
                 return;
+            } elseif (($this->sessions[$rid]['protocol'] ?? '') === 'vivistar-iw') {
+                // Vivistar doc: reply to login/heartbeat for unregistered IMEI,
+                // do not disconnect to avoid reconnect loops.
+                return;
             } else {
                 $this->sendError($from, $payload, 'authentication_required',
                     'You must send login first');
@@ -136,16 +139,6 @@ class WatchServer implements MessageComponentInterface
             $this->sendError($from, $payload, 'rate_limited',
                 'Too many messages. Please wait a moment.');
             return;
-        }
-
-        if (($session['protocol'] ?? '') === 'wonlex-json') {
-            $sentToken = $payload['data']['sessionToken'] ?? '';
-            if ($sentToken !== $session['sessionToken']) {
-                Logger::channel('watch')->warning("Invalid token for IMEI=$imei (expected={$session['sessionToken']}, received=$sentToken)");
-                $this->sendError($from, $payload, 'invalid_session_token',
-                    'Invalid session token');
-                return;
-            }
         }
 
         $ref = $payload['ref'] ?? '';
@@ -213,13 +206,19 @@ class WatchServer implements MessageComponentInterface
         $model = $data['deviceModel'] ?? '';
         $ident = $payload['ident'] ?? '';
 
-        // 1. Check whitelist.
+        $isVivistar = $protocol === 'vivistar-iw';
+
+        // 1. Check whitelist — Vivistar doc permits unknown IMEI login to avoid reconnect loops.
         if (!$this->whitelist->isAuthorized($imei)) {
-            $this->sendLoginError($conn, $ident, $imei, 'IMEI not authorized or disabled');
-            return;
+            if ($isVivistar) {
+                Logger::channel('watch')->warning("Vivistar unknown IMEI=$imei — accepting per protocol spec");
+            } else {
+                $this->sendLoginError($conn, $ident, $imei, 'IMEI not authorized or disabled');
+                return;
+            }
         }
 
-        // 2. Check expected model.
+        // 2. Determine model.
         $expectedModel = $this->whitelist->getModel($imei);
         if ($model === '' && $expectedModel) {
             $model = $expectedModel;
@@ -231,19 +230,35 @@ class WatchServer implements MessageComponentInterface
             return;
         }
 
+        // For Vivistar with no model declared, default to the most comprehensive profile.
+        if ($model === '' && $isVivistar) {
+            $model = 'VIVISTAR-CARE';
+        }
+
         // 3. Load capabilities.
-        $caps = DeviceCapabilities::forModel($model);
+        $caps = $model !== '' ? DeviceCapabilities::forModel($model) : null;
         if (!$caps) {
-            $this->sendLoginError($conn, $ident, $imei,
-                "Unknown device model: $model");
-            return;
+            if ($isVivistar) {
+                $model = 'VIVISTAR-CARE';
+                $caps = DeviceCapabilities::forModel($model);
+            }
+            if (!$caps) {
+                $this->sendLoginError($conn, $ident, $imei,
+                    "Unknown device model: $model");
+                return;
+            }
         }
 
         $modelAdapter = $this->adapters->resolveForModel($model);
         if ($modelAdapter === null) {
-            $this->sendLoginError($conn, $ident, $imei,
-                "No protocol adapter configured for model: $model");
-            return;
+            if ($isVivistar) {
+                $modelAdapter = $this->adapters->get('vivistar-iw');
+            }
+            if ($modelAdapter === null) {
+                $this->sendLoginError($conn, $ident, $imei,
+                    "No protocol adapter configured for model: $model");
+                return;
+            }
         }
 
         if ($protocol !== null && $modelAdapter->protocol() !== $protocol) {
@@ -256,13 +271,23 @@ class WatchServer implements MessageComponentInterface
             return;
         }
 
+        // 3b. Wonlex key verification (optional).
+        if ($protocol === 'wonlex-json') {
+            $deviceKey = $payload['key'] ?? $data['key'] ?? '';
+            $storedSecret = $this->whitelist->getDeviceSecret($imei);
+            if ($storedSecret !== null) {
+                if ($deviceKey === '' || $deviceKey !== $storedSecret) {
+                    $this->sendLoginError($conn, $ident, $imei, 'Device key mismatch');
+                    return;
+                }
+            }
+        }
+
         // 4. Accept login.
-        $sessionToken = bin2hex(random_bytes(8));
         $this->sessions[$rid]['authenticated'] = true;
         $this->sessions[$rid]['imei'] = $imei;
         $this->sessions[$rid]['model'] = $model;
         $this->sessions[$rid]['caps'] = $caps;
-        $this->sessions[$rid]['sessionToken'] = $sessionToken;
         $this->sessions[$rid]['protocol'] = $modelAdapter->protocol();
         $this->sessions[$rid]['adapter'] = $modelAdapter;
 
@@ -280,20 +305,40 @@ class WatchServer implements MessageComponentInterface
             ]);
         }
 
-        $this->sendPayload($conn, [
-            'type' => 'login_ok',
-            'ident' => $ident,
-            'ref' => 's:reply',
-            'imei' => $imei,
-            'data' => [
-                'sessionToken' => $sessionToken,
-                'serverTime' => $this->now(),
-                'capabilities' => $caps->toArray(),
-            ],
-            'timestamp' => $this->now(),
-        ]);
+        $loginTimestamp = $this->now();
+        $protocol = $this->sessions[$rid]['protocol'] ?? '';
+        if ($protocol === 'wonlex-json') {
+            // Wonlex protocol docs define login reply payload under type=login.
+            $this->sendPayload($conn, [
+                'type' => 'login',
+                'ident' => $ident,
+                'ref' => 's:reply',
+                'imei' => $imei,
+                'data' => [
+                    'type' => 'login',
+                    'imei' => $imei,
+                    'deviceModel' => $model,
+                    'bindStatus' => 1,
+                    'timestamp' => $loginTimestamp,
+                ],
+                'timestamp' => $loginTimestamp,
+            ]);
+        } else {
+            // Vivistar adapter maps login_ok to BP00.
+            $this->sendPayload($conn, [
+                'type' => 'login_ok',
+                'ident' => $ident,
+                'ref' => 's:reply',
+                'imei' => $imei,
+                'data' => [
+                    'serverTime' => $loginTimestamp,
+                    'capabilities' => $caps->toArray(),
+                ],
+                'timestamp' => $loginTimestamp,
+            ]);
+        }
 
-        Logger::channel('watch')->info("Login OK: IMEI=$imei, model=$model, session=$sessionToken");
+        Logger::channel('watch')->info("Login OK: IMEI=$imei, model=$model, protocol={$protocol}");
 
         if ($previousConn !== null && $previousConn !== $conn) {
             Logger::channel('watch')->warning("Duplicate login for IMEI=$imei; the new connection took over routing");
@@ -315,14 +360,32 @@ class WatchServer implements MessageComponentInterface
             ]);
         }
 
-        $this->sendPayload($conn, [
-            'type' => 'login_error',
-            'ident' => $ident,
-            'ref' => 's:reply',
-            'imei' => $imei,
-            'data' => ['error' => $msg],
-            'timestamp' => $this->now(),
-        ]);
+        $timestamp = $this->now();
+        if (($session['protocol'] ?? '') === 'wonlex-json') {
+            $this->sendPayload($conn, [
+                'type' => 'login',
+                'ident' => $ident,
+                'ref' => 's:reply',
+                'imei' => $imei,
+                'data' => [
+                    'type' => 'login',
+                    'imei' => $imei,
+                    'bindStatus' => 0,
+                    'error' => $msg,
+                    'timestamp' => $timestamp,
+                ],
+                'timestamp' => $timestamp,
+            ]);
+        } else {
+            $this->sendPayload($conn, [
+                'type' => 'login_error',
+                'ident' => $ident,
+                'ref' => 's:reply',
+                'imei' => $imei,
+                'data' => ['error' => $msg],
+                'timestamp' => $timestamp,
+            ]);
+        }
         Logger::channel('watch')->warning("Login rejected: IMEI=$imei ($msg)");
     }
 
@@ -333,7 +396,187 @@ class WatchServer implements MessageComponentInterface
 
         Logger::channel('watch')->info("data IMEI=$imei, type=$type");
 
-        $this->sendPayload($conn, $this->buildReply($payload));
+        $rid = $conn->resourceId;
+        $session = $this->sessions[$rid] ?? [];
+        $replyData = $this->buildPassiveReplyData($session, $payload);
+        $this->sendPayload($conn, $this->buildReply($payload, $replyData));
+    }
+
+    private function buildPassiveReplyData(array $session, array $payload): array
+    {
+        if (($session['protocol'] ?? '') !== 'vivistar-iw') {
+            return [];
+        }
+
+        $type = (string)($payload['type'] ?? '');
+        $fields = $payload['data']['fields'] ?? [];
+        if (!is_array($fields)) {
+            $fields = [];
+        }
+
+        if ($type === 'AP02') {
+            $replyFlag = (string)($fields[1] ?? '0');
+            if ($replyFlag === '1') {
+                $lang = (string)($fields[0] ?? '');
+                $coords = $this->resolveVivistarReplyCoordinates($session, $payload);
+                $text = $this->buildVivistarAddressText($coords, $lang, false);
+                return ['unicodeHex' => $this->toUnicodeHex($text)];
+            }
+            return [];
+        }
+
+        if ($type === 'AP10') {
+            $flags = $this->resolveAp10ReplyFlags($fields);
+            $needsAddress = str_starts_with($flags, '1');
+            if ($needsAddress) {
+                $includeMapLink = strlen($flags) >= 2 && $flags[1] === '1';
+                $lang = (string)($fields[6] ?? '');
+                $coords = $this->resolveVivistarReplyCoordinates($session, $payload);
+                $text = $this->buildVivistarAddressText($coords, $lang, $includeMapLink);
+                return ['unicodeHex' => $this->toUnicodeHex($text)];
+            }
+            return [];
+        }
+
+        return [];
+    }
+
+    private function resolveAp10ReplyFlags(array $fields): string
+    {
+        $candidate = (string)($fields[7] ?? '');
+        if (preg_match('/^[01]{2}$/', $candidate) === 1) {
+            return $candidate;
+        }
+
+        foreach ($fields as $field) {
+            $value = trim((string)$field);
+            if (preg_match('/^[01]{2}$/', $value) === 1) {
+                return $value;
+            }
+        }
+
+        return '00';
+    }
+
+    private function resolveVivistarReplyCoordinates(array $session, array $payload): ?array
+    {
+        $coords = $this->extractVivistarCoordinatesFromPayload($payload['data'] ?? []);
+        if ($coords !== null) {
+            return $coords;
+        }
+
+        $imei = (string)($session['imei'] ?? $payload['imei'] ?? '');
+        if ($imei === '') {
+            return null;
+        }
+
+        $latest = $this->deviceData[$imei] ?? null;
+        if (!is_array($latest)) {
+            return null;
+        }
+
+        return $this->extractVivistarCoordinatesFromPayload($latest['nativePayload'] ?? []);
+    }
+
+    private function extractVivistarCoordinatesFromPayload(array $payload): ?array
+    {
+        $raw = (string)($payload['raw'] ?? '');
+        if ($raw === '' && isset($payload['fields'][0])) {
+            $raw = (string)$payload['fields'][0];
+        }
+
+        if ($raw !== '') {
+            if (preg_match('/([0-9]{4}\.[0-9]+)([NS])([0-9]{5}\.[0-9]+)([EW])/', $raw, $m) === 1) {
+                $lat = $this->parseNmeaCoordinate($m[1], true, $m[2]);
+                $lng = $this->parseNmeaCoordinate($m[3], false, $m[4]);
+                if ($lat !== null && $lng !== null) {
+                    return ['lat' => $lat, 'lng' => $lng];
+                }
+            }
+        }
+
+        $lat = $payload['lat'] ?? $payload['latitude'] ?? $payload['upLocation']['lat'] ?? null;
+        $lng = $payload['lng'] ?? $payload['lon'] ?? $payload['longitude'] ?? $payload['upLocation']['lon'] ?? null;
+        if (is_numeric((string)$lat) && is_numeric((string)$lng)) {
+            return ['lat' => (float)$lat, 'lng' => (float)$lng];
+        }
+
+        return null;
+    }
+
+    private function parseNmeaCoordinate(string $value, bool $isLatitude, string $hemisphere): ?float
+    {
+        if ($value === '' || !is_numeric($value)) {
+            return null;
+        }
+
+        $digits = $isLatitude ? 2 : 3;
+        if (strlen($value) < ($digits + 3)) {
+            return null;
+        }
+
+        $degrees = (int)substr($value, 0, $digits);
+        $minutes = (float)substr($value, $digits);
+        if ($degrees === 0 && $minutes == 0.0) {
+            return null;
+        }
+
+        $decimal = $degrees + ($minutes / 60.0);
+        $hemisphere = strtoupper($hemisphere);
+        if ($hemisphere === 'S' || $hemisphere === 'W') {
+            $decimal *= -1;
+        }
+
+        return $decimal;
+    }
+
+    private function buildVivistarAddressText(?array $coords, string $language, bool $includeMapLink): string
+    {
+        $lang = strtolower(str_replace('_', '-', trim($language)));
+        $isChinese = str_starts_with($lang, 'zh');
+
+        if ($coords !== null) {
+            $lat = number_format((float)$coords['lat'], 6, '.', '');
+            $lng = number_format((float)$coords['lng'], 6, '.', '');
+            $address = $isChinese
+                ? "纬度{$lat}，经度{$lng}"
+                : "Lat {$lat}, Lng {$lng}";
+        } else {
+            $address = $isChinese ? '位置不可用' : 'Location unavailable';
+            $lat = null;
+            $lng = null;
+        }
+
+        if ($includeMapLink && $lat !== null && $lng !== null) {
+            $address .= "\nhttp://www.gps.com/map.aspx?lat={$lat}&lng={$lng}";
+        }
+
+        return $address;
+    }
+
+    private function toUnicodeHex(string $text): string
+    {
+        if ($text === '') {
+            return '';
+        }
+
+        if (function_exists('mb_convert_encoding')) {
+            $utf16 = mb_convert_encoding($text, 'UTF-16BE', 'UTF-8');
+            return strtoupper(bin2hex($utf16));
+        }
+
+        if (function_exists('iconv')) {
+            $utf16 = iconv('UTF-8', 'UTF-16BE//IGNORE', $text);
+            if ($utf16 !== false) {
+                return strtoupper(bin2hex($utf16));
+            }
+        }
+
+        $out = '';
+        foreach (str_split($text) as $char) {
+            $out .= sprintf('%04X', ord($char));
+        }
+        return $out;
     }
 
     public function sendCommand(
