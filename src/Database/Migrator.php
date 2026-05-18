@@ -41,12 +41,6 @@ class Migrator
         Logger::channel('db')->info('Migration completed');
     }
 
-    public function seedClients(): int
-    {
-        Logger::channel('db')->info('Client seed is deprecated and ignored (devices are not tenant-owned anymore).');
-        return 0;
-    }
-
     public function seedFromWhitelistJson(string $jsonPath): int
     {
         if (!file_exists($jsonPath)) {
@@ -247,13 +241,7 @@ class Migrator
     private function cleanupLegacySchema(): void
     {
         if ($this->tableExists('devices')) {
-            $this->dropForeignKeyIfExists('devices', 'fk_devices_client');
             $this->dropForeignKeyIfExists('devices', 'fk_devices_model');
-
-            if ($this->columnExists('devices', 'client_id')) {
-                $this->dropIndexIfExists('devices', 'idx_devices_client');
-                $this->dropColumnIfExists('devices', 'client_id');
-            }
 
             if ($this->columnExists('devices', 'model')) {
                 $this->dropIndexIfExists('devices', 'idx_devices_model');
@@ -268,15 +256,6 @@ class Migrator
 
         if ($this->tableExists('device_events')) {
             $this->dropColumnIfExists('device_events', 'model');
-        }
-
-        if ($this->tableExists('clients')) {
-            try {
-                $this->pdo->exec('DROP TABLE clients');
-                Logger::channel('db')->info('Dropped legacy table clients');
-            } catch (\PDOException $e) {
-                Logger::channel('db')->warning('Could not drop legacy table clients: ' . $e->getMessage());
-            }
         }
 
         if ($this->tableExists('device_models')) {
