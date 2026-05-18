@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use App\WebSocket\WatchServer;
 use App\Registry\Whitelist;
 use App\Registry\DeviceCapabilities;
+use App\Domain\EventNormalizer;
 use App\Repository\DeviceRepository;
 use App\Repository\EventRepository;
 use App\Repository\ModelRepository;
@@ -1280,17 +1281,7 @@ class ApiServer
 
     private function normalizedEventPayload(?string $feature, ?string $nativeType, array $payload): array
     {
-        return match ($feature) {
-            'heart_rate' => $this->normalizeHeartRate($payload),
-            'blood_pressure' => $this->normalizeBloodPressure($payload),
-            'blood_oxygen' => $this->normalizeBloodOxygen($payload),
-            'temperature' => $this->normalizeTemperature($payload),
-            'location' => $this->normalizeLocation($payload),
-            'battery' => $this->normalizeBattery($payload),
-            'heartbeat' => $this->normalizeHeartbeat($payload),
-            'activity' => $this->normalizeActivity($payload),
-            default => [],
-        };
+        return EventNormalizer::normalize($feature, $nativeType, $payload);
     }
 
     private function normalizeHeartRate(array $payload): array

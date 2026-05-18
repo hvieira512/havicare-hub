@@ -5,6 +5,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use App\Config;
 use App\Database\Database;
+use App\Domain\EventNormalizer;
 use App\Log\Logger;
 use App\Mqtt\SimpleClient;
 use App\Redis\Client as RedisClient;
@@ -281,6 +282,11 @@ function buildTelemetryPayload(array $event, string $imei, Whitelist $whitelist)
             'feature' => ($event['feature'] ?? '') !== '' ? $event['feature'] : null,
             'nativeType' => $event['nativeType'] ?? null,
             'nativePayload' => $event['nativePayload'] ?? new stdClass(),
+            'normalized' => EventNormalizer::normalize(
+                ($event['feature'] ?? '') !== '' ? (string)$event['feature'] : null,
+                isset($event['nativeType']) ? (string)$event['nativeType'] : null,
+                is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : []
+            ),
         ],
     ];
 }
