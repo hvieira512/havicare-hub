@@ -3,47 +3,24 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use App\Config;
-use App\Database\Database;
-use App\Domain\EventNormalizer;
+use App\Bootstrap;
 use App\Log\Logger;
+use App\Mqtt\PayloadBuilder;
 use App\Mqtt\SimpleClient;
-use App\Redis\Client as RedisClient;
-use App\Registry\DeviceCapabilities;
 use App\Registry\Whitelist;
 
-$config = Config::load()->all();
+$config = Bootstrap::config();
 $mqttConfig = $config['mqtt'] ?? [];
-$redisConfig = $config['redis'] ?? [];
-$dbConfig = $config['database'] ?? null;
 
 if (!($mqttConfig['enabled'] ?? false)) {
     Logger::channel('mqtt-publisher')->warning('MQTT publisher is disabled. Set MQTT_ENABLED=true to run.');
     exit(0);
 }
 
-$redisHost = getenv('REDIS_HOST') ?: ($redisConfig['host'] ?? '');
-if ($redisHost === '') {
-    Logger::channel('mqtt-publisher')->error('Redis configuration is required');
-    exit(1);
-}
+$redis = Bootstrap::requireRedis($config['redis'] ?? []);
 
-$redis = new RedisClient($redisConfig);
-if (!$redis->isAvailable()) {
-    Logger::channel('mqtt-publisher')->error('Redis is unavailable');
-    exit(1);
-}
-
-$pdo = null;
-if ($dbConfig && ($dbConfig['host'] ?? '') !== '' && ($dbConfig['name'] ?? '') !== '') {
-    try {
-        $pdo = Database::connect($dbConfig)->pdo();
-    } catch (\PDOException $e) {
-        Logger::channel('mqtt-publisher')->warning('MySQL unavailable (' . $e->getMessage() . '). Continuing without model metadata.');
-    }
-}
-
-DeviceCapabilities::setDatabasePdo($pdo);
+$pdo = Bootstrap::database($config['database'] ?? null);
+Bootstrap::setupDeviceCapabilities($pdo);
 $whitelist = new Whitelist(pdo: $pdo);
 
 $mqttHost = trim((string)($mqttConfig['host'] ?? ''));
@@ -149,7 +126,7 @@ while ($running) {
         }
 
         $topic = $topicForStatus($imei);
-        $payload = buildStatusPayload($statusEvent, $imei, $whitelist);
+        $payload = PayloadBuilder::buildStatusPayload($statusEvent, $imei, $whitelist);
 
         try {
             $mqtt->publish($topic, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), retain: true);
@@ -179,7 +156,7 @@ while ($running) {
         }
 
         $topic = $topicForError($imei);
-        $payload = buildErrorPayload($errorEvent, $imei, $whitelist);
+        $payload = PayloadBuilder::buildErrorPayload($errorEvent, $imei, $whitelist);
 
         try {
             $mqtt->publish($topic, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
@@ -209,7 +186,7 @@ while ($running) {
         }
 
         $topic = $topicForCommandState($imei);
-        $payload = buildCommandStatePayload($commandStateEvent, $imei, $whitelist);
+        $payload = PayloadBuilder::buildCommandStatePayload($commandStateEvent, $imei, $whitelist);
 
         try {
             $mqtt->publish($topic, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
@@ -244,7 +221,7 @@ while ($running) {
         }
 
         $topic = $topicForTelemetry($imei);
-        $payload = buildTelemetryPayload($event, $imei, $whitelist);
+        $payload = PayloadBuilder::buildTelemetryPayload($event, $imei, $whitelist);
 
         try {
             $mqtt->publish($topic, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
@@ -252,7 +229,6 @@ while ($running) {
             persistCursor($telemetryCursorPath, $telemetryCursor);
         } catch (\Throwable $e) {
             Logger::channel('mqtt-publisher')->error("Telemetry publish failed for IMEI={$imei}: " . $e->getMessage());
-            // Stop processing current batch so message order is preserved.
             usleep(500000);
             continue 2;
         }
@@ -261,118 +237,6 @@ while ($running) {
 
 $mqtt->disconnect();
 Logger::channel('mqtt-publisher')->info('Stopped MQTT publisher');
-
-function buildTelemetryPayload(array $event, string $imei, Whitelist $whitelist): array
-{
-    $streamId = (string)($event['streamId'] ?? '0-0');
-    $receivedAtMs = (int)($event['receivedAt'] ?? (int)round(microtime(true) * 1000));
-
-    $model = $whitelist->getModel($imei);
-    $caps = $model ? DeviceCapabilities::forModel($model) : null;
-
-    return [
-        'event' => [
-            'type' => 'telemetry.received',
-            'id' => eventIdFromStreamId($streamId),
-        ],
-        'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($receivedAtMs / 1000))),
-        'device' => [
-            'imei' => $imei,
-            'model' => $model,
-            'supplier' => $caps?->getSupplier(),
-        ],
-        'data' => EventNormalizer::normalize(
-            ($event['feature'] ?? '') !== '' ? (string)$event['feature'] : null,
-            isset($event['nativeType']) ? (string)$event['nativeType'] : null,
-            is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : []
-        ),
-    ];
-}
-
-function buildStatusPayload(array $event, string $imei, Whitelist $whitelist): array
-{
-    $streamId = (string)($event['streamId'] ?? '0-0');
-    $timestampMs = (int)($event['timestamp'] ?? (int)round(microtime(true) * 1000));
-    $state = (string)($event['state'] ?? 'unknown');
-
-    $model = $whitelist->getModel($imei);
-    $caps = $model ? DeviceCapabilities::forModel($model) : null;
-
-    return [
-        'event' => [
-            'type' => 'device.status.changed',
-            'id' => eventIdFromStreamId($streamId),
-        ],
-        'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($timestampMs / 1000))),
-        'device' => [
-            'imei' => $imei,
-            'model' => $model,
-            'supplier' => $caps?->getSupplier(),
-        ],
-        'data' => [
-            'state' => $state,
-            'reason' => $event['reason'] ?? null,
-        ],
-    ];
-}
-
-function buildErrorPayload(array $event, string $imei, Whitelist $whitelist): array
-{
-    $streamId = (string)($event['streamId'] ?? '0-0');
-    $timestampMs = (int)($event['timestamp'] ?? (int)round(microtime(true) * 1000));
-
-    $model = $whitelist->getModel($imei);
-    $caps = $model ? DeviceCapabilities::forModel($model) : null;
-
-    return [
-        'event' => [
-            'type' => 'integration.error',
-            'id' => eventIdFromStreamId($streamId),
-        ],
-        'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($timestampMs / 1000))),
-        'device' => [
-            'imei' => $imei,
-            'model' => $model,
-            'supplier' => $caps?->getSupplier(),
-        ],
-        'data' => [
-            'code' => $event['code'] ?? 'unknown_error',
-            'message' => $event['message'] ?? 'Unknown error',
-        ],
-    ];
-}
-
-function buildCommandStatePayload(array $event, string $imei, Whitelist $whitelist): array
-{
-    $streamId = (string)($event['streamId'] ?? '0-0');
-    $timestampMs = (int)($event['timestamp'] ?? (int)round(microtime(true) * 1000));
-
-    $model = $whitelist->getModel($imei);
-    $caps = $model ? DeviceCapabilities::forModel($model) : null;
-
-    return [
-        'event' => [
-            'type' => 'command.state.changed',
-            'id' => eventIdFromStreamId($streamId),
-        ],
-        'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z', max(0, (int)floor($timestampMs / 1000))),
-        'device' => [
-            'imei' => $imei,
-            'model' => $model,
-            'supplier' => $caps?->getSupplier(),
-        ],
-        'data' => [
-            'state' => $event['state'] ?? null,
-            'requestId' => $event['requestId'] ?? null,
-        ],
-    ];
-}
-
-function eventIdFromStreamId(string $streamId): string
-{
-    $normalized = preg_replace('/[^a-zA-Z0-9]/', '_', $streamId) ?: '0_0';
-    return 'evt_' . $normalized;
-}
 
 function loadCursor(string $path): ?string
 {
