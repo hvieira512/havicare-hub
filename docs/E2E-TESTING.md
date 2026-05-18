@@ -12,8 +12,8 @@ It uses real project processes and simulator protocols.
 
 - Docker running
 - Whitelist contains test devices:
-  - `865028000000306` (`WONLEX-PRO`)
-  - `865028000000308` (`VIVISTAR-CARE`)
+    - `865028000000306` (`WONLEX-PRO`)
+    - `865028000000308` (`VIVISTAR-CARE`)
 
 ## Terminal 1: Start Stack + Watch Logs
 
@@ -26,10 +26,10 @@ What this does:
 
 - starts MySQL, Redis, WS ingress, API, worker, nginx
 - keeps WS logs open so you can see:
-  - connection open/close
-  - login accepted/rejected
-  - passive event ingestion
-  - command dispatch and reply
+    - connection open/close
+    - login accepted/rejected
+    - passive event ingestion
+    - command dispatch and reply
 
 Expected startup log lines:
 
@@ -99,11 +99,11 @@ What this does:
 What to look for:
 
 - Terminal 2:
-  - `[COMMAND] dnHeartRate`
-  - `[reply]`
+    - `[COMMAND] dnHeartRate`
+    - `[reply]`
 - Terminal 1:
-  - `cmd IMEI=865028000000306, type=dnHeartRate`
-  - `reply IMEI=865028000000306, type=dnHeartRate`
+    - `cmd IMEI=865028000000306, type=dnHeartRate`
+    - `reply IMEI=865028000000306, type=dnHeartRate`
 
 ## Terminal 2 + 3: Vivistar Flow (Native TCP)
 
@@ -162,11 +162,11 @@ What this does:
 What to look for:
 
 - Terminal 2:
-  - `[COMMAND] BPXL`
-  - `[reply] IWAPXL,...#`
+    - `[COMMAND] BPXL`
+    - `[reply] IWAPXL,...#`
 - Terminal 1:
-  - `cmd IMEI=865028000000308, type=BPXL`
-  - `reply IMEI=865028000000308, type=APXL`
+    - `cmd IMEI=865028000000308, type=BPXL`
+    - `reply IMEI=865028000000308, type=APXL`
 
 ## Quick Troubleshooting
 
@@ -190,5 +190,3 @@ If Vivistar TCP fails to connect:
 - Terminal 1 = observability (ground truth logs)
 - Terminal 2 = device behavior
 - Terminal 3 = control-plane/API actions
-
-This separation makes debugging easy: you can see exactly where flow breaks (API, transport, adapter, or session/auth).

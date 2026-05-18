@@ -1,70 +1,66 @@
-# MQTT Contract (Data Plane)
+# MQTT Contract (External Data Plane)
 
-Status: architecture contract for external backend integrations. Some operational automation is planned and not fully implemented yet.
+Status: active contract in rollout. All topic families are wired; lifecycle depth is phased.
 
-## Purpose
+## Product Direction
 
-MQTT is the external data plane for:
+Primary client integration direction:
 
-- real-time telemetry delivery
-- command result and status fanout
-- operational stream consumption
+- "Here is our MQTT server and event contract. Build what you need on top."
+- Platform does not need to build a custom REST API for each client.
 
-MQTT is used by:
+## Role of MQTT
 
-- client backend services only
+MQTT is intended to carry:
 
-MQTT is not the external command entrypoint. External command requests are submitted via REST.
+- real-time telemetry
+- device status updates
+- command result/state events (when lifecycle is implemented)
+- operational integration errors
 
-## Access model
+Command ingress policy (current):
 
-- Per-client service account credentials.
-- One tenant namespace per client.
-- ACLs restrict publish/subscribe by namespace and topic direction.
+- Commands are sent to the platform via REST control-plane endpoints.
+- MQTT `devices/{imei}/command/state` is an outbound state/event stream, not an inbound command queue.
 
-Recommended namespace:
+## Topic Shape
 
-- `tenant/{client_id}/...`
+Recommended topic families:
 
-## Topic catalog
+- `devices/{imei}/telemetry`
+- `devices/{imei}/status`
+- `devices/{imei}/error`
+- `devices/{imei}/command/state`
 
-Recommended external topics:
+Optional aggregate topics:
 
-- `tenant/{client_id}/device/{imei}/telemetry`
-- `tenant/{client_id}/device/{imei}/status`
-- `tenant/{client_id}/device/{imei}/command/result`
-- `tenant/{client_id}/device/{imei}/errors`
+- `devices/all/telemetry`
+- `devices/all/command/state`
 
-Optional aggregate streams:
+Note: you can prepend environment namespaces when needed, for example `prod/devices/...`.
 
-- `tenant/{client_id}/telemetry`
-- `tenant/{client_id}/command/result`
+### Topic purpose
 
-Internal-only topics can exist separately and are not part of external contract.
+- `devices/{imei}/telemetry`: passive measurements/events from watch to platform.
+- `devices/{imei}/status`: online/offline and operational status transitions.
+- `devices/{imei}/error`: integration/runtime errors related to a specific watch.
+- `devices/{imei}/command/state`: command lifecycle updates.
 
-## Publish/subscribe policy
+### Subscription patterns
 
-External client backend:
+- One device: `devices/{imei}/#`
+- All telemetry: `devices/+/telemetry`
+- All status: `devices/+/status`
+- Full fleet stream: `devices/+/+`
 
-- Subscribe: telemetry, status, command result, errors
-- Publish: none for direct watch command dispatch
+## Payload Envelope
 
-Platform services:
-
-- Publish to tenant topics after validation and ownership checks
-- Publish command result transitions from internal command state machine
-
-## Payload contract
-
-All MQTT payloads are JSON UTF-8.
-
-Common envelope fields:
+All payloads should be JSON UTF-8 with a stable envelope:
 
 - `schemaVersion`
 - `eventType`
 - `eventId`
 - `occurredAt`
-- `clientId`
 - `imei`
 - `model`
 - `supplier`
@@ -78,81 +74,64 @@ Canonical event types:
 - `command.state.changed`
 - `integration.error`
 
-## Example payloads
+## Compatibility and Versioning
 
-Telemetry event example:
+- `schemaVersion` is mandatory on every event.
+- Additive changes are allowed within `1.x` (for example, new optional fields).
+- Breaking changes require a new major schema version (`2.0`, etc.).
+- Consumers should ignore unknown fields and validate required fields only.
+
+## Example Telemetry Event
 
 ```json
 {
   "schemaVersion": "1.0",
   "eventType": "telemetry.received",
   "eventId": "evt_01J...",
-  "occurredAt": "2026-05-14T16:30:00Z",
-  "clientId": 42,
+  "occurredAt": "2026-05-18T16:30:00Z",
   "imei": "865028000000306",
   "model": "WONLEX-PRO",
   "supplier": "Wonlex",
   "data": {
     "feature": "heart_rate",
     "nativeType": "upHeartRate",
-    "normalized": {
-      "heartRateBpm": 72
+    "nativePayload": {
+      "heartRate": 72
     }
   }
 }
 ```
 
-Command state change event example:
+## QoS and Delivery Guidelines
 
-```json
-{
-  "schemaVersion": "1.0",
-  "eventType": "command.state.changed",
-  "eventId": "evt_01J...",
-  "occurredAt": "2026-05-14T16:31:00Z",
-  "clientId": 42,
-  "imei": "865028000000306",
-  "data": {
-    "commandId": "cmd_01J...",
-    "state": "ack",
-    "native": {
-      "requestType": "dnHeartRate",
-      "responseType": "upHeartRate"
-    }
-  }
-}
-```
+- Telemetry: QoS 0 or QoS 1 based on SLA.
+- Status and command results: QoS 1.
+- Consumers should assume at-least-once and deduplicate by `eventId`.
 
-## QoS and retain policy
+## Security Guidelines
 
-Recommended defaults:
+- Enable TLS in production.
+- Use separate credentials by integration consumer.
+- Use ACL deny-by-default.
+- Never embed broker credentials in mobile/web clients directly.
 
-- Telemetry topics: QoS 0 or QoS 1 depending SLA
-- Command result topics: QoS 1
-- Status topics: QoS 1 with retained last-known state when appropriate
-- Errors topics: QoS 1
+## Current Runtime Scope
 
-## Ordering and delivery notes
+Implemented now:
 
-- Ordering is guaranteed only per topic partition semantics of the broker and publisher behavior.
-- Consumers must treat messages as at-least-once when QoS 1 is used.
-- Consumers must use `eventId` for idempotent processing.
+- `devices/{imei}/telemetry` publish path from Redis `events` stream.
+- `devices/{imei}/status` publish path from device online/offline status stream.
+- `devices/{imei}/error` publish path from integration/runtime error stream.
+- `devices/{imei}/command/state` publish path from dispatch/reply state stream.
 
-## Security requirements
+Current command-state coverage:
 
-- TLS enabled in production.
-- Per-client credential rotation policy.
-- ACL deny-by-default.
-- No wildcard ACL granting cross-tenant topic access.
+- `dispatched`
+- `failed`
+- `ack`
 
-## Compatibility policy
+Still in roadmap:
 
-- Contract is additive-first.
-- Breaking topic or payload changes require version bump and migration path.
-- Native/vendor protocol changes must remain adapter-internal and not break external MQTT schema.
+- full terminal coverage (`timeout`) and richer retry/timeout semantics.
 
-## Relationship to REST
-
-- REST: command/control/history
-- MQTT: real-time stream delivery
-- External commands enter via REST and appear on MQTT as lifecycle events/results.
+Implementation phases are documented in `docs/MQTT-ROADMAP.md`.
