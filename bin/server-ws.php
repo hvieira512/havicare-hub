@@ -9,49 +9,25 @@ use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;
 use Ratchet\WebSocket\WsServer;
 use App\WebSocket\WatchServer;
-use App\Database\Database;
+use App\Bootstrap;
 use App\Log\Logger;
-use App\Redis\Client as RedisClient;
 use App\Tcp\VivistarTcpIngress;
-use App\Registry\DeviceCapabilities;
 
-$config = \App\Config::load()->all();
+$config = Bootstrap::config();
 
 $wsPort = $config['websocket']['port'] ?? 8080;
 $wsHost = $config['websocket']['host'] ?? '0.0.0.0';
 $vivistarTcpPort = $config['vivistar_tcp']['port'] ?? 9000;
 $vivistarTcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
 
-// --- MySQL ---
+$pdo = Bootstrap::database($config['database'] ?? null);
+Bootstrap::setupDeviceCapabilities($pdo);
 
-$dbConfig = $config['database'] ?? null;
-$db = null;
-if ($dbConfig && $dbConfig['host'] !== '' && $dbConfig['name'] !== '') {
-    try {
-        $db = Database::connect($dbConfig);
-        Logger::channel('db')->info("Connected to MySQL at {$dbConfig['host']}:{$dbConfig['port']}/{$dbConfig['name']}");
-    } catch (\PDOException $e) {
-        Logger::channel('db')->warning('MySQL unavailable (' . $e->getMessage() . '). Using JSON files');
-    }
-}
-
-DeviceCapabilities::setDatabasePdo($db?->pdo());
-DeviceCapabilities::setCacheTtl((int)(getenv('MODEL_CACHE_TTL_SECONDS') ?: 5));
-
-// --- Redis ---
-
-$redisConfig = $config['redis'] ?? [];
-$redisHost = getenv('REDIS_HOST') ?: ($redisConfig['host'] ?? '');
-$redis = null;
-if ($redisHost !== '') {
-    $redis = new RedisClient($redisConfig);
-}
-
-// --- Event Loop ---
+$redis = Bootstrap::redis($config['redis'] ?? []);
 
 $loop = Loop::get();
 
-$watchServer = new WatchServer($db?->pdo(), $redis);
+$watchServer = new WatchServer($pdo, $redis);
 
 $wsApp = new HttpServer(
     new WsServer($watchServer)
@@ -59,7 +35,6 @@ $wsApp = new HttpServer(
 $wsSocket = new Reactor("$wsHost:$wsPort", $loop);
 $wsServer = new IoServer($wsApp, $wsSocket, $loop);
 
-// Native Vivistar ingress on raw TCP (IW...#)
 $vivistarTcpServer = new VivistarTcpIngress(
     watchServer: $watchServer,
     loop: $loop,
@@ -70,9 +45,6 @@ $vivistarTcpServer = new VivistarTcpIngress(
 $loop->addPeriodicTimer(1.0, function () use ($watchServer): void {
     $watchServer->sweepCommandTimeouts();
 });
-
-// --- Redis Command Stream Consumer ---
-// Receives commands from the API process via Redis Stream and sends them to devices.
 
 if ($redis !== null && $redis->isAvailable()) {
     $redis->xGroupCreate('cmd:worker', 'cmd:stream', '0', true);

@@ -4,57 +4,29 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use React\EventLoop\Loop;
-use React\Socket\Server as Reactor;
 use App\Http\ApiServer;
-use App\Database\Database;
+use App\Bootstrap;
 use App\Log\Logger;
-use App\Redis\Client as RedisClient;
-use App\Registry\DeviceCapabilities;
 
-$config = \App\Config::load()->all();
+$config = Bootstrap::config();
 
 $apiPort = $config['api']['port'] ?? 8081;
 $apiHost = $config['api']['host'] ?? '0.0.0.0';
 $wsServerUrl = getenv('WS_SERVER_URL') ?: ($config['public_ws_url'] ?? 'ws://127.0.0.1:8080');
 
-// --- MySQL ---
+$pdo = Bootstrap::database($config['database'] ?? null);
+Bootstrap::setupDeviceCapabilities($pdo);
 
-$dbConfig = $config['database'] ?? null;
-$db = null;
-if ($dbConfig && $dbConfig['host'] !== '' && $dbConfig['name'] !== '') {
-    try {
-        $db = Database::connect($dbConfig);
-        Logger::channel('db')->info("Connected to MySQL at {$dbConfig['host']}:{$dbConfig['port']}/{$dbConfig['name']}");
-    } catch (\PDOException $e) {
-        Logger::channel('db')->warning('MySQL unavailable (' . $e->getMessage() . ')');
-    }
-}
-
-DeviceCapabilities::setDatabasePdo($db?->pdo());
-DeviceCapabilities::setCacheTtl((int)(getenv('MODEL_CACHE_TTL_SECONDS') ?: 5));
-
-// --- Redis ---
-
-$redisConfig = $config['redis'] ?? [];
-$redisHost = getenv('REDIS_HOST') ?: ($redisConfig['host'] ?? '');
-$redis = null;
-if ($redisHost !== '') {
-    $redis = new RedisClient($redisConfig);
-}
-
-// --- Event Loop ---
+$redis = Bootstrap::redis($config['redis'] ?? []);
 
 $loop = Loop::get();
-
-// No WatchServer here - this is a separate instance.
-// Command calls use Redis Stream to communicate with the WS process.
 
 $apiServer = new ApiServer(
     watchServer: null,
     loop: $loop,
     port: $apiPort,
     host: $apiHost,
-    pdo: $db?->pdo(),
+    pdo: $pdo,
     redis: $redis,
     wsServerUrl: $wsServerUrl,
 );

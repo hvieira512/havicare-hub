@@ -10,10 +10,11 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use App\Bootstrap;
 use App\Database\Migrator;
 use App\Log\Logger;
 
-$config = \App\Config::load()->all();
+$config = Bootstrap::config();
 $dbConfig = $config['database'] ?? null;
 
 if (!$dbConfig) {
@@ -21,12 +22,7 @@ if (!$dbConfig) {
     exit(1);
 }
 
-try {
-    $pdo = \App\Database\Database::connect($dbConfig)->pdo();
-} catch (\PDOException $e) {
-    Logger::channel('db')->error('Failed to connect to MySQL: ' . $e->getMessage() . '. Check the credentials in .env');
-    exit(1);
-}
+$pdo = Bootstrap::requireDatabase($dbConfig);
 
 $migrator = new Migrator($pdo);
 $args = $argv;

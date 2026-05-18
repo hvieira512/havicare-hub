@@ -3,13 +3,12 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use App\Database\Database;
+use App\Bootstrap;
 use App\Repository\DeviceRepository;
 use App\Repository\EventRepository;
 use App\Log\Logger;
-use App\Redis\Client as RedisClient;
 
-$config = \App\Config::load()->all();
+$config = Bootstrap::config();
 $dbConfig = $config['database'] ?? null;
 $redisConfig = $config['redis'] ?? [];
 
@@ -22,45 +21,15 @@ $running = true;
 
 Logger::channel('worker')->info('Starting (PID: ' . getmypid() . ')');
 
-// --- MySQL ---
-if (!$dbConfig || $dbConfig['host'] === '' || $dbConfig['name'] === '') {
-    Logger::channel('worker')->error('MySQL configuration is required');
-    exit(1);
-}
-try {
-    $db = Database::connect($dbConfig);
-    $pdo = $db->pdo();
-    $eventsRepo = new EventRepository($pdo);
-    $devicesRepo = new DeviceRepository($pdo);
-    Logger::channel('worker')->info("Connected to MySQL at {$dbConfig['host']}:{$dbConfig['port']}/{$dbConfig['name']}");
-} catch (\PDOException $e) {
-    Logger::channel('worker')->error('MySQL unavailable (' . $e->getMessage() . '). Shutting down');
-    exit(1);
-}
+$pdo = Bootstrap::requireDatabase($dbConfig);
+$eventsRepo = new EventRepository($pdo);
+$devicesRepo = new DeviceRepository($pdo);
 
-// --- Redis ---
-$redisHost = getenv('REDIS_HOST') ?: ($redisConfig['host'] ?? '');
-if ($redisHost === '') {
-    Logger::channel('worker')->error('Redis configuration is required');
-    exit(1);
-}
-$redis = null;
-try {
-    $redis = new RedisClient($redisConfig);
-    if (!$redis->isAvailable()) {
-        throw new \RuntimeException("RedisClient not available");
-    }
-    Logger::channel('worker')->info("Connected to Redis at $redisHost");
-} catch (\Throwable $e) {
-    Logger::channel('worker')->error('Redis unavailable (' . $e->getMessage() . '). Shutting down');
-    exit(1);
-}
+$redis = Bootstrap::requireRedis($redisConfig);
 
-// --- Consumer Group ---
 $redis->xGroupCreate($groupName, $streamKey, '0', true);
 Logger::channel('worker')->info("Group '{$groupName}' ready on stream '{$streamKey}'");
 
-// --- Signal Handling ---
 if (extension_loaded('pcntl')) {
     pcntl_signal(SIGINT, function () use (&$running) {
         Logger::channel('worker')->info('SIGINT received. Shutting down gracefully...');
@@ -72,7 +41,6 @@ if (extension_loaded('pcntl')) {
     });
 }
 
-// --- Main Loop ---
 Logger::channel('worker')->info("Consuming events from '{$streamKey}' (consumer: {$consumerName})");
 
 while ($running) {

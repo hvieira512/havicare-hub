@@ -3,12 +3,12 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use App\Database\Database;
+use App\Bootstrap;
 use App\Repository\DeviceRepository;
 use App\Repository\EventRepository;
 use App\Log\Logger;
 
-$config = \App\Config::load()->all();
+$config = Bootstrap::config();
 $dbConfig = $config['database'] ?? null;
 
 $help = <<<HELP
@@ -49,19 +49,9 @@ foreach ($args as $arg) {
     exit(1);
 }
 
-if (!$dbConfig || $dbConfig['host'] === '' || $dbConfig['name'] === '') {
-    Logger::channel('purge')->error('MySQL configuration is required');
-    exit(1);
-}
-
-try {
-    $db = Database::connect($dbConfig);
-    $devicesRepo = new DeviceRepository($db->pdo());
-    $eventsRepo = new EventRepository($db->pdo());
-} catch (\PDOException $e) {
-    Logger::channel('purge')->error('MySQL unavailable (' . $e->getMessage() . ')');
-    exit(1);
-}
+$pdo = Bootstrap::requireDatabase($dbConfig, 'purge');
+$devicesRepo = new DeviceRepository($pdo);
+$eventsRepo = new EventRepository($pdo);
 
 $cutoffDate = date('Y-m-d H:i:s', strtotime("-{$olderThan} days"));
 Logger::channel('purge')->info("Events before {$cutoffDate}, max {$keepPerDevice} per device");
