@@ -96,7 +96,6 @@ class SystemController extends Controller
         $wsUrl = $this->wsServerUrl;
 
         $logFile = __DIR__ . "/../../../var/demo-listener-{$imei}.log";
-        $pidFile = __DIR__ . "/../../../var/demo-listener-{$imei}.pid";
 
         $cmd = sprintf(
             'cd %s && nohup php simulator/simulate.php --server %s --model %s --imei %s --listen > %s 2>&1 & echo $!',

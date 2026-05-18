@@ -190,7 +190,7 @@ class Migrator
                 'enabled' => (int)($row['enabled'] ?? 1),
                 'passive' => $this->jsonColumnValue($row['passive']),
                 'active' => $this->jsonColumnValue($row['active']),
-                'features' => $this->jsonColumnValue($row['features'], true),
+                'features' => $this->jsonColumnValue($row['features']),
             ]);
             $count++;
         }
@@ -319,7 +319,7 @@ class Migrator
         return $id === false ? null : (int)$id;
     }
 
-    private function jsonColumnValue(mixed $value, bool $object = false): string
+    private function jsonColumnValue(mixed $value): string
     {
         if (is_string($value) && $value !== '') {
             return $value;
@@ -327,7 +327,7 @@ class Migrator
         if (is_array($value)) {
             return json_encode($value, JSON_UNESCAPED_UNICODE);
         }
-        return json_encode($object ? [] : [], JSON_UNESCAPED_UNICODE);
+        return json_encode([], JSON_UNESCAPED_UNICODE);
     }
 
     private function tableExists(string $table): bool

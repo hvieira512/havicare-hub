@@ -69,9 +69,12 @@ class VivistarAdapter implements DeviceAdapterInterface
     public function encodeOutgoing(array $payload, array $context = []): string
     {
         $type = $payload['type'] ?? '';
+        $timezoneHours = isset($context['timezoneHours']) && is_numeric($context['timezoneHours'])
+            ? (int)$context['timezoneHours']
+            : $this->timezoneHours();
 
         if ($type === 'login_ok' || $type === 'login_error') {
-            return $this->formatLine('BP00', [gmdate('YmdHis'), $this->timezoneHours()]);
+            return $this->formatLine('BP00', [gmdate('YmdHis'), $timezoneHours]);
         }
 
         if ($type === 'error') {

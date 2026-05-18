@@ -76,11 +76,6 @@ class ModelController extends Controller
         $supplierId = (int)($body['supplierId'] ?? 0);
         $protocol = trim((string)($body['protocol'] ?? ''));
         $transport = trim((string)($body['transport'] ?? ''));
-        $sourceDoc = trim((string)($body['sourceDoc'] ?? ''));
-        $enabled = (bool)($body['enabled'] ?? true);
-        $passive = $body['passive'] ?? [];
-        $active = $body['active'] ?? [];
-        $features = $body['features'] ?? new \stdClass();
 
         if ($code === '' || $name === '' || $protocol === '' || $transport === '' || $supplierId === 0) {
             return $this->errorResponse('invalid_request', 'code, name, protocol, transport, and supplierId are required', 400);
@@ -106,7 +101,7 @@ class ModelController extends Controller
         }
 
         $data = $this->normalizeModelPayload($body, true);
-        $insertedId = $this->modelRepo->insert($data);
+        $this->modelRepo->insert($data);
         $row = $this->modelRepo->findByCode($code);
 
         DeviceCapabilities::setDatabasePdo($this->pdo);

@@ -27,7 +27,7 @@ class DeviceController extends Controller
             $total = $this->deviceRepo->countFiltered($filters);
             $devices = $this->deviceResourcesFromRows($rows);
         } else {
-            $devices = $this->deviceResourcesFromRows($this->deviceRepo?->all() ?? []);
+            $devices = [];
             foreach ($this->whitelist()->all() as $imei => $info) {
                 $devices[] = $this->deviceResource($imei, $info);
             }
@@ -183,28 +183,6 @@ class DeviceController extends Controller
             ];
         }
         return $devices;
-    }
-
-    private function applyDeviceFilters(array $devices, array $filters): array
-    {
-        return array_values(array_filter($devices, function (array $device) use ($filters): bool {
-            if (($filters['model'] ?? null) !== null && $filters['model'] !== '' && $device['model'] !== $filters['model']) {
-                return false;
-            }
-            if (($filters['supplier'] ?? null) !== null && $filters['supplier'] !== '' && $device['supplier'] !== $filters['supplier']) {
-                return false;
-            }
-            if (($filters['enabled'] ?? null) !== null && $device['enabled'] !== $filters['enabled']) {
-                return false;
-            }
-            if (($filters['online'] ?? null) !== null) {
-                $wantOnline = filter_var($filters['online'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-                if ($wantOnline !== null && $device['online'] !== $wantOnline) {
-                    return false;
-                }
-            }
-            return true;
-        }));
     }
 
     private function validateModelForDeviceAssignment(string $model): ?Response

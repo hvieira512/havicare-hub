@@ -5,7 +5,6 @@ namespace App\Http\Controller;
 use React\Http\Message\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use App\Registry\DeviceCapabilities;
-use App\Redis\Client as RedisClient;
 
 class CommandController extends Controller
 {

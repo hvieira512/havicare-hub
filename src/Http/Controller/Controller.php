@@ -3,10 +3,8 @@
 namespace App\Http\Controller;
 
 use React\Http\Message\Response;
-use Psr\Http\Message\ServerRequestInterface;
 use App\WebSocket\WatchServer;
 use App\Registry\Whitelist;
-use App\Registry\DeviceCapabilities;
 use App\Repository\DeviceRepository;
 use App\Repository\EventRepository;
 use App\Repository\ModelRepository;

@@ -34,12 +34,19 @@ class WonlexAdapter implements DeviceAdapterInterface
             return null;
         }
 
+        if (($context['attachRawJson'] ?? false) === true) {
+            $payload['_rawJson'] = $json;
+        }
+
         return $payload;
     }
 
     public function encodeOutgoing(array $payload, array $context = []): string
     {
-        $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
+        $jsonOptions = isset($context['jsonOptions']) && is_int($context['jsonOptions'])
+            ? $context['jsonOptions']
+            : JSON_UNESCAPED_UNICODE;
+        $json = json_encode($payload, $jsonOptions);
         if ($json === false) {
             $json = '{}';
         }

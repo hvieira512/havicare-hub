@@ -73,7 +73,7 @@ $loop->addPeriodicTimer(1.0, function () use ($watchServer): void {
 });
 
 // Note: Redis Stream -> MySQL event persistence is handled by the dedicated worker
-// (bin/worker.php) usando consumer groups XREADGROUP.
+// (bin/worker.php) using consumer groups XREADGROUP.
 
 Logger::channel('app')->info("=== Multi-Vendor 4G Smartwatch Server ===");
 Logger::channel('app')->info("WebSocket: ws://$wsHost:$wsPort");
