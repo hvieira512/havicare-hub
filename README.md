@@ -1,134 +1,185 @@
-# Platform Overview
+# Health Smartwatches Platform
 
-This project ingests smartwatch protocol traffic (Wonlex + Vivistar), normalizes events, and exposes platform integrations.
+Multi-protocol smartwatch ingestion platform (Wonlex + Vivistar) with:
 
-Integration references:
+- REST control plane for operations and command ingress
+- MQTT data plane for client integrations
+- Redis streams for internal decoupling
+- MySQL persistence for device/event history
 
-- `docs/MQTT-CONTRACT.md`
-- `docs/CLIENT-ONBOARDING.md`
-- `docs/INTEGRATION-CURRENT-ENDPOINTS.md`
-- `docs/MQTT-ROADMAP.md`
-- `docs/E2E-TESTING.md`
+## Architecture Summary
 
-## Integration Direction
+External clients consume normalized data from MQTT topics.  
+Commands enter through REST and command state is emitted back through MQTT.
 
-Primary direction:
+```text
+Watches (Wonlex WS / Vivistar TCP)
+        |
+        v
+ws service (protocol adapters + session/auth + routing)
+        |
+        +--> Redis stream: events --------> worker --------> MySQL (device_events)
+        |
+        +--> Redis stream: events/status/errors/command_state
+                        |
+                        v
+                 mqtt-publisher ---------> Mosquitto MQTT
+                                              |
+                                              v
+                                 devices/{imei}/telemetry
+                                 devices/{imei}/status
+                                 devices/{imei}/error
+                                 devices/{imei}/command/state
 
-- Client systems consume data from the platform MQTT broker.
-- Clients are free to build their own APIs/products on top of MQTT data.
-- Platform does not require creating a dedicated REST API per client.
+api service (REST control plane)
+  - reads from MySQL
+  - dispatches commands to ws (direct or via Redis command stream)
+```
 
-Current reality in this repository:
+## Service Catalog
 
-- External MQTT publishing is available via a bridge worker (`bin/mqtt-publisher.php`) for telemetry, status, error, and command-state topics.
-- Redis Streams are used internally for decoupling (`events`, `cmd:stream`).
-- A platform REST API exists and can be used now for operations and command dispatch while MQTT is phased in.
-- Command ingress is REST control-plane; MQTT carries outbound command state and device/event streams.
+| Service | Purpose | Key Ports |
+|---|---|---|
+| `ws` | Device ingress server. Handles Wonlex WebSocket and Vivistar TCP, auth/login, protocol decoding, event normalization, command dispatch/replies. | `8080` (WS), `9000` (TCP) |
+| `api` | Platform REST control plane: device/model/supplier management, event reads, command submission, health/docs. | `8081` |
+| `worker` | Reads Redis `events` stream and persists normalized events to MySQL. | internal |
+| `mqtt-publisher` | Reads Redis streams (`events`, `status`, `errors`, `command_state`) and publishes MQTT envelopes. | internal |
+| `redis` | Internal event bus and transient runtime state. | `6379` |
+| `mysql` | System of record for suppliers/models/devices/device_events. | `3306` |
+| `mosquitto` | MQTT broker used by external consumers. | `1883` |
+| `nginx` | Optional reverse proxy/TLS entrypoint for API/WS. | `80`, `443` |
 
-Canonical MQTT topics (target contract):
+## Integration Contract
+
+Primary MQTT topics:
 
 - `devices/{imei}/telemetry`
 - `devices/{imei}/status`
 - `devices/{imei}/error`
 - `devices/{imei}/command/state`
 
-## Runtime Architecture (Current)
+Policy:
 
-```text
-Smartwatch (Wonlex / Vivistar)
-        |
-        v
-Protocol Adapters (internal)
-        |
-        v
-Watch Server (WS + Vivistar TCP ingress)
-        |
-        +--> Redis stream: events ------> Worker ------> MySQL device_events
-        |
-        +--> Redis stream: events ------> MQTT Publisher ------> MQTT broker topic devices/{imei}/telemetry
-        |
-        +--> Latest in-memory state
+- Command ingress is REST (`POST /devices/{imei}/command` and feature command endpoint).
+- MQTT is outbound integration stream (not inbound command queue).
 
-Platform API (REST)
-        |
-        +--> Reads: devices/models/suppliers/events
-        +--> Commands: direct (monolith) or via Redis cmd:stream (split mode)
+## Quick Start
+
+Prerequisites:
+
+- Docker + Docker Compose
+- `make`
+
+Boot stack:
+
+```bash
+cp .env.example .env
+make up
+make migrate
 ```
 
-## What Is Implemented Today
+Useful checks:
 
-- WS ingestion server for Wonlex traffic.
-- Native Vivistar TCP ingress (`tcp://...`, IW/AP/BP).
-- Adapter layer for protocol-specific encode/decode.
-- REST API (`/openapi.json`, `/docs`) for platform operations and command entry.
-- Redis streams for internal decoupling.
-- MySQL persistence for suppliers/models/devices/events.
-- Worker process (`bin/worker.php`) for stream-to-DB persistence.
-- MQTT bridge worker (`bin/mqtt-publisher.php`) for telemetry publish to `devices/{imei}/telemetry`.
-- MQTT status publishing to `devices/{imei}/status` from device online/offline transitions.
-- MQTT error publishing to `devices/{imei}/error` from integration/runtime failures.
-- MQTT command state publishing to `devices/{imei}/command/state` (`dispatched`, `failed`, `ack`).
-- Local Mosquitto broker service in Docker Compose.
+```bash
+make ps
+curl -s http://127.0.0.1:8081/health
+curl -s http://127.0.0.1:8081/openapi.json | head -c 200
+```
 
-## What Is Not Implemented Yet
+## Full Circuit Test
 
-- MQTT auth/ACL automation for integration consumers.
-- Durable/full command lifecycle state machine (`requested -> accepted -> dispatched -> ack|timeout|failed`).
+### 1. Automated smoke test (recommended)
 
-## Local Stack
-
-`docker-compose.yml` currently provides:
-
-- `mysql`
-- `redis`
-- `ws`
-- `api`
-- `worker`
-- `mosquitto`
-- `mqtt-publisher`
-- `nginx`
-
-Default ports:
-
-- Wonlex/WebSocket ingress: `8080`
-- Vivistar TCP ingress: `9000`
-- HTTP API: `8081` (direct) and `80/443` via nginx
-- MQTT broker: `1883`
-
-Smoke validation:
+Runs end-to-end verification across all four MQTT topic families:
 
 ```bash
 make smoke-mqtt
 ```
 
-## Simulator
+What it validates:
 
-`simulator/simulate.php` auto-selects protocol by model from `config/capabilities.json`.
+- telemetry publish
+- status publish
+- error publish
+- command state publish
 
-Examples:
+### 2. Manual full-circuit test (4 terminals)
+
+Terminal A: keep platform logs visible
 
 ```bash
-# Wonlex over WebSocket
-php simulator/simulate.php --server ws://127.0.0.1:8080 \
-  --model WONLEX-PRO --imei 865028000000306 \
-  --command upHeartRate --data '{"heartRate":72}'
-
-# Vivistar over TCP
-php simulator/simulate.php --server tcp://127.0.0.1:9000 \
-  --model VIVISTAR-CARE --imei 865028000000308 \
-  --command AP49 --data '{"heartRate":68}'
+make up
+docker compose logs -f ws api mqtt-publisher
 ```
 
-## Decision Framework: MQTT-only vs REST + MQTT
+Terminal B: subscribe to MQTT output
 
-If you want maximum freedom for clients:
+```bash
+docker compose exec mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -v -t 'devices/#'"
+```
 
-- Publish canonical events on MQTT.
-- Keep client responsibilities outside this repo (they consume and shape data however they want).
+Terminal C: keep one device online for command ack
 
-If you want easy command/governance operations during rollout:
+```bash
+docker compose exec ws php simulator/simulate.php \
+  --server ws://127.0.0.1:8080 \
+  --model WONLEX-PRO \
+  --imei 865028000000306 \
+  --listen
+```
 
-- Keep existing REST API as platform control plane.
-- Add MQTT as the main external data plane.
+Terminal D: trigger all paths
 
-This project currently supports the second path immediately, and can evolve toward MQTT-first consumption without per-client REST duplication.
+```bash
+# telemetry
+docker compose exec ws php simulator/simulate.php \
+  --server ws://127.0.0.1:8080 \
+  --model WONLEX-HEALTH \
+  --imei 865028000000307 \
+  --command upBattery
+
+# command dispatch (and ack from Terminal C device)
+curl -s -X POST http://127.0.0.1:8081/devices/865028000000306/command \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"dnHeartRate","data":{}}'
+
+# protocol mismatch to force integration error path
+docker compose exec ws php simulator/simulate.php \
+  --server ws://127.0.0.1:8080 \
+  --model VIVISTAR-CARE \
+  --imei 865028000000306 \
+  --command AP49
+```
+
+Expected topics in Terminal B:
+
+- `devices/865028000000307/telemetry`
+- `devices/865028000000306/status` (and/or other device status updates)
+- `devices/865028000000306/error`
+- `devices/865028000000306/command/state`
+
+## REST Surface (Control Plane)
+
+Key endpoints:
+
+- `GET /openapi.json`
+- `GET /docs`
+- `GET /health`
+- `GET /devices`
+- `POST /devices/{imei}/command`
+- `POST /devices/{imei}/features/{feature}/command`
+
+## Production Readiness Notes
+
+Implemented:
+
+- protocol abstraction and multi-ingress support
+- stream-decoupled internal architecture
+- MQTT topic fanout for telemetry/status/error/command-state
+- end-to-end smoke script for regression checks
+
+Still required for hardened production rollout:
+
+- MQTT TLS + per-consumer credentials + ACL automation
+- command lifecycle depth completion (`timeout`, durable terminal coverage)
+- CI pipeline job to run `make smoke-mqtt` on release candidates
