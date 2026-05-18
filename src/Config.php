@@ -13,8 +13,6 @@ class Config
 
     public static function load(): self
     {
-        $mqttEnabledRaw = strtolower(trim((string)(getenv('MQTT_ENABLED') ?: 'false')));
-        $mqttEnabled = in_array($mqttEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsEnabledRaw = strtolower(trim((string)(getenv('MQTT_TLS_ENABLED') ?: 'false')));
         $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
@@ -46,7 +44,7 @@ class Config
                 'database' => 0,
             ],
             'mqtt' => [
-                'enabled' => $mqttEnabled,
+                'enabled' => true,
                 'host' => getenv('MQTT_HOST') ?: '',
                 'port' => (int)(getenv('MQTT_PORT') ?: 1883),
                 'username' => getenv('MQTT_USERNAME') ?: '',

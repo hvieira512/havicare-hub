@@ -54,6 +54,8 @@ class EventController extends Controller
 
         return [
             'id' => $event['id'] ?? null,
+            'imei' => $event['imei'] ?? null,
+            'model' => $event['model'] ?? null,
             'direction' => 'watch_to_server',
             'feature' => $feature,
             'nativeType' => $nativeType,

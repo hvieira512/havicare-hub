@@ -12,11 +12,6 @@ use App\Registry\Whitelist;
 $config = Bootstrap::config();
 $mqttConfig = $config['mqtt'] ?? [];
 
-if (!($mqttConfig['enabled'] ?? false)) {
-    Logger::channel('mqtt-publisher')->warning('MQTT publisher is disabled. Set MQTT_ENABLED=true to run.');
-    exit(0);
-}
-
 $redis = Bootstrap::requireRedis($config['redis'] ?? []);
 
 $pdo = Bootstrap::database($config['database'] ?? null);
@@ -39,7 +34,7 @@ $tlsCertFile = (string)($mqttConfig['tls_cert_file'] ?? '');
 $tlsKeyFile = (string)($mqttConfig['tls_key_file'] ?? '');
 
 if ($mqttHost === '') {
-    Logger::channel('mqtt-publisher')->error('MQTT_HOST is required when MQTT publisher is enabled');
+    Logger::channel('mqtt-publisher')->error('MQTT_HOST is required');
     exit(1);
 }
 

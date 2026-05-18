@@ -124,7 +124,6 @@ services:
     environment:
       REDIS_HOST: redis
       DB_HOST: mysql
-      MQTT_ENABLED: "true"
       MQTT_HOST: mosquitto
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USERNAME: ${MQTT_PUBLISHER_USERNAME:-}

@@ -121,6 +121,7 @@
             seenEventIds: new Set(),
             newEventIds: new Set(),
             firstEventLoad: true,
+            demoApiEnabled: true,
         };
 
         const passiveFeatures = [
@@ -232,6 +233,54 @@
             return normalized;
         }
 
+        function normalizeNativeCommands(payload, featuresMap) {
+            const legacy = payload?.nativeCommands;
+            if (legacy && typeof legacy === 'object') {
+                return {
+                    passive: Array.isArray(legacy.passive) ? legacy.passive : [],
+                    active: Array.isArray(legacy.active) ? legacy.active : [],
+                };
+            }
+
+            const passive = [];
+            const active = [];
+            Object.values(featuresMap).forEach((feature) => {
+                (feature.passiveTypes || []).forEach((type) => passive.push(type));
+                (feature.activeTypes || []).forEach((type) => active.push(type));
+            });
+
+            return {
+                passive: unique(passive),
+                active: unique(active),
+            };
+        }
+
+        function normalizeEventItem(item) {
+            if (item && item.event && item.device) {
+                return item;
+            }
+
+            const receivedAtRaw = item?.receivedAt ?? item?.timestamp ?? null;
+            const receivedAtMs = receivedAtRaw === null
+                ? Date.now()
+                : (Number(receivedAtRaw) < 1000000000000 ? Number(receivedAtRaw) * 1000 : Number(receivedAtRaw));
+
+            return {
+                device: {
+                    imei: item?.imei || 'unknown',
+                    model: item?.model || '',
+                },
+                event: {
+                    id: item?.id ?? null,
+                    feature: item?.feature ?? null,
+                    nativeType: item?.nativeType ?? item?.type ?? null,
+                    nativePayload: item?.nativePayload ?? item?.data ?? {},
+                    normalized: item?.normalized ?? {},
+                    receivedAt: receivedAtMs,
+                },
+            };
+        }
+
         async function loadDevices() {
             const payload = await api('/devices');
             state.devices = (payload.data || []).map(normalizeDeviceItem);
@@ -254,8 +303,9 @@
 
             try {
                 const payload = await api(`/devices/${device.imei}/features`);
-                state.features = normalizeFeaturesPayload(payload.features);
-                state.nativeCommands = payload.nativeCommands || { passive: [], active: [] };
+                const data = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
+                state.features = normalizeFeaturesPayload(data?.features || {});
+                state.nativeCommands = normalizeNativeCommands(data || payload, state.features);
             } catch (error) {
                 state.features = {};
                 state.nativeCommands = { passive: [], active: [] };
@@ -269,8 +319,13 @@
             try {
                 const payload = await api('/demo/listeners');
                 state.listeners = Object.fromEntries((payload.data || []).map((listener) => [listener.imei, listener]));
+                state.demoApiEnabled = true;
             } catch (error) {
                 state.listeners = {};
+                const code = error?.error?.code || '';
+                if (code === 'not_found') {
+                    state.demoApiEnabled = false;
+                }
                 $('lastResponse').textContent = pretty(error);
             }
             renderActions();
@@ -279,7 +334,7 @@
         async function loadEvents() {
             try {
                 const payload = await api('/events/recent?limit=40');
-                const incoming = payload.data || [];
+                const incoming = (payload.data || []).map(normalizeEventItem);
                 const incomingIds = incoming
                     .map(({ event }) => event?.id)
                     .filter((id) => id !== null && id !== undefined);
@@ -354,7 +409,7 @@
             $('passiveActions').innerHTML = passiveFeatures.map(([feature, title]) => {
                 const passiveTypes = state.features[feature]?.passiveTypes || [];
                 const nativeType = passiveTypes[0] || '';
-                const disabled = !device || !nativeType || !deviceEnabled(device);
+                const disabled = !state.demoApiEnabled || !device || !nativeType || !deviceEnabled(device);
                 return `
                     <div class="col-12 col-sm-6">
                         <button class="btn btn-outline-primary w-100" type="button" data-type="${escapeHtml(nativeType)}" ${disabled ? 'disabled' : ''}>
@@ -372,8 +427,12 @@
                 ? `Managed demo watch is running (pid ${listener.pid}). Active commands can be sent while the device is online.`
                 : 'Start a demo watch to keep the simulator connected, then send active commands from the server.';
 
-            $('startListener').disabled = !device || !deviceEnabled(device) || !!listener || isOnline;
-            $('stopListener').disabled = !listener;
+            if (!state.demoApiEnabled) {
+                $('listenerNote').textContent = 'Demo simulator endpoints are disabled. Set DEMO_API_ENABLED=true and restart the API server.';
+            }
+
+            $('startListener').disabled = !state.demoApiEnabled || !device || !deviceEnabled(device) || !!listener || isOnline;
+            $('stopListener').disabled = !state.demoApiEnabled || !listener;
 
             $('activeActions').innerHTML = activeFeatures.map((feature) => {
                 const disabled = !device || !isOnline;
@@ -419,6 +478,27 @@
             return `Request ${featureLabel(feature).toLowerCase()}`;
         }
 
+        function defaultSimulatedPayload(nativeType) {
+            const type = String(nativeType || '').trim();
+            const map = {
+                AP03: { raw: '040,070,00,01,2100,30' },
+                AP49: { raw: '72', heartRate: 72 },
+                AP50: { raw: '36.4,70', temperature: 36.4, battery: 70 },
+                APHT: { raw: '72,130,85', heartRate: 72, systolic: 130, diastolic: 85 },
+                APHP: { raw: '75,125,82,96,90', heartRate: 75, systolic: 125, diastolic: 82, spo2: 96, bloodSugar: 90 },
+                upBattery: { batteryType: 2, batteryLevel: 90, batteryState: 0 },
+                upHeartRate: { heartRate: 72 },
+                upBP: { systolic: 120, diastolic: 80 },
+                upBO: { spo2: 98 },
+                upBodyTemperature: { temperature: 36.6 },
+                upLocation: { lat: 38.7223, lon: -9.1393 },
+                upTodayActivity: { step: 3120, standTime: 6, exerciseTime: 1800 },
+                upSleep: { value: '420/120/280/20', upDayStr: '2026-05-18' },
+                upECG: { date: '110.2,120.6,99.7', frequency: '500', collectionLogo: '87654321' },
+            };
+            return map[type] || {};
+        }
+
         function renderEvents() {
             $('eventCount').textContent = String(state.events.length);
             if (!state.events.length) {
@@ -455,6 +535,7 @@
                 imei: device.imei,
                 model: deviceModelId(device),
                 type: nativeType,
+                data: defaultSimulatedPayload(nativeType),
             };
 
             try {
