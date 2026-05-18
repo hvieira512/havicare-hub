@@ -9,6 +9,8 @@ LISTENER_LOG_HOST="/tmp/sim-listener.log"
 TELEMETRY_LOG_HOST="/tmp/sim-telemetry.log"
 ERROR_LOG_HOST="/tmp/sim-error.log"
 API_COMMAND_HOST="/tmp/api-command.json"
+MQTT_SMOKE_USER="${MQTT_SMOKE_USER:-integration_smoke}"
+MQTT_SMOKE_PASS="${MQTT_SMOKE_PASS:-integration_smoke_dev}"
 
 cleanup() {
   docker compose exec -T ws sh -lc 'test -f /tmp/sim-listener.pid && kill "$(cat /tmp/sim-listener.pid)" 2>/dev/null || true' >/dev/null 2>&1 || true
@@ -25,13 +27,21 @@ docker compose restart ws api mqtt-publisher >/dev/null
 echo "[smoke] migrating/seed database..."
 docker compose exec -T api php bin/migrate.php --seed >/dev/null
 
+echo "[smoke] waiting for mosquitto to be ready..."
+for _ in $(seq 1 30); do
+  if docker compose exec -T mosquitto sh -lc "mosquitto_sub --help >/dev/null 2>&1"; then
+    break
+  fi
+  sleep 1
+done
+
 echo "[smoke] preparing logs..."
 docker compose exec -T mosquitto sh -lc 'rm -f /tmp/mqtt-smoke.log /tmp/mqtt-sub.pid'
 docker compose exec -T ws sh -lc 'rm -f /tmp/sim-listener.log /tmp/sim-listener.pid /tmp/sim-telemetry.log /tmp/sim-error.log'
 rm -f "$MQTT_LOG_HOST" "$LISTENER_LOG_HOST" "$TELEMETRY_LOG_HOST" "$ERROR_LOG_HOST" "$API_COMMAND_HOST"
 
 echo "[smoke] subscribing to devices/# ..."
-docker compose exec -T mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -v -t 'devices/#' > /tmp/mqtt-smoke.log 2>&1 & echo \$! > /tmp/mqtt-sub.pid"
+docker compose exec -T mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -u '$MQTT_SMOKE_USER' -P '$MQTT_SMOKE_PASS' -v -t 'devices/#' > /tmp/mqtt-smoke.log 2>&1 & echo \$! > /tmp/mqtt-sub.pid"
 
 echo "[smoke] starting device listener for command ack..."
 docker compose exec -T ws sh -lc "php simulator/simulate.php --server ws://127.0.0.1:8080 --model WONLEX-PRO --imei 865028000000306 --listen > /tmp/sim-listener.log 2>&1 & echo \$! > /tmp/sim-listener.pid"

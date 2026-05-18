@@ -1,0 +1,36 @@
+name: MQTT Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: cp .env.example .env
+
+      - name: Build stack
+        run: docker compose build
+
+      - name: Run MQTT smoke test
+        run: make smoke-mqtt
+
+      - name: Upload smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mqtt-smoke-logs
+          path: |
+            /tmp/mqtt-smoke.log
+            /tmp/sim-listener.log
+            /tmp/sim-telemetry.log
+            /tmp/sim-error.log
+            /tmp/api-command.json
