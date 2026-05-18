@@ -25,6 +25,44 @@ class DeviceRepository
         return array_map(fn(array $row): array => $this->hydrate($row), $stmt->fetchAll());
     }
 
+    public function list(array $filters, int $page, int $limit): array
+    {
+        $page = max(1, $page);
+        $limit = max(1, $limit);
+        $offset = ($page - 1) * $limit;
+
+        [$whereSql, $params] = $this->buildFilterWhere($filters);
+        $sql = 'SELECT ' . self::COLS . '
+                FROM ' . self::TABLE
+            . $whereSql . '
+                ORDER BY d.registered_at DESC
+                LIMIT :limit OFFSET :offset';
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $name => $value) {
+            $stmt->bindValue($name, $value);
+        }
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return array_map(fn(array $row): array => $this->hydrate($row), $stmt->fetchAll());
+    }
+
+    public function countFiltered(array $filters): int
+    {
+        [$whereSql, $params] = $this->buildFilterWhere($filters);
+        $sql = 'SELECT COUNT(*) FROM ' . self::TABLE . $whereSql;
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $name => $value) {
+            $stmt->bindValue($name, $value);
+        }
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
+    }
+
     public function insert(array $data): int
     {
         $modelId = $this->resolveModelId($data);
@@ -95,6 +133,43 @@ class DeviceRepository
             'registered_at' => $row['registered_at'],
             'updated_at' => $row['updated_at'],
         ];
+    }
+
+    private function buildFilterWhere(array $filters): array
+    {
+        $where = [];
+        $params = [];
+
+        $imei = trim((string)($filters['imei'] ?? ''));
+        if ($imei !== '') {
+            $where[] = 'd.imei = :imei';
+            $params[':imei'] = $imei;
+        }
+
+        $model = trim((string)($filters['model'] ?? ''));
+        if ($model !== '') {
+            $where[] = 'm.code = :model';
+            $params[':model'] = $model;
+        }
+
+        $supplier = trim((string)($filters['supplier'] ?? ''));
+        if ($supplier !== '') {
+            $where[] = 's.name = :supplier';
+            $params[':supplier'] = $supplier;
+        }
+
+        if (array_key_exists('enabled', $filters) && $filters['enabled'] !== null) {
+            $where[] = 'd.enabled = :enabled';
+            $params[':enabled'] = $filters['enabled'] ? 1 : 0;
+        }
+
+        $online = $filters['online'] ?? null;
+        if ($online !== null && $online !== '') {
+            // Online state is derived from runtime session/Redis and cannot be filtered purely in SQL.
+        }
+
+        $sql = $where === [] ? '' : (' WHERE ' . implode(' AND ', $where));
+        return [$sql, $params];
     }
 
     private function resolveModelId(array $data): int

@@ -15,7 +15,7 @@ use App\Protocol\AdapterRegistry;
 abstract class Controller
 {
     protected ?WatchServer $watchServer;
-    protected ?Whitelist $whitelist;
+    protected ?Whitelist $whitelist = null;
     protected ?\PDO $pdo;
     protected ?DeviceRepository $deviceRepo;
     protected ?EventRepository $eventsRepo;

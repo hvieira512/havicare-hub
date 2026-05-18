@@ -297,6 +297,20 @@ Runs end-to-end verification across all four MQTT topic families:
 make smoke-mqtt
 ```
 
+### 1.1 Full scenario suite (PR-grade)
+
+Run the deterministic end-to-end suite (all scenarios, with artifacts under `tests/artifacts/`):
+
+```bash
+make test-scenarios
+```
+
+Per-scenario timeout is configurable:
+
+```bash
+PER_SCENARIO_TIMEOUT_SECONDS=600 make test-scenarios
+```
+
 What it validates:
 
 - telemetry publish
@@ -371,6 +385,27 @@ Key endpoints:
 - `POST /devices/{imei}/features/{feature}/command`
 
 Demo control endpoints (`/demo/simulate`, `/demo/listener*`) are disabled by default and require `DEMO_API_ENABLED=true`.
+
+## Testing Strategy
+
+Two layers are used together:
+
+- Fast suites (`phpunit`) for protocol/domain/component/contract checks.
+- Docker scenario suite for full service-path validation (`ws -> redis -> worker -> mysql -> mqtt-publisher -> mosquitto -> api`).
+
+Run locally:
+
+```bash
+make test-unit
+make test-scenarios
+make test-all
+```
+
+Replay fixtures (real-device readiness bridge):
+
+- Fixture files live at `tests/fixtures/replay/*.json`.
+- Scenario `S5` replays these packets via simulator transport and asserts MQTT payload contracts.
+- Replay report is written to `tests/artifacts/.../s5_replay_fixtures/replay-report.ndjson`.
 
 ## MQTT Credentials
 

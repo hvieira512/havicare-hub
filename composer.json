@@ -23,6 +23,12 @@
         "mqtt:publisher": "php bin/mqtt-publisher.php",
         "simulate": "php simulator/simulate.php",
         "migrate": "php bin/migrate.php --seed",
-        "purge": "php bin/purge-events.php"
+        "purge": "php bin/purge-events.php",
+        "test:unit": "vendor/bin/phpunit --testsuite unit,component,contract",
+        "test:scenarios": "tests/scenarios/run-all.sh",
+        "test": "@test:unit && @test:scenarios"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
     }
 }

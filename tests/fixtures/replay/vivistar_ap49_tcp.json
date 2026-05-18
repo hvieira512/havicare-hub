@@ -1,0 +1,18 @@
+{
+  "name": "vivistar_ap49_tcp",
+  "ingress": {
+    "transport": "tcp",
+    "server": "tcp://127.0.0.1:9000",
+    "model": "VIVISTAR-CARE",
+    "imei": "865028000000308",
+    "command": "AP49"
+  },
+  "expect": {
+    "topic": "devices/865028000000308/telemetry",
+    "json": {
+      "event.type": "telemetry.received",
+      "device.imei": "865028000000308",
+      "data.heartRateBpm": "72"
+    }
+  }
+}

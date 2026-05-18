@@ -28,6 +28,7 @@
 .phpcs-cache
 /coverage/
 /.phpunit.cache/
+/tests/artifacts/
 
 # Docker/local override files
 docker-compose.override.yml
