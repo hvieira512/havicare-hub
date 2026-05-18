@@ -2,51 +2,23 @@
 
 namespace App\Repository;
 
-use App\Database\Repository;
-
-class DeviceRepository extends Repository
+class DeviceRepository
 {
     private const TABLE = 'devices d JOIN models m ON m.id = d.model_id JOIN suppliers s ON s.id = m.supplier_id';
     private const COLS = 'd.imei, d.model_id, d.enabled, d.registered_at, d.updated_at, m.code AS model_code, m.name AS model_name, m.protocol, m.transport, m.enabled AS model_enabled, s.id AS supplier_id, s.name AS supplier_name';
 
-    protected function table(): string
-    {
-        return self::TABLE;
-    }
+    private \PDO $pdo;
 
-    protected function columns(): string
+    public function __construct(\PDO $pdo)
     {
-        return self::COLS;
-    }
-
-    protected function pk(): string
-    {
-        return 'd.imei';
-    }
-
-    protected function hydrate(array $row): array
-    {
-        return [
-            'imei' => $row['imei'],
-            'model_id' => (int)$row['model_id'],
-            'model_code' => $row['model_code'],
-            'model_name' => $row['model_name'],
-            'protocol' => $row['protocol'],
-            'transport' => $row['transport'],
-            'model_enabled' => (bool)$row['model_enabled'],
-            'supplier_id' => (int)$row['supplier_id'],
-            'supplier_name' => $row['supplier_name'],
-            'enabled' => (bool)$row['enabled'],
-            'registered_at' => $row['registered_at'],
-            'updated_at' => $row['updated_at'],
-        ];
+        $this->pdo = $pdo;
     }
 
     public function all(): array
     {
         $stmt = $this->pdo->query(
-            'SELECT ' . $this->columns() . '
-             FROM ' . $this->table() . '
+            'SELECT ' . self::COLS . '
+             FROM ' . self::TABLE . '
              ORDER BY d.registered_at ASC'
         );
 
@@ -105,6 +77,24 @@ class DeviceRepository extends Repository
                 'registered_at' => 'now',
             ]);
         }
+    }
+
+    private function hydrate(array $row): array
+    {
+        return [
+            'imei' => $row['imei'],
+            'model_id' => (int)$row['model_id'],
+            'model_code' => $row['model_code'],
+            'model_name' => $row['model_name'],
+            'protocol' => $row['protocol'],
+            'transport' => $row['transport'],
+            'model_enabled' => (bool)$row['model_enabled'],
+            'supplier_id' => (int)$row['supplier_id'],
+            'supplier_name' => $row['supplier_name'],
+            'enabled' => (bool)$row['enabled'],
+            'registered_at' => $row['registered_at'],
+            'updated_at' => $row['updated_at'],
+        ];
     }
 
     private function resolveModelId(array $data): int
