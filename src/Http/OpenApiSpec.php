@@ -480,10 +480,10 @@ class OpenApiSpec
                     ],
                     'DeviceDeleteResponse' => [
                         'type' => 'object',
-                        'required' => ['status', 'imei'],
+                        'required' => ['status', 'data'],
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'deleted'],
-                            'imei' => ['type' => 'string', 'example' => '865028000000306'],
+                            'data' => ['$ref' => '#/components/schemas/Device'],
                         ],
                     ],
                     'DeviceFilters' => [
