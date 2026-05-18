@@ -1,8 +1,0 @@
-user platform_publisher
-topic write devices/+/telemetry
-topic write devices/+/status
-topic write devices/+/error
-topic write devices/+/command/state
-
-user integration_smoke
-topic read devices/#

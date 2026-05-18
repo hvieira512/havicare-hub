@@ -194,18 +194,17 @@ Purpose:
 
 Default ACL model in this repo:
 
-- `platform_publisher`: write-only on platform topics
-- `integration_smoke`: read-only on `devices/#`
+- `${MQTT_PUBLISHER_USERNAME}`: write-only on platform topics
+- `${MQTT_SMOKE_USERNAME}`: read-only on `devices/#`
 
 Examples:
 
 ```bash
 docker compose exec mosquitto sh -lc \
-  "mosquitto_sub -h 127.0.0.1 -p 1883 -u integration_smoke -P integration_smoke_dev -v -t 'devices/#'"
+  "mosquitto_sub -h 127.0.0.1 -p 1883 -u \"$MQTT_SMOKE_USERNAME\" -P \"$MQTT_SMOKE_PASSWORD\" -v -t 'devices/#'"
 ```
 
 ```bash
-make mqtt-provision-user ARGS="--username acme_backend --password 'strong_password' --topics devices/+/telemetry,devices/+/status --mode read"
 docker compose restart mosquitto
 ```
 
@@ -219,7 +218,7 @@ Purpose:
 Examples:
 
 ```bash
-docker compose exec mysql mysql -uhealth -phealth_secret -e "use health_watches; show tables;"
+docker compose exec mysql sh -lc 'mysql -u"$DB_USER" -p"$DB_PASS" -e "use $DB_NAME; show tables;"'
 ```
 
 ### `nginx` (optional edge/proxy)
@@ -251,8 +250,8 @@ Policy:
 
 Default broker users:
 
-- `platform_publisher` (write only to platform topics)
-- `integration_smoke` (read for smoke verification)
+- `${MQTT_PUBLISHER_USERNAME}` (write only to platform topics)
+- `${MQTT_SMOKE_USERNAME}` (read for smoke verification)
 
 ## Quick Start
 
@@ -265,6 +264,10 @@ Boot stack:
 
 ```bash
 cp .env.example .env
+# edit .env and set required secrets:
+#   MYSQL_ROOT_PASSWORD, DB_PASS
+#   MQTT_PUBLISHER_USERNAME, MQTT_PUBLISHER_PASSWORD
+#   MQTT_SMOKE_USERNAME, MQTT_SMOKE_PASSWORD
 make up
 make migrate
 ```
@@ -306,7 +309,7 @@ docker compose logs -f ws api mqtt-publisher
 Terminal B: subscribe to MQTT output
 
 ```bash
-docker compose exec mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -u integration_smoke -P integration_smoke_dev -v -t 'devices/#'"
+docker compose exec mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -u \"$MQTT_SMOKE_USERNAME\" -P \"$MQTT_SMOKE_PASSWORD\" -v -t 'devices/#'"
 ```
 
 Terminal C: keep one device online for command ack
@@ -360,19 +363,27 @@ Key endpoints:
 - `POST /devices/{imei}/command`
 - `POST /devices/{imei}/features/{feature}/command`
 
-## MQTT Consumer Provisioning
+## MQTT Credentials
 
-Create per-consumer credentials + ACL entries:
+Set credentials in `.env`:
 
 ```bash
-make mqtt-provision-user ARGS="--username acme_backend --password 'strong_password' --topics devices/+/telemetry,devices/+/status --mode read"
-docker compose restart mosquitto
+MQTT_PUBLISHER_USERNAME=...
+MQTT_PUBLISHER_PASSWORD=...
+MQTT_SMOKE_USERNAME=...
+MQTT_SMOKE_PASSWORD=...
+```
+
+Then apply:
+
+```bash
+docker compose restart mosquitto mqtt-publisher
 ```
 
 For TLS clients (port `8883`), use:
 
 - CA: `config/ssl/fullchain.pem`
-- client username/password from provision step
+- username/password from your `.env` values
 
 ## Production Readiness Notes
 

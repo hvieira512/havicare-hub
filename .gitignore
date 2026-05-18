@@ -12,6 +12,8 @@
 !.env.example
 /config/ssl/*
 !/config/ssl/.gitkeep
+/config/mosquitto.passwd
+/config/mosquitto.acl
 
 # Local databases and dumps
 *.db

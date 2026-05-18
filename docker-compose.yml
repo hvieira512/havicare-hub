@@ -4,10 +4,10 @@ services:
     image: mysql:8.0
     container_name: health-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root_secret
-      MYSQL_DATABASE: health_watches
-      MYSQL_USER: health
-      MYSQL_PASSWORD: health_secret
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
+      MYSQL_DATABASE: ${DB_NAME:-health_watches}
+      MYSQL_USER: ${DB_USER:-health}
+      MYSQL_PASSWORD: ${DB_PASS:-}
     ports:
       - "3306:3306"
     volumes:
@@ -36,14 +36,19 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: health-mosquitto
+    command: sh -lc "/mosquitto/config/bootstrap.sh && exec mosquitto -c /mosquitto/config/mosquitto.conf"
     ports:
       - "1883:1883"
       - "8883:8883"
     volumes:
       - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - ./config/mosquitto.passwd:/mosquitto/config/passwd:ro
-      - ./config/mosquitto.acl:/mosquitto/config/acl:ro
+      - ./bin/mosquitto-bootstrap.sh:/mosquitto/config/bootstrap.sh:ro
       - ./config/ssl:/mosquitto/config/certs:ro
+    environment:
+      MQTT_PUBLISHER_USERNAME: ${MQTT_PUBLISHER_USERNAME:-}
+      MQTT_PUBLISHER_PASSWORD: ${MQTT_PUBLISHER_PASSWORD:-}
+      MQTT_SMOKE_USERNAME: ${MQTT_SMOKE_USERNAME:-}
+      MQTT_SMOKE_PASSWORD: ${MQTT_SMOKE_PASSWORD:-}
     restart: unless-stopped
 
   ws:
@@ -122,8 +127,8 @@ services:
       MQTT_ENABLED: "true"
       MQTT_HOST: mosquitto
       MQTT_PORT: ${MQTT_PORT:-1883}
-      MQTT_USERNAME: ${MQTT_USERNAME:-platform_publisher}
-      MQTT_PASSWORD: ${MQTT_PASSWORD:-platform_publisher_dev}
+      MQTT_USERNAME: ${MQTT_PUBLISHER_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PUBLISHER_PASSWORD:-}
       MQTT_TLS_ENABLED: ${MQTT_TLS_ENABLED:-false}
       MQTT_TLS_VERIFY_PEER: ${MQTT_TLS_VERIFY_PEER:-true}
       MQTT_TLS_CA_FILE: ${MQTT_TLS_CA_FILE:-}
@@ -145,7 +150,7 @@ services:
     volumes:
       - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./config/ssl:/etc/nginx/ssl:ro
-      - /dev/null:/etc/nginx/conf.d/default.conf:ro
+
     depends_on:
       - ws
       - api

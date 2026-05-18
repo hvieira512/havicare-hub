@@ -9,8 +9,13 @@ LISTENER_LOG_HOST="/tmp/sim-listener.log"
 TELEMETRY_LOG_HOST="/tmp/sim-telemetry.log"
 ERROR_LOG_HOST="/tmp/sim-error.log"
 API_COMMAND_HOST="/tmp/api-command.json"
-MQTT_SMOKE_USER="${MQTT_SMOKE_USER:-integration_smoke}"
-MQTT_SMOKE_PASS="${MQTT_SMOKE_PASS:-integration_smoke_dev}"
+MQTT_SMOKE_USER="${MQTT_SMOKE_USERNAME:-${MQTT_SMOKE_USER:-}}"
+MQTT_SMOKE_PASS="${MQTT_SMOKE_PASSWORD:-${MQTT_SMOKE_PASS:-}}"
+
+if [ -z "$MQTT_SMOKE_USER" ] || [ -z "$MQTT_SMOKE_PASS" ]; then
+  echo "[smoke][FAIL] MQTT smoke credentials missing. Set MQTT_SMOKE_USERNAME and MQTT_SMOKE_PASSWORD."
+  exit 1
+fi
 
 cleanup() {
   docker compose exec -T ws sh -lc 'test -f /tmp/sim-listener.pid && kill "$(cat /tmp/sim-listener.pid)" 2>/dev/null || true' >/dev/null 2>&1 || true
@@ -29,7 +34,7 @@ docker compose exec -T api php bin/migrate.php --seed >/dev/null
 
 echo "[smoke] waiting for mosquitto to be ready..."
 for _ in $(seq 1 30); do
-  if docker compose exec -T mosquitto sh -lc "mosquitto_sub --help >/dev/null 2>&1"; then
+  if docker compose exec -T mosquitto sh -lc "mosquitto_sub --help >/dev/null 2>&1" >/dev/null 2>&1; then
     break
   fi
   sleep 1
