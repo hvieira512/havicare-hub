@@ -117,7 +117,13 @@ class ApiServer
                 default => $this->jsonResponse(['error' => ['code' => 'not_found', 'message' => 'Endpoint not found']], 404),
             };
         } catch (\Throwable $e) {
-            return $this->jsonResponse(['error' => ['code' => 'internal_error', 'message' => $e->getMessage()]], 500);
+            Logger::channel('api')->error(sprintf(
+                'Unhandled exception: %s in %s:%d',
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+            return $this->jsonResponse(['error' => ['code' => 'internal_error', 'message' => 'Internal server error']], 500);
         }
     }
 

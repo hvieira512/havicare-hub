@@ -268,6 +268,7 @@ cp .env.example .env
 #   MYSQL_ROOT_PASSWORD, DB_PASS
 #   MQTT_PUBLISHER_USERNAME, MQTT_PUBLISHER_PASSWORD
 #   MQTT_SMOKE_USERNAME, MQTT_SMOKE_PASSWORD
+#   DEMO_API_ENABLED=true  # optional, enables /demo/simulate and /demo/listener*
 make up
 make migrate
 ```
@@ -362,6 +363,8 @@ Key endpoints:
 - `GET /devices`
 - `POST /devices/{imei}/command`
 - `POST /devices/{imei}/features/{feature}/command`
+
+Demo control endpoints (`/demo/simulate`, `/demo/listener*`) are disabled by default and require `DEMO_API_ENABLED=true`.
 
 ## MQTT Credentials
 

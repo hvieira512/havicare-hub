@@ -41,6 +41,10 @@ class SystemController extends Controller
 
     public function simulateDeviceEvent(ServerRequestInterface $request): Response
     {
+        if (!$this->demoApiEnabled()) {
+            return $this->errorResponse('not_found', 'Endpoint not found', 404);
+        }
+
         if ($this->pdo === null) {
             return $this->errorResponse('mysql_unavailable', 'MySQL is not available', 503);
         }
@@ -90,6 +94,10 @@ class SystemController extends Controller
 
     public function startDemoListener(ServerRequestInterface $request): Response
     {
+        if (!$this->demoApiEnabled()) {
+            return $this->errorResponse('not_found', 'Endpoint not found', 404);
+        }
+
         $body = json_decode((string)$request->getBody(), true);
         if (!is_array($body)) {
             return $this->errorResponse('invalid_request', 'Invalid JSON body', 400);
@@ -139,6 +147,10 @@ class SystemController extends Controller
 
     public function stopDemoListener(string $imei): Response
     {
+        if (!$this->demoApiEnabled()) {
+            return $this->errorResponse('not_found', 'Endpoint not found', 404);
+        }
+
         if (!isset($this->demoListeners[$imei])) {
             return $this->errorResponse('not_found', 'No demo listener for this IMEI', 404);
         }
@@ -155,6 +167,10 @@ class SystemController extends Controller
 
     public function demoListeners(): Response
     {
+        if (!$this->demoApiEnabled()) {
+            return $this->errorResponse('not_found', 'Endpoint not found', 404);
+        }
+
         return $this->jsonResponse([
             'data' => array_values(array_map(
                 fn(array $l): array => $this->listenerResource($l, $this->processIsRunning($l['pid'])),
@@ -212,5 +228,11 @@ class SystemController extends Controller
             'startedAt' => $listener['started_at'] ?? null,
             'since' => isset($listener['started_at']) ? (time() - $listener['started_at']) . 's ago' : null,
         ];
+    }
+
+    private function demoApiEnabled(): bool
+    {
+        $raw = strtolower(trim((string)(getenv('DEMO_API_ENABLED') ?: 'false')));
+        return in_array($raw, ['1', 'true', 'yes', 'on'], true);
     }
 }
