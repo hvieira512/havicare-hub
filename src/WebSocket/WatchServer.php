@@ -758,10 +758,31 @@ class WatchServer implements MessageComponentInterface
 
     public function getRecentEvents(int $limit = 50, ?int $afterId = null): array
     {
+        // Split/Redis mode: prefer ingress-local memory for freshest events, because
+        // DB persistence may lag behind stream ingestion. On cold start (no in-memory
+        // history yet), fall back to DB if available.
+        if ($this->isRedisAvailable()) {
+            if ($this->eventHistory !== []) {
+                return $this->filterRecentInMemory($limit, $afterId);
+            }
+            if ($this->eventsRepo) {
+                return $this->eventsRepo->findRecent($limit, $afterId);
+            }
+            return [];
+        }
+
+        // Direct DB mode (without Redis): reads are durable and immediately consistent
+        // with ingress writes, so prefer DB here.
         if ($this->eventsRepo) {
             return $this->eventsRepo->findRecent($limit, $afterId);
         }
 
+        // No DB available: return the in-memory ring buffer.
+        return $this->filterRecentInMemory($limit, $afterId);
+    }
+
+    private function filterRecentInMemory(int $limit, ?int $afterId): array
+    {
         $events = $this->eventHistory;
 
         if ($afterId !== null) {

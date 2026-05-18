@@ -104,6 +104,11 @@ Data flow:
 3. API returns immediate dispatch response with `requestId`.
 4. Command lifecycle updates (`dispatched`, `ack`, `failed`, `timeout`) are later emitted on MQTT via Redis streams.
 
+`GET /events/recent` consistency:
+
+- Redis-backed ingress (`ws` connected): API prefers live ingress memory for freshest events, with DB fallback on cold start.
+- Direct DB ingest (no Redis): API reads directly from DB as the durable source.
+
 Examples:
 
 ```bash
