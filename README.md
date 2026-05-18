@@ -46,8 +46,194 @@ api service (REST control plane)
 | `mqtt-publisher` | Reads Redis streams (`events`, `status`, `errors`, `command_state`) and publishes MQTT envelopes. | internal |
 | `redis` | Internal event bus and transient runtime state. | `6379` |
 | `mysql` | System of record for suppliers/models/devices/device_events. | `3306` |
-| `mosquitto` | MQTT broker used by external consumers. | `1883` |
+| `mosquitto` | MQTT broker used by external consumers with ACL/password auth on plain/TLS listeners. | `1883`, `8883` |
 | `nginx` | Optional reverse proxy/TLS entrypoint for API/WS. | `80`, `443` |
+
+## Service Deep Dive
+
+### `ws` (device ingress + protocol runtime)
+
+Purpose:
+
+- terminates device connections for Wonlex (`ws://:8080`) and Vivistar (`tcp://:9000`)
+- authenticates/authorizes device logins
+- decodes vendor payloads into canonical internal events
+- dispatches downlink commands and captures replies
+
+Data flow:
+
+1. Device sends login + payload to `ws`.
+2. `ws` validates whitelist/model/protocol compatibility.
+3. Passive telemetry is pushed to Redis `events`.
+4. Online/offline transitions are pushed to Redis `status`.
+5. Command dispatch/reply/failure/timeout states are pushed to Redis `command_state`.
+6. Runtime/protocol errors are pushed to Redis `errors`.
+
+Examples:
+
+```bash
+# Wonlex passive event ingress
+docker compose exec ws php simulator/simulate.php \
+  --server ws://127.0.0.1:8080 \
+  --model WONLEX-HEALTH \
+  --imei 865028000000307 \
+  --command upBattery
+```
+
+```bash
+# Vivistar passive event ingress
+docker compose exec ws php simulator/simulate.php \
+  --server tcp://127.0.0.1:9000 \
+  --model VIVISTAR-CARE \
+  --imei 865028000000308 \
+  --command AP49
+```
+
+### `api` (REST control plane)
+
+Purpose:
+
+- device/model/supplier CRUD
+- health/docs/openapi endpoints
+- command ingress (`POST /devices/{imei}/command`, feature command endpoint)
+
+Data flow:
+
+1. API validates device + capability + online status.
+2. API emits command request to `ws` (direct in monolith mode or via Redis `cmd:stream` in split mode).
+3. API returns immediate dispatch response with `requestId`.
+4. Command lifecycle updates (`dispatched`, `ack`, `failed`, `timeout`) are later emitted on MQTT via Redis streams.
+
+Examples:
+
+```bash
+curl -s -X POST http://127.0.0.1:8081/devices/865028000000306/command \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"dnHeartRate","data":{}}'
+```
+
+```bash
+curl -s http://127.0.0.1:8081/openapi.json | head -c 200
+```
+
+### `redis` (internal event bus + runtime coordination)
+
+Purpose:
+
+- decouple ingestion, persistence, command routing, and MQTT publishing
+- hold online device registry and rate-limit counters
+
+Stream roles:
+
+- `events`: normalized passive telemetry
+- `status`: online/offline transitions
+- `errors`: integration/runtime errors
+- `command_state`: command lifecycle transitions
+- `cmd:stream`: API-to-WS command queue (split mode)
+
+Examples:
+
+```bash
+make redis-cli
+```
+
+```bash
+docker compose exec redis redis-cli XLEN events
+docker compose exec redis redis-cli XLEN command_state
+```
+
+### `worker` (stream-to-DB persistence)
+
+Purpose:
+
+- consume `events` from Redis using consumer groups
+- persist canonical events into MySQL `device_events`
+
+Data flow:
+
+1. Reads from Redis `events`.
+2. Writes durable records to MySQL.
+3. Acks consumed stream entries.
+
+Examples:
+
+```bash
+docker compose logs -f worker
+```
+
+```bash
+curl -s "http://127.0.0.1:8081/events/recent?limit=5"
+```
+
+### `mqtt-publisher` (external data plane bridge)
+
+Purpose:
+
+- consume Redis streams and publish MQTT topics for external clients
+- apply canonical envelope (`schemaVersion`, `eventType`, `eventId`, `occurredAt`, etc.)
+
+Data flow:
+
+1. Reads `events`, `status`, `errors`, `command_state`.
+2. Converts to normalized MQTT payloads.
+3. Publishes to `devices/{imei}/telemetry|status|error|command/state`.
+4. Stores cursors in `var/` for resume safety.
+
+Examples:
+
+```bash
+docker compose logs -f mqtt-publisher
+```
+
+### `mosquitto` (MQTT broker)
+
+Purpose:
+
+- expose integration topics to external consumers
+- enforce auth + ACL on plain (`1883`) and TLS (`8883`) listeners
+
+Default ACL model in this repo:
+
+- `platform_publisher`: write-only on platform topics
+- `integration_smoke`: read-only on `devices/#`
+
+Examples:
+
+```bash
+docker compose exec mosquitto sh -lc \
+  "mosquitto_sub -h 127.0.0.1 -p 1883 -u integration_smoke -P integration_smoke_dev -v -t 'devices/#'"
+```
+
+```bash
+make mqtt-provision-user ARGS="--username acme_backend --password 'strong_password' --topics devices/+/telemetry,devices/+/status --mode read"
+docker compose restart mosquitto
+```
+
+### `mysql` (system of record)
+
+Purpose:
+
+- persist suppliers/models/devices/device events for governance and auditing
+- back REST read paths and metadata resolution used in MQTT payload enrichment
+
+Examples:
+
+```bash
+docker compose exec mysql mysql -uhealth -phealth_secret -e "use health_watches; show tables;"
+```
+
+### `nginx` (optional edge/proxy)
+
+Purpose:
+
+- provide unified ingress and optional TLS termination for API/WS
+- useful when exposing this stack behind a single endpoint
+
+Examples:
+
+```bash
+docker compose logs -f nginx
+```
 
 ## Integration Contract
 
@@ -62,6 +248,11 @@ Policy:
 
 - Command ingress is REST (`POST /devices/{imei}/command` and feature command endpoint).
 - MQTT is outbound integration stream (not inbound command queue).
+
+Default broker users:
+
+- `platform_publisher` (write only to platform topics)
+- `integration_smoke` (read for smoke verification)
 
 ## Quick Start
 
@@ -115,7 +306,7 @@ docker compose logs -f ws api mqtt-publisher
 Terminal B: subscribe to MQTT output
 
 ```bash
-docker compose exec mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -v -t 'devices/#'"
+docker compose exec mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -u integration_smoke -P integration_smoke_dev -v -t 'devices/#'"
 ```
 
 Terminal C: keep one device online for command ack
@@ -169,6 +360,20 @@ Key endpoints:
 - `POST /devices/{imei}/command`
 - `POST /devices/{imei}/features/{feature}/command`
 
+## MQTT Consumer Provisioning
+
+Create per-consumer credentials + ACL entries:
+
+```bash
+make mqtt-provision-user ARGS="--username acme_backend --password 'strong_password' --topics devices/+/telemetry,devices/+/status --mode read"
+docker compose restart mosquitto
+```
+
+For TLS clients (port `8883`), use:
+
+- CA: `config/ssl/fullchain.pem`
+- client username/password from provision step
+
 ## Production Readiness Notes
 
 Implemented:
@@ -177,9 +382,13 @@ Implemented:
 - stream-decoupled internal architecture
 - MQTT topic fanout for telemetry/status/error/command-state
 - end-to-end smoke script for regression checks
+- MQTT broker auth + ACL enforcement (no anonymous access)
+- TLS MQTT listener on `8883`
+- command terminal states for `dispatched`, `ack`, `failed`, `timeout`
+- CI pipeline workflow (`.github/workflows/mqtt-smoke.yml`) running `make smoke-mqtt`
 
-Still required for hardened production rollout:
+Still recommended before large-scale production traffic:
 
-- MQTT TLS + per-consumer credentials + ACL automation
-- command lifecycle depth completion (`timeout`, durable terminal coverage)
-- CI pipeline job to run `make smoke-mqtt` on release candidates
+- rotate default dev credentials and keep secrets outside git-managed `.env`
+- replace self-signed TLS certs with CA-issued cert chain
+- add alerting/SLOs around command timeout rates and publish failures
