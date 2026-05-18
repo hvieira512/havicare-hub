@@ -5,6 +5,7 @@ namespace App\Http\Controller;
 use React\Http\Message\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use App\Registry\DeviceCapabilities;
+use App\Log\Logger;
 
 class CommandController extends Controller
 {
@@ -132,14 +133,19 @@ class CommandController extends Controller
         }
 
         if ($this->redis !== null) {
-            $this->redis->commandPublish([
+            $streamId = $this->redis->commandPublish([
                 'imei' => $imei,
                 'type' => $type,
                 'data' => $data,
                 'requestId' => $requestId ?? '',
                 'source' => 'api',
             ]);
-            return true;
+            if ($streamId !== '') {
+                return true;
+            }
+
+            Logger::channel('api')->error("command enqueue failed: IMEI={$imei}, type={$type}, requestId=" . ($requestId ?? ''));
+            return false;
         }
 
         return false;
