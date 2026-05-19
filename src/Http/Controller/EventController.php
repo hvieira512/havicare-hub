@@ -2,19 +2,38 @@
 
 namespace App\Http\Controller;
 
-use React\Http\Message\Response;
-use Psr\Http\Message\ServerRequestInterface;
 use App\Domain\EventNormalizer;
+use App\Redis\Client as RedisClient;
+use App\Services\EventService;
+use App\WebSocket\WatchServer;
+use Psr\Http\Message\ServerRequestInterface;
+use React\Http\Message\Response;
 
 class EventController extends Controller
 {
+    private EventService $eventService;
+
+    public function __construct(
+        ?WatchServer $watchServer = null,
+        ?\PDO $pdo = null,
+        ?RedisClient $redis = null,
+        ?string $wsServerUrl = null,
+        ?EventService $eventService = null,
+    ) {
+        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl);
+        if ($eventService === null) {
+            throw new \InvalidArgumentException('EventService is required');
+        }
+        $this->eventService = $eventService;
+    }
+
     public function recentEvents(ServerRequestInterface $request): Response
     {
         $params = $request->getQueryParams();
         $limit = $this->parseLimit($params['limit'] ?? null);
         $afterId = isset($params['after']) ? (int)$params['after'] : null;
 
-        $events = $this->recentEventsFromServer($limit, $afterId);
+        $events = $this->eventService->recentEvents($this->watchServer, $limit, $afterId);
 
         return $this->jsonResponse([
             'data' => array_map(fn(array $event): array => $this->eventResource($event), $events),
@@ -27,23 +46,12 @@ class EventController extends Controller
 
     public function latestDeviceEvent(string $imei): Response
     {
-        $data = $this->deviceData($imei);
+        $data = $this->eventService->latestDeviceEvent($this->watchServer, $imei);
         if ($data === null) {
             return $this->errorResponse('no_data', 'No data available for this device', 404);
         }
 
         return $this->jsonResponse(['data' => $this->eventResource($data)]);
-    }
-
-    private function recentEventsFromServer(int $limit = 50, ?int $afterId = null): array
-    {
-        if ($this->watchServer !== null) {
-            return $this->watchServer->getRecentEvents($limit, $afterId);
-        }
-        if ($this->eventsRepo !== null) {
-            return $this->eventsRepo->findRecent($limit, $afterId);
-        }
-        return [];
     }
 
     private function eventResource(array $event): array

@@ -12,6 +12,7 @@ use App\Http\ApiServer;
 use App\Database\Database;
 use App\Log\Logger;
 use App\Redis\Client as RedisClient;
+use App\Runtime\ServiceComposer;
 use App\Tcp\VivistarTcpIngress;
 
 $config = \App\Config::load()->all();
@@ -50,7 +51,13 @@ if ($redisHost !== '') {
 
 $loop = Loop::get();
 
-$watchServer = new WatchServer($db?->pdo(), $redis);
+$watchServices = ServiceComposer::forWatchServer($db?->pdo(), $redis);
+$watchServer = new WatchServer(
+    $db?->pdo(),
+    $redis,
+    $watchServices['commandService'],
+    $watchServices['eventService'],
+);
 
 $wsApp = new HttpServer(
     new WsServer($watchServer)

@@ -11,6 +11,7 @@ use Ratchet\WebSocket\WsServer;
 use App\WebSocket\WatchServer;
 use App\Bootstrap;
 use App\Log\Logger;
+use App\Runtime\ServiceComposer;
 use App\Tcp\VivistarTcpIngress;
 
 $config = Bootstrap::config();
@@ -21,13 +22,18 @@ $vivistarTcpPort = $config['vivistar_tcp']['port'] ?? 9000;
 $vivistarTcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
 
 $pdo = Bootstrap::database($config['database'] ?? null);
-Bootstrap::setupDeviceCapabilities($pdo);
 
 $redis = Bootstrap::redis($config['redis'] ?? []);
 
 $loop = Loop::get();
 
-$watchServer = new WatchServer($pdo, $redis);
+$watchServices = ServiceComposer::forWatchServer($pdo, $redis);
+$watchServer = new WatchServer(
+    $pdo,
+    $redis,
+    $watchServices['commandService'],
+    $watchServices['eventService'],
+);
 
 $wsApp = new HttpServer(
     new WsServer($watchServer)

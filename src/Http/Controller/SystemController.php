@@ -2,41 +2,42 @@
 
 namespace App\Http\Controller;
 
-use React\Http\Message\Response;
-use Psr\Http\Message\ServerRequestInterface;
 use App\Http\OpenApiSpec;
+use App\Redis\Client as RedisClient;
+use App\Services\EventService;
+use App\Services\ServiceException;
+use App\Services\SystemService;
+use App\WebSocket\WatchServer;
+use Psr\Http\Message\ServerRequestInterface;
+use React\Http\Message\Response;
 
 class SystemController extends Controller
 {
     private array $demoListeners = [];
+    private SystemService $systemService;
+    private EventService $eventService;
+
+    public function __construct(
+        ?WatchServer $watchServer = null,
+        ?\PDO $pdo = null,
+        ?RedisClient $redis = null,
+        ?string $wsServerUrl = null,
+        ?SystemService $systemService = null,
+        ?EventService $eventService = null,
+    ) {
+        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl);
+        $this->systemService = $systemService ?? new SystemService($this->pdo, $this->redis, $this->whitelist(), $this->watchServer);
+        $this->eventService = $eventService ?? new EventService($this->eventsRepo, $this->redis);
+    }
 
     public function healthCheck(): Response
     {
-        $dbOk = $this->pdo !== null;
-        $redisOk = $this->redis !== null && $this->redis->isAvailable();
-
-        return $this->jsonResponse([
-            'status' => ($dbOk ? 'ok' : 'degraded'),
-            'services' => [
-                'mysql' => $dbOk,
-                'redis' => $redisOk,
-                'watchServerAttached' => $this->watchServer !== null,
-            ],
-            'onlineDevices' => $this->watchServer !== null ? $this->watchServer->onlineDeviceCount() : 0,
-            'time' => time(),
-        ]);
+        return $this->jsonResponse($this->systemService->healthPayload());
     }
 
     public function metricsEndpoint(): Response
     {
-        $payload = [
-            'onlineDevices' => $this->watchServer !== null ? $this->watchServer->onlineDeviceCount() : 0,
-            'knownModels' => \App\Registry\DeviceCapabilities::allModels(),
-            'totalDevices' => count($this->whitelist()->all()),
-            'time' => time(),
-        ];
-
-        return $this->jsonResponse($payload);
+        return $this->jsonResponse($this->systemService->metricsPayload());
     }
 
     public function simulateDeviceEvent(ServerRequestInterface $request): Response
@@ -45,51 +46,17 @@ class SystemController extends Controller
             return $this->errorResponse('not_found', 'Endpoint not found', 404);
         }
 
-        if ($this->pdo === null) {
-            return $this->errorResponse('mysql_unavailable', 'MySQL is not available', 503);
-        }
-
         $body = json_decode((string)$request->getBody(), true);
         if (!is_array($body)) {
             return $this->errorResponse('invalid_request', 'Invalid JSON body', 400);
         }
 
-        $imei = trim((string)($body['imei'] ?? ''));
-        $type = trim((string)($body['type'] ?? ''));
-        $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-
-        if ($imei === '' || $type === '') {
-            return $this->errorResponse('invalid_request', 'imei and type are required', 400);
+        try {
+            $payload = $this->eventService->simulateDeviceEvent($this->pdo, $this->watchServer, $body);
+            return $this->jsonResponse($payload, 201);
+        } catch (ServiceException $e) {
+            return $this->errorResponse($e->codeName(), $e->getMessage(), $e->status(), $e->details());
         }
-
-        if ($this->eventsRepo === null) {
-            return $this->errorResponse('mysql_unavailable', 'Event repository is not available', 503);
-        }
-
-        $event = [
-            'imei' => $imei,
-            'nativeType' => $type,
-            'feature' => null,
-            'nativePayload' => $data,
-            'receivedAt' => (int)round(microtime(true) * 1000),
-        ];
-        $eventId = $this->eventsRepo->insert($event);
-
-        if ($this->redis !== null && $this->redis->isAvailable()) {
-            $this->redis->eventPush($event);
-        }
-        if ($this->watchServer !== null) {
-            $this->watchServer->ingestEvent($event, $eventId);
-        }
-
-        return $this->jsonResponse([
-            'data' => [
-                'status' => 'simulated',
-                'imei' => $imei,
-                'type' => $type,
-                'id' => $eventId,
-            ],
-        ], 201);
     }
 
     public function startDemoListener(ServerRequestInterface $request): Response

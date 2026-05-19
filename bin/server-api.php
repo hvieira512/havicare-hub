@@ -7,6 +7,7 @@ use React\EventLoop\Loop;
 use App\Http\ApiServer;
 use App\Bootstrap;
 use App\Log\Logger;
+use App\Runtime\ServiceComposer;
 
 $config = Bootstrap::config();
 
@@ -15,9 +16,9 @@ $apiHost = $config['api']['host'] ?? '0.0.0.0';
 $wsServerUrl = getenv('WS_SERVER_URL') ?: ($config['public_ws_url'] ?? 'ws://127.0.0.1:8080');
 
 $pdo = Bootstrap::database($config['database'] ?? null);
-Bootstrap::setupDeviceCapabilities($pdo);
 
 $redis = Bootstrap::redis($config['redis'] ?? []);
+$apiServices = ServiceComposer::forApi($pdo, $redis, null);
 
 $loop = Loop::get();
 
@@ -29,6 +30,10 @@ $apiServer = new ApiServer(
     pdo: $pdo,
     redis: $redis,
     wsServerUrl: $wsServerUrl,
+    deviceService: $apiServices['deviceService'],
+    commandService: $apiServices['commandService'],
+    eventService: $apiServices['eventService'],
+    systemService: $apiServices['systemService'],
 );
 
 Logger::channel('app')->info("=== HTTP API Server (separate) ===");

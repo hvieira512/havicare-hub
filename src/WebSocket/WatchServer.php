@@ -11,6 +11,8 @@ use App\Log\Logger;
 use App\Redis\Client as RedisClient;
 use App\Protocol\AdapterRegistry;
 use App\Protocol\Adapter\DeviceAdapterInterface;
+use App\Services\CommandService;
+use App\Services\EventService;
 
 class WatchServer implements MessageComponentInterface
 {
@@ -26,8 +28,15 @@ class WatchServer implements MessageComponentInterface
     private ?EventRepository $eventsRepo;
     private ?RedisClient $redis;
     private AdapterRegistry $adapters;
+    private CommandService $commandService;
+    private EventService $eventService;
 
-    public function __construct(?\PDO $pdo = null, ?RedisClient $redis = null)
+    public function __construct(
+        ?\PDO $pdo = null,
+        ?RedisClient $redis = null,
+        ?CommandService $commandService = null,
+        ?EventService $eventService = null,
+    )
     {
         DeviceCapabilities::setDatabasePdo($pdo);
         DeviceCapabilities::setCacheTtl((int)(getenv('MODEL_CACHE_TTL_SECONDS') ?: 5));
@@ -43,6 +52,14 @@ class WatchServer implements MessageComponentInterface
         $this->pendingCommands = [];
         $this->whitelist = new Whitelist(pdo: $pdo);
         $this->adapters = new AdapterRegistry();
+        $this->commandService = $commandService
+            ?? new CommandService(
+                $this->whitelist,
+                $this,
+                $this->redis,
+                fn(string $imei): bool => $this->isOnline($imei),
+            );
+        $this->eventService = $eventService ?? new EventService($this->eventsRepo, $this->redis);
 
         if ($this->eventsRepo) {
             $this->loadDeviceDataFromDatabase();
@@ -167,17 +184,17 @@ class WatchServer implements MessageComponentInterface
         if ($isReplyToServerCommand) {
             $requestId = $this->resolveRequestIdForAck($rid, $session, $payload);
             if ($this->isRedisAvailable() && $requestId) {
-                $this->redis->commandStatePush([
-                    'imei' => $imei,
-                    'state' => 'ack',
-                    'type' => $session['lastCommandType'] ?? '',
-                    'feature' => $session['lastCommandFeature'] ?? '',
-                    'requestId' => $requestId,
-                    'ident' => $payload['ident'] ?? '',
-                    'reason' => 'device_reply',
-                    'protocol' => $session['protocol'] ?? '',
-                    'timestamp' => $this->now(),
-                ]);
+                $this->pushCommandState(
+                    imei: $imei,
+                    state: 'ack',
+                    type: (string)($session['lastCommandType'] ?? ''),
+                    feature: isset($session['lastCommandFeature']) ? (string)$session['lastCommandFeature'] : null,
+                    requestId: $requestId,
+                    ident: isset($payload['ident']) ? (string)$payload['ident'] : null,
+                    reason: 'device_reply',
+                    protocol: isset($session['protocol']) ? (string)$session['protocol'] : null,
+                    timestamp: $this->now(),
+                );
             }
             if (($session['protocol'] ?? '') === 'vivistar-iw') {
                 $this->sessions[$rid]['lastCommandType'] = null;
@@ -598,15 +615,17 @@ class WatchServer implements MessageComponentInterface
                 } elseif ($node !== $this->redis->getNodeId()) {
                     Logger::channel('watch')->warning("sendCommand: IMEI=$imei is on node $node (future: reroute via Pub/Sub)");
                 }
-                $this->redis->commandStatePush([
-                    'imei' => $imei,
-                    'state' => 'failed',
-                    'type' => $type,
-                    'feature' => $feature ?? '',
-                    'requestId' => $requestId,
-                    'reason' => 'offline_or_not_routable',
-                    'timestamp' => $this->now(),
-                ]);
+                $this->pushCommandState(
+                    imei: $imei,
+                    state: 'failed',
+                    type: $type,
+                    feature: $feature,
+                    requestId: $requestId,
+                    ident: null,
+                    reason: 'offline_or_not_routable',
+                    protocol: null,
+                    timestamp: $this->now(),
+                );
             }
             return false;
         }
@@ -617,16 +636,17 @@ class WatchServer implements MessageComponentInterface
         if (!$session || !$session['caps']->supportsActive($type)) {
             Logger::channel('watch')->warning("sendCommand: $type is not supported for $imei");
             if ($this->isRedisAvailable()) {
-                $this->redis->commandStatePush([
-                    'imei' => $imei,
-                    'state' => 'failed',
-                    'type' => $type,
-                    'feature' => $feature ?? '',
-                    'requestId' => $requestId,
-                    'reason' => 'command_not_supported',
-                    'protocol' => $session['protocol'] ?? '',
-                    'timestamp' => $this->now(),
-                ]);
+                $this->pushCommandState(
+                    imei: $imei,
+                    state: 'failed',
+                    type: $type,
+                    feature: $feature,
+                    requestId: $requestId,
+                    ident: null,
+                    reason: 'command_not_supported',
+                    protocol: isset($session['protocol']) ? (string)$session['protocol'] : null,
+                    timestamp: $this->now(),
+                );
             }
             return false;
         }
@@ -656,17 +676,17 @@ class WatchServer implements MessageComponentInterface
             'deadlineAt' => $this->now() + $this->commandAckTimeoutMs,
         ];
         if ($this->isRedisAvailable()) {
-            $this->redis->commandStatePush([
-                'imei' => $imei,
-                'state' => 'dispatched',
-                'type' => $type,
-                'feature' => $feature ?? '',
-                'requestId' => $requestId,
-                'ident' => $ident,
-                'reason' => 'sent_to_device',
-                'protocol' => $session['protocol'] ?? '',
-                'timestamp' => $this->now(),
-            ]);
+            $this->pushCommandState(
+                imei: $imei,
+                state: 'dispatched',
+                type: $type,
+                feature: $feature,
+                requestId: $requestId,
+                ident: $ident,
+                reason: 'sent_to_device',
+                protocol: isset($session['protocol']) ? (string)$session['protocol'] : null,
+                timestamp: $this->now(),
+            );
         }
         return true;
     }
@@ -854,33 +874,14 @@ class WatchServer implements MessageComponentInterface
 
     private function storeDeviceEvent(string $imei, array $event): void
     {
-        if ($this->isRedisAvailable()) {
-            $streamId = $this->redis->eventPush($event);
-            $parts = explode('-', $streamId);
-            $event['id'] = (int)$parts[0];
-        } elseif ($this->eventsRepo) {
-            $event['id'] = $this->eventsRepo->insert($event);
-        } else {
-            $event['id'] = $this->nextEventId++;
-        }
-
-        $this->deviceData[$imei] = $event;
-        $this->eventHistory[] = $event;
-
-        if (count($this->eventHistory) > 200) {
-            array_shift($this->eventHistory);
-        }
+        $stored = $this->eventService->persistWatchIngressEvent($event, $this->nextEventId);
+        $this->eventService->ingestInMemory($stored, $this->deviceData, $this->eventHistory);
     }
 
     public function ingestEvent(array $event, int $dbId): void
     {
         $event['id'] = $dbId;
-        $imei = $event['imei'];
-        $this->deviceData[$imei] = $event;
-        $this->eventHistory[] = $event;
-        if (count($this->eventHistory) > 200) {
-            array_shift($this->eventHistory);
-        }
+        $this->eventService->ingestInMemory($event, $this->deviceData, $this->eventHistory);
     }
 
     public function sweepCommandTimeouts(): int
@@ -899,17 +900,17 @@ class WatchServer implements MessageComponentInterface
 
             $imei = (string)($pending['imei'] ?? '');
             if ($imei !== '') {
-                $this->redis->commandStatePush([
-                    'imei' => $imei,
-                    'state' => 'timeout',
-                    'type' => $pending['type'] ?? '',
-                    'feature' => $pending['feature'] ?? '',
-                    'requestId' => (string)$requestId,
-                    'ident' => $pending['ident'] ?? '',
-                    'reason' => 'ack_timeout',
-                    'protocol' => $pending['protocol'] ?? '',
-                    'timestamp' => $now,
-                ]);
+                $this->pushCommandState(
+                    imei: $imei,
+                    state: 'timeout',
+                    type: (string)($pending['type'] ?? ''),
+                    feature: isset($pending['feature']) ? (string)$pending['feature'] : null,
+                    requestId: (string)$requestId,
+                    ident: isset($pending['ident']) ? (string)$pending['ident'] : null,
+                    reason: 'ack_timeout',
+                    protocol: isset($pending['protocol']) ? (string)$pending['protocol'] : null,
+                    timestamp: $now,
+                );
             }
 
             $resourceId = (int)($pending['resourceId'] ?? 0);
@@ -971,20 +972,50 @@ class WatchServer implements MessageComponentInterface
 
             $imei = (string)($pending['imei'] ?? '');
             if ($imei !== '') {
-                $this->redis->commandStatePush([
-                    'imei' => $imei,
-                    'state' => 'failed',
-                    'type' => $pending['type'] ?? '',
-                    'feature' => $pending['feature'] ?? '',
-                    'requestId' => (string)$requestId,
-                    'ident' => $pending['ident'] ?? '',
-                    'reason' => $reason,
-                    'protocol' => $pending['protocol'] ?? '',
-                    'timestamp' => $this->now(),
-                ]);
+                $this->pushCommandState(
+                    imei: $imei,
+                    state: 'failed',
+                    type: (string)($pending['type'] ?? ''),
+                    feature: isset($pending['feature']) ? (string)$pending['feature'] : null,
+                    requestId: (string)$requestId,
+                    ident: isset($pending['ident']) ? (string)$pending['ident'] : null,
+                    reason: $reason,
+                    protocol: isset($pending['protocol']) ? (string)$pending['protocol'] : null,
+                    timestamp: $this->now(),
+                );
             }
             unset($this->pendingCommands[$requestId]);
         }
+    }
+
+    private function pushCommandState(
+        string $imei,
+        string $state,
+        string $type,
+        ?string $feature,
+        string $requestId,
+        ?string $ident,
+        string $reason,
+        ?string $protocol,
+        int $timestamp,
+    ): void {
+        if (!$this->isRedisAvailable()) {
+            return;
+        }
+
+        $this->redis->commandStatePush(
+            $this->commandService->commandStatePayload(
+                imei: $imei,
+                state: $state,
+                type: $type,
+                feature: $feature,
+                requestId: $requestId,
+                ident: $ident,
+                reason: $reason,
+                protocol: $protocol,
+                timestamp: $timestamp,
+            )
+        );
     }
 
     // --- Public API for the HTTP server ---
