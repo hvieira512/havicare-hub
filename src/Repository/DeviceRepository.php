@@ -105,6 +105,20 @@ class DeviceRepository
         return (bool)$stmt->fetchColumn();
     }
 
+    public function find(string $imei): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . self::COLS . '
+             FROM ' . self::TABLE . '
+             WHERE d.imei = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$imei]);
+        $row = $stmt->fetch();
+
+        return $row ? $this->hydrate($row) : null;
+    }
+
     public function ensureExists(string $imei, string $modelCode = 'unknown', bool $enabled = true): void
     {
         if (!$this->exists($imei)) {

@@ -112,6 +112,18 @@ class DeviceCapabilities
         return array_keys(self::$profiles);
     }
 
+    public static function modelName(string $model): string
+    {
+        self::load();
+        $profile = self::$profiles[$model] ?? null;
+        if (!is_array($profile)) {
+            return $model;
+        }
+
+        $name = $profile['name'] ?? $model;
+        return is_string($name) && $name !== '' ? $name : $model;
+    }
+
     // --- Instance ---
 
     private string $model;
@@ -142,6 +154,11 @@ class DeviceCapabilities
     public function getSupplier(): ?string
     {
         return $this->supplier;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     public function getProtocol(): ?string
