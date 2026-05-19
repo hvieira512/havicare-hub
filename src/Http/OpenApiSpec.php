@@ -30,12 +30,22 @@ class OpenApiSpec
             'schema' => ['type' => 'string', 'example' => 'WONLEX-PRO'],
         ];
 
+        $nativeTypeParam = [
+            'name' => 'nativeType',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'Native command/event type (example: BP16, AP03, upHeartRate)',
+            'schema' => ['type' => 'string', 'example' => 'BP16'],
+        ];
+
         return [
             'openapi' => '3.1.0',
             'info' => [
                 'title' => 'Health Smartwatches API',
                 'version' => '1.2.1',
-                'description' => 'Devices, suppliers, models, events and command endpoints.',
+                'description' => 'Devices, suppliers, models, events and command endpoints. '
+                    . 'Command lifecycle states: dispatched, ack, timeout, failed. '
+                    . 'Device online indicates active session; for real telemetry liveness use recent event timestamps.',
             ],
             'servers' => [['url' => 'http://localhost:8081']],
             'tags' => [
@@ -213,7 +223,7 @@ class OpenApiSpec
                             ['name' => 'code', 'in' => 'query', 'schema' => ['type' => 'string'], 'required' => false],
                             ['name' => 'name', 'in' => 'query', 'schema' => ['type' => 'string'], 'required' => false],
                             ['name' => 'supplierId', 'in' => 'query', 'schema' => ['type' => 'integer'], 'required' => false],
-                            ['name' => 'supplier', 'in' => 'query', 'schema' => ['type' => 'string'], 'required' => false],
+                            ['name' => 'supplierName', 'in' => 'query', 'schema' => ['type' => 'string'], 'required' => false],
                             ['name' => 'protocol', 'in' => 'query', 'schema' => ['type' => 'string'], 'required' => false],
                             ['name' => 'transport', 'in' => 'query', 'schema' => ['type' => 'string'], 'required' => false],
                             ['name' => 'enabled', 'in' => 'query', 'schema' => ['type' => 'boolean'], 'required' => false],
@@ -287,6 +297,68 @@ class OpenApiSpec
                             ],
                             '404' => ['$ref' => '#/components/responses/Error'],
                             '409' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/models/{code}/feature-mappings' => [
+                    'get' => [
+                        'tags' => ['Models'],
+                        'summary' => 'List model native feature mappings',
+                        'parameters' => [$modelCodeParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Model mappings',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelFeatureMappingsResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'put' => [
+                        'tags' => ['Models'],
+                        'summary' => 'Replace all model native feature mappings',
+                        'parameters' => [$modelCodeParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ReplaceModelFeatureMappingsRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Mappings replaced',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelFeatureMappingsResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'post' => [
+                        'tags' => ['Models'],
+                        'summary' => 'Create or update a single native mapping for model',
+                        'parameters' => [$modelCodeParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelFeatureMappingInput']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Mapping saved',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/UpsertModelFeatureMappingResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/models/{code}/feature-mappings/{nativeType}' => [
+                    'delete' => [
+                        'tags' => ['Models'],
+                        'summary' => 'Delete model native mapping by nativeType',
+                        'parameters' => [$modelCodeParam, $nativeTypeParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Mapping deleted',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeleteModelFeatureMappingResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],
@@ -563,15 +635,15 @@ class OpenApiSpec
                     ],
                     'Model' => [
                         'type' => 'object',
-                        'required' => ['id', 'code', 'name', 'supplier', 'protocol', 'transport', 'enabled', 'passive', 'active', 'features'],
+                        'required' => ['id', 'code', 'name', 'supplierId', 'supplierName', 'protocol', 'transport', 'enabled', 'passive', 'active', 'features'],
                         'properties' => [
                             'id' => ['type' => 'integer', 'example' => 1],
+                            'supplierId' => ['type' => 'integer', 'example' => 3],
+                            'supplierName' => ['type' => 'string', 'example' => 'VIVISTAR'],
                             'code' => ['type' => 'string', 'example' => 'WONLEX-PRO'],
                             'name' => ['type' => 'string', 'example' => 'Wonlex 4G Health Watch (Full protocol)'],
-                            'supplier' => ['$ref' => '#/components/schemas/SupplierRef'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'transport' => ['type' => 'string', 'example' => 'websocket-json'],
-                            'sourceDoc' => ['type' => 'string', 'nullable' => true, 'example' => 'docs/Wonlex.pdf'],
                             'enabled' => ['type' => 'boolean', 'example' => true],
                             'passive' => ['type' => 'array', 'items' => ['type' => 'string']],
                             'active' => ['type' => 'array', 'items' => ['type' => 'string']],
@@ -579,6 +651,7 @@ class OpenApiSpec
                                 'type' => 'object',
                                 'additionalProperties' => ['$ref' => '#/components/schemas/FeatureCommandMap'],
                             ],
+                            'nativeMappings' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/NativeMappingItem']],
                             'createdAt' => ['type' => 'string', 'nullable' => true],
                             'updatedAt' => ['type' => 'string', 'nullable' => true],
                         ],
@@ -593,21 +666,14 @@ class OpenApiSpec
                     ],
                     'ModelCreateRequest' => [
                         'type' => 'object',
-                        'required' => ['code', 'name', 'supplierId', 'protocol', 'transport', 'passive', 'active', 'features'],
+                        'required' => ['code', 'name', 'supplierId', 'protocol', 'transport'],
                         'properties' => [
                             'code' => ['type' => 'string', 'example' => 'WONLEX-PRO'],
                             'name' => ['type' => 'string', 'example' => 'Wonlex 4G Health Watch (Full protocol)'],
                             'supplierId' => ['type' => 'integer', 'example' => 3],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'transport' => ['type' => 'string', 'example' => 'websocket-json'],
-                            'sourceDoc' => ['type' => 'string', 'nullable' => true, 'example' => 'docs/Wonlex.pdf'],
                             'enabled' => ['type' => 'boolean', 'example' => true],
-                            'passive' => ['type' => 'array', 'items' => ['type' => 'string']],
-                            'active' => ['type' => 'array', 'items' => ['type' => 'string']],
-                            'features' => [
-                                'type' => 'object',
-                                'additionalProperties' => ['$ref' => '#/components/schemas/FeatureCommandMap'],
-                            ],
                         ],
                     ],
                     'ModelUpdateRequest' => [
@@ -617,14 +683,7 @@ class OpenApiSpec
                             'supplierId' => ['type' => 'integer'],
                             'protocol' => ['type' => 'string'],
                             'transport' => ['type' => 'string'],
-                            'sourceDoc' => ['type' => 'string', 'nullable' => true],
                             'enabled' => ['type' => 'boolean'],
-                            'passive' => ['type' => 'array', 'items' => ['type' => 'string']],
-                            'active' => ['type' => 'array', 'items' => ['type' => 'string']],
-                            'features' => [
-                                'type' => 'object',
-                                'additionalProperties' => ['$ref' => '#/components/schemas/FeatureCommandMap'],
-                            ],
                         ],
                     ],
                     'ModelSingleResponse' => [
@@ -667,6 +726,8 @@ class OpenApiSpec
                         'type' => 'object',
                         'properties' => [
                             'id' => ['type' => 'integer', 'nullable' => true],
+                            'imei' => ['type' => 'string', 'nullable' => true],
+                            'model' => ['type' => 'string', 'nullable' => true],
                             'direction' => ['type' => 'string', 'example' => 'watch_to_server'],
                             'feature' => ['type' => 'string', 'nullable' => true],
                             'nativeType' => ['type' => 'string', 'nullable' => true],
@@ -675,17 +736,10 @@ class OpenApiSpec
                             'normalized' => ['type' => 'object', 'additionalProperties' => true],
                         ],
                     ],
-                    'RecentEventItem' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'device' => ['$ref' => '#/components/schemas/Device'],
-                            'event' => ['$ref' => '#/components/schemas/Event'],
-                        ],
-                    ],
                     'RecentEventsResponse' => [
                         'type' => 'object',
                         'properties' => [
-                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/RecentEventItem']],
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/Event']],
                             'meta' => [
                                 'type' => 'object',
                                 'properties' => [
@@ -698,8 +752,7 @@ class OpenApiSpec
                     'LatestEventResponse' => [
                         'type' => 'object',
                         'properties' => [
-                            'device' => ['$ref' => '#/components/schemas/Device'],
-                            'event' => ['$ref' => '#/components/schemas/Event'],
+                            'data' => ['$ref' => '#/components/schemas/Event'],
                         ],
                     ],
                     'DeviceFeatureItem' => [
@@ -708,6 +761,32 @@ class OpenApiSpec
                             'name' => ['type' => 'string'],
                             'passive' => ['type' => 'array', 'items' => ['type' => 'string']],
                             'active' => ['type' => 'array', 'items' => ['type' => 'string']],
+                            'passiveDetails' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandMetadata']],
+                            'activeDetails' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandMetadata']],
+                        ],
+                    ],
+                    'CommandMetadata' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'type' => ['type' => 'string'],
+                            'title' => ['type' => 'string'],
+                            'description' => ['type' => 'string'],
+                            'feature' => ['type' => 'string'],
+                            'direction' => ['type' => 'string', 'enum' => ['passive', 'active']],
+                            'expectedReplyTypes' => ['type' => 'array', 'items' => ['type' => 'string']],
+                            'riskLevel' => ['type' => 'string', 'example' => 'normal'],
+                            'notes' => ['type' => 'string'],
+                        ],
+                    ],
+                    'NativeMappingItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'nullable' => true],
+                            'nativeType' => ['type' => 'string'],
+                            'feature' => ['type' => 'string', 'nullable' => true],
+                            'isActive' => ['type' => 'boolean'],
+                            'description' => ['type' => 'string', 'nullable' => true],
+                            'enabled' => ['type' => 'boolean'],
                         ],
                     ],
                     'DeviceFeaturesResponse' => [
@@ -715,11 +794,77 @@ class OpenApiSpec
                         'properties' => [
                             'device' => ['$ref' => '#/components/schemas/Device'],
                             'features' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceFeatureItem']],
+                            'nativeMappings' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/NativeMappingItem']],
+                            'commandMetadata' => [
+                                'type' => 'object',
+                                'additionalProperties' => ['$ref' => '#/components/schemas/CommandMetadata'],
+                            ],
+                            'commandStateHints' => [
+                                'type' => 'object',
+                                'additionalProperties' => ['type' => 'string'],
+                            ],
                             'nativeCommands' => [
                                 'type' => 'object',
                                 'properties' => [
                                     'passive' => ['type' => 'array', 'items' => ['type' => 'string']],
                                     'active' => ['type' => 'array', 'items' => ['type' => 'string']],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'ModelFeatureMappingInput' => [
+                        'type' => 'object',
+                        'required' => ['nativeType'],
+                        'properties' => [
+                            'nativeType' => ['type' => 'string'],
+                            'feature' => ['type' => 'string', 'nullable' => true],
+                            'isActive' => ['type' => 'boolean', 'default' => false],
+                            'description' => ['type' => 'string', 'nullable' => true],
+                            'enabled' => ['type' => 'boolean', 'default' => true],
+                        ],
+                    ],
+                    'ReplaceModelFeatureMappingsRequest' => [
+                        'type' => 'object',
+                        'required' => ['mappings'],
+                        'properties' => [
+                            'mappings' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelFeatureMappingInput']],
+                        ],
+                    ],
+                    'ModelFeatureMappingsResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'model' => ['type' => 'string'],
+                                    'mappings' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/NativeMappingItem']],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'UpsertModelFeatureMappingResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'saved'],
+                            'data' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'model' => ['type' => 'string'],
+                                    'mapping' => ['$ref' => '#/components/schemas/ModelFeatureMappingInput'],
+                                    'mappings' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/NativeMappingItem']],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'DeleteModelFeatureMappingResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'deleted'],
+                            'data' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'model' => ['type' => 'string'],
+                                    'nativeType' => ['type' => 'string'],
                                 ],
                             ],
                         ],

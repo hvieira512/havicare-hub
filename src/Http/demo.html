@@ -84,8 +84,11 @@
                             <div class="border-top pt-3">
                                 <label class="form-label fw-semibold" for="nativeCommand">Advanced native command</label>
                                 <select id="nativeCommand" class="form-select mb-2"></select>
+                                <div id="nativeCommandMeta" class="small text-secondary mb-2"></div>
                                 <textarea id="nativePayload" class="form-control font-monospace mb-2" rows="5">{}</textarea>
                                 <button id="sendNativeCommand" class="btn btn-outline-primary" type="button">Send native command</button>
+                                <div class="small text-secondary mt-3 mb-1">Model native mapping</div>
+                                <pre id="nativeMappingView" class="border rounded bg-body-tertiary p-2 small">No mapping loaded.</pre>
                             </div>
                         </div>
 
@@ -114,6 +117,8 @@
             devices: [],
             selectedImei: null,
             features: {},
+            commandMetadata: {},
+            nativeMappings: [],
             nativeCommands: { passive: [], active: [] },
             listeners: {},
             mode: 'events',
@@ -212,6 +217,8 @@
                     normalized[name] = {
                         passiveTypes: Array.isArray(feature?.passive) ? feature.passive : [],
                         activeTypes: Array.isArray(feature?.active) ? feature.active : [],
+                        passiveDetails: Array.isArray(feature?.passiveDetails) ? feature.passiveDetails : [],
+                        activeDetails: Array.isArray(feature?.activeDetails) ? feature.activeDetails : [],
                     };
                 });
                 return normalized;
@@ -226,6 +233,8 @@
                         activeTypes: Array.isArray(mapping?.activeTypes)
                             ? mapping.activeTypes
                             : (Array.isArray(mapping?.active) ? mapping.active : []),
+                        passiveDetails: Array.isArray(mapping?.passiveDetails) ? mapping.passiveDetails : [],
+                        activeDetails: Array.isArray(mapping?.activeDetails) ? mapping.activeDetails : [],
                     };
                 });
             }
@@ -296,6 +305,8 @@
             const device = selectedDevice();
             if (!device) {
                 state.features = {};
+                state.commandMetadata = {};
+                state.nativeMappings = [];
                 state.nativeCommands = { passive: [], active: [] };
                 renderActions();
                 return;
@@ -305,9 +316,13 @@
                 const payload = await api(`/devices/${device.imei}/features`);
                 const data = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
                 state.features = normalizeFeaturesPayload(data?.features || {});
+                state.commandMetadata = data?.commandMetadata || {};
+                state.nativeMappings = Array.isArray(data?.nativeMappings) ? data.nativeMappings : [];
                 state.nativeCommands = normalizeNativeCommands(data || payload, state.features);
             } catch (error) {
                 state.features = {};
+                state.commandMetadata = {};
+                state.nativeMappings = [];
                 state.nativeCommands = { passive: [], active: [] };
                 $('lastResponse').textContent = pretty(error);
             }
@@ -436,10 +451,19 @@
 
             $('activeActions').innerHTML = activeFeatures.map((feature) => {
                 const disabled = !device || !isOnline;
+                const firstType = state.features[feature]?.activeTypes?.[0] || '';
+                const detail = state.commandMetadata[firstType] || state.features[feature]?.activeDetails?.[0] || null;
+                const hint = detail
+                    ? `${detail.title || firstType}${detail.expectedReplyTypes?.length ? ` (reply: ${detail.expectedReplyTypes.join(', ')})` : ''}`
+                    : '';
+                const riskBadge = detail?.riskLevel === 'high'
+                    ? '<span class="badge text-bg-danger ms-2">High risk</span>'
+                    : '';
                 return `
                     <div class="col-12 col-sm-6">
-                        <button class="btn btn-outline-primary w-100" type="button" data-feature="${escapeHtml(feature)}" ${disabled ? 'disabled' : ''}>
-                            ${escapeHtml(activeLabel(feature))}
+                        <button class="btn btn-outline-primary w-100 text-start" type="button" data-feature="${escapeHtml(feature)}" ${disabled ? 'disabled' : ''} title="${escapeHtml(hint)}">
+                            <span>${escapeHtml(activeLabel(feature))}</span>${riskBadge}
+                            ${hint ? `<div class="small text-secondary mt-1">${escapeHtml(hint)}</div>` : ''}
                         </button>
                     </div>
                 `;
@@ -450,12 +474,14 @@
             });
 
             $('nativeCommand').innerHTML = nativeCommands.map((type) => (
-                `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`
+                `<option value="${escapeHtml(type)}">${escapeHtml(commandOptionLabel(type))}</option>`
             )).join('');
 
             $('nativeCommand').disabled = nativeCommands.length === 0;
             $('nativePayload').disabled = nativeCommands.length === 0;
             $('sendNativeCommand').disabled = !device || !isOnline || nativeCommands.length === 0;
+            renderNativeCommandMeta();
+            renderNativeMappingView();
         }
 
         function unique(values) {
@@ -476,6 +502,79 @@
             if (feature === 'sos') return 'Send SOS settings';
             if (feature === 'reminders') return 'Send reminders';
             return `Request ${featureLabel(feature).toLowerCase()}`;
+        }
+
+        function commandOptionLabel(type) {
+            const meta = state.commandMetadata[type];
+            const mapping = findNativeMapping(type);
+            if (!meta && !mapping) return type;
+            if (!meta && mapping) {
+                const feature = mapping.feature ? featureLabel(String(mapping.feature)) : 'Unmapped';
+                const desc = String(mapping.description || mapping.notes || '').trim();
+                return desc ? `${type} - ${feature} - ${desc}` : `${type} - ${feature}`;
+            }
+            const cleanTitle = String(meta.title || '').trim();
+            const title = cleanTitle && cleanTitle !== type
+                ? `${cleanTitle} (${type})`
+                : type;
+            if (!Array.isArray(meta.expectedReplyTypes) || meta.expectedReplyTypes.length === 0) {
+                return title;
+            }
+            return `${title} (reply: ${meta.expectedReplyTypes.join(', ')})`;
+        }
+
+        function renderNativeCommandMeta() {
+            const select = $('nativeCommand');
+            const type = select?.value || '';
+            const meta = state.commandMetadata[type] || null;
+            const mapping = findNativeMapping(type);
+            if (!meta) {
+                if (!mapping) {
+                    $('nativeCommandMeta').textContent = type ? type : '';
+                    return;
+                }
+                const parts = [];
+                if (mapping.feature) parts.push(`Feature: ${featureLabel(String(mapping.feature))}`);
+                if (mapping.description) parts.push(String(mapping.description));
+                if (mapping.notes) parts.push(`Notes: ${mapping.notes}`);
+                $('nativeCommandMeta').textContent = parts.join(' | ');
+                return;
+            }
+
+            const parts = [];
+            if (meta.description) parts.push(meta.description);
+            if (Array.isArray(meta.expectedReplyTypes) && meta.expectedReplyTypes.length > 0) {
+                parts.push(`Expected reply: ${meta.expectedReplyTypes.join(', ')}`);
+            }
+            if (meta.riskLevel) parts.push(`Risk: ${meta.riskLevel}`);
+            if (meta.notes) parts.push(`Notes: ${meta.notes}`);
+            $('nativeCommandMeta').textContent = parts.join(' | ');
+        }
+
+        function findNativeMapping(type) {
+            return (state.nativeMappings || []).find((item) => {
+                const nativeType = item.nativeType || item.native_type || '';
+                return nativeType === type;
+            }) || null;
+        }
+
+        function renderNativeMappingView() {
+            if (!Array.isArray(state.nativeMappings) || state.nativeMappings.length === 0) {
+                $('nativeMappingView').textContent = 'No native mapping available for selected model.';
+                return;
+            }
+
+            const rows = state.nativeMappings.map((item) => ({
+                nativeType: item.nativeType || item.native_type || '',
+                feature: item.feature || '',
+                direction: (item.isActive || item.is_active) ? 'active' : 'passive',
+                triggerMode: item.triggerMode || item.trigger_mode || 'both',
+                isTransportAck: !!(item.isTransportAck || item.is_transport_ack),
+                isBusinessReply: !!(item.isBusinessReply || item.is_business_reply),
+                notes: item.notes || '',
+            }));
+
+            $('nativeMappingView').textContent = pretty(rows);
         }
 
         function defaultSimulatedPayload(nativeType) {
@@ -647,6 +746,7 @@
         $('startListener').addEventListener('click', startListener);
         $('stopListener').addEventListener('click', stopListener);
         $('sendNativeCommand').addEventListener('click', sendNativeCommand);
+        $('nativeCommand').addEventListener('change', renderNativeCommandMeta);
 
         loadDevices();
         loadListeners();

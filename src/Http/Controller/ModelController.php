@@ -172,6 +172,116 @@ class ModelController extends Controller
         return $this->jsonResponse(['status' => 'deleted', 'data' => $this->modelResource($existing)]);
     }
 
+    public function listFeatureMappings(string $code): Response
+    {
+        if ($this->pdo === null || $this->modelRepo === null) {
+            return $this->errorResponse('mysql_unavailable', 'MySQL is not available', 503);
+        }
+        $model = $this->modelRepo->findByCode($code);
+        if ($model === null) {
+            return $this->errorResponse('model_not_found', 'Model not found', 404);
+        }
+
+        return $this->jsonResponse([
+            'data' => [
+                'model' => $model['code'],
+                'mappings' => $this->modelRepo->listFeatureMappingsByCode($code),
+            ],
+        ]);
+    }
+
+    public function replaceFeatureMappings(string $code, ServerRequestInterface $request): Response
+    {
+        if ($this->pdo === null || $this->modelRepo === null) {
+            return $this->errorResponse('mysql_unavailable', 'MySQL is not available', 503);
+        }
+        if ($this->modelRepo->findByCode($code) === null) {
+            return $this->errorResponse('model_not_found', 'Model not found', 404);
+        }
+
+        $body = json_decode((string)$request->getBody(), true);
+        if (!is_array($body)) {
+            return $this->errorResponse('invalid_request', 'Invalid JSON body', 400);
+        }
+        $rows = $body['mappings'] ?? null;
+        if (!is_array($rows)) {
+            return $this->errorResponse('invalid_request', 'mappings must be an array', 400);
+        }
+
+        try {
+            $normalized = array_map(fn(mixed $row): array => $this->normalizeFeatureMappingPayload($row), $rows);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse('invalid_request', $e->getMessage(), 400);
+        }
+
+        $this->modelRepo->replaceFeatureMappingsByCode($code, $normalized);
+        DeviceCapabilities::setDatabasePdo($this->pdo);
+
+        return $this->jsonResponse([
+            'data' => [
+                'model' => $code,
+                'mappings' => $this->modelRepo->listFeatureMappingsByCode($code),
+            ],
+        ]);
+    }
+
+    public function upsertFeatureMapping(string $code, ServerRequestInterface $request): Response
+    {
+        if ($this->pdo === null || $this->modelRepo === null) {
+            return $this->errorResponse('mysql_unavailable', 'MySQL is not available', 503);
+        }
+        if ($this->modelRepo->findByCode($code) === null) {
+            return $this->errorResponse('model_not_found', 'Model not found', 404);
+        }
+
+        $body = json_decode((string)$request->getBody(), true);
+        if (!is_array($body)) {
+            return $this->errorResponse('invalid_request', 'Invalid JSON body', 400);
+        }
+
+        try {
+            $mapping = $this->normalizeFeatureMappingPayload($body);
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse('invalid_request', $e->getMessage(), 400);
+        }
+
+        $this->modelRepo->upsertFeatureMappingByCode($code, $mapping);
+        DeviceCapabilities::setDatabasePdo($this->pdo);
+
+        return $this->jsonResponse([
+            'status' => 'saved',
+            'data' => [
+                'model' => $code,
+                'mapping' => $mapping,
+                'mappings' => $this->modelRepo->listFeatureMappingsByCode($code),
+            ],
+        ]);
+    }
+
+    public function deleteFeatureMapping(string $code, string $nativeType): Response
+    {
+        if ($this->pdo === null || $this->modelRepo === null) {
+            return $this->errorResponse('mysql_unavailable', 'MySQL is not available', 503);
+        }
+        if ($this->modelRepo->findByCode($code) === null) {
+            return $this->errorResponse('model_not_found', 'Model not found', 404);
+        }
+
+        $deleted = $this->modelRepo->deleteFeatureMappingByCode($code, trim($nativeType));
+        if (!$deleted) {
+            return $this->errorResponse('mapping_not_found', 'Mapping not found for this model/nativeType', 404);
+        }
+        DeviceCapabilities::setDatabasePdo($this->pdo);
+
+        return $this->jsonResponse([
+            'status' => 'deleted',
+            'data' => [
+                'model' => $code,
+                'nativeType' => $nativeType,
+            ],
+        ]);
+    }
+
     private function modelResource(array $row): array
     {
         $caps = DeviceCapabilities::forModel($row['code']);
@@ -184,11 +294,11 @@ class ModelController extends Controller
             'name' => $row['name'],
             'protocol' => $row['protocol'],
             'transport' => $row['transport'],
-            'sourceDoc' => $row['source_doc'],
             'enabled' => $row['enabled'],
             'passive' => $row['passive'],
             'active' => $row['active'],
             'features' => $row['features'] ?? $caps?->getFeatures() ?? [],
+            'nativeMappings' => $row['native_mappings'] ?? [],
             'createdAt' => $row['created_at'],
             'updatedAt' => $row['updated_at'],
         ];
@@ -215,37 +325,11 @@ class ModelController extends Controller
         if ($create || isset($body['transport'])) {
             $data['transport'] = trim((string)($body['transport'] ?? ''));
         }
-        if (isset($body['sourceDoc'])) {
-            $data['source_doc'] = trim((string)$body['sourceDoc']);
-        }
         if (isset($body['enabled'])) {
             if (!is_bool($body['enabled'])) {
                 throw new \InvalidArgumentException('enabled must be a boolean');
             }
             $data['enabled'] = $body['enabled'];
-        }
-
-        $passive = $body['passive'] ?? [];
-        if ($passive !== []) {
-            $activeList = $body['active'] ?? $existing['active'] ?? [];
-            $this->validateFeatureCommands($passive, $activeList, $body['features'] ?? $existing['features'] ?? []);
-        }
-        if ($passive !== [] || $create) {
-            $data['passive'] = $passive !== [] ? $passive : [];
-        }
-
-        $active = $body['active'] ?? [];
-        if ($active !== []) {
-            $passiveList = $body['passive'] ?? $existing['passive'] ?? [];
-            $this->validateFeatureCommands($active, $passiveList, $body['features'] ?? $existing['features'] ?? []);
-        }
-        if ($active !== [] || $create) {
-            $data['active'] = $active !== [] ? $active : [];
-        }
-
-        $features = $body['features'] ?? null;
-        if ($features !== null) {
-            $data['features'] = $this->normalizeFeaturesObject($features);
         }
 
         return $data;
@@ -293,5 +377,45 @@ class ModelController extends Controller
                 throw new \InvalidArgumentException("Command '$cmd' must be declared in features or as the opposite direction");
             }
         }
+    }
+
+    private function normalizeFeatureMappingPayload(mixed $row): array
+    {
+        if (!is_array($row)) {
+            throw new \InvalidArgumentException('Each mapping must be an object');
+        }
+
+        $nativeType = trim((string)($row['nativeType'] ?? ''));
+        if ($nativeType === '') {
+            throw new \InvalidArgumentException('nativeType is required');
+        }
+
+        $feature = isset($row['feature']) ? trim((string)$row['feature']) : '';
+        if ($feature === '') {
+            $feature = null;
+        }
+
+        if (isset($row['isActive']) && !is_bool($row['isActive'])) {
+            throw new \InvalidArgumentException('isActive must be a boolean');
+        }
+        if (isset($row['enabled']) && !is_bool($row['enabled'])) {
+            throw new \InvalidArgumentException('enabled must be a boolean');
+        }
+
+        $description = null;
+        if (isset($row['description'])) {
+            $description = trim((string)$row['description']);
+            if ($description === '') {
+                $description = null;
+            }
+        }
+
+        return [
+            'nativeType' => $nativeType,
+            'feature' => $feature,
+            'isActive' => (bool)($row['isActive'] ?? false),
+            'description' => $description,
+            'enabled' => (bool)($row['enabled'] ?? true),
+        ];
     }
 }

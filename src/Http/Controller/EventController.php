@@ -56,9 +56,10 @@ class EventController extends Controller
 
     private function eventResource(array $event): array
     {
-        $nativePayload = $event['nativePayload'] ?? $event['data'] ?? [];
+        $nativePayload = $event['nativeData'] ?? $event['nativePayload'] ?? $event['data'] ?? [];
         $nativeType = $event['nativeType'] ?? $event['type'] ?? null;
         $feature = $event['feature'] ?? null;
+        $normalized = $event['generalizedData'] ?? EventNormalizer::normalize($feature, $nativeType, $nativePayload);
 
         return [
             'id' => $event['id'] ?? null,
@@ -69,7 +70,7 @@ class EventController extends Controller
             'nativeType' => $nativeType,
             'receivedAt' => $this->toSeconds($event['receivedAt'] ?? $event['timestamp'] ?? null),
             'nativePayload' => $nativePayload,
-            'normalized' => EventNormalizer::normalize($feature, $nativeType, $nativePayload),
+            'normalized' => is_array($normalized) ? $normalized : [],
         ];
     }
 }

@@ -115,6 +115,10 @@ class ApiServer
                 $method === 'GET' && preg_match('#^/models/([^/]+)$#', $path, $m) === 1 => $this->modelController->getModel($m[1]),
                 $method === 'PUT' && preg_match('#^/models/([^/]+)$#', $path, $m) === 1 => $this->modelController->updateModel($m[1], $request),
                 $method === 'DELETE' && preg_match('#^/models/([^/]+)$#', $path, $m) === 1 => $this->modelController->deleteModel($m[1]),
+                $method === 'GET' && preg_match('#^/models/([^/]+)/feature-mappings$#', $path, $m) === 1 => $this->modelController->listFeatureMappings($m[1]),
+                $method === 'PUT' && preg_match('#^/models/([^/]+)/feature-mappings$#', $path, $m) === 1 => $this->modelController->replaceFeatureMappings($m[1], $request),
+                $method === 'POST' && preg_match('#^/models/([^/]+)/feature-mappings$#', $path, $m) === 1 => $this->modelController->upsertFeatureMapping($m[1], $request),
+                $method === 'DELETE' && preg_match('#^/models/([^/]+)/feature-mappings/([^/]+)$#', $path, $m) === 1 => $this->modelController->deleteFeatureMapping($m[1], $m[2]),
 
                 $method === 'GET' && $path === '/events/recent' => $this->eventController->recentEvents($request),
                 $method === 'GET' && preg_match('#^/devices/([^/]+)/events/latest$#', $path, $m) === 1 => $this->eventController->latestDeviceEvent($m[1]),
