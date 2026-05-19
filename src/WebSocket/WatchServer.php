@@ -492,7 +492,8 @@ class WatchServer implements MessageComponentInterface
             return null;
         }
 
-        return $this->extractVivistarCoordinatesFromPayload($latest['nativePayload'] ?? []);
+        $native = $latest['nativePayload'] ?? $latest['nativeData'] ?? [];
+        return $this->extractVivistarCoordinatesFromPayload(is_array($native) ? $native : []);
     }
 
     private function extractVivistarCoordinatesFromPayload(array $payload): ?array

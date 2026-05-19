@@ -92,7 +92,15 @@ class CommandService
                 'protocol' => $caps->getProtocol(),
                 'passive' => $caps->getPassive(),
                 'active' => $caps->getActive(),
-                'features' => $this->featureResources($caps->getFeatures()),
+                'features' => $this->featureResources($caps),
+                'commandMetadata' => $caps->getCommandMetadata(),
+                'nativeMappings' => $caps->getNativeMappings(),
+                'commandStateHints' => [
+                    'dispatched' => 'Command queued/sent to active device session.',
+                    'ack' => 'Device replied and command was acknowledged.',
+                    'timeout' => 'Device did not reply within timeout window.',
+                    'failed' => 'Command dispatch failed before device delivery.',
+                ],
             ],
         ];
     }
@@ -223,14 +231,27 @@ class CommandService
         ];
     }
 
-    private function featureResources(array $features): array
+    private function featureResources(DeviceCapabilities $caps): array
     {
+        $features = $caps->getFeatures();
         $resources = [];
+        $allMetadata = $caps->getCommandMetadata();
+
         foreach ($features as $feature => $commands) {
+            $passive = array_values($commands['passive'] ?? []);
+            $active = array_values($commands['active'] ?? []);
             $resources[] = [
                 'name' => $feature,
-                'passive' => array_values($commands['passive'] ?? []),
-                'active' => array_values($commands['active'] ?? []),
+                'passive' => $passive,
+                'active' => $active,
+                'passiveDetails' => array_values(array_filter(array_map(
+                    static fn(string $type): ?array => $allMetadata[$type] ?? null,
+                    $passive
+                ))),
+                'activeDetails' => array_values(array_filter(array_map(
+                    static fn(string $type): ?array => $allMetadata[$type] ?? null,
+                    $active
+                ))),
             ];
         }
 

@@ -55,4 +55,19 @@ final class CommandServiceTest extends TestCase
             self::assertSame(503, $e->status());
         }
     }
+
+    public function testDeviceFeaturesIncludesCommandMetadataAndHints(): void
+    {
+        $service = new CommandService(new Whitelist($this->tmpFile, null), null, null);
+
+        $payload = $service->deviceFeatures('865028000000306');
+
+        self::assertIsArray($payload['data']['commandMetadata'] ?? null);
+        self::assertNotEmpty($payload['data']['commandMetadata']);
+        self::assertIsArray($payload['data']['commandStateHints'] ?? null);
+        self::assertSame(
+            'Device replied and command was acknowledged.',
+            $payload['data']['commandStateHints']['ack'] ?? null
+        );
+    }
 }

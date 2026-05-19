@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Registry\DeviceCapabilities;
 use App\Repository\EventRepository;
 use App\Redis\Client as RedisClient;
 use App\WebSocket\WatchServer;
@@ -84,15 +85,29 @@ class EventService
         $imei = trim((string)($body['imei'] ?? ''));
         $type = trim((string)($body['type'] ?? ''));
         $data = is_array($body['data'] ?? null) ? $body['data'] : [];
+        $model = trim((string)($body['model'] ?? ''));
+        $feature = null;
+        if ($model !== '') {
+            $caps = DeviceCapabilities::forModel($model);
+            if ($caps !== null) {
+                $feature = $caps->featureForPassive($type);
+            }
+        }
 
         if ($imei === '' || $type === '') {
             throw new ServiceException('invalid_request', 'imei and type are required', 400);
         }
 
+        $existsStmt = $pdo->prepare('SELECT 1 FROM devices WHERE imei = ? LIMIT 1');
+        $existsStmt->execute([$imei]);
+        if ($existsStmt->fetchColumn() === false) {
+            throw new ServiceException('device_not_found', "Device '$imei' is not registered", 404);
+        }
+
         $event = [
             'imei' => $imei,
             'nativeType' => $type,
-            'feature' => null,
+            'feature' => $feature,
             'nativePayload' => $data,
             'receivedAt' => (int)round(microtime(true) * 1000),
         ];
