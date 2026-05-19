@@ -23,8 +23,9 @@ class Migrator
         }
 
         $this->runSchemaSql($path);
+        $this->migrateModelsTable();
         $this->seedModelsFromCapabilities(__DIR__ . '/../../config/capabilities.json');
-        $this->migrateLegacyDeviceModelsTable();
+        $this->migrateDeviceEventsToCanonicalColumns();
         $this->syncDevicesModelIdFromLegacyModelColumn();
         $this->cleanupLegacySchema();
         $this->addForeignKeyIfNotExists(
@@ -90,6 +91,19 @@ class Migrator
         }
     }
 
+    private function migrateModelsTable(): void
+    {
+        if (!$this->tableExists('models')) {
+            return;
+        }
+
+        $this->dropColumnIfExists('models', 'source_doc');
+        $this->dropColumnIfExists('models', 'passive');
+        $this->dropColumnIfExists('models', 'active');
+        $this->dropColumnIfExists('models', 'features');
+        $this->dropColumnIfExists('models', 'command_metadata');
+    }
+
     private function seedModelsFromCapabilities(string $jsonPath): int
     {
         if (!file_exists($jsonPath)) {
@@ -103,18 +117,15 @@ class Migrator
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO models
-                (supplier_id, code, name, protocol, transport, source_doc, enabled, passive, active, features)
+                (supplier_id, code, name, protocol, transport, enabled)
              VALUES
-                (:supplier_id, :code, :name, :protocol, :transport, :source_doc, :enabled, :passive, :active, :features)
+                (:supplier_id, :code, :name, :protocol, :transport, :enabled)
              ON DUPLICATE KEY UPDATE
                 supplier_id = VALUES(supplier_id),
                 name = VALUES(name),
                 protocol = VALUES(protocol),
                 transport = VALUES(transport),
-                source_doc = VALUES(source_doc),
-                passive = VALUES(passive),
-                active = VALUES(active),
-                features = VALUES(features)'
+                enabled = VALUES(enabled)'
         );
 
         $count = 0;
@@ -132,12 +143,13 @@ class Migrator
                 'name' => (string)($profile['name'] ?? $code),
                 'protocol' => (string)($profile['protocol'] ?? 'unknown'),
                 'transport' => (string)($profile['transport'] ?? 'unknown'),
-                'source_doc' => $profile['source_doc'] ?? null,
                 'enabled' => 1,
-                'passive' => json_encode(array_values($profile['passive'] ?? []), JSON_UNESCAPED_UNICODE),
-                'active' => json_encode(array_values($profile['active'] ?? []), JSON_UNESCAPED_UNICODE),
-                'features' => json_encode($profile['features'] ?? [], JSON_UNESCAPED_UNICODE),
             ]);
+
+            $modelId = $this->modelIdByCode((string)$code);
+            if ($modelId !== null) {
+                $this->upsertModelFeatureMappings($modelId, $profile);
+            }
             $count++;
         }
 
@@ -146,58 +158,6 @@ class Migrator
         }
 
         return $count;
-    }
-
-    private function migrateLegacyDeviceModelsTable(): void
-    {
-        if (!$this->tableExists('device_models')) {
-            return;
-        }
-
-        $stmt = $this->pdo->query(
-            'SELECT id, name, supplier, protocol, transport, source_doc, enabled, passive, active, features FROM device_models'
-        );
-
-        $upsert = $this->pdo->prepare(
-            'INSERT INTO models
-                (supplier_id, code, name, protocol, transport, source_doc, enabled, passive, active, features)
-             VALUES
-                (:supplier_id, :code, :name, :protocol, :transport, :source_doc, :enabled, :passive, :active, :features)
-             ON DUPLICATE KEY UPDATE
-                supplier_id = VALUES(supplier_id),
-                name = VALUES(name),
-                protocol = VALUES(protocol),
-                transport = VALUES(transport),
-                source_doc = VALUES(source_doc),
-                enabled = VALUES(enabled),
-                passive = VALUES(passive),
-                active = VALUES(active),
-                features = VALUES(features)'
-        );
-
-        $count = 0;
-        while ($row = $stmt->fetch()) {
-            $supplierName = trim((string)($row['supplier'] ?? 'Unknown'));
-            $supplierId = $this->upsertSupplier($supplierName === '' ? 'Unknown' : $supplierName);
-
-            $upsert->execute([
-                'supplier_id' => $supplierId,
-                'code' => (string)$row['id'],
-                'name' => (string)($row['name'] ?? $row['id']),
-                'protocol' => (string)($row['protocol'] ?? 'unknown'),
-                'transport' => (string)($row['transport'] ?? 'unknown'),
-                'source_doc' => $row['source_doc'] ?? null,
-                'enabled' => (int)($row['enabled'] ?? 1),
-                'passive' => $this->jsonColumnValue($row['passive']),
-                'active' => $this->jsonColumnValue($row['active']),
-                'features' => $this->jsonColumnValue($row['features']),
-            ]);
-            $count++;
-        }
-
-        if ($count > 0) {
-            Logger::channel('db')->info("Migrated $count legacy row(s) from device_models to models");
-        }
     }
 
     private function syncDevicesModelIdFromLegacyModelColumn(): void
@@ -256,6 +216,8 @@ class Migrator
 
         if ($this->tableExists('device_events')) {
             $this->dropColumnIfExists('device_events', 'model');
+            $this->dropColumnIfExists('device_events', 'feature');
+            $this->dropColumnIfExists('device_events', 'native_payload');
         }
 
         if ($this->tableExists('device_models')) {
@@ -266,6 +228,65 @@ class Migrator
                 Logger::channel('db')->warning('Could not drop legacy table device_models: ' . $e->getMessage());
             }
         }
+    }
+
+    private function migrateDeviceEventsToCanonicalColumns(): void
+    {
+        if (!$this->tableExists('device_events')) {
+            return;
+        }
+
+        $this->addColumnIfNotExists('device_events', 'feature_id', 'INT UNSIGNED NULL AFTER native_type');
+        $this->addColumnIfNotExists('device_events', 'native_data', 'JSON NULL AFTER feature_id');
+        $this->addColumnIfNotExists('device_events', 'generalized_data', 'JSON NULL AFTER native_data');
+
+        if ($this->columnExists('device_events', 'feature')) {
+            $this->pdo->exec(
+                'INSERT INTO features (code, name, enabled)
+                 SELECT DISTINCT e.feature, e.feature, 1
+                 FROM device_events e
+                 WHERE e.feature IS NOT NULL AND e.feature <> ""
+                 ON DUPLICATE KEY UPDATE name = VALUES(name), enabled = VALUES(enabled)'
+            );
+            $this->pdo->exec(
+                'UPDATE device_events e
+                 JOIN features f ON f.code = e.feature
+                 SET e.feature_id = f.id
+                 WHERE e.feature_id IS NULL
+                   AND e.feature IS NOT NULL
+                   AND e.feature <> ""'
+            );
+        }
+
+        if ($this->columnExists('device_events', 'native_payload')) {
+            $this->pdo->exec(
+                'UPDATE device_events
+                 SET native_data = native_payload
+                 WHERE native_data IS NULL'
+            );
+        }
+
+        $this->pdo->exec(
+            'UPDATE device_events
+             SET native_data = JSON_OBJECT()
+             WHERE native_data IS NULL'
+        );
+
+        $this->pdo->exec(
+            'UPDATE device_events
+             SET generalized_data = JSON_OBJECT()
+             WHERE generalized_data IS NULL'
+        );
+
+        $this->modifyColumnIfExists('device_events', 'native_data', 'JSON NOT NULL');
+        $this->modifyColumnIfExists('device_events', 'generalized_data', 'JSON NOT NULL');
+
+        $this->addIndexIfNotExists('device_events', 'idx_events_feature_received', 'feature_id');
+        $this->addForeignKeyIfNotExists(
+            'device_events',
+            'fk_events_feature',
+            'FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE SET NULL ON UPDATE RESTRICT'
+        );
     }
 
     private function ensureModelExistsByCode(string $code): void
@@ -282,9 +303,9 @@ class Migrator
         $supplierId = $this->upsertSupplier('Unknown');
         $stmt = $this->pdo->prepare(
             'INSERT INTO models
-                (supplier_id, code, name, protocol, transport, source_doc, enabled, passive, active, features)
+                (supplier_id, code, name, protocol, transport, enabled)
              VALUES
-                (:supplier_id, :code, :name, :protocol, :transport, NULL, 0, :passive, :active, :features)'
+                (:supplier_id, :code, :name, :protocol, :transport, 0)'
         );
         $stmt->execute([
             'supplier_id' => $supplierId,
@@ -292,9 +313,6 @@ class Migrator
             'name' => $code,
             'protocol' => 'unknown',
             'transport' => 'unknown',
-            'passive' => json_encode([], JSON_UNESCAPED_UNICODE),
-            'active' => json_encode([], JSON_UNESCAPED_UNICODE),
-            'features' => json_encode([], JSON_UNESCAPED_UNICODE),
         ]);
 
         Logger::channel('db')->warning("Created stub disabled model for existing devices: $code");
@@ -328,6 +346,88 @@ class Migrator
             return json_encode($value, JSON_UNESCAPED_UNICODE);
         }
         return json_encode([], JSON_UNESCAPED_UNICODE);
+    }
+
+    private function upsertModelFeatureMappings(int $modelId, array $profile): void
+    {
+        $this->pdo->prepare('DELETE FROM model_feature_mappings WHERE model_id = ?')->execute([$modelId]);
+
+        $features = is_array($profile['features'] ?? null) ? $profile['features'] : [];
+        $insert = $this->pdo->prepare(
+            'INSERT INTO model_feature_mappings
+                (model_id, feature_id, native_type, is_active, description, enabled)
+             VALUES
+                (:model_id, :feature_id, :native_type, :is_active, :description, 1)'
+        );
+
+        $notesByType = $this->metadataNotesByType($profile['command_metadata'] ?? []);
+        $seenByNativeType = [];
+
+        foreach ($features as $featureCode => $commands) {
+            $featureId = $this->upsertFeature((string)$featureCode);
+            $passive = is_array($commands['passive'] ?? null) ? $commands['passive'] : [];
+            $active = is_array($commands['active'] ?? null) ? $commands['active'] : [];
+
+            foreach ($passive as $nativeType) {
+                $nativeType = (string)$nativeType;
+                if (isset($seenByNativeType[$nativeType])) {
+                    continue;
+                }
+                $insert->execute([
+                    'model_id' => $modelId,
+                    'feature_id' => $featureId,
+                    'native_type' => $nativeType,
+                    'is_active' => 0,
+                    'description' => $notesByType[$nativeType] ?? null,
+                ]);
+                $seenByNativeType[$nativeType] = true;
+            }
+            foreach ($active as $nativeType) {
+                $nativeType = (string)$nativeType;
+                if (isset($seenByNativeType[$nativeType])) {
+                    continue;
+                }
+                $insert->execute([
+                    'model_id' => $modelId,
+                    'feature_id' => $featureId,
+                    'native_type' => $nativeType,
+                    'is_active' => 1,
+                    'description' => $notesByType[$nativeType] ?? null,
+                ]);
+                $seenByNativeType[$nativeType] = true;
+            }
+        }
+    }
+
+    private function upsertFeature(string $code): int
+    {
+        $name = ucwords(str_replace('_', ' ', trim($code)));
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO features (code, name, enabled)
+             VALUES (:code, :name, 1)
+             ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), name = VALUES(name), enabled = VALUES(enabled)'
+        );
+        $stmt->execute(['code' => $code, 'name' => $name === '' ? $code : $name]);
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    private function metadataNotesByType(mixed $metadata): array
+    {
+        if (!is_array($metadata)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($metadata as $type => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $desc = trim((string)($row['description'] ?? ''));
+            $note = trim((string)($row['notes'] ?? ''));
+            $composed = trim($desc . ($note !== '' ? ' | ' . $note : ''));
+            $out[(string)$type] = $composed !== '' ? $composed : null;
+        }
+        return $out;
     }
 
     private function tableExists(string $table): bool

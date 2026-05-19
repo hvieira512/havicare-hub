@@ -2,11 +2,13 @@
 
 namespace App\Repository;
 
+use App\Domain\EventNormalizer;
+
 class EventRepository
 {
     private \PDO $pdo;
-    private const COLUMNS = 'e.id, e.imei, m.code AS model, e.native_type, e.feature, e.native_payload, e.received_at, e.created_at';
-    private const FROM_WITH_DEVICE = 'device_events e LEFT JOIN devices d ON d.imei = e.imei LEFT JOIN models m ON m.id = d.model_id';
+    private const COLUMNS = 'e.id, e.imei, m.code AS model, e.native_type, f.code AS feature, e.native_data, e.generalized_data, e.received_at, e.created_at';
+    private const FROM_WITH_DEVICE = 'device_events e LEFT JOIN features f ON f.id = e.feature_id LEFT JOIN devices d ON d.imei = e.imei LEFT JOIN models m ON m.id = d.model_id';
 
     public function __construct(\PDO $pdo)
     {
@@ -15,15 +17,33 @@ class EventRepository
 
     public function insert(array $event): int
     {
+        $feature = isset($event['feature']) && $event['feature'] !== '' ? (string)$event['feature'] : null;
+        $nativePayload = is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : [];
+        $generalized = is_array($event['generalizedData'] ?? null)
+            ? $event['generalizedData']
+            : EventNormalizer::normalize($feature, (string)($event['nativeType'] ?? ''), $nativePayload);
+
+        $featureId = $feature !== null
+            ? $this->resolveFeatureId($feature)
+            : null;
+
         $stmt = $this->pdo->prepare(
-            'INSERT INTO device_events (imei, native_type, feature, native_payload, received_at)
-             VALUES (:imei, :native_type, :feature, :native_payload, :received_at)'
+            'INSERT INTO device_events (imei, native_type, feature_id, native_data, generalized_data, received_at)
+             VALUES (
+                :imei,
+                :native_type,
+                :feature_id,
+                :native_data,
+                :generalized_data,
+                :received_at
+             )'
         );
         $stmt->execute([
             'imei' => $event['imei'],
             'native_type' => $event['nativeType'],
-            'feature' => $event['feature'],
-            'native_payload' => json_encode($event['nativePayload']),
+            'feature_id' => $featureId,
+            'native_data' => json_encode($nativePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'generalized_data' => json_encode($generalized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'received_at' => $event['receivedAt'],
         ]);
         return (int)$this->pdo->lastInsertId();
@@ -60,7 +80,8 @@ class EventRepository
             'model' => $row['model'],
             'nativeType' => $row['native_type'],
             'feature' => $row['feature'],
-            'nativePayload' => json_decode($row['native_payload'], true) ?? [],
+            'nativeData' => json_decode($row['native_data'], true) ?? [],
+            'generalizedData' => json_decode($row['generalized_data'], true) ?? [],
             'receivedAt' => (int)$row['received_at'],
         ], $stmt->fetchAll());
     }
@@ -82,7 +103,8 @@ class EventRepository
             'model' => $row['model'],
             'nativeType' => $row['native_type'],
             'feature' => $row['feature'],
-            'nativePayload' => json_decode($row['native_payload'], true) ?? [],
+            'nativeData' => json_decode($row['native_data'], true) ?? [],
+            'generalizedData' => json_decode($row['generalized_data'], true) ?? [],
             'receivedAt' => (int)$row['received_at'],
         ];
     }
@@ -117,7 +139,8 @@ class EventRepository
                 'model' => $row['model'],
                 'nativeType' => $row['native_type'],
                 'feature' => $row['feature'],
-                'nativePayload' => json_decode($row['native_payload'], true) ?? [],
+                'nativeData' => json_decode($row['native_data'], true) ?? [],
+                'generalizedData' => json_decode($row['generalized_data'], true) ?? [],
                 'receivedAt' => (int)$row['received_at'],
             ];
         }
@@ -148,5 +171,13 @@ class EventRepository
         $purged += $stmt->rowCount();
 
         return $purged;
+    }
+
+    private function resolveFeatureId(string $code): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM features WHERE code = ? LIMIT 1');
+        $stmt->execute([$code]);
+        $id = $stmt->fetchColumn();
+        return $id !== false ? (int)$id : null;
     }
 }

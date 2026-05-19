@@ -5,7 +5,7 @@ namespace App\Repository;
 class ModelRepository
 {
     private const TABLE = 'models m JOIN suppliers s ON s.id = m.supplier_id';
-    private const COLS = 'm.id, m.supplier_id, s.name AS supplier_name, m.code, m.name, m.protocol, m.transport, m.source_doc, m.enabled, m.passive, m.active, m.features, m.created_at, m.updated_at';
+    private const COLS = 'm.id, m.supplier_id, s.name AS supplier_name, m.code, m.name, m.protocol, m.transport, m.enabled, m.created_at, m.updated_at';
 
     private \PDO $pdo;
 
@@ -69,9 +69,9 @@ class ModelRepository
     {
         $stmt = $this->pdo->prepare(
             'INSERT INTO models
-                (supplier_id, code, name, protocol, transport, source_doc, enabled, passive, active, features)
+                (supplier_id, code, name, protocol, transport, enabled)
              VALUES
-                (:supplier_id, :code, :name, :protocol, :transport, :source_doc, :enabled, :passive, :active, :features)'
+                (:supplier_id, :code, :name, :protocol, :transport, :enabled)'
         );
 
         $stmt->execute($this->serialize($data));
@@ -134,11 +134,12 @@ class ModelRepository
             'name' => $row['name'],
             'protocol' => $row['protocol'],
             'transport' => $row['transport'],
-            'source_doc' => $row['source_doc'],
             'enabled' => (bool)$row['enabled'],
-            'passive' => $this->decodeJsonArray($row['passive']),
-            'active' => $this->decodeJsonArray($row['active']),
-            'features' => $this->decodeJsonObject($row['features']),
+            'passive' => $this->mappingPassive((int)$row['id']),
+            'active' => $this->mappingActive((int)$row['id']),
+            'features' => $this->mappingFeatures((int)$row['id']),
+            'native_mappings' => $this->mappingRows((int)$row['id']),
+            'command_metadata' => [],
             'created_at' => $row['created_at'],
             'updated_at' => $row['updated_at'],
         ];
@@ -188,15 +189,7 @@ class ModelRepository
         if (array_key_exists('enabled', $serialized)) {
             $serialized['enabled'] = $serialized['enabled'] ? 1 : 0;
         }
-        if (array_key_exists('passive', $serialized) && is_array($serialized['passive'])) {
-            $serialized['passive'] = json_encode(array_values($serialized['passive']), JSON_UNESCAPED_UNICODE);
-        }
-        if (array_key_exists('active', $serialized) && is_array($serialized['active'])) {
-            $serialized['active'] = json_encode(array_values($serialized['active']), JSON_UNESCAPED_UNICODE);
-        }
-        if (array_key_exists('features', $serialized) && is_array($serialized['features'])) {
-            $serialized['features'] = json_encode($serialized['features'], JSON_UNESCAPED_UNICODE);
-        }
+        unset($serialized['passive'], $serialized['active'], $serialized['features'], $serialized['command_metadata'], $serialized['source_doc']);
 
         return $serialized;
     }
@@ -223,5 +216,184 @@ class ModelRepository
         }
         $decoded = json_decode($value, true);
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function mappingRows(int $modelId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT mfm.id, mfm.native_type, mfm.is_active, mfm.description, mfm.enabled,
+                    f.code AS feature_code
+             FROM model_feature_mappings mfm
+             LEFT JOIN features f ON f.id = mfm.feature_id
+             WHERE mfm.model_id = :model_id
+             ORDER BY mfm.native_type ASC'
+        );
+        $stmt->execute(['model_id' => $modelId]);
+
+        return array_map(static fn(array $row): array => [
+            'id' => (int)$row['id'],
+            'nativeType' => (string)$row['native_type'],
+            'isActive' => (bool)$row['is_active'],
+            'feature' => $row['feature_code'] !== null ? (string)$row['feature_code'] : null,
+            'description' => $row['description'] !== null ? (string)$row['description'] : null,
+            'enabled' => (bool)$row['enabled'],
+        ], $stmt->fetchAll());
+    }
+
+    private function mappingPassive(int $modelId): array
+    {
+        $types = [];
+        foreach ($this->mappingRows($modelId) as $row) {
+            if (($row['enabled'] ?? true) === true && ($row['isActive'] ?? false) === false) {
+                $types[] = (string)$row['nativeType'];
+            }
+        }
+        return array_values(array_unique($types));
+    }
+
+    private function mappingActive(int $modelId): array
+    {
+        $types = [];
+        foreach ($this->mappingRows($modelId) as $row) {
+            if (($row['enabled'] ?? true) === true && ($row['isActive'] ?? false) === true) {
+                $types[] = (string)$row['nativeType'];
+            }
+        }
+        return array_values(array_unique($types));
+    }
+
+    private function mappingFeatures(int $modelId): array
+    {
+        $features = [];
+        foreach ($this->mappingRows($modelId) as $row) {
+            if (($row['enabled'] ?? true) !== true) {
+                continue;
+            }
+            $feature = $row['feature'] ?? null;
+            if (!is_string($feature) || $feature === '') {
+                continue;
+            }
+            if (!isset($features[$feature])) {
+                $features[$feature] = ['passive' => [], 'active' => []];
+            }
+            $bucket = ($row['isActive'] ?? false) ? 'active' : 'passive';
+            $features[$feature][$bucket][] = (string)$row['nativeType'];
+        }
+        foreach ($features as $feature => $maps) {
+            $features[$feature]['passive'] = array_values(array_unique($maps['passive']));
+            $features[$feature]['active'] = array_values(array_unique($maps['active']));
+        }
+        ksort($features);
+        return $features;
+    }
+
+    public function listFeatureMappingsByCode(string $code): array
+    {
+        $model = $this->findByCode($code);
+        if ($model === null) {
+            return [];
+        }
+
+        return $this->mappingRows((int)$model['id']);
+    }
+
+    public function replaceFeatureMappingsByCode(string $code, array $mappings): void
+    {
+        $model = $this->findByCode($code);
+        if ($model === null) {
+            throw new \InvalidArgumentException('model_not_found');
+        }
+        $modelId = (int)$model['id'];
+
+        $this->pdo->beginTransaction();
+        try {
+            $del = $this->pdo->prepare('DELETE FROM model_feature_mappings WHERE model_id = ?');
+            $del->execute([$modelId]);
+
+            if ($mappings !== []) {
+                $insert = $this->pdo->prepare(
+                    'INSERT INTO model_feature_mappings
+                        (model_id, feature_id, native_type, is_active, description, enabled)
+                     VALUES
+                        (:model_id, :feature_id, :native_type, :is_active, :description, :enabled)'
+                );
+
+                foreach ($mappings as $mapping) {
+                    $featureId = $this->resolveFeatureId($mapping['feature'] ?? null);
+                    $insert->execute([
+                        'model_id' => $modelId,
+                        'feature_id' => $featureId,
+                        'native_type' => (string)$mapping['nativeType'],
+                        'is_active' => !empty($mapping['isActive']) ? 1 : 0,
+                        'description' => $mapping['description'] ?? null,
+                        'enabled' => array_key_exists('enabled', $mapping) ? ((bool)$mapping['enabled'] ? 1 : 0) : 1,
+                    ]);
+                }
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public function upsertFeatureMappingByCode(string $code, array $mapping): void
+    {
+        $model = $this->findByCode($code);
+        if ($model === null) {
+            throw new \InvalidArgumentException('model_not_found');
+        }
+        $modelId = (int)$model['id'];
+        $featureId = $this->resolveFeatureId($mapping['feature'] ?? null);
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO model_feature_mappings
+                (model_id, feature_id, native_type, is_active, description, enabled)
+             VALUES
+                (:model_id, :feature_id, :native_type, :is_active, :description, :enabled)
+             ON DUPLICATE KEY UPDATE
+                feature_id = VALUES(feature_id),
+                is_active = VALUES(is_active),
+                description = VALUES(description),
+                enabled = VALUES(enabled)'
+        );
+        $stmt->execute([
+            'model_id' => $modelId,
+            'feature_id' => $featureId,
+            'native_type' => (string)$mapping['nativeType'],
+            'is_active' => !empty($mapping['isActive']) ? 1 : 0,
+            'description' => $mapping['description'] ?? null,
+            'enabled' => array_key_exists('enabled', $mapping) ? ((bool)$mapping['enabled'] ? 1 : 0) : 1,
+        ]);
+    }
+
+    public function deleteFeatureMappingByCode(string $code, string $nativeType): bool
+    {
+        $model = $this->findByCode($code);
+        if ($model === null) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM model_feature_mappings WHERE model_id = ? AND native_type = ?');
+        $stmt->execute([(int)$model['id'], $nativeType]);
+        return $stmt->rowCount() > 0;
+    }
+
+    private function resolveFeatureId(mixed $featureCode): ?int
+    {
+        if (!is_string($featureCode) || trim($featureCode) === '') {
+            return null;
+        }
+        $featureCode = trim($featureCode);
+        $name = ucwords(str_replace('_', ' ', $featureCode));
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO features (code, name, enabled)
+             VALUES (:code, :name, 1)
+             ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)'
+        );
+        $stmt->execute([
+            'code' => $featureCode,
+            'name' => $name === '' ? $featureCode : $name,
+        ]);
+        return (int)$this->pdo->lastInsertId();
     }
 }
