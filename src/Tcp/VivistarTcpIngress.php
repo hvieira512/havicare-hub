@@ -35,7 +35,6 @@ class VivistarTcpIngress
         $resourceId = $this->nextResourceId++;
         $client = new TcpDeviceConnection($connection, $resourceId);
 
-        Logger::channel('watch')->info("TCP connection: resourceId=$resourceId from " . ($connection->getRemoteAddress() ?? 'unknown'));
         $this->buffers[$resourceId] = '';
         $this->watchServer->onOpen($client);
 
@@ -58,7 +57,6 @@ class VivistarTcpIngress
 
     private function onData(TcpDeviceConnection $client, int $resourceId, string $data): void
     {
-        Logger::channel('watch')->debug("TCP raw data from resourceId=$resourceId: " . bin2hex($data) . " (text: " . trim($data) . ")");
         $this->buffers[$resourceId] = ($this->buffers[$resourceId] ?? '') . $data;
 
         while (($pos = strpos($this->buffers[$resourceId], '#')) !== false) {
@@ -70,7 +68,6 @@ class VivistarTcpIngress
                 continue;
             }
 
-            Logger::channel('watch')->debug("TCP packet extracted: hex=" . bin2hex($trimmed) . " text=\"{$trimmed}\"");
             $this->watchServer->onMessage($client, $trimmed);
         }
 
