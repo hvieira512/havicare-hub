@@ -8,6 +8,7 @@
         "passive": [
             "upHeartRate",
             "upECG",
+            "upECGAnalysis",
             "upHRV",
             "upPPG",
             "upRR",
@@ -119,35 +120,108 @@
         ],
         "features": {
             "heart_rate": {
-                "passive": ["upHeartRate", "upBatch"],
-                "active": ["dnHeartRate"]
+                "passive": [
+                    "upHeartRate",
+                    "upBatch"
+                ],
+                "active": [
+                    "dnHeartRate"
+                ]
             },
             "blood_pressure": {
-                "passive": ["upBP", "upBatch"],
-                "active": ["dnBP"]
+                "passive": [
+                    "upBP",
+                    "upBatch"
+                ],
+                "active": [
+                    "dnBP"
+                ]
             },
             "blood_oxygen": {
-                "passive": ["upBO", "upBatch"],
-                "active": ["dnBO"]
+                "passive": [
+                    "upBO",
+                    "upBatch"
+                ],
+                "active": [
+                    "dnBO"
+                ]
             },
             "temperature": {
-                "passive": ["upBodyTemperature"],
-                "active": ["dnTemperature"]
+                "passive": [
+                    "upBodyTemperature"
+                ],
+                "active": [
+                    "dnTemperature"
+                ]
             },
-            "blood_sugar": { "passive": ["upBS"], "active": [] },
-            "blood_fat": { "passive": ["upBF"], "active": [] },
-            "uric_acid": { "passive": ["upUA"], "active": [] },
-            "ecg": { "passive": ["upECG"], "active": ["dnECG"] },
-            "hrv": { "passive": ["upHRV"], "active": ["dnHRV"] },
-            "ppg": { "passive": ["upPPG"], "active": ["dnPPG"] },
-            "rr_interval": { "passive": ["upRR"], "active": ["dnRR"] },
+            "blood_sugar": {
+                "passive": [
+                    "upBS"
+                ],
+                "active": []
+            },
+            "blood_fat": {
+                "passive": [
+                    "upBF"
+                ],
+                "active": []
+            },
+            "uric_acid": {
+                "passive": [
+                    "upUA"
+                ],
+                "active": []
+            },
+            "ecg": {
+                "passive": [
+                    "upECG",
+                    "upECGAnalysis"
+                ],
+                "active": [
+                    "dnECG"
+                ]
+            },
+            "hrv": {
+                "passive": [
+                    "upHRV"
+                ],
+                "active": [
+                    "dnHRV"
+                ]
+            },
+            "ppg": {
+                "passive": [
+                    "upPPG"
+                ],
+                "active": [
+                    "dnPPG"
+                ]
+            },
+            "rr_interval": {
+                "passive": [
+                    "upRR"
+                ],
+                "active": [
+                    "dnRR"
+                ]
+            },
             "respiration": {
-                "passive": ["upBreathe"],
-                "active": ["dnBreathe", "dnUpBreathe"]
+                "passive": [
+                    "upBreathe"
+                ],
+                "active": [
+                    "dnBreathe",
+                    "dnUpBreathe"
+                ]
             },
             "sleep": {
-                "passive": ["upSleep", "upSleepFind"],
-                "active": ["dnUpSleep"]
+                "passive": [
+                    "upSleep",
+                    "upSleepFind"
+                ],
+                "active": [
+                    "dnUpSleep"
+                ]
             },
             "activity": {
                 "passive": [
@@ -178,26 +252,93 @@
                 "active": []
             },
             "location": {
-                "passive": ["upLocation"],
-                "active": ["dnLocation", "locationInterval"]
+                "passive": [
+                    "upLocation"
+                ],
+                "active": [
+                    "dnLocation",
+                    "locationInterval"
+                ]
             },
-            "battery": { "passive": ["upBattery"], "active": [] },
-            "weather": { "passive": ["upWeather"], "active": ["dnWeather"] },
-            "sos": { "passive": [], "active": ["SOSNumber", "deviceConfig"] },
-            "fall_detection": { "passive": [], "active": ["deviceConfig"] },
+            "battery": {
+                "passive": [
+                    "upBattery"
+                ],
+                "active": []
+            },
+            "weather": {
+                "passive": [
+                    "upWeather"
+                ],
+                "active": [
+                    "dnWeather"
+                ]
+            },
+            "sos": {
+                "passive": [],
+                "active": [
+                    "SOSNumber",
+                    "deviceConfig"
+                ]
+            },
+            "fall_detection": {
+                "passive": [],
+                "active": [
+                    "deviceConfig"
+                ]
+            },
             "reminders": {
                 "passive": [],
-                "active": ["alarmClock", "dnMedicationPlan"]
+                "active": [
+                    "alarmClock",
+                    "dnMedicationPlan"
+                ]
             },
             "device_config": {
-                "passive": ["upDeviceConfig", "upGetDevConfig"],
-                "active": ["deviceConfig"]
+                "passive": [
+                    "upDeviceConfig",
+                    "upGetDevConfig"
+                ],
+                "active": [
+                    "deviceConfig"
+                ]
             },
-            "factory_reset": { "passive": ["upReset"], "active": ["reset"] },
-            "restart": { "passive": [], "active": ["restart"] },
-            "power_off": { "passive": ["upShutdown"], "active": ["powerOff"] },
-            "find_device": { "passive": [], "active": ["find"] },
-            "ota": { "passive": ["upGetOTA"], "active": ["OTA"] },
+            "factory_reset": {
+                "passive": [
+                    "upReset"
+                ],
+                "active": [
+                    "reset"
+                ]
+            },
+            "restart": {
+                "passive": [],
+                "active": [
+                    "restart"
+                ]
+            },
+            "power_off": {
+                "passive": [
+                    "upShutdown"
+                ],
+                "active": [
+                    "powerOff"
+                ]
+            },
+            "find_device": {
+                "passive": [],
+                "active": [
+                    "find"
+                ]
+            },
+            "ota": {
+                "passive": [
+                    "upGetOTA"
+                ],
+                "active": [
+                    "OTA"
+                ]
+            },
             "messaging": {
                 "passive": [
                     "upSMS",
@@ -227,10 +368,28 @@
                 ]
             },
             "ephemeris": {
-                "passive": ["upEphemeris"],
-                "active": ["dnEphemeris"]
+                "passive": [
+                    "upEphemeris"
+                ],
+                "active": [
+                    "dnEphemeris"
+                ]
             },
-            "custom": { "passive": ["upCustom"], "active": ["dnCustom"] }
+            "custom": {
+                "passive": [
+                    "upCustom"
+                ],
+                "active": [
+                    "dnCustom"
+                ]
+            },
+            "sensors": {
+                "passive": [
+                    "upSensorValue",
+                    "upSensorValues"
+                ],
+                "active": []
+            }
         }
     },
     "WONLEX-HEALTH": {
@@ -291,57 +450,194 @@
         ],
         "features": {
             "heart_rate": {
-                "passive": ["upHeartRate", "upBatch"],
-                "active": ["dnHeartRate"]
+                "passive": [
+                    "upHeartRate",
+                    "upBatch"
+                ],
+                "active": [
+                    "dnHeartRate"
+                ]
             },
             "blood_pressure": {
-                "passive": ["upBP", "upBatch"],
-                "active": ["dnBP"]
+                "passive": [
+                    "upBP",
+                    "upBatch"
+                ],
+                "active": [
+                    "dnBP"
+                ]
             },
             "blood_oxygen": {
-                "passive": ["upBO", "upBatch"],
-                "active": ["dnBO"]
+                "passive": [
+                    "upBO",
+                    "upBatch"
+                ],
+                "active": [
+                    "dnBO"
+                ]
             },
             "temperature": {
-                "passive": ["upBodyTemperature"],
-                "active": ["dnTemperature"]
+                "passive": [
+                    "upBodyTemperature"
+                ],
+                "active": [
+                    "dnTemperature"
+                ]
             },
-            "blood_sugar": { "passive": ["upBS"], "active": [] },
-            "blood_fat": { "passive": ["upBF"], "active": [] },
-            "uric_acid": { "passive": ["upUA"], "active": [] },
-            "ecg": { "passive": ["upECG"], "active": ["dnECG"] },
-            "hrv": { "passive": ["upHRV"], "active": ["dnHRV"] },
-            "ppg": { "passive": ["upPPG"], "active": ["dnPPG"] },
-            "rr_interval": { "passive": ["upRR"], "active": ["dnRR"] },
+            "blood_sugar": {
+                "passive": [
+                    "upBS"
+                ],
+                "active": []
+            },
+            "blood_fat": {
+                "passive": [
+                    "upBF"
+                ],
+                "active": []
+            },
+            "uric_acid": {
+                "passive": [
+                    "upUA"
+                ],
+                "active": []
+            },
+            "ecg": {
+                "passive": [
+                    "upECG"
+                ],
+                "active": [
+                    "dnECG"
+                ]
+            },
+            "hrv": {
+                "passive": [
+                    "upHRV"
+                ],
+                "active": [
+                    "dnHRV"
+                ]
+            },
+            "ppg": {
+                "passive": [
+                    "upPPG"
+                ],
+                "active": [
+                    "dnPPG"
+                ]
+            },
+            "rr_interval": {
+                "passive": [
+                    "upRR"
+                ],
+                "active": [
+                    "dnRR"
+                ]
+            },
             "respiration": {
-                "passive": ["upBreathe"],
-                "active": ["dnBreathe"]
+                "passive": [
+                    "upBreathe"
+                ],
+                "active": [
+                    "dnBreathe"
+                ]
             },
-            "sleep": { "passive": ["upSleep"], "active": ["dnUpSleep"] },
+            "sleep": {
+                "passive": [
+                    "upSleep"
+                ],
+                "active": [
+                    "dnUpSleep"
+                ]
+            },
             "activity": {
-                "passive": ["upTodayActivity", "upRun", "upWalk"],
+                "passive": [
+                    "upTodayActivity",
+                    "upRun",
+                    "upWalk"
+                ],
                 "active": []
             },
             "location": {
-                "passive": ["upLocation"],
-                "active": ["dnLocation", "locationInterval"]
+                "passive": [
+                    "upLocation"
+                ],
+                "active": [
+                    "dnLocation",
+                    "locationInterval"
+                ]
             },
-            "battery": { "passive": ["upBattery"], "active": [] },
-            "weather": { "passive": ["upWeather"], "active": ["dnWeather"] },
-            "sos": { "passive": [], "active": ["SOSNumber"] },
+            "battery": {
+                "passive": [
+                    "upBattery"
+                ],
+                "active": []
+            },
+            "weather": {
+                "passive": [
+                    "upWeather"
+                ],
+                "active": [
+                    "dnWeather"
+                ]
+            },
+            "sos": {
+                "passive": [],
+                "active": [
+                    "SOSNumber"
+                ]
+            },
             "reminders": {
                 "passive": [],
-                "active": ["alarmClock", "dnMedicationPlan"]
+                "active": [
+                    "alarmClock",
+                    "dnMedicationPlan"
+                ]
             },
             "device_config": {
-                "passive": ["upDeviceConfig"],
-                "active": ["deviceConfig"]
+                "passive": [
+                    "upDeviceConfig"
+                ],
+                "active": [
+                    "deviceConfig"
+                ]
             },
-            "factory_reset": { "passive": ["upReset"], "active": ["reset"] },
-            "restart": { "passive": [], "active": ["restart"] },
-            "power_off": { "passive": ["upShutdown"], "active": ["powerOff"] },
-            "find_device": { "passive": [], "active": ["find"] },
-            "ota": { "passive": ["upGetOTA"], "active": ["OTA"] }
+            "factory_reset": {
+                "passive": [
+                    "upReset"
+                ],
+                "active": [
+                    "reset"
+                ]
+            },
+            "restart": {
+                "passive": [],
+                "active": [
+                    "restart"
+                ]
+            },
+            "power_off": {
+                "passive": [
+                    "upShutdown"
+                ],
+                "active": [
+                    "powerOff"
+                ]
+            },
+            "find_device": {
+                "passive": [],
+                "active": [
+                    "find"
+                ]
+            },
+            "ota": {
+                "passive": [
+                    "upGetOTA"
+                ],
+                "active": [
+                    "OTA"
+                ]
+            }
         }
     },
     "VIVISTAR-CARE": {
@@ -473,13 +769,14 @@
                 "riskLevel": "normal",
                 "notes": ""
             },
-
             "BP12": {
                 "title": "Set SOS contacts",
                 "description": "Configure SOS numbers on device.",
                 "feature": "sos",
                 "direction": "active",
-                "expectedReplyTypes": ["AP12"],
+                "expectedReplyTypes": [
+                    "AP12"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -488,7 +785,9 @@
                 "description": "Push contact list to device.",
                 "feature": "contacts",
                 "direction": "active",
-                "expectedReplyTypes": ["AP14"],
+                "expectedReplyTypes": [
+                    "AP14"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -497,7 +796,9 @@
                 "description": "Ask device for immediate location report.",
                 "feature": "location",
                 "direction": "active",
-                "expectedReplyTypes": ["AP16"],
+                "expectedReplyTypes": [
+                    "AP16"
+                ],
                 "riskLevel": "normal",
                 "notes": "Device may send AP01/AP10 after ack."
             },
@@ -506,7 +807,9 @@
                 "description": "Request factory reset operation.",
                 "feature": "factory_reset",
                 "direction": "active",
-                "expectedReplyTypes": ["AP17"],
+                "expectedReplyTypes": [
+                    "AP17"
+                ],
                 "riskLevel": "high",
                 "notes": "Use with extreme caution."
             },
@@ -515,7 +818,9 @@
                 "description": "Send message payload to watch.",
                 "feature": "messaging",
                 "direction": "active",
-                "expectedReplyTypes": ["AP28"],
+                "expectedReplyTypes": [
+                    "AP28"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -524,7 +829,9 @@
                 "description": "Configure generic watch settings.",
                 "feature": "device_config",
                 "direction": "active",
-                "expectedReplyTypes": ["AP33"],
+                "expectedReplyTypes": [
+                    "AP33"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -533,7 +840,9 @@
                 "description": "Alternative messaging command path.",
                 "feature": "messaging",
                 "direction": "active",
-                "expectedReplyTypes": ["AP40"],
+                "expectedReplyTypes": [
+                    "AP40"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -542,7 +851,9 @@
                 "description": "Enable/configure fall detection.",
                 "feature": "fall_detection",
                 "direction": "active",
-                "expectedReplyTypes": ["AP76"],
+                "expectedReplyTypes": [
+                    "AP76"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -551,7 +862,9 @@
                 "description": "Configure fall emergency behavior.",
                 "feature": "fall_detection",
                 "direction": "active",
-                "expectedReplyTypes": ["AP77"],
+                "expectedReplyTypes": [
+                    "AP77"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -560,7 +873,9 @@
                 "description": "Configure quick dial contacts.",
                 "feature": "contacts",
                 "direction": "active",
-                "expectedReplyTypes": ["AP84"],
+                "expectedReplyTypes": [
+                    "AP84"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -569,7 +884,9 @@
                 "description": "Push reminder schedule.",
                 "feature": "reminders",
                 "direction": "active",
-                "expectedReplyTypes": ["AP85"],
+                "expectedReplyTypes": [
+                    "AP85"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -578,7 +895,9 @@
                 "description": "Alternate settings command.",
                 "feature": "device_config",
                 "direction": "active",
-                "expectedReplyTypes": ["AP86"],
+                "expectedReplyTypes": [
+                    "AP86"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -587,7 +906,9 @@
                 "description": "Temperature command variant.",
                 "feature": "temperature",
                 "direction": "active",
-                "expectedReplyTypes": ["AP87"],
+                "expectedReplyTypes": [
+                    "AP87"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -596,7 +917,9 @@
                 "description": "Send BP calibration parameters.",
                 "feature": "blood_pressure_calibration",
                 "direction": "active",
-                "expectedReplyTypes": ["APJZ"],
+                "expectedReplyTypes": [
+                    "APJZ"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -605,7 +928,9 @@
                 "description": "Trigger heart rate measurement/report.",
                 "feature": "heart_rate",
                 "direction": "active",
-                "expectedReplyTypes": ["APXL"],
+                "expectedReplyTypes": [
+                    "APXL"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -614,7 +939,9 @@
                 "description": "Trigger blood pressure measurement/report.",
                 "feature": "blood_pressure",
                 "direction": "active",
-                "expectedReplyTypes": ["APXY"],
+                "expectedReplyTypes": [
+                    "APXY"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -623,7 +950,9 @@
                 "description": "Trigger temperature measurement/report.",
                 "feature": "temperature",
                 "direction": "active",
-                "expectedReplyTypes": ["APXT"],
+                "expectedReplyTypes": [
+                    "APXT"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -632,41 +961,143 @@
                 "description": "Trigger SpO2 measurement/report.",
                 "feature": "blood_oxygen",
                 "direction": "active",
-                "expectedReplyTypes": ["APXZ"],
+                "expectedReplyTypes": [
+                    "APXZ"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             }
         },
         "features": {
             "location": {
-                "passive": ["AP01", "AP02", "AP10"],
-                "active": ["BP16"]
+                "passive": [
+                    "AP01",
+                    "AP02",
+                    "AP10"
+                ],
+                "active": [
+                    "BP16"
+                ]
             },
-            "heartbeat": { "passive": ["AP03"], "active": [] },
+            "heartbeat": {
+                "passive": [
+                    "AP03"
+                ],
+                "active": []
+            },
             "heart_rate": {
-                "passive": ["AP49", "APHT", "APHP"],
-                "active": ["BPXL"]
+                "passive": [
+                    "AP49",
+                    "APHT",
+                    "APHP"
+                ],
+                "active": [
+                    "BPXL"
+                ]
             },
             "blood_pressure": {
-                "passive": ["APHT", "APHP"],
-                "active": ["BPXY"]
+                "passive": [
+                    "APHT",
+                    "APHP"
+                ],
+                "active": [
+                    "BPXY"
+                ]
             },
-            "blood_pressure_calibration": { "passive": [], "active": ["BPJZ"] },
-            "blood_oxygen": { "passive": ["APHP"], "active": ["BPXZ"] },
-            "blood_sugar": { "passive": ["APHP"], "active": [] },
-            "temperature": { "passive": ["AP50"], "active": ["BPXT", "BP87"] },
-            "ecg": { "passive": ["APHD"], "active": [] },
-            "sos": { "passive": ["AP10"], "active": ["BP12"] },
+            "blood_pressure_calibration": {
+                "passive": [],
+                "active": [
+                    "BPJZ"
+                ]
+            },
+            "blood_oxygen": {
+                "passive": [
+                    "APHP"
+                ],
+                "active": [
+                    "BPXZ"
+                ]
+            },
+            "blood_sugar": {
+                "passive": [
+                    "APHP"
+                ],
+                "active": []
+            },
+            "temperature": {
+                "passive": [
+                    "AP50"
+                ],
+                "active": [
+                    "BPXT",
+                    "BP87"
+                ]
+            },
+            "ecg": {
+                "passive": [
+                    "APHD"
+                ],
+                "active": []
+            },
+            "sos": {
+                "passive": [
+                    "AP10"
+                ],
+                "active": [
+                    "BP12"
+                ]
+            },
             "fall_detection": {
-                "passive": ["AP10"],
-                "active": ["BP76", "BP77"]
+                "passive": [
+                    "AP10"
+                ],
+                "active": [
+                    "BP76",
+                    "BP77"
+                ]
             },
-            "battery": { "passive": ["AP03", "AP10"], "active": [] },
-            "messaging": { "passive": ["AP07"], "active": ["BP28", "BP40"] },
-            "contacts": { "passive": [], "active": ["BP14", "BP84"] },
-            "reminders": { "passive": [], "active": ["BP85"] },
-            "device_config": { "passive": [], "active": ["BP33", "BP86"] },
-            "factory_reset": { "passive": [], "active": ["BP17"] }
+            "battery": {
+                "passive": [
+                    "AP03",
+                    "AP10"
+                ],
+                "active": []
+            },
+            "messaging": {
+                "passive": [
+                    "AP07"
+                ],
+                "active": [
+                    "BP28",
+                    "BP40"
+                ]
+            },
+            "contacts": {
+                "passive": [],
+                "active": [
+                    "BP14",
+                    "BP84"
+                ]
+            },
+            "reminders": {
+                "passive": [],
+                "active": [
+                    "BP85"
+                ]
+            },
+            "device_config": {
+                "passive": [],
+                "active": [
+                    "BP33",
+                    "BP86"
+                ]
+            },
+            "factory_reset": {
+                "passive": [],
+                "active": [
+                    "BP17"
+                ]
+            }
         }
     },
     "VIVISTAR-LITE": {
@@ -675,7 +1106,14 @@
         "protocol": "vivistar-iw",
         "transport": "tcp-text",
         "source_doc": "docs/VIVISTAR.docx",
-        "passive": ["AP01", "AP02", "AP03", "AP10", "AP49", "AP50"],
+        "passive": [
+            "AP01",
+            "AP02",
+            "AP03",
+            "AP10",
+            "AP49",
+            "AP50"
+        ],
         "active": [
             "BP12",
             "BP16",
@@ -742,13 +1180,14 @@
                 "riskLevel": "normal",
                 "notes": ""
             },
-
             "BP12": {
                 "title": "Set SOS contacts",
                 "description": "Configure SOS numbers on device.",
                 "feature": "sos",
                 "direction": "active",
-                "expectedReplyTypes": ["AP12"],
+                "expectedReplyTypes": [
+                    "AP12"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -757,7 +1196,9 @@
                 "description": "Ask device for immediate location report.",
                 "feature": "location",
                 "direction": "active",
-                "expectedReplyTypes": ["AP16"],
+                "expectedReplyTypes": [
+                    "AP16"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -766,7 +1207,9 @@
                 "description": "Request factory reset operation.",
                 "feature": "factory_reset",
                 "direction": "active",
-                "expectedReplyTypes": ["AP17"],
+                "expectedReplyTypes": [
+                    "AP17"
+                ],
                 "riskLevel": "high",
                 "notes": "Use with extreme caution."
             },
@@ -775,7 +1218,9 @@
                 "description": "Configure generic watch settings.",
                 "feature": "device_config",
                 "direction": "active",
-                "expectedReplyTypes": ["AP33"],
+                "expectedReplyTypes": [
+                    "AP33"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -784,7 +1229,9 @@
                 "description": "Enable/configure fall detection.",
                 "feature": "fall_detection",
                 "direction": "active",
-                "expectedReplyTypes": ["AP76"],
+                "expectedReplyTypes": [
+                    "AP76"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -793,7 +1240,9 @@
                 "description": "Push reminder schedule.",
                 "feature": "reminders",
                 "direction": "active",
-                "expectedReplyTypes": ["AP85"],
+                "expectedReplyTypes": [
+                    "AP85"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -802,7 +1251,9 @@
                 "description": "Temperature command variant.",
                 "feature": "temperature",
                 "direction": "active",
-                "expectedReplyTypes": ["AP87"],
+                "expectedReplyTypes": [
+                    "AP87"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -811,7 +1262,9 @@
                 "description": "Trigger heart rate measurement/report.",
                 "feature": "heart_rate",
                 "direction": "active",
-                "expectedReplyTypes": ["APXL"],
+                "expectedReplyTypes": [
+                    "APXL"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             },
@@ -820,25 +1273,88 @@
                 "description": "Trigger temperature measurement/report.",
                 "feature": "temperature",
                 "direction": "active",
-                "expectedReplyTypes": ["APXT"],
+                "expectedReplyTypes": [
+                    "APXT"
+                ],
                 "riskLevel": "normal",
                 "notes": ""
             }
         },
         "features": {
             "location": {
-                "passive": ["AP01", "AP02", "AP10"],
-                "active": ["BP16"]
+                "passive": [
+                    "AP01",
+                    "AP02",
+                    "AP10"
+                ],
+                "active": [
+                    "BP16"
+                ]
             },
-            "heartbeat": { "passive": ["AP03"], "active": [] },
-            "heart_rate": { "passive": ["AP49"], "active": ["BPXL"] },
-            "temperature": { "passive": ["AP50"], "active": ["BPXT", "BP87"] },
-            "sos": { "passive": ["AP10"], "active": ["BP12"] },
-            "fall_detection": { "passive": ["AP10"], "active": ["BP76"] },
-            "battery": { "passive": ["AP03", "AP10"], "active": [] },
-            "reminders": { "passive": [], "active": ["BP85"] },
-            "device_config": { "passive": [], "active": ["BP33"] },
-            "factory_reset": { "passive": [], "active": ["BP17"] }
+            "heartbeat": {
+                "passive": [
+                    "AP03"
+                ],
+                "active": []
+            },
+            "heart_rate": {
+                "passive": [
+                    "AP49"
+                ],
+                "active": [
+                    "BPXL"
+                ]
+            },
+            "temperature": {
+                "passive": [
+                    "AP50"
+                ],
+                "active": [
+                    "BPXT",
+                    "BP87"
+                ]
+            },
+            "sos": {
+                "passive": [
+                    "AP10"
+                ],
+                "active": [
+                    "BP12"
+                ]
+            },
+            "fall_detection": {
+                "passive": [
+                    "AP10"
+                ],
+                "active": [
+                    "BP76"
+                ]
+            },
+            "battery": {
+                "passive": [
+                    "AP03",
+                    "AP10"
+                ],
+                "active": []
+            },
+            "reminders": {
+                "passive": [],
+                "active": [
+                    "BP85"
+                ]
+            },
+            "device_config": {
+                "passive": [],
+                "active": [
+                    "BP33"
+                ]
+            },
+            "factory_reset": {
+                "passive": [],
+                "active": [
+                    "BP17"
+                ]
+            }
         }
     }
 }
