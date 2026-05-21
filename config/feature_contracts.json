@@ -1,0 +1,522 @@
+{
+    "version": "1.0.0",
+    "models": [
+        "WONLEX-PRO",
+        "WONLEX-HEALTH",
+        "VIVISTAR-CARE",
+        "VIVISTAR-LITE"
+    ],
+    "features": {
+        "activity": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "steps": "integer"
+            },
+            "extra": {
+                "exerciseSeconds": "integer",
+                "standMinutes": "integer",
+                "distanceKm": "number",
+                "caloriesKcal": "number",
+                "sportType": "string",
+                "speed": "object",
+                "stride": "object",
+                "heartRateZones": "object"
+            }
+        },
+        "battery": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "percent": "integer"
+            },
+            "extra": {
+                "charging": "boolean",
+                "batteryType": "integer",
+                "lowPower": "boolean",
+                "derivedFromHeartbeat": "boolean"
+            }
+        },
+        "blood_fat": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "totalCholesterol": "number"
+            },
+            "extra": {
+                "hdl": "number",
+                "ldl": "number",
+                "triglycerides": "number",
+                "unit": "string"
+            }
+        },
+        "blood_oxygen": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE"
+            ],
+            "data": {
+                "spo2Percent": "integer"
+            },
+            "extra": {
+                "seriesSpo2": "number[]",
+                "measurementMode": "string",
+                "sampleFrequencyHz": "integer"
+            }
+        },
+        "blood_pressure": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE"
+            ],
+            "data": {
+                "systolicMmHg": "integer",
+                "diastolicMmHg": "integer"
+            },
+            "extra": {
+                "pulseBpm": "integer",
+                "series": "object[]",
+                "measurementMode": "string",
+                "airbagSize": "string",
+                "wearPosition": "string"
+            }
+        },
+        "blood_pressure_calibration": {
+            "supportedModels": [
+                "VIVISTAR-CARE"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "calibration": "object"
+            }
+        },
+        "blood_sugar": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE"
+            ],
+            "data": {
+                "value": "number"
+            },
+            "extra": {
+                "unit": "string",
+                "measurementMode": "string",
+                "coMeasured": "object"
+            }
+        },
+        "contacts": {
+            "supportedModels": [
+                "VIVISTAR-CARE"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "entries": "object[]",
+                "whitelistEnabled": "boolean"
+            }
+        },
+        "custom": {
+            "supportedModels": [
+                "WONLEX-PRO"
+            ],
+            "data": {
+                "type": "string"
+            },
+            "extra": {
+                "payload": "object"
+            }
+        },
+        "device_config": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "configs": "object"
+            }
+        },
+        "ecg": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE"
+            ],
+            "data": {
+                "sampleCount": "integer"
+            },
+            "extra": {
+                "fileId": "string",
+                "waveform": "number[]",
+                "fileBase64": "string",
+                "gain": "number",
+                "lead": "integer",
+                "sampleFrequencyHz": "integer",
+                "zeroVoltage": "number",
+                "analysis": "object",
+                "packetState": "string"
+            }
+        },
+        "ephemeris": {
+            "supportedModels": [
+                "WONLEX-PRO"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "payload": "object",
+                "windowStart": "string",
+                "windowEnd": "string"
+            }
+        },
+        "factory_reset": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "mode": "string",
+                "requestedBy": "string"
+            }
+        },
+        "fall_detection": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "enabled": "boolean"
+            },
+            "extra": {
+                "sensitivity": "integer",
+                "alarmCode": "string",
+                "source": "string"
+            }
+        },
+        "find_device": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "ringDuration": "integer",
+                "mode": "string"
+            }
+        },
+        "heart_rate": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "bpm": "integer"
+            },
+            "extra": {
+                "seriesBpm": "number[]",
+                "seriesMeasuredAt": "string[]",
+                "measurementMode": "string",
+                "wearPosition": "string",
+                "collectionId": "string",
+                "sampleFrequencyHz": "integer",
+                "packetState": "string",
+                "coMeasured": "object"
+            }
+        },
+        "heartbeat": {
+            "supportedModels": [
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "steps": "integer",
+                "rollFrequency": "integer",
+                "batteryPercent": "integer",
+                "satelliteCount": "integer",
+                "gsmSignal": "integer",
+                "fortificationState": "integer",
+                "workMode": "integer"
+            }
+        },
+        "hrv": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "value": "number"
+            },
+            "extra": {
+                "sampleFrequencyHz": "integer",
+                "series": "number[]",
+                "collectionId": "string"
+            }
+        },
+        "location": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "source": "string",
+                "lat": "number",
+                "lon": "number"
+            },
+            "extra": {
+                "accuracy": "number",
+                "altitudeM": "number",
+                "satelliteCount": "integer",
+                "speedKmh": "number",
+                "heading": "number",
+                "gsmSignal": "integer",
+                "wifiAccessPoints": "object[]",
+                "baseStations": "object[]",
+                "mcc": "integer",
+                "mnc": "integer",
+                "lac": "integer",
+                "cellId": "integer",
+                "coordinateSystem": "string"
+            }
+        },
+        "messaging": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "VIVISTAR-CARE"
+            ],
+            "data": {
+                "kind": "string"
+            },
+            "extra": {
+                "sender": "string",
+                "phone": "string",
+                "text": "string",
+                "audio": "object",
+                "callLog": "object",
+                "videoCall": "object",
+                "socialSync": "object"
+            }
+        },
+        "ota": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "currentVersion": "string",
+                "targetVersion": "string",
+                "url": "string",
+                "checksum": "string",
+                "policy": "object"
+            }
+        },
+        "power_off": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "reason": "string"
+            }
+        },
+        "ppg": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "sampleCount": "integer"
+            },
+            "extra": {
+                "waveform": "number[]",
+                "sampleFrequencyHz": "integer",
+                "collectionId": "string"
+            }
+        },
+        "reminders": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "enabled": "boolean"
+            },
+            "extra": {
+                "items": "object[]",
+                "medicationPlan": "object[]"
+            }
+        },
+        "respiration": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "rpm": "integer"
+            },
+            "extra": {
+                "seriesRpm": "number[]",
+                "measurementMode": "string"
+            }
+        },
+        "restart": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "requestedBy": "string"
+            }
+        },
+        "rr_interval": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "intervalMs": "integer"
+            },
+            "extra": {
+                "series": "object[]",
+                "sampleFrequencyHz": "integer",
+                "collectionId": "string"
+            }
+        },
+        "sensors": {
+            "supportedModels": [
+                "WONLEX-PRO"
+            ],
+            "data": {
+                "kind": "string"
+            },
+            "extra": {
+                "sensorType": "string",
+                "value": "string",
+                "values": "object[]",
+                "dataTime": "string"
+            }
+        },
+        "sleep": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "totalMinutes": "integer"
+            },
+            "extra": {
+                "deepMinutes": "integer",
+                "lightMinutes": "integer",
+                "remMinutes": "integer",
+                "awakeMinutes": "integer",
+                "segments": "object[]",
+                "cycleStart": "string",
+                "cycleEnd": "string",
+                "isAccumulative": "boolean"
+            }
+        },
+        "sos": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "numbers": "string[]",
+                "alarmCode": "string",
+                "triggerSource": "string",
+                "fromAp10": "boolean"
+            }
+        },
+        "temperature": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH",
+                "VIVISTAR-CARE",
+                "VIVISTAR-LITE"
+            ],
+            "data": {
+                "bodyCelsius": "number"
+            },
+            "extra": {
+                "surfaceCelsius": "number",
+                "ambientCelsius": "number",
+                "batteryPercentFromPayload": "integer",
+                "measurementMode": "string"
+            }
+        },
+        "uric_acid": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "value": "number"
+            },
+            "extra": {
+                "unit": "string"
+            }
+        },
+        "weather": {
+            "supportedModels": [
+                "WONLEX-PRO",
+                "WONLEX-HEALTH"
+            ],
+            "data": {
+                "status": "string"
+            },
+            "extra": {
+                "requestAccepted": "boolean",
+                "locationAvailable": "boolean"
+            }
+        }
+    }
+}
