@@ -56,6 +56,10 @@ class SystemController extends Controller
             return $this->jsonResponse($payload, 201);
         } catch (ServiceException $e) {
             return $this->errorResponse($e->codeName(), $e->getMessage(), $e->status(), $e->details());
+        } catch (\Throwable $e) {
+            return $this->errorResponse('simulate_failed', 'Failed to simulate device event', 500, [
+                'cause' => $e->getMessage(),
+            ]);
         }
     }
 
