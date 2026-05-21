@@ -392,6 +392,28 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/devices/{imei}/features/{feature}/latest' => [
+                    'get' => [
+                        'tags' => ['Events'],
+                        'summary' => 'Latest canonical payload for a device feature',
+                        'parameters' => [
+                            $imeiParam,
+                            [
+                                'name' => 'feature',
+                                'in' => 'path',
+                                'required' => true,
+                                'schema' => ['type' => 'string', 'example' => 'heart_rate'],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Latest feature payload',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/FeaturePayloadResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/devices/{imei}/features' => [
                     'get' => [
                         'tags' => ['Devices'],
@@ -451,6 +473,55 @@ class OpenApiSpec
                             '400' => ['$ref' => '#/components/responses/Error'],
                             '404' => ['$ref' => '#/components/responses/Error'],
                             '409' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/devices/{imei}/features/{feature}/measure' => [
+                    'post' => [
+                        'tags' => ['Commands'],
+                        'summary' => 'Request feature measurement',
+                        'description' => 'Resolves the native command for the feature and requests a fresh measurement. '
+                            . 'Use the returned poll.latestFeaturePath to fetch the canonical payload.',
+                        'parameters' => [
+                            $imeiParam,
+                            [
+                                'name' => 'feature',
+                                'in' => 'path',
+                                'required' => true,
+                                'schema' => ['type' => 'string', 'example' => 'heart_rate'],
+                            ],
+                            [
+                                'name' => 'wait',
+                                'in' => 'query',
+                                'required' => false,
+                                'description' => 'If true, waits for a fresh payload up to timeoutMs.',
+                                'schema' => ['type' => 'boolean', 'default' => false],
+                            ],
+                            [
+                                'name' => 'timeoutMs',
+                                'in' => 'query',
+                                'required' => false,
+                                'description' => 'Max wait time in milliseconds when wait=true (1000-60000).',
+                                'schema' => ['type' => 'integer', 'minimum' => 1000, 'maximum' => 60000, 'default' => 15000],
+                            ],
+                        ],
+                        'requestBody' => [
+                            'required' => false,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/FeatureMeasureRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Measurement requested',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/FeatureMeasureResponse']]],
+                            ],
+                            '202' => [
+                                'description' => 'Measurement requested but wait mode timed out before a fresh payload arrived',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/FeatureMeasureResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                            '409' => ['$ref' => '#/components/responses/Error'],
+                            '503' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],
@@ -755,6 +826,13 @@ class OpenApiSpec
                             'data' => ['$ref' => '#/components/schemas/Event'],
                         ],
                     ],
+                    'FeaturePayloadResponse' => [
+                        'type' => 'object',
+                        'required' => ['data'],
+                        'properties' => [
+                            'data' => ['$ref' => '#/components/schemas/FeaturePayload'],
+                        ],
+                    ],
                     'DeviceFeatureItem' => [
                         'type' => 'object',
                         'properties' => [
@@ -883,6 +961,14 @@ class OpenApiSpec
                             'data' => ['type' => 'object', 'additionalProperties' => true],
                         ],
                     ],
+                    'FeatureMeasureRequest' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'object', 'additionalProperties' => true],
+                            'wait' => ['type' => 'boolean', 'default' => false],
+                            'timeoutMs' => ['type' => 'integer', 'minimum' => 1000, 'maximum' => 60000, 'default' => 15000],
+                        ],
+                    ],
                     'CommandResponse' => [
                         'type' => 'object',
                         'properties' => [
@@ -899,6 +985,43 @@ class OpenApiSpec
                             ],
                         ],
                     ],
+                    'FeatureMeasureResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'measurement', 'poll'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'requested'],
+                            'measurement' => [
+                                'type' => 'object',
+                                'required' => ['feature', 'nativeType', 'requestId', 'payload'],
+                                'properties' => [
+                                    'feature' => ['type' => 'string', 'example' => 'heart_rate'],
+                                    'nativeType' => ['type' => 'string', 'example' => 'dnHeartRate'],
+                                    'requestId' => ['type' => 'string', 'example' => '7f9b4aa9f6f94f1a'],
+                                    'requestedAt' => ['type' => 'integer', 'example' => 1710000000123],
+                                    'payload' => ['type' => 'object', 'additionalProperties' => true],
+                                ],
+                            ],
+                            'poll' => [
+                                'type' => 'object',
+                                'required' => ['latestFeaturePath'],
+                                'properties' => [
+                                    'latestFeaturePath' => [
+                                        'type' => 'string',
+                                        'example' => '/devices/865028000000307/features/heart_rate/latest',
+                                    ],
+                                ],
+                            ],
+                            'wait' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'status' => ['type' => 'string', 'enum' => ['received', 'timeout']],
+                                    'timeoutMs' => ['type' => 'integer'],
+                                ],
+                            ],
+                            'latest' => ['$ref' => '#/components/schemas/FeaturePayload'],
+                        ],
+                    ],
+                    ...self::featurePayloadSchemas(),
                     'ErrorResponse' => [
                         'type' => 'object',
                         'required' => ['error'],
@@ -917,5 +1040,129 @@ class OpenApiSpec
                 ],
             ],
         ];
+    }
+
+    private static function featurePayloadSchemas(): array
+    {
+        $contractsPath = __DIR__ . '/../../config/feature_contracts.json';
+        $contracts = json_decode((string)file_get_contents($contractsPath), true);
+        if (!is_array($contracts)) {
+            return [];
+        }
+
+        $features = $contracts['features'] ?? [];
+        if (!is_array($features) || $features === []) {
+            return [];
+        }
+
+        $schemas = [];
+        $payloadRefs = [];
+        $catalogProperties = [];
+
+        foreach ($features as $feature => $definition) {
+            if (!is_string($feature) || $feature === '' || !is_array($definition)) {
+                continue;
+            }
+
+            $name = self::featureSchemaBaseName($feature);
+            $dataSchema = $name . 'FeatureData';
+            $extraSchema = $name . 'FeatureExtra';
+            $payloadSchema = $name . 'FeaturePayload';
+
+            $dataProps = self::featureObjectProperties($definition['data'] ?? []);
+            $extraProps = self::featureObjectProperties($definition['extra'] ?? []);
+
+            $schemas[$dataSchema] = [
+                'type' => 'object',
+                'properties' => $dataProps,
+                'additionalProperties' => false,
+            ];
+
+            $schemas[$extraSchema] = [
+                'type' => 'object',
+                'properties' => $extraProps,
+                'additionalProperties' => false,
+            ];
+
+            $schemas[$payloadSchema] = [
+                'type' => 'object',
+                'required' => ['imei', 'feature', 'timestamp', 'data'],
+                'properties' => [
+                    'imei' => ['type' => 'string', 'example' => '865028000000307'],
+                    'feature' => ['type' => 'string', 'enum' => [$feature]],
+                    'timestamp' => ['type' => 'string', 'format' => 'date-time'],
+                    'data' => ['$ref' => '#/components/schemas/' . $dataSchema],
+                    'extra' => ['$ref' => '#/components/schemas/' . $extraSchema],
+                ],
+            ];
+
+            $payloadRefs[] = ['$ref' => '#/components/schemas/' . $payloadSchema];
+            $catalogProperties[$feature] = [
+                'type' => 'object',
+                'properties' => [
+                    'supportedModels' => ['type' => 'array', 'items' => ['type' => 'string']],
+                    'data' => ['type' => 'object', 'additionalProperties' => ['type' => 'string']],
+                    'extra' => ['type' => 'object', 'additionalProperties' => ['type' => 'string']],
+                ],
+            ];
+        }
+
+        $schemas['FeaturePayload'] = [
+            'oneOf' => $payloadRefs,
+        ];
+
+        $schemas['FeaturePayloadCatalog'] = [
+            'type' => 'object',
+            'required' => ['version', 'features'],
+            'properties' => [
+                'version' => ['type' => 'string', 'example' => (string)($contracts['version'] ?? '1.0.0')],
+                'features' => [
+                    'type' => 'object',
+                    'properties' => $catalogProperties,
+                    'additionalProperties' => false,
+                ],
+            ],
+        ];
+
+        return $schemas;
+    }
+
+    private static function featureSchemaBaseName(string $feature): string
+    {
+        $parts = preg_split('/[_\\-]+/', $feature) ?: [$feature];
+        $words = array_map(
+            static fn(string $part): string => ucfirst(strtolower($part)),
+            array_filter($parts, static fn(string $part): bool => $part !== '')
+        );
+
+        return implode('', $words);
+    }
+
+    private static function featureObjectProperties(array $fields): array
+    {
+        $properties = [];
+        foreach ($fields as $name => $type) {
+            if (!is_string($name) || $name === '') {
+                continue;
+            }
+            $properties[$name] = self::schemaFromTypeString(is_string($type) ? $type : 'string');
+        }
+
+        return $properties;
+    }
+
+    private static function schemaFromTypeString(string $type): array
+    {
+        return match ($type) {
+            'integer' => ['type' => 'integer'],
+            'number' => ['type' => 'number'],
+            'boolean' => ['type' => 'boolean'],
+            'string' => ['type' => 'string'],
+            'string[]' => ['type' => 'array', 'items' => ['type' => 'string']],
+            'number[]' => ['type' => 'array', 'items' => ['type' => 'number']],
+            'object[]' => ['type' => 'array', 'items' => ['type' => 'object', 'additionalProperties' => true]],
+            'object' => ['type' => 'object', 'additionalProperties' => true],
+            default => ['type' => 'string'],
+        };
     }
 }
