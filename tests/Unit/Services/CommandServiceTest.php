@@ -7,6 +7,7 @@ namespace Tests\Unit\Services;
 use App\Registry\Whitelist;
 use App\Services\CommandService;
 use App\Services\ServiceException;
+use App\WebSocket\WatchServer;
 use PHPUnit\Framework\TestCase;
 
 final class CommandServiceTest extends TestCase
@@ -68,6 +69,40 @@ final class CommandServiceTest extends TestCase
         self::assertSame(
             'Device replied and command was acknowledged.',
             $payload['data']['commandStateHints']['ack'] ?? null
+        );
+    }
+
+    public function testMeasureFeatureReturnsPollPathWhenDispatchSucceeds(): void
+    {
+        $watchServer = $this->getMockBuilder(WatchServer::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['sendCommand'])
+            ->getMock();
+
+        $watchServer->expects(self::once())
+            ->method('sendCommand')
+            ->with(
+                '865028000000306',
+                'dnHeartRate',
+                ['priority' => 'high'],
+                self::isType('string'),
+                'heart_rate'
+            )
+            ->willReturn(true);
+
+        $service = new CommandService(new Whitelist($this->tmpFile, null), $watchServer, null);
+        $payload = $service->measureFeature('865028000000306', 'heart_rate', [
+            'data' => ['priority' => 'high'],
+        ]);
+
+        self::assertSame('requested', $payload['status']);
+        self::assertSame('heart_rate', $payload['measurement']['feature'] ?? null);
+        self::assertSame('dnHeartRate', $payload['measurement']['nativeType'] ?? null);
+        self::assertNotEmpty($payload['measurement']['requestId'] ?? null);
+        self::assertIsInt($payload['measurement']['requestedAt'] ?? null);
+        self::assertSame(
+            '/devices/865028000000306/features/heart_rate/latest',
+            $payload['poll']['latestFeaturePath'] ?? null
         );
     }
 }

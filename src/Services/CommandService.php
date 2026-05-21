@@ -150,6 +150,30 @@ class CommandService
         ];
     }
 
+    public function measureFeature(string $imei, string $feature, array $body = []): array
+    {
+        $result = $this->sendFeatureCommand($imei, $feature, $body);
+
+        $requestId = (string)($result['command']['requestId'] ?? '');
+        $nativeType = (string)($result['command']['nativeType'] ?? '');
+        $payload = is_array($result['command']['payload'] ?? null) ? $result['command']['payload'] : [];
+        $requestedAt = (int)round(microtime(true) * 1000);
+
+        return [
+            'status' => 'requested',
+            'measurement' => [
+                'feature' => $feature,
+                'nativeType' => $nativeType,
+                'requestId' => $requestId,
+                'requestedAt' => $requestedAt,
+                'payload' => $payload,
+            ],
+            'poll' => [
+                'latestFeaturePath' => "/devices/{$imei}/features/{$feature}/latest",
+            ],
+        ];
+    }
+
     public function dispatchCommandToDevice(
         string $imei,
         string $type,
