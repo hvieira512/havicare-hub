@@ -481,7 +481,7 @@
                 $('listenerNote').textContent = 'Demo simulator endpoints are disabled. Set DEMO_API_ENABLED=true and restart the API server.';
             }
 
-            $('startListener').disabled = !state.demoApiEnabled || !device || !deviceEnabled(device) || !!listener || isOnline;
+            $('startListener').disabled = !state.demoApiEnabled || !device || !deviceEnabled(device) || !!listener;
             $('stopListener').disabled = !state.demoApiEnabled || !listener;
 
             $('activeActions').innerHTML = activeFeatures.map((feature) => {

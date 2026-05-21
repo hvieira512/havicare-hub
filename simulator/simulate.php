@@ -1160,6 +1160,29 @@ if ($listen) {
                         : "IWAP{$match[1]}," . implode(',', $replyFields) . "#";
                     sendProtocolPacket($ws, $protocol, $reply);
                     echo "[reply] {$reply}\n";
+
+                    // Send simulated uplink data after ack.
+                    $apType = 'AP' . $match[1];
+                    if (isset($templates[$apType]) || $match[1] !== '00') {
+                        $uplinkData = randomizeTemplatePayload(
+                            $apType,
+                            (array)($templates[$apType] ?? [])
+                        );
+                        if ($uplinkData !== []) {
+                            $line = buildVivistarUplink($apType, $uplinkData);
+                            sendProtocolPacket($ws, $protocol, $line);
+                            echo "[data] {$line}\n";
+                        } elseif ($match[1] === 'HT' || $match[1] === '40') {
+                            // Fallback: blood pressure data
+                            $line = buildVivistarUplink($apType, [
+                                'heartRate' => rand(60, 120),
+                                'systolic' => rand(105, 145),
+                                'diastolic' => rand(65, 95),
+                            ]);
+                            sendProtocolPacket($ws, $protocol, $line);
+                            echo "[data] {$line}\n";
+                        }
+                    }
                 } else {
                     echo "[ACK] {$type}\n";
                 }
@@ -1178,6 +1201,26 @@ if ($listen) {
                         'timestamp' => now(),
                     ]);
                     echo "[reply] Response sent.\n";
+
+                    // Send simulated measurement data after ack.
+                    $passiveType = findPassiveForActive($caps, $msg['type']);
+                    if ($passiveType !== null) {
+                        $data = randomizeTemplatePayload(
+                            $passiveType,
+                            (array)($templates[$passiveType] ?? [])
+                        );
+                        if ($data !== []) {
+                            sendProtocolPacket($ws, $protocol, [
+                                'type' => $passiveType,
+                                'ident' => str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT),
+                                'ref' => 'w:update',
+                                'imei' => $imei,
+                                'data' => withToken($data, $sessionToken),
+                                'timestamp' => now(),
+                            ]);
+                            echo "[data] {$passiveType}\n";
+                        }
+                    }
                 } elseif ($ref === 's:reply') {
                     echo "[ACK] {$msg['type']}\n";
                 }
@@ -1189,6 +1232,17 @@ if ($listen) {
 }
 
 // --- Helper function ---
+
+function findPassiveForActive(object $caps, string $activeType): ?string
+{
+    foreach ($caps->getFeatures() as $commands) {
+        if (in_array($activeType, $commands['active'] ?? [], true)) {
+            $passive = $commands['passive'] ?? [];
+            return $passive[0] ?? null;
+        }
+    }
+    return null;
+}
 
 function parseArgs(array $argv): array
 {
