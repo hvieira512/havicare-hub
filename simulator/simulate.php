@@ -420,6 +420,139 @@ function now(): int
     return (int)round(microtime(true) * 1000);
 }
 
+function randomFloat(float $min, float $max, int $precision = 1): float
+{
+    $scale = 10 ** max(0, $precision);
+    return round((random_int((int)round($min * $scale), (int)round($max * $scale))) / $scale, $precision);
+}
+
+function randomizeTemplatePayload(string $type, array $payload): array
+{
+    if ($payload === []) {
+        return $payload;
+    }
+
+    switch ($type) {
+        case 'AP49':
+        case 'upHeartRate':
+            $payload['heartRate'] = random_int(58, 128);
+            $payload['date'] = (string)$payload['heartRate'];
+            break;
+
+        case 'APHT':
+        case 'upBP':
+            $sys = random_int(105, 145);
+            $dia = random_int(65, 95);
+            $pulse = random_int(58, 120);
+            $payload['systolic'] = $sys;
+            $payload['diastolic'] = $dia;
+            $payload['heartRate'] = $pulse;
+            $payload['date'] = "{$sys}/{$dia}/{$pulse}";
+            break;
+
+        case 'APHP':
+            $sys = random_int(105, 145);
+            $dia = random_int(65, 95);
+            $pulse = random_int(58, 120);
+            $spo2 = random_int(91, 100);
+            $sugar = randomFloat(4.6, 7.4, 1);
+            $payload['heartRate'] = $pulse;
+            $payload['systolic'] = $sys;
+            $payload['diastolic'] = $dia;
+            $payload['spo2'] = $spo2;
+            $payload['bloodSugar'] = $sugar;
+            break;
+
+        case 'upBO':
+            $payload['spo2'] = random_int(91, 100);
+            $payload['date'] = (string)$payload['spo2'];
+            break;
+
+        case 'upBodyTemperature':
+        case 'AP50':
+            $body = randomFloat(35.8, 38.3, 1);
+            $battery = random_int(20, 99);
+            $payload['bodyTemperature'] = $body;
+            $payload['temperature'] = $body;
+            $payload['batteryLevel'] = $battery;
+            $payload['date'] = sprintf('%.1f/31.0/27.8', $body);
+            break;
+
+        case 'upBreathe':
+            $payload['value'] = (string)random_int(10, 24);
+            break;
+
+        case 'upTodayActivity':
+            $payload['step'] = random_int(300, 16000);
+            $payload['exerciseTime'] = random_int(600, 7200);
+            $payload['standTime'] = random_int(1, 12);
+            break;
+
+        case 'upSleep':
+            $total = random_int(240, 540);
+            $deep = random_int(50, (int)floor($total * 0.45));
+            $awake = random_int(5, 50);
+            $light = max(0, $total - $deep - $awake);
+            $payload['value'] = "{$total}/{$deep}/{$light}/{$awake}";
+            $payload['upDayStr'] = gmdate('Y-m-d');
+            break;
+
+        case 'upBattery':
+            $payload['batteryLevel'] = random_int(10, 100);
+            $payload['batteryState'] = random_int(0, 1);
+            break;
+
+        case 'upLocation':
+            $payload['lat'] = randomFloat(38.67, 38.79, 6);
+            $payload['lon'] = randomFloat(-9.21, -9.09, 6);
+            if (isset($payload['gps']) && is_array($payload['gps'])) {
+                $payload['gps']['lat'] = (string)$payload['lat'];
+                $payload['gps']['lon'] = (string)$payload['lon'];
+                $payload['gps']['height'] = random_int(5, 120);
+                $payload['gps']['satelliteNum'] = random_int(3, 16);
+                $payload['gps']['GSM'] = random_int(30, 100);
+            }
+            break;
+
+        case 'upECG':
+        case 'APHD':
+            $payload['date'] = sprintf(
+                '%.1f,%.1f,%.1f',
+                randomFloat(80, 140, 1),
+                randomFloat(80, 140, 1),
+                randomFloat(80, 140, 1),
+            );
+            $payload['collectionLogo'] = (string)random_int(10000000, 99999999);
+            break;
+
+        case 'upECGAnalysis':
+            $payload['dataStatus'] = random_int(0, 2);
+            $payload['fileName'] = 'N' . random_int(10000000, 99999999) . '.lp4';
+            break;
+
+        case 'upSensorValue':
+            $payload['sensorType'] = random_int(0, 1);
+            $payload['date'] = sprintf('%.2f,%.2f,%.2f', randomFloat(-2, 2, 2), randomFloat(-2, 2, 2), randomFloat(-2, 2, 2));
+            break;
+
+        case 'upSensorValues':
+            $payload['sensorType'] = '0,1';
+            $payload['data'] = sprintf(
+                '%.2f,%.2f,%.2f;%.2f,%.2f,%.2f',
+                randomFloat(-2, 2, 2),
+                randomFloat(-2, 2, 2),
+                randomFloat(-2, 2, 2),
+                randomFloat(-2, 2, 2),
+                randomFloat(-2, 2, 2),
+                randomFloat(-2, 2, 2),
+            );
+            $payload['dataTime'] = (string)(now() - 5000) . ',' . (string)now();
+            break;
+    }
+
+    return $payload;
+}
+
 function withToken(array $data, string $sessionToken): array
 {
     if ($sessionToken !== '') {
@@ -482,6 +615,21 @@ function buildVivistarUplink(string $type, mixed $data): string
 
     if (is_array($data) && isset($data['fields']) && is_array($data['fields'])) {
         $fields = array_map(static fn ($v): string => (string)$v, $data['fields']);
+    } elseif (is_array($data) && isset($data['raw']) && is_string($data['raw']) && trim($data['raw']) !== '') {
+        $tail = trim($data['raw']);
+        if (str_starts_with($tail, 'IW') && str_ends_with($tail, '#')) {
+            return $tail;
+        }
+        if (str_starts_with($tail, ',')) {
+            return "IW{$type}{$tail}#";
+        }
+        return "IW{$type}," . $tail . "#";
+    } elseif ($type === 'AP01') {
+        $fields = buildVivistarAp01Fields(is_array($data) ? $data : []);
+    } elseif ($type === 'AP02') {
+        $fields = buildVivistarAp02Fields(is_array($data) ? $data : []);
+    } elseif ($type === 'AP07') {
+        $fields = buildVivistarAp07Fields(is_array($data) ? $data : []);
     } elseif ($type === 'AP49') {
         $fields = [(string)($data['heartRate'] ?? 72)];
     } elseif ($type === 'APHT') {
@@ -503,6 +651,8 @@ function buildVivistarUplink(string $type, mixed $data): string
             (string)($data['bodyTemperature'] ?? 36.5),
             (string)($data['batteryLevel'] ?? 80),
         ];
+    } elseif ($type === 'APHD') {
+        $fields = buildVivistarAphdFields(is_array($data) ? $data : []);
     } elseif (is_array($data) && !empty($data)) {
         foreach ($data as $value) {
             if (is_scalar($value) || $value === null) {
@@ -514,6 +664,164 @@ function buildVivistarUplink(string $type, mixed $data): string
     return empty($fields)
         ? "IW{$type}#"
         : "IW{$type}," . implode(',', $fields) . "#";
+}
+
+function buildVivistarAp01Fields(array $data): array
+{
+    $gpsStatus = strtoupper((string)($data['gpsStatus'] ?? 'A'));
+    if (!in_array($gpsStatus, ['A', 'V'], true)) {
+        $gpsStatus = 'A';
+    }
+
+    $lat = vivistarCoordinate((string)($data['lat'] ?? '2232.9806N'), true);
+    $lon = vivistarCoordinate((string)($data['lng'] ?? $data['lon'] ?? '11404.9355E'), false);
+    $speed = (float)($data['speed'] ?? 0.1);
+    $direction = (float)($data['direction'] ?? 323.87);
+    $gsmSignal = str_pad((string)(int)($data['gsmSignal'] ?? 60), 3, '0', STR_PAD_LEFT);
+    $satellites = str_pad((string)(int)($data['satellites'] ?? 9), 3, '0', STR_PAD_LEFT);
+    $battery = str_pad((string)(int)($data['batteryLevel'] ?? 80), 3, '0', STR_PAD_LEFT);
+    $remaining = str_pad((string)(int)($data['remainingSpace'] ?? 0), 1, '0', STR_PAD_LEFT);
+    $fortification = str_pad((string)(int)($data['fortification'] ?? 1), 2, '0', STR_PAD_LEFT);
+    $workMode = str_pad((string)(int)($data['workingMode'] ?? 2), 2, '0', STR_PAD_LEFT);
+
+    $head = gmdate('dmy')
+        . $gpsStatus
+        . $lat
+        . $lon
+        . str_pad(number_format($speed, 1, '.', ''), 5, '0', STR_PAD_LEFT)
+        . gmdate('His')
+        . str_pad(number_format($direction, 2, '.', ''), 6, '0', STR_PAD_LEFT)
+        . $gsmSignal . $satellites . $battery . $remaining . $fortification . $workMode;
+
+    $lbs = is_array($data['lbs'] ?? null) ? $data['lbs'] : [];
+    $mcc = (string)($lbs['mcc'] ?? 460);
+    $mnc = (string)($lbs['mnc'] ?? 0);
+    $lac = (string)($lbs['lac'] ?? 9520);
+    $cid = (string)($lbs['cid'] ?? 3671);
+
+    $wifi = is_array($data['wifi'] ?? null) ? $data['wifi'] : [];
+    $wifiParts = [];
+    foreach ($wifi as $ap) {
+        if (!is_array($ap)) {
+            continue;
+        }
+        $ssid = (string)($ap['ssid'] ?? '');
+        $mac = (string)($ap['mac'] ?? '');
+        $rssi = (string)($ap['rssi'] ?? $ap['signal'] ?? '');
+        if ($ssid === '' || $mac === '' || $rssi === '') {
+            continue;
+        }
+        $wifiParts[] = "{$ssid}|{$mac}|{$rssi}";
+    }
+
+    return array_filter([
+        $head,
+        $mcc,
+        $mnc,
+        "{$lac}|{$cid}",
+        (string)count($wifiParts),
+        implode('&', $wifiParts),
+    ], static fn($v): bool => $v !== '');
+}
+
+function buildVivistarAp02Fields(array $data): array
+{
+    $language = (string)($data['language'] ?? 'zh_cn');
+    $replyAddress = (string)(int)($data['replyAddress'] ?? 0);
+    $baseStations = is_array($data['baseStations'] ?? null) ? $data['baseStations'] : [];
+    $wifi = is_array($data['wifi'] ?? null) ? $data['wifi'] : [];
+
+    $mcc = '460';
+    $mnc = '0';
+    if (isset($baseStations[0]) && is_array($baseStations[0])) {
+        $mcc = (string)($baseStations[0]['mcc'] ?? $mcc);
+        $mnc = (string)($baseStations[0]['mnc'] ?? $mnc);
+    }
+
+    $baseParts = [];
+    foreach ($baseStations as $base) {
+        if (!is_array($base)) {
+            continue;
+        }
+        $lac = (string)($base['lac'] ?? '');
+        $cid = (string)($base['cid'] ?? $base['ci'] ?? '');
+        $dbm = (string)($base['dbm'] ?? $base['rxlev'] ?? '');
+        if ($lac === '' || $cid === '') {
+            continue;
+        }
+        $baseParts[] = "{$lac}|{$cid}|{$dbm}";
+    }
+
+    $wifiParts = [];
+    foreach ($wifi as $ap) {
+        if (!is_array($ap)) {
+            continue;
+        }
+        $ssid = (string)($ap['ssid'] ?? '');
+        $mac = (string)($ap['mac'] ?? '');
+        $rssi = (string)($ap['rssi'] ?? $ap['signal'] ?? '');
+        if ($ssid === '' || $mac === '' || $rssi === '') {
+            continue;
+        }
+        $wifiParts[] = "{$ssid}|{$mac}|{$rssi}";
+    }
+
+    return array_filter([
+        $language,
+        $replyAddress,
+        (string)count($baseParts),
+        $mcc,
+        $mnc,
+        implode('&', $baseParts),
+        (string)count($wifiParts),
+        implode('&', $wifiParts),
+    ], static fn($v): bool => $v !== '');
+}
+
+function buildVivistarAp07Fields(array $data): array
+{
+    return array_filter([
+        (string)($data['recordedAt'] ?? gmdate('YmdHis')),
+        (string)($data['totalPackets'] ?? 1),
+        (string)($data['sequence'] ?? 1),
+        (string)($data['length'] ?? 256),
+        (string)($data['audio'] ?? 'base64-amr-audio'),
+    ], static fn($v): bool => $v !== '');
+}
+
+function buildVivistarAphdFields(array $data): array
+{
+    return array_filter([
+        (string)($data['recordedAt'] ?? gmdate('YmdHis')),
+        (string)($data['totalPackets'] ?? 1),
+        (string)($data['sequence'] ?? 1),
+        (string)($data['gain'] ?? 1.3),
+        (string)($data['zeroVoltage'] ?? 20.2),
+        (string)($data['lead'] ?? 1),
+        (string)($data['samplingRate'] ?? 1000),
+        (string)($data['length'] ?? 1024),
+        (string)($data['ecg'] ?? 'base64-ecg-data'),
+    ], static fn($v): bool => $v !== '');
+}
+
+function vivistarCoordinate(string $value, bool $isLat): string
+{
+    $trimmed = trim($value);
+    if ($trimmed !== '' && preg_match('/^\\d{4,5}\\.\\d+[NSEW]$/i', $trimmed) === 1) {
+        return strtoupper($trimmed);
+    }
+
+    if (!is_numeric($trimmed)) {
+        return $isLat ? '2232.9806N' : '11404.9355E';
+    }
+
+    $decimal = (float)$trimmed;
+    $hemi = $isLat ? ($decimal < 0 ? 'S' : 'N') : ($decimal < 0 ? 'W' : 'E');
+    $abs = abs($decimal);
+    $degrees = (int)floor($abs);
+    $minutes = ($abs - $degrees) * 60.0;
+    $degFormat = $isLat ? '%02d' : '%03d';
+    return sprintf($degFormat, $degrees) . sprintf('%07.4f', $minutes) . $hemi;
 }
 
 function isVivistarDownlinkCommand(array $msg): bool
@@ -696,7 +1004,7 @@ if ($interactive) {
 
         $parts = explode(' ', $input, 2);
         $cmdType = $parts[0];
-        $cmdData = isset($parts[1]) ? json_decode($parts[1], true) : ($templates[$cmdType] ?? []);
+        $cmdData = isset($parts[1]) ? json_decode($parts[1], true) : randomizeTemplatePayload($cmdType, (array)($templates[$cmdType] ?? []));
 
         if (!$caps->supportsPassive($cmdType)) {
             echo "[!] Command '$cmdType' is not passive for this model.\n";
@@ -766,7 +1074,7 @@ if ($command) {
         exit(1);
     }
 
-    $cmdData = $dataJson ? json_decode($dataJson, true) : ($templates[$command] ?? []);
+    $cmdData = $dataJson ? json_decode($dataJson, true) : randomizeTemplatePayload($command, (array)($templates[$command] ?? []));
     if ($cmdData === null) {
         echo "Error: Invalid JSON.\n";
         $ws->close();
