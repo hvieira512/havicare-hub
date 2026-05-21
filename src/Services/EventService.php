@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Domain\EventNormalizer;
+use App\Domain\FeaturePayloadFormatter;
 use App\Registry\DeviceCapabilities;
 use App\Repository\EventRepository;
 use App\Redis\Client as RedisClient;
@@ -38,6 +40,75 @@ class EventService
         if ($this->eventsRepo !== null) {
             return $this->eventsRepo->latestForImei($imei);
         }
+
+        return null;
+    }
+
+    public function latestDeviceFeatureEvent(?WatchServer $watchServer, string $imei, string $feature): ?array
+    {
+        if ($feature === '') {
+            return null;
+        }
+
+        $candidate = null;
+
+        if ($watchServer !== null) {
+            $recent = $watchServer->getRecentEvents(250, null);
+            $candidate = $this->pickLatestFeatureEventFromList($recent, $imei, $feature);
+            if ($candidate !== null) {
+                return $candidate;
+            }
+        }
+
+        if ($this->eventsRepo !== null) {
+            // Primary path: exact feature match in storage.
+            $direct = $this->eventsRepo->latestForImeiAndFeature($imei, $feature);
+            if ($direct !== null) {
+                $normalized = $this->normalizeForFeature($feature, $direct);
+                if ($normalized !== []) {
+                    $direct['featureNormalizedData'] = $normalized;
+                    return $direct;
+                }
+            }
+
+            // Fallback path: mixed native payloads that may carry multiple feature values.
+            $recent = $this->eventsRepo->findRecent(250, null, $imei);
+            $candidate = $this->pickLatestFeatureEventFromList($recent, $imei, $feature);
+            if ($candidate !== null) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    public function waitLatestDeviceFeatureEvent(
+        ?WatchServer $watchServer,
+        string $imei,
+        string $feature,
+        int $afterReceivedAtMs,
+        int $timeoutMs,
+        int $pollIntervalMs = 250,
+    ): ?array {
+        $timeoutMs = max(0, min(60000, $timeoutMs));
+        $pollIntervalMs = max(100, min(1000, $pollIntervalMs));
+        $deadline = (int)round(microtime(true) * 1000) + $timeoutMs;
+
+        do {
+            $event = $this->latestDeviceFeatureEvent($watchServer, $imei, $feature);
+            if ($event !== null) {
+                $receivedAtMs = $this->eventReceivedAtMs($event);
+                if ($receivedAtMs !== null && $receivedAtMs >= $afterReceivedAtMs) {
+                    return $event;
+                }
+            }
+
+            if ($timeoutMs === 0) {
+                break;
+            }
+
+            usleep($pollIntervalMs * 1000);
+        } while ((int)round(microtime(true) * 1000) <= $deadline);
 
         return null;
     }
@@ -112,14 +183,37 @@ class EventService
             'receivedAt' => (int)round(microtime(true) * 1000),
         ];
 
-        $eventId = $this->eventsRepo->insert($event);
+        try {
+            $eventId = $this->eventsRepo->insert($event);
 
-        if ($this->isRedisAvailable()) {
-            $this->redis->eventPush($event);
+            if ($this->isRedisAvailable()) {
+                $this->redis->eventPush($event);
+            }
+
+            if ($watchServer !== null) {
+                $watchServer->ingestEvent($event, $eventId);
+            }
+        } catch (\Throwable $e) {
+            throw new ServiceException(
+                'event_persist_failed',
+                'Failed to persist simulated event',
+                500,
+                ['cause' => $e->getMessage()]
+            );
         }
 
-        if ($watchServer !== null) {
-            $watchServer->ingestEvent($event, $eventId);
+        $featurePayload = null;
+        if (is_string($feature) && $feature !== '') {
+            $normalized = EventNormalizer::normalize($feature, $type, $data);
+            $featurePayload = FeaturePayloadFormatter::format($feature, [
+                'id' => $eventId,
+                'imei' => $imei,
+                'feature' => $feature,
+                'nativeType' => $type,
+                'nativePayload' => $data,
+                'featureNormalizedData' => $normalized,
+                'receivedAt' => $event['receivedAt'],
+            ]);
         }
 
         return [
@@ -128,6 +222,8 @@ class EventService
                 'imei' => $imei,
                 'type' => $type,
                 'id' => $eventId,
+                'feature' => $feature,
+                'featurePayload' => $featurePayload,
             ],
         ];
     }
@@ -135,5 +231,63 @@ class EventService
     private function isRedisAvailable(): bool
     {
         return $this->redis !== null && $this->redis->isAvailable();
+    }
+
+    private function pickLatestFeatureEventFromList(array $events, string $imei, string $feature): ?array
+    {
+        foreach ($events as $event) {
+            if (($event['imei'] ?? null) !== $imei) {
+                continue;
+            }
+
+            $normalized = $this->normalizeForFeature($feature, $event);
+            if ($normalized === []) {
+                continue;
+            }
+
+            $event['featureNormalizedData'] = $normalized;
+            return $event;
+        }
+
+        return null;
+    }
+
+    private function normalizeForFeature(string $feature, array $event): array
+    {
+        if (($event['feature'] ?? null) === $feature) {
+            $existing = $event['generalizedData'] ?? null;
+            if (is_array($existing) && $existing !== []) {
+                return $existing;
+            }
+        }
+
+        $nativePayload = $event['nativeData'] ?? $event['nativePayload'] ?? $event['data'] ?? [];
+        if (!is_array($nativePayload)) {
+            return [];
+        }
+
+        $nativeType = (string)($event['nativeType'] ?? $event['type'] ?? '');
+        $normalized = EventNormalizer::normalize($feature, $nativeType, $nativePayload);
+
+        return is_array($normalized) ? $normalized : [];
+    }
+
+    private function eventReceivedAtMs(array $event): ?int
+    {
+        $value = $event['receivedAt'] ?? $event['timestamp'] ?? null;
+        if ($value === null || !is_numeric((string)$value)) {
+            return null;
+        }
+
+        $ts = (int)$value;
+        if ($ts <= 0) {
+            return null;
+        }
+
+        if ($ts < 1000000000000) {
+            return $ts * 1000;
+        }
+
+        return $ts;
     }
 }

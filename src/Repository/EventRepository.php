@@ -109,6 +109,36 @@ class EventRepository
         ];
     }
 
+    public function latestForImeiAndFeature(string $imei, string $feature): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT ' . self::COLUMNS . '
+             FROM ' . self::FROM_WITH_DEVICE . '
+             WHERE e.imei = :imei AND f.code = :feature
+             ORDER BY e.received_at DESC
+             LIMIT 1'
+        );
+        $stmt->execute([
+            'imei' => $imei,
+            'feature' => $feature,
+        ]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+
+        return [
+            'id' => (int)$row['id'],
+            'imei' => $row['imei'],
+            'model' => $row['model'],
+            'nativeType' => $row['native_type'],
+            'feature' => $row['feature'],
+            'nativeData' => json_decode($row['native_data'], true) ?? [],
+            'generalizedData' => json_decode($row['generalized_data'], true) ?? [],
+            'receivedAt' => (int)$row['received_at'],
+        ];
+    }
+
     public function count(?string $imei = null): int
     {
         if ($imei !== null) {

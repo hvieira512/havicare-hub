@@ -68,7 +68,7 @@ class ApiServer
         $this->supplierController = new SupplierController($watchServer, $pdo, $redis, $wsServerUrl);
         $this->modelController = new ModelController($watchServer, $pdo, $redis, $wsServerUrl);
         $this->eventController = new EventController($watchServer, $pdo, $redis, $wsServerUrl, $eventService);
-        $this->commandController = new CommandController($watchServer, $pdo, $redis, $wsServerUrl, $commandService);
+        $this->commandController = new CommandController($watchServer, $pdo, $redis, $wsServerUrl, $commandService, $eventService);
         $this->systemController = new SystemController($watchServer, $pdo, $redis, $wsServerUrl, $systemService, $eventService);
 
         $this->http = new HttpServer($loop, \Closure::fromCallable([$this, 'handleRequest']));
@@ -122,8 +122,10 @@ class ApiServer
 
                 $method === 'GET' && $path === '/events/recent' => $this->eventController->recentEvents($request),
                 $method === 'GET' && preg_match('#^/devices/([^/]+)/events/latest$#', $path, $m) === 1 => $this->eventController->latestDeviceEvent($m[1]),
+                $method === 'GET' && preg_match('#^/devices/([^/]+)/features/([^/]+)/latest$#', $path, $m) === 1 => $this->eventController->latestDeviceFeaturePayload($m[1], $m[2]),
                 $method === 'GET' && preg_match('#^/devices/([^/]+)/features$#', $path, $m) === 1 => $this->commandController->deviceFeatures($m[1]),
                 $method === 'POST' && preg_match('#^/devices/([^/]+)/command$#', $path, $m) === 1 => $this->commandController->sendCommand($m[1], $request),
+                $method === 'POST' && preg_match('#^/devices/([^/]+)/features/([^/]+)/measure$#', $path, $m) === 1 => $this->commandController->measureFeature($m[1], $m[2], $request),
                 $method === 'POST' && preg_match('#^/devices/([^/]+)/features/([^/]+)/command$#', $path, $m) === 1 => $this->commandController->sendFeatureCommand($m[1], $m[2], $request),
 
                 $method === 'GET' && $path === '/health' => $this->systemController->healthCheck(),

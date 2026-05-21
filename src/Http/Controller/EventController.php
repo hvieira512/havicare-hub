@@ -3,6 +3,7 @@
 namespace App\Http\Controller;
 
 use App\Domain\EventNormalizer;
+use App\Domain\FeaturePayloadFormatter;
 use App\Redis\Client as RedisClient;
 use App\Services\EventService;
 use App\WebSocket\WatchServer;
@@ -54,14 +55,30 @@ class EventController extends Controller
         return $this->jsonResponse(['data' => $this->eventResource($data)]);
     }
 
+    public function latestDeviceFeaturePayload(string $imei, string $feature): Response
+    {
+        $feature = trim($feature);
+        if ($feature === '') {
+            return $this->errorResponse('invalid_feature', 'Feature is required', 400);
+        }
+
+        $data = $this->eventService->latestDeviceFeatureEvent($this->watchServer, $imei, $feature);
+        if ($data === null) {
+            return $this->errorResponse('no_data', "No data available for feature '$feature' on this device", 404);
+        }
+
+        return $this->jsonResponse([
+            'data' => FeaturePayloadFormatter::format($feature, $data),
+        ]);
+    }
+
     private function eventResource(array $event): array
     {
         $nativePayload = $event['nativeData'] ?? $event['nativePayload'] ?? $event['data'] ?? [];
         $nativeType = $event['nativeType'] ?? $event['type'] ?? null;
         $feature = $event['feature'] ?? null;
         $normalized = $event['generalizedData'] ?? EventNormalizer::normalize($feature, $nativeType, $nativePayload);
-
-        return [
+        $resource = [
             'id' => $event['id'] ?? null,
             'imei' => $event['imei'] ?? null,
             'model' => $event['model'] ?? null,
@@ -72,5 +89,19 @@ class EventController extends Controller
             'nativePayload' => $nativePayload,
             'normalized' => is_array($normalized) ? $normalized : [],
         ];
+
+        if (is_string($feature) && $feature !== '') {
+            $resource['featurePayload'] = FeaturePayloadFormatter::format($feature, [
+                'id' => $event['id'] ?? null,
+                'imei' => $event['imei'] ?? null,
+                'feature' => $feature,
+                'nativeType' => $nativeType,
+                'nativePayload' => is_array($nativePayload) ? $nativePayload : [],
+                'featureNormalizedData' => is_array($normalized) ? $normalized : [],
+                'receivedAt' => $event['receivedAt'] ?? $event['timestamp'] ?? null,
+            ]);
+        }
+
+        return $resource;
     }
 }
