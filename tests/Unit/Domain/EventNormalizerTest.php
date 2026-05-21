@@ -22,9 +22,10 @@ final class EventNormalizerTest extends TestCase
             'heart rate' => ['heart_rate', 'upHeartRate', ['heartRate' => 72], ['heartRateBpm' => 72]],
             'blood pressure' => ['blood_pressure', 'upBP', ['date' => '120/80/70'], ['systolicMmHg' => 120, 'diastolicMmHg' => 80, 'pulseBpm' => 70]],
             'oxygen' => ['blood_oxygen', 'upBO', ['spo2' => 97], ['spo2Percent' => 97]],
+            'blood fat' => ['blood_fat', 'upBF', ['date' => '3.12/1.20/1.10/3.12'], ['totalCholesterol' => 3.12, 'hdl' => 1.2, 'ldl' => 1.1, 'triglycerides' => 3.12]],
             'temperature' => ['temperature', 'AP50', ['temperature' => 36.6], ['bodyTemperatureC' => 36.6]],
             'battery' => ['battery', 'upBattery', ['batteryLevel' => 85, 'batteryState' => 1], ['batteryPercent' => 85, 'chargingState' => 1]],
-            'location' => ['location', 'upLocation', ['lat' => '41.15', 'lng' => '-8.61'], ['latitude' => 41.15, 'longitude' => -8.61]],
+            'location' => ['location', 'upLocation', ['lat' => '41.15', 'lng' => '-8.61'], ['latitude' => 41.15, 'longitude' => -8.61, 'source' => 'gps']],
             'vivistar ap02 location' => ['location', 'AP02', [
                 'fields' => [
                     'zh_cn',
@@ -51,6 +52,18 @@ final class EventNormalizerTest extends TestCase
                 'baseStationCount' => 1,
             ]],
             'activity' => ['activity', 'upBatch', ['steps' => 1200, 'distance' => 800.5], ['steps' => 1200, 'distanceMeters' => 800.5]],
+            'activity fallback from mileage' => ['activity', 'upRun', ['mileage' => '2.8'], ['steps' => 3640, 'distanceMeters' => 2.8]],
+            'rr intervals' => ['rr_interval', 'upRR', ['data' => '1648111390074,1080;1648111391154,1570', 'frequency' => '100'], [
+                'intervalMs' => 1080,
+                'series' => [
+                    ['timestamp' => 1648111390074, 'intervalMs' => 1080],
+                    ['timestamp' => 1648111391154, 'intervalMs' => 1570],
+                ],
+                'sampleFrequencyHz' => 100,
+            ]],
+            'sleep legacy value' => ['sleep', 'upSleep', ['value' => '420/120/280/20'], ['durationMinutes' => 420, 'deepMinutes' => 120, 'lightMinutes' => 280, 'awakeMinutes' => 20]],
+            'messaging audio kind' => ['messaging', 'AP07', ['sequence' => 1, 'audio' => 'base64'], ['kind' => 'audio_message', 'audio' => ['sequence' => 1, 'audio' => 'base64']]],
+            'messaging call log kind' => ['messaging', 'upCallLog', ['phone' => '+3519', 'duration' => 30, 'direction' => 1], ['kind' => 'call_log', 'phone' => '+3519', 'callLog' => ['phone' => '+3519', 'duration' => 30, 'callType' => 1]]],
             'generic apht fallback' => [null, 'APHT', ['date' => '120/80/95'], ['systolicMmHg' => 120, 'diastolicMmHg' => 80, 'pulseBpm' => 95, 'spo2Percent' => 120]],
             'generic fallback text' => [null, 'X', ['value' => 'sensor error'], ['text' => 'sensor error']],
         ];
