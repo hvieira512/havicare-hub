@@ -13,7 +13,7 @@ use React\Http\Message\Response;
 
 class SystemController extends Controller
 {
-    private array $demoListeners = [];
+    private const REDIS_PREFIX = 'demo_listener:';
     private SystemService $systemService;
     private EventService $eventService;
 
@@ -79,7 +79,7 @@ class SystemController extends Controller
             return $this->errorResponse('invalid_request', 'imei is required', 400);
         }
 
-        if (isset($this->demoListeners[$imei])) {
+        if ($this->redis?->get(self::REDIS_PREFIX . $imei)) {
             return $this->errorResponse('already_listening', 'Already listening for this IMEI', 409);
         }
 
@@ -111,9 +111,10 @@ class SystemController extends Controller
             return $this->errorResponse('start_failed', 'Process exited immediately after start', 500);
         }
 
-        $this->demoListeners[$imei] = ['pid' => $pid, 'imei' => $imei, 'model' => $model, 'started_at' => time()];
+        $listener = ['pid' => $pid, 'imei' => $imei, 'model' => $model, 'started_at' => time()];
+        $this->redis?->set(self::REDIS_PREFIX . $imei, json_encode($listener));
 
-        return $this->jsonResponse(['data' => $this->listenerResource($this->demoListeners[$imei], true)], 201);
+        return $this->jsonResponse(['data' => $this->listenerResource($listener)], 201);
     }
 
     public function stopDemoListener(string $imei): Response
@@ -122,18 +123,20 @@ class SystemController extends Controller
             return $this->errorResponse('not_found', 'Endpoint not found', 404);
         }
 
-        if (!isset($this->demoListeners[$imei])) {
+        $raw = $this->redis?->get(self::REDIS_PREFIX . $imei);
+        if (!$raw) {
             return $this->errorResponse('not_found', 'No demo listener for this IMEI', 404);
         }
 
-        $listener = $this->demoListeners[$imei];
-        if ($listener['pid'] > 0) {
+        $listener = json_decode($raw, true);
+        if ($listener && ($listener['pid'] ?? 0) > 0) {
             exec('kill ' . (int)$listener['pid'] . ' 2>/dev/null');
+            usleep(500000);
         }
 
-        unset($this->demoListeners[$imei]);
+        $this->redis?->del(self::REDIS_PREFIX . $imei);
 
-        return $this->jsonResponse(['data' => $this->listenerResource($listener, false)]);
+        return $this->jsonResponse(['data' => $this->listenerResource($listener ?? [])]);
     }
 
     public function demoListeners(): Response
@@ -142,10 +145,12 @@ class SystemController extends Controller
             return $this->errorResponse('not_found', 'Endpoint not found', 404);
         }
 
+        $listeners = $this->loadListeners();
+
         return $this->jsonResponse([
             'data' => array_values(array_map(
-                fn(array $l): array => $this->listenerResource($l, $this->processIsRunning($l['pid'])),
-                $this->demoListeners
+                fn(array $l): array => $this->listenerResource($l),
+                $listeners
             )),
         ]);
     }
@@ -182,23 +187,59 @@ class SystemController extends Controller
         if ($pid <= 0) {
             return false;
         }
-        $output = trim((string)shell_exec("ps -p $pid -o pid= 2>/dev/null"));
-        return $output !== '';
+        if (!@file_exists("/proc/{$pid}/status")) {
+            return false;
+        }
+        $status = @file_get_contents("/proc/{$pid}/status");
+        if ($status === false) {
+            return false;
+        }
+        if (preg_match('/^State:\s+Z/m', $status)) {
+            return false;
+        }
+        return true;
     }
 
-    private function listenerResource(array $listener, ?bool $running = null): array
+    private function listenerResource(array $listener): array
     {
-        if ($running === null) {
-            $running = $this->processIsRunning($listener['pid']);
-        }
+        $running = $this->processIsRunning((int)($listener['pid'] ?? 0));
         return [
-            'imei' => $listener['imei'],
-            'model' => $listener['model'],
-            'pid' => $listener['pid'],
+            'imei' => $listener['imei'] ?? '',
+            'model' => $listener['model'] ?? '',
+            'pid' => $listener['pid'] ?? 0,
             'running' => $running,
             'startedAt' => $listener['started_at'] ?? null,
             'since' => isset($listener['started_at']) ? (time() - $listener['started_at']) . 's ago' : null,
         ];
+    }
+
+    private function loadListeners(): array
+    {
+        $listeners = [];
+        if (!$this->redis) {
+            return $listeners;
+        }
+        try {
+            $keys = $this->redis->keys(self::REDIS_PREFIX . '*');
+            foreach ($keys as $key) {
+                $raw = $this->redis->get($key);
+                if (!$raw) {
+                    continue;
+                }
+                $listener = json_decode($raw, true);
+                if (!$listener) {
+                    continue;
+                }
+                if (!$this->processIsRunning((int)($listener['pid'] ?? 0))) {
+                    $this->redis->del($key);
+                    continue;
+                }
+                $listeners[] = $listener;
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+        return $listeners;
     }
 
     private function demoApiEnabled(): bool

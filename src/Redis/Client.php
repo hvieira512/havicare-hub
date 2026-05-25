@@ -374,6 +374,54 @@ class Client
         return $this->rateLimitCheck("msg:$imei", 60);
     }
 
+    public function keys(string $pattern): array
+    {
+        if (!$this->available) return [];
+        try {
+            $result = $this->redis->keys($pattern);
+            return $result ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    // --- Key-value helpers ---
+
+    public function set(string $key, string $value, ?int $ttl = null): void
+    {
+        if (!$this->available) return;
+        try {
+            if ($ttl !== null) {
+                $this->redis->setEx($key, $ttl, $value);
+            } else {
+                $this->redis->set($key, $value);
+            }
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("set({$key}): {$e->getMessage()}");
+        }
+    }
+
+    public function get(string $key): ?string
+    {
+        if (!$this->available) return null;
+        try {
+            $val = $this->redis->get($key);
+            return $val === false ? null : $val;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    public function del(string $key): void
+    {
+        if (!$this->available) return;
+        try {
+            $this->redis->del($key);
+        } catch (\Throwable $e) {
+            Logger::channel('redis')->error("del({$key}): {$e->getMessage()}");
+        }
+    }
+
     private function mapCommandEntries(array $result, bool $isPending): array
     {
         $commands = [];

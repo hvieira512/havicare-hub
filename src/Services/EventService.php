@@ -186,10 +186,6 @@ class EventService
         try {
             $eventId = $this->eventsRepo->insert($event);
 
-            if ($this->isRedisAvailable()) {
-                $this->redis->eventPush($event);
-            }
-
             if ($watchServer !== null) {
                 $watchServer->ingestEvent($event, $eventId);
             }

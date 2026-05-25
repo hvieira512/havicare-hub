@@ -104,6 +104,8 @@ class WatchServer implements MessageComponentInterface
         $session = $this->sessions[$rid] ?? [];
         $raw = (string)$msg;
 
+        Logger::channel('watch')->info("RAW[$rid]: " . substr($raw, 0, 500));
+
         $payload = null;
         $adapter = $session['adapter'] ?? null;
         if ($adapter instanceof DeviceAdapterInterface) {
