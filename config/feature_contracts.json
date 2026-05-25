@@ -294,7 +294,11 @@
             "data": {
                 "source": "string",
                 "lat": "number",
-                "lon": "number"
+                "lon": "number",
+                "mcc": "integer",
+                "mnc": "integer",
+                "lac": "integer",
+                "cellId": "integer"
             },
             "extra": {
                 "accuracy": "number",
@@ -305,10 +309,6 @@
                 "gsmSignal": "integer",
                 "wifiAccessPoints": "object[]",
                 "baseStations": "object[]",
-                "mcc": "integer",
-                "mnc": "integer",
-                "lac": "integer",
-                "cellId": "integer",
                 "coordinateSystem": "string"
             }
         },
