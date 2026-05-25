@@ -11,6 +11,7 @@ use App\Http\Controller\SystemController;
 use App\Log\Logger;
 use App\Redis\Client as RedisClient;
 use App\Registry\DeviceCapabilities;
+use App\Runtime\HttpRuntimeContext;
 use App\Runtime\ServiceComposer;
 use App\Services\CommandService;
 use App\Services\DeviceService;
@@ -42,6 +43,7 @@ class ApiServer
         ?\PDO $pdo = null,
         ?RedisClient $redis = null,
         ?string $wsServerUrl = null,
+        ?HttpRuntimeContext $httpRuntimeContext = null,
         ?DeviceService $deviceService = null,
         ?CommandService $commandService = null,
         ?EventService $eventService = null,
@@ -56,20 +58,41 @@ class ApiServer
                 ? $envWsServerUrl
                 : 'ws://127.0.0.1:8080');
 
-        if ($deviceService === null || $commandService === null || $eventService === null || $systemService === null) {
-            $services = ServiceComposer::forApi($pdo, $redis, $watchServer);
+        if (
+            $deviceService === null
+            || $commandService === null
+            || $eventService === null
+            || $systemService === null
+            || $httpRuntimeContext === null
+        ) {
+            $services = ServiceComposer::forApi($pdo, $redis, $watchServer, $wsServerUrl);
             $deviceService = $deviceService ?? $services['deviceService'];
             $commandService = $commandService ?? $services['commandService'];
             $eventService = $eventService ?? $services['eventService'];
             $systemService = $systemService ?? $services['systemService'];
+            $httpRuntimeContext = $httpRuntimeContext ?? $services['httpContext'];
         }
 
-        $this->deviceController = new DeviceController($watchServer, $pdo, $redis, $wsServerUrl, $deviceService);
-        $this->supplierController = new SupplierController($watchServer, $pdo, $redis, $wsServerUrl);
-        $this->modelController = new ModelController($watchServer, $pdo, $redis, $wsServerUrl);
-        $this->eventController = new EventController($watchServer, $pdo, $redis, $wsServerUrl, $eventService);
-        $this->commandController = new CommandController($watchServer, $pdo, $redis, $wsServerUrl, $commandService, $eventService);
-        $this->systemController = new SystemController($watchServer, $pdo, $redis, $wsServerUrl, $systemService, $eventService);
+        $this->deviceController = new DeviceController(
+            runtimeContext: $httpRuntimeContext,
+            deviceService: $deviceService,
+        );
+        $this->supplierController = new SupplierController(runtimeContext: $httpRuntimeContext);
+        $this->modelController = new ModelController(runtimeContext: $httpRuntimeContext);
+        $this->eventController = new EventController(
+            runtimeContext: $httpRuntimeContext,
+            eventService: $eventService,
+        );
+        $this->commandController = new CommandController(
+            runtimeContext: $httpRuntimeContext,
+            commandService: $commandService,
+            eventService: $eventService,
+        );
+        $this->systemController = new SystemController(
+            runtimeContext: $httpRuntimeContext,
+            systemService: $systemService,
+            eventService: $eventService,
+        );
 
         $this->http = new HttpServer($loop, \Closure::fromCallable([$this, 'handleRequest']));
         $this->socket = new SocketServer("$host:$port", [], $loop);

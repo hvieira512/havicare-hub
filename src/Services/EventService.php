@@ -158,10 +158,12 @@ class EventService
         $data = is_array($body['data'] ?? null) ? $body['data'] : [];
         $model = trim((string)($body['model'] ?? ''));
         $feature = null;
+        $protocol = null;
         if ($model !== '') {
             $caps = DeviceCapabilities::forModel($model);
             if ($caps !== null) {
                 $feature = $caps->featureForPassive($type);
+                $protocol = $caps->getProtocol();
             }
         }
 
@@ -179,6 +181,7 @@ class EventService
             'imei' => $imei,
             'nativeType' => $type,
             'feature' => $feature,
+            'protocol' => $protocol,
             'nativePayload' => $data,
             'receivedAt' => (int)round(microtime(true) * 1000),
         ];
@@ -200,12 +203,13 @@ class EventService
 
         $featurePayload = null;
         if (is_string($feature) && $feature !== '') {
-            $normalized = EventNormalizer::normalize($feature, $type, $data);
+            $normalized = EventNormalizer::normalize($feature, $type, $data, $protocol);
             $featurePayload = FeaturePayloadFormatter::format($feature, [
                 'id' => $eventId,
                 'imei' => $imei,
                 'feature' => $feature,
                 'nativeType' => $type,
+                'protocol' => $protocol,
                 'nativePayload' => $data,
                 'featureNormalizedData' => $normalized,
                 'receivedAt' => $event['receivedAt'],
@@ -263,7 +267,12 @@ class EventService
         }
 
         $nativeType = (string)($event['nativeType'] ?? $event['type'] ?? '');
-        $normalized = EventNormalizer::normalize($feature, $nativeType, $nativePayload);
+        $normalized = EventNormalizer::normalize(
+            $feature,
+            $nativeType,
+            $nativePayload,
+            isset($event['protocol']) ? (string)$event['protocol'] : null
+        );
 
         return is_array($normalized) ? $normalized : [];
     }

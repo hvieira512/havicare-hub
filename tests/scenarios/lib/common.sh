@@ -52,7 +52,13 @@ restart_runtime() {
 }
 
 migrate_seed() {
-  docker compose exec -T api php bin/migrate.php --seed >/dev/null
+  for _ in $(seq 1 40); do
+    if docker compose exec -T api php bin/migrate.php --seed >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  scenario_fail "stream_failure" "database seed migration failed after retries"
 }
 
 wait_for_mosquitto() {
@@ -149,7 +155,12 @@ capture_artifacts() {
 require "vendor/autoload.php";
 $c=\App\Config::load()->all();
 $db=\App\Database\Database::connect($c["database"])->pdo();
-$q=$db->query("SELECT imei,native_type,feature,received_at FROM device_events ORDER BY id DESC LIMIT 20");
+$q=$db->query(
+    "SELECT e.imei, e.native_type, f.code AS feature, e.received_at
+     FROM device_events e
+     LEFT JOIN features f ON f.id = e.feature_id
+     ORDER BY e.id DESC LIMIT 20"
+);
 echo json_encode($q->fetchAll(), JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE), PHP_EOL;
 ' > "$SCENARIO_DIR/db-events-tail.json" 2>&1 || true
 }
@@ -201,7 +212,12 @@ wait_for_db_event() {
 require "vendor/autoload.php";
 $config=\App\Config::load()->all();
 $pdo=\App\Database\Database::connect($config["database"])->pdo();
-$stmt=$pdo->prepare("SELECT COUNT(*) FROM device_events WHERE imei = :imei AND native_type = :native_type AND feature = :feature");
+$stmt=$pdo->prepare(
+    "SELECT COUNT(*)
+     FROM device_events e
+     LEFT JOIN features f ON f.id = e.feature_id
+     WHERE e.imei = :imei AND e.native_type = :native_type AND f.code = :feature"
+);
 $stmt->execute([
     "imei"=>$argv[1],
     "native_type"=>$argv[2],

@@ -11,9 +11,11 @@ use App\Repository\ModelRepository;
 use App\Repository\SupplierRepository;
 use App\Redis\Client as RedisClient;
 use App\Protocol\AdapterRegistry;
+use App\Runtime\HttpRuntimeContext;
 
 abstract class Controller
 {
+    protected ?HttpRuntimeContext $runtimeContext;
     protected ?WatchServer $watchServer;
     protected ?Whitelist $whitelist = null;
     protected ?\PDO $pdo;
@@ -29,7 +31,23 @@ abstract class Controller
         ?\PDO $pdo = null,
         ?RedisClient $redis = null,
         ?string $wsServerUrl = null,
+        ?HttpRuntimeContext $runtimeContext = null,
     ) {
+        $this->runtimeContext = $runtimeContext;
+
+        if ($runtimeContext !== null) {
+            $this->watchServer = $runtimeContext->watchServer;
+            $this->pdo = $runtimeContext->pdo;
+            $this->redis = $runtimeContext->redis;
+            $this->wsServerUrl = $runtimeContext->wsServerUrl;
+            $this->whitelist = $runtimeContext->whitelist;
+            $this->deviceRepo = $runtimeContext->deviceRepo;
+            $this->eventsRepo = $runtimeContext->eventRepo;
+            $this->modelRepo = $runtimeContext->modelRepo;
+            $this->supplierRepo = $runtimeContext->supplierRepo;
+            return;
+        }
+
         $this->watchServer = $watchServer;
         $this->pdo = $pdo;
         $this->deviceRepo = $pdo ? new DeviceRepository($pdo) : null;
@@ -137,6 +155,10 @@ abstract class Controller
 
     protected function supportedProtocols(): array
     {
+        if ($this->runtimeContext !== null) {
+            return $this->runtimeContext->supportedProtocols;
+        }
+
         $registry = new AdapterRegistry();
         return $registry->getProtocols();
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controller;
 use App\Domain\EventNormalizer;
 use App\Domain\FeaturePayloadFormatter;
 use App\Redis\Client as RedisClient;
+use App\Runtime\HttpRuntimeContext;
 use App\Services\EventService;
 use App\WebSocket\WatchServer;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,9 +20,10 @@ class EventController extends Controller
         ?\PDO $pdo = null,
         ?RedisClient $redis = null,
         ?string $wsServerUrl = null,
+        ?HttpRuntimeContext $runtimeContext = null,
         ?EventService $eventService = null,
     ) {
-        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl);
+        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl, $runtimeContext);
         if ($eventService === null) {
             throw new \InvalidArgumentException('EventService is required');
         }
@@ -77,7 +79,8 @@ class EventController extends Controller
         $nativePayload = $event['nativeData'] ?? $event['nativePayload'] ?? $event['data'] ?? [];
         $nativeType = $event['nativeType'] ?? $event['type'] ?? null;
         $feature = $event['feature'] ?? null;
-        $normalized = $event['generalizedData'] ?? EventNormalizer::normalize($feature, $nativeType, $nativePayload);
+        $protocol = isset($event['protocol']) ? (string)$event['protocol'] : null;
+        $normalized = $event['generalizedData'] ?? EventNormalizer::normalize($feature, $nativeType, $nativePayload, $protocol);
         $resource = [
             'id' => $event['id'] ?? null,
             'imei' => $event['imei'] ?? null,
@@ -96,6 +99,7 @@ class EventController extends Controller
                 'imei' => $event['imei'] ?? null,
                 'feature' => $feature,
                 'nativeType' => $nativeType,
+                'protocol' => $protocol,
                 'nativePayload' => is_array($nativePayload) ? $nativePayload : [],
                 'featureNormalizedData' => is_array($normalized) ? $normalized : [],
                 'receivedAt' => $event['receivedAt'] ?? $event['timestamp'] ?? null,

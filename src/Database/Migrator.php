@@ -357,7 +357,12 @@ class Migrator
             'INSERT INTO model_feature_mappings
                 (model_id, feature_id, native_type, is_active, description, enabled)
              VALUES
-                (:model_id, :feature_id, :native_type, :is_active, :description, 1)'
+                (:model_id, :feature_id, :native_type, :is_active, :description, 1)
+             ON DUPLICATE KEY UPDATE
+                feature_id = VALUES(feature_id),
+                is_active = VALUES(is_active),
+                description = VALUES(description),
+                enabled = 1'
         );
 
         $notesByType = $this->metadataNotesByType($profile['command_metadata'] ?? []);

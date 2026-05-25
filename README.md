@@ -36,6 +36,16 @@ api service (REST control plane)
   - dispatches commands to ws (direct or via Redis command stream)
 ```
 
+## Runtime Composition
+
+Runtime wiring is centralized in [`src/Runtime/ServiceComposer.php`](src/Runtime/ServiceComposer.php):
+
+- `forWatchServer(...)` composes WS-facing services (`EventService`, `CommandService`).
+- `forApi(...)` composes API services plus a shared HTTP runtime context.
+
+HTTP controllers now receive dependencies from a shared context object
+([`src/Runtime/HttpRuntimeContext.php`](src/Runtime/HttpRuntimeContext.php)) rather than instantiating repositories ad hoc in each controller path.
+
 ## Service Catalog
 
 | Service | Purpose | Key Ports |
@@ -405,6 +415,7 @@ Replay fixtures (real-device readiness bridge):
 
 - Fixture files live at `tests/fixtures/replay/*.json`.
 - Scenario `S5` replays these packets via simulator transport and asserts MQTT payload contracts.
+- Fixtures can include optional `ingress.data` to force deterministic payload values in replay tests.
 - Replay report is written to `tests/artifacts/.../s5_replay_fixtures/replay-report.ndjson`.
 
 ## MQTT Credentials

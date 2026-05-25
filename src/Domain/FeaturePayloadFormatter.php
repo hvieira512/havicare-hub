@@ -10,7 +10,8 @@ final class FeaturePayloadFormatter
     {
         $nativePayload = self::nativePayload($event);
         $nativeType = (string)($event['nativeType'] ?? $event['type'] ?? '');
-        $normalized = self::normalizedPayload($feature, $event, $nativePayload, $nativeType);
+        $protocol = isset($event['protocol']) ? (string)$event['protocol'] : null;
+        $normalized = self::normalizedPayload($feature, $event, $nativePayload, $nativeType, $protocol);
 
         $dataFields = self::contractFields($feature, 'data');
         $extraFields = self::contractFields($feature, 'extra');
@@ -37,7 +38,7 @@ final class FeaturePayloadFormatter
 
         $extra = [];
         foreach ($extraFields as $field => $type) {
-            $value = self::extractExtraFieldValue($feature, $field, $normalized, $nativePayload);
+            $value = self::extractExtraFieldValue($feature, $field, $normalized, $nativePayload, $protocol);
             if ($value === null) {
                 continue;
             }
@@ -69,7 +70,13 @@ final class FeaturePayloadFormatter
         ];
     }
 
-    private static function normalizedPayload(string $feature, array $event, array $nativePayload, string $nativeType): array
+    private static function normalizedPayload(
+        string $feature,
+        array $event,
+        array $nativePayload,
+        string $nativeType,
+        ?string $protocol,
+    ): array
     {
         if (isset($event['featureNormalizedData']) && is_array($event['featureNormalizedData'])) {
             return $event['featureNormalizedData'];
@@ -80,7 +87,7 @@ final class FeaturePayloadFormatter
             return $existing;
         }
 
-        $normalized = EventNormalizer::normalize($feature, $nativeType, $nativePayload);
+        $normalized = EventNormalizer::normalize($feature, $nativeType, $nativePayload, $protocol);
         return is_array($normalized) ? $normalized : [];
     }
 
@@ -178,7 +185,13 @@ final class FeaturePayloadFormatter
         return null;
     }
 
-    private static function extractExtraFieldValue(string $feature, string $field, array $normalized, array $nativePayload): mixed
+    private static function extractExtraFieldValue(
+        string $feature,
+        string $field,
+        array $normalized,
+        array $nativePayload,
+        ?string $protocol,
+    ): mixed
     {
         if (array_key_exists($field, $normalized)) {
             return $normalized[$field];
@@ -196,9 +209,9 @@ final class FeaturePayloadFormatter
         // Feature-specific enrichments.
         if ($feature === 'heart_rate' && $field === 'coMeasured') {
             $co = array_merge(
-                EventNormalizer::normalize('blood_pressure', '', $nativePayload),
-                EventNormalizer::normalize('blood_oxygen', '', $nativePayload),
-                EventNormalizer::normalize('blood_sugar', '', $nativePayload)
+                EventNormalizer::normalize('blood_pressure', '', $nativePayload, $protocol),
+                EventNormalizer::normalize('blood_oxygen', '', $nativePayload, $protocol),
+                EventNormalizer::normalize('blood_sugar', '', $nativePayload, $protocol)
             );
             return $co !== [] ? $co : null;
         }

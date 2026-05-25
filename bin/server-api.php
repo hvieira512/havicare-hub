@@ -30,6 +30,7 @@ $apiServer = new ApiServer(
     pdo: $pdo,
     redis: $redis,
     wsServerUrl: $wsServerUrl,
+    httpRuntimeContext: $apiServices['httpContext'],
     deviceService: $apiServices['deviceService'],
     commandService: $apiServices['commandService'],
     eventService: $apiServices['eventService'],

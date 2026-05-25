@@ -3,6 +3,7 @@
 namespace App\Http\Controller;
 
 use App\Redis\Client as RedisClient;
+use App\Runtime\HttpRuntimeContext;
 use App\Services\DeviceService;
 use App\Services\ServiceException;
 use App\WebSocket\WatchServer;
@@ -18,9 +19,10 @@ class DeviceController extends Controller
         ?\PDO $pdo = null,
         ?RedisClient $redis = null,
         ?string $wsServerUrl = null,
+        ?HttpRuntimeContext $runtimeContext = null,
         ?DeviceService $deviceService = null,
     ) {
-        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl);
+        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl, $runtimeContext);
         if ($deviceService === null) {
             throw new \InvalidArgumentException('DeviceService is required');
         }

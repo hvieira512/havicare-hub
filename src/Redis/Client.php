@@ -139,6 +139,7 @@ class Client
             'imei' => $event['imei'],
             'native_type' => $event['nativeType'],
             'feature' => $event['feature'] ?? '',
+            'protocol' => $event['protocol'] ?? '',
             'native_payload' => json_encode($event['nativePayload']),
             'received_at' => $event['receivedAt'],
         ], 10000);
@@ -152,6 +153,7 @@ class Client
                 'imei' => $data['imei'],
                 'nativeType' => $data['native_type'],
                 'feature' => $data['feature'] ?: null,
+                'protocol' => ($data['protocol'] ?? '') !== '' ? $data['protocol'] : null,
                 'nativePayload' => json_decode($data['native_payload'], true) ?? [],
                 'receivedAt' => (int)$data['received_at'],
             ]
@@ -282,6 +284,7 @@ class Client
                         'imei' => $data['imei'],
                         'nativeType' => $data['native_type'],
                         'feature' => $data['feature'] ?? '',
+                        'protocol' => ($data['protocol'] ?? '') !== '' ? $data['protocol'] : null,
                         'nativePayload' => json_decode($data['native_payload'], true) ?? [],
                         'receivedAt' => (int)$data['received_at'],
                     ];

@@ -4,6 +4,7 @@ namespace App\Http\Controller;
 
 use App\Http\OpenApiSpec;
 use App\Redis\Client as RedisClient;
+use App\Runtime\HttpRuntimeContext;
 use App\Services\EventService;
 use App\Services\ServiceException;
 use App\Services\SystemService;
@@ -22,10 +23,11 @@ class SystemController extends Controller
         ?\PDO $pdo = null,
         ?RedisClient $redis = null,
         ?string $wsServerUrl = null,
+        ?HttpRuntimeContext $runtimeContext = null,
         ?SystemService $systemService = null,
         ?EventService $eventService = null,
     ) {
-        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl);
+        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl, $runtimeContext);
         $this->systemService = $systemService ?? new SystemService($this->pdo, $this->redis, $this->whitelist(), $this->watchServer);
         $this->eventService = $eventService ?? new EventService($this->eventsRepo, $this->redis);
     }

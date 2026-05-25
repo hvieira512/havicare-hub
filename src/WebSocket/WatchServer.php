@@ -177,6 +177,7 @@ class WatchServer implements MessageComponentInterface
                 'imei' => $imei,
                 'nativeType' => $type,
                 'feature' => $caps->featureForPassive($type),
+                'protocol' => $session['protocol'] ?? null,
                 'nativePayload' => $this->sanitizePayload($payload['data'] ?? []),
                 'receivedAt' => $this->now(),
             ]);

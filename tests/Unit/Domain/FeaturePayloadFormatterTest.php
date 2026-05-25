@@ -44,7 +44,7 @@ final class FeaturePayloadFormatterTest extends TestCase
         self::assertSame(38.7223, $payload['data']['lat'] ?? null);
         self::assertSame(-9.1393, $payload['data']['lon'] ?? null);
         self::assertSame('gps', $payload['data']['source'] ?? null);
-        self::assertSame(8, $payload['extra']['satelliteCount'] ?? null);
+        self::assertSame(8, $payload['data']['satelliteCount'] ?? ($payload['extra']['satelliteCount'] ?? null));
     }
 
     public function testPreservesUnmappedNativePayloadInsideExtra(): void

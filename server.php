@@ -73,7 +73,20 @@ $vivistarTcpServer = new VivistarTcpIngress(
     port: $vivistarTcpPort,
 );
 
-$apiServer = new ApiServer($watchServer, $loop, $apiPort, $apiHost);
+$apiServices = ServiceComposer::forApi($db?->pdo(), $redis, $watchServer);
+$apiServer = new ApiServer(
+    watchServer: $watchServer,
+    loop: $loop,
+    port: $apiPort,
+    host: $apiHost,
+    pdo: $db?->pdo(),
+    redis: $redis,
+    httpRuntimeContext: $apiServices['httpContext'],
+    deviceService: $apiServices['deviceService'],
+    commandService: $apiServices['commandService'],
+    eventService: $apiServices['eventService'],
+    systemService: $apiServices['systemService'],
+);
 
 $loop->addPeriodicTimer(1.0, function () use ($watchServer): void {
     $watchServer->sweepCommandTimeouts();

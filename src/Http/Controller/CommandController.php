@@ -4,6 +4,7 @@ namespace App\Http\Controller;
 
 use App\Domain\FeaturePayloadFormatter;
 use App\Redis\Client as RedisClient;
+use App\Runtime\HttpRuntimeContext;
 use App\Services\CommandService;
 use App\Services\EventService;
 use App\Services\ServiceException;
@@ -21,10 +22,11 @@ class CommandController extends Controller
         ?\PDO $pdo = null,
         ?RedisClient $redis = null,
         ?string $wsServerUrl = null,
+        ?HttpRuntimeContext $runtimeContext = null,
         ?CommandService $commandService = null,
         ?EventService $eventService = null,
     ) {
-        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl);
+        parent::__construct($watchServer, $pdo, $redis, $wsServerUrl, $runtimeContext);
         if ($commandService === null) {
             throw new \InvalidArgumentException('CommandService is required');
         }

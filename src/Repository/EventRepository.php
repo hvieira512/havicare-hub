@@ -7,7 +7,7 @@ use App\Domain\EventNormalizer;
 class EventRepository
 {
     private \PDO $pdo;
-    private const COLUMNS = 'e.id, e.imei, m.code AS model, e.native_type, f.code AS feature, e.native_data, e.generalized_data, e.received_at, e.created_at';
+    private const COLUMNS = 'e.id, e.imei, m.code AS model, m.protocol AS protocol, e.native_type, f.code AS feature, e.native_data, e.generalized_data, e.received_at, e.created_at';
     private const FROM_WITH_DEVICE = 'device_events e LEFT JOIN features f ON f.id = e.feature_id LEFT JOIN devices d ON d.imei = e.imei LEFT JOIN models m ON m.id = d.model_id';
 
     public function __construct(\PDO $pdo)
@@ -21,7 +21,12 @@ class EventRepository
         $nativePayload = is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : [];
         $generalized = is_array($event['generalizedData'] ?? null)
             ? $event['generalizedData']
-            : EventNormalizer::normalize($feature, (string)($event['nativeType'] ?? ''), $nativePayload);
+            : EventNormalizer::normalize(
+                $feature,
+                (string)($event['nativeType'] ?? ''),
+                $nativePayload,
+                isset($event['protocol']) ? (string)$event['protocol'] : null
+            );
 
         $featureId = $feature !== null
             ? $this->resolveFeatureId($feature)
@@ -79,6 +84,7 @@ class EventRepository
             'imei' => $row['imei'],
             'model' => $row['model'],
             'nativeType' => $row['native_type'],
+            'protocol' => $row['protocol'],
             'feature' => $row['feature'],
             'nativeData' => json_decode($row['native_data'], true) ?? [],
             'generalizedData' => json_decode($row['generalized_data'], true) ?? [],
@@ -102,6 +108,7 @@ class EventRepository
             'imei' => $row['imei'],
             'model' => $row['model'],
             'nativeType' => $row['native_type'],
+            'protocol' => $row['protocol'],
             'feature' => $row['feature'],
             'nativeData' => json_decode($row['native_data'], true) ?? [],
             'generalizedData' => json_decode($row['generalized_data'], true) ?? [],
@@ -132,6 +139,7 @@ class EventRepository
             'imei' => $row['imei'],
             'model' => $row['model'],
             'nativeType' => $row['native_type'],
+            'protocol' => $row['protocol'],
             'feature' => $row['feature'],
             'nativeData' => json_decode($row['native_data'], true) ?? [],
             'generalizedData' => json_decode($row['generalized_data'], true) ?? [],
@@ -168,6 +176,7 @@ class EventRepository
                 'imei' => $row['imei'],
                 'model' => $row['model'],
                 'nativeType' => $row['native_type'],
+                'protocol' => $row['protocol'],
                 'feature' => $row['feature'],
                 'nativeData' => json_decode($row['native_data'], true) ?? [],
                 'generalizedData' => json_decode($row['generalized_data'], true) ?? [],

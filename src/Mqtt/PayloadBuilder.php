@@ -30,7 +30,8 @@ class PayloadBuilder
             'data' => EventNormalizer::normalize(
                 ($event['feature'] ?? '') !== '' ? (string)$event['feature'] : null,
                 isset($event['nativeType']) ? (string)$event['nativeType'] : null,
-                is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : []
+                is_array($event['nativePayload'] ?? null) ? $event['nativePayload'] : [],
+                isset($event['protocol']) ? (string)$event['protocol'] : $caps?->getProtocol()
             ),
         ];
     }

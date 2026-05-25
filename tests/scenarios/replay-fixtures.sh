@@ -34,14 +34,38 @@ for fixture in "$ROOT_DIR"/tests/fixtures/replay/*.json; do
   model="$(php -r '$f=json_decode(file_get_contents($argv[1]),true); echo $f["ingress"]["model"];' "$fixture")"
   imei="$(php -r '$f=json_decode(file_get_contents($argv[1]),true); echo $f["ingress"]["imei"];' "$fixture")"
   command="$(php -r '$f=json_decode(file_get_contents($argv[1]),true); echo $f["ingress"]["command"];' "$fixture")"
+  data_json="$(php -r '
+$f=json_decode(file_get_contents($argv[1]), true);
+$d=$f["ingress"]["data"] ?? null;
+if ($d === null) { exit(0); }
+echo json_encode($d, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+' "$fixture")"
   topic="$(php -r '$f=json_decode(file_get_contents($argv[1]),true); echo $f["expect"]["topic"];' "$fixture")"
 
   echo "[replay] running fixture: $name"
-  docker compose exec -T ws php simulator/simulate.php \
-    --server "$server" \
-    --model "$model" \
-    --imei "$imei" \
-    --command "$command" >/dev/null
+  sent=0
+  for _ in $(seq 1 20); do
+    cmd=(docker compose exec -T ws php simulator/simulate.php
+      --server "$server"
+      --model "$model"
+      --imei "$imei"
+      --command "$command"
+    )
+    if [ -n "$data_json" ]; then
+      cmd+=(--data "$data_json")
+    fi
+
+    if "${cmd[@]}" >/dev/null; then
+      sent=1
+      break
+    fi
+    sleep 1
+  done
+
+  if [ "$sent" -ne 1 ]; then
+    echo "[replay][FAIL][routing_failure] failed to inject fixture event after retries: $name"
+    exit 1
+  fi
 
   sleep 4
 

@@ -4,9 +4,11 @@ namespace App\Runtime;
 
 use App\Redis\Client as RedisClient;
 use App\Registry\Whitelist;
+use App\Repository\SupplierRepository;
 use App\Repository\DeviceRepository;
 use App\Repository\EventRepository;
 use App\Repository\ModelRepository;
+use App\Protocol\AdapterRegistry;
 use App\Services\CommandService;
 use App\Services\DeviceService;
 use App\Services\EventService;
@@ -19,12 +21,14 @@ class ServiceComposer
         ?\PDO $pdo,
         ?RedisClient $redis,
         ?WatchServer $watchServer,
+        ?string $wsServerUrl = null,
     ): array {
         $whitelist = $watchServer?->getWhitelist() ?? new Whitelist(pdo: $pdo);
 
         $deviceRepo = $pdo ? new DeviceRepository($pdo) : null;
         $eventRepo = $pdo ? new EventRepository($pdo) : null;
         $modelRepo = $pdo ? new ModelRepository($pdo) : null;
+        $supplierRepo = $pdo ? new SupplierRepository($pdo) : null;
 
         $onlineResolver = static function (string $imei) use ($watchServer, $redis): bool {
             if ($watchServer !== null) {
@@ -50,12 +54,31 @@ class ServiceComposer
         $commandService = new CommandService($whitelist, $watchServer, $redis, $onlineResolver);
         $eventService = new EventService($eventRepo, $redis);
         $systemService = new SystemService($pdo, $redis, $whitelist, $watchServer);
+        $registry = new AdapterRegistry();
+        $envWsServerUrl = getenv('WS_SERVER_URL');
+        $resolvedWsServerUrl = $wsServerUrl
+            ?: (($envWsServerUrl !== false && $envWsServerUrl !== '')
+                ? $envWsServerUrl
+                : 'ws://127.0.0.1:8080');
+        $httpContext = new HttpRuntimeContext(
+            watchServer: $watchServer,
+            pdo: $pdo,
+            redis: $redis,
+            wsServerUrl: $resolvedWsServerUrl,
+            whitelist: $whitelist,
+            deviceRepo: $deviceRepo,
+            eventRepo: $eventRepo,
+            modelRepo: $modelRepo,
+            supplierRepo: $supplierRepo,
+            supportedProtocols: $registry->getProtocols(),
+        );
 
         return [
             'deviceService' => $deviceService,
             'commandService' => $commandService,
             'eventService' => $eventService,
             'systemService' => $systemService,
+            'httpContext' => $httpContext,
         ];
     }
 

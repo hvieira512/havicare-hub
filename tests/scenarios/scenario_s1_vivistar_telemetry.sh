@@ -13,11 +13,22 @@ wait_for_mosquitto
 start_mqtt_subscriber
 
 # Trigger Vivistar telemetry through native TCP ingress.
-docker compose exec -T ws php simulator/simulate.php \
-  --server tcp://127.0.0.1:9000 \
-  --model VIVISTAR-CARE \
-  --imei 865028000000308 \
-  --command AP49 >/dev/null
+sent=0
+for _ in $(seq 1 20); do
+  if docker compose exec -T ws php simulator/simulate.php \
+    --server tcp://127.0.0.1:9000 \
+    --model VIVISTAR-CARE \
+    --imei 865028000000308 \
+    --command AP49 \
+    --data '{"heartRate":72}' >/dev/null; then
+    sent=1
+    break
+  fi
+  sleep 1
+done
+if [ "$sent" -ne 1 ]; then
+  scenario_fail "routing_failure" "failed to send Vivistar AP49 fixture event after retries"
+fi
 
 sleep 4
 

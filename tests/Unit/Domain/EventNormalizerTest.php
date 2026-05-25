@@ -68,4 +68,44 @@ final class EventNormalizerTest extends TestCase
             'generic fallback text' => [null, 'X', ['value' => 'sensor error'], ['text' => 'sensor error']],
         ];
     }
+
+    public function testLocationVivistarNormalizerCanBeAppliedByExplicitProtocol(): void
+    {
+        $payload = [
+            'fields' => [
+                'zh_cn',
+                '0',
+                '1',
+                '268',
+                '6',
+                '8820|1624085|22',
+                '2',
+                'a|dc-fe-23-b8-b6-9b|88&a|dc-fe-23-36-57-4d|84',
+            ],
+        ];
+
+        $normalized = EventNormalizer::normalize('location', 'AP02', $payload, 'vivistar-iw');
+        self::assertSame('lbs_wifi', $normalized['source'] ?? null);
+        self::assertSame(268, $normalized['mcc'] ?? null);
+        self::assertSame(6, $normalized['mnc'] ?? null);
+        self::assertSame(2, $normalized['wifiCount'] ?? null);
+    }
+
+    public function testLocationVivistarNormalizerDoesNotApplyForDifferentExplicitProtocol(): void
+    {
+        $payload = [
+            'fields' => [
+                'zh_cn',
+                '0',
+                '1',
+                '268',
+                '6',
+                '8820|1624085|22',
+                '2',
+                'a|dc-fe-23-b8-b6-9b|88',
+            ],
+        ];
+
+        self::assertSame([], EventNormalizer::normalize('location', 'AP02', $payload, 'wonlex-json'));
+    }
 }
