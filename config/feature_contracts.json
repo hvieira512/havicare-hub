@@ -34,10 +34,10 @@
                 "VIVISTAR-LITE"
             ],
             "data": {
-                "percent": "integer"
+                "percent": "integer",
+                "charging": "boolean"
             },
             "extra": {
-                "charging": "boolean",
                 "batteryType": "integer",
                 "lowPower": "boolean",
                 "derivedFromHeartbeat": "boolean"
@@ -81,10 +81,10 @@
             ],
             "data": {
                 "systolicMmHg": "integer",
-                "diastolicMmHg": "integer"
+                "diastolicMmHg": "integer",
+                "pulseBpm": "integer"
             },
             "extra": {
-                "pulseBpm": "integer",
                 "series": "object[]",
                 "measurementMode": "string",
                 "airbagSize": "string",
@@ -295,21 +295,21 @@
                 "source": "string",
                 "lat": "number",
                 "lon": "number",
-                "mcc": "integer",
-                "mnc": "integer",
-                "lac": "integer",
-                "cellId": "integer"
-            },
-            "extra": {
-                "accuracy": "number",
                 "altitudeM": "number",
                 "satelliteCount": "integer",
                 "speedKmh": "number",
                 "heading": "number",
+                "mcc": "integer",
+                "mnc": "integer",
+                "lac": "integer",
+                "cellId": "integer",
+                "coordinateSystem": "string"
+            },
+            "extra": {
+                "accuracy": "number",
                 "gsmSignal": "integer",
                 "wifiAccessPoints": "object[]",
-                "baseStations": "object[]",
-                "coordinateSystem": "string"
+                "baseStations": "object[]"
             }
         },
         "messaging": {
