@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS model_feature_mappings (
     id                   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     model_id             INT UNSIGNED NOT NULL,
     feature_id           INT UNSIGNED NULL,
-    native_type          VARCHAR(80)  NOT NULL COMMENT 'AP02/BP16/upLocation/dnLocation...',
+    native_type          VARCHAR(50)     NOT NULL COMMENT 'AP02/BP16/upLocation/dnLocation...',
     is_active            TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '0=passive upload, 1=active command',
     description          VARCHAR(255) NULL,
     enabled              TINYINT(1)   NOT NULL DEFAULT 1,
@@ -80,24 +80,30 @@ CREATE TABLE IF NOT EXISTS devices (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS device_events (
-    id                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     imei               VARCHAR(15)     NOT NULL,
-    native_type        VARCHAR(100)    NOT NULL,
+    native_type        VARCHAR(50)     NOT NULL,
     feature_id         INT UNSIGNED    NULL,
     native_data        JSON            NOT NULL COMMENT 'raw/native protocol payload (string + parsed fields)',
     generalized_data   JSON            NOT NULL COMMENT 'canonical normalized payload used by product/API',
     received_at        BIGINT UNSIGNED NOT NULL COMMENT 'epoch milliseconds',
     created_at         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    KEY idx_events_imei (imei),
+    PRIMARY KEY (id, received_at),
     KEY idx_events_imei_received (imei, received_at DESC),
-    KEY idx_events_feature_received (feature_id, received_at DESC),
-    KEY idx_events_created (created_at DESC),
-    CONSTRAINT fk_events_device
-        FOREIGN KEY (imei) REFERENCES devices(imei)
-        ON DELETE CASCADE
-        ON UPDATE RESTRICT,
-    CONSTRAINT fk_events_feature
-        FOREIGN KEY (feature_id) REFERENCES features(id)
-        ON DELETE SET NULL
-        ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    KEY idx_events_feature_received (feature_id, received_at DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  PARTITION BY RANGE (received_at) (
+    PARTITION p202601 VALUES LESS THAN (UNIX_TIMESTAMP('2026-02-01') * 1000),
+    PARTITION p202602 VALUES LESS THAN (UNIX_TIMESTAMP('2026-03-01') * 1000),
+    PARTITION p202603 VALUES LESS THAN (UNIX_TIMESTAMP('2026-04-01') * 1000),
+    PARTITION p202604 VALUES LESS THAN (UNIX_TIMESTAMP('2026-05-01') * 1000),
+    PARTITION p202605 VALUES LESS THAN (UNIX_TIMESTAMP('2026-06-01') * 1000),
+    PARTITION p202606 VALUES LESS THAN (UNIX_TIMESTAMP('2026-07-01') * 1000),
+    PARTITION p202607 VALUES LESS THAN (UNIX_TIMESTAMP('2026-08-01') * 1000),
+    PARTITION p202608 VALUES LESS THAN (UNIX_TIMESTAMP('2026-09-01') * 1000),
+    PARTITION p202609 VALUES LESS THAN (UNIX_TIMESTAMP('2026-10-01') * 1000),
+    PARTITION p202610 VALUES LESS THAN (UNIX_TIMESTAMP('2026-11-01') * 1000),
+    PARTITION p202611 VALUES LESS THAN (UNIX_TIMESTAMP('2026-12-01') * 1000),
+    PARTITION p202612 VALUES LESS THAN (UNIX_TIMESTAMP('2027-01-01') * 1000),
+    PARTITION p_future VALUES LESS THAN MAXVALUE
+);

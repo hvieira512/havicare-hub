@@ -33,11 +33,6 @@ class Migrator
             'fk_devices_model',
             'FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE RESTRICT ON UPDATE RESTRICT'
         );
-        $this->addForeignKeyIfNotExists(
-            'device_events',
-            'fk_events_device',
-            'FOREIGN KEY (imei) REFERENCES devices(imei) ON DELETE CASCADE'
-        );
 
         Logger::channel('db')->info('Migration completed');
     }
@@ -215,6 +210,8 @@ class Migrator
         }
 
         if ($this->tableExists('device_events')) {
+            $this->dropForeignKeyIfExists('device_events', 'fk_events_device');
+            $this->dropForeignKeyIfExists('device_events', 'fk_events_feature');
             $this->dropColumnIfExists('device_events', 'model');
             $this->dropColumnIfExists('device_events', 'feature');
             $this->dropColumnIfExists('device_events', 'native_payload');
@@ -282,11 +279,6 @@ class Migrator
         $this->modifyColumnIfExists('device_events', 'generalized_data', 'JSON NOT NULL');
 
         $this->addIndexIfNotExists('device_events', 'idx_events_feature_received', 'feature_id');
-        $this->addForeignKeyIfNotExists(
-            'device_events',
-            'fk_events_feature',
-            'FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE SET NULL ON UPDATE RESTRICT'
-        );
     }
 
     private function ensureModelExistsByCode(string $code): void
