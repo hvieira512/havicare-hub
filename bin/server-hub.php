@@ -58,9 +58,18 @@ $buildMqttClient = static function (string $suffix) use ($mqttConfig, $mqttHost,
 };
 
 $whitelist = new Whitelist();
-$mqttBridge = new HubMqttBridge($buildMqttClient('pub'), $topicPrefix);
+$mqttBridge = new HubMqttBridge(
+    $buildMqttClient('pub'),
+    $topicPrefix,
+    static fn (): MqttClient => $buildMqttClient('pub')
+);
 $hubServer = new DeviceHubServer($whitelist, $mqttBridge);
-$downlink = new HubDownlinkSubscriber($buildMqttClient('sub'), $hubServer, $topicPrefix);
+$downlink = new HubDownlinkSubscriber(
+    $buildMqttClient('sub'),
+    $hubServer,
+    $topicPrefix,
+    static fn (): MqttClient => $buildMqttClient('sub')
+);
 
 $loop = Loop::get();
 $wsHost = $config['websocket']['host'] ?? '0.0.0.0';

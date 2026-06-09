@@ -9,11 +9,14 @@ class HubMqttBridge
 {
     private MqttClient $publisher;
     private string $topicPrefix;
+    /** @var null|callable(): MqttClient */
+    private $reconnectPublisher;
 
-    public function __construct(MqttClient $publisher, string $topicPrefix = '')
+    public function __construct(MqttClient $publisher, string $topicPrefix = '', ?callable $reconnectPublisher = null)
     {
         $this->publisher = $publisher;
         $this->topicPrefix = trim($topicPrefix, '/');
+        $this->reconnectPublisher = $reconnectPublisher;
     }
 
     public function publishUplink(string $imei, array $payload): void
@@ -43,7 +46,16 @@ class HubMqttBridge
             throw new \RuntimeException('Failed to encode MQTT payload');
         }
 
-        $this->publisher->publish($topic, $json, MqttClient::QOS_AT_MOST_ONCE, $retain);
+        try {
+            $this->publisher->publish($topic, $json, MqttClient::QOS_AT_MOST_ONCE, $retain);
+        } catch (\Throwable $e) {
+            if ($this->reconnectPublisher === null) {
+                throw $e;
+            }
+
+            $this->reconnect();
+            $this->publisher->publish($topic, $json, MqttClient::QOS_AT_MOST_ONCE, $retain);
+        }
     }
 
     public function topic(string $topic): string
@@ -55,5 +67,18 @@ class HubMqttBridge
     public function logPublishFailure(string $channel, string $imei, \Throwable $e): void
     {
         Logger::channel($channel)->error("MQTT publish failed for IMEI=$imei: {$e->getMessage()}");
+    }
+
+    private function reconnect(): void
+    {
+        try {
+            if ($this->publisher->isConnected()) {
+                $this->publisher->disconnect();
+            }
+        } catch (\Throwable) {
+        }
+
+        Logger::channel('hub')->warning('MQTT publisher connection lost; reconnecting');
+        $this->publisher = ($this->reconnectPublisher)();
     }
 }
