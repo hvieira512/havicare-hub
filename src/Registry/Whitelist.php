@@ -23,34 +23,28 @@ class Whitelist
         $raw = json_decode(file_get_contents($this->filePath), true) ?? [];
         $this->devices = [];
         foreach ($raw as $imei => $value) {
-            if (is_array($value)) {
-                $entry = [
-                    'model' => $value['model'] ?? '',
-                    'enabled' => $value['enabled'] ?? true,
-                    'registered_at' => $value['registered_at'] ?? null,
-                ];
-                if (isset($value['key']) && is_string($value['key'])) {
-                    $entry['key'] = $value['key'];
-                }
-                $this->devices[$imei] = $entry;
-            } else {
-                $this->devices[$imei] = [
-                    'model' => (string)$value,
-                    'enabled' => true,
-                    'registered_at' => null,
-                ];
+            if (!is_scalar($imei) || !is_scalar($value)) {
+                continue;
             }
+
+            $imei = trim((string)$imei);
+            $model = trim((string)$value);
+            if ($imei === '' || $model === '') {
+                continue;
+            }
+
+            $this->devices[$imei] = $model;
         }
     }
 
     public function isAuthorized(string $imei): bool
     {
-        return isset($this->devices[$imei]) && $this->devices[$imei]['enabled'] === true;
+        return isset($this->devices[$imei]);
     }
 
     public function getModel(string $imei): ?string
     {
-        return $this->devices[$imei]['model'] ?? null;
+        return $this->devices[$imei] ?? null;
     }
 
     public function all(): array
@@ -58,36 +52,9 @@ class Whitelist
         return $this->devices;
     }
 
-    public function getDeviceSecret(string $imei): ?string
+    public function register(string $imei, string $model): void
     {
-        $entry = $this->devices[$imei] ?? null;
-        if (is_array($entry) && isset($entry['key']) && is_string($entry['key']) && $entry['key'] !== '') {
-            return $entry['key'];
-        }
-
-        $envKey = 'DEVICE_SECRET_' . strtoupper($imei);
-        $env = getenv($envKey);
-        if (is_string($env) && $env !== '') {
-            return $env;
-        }
-
-        return null;
-    }
-
-    public function register(string $imei, string $model, bool $enabled = true): void
-    {
-        $data = [
-            'imei' => $imei,
-            'model' => $model,
-            'enabled' => $enabled,
-            'registered_at' => date('c'),
-        ];
-
-        $this->devices[$imei] = [
-            'model' => $model,
-            'enabled' => $enabled,
-            'registered_at' => date('c'),
-        ];
+        $this->devices[$imei] = $model;
 
         $this->saveFile();
     }
@@ -99,18 +66,13 @@ class Whitelist
         $this->saveFile();
     }
 
-    public function update(string $imei, array $data): bool
+    public function update(string $imei, string $model): bool
     {
         if (!isset($this->devices[$imei])) {
             return false;
         }
 
-        if (isset($data['model'])) {
-            $this->devices[$imei]['model'] = $data['model'];
-        }
-        if (isset($data['enabled'])) {
-            $this->devices[$imei]['enabled'] = (bool)$data['enabled'];
-        }
+        $this->devices[$imei] = $model;
 
         $this->saveFile();
 

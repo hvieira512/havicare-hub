@@ -118,7 +118,16 @@ Downlink accepts either a raw MQTT payload string or JSON:
 
 ## Whitelist
 
-Devices are authorized through [config/whitelist.json](config/whitelist.json). Unknown or disabled devices are disconnected and an auth rejection is published to `devices/{imei}/error`.
+Devices are authorized through [config/whitelist.json](config/whitelist.json) as key-value pairs of IMEI to configured model:
+
+```json
+{
+  "865028000000306": "WONLEX-PRO",
+  "865028000000308": "VIVISTAR-CARE"
+}
+```
+
+Unknown devices are disconnected and an auth rejection is published to `devices/{imei}/error`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by IMEI and records the configured model from the whitelist.
 
 ## Tests
 

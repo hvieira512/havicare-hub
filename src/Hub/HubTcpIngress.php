@@ -54,6 +54,9 @@ class HubTcpIngress
             $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $pos + 1);
             if (trim($packet) !== '') {
                 $this->hubServer->onMessage($client, trim($packet));
+                if (!isset($this->buffers[$resourceId])) {
+                    return;
+                }
             }
         }
 
