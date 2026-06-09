@@ -17,6 +17,9 @@ class SimpleClient
     private string $tlsCertFile;
     private string $tlsKeyFile;
     private $socket = null;
+    private int $nextPacketId = 1;
+    /** @var array<string, callable> */
+    private array $subscriptions = [];
 
     public function __construct(
         string $host,
@@ -57,6 +60,67 @@ class SimpleClient
 
         try {
             $this->writeAll($packet);
+        } catch (\Throwable $e) {
+            $this->disconnect();
+            throw $e;
+        }
+    }
+
+    public function subscribe(string $topicFilter, callable $handler): void
+    {
+        $this->connectIfNeeded();
+        $this->subscriptions[$topicFilter] = $handler;
+        $this->sendSubscribePacket($topicFilter);
+    }
+
+    private function sendSubscribePacket(string $topicFilter): void
+    {
+        $packetId = $this->nextPacketId();
+        $body = pack('n', $packetId) . $this->encodeString($topicFilter) . "\x00";
+        $packet = "\x82" . $this->encodeRemainingLength(strlen($body)) . $body;
+
+        $this->writeAll($packet);
+        $header = $this->readExactly(1);
+        if (ord($header) !== 0x90) {
+            throw new \RuntimeException('Invalid SUBACK header from broker');
+        }
+
+        $remainingLength = $this->decodeRemainingLength();
+        $payload = $this->readExactly($remainingLength);
+        if (strlen($payload) < 3 || unpack('npacketId', substr($payload, 0, 2))['packetId'] !== $packetId) {
+            throw new \RuntimeException('Invalid SUBACK payload from broker');
+        }
+
+        $returnCode = ord($payload[2]);
+        if ($returnCode === 0x80) {
+            throw new \RuntimeException("MQTT broker rejected subscription to {$topicFilter}");
+        }
+    }
+
+    public function loopOnce(float $timeout = 0.1): void
+    {
+        $this->connectIfNeeded();
+
+        $read = [$this->socket];
+        $write = [];
+        $except = [];
+        $seconds = max(0, (int)floor($timeout));
+        $microseconds = max(0, (int)(($timeout - $seconds) * 1000000));
+        $ready = @stream_select($read, $write, $except, $seconds, $microseconds);
+        if ($ready === false || $ready === 0) {
+            return;
+        }
+
+        try {
+            $header = $this->readExactly(1);
+            $packetType = ord($header) & 0xF0;
+            $flags = ord($header) & 0x0F;
+            $remainingLength = $this->decodeRemainingLength();
+            $packet = $this->readExactly($remainingLength);
+
+            if ($packetType === 0x30) {
+                $this->handlePublishPacket($packet, $flags);
+            }
         } catch (\Throwable $e) {
             $this->disconnect();
             throw $e;
@@ -135,6 +199,10 @@ class SimpleClient
             $this->disconnect();
             throw new \RuntimeException("MQTT broker refused connection (code {$returnCode})");
         }
+
+        foreach (array_keys($this->subscriptions) as $topicFilter) {
+            $this->sendSubscribePacket($topicFilter);
+        }
     }
 
     private function writeAll(string $bytes): void
@@ -181,6 +249,43 @@ class SimpleClient
         } while (($encoded & 0x80) !== 0);
 
         return $value;
+    }
+
+    private function nextPacketId(): int
+    {
+        $packetId = $this->nextPacketId++;
+        if ($this->nextPacketId > 65535) {
+            $this->nextPacketId = 1;
+        }
+
+        return $packetId;
+    }
+
+    private function handlePublishPacket(string $packet, int $flags): void
+    {
+        if (strlen($packet) < 2) {
+            throw new \RuntimeException('Malformed MQTT publish packet');
+        }
+
+        $topicLength = unpack('ntopicLength', substr($packet, 0, 2))['topicLength'];
+        if (strlen($packet) < 2 + $topicLength) {
+            throw new \RuntimeException('Malformed MQTT publish topic');
+        }
+
+        $topic = substr($packet, 2, $topicLength);
+        $offset = 2 + $topicLength;
+        $qos = ($flags & 0x06) >> 1;
+        if ($qos > 0) {
+            if (strlen($packet) < $offset + 2) {
+                throw new \RuntimeException('Malformed MQTT publish packet id');
+            }
+            $offset += 2;
+        }
+
+        $payload = substr($packet, $offset);
+        foreach ($this->subscriptions as $handler) {
+            $handler($topic, $payload);
+        }
     }
 
     private function encodeRemainingLength(int $length): string
