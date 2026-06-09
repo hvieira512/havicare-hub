@@ -3,15 +3,15 @@
 namespace App\Hub;
 
 use App\Log\Logger;
-use App\Mqtt\SimpleClient;
+use PhpMqtt\Client\MqttClient;
 
 class HubDownlinkSubscriber
 {
-    private SimpleClient $subscriber;
+    private MqttClient $subscriber;
     private DeviceHubServer $hubServer;
     private string $topicPrefix;
 
-    public function __construct(SimpleClient $subscriber, DeviceHubServer $hubServer, string $topicPrefix = '')
+    public function __construct(MqttClient $subscriber, DeviceHubServer $hubServer, string $topicPrefix = '')
     {
         $this->subscriber = $subscriber;
         $this->hubServer = $hubServer;
@@ -23,13 +23,13 @@ class HubDownlinkSubscriber
         $filter = $this->topic('devices/+/downlink');
         $this->subscriber->subscribe($filter, function (string $topic, string $payload): void {
             $this->handle($topic, $payload);
-        });
+        }, MqttClient::QOS_AT_MOST_ONCE);
         Logger::channel('hub')->info("MQTT downlink subscribed to {$filter}");
     }
 
     public function tick(float $timeout = 0.01): void
     {
-        $this->subscriber->loopOnce($timeout);
+        $this->subscriber->loopOnce(microtime(true), false, max(1000, (int)round($timeout * 1000000)));
     }
 
     private function handle(string $topic, string $payload): void

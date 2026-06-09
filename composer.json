@@ -7,7 +7,8 @@
         "php": ">=8.1",
         "cboden/ratchet": "^0.4",
         "react/http": "^1.11",
-        "monolog/monolog": "^3.10"
+        "monolog/monolog": "^3.10",
+        "php-mqtt/client": "^2.3"
     },
     "autoload": {
         "psr-4": {

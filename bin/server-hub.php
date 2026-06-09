@@ -9,8 +9,9 @@ use App\Hub\HubDownlinkSubscriber;
 use App\Hub\HubMqttBridge;
 use App\Hub\HubTcpIngress;
 use App\Log\Logger;
-use App\Mqtt\SimpleClient;
 use App\Registry\Whitelist;
+use PhpMqtt\Client\ConnectionSettings;
+use PhpMqtt\Client\MqttClient;
 use Ratchet\Http\HttpServer;
 use Ratchet\Server\IoServer;
 use Ratchet\WebSocket\WsServer;
@@ -29,21 +30,31 @@ if ($mqttHost === '') {
 $clientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($mqttConfig['client_id_prefix'] ?? 'hitecosystem-hub')) ?: 'hitecosystem-hub';
 $topicPrefix = trim((string)($mqttConfig['topic_prefix'] ?? ''), '/');
 
-$buildMqttClient = static function (string $suffix) use ($mqttConfig, $mqttHost, $clientIdPrefix): SimpleClient {
-    return new SimpleClient(
-        host: $mqttHost,
-        port: (int)($mqttConfig['port'] ?? 1883),
-        clientId: substr($clientIdPrefix . '-' . $suffix . '-' . getmypid(), 0, 23),
-        username: (string)($mqttConfig['username'] ?? ''),
-        password: (string)($mqttConfig['password'] ?? ''),
-        keepAlive: (int)($mqttConfig['keepalive'] ?? 60),
-        timeout: (float)($mqttConfig['timeout'] ?? 5.0),
-        tlsEnabled: (bool)($mqttConfig['tls_enabled'] ?? false),
-        tlsVerifyPeer: (bool)($mqttConfig['tls_verify_peer'] ?? true),
-        tlsCaFile: (string)($mqttConfig['tls_ca_file'] ?? ''),
-        tlsCertFile: (string)($mqttConfig['tls_cert_file'] ?? ''),
-        tlsKeyFile: (string)($mqttConfig['tls_key_file'] ?? ''),
-    );
+$buildMqttClient = static function (string $suffix) use ($mqttConfig, $mqttHost, $clientIdPrefix): MqttClient {
+    $clientId = substr($clientIdPrefix . '-' . $suffix . '-' . getmypid(), 0, 23);
+    $client = new MqttClient($mqttHost, (int)($mqttConfig['port'] ?? 1883), $clientId);
+
+    $username = (string)($mqttConfig['username'] ?? '');
+    $password = (string)($mqttConfig['password'] ?? '');
+    $timeout = max(1, (int)ceil((float)($mqttConfig['timeout'] ?? 5.0)));
+
+    $settings = (new ConnectionSettings())
+        ->setUsername($username !== '' ? $username : null)
+        ->setPassword($password !== '' ? $password : null)
+        ->setKeepAliveInterval(max(1, (int)($mqttConfig['keepalive'] ?? 60)))
+        ->setConnectTimeout($timeout)
+        ->setSocketTimeout($timeout)
+        ->setUseTls((bool)($mqttConfig['tls_enabled'] ?? false))
+        ->setTlsVerifyPeer((bool)($mqttConfig['tls_verify_peer'] ?? true))
+        ->setTlsVerifyPeerName((bool)($mqttConfig['tls_verify_peer'] ?? true))
+        ->setTlsSelfSignedAllowed(!(bool)($mqttConfig['tls_verify_peer'] ?? true))
+        ->setTlsCertificateAuthorityFile(((string)($mqttConfig['tls_ca_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_ca_file'] : null)
+        ->setTlsClientCertificateFile(((string)($mqttConfig['tls_cert_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_cert_file'] : null)
+        ->setTlsClientCertificateKeyFile(((string)($mqttConfig['tls_key_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_key_file'] : null);
+
+    $client->connect($settings, true);
+
+    return $client;
 };
 
 $whitelist = new Whitelist();

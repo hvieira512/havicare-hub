@@ -3,14 +3,14 @@
 namespace App\Hub;
 
 use App\Log\Logger;
-use App\Mqtt\SimpleClient;
+use PhpMqtt\Client\MqttClient;
 
 class HubMqttBridge
 {
-    private SimpleClient $publisher;
+    private MqttClient $publisher;
     private string $topicPrefix;
 
-    public function __construct(SimpleClient $publisher, string $topicPrefix = '')
+    public function __construct(MqttClient $publisher, string $topicPrefix = '')
     {
         $this->publisher = $publisher;
         $this->topicPrefix = trim($topicPrefix, '/');
@@ -43,7 +43,7 @@ class HubMqttBridge
             throw new \RuntimeException('Failed to encode MQTT payload');
         }
 
-        $this->publisher->publish($topic, $json, $retain);
+        $this->publisher->publish($topic, $json, MqttClient::QOS_AT_MOST_ONCE, $retain);
     }
 
     public function topic(string $topic): string
