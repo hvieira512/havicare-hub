@@ -16,7 +16,7 @@ use Ratchet\Http\HttpServer;
 use Ratchet\Server\IoServer;
 use Ratchet\WebSocket\WsServer;
 use React\EventLoop\Loop;
-use React\Socket\Server as Reactor;
+use React\Socket\SocketServer;
 
 $config = Config::load()->all();
 $mqttConfig = $config['mqtt'] ?? [];
@@ -68,7 +68,7 @@ $wsPort = $config['websocket']['port'] ?? 8080;
 $tcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
 $tcpPort = $config['vivistar_tcp']['port'] ?? 9000;
 
-$wsSocket = new Reactor("$wsHost:$wsPort", $loop);
+$wsSocket = new SocketServer("$wsHost:$wsPort", [], $loop);
 $wsServer = new IoServer(new HttpServer(new WsServer($hubServer)), $wsSocket, $loop);
 $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
 

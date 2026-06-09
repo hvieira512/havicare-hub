@@ -6,19 +6,19 @@ use App\Log\Logger;
 use App\Tcp\TcpDeviceConnection;
 use React\EventLoop\LoopInterface;
 use React\Socket\ConnectionInterface as ReactConnection;
-use React\Socket\Server as Reactor;
+use React\Socket\SocketServer;
 
 class HubTcpIngress
 {
     private DeviceHubServer $hubServer;
-    private Reactor $socket;
+    private SocketServer $socket;
     private array $buffers = [];
     private int $nextResourceId = 1000000;
 
     public function __construct(DeviceHubServer $hubServer, LoopInterface $loop, string $host, int $port)
     {
         $this->hubServer = $hubServer;
-        $this->socket = new Reactor("$host:$port", $loop);
+        $this->socket = new SocketServer("$host:$port", [], $loop);
         $this->socket->on('connection', function (ReactConnection $connection): void {
             $this->onConnection($connection);
         });
