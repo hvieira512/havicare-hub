@@ -3,6 +3,7 @@
 namespace App\Protocol;
 
 use App\Protocol\Adapter\DeviceAdapterInterface;
+use App\Protocol\Adapter\FourPTouchAdapter;
 use App\Protocol\Adapter\VivistarAdapter;
 use App\Protocol\Adapter\WonlexAdapter;
 
@@ -16,6 +17,7 @@ class AdapterRegistry
         $this->adapters = [];
         $this->register(new WonlexAdapter());
         $this->register(new VivistarAdapter());
+        $this->register(new FourPTouchAdapter());
     }
 
     public function register(DeviceAdapterInterface $adapter): void

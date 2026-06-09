@@ -43,6 +43,18 @@ final class DeviceIdentityExtractorTest extends TestCase
         self::assertSame('vivistar-iw', $identity->protocol);
     }
 
+    public function testIdentifiesFourPTouchLinkKeep(): void
+    {
+        $extractor = new DeviceIdentityExtractor();
+
+        $identity = $extractor->identify('[3G*8800000015*000D*LK,50,100,100]');
+
+        self::assertNotNull($identity);
+        self::assertSame('8800000015', $identity->imei);
+        self::assertSame('four-p-touch', $identity->protocol);
+        self::assertSame('8800000015', $identity->ident);
+    }
+
     public function testReturnsNullWhenDeviceCannotBeIdentified(): void
     {
         $extractor = new DeviceIdentityExtractor();

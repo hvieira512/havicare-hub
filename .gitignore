@@ -12,6 +12,7 @@
 !.env.example
 /config/ssl/*
 !/config/ssl/.gitkeep
+/config/whitelist.json
 /config/mosquitto.passwd
 /config/mosquitto.acl
 
