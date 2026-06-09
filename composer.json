@@ -21,7 +21,10 @@
         "simulate": "php simulator/simulate.php",
         "test:unit": "vendor/bin/phpunit --testsuite unit",
         "test:scenarios": "tests/scenarios/run-all.sh",
-        "test": "@test:unit && @test:scenarios"
+        "test": [
+            "@test:unit",
+            "@test:scenarios"
+        ]
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5"

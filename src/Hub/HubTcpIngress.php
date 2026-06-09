@@ -49,7 +49,7 @@ class HubTcpIngress
     {
         $this->buffers[$resourceId] = ($this->buffers[$resourceId] ?? '') . $data;
 
-        while (($pos = strpos($this->buffers[$resourceId], '#')) !== false) {
+        while (isset($this->buffers[$resourceId]) && ($pos = strpos($this->buffers[$resourceId], '#')) !== false) {
             $packet = substr($this->buffers[$resourceId], 0, $pos + 1);
             $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $pos + 1);
             if (trim($packet) !== '') {
@@ -60,7 +60,7 @@ class HubTcpIngress
             }
         }
 
-        if (strlen($this->buffers[$resourceId]) > 65535) {
+        if (isset($this->buffers[$resourceId]) && strlen($this->buffers[$resourceId]) > 65535) {
             Logger::channel('hub')->warning("TCP buffer overflow for connection=$resourceId; resetting buffer");
             $this->buffers[$resourceId] = '';
         }
