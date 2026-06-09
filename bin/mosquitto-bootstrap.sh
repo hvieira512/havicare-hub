@@ -24,10 +24,10 @@ fi
 
 cat >"$ACL_FILE" <<EOF
 user $PUBLISHER_USER
-topic write devices/+/telemetry
+topic write devices/+/uplink
 topic write devices/+/status
 topic write devices/+/error
-topic write devices/+/command/state
+topic readwrite devices/+/downlink
 EOF
 
 if [ -n "$SMOKE_USER" ]; then

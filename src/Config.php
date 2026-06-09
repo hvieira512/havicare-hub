@@ -27,28 +27,12 @@ class Config
                 'host' => getenv('VIVISTAR_TCP_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('VIVISTAR_TCP_PORT') ?: 9000),
             ],
-            'api' => [
-                'host' => getenv('API_HOST') ?: '0.0.0.0',
-                'port' => (int)(getenv('API_PORT') ?: 8081),
-            ],
-            'database' => [
-                'host' => getenv('DB_HOST') ?: 'localhost',
-                'port' => (int)(getenv('DB_PORT') ?: 3306),
-                'name' => getenv('DB_NAME') ?: 'health_watches',
-                'user' => getenv('DB_USER') ?: '',
-                'pass' => getenv('DB_PASS') ?: '',
-            ],
-            'redis' => [
-                'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
-                'port' => (int)(getenv('REDIS_PORT') ?: 6379),
-                'database' => 0,
-            ],
             'mqtt' => [
                 'enabled' => true,
                 'host' => getenv('MQTT_HOST') ?: '',
                 'port' => (int)(getenv('MQTT_PORT') ?: 1883),
-                'username' => getenv('MQTT_USERNAME') ?: '',
-                'password' => getenv('MQTT_PASSWORD') ?: '',
+                'username' => getenv('MQTT_USERNAME') ?: (getenv('MQTT_PUBLISHER_USERNAME') ?: ''),
+                'password' => getenv('MQTT_PASSWORD') ?: (getenv('MQTT_PUBLISHER_PASSWORD') ?: ''),
                 'topic_prefix' => trim((string)(getenv('MQTT_TOPIC_PREFIX') ?: ''), '/'),
                 'client_id_prefix' => getenv('MQTT_CLIENT_ID_PREFIX') ?: 'health-mqtt',
                 'keepalive' => (int)(getenv('MQTT_KEEPALIVE') ?: 60),
@@ -58,11 +42,6 @@ class Config
                 'tls_ca_file' => getenv('MQTT_TLS_CA_FILE') ?: '',
                 'tls_cert_file' => getenv('MQTT_TLS_CERT_FILE') ?: '',
                 'tls_key_file' => getenv('MQTT_TLS_KEY_FILE') ?: '',
-            ],
-            'public_ws_url' => getenv('WS_SERVER_URL') ?: 'ws://127.0.0.1:8080',
-            'device_defaults' => [
-                'allow_unknown_models' => false,
-                'default_model' => null,
             ],
             'logging' => [
                 'level' => getenv('LOG_LEVEL') ?: 'info',

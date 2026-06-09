@@ -2,59 +2,15 @@
 
 namespace App\Registry;
 
-use App\Repository\DeviceRepository;
-use App\Database\Migrator;
-use App\Log\Logger;
-
 class Whitelist
 {
     private array $devices;
     private string $filePath;
-    private ?DeviceRepository $deviceRepo;
-    private ?Migrator $migrator;
-    private int $cacheTtlSeconds;
-    private int $lastLoadedAt = 0;
 
-    public function __construct(?string $filePath = null, ?\PDO $pdo = null)
+    public function __construct(?string $filePath = null)
     {
         $this->filePath = $filePath ?? __DIR__ . '/../../config/whitelist.json';
-        $this->deviceRepo = $pdo ? new DeviceRepository($pdo) : null;
-        $this->migrator = $pdo ? new Migrator($pdo) : null;
-        $this->cacheTtlSeconds = max(1, (int)(getenv('WHITELIST_CACHE_TTL_SECONDS') ?: 3));
-        $this->load();
-    }
-
-    private function load(): void
-    {
-        if ($this->deviceRepo) {
-            $this->loadFromDatabase();
-            return;
-        }
         $this->loadFromFile();
-    }
-
-    private function loadFromDatabase(): void
-    {
-        $rows = $this->deviceRepo->all();
-        $this->devices = [];
-
-        foreach ($rows as $row) {
-            $this->devices[$row['imei']] = [
-                'model' => $row['model_code'],
-                'enabled' => (bool)$row['enabled'],
-                'registered_at' => $row['registered_at'],
-            ];
-        }
-
-        if (empty($this->devices) && file_exists($this->filePath)) {
-            $count = $this->migrator?->seedFromWhitelistJson($this->filePath) ?? 0;
-            if ($count > 0) {
-                Logger::channel('whitelist')->info("Migrated $count devices from $this->filePath to MySQL");
-                $this->loadFromDatabase();
-            }
-        }
-
-        $this->lastLoadedAt = time();
     }
 
     private function loadFromFile(): void
@@ -89,25 +45,21 @@ class Whitelist
 
     public function isAuthorized(string $imei): bool
     {
-        $this->ensureFresh();
         return isset($this->devices[$imei]) && $this->devices[$imei]['enabled'] === true;
     }
 
     public function getModel(string $imei): ?string
     {
-        $this->ensureFresh();
         return $this->devices[$imei]['model'] ?? null;
     }
 
     public function all(): array
     {
-        $this->ensureFresh();
         return $this->devices;
     }
 
     public function getDeviceSecret(string $imei): ?string
     {
-        $this->ensureFresh();
         $entry = $this->devices[$imei] ?? null;
         if (is_array($entry) && isset($entry['key']) && is_string($entry['key']) && $entry['key'] !== '') {
             return $entry['key'];
@@ -137,22 +89,14 @@ class Whitelist
             'registered_at' => date('c'),
         ];
 
-        if ($this->deviceRepo) {
-            $this->deviceRepo->insert($data);
-        } else {
-            $this->saveFile();
-        }
+        $this->saveFile();
     }
 
     public function unregister(string $imei): void
     {
         unset($this->devices[$imei]);
 
-        if ($this->deviceRepo) {
-            $this->deviceRepo->delete($imei);
-        } else {
-            $this->saveFile();
-        }
+        $this->saveFile();
     }
 
     public function update(string $imei, array $data): bool
@@ -168,31 +112,7 @@ class Whitelist
             $this->devices[$imei]['enabled'] = (bool)$data['enabled'];
         }
 
-        if ($this->deviceRepo) {
-            $repoData = ['imei' => $imei];
-            if (isset($data['model'])) {
-                $repoData['model'] = $data['model'];
-            }
-            if (isset($data['enabled'])) {
-                $repoData['enabled'] = $data['enabled'];
-            }
-
-            if (count($repoData) > 1) {
-                $existing = $this->deviceRepo->find($imei);
-                $current = $existing
-                    ? [
-                        'imei' => $existing['imei'],
-                        'model' => $existing['model_code'],
-                        'enabled' => $existing['enabled'],
-                        'registered_at' => $existing['registered_at'],
-                    ]
-                    : ['imei' => $imei, 'model' => $this->devices[$imei]['model'] ?? '', 'enabled' => true];
-                $merged = array_merge($current, $repoData);
-                $this->deviceRepo->insert($merged);
-            }
-        } else {
-            $this->saveFile();
-        }
+        $this->saveFile();
 
         return true;
     }
@@ -210,16 +130,4 @@ class Whitelist
         );
     }
 
-    private function ensureFresh(): void
-    {
-        if ($this->deviceRepo === null) {
-            return;
-        }
-
-        if ((time() - $this->lastLoadedAt) < $this->cacheTtlSeconds) {
-            return;
-        }
-
-        $this->loadFromDatabase();
-    }
 }

@@ -6,7 +6,7 @@ CMD="$@"
 
 if [ -z "$CMD" ]; then
     echo "Usage: bin/dev.sh <command>"
-    echo "Example: bin/dev.sh php bin/server-ws.php"
+    echo "Example: bin/dev.sh php bin/server-hub.php"
     exit 1
 fi
 
