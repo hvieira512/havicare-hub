@@ -246,14 +246,24 @@ function wonlexCommands(): array
 
 function buildDownlinkPayload(string $imei, string $command, string $requestId, string $ident, ?array $payloadOverride): array
 {
+    $timestamp = (int)round(microtime(true) * 1000);
+    $data = [
+        'type' => $command,
+        'imei' => $imei,
+        'timestamp' => $timestamp,
+    ];
+
+    if ($payloadOverride !== null) {
+        $data = array_replace($data, $payloadOverride);
+    }
+
     return [
         'type' => $command,
         'ident' => $ident,
         'ref' => 's:down',
         'imei' => $imei,
-        'data' => $payloadOverride ?? [],
-        'requestId' => $requestId,
-        'timestamp' => (int)round(microtime(true) * 1000),
+        'data' => $data,
+        'timestamp' => $timestamp,
     ];
 }
 
@@ -324,7 +334,15 @@ function waitForMessages(
             $lastChange = microtime(true);
         }
 
-        if ($currentCount > $startIndex && (microtime(true) - $lastChange) >= $settleSeconds) {
+        $captured = array_slice($messages, $startIndex);
+        $hasReply = false;
+        foreach ($captured as $message) {
+            if (isDeviceReply($message) || isDecodedReply($message)) {
+                $hasReply = true;
+                break;
+            }
+        }
+        if ($hasReply && (microtime(true) - $lastChange) >= $settleSeconds) {
             break;
         }
     }
