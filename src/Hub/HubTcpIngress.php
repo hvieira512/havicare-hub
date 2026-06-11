@@ -49,11 +49,11 @@ class HubTcpIngress
     {
         $this->buffers[$resourceId] = ($this->buffers[$resourceId] ?? '') . $data;
 
-        while (isset($this->buffers[$resourceId]) && ($pos = $this->nextPacketEnd($this->buffers[$resourceId])) !== null) {
-            $packet = substr($this->buffers[$resourceId], 0, $pos + 1);
-            $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $pos + 1);
-            if (trim($packet) !== '') {
-                $this->hubServer->onMessage($client, trim($packet));
+        while (isset($this->buffers[$resourceId]) && ($packetLength = $this->nextPacketLength($this->buffers[$resourceId])) !== null) {
+            $packet = substr($this->buffers[$resourceId], 0, $packetLength);
+            $this->buffers[$resourceId] = substr($this->buffers[$resourceId], $packetLength);
+            if ($packet !== '' && trim($packet) !== '') {
+                $this->hubServer->onMessage($client, $this->isWonlexFrame($packet) ? $packet : trim($packet));
                 if (!isset($this->buffers[$resourceId])) {
                     return;
                 }
@@ -66,18 +66,42 @@ class HubTcpIngress
         }
     }
 
-    private function nextPacketEnd(string $buffer): ?int
+    private function nextPacketLength(string $buffer): ?int
     {
+        if ($this->isWonlexFrameStart($buffer)) {
+            if (strlen($buffer) < 4) {
+                return null;
+            }
+
+            $header = unpack('nstart/nlength', substr($buffer, 0, 4));
+            $length = (int)($header['length'] ?? 0);
+            $packetLength = 4 + $length;
+
+            return strlen($buffer) >= $packetLength ? $packetLength : null;
+        }
+
         $hashPos = strpos($buffer, '#');
         $bracketPos = strpos($buffer, ']');
 
         if ($hashPos === false) {
-            return $bracketPos === false ? null : $bracketPos;
+            return $bracketPos === false ? null : $bracketPos + 1;
         }
         if ($bracketPos === false) {
-            return $hashPos;
+            return $hashPos + 1;
         }
 
-        return min($hashPos, $bracketPos);
+        return min($hashPos, $bracketPos) + 1;
+    }
+
+    private function isWonlexFrame(string $packet): bool
+    {
+        return $this->isWonlexFrameStart($packet)
+            && strlen($packet) >= 4
+            && strlen($packet) === 4 + (int)(unpack('nlength', substr($packet, 2, 2))['length'] ?? -1);
+    }
+
+    private function isWonlexFrameStart(string $buffer): bool
+    {
+        return strlen($buffer) >= 2 && substr($buffer, 0, 2) === "\xFC\xAF";
     }
 }
