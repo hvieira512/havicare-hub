@@ -70,4 +70,13 @@ class ConnectionRegistry
     {
         return isset($this->deviceMap[$imei]);
     }
+
+    /** @return array<int, DeviceSession> */
+    public function allAuthenticatedSessions(): array
+    {
+        return array_values(array_filter(
+            $this->sessions,
+            static fn (DeviceSession $session): bool => $session->authenticated
+        ));
+    }
 }

@@ -96,6 +96,14 @@ $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
     }
 });
 
+$loop->addPeriodicTimer(30, function () use ($hubServer): void {
+    try {
+        $hubServer->sendHeartbeats();
+    } catch (\Throwable $e) {
+        Logger::channel('hub')->error('Heartbeat send failed: ' . $e->getMessage());
+    }
+});
+
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
 Logger::channel('hub')->info("WebSocket ingress: ws://$wsHost:$wsPort");
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");

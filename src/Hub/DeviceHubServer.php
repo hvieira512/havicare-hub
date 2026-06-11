@@ -108,6 +108,34 @@ class DeviceHubServer implements MessageComponentInterface
         return true;
     }
 
+    public function sendHeartbeats(): void
+    {
+        $adapter = $this->adapters->get('wonlex-json');
+        if ($adapter === null) {
+            return;
+        }
+
+        $timestamp = (int)round(microtime(true) * 1000);
+        $sessions = $this->connections->allAuthenticatedSessions();
+
+        foreach ($sessions as $session) {
+            if ($session->protocol !== 'wonlex-json') {
+                continue;
+            }
+
+            try {
+                $session->connection->send($adapter->encodeOutgoing([
+                    'type' => 'heartbeat',
+                    'imei' => $session->imei,
+                    'deviceModel' => $session->model,
+                    'timestamp' => $timestamp,
+                ]));
+            } catch (\Throwable $e) {
+                Logger::channel('hub')->warning("Failed to send heartbeat to IMEI={$session->imei}: {$e->getMessage()}");
+            }
+        }
+    }
+
     public function reportDownlinkDropped(string $imei, string $reason): void
     {
         $error = $this->errorPayload($reason);
