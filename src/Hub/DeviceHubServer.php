@@ -62,6 +62,7 @@ class DeviceHubServer implements MessageComponentInterface
 
         $this->publishDecodedEvents($session, $raw);
         $this->sendProtocolAck($from, $session, $raw);
+        $this->sendWonlexHeartbeatReply($from, $session, $raw);
     }
 
     public function onClose(ConnectionInterface $conn): void
@@ -257,6 +258,39 @@ class DeviceHubServer implements MessageComponentInterface
                 $this->mqtt->logPublishFailure('hub', $session->imei, $e);
             }
         }
+    }
+
+    private function sendWonlexHeartbeatReply(ConnectionInterface $conn, DeviceSession $session, string $raw): void
+    {
+        if ($session->protocol !== 'wonlex-json') {
+            return;
+        }
+
+        $adapter = $this->adapters->get($session->protocol);
+        if ($adapter === null) {
+            return;
+        }
+
+        $decoded = $adapter->decodeIncoming($raw);
+        if (!is_array($decoded) || ($decoded['type'] ?? '') !== 'heartbeat') {
+            return;
+        }
+
+        $timestamp = (int)round(microtime(true) * 1000);
+        $ident = (string)($decoded['ident'] ?? '');
+        $conn->send($adapter->encodeOutgoing([
+            'type' => 'heartbeat',
+            'ident' => $ident !== '' ? $ident : random_int(100000, 999999),
+            'ref' => 's:reply',
+            'imei' => $session->imei,
+            'data' => [
+                'type' => 'heartbeat',
+                'imei' => $session->imei,
+                'deviceModel' => $session->model,
+                'timestamp' => $timestamp,
+            ],
+            'timestamp' => $timestamp,
+        ]));
     }
 
     private function sendProtocolAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
