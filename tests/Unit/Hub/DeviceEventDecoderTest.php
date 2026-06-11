@@ -99,6 +99,37 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('ok', $config[0]['value']['status']);
     }
 
+    public function testDecodesWonlexHeartRateDataFieldAndHeartbeatBattery(): void
+    {
+        $heartRate = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upHeartRate',
+                'data' => [
+                    'data' => '83',
+                    'testType' => 0,
+                ],
+            ]
+        );
+
+        $heartbeat = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'heartbeat',
+                'data' => [
+                    'batteryLevel' => 90,
+                    'batteryState' => 0,
+                ],
+            ]
+        );
+
+        self::assertSame(['heart_rate'], array_column($heartRate, 'feature'));
+        self::assertSame(83, $heartRate[0]['value']['bpm']);
+        self::assertSame(['heartbeat', 'battery'], array_column($heartbeat, 'feature'));
+        self::assertSame('ok', $heartbeat[0]['value']['status']);
+        self::assertSame(90, $heartbeat[1]['value']['percent']);
+    }
+
     public function testDecodesVivistarApHpIntoMultipleEvents(): void
     {
         $events = (new DeviceEventDecoder())->decode(

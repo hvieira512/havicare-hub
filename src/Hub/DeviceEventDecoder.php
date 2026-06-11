@@ -35,6 +35,10 @@ final class DeviceEventDecoder
             'upBS' => [$this->event('blood_sugar', $nativeType, $payload)],
             'upBodyTemperature' => [$this->event('temperature', $nativeType, $payload)],
             'upBattery' => [$this->event('battery', $nativeType, $payload)],
+            'heartbeat' => array_values(array_filter([
+                $this->event('heartbeat', $nativeType, $payload, $payload),
+                $this->event('battery', $nativeType, $payload, $payload),
+            ])),
             'upLocation' => [$this->event('location', $nativeType, $payload, $payload)],
             'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload, $payload)],
             'upGetDevConfig', 'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],

@@ -24,7 +24,7 @@ final class FeatureNormalizer
 
     private static function heartRate(array $payload): array
     {
-        $value = self::first($payload, ['heartRate', 'heart_rate', 'hr', 'bpm', 'pulse', 'value']);
+        $value = self::first($payload, ['heartRate', 'heart_rate', 'hr', 'bpm', 'pulse', 'value', 'data']);
         return $value === null ? [] : ['bpm' => (int)$value];
     }
 
