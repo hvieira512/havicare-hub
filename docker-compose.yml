@@ -35,6 +35,7 @@ services:
       MQTT_PUBLISHER_PASSWORD: ${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}
       VIVISTAR_TCP_HOST: 0.0.0.0
       VIVISTAR_TCP_PORT: 9000
+      WONLEX_HEARTBEAT_INTERVAL: ${WONLEX_HEARTBEAT_INTERVAL:-30}
     depends_on:
       - mosquitto
     restart: unless-stopped
