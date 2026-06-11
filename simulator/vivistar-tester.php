@@ -206,6 +206,7 @@ function vivistarCommands(): array
             'title' => 'Set SOS contacts',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP12'],
+            'data' => ['13500000001', '13500000002', '13500000003'],
         ],
         [
             'command' => 'BP14',
@@ -242,6 +243,7 @@ function vivistarCommands(): array
             'title' => 'Push message variant',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP40'],
+            'data' => ['00610072006500200079006f00750020006f006b003f'],
         ],
         [
             'command' => 'BP76',

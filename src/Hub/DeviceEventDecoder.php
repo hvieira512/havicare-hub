@@ -95,7 +95,7 @@ final class DeviceEventDecoder
             ],
             'AP12', 'AP14', 'AP16', 'AP28', 'AP33', 'AP40',
             'AP76', 'AP77', 'AP84', 'AP85', 'AP86', 'AP87',
-            'APJZ', 'APXL', 'APXY', 'APXT', 'APXZ' => [
+            'APJZ', 'APXL', 'APXY', 'APXT', 'APXZ', 'AP43' => [
                 $this->event('device_config', $nativeType, $payload, $payload),
             ],
             default => [],
