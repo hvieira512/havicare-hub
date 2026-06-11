@@ -66,6 +66,7 @@ final class DeviceEventDecoder
     private function decodeVivistar(string $nativeType, array $payload): array
     {
         return match ($nativeType) {
+            'AP02' => [$this->decodeVivistarAp02($payload)],
             'AP49' => [$this->event('heart_rate', $nativeType, $payload)],
             'APHT' => [
                 $this->event('heart_rate', $nativeType, $payload),
@@ -88,6 +89,33 @@ final class DeviceEventDecoder
             ],
             default => [],
         };
+    }
+
+    private function decodeVivistarAp02(array $payload): ?array
+    {
+        $fields = isset($payload['fields']) && is_array($payload['fields']) ? $payload['fields'] : [];
+        $baseStations = $this->parseVivistarBaseStations((string)($fields[5] ?? ''));
+        $wifi = $this->parseVivistarWifi((string)($fields[7] ?? ''));
+        $firstBase = $baseStations[0] ?? [];
+
+        return $this->event('location', 'AP02', array_filter([
+            'source' => 'vivistar-ap02',
+            'gpsValid' => false,
+            'mcc' => $this->stringField($fields[3] ?? null),
+            'mnc' => $this->stringField($fields[4] ?? null),
+            'lac' => $firstBase['lac'] ?? null,
+            'cellId' => $firstBase['cellId'] ?? null,
+            'gsmSignal' => $firstBase['gsmSignal'] ?? null,
+            'accuracyMeters' => null,
+        ], static fn (mixed $value): bool => $value !== null && $value !== ''), [
+            'raw' => $payload['raw'] ?? '',
+            'fields' => $fields,
+            'replyFlag' => $this->intField($fields[1] ?? null),
+            'baseCount' => $this->intField($fields[2] ?? null),
+            'wifiCount' => $this->intField($fields[6] ?? null),
+            'baseStations' => $baseStations,
+            'wifi' => $wifi,
+        ]);
     }
 
     private function decodeFourPTouch(string $nativeType, array $payload): array
@@ -145,5 +173,68 @@ final class DeviceEventDecoder
         }
 
         return $extra;
+    }
+
+    /**
+     * @return array<int, array{lac?: string, cellId?: string, gsmSignal?: int}>
+     */
+    private function parseVivistarBaseStations(string $field): array
+    {
+        $stations = [];
+        foreach (explode(',', $field) as $entry) {
+            $parts = array_map('trim', explode('|', $entry));
+            if (count($parts) < 3) {
+                continue;
+            }
+
+            $stations[] = array_filter([
+                'lac' => $parts[0] !== '' ? $parts[0] : null,
+                'cellId' => $parts[1] !== '' ? $parts[1] : null,
+                'gsmSignal' => $this->signalFromDbm($parts[2] ?? null),
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+        }
+
+        return $stations;
+    }
+
+    /**
+     * @return array<int, array{label?: string, mac?: string, gsmSignal?: int}>
+     */
+    private function parseVivistarWifi(string $field): array
+    {
+        $wifi = [];
+        foreach (explode('&', $field) as $entry) {
+            $parts = array_map('trim', explode('|', $entry));
+            if (count($parts) < 3) {
+                continue;
+            }
+
+            $wifi[] = array_filter([
+                'label' => $parts[0] !== '' ? $parts[0] : null,
+                'mac' => $parts[1] !== '' ? $parts[1] : null,
+                'gsmSignal' => $this->signalFromDbm($parts[2] ?? null),
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+        }
+
+        return $wifi;
+    }
+
+    private function signalFromDbm(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || !is_numeric((string)$value)) {
+            return null;
+        }
+
+        return max(0, 150 - abs((int)$value));
+    }
+
+    private function intField(mixed $value): ?int
+    {
+        return $value === null || $value === '' || !is_numeric((string)$value) ? null : (int)$value;
+    }
+
+    private function stringField(mixed $value): ?string
+    {
+        return $value === null || $value === '' ? null : (string)$value;
     }
 }

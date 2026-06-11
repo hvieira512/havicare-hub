@@ -19,6 +19,7 @@
         "server": "php bin/server-hub.php",
         "server:hub": "php bin/server-hub.php",
         "simulate": "php simulator/simulate.php",
+        "test:vivistar": "php simulator/vivistar-tester.php",
         "test:unit": "vendor/bin/phpunit --testsuite unit",
         "test:scenarios": "tests/scenarios/run-all.sh",
         "test": [

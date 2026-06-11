@@ -54,6 +54,45 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(91, $events[3]['value']['value']);
     }
 
+    public function testDecodesVivistarAp02IntoLocationEvent(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('vivistar-iw'),
+            [
+                'type' => 'AP02',
+                'data' => [
+                    'raw' => 'zh_cn|1@bt1|08-00-20-00-0a-04|38,0,1,268,6,8820|677900|33,4,a|86-45-58-1d-dd-4f|106&a|7e-45-58-1d-dd-4f|105&a|82-45-58-1d-dd-4f|105&a|78-45-58-1d-dd-4f|104',
+                    'fields' => [
+                        'zh_cn|1@bt1|08-00-20-00-0a-04|38',
+                        '0',
+                        '1',
+                        '268',
+                        '6',
+                        '8820|677900|33',
+                        '4',
+                        'a|86-45-58-1d-dd-4f|106&a|7e-45-58-1d-dd-4f|105&a|82-45-58-1d-dd-4f|105&a|78-45-58-1d-dd-4f|104',
+                    ],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('location', $events[0]['feature']);
+        self::assertSame('AP02', $events[0]['nativeType']);
+        self::assertSame('vivistar-ap02', $events[0]['value']['source']);
+        self::assertFalse($events[0]['value']['gpsValid']);
+        self::assertSame('268', $events[0]['value']['mcc']);
+        self::assertSame('6', $events[0]['value']['mnc']);
+        self::assertSame('8820', $events[0]['value']['lac']);
+        self::assertSame('677900', $events[0]['value']['cellId']);
+        self::assertSame(117, $events[0]['value']['gsmSignal']);
+        self::assertSame(0, $events[0]['extra']['replyFlag']);
+        self::assertSame(1, $events[0]['extra']['baseCount']);
+        self::assertSame(4, $events[0]['extra']['wifiCount']);
+        self::assertCount(1, $events[0]['extra']['baseStations']);
+        self::assertCount(4, $events[0]['extra']['wifi']);
+    }
+
     public function testDecodesFourPTouchHealthReport(): void
     {
         $events = (new DeviceEventDecoder())->decode(
