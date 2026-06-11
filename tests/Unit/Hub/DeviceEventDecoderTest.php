@@ -31,6 +31,74 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(98, $events[2]['value']['spo2Percent']);
     }
 
+    public function testDecodesWonlexLocationWithBaseStationsAndWifi(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upLocation',
+                'data' => [
+                    'gps' => [
+                        'GSM' => 90,
+                        'lat' => '38.7150',
+                        'lon' => '-9.1450',
+                        'Type' => 0,
+                        'height' => 45,
+                        'satelliteNum' => 8,
+                    ],
+                    'wifi' => [
+                        ['mac' => 'AA:BB:CC:DD:EE:FF', 'ssid' => 'HOME', 'signal' => '-58'],
+                    ],
+                    'baseStation' => [
+                        ['ci' => 5679, 'lac' => 1234, 'mcc' => 268, 'mnc' => 1, 'rxlev' => 49],
+                    ],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('location', $events[0]['feature']);
+        self::assertSame(38.715, $events[0]['value']['lat']);
+        self::assertSame(-9.145, $events[0]['value']['lon']);
+        self::assertSame(8, $events[0]['value']['satelliteCount']);
+        self::assertSame(268, (int)$events[0]['value']['mcc']);
+        self::assertSame(1, (int)$events[0]['value']['mnc']);
+        self::assertSame(1234, (int)$events[0]['value']['lac']);
+        self::assertSame(5679, (int)$events[0]['value']['cellId']);
+        self::assertCount(1, $events[0]['extra']['baseStation']);
+        self::assertCount(1, $events[0]['extra']['wifi']);
+    }
+
+    public function testDecodesWonlexActivityAndDeviceConfigPackets(): void
+    {
+        $activity = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upTodayActivity',
+                'data' => [
+                    'step' => 0,
+                    'standTime' => 6,
+                    'exerciseTime' => 1800,
+                ],
+            ]
+        );
+
+        $config = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upGetDevConfig',
+                'data' => [
+                    'deviceModel' => 'HW20PRO',
+                ],
+            ]
+        );
+
+        self::assertSame(['activity'], array_column($activity, 'feature'));
+        self::assertSame(0, $activity[0]['value']['steps']);
+        self::assertSame(['device_config'], array_column($config, 'feature'));
+        self::assertSame('ok', $config[0]['value']['status']);
+    }
+
     public function testDecodesVivistarApHpIntoMultipleEvents(): void
     {
         $events = (new DeviceEventDecoder())->decode(

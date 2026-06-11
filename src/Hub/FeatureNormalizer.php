@@ -84,22 +84,40 @@ final class FeatureNormalizer
 
     private static function location(array $payload): array
     {
-        return array_filter([
-            'source' => $payload['source'] ?? null,
-            'lat' => self::float($payload['lat'] ?? $payload['latitude'] ?? null),
-            'lon' => self::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? null),
-            'gpsValid' => isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : null,
-            'speedKmh' => self::float($payload['speed'] ?? $payload['speedKmh'] ?? null),
-            'heading' => self::float($payload['direction'] ?? $payload['heading'] ?? null),
-            'altitudeMeters' => self::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? null),
-            'satelliteCount' => self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? null),
-            'gsmSignal' => self::int($payload['gsmSignal'] ?? null),
-            'mcc' => isset($payload['mcc']) ? (string)$payload['mcc'] : null,
-            'mnc' => isset($payload['mnc']) ? (string)$payload['mnc'] : null,
-            'lac' => isset($payload['lac']) ? (string)$payload['lac'] : null,
-            'cellId' => isset($payload['cellId']) ? (string)$payload['cellId'] : null,
+        $gps = isset($payload['gps']) && is_array($payload['gps']) ? $payload['gps'] : [];
+        $baseStations = isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : [];
+        $wifiAccessPoints = isset($payload['wifi']) && is_array($payload['wifi']) ? $payload['wifi'] : [];
+        $firstBaseStation = $baseStations[0] ?? [];
+
+        $location = array_filter([
+            'source' => $payload['source'] ?? ($gps !== [] ? 'gps' : ($baseStations !== [] || $wifiAccessPoints !== [] ? 'cell' : null)),
+            'lat' => self::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null),
+            'lon' => self::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? $gps['lon'] ?? $gps['lng'] ?? $gps['longitude'] ?? null),
+            'gpsValid' => isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : (isset($gps['Type']) ? ((int)$gps['Type'] === 0) : null),
+            'speedKmh' => self::float($payload['speed'] ?? $payload['speedKmh'] ?? $gps['speed'] ?? null),
+            'heading' => self::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
+            'altitudeMeters' => self::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? $gps['height'] ?? null),
+            'satelliteCount' => self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null),
+            'gsmSignal' => self::int($payload['gsmSignal'] ?? $gps['GSM'] ?? $firstBaseStation['rxlev'] ?? null),
+            'mcc' => self::stringOrNull($payload['mcc'] ?? $gps['mcc'] ?? $firstBaseStation['mcc'] ?? null),
+            'mnc' => self::stringOrNull($payload['mnc'] ?? $gps['mnc'] ?? $firstBaseStation['mnc'] ?? null),
+            'lac' => self::stringOrNull($payload['lac'] ?? $gps['lac'] ?? $firstBaseStation['lac'] ?? null),
+            'cellId' => self::stringOrNull($payload['cellId'] ?? $gps['cellId'] ?? $gps['ci'] ?? $firstBaseStation['ci'] ?? null),
             'accuracyMeters' => self::float($payload['accuracy'] ?? $payload['accuracyMeters'] ?? null),
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+        if ($location === [] && $baseStations === [] && $wifiAccessPoints === []) {
+            return [];
+        }
+
+        if ($baseStations !== []) {
+            $location['baseStations'] = $baseStations;
+        }
+        if ($wifiAccessPoints !== []) {
+            $location['wifiAccessPoints'] = $wifiAccessPoints;
+        }
+
+        return $location;
     }
 
     private static function alarm(array $payload): array
@@ -136,5 +154,10 @@ final class FeatureNormalizer
     private static function float(mixed $value): ?float
     {
         return $value === null || $value === '' || !is_numeric((string)$value) ? null : (float)$value;
+    }
+
+    private static function stringOrNull(mixed $value): ?string
+    {
+        return $value === null || $value === '' ? null : (string)$value;
     }
 }

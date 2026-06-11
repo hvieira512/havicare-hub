@@ -35,8 +35,9 @@ final class DeviceEventDecoder
             'upBS' => [$this->event('blood_sugar', $nativeType, $payload)],
             'upBodyTemperature' => [$this->event('temperature', $nativeType, $payload)],
             'upBattery' => [$this->event('battery', $nativeType, $payload)],
-            'upLocation' => [$this->event('location', $nativeType, $payload)],
-            'upStep', 'upKcal', 'upDistance' => [$this->event('activity', $nativeType, $payload)],
+            'upLocation' => [$this->event('location', $nativeType, $payload, $payload)],
+            'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload, $payload)],
+            'upGetDevConfig', 'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],
             'upBatch' => $this->decodeWonlexBatch($nativeType, $payload),
             default => [],
         };
