@@ -1,4 +1,6 @@
-.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub test-unit test-scenarios test-all ssl-setup ps dev-hub dev
+.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub test-unit test-scenarios test-all ssl-setup ps dev-hub dev prod-update prod-restart prod-status prod-logs
+
+HEALTH_HUB_SERVICE ?= health-hub
 
 up:
 	docker compose up -d
@@ -71,3 +73,18 @@ dev-hub:
 	docker compose run --rm --service-ports --name hitecosystem-devices-hub-dev hub bin/dev.sh php bin/server-hub.php
 
 dev: dev-hub
+
+prod-update:
+	git pull --ff-only
+	composer install --no-dev --optimize-autoloader
+	systemctl restart $(HEALTH_HUB_SERVICE)
+	systemctl status $(HEALTH_HUB_SERVICE) --no-pager
+
+prod-restart:
+	systemctl restart $(HEALTH_HUB_SERVICE)
+
+prod-status:
+	systemctl status $(HEALTH_HUB_SERVICE) --no-pager
+
+prod-logs:
+	journalctl -u $(HEALTH_HUB_SERVICE) -f
