@@ -94,6 +94,34 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('Wonlex', $mqtt->events[0][1]['device']['supplier']);
         self::assertSame('HW20PRO', $mqtt->raw[0][1]['device']['model']);
     }
+
+    public function testAuthenticatedMeasurementPublishesDecodedEventWithoutDebugFields(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $connection = new ContractFakeConnection(3);
+        $adapter = new WonlexAdapter();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'login',
+            'imei' => '868705080300697',
+            'data' => ['deviceModel' => 'IGNORED'],
+        ]));
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'upHeartRate',
+            'data' => ['heartRate' => 72],
+        ]));
+
+        self::assertCount(2, $mqtt->raw);
+        self::assertCount(2, $mqtt->events);
+        self::assertSame('device.connected', $mqtt->events[0][1]['type']);
+        self::assertSame('device.data.received', $mqtt->events[1][1]['type']);
+        self::assertSame('heart_rate', $mqtt->events[1][1]['data']['feature']);
+        self::assertSame('upHeartRate', $mqtt->events[1][1]['data']['nativeType']);
+        self::assertSame(['bpm' => 72], $mqtt->events[1][1]['data']['value']);
+        self::assertArrayNotHasKey('debug', $mqtt->events[1][1]);
+    }
 }
 
 final class ContractRecordingHubMqttBridge extends HubMqttBridge

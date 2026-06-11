@@ -14,6 +14,7 @@ class DeviceHubServer implements MessageComponentInterface
     private DeviceAuthorizer $authorizer;
     private DeviceIdentityExtractor $identityExtractor;
     private AdapterRegistry $adapters;
+    private DeviceEventDecoder $eventDecoder;
     private HubMqttBridge $mqtt;
 
     public function __construct(
@@ -22,12 +23,14 @@ class DeviceHubServer implements MessageComponentInterface
         ?DeviceIdentityExtractor $identityExtractor = null,
         ?DeviceAuthorizer $authorizer = null,
         ?ConnectionRegistry $connections = null,
+        ?DeviceEventDecoder $eventDecoder = null,
     ) {
         $this->connections = $connections ?? new ConnectionRegistry();
         $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist);
         $this->mqtt = $mqtt;
         $this->adapters = new AdapterRegistry();
         $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($this->adapters);
+        $this->eventDecoder = $eventDecoder ?? new DeviceEventDecoder();
     }
 
     public function onOpen(ConnectionInterface $conn): void
@@ -57,7 +60,8 @@ class DeviceHubServer implements MessageComponentInterface
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
         }
 
-        $this->sendProtocolKeepaliveAck($from, $session, $raw);
+        $this->publishDecodedEvents($session, $raw);
+        $this->sendProtocolAck($from, $session, $raw);
     }
 
     public function onClose(ConnectionInterface $conn): void
@@ -149,7 +153,8 @@ class DeviceHubServer implements MessageComponentInterface
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
         }
 
-        $this->sendProtocolKeepaliveAck($conn, $session, $raw);
+        $this->publishDecodedEvents($session, $raw);
+        $this->sendProtocolAck($conn, $session, $raw);
 
         Logger::channel('hub')->info("Device online IMEI={$identity->imei} protocol={$identity->protocol}");
     }
@@ -199,7 +204,28 @@ class DeviceHubServer implements MessageComponentInterface
 
     }
 
-    private function sendProtocolKeepaliveAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
+    private function publishDecodedEvents(DeviceSession $session, string $raw): void
+    {
+        $adapter = $this->adapters->get($session->protocol);
+        if ($adapter === null) {
+            return;
+        }
+
+        $decoded = $adapter->decodeIncoming($raw, ['session' => $session->identityContext()]);
+        if (!is_array($decoded)) {
+            return;
+        }
+
+        foreach ($this->eventDecoder->decode($session, $decoded) as $event) {
+            try {
+                $this->mqtt->publishEvent($session->imei, DeviceEventPayloadBuilder::decoded($session, $event));
+            } catch (\Throwable $e) {
+                $this->mqtt->logPublishFailure('hub', $session->imei, $e);
+            }
+        }
+    }
+
+    private function sendProtocolAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
     {
         if ($session->protocol !== 'four-p-touch') {
             return;
@@ -211,15 +237,21 @@ class DeviceHubServer implements MessageComponentInterface
         }
 
         $decoded = $adapter->decodeIncoming($raw);
-        if (!is_array($decoded) || ($decoded['type'] ?? '') !== 'LK') {
+        if (!is_array($decoded)) {
+            return;
+        }
+
+        $type = (string)($decoded['type'] ?? '');
+        if (!in_array($type, ['LK', 'AL_LTE', 'bphrt', 'CONFIG'], true)) {
             return;
         }
 
         $conn->send($adapter->encodeOutgoing([
-            'type' => 'LK',
+            'type' => $type,
             'imei' => $session->imei,
             'deviceId' => $decoded['ident'] ?? $session->imei,
             'manufacturer' => $decoded['data']['manufacturer'] ?? '3G',
+            'data' => ['fields' => $type === 'CONFIG' ? ['1'] : []],
         ]));
     }
 
