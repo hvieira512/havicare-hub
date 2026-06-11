@@ -24,9 +24,9 @@ fi
 
 cat >"$ACL_FILE" <<EOF
 user $PUBLISHER_USER
-topic write devices/+/uplink
 topic write devices/+/status
-topic write devices/+/error
+topic write devices/+/events
+topic write devices/+/raw
 topic readwrite devices/+/downlink
 EOF
 

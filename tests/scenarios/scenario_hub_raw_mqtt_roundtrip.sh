@@ -35,18 +35,18 @@ docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^devices/$IMEI/uplink " "$MQTT_LOG_FILE" && grep -q '"text":"IWAP00' "$MQTT_LOG_FILE"; then
+  if grep -q "^devices/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAP00' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q "^devices/$IMEI/uplink " "$MQTT_LOG_FILE"; then
-  scenario_fail "publish_failure" "missing raw login uplink topic"
+if ! grep -q "^devices/$IMEI/raw " "$MQTT_LOG_FILE"; then
+  scenario_fail "publish_failure" "missing raw login topic"
 fi
-if ! grep -q '"text":"IWAP00' "$MQTT_LOG_FILE"; then
-  scenario_fail "contract_failure" "raw login uplink did not include text projection"
+if ! grep -q '"debug":{"protocol":"vivistar-iw","transport":"tcp","encoding":"text","payload":"IWAP00' "$MQTT_LOG_FILE"; then
+  scenario_fail "contract_failure" "raw login did not include text debug payload"
 fi
 
 docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t 'devices/$IMEI/downlink' -f /tmp/hub-downlink.json"
@@ -65,15 +65,15 @@ fi
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^devices/$IMEI/uplink " "$MQTT_LOG_FILE" && grep -q '"text":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
+  if grep -q "^devices/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q '"text":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
-  scenario_fail "routing_failure" "missing raw device reply uplink after MQTT downlink"
+if ! grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
+  scenario_fail "routing_failure" "missing raw device reply after MQTT downlink"
 fi
 
 scenario_pass

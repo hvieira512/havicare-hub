@@ -49,9 +49,9 @@ class DeviceHubServer implements MessageComponentInterface
         }
 
         try {
-            $this->mqtt->publishUplink(
+            $this->mqtt->publishRaw(
                 $session->imei,
-                RawPayload::envelope($session->imei, $session->transport, $session->protocol, $raw, 'uplink', (string)$rid)
+                RawPayload::raw($session->imei, $session->model, $session->transport, $session->protocol, $raw, 'uplink', (string)$rid)
             );
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
@@ -69,7 +69,8 @@ class DeviceHubServer implements MessageComponentInterface
             return;
         }
 
-        $this->publishStatus($session->imei, 'offline', $session->transport, $session->protocol, (string)$conn->resourceId);
+        $this->publishStatus($session->imei, $session->model, 'offline');
+        $this->publishEvent($session->imei, $session->model, 'device.disconnected');
         Logger::channel('hub')->info("Device offline IMEI={$session->imei}");
     }
 
@@ -89,18 +90,28 @@ class DeviceHubServer implements MessageComponentInterface
         $conn->send($bytes);
         $session = $this->connections->get($conn);
         try {
-            $this->mqtt->publishStatus($imei, [
-                'event' => ['type' => 'device.downlink.sent', 'id' => 'raw_' . bin2hex(random_bytes(8))],
-                'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'device' => ['imei' => $imei],
-                'transport' => $session?->transport ?? '',
-                'protocol' => $session?->protocol ?? '',
-            ], false);
+            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $session?->model ?? '', 'device.downlink.sent'));
+            if ($session !== null) {
+                $this->mqtt->publishRaw(
+                    $imei,
+                    RawPayload::raw($imei, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId)
+                );
+            }
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
 
         return true;
+    }
+
+    public function reportDownlinkDropped(string $imei, string $reason): void
+    {
+        $error = $this->errorPayload($reason);
+        try {
+            $this->mqtt->publishEvent($imei, RawPayload::event($imei, '', 'device.downlink.dropped', $error));
+        } catch (\Throwable $e) {
+            $this->mqtt->logPublishFailure('hub', $imei, $e);
+        }
     }
 
     public function isOnline(string $imei): bool
@@ -125,12 +136,13 @@ class DeviceHubServer implements MessageComponentInterface
         $session = $this->connections->authenticate($conn, $identity, $authorization->model);
 
         $this->sendLoginAccepted($conn, $identity);
-        $this->publishStatus($identity->imei, 'online', $session->transport, $identity->protocol, (string)$conn->resourceId);
+        $this->publishStatus($identity->imei, $session->model, 'online');
+        $this->publishEvent($identity->imei, $session->model, 'device.connected');
 
         try {
-            $this->mqtt->publishUplink(
+            $this->mqtt->publishRaw(
                 $identity->imei,
-                RawPayload::envelope($identity->imei, $session->transport, $identity->protocol, $raw, 'uplink', (string)$conn->resourceId)
+                RawPayload::raw($identity->imei, $session->model, $session->transport, $identity->protocol, $raw, 'uplink', (string)$conn->resourceId)
             );
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
@@ -143,14 +155,10 @@ class DeviceHubServer implements MessageComponentInterface
 
     private function reject(ConnectionInterface $conn, DeviceIdentity $identity, string $reason): void
     {
+        $error = $this->errorPayload($reason);
         try {
-            $this->mqtt->publishError($identity->imei, [
-                'event' => ['type' => 'device.auth.rejected', 'id' => 'raw_' . bin2hex(random_bytes(8))],
-                'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'device' => ['imei' => $identity->imei],
-                'protocol' => $identity->protocol,
-                'reason' => $reason,
-            ]);
+            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, $identity->model, 'error', $error));
+            $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, $identity->model, 'device.rejected', $error));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
         }
@@ -214,20 +222,33 @@ class DeviceHubServer implements MessageComponentInterface
         ]));
     }
 
-    private function publishStatus(string $imei, string $state, string $transport, string $protocol, string $connectionId): void
+    private function publishStatus(string $imei, string $model, string $state): void
     {
         try {
-            $this->mqtt->publishStatus($imei, [
-                'event' => ['type' => 'device.status.changed', 'id' => 'raw_' . bin2hex(random_bytes(8))],
-                'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'device' => ['imei' => $imei],
-                'transport' => $transport,
-                'protocol' => $protocol,
-                'connectionId' => $connectionId,
-                'data' => ['state' => $state],
-            ]);
+            $this->mqtt->publishStatus($imei, RawPayload::status($imei, $model, $state));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
+    }
+
+    private function publishEvent(string $imei, string $model, string $type): void
+    {
+        try {
+            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $model, $type));
+        } catch (\Throwable $e) {
+            $this->mqtt->logPublishFailure('hub', $imei, $e);
+        }
+    }
+
+    private function errorPayload(string $code): array
+    {
+        return [
+            'code' => $code,
+            'message' => match ($code) {
+                'device_not_authorized' => 'Device is not authorized',
+                'device_offline' => 'Device is offline',
+                default => str_replace('_', ' ', ucfirst($code)),
+            },
+        ];
     }
 }

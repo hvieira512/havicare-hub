@@ -76,7 +76,11 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertNull($error, $error?->getMessage() ?? '');
         self::assertSame('[3G*8800000015*0002*LK]', $received);
         self::assertCount(1, $mqtt->statuses);
-        self::assertCount(1, $mqtt->uplinks);
+        self::assertCount(1, $mqtt->events);
+        self::assertCount(1, $mqtt->raw);
+        self::assertSame('online', $mqtt->statuses[0][1]['state']);
+        self::assertSame('device.connected', $mqtt->events[0][1]['type']);
+        self::assertSame('text', $mqtt->raw[0][1]['debug']['encoding']);
     }
 
     private function freeTcpPort(): ?int
@@ -96,17 +100,17 @@ final class FourPTouchTcpHandshakeTest extends TestCase
 
 final class RecordingHubMqttBridge extends HubMqttBridge
 {
-    public array $uplinks = [];
+    public array $raw = [];
     public array $statuses = [];
-    public array $errors = [];
+    public array $events = [];
 
     public function __construct()
     {
     }
 
-    public function publishUplink(string $imei, array $payload): void
+    public function publishRaw(string $imei, array $payload): void
     {
-        $this->uplinks[] = [$imei, $payload];
+        $this->raw[] = [$imei, $payload];
     }
 
     public function publishStatus(string $imei, array $payload, bool $retain = true): void
@@ -114,8 +118,8 @@ final class RecordingHubMqttBridge extends HubMqttBridge
         $this->statuses[] = [$imei, $payload, $retain];
     }
 
-    public function publishError(string $imei, array $payload): void
+    public function publishEvent(string $imei, array $payload): void
     {
-        $this->errors[] = [$imei, $payload];
+        $this->events[] = [$imei, $payload];
     }
 }

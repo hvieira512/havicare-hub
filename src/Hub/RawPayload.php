@@ -4,36 +4,65 @@ namespace App\Hub;
 
 class RawPayload
 {
-    public static function envelope(
+    public static function raw(
         string $imei,
+        string $model,
         string $transport,
         string $protocol,
         string $raw,
         string $direction,
         ?string $connectionId = null,
     ): array {
+        $encoding = self::isText($raw) ? 'text' : 'base64';
+
         $payload = [
-            'event' => [
-                'type' => 'device.raw.' . $direction,
-                'id' => 'raw_' . bin2hex(random_bytes(8)),
-            ],
+            'schemaVersion' => 1,
+            'direction' => $direction,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'device' => [
-                'imei' => $imei,
+            'device' => self::device($imei, $model),
+            'debug' => [
+                'protocol' => $protocol,
+                'transport' => $transport,
+                'encoding' => $encoding,
+                'payload' => $encoding === 'text' ? $raw : base64_encode($raw),
+                'size' => strlen($raw),
             ],
-            'transport' => $transport,
-            'protocol' => $protocol,
-            'encoding' => 'base64',
-            'payload' => base64_encode($raw),
-            'size' => strlen($raw),
         ];
 
         if ($connectionId !== null && $connectionId !== '') {
-            $payload['connectionId'] = $connectionId;
+            $payload['debug']['connectionId'] = $connectionId;
         }
 
-        if (self::isText($raw)) {
-            $payload['text'] = $raw;
+        return $payload;
+    }
+
+    public static function status(string $imei, string $model, string $state, ?array $error = null): array
+    {
+        $payload = [
+            'schemaVersion' => 1,
+            'state' => $state,
+            'updatedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'device' => self::device($imei, $model),
+        ];
+
+        if ($error !== null) {
+            $payload['error'] = $error;
+        }
+
+        return $payload;
+    }
+
+    public static function event(string $imei, string $model, string $type, ?array $error = null): array
+    {
+        $payload = [
+            'schemaVersion' => 1,
+            'type' => $type,
+            'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'device' => self::device($imei, $model),
+        ];
+
+        if ($error !== null) {
+            $payload['error'] = $error;
         }
 
         return $payload;
@@ -78,5 +107,15 @@ class RawPayload
         }
 
         return preg_match('/[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]/', $raw) !== 1;
+    }
+
+    private static function device(string $imei, string $model): array
+    {
+        $device = ['id' => $imei];
+        if ($model !== '') {
+            $device['model'] = $model;
+        }
+
+        return $device;
     }
 }

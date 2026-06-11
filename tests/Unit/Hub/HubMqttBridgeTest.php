@@ -20,14 +20,14 @@ final class HubMqttBridgeTest extends TestCase
             static fn (): MqttClient => $reconnectedPublisher
         );
 
-        $bridge->publishUplink('8800000015', [
-            'event' => ['type' => 'device.raw.uplink'],
+        $bridge->publishRaw('8800000015', [
+            'direction' => 'uplink',
         ]);
 
         self::assertSame(1, $failedPublisher->publishCalls);
         self::assertSame(1, $failedPublisher->disconnectCalls);
         self::assertSame(1, $reconnectedPublisher->publishCalls);
-        self::assertSame('prefix/devices/8800000015/uplink', $reconnectedPublisher->lastTopic);
+        self::assertSame('prefix/devices/8800000015/raw', $reconnectedPublisher->lastTopic);
     }
 }
 

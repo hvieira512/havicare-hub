@@ -9,24 +9,58 @@ use PHPUnit\Framework\TestCase;
 
 final class RawPayloadTest extends TestCase
 {
-    public function testEnvelopePreservesTextPayloadAsBase64AndText(): void
+    public function testRawPayloadKeepsTextDebugDataUnderDebugKey(): void
     {
-        $payload = RawPayload::envelope('865028000000308', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1');
+        $payload = RawPayload::raw('865028000000308', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1');
 
-        self::assertSame('865028000000308', $payload['device']['imei']);
-        self::assertSame('base64', $payload['encoding']);
-        self::assertSame(base64_encode('IWAP49,72#'), $payload['payload']);
-        self::assertSame('IWAP49,72#', $payload['text']);
+        self::assertSame(1, $payload['schemaVersion']);
+        self::assertSame('uplink', $payload['direction']);
+        self::assertSame('865028000000308', $payload['device']['id']);
+        self::assertSame('VIVISTAR-CARE', $payload['device']['model']);
+        self::assertSame('text', $payload['debug']['encoding']);
+        self::assertSame('IWAP49,72#', $payload['debug']['payload']);
+        self::assertSame('1', $payload['debug']['connectionId']);
     }
 
-    public function testEnvelopePreservesBinaryPayloadWithoutTextProjection(): void
+    public function testRawPayloadKeepsBinaryDebugDataAsBase64(): void
     {
         $raw = "\xFC\xAF\x00\x02{}";
 
-        $payload = RawPayload::envelope('865028000000306', 'websocket', 'wonlex-json', $raw, 'uplink');
+        $payload = RawPayload::raw('865028000000306', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
 
-        self::assertSame(base64_encode($raw), $payload['payload']);
+        self::assertSame(base64_encode($raw), $payload['debug']['payload']);
+        self::assertSame('base64', $payload['debug']['encoding']);
         self::assertArrayNotHasKey('text', $payload);
+    }
+
+    public function testStatusPayloadDoesNotExposeDebugFields(): void
+    {
+        $payload = RawPayload::status('868705080300697', 'HW20PRO', 'online');
+
+        self::assertSame([
+            'schemaVersion' => 1,
+            'state' => 'online',
+            'updatedAt' => $payload['updatedAt'],
+            'device' => [
+                'id' => '868705080300697',
+                'model' => 'HW20PRO',
+            ],
+        ], $payload);
+    }
+
+    public function testEventPayloadDoesNotExposeDebugFields(): void
+    {
+        $payload = RawPayload::event('868705080300697', 'HW20PRO', 'device.connected');
+
+        self::assertSame([
+            'schemaVersion' => 1,
+            'type' => 'device.connected',
+            'occurredAt' => $payload['occurredAt'],
+            'device' => [
+                'id' => '868705080300697',
+                'model' => 'HW20PRO',
+            ],
+        ], $payload);
     }
 
     public function testDownlinkAcceptsTextEnvelope(): void

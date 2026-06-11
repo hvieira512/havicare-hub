@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use App\Hub\DeviceHubServer;
+use App\Hub\HubMqttBridge;
 use App\Hub\HubTcpIngress;
 use App\Protocol\Adapter\WonlexAdapter;
 use App\Registry\Whitelist;
@@ -40,7 +41,7 @@ final class WonlexTcpHandshakeTest extends TestCase
             self::markTestSkipped('Local TCP sockets are not available in this environment');
         }
 
-        $mqtt = new RecordingHubMqttBridge();
+        $mqtt = new WonlexRecordingHubMqttBridge();
         $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
         new HubTcpIngress($hub, $loop, '127.0.0.1', $port);
 
@@ -97,7 +98,11 @@ final class WonlexTcpHandshakeTest extends TestCase
         self::assertSame('868705080300697', $reply['imei']);
         self::assertSame(1, $reply['data']['bindStatus']);
         self::assertCount(1, $mqtt->statuses);
-        self::assertCount(1, $mqtt->uplinks);
+        self::assertCount(1, $mqtt->events);
+        self::assertCount(1, $mqtt->raw);
+        self::assertSame('online', $mqtt->statuses[0][1]['state']);
+        self::assertSame('device.connected', $mqtt->events[0][1]['type']);
+        self::assertSame('base64', $mqtt->raw[0][1]['debug']['encoding']);
     }
 
     private function freeTcpPort(): ?int
@@ -112,5 +117,31 @@ final class WonlexTcpHandshakeTest extends TestCase
 
         $parts = explode(':', (string)$name);
         return (int)array_pop($parts);
+    }
+}
+
+final class WonlexRecordingHubMqttBridge extends HubMqttBridge
+{
+    public array $raw = [];
+    public array $statuses = [];
+    public array $events = [];
+
+    public function __construct()
+    {
+    }
+
+    public function publishRaw(string $imei, array $payload): void
+    {
+        $this->raw[] = [$imei, $payload];
+    }
+
+    public function publishStatus(string $imei, array $payload, bool $retain = true): void
+    {
+        $this->statuses[] = [$imei, $payload, $retain];
+    }
+
+    public function publishEvent(string $imei, array $payload): void
+    {
+        $this->events[] = [$imei, $payload];
     }
 }

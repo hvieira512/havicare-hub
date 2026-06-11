@@ -99,7 +99,9 @@ $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
 Logger::channel('hub')->info("WebSocket ingress: ws://$wsHost:$wsPort");
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");
-Logger::channel('hub')->info('MQTT uplink topics: ' . $mqttBridge->topic('devices/{imei}/uplink'));
+Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('devices/{imei}/status'));
+Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('devices/{imei}/events'));
+Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('devices/{imei}/raw'));
 Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('devices/{imei}/downlink'));
 
 $loop->run();

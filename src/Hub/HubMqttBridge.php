@@ -19,9 +19,9 @@ class HubMqttBridge
         $this->reconnectPublisher = $reconnectPublisher;
     }
 
-    public function publishUplink(string $imei, array $payload): void
+    public function publishRaw(string $imei, array $payload): void
     {
-        $this->publish($this->topic("devices/$imei/uplink"), $payload);
+        $this->publish($this->topic("devices/$imei/raw"), $payload);
     }
 
     public function publishStatus(string $imei, array $payload, bool $retain = true): void
@@ -29,9 +29,9 @@ class HubMqttBridge
         $this->publish($this->topic("devices/$imei/status"), $payload, $retain);
     }
 
-    public function publishError(string $imei, array $payload): void
+    public function publishEvent(string $imei, array $payload): void
     {
-        $this->publish($this->topic("devices/$imei/error"), $payload);
+        $this->publish($this->topic("devices/$imei/events"), $payload);
     }
 
     public function downlinkTopicFilter(): string
