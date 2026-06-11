@@ -235,6 +235,7 @@ function wonlexCommands(): array
         ['command' => 'dnUpSleep', 'title' => 'Request sleep report', 'risk' => 'normal', 'expectedReplyTypes' => ['upSleep']],
         ['command' => 'dnWeather', 'title' => 'Request weather', 'risk' => 'normal', 'expectedReplyTypes' => ['upWeather']],
         ['command' => 'dnMedicationPlan', 'title' => 'Set medication plan', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
+        ['command' => 'dnDevBindStatus', 'title' => 'Issue device binding status', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'findPhoneBillOrFlow', 'title' => 'Request phone bill or flow', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'find', 'title' => 'Find device', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'OTA', 'title' => 'OTA update', 'risk' => 'high', 'expectedReplyTypes' => ['upGetOTA']],

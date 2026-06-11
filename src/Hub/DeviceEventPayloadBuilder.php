@@ -6,17 +6,26 @@ final class DeviceEventPayloadBuilder
 {
     public static function decoded(DeviceSession $session, array $decodedEvent): array
     {
-        $payload = RawPayload::event(
-            $session->imei,
-            $session->supplier,
-            $session->model,
-            'device.data.received'
-        );
+        $feature = (string)$decodedEvent['feature'];
 
-        $payload['data'] = [
-            'feature' => (string)$decodedEvent['feature'],
-            'nativeType' => (string)$decodedEvent['nativeType'],
-            'value' => $decodedEvent['value'],
+        $device = ['id' => $session->imei];
+        if ($session->supplier !== '') {
+            $device['supplier'] = $session->supplier;
+        }
+        if ($session->model !== '') {
+            $device['model'] = $session->model;
+        }
+
+        $payload = [
+            'schemaVersion' => 2,
+            'type' => 'device.telemetry.' . $feature,
+            'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'device' => $device,
+            'data' => $decodedEvent['value'],
+            'source' => [
+                'protocol' => $session->protocol,
+                'nativeType' => (string)$decodedEvent['nativeType'],
+            ],
         ];
 
         $extra = $decodedEvent['extra'] ?? [];
