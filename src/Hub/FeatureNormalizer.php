@@ -18,6 +18,7 @@ final class FeatureNormalizer
             'location' => self::location($payload),
             'alarm' => self::alarm($payload),
             'device_config' => self::deviceConfig($payload),
+            'weather' => self::weather($payload),
             default => [],
         };
     }
@@ -133,6 +134,11 @@ final class FeatureNormalizer
     private static function deviceConfig(array $payload): array
     {
         return ['status' => 'ok'];
+    }
+
+    private static function weather(array $payload): array
+    {
+        return ['status' => 'requested'];
     }
 
     private static function first(array $payload, array $keys): mixed

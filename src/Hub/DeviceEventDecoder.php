@@ -42,6 +42,7 @@ final class DeviceEventDecoder
             'upLocation' => [$this->event('location', $nativeType, $payload, $payload)],
             'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload, $payload)],
             'upGetDevConfig', 'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],
+            'upWeather' => [$this->event('weather', $nativeType, $payload, $payload)],
             'upBatch' => $this->decodeWonlexBatch($nativeType, $payload),
             default => [],
         };
