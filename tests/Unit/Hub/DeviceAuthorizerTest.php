@@ -17,8 +17,8 @@ final class DeviceAuthorizerTest extends TestCase
     {
         $this->whitelistPath = sys_get_temp_dir() . '/hub-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '865028000000306' => 'WONLEX-PRO',
-            '865028000000307' => 'WONLEX-HEALTH',
+            '865028000000306' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
+            '865028000000307' => ['supplier' => 'Wonlex', 'model' => 'WONLEX-HEALTH'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -36,7 +36,8 @@ final class DeviceAuthorizerTest extends TestCase
         $result = $authorizer->authorize(new DeviceIdentity('865028000000306', 'wonlex-json'));
 
         self::assertTrue($result->allowed);
-        self::assertSame('WONLEX-PRO', $result->model);
+        self::assertSame('Wonlex', $result->supplier);
+        self::assertSame('HW20PRO', $result->model);
     }
 
     public function testRejectsUnknownDevice(): void
@@ -49,13 +50,14 @@ final class DeviceAuthorizerTest extends TestCase
         );
     }
 
-    public function testRejectsModelMismatch(): void
+    public function testIgnoresDeviceClaimedModelAndReturnsWhitelistMetadata(): void
     {
         $authorizer = new DeviceAuthorizer(new Whitelist($this->whitelistPath));
 
-        $result = $authorizer->authorize(new DeviceIdentity('865028000000306', 'wonlex-json', 'WONLEX-HEALTH'));
+        $result = $authorizer->authorize(new DeviceIdentity('865028000000306', 'wonlex-json', 'DEVICE-CLAIMED-MODEL'));
 
-        self::assertFalse($result->allowed);
-        self::assertSame('model_mismatch', $result->reason);
+        self::assertTrue($result->allowed);
+        self::assertSame('Wonlex', $result->supplier);
+        self::assertSame('HW20PRO', $result->model);
     }
 }

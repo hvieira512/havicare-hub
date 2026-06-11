@@ -22,7 +22,7 @@ final class WonlexTcpHandshakeTest extends TestCase
     {
         $this->whitelistPath = sys_get_temp_dir() . '/hub-wonlex-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '868705080300697' => 'HW20PRO',
+            '868705080300697' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
         ]));
     }
 
@@ -101,6 +101,8 @@ final class WonlexTcpHandshakeTest extends TestCase
         self::assertCount(1, $mqtt->events);
         self::assertCount(1, $mqtt->raw);
         self::assertSame('online', $mqtt->statuses[0][1]['state']);
+        self::assertSame('Wonlex', $mqtt->statuses[0][1]['device']['supplier']);
+        self::assertSame('HW20PRO', $mqtt->statuses[0][1]['device']['model']);
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
         self::assertSame('base64', $mqtt->raw[0][1]['debug']['encoding']);
     }

@@ -19,11 +19,21 @@ class DeviceAuthorizer
             return AuthorizationResult::deny('device_not_authorized');
         }
 
-        $expectedModel = $this->whitelist->getModel($identity->imei) ?? '';
-        if ($expectedModel !== '' && $identity->model !== '' && $expectedModel !== $identity->model) {
-            return AuthorizationResult::deny('model_mismatch');
-        }
+        $metadata = $this->metadataFor($identity->imei);
 
-        return AuthorizationResult::allow($identity->model !== '' ? $identity->model : $expectedModel);
+        return AuthorizationResult::allow($metadata['supplier'], $metadata['model']);
+    }
+
+    /**
+     * @return array{supplier: string, model: string}
+     */
+    public function metadataFor(string $imei): array
+    {
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+
+        return [
+            'supplier' => (string)($metadata['supplier'] ?? ''),
+            'model' => (string)($metadata['model'] ?? ''),
+        ];
     }
 }

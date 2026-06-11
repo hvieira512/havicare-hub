@@ -11,11 +11,12 @@ final class RawPayloadTest extends TestCase
 {
     public function testRawPayloadKeepsTextDebugDataUnderDebugKey(): void
     {
-        $payload = RawPayload::raw('865028000000308', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1');
+        $payload = RawPayload::raw('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1');
 
         self::assertSame(1, $payload['schemaVersion']);
         self::assertSame('uplink', $payload['direction']);
         self::assertSame('865028000000308', $payload['device']['id']);
+        self::assertSame('Vivistar', $payload['device']['supplier']);
         self::assertSame('VIVISTAR-CARE', $payload['device']['model']);
         self::assertSame('text', $payload['debug']['encoding']);
         self::assertSame('IWAP49,72#', $payload['debug']['payload']);
@@ -26,7 +27,7 @@ final class RawPayloadTest extends TestCase
     {
         $raw = "\xFC\xAF\x00\x02{}";
 
-        $payload = RawPayload::raw('865028000000306', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
+        $payload = RawPayload::raw('865028000000306', 'Wonlex', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
 
         self::assertSame(base64_encode($raw), $payload['debug']['payload']);
         self::assertSame('base64', $payload['debug']['encoding']);
@@ -35,7 +36,7 @@ final class RawPayloadTest extends TestCase
 
     public function testStatusPayloadDoesNotExposeDebugFields(): void
     {
-        $payload = RawPayload::status('868705080300697', 'HW20PRO', 'online');
+        $payload = RawPayload::status('868705080300697', 'Wonlex', 'HW20PRO', 'online');
 
         self::assertSame([
             'schemaVersion' => 1,
@@ -43,6 +44,7 @@ final class RawPayloadTest extends TestCase
             'updatedAt' => $payload['updatedAt'],
             'device' => [
                 'id' => '868705080300697',
+                'supplier' => 'Wonlex',
                 'model' => 'HW20PRO',
             ],
         ], $payload);
@@ -50,7 +52,7 @@ final class RawPayloadTest extends TestCase
 
     public function testEventPayloadDoesNotExposeDebugFields(): void
     {
-        $payload = RawPayload::event('868705080300697', 'HW20PRO', 'device.connected');
+        $payload = RawPayload::event('868705080300697', 'Wonlex', 'HW20PRO', 'device.connected');
 
         self::assertSame([
             'schemaVersion' => 1,
@@ -58,6 +60,7 @@ final class RawPayloadTest extends TestCase
             'occurredAt' => $payload['occurredAt'],
             'device' => [
                 'id' => '868705080300697',
+                'supplier' => 'Wonlex',
                 'model' => 'HW20PRO',
             ],
         ], $payload);

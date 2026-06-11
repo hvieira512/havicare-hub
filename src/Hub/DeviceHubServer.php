@@ -51,7 +51,7 @@ class DeviceHubServer implements MessageComponentInterface
         try {
             $this->mqtt->publishRaw(
                 $session->imei,
-                RawPayload::raw($session->imei, $session->model, $session->transport, $session->protocol, $raw, 'uplink', (string)$rid)
+                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $raw, 'uplink', (string)$rid)
             );
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
@@ -69,8 +69,8 @@ class DeviceHubServer implements MessageComponentInterface
             return;
         }
 
-        $this->publishStatus($session->imei, $session->model, 'offline');
-        $this->publishEvent($session->imei, $session->model, 'device.disconnected');
+        $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline');
+        $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected');
         Logger::channel('hub')->info("Device offline IMEI={$session->imei}");
     }
 
@@ -90,11 +90,11 @@ class DeviceHubServer implements MessageComponentInterface
         $conn->send($bytes);
         $session = $this->connections->get($conn);
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $session?->model ?? '', 'device.downlink.sent'));
+            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $session?->supplier ?? '', $session?->model ?? '', 'device.downlink.sent'));
             if ($session !== null) {
                 $this->mqtt->publishRaw(
                     $imei,
-                    RawPayload::raw($imei, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId)
+                    RawPayload::raw($imei, $session->supplier, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId)
                 );
             }
         } catch (\Throwable $e) {
@@ -107,8 +107,9 @@ class DeviceHubServer implements MessageComponentInterface
     public function reportDownlinkDropped(string $imei, string $reason): void
     {
         $error = $this->errorPayload($reason);
+        $metadata = $this->authorizer->metadataFor($imei);
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, '', 'device.downlink.dropped', $error));
+            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $metadata['supplier'], $metadata['model'], 'device.downlink.dropped', $error));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
@@ -133,16 +134,16 @@ class DeviceHubServer implements MessageComponentInterface
             return;
         }
 
-        $session = $this->connections->authenticate($conn, $identity, $authorization->model);
+        $session = $this->connections->authenticate($conn, $identity, $authorization->supplier, $authorization->model);
 
         $this->sendLoginAccepted($conn, $identity);
-        $this->publishStatus($identity->imei, $session->model, 'online');
-        $this->publishEvent($identity->imei, $session->model, 'device.connected');
+        $this->publishStatus($identity->imei, $session->supplier, $session->model, 'online');
+        $this->publishEvent($identity->imei, $session->supplier, $session->model, 'device.connected');
 
         try {
             $this->mqtt->publishRaw(
                 $identity->imei,
-                RawPayload::raw($identity->imei, $session->model, $session->transport, $identity->protocol, $raw, 'uplink', (string)$conn->resourceId)
+                RawPayload::raw($identity->imei, $session->supplier, $session->model, $session->transport, $identity->protocol, $raw, 'uplink', (string)$conn->resourceId)
             );
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
@@ -157,8 +158,8 @@ class DeviceHubServer implements MessageComponentInterface
     {
         $error = $this->errorPayload($reason);
         try {
-            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, $identity->model, 'error', $error));
-            $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, $identity->model, 'device.rejected', $error));
+            $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error));
+            $this->mqtt->publishEvent($identity->imei, RawPayload::event($identity->imei, '', '', 'device.rejected', $error));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
         }
@@ -222,19 +223,19 @@ class DeviceHubServer implements MessageComponentInterface
         ]));
     }
 
-    private function publishStatus(string $imei, string $model, string $state): void
+    private function publishStatus(string $imei, string $supplier, string $model, string $state): void
     {
         try {
-            $this->mqtt->publishStatus($imei, RawPayload::status($imei, $model, $state));
+            $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
     }
 
-    private function publishEvent(string $imei, string $model, string $type): void
+    private function publishEvent(string $imei, string $supplier, string $model, string $type): void
     {
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $model, $type));
+            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }

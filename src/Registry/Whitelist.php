@@ -4,6 +4,7 @@ namespace App\Registry;
 
 class Whitelist
 {
+    /** @var array<string, array{supplier: string, model: string}> */
     private array $devices;
     private string $filePath;
 
@@ -23,17 +24,21 @@ class Whitelist
         $raw = json_decode(file_get_contents($this->filePath), true) ?? [];
         $this->devices = [];
         foreach ($raw as $imei => $value) {
-            if (!is_scalar($imei) || !is_scalar($value)) {
+            if (!is_scalar($imei) || !is_array($value)) {
                 continue;
             }
 
             $imei = trim((string)$imei);
-            $model = trim((string)$value);
-            if ($imei === '' || $model === '') {
+            $supplier = trim((string)($value['supplier'] ?? ''));
+            $model = trim((string)($value['model'] ?? ''));
+            if ($imei === '' || $supplier === '' || $model === '') {
                 continue;
             }
 
-            $this->devices[$imei] = $model;
+            $this->devices[$imei] = [
+                'supplier' => $supplier,
+                'model' => $model,
+            ];
         }
     }
 
@@ -44,6 +49,16 @@ class Whitelist
 
     public function getModel(string $imei): ?string
     {
+        return $this->devices[$imei]['model'] ?? null;
+    }
+
+    public function getSupplier(string $imei): ?string
+    {
+        return $this->devices[$imei]['supplier'] ?? null;
+    }
+
+    public function getMetadata(string $imei): ?array
+    {
         return $this->devices[$imei] ?? null;
     }
 
@@ -52,9 +67,12 @@ class Whitelist
         return $this->devices;
     }
 
-    public function register(string $imei, string $model): void
+    public function register(string $imei, string $supplier, string $model): void
     {
-        $this->devices[$imei] = $model;
+        $this->devices[$imei] = [
+            'supplier' => $supplier,
+            'model' => $model,
+        ];
 
         $this->saveFile();
     }
@@ -66,13 +84,16 @@ class Whitelist
         $this->saveFile();
     }
 
-    public function update(string $imei, string $model): bool
+    public function update(string $imei, string $supplier, string $model): bool
     {
         if (!isset($this->devices[$imei])) {
             return false;
         }
 
-        $this->devices[$imei] = $model;
+        $this->devices[$imei] = [
+            'supplier' => $supplier,
+            'model' => $model,
+        ];
 
         $this->saveFile();
 

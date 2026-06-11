@@ -34,10 +34,10 @@ class ConnectionRegistry
         return $this->sessions[$connection->resourceId] ?? null;
     }
 
-    public function authenticate(ConnectionInterface $connection, DeviceIdentity $identity, string $model): DeviceSession
+    public function authenticate(ConnectionInterface $connection, DeviceIdentity $identity, string $supplier, string $model): DeviceSession
     {
         $current = $this->get($connection) ?? $this->open($connection);
-        $session = $current->authenticate($identity, $model);
+        $session = $current->authenticate($identity, $supplier, $model);
 
         $this->sessions[$connection->resourceId] = $session;
         $this->deviceMap[$identity->imei] = $connection;

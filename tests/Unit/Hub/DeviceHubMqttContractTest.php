@@ -6,6 +6,7 @@ namespace Tests\Unit\Hub;
 
 use App\Hub\DeviceHubServer;
 use App\Hub\HubMqttBridge;
+use App\Protocol\Adapter\WonlexAdapter;
 use App\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Ratchet\ConnectionInterface;
@@ -18,7 +19,8 @@ final class DeviceHubMqttContractTest extends TestCase
     {
         $this->whitelistPath = sys_get_temp_dir() . '/hub-contract-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '865028000000308' => 'VIVISTAR-CARE',
+            '865028000000308' => ['supplier' => 'Vivistar', 'model' => 'VIVISTAR-CARE'],
+            '868705080300697' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -60,9 +62,37 @@ final class DeviceHubMqttContractTest extends TestCase
 
         self::assertCount(1, $mqtt->events);
         self::assertSame('device.downlink.dropped', $mqtt->events[0][1]['type']);
+        self::assertSame('Vivistar', $mqtt->events[0][1]['device']['supplier']);
+        self::assertSame('VIVISTAR-CARE', $mqtt->events[0][1]['device']['model']);
         self::assertSame('device_offline', $mqtt->events[0][1]['error']['code']);
         self::assertCount(0, $mqtt->statuses);
         self::assertCount(0, $mqtt->raw);
+    }
+
+    public function testDeviceClaimedModelIsIgnoredForAuthorizationAndMqttMetadata(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $connection = new ContractFakeConnection(2);
+        $adapter = new WonlexAdapter();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'login',
+            'ident' => 614377,
+            'imei' => '868705080300697',
+            'data' => [
+                'deviceModel' => 'DEVICE-CLAIMED-MODEL',
+            ],
+        ]));
+
+        self::assertFalse($connection->closed);
+        self::assertCount(1, $mqtt->statuses);
+        self::assertSame('online', $mqtt->statuses[0][1]['state']);
+        self::assertSame('Wonlex', $mqtt->statuses[0][1]['device']['supplier']);
+        self::assertSame('HW20PRO', $mqtt->statuses[0][1]['device']['model']);
+        self::assertSame('Wonlex', $mqtt->events[0][1]['device']['supplier']);
+        self::assertSame('HW20PRO', $mqtt->raw[0][1]['device']['model']);
     }
 }
 

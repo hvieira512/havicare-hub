@@ -12,6 +12,7 @@ class DeviceSession
         public readonly bool $authenticated = false,
         public readonly string $imei = '',
         public readonly string $protocol = '',
+        public readonly string $supplier = '',
         public readonly string $model = '',
     ) {
     }
@@ -27,12 +28,13 @@ class DeviceSession
             'authenticated' => $this->authenticated,
             'imei' => $this->imei,
             'protocol' => $this->protocol,
+            'supplier' => $this->supplier,
             'model' => $this->model,
             'transport' => $this->transport,
         ];
     }
 
-    public function authenticate(DeviceIdentity $identity, string $model): self
+    public function authenticate(DeviceIdentity $identity, string $supplier, string $model): self
     {
         return new self(
             connection: $this->connection,
@@ -40,6 +42,7 @@ class DeviceSession
             authenticated: true,
             imei: $identity->imei,
             protocol: $identity->protocol,
+            supplier: $supplier,
             model: $model,
         );
     }

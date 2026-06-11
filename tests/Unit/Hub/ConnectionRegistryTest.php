@@ -22,10 +22,12 @@ final class ConnectionRegistryTest extends TestCase
         self::assertSame('websocket', $session->transport);
         self::assertFalse($registry->isOnline('865028000000306'));
 
-        $identity = new DeviceIdentity('865028000000306', 'wonlex-json', 'WONLEX-PRO');
-        $authenticated = $registry->authenticate($connection, $identity, 'WONLEX-PRO');
+        $identity = new DeviceIdentity('865028000000306', 'wonlex-json', 'DEVICE-CLAIMED-MODEL');
+        $authenticated = $registry->authenticate($connection, $identity, 'Wonlex', 'HW20PRO');
 
         self::assertTrue($authenticated->authenticated);
+        self::assertSame('Wonlex', $authenticated->supplier);
+        self::assertSame('HW20PRO', $authenticated->model);
         self::assertSame($connection, $registry->connectionFor('865028000000306'));
         self::assertTrue($registry->isOnline('865028000000306'));
 
