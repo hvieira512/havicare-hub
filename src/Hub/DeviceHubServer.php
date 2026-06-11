@@ -117,6 +117,7 @@ class DeviceHubServer implements MessageComponentInterface
 
         $timestamp = (int)round(microtime(true) * 1000);
         $sessions = $this->connections->allAuthenticatedSessions();
+        $count = 0;
 
         foreach ($sessions as $session) {
             if ($session->protocol !== 'wonlex-json') {
@@ -130,9 +131,14 @@ class DeviceHubServer implements MessageComponentInterface
                     'deviceModel' => $session->model,
                     'timestamp' => $timestamp,
                 ]));
+                $count++;
             } catch (\Throwable $e) {
                 Logger::channel('hub')->warning("Failed to send heartbeat to IMEI={$session->imei}: {$e->getMessage()}");
             }
+        }
+
+        if ($count > 0) {
+            Logger::channel('hub')->info("Heartbeat sent to {$count} Wonlex device(s)");
         }
     }
 
