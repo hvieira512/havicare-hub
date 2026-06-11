@@ -20,6 +20,7 @@ use React\Socket\SocketServer;
 
 $config = Config::load()->all();
 $mqttConfig = $config['mqtt'] ?? [];
+$wonlexHeartbeatInterval = (int)($config['hub']['wonlex_heartbeat_interval'] ?? 30);
 
 $mqttHost = trim((string)($mqttConfig['host'] ?? ''));
 if ($mqttHost === '') {
@@ -96,17 +97,22 @@ $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
     }
 });
 
-$loop->addPeriodicTimer(30, function () use ($hubServer): void {
-    try {
-        $hubServer->sendHeartbeats();
-    } catch (\Throwable $e) {
-        Logger::channel('hub')->error('Heartbeat send failed: ' . $e->getMessage());
-    }
-});
+if ($wonlexHeartbeatInterval > 0) {
+    $loop->addPeriodicTimer($wonlexHeartbeatInterval, function () use ($hubServer): void {
+        try {
+            $hubServer->sendHeartbeats();
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error('Heartbeat send failed: ' . $e->getMessage());
+        }
+    });
+} else {
+    Logger::channel('hub')->info('Wonlex server heartbeat timer disabled');
+}
 
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
 Logger::channel('hub')->info("WebSocket ingress: ws://$wsHost:$wsPort");
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");
+Logger::channel('hub')->info("Wonlex server heartbeat interval: {$wonlexHeartbeatInterval}s");
 Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('devices/{imei}/status'));
 Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('devices/{imei}/events'));
 Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('devices/{imei}/raw'));

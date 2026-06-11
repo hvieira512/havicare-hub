@@ -27,6 +27,9 @@ class Config
                 'host' => getenv('VIVISTAR_TCP_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('VIVISTAR_TCP_PORT') ?: 9000),
             ],
+            'hub' => [
+                'wonlex_heartbeat_interval' => max(0, (int)(getenv('WONLEX_HEARTBEAT_INTERVAL') ?: 30)),
+            ],
             'mqtt' => [
                 'enabled' => true,
                 'host' => getenv('MQTT_HOST') ?: '',
