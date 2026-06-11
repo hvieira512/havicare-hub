@@ -99,6 +99,28 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('ok', $config[0]['value']['status']);
     }
 
+    public function testDecodesWonlexBloodPressureWithStringData(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upBP',
+                'data' => [
+                    'type' => 'upBP',
+                    'data' => '164/89',
+                    'imei' => '868705080300697',
+                    'deviceModel' => 'HW20PRO',
+                    'testType' => 57199,
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('blood_pressure', $events[0]['feature']);
+        self::assertSame(164, $events[0]['value']['systolicMmHg']);
+        self::assertSame(89, $events[0]['value']['diastolicMmHg']);
+    }
+
     public function testDecodesWonlexHeartRateDataFieldAndHeartbeatBattery(): void
     {
         $heartRate = (new DeviceEventDecoder())->decode(

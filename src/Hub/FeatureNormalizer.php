@@ -31,6 +31,14 @@ final class FeatureNormalizer
 
     private static function bloodPressure(array $payload): array
     {
+        $rawData = $payload['data'] ?? null;
+        if (is_string($rawData) && str_contains($rawData, '/')) {
+            $parts = preg_split('/[\/,\-]+/', $rawData);
+            $payload['systolic'] = $parts[0] ?? null;
+            $payload['diastolic'] = $parts[1] ?? null;
+            $payload['pulse'] = $parts[2] ?? $payload['pulse'] ?? null;
+        }
+
         return array_filter([
             'systolicMmHg' => self::int($payload['systolic'] ?? $payload['systolicMmHg'] ?? $payload['sbp'] ?? null),
             'diastolicMmHg' => self::int($payload['diastolic'] ?? $payload['diastolicMmHg'] ?? $payload['dbp'] ?? null),
