@@ -10,7 +10,7 @@ final class FeatureNormalizer
             'heart_rate' => self::heartRate($payload),
             'blood_pressure' => self::bloodPressure($payload),
             'blood_oxygen' => self::bloodOxygen($payload),
-            'blood_sugar' => self::scalar($payload, 'value', ['bloodSugar', 'blood_sugar', 'bs', 'value']),
+            'blood_sugar' => self::scalar($payload, 'value', ['bloodSugar', 'blood_sugar', 'bs', 'value', 'data']),
             'temperature' => self::temperature($payload),
             'battery' => self::battery($payload),
             'activity' => self::activity($payload),
@@ -40,7 +40,7 @@ final class FeatureNormalizer
 
     private static function bloodOxygen(array $payload): array
     {
-        $value = self::first($payload, ['spo2', 'spo2Percent', 'oxygen', 'bloodOxygen', 'bo', 'value']);
+        $value = self::first($payload, ['spo2', 'spo2Percent', 'oxygen', 'bloodOxygen', 'bo', 'value', 'data']);
         return $value === null ? [] : ['spo2Percent' => (int)$value];
     }
 
@@ -56,7 +56,7 @@ final class FeatureNormalizer
 
     private static function temperature(array $payload): array
     {
-        $value = self::first($payload, ['bodyTemperature', 'temperature', 'bodyCelsius', 'temp', 'value']);
+        $value = self::first($payload, ['bodyTemperature', 'temperature', 'bodyCelsius', 'temp', 'value', 'data']);
         return $value === null ? [] : ['bodyCelsius' => (float)$value];
     }
 
