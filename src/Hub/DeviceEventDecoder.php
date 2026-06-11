@@ -93,6 +93,11 @@ final class DeviceEventDecoder
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null], $payload),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null], $payload),
             ],
+            'AP12', 'AP14', 'AP16', 'AP28', 'AP33', 'AP40',
+            'AP76', 'AP77', 'AP84', 'AP85', 'AP86', 'AP87',
+            'APJZ', 'APXL', 'APXY', 'APXT', 'APXZ' => [
+                $this->event('device_config', $nativeType, $payload, $payload),
+            ],
             default => [],
         };
     }
