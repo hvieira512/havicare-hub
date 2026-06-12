@@ -36,6 +36,7 @@ $settleSeconds = max(0.1, (float)($args['settle'] ?? 0.6));
 $commandIdent = (string)($args['ident'] ?? '080835');
 $commandFilter = trim((string)($args['command'] ?? ''));
 $riskFilter = parseCsv((string)($args['include-risk'] ?? 'normal'));
+$fieldsOverride = isset($args['fields']) ? parseCsv((string)$args['fields']) : null;
 $listCommands = isset($args['list-commands']);
 $showRaw = isset($args['show-raw']);
 
@@ -116,7 +117,7 @@ foreach ($selected as $entry) {
         continue;
     }
 
-    $payload = buildDownlinkPayload($adapter, $imei, $command, $commandIdent, $entry['data'] ?? []);
+    $payload = buildDownlinkPayload($adapter, $imei, $command, $commandIdent, $fieldsOverride ?? ($entry['data'] ?? []));
     $before = count($messages);
 
     echo "[SEND] {$command} {$title}" . PHP_EOL;
@@ -170,6 +171,7 @@ Usage:
 Options:
   --command BPXL           Run a single command instead of the full set.
   --ident 080835           Command ident field to embed in Vivistar downlinks.
+  --fields A,B,C           Override command data fields, e.g. --fields +351938854803 for BP12.
   --include-risk normal,high
                            Select risk level for bulk request runs. Default: normal.
   --timeout 6              Maximum seconds to wait for replies per command.

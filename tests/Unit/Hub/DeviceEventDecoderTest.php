@@ -193,9 +193,9 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(91, $events[3]['value']['value']);
     }
 
-    public function testDecodesVivistarAckTypesAsDeviceConfig(): void
+    public function testDecodesVivistarConfigAndControlAckTypesAsDeviceConfig(): void
     {
-        $ackTypes = ['AP12', 'AP14', 'AP16', 'AP28', 'AP33', 'AP40', 'AP76', 'AP77', 'AP84', 'AP85', 'AP86', 'AP87', 'APJZ', 'APXL', 'APXY', 'APXT', 'APXZ'];
+        $ackTypes = ['AP12', 'AP14', 'AP28', 'AP33', 'AP40', 'AP76', 'AP77', 'AP84', 'AP85', 'AP86', 'APJZ'];
 
         foreach ($ackTypes as $type) {
             $events = (new DeviceEventDecoder())->decode(
@@ -207,6 +207,20 @@ final class DeviceEventDecoderTest extends TestCase
             self::assertSame('device_config', $events[0]['feature'], "{$type} should map to device_config");
             self::assertSame($type, $events[0]['nativeType'], "{$type} nativeType mismatch");
             self::assertSame('ok', $events[0]['value']['status'], "{$type} should have status ok");
+        }
+    }
+
+    public function testIgnoresVivistarRequestAckTypesAsTelemetry(): void
+    {
+        $ackTypes = ['AP16', 'AP87', 'APXL', 'APXY', 'APXT', 'APXZ'];
+
+        foreach ($ackTypes as $type) {
+            $events = (new DeviceEventDecoder())->decode(
+                $this->session('vivistar-iw'),
+                ['type' => $type, 'data' => ['raw' => '080835', 'fields' => ['080835']]]
+            );
+
+            self::assertSame([], $events, "{$type} should remain a raw request ACK only");
         }
     }
 
