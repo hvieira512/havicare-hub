@@ -62,6 +62,7 @@ class DeviceHubServer implements MessageComponentInterface
 
         $this->publishDecodedEvents($session, $raw);
         $this->sendProtocolAck($from, $session, $raw);
+        $this->sendWonlexUploadAck($from, $session, $raw);
         $this->sendWonlexHeartbeatReply($from, $session, $raw);
     }
 
@@ -190,6 +191,7 @@ class DeviceHubServer implements MessageComponentInterface
 
         $this->publishDecodedEvents($session, $raw);
         $this->sendProtocolAck($conn, $session, $raw);
+        $this->sendWonlexUploadAck($conn, $session, $raw);
 
         Logger::channel('hub')->info("Device online IMEI={$identity->imei} protocol={$identity->protocol}");
     }
@@ -291,6 +293,59 @@ class DeviceHubServer implements MessageComponentInterface
             ],
             'timestamp' => $timestamp,
         ]));
+    }
+
+    private function sendWonlexUploadAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
+    {
+        if ($session->protocol !== 'wonlex-json') {
+            return;
+        }
+
+        $adapter = $this->adapters->get($session->protocol);
+        if ($adapter === null) {
+            return;
+        }
+
+        $decoded = $adapter->decodeIncoming($raw);
+        if (!is_array($decoded) || (string)($decoded['ref'] ?? '') !== 'w:update') {
+            return;
+        }
+
+        $type = (string)($decoded['type'] ?? '');
+        if ($type === '' || in_array($type, ['login', 'heartbeat'], true)) {
+            return;
+        }
+
+        $timestamp = (int)round(microtime(true) * 1000);
+        $ident = is_int($decoded['ident'] ?? null)
+            ? $decoded['ident']
+            : (int)($decoded['ident'] ?? random_int(100000, 999999));
+        if ($ident <= 0) {
+            $ident = random_int(100000, 999999);
+        }
+
+        $bytes = $adapter->encodeOutgoing([
+            'type' => $type,
+            'ident' => $ident,
+            'ref' => 's:reply',
+            'imei' => $session->imei,
+            'data' => [
+                'type' => $type,
+                'imei' => $session->imei,
+                'timestamp' => $timestamp,
+            ],
+            'timestamp' => $timestamp,
+        ]);
+
+        $conn->send($bytes);
+        try {
+            $this->mqtt->publishRaw(
+                $session->imei,
+                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId)
+            );
+        } catch (\Throwable $e) {
+            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
+        }
     }
 
     private function sendProtocolAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void

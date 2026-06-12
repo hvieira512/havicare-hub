@@ -37,6 +37,7 @@ $commandFilter = trim((string)($args['command'] ?? ''));
 $riskFilter = parseCsv((string)($args['include-risk'] ?? 'normal'));
 $payloadOverride = isset($args['payload']) ? decodeJsonObject((string)$args['payload']) : null;
 $listCommands = isset($args['list-commands']);
+$showRaw = isset($args['show-raw']);
 
 $adapter = new WonlexAdapter();
 $manifest = wonlexCommands();
@@ -51,6 +52,7 @@ $selected = $commandFilter !== ''
     : array_values(array_filter(
         $manifest,
         static fn(array $entry): bool => in_array((string)($entry['risk'] ?? 'normal'), $riskFilter, true)
+            && (string)($entry['kind'] ?? 'request') !== 'data'
     ));
 
 if ($commandFilter !== '' && $selected === []) {
@@ -97,7 +99,7 @@ $client->subscribe($rawTopic, static function (string $topic, string $payload) u
 
 echo "Connected to {$host}:{$port}" . PHP_EOL;
 echo "Watching: {$eventsTopic}" . PHP_EOL;
-echo "Watching: {$rawTopic}" . PHP_EOL;
+echo $showRaw ? "Watching: {$rawTopic}" . PHP_EOL : "Watching raw internally for device replies. Use --show-raw to print it." . PHP_EOL;
 echo PHP_EOL;
 
 drainLoop($client, 0.25);
@@ -137,23 +139,28 @@ foreach ($selected as $entry) {
         false
     );
 
-    $captured = waitForMessages($client, $messages, $before, $timeoutSeconds, $settleSeconds);
+    $captured = waitForMessages($client, $messages, $before, $timeoutSeconds, $settleSeconds, $command, $replyTypes);
     if ($captured === []) {
         echo "  [timeout] no MQTT response within {$timeoutSeconds}s" . PHP_EOL . PHP_EOL;
         continue;
     }
 
-    foreach ($captured as $message) {
+    foreach (visibleMessages($captured, $showRaw) as $message) {
         echo '  ' . highlightTopic($message['topic']) . PHP_EOL;
         echo indent(prettyPayload($message['payload'])) . PHP_EOL;
     }
 
     $replyMessages = array_values(array_filter($captured, static fn(array $message): bool => isDeviceReply($message)));
-    $decodedReplies = array_values(array_filter($captured, static fn(array $message): bool => isDecodedReply($message)));
+    $matchingNativeReplies = array_values(array_filter($captured, static fn(array $message): bool => isMatchingNativeReply($message, $command, $replyTypes)));
+    $decodedReplies = array_values(array_filter($captured, static fn(array $message): bool => isExpectedDecodedReply($message, $replyTypes)));
     if ($replyMessages === [] && $decodedReplies === []) {
         echo "  [sent] downlink accepted by hub, but no device reply observed" . PHP_EOL;
+    } elseif ($matchingNativeReplies === [] && $decodedReplies === []) {
+        echo "  [sent] downlink accepted by hub, but only unrelated device uplink(s) were observed" . PHP_EOL;
+    } elseif ($decodedReplies === [] && !$showRaw) {
+        echo "  [ok] device replied with " . count($matchingNativeReplies) . " matching native message(s), but no expected decoded event was produced. Use --show-raw to inspect." . PHP_EOL;
     } else {
-        echo "  [ok] device replied with " . count($replyMessages) . " raw message(s) and " . count($decodedReplies) . " decoded event(s)" . PHP_EOL;
+        echo "  [ok] device replied with " . count($matchingNativeReplies) . " matching native message(s) and " . count($decodedReplies) . " expected decoded event(s)" . PHP_EOL;
     }
 
     echo PHP_EOL;
@@ -175,11 +182,13 @@ Options:
   --timeout 8             Maximum seconds to wait for replies per command.
   --settle 1.0            Stop early after this many quiet seconds.
   --topic-prefix PREFIX    MQTT topic prefix. Default: hitecosystem-hub
+  --show-raw              Print raw MQTT packets. By default raw is used only to detect device replies.
   --list-commands         Print server downlinks and device uplinks, then exit.
 
 Notes:
   - Replies are read from devices/{imei}/events and devices/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
+  - Data commands with placeholder defaults are excluded from bulk runs; use --command to send one explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive reset/restart/powerOff commands are behind --include-risk high.
   - This tester publishes base64-encoded Wonlex JSON frames to devices/{imei}/downlink.
@@ -234,7 +243,7 @@ function wonlexCommands(): array
         ['command' => 'dnTemperature', 'title' => 'Request temperature', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBodyTemperature']],
         ['command' => 'dnBreathe', 'title' => 'Request respiration', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBreathe']],
         ['command' => 'dnECG', 'title' => 'Request ECG', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upECG']],
-        ['command' => 'dnECGAnalysis', 'title' => 'Request ECG analysis', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upECGAnalysis']],
+        ['command' => 'dnECGAnalysis', 'title' => 'Issue ECG analysis results', 'kind' => 'data', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'dnHRV', 'title' => 'Request HRV', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upHRV']],
         ['command' => 'dnPPG', 'title' => 'Request PPG', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upPPG']],
         ['command' => 'dnRR', 'title' => 'Request RR interval', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upRR']],
@@ -243,8 +252,8 @@ function wonlexCommands(): array
         ['command' => 'deviceConfig', 'title' => 'Set device config', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
         ['command' => 'alarmClock', 'title' => 'Set alarm clock', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
         ['command' => 'SOSNumber', 'title' => 'Set SOS numbers', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
-        ['command' => 'dnUpSleep', 'title' => 'Request sleep report', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upSleep']],
-        ['command' => 'dnWeather', 'title' => 'Request weather', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upWeather']],
+        ['command' => 'dnUpSleep', 'title' => 'Send sleep data', 'kind' => 'data', 'risk' => 'normal', 'expectedReplyTypes' => []],
+        ['command' => 'dnWeather', 'title' => 'Issue weather data', 'kind' => 'data', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'dnMedicationPlan', 'title' => 'Set medication plan', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
         ['command' => 'dnDevBindStatus', 'title' => 'Issue device binding status', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'findPhoneBillOrFlow', 'title' => 'Request phone bill or flow', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => []],
@@ -319,14 +328,14 @@ function printCommandCatalog(array $downlinks, array $uplinks): void
     }
 }
 
-function buildDownlinkPayload(string $imei, string $command, string $requestId, string $ident, ?array $payloadOverride): array
+function buildDownlinkPayload(string $imei, string $command, string $requestId, int $ident, ?array $payloadOverride): array
 {
     $timestamp = (int)round(microtime(true) * 1000);
-    $data = [
+    $data = array_replace([
         'type' => $command,
         'imei' => $imei,
         'timestamp' => $timestamp,
-    ];
+    ], defaultCommandData($command, $timestamp));
 
     if ($payloadOverride !== null) {
         $data = array_replace($data, $payloadOverride);
@@ -342,9 +351,50 @@ function buildDownlinkPayload(string $imei, string $command, string $requestId, 
     ];
 }
 
-function randomIdent(): string
+function defaultCommandData(string $command, int $timestamp): array
 {
-    return (string)random_int(100000, 999999);
+    return match ($command) {
+        'dnECG', 'dnHRV', 'dnPPG', 'dnRR' => [
+            'frequency' => '200',
+            'oneTime' => 300,
+            'collectionLogo' => (string)random_int(10000000, 99999999),
+        ],
+        'findPhoneBillOrFlow' => [
+            'queryType' => 1,
+        ],
+        'dnECGAnalysis' => [
+            'heartRate' => '0',
+            'BSc' => '0',
+            'BScIndex' => '4',
+            'BPcDia' => '0',
+            'BPcSys' => '0',
+        ],
+        'dnUpSleep' => [
+            'upDayStr' => gmdate('Y-m-d', (int)floor($timestamp / 1000)),
+            'value' => '0/0/0/0',
+        ],
+        'dnWeather' => [
+            'iIsCDMA' => '0',
+            'weather' => 'Cloudy',
+            'weatherType' => 1,
+            'province' => '',
+            'city' => '',
+            'adcode' => '',
+            'temperature' => '',
+            'winddirection' => '',
+            'windpower' => '',
+            'humidity' => '',
+            'daytemp' => '',
+            'nighttemp' => '',
+            'reporttime' => gmdate('Y-m-d H:i:s', (int)floor($timestamp / 1000)),
+        ],
+        default => [],
+    };
+}
+
+function randomIdent(): int
+{
+    return random_int(100000, 999999);
 }
 
 function randomHex(int $bytes): string
@@ -390,7 +440,9 @@ function waitForMessages(
     array &$messages,
     int $startIndex,
     float $timeoutSeconds,
-    float $settleSeconds
+    float $settleSeconds,
+    string $command,
+    array $expectedReplyTypes
 ): array {
     $deadline = microtime(true) + $timeoutSeconds;
     $lastCount = count($messages);
@@ -412,7 +464,7 @@ function waitForMessages(
         $captured = array_slice($messages, $startIndex);
         $hasReply = false;
         foreach ($captured as $message) {
-            if (isDeviceReply($message) || isDecodedReply($message)) {
+            if (isMatchingNativeReply($message, $command, $expectedReplyTypes) || isExpectedDecodedReply($message, $expectedReplyTypes)) {
                 $hasReply = true;
                 break;
             }
@@ -433,6 +485,17 @@ function prettyPayload(string $payload): string
     }
 
     return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: $payload;
+}
+
+function visibleMessages(array $messages, bool $showRaw): array
+{
+    if ($showRaw) {
+        return $messages;
+    }
+
+    return array_values(array_filter($messages, static function (array $message): bool {
+        return !str_ends_with((string)($message['topic'] ?? ''), '/raw');
+    }));
 }
 
 function highlightTopic(string $topic): string
@@ -456,7 +519,22 @@ function isDeviceReply(array $message): bool
     return false;
 }
 
-function isDecodedReply(array $message): bool
+function isMatchingNativeReply(array $message, string $command, array $expectedReplyTypes = []): bool
+{
+    $native = nativePayload($message);
+    if ($native === null) {
+        return false;
+    }
+
+    $type = (string)($native['type'] ?? '');
+    if ($type === $command && (string)($native['ref'] ?? '') === 'w:reply') {
+        return true;
+    }
+
+    return $type !== '' && in_array($type, $expectedReplyTypes, true);
+}
+
+function isExpectedDecodedReply(array $message, array $expectedReplyTypes): bool
 {
     $topic = (string)($message['topic'] ?? '');
     if (!str_ends_with($topic, '/events')) {
@@ -464,7 +542,38 @@ function isDecodedReply(array $message): bool
     }
 
     $decoded = $message['decoded'] ?? null;
-    return is_array($decoded) && (string)($decoded['type'] ?? '') === 'device.data.received';
+    if (!is_array($decoded)) {
+        return false;
+    }
+
+    $nativeType = (string)($decoded['source']['nativeType'] ?? '');
+    return $nativeType !== '' && in_array($nativeType, $expectedReplyTypes, true);
+}
+
+function nativePayload(array $message): ?array
+{
+    if (!isDeviceReply($message)) {
+        return null;
+    }
+
+    $encoded = $message['decoded']['debug']['payload'] ?? null;
+    if (!is_string($encoded) || $encoded === '') {
+        return null;
+    }
+
+    $bytes = base64_decode($encoded, true);
+    if (!is_string($bytes) || strlen($bytes) < 4) {
+        return null;
+    }
+
+    $header = @unpack('nstart/nlength', substr($bytes, 0, 4));
+    if (($header['start'] ?? null) !== 0xFCAF) {
+        return null;
+    }
+
+    $json = substr($bytes, 4, (int)($header['length'] ?? 0));
+    $decoded = json_decode($json, true);
+    return is_array($decoded) ? $decoded : null;
 }
 
 function indent(string $text, string $prefix = '    '): string

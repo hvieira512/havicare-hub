@@ -37,6 +37,7 @@ $commandIdent = (string)($args['ident'] ?? '080835');
 $commandFilter = trim((string)($args['command'] ?? ''));
 $riskFilter = parseCsv((string)($args['include-risk'] ?? 'normal'));
 $listCommands = isset($args['list-commands']);
+$showRaw = isset($args['show-raw']);
 
 $adapter = new VivistarAdapter();
 $manifest = vivistarCommands();
@@ -97,7 +98,7 @@ $client->subscribe($rawTopic, static function (string $topic, string $payload) u
 
 echo "Connected to {$host}:{$port}" . PHP_EOL;
 echo "Watching: {$eventsTopic}" . PHP_EOL;
-echo "Watching: {$rawTopic}" . PHP_EOL;
+echo $showRaw ? "Watching: {$rawTopic}" . PHP_EOL : "Watching raw internally for device replies. Use --show-raw to print it." . PHP_EOL;
 echo PHP_EOL;
 
 drainLoop($client, 0.25);
@@ -139,7 +140,7 @@ foreach ($selected as $entry) {
         continue;
     }
 
-    foreach ($captured as $message) {
+    foreach (visibleMessages($captured, $showRaw) as $message) {
         echo '  ' . highlightTopic($message['topic']) . PHP_EOL;
         echo indent(prettyPayload($message['payload'])) . PHP_EOL;
     }
@@ -148,6 +149,8 @@ foreach ($selected as $entry) {
     $decodedReplies = array_values(array_filter($captured, static fn (array $message): bool => isDecodedReply($message)));
     if ($replyMessages === [] && $decodedReplies === []) {
         echo "  [sent] downlink accepted by hub, but no device reply observed" . PHP_EOL;
+    } elseif ($decodedReplies === [] && !$showRaw) {
+        echo "  [ok] device replied with " . count($replyMessages) . " native raw message(s), but no decoded event was produced. Use --show-raw to inspect." . PHP_EOL;
     } else {
         echo "  [ok] device replied with " . count($replyMessages) . " raw message(s) and " . count($decodedReplies) . " decoded event(s)" . PHP_EOL;
     }
@@ -171,6 +174,7 @@ Options:
   --timeout 6              Maximum seconds to wait for replies per command.
   --settle 0.6             Stop early after this many quiet seconds.
   --topic-prefix PREFIX     MQTT topic prefix, if the broker uses one. Default: hitecosystem-hub
+  --show-raw               Print raw MQTT packets. By default raw is used only to detect device replies.
   --list-commands          Print server downlinks and device uplinks, then exit.
 
 Notes:
@@ -493,6 +497,17 @@ function prettyPayload(string $payload): string
     }
 
     return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: $payload;
+}
+
+function visibleMessages(array $messages, bool $showRaw): array
+{
+    if ($showRaw) {
+        return $messages;
+    }
+
+    return array_values(array_filter($messages, static function (array $message): bool {
+        return !str_ends_with((string)($message['topic'] ?? ''), '/raw');
+    }));
 }
 
 function highlightTopic(string $topic): string

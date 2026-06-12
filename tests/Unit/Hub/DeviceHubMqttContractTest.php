@@ -110,10 +110,13 @@ final class DeviceHubMqttContractTest extends TestCase
         ]));
         $hub->onMessage($connection, $adapter->encodeOutgoing([
             'type' => 'upHeartRate',
+            'ident' => 274611,
+            'ref' => 'w:update',
+            'imei' => '868705080300697',
             'data' => ['heartRate' => 72],
         ]));
 
-        self::assertCount(2, $mqtt->raw);
+        self::assertCount(3, $mqtt->raw);
         self::assertCount(2, $mqtt->events);
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
         self::assertSame('device.telemetry.heart_rate', $mqtt->events[1][1]['type']);
@@ -122,6 +125,14 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('wonlex-json', $mqtt->events[1][1]['source']['protocol']);
         self::assertSame('upHeartRate', $mqtt->events[1][1]['source']['nativeType']);
         self::assertArrayNotHasKey('debug', $mqtt->events[1][1]);
+
+        self::assertSame('downlink', $mqtt->raw[2][1]['direction']);
+        $ack = $adapter->decodeIncoming(base64_decode($mqtt->raw[2][1]['debug']['payload'], true));
+        self::assertIsArray($ack);
+        self::assertSame('upHeartRate', $ack['type']);
+        self::assertSame(274611, $ack['ident']);
+        self::assertSame('s:reply', $ack['ref']);
+        self::assertSame('868705080300697', $ack['imei']);
     }
 }
 
