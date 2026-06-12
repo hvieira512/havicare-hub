@@ -111,6 +111,7 @@ function commandPayload(string $protocol, string $imei, string $model, string $c
 {
     if ($protocol === 'vivistar-iw') {
         if (str_starts_with($command, 'IW')) {
+            $command = preg_replace('/\s+/', '', $command) ?? $command;
             return str_ends_with($command, '#') ? $command : $command . '#';
         }
         return match ($command) {
