@@ -88,6 +88,11 @@ final class DeviceEventDecoder
                 $this->event('temperature', $nativeType, $payload),
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null], $payload),
             ],
+            'AP10' => array_values(array_filter([
+                $this->event('alarm', $nativeType, $payload, $payload),
+                $this->event('location', $nativeType, $payload, $payload),
+                $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null], $payload),
+            ])),
             'AP03' => [
                 $this->event('heartbeat', $nativeType, $payload, $payload),
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null], $payload),

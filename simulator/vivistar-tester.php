@@ -36,10 +36,7 @@ $adapter = new VivistarAdapter();
 $manifest = vivistarCommands();
 
 if ($listCommands) {
-    foreach ($manifest as $entry) {
-        $risk = $entry['risk'] ?? 'normal';
-        echo $entry['command'] . "\t" . ($entry['title'] ?? '') . "\t[" . $risk . "]" . PHP_EOL;
-    }
+    printCommandCatalog($manifest, vivistarUplinks());
     exit(0);
 }
 
@@ -161,10 +158,12 @@ Options:
   --timeout 6              Maximum seconds to wait for replies per command.
   --settle 0.6             Stop early after this many quiet seconds.
   --topic-prefix PREFIX     MQTT topic prefix, if the broker uses one. Default: hitecosystem-hub
-  --list-commands          Print the Vivistar command catalog and exit.
+  --list-commands          Print server downlinks and device uplinks, then exit.
 
 Notes:
   - Replies are read from devices/{imei}/events and devices/{imei}/raw.
+  - Commands listed under "server -> device" can be used with --command.
+  - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive BP17 factory-reset command is behind --include-risk high.
   - This tester publishes native downlink frames to devices/{imei}/downlink.
 
@@ -204,6 +203,7 @@ function vivistarCommands(): array
         [
             'command' => 'BP12',
             'title' => 'Set SOS contacts',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP12'],
             'data' => ['13500000001', '13500000002', '13500000003'],
@@ -211,36 +211,42 @@ function vivistarCommands(): array
         [
             'command' => 'BP14',
             'title' => 'Set contacts',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP14'],
         ],
         [
             'command' => 'BP16',
             'title' => 'Request location now',
+            'kind' => 'request',
             'risk' => 'normal',
-            'expectedReplyTypes' => ['AP16'],
+            'expectedReplyTypes' => ['AP16', 'AP01'],
         ],
         [
             'command' => 'BP17',
             'title' => 'Factory reset',
+            'kind' => 'control',
             'risk' => 'high',
             'expectedReplyTypes' => ['AP17'],
         ],
         [
             'command' => 'BP28',
             'title' => 'Push short message',
+            'kind' => 'control',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP28'],
         ],
         [
             'command' => 'BP33',
             'title' => 'Set device config',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP33'],
         ],
         [
             'command' => 'BP40',
             'title' => 'Push message variant',
+            'kind' => 'control',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP40'],
             'data' => ['00610072006500200079006f00750020006f006b003f'],
@@ -248,70 +254,145 @@ function vivistarCommands(): array
         [
             'command' => 'BP76',
             'title' => 'Set fall detection',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP76'],
         ],
         [
             'command' => 'BP77',
             'title' => 'Set fall detection emergency',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP77'],
         ],
         [
             'command' => 'BP84',
             'title' => 'Set quick contacts',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP84'],
         ],
         [
             'command' => 'BP85',
             'title' => 'Set reminders',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP85'],
         ],
         [
             'command' => 'BP86',
             'title' => 'Set config variant',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP86'],
         ],
         [
             'command' => 'BP87',
             'title' => 'Request temperature variant',
+            'kind' => 'request',
             'risk' => 'normal',
             'expectedReplyTypes' => ['AP87'],
         ],
         [
             'command' => 'BPJZ',
             'title' => 'Blood pressure calibration',
+            'kind' => 'config',
             'risk' => 'normal',
             'expectedReplyTypes' => ['APJZ'],
         ],
         [
             'command' => 'BPXL',
             'title' => 'Request heart rate',
+            'kind' => 'request',
             'risk' => 'normal',
             'expectedReplyTypes' => ['APXL'],
         ],
         [
             'command' => 'BPXY',
             'title' => 'Request blood pressure',
+            'kind' => 'request',
             'risk' => 'normal',
             'expectedReplyTypes' => ['APXY'],
         ],
         [
             'command' => 'BPXT',
             'title' => 'Request temperature',
+            'kind' => 'request',
             'risk' => 'normal',
             'expectedReplyTypes' => ['APXT'],
         ],
         [
             'command' => 'BPXZ',
             'title' => 'Request blood oxygen',
+            'kind' => 'request',
             'risk' => 'normal',
             'expectedReplyTypes' => ['APXZ'],
         ],
     ];
+}
+
+function vivistarUplinks(): array
+{
+    return [
+        ['command' => 'AP00', 'origin' => 'device-init', 'features' => ['status'], 'responds' => 'BP00', 'notes' => 'Login packet sent when the device opens a TCP session.'],
+        ['command' => 'AP01', 'origin' => 'scheduled/request', 'features' => ['location'], 'responds' => 'BP01', 'notes' => 'GPS/LBS/Wi-Fi location packet; may be sent after BP16.'],
+        ['command' => 'AP02', 'origin' => 'scheduled/request', 'features' => ['location'], 'responds' => 'BP02', 'notes' => 'Multi-base-station location packet.'],
+        ['command' => 'AP03', 'origin' => 'scheduled', 'features' => ['heartbeat', 'battery', 'activity'], 'responds' => 'BP03', 'notes' => 'Heartbeat used to keep the long TCP connection alive.'],
+        ['command' => 'AP07', 'origin' => 'device-init', 'features' => ['audio'], 'responds' => 'BP07', 'notes' => 'Upload audio message.'],
+        ['command' => 'AP10', 'origin' => 'alarm', 'features' => ['alarm', 'location'], 'responds' => 'BP10', 'notes' => 'Alarm and return-address packet.'],
+        ['command' => 'AP49', 'origin' => 'scheduled/request/manual', 'features' => ['heart_rate'], 'responds' => 'BP49', 'notes' => 'Heart-rate upload.'],
+        ['command' => 'APHT', 'origin' => 'scheduled/request/manual', 'features' => ['heart_rate', 'blood_pressure'], 'responds' => 'BPHT', 'notes' => 'Heart-rate and blood-pressure upload.'],
+        ['command' => 'APHP', 'origin' => 'scheduled/request/manual', 'features' => ['heart_rate', 'blood_pressure', 'blood_oxygen', 'blood_sugar'], 'responds' => 'BPHP', 'notes' => 'Combined health upload.'],
+        ['command' => 'AP50', 'origin' => 'scheduled/request/manual', 'features' => ['temperature', 'battery'], 'responds' => 'BP50', 'notes' => 'Body-temperature upload with battery.'],
+        ['command' => 'AP12', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP12.'],
+        ['command' => 'AP14', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP14.'],
+        ['command' => 'AP16', 'origin' => 'request-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Acknowledges BP16; location may follow as AP01.'],
+        ['command' => 'AP17', 'origin' => 'control-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP17 factory reset.'],
+        ['command' => 'AP28', 'origin' => 'control-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP28.'],
+        ['command' => 'AP33', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP33 working mode/config.'],
+        ['command' => 'AP40', 'origin' => 'control-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP40.'],
+        ['command' => 'AP76', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP76.'],
+        ['command' => 'AP77', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP77.'],
+        ['command' => 'AP84', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP84.'],
+        ['command' => 'AP85', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP85.'],
+        ['command' => 'AP86', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP86.'],
+        ['command' => 'AP87', 'origin' => 'request-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BP87.'],
+        ['command' => 'APJZ', 'origin' => 'config-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BPJZ.'],
+        ['command' => 'APXL', 'origin' => 'request-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Acknowledges BPXL; device may separately upload AP49.'],
+        ['command' => 'APXY', 'origin' => 'request-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Acknowledges BPXY; device may separately upload APHT/APHP.'],
+        ['command' => 'APXT', 'origin' => 'request-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Acknowledges BPXT; device may separately upload AP50.'],
+        ['command' => 'APXZ', 'origin' => 'request-reply', 'features' => ['device_config'], 'responds' => '-', 'notes' => 'Reply to BPXZ.'],
+    ];
+}
+
+function printCommandCatalog(array $downlinks, array $uplinks): void
+{
+    echo "Vivistar server -> device commands usable with --command" . PHP_EOL;
+    echo "COMMAND   KIND      RISK    EXPECTED DEVICE UPLINKS          TITLE" . PHP_EOL;
+    foreach ($downlinks as $entry) {
+        printf(
+            "%-9s %-9s %-7s %-32s %s" . PHP_EOL,
+            (string)$entry['command'],
+            (string)($entry['kind'] ?? 'request'),
+            (string)($entry['risk'] ?? 'normal'),
+            implode(',', $entry['expectedReplyTypes'] ?? []) ?: '-',
+            (string)($entry['title'] ?? '')
+        );
+    }
+
+    echo PHP_EOL;
+    echo "Vivistar device -> server native uplinks" . PHP_EOL;
+    echo "UPLINK   ORIGIN                    FEATURES                         RESPONDS NOTES" . PHP_EOL;
+    foreach ($uplinks as $entry) {
+        printf(
+            "%-8s %-25s %-32s %-8s %s" . PHP_EOL,
+            (string)$entry['command'],
+            (string)$entry['origin'],
+            implode(',', $entry['features'] ?? []),
+            (string)($entry['responds'] ?? '-'),
+            (string)($entry['notes'] ?? '')
+        );
+    }
 }
 
 function buildDownlinkPayload(VivistarAdapter $adapter, string $imei, string $command, string $ident, array $data = []): string

@@ -6,6 +6,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $args = parseArgs($argv);
 $server = (string)($args['server'] ?? 'ws://127.0.0.1:8080');
 $model = (string)($args['model'] ?? 'VIVISTAR-CARE');
+$protocolOverride = (string)($args['protocol'] ?? '');
 $imei = (string)($args['imei'] ?? '');
 $command = (string)($args['command'] ?? '');
 $payloadOverride = isset($args['payload']) ? decodeJsonObject((string)$args['payload']) : null;
@@ -16,7 +17,11 @@ if ($imei === '') {
     exit(1);
 }
 
-$protocol = protocolForModel($model);
+$protocol = $protocolOverride !== '' ? $protocolOverride : protocolForModel($model);
+if (!in_array($protocol, ['vivistar-iw', 'wonlex-json'], true)) {
+    fwrite(STDERR, "Unsupported protocol: {$protocol}. Use vivistar-iw or wonlex-json.\n");
+    exit(1);
+}
 $client = str_starts_with($server, 'tcp://')
     ? new TcpTextClient($server)
     : new WsClient($server);
@@ -82,7 +87,8 @@ function decodeJsonObject(string $value): array
 
 function protocolForModel(string $model): string
 {
-    return str_starts_with(strtoupper($model), 'VIVISTAR') ? 'vivistar-iw' : 'wonlex-json';
+    $model = strtoupper($model);
+    return str_starts_with($model, 'VIVISTAR') || str_starts_with($model, 'VL') ? 'vivistar-iw' : 'wonlex-json';
 }
 
 function loginPayload(string $protocol, string $imei, string $model): array|string

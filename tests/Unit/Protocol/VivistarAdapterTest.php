@@ -43,6 +43,27 @@ final class VivistarAdapterTest extends TestCase
         self::assertSame(72, $payload['data']['heartRate']);
     }
 
+    public function testDecodeIncomingParsesAp10AlarmPacket(): void
+    {
+        $adapter = new VivistarAdapter();
+
+        $payload = $adapter->decodeIncoming(
+            'IWAP10080524A2232.9806N11404.9355E000.1061830323.8706000908000602,460,0,9520,3671,06,zh-cn,00,HOME|74-DE-2B-44-88-8C|97#',
+            ['session' => ['imei' => '861265062542599']]
+        );
+
+        self::assertIsArray($payload);
+        self::assertSame('AP10', $payload['type']);
+        self::assertSame('861265062542599', $payload['imei']);
+        self::assertSame(22.549676666666667, $payload['data']['lat']);
+        self::assertSame(114.08225833333333, $payload['data']['lon']);
+        self::assertSame('06', $payload['data']['alarmCode']);
+        self::assertTrue($payload['data']['fall']);
+        self::assertSame(80, $payload['data']['battery']);
+        self::assertSame(9520, $payload['data']['lac']);
+        self::assertSame(3671, $payload['data']['cellId']);
+    }
+
     public function testDecodeIncomingRejectsMalformedPacket(): void
     {
         $adapter = new VivistarAdapter();

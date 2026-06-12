@@ -202,7 +202,95 @@ class VivistarAdapter implements DeviceAdapterInterface
             }
             $data['steps'] = $this->num($fields[1] ?? null);
             $data['rollFrequency'] = $this->num($fields[2] ?? null);
+            return;
         }
+
+        if ($type === 'AP10') {
+            $this->enrichAlarmLocation($fields, $data);
+        }
+    }
+
+    private function enrichAlarmLocation(array $fields, array &$data): void
+    {
+        $compact = trim((string)($fields[0] ?? ''));
+        if (preg_match(
+            '/^(?<date>\d{6})(?<valid>[AV])(?<lat>\d{4}\.\d+)(?<latDir>[NS])(?<lon>\d{5}\.\d+)(?<lonDir>[EW])(?<speed>\d{3}\.\d)(?<time>\d{6})(?<direction>\d+(?:\.\d+)?)(?<status>\d{14})$/',
+            $compact,
+            $m
+        ) === 1) {
+            $data['date'] = $m['date'];
+            $data['timeUtc'] = $m['time'];
+            $data['gpsValid'] = $m['valid'] === 'A';
+            $data['lat'] = $this->coordinate((string)$m['lat'], (string)$m['latDir']);
+            $data['lon'] = $this->coordinate((string)$m['lon'], (string)$m['lonDir']);
+            $data['speed'] = $this->num($m['speed']);
+            $data['direction'] = $this->num($m['direction']);
+            $this->enrichStatusBlock((string)$m['status'], $data);
+        }
+
+        $data['mcc'] = $this->num(trim((string)($fields[1] ?? '')));
+        $data['mnc'] = $this->num(trim((string)($fields[2] ?? '')));
+        $data['lac'] = $this->num(trim((string)($fields[3] ?? '')));
+        $data['cellId'] = $this->num(trim((string)($fields[4] ?? '')));
+
+        $alarmCode = trim((string)($fields[5] ?? ''));
+        if ($alarmCode !== '') {
+            $data['alarmCode'] = $alarmCode;
+            $data['sos'] = $alarmCode === '01';
+            $data['lowBattery'] = $alarmCode === '02';
+            $data['fall'] = $alarmCode === '06';
+            $data['wearingNotice'] = $alarmCode === '04';
+        }
+
+        $languageAndBeacon = trim((string)($fields[6] ?? ''));
+        if ($languageAndBeacon !== '') {
+            $parts = explode('|', $languageAndBeacon, 2);
+            $data['language'] = $parts[0] ?? $languageAndBeacon;
+            if (isset($parts[1])) {
+                $data['beacon'] = $parts[1];
+            }
+        }
+
+        $replyFlags = trim((string)($fields[7] ?? ''));
+        if (preg_match('/^\d{2}$/', $replyFlags) === 1) {
+            $data['replyAddressRequested'] = $replyFlags[0] === '1';
+            $data['mobileLinkRequested'] = $replyFlags[1] === '1';
+        }
+
+        $wifi = trim((string)($fields[8] ?? ''));
+        if ($wifi !== '') {
+            $data['wifiRaw'] = $wifi;
+        }
+    }
+
+    private function enrichStatusBlock(string $status, array &$data): void
+    {
+        if (preg_match('/^\d{11,14}$/', $status) !== 1) {
+            return;
+        }
+
+        $data['gsmSignal'] = $this->num(substr($status, 0, 3));
+        $data['satelliteCount'] = $this->num(substr($status, 3, 3));
+        $data['battery'] = $this->num(substr($status, 6, 3));
+        $data['remainingSpace'] = $this->num(substr($status, 9, 1));
+        $data['fortificationState'] = $this->num(substr($status, 10, 2));
+        if (strlen($status) >= 14) {
+            $data['workMode'] = $this->num(substr($status, 12, 2));
+        }
+    }
+
+    private function coordinate(string $value, string $direction): ?float
+    {
+        if (!is_numeric($value)) {
+            return null;
+        }
+
+        $degreeDigits = in_array($direction, ['E', 'W'], true) ? 3 : 2;
+        $degrees = (int)substr($value, 0, $degreeDigits);
+        $minutes = (float)substr($value, $degreeDigits);
+        $decimal = $degrees + ($minutes / 60);
+
+        return in_array($direction, ['S', 'W'], true) ? -$decimal : $decimal;
     }
 
     private function num(mixed $value): int|float|null

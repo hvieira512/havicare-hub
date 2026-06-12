@@ -249,6 +249,39 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(4, $events[0]['extra']['wifi']);
     }
 
+    public function testDecodesVivistarAp10IntoAlarmLocationAndBatteryEvents(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('vivistar-iw'),
+            [
+                'type' => 'AP10',
+                'data' => [
+                    'alarmCode' => '06',
+                    'fall' => true,
+                    'lowBattery' => false,
+                    'sos' => false,
+                    'lat' => 22.549676666666667,
+                    'lon' => 114.08225833333333,
+                    'gpsValid' => true,
+                    'speed' => 0.1,
+                    'direction' => 323.87,
+                    'mcc' => 460,
+                    'mnc' => 0,
+                    'lac' => 9520,
+                    'cellId' => 3671,
+                    'battery' => 80,
+                ],
+            ]
+        );
+
+        self::assertSame(['alarm', 'location', 'battery'], array_column($events, 'feature'));
+        self::assertSame('06', $events[0]['value']['code']);
+        self::assertTrue($events[0]['value']['fall']);
+        self::assertSame(22.549676666666667, $events[1]['value']['lat']);
+        self::assertSame(114.08225833333333, $events[1]['value']['lon']);
+        self::assertSame(80, $events[2]['value']['percent']);
+    }
+
     public function testDecodesFourPTouchHealthReport(): void
     {
         $events = (new DeviceEventDecoder())->decode(
