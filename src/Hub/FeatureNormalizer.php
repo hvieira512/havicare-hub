@@ -25,13 +25,13 @@ final class FeatureNormalizer
 
     private static function heartRate(array $payload): array
     {
-        $value = self::first($payload, ['heartRate', 'heart_rate', 'hr', 'bpm', 'pulse', 'value', 'data']);
+        $value = self::first($payload, ['heartRate', 'heart_rate', 'hr', 'bpm', 'pulse', 'value', 'data', 'date']);
         return $value === null ? [] : ['bpm' => (int)$value];
     }
 
     private static function bloodPressure(array $payload): array
     {
-        $rawData = $payload['data'] ?? null;
+        $rawData = $payload['data'] ?? $payload['date'] ?? null;
         if (is_string($rawData) && str_contains($rawData, '/')) {
             $parts = preg_split('/[\/,\-]+/', $rawData);
             $payload['systolic'] = $parts[0] ?? null;
@@ -48,7 +48,7 @@ final class FeatureNormalizer
 
     private static function bloodOxygen(array $payload): array
     {
-        $value = self::first($payload, ['spo2', 'spo2Percent', 'oxygen', 'bloodOxygen', 'bo', 'value', 'data']);
+        $value = self::first($payload, ['spo2', 'spo2Percent', 'oxygen', 'bloodOxygen', 'bo', 'value', 'data', 'date']);
         return $value === null ? [] : ['spo2Percent' => (int)$value];
     }
 
@@ -64,7 +64,7 @@ final class FeatureNormalizer
 
     private static function temperature(array $payload): array
     {
-        $value = self::first($payload, ['bodyTemperature', 'temperature', 'bodyCelsius', 'temp', 'value', 'data']);
+        $value = self::first($payload, ['bodyTemperature', 'temperature', 'bodyCelsius', 'temp', 'value', 'data', 'date']);
         return $value === null ? [] : ['bodyCelsius' => (float)$value];
     }
 

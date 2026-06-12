@@ -8,10 +8,11 @@ $server = (string)($args['server'] ?? 'ws://127.0.0.1:8080');
 $model = (string)($args['model'] ?? 'VIVISTAR-CARE');
 $imei = (string)($args['imei'] ?? '');
 $command = (string)($args['command'] ?? '');
+$payloadOverride = isset($args['payload']) ? decodeJsonObject((string)$args['payload']) : null;
 $listen = isset($args['listen']);
 
 if ($imei === '') {
-    fwrite(STDERR, "Usage: php simulator/simulate.php --imei IMEI [--model MODEL] [--server URL] [--command RAW_OR_TYPE] [--listen]\n");
+    fwrite(STDERR, "Usage: php simulator/simulate.php --imei IMEI [--model MODEL] [--server URL] [--command RAW_OR_TYPE] [--payload JSON] [--listen]\n");
     exit(1);
 }
 
@@ -27,7 +28,7 @@ if ($reply !== null) {
 }
 
 if ($command !== '') {
-    sendProtocolPacket($client, $protocol, commandPayload($protocol, $imei, $command));
+    sendProtocolPacket($client, $protocol, commandPayload($protocol, $imei, $model, $command, $payloadOverride));
 }
 
 if (!$listen) {
@@ -68,6 +69,17 @@ function parseArgs(array $argv): array
     return $args;
 }
 
+function decodeJsonObject(string $value): array
+{
+    $decoded = json_decode($value, true);
+    if (!is_array($decoded)) {
+        fwrite(STDERR, "Failed to decode --payload JSON\n");
+        exit(1);
+    }
+
+    return $decoded;
+}
+
 function protocolForModel(string $model): string
 {
     return str_starts_with(strtoupper($model), 'VIVISTAR') ? 'vivistar-iw' : 'wonlex-json';
@@ -89,7 +101,7 @@ function loginPayload(string $protocol, string $imei, string $model): array|stri
     ];
 }
 
-function commandPayload(string $protocol, string $imei, string $command): array|string
+function commandPayload(string $protocol, string $imei, string $model, string $command, ?array $payloadOverride = null): array|string
 {
     if ($protocol === 'vivistar-iw') {
         if (str_starts_with($command, 'IW')) {
@@ -102,14 +114,90 @@ function commandPayload(string $protocol, string $imei, string $command): array|
         };
     }
 
+    $type = $command !== '' ? $command : 'upBattery';
+    $data = wonlexSampleData($type);
+    $data = array_replace([
+        'type' => $type,
+        'imei' => $imei,
+        'deviceModel' => $model,
+    ], $data);
+    if ($payloadOverride !== null) {
+        $data = array_replace($data, $payloadOverride);
+    }
+
     return [
-        'type' => $command !== '' ? $command : 'upBattery',
+        'type' => $type,
         'ident' => bin2hex(random_bytes(4)),
         'ref' => 'w:update',
         'imei' => $imei,
-        'data' => [],
+        'data' => $data,
         'timestamp' => nowMs(),
     ];
+}
+
+function wonlexSampleData(string $type): array
+{
+    return match ($type) {
+        'heartbeat' => [
+            'batteryLevel' => 90,
+            'batteryState' => 0,
+        ],
+        'upHeartRate' => [
+            'data' => '72',
+            'testType' => 2,
+        ],
+        'upBP' => [
+            'data' => '120/80/72',
+            'testType' => 2,
+        ],
+        'upBO' => [
+            'data' => '98',
+            'testType' => 2,
+        ],
+        'upBodyTemperature' => [
+            'data' => '36.6/31.0/27.8',
+            'testType' => 2,
+        ],
+        'upBattery' => [
+            'batteryLevel' => 90,
+            'batteryState' => 0,
+            'batteryType' => 2,
+        ],
+        'upLocation' => [
+            'baseStationType' => 0,
+            'positionDataType' => '1',
+            'gps' => [
+                'lat' => '38.7150',
+                'lon' => '-9.1450',
+                'height' => 45,
+                'satelliteNum' => 8,
+                'GSM' => 90,
+                'Type' => 0,
+            ],
+            'baseStation' => [
+                ['mcc' => 268, 'mnc' => 1, 'lac' => 1234, 'ci' => 5679, 'rxlev' => 49],
+            ],
+            'wifi' => [
+                ['ssid' => 'HOME', 'mac' => 'AA:BB:CC:DD:EE:FF', 'signal' => '-58'],
+            ],
+        ],
+        'upBatch' => [
+            'heartRate' => '100,98,97',
+            'bp' => '120/80/72',
+            'bo' => '98',
+            'testType' => 2,
+        ],
+        'upTodayActivity' => [
+            'step' => 3120,
+            'exerciseTime' => 1800,
+            'standTime' => 6,
+        ],
+        'upSleep' => [
+            'value' => '420/120/280/20',
+            'upDayStr' => gmdate('Y-m-d'),
+        ],
+        default => [],
+    };
 }
 
 function sendProtocolPacket(WsClient|TcpTextClient $client, string $protocol, array|string $payload): void
@@ -127,17 +215,20 @@ function sendProtocolPacket(WsClient|TcpTextClient $client, string $protocol, ar
     if (!is_array($payload)) {
         throw new RuntimeException('Wonlex payload must be an array');
     }
-    if ($client instanceof TcpTextClient) {
-        throw new RuntimeException('Wonlex simulator requires WebSocket transport');
-    }
-
     $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
-    $client->send(pack('nn', 0xFCAF, strlen($json)) . $json, 0x2);
+    $frame = pack('nn', 0xFCAF, strlen($json)) . $json;
+    if ($client instanceof TcpTextClient) {
+        $client->send($frame);
+    } else {
+        $client->send($frame, 0x2);
+    }
 }
 
 function receiveProtocolPacket(WsClient|TcpTextClient $client, string $protocol, ?int $timeout = null): ?array
 {
-    $raw = $client->receive($timeout);
+    $raw = $protocol === 'wonlex-json' && $client instanceof TcpTextClient
+        ? $client->receiveFrame($timeout)
+        : $client->receive($timeout);
     if ($raw === null || $raw === '') {
         return null;
     }
@@ -149,6 +240,7 @@ function receiveProtocolPacket(WsClient|TcpTextClient $client, string $protocol,
     if (strlen($raw) < 4) {
         return null;
     }
+
     $header = unpack('nstart/nlength', substr($raw, 0, 4));
     if (($header['start'] ?? null) !== 0xFCAF) {
         return null;
@@ -220,6 +312,42 @@ class TcpTextClient
             }
             $this->buffer .= $chunk;
         }
+    }
+
+    public function receiveFrame(?int $timeout = null): ?string
+    {
+        stream_set_timeout($this->socket, $timeout ?? 0);
+        $header = $this->readBytes(4);
+        if ($header === null) {
+            return null;
+        }
+
+        $fields = unpack('nstart/nlength', $header);
+        if (($fields['start'] ?? null) !== 0xFCAF) {
+            return null;
+        }
+
+        $length = (int)($fields['length'] ?? 0);
+        $payload = $length > 0 ? $this->readBytes($length) : '';
+        if ($payload === null) {
+            return null;
+        }
+
+        return $header . $payload;
+    }
+
+    private function readBytes(int $length): ?string
+    {
+        $data = '';
+        while (strlen($data) < $length) {
+            $chunk = fread($this->socket, $length - strlen($data));
+            if ($chunk === false || $chunk === '') {
+                return null;
+            }
+            $data .= $chunk;
+        }
+
+        return $data;
     }
 }
 

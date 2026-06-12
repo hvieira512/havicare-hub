@@ -36,11 +36,7 @@ $adapter = new WonlexAdapter();
 $manifest = wonlexCommands();
 
 if ($listCommands) {
-    foreach ($manifest as $entry) {
-        $risk = $entry['risk'] ?? 'normal';
-        $expected = $entry['expectedReplyTypes'] ?? [];
-        echo $entry['command'] . "\t" . ($entry['title'] ?? '') . "\t[" . $risk . "]\t" . implode(',', $expected) . PHP_EOL;
-    }
+    printCommandCatalog($manifest, wonlexUplinks());
     exit(0);
 }
 
@@ -166,10 +162,12 @@ Options:
   --timeout 8             Maximum seconds to wait for replies per command.
   --settle 1.0            Stop early after this many quiet seconds.
   --topic-prefix PREFIX    MQTT topic prefix. Default: hitecosystem-hub
-  --list-commands         Print the Wonlex command catalog and exit.
+  --list-commands         Print server downlinks and device uplinks, then exit.
 
 Notes:
   - Replies are read from devices/{imei}/events and devices/{imei}/raw.
+  - Commands listed under "server -> device" can be used with --command.
+  - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive reset/restart/powerOff commands are behind --include-risk high.
   - This tester publishes base64-encoded Wonlex JSON frames to devices/{imei}/downlink.
 
@@ -217,32 +215,95 @@ function decodeJsonObject(string $value): array
 function wonlexCommands(): array
 {
     return [
-        ['command' => 'dnHeartRate', 'title' => 'Request heart rate', 'risk' => 'normal', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
-        ['command' => 'dnBP', 'title' => 'Request blood pressure', 'risk' => 'normal', 'expectedReplyTypes' => ['upBP', 'upBatch']],
-        ['command' => 'dnBO', 'title' => 'Request blood oxygen', 'risk' => 'normal', 'expectedReplyTypes' => ['upBO', 'upBatch']],
-        ['command' => 'dnTemperature', 'title' => 'Request temperature', 'risk' => 'normal', 'expectedReplyTypes' => ['upBodyTemperature']],
-        ['command' => 'dnBreathe', 'title' => 'Request respiration', 'risk' => 'normal', 'expectedReplyTypes' => ['upBreathe']],
-        ['command' => 'dnECG', 'title' => 'Request ECG', 'risk' => 'normal', 'expectedReplyTypes' => ['upECG']],
-        ['command' => 'dnECGAnalysis', 'title' => 'Request ECG analysis', 'risk' => 'normal', 'expectedReplyTypes' => ['upECGAnalysis']],
-        ['command' => 'dnHRV', 'title' => 'Request HRV', 'risk' => 'normal', 'expectedReplyTypes' => ['upHRV']],
-        ['command' => 'dnPPG', 'title' => 'Request PPG', 'risk' => 'normal', 'expectedReplyTypes' => ['upPPG']],
-        ['command' => 'dnRR', 'title' => 'Request RR interval', 'risk' => 'normal', 'expectedReplyTypes' => ['upRR']],
-        ['command' => 'dnLocation', 'title' => 'Request location', 'risk' => 'normal', 'expectedReplyTypes' => ['upLocation']],
-        ['command' => 'locationInterval', 'title' => 'Set location interval', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
-        ['command' => 'deviceConfig', 'title' => 'Set device config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
-        ['command' => 'alarmClock', 'title' => 'Set alarm clock', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
-        ['command' => 'SOSNumber', 'title' => 'Set SOS numbers', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
-        ['command' => 'dnUpSleep', 'title' => 'Request sleep report', 'risk' => 'normal', 'expectedReplyTypes' => ['upSleep']],
-        ['command' => 'dnWeather', 'title' => 'Request weather', 'risk' => 'normal', 'expectedReplyTypes' => ['upWeather']],
-        ['command' => 'dnMedicationPlan', 'title' => 'Set medication plan', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
-        ['command' => 'dnDevBindStatus', 'title' => 'Issue device binding status', 'risk' => 'normal', 'expectedReplyTypes' => []],
-        ['command' => 'findPhoneBillOrFlow', 'title' => 'Request phone bill or flow', 'risk' => 'normal', 'expectedReplyTypes' => []],
-        ['command' => 'find', 'title' => 'Find device', 'risk' => 'normal', 'expectedReplyTypes' => []],
-        ['command' => 'OTA', 'title' => 'OTA update', 'risk' => 'high', 'expectedReplyTypes' => ['upGetOTA']],
-        ['command' => 'reset', 'title' => 'Factory reset', 'risk' => 'high', 'expectedReplyTypes' => ['upReset']],
-        ['command' => 'restart', 'title' => 'Restart device', 'risk' => 'high', 'expectedReplyTypes' => ['upShutdown']],
-        ['command' => 'powerOff', 'title' => 'Power off device', 'risk' => 'high', 'expectedReplyTypes' => ['upShutdown']],
+        ['command' => 'dnHeartRate', 'title' => 'Request heart rate', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
+        ['command' => 'dnBP', 'title' => 'Request blood pressure', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBP', 'upBatch']],
+        ['command' => 'dnBO', 'title' => 'Request blood oxygen', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBO', 'upBatch']],
+        ['command' => 'dnTemperature', 'title' => 'Request temperature', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBodyTemperature']],
+        ['command' => 'dnBreathe', 'title' => 'Request respiration', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBreathe']],
+        ['command' => 'dnECG', 'title' => 'Request ECG', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upECG']],
+        ['command' => 'dnECGAnalysis', 'title' => 'Request ECG analysis', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upECGAnalysis']],
+        ['command' => 'dnHRV', 'title' => 'Request HRV', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upHRV']],
+        ['command' => 'dnPPG', 'title' => 'Request PPG', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upPPG']],
+        ['command' => 'dnRR', 'title' => 'Request RR interval', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upRR']],
+        ['command' => 'dnLocation', 'title' => 'Request location', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upLocation']],
+        ['command' => 'locationInterval', 'title' => 'Set location interval', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
+        ['command' => 'deviceConfig', 'title' => 'Set device config', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
+        ['command' => 'alarmClock', 'title' => 'Set alarm clock', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
+        ['command' => 'SOSNumber', 'title' => 'Set SOS numbers', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
+        ['command' => 'dnUpSleep', 'title' => 'Request sleep report', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upSleep']],
+        ['command' => 'dnWeather', 'title' => 'Request weather', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upWeather']],
+        ['command' => 'dnMedicationPlan', 'title' => 'Set medication plan', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['upDeviceConfig']],
+        ['command' => 'dnDevBindStatus', 'title' => 'Issue device binding status', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => []],
+        ['command' => 'findPhoneBillOrFlow', 'title' => 'Request phone bill or flow', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => []],
+        ['command' => 'find', 'title' => 'Find device', 'kind' => 'control', 'risk' => 'normal', 'expectedReplyTypes' => []],
+        ['command' => 'OTA', 'title' => 'OTA update', 'kind' => 'control', 'risk' => 'high', 'expectedReplyTypes' => ['upGetOTA']],
+        ['command' => 'reset', 'title' => 'Factory reset', 'kind' => 'control', 'risk' => 'high', 'expectedReplyTypes' => ['upReset']],
+        ['command' => 'restart', 'title' => 'Restart device', 'kind' => 'control', 'risk' => 'high', 'expectedReplyTypes' => ['upShutdown']],
+        ['command' => 'powerOff', 'title' => 'Power off device', 'kind' => 'control', 'risk' => 'high', 'expectedReplyTypes' => ['upShutdown']],
     ];
+}
+
+function wonlexUplinks(): array
+{
+    return [
+        ['command' => 'login', 'origin' => 'device-init', 'features' => ['status'], 'notes' => 'Sent when the device opens a session.'],
+        ['command' => 'heartbeat', 'origin' => 'server-probe', 'features' => ['heartbeat', 'battery'], 'notes' => 'Reply to server heartbeat; includes battery fields.'],
+        ['command' => 'upHeartRate', 'origin' => 'scheduled/manual/request', 'features' => ['heart_rate'], 'notes' => 'May also be included in upBatch.'],
+        ['command' => 'upBP', 'origin' => 'scheduled/manual/request', 'features' => ['blood_pressure'], 'notes' => 'May also be included in upBatch.'],
+        ['command' => 'upBO', 'origin' => 'scheduled/manual/request', 'features' => ['blood_oxygen'], 'notes' => 'May also be included in upBatch.'],
+        ['command' => 'upBodyTemperature', 'origin' => 'scheduled/manual/request', 'features' => ['temperature'], 'notes' => 'Body/surface/environment temperature payload.'],
+        ['command' => 'upBreathe', 'origin' => 'scheduled/manual/request', 'features' => ['respiration'], 'notes' => 'Respiration measurement upload.'],
+        ['command' => 'upECG', 'origin' => 'scheduled/manual/request', 'features' => ['ecg'], 'notes' => 'Waveform upload; may be multi-packet.'],
+        ['command' => 'upECGAnalysis', 'origin' => 'request', 'features' => ['ecg_analysis'], 'notes' => 'ECG analysis result.'],
+        ['command' => 'upHRV', 'origin' => 'scheduled/manual/request', 'features' => ['hrv'], 'notes' => 'Heart-rate variability upload.'],
+        ['command' => 'upPPG', 'origin' => 'scheduled/manual/request', 'features' => ['ppg'], 'notes' => 'PPG waveform upload.'],
+        ['command' => 'upRR', 'origin' => 'scheduled/manual/request', 'features' => ['rr_interval'], 'notes' => 'RRI upload.'],
+        ['command' => 'upBatch', 'origin' => 'scheduled/manual/request', 'features' => ['heart_rate', 'blood_pressure', 'blood_oxygen'], 'notes' => 'Batch health upload; dataType identifies the measurement.'],
+        ['command' => 'upLocation', 'origin' => 'scheduled/request', 'features' => ['location'], 'notes' => 'Periodic by locationInterval or reply to dnLocation.'],
+        ['command' => 'upBattery', 'origin' => 'scheduled', 'features' => ['battery'], 'notes' => 'Battery upload at regular intervals.'],
+        ['command' => 'upStep', 'origin' => 'scheduled', 'features' => ['activity'], 'notes' => 'Step upload according to measurement frequency.'],
+        ['command' => 'upKcal', 'origin' => 'scheduled', 'features' => ['activity'], 'notes' => 'Calories upload.'],
+        ['command' => 'upDistance', 'origin' => 'scheduled', 'features' => ['activity'], 'notes' => 'Distance upload.'],
+        ['command' => 'upTodayActivity', 'origin' => 'scheduled', 'features' => ['activity'], 'notes' => 'Latest daily activity snapshot.'],
+        ['command' => 'upRun', 'origin' => 'scheduled/manual', 'features' => ['activity'], 'notes' => 'Running exercise upload.'],
+        ['command' => 'upWalk', 'origin' => 'scheduled/manual', 'features' => ['activity'], 'notes' => 'Walking exercise upload.'],
+        ['command' => 'upSleep', 'origin' => 'scheduled/request', 'features' => ['sleep'], 'notes' => 'Sleep data upload or reply to dnUpSleep.'],
+        ['command' => 'upWeather', 'origin' => 'request', 'features' => ['weather'], 'notes' => 'Reply to dnWeather.'],
+        ['command' => 'upDeviceConfig', 'origin' => 'config-reply', 'features' => ['device_config'], 'notes' => 'Acknowledges config downlinks such as deviceConfig/locationInterval/alarmClock/SOSNumber.'],
+        ['command' => 'upGetDevConfig', 'origin' => 'request/reply', 'features' => ['device_config'], 'notes' => 'Device configuration report.'],
+        ['command' => 'upGetOTA', 'origin' => 'ota-reply', 'features' => ['ota'], 'notes' => 'OTA acknowledgement/status.'],
+        ['command' => 'upReset', 'origin' => 'device-init/control-reply', 'features' => ['device_state'], 'notes' => 'Device-initiated factory reset or reply to reset.'],
+        ['command' => 'upShutdown', 'origin' => 'control-reply', 'features' => ['device_state'], 'notes' => 'Reply to restart or powerOff before disconnecting.'],
+    ];
+}
+
+function printCommandCatalog(array $downlinks, array $uplinks): void
+{
+    echo "Wonlex server -> device commands usable with --command" . PHP_EOL;
+    echo "COMMAND                 KIND      RISK    EXPECTED DEVICE UPLINKS          TITLE" . PHP_EOL;
+    foreach ($downlinks as $entry) {
+        printf(
+            "%-23s %-9s %-7s %-32s %s" . PHP_EOL,
+            (string)$entry['command'],
+            (string)($entry['kind'] ?? 'request'),
+            (string)($entry['risk'] ?? 'normal'),
+            implode(',', $entry['expectedReplyTypes'] ?? []) ?: '-',
+            (string)($entry['title'] ?? '')
+        );
+    }
+
+    echo PHP_EOL;
+    echo "Wonlex device -> server native uplinks" . PHP_EOL;
+    echo "UPLINK                 ORIGIN                    FEATURES                         NOTES" . PHP_EOL;
+    foreach ($uplinks as $entry) {
+        printf(
+            "%-22s %-25s %-32s %s" . PHP_EOL,
+            (string)$entry['command'],
+            (string)$entry['origin'],
+            implode(',', $entry['features'] ?? []),
+            (string)($entry['notes'] ?? '')
+        );
+    }
 }
 
 function buildDownlinkPayload(string $imei, string $command, string $requestId, string $ident, ?array $payloadOverride): array

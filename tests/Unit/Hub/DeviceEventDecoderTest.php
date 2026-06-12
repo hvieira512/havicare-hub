@@ -152,6 +152,24 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(90, $heartbeat[1]['value']['percent']);
     }
 
+    public function testDecodesWonlexDocumentDateFields(): void
+    {
+        $decoder = new DeviceEventDecoder();
+        $session = $this->session('wonlex-json');
+
+        $heartRate = $decoder->decode($session, ['type' => 'upHeartRate', 'data' => ['date' => '75']]);
+        $bloodPressure = $decoder->decode($session, ['type' => 'upBP', 'data' => ['date' => '118/78/75']]);
+        $bloodOxygen = $decoder->decode($session, ['type' => 'upBO', 'data' => ['date' => '97']]);
+        $temperature = $decoder->decode($session, ['type' => 'upBodyTemperature', 'data' => ['date' => '36.6/31.0/27.8']]);
+
+        self::assertSame(75, $heartRate[0]['value']['bpm']);
+        self::assertSame(118, $bloodPressure[0]['value']['systolicMmHg']);
+        self::assertSame(78, $bloodPressure[0]['value']['diastolicMmHg']);
+        self::assertSame(75, $bloodPressure[0]['value']['pulseBpm']);
+        self::assertSame(97, $bloodOxygen[0]['value']['spo2Percent']);
+        self::assertSame(36.6, $temperature[0]['value']['bodyCelsius']);
+    }
+
     public function testDecodesVivistarApHpIntoMultipleEvents(): void
     {
         $events = (new DeviceEventDecoder())->decode(
