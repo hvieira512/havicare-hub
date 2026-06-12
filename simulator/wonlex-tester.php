@@ -3,11 +3,17 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use App\Bootstrap;
+use App\Config;
 use App\Protocol\Adapter\WonlexAdapter;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\MqttClient;
 
+Bootstrap::loadEnv(__DIR__ . '/..');
+
 $args = parseArgs($argv);
+$config = Config::load()->all();
+$mqttConfig = $config['mqtt'] ?? [];
 
 if (isset($args['help']) || isset($args['h'])) {
     usage();
@@ -20,11 +26,11 @@ if ($imei === '') {
     exit(1);
 }
 
-$host = (string)($args['host'] ?? '127.0.0.1');
-$port = (int)($args['port'] ?? 1883);
-$username = (string)($args['username'] ?? '');
-$password = (string)($args['password'] ?? '');
-$topicPrefix = trim((string)($args['topic-prefix'] ?? 'hitecosystem-hub'), '/');
+$host = (string)($args['host'] ?? ($mqttConfig['host'] ?? '127.0.0.1'));
+$port = (int)($args['port'] ?? ($mqttConfig['port'] ?? 1883));
+$username = (string)($args['username'] ?? ($mqttConfig['username'] ?? ''));
+$password = (string)($args['password'] ?? ($mqttConfig['password'] ?? ''));
+$topicPrefix = trim((string)($args['topic-prefix'] ?? ($mqttConfig['topic_prefix'] ?? 'hitecosystem-hub')), '/');
 $timeoutSeconds = max(0.5, (float)($args['timeout'] ?? 8.0));
 $settleSeconds = max(0.1, (float)($args['settle'] ?? 1.0));
 $commandFilter = trim((string)($args['command'] ?? ''));
@@ -41,10 +47,10 @@ if ($listCommands) {
 }
 
 $selected = $commandFilter !== ''
-    ? array_values(array_filter($manifest, static fn (array $entry): bool => $entry['command'] === $commandFilter))
+    ? array_values(array_filter($manifest, static fn(array $entry): bool => $entry['command'] === $commandFilter))
     : array_values(array_filter(
         $manifest,
-        static fn (array $entry): bool => in_array((string)($entry['risk'] ?? 'normal'), $riskFilter, true)
+        static fn(array $entry): bool => in_array((string)($entry['risk'] ?? 'normal'), $riskFilter, true)
     ));
 
 if ($commandFilter !== '' && $selected === []) {
@@ -67,7 +73,14 @@ $settings = (new ConnectionSettings())
     ->setConnectTimeout(5)
     ->setSocketTimeout(5);
 
-$client->connect($settings, true);
+try {
+    $client->connect($settings, true);
+} catch (Throwable $e) {
+    fwrite(STDERR, "Failed to connect to MQTT broker {$host}:{$port} as " . ($username !== '' ? $username : '<anonymous>') . "\n");
+    fwrite(STDERR, $e->getMessage() . PHP_EOL);
+    fwrite(STDERR, "Check MQTT_HOST, MQTT_PORT, MQTT_USERNAME and MQTT_PASSWORD in .env, or override them with CLI flags.\n");
+    exit(1);
+}
 
 $eventsTopic = topic($topicPrefix, "devices/$imei/events");
 $rawTopic = topic($topicPrefix, "devices/$imei/raw");
@@ -135,8 +148,8 @@ foreach ($selected as $entry) {
         echo indent(prettyPayload($message['payload'])) . PHP_EOL;
     }
 
-    $replyMessages = array_values(array_filter($captured, static fn (array $message): bool => isDeviceReply($message)));
-    $decodedReplies = array_values(array_filter($captured, static fn (array $message): bool => isDecodedReply($message)));
+    $replyMessages = array_values(array_filter($captured, static fn(array $message): bool => isDeviceReply($message)));
+    $decodedReplies = array_values(array_filter($captured, static fn(array $message): bool => isDecodedReply($message)));
     if ($replyMessages === [] && $decodedReplies === []) {
         echo "  [sent] downlink accepted by hub, but no device reply observed" . PHP_EOL;
     } else {
@@ -197,7 +210,7 @@ function parseArgs(array $argv): array
 function parseCsv(string $value): array
 {
     $parts = array_map('trim', explode(',', $value));
-    $parts = array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
+    $parts = array_values(array_filter($parts, static fn(string $part): bool => $part !== ''));
     return $parts !== [] ? $parts : ['normal'];
 }
 

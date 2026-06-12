@@ -3,6 +3,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use App\Bootstrap;
 use App\Config;
 use App\Hub\DeviceHubServer;
 use App\Hub\HubDownlinkSubscriber;
@@ -17,6 +18,8 @@ use Ratchet\Server\IoServer;
 use Ratchet\WebSocket\WsServer;
 use React\EventLoop\Loop;
 use React\Socket\SocketServer;
+
+Bootstrap::loadEnv(__DIR__ . '/..');
 
 $config = Config::load()->all();
 $mqttConfig = $config['mqtt'] ?? [];

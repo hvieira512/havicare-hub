@@ -86,17 +86,23 @@ final class DeviceEventDecoder
             ])),
             'AP50' => [
                 $this->event('temperature', $nativeType, $payload),
-                $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null], $payload),
+                $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
             ],
             'AP10' => array_values(array_filter([
-                $this->event('alarm', $nativeType, $payload, $payload),
-                $this->event('location', $nativeType, $payload, $payload),
-                $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null], $payload),
+                $this->event('alarm', $nativeType, $payload, $this->only($payload, [
+                    'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satelliteCount',
+                    'battery', 'mcc', 'mnc', 'lac', 'cellId', 'language',
+                    'replyAddressRequested', 'mobileLinkRequested', 'wifiRaw', 'date', 'timeUtc',
+                ])),
+                $this->event('location', $nativeType, $payload, $this->only($payload, [
+                    'alarmCode', 'sos', 'lowBattery', 'fall', 'wearingNotice', 'battery', 'language',
+                ])),
+                $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
             ])),
             'AP03' => [
                 $this->event('heartbeat', $nativeType, $payload, $payload),
-                $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null], $payload),
-                $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null], $payload),
+                $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
+                $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
             ],
             'AP12', 'AP14', 'AP16', 'AP28', 'AP33', 'AP40',
             'AP76', 'AP77', 'AP84', 'AP85', 'AP86', 'AP87',
@@ -139,8 +145,8 @@ final class DeviceEventDecoder
         return match ($nativeType) {
             'LK' => array_values(array_filter([
                 $this->event('heartbeat', $nativeType, $payload, $payload),
-                $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null], $payload),
-                $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null], $payload),
+                $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
+                $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
             'bphrt' => [
                 $this->event('blood_pressure', $nativeType, $payload),
@@ -148,13 +154,16 @@ final class DeviceEventDecoder
             ],
             'UD_LTE' => array_values(array_filter([
                 $this->event('location', $nativeType, $payload, $payload),
-                $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null], $payload),
-                $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null], $payload),
+                $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
+                $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
             'AL_LTE' => array_values(array_filter([
                 $this->event('location', $nativeType, $payload, $payload),
-                $this->event('alarm', $nativeType, $payload, $payload),
-                $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null], $payload),
+                $this->event('alarm', $nativeType, $payload, $this->only($payload, [
+                    'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satellites',
+                    'batteryPercent', 'mcc', 'mnc', 'lac', 'cellId',
+                ])),
+                $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
             'CONFIG' => [$this->event('device_config', $nativeType, $payload, $payload)],
             default => [],
@@ -189,6 +198,11 @@ final class DeviceEventDecoder
         }
 
         return $extra;
+    }
+
+    private function only(array $payload, array $keys): array
+    {
+        return array_intersect_key($payload, array_flip($keys));
     }
 
     /**

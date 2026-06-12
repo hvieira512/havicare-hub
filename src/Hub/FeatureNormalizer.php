@@ -136,6 +136,7 @@ final class FeatureNormalizer
             'sos' => isset($payload['sos']) ? (bool)$payload['sos'] : null,
             'lowBattery' => isset($payload['lowBattery']) ? (bool)$payload['lowBattery'] : null,
             'fall' => isset($payload['fall']) ? (bool)$payload['fall'] : null,
+            'wearingNotice' => isset($payload['wearingNotice']) ? (bool)$payload['wearingNotice'] : null,
         ], static fn (mixed $value): bool => $value !== null);
     }
 

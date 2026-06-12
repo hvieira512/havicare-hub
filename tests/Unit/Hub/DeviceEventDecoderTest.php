@@ -260,6 +260,7 @@ final class DeviceEventDecoderTest extends TestCase
                     'fall' => true,
                     'lowBattery' => false,
                     'sos' => false,
+                    'wearingNotice' => false,
                     'lat' => 22.549676666666667,
                     'lon' => 114.08225833333333,
                     'gpsValid' => true,
@@ -277,9 +278,12 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(['alarm', 'location', 'battery'], array_column($events, 'feature'));
         self::assertSame('06', $events[0]['value']['code']);
         self::assertTrue($events[0]['value']['fall']);
+        self::assertFalse($events[0]['value']['wearingNotice']);
         self::assertSame(22.549676666666667, $events[1]['value']['lat']);
         self::assertSame(114.08225833333333, $events[1]['value']['lon']);
+        self::assertSame('06', $events[1]['extra']['alarmCode']);
         self::assertSame(80, $events[2]['value']['percent']);
+        self::assertArrayNotHasKey('extra', $events[2]);
     }
 
     public function testDecodesFourPTouchHealthReport(): void
