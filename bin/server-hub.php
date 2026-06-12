@@ -78,8 +78,13 @@ $wsPort = $config['websocket']['port'] ?? 8080;
 $tcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
 $tcpPort = $config['vivistar_tcp']['port'] ?? 9000;
 
-$wsSocket = new SocketServer("$wsHost:$wsPort", [], $loop);
-$wsServer = new IoServer(new HttpServer(new WsServer($hubServer)), $wsSocket, $loop);
+$wsEnabled = (bool)($config['websocket']['enabled'] ?? true);
+
+if ($wsEnabled) {
+    $wsSocket = new SocketServer("$wsHost:$wsPort", [], $loop);
+    $wsServer = new IoServer(new HttpServer(new WsServer($hubServer)), $wsSocket, $loop);
+}
+
 $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
 
 try {
@@ -110,7 +115,13 @@ if ($wonlexHeartbeatInterval > 0) {
 }
 
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
-Logger::channel('hub')->info("WebSocket ingress: ws://$wsHost:$wsPort");
+
+if ($wsEnabled) {
+    Logger::channel('hub')->info("WebSocket ingress: ws://$wsHost:$wsPort");
+} else {
+    Logger::channel('hub')->info('WebSocket ingress disabled');
+}
+
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");
 Logger::channel('hub')->info("Wonlex server heartbeat interval: {$wonlexHeartbeatInterval}s");
 Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('devices/{imei}/status'));

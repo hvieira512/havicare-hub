@@ -22,8 +22,12 @@ class Config
             ? 30
             : max(0, (int)$wonlexHeartbeatIntervalRaw);
 
+        $wsEnabledRaw = strtolower(trim((string)(getenv('WS_ENABLED') ?: 'true')));
+        $wsEnabled = in_array($wsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
+
         return new self([
             'websocket' => [
+                'enabled' => $wsEnabled,
                 'host' => getenv('WS_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('WS_PORT') ?: 8080),
             ],
