@@ -127,6 +127,7 @@ final class WonlexRecordingHubMqttBridge extends HubMqttBridge
     public array $raw = [];
     public array $statuses = [];
     public array $events = [];
+    public array $telemetry = [];
 
     public function __construct()
     {
@@ -145,5 +146,10 @@ final class WonlexRecordingHubMqttBridge extends HubMqttBridge
     public function publishEvent(string $imei, array $payload): void
     {
         $this->events[] = [$imei, $payload];
+    }
+
+    public function publishTelemetry(string $imei, array $payload): void
+    {
+        $this->telemetry[] = [$imei, $payload];
     }
 }

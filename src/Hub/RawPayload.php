@@ -53,8 +53,14 @@ class RawPayload
         return $payload;
     }
 
-    public static function event(string $imei, string $supplier, string $model, string $type, ?array $error = null): array
-    {
+    public static function event(
+        string $imei,
+        string $supplier,
+        string $model,
+        string $type,
+        ?array $error = null,
+        ?array $command = null,
+    ): array {
         $payload = [
             'schemaVersion' => 1,
             'type' => $type,
@@ -64,6 +70,9 @@ class RawPayload
 
         if ($error !== null) {
             $payload['error'] = $error;
+        }
+        if ($command !== null && $command !== []) {
+            $payload['command'] = $command;
         }
 
         return $payload;

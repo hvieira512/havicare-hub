@@ -96,7 +96,14 @@ class DeviceHubServer implements MessageComponentInterface
         $conn->send($bytes);
         $session = $this->connections->get($conn);
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $session?->supplier ?? '', $session?->model ?? '', 'device.downlink.sent'));
+            $this->mqtt->publishEvent($imei, RawPayload::event(
+                $imei,
+                $session?->supplier ?? '',
+                $session?->model ?? '',
+                'device.downlink.sent',
+                null,
+                $this->commandMetadata($bytes, $session?->protocol)
+            ));
             if ($session !== null) {
                 $this->mqtt->publishRaw(
                     $imei,
@@ -144,12 +151,19 @@ class DeviceHubServer implements MessageComponentInterface
         }
     }
 
-    public function reportDownlinkDropped(string $imei, string $reason): void
+    public function reportDownlinkDropped(string $imei, string $reason, ?string $bytes = null): void
     {
         $error = $this->errorPayload($reason);
         $metadata = $this->authorizer->metadataFor($imei);
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $metadata['supplier'], $metadata['model'], 'device.downlink.dropped', $error));
+            $this->mqtt->publishEvent($imei, RawPayload::event(
+                $imei,
+                $metadata['supplier'],
+                $metadata['model'],
+                'device.downlink.dropped',
+                $error,
+                $bytes !== null ? $this->commandMetadata($bytes) : null
+            ));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
@@ -255,7 +269,7 @@ class DeviceHubServer implements MessageComponentInterface
 
         foreach ($this->eventDecoder->decode($session, $decoded) as $event) {
             try {
-                $this->mqtt->publishEvent($session->imei, DeviceEventPayloadBuilder::decoded($session, $event));
+                $this->mqtt->publishTelemetry($session->imei, DeviceEventPayloadBuilder::decoded($session, $event));
             } catch (\Throwable $e) {
                 $this->mqtt->logPublishFailure('hub', $session->imei, $e);
             }
@@ -394,6 +408,47 @@ class DeviceHubServer implements MessageComponentInterface
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
+    }
+
+    private function commandMetadata(string $bytes, ?string $protocol = null): ?array
+    {
+        $decoded = null;
+        $resolvedProtocol = $protocol;
+        if ($protocol !== null && $protocol !== '') {
+            $adapter = $this->adapters->get($protocol);
+            $decoded = $adapter?->decodeIncoming($bytes);
+        }
+        if (!is_array($decoded)) {
+            $decoded = $this->adapters->decodeAny($bytes);
+            $resolvedProtocol = is_array($decoded) ? (string)($decoded['_protocol'] ?? $resolvedProtocol) : $resolvedProtocol;
+        }
+        if (!is_array($decoded)) {
+            return $this->outgoingCommandMetadata($bytes, $protocol);
+        }
+
+        $metadata = array_filter([
+            'nativeType' => (string)($decoded['type'] ?? ''),
+            'protocol' => $resolvedProtocol,
+            'ident' => $decoded['ident'] ?? null,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+        return $metadata !== [] ? $metadata : null;
+    }
+
+    private function outgoingCommandMetadata(string $bytes, ?string $protocol = null): ?array
+    {
+        $message = trim($bytes);
+        if (($protocol === null || $protocol === '' || $protocol === 'vivistar-iw')
+            && preg_match('/^IW(BP[A-Z0-9]{2}),([^,#]+),([^,#]+)/', $message, $matches) === 1
+        ) {
+            return [
+                'nativeType' => $matches[1],
+                'protocol' => 'vivistar-iw',
+                'ident' => $matches[3],
+            ];
+        }
+
+        return null;
     }
 
     private function errorPayload(string $code): array

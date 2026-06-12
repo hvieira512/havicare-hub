@@ -85,11 +85,16 @@ try {
 }
 
 $eventsTopic = topic($topicPrefix, "devices/$imei/events");
+$telemetryTopic = topic($topicPrefix, "devices/$imei/telemetry");
 $rawTopic = topic($topicPrefix, "devices/$imei/raw");
 $downlinkTopic = topic($topicPrefix, "devices/$imei/downlink");
 
 $messages = [];
 $client->subscribe($eventsTopic, static function (string $topic, string $payload) use (&$messages): void {
+    $messages[] = recordMessage($topic, $payload);
+}, MqttClient::QOS_AT_MOST_ONCE);
+
+$client->subscribe($telemetryTopic, static function (string $topic, string $payload) use (&$messages): void {
     $messages[] = recordMessage($topic, $payload);
 }, MqttClient::QOS_AT_MOST_ONCE);
 
@@ -99,6 +104,7 @@ $client->subscribe($rawTopic, static function (string $topic, string $payload) u
 
 echo "Connected to {$host}:{$port}" . PHP_EOL;
 echo "Watching: {$eventsTopic}" . PHP_EOL;
+echo "Watching: {$telemetryTopic}" . PHP_EOL;
 echo $showRaw ? "Watching: {$rawTopic}" . PHP_EOL : "Watching raw internally for device replies. Use --show-raw to print it." . PHP_EOL;
 echo PHP_EOL;
 
@@ -158,9 +164,9 @@ foreach ($selected as $entry) {
     } elseif ($matchingNativeReplies === [] && $decodedReplies === []) {
         echo "  [sent] downlink accepted by hub, but only unrelated device uplink(s) were observed" . PHP_EOL;
     } elseif ($decodedReplies === [] && !$showRaw) {
-        echo "  [ok] device replied with " . count($matchingNativeReplies) . " matching native message(s), but no expected decoded event was produced. Use --show-raw to inspect." . PHP_EOL;
+        echo "  [ok] device replied with " . count($matchingNativeReplies) . " matching native message(s), but no expected decoded telemetry was produced. Use --show-raw to inspect." . PHP_EOL;
     } else {
-        echo "  [ok] device replied with " . count($matchingNativeReplies) . " matching native message(s) and " . count($decodedReplies) . " expected decoded event(s)" . PHP_EOL;
+        echo "  [ok] device replied with " . count($matchingNativeReplies) . " matching native message(s) and " . count($decodedReplies) . " expected decoded telemetry message(s)" . PHP_EOL;
     }
 
     echo PHP_EOL;
@@ -186,7 +192,7 @@ Options:
   --list-commands         Print server downlinks and device uplinks, then exit.
 
 Notes:
-  - Replies are read from devices/{imei}/events and devices/{imei}/raw.
+  - Replies are read from devices/{imei}/events, devices/{imei}/telemetry and devices/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
   - Bulk runs only send request commands; use --command to send config/control/data commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
@@ -537,7 +543,7 @@ function isMatchingNativeReply(array $message, string $command, array $expectedR
 function isExpectedDecodedReply(array $message, array $expectedReplyTypes): bool
 {
     $topic = (string)($message['topic'] ?? '');
-    if (!str_ends_with($topic, '/events')) {
+    if (!str_ends_with($topic, '/telemetry')) {
         return false;
     }
 

@@ -34,6 +34,11 @@ class HubMqttBridge
         $this->publish($this->topic("devices/$imei/events"), $payload);
     }
 
+    public function publishTelemetry(string $imei, array $payload): void
+    {
+        $this->publish($this->topic("devices/$imei/telemetry"), $payload);
+    }
+
     public function downlinkTopicFilter(): string
     {
         return $this->topic('devices/+/downlink');

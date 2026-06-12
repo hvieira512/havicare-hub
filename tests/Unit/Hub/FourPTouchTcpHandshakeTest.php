@@ -76,18 +76,19 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertNull($error, $error?->getMessage() ?? '');
         self::assertSame('[3G*8800000015*0002*LK]', $received);
         self::assertCount(1, $mqtt->statuses);
-        self::assertCount(4, $mqtt->events);
+        self::assertCount(1, $mqtt->events);
+        self::assertCount(3, $mqtt->telemetry);
         self::assertCount(1, $mqtt->raw);
         self::assertSame('online', $mqtt->statuses[0][1]['state']);
         self::assertSame('4P Touch', $mqtt->statuses[0][1]['device']['supplier']);
         self::assertSame('4P-TOUCH', $mqtt->statuses[0][1]['device']['model']);
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
-        self::assertSame('device.telemetry.heartbeat', $mqtt->events[1][1]['type']);
-        self::assertSame(2, $mqtt->events[1][1]['schemaVersion']);
-        self::assertSame('four-p-touch', $mqtt->events[1][1]['source']['protocol']);
-        self::assertSame('LK', $mqtt->events[1][1]['source']['nativeType']);
-        self::assertSame('device.telemetry.activity', $mqtt->events[2][1]['type']);
-        self::assertSame('device.telemetry.battery', $mqtt->events[3][1]['type']);
+        self::assertSame('device.telemetry.heartbeat', $mqtt->telemetry[0][1]['type']);
+        self::assertSame(2, $mqtt->telemetry[0][1]['schemaVersion']);
+        self::assertSame('four-p-touch', $mqtt->telemetry[0][1]['source']['protocol']);
+        self::assertSame('LK', $mqtt->telemetry[0][1]['source']['nativeType']);
+        self::assertSame('device.telemetry.activity', $mqtt->telemetry[1][1]['type']);
+        self::assertSame('device.telemetry.battery', $mqtt->telemetry[2][1]['type']);
         self::assertSame('text', $mqtt->raw[0][1]['debug']['encoding']);
     }
 
@@ -111,6 +112,7 @@ final class RecordingHubMqttBridge extends HubMqttBridge
     public array $raw = [];
     public array $statuses = [];
     public array $events = [];
+    public array $telemetry = [];
 
     public function __construct()
     {
@@ -129,5 +131,10 @@ final class RecordingHubMqttBridge extends HubMqttBridge
     public function publishEvent(string $imei, array $payload): void
     {
         $this->events[] = [$imei, $payload];
+    }
+
+    public function publishTelemetry(string $imei, array $payload): void
+    {
+        $this->telemetry[] = [$imei, $payload];
     }
 }

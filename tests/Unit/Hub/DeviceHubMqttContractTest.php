@@ -117,14 +117,15 @@ final class DeviceHubMqttContractTest extends TestCase
         ]));
 
         self::assertCount(3, $mqtt->raw);
-        self::assertCount(2, $mqtt->events);
+        self::assertCount(1, $mqtt->events);
+        self::assertCount(1, $mqtt->telemetry);
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
-        self::assertSame('device.telemetry.heart_rate', $mqtt->events[1][1]['type']);
-        self::assertSame(2, $mqtt->events[1][1]['schemaVersion']);
-        self::assertSame(['bpm' => 72], $mqtt->events[1][1]['data']);
-        self::assertSame('wonlex-json', $mqtt->events[1][1]['source']['protocol']);
-        self::assertSame('upHeartRate', $mqtt->events[1][1]['source']['nativeType']);
-        self::assertArrayNotHasKey('debug', $mqtt->events[1][1]);
+        self::assertSame('device.telemetry.heart_rate', $mqtt->telemetry[0][1]['type']);
+        self::assertSame(2, $mqtt->telemetry[0][1]['schemaVersion']);
+        self::assertSame(['bpm' => 72], $mqtt->telemetry[0][1]['data']);
+        self::assertSame('wonlex-json', $mqtt->telemetry[0][1]['source']['protocol']);
+        self::assertSame('upHeartRate', $mqtt->telemetry[0][1]['source']['nativeType']);
+        self::assertArrayNotHasKey('debug', $mqtt->telemetry[0][1]);
 
         self::assertSame('downlink', $mqtt->raw[2][1]['direction']);
         $ack = $adapter->decodeIncoming(base64_decode($mqtt->raw[2][1]['debug']['payload'], true));
@@ -134,6 +135,55 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('s:reply', $ack['ref']);
         self::assertSame('868705080300697', $ack['imei']);
     }
+
+    public function testOnlineDownlinkPublishesCommandMetadata(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $connection = new ContractFakeConnection(4);
+        $adapter = new WonlexAdapter();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'login',
+            'imei' => '868705080300697',
+            'data' => ['deviceModel' => 'IGNORED'],
+        ]));
+
+        self::assertTrue($hub->sendDownlink('868705080300697', $adapter->encodeOutgoing([
+            'type' => 'dnHeartRate',
+            'ident' => 123456,
+            'ref' => 's:down',
+            'imei' => '868705080300697',
+            'data' => ['type' => 'dnHeartRate', 'imei' => '868705080300697'],
+        ])));
+
+        self::assertSame('device.downlink.sent', $mqtt->events[1][1]['type']);
+        self::assertSame([
+            'nativeType' => 'dnHeartRate',
+            'protocol' => 'wonlex-json',
+            'ident' => 123456,
+        ], $mqtt->events[1][1]['command']);
+    }
+
+    public function testVivistarOnlineDownlinkPublishesCommandMetadata(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $connection = new ContractFakeConnection(5);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000308#');
+
+        self::assertTrue($hub->sendDownlink('865028000000308', 'IWBPXY,865028000000308,080835#'));
+
+        self::assertSame('device.downlink.sent', $mqtt->events[1][1]['type']);
+        self::assertSame([
+            'nativeType' => 'BPXY',
+            'protocol' => 'vivistar-iw',
+            'ident' => '080835',
+        ], $mqtt->events[1][1]['command']);
+    }
 }
 
 final class ContractRecordingHubMqttBridge extends HubMqttBridge
@@ -141,6 +191,7 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     public array $raw = [];
     public array $statuses = [];
     public array $events = [];
+    public array $telemetry = [];
 
     public function __construct()
     {
@@ -159,6 +210,11 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     public function publishEvent(string $imei, array $payload): void
     {
         $this->events[] = [$imei, $payload];
+    }
+
+    public function publishTelemetry(string $imei, array $payload): void
+    {
+        $this->telemetry[] = [$imei, $payload];
     }
 }
 
