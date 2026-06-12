@@ -52,6 +52,7 @@ $selected = $commandFilter !== ''
     : array_values(array_filter(
         $manifest,
         static fn (array $entry): bool => in_array((string)($entry['risk'] ?? 'normal'), $riskFilter, true)
+            && (string)($entry['kind'] ?? 'request') === 'request'
     ));
 
 if ($commandFilter !== '' && $selected === []) {
@@ -170,7 +171,7 @@ Options:
   --command BPXL           Run a single command instead of the full set.
   --ident 080835           Command ident field to embed in Vivistar downlinks.
   --include-risk normal,high
-                           Select which commands to run. Default: normal.
+                           Select risk level for bulk request runs. Default: normal.
   --timeout 6              Maximum seconds to wait for replies per command.
   --settle 0.6             Stop early after this many quiet seconds.
   --topic-prefix PREFIX     MQTT topic prefix, if the broker uses one. Default: hitecosystem-hub
@@ -180,6 +181,7 @@ Options:
 Notes:
   - Replies are read from devices/{imei}/events and devices/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
+  - Bulk runs only send request commands; use --command to send config/control commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive BP17 factory-reset command is behind --include-risk high.
   - This tester publishes native downlink frames to devices/{imei}/downlink.

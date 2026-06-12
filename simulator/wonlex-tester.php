@@ -52,7 +52,7 @@ $selected = $commandFilter !== ''
     : array_values(array_filter(
         $manifest,
         static fn(array $entry): bool => in_array((string)($entry['risk'] ?? 'normal'), $riskFilter, true)
-            && (string)($entry['kind'] ?? 'request') !== 'data'
+            && (string)($entry['kind'] ?? 'request') === 'request'
     ));
 
 if ($commandFilter !== '' && $selected === []) {
@@ -178,7 +178,7 @@ Options:
   --command dnHeartRate   Run a single command instead of the full set.
   --payload JSON          Override the payload object sent for every command.
   --include-risk normal,high
-                          Select which commands to run. Default: normal.
+                          Select risk level for bulk request runs. Default: normal.
   --timeout 8             Maximum seconds to wait for replies per command.
   --settle 1.0            Stop early after this many quiet seconds.
   --topic-prefix PREFIX    MQTT topic prefix. Default: hitecosystem-hub
@@ -188,7 +188,7 @@ Options:
 Notes:
   - Replies are read from devices/{imei}/events and devices/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
-  - Data commands with placeholder defaults are excluded from bulk runs; use --command to send one explicitly.
+  - Bulk runs only send request commands; use --command to send config/control/data commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive reset/restart/powerOff commands are behind --include-risk high.
   - This tester publishes base64-encoded Wonlex JSON frames to devices/{imei}/downlink.
