@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 SCENARIOS=(
   "tests/scenarios/scenario_hub_raw_mqtt_roundtrip.sh"
+  "tests/scenarios/scenario_hub_downlink_queue.sh"
 )
 PER_SCENARIO_TIMEOUT_SECONDS="${PER_SCENARIO_TIMEOUT_SECONDS:-240}"
 

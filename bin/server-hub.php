@@ -9,10 +9,12 @@ use App\Hub\DeviceHubServer;
 use App\Hub\HubDownlinkSubscriber;
 use App\Hub\HubMqttBridge;
 use App\Hub\HubTcpIngress;
+use App\Hub\RedisPendingDownlinkQueue;
 use App\Log\Logger;
 use App\Registry\Whitelist;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\MqttClient;
+use Predis\Client as RedisClient;
 use Ratchet\Http\HttpServer;
 use Ratchet\Server\IoServer;
 use Ratchet\WebSocket\WsServer;
@@ -23,7 +25,8 @@ Bootstrap::loadEnv(__DIR__ . '/..');
 
 $config = Config::load()->all();
 $mqttConfig = $config['mqtt'] ?? [];
-$wonlexHeartbeatInterval = (int)($config['hub']['wonlex_heartbeat_interval'] ?? 30);
+$redisConfig = $config['redis'] ?? [];
+$downlinkQueueTtlSeconds = (int)($config['hub']['downlink_queue_ttl_seconds'] ?? 300);
 
 $mqttHost = trim((string)($mqttConfig['host'] ?? ''));
 if ($mqttHost === '') {
@@ -61,13 +64,28 @@ $buildMqttClient = static function (string $suffix) use ($mqttConfig, $mqttHost,
     return $client;
 };
 
-$whitelist = new Whitelist();
+$whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
+$whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null);
+$redisParameters = [
+    'host' => (string)($redisConfig['host'] ?? '127.0.0.1'),
+    'port' => (int)($redisConfig['port'] ?? 6379),
+];
+$redisPassword = (string)($redisConfig['password'] ?? '');
+if ($redisPassword !== '') {
+    $redisParameters['password'] = $redisPassword;
+}
+$downlinkQueue = new RedisPendingDownlinkQueue(new RedisClient($redisParameters));
 $mqttBridge = new HubMqttBridge(
     $buildMqttClient('pub'),
     $topicPrefix,
     static fn (): MqttClient => $buildMqttClient('pub')
 );
-$hubServer = new DeviceHubServer($whitelist, $mqttBridge);
+$hubServer = new DeviceHubServer(
+    $whitelist,
+    $mqttBridge,
+    downlinkQueue: $downlinkQueue,
+    downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds
+);
 $downlink = new HubDownlinkSubscriber(
     $buildMqttClient('sub'),
     $hubServer,
@@ -105,18 +123,6 @@ $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
     }
 });
 
-if ($wonlexHeartbeatInterval > 0) {
-    $loop->addPeriodicTimer($wonlexHeartbeatInterval, function () use ($hubServer): void {
-        try {
-            $hubServer->sendHeartbeats();
-        } catch (\Throwable $e) {
-            Logger::channel('hub')->error('Heartbeat send failed: ' . $e->getMessage());
-        }
-    });
-} else {
-    Logger::channel('hub')->info('Wonlex server heartbeat timer disabled');
-}
-
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
 
 if ($wsEnabled) {
@@ -126,7 +132,7 @@ if ($wsEnabled) {
 }
 
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");
-Logger::channel('hub')->info("Wonlex server heartbeat interval: {$wonlexHeartbeatInterval}s");
+Logger::channel('hub')->info("Redis downlink queue: {$redisParameters['host']}:{$redisParameters['port']} ttl={$downlinkQueueTtlSeconds}s");
 Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('devices/{imei}/status'));
 Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('devices/{imei}/events'));
 Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('devices/{imei}/raw'));

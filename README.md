@@ -2,7 +2,7 @@
 
 Raw multi-transport device hub that bridges authorized devices to MQTT.
 
-The hub accepts devices over their native transport/protocol, identifies them only enough to enforce the whitelist, then forwards raw bytes through MQTT. It does not normalize telemetry, persist history, expose a REST API, or run Redis/MySQL workers.
+The hub accepts devices over their native transport/protocol, identifies them only enough to enforce the whitelist, then forwards raw bytes through MQTT. It queues offline downlinks in Redis so intermittently connected devices receive pending commands after they reconnect.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ Hitecosystem Devices Hub
   - whitelist authorization
   - live connection registry
   - raw uplink -> MQTT
-  - MQTT downlink -> raw device write
+  - MQTT downlink -> raw device write or Redis queue
   |
   v
 MQTT Broker
@@ -51,6 +51,7 @@ make test-all
 - WebSocket ingress: `WS_HOST` / `WS_PORT`, default `0.0.0.0:8080`
 - TCP ingress: `VIVISTAR_TCP_HOST` / `VIVISTAR_TCP_PORT`, default `0.0.0.0:9000`
 - MQTT: `MQTT_HOST` / `MQTT_PORT`, default `127.0.0.1:1883`
+- Redis downlink queue: `REDIS_HOST` / `REDIS_PORT`, default `127.0.0.1:6379`
 
 ## MQTT Topics
 
@@ -65,6 +66,8 @@ Downlink from MQTT to connected device:
 ```text
 devices/{imei}/downlink
 ```
+
+If the device is offline, the hub stores the latest pending downlink per IMEI and native command in Redis for `DOWNLINK_QUEUE_TTL_SECONDS` seconds, default `300`. The hub publishes `device.downlink.queued` when queued and `device.downlink.sent` when it is delivered after the next device login.
 
 Status and errors:
 

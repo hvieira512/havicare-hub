@@ -17,6 +17,13 @@ services:
       MQTT_SMOKE_PASSWORD: ${MQTT_SMOKE_PASSWORD:-hub_smoke_pass}
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: hitecosystem-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   hub:
     build: .
     container_name: hitecosystem-devices-hub
@@ -29,13 +36,19 @@ services:
     environment:
       MQTT_HOST: mosquitto
       MQTT_PORT: ${MQTT_PORT:-1883}
-      MQTT_USERNAME: ${MQTT_USERNAME:-}
-      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX-}
+      MQTT_USERNAME: ${MQTT_PUBLISHER_USERNAME:-hub_publisher}
+      MQTT_PASSWORD: ${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}
       MQTT_PUBLISHER_USERNAME: ${MQTT_PUBLISHER_USERNAME:-hub_publisher}
       MQTT_PUBLISHER_PASSWORD: ${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      DOWNLINK_QUEUE_TTL_SECONDS: ${DOWNLINK_QUEUE_TTL_SECONDS:-300}
+      WHITELIST_FILE: ${WHITELIST_FILE-}
       VIVISTAR_TCP_HOST: 0.0.0.0
       VIVISTAR_TCP_PORT: 9000
-      WONLEX_HEARTBEAT_INTERVAL: ${WONLEX_HEARTBEAT_INTERVAL:-30}
     depends_on:
       - mosquitto
+      - redis
     restart: unless-stopped

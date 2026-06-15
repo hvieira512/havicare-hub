@@ -16,6 +16,8 @@ class DeviceHubServer implements MessageComponentInterface
     private AdapterRegistry $adapters;
     private DeviceEventDecoder $eventDecoder;
     private HubMqttBridge $mqtt;
+    private ?PendingDownlinkQueue $downlinkQueue;
+    private int $downlinkQueueTtlSeconds;
 
     public function __construct(
         Whitelist $whitelist,
@@ -24,6 +26,8 @@ class DeviceHubServer implements MessageComponentInterface
         ?DeviceAuthorizer $authorizer = null,
         ?ConnectionRegistry $connections = null,
         ?DeviceEventDecoder $eventDecoder = null,
+        ?PendingDownlinkQueue $downlinkQueue = null,
+        int $downlinkQueueTtlSeconds = 300,
     ) {
         $this->connections = $connections ?? new ConnectionRegistry();
         $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist);
@@ -31,6 +35,8 @@ class DeviceHubServer implements MessageComponentInterface
         $this->adapters = new AdapterRegistry();
         $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($this->adapters);
         $this->eventDecoder = $eventDecoder ?? new DeviceEventDecoder();
+        $this->downlinkQueue = $downlinkQueue;
+        $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
     }
 
     public function onOpen(ConnectionInterface $conn): void
@@ -117,40 +123,6 @@ class DeviceHubServer implements MessageComponentInterface
         return true;
     }
 
-    public function sendHeartbeats(): void
-    {
-        $adapter = $this->adapters->get('wonlex-json');
-        if ($adapter === null) {
-            return;
-        }
-
-        $timestamp = (int)round(microtime(true) * 1000);
-        $sessions = $this->connections->allAuthenticatedSessions();
-        $count = 0;
-
-        foreach ($sessions as $session) {
-            if ($session->protocol !== 'wonlex-json') {
-                continue;
-            }
-
-            try {
-                $session->connection->send($adapter->encodeOutgoing([
-                    'type' => 'heartbeat',
-                    'imei' => $session->imei,
-                    'deviceModel' => $session->model,
-                    'timestamp' => $timestamp,
-                ]));
-                $count++;
-            } catch (\Throwable $e) {
-                Logger::channel('hub')->warning("Failed to send heartbeat to IMEI={$session->imei}: {$e->getMessage()}");
-            }
-        }
-
-        if ($count > 0) {
-            Logger::channel('hub')->info("Heartbeat sent to {$count} Wonlex device(s)");
-        }
-    }
-
     public function reportDownlinkDropped(string $imei, string $reason, ?string $bytes = null): void
     {
         $error = $this->errorPayload($reason);
@@ -166,6 +138,34 @@ class DeviceHubServer implements MessageComponentInterface
             ));
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
+        }
+    }
+
+    public function queueDownlink(string $imei, string $bytes): bool
+    {
+        if ($this->downlinkQueue === null) {
+            $this->reportDownlinkDropped($imei, 'device_offline', $bytes);
+            return false;
+        }
+
+        $metadata = $this->authorizer->metadataFor($imei);
+        $command = $this->commandMetadata($bytes);
+
+        try {
+            $this->downlinkQueue->enqueue($imei, $bytes, $command, $this->downlinkQueueTtlSeconds);
+            $this->mqtt->publishEvent($imei, RawPayload::event(
+                $imei,
+                $metadata['supplier'],
+                $metadata['model'],
+                'device.downlink.queued',
+                null,
+                $command
+            ));
+            return true;
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error("Failed to queue downlink for IMEI={$imei}: {$e->getMessage()}");
+            $this->reportDownlinkDropped($imei, 'queue_unavailable', $bytes);
+            return false;
         }
     }
 
@@ -206,6 +206,7 @@ class DeviceHubServer implements MessageComponentInterface
         $this->publishDecodedEvents($session, $raw);
         $this->sendProtocolAck($conn, $session, $raw);
         $this->sendWonlexUploadAck($conn, $session, $raw);
+        $this->flushPendingDownlinks($session);
 
         Logger::channel('hub')->info("Device online IMEI={$identity->imei} protocol={$identity->protocol}");
     }
@@ -272,6 +273,31 @@ class DeviceHubServer implements MessageComponentInterface
                 $this->mqtt->publishTelemetry($session->imei, DeviceEventPayloadBuilder::decoded($session, $event));
             } catch (\Throwable $e) {
                 $this->mqtt->logPublishFailure('hub', $session->imei, $e);
+            }
+        }
+    }
+
+    private function flushPendingDownlinks(DeviceSession $session): void
+    {
+        if ($this->downlinkQueue === null) {
+            return;
+        }
+
+        try {
+            $pending = $this->downlinkQueue->pendingFor($session->imei);
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error("Failed to read pending downlinks for IMEI={$session->imei}: {$e->getMessage()}");
+            return;
+        }
+
+        foreach ($pending as $downlink) {
+            try {
+                if (!$this->sendDownlink($session->imei, $downlink->bytes)) {
+                    continue;
+                }
+                $this->downlinkQueue->remove($downlink);
+            } catch (\Throwable $e) {
+                Logger::channel('hub')->error("Failed to flush pending downlink for IMEI={$session->imei}: {$e->getMessage()}");
             }
         }
     }
@@ -458,6 +484,7 @@ class DeviceHubServer implements MessageComponentInterface
             'message' => match ($code) {
                 'device_not_authorized' => 'Device is not authorized',
                 'device_offline' => 'Device is offline',
+                'queue_unavailable' => 'Downlink queue is unavailable',
                 default => str_replace('_', ' ', ucfirst($code)),
             },
         ];

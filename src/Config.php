@@ -17,13 +17,12 @@ class Config
         $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
         $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
-        $wonlexHeartbeatIntervalRaw = getenv('WONLEX_HEARTBEAT_INTERVAL');
-        $wonlexHeartbeatInterval = $wonlexHeartbeatIntervalRaw === false || trim((string)$wonlexHeartbeatIntervalRaw) === ''
-            ? 30
-            : max(0, (int)$wonlexHeartbeatIntervalRaw);
-
         $wsEnabledRaw = strtolower(trim((string)(getenv('WS_ENABLED') ?: 'true')));
         $wsEnabled = in_array($wsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
+        $downlinkQueueTtlRaw = getenv('DOWNLINK_QUEUE_TTL_SECONDS');
+        $downlinkQueueTtl = $downlinkQueueTtlRaw === false || trim((string)$downlinkQueueTtlRaw) === ''
+            ? 300
+            : max(1, (int)$downlinkQueueTtlRaw);
 
         return new self([
             'websocket' => [
@@ -36,7 +35,8 @@ class Config
                 'port' => (int)(getenv('VIVISTAR_TCP_PORT') ?: 9000),
             ],
             'hub' => [
-                'wonlex_heartbeat_interval' => $wonlexHeartbeatInterval,
+                'downlink_queue_ttl_seconds' => $downlinkQueueTtl,
+                'whitelist_file' => getenv('WHITELIST_FILE') ?: '',
             ],
             'mqtt' => [
                 'enabled' => true,
@@ -57,6 +57,11 @@ class Config
             'logging' => [
                 'level' => getenv('LOG_LEVEL') ?: 'info',
                 'file' => getenv('LOG_FILE') ?: 'var/log/server.log',
+            ],
+            'redis' => [
+                'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
+                'port' => (int)(getenv('REDIS_PORT') ?: 6379),
+                'password' => getenv('REDIS_PASSWORD') ?: '',
             ],
         ]);
     }

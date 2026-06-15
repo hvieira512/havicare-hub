@@ -94,8 +94,12 @@ class HubDownlinkSubscriber
         }
 
         if (!$this->hubServer->sendDownlink($imei, $bytes)) {
-            $this->hubServer->reportDownlinkDropped($imei, 'device_offline', $bytes);
-            Logger::channel('hub')->warning("Downlink dropped because IMEI={$imei} is offline");
+            if ($this->hubServer->queueDownlink($imei, $bytes)) {
+                Logger::channel('hub')->info("Downlink queued because IMEI={$imei} is offline");
+                return;
+            }
+
+            Logger::channel('hub')->warning("Downlink dropped because IMEI={$imei} is offline and queueing failed");
         }
     }
 

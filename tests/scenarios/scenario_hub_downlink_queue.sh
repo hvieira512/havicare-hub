@@ -3,7 +3,7 @@ set -euo pipefail
 
 source "$(cd "$(dirname "$0")" && pwd)/lib/common.sh"
 
-scenario_begin "hub_raw_mqtt_roundtrip"
+scenario_begin "hub_downlink_queue"
 trap scenario_cleanup EXIT
 
 export MQTT_PUBLISHER_USERNAME="${MQTT_PUBLISHER_USERNAME:-hub_publisher}"
@@ -14,9 +14,9 @@ export MQTT_TOPIC_PREFIX=""
 export WHITELIST_FILE="config/whitelist.example.json"
 
 IMEI="865028000000308"
-DOWNLINK='{"encoding":"text","payload":"IWBPXL,865028000000308,123456,1,2#"}'
+DOWNLINK='{"encoding":"text","payload":"IWBPXL,865028000000308,654321,1,2#"}'
 
-docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
+docker compose up -d --force-recreate --remove-orphans mosquitto redis hub >/dev/null
 
 wait_for_mosquitto
 start_mqtt_subscriber
@@ -32,26 +32,23 @@ if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m,
   scenario_fail "routing_failure" "hub TCP listener did not become ready"
 fi
 
-docker compose exec -T hub sh -lc 'rm -f /tmp/hub-vivistar-listener.log /tmp/hub-vivistar-listener.pid'
-docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --model VIVISTAR-CARE --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
+docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t 'devices/$IMEI/downlink' -f /tmp/hub-downlink.json"
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^devices/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAP00' "$MQTT_LOG_FILE"; then
+  if grep -q "^devices/$IMEI/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q "^devices/$IMEI/raw " "$MQTT_LOG_FILE"; then
-  scenario_fail "publish_failure" "missing raw login topic"
-fi
-if ! grep -q '"debug":{"protocol":"vivistar-iw","transport":"tcp","encoding":"text","payload":"IWAP00' "$MQTT_LOG_FILE"; then
-  scenario_fail "contract_failure" "raw login did not include text debug payload"
+if ! grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
+  scenario_fail "queue_failure" "offline downlink was not queued"
 fi
 
-docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t 'devices/$IMEI/downlink' -f /tmp/hub-downlink.json"
+docker compose exec -T hub sh -lc 'rm -f /tmp/hub-vivistar-listener.log /tmp/hub-vivistar-listener.pid'
+docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --model VIVISTAR-CARE --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
 
 for _ in $(seq 1 20); do
   if docker compose exec -T hub sh -lc "grep -q '\\[COMMAND\\] BPXL' /tmp/hub-vivistar-listener.log"; then
@@ -62,20 +59,20 @@ done
 
 docker compose exec -T hub sh -lc 'cat /tmp/hub-vivistar-listener.log 2>/dev/null || true' > "$SCENARIO_DIR/device-listener.log" || true
 if ! grep -q '\[COMMAND\] BPXL' "$SCENARIO_DIR/device-listener.log"; then
-  scenario_fail "routing_failure" "device listener did not receive MQTT downlink"
+  scenario_fail "routing_failure" "device listener did not receive queued downlink after reconnect"
 fi
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^devices/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
+  if grep -q "^devices/$IMEI/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.sent"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
-  scenario_fail "routing_failure" "missing raw device reply after MQTT downlink"
+if ! grep -q '"type":"device.downlink.sent"' "$MQTT_LOG_FILE"; then
+  scenario_fail "queue_failure" "queued downlink did not publish sent event after reconnect"
 fi
 
 scenario_pass

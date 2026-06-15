@@ -6,6 +6,8 @@ namespace Tests\Unit\Hub;
 
 use App\Hub\DeviceHubServer;
 use App\Hub\HubMqttBridge;
+use App\Hub\PendingDownlink;
+use App\Hub\PendingDownlinkQueue;
 use App\Protocol\Adapter\WonlexAdapter;
 use App\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
@@ -69,6 +71,67 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(0, $mqtt->raw);
     }
 
+    public function testOfflineDownlinkQueuesLatestCommandPerDeviceAndNativeType(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $queue = new ContractFakePendingDownlinkQueue();
+        $hub = new DeviceHubServer(
+            new Whitelist($this->whitelistPath),
+            $mqtt,
+            downlinkQueue: $queue,
+            downlinkQueueTtlSeconds: 300
+        );
+        $adapter = new WonlexAdapter();
+
+        self::assertTrue($hub->queueDownlink('868705080300697', $adapter->encodeOutgoing([
+            'type' => 'dnHeartRate',
+            'ident' => 111111,
+            'ref' => 's:down',
+            'imei' => '868705080300697',
+            'data' => ['type' => 'dnHeartRate', 'imei' => '868705080300697'],
+        ])));
+        self::assertTrue($hub->queueDownlink('868705080300697', $adapter->encodeOutgoing([
+            'type' => 'dnHeartRate',
+            'ident' => 222222,
+            'ref' => 's:down',
+            'imei' => '868705080300697',
+            'data' => ['type' => 'dnHeartRate', 'imei' => '868705080300697'],
+        ])));
+        self::assertTrue($hub->queueDownlink('868705080300697', $adapter->encodeOutgoing([
+            'type' => 'dnLocation',
+            'ident' => 333333,
+            'ref' => 's:down',
+            'imei' => '868705080300697',
+            'data' => ['type' => 'dnLocation', 'imei' => '868705080300697'],
+        ])));
+
+        self::assertCount(3, $mqtt->events);
+        self::assertSame('device.downlink.queued', $mqtt->events[0][1]['type']);
+        self::assertSame('dnHeartRate', $mqtt->events[0][1]['command']['nativeType']);
+        self::assertSame('device.downlink.queued', $mqtt->events[2][1]['type']);
+        self::assertCount(2, $queue->pendingFor('868705080300697'));
+        self::assertSame(300, $queue->lastTtl);
+    }
+
+    public function testOfflineDownlinkDropsWithQueueUnavailableWhenRedisFails(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $queue = new ContractFakePendingDownlinkQueue();
+        $queue->failEnqueue = true;
+        $hub = new DeviceHubServer(
+            new Whitelist($this->whitelistPath),
+            $mqtt,
+            downlinkQueue: $queue
+        );
+
+        self::assertFalse($hub->queueDownlink('865028000000308', 'IWBPXY,865028000000308,080835#'));
+
+        self::assertCount(1, $mqtt->events);
+        self::assertSame('device.downlink.dropped', $mqtt->events[0][1]['type']);
+        self::assertSame('queue_unavailable', $mqtt->events[0][1]['error']['code']);
+        self::assertSame('BPXY', $mqtt->events[0][1]['command']['nativeType']);
+    }
+
     public function testDeviceClaimedModelIsIgnoredForAuthorizationAndMqttMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
@@ -93,6 +156,46 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('HW20PRO', $mqtt->statuses[0][1]['device']['model']);
         self::assertSame('Wonlex', $mqtt->events[0][1]['device']['supplier']);
         self::assertSame('HW20PRO', $mqtt->raw[0][1]['device']['model']);
+    }
+
+    public function testPendingDownlinksFlushAfterDeviceLogin(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $queue = new ContractFakePendingDownlinkQueue();
+        $hub = new DeviceHubServer(
+            new Whitelist($this->whitelistPath),
+            $mqtt,
+            downlinkQueue: $queue
+        );
+        $connection = new ContractFakeConnection(6);
+        $adapter = new WonlexAdapter();
+
+        $queuedBytes = $adapter->encodeOutgoing([
+            'type' => 'dnHeartRate',
+            'ident' => 444444,
+            'ref' => 's:down',
+            'imei' => '868705080300697',
+            'data' => ['type' => 'dnHeartRate', 'imei' => '868705080300697'],
+        ]);
+        $queue->enqueue('868705080300697', $queuedBytes, [
+            'nativeType' => 'dnHeartRate',
+            'protocol' => 'wonlex-json',
+            'ident' => 444444,
+        ], 300);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'login',
+            'imei' => '868705080300697',
+            'data' => ['deviceModel' => 'IGNORED'],
+        ]));
+
+        self::assertCount(2, $connection->sent);
+        self::assertSame('login', $adapter->decodeIncoming($connection->sent[0])['type']);
+        self::assertSame('dnHeartRate', $adapter->decodeIncoming($connection->sent[1])['type']);
+        self::assertSame('device.downlink.sent', $mqtt->events[1][1]['type']);
+        self::assertSame('dnHeartRate', $mqtt->events[1][1]['command']['nativeType']);
+        self::assertCount(0, $queue->pendingFor('868705080300697'));
     }
 
     public function testAuthenticatedMeasurementPublishesDecodedEventWithoutDebugFields(): void
@@ -239,5 +342,47 @@ final class ContractFakeConnection implements ConnectionInterface
     {
         $this->closed = true;
         return $this;
+    }
+}
+
+final class ContractFakePendingDownlinkQueue implements PendingDownlinkQueue
+{
+    /** @var array<string, array<string, PendingDownlink>> */
+    private array $items = [];
+    public bool $failEnqueue = false;
+    public int $lastTtl = 0;
+
+    public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
+    {
+        if ($this->failEnqueue) {
+            throw new \RuntimeException('Redis unavailable');
+        }
+
+        $this->lastTtl = $ttlSeconds;
+        $dedupeKey = $this->dedupeKey($bytes, $command);
+        $downlink = new PendingDownlink($imei, $dedupeKey, $bytes, $command, time(), time() + $ttlSeconds);
+        $this->items[$imei][$dedupeKey] = $downlink;
+
+        return $downlink;
+    }
+
+    public function pendingFor(string $imei): array
+    {
+        return array_values($this->items[$imei] ?? []);
+    }
+
+    public function remove(PendingDownlink $downlink): void
+    {
+        unset($this->items[$downlink->imei][$downlink->dedupeKey]);
+    }
+
+    private function dedupeKey(string $bytes, ?array $command): string
+    {
+        $nativeType = is_array($command) ? (string)($command['nativeType'] ?? '') : '';
+        if ($nativeType !== '') {
+            return 'command:' . (string)($command['protocol'] ?? 'unknown') . ':' . $nativeType;
+        }
+
+        return 'raw:' . hash('sha256', $bytes);
     }
 }
