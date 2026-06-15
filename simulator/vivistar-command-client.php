@@ -3,9 +3,9 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use App\Bootstrap;
-use App\Config;
-use App\Protocol\Adapter\VivistarAdapter;
+use Hub\Bootstrap;
+use Hub\Config;
+use Hub\Protocol\Adapter\VivistarAdapter;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\MqttClient;
 
