@@ -6,6 +6,7 @@ let els = {};
 let deviceModal = null;
 let supplierModal = null;
 let modelModal = null;
+const loadingCommands = new Set();
 
 const request = (url, options = {}) => fetch(url, Object.assign({headers: {'Content-Type': 'application/json'}}, options)).then(r => r.json());
 const formRequest = (url, formData, options = {}) => fetch(url, Object.assign({method: 'POST', body: formData}, options)).then(r => r.json());
@@ -20,6 +21,17 @@ const ago = value => {
 };
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+
+const titleize = value => String(value ?? 'unknown').replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+const when = value => {
+  if (!value) return '';
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return String(value);
+  return new Date(parsed).toLocaleString();
+};
+
+const rowPayload = row => row?.payload && typeof row.payload === 'object' ? row.payload : row;
 
 function modelImageHtml(modelInfo) {
   return modelInfo?.image
@@ -102,23 +114,140 @@ function renderSelection() {
         <div class="card-body position-relative">
           <h2 class="h6">${esc(c.label)}</h2>
           <div class="small text-secondary mb-3">${esc(c.command)}</div>
-          <button class="btn btn-primary btn-sm" data-command="${esc(c.command)}" data-action="sendCommand"><i class="fa-solid fa-paper-plane me-1"></i>Request</button>
+          <button class="btn btn-primary btn-sm" data-command="${esc(c.command)}" data-action="sendCommand" ${loadingCommands.has(c.command) ? 'disabled' : ''}>${loadingCommands.has(c.command) ? '<span class="spinner-border spinner-border-sm me-1"></span>Requesting' : '<i class="fa-solid fa-paper-plane me-1"></i>Request'}</button>
         </div>
       </div>
     </div>`).join('');
-  renderList('downlinkList', [...(selectedDetail.pending || []).map(p => ({type: 'queued', payload: p})), ...(selectedDetail.recent.commands || [])]);
-  renderList('uplinkList', selectedDetail.recent.raw || []);
-  renderList('telemetryList', [...(selectedDetail.recent.telemetry || []), ...(selectedDetail.recent.events || [])]);
+  renderUplinkCards([...(selectedDetail.recent.telemetry || []), ...(selectedDetail.recent.events || []), ...(selectedDetail.recent.raw || [])]);
+  renderDownlinkRequests(selectedDetail.recent.commands || []);
 }
 
-function renderList(id, rows) {
-  document.getElementById(id).innerHTML = rows.length ? rows.map(row => `<pre class="border rounded bg-body-tertiary p-2 small">${esc(JSON.stringify(row, null, 2))}</pre>`).join('') : '<div class="text-secondary">No records yet.</div>';
+function renderUplinkCards(rows) {
+  const latestByType = [];
+  const seen = new Set();
+  for (const row of rows) {
+    const payload = rowPayload(row);
+    const key = String(payload?.type || payload?.source?.nativeType || payload?.debug?.payload || 'raw');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    latestByType.push(row);
+  }
+
+  els.uplinkCount.textContent = latestByType.length ? `${latestByType.length} latest` : '';
+  els.uplinkCards.innerHTML = latestByType.length
+    ? latestByType.map(renderUplinkCard).join('')
+    : '<div class="col-12"><div class="text-secondary border rounded bg-body-tertiary p-3">No uplink data yet.</div></div>';
+}
+
+function renderUplinkCard(row) {
+  const payload = rowPayload(row) || {};
+  const type = payload.type || 'raw_uplink';
+  const data = payload.data && typeof payload.data === 'object' ? payload.data : {};
+  const meta = payload.source?.nativeType || payload.debug?.protocol || '';
+  const timestamp = payload.occurredAt || payload.recordedAt || row?.recorded_at || '';
+  const card = uplinkCardContent(type, data, payload);
+
+  return `
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between gap-2 mb-2">
+            <div>
+              <div class="small text-secondary">${esc(titleize(type))}</div>
+              <h3 class="h5 mb-0">${esc(card.value)}</h3>
+            </div>
+            <i class="fa-solid ${esc(card.icon)} fs-3 text-secondary"></i>
+          </div>
+          ${card.details ? `<div class="small text-secondary">${card.details}</div>` : ''}
+          <div class="small text-secondary mt-3">${esc(when(timestamp) || 'time unknown')}${meta ? ` · ${esc(meta)}` : ''}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function uplinkCardContent(type, data, payload) {
+  if (type === 'heart_rate') return {icon: 'fa-heart-pulse', value: `${data.bpm ?? '-'} bpm`};
+  if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: `${data.systolicMmHg ?? '-'} / ${data.diastolicMmHg ?? '-'} mmHg`, details: data.pulseBpm ? `Pulse ${esc(data.pulseBpm)} bpm` : ''};
+  if (type === 'blood_oxygen') return {icon: 'fa-droplet', value: `${data.spo2Percent ?? '-'}% SpO2`};
+  if (type === 'temperature') return {icon: 'fa-temperature-half', value: `${data.bodyCelsius ?? '-'} °C`};
+  if (type === 'battery') return {icon: 'fa-battery-three-quarters', value: `${data.percent ?? '-'}%`, details: data.charging === true ? 'Charging' : (data.charging === false ? 'Not charging' : '')};
+  if (type === 'activity') return {icon: 'fa-person-walking', value: `${data.steps ?? 0} steps`, details: compactDetails(data, ['distanceMeters', 'caloriesKcal'])};
+  if (type === 'location') return {icon: 'fa-location-dot', value: data.lat && data.lon ? `${data.lat}, ${data.lon}` : 'Location update', details: compactDetails(data, ['source', 'gpsValid', 'speedKmh', 'accuracyMeters'])};
+  if (type === 'alarm') return {icon: 'fa-triangle-exclamation', value: alarmValue(data), details: compactDetails(data, ['code', 'lowBattery', 'fall', 'wearingNotice'])};
+  if (type === 'heartbeat') return {icon: 'fa-signal', value: 'Heartbeat'};
+  if (payload.debug) return {icon: 'fa-arrow-up', value: `${payload.debug.size ?? '-'} bytes`, details: esc(String(payload.debug.payload ?? '')).slice(0, 90)};
+  return {icon: 'fa-circle-info', value: titleize(type), details: compactDetails(data, Object.keys(data).slice(0, 4))};
+}
+
+function alarmValue(data) {
+  if (data.sos) return 'SOS';
+  if (data.fall) return 'Fall detected';
+  if (data.lowBattery) return 'Low battery';
+  return 'Alarm';
+}
+
+function compactDetails(data, keys) {
+  return keys
+    .filter(key => data[key] !== undefined && data[key] !== null && data[key] !== '')
+    .map(key => `${esc(titleize(key))}: ${esc(data[key])}`)
+    .join(' · ');
+}
+
+function renderDownlinkRequests(commands) {
+  els.downlinkRequests.innerHTML = commands.length ? `
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr><th>Requested</th><th>Request</th><th>Status</th><th>Response</th><th>Details</th></tr>
+        </thead>
+        <tbody>
+          ${commands.map(renderDownlinkRow).join('')}
+        </tbody>
+      </table>
+    </div>` : '<div class="text-secondary border rounded bg-body-tertiary p-3">No downlink requests yet.</div>';
+}
+
+function renderDownlinkRow(command) {
+  const status = String(command.status || 'unknown');
+  return `
+    <tr>
+      <td class="text-nowrap small">${esc(when(command.requestedAt) || '-')}</td>
+      <td><div class="fw-semibold">${esc(command.label || command.nativeType || 'Request')}</div><div class="small text-secondary">${esc(command.nativeType || '')}</div></td>
+      <td>${statusBadge(status)}</td>
+      <td class="small">${esc(command.ackedAt ? when(command.ackedAt) : (command.sentAt ? when(command.sentAt) : '-'))}</td>
+      <td class="small text-secondary">${esc(command.error || command.replyNativeType || expectedReplies(command))}</td>
+    </tr>`;
+}
+
+function statusBadge(status) {
+  const cls = {
+    queued: 'text-bg-secondary',
+    sent: 'text-bg-primary',
+    waiting: 'text-bg-warning',
+    acked: 'text-bg-success',
+    failed: 'text-bg-danger',
+    dropped: 'text-bg-danger',
+  }[status] || 'text-bg-light';
+  return `<span class="badge ${cls}">${esc(status)}</span>`;
+}
+
+function expectedReplies(command) {
+  return Array.isArray(command.expectedReplyTypes) && command.expectedReplyTypes.length
+    ? `Waiting for ${command.expectedReplyTypes.join(', ')}`
+    : '';
 }
 
 async function sendCommand(command) {
-  const result = await request(`/api/devices/${encodeURIComponent(selectedImei)}/commands`, {method: 'POST', body: JSON.stringify({command})});
-  if (result.error) alert(result.error.message || result.error.code);
-  await loadSummary();
+  loadingCommands.add(command);
+  renderSelection();
+  try {
+    const result = await request(`/api/devices/${encodeURIComponent(selectedImei)}/commands`, {method: 'POST', body: JSON.stringify({command})});
+    if (result.error) alert(result.error.message || result.error.code);
+    await loadSummary();
+  } finally {
+    loadingCommands.delete(command);
+    renderSelection();
+  }
 }
 
 function populateModelOptions() {
@@ -287,7 +416,10 @@ document.addEventListener('DOMContentLoaded', () => {
     detailTitle: document.getElementById('detailTitle'),
     detailMeta: document.getElementById('detailMeta'),
     detailBadge: document.getElementById('detailBadge'),
+    uplinkCount: document.getElementById('uplinkCount'),
+    uplinkCards: document.getElementById('uplinkCards'),
     commandGrid: document.getElementById('commandGrid'),
+    downlinkRequests: document.getElementById('downlinkRequests'),
     addDeviceBtn: document.getElementById('addDeviceBtn'),
     deviceModalLabel: document.getElementById('deviceModalLabel'),
     deviceForm: document.getElementById('deviceForm'),

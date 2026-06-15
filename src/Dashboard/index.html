@@ -44,19 +44,22 @@
               </div>
               <span id="detailBadge" class="badge"></span>
             </div>
-            <ul class="nav nav-tabs" role="tablist">
-              <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button">Overview</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#downlinks" type="button">Downlinks</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#uplinks" type="button">Uplinks</button></li>
-              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#telemetry" type="button">Telemetry</button></li>
-            </ul>
-            <div class="tab-content pt-3">
-              <div class="tab-pane fade show active" id="overview">
+            <div class="vstack gap-4">
+              <section>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h2 class="h6 mb-0">Uplink Data</h2>
+                  <span class="small text-secondary" id="uplinkCount"></span>
+                </div>
+                <div class="row g-3" id="uplinkCards"></div>
+              </section>
+              <section>
+                <h2 class="h6 mb-2">Available Requests</h2>
                 <div class="row g-3" id="commandGrid"></div>
-              </div>
-              <div class="tab-pane fade" id="downlinks"><div id="downlinkList"></div></div>
-              <div class="tab-pane fade" id="uplinks"><div id="uplinkList"></div></div>
-              <div class="tab-pane fade" id="telemetry"><div id="telemetryList"></div></div>
+              </section>
+              <section>
+                <h2 class="h6 mb-2">Downlink Requests</h2>
+                <div id="downlinkRequests"></div>
+              </section>
             </div>
           </div>
         </div>
