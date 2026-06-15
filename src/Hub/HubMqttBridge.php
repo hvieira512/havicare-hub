@@ -31,7 +31,7 @@ class HubMqttBridge
 
     public function publishEvent(string $imei, array $payload): void
     {
-        $this->publish($this->topic("devices/$imei/events"), $payload);
+        $this->publish($this->topic("devices/$imei/events"), $payload, false, MqttClient::QOS_AT_LEAST_ONCE);
     }
 
     public function publishTelemetry(string $imei, array $payload): void
@@ -44,7 +44,7 @@ class HubMqttBridge
         return $this->topic('devices/+/downlink');
     }
 
-    private function publish(string $topic, array $payload, bool $retain = false): void
+    private function publish(string $topic, array $payload, bool $retain = false, int $qualityOfService = MqttClient::QOS_AT_MOST_ONCE): void
     {
         $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
@@ -52,14 +52,14 @@ class HubMqttBridge
         }
 
         try {
-            $this->publisher->publish($topic, $json, MqttClient::QOS_AT_MOST_ONCE, $retain);
+            $this->publisher->publish($topic, $json, $qualityOfService, $retain);
         } catch (\Throwable $e) {
             if ($this->reconnectPublisher === null) {
                 throw $e;
             }
 
             $this->reconnect();
-            $this->publisher->publish($topic, $json, MqttClient::QOS_AT_MOST_ONCE, $retain);
+            $this->publisher->publish($topic, $json, $qualityOfService, $retain);
         }
     }
 

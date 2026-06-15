@@ -37,6 +37,7 @@ $commandFilter = trim((string)($args['command'] ?? ''));
 $riskFilter = parseCsv((string)($args['include-risk'] ?? 'normal'));
 $payloadOverride = isset($args['payload']) ? decodeJsonObject((string)$args['payload']) : null;
 $listCommands = isset($args['list-commands']);
+$runAllRequests = isset($args['all-requests']) || isset($args['all']);
 $showRaw = isset($args['show-raw']);
 
 $adapter = new WonlexAdapter();
@@ -45,6 +46,12 @@ $manifest = wonlexCommands();
 if ($listCommands) {
     printCommandCatalog($manifest, wonlexUplinks());
     exit(0);
+}
+
+if ($commandFilter === '' && !$runAllRequests) {
+    fwrite(STDERR, "Missing command. Use --command dnHeartRate, --all-requests, or --list-commands.\n\n");
+    usage();
+    exit(1);
 }
 
 $selected = $commandFilter !== ''
@@ -66,7 +73,7 @@ if ($selected === []) {
 }
 
 $clientId = substr('health-wonlex-command-' . getmypid() . '-' . bin2hex(random_bytes(4)), 0, 23);
-$client = new MqttClient($host, $port, $clientId);
+$client = new MqttClient($host, $port, $clientId, MqttClient::MQTT_3_1_1);
 
 $settings = (new ConnectionSettings())
     ->setUsername($username !== '' ? $username : null)
@@ -92,7 +99,7 @@ $downlinkTopic = topic($topicPrefix, "devices/$imei/downlink");
 $messages = [];
 $client->subscribe($eventsTopic, static function (string $topic, string $payload) use (&$messages): void {
     $messages[] = recordMessage($topic, $payload);
-}, MqttClient::QOS_AT_MOST_ONCE);
+}, MqttClient::QOS_AT_LEAST_ONCE);
 
 $client->subscribe($telemetryTopic, static function (string $topic, string $payload) use (&$messages): void {
     $messages[] = recordMessage($topic, $payload);
@@ -141,7 +148,7 @@ foreach ($selected as $entry) {
             'encoding' => 'base64',
             'payload' => base64_encode($adapter->encodeOutgoing($payload)),
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-        MqttClient::QOS_AT_MOST_ONCE,
+        MqttClient::QOS_AT_LEAST_ONCE,
         false
     );
 
@@ -192,6 +199,7 @@ Usage:
 
 Options:
   --command dnHeartRate   Run a single command instead of the full set.
+  --all-requests          Run all normal request commands. Alias: --all.
   --payload JSON          Override the payload object sent for every command.
   --include-risk normal,high
                           Select risk level for bulk request runs. Default: normal.
@@ -204,7 +212,7 @@ Options:
 Notes:
   - Replies are read from devices/{imei}/events, devices/{imei}/telemetry and devices/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
-  - Bulk runs only send request commands; use --command to send config/control/data commands explicitly.
+  - Bulk runs require --all-requests and only send request commands; use --command to send config/control/data commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive reset/restart/powerOff commands are behind --include-risk high.
   - This command client publishes base64-encoded Wonlex JSON frames to devices/{imei}/downlink.

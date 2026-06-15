@@ -38,6 +38,7 @@ $commandFilter = trim((string)($args['command'] ?? ''));
 $riskFilter = parseCsv((string)($args['include-risk'] ?? 'normal'));
 $fieldsOverride = isset($args['fields']) ? parseCsv((string)$args['fields']) : null;
 $listCommands = isset($args['list-commands']);
+$runAllRequests = isset($args['all-requests']) || isset($args['all']);
 $showRaw = isset($args['show-raw']);
 
 $adapter = new VivistarAdapter();
@@ -46,6 +47,12 @@ $manifest = vivistarCommands();
 if ($listCommands) {
     printCommandCatalog($manifest, vivistarUplinks());
     exit(0);
+}
+
+if ($commandFilter === '' && !$runAllRequests) {
+    fwrite(STDERR, "Missing command. Use --command BPXL, --all-requests, or --list-commands.\n\n");
+    usage();
+    exit(1);
 }
 
 $selected = $commandFilter !== ''
@@ -67,7 +74,7 @@ if ($selected === []) {
 }
 
 $clientId = substr('health-vivistar-command-' . getmypid() . '-' . bin2hex(random_bytes(4)), 0, 23);
-$client = new MqttClient($host, $port, $clientId);
+$client = new MqttClient($host, $port, $clientId, MqttClient::MQTT_3_1_1);
 
 $settings = (new ConnectionSettings())
     ->setUsername($username !== '' ? $username : null)
@@ -93,7 +100,7 @@ $downlinkTopic = topic($topicPrefix, "devices/$imei/downlink");
 $messages = [];
 $client->subscribe($eventsTopic, static function (string $topic, string $payload) use (&$messages): void {
     $messages[] = recordMessage($topic, $payload);
-}, MqttClient::QOS_AT_MOST_ONCE);
+}, MqttClient::QOS_AT_LEAST_ONCE);
 
 $client->subscribe($telemetryTopic, static function (string $topic, string $payload) use (&$messages): void {
     $messages[] = recordMessage($topic, $payload);
@@ -138,7 +145,7 @@ foreach ($selected as $entry) {
             'encoding' => 'text',
             'payload' => $payload,
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-        MqttClient::QOS_AT_MOST_ONCE,
+        MqttClient::QOS_AT_LEAST_ONCE,
         false
     );
 
@@ -186,6 +193,7 @@ Usage:
 
 Options:
   --command BPXL           Run a single command instead of the full set.
+  --all-requests           Run all normal request commands. Alias: --all.
   --ident 080835           Command ident field to embed in Vivistar downlinks.
   --fields A,B,C           Override command data fields, e.g. --fields +351938854803 for BP12.
   --include-risk normal,high
@@ -199,7 +207,7 @@ Options:
 Notes:
   - Replies are read from devices/{imei}/events, devices/{imei}/telemetry and devices/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
-  - Bulk runs only send request commands; use --command to send config/control commands explicitly.
+  - Bulk runs require --all-requests and only send request commands; use --command to send config/control commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive BP17 factory-reset command is behind --include-risk high.
   - This command client publishes native downlink frames to devices/{imei}/downlink.

@@ -13,7 +13,10 @@ use App\Hub\RedisPendingDownlinkQueue;
 use App\Log\Logger;
 use App\Registry\Whitelist;
 use PhpMqtt\Client\ConnectionSettings;
+use PhpMqtt\Client\Contracts\Repository;
 use PhpMqtt\Client\MqttClient;
+use PhpMqtt\Client\Repositories\MemoryRepository;
+use PhpMqtt\Client\Subscription;
 use Predis\Client as RedisClient;
 use Ratchet\Http\HttpServer;
 use Ratchet\Server\IoServer;
@@ -37,10 +40,15 @@ if ($mqttHost === '') {
 $clientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($mqttConfig['client_id_prefix'] ?? 'hitecosystem-hub')) ?: 'hitecosystem-hub';
 $topicPrefix = trim((string)($mqttConfig['topic_prefix'] ?? ''), '/');
 
-$buildMqttClient = static function (string $suffix) use ($mqttConfig, $mqttHost, $clientIdPrefix): MqttClient {
-    $clientId = substr($clientIdPrefix . '-' . $suffix . '-' . getmypid(), 0, 23);
-    $client = new MqttClient($mqttHost, (int)($mqttConfig['port'] ?? 1883), $clientId);
+$createMqttClient = static function (string $suffix, bool $stableClientId = false, ?Repository $repository = null) use ($mqttConfig, $mqttHost, $clientIdPrefix): MqttClient {
+    $clientId = $stableClientId
+        ? substr($clientIdPrefix . '-' . $suffix, 0, 23)
+        : substr($clientIdPrefix . '-' . $suffix . '-' . getmypid(), 0, 23);
 
+    return new MqttClient($mqttHost, (int)($mqttConfig['port'] ?? 1883), $clientId, MqttClient::MQTT_3_1_1, $repository);
+};
+
+$connectMqttClient = static function (MqttClient $client, bool $cleanSession = true) use ($mqttConfig): MqttClient {
     $username = (string)($mqttConfig['username'] ?? '');
     $password = (string)($mqttConfig['password'] ?? '');
     $timeout = max(1, (int)ceil((float)($mqttConfig['timeout'] ?? 5.0)));
@@ -59,10 +67,13 @@ $buildMqttClient = static function (string $suffix) use ($mqttConfig, $mqttHost,
         ->setTlsClientCertificateFile(((string)($mqttConfig['tls_cert_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_cert_file'] : null)
         ->setTlsClientCertificateKeyFile(((string)($mqttConfig['tls_key_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_key_file'] : null);
 
-    $client->connect($settings, true);
+    $client->connect($settings, $cleanSession);
 
     return $client;
 };
+
+$buildMqttClient = static fn (string $suffix, bool $cleanSession = true, bool $stableClientId = false): MqttClient
+    => $connectMqttClient($createMqttClient($suffix, $stableClientId), $cleanSession);
 
 $whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
 $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null);
@@ -86,12 +97,35 @@ $hubServer = new DeviceHubServer(
     downlinkQueue: $downlinkQueue,
     downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds
 );
+$downlink = null;
+$downlinkTopicFilter = $topicPrefix === '' ? 'devices/+/downlink' : $topicPrefix . '/devices/+/downlink';
+$subscriberRepository = new MemoryRepository();
+$subscriberRepository->addSubscription(new Subscription(
+    $downlinkTopicFilter,
+    MqttClient::QOS_AT_LEAST_ONCE,
+    static function (string $topic, string $message) use (&$downlink): void {
+        $downlink?->handleReceivedMessage($topic, $message);
+    }
+));
+$subscriber = $createMqttClient('sub', true, $subscriberRepository);
 $downlink = new HubDownlinkSubscriber(
-    $buildMqttClient('sub'),
+    $subscriber,
     $hubServer,
     $topicPrefix,
-    static fn (): MqttClient => $buildMqttClient('sub')
+    function () use (&$downlink, $createMqttClient, $connectMqttClient, $downlinkTopicFilter): MqttClient {
+        $repository = new MemoryRepository();
+        $repository->addSubscription(new Subscription(
+            $downlinkTopicFilter,
+            MqttClient::QOS_AT_LEAST_ONCE,
+            static function (string $topic, string $message) use (&$downlink): void {
+                $downlink?->handleReceivedMessage($topic, $message);
+            }
+        ));
+
+        return $connectMqttClient($createMqttClient('sub', true, $repository), false);
+    }
 );
+$connectMqttClient($subscriber, false);
 
 $loop = Loop::get();
 $wsHost = $config['websocket']['host'] ?? '0.0.0.0';

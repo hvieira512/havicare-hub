@@ -29,6 +29,19 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame(1, $reconnectedPublisher->publishCalls);
         self::assertSame('prefix/devices/8800000015/raw', $reconnectedPublisher->lastTopic);
     }
+
+    public function testEventsPublishWithQosOne(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishEvent('8800000015', [
+            'type' => 'device.downlink.queued',
+        ]);
+
+        self::assertSame('prefix/devices/8800000015/events', $publisher->lastTopic);
+        self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
+    }
 }
 
 final class FakeMqttPublisher extends MqttClient
@@ -36,6 +49,7 @@ final class FakeMqttPublisher extends MqttClient
     public int $publishCalls = 0;
     public int $disconnectCalls = 0;
     public ?string $lastTopic = null;
+    public ?int $lastQualityOfService = null;
 
     public function __construct(private bool $shouldFail = false)
     {
@@ -45,6 +59,7 @@ final class FakeMqttPublisher extends MqttClient
     {
         $this->publishCalls++;
         $this->lastTopic = $topic;
+        $this->lastQualityOfService = $qualityOfService;
 
         if ($this->shouldFail) {
             throw new \RuntimeException('socket closed');

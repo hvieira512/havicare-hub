@@ -42,8 +42,13 @@ class HubDownlinkSubscriber
         $filter = $this->topic('devices/+/downlink');
         $this->subscriber->subscribe($filter, function (string $topic, string $payload): void {
             $this->handle($topic, $payload);
-        }, MqttClient::QOS_AT_MOST_ONCE);
-        Logger::channel('hub')->info("MQTT downlink subscribed to {$filter}");
+        }, MqttClient::QOS_AT_LEAST_ONCE);
+        Logger::channel('hub')->info("MQTT downlink subscribed to {$filter} qos=1");
+    }
+
+    public function handleReceivedMessage(string $topic, string $payload): void
+    {
+        $this->handle($topic, $payload);
     }
 
     private function handleLoopFailure(\Throwable $e): void
