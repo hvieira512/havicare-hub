@@ -1,7 +1,7 @@
 #!/bin/sh
-set -e
 
-WATCH_DIRS="/app/src /app/config /app/bin"
+WATCH_DIRS="${WATCH_DIRS:-/app/src /app/config /app/bin}"
+POLL_INTERVAL="${POLL_INTERVAL:-1}"
 CMD="$@"
 
 if [ -z "$CMD" ]; then
@@ -12,18 +12,28 @@ fi
 
 echo "=== Dev watcher started ==="
 echo "Watching: $WATCH_DIRS"
+echo "Poll:     ${POLL_INTERVAL}s"
 echo "Command:  $CMD"
 echo ""
 
 while true; do
     $CMD &
     PID=$!
-
-    inotifywait -q -r -e modify,create,delete,move --exclude '\.(swp|swx|~)$' $WATCH_DIRS 2>/dev/null
-    echo "[dev] Files changed, restarting..."
-
-    kill $PID 2>/dev/null
-    wait $PID 2>/dev/null
-
-    sleep 0.5
+    TMPREF=$(mktemp)
+    while true; do
+        sleep "$POLL_INTERVAL"
+        if ! kill -0 "$PID" 2>/dev/null; then
+            echo "[dev] process died, restarting..."
+            break
+        fi
+        CHANGED=$(find $WATCH_DIRS -newer "$TMPREF" \
+            -not -name '*.swp' -not -name '*.swx' -not -name '.*~' \
+            -type f 2>/dev/null | head -1)
+        if [ -n "$CHANGED" ]; then
+            echo "[dev] $CHANGED changed, restarting..."
+            break
+        fi
+    done
+    rm -f "$TMPREF"
+    kill $PID 2>/dev/null; wait $PID 2>/dev/null
 done

@@ -3,25 +3,30 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use App\Bootstrap;
-use App\Config;
-use App\Hub\DeviceHubServer;
-use App\Hub\HubDownlinkSubscriber;
-use App\Hub\HubMqttBridge;
-use App\Hub\HubTcpIngress;
-use App\Hub\RedisPendingDownlinkQueue;
-use App\Log\Logger;
-use App\Registry\Whitelist;
+use Hub\Bootstrap;
+use Hub\Config;
+use Hub\Dashboard\DashboardHttpServer;
+use Hub\Dashboard\DashboardStore;
+use Hub\DeviceHubServer;
+use Hub\HubDownlinkSubscriber;
+use Hub\HubMqttBridge;
+use Hub\HubTcpIngress;
+use Hub\RedisPendingDownlinkQueue;
+use Hub\Log\Logger;
+use Hub\Registry\Whitelist;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\Contracts\Repository;
 use PhpMqtt\Client\MqttClient;
 use PhpMqtt\Client\Repositories\MemoryRepository;
 use PhpMqtt\Client\Subscription;
 use Predis\Client as RedisClient;
-use Ratchet\Http\HttpServer;
-use Ratchet\Server\IoServer;
-use Ratchet\WebSocket\WsServer;
+use React\Http\Middleware\LimitConcurrentRequestsMiddleware;
+use React\Http\Middleware\RequestBodyBufferMiddleware;
+use React\Http\Middleware\RequestBodyParserMiddleware;
+use React\Http\Middleware\StreamingRequestMiddleware;
+use Hub\WebSocket\WebSocketServer;
 use React\EventLoop\Loop;
+use React\Http\HttpServer as ReactHttpServer;
 use React\Socket\SocketServer;
 
 Bootstrap::loadEnv(__DIR__ . '/..');
@@ -29,6 +34,7 @@ Bootstrap::loadEnv(__DIR__ . '/..');
 $config = Config::load()->all();
 $mqttConfig = $config['mqtt'] ?? [];
 $redisConfig = $config['redis'] ?? [];
+$dashboardConfig = $config['dashboard'] ?? [];
 $downlinkQueueTtlSeconds = (int)($config['hub']['downlink_queue_ttl_seconds'] ?? 300);
 
 $mqttHost = trim((string)($mqttConfig['host'] ?? ''));
@@ -75,8 +81,9 @@ $connectMqttClient = static function (MqttClient $client, bool $cleanSession = t
 $buildMqttClient = static fn (string $suffix, bool $cleanSession = true, bool $stableClientId = false): MqttClient
     => $connectMqttClient($createMqttClient($suffix, $stableClientId), $cleanSession);
 
+$databaseStore = new Hub\Dashboard\DatabaseStore();
 $whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
-$whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null);
+$whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $databaseStore);
 $redisParameters = [
     'host' => (string)($redisConfig['host'] ?? '127.0.0.1'),
     'port' => (int)($redisConfig['port'] ?? 6379),
@@ -86,6 +93,8 @@ if ($redisPassword !== '') {
     $redisParameters['password'] = $redisPassword;
 }
 $downlinkQueue = new RedisPendingDownlinkQueue(new RedisClient($redisParameters));
+$dashboardStore = new DashboardStore(new RedisClient($redisParameters), (int)($dashboardConfig['history_limit'] ?? 100));
+$dashboardStore->setDatabaseStore($databaseStore);
 $mqttBridge = new HubMqttBridge(
     $buildMqttClient('pub'),
     $topicPrefix,
@@ -95,6 +104,7 @@ $hubServer = new DeviceHubServer(
     $whitelist,
     $mqttBridge,
     downlinkQueue: $downlinkQueue,
+    dashboardStore: $dashboardStore,
     downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds
 );
 $downlink = null;
@@ -132,15 +142,38 @@ $wsHost = $config['websocket']['host'] ?? '0.0.0.0';
 $wsPort = $config['websocket']['port'] ?? 8080;
 $tcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
 $tcpPort = $config['vivistar_tcp']['port'] ?? 9000;
+$dashboardHost = (string)($dashboardConfig['host'] ?? '0.0.0.0');
+$dashboardPort = (int)($dashboardConfig['port'] ?? 8081);
 
 $wsEnabled = (bool)($config['websocket']['enabled'] ?? true);
+$dashboardEnabled = (bool)($dashboardConfig['enabled'] ?? true);
 
 if ($wsEnabled) {
-    $wsSocket = new SocketServer("$wsHost:$wsPort", [], $loop);
-    $wsServer = new IoServer(new HttpServer(new WsServer($hubServer)), $wsSocket, $loop);
+    new WebSocketServer($hubServer, "$wsHost:$wsPort", [], $loop);
 }
 
 $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
+
+if ($dashboardEnabled) {
+    $dashboard = new DashboardHttpServer(
+        $dashboardStore,
+        $whitelist,
+        $hubServer,
+        $downlinkQueue,
+        $databaseStore,
+        (string)($dashboardConfig['username'] ?? ''),
+        (string)($dashboardConfig['password'] ?? '')
+    );
+    $dashboardServer = new ReactHttpServer(
+        new StreamingRequestMiddleware(),
+        new LimitConcurrentRequestsMiddleware(50),
+        new RequestBodyBufferMiddleware(6 * 1024 * 1024),
+        new RequestBodyParserMiddleware(5 * 1024 * 1024),
+        $dashboard
+    );
+    $dashboardSocket = new SocketServer("$dashboardHost:$dashboardPort", [], $loop);
+    $dashboardServer->listen($dashboardSocket);
+}
 
 try {
     $downlink->start();
@@ -157,12 +190,22 @@ $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
     }
 });
 
+$loop->addPeriodicTimer(10, function () use ($dashboardStore, $dashboardConfig): void {
+    $dashboardStore->expireWaitingCommands((int)($dashboardConfig['command_timeout_seconds'] ?? 120));
+});
+
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
 
 if ($wsEnabled) {
     Logger::channel('hub')->info("WebSocket ingress: ws://$wsHost:$wsPort");
 } else {
     Logger::channel('hub')->info('WebSocket ingress disabled');
+}
+
+if ($dashboardEnabled) {
+    Logger::channel('hub')->info("Dashboard: http://$dashboardHost:$dashboardPort/dashboard");
+} else {
+    Logger::channel('hub')->info('Dashboard disabled');
 }
 
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");

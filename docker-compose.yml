@@ -27,9 +27,10 @@ services:
   hub:
     build: .
     container_name: hitecosystem-devices-hub
-    command: php bin/server-hub.php
+    command: bin/dev.sh php bin/server-hub.php
     ports:
       - "8080:8080"
+      - "8081:8081"
       - "9000:9000"
     volumes:
       - .:/app
@@ -46,6 +47,13 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       DOWNLINK_QUEUE_TTL_SECONDS: ${DOWNLINK_QUEUE_TTL_SECONDS:-300}
       WHITELIST_FILE: ${WHITELIST_FILE-}
+      DASHBOARD_ENABLED: ${DASHBOARD_ENABLED:-true}
+      DASHBOARD_HOST: 0.0.0.0
+      DASHBOARD_PORT: ${DASHBOARD_PORT:-8081}
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:-}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-}
+      DASHBOARD_HISTORY_LIMIT: ${DASHBOARD_HISTORY_LIMIT:-100}
+      DASHBOARD_COMMAND_TIMEOUT_SECONDS: ${DASHBOARD_COMMAND_TIMEOUT_SECONDS:-120}
       VIVISTAR_TCP_HOST: 0.0.0.0
       VIVISTAR_TCP_PORT: 9000
     depends_on:

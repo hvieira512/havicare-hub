@@ -8,6 +8,7 @@ SCENARIOS=(
   "tests/scenarios/scenario_hub_raw_mqtt_roundtrip.sh"
   "tests/scenarios/scenario_hub_downlink_queue.sh"
   "tests/scenarios/scenario_hub_persistent_mqtt_downlink.sh"
+  "tests/scenarios/scenario_dashboard_api.sh"
 )
 PER_SCENARIO_TIMEOUT_SECONDS="${PER_SCENARIO_TIMEOUT_SECONDS:-240}"
 

@@ -68,11 +68,15 @@ ssl-setup:
 ps:
 	docker compose ps
 
-dev-hub:
-	docker compose stop hub 2>/dev/null; \
-	docker compose run --rm --service-ports --name hitecosystem-devices-hub-dev hub bin/dev.sh php bin/server-hub.php
+dev-hub: hub
 
-dev: dev-hub
+dev-dashboard:
+	docker compose stop hub 2>/dev/null; \
+	docker compose run --rm --service-ports --name hitecosystem-devices-hub-dev \
+		-e WATCH_DIRS="/app/src/Dashboard /app/config/whitelist.json" \
+		hub bin/dev.sh php bin/server-hub.php
+
+dev: up
 
 prod-update:
 	git pull --ff-only

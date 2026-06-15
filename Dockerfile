@@ -1,12 +1,18 @@
-FROM php:8.1-cli
+FROM php:8.5-cli
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     unzip \
     inotify-tools \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libsqlite3-dev \
+    && docker-php-ext-configure gd --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
+        gd \
         sockets \
         pcntl \
+        pdo_sqlite \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,6 +25,6 @@ RUN composer install --no-dev --optimize-autoloader
 
 COPY . .
 
-EXPOSE 8080 9000
+EXPOSE 8080 8081 9000
 
 CMD ["php", "bin/server-hub.php"]
