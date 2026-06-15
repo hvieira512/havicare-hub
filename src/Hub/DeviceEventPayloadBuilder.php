@@ -18,7 +18,7 @@ final class DeviceEventPayloadBuilder
 
         $payload = [
             'schemaVersion' => 2,
-            'type' => 'device.telemetry.' . $feature,
+            'type' => $feature,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             'device' => $device,
             'data' => $decodedEvent['value'],

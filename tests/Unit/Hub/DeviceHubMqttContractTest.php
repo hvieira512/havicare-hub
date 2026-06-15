@@ -120,7 +120,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(1, $mqtt->events);
         self::assertCount(1, $mqtt->telemetry);
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
-        self::assertSame('device.telemetry.heart_rate', $mqtt->telemetry[0][1]['type']);
+        self::assertSame('heart_rate', $mqtt->telemetry[0][1]['type']);
         self::assertSame(2, $mqtt->telemetry[0][1]['schemaVersion']);
         self::assertSame(['bpm' => 72], $mqtt->telemetry[0][1]['data']);
         self::assertSame('wonlex-json', $mqtt->telemetry[0][1]['source']['protocol']);

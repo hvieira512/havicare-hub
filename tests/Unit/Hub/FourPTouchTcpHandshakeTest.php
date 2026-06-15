@@ -83,12 +83,12 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertSame('4P Touch', $mqtt->statuses[0][1]['device']['supplier']);
         self::assertSame('4P-TOUCH', $mqtt->statuses[0][1]['device']['model']);
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
-        self::assertSame('device.telemetry.heartbeat', $mqtt->telemetry[0][1]['type']);
+        self::assertSame('heartbeat', $mqtt->telemetry[0][1]['type']);
         self::assertSame(2, $mqtt->telemetry[0][1]['schemaVersion']);
         self::assertSame('four-p-touch', $mqtt->telemetry[0][1]['source']['protocol']);
         self::assertSame('LK', $mqtt->telemetry[0][1]['source']['nativeType']);
-        self::assertSame('device.telemetry.activity', $mqtt->telemetry[1][1]['type']);
-        self::assertSame('device.telemetry.battery', $mqtt->telemetry[2][1]['type']);
+        self::assertSame('activity', $mqtt->telemetry[1][1]['type']);
+        self::assertSame('battery', $mqtt->telemetry[2][1]['type']);
         self::assertSame('text', $mqtt->raw[0][1]['debug']['encoding']);
     }
 
