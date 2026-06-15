@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use App\Hub\HubMqttBridge;
+use Hub\HubMqttBridge;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 

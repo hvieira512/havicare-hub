@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Protocol;
 
-use App\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Protocol\Adapter\FourPTouchAdapter;
 use PHPUnit\Framework\TestCase;
 
 final class FourPTouchAdapterTest extends TestCase

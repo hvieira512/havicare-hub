@@ -1,44 +1,54 @@
 <?php
 
-namespace App\Registry;
+namespace Hub\Registry;
+
+use Hub\Dashboard\DatabaseStore;
 
 class Whitelist
 {
     /** @var array<string, array{supplier: string, model: string}> */
     private array $devices;
     private string $filePath;
+    private ?DatabaseStore $db;
 
-    public function __construct(?string $filePath = null)
+    public function __construct(?string $filePath = null, ?DatabaseStore $db = null)
     {
         $this->filePath = $filePath ?? __DIR__ . '/../../config/whitelist.json';
-        $this->loadFromFile();
+        $this->db = $db;
+        $this->load();
     }
 
-    private function loadFromFile(): void
+    private function load(): void
     {
-        if (!file_exists($this->filePath)) {
+        if ($this->db !== null) {
             $this->devices = [];
+            foreach ($this->db->whitelistAll() as $row) {
+                $imei = (string)$row['imei'];
+                $supplier = (string)$row['supplier'];
+                $model = (string)$row['model'];
+                if ($imei !== '' && $supplier !== '' && $model !== '') {
+                    $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
+                }
+            }
             return;
         }
 
-        $raw = json_decode(file_get_contents($this->filePath), true) ?? [];
         $this->devices = [];
+        if (!file_exists($this->filePath)) {
+            return;
+        }
+        $raw = json_decode(file_get_contents($this->filePath), true) ?? [];
         foreach ($raw as $imei => $value) {
             if (!is_scalar($imei) || !is_array($value)) {
                 continue;
             }
-
             $imei = trim((string)$imei);
             $supplier = trim((string)($value['supplier'] ?? ''));
             $model = trim((string)($value['model'] ?? ''));
             if ($imei === '' || $supplier === '' || $model === '') {
                 continue;
             }
-
-            $this->devices[$imei] = [
-                'supplier' => $supplier,
-                'model' => $model,
-            ];
+            $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
         }
     }
 
@@ -69,18 +79,15 @@ class Whitelist
 
     public function register(string $imei, string $supplier, string $model): void
     {
-        $this->devices[$imei] = [
-            'supplier' => $supplier,
-            'model' => $model,
-        ];
-
+        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
+        $this->db?->whitelistRegister($imei, $supplier, $model);
         $this->saveFile();
     }
 
     public function unregister(string $imei): void
     {
         unset($this->devices[$imei]);
-
+        $this->db?->whitelistUnregister($imei);
         $this->saveFile();
     }
 
@@ -89,14 +96,9 @@ class Whitelist
         if (!isset($this->devices[$imei])) {
             return false;
         }
-
-        $this->devices[$imei] = [
-            'supplier' => $supplier,
-            'model' => $model,
-        ];
-
+        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
+        $this->db?->whitelistRegister($imei, $supplier, $model);
         $this->saveFile();
-
         return true;
     }
 
@@ -106,11 +108,9 @@ class Whitelist
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-
         file_put_contents(
             $this->filePath,
             json_encode($this->devices, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
         );
     }
-
 }

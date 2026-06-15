@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use App\Hub\DeviceEventDecoder;
-use App\Hub\DeviceSession;
+use Hub\DeviceEventDecoder;
+use Hub\DeviceSession;
 use PHPUnit\Framework\TestCase;
-use Ratchet\ConnectionInterface;
+use Hub\WebSocket\ConnectionInterface;
 
 final class DeviceEventDecoderTest extends TestCase
 {
@@ -345,12 +345,12 @@ final class DecoderFakeConnection implements ConnectionInterface
 {
     public int $resourceId = 1;
 
-    public function send($data)
+    public function send($data): static
     {
         return $this;
     }
 
-    public function close()
+    public function close(): static
     {
         return $this;
     }

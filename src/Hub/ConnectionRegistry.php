@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Hub;
+namespace Hub;
 
-use App\Tcp\TcpDeviceConnection;
-use Ratchet\ConnectionInterface;
+use Hub\Tcp\TcpDeviceConnection;
+use Hub\WebSocket\ConnectionInterface;
 
 class ConnectionRegistry
 {

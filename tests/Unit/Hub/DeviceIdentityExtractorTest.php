@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use App\Hub\DeviceIdentityExtractor;
-use App\Protocol\Adapter\VivistarAdapter;
-use App\Protocol\Adapter\WonlexAdapter;
+use Hub\DeviceIdentityExtractor;
+use Hub\Protocol\Adapter\VivistarAdapter;
+use Hub\Protocol\Adapter\WonlexAdapter;
 use PHPUnit\Framework\TestCase;
 
 final class DeviceIdentityExtractorTest extends TestCase

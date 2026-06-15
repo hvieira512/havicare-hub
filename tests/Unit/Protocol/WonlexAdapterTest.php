@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Protocol;
 
-use App\Protocol\Adapter\WonlexAdapter;
+use Hub\Protocol\Adapter\WonlexAdapter;
 use PHPUnit\Framework\TestCase;
 
 final class WonlexAdapterTest extends TestCase

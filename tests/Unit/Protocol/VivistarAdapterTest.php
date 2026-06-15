@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Protocol;
 
-use App\Protocol\Adapter\VivistarAdapter;
+use Hub\Protocol\Adapter\VivistarAdapter;
 use PHPUnit\Framework\TestCase;
 
 final class VivistarAdapterTest extends TestCase

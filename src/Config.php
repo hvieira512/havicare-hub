@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace Hub;
 
 class Config
 {
@@ -19,6 +19,8 @@ class Config
         $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
         $wsEnabledRaw = strtolower(trim((string)(getenv('WS_ENABLED') ?: 'true')));
         $wsEnabled = in_array($wsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
+        $dashboardEnabledRaw = strtolower(trim((string)(getenv('DASHBOARD_ENABLED') ?: 'true')));
+        $dashboardEnabled = in_array($dashboardEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $downlinkQueueTtlRaw = getenv('DOWNLINK_QUEUE_TTL_SECONDS');
         $downlinkQueueTtl = $downlinkQueueTtlRaw === false || trim((string)$downlinkQueueTtlRaw) === ''
             ? 300
@@ -33,6 +35,15 @@ class Config
             'vivistar_tcp' => [
                 'host' => getenv('VIVISTAR_TCP_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('VIVISTAR_TCP_PORT') ?: 9000),
+            ],
+            'dashboard' => [
+                'enabled' => $dashboardEnabled,
+                'host' => getenv('DASHBOARD_HOST') ?: '0.0.0.0',
+                'port' => (int)(getenv('DASHBOARD_PORT') ?: 8081),
+                'username' => getenv('DASHBOARD_USERNAME') ?: '',
+                'password' => getenv('DASHBOARD_PASSWORD') ?: '',
+                'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
+                'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 120),
             ],
             'hub' => [
                 'downlink_queue_ttl_seconds' => $downlinkQueueTtl,

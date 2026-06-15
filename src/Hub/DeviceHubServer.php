@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Hub;
+namespace Hub;
 
-use App\Log\Logger;
-use App\Protocol\AdapterRegistry;
-use App\Registry\Whitelist;
-use Ratchet\ConnectionInterface;
-use Ratchet\MessageComponentInterface;
+use Hub\Log\Logger;
+use Hub\Dashboard\DashboardStore;
+use Hub\Protocol\AdapterRegistry;
+use Hub\Registry\Whitelist;
+use Hub\WebSocket\ConnectionInterface;
+use Hub\WebSocket\MessageComponentInterface;
 
 class DeviceHubServer implements MessageComponentInterface
 {
@@ -17,6 +18,7 @@ class DeviceHubServer implements MessageComponentInterface
     private DeviceEventDecoder $eventDecoder;
     private HubMqttBridge $mqtt;
     private ?PendingDownlinkQueue $downlinkQueue;
+    private ?DashboardStore $dashboardStore;
     private int $downlinkQueueTtlSeconds;
 
     public function __construct(
@@ -27,6 +29,7 @@ class DeviceHubServer implements MessageComponentInterface
         ?ConnectionRegistry $connections = null,
         ?DeviceEventDecoder $eventDecoder = null,
         ?PendingDownlinkQueue $downlinkQueue = null,
+        ?DashboardStore $dashboardStore = null,
         int $downlinkQueueTtlSeconds = 300,
     ) {
         $this->connections = $connections ?? new ConnectionRegistry();
@@ -36,6 +39,7 @@ class DeviceHubServer implements MessageComponentInterface
         $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($this->adapters);
         $this->eventDecoder = $eventDecoder ?? new DeviceEventDecoder();
         $this->downlinkQueue = $downlinkQueue;
+        $this->dashboardStore = $dashboardStore;
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
     }
 
@@ -46,7 +50,7 @@ class DeviceHubServer implements MessageComponentInterface
         Logger::channel('hub')->info("Connection open id={$conn->resourceId}");
     }
 
-    public function onMessage(ConnectionInterface $from, $msg): void
+    public function onMessage(ConnectionInterface $from, string $msg): void
     {
         $rid = $from->resourceId;
         $raw = (string)$msg;
@@ -62,6 +66,7 @@ class DeviceHubServer implements MessageComponentInterface
                 $session->imei,
                 RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $raw, 'uplink', (string)$rid)
             );
+            $this->recordRaw($session, $raw, (string)$rid);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
         }
@@ -83,6 +88,7 @@ class DeviceHubServer implements MessageComponentInterface
 
         $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline');
         $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected');
+        $this->dashboardStore?->deviceOffline($session->imei);
         Logger::channel('hub')->info("Device offline IMEI={$session->imei}");
     }
 
@@ -110,6 +116,7 @@ class DeviceHubServer implements MessageComponentInterface
                 null,
                 $this->commandMetadata($bytes, $session?->protocol)
             ));
+            $this->recordDownlinkEvent($imei, $session?->supplier ?? '', $session?->model ?? '', 'device.downlink.sent', $bytes);
             if ($session !== null) {
                 $this->mqtt->publishRaw(
                     $imei,
@@ -121,6 +128,18 @@ class DeviceHubServer implements MessageComponentInterface
         }
 
         return true;
+    }
+
+    /**
+     * @return 'sent'|'queued'|'dropped'
+     */
+    public function submitDownlink(string $imei, string $bytes): string
+    {
+        if ($this->sendDownlink($imei, $bytes)) {
+            return 'sent';
+        }
+
+        return $this->queueDownlink($imei, $bytes) ? 'queued' : 'dropped';
     }
 
     public function reportDownlinkDropped(string $imei, string $reason, ?string $bytes = null): void
@@ -136,6 +155,7 @@ class DeviceHubServer implements MessageComponentInterface
                 $error,
                 $bytes !== null ? $this->commandMetadata($bytes) : null
             ));
+            $this->recordEvent($imei, $metadata['supplier'], $metadata['model'], 'device.downlink.dropped', $bytes !== null ? $this->commandMetadata($bytes) : null);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
@@ -161,6 +181,7 @@ class DeviceHubServer implements MessageComponentInterface
                 null,
                 $command
             ));
+            $this->recordEvent($imei, $metadata['supplier'], $metadata['model'], 'device.downlink.queued', $command);
             return true;
         } catch (\Throwable $e) {
             Logger::channel('hub')->error("Failed to queue downlink for IMEI={$imei}: {$e->getMessage()}");
@@ -189,6 +210,14 @@ class DeviceHubServer implements MessageComponentInterface
         }
 
         $session = $this->connections->authenticate($conn, $identity, $authorization->supplier, $authorization->model);
+        $this->dashboardStore?->deviceSeen($identity->imei, [
+            'supplier' => $session->supplier,
+            'model' => $session->model,
+            'protocol' => $identity->protocol,
+            'transport' => $session->transport,
+            'online' => '1',
+            'lastConnectionId' => (string)$conn->resourceId,
+        ]);
 
         $this->sendLoginAccepted($conn, $identity);
         $this->publishStatus($identity->imei, $session->supplier, $session->model, 'online');
@@ -199,6 +228,7 @@ class DeviceHubServer implements MessageComponentInterface
                 $identity->imei,
                 RawPayload::raw($identity->imei, $session->supplier, $session->model, $session->transport, $identity->protocol, $raw, 'uplink', (string)$conn->resourceId)
             );
+            $this->recordRaw($session, $raw, (string)$conn->resourceId);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
         }
@@ -270,7 +300,10 @@ class DeviceHubServer implements MessageComponentInterface
 
         foreach ($this->eventDecoder->decode($session, $decoded) as $event) {
             try {
-                $this->mqtt->publishTelemetry($session->imei, DeviceEventPayloadBuilder::decoded($session, $event));
+                $payload = DeviceEventPayloadBuilder::decoded($session, $event);
+                $this->mqtt->publishTelemetry($session->imei, $payload);
+                $this->dashboardStore?->append($session->imei, 'telemetry', $payload);
+                $this->dashboardStore?->markCommandReply($session->imei, (string)$event['nativeType']);
             } catch (\Throwable $e) {
                 $this->mqtt->logPublishFailure('hub', $session->imei, $e);
             }
@@ -294,6 +327,13 @@ class DeviceHubServer implements MessageComponentInterface
             try {
                 if (!$this->sendDownlink($session->imei, $downlink->bytes)) {
                     continue;
+                }
+                $nativeType = is_array($downlink->command) ? (string)($downlink->command['nativeType'] ?? '') : '';
+                if ($nativeType !== '') {
+                    $this->dashboardStore?->markLatestCommand($session->imei, $nativeType, [
+                        'status' => 'waiting',
+                        'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                    ]);
                 }
                 $this->downlinkQueue->remove($downlink);
             } catch (\Throwable $e) {
@@ -422,6 +462,11 @@ class DeviceHubServer implements MessageComponentInterface
     {
         try {
             $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state));
+            if ($state === 'online') {
+                $this->dashboardStore?->deviceSeen($imei, ['supplier' => $supplier, 'model' => $model, 'online' => '1']);
+            } elseif ($state === 'offline') {
+                $this->dashboardStore?->deviceOffline($imei);
+            }
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
@@ -431,9 +476,42 @@ class DeviceHubServer implements MessageComponentInterface
     {
         try {
             $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type));
+            $this->recordEvent($imei, $supplier, $model, $type);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);
         }
+    }
+
+    private function recordRaw(DeviceSession $session, string $raw, string $connectionId): void
+    {
+        $this->dashboardStore?->deviceSeen($session->imei, [
+            'supplier' => $session->supplier,
+            'model' => $session->model,
+            'protocol' => $session->protocol,
+            'transport' => $session->transport,
+            'online' => '1',
+            'lastConnectionId' => $connectionId,
+        ]);
+        $this->dashboardStore?->append($session->imei, 'raw', RawPayload::raw(
+            $session->imei,
+            $session->supplier,
+            $session->model,
+            $session->transport,
+            $session->protocol,
+            $raw,
+            'uplink',
+            $connectionId
+        ));
+    }
+
+    private function recordEvent(string $imei, string $supplier, string $model, string $type, ?array $command = null): void
+    {
+        $this->dashboardStore?->append($imei, 'events', RawPayload::event($imei, $supplier, $model, $type, null, $command));
+    }
+
+    private function recordDownlinkEvent(string $imei, string $supplier, string $model, string $type, string $bytes): void
+    {
+        $this->recordEvent($imei, $supplier, $model, $type, $this->commandMetadata($bytes));
     }
 
     private function commandMetadata(string $bytes, ?string $protocol = null): ?array

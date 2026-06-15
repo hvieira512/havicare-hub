@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use App\Hub\ConnectionRegistry;
-use App\Hub\DeviceIdentity;
+use Hub\ConnectionRegistry;
+use Hub\DeviceIdentity;
 use PHPUnit\Framework\TestCase;
-use Ratchet\ConnectionInterface;
+use Hub\WebSocket\ConnectionInterface;
 
 final class ConnectionRegistryTest extends TestCase
 {
@@ -50,13 +50,13 @@ final class FakeHubConnection implements ConnectionInterface
         $this->resourceId = $resourceId;
     }
 
-    public function send($data)
+    public function send($data): static
     {
         $this->sent[] = $data;
         return $this;
     }
 
-    public function close()
+    public function close(): static
     {
         $this->closed = true;
         return $this;

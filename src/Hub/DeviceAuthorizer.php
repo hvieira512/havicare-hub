@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Hub;
+namespace Hub;
 
-use App\Registry\Whitelist;
+use Hub\Registry\Whitelist;
 
 class DeviceAuthorizer
 {

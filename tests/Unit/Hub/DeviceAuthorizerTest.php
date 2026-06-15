@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use App\Hub\DeviceAuthorizer;
-use App\Hub\DeviceIdentity;
-use App\Registry\Whitelist;
+use Hub\DeviceAuthorizer;
+use Hub\DeviceIdentity;
+use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 
 final class DeviceAuthorizerTest extends TestCase

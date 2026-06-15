@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Hub;
+namespace Hub;
 
-use Ratchet\ConnectionInterface;
+use Hub\WebSocket\ConnectionInterface;
 
 class DeviceSession
 {

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Tcp;
+namespace Hub\Tcp;
 
-use Ratchet\ConnectionInterface;
+use Hub\WebSocket\ConnectionInterface;
 use React\Socket\ConnectionInterface as ReactConnection;
 
 class TcpDeviceConnection implements ConnectionInterface
@@ -16,13 +16,13 @@ class TcpDeviceConnection implements ConnectionInterface
         $this->resourceId = $resourceId;
     }
 
-    public function send($data)
+    public function send($data): static
     {
         $this->connection->write((string)$data);
         return $this;
     }
 
-    public function close()
+    public function close(): static
     {
         $this->connection->end();
         return $this;

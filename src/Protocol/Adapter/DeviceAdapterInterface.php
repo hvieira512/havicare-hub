@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Protocol\Adapter;
+namespace Hub\Protocol\Adapter;
 
 interface DeviceAdapterInterface
 {

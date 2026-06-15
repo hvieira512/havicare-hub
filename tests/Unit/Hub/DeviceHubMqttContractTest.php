@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use App\Hub\DeviceHubServer;
-use App\Hub\HubMqttBridge;
-use App\Hub\PendingDownlink;
-use App\Hub\PendingDownlinkQueue;
-use App\Protocol\Adapter\WonlexAdapter;
-use App\Registry\Whitelist;
+use Hub\DeviceHubServer;
+use Hub\HubMqttBridge;
+use Hub\PendingDownlink;
+use Hub\PendingDownlinkQueue;
+use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
-use Ratchet\ConnectionInterface;
+use Hub\WebSocket\ConnectionInterface;
 
 final class DeviceHubMqttContractTest extends TestCase
 {
@@ -332,13 +332,13 @@ final class ContractFakeConnection implements ConnectionInterface
         $this->resourceId = $resourceId;
     }
 
-    public function send($data)
+    public function send($data): static
     {
         $this->sent[] = $data;
         return $this;
     }
 
-    public function close()
+    public function close(): static
     {
         $this->closed = true;
         return $this;

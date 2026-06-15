@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Hub;
+namespace Hub;
 
-use App\Protocol\AdapterRegistry;
+use Hub\Protocol\AdapterRegistry;
 
 class DeviceIdentityExtractor
 {

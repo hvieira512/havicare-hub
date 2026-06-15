@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Protocol;
+namespace Hub\Protocol;
 
-use App\Protocol\Adapter\DeviceAdapterInterface;
-use App\Protocol\Adapter\FourPTouchAdapter;
-use App\Protocol\Adapter\VivistarAdapter;
-use App\Protocol\Adapter\WonlexAdapter;
+use Hub\Protocol\Adapter\DeviceAdapterInterface;
+use Hub\Protocol\Adapter\FourPTouchAdapter;
+use Hub\Protocol\Adapter\VivistarAdapter;
+use Hub\Protocol\Adapter\WonlexAdapter;
 
 class AdapterRegistry
 {

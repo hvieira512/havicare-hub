@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Hub;
+namespace Hub;
 
 final class DeviceEventDecoder
 {

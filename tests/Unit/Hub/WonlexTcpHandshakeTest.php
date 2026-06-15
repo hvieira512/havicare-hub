@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use App\Hub\DeviceHubServer;
-use App\Hub\HubMqttBridge;
-use App\Hub\HubTcpIngress;
-use App\Protocol\Adapter\WonlexAdapter;
-use App\Registry\Whitelist;
+use Hub\DeviceHubServer;
+use Hub\HubMqttBridge;
+use Hub\HubTcpIngress;
+use Hub\Protocol\Adapter\WonlexAdapter;
+use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
 use React\Socket\ConnectionInterface;

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Hub;
+namespace Hub;
 
-use App\Log\Logger;
+use Hub\Log\Logger;
 use PhpMqtt\Client\MqttClient;
 
 class HubDownlinkSubscriber
