@@ -28,6 +28,7 @@ const featureLabel = type => ({
   heart_rate: 'Frequência cardíaca',
   blood_pressure: 'Tensão arterial',
   blood_oxygen: 'Oxigénio no sangue',
+  blood_sugar: 'Glicemia',
   temperature: 'Temperatura',
   battery: 'Bateria',
   activity: 'Atividade',
@@ -192,9 +193,16 @@ function renderRequestCard(command, telemetry) {
 function latestResultForCommand(command, telemetry) {
   const expected = Array.isArray(command.expectedReplyTypes) ? command.expectedReplyTypes : [];
   const feature = commandFeature(command);
-  return telemetry.find(payload => {
+  const rows = telemetry.filter(payload => {
     if (!payload || !payload.data || payload.debug) return false;
-    if (payload.type === feature) return true;
+    return true;
+  });
+
+  const exact = rows.find(payload => payload.type === feature);
+  if (exact) return exact;
+
+  return rows.find(payload => {
+    if (payload.type && payload.type !== feature) return false;
     return expected.includes(payload.source?.nativeType);
   }) || null;
 }
@@ -217,6 +225,7 @@ function cardTone(type, command) {
   const key = type || commandFeature(command);
   if (['heart_rate', 'blood_pressure', 'ecg', 'hrv'].includes(key)) return {border: 'danger', bg: 'bg-danger', text: 'text-danger'};
   if (key === 'blood_oxygen') return {border: 'info', bg: 'bg-info', text: 'text-info'};
+  if (key === 'blood_sugar') return {border: 'warning', bg: 'bg-warning', text: 'text-warning'};
   if (key === 'temperature') return {border: 'warning', bg: 'bg-warning', text: 'text-warning'};
   if (key === 'location') return {border: 'success', bg: 'bg-success', text: 'text-success'};
   if (key === 'sleep') return {border: 'primary', bg: 'bg-primary', text: 'text-primary'};
@@ -228,6 +237,7 @@ function uplinkCardContent(type, data, payload) {
   if (type === 'heart_rate') return {icon: 'fa-heart-pulse', value: `${data.bpm ?? '-'} bpm`};
   if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: `${data.systolicMmHg ?? '-'} / ${data.diastolicMmHg ?? '-'} mmHg`, details: data.pulseBpm ? `Pulso ${esc(data.pulseBpm)} bpm` : ''};
   if (type === 'blood_oxygen') return {icon: 'fa-droplet', value: `${data.spo2Percent ?? '-'}% SpO2`};
+  if (type === 'blood_sugar') return {icon: 'fa-vial', value: `${data.value ?? '-'} mg/dL`};
   if (type === 'temperature') return {icon: 'fa-temperature-half', value: `${data.bodyCelsius ?? '-'} °C`};
   if (type === 'battery') return {icon: 'fa-battery-three-quarters', value: `${data.percent ?? '-'}%`, details: data.charging === true ? 'A carregar' : (data.charging === false ? 'Não está a carregar' : '')};
   if (type === 'activity') return {icon: 'fa-person-walking', value: `${data.steps ?? 0} passos`, details: compactDetails(data, ['distanceMeters', 'caloriesKcal'])};
