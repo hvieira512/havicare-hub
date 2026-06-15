@@ -43,6 +43,19 @@ final class VivistarAdapterTest extends TestCase
         self::assertSame(72, $payload['data']['heartRate']);
     }
 
+    public function testDecodeIncomingParsesBodyTemperatureUpload(): void
+    {
+        $adapter = new VivistarAdapter();
+
+        $payload = $adapter->decodeIncoming('IWAP50,36.7,90#', ['session' => ['imei' => '865028000000308']]);
+
+        self::assertIsArray($payload);
+        self::assertSame('AP50', $payload['type']);
+        self::assertSame(['36.7', '90'], $payload['data']['fields']);
+        self::assertSame(36.7, $payload['data']['temperature']);
+        self::assertSame(90, $payload['data']['battery']);
+    }
+
     public function testDecodeIncomingParsesAp10AlarmPacket(): void
     {
         $adapter = new VivistarAdapter();

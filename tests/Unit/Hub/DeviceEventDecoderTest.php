@@ -193,6 +193,24 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(91, $events[3]['value']['value']);
     }
 
+    public function testDecodesVivistarAp50IntoTemperatureAndBatteryEvents(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('vivistar-iw'),
+            [
+                'type' => 'AP50',
+                'data' => [
+                    'temperature' => 36.7,
+                    'battery' => 90,
+                ],
+            ]
+        );
+
+        self::assertSame(['temperature', 'battery'], array_column($events, 'feature'));
+        self::assertSame(36.7, $events[0]['value']['bodyCelsius']);
+        self::assertSame(90, $events[1]['value']['percent']);
+    }
+
     public function testDecodesVivistarConfigAndControlAckTypesAsDeviceConfig(): void
     {
         $ackTypes = ['AP12', 'AP14', 'AP28', 'AP33', 'AP40', 'AP76', 'AP77', 'AP84', 'AP85', 'AP86', 'APJZ'];

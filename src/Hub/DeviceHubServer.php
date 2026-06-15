@@ -298,12 +298,13 @@ class DeviceHubServer implements MessageComponentInterface
             return;
         }
 
+        $this->dashboardStore?->markCommandReply($session->imei, (string)($decoded['type'] ?? ''));
+
         foreach ($this->eventDecoder->decode($session, $decoded) as $event) {
             try {
                 $payload = DeviceEventPayloadBuilder::decoded($session, $event);
                 $this->mqtt->publishTelemetry($session->imei, $payload);
                 $this->dashboardStore?->append($session->imei, 'telemetry', $payload);
-                $this->dashboardStore?->markCommandReply($session->imei, (string)$event['nativeType']);
             } catch (\Throwable $e) {
                 $this->mqtt->logPublishFailure('hub', $session->imei, $e);
             }
