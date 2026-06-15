@@ -159,10 +159,20 @@ foreach ($selected as $entry) {
     $replyMessages = array_values(array_filter($captured, static fn(array $message): bool => isDeviceReply($message)));
     $matchingNativeReplies = array_values(array_filter($captured, static fn(array $message): bool => isMatchingNativeReply($message, $command, $replyTypes)));
     $decodedReplies = array_values(array_filter($captured, static fn(array $message): bool => isExpectedDecodedReply($message, $replyTypes)));
-    if ($replyMessages === [] && $decodedReplies === []) {
-        echo "  [sent] downlink accepted by hub, but no device reply observed" . PHP_EOL;
+    $downlinkState = downlinkState($captured);
+
+    if ($downlinkState !== null) {
+        echo "  " . describeDownlinkState($downlinkState) . PHP_EOL;
+    }
+
+    if (($downlinkState['type'] ?? null) === 'device.downlink.queued') {
+        echo "  [queued] device is offline; command will be sent after the next login" . PHP_EOL;
+    } elseif (($downlinkState['type'] ?? null) === 'device.downlink.dropped') {
+        echo "  [dropped] command was not delivered" . PHP_EOL;
+    } elseif ($replyMessages === [] && $decodedReplies === []) {
+        echo "  [sent] no device reply observed yet" . PHP_EOL;
     } elseif ($matchingNativeReplies === [] && $decodedReplies === []) {
-        echo "  [sent] downlink accepted by hub, but only unrelated device uplink(s) were observed" . PHP_EOL;
+        echo "  [sent] only unrelated device uplink(s) were observed" . PHP_EOL;
     } elseif ($decodedReplies === [] && !$showRaw) {
         echo "  [ok] device replied with " . count($matchingNativeReplies) . " matching native message(s), but no expected decoded telemetry was produced. Use --show-raw to inspect." . PHP_EOL;
     } else {
@@ -475,7 +485,7 @@ function waitForMessages(
                 break;
             }
         }
-        if ($hasReply && (microtime(true) - $lastChange) >= $settleSeconds) {
+        if (($hasReply || downlinkState($captured) !== null) && (microtime(true) - $lastChange) >= $settleSeconds) {
             break;
         }
     }
@@ -554,6 +564,45 @@ function isExpectedDecodedReply(array $message, array $expectedReplyTypes): bool
 
     $nativeType = (string)($decoded['source']['nativeType'] ?? '');
     return $nativeType !== '' && in_array($nativeType, $expectedReplyTypes, true);
+}
+
+function downlinkState(array $messages): ?array
+{
+    $state = null;
+    foreach ($messages as $message) {
+        $decoded = $message['decoded'] ?? null;
+        if (!is_array($decoded)) {
+            continue;
+        }
+
+        $type = (string)($decoded['type'] ?? '');
+        if (!in_array($type, ['device.downlink.queued', 'device.downlink.sent', 'device.downlink.dropped'], true)) {
+            continue;
+        }
+
+        $state = [
+            'type' => $type,
+            'error' => is_array($decoded['error'] ?? null) ? $decoded['error'] : null,
+            'command' => is_array($decoded['command'] ?? null) ? $decoded['command'] : null,
+        ];
+    }
+
+    return $state;
+}
+
+function describeDownlinkState(array $state): string
+{
+    $type = (string)($state['type'] ?? '');
+    $command = $state['command'] ?? [];
+    $nativeType = is_array($command) ? (string)($command['nativeType'] ?? '') : '';
+    $suffix = $nativeType !== '' ? " {$nativeType}" : '';
+
+    return match ($type) {
+        'device.downlink.queued' => "[queued]{$suffix} accepted by hub",
+        'device.downlink.sent' => "[sent]{$suffix} delivered to device connection",
+        'device.downlink.dropped' => "[dropped]{$suffix} " . (string)($state['error']['code'] ?? 'unknown_error'),
+        default => '[unknown] downlink state unavailable',
+    };
 }
 
 function nativePayload(array $message): ?array
