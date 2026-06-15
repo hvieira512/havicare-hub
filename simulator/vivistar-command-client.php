@@ -66,7 +66,7 @@ if ($selected === []) {
     exit(1);
 }
 
-$clientId = substr('health-vivistar-tester-' . getmypid() . '-' . bin2hex(random_bytes(4)), 0, 23);
+$clientId = substr('health-vivistar-command-' . getmypid() . '-' . bin2hex(random_bytes(4)), 0, 23);
 $client = new MqttClient($host, $port, $clientId);
 
 $settings = (new ConnectionSettings())
@@ -182,7 +182,7 @@ function usage(): void
 {
     echo <<<TXT
 Usage:
-  php simulator/vivistar-tester.php --imei IMEI --host HOST --port PORT --username USER --password PASS [options]
+  php simulator/vivistar-command-client.php --imei IMEI --host HOST --port PORT --username USER --password PASS [options]
 
 Options:
   --command BPXL           Run a single command instead of the full set.
@@ -202,7 +202,7 @@ Notes:
   - Bulk runs only send request commands; use --command to send config/control commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive BP17 factory-reset command is behind --include-risk high.
-  - This tester publishes native downlink frames to devices/{imei}/downlink.
+  - This command client publishes native downlink frames to devices/{imei}/downlink.
 
 TXT;
 }

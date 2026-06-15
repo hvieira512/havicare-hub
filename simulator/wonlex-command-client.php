@@ -65,7 +65,7 @@ if ($selected === []) {
     exit(1);
 }
 
-$clientId = substr('health-wonlex-tester-' . getmypid() . '-' . bin2hex(random_bytes(4)), 0, 23);
+$clientId = substr('health-wonlex-command-' . getmypid() . '-' . bin2hex(random_bytes(4)), 0, 23);
 $client = new MqttClient($host, $port, $clientId);
 
 $settings = (new ConnectionSettings())
@@ -188,7 +188,7 @@ function usage(): void
 {
     echo <<<TXT
 Usage:
-  php simulator/wonlex-tester.php --imei IMEI --host HOST --port PORT --username USER --password PASS [options]
+  php simulator/wonlex-command-client.php --imei IMEI --host HOST --port PORT --username USER --password PASS [options]
 
 Options:
   --command dnHeartRate   Run a single command instead of the full set.
@@ -207,7 +207,7 @@ Notes:
   - Bulk runs only send request commands; use --command to send config/control/data commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive reset/restart/powerOff commands are behind --include-risk high.
-  - This tester publishes base64-encoded Wonlex JSON frames to devices/{imei}/downlink.
+  - This command client publishes base64-encoded Wonlex JSON frames to devices/{imei}/downlink.
 
 TXT;
 }
