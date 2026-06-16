@@ -72,4 +72,43 @@ final class DatabaseStoreTest extends TestCase
             unlink($path);
         }
     }
+
+    public function testDeviceConfigurationStoresDesiredAndReportedStateSeparately(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'hub-dashboard-');
+        self::assertIsString($path);
+
+        try {
+            $store = new DatabaseStore($path);
+            $store->saveDesiredConfiguration(
+                '861265061009822',
+                'fallDetection',
+                'vivistar-iw',
+                'Vivistar',
+                'L08 Pro',
+                'BP76',
+                ['enabled' => true],
+                'queued',
+                'abc123'
+            );
+            $store->saveReportedConfiguration(
+                '861265061009822',
+                'fallDetection',
+                'vivistar-iw',
+                'Vivistar',
+                'L08 Pro',
+                'AP76',
+                ['data' => ['fields' => ['1']]]
+            );
+
+            $rows = $store->configurations('861265061009822');
+            self::assertCount(1, $rows);
+            self::assertSame(['enabled' => true], $rows[0]['desired_payload']);
+            self::assertSame(['data' => ['fields' => ['1']]], $rows[0]['reported_payload']);
+            self::assertSame('queued', $rows[0]['last_status']);
+            self::assertSame('abc123', $rows[0]['last_command_id']);
+        } finally {
+            unlink($path);
+        }
+    }
 }

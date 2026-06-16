@@ -11,6 +11,14 @@ export const formRequest = (url, formData, options = {}) => fetch(
 export const api = {
     summary: () => requestJson('/api/dashboard/summary'),
     device: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`),
+    configuration: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`),
+    saveConfiguration: (imei, configs) => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`, {
+        method: 'PUT',
+        body: JSON.stringify({configs}),
+    }),
+    applyConfiguration: (imei, key) => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration/${encodeURIComponent(key)}/apply`, {
+        method: 'POST',
+    }),
     sendCommand: (imei, command) => requestJson(`/api/devices/${encodeURIComponent(imei)}/commands`, {
         method: 'POST',
         body: JSON.stringify({command}),

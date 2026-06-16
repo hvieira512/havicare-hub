@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard;
 
+use Hub\Command\DeviceConfigurationCatalog;
 use Predis\ClientInterface;
 
 final class DashboardStore
@@ -75,6 +76,28 @@ final class DashboardStore
         $this->redis->ltrim($key, 0, $this->limit - 1);
 
         if ($this->db !== null) {
+            if ($list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
+                $device = isset($payload['device']) && is_array($payload['device']) ? $payload['device'] : [];
+                $source = isset($payload['source']) && is_array($payload['source']) ? $payload['source'] : [];
+                $nativeType = (string)($source['nativeType'] ?? 'device_config');
+                $protocol = (string)($source['protocol'] ?? '');
+                $key = $nativeType;
+                foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
+                    if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {
+                        $key = (string)$entry['key'];
+                        break;
+                    }
+                }
+                $this->db->saveReportedConfiguration(
+                    $imei,
+                    $key,
+                    $protocol,
+                    (string)($device['supplier'] ?? ''),
+                    (string)($device['model'] ?? ''),
+                    $nativeType,
+                    $payload
+                );
+            }
             match ($list) {
                 'telemetry' => $this->db->appendTelemetry($imei, $payload['type'] ?? 'unknown', $payload),
                 'events' => $this->db->appendEvent($imei, $payload['type'] ?? 'unknown', $payload),
@@ -121,11 +144,15 @@ final class DashboardStore
             if (!is_array($expected) || !in_array($replyNativeType, $expected, true)) {
                 continue;
             }
-            $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+            $id = (string)$command['id'];
+            $this->recordCommand($imei, $id, array_merge($command, [
                 'status' => 'acked',
                 'ackedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
                 'replyNativeType' => $replyNativeType,
             ]));
+            if ($this->db !== null && isset($command['configKey'])) {
+                $this->db->markConfigurationApplyStatus($imei, (string)$command['configKey'], 'acked', $id);
+            }
             return;
         }
     }

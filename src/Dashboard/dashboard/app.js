@@ -98,7 +98,9 @@ async function selectDevice(imei) {
 }
 
 async function loadDevice(imei) {
-    state.selectedDetail = await api.device(imei);
+    const [detail, configuration] = await Promise.all([api.device(imei), api.configuration(imei)]);
+    state.selectedDetail = detail;
+    state.selectedConfiguration = configuration;
     renderSelection();
 }
 
@@ -116,6 +118,7 @@ function renderSelection() {
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
     renderRequestCards(state.selectedDetail.commands || []);
+    renderConfigurationPanel();
     renderDownlinkRequests(state.selectedDetail.recent.commands || []);
     renderConnectionLogs(state.selectedDetail.recent.events || []);
 }
@@ -196,6 +199,73 @@ function renderRequestCards(commands) {
     els.requestGrid.innerHTML = commands.length
         ? commands.map(command => renderRequestCardShell(command, state.loadingCommands.has(command.command))).join('')
         : `<div class="col-12">${emptyPanel('Não há pedidos disponíveis para este dispositivo.')}</div>`;
+}
+
+function renderConfigurationPanel() {
+    const configuration = state.selectedConfiguration;
+    const catalog = configuration?.catalog || [];
+    const rows = configurationRowsByKey(configuration?.configurations || []);
+    els.configurationCount.textContent = catalog.length ? `${catalog.length} opções` : '';
+
+    if (!catalog.length) {
+        els.configurationPanel.innerHTML = emptyPanel('Este modelo não tem configuração suportada.');
+        return;
+    }
+
+    els.configurationPanel.innerHTML = `
+        <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+        <thead>
+        <tr><th>Configuração</th><th>Desejado</th><th>Reportado</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+        ${catalog.map(entry => renderConfigurationRow(entry, rows[entry.key] || null)).join('')}
+        </tbody>
+        </table>
+        </div>`;
+}
+
+function configurationRowsByKey(rows) {
+    const indexed = {};
+    for (const row of rows) {
+        indexed[row.config_key] = row;
+    }
+    return indexed;
+}
+
+function renderConfigurationRow(entry, row) {
+    const desired = row?.desired_payload && Object.keys(row.desired_payload).length ? row.desired_payload : defaultConfigPayload(entry);
+    const reported = row?.reported_payload && Object.keys(row.reported_payload).length ? row.reported_payload : null;
+    const status = row?.last_status || '';
+    return `
+        <tr>
+        <td>
+        <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
+        <div class="small text-secondary">${esc(entry.command)} · ${esc(entry.input || 'json')}</div>
+        </td>
+        <td style="min-width:260px">
+        <textarea class="form-control form-control-sm font-monospace" rows="3" data-config-key="${esc(entry.key)}">${esc(JSON.stringify(desired, null, 2))}</textarea>
+        </td>
+        <td class="small text-secondary text-break" style="max-width:240px">${reported ? esc(JSON.stringify(reported)) : '-'}</td>
+        <td>${status ? statusBadge(status) : '<span class="badge text-bg-light">não aplicado</span>'}</td>
+        <td class="text-nowrap">
+        <button class="btn btn-primary btn-sm" data-config-key="${esc(entry.key)}" data-action="saveConfig"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar</button>
+        <button class="btn btn-outline-secondary btn-sm" data-config-key="${esc(entry.key)}" data-action="applyConfig"><i class="fa-solid fa-paper-plane me-1"></i>Reenviar</button>
+        </td>
+        </tr>`;
+}
+
+function defaultConfigPayload(entry) {
+    const field = (entry.fields || [])[0] || 'value';
+    if (entry.input === 'toggle') return {[field]: true};
+    if (entry.input === 'number') return {[field]: 0};
+    if (entry.input === 'intervalToggle') return {enabled: true, intervalMinutes: 60};
+    if (entry.input === 'workingMode') return {mode: 1};
+    if (entry.input === 'bloodPressure') return {systolic: 120, diastolic: 80};
+    if (entry.input === 'list') return {[field]: []};
+    if (entry.input === 'contacts') return {contacts: []};
+    if (entry.input === 'reminders') return {masterEnabled: true, items: []};
+    return {[field]: {}};
 }
 
 function renderDownlinkRequests(commands) {
@@ -509,6 +579,8 @@ function cacheElements() {
         telemetryPager: document.getElementById('telemetryPager'),
         requestCardCount: document.getElementById('requestCardCount'),
         requestGrid: document.getElementById('requestGrid'),
+        configurationCount: document.getElementById('configurationCount'),
+        configurationPanel: document.getElementById('configurationPanel'),
         downlinkRequests: document.getElementById('downlinkRequests'),
         connectionLogs: document.getElementById('connectionLogs'),
         addDeviceBtn: document.getElementById('addDeviceBtn'),
@@ -553,6 +625,7 @@ function bindEvents() {
     els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
+    els.configurationPanel.addEventListener('click', handleConfigurationClick);
     els.deviceSupplierButtons.addEventListener('click', handleDeviceSupplierClick);
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
@@ -581,6 +654,42 @@ function handleTelemetryPagerClick(event) {
     if (button.dataset.action === 'telemetryPrev') setTelemetryPage(state.telemetryPage - 1, totalPages);
     if (button.dataset.action === 'telemetryNext') setTelemetryPage(state.telemetryPage + 1, totalPages);
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
+}
+
+async function handleConfigurationClick(event) {
+    const button = event.target.closest('[data-action]');
+    if (!button || !state.selectedImei) return;
+
+    const key = button.dataset.configKey;
+    if (!key) return;
+
+    if (button.dataset.action === 'saveConfig') {
+        const textarea = Array.from(els.configurationPanel.querySelectorAll('textarea[data-config-key]'))
+            .find(item => item.dataset.configKey === key);
+        let payload = {};
+        try {
+            payload = JSON.parse(textarea?.value || '{}');
+        } catch (e) {
+            alert('JSON inválido para esta configuração');
+            return;
+        }
+        const result = await api.saveConfiguration(state.selectedImei, {[key]: payload});
+        if (result.error) {
+            alert(result.error.message || result.error.code);
+            return;
+        }
+        state.selectedConfiguration = result.configuration;
+        await loadDevice(state.selectedImei);
+    }
+
+    if (button.dataset.action === 'applyConfig') {
+        const result = await api.applyConfiguration(state.selectedImei, key);
+        if (result.error) {
+            alert(result.error.message || result.error.code);
+            return;
+        }
+        await loadDevice(state.selectedImei);
+    }
 }
 
 function handleDeviceSupplierClick(event) {

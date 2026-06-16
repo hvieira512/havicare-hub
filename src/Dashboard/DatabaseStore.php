@@ -91,10 +91,29 @@ final class DatabaseStore
                 recorded_at TEXT NOT NULL
             )
         ');
+        $this->pdo->exec('
+            CREATE TABLE IF NOT EXISTS device_configurations (
+                imei TEXT NOT NULL,
+                config_key TEXT NOT NULL,
+                protocol TEXT NOT NULL,
+                supplier TEXT NOT NULL DEFAULT "",
+                model TEXT NOT NULL DEFAULT "",
+                command TEXT NOT NULL DEFAULT "",
+                desired_payload TEXT NOT NULL DEFAULT "{}",
+                reported_payload TEXT NOT NULL DEFAULT "{}",
+                last_status TEXT NOT NULL DEFAULT "",
+                last_command_id TEXT NOT NULL DEFAULT "",
+                desired_updated_at TEXT NOT NULL DEFAULT "",
+                reported_at TEXT NOT NULL DEFAULT "",
+                applied_at TEXT NOT NULL DEFAULT "",
+                PRIMARY KEY (imei, config_key)
+            )
+        ');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_telemetry_imei ON telemetry(imei)');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_telemetry_recorded ON telemetry(recorded_at)');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_events_imei ON events(imei)');
         $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_raw_payloads_imei ON raw_payloads(imei)');
+        $this->pdo->exec('CREATE INDEX IF NOT EXISTS idx_device_configurations_imei ON device_configurations(imei)');
     }
 
     private function seedDefaults(): void
@@ -355,6 +374,84 @@ final class DatabaseStore
         return $this->decodeRows($stmt->fetchAll());
     }
 
+    public function configurations(string $imei): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM device_configurations WHERE imei = ? ORDER BY config_key');
+        $stmt->execute([$imei]);
+        return array_map([$this, 'normalizeConfigurationRow'], $stmt->fetchAll());
+    }
+
+    public function saveDesiredConfiguration(
+        string $imei,
+        string $key,
+        string $protocol,
+        string $supplier,
+        string $model,
+        string $command,
+        array $payload,
+        string $status = '',
+        string $commandId = ''
+    ): void {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        $stmt = $this->pdo->prepare('
+            INSERT INTO device_configurations (
+                imei, config_key, protocol, supplier, model, command, desired_payload,
+                last_status, last_command_id, desired_updated_at, applied_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(imei, config_key) DO UPDATE SET
+                protocol = excluded.protocol,
+                supplier = excluded.supplier,
+                model = excluded.model,
+                command = excluded.command,
+                desired_payload = excluded.desired_payload,
+                last_status = excluded.last_status,
+                last_command_id = excluded.last_command_id,
+                desired_updated_at = excluded.desired_updated_at,
+                applied_at = excluded.applied_at
+        ');
+        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $now]);
+    }
+
+    public function markConfigurationApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
+    {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $stmt = $this->pdo->prepare('
+            UPDATE device_configurations
+            SET last_status = ?, last_command_id = ?, applied_at = ?
+            WHERE imei = ? AND config_key = ?
+        ');
+        $stmt->execute([$status, $commandId, $now, $imei, $key]);
+    }
+
+    public function saveReportedConfiguration(
+        string $imei,
+        string $key,
+        string $protocol,
+        string $supplier,
+        string $model,
+        string $command,
+        array $payload
+    ): void {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        $stmt = $this->pdo->prepare('
+            INSERT INTO device_configurations (
+                imei, config_key, protocol, supplier, model, command, reported_payload, reported_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(imei, config_key) DO UPDATE SET
+                protocol = excluded.protocol,
+                supplier = excluded.supplier,
+                model = excluded.model,
+                command = excluded.command,
+                reported_payload = excluded.reported_payload,
+                reported_at = excluded.reported_at
+        ');
+        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, $now]);
+    }
+
     private function decodeRows(array $rows): array
     {
         return array_map(static function (array $row): array {
@@ -362,5 +459,12 @@ final class DatabaseStore
             $row['payload'] = is_array($decoded) ? $decoded : $row['payload'];
             return $row;
         }, $rows);
+    }
+
+    private function normalizeConfigurationRow(array $row): array
+    {
+        $row['desired_payload'] = json_decode((string)($row['desired_payload'] ?? '{}'), true) ?: [];
+        $row['reported_payload'] = json_decode((string)($row['reported_payload'] ?? '{}'), true) ?: [];
+        return $row;
     }
 }

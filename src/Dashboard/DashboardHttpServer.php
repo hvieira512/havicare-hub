@@ -3,6 +3,7 @@
 namespace Hub\Dashboard;
 
 use Hub\Command\DeviceCommandCatalog;
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Http\OpenApiSpec;
 use Hub\DeviceHubServer;
 use Hub\PendingDownlinkQueue;
@@ -50,6 +51,15 @@ final class DashboardHttpServer
             }
             if ($method === 'GET' && preg_match('#^/api/devices/([^/]+)$#', $path, $matches) === 1) {
                 return $this->json($this->device(rawurldecode($matches[1])));
+            }
+            if ($method === 'GET' && preg_match('#^/api/devices/([^/]+)/configuration$#', $path, $matches) === 1) {
+                return $this->json($this->deviceConfiguration(rawurldecode($matches[1])));
+            }
+            if ($method === 'PUT' && preg_match('#^/api/devices/([^/]+)/configuration$#', $path, $matches) === 1) {
+                return $this->json($this->saveDeviceConfiguration(rawurldecode($matches[1]), (string)$request->getBody()));
+            }
+            if ($method === 'POST' && preg_match('#^/api/devices/([^/]+)/configuration/([^/]+)/apply$#', $path, $matches) === 1) {
+                return $this->json($this->applyDeviceConfiguration(rawurldecode($matches[1]), rawurldecode($matches[2])));
             }
             if ($method === 'POST' && preg_match('#^/api/devices/([^/]+)/commands$#', $path, $matches) === 1) {
                 return $this->json($this->command(rawurldecode($matches[1]), (string)$request->getBody()));
@@ -163,6 +173,10 @@ final class DashboardHttpServer
         return [
             'device' => $device,
             'commands' => DeviceCommandCatalog::commandsForProtocol($protocol),
+            'configuration' => [
+                'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
+                'stored' => count($this->db->configurations($imei)),
+            ],
             'pending' => $this->pending($imei),
             'recent' => [
                 'raw' => $this->store->recent($imei, 'raw'),
@@ -227,6 +241,97 @@ final class DashboardHttpServer
             'queuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->queuedAt),
             'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->expiresAt),
         ], $this->downlinkQueue->pendingFor($imei));
+    }
+
+    private function deviceConfiguration(string $imei): array
+    {
+        $device = $this->store->device($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+
+        return [
+            'device' => array_merge($device, ['imei' => $imei, 'supplier' => $supplier, 'model' => $model, 'protocol' => $protocol]),
+            'catalog' => DeviceConfigurationCatalog::configsForProtocol($protocol),
+            'configurations' => $this->db->configurations($imei),
+        ];
+    }
+
+    private function saveDeviceConfiguration(string $imei, string $body): array
+    {
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded) || !isset($decoded['configs']) || !is_array($decoded['configs'])) {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'configs object is required']];
+        }
+
+        $results = [];
+        foreach ($decoded['configs'] as $key => $payload) {
+            if (!is_string($key) || !is_array($payload)) {
+                return ['error' => ['code' => 'invalid_config', 'message' => 'Each config entry must be an object']];
+            }
+            $result = $this->persistAndApplyConfiguration($imei, $key, $payload);
+            if (isset($result['error'])) {
+                return $result;
+            }
+            $results[] = $result;
+        }
+
+        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->deviceConfiguration($imei)];
+    }
+
+    private function applyDeviceConfiguration(string $imei, string $key): array
+    {
+        foreach ($this->db->configurations($imei) as $row) {
+            if (($row['config_key'] ?? '') === $key) {
+                return $this->persistAndApplyConfiguration($imei, $key, $row['desired_payload'] ?? []);
+            }
+        }
+
+        return ['error' => ['code' => 'config_not_found', 'message' => 'Desired configuration was not found']];
+    }
+
+    private function persistAndApplyConfiguration(string $imei, string $key, array $payload): array
+    {
+        $device = $this->store->device($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+        if ($protocol === '') {
+            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
+        }
+
+        $error = DeviceConfigurationCatalog::validate($protocol, $key, $payload);
+        if ($error !== null) {
+            return ['error' => ['code' => 'invalid_config', 'message' => $error]];
+        }
+
+        $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $key, $payload);
+        $command = $commandPayload['command'];
+        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload']);
+        $id = bin2hex(random_bytes(8));
+        $status = $this->hub->submitDownlink($imei, $bytes);
+        $record = [
+            'status' => $status === 'sent' ? 'waiting' : $status,
+            'imei' => $imei,
+            'protocol' => $protocol,
+            'nativeType' => $command,
+            'label' => (string)(DeviceConfigurationCatalog::configForProtocol($protocol, $key)['label'] ?? $key),
+            'configKey' => $key,
+            'expectedReplyTypes' => DeviceConfigurationCatalog::configForProtocol($protocol, $key)['expectedReplyTypes'] ?? [],
+            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+        ];
+        if ($status === 'sent') {
+            $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+        }
+        if ($status === 'dropped') {
+            $record['error'] = 'delivery_failed';
+        }
+        $this->store->recordCommand($imei, $id, $record);
+        $this->db->saveDesiredConfiguration($imei, $key, $protocol, $supplier, $model, $command, $payload, (string)$record['status'], $id);
+
+        return ['status' => $record['status'], 'key' => $key, 'command' => $command, 'id' => $id];
     }
 
     private function protocolForModel(string $supplier, string $model): string

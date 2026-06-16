@@ -71,6 +71,10 @@ require_once __DIR__ . '/components.php';
                                         <div class="row g-3" id="requestGrid"></div>
                                     </section>
                                     <section>
+                                        <?= section_header('Configuração do dispositivo', 'configurationCount') ?>
+                                        <div id="configurationPanel"></div>
+                                    </section>
+                                    <section>
                                         <?= section_header('Pedidos ao dispositivo') ?>
                                         <div id="downlinkRequests"></div>
                                     </section>

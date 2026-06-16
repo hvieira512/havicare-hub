@@ -2,6 +2,7 @@ export const state = {
     summary: {devices: [], models: [], counts: {}},
     selectedImei: null,
     selectedDetail: null,
+    selectedConfiguration: null,
     modelModalSuppliers: [],
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),

@@ -44,16 +44,21 @@ final class DeviceCommandCatalog
         return null;
     }
 
-    public static function buildDownlink(string $protocol, string $imei, string $command): string
+    public static function buildDownlink(string $protocol, string $imei, string $command, array $payload = []): string
     {
         $entry = self::commandForProtocol($protocol, $command);
+        $configEntry = null;
         if ($entry === null) {
-            throw new \InvalidArgumentException("Unsupported {$protocol} command {$command}");
+            $configEntry = DeviceConfigurationCatalog::configForCommand($protocol, $command);
+            if ($configEntry === null) {
+                throw new \InvalidArgumentException("Unsupported {$protocol} command {$command}");
+            }
+            $entry = $configEntry;
         }
 
         return match ($protocol) {
-            'wonlex-json' => self::buildWonlex($imei, $command),
-            'vivistar-iw' => self::buildVivistar($imei, $command, $entry),
+            'wonlex-json' => self::buildWonlex($imei, $command, $payload),
+            'vivistar-iw' => self::buildVivistar($imei, $command, $entry, $payload),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
@@ -94,14 +99,14 @@ final class DeviceCommandCatalog
         ];
     }
 
-    private static function buildWonlex(string $imei, string $command): string
+    private static function buildWonlex(string $imei, string $command, array $payload = []): string
     {
         $timestamp = (int)round(microtime(true) * 1000);
-        $data = [
+        $data = array_replace([
             'type' => $command,
             'imei' => $imei,
             'timestamp' => $timestamp,
-        ];
+        ], $payload);
         if (in_array($command, ['dnECG', 'dnHRV', 'dnPPG', 'dnRR'], true)) {
             $data += ['frequency' => '200', 'oneTime' => 300, 'collectionLogo' => (string)random_int(10000000, 99999999)];
         }
@@ -119,13 +124,13 @@ final class DeviceCommandCatalog
         ]);
     }
 
-    private static function buildVivistar(string $imei, string $command, array $entry): string
+    private static function buildVivistar(string $imei, string $command, array $entry, array $payload = []): string
     {
         return (new VivistarAdapter())->encodeOutgoing([
             'type' => $command,
             'imei' => $imei,
             'ident' => (string)random_int(100000, 999999),
-            'data' => ['fields' => $entry['data'] ?? []],
+            'data' => ['fields' => $payload['fields'] ?? ($entry['data'] ?? [])],
         ]);
     }
 }

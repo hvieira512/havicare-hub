@@ -133,6 +133,61 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/api/devices/{imei}/configuration' => [
+                    'get' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Get device configuration catalog and state',
+                        'parameters' => [$imeiParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Configuration catalog with desired and reported state',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                            ],
+                        ],
+                    ],
+                    'put' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Save and apply device configuration',
+                        'parameters' => [$imeiParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => [
+                                'type' => 'object',
+                                'properties' => ['configs' => ['type' => 'object']],
+                                'required' => ['configs'],
+                            ]]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Configuration saved and downlinks submitted',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/devices/{imei}/configuration/{key}/apply' => [
+                    'post' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Re-apply one stored device configuration item',
+                        'parameters' => [
+                            $imeiParam,
+                            [
+                                'name' => 'key',
+                                'in' => 'path',
+                                'required' => true,
+                                'schema' => ['type' => 'string'],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Configuration downlink submitted',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/suppliers' => [
                     'get' => [
                         'tags' => ['Suppliers'],
