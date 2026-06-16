@@ -160,8 +160,19 @@ function renderSelection() {
 
 function renderRequestCards(commands, telemetryRows) {
     const telemetry = telemetryRows.map(rowPayload).filter(payload => payload && !payload.debug);
-    els.requestCardCount.textContent = commands.length ? `${commands.length} ações` : '';
-    els.requestGrid.innerHTML = commands.length ? commands.map(command => renderRequestCard(command, telemetry)).join('') : '<div class="col-12"><div class="text-secondary border rounded bg-body-tertiary p-3">Não há pedidos disponíveis para este dispositivo.</div></div>';
+    const commandCards = commands.map(command => renderRequestCard(command, telemetry));
+    const commandFeatures = new Set(commands.map(commandFeature));
+    const passiveCards = latestTelemetryByType(telemetry)
+        .filter(payload => payload.type && !commandFeatures.has(payload.type))
+        .map(renderTelemetryCard);
+    const cards = [...passiveCards, ...commandCards];
+
+    const count = [
+        passiveCards.length ? `${passiveCards.length} dados` : '',
+        commands.length ? `${commands.length} ações` : '',
+    ].filter(Boolean).join(' / ');
+    els.requestCardCount.textContent = count;
+    els.requestGrid.innerHTML = cards.length ? cards.join('') : '<div class="col-12"><div class="text-secondary border rounded bg-body-tertiary p-3">Ainda não há dados nem pedidos disponíveis para este dispositivo.</div></div>';
 }
 
 function renderRequestCard(command, telemetry) {
@@ -188,6 +199,40 @@ function renderRequestCard(command, telemetry) {
         </div>
         </div>
         </div>`;
+}
+
+function renderTelemetryCard(payload) {
+    const type = payload?.type || 'telemetry';
+    const data = payload?.data && typeof payload.data === 'object' ? payload.data : {};
+    const card = uplinkCardContent(type, data, payload || {});
+    const tone = cardTone(type, {});
+
+    return `
+        <div class="col-12 col-md-6 col-xl-4">
+        <div class="card position-relative overflow-hidden h-100 border-${tone.border} ${tone.bg} bg-opacity-10">
+        <div class="position-absolute top-0 end-0 bg-white bg-opacity-75 rounded-bottom-start px-3 py-2">
+        <i class="fa-solid ${esc(card.icon)} fs-4 ${tone.text}"></i>
+        </div>
+        <div class="card-body position-relative">
+        <div class="small text-secondary">${esc(payload.source?.nativeType || 'telemetria')}</div>
+        <h2 class="h6 mb-3">${esc(featureLabel(type))}</h2>
+        <div class="${tone.text} fw-semibold fs-5">${esc(card.value)}</div>
+        ${card.details ? `<div class="small text-secondary mt-1">${card.details}</div>` : ''}
+        <div class="small text-secondary mt-3">${esc(when(payload.occurredAt || payload.recordedAt) || 'hora desconhecida')}</div>
+        </div>
+        </div>
+        </div>`;
+}
+
+function latestTelemetryByType(telemetry) {
+    const seen = new Set();
+    const rows = [];
+    for (const payload of telemetry) {
+        if (!payload?.type || seen.has(payload.type)) continue;
+        seen.add(payload.type);
+        rows.push(payload);
+    }
+    return rows;
 }
 
 function latestResultForCommand(command, telemetry) {
@@ -227,7 +272,10 @@ function cardTone(type, command) {
     if (key === 'blood_oxygen') return {border: 'info', bg: 'bg-info', text: 'text-info'};
     if (key === 'blood_sugar') return {border: 'warning', bg: 'bg-warning', text: 'text-warning'};
     if (key === 'temperature') return {border: 'warning', bg: 'bg-warning', text: 'text-warning'};
+    if (key === 'battery') return {border: 'success', bg: 'bg-success', text: 'text-success'};
+    if (key === 'activity') return {border: 'primary', bg: 'bg-primary', text: 'text-primary'};
     if (key === 'location') return {border: 'success', bg: 'bg-success', text: 'text-success'};
+    if (key === 'heartbeat') return {border: 'info', bg: 'bg-info', text: 'text-info'};
     if (key === 'sleep') return {border: 'primary', bg: 'bg-primary', text: 'text-primary'};
     if (key === 'weather') return {border: 'secondary', bg: 'bg-secondary', text: 'text-secondary'};
     return {border: 'secondary', bg: 'bg-secondary', text: 'text-secondary'};
