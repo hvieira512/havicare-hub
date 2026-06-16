@@ -6,7 +6,14 @@ let els = {};
 let deviceModal = null;
 let supplierModal = null;
 let modelModal = null;
+let modelModalSuppliers = [];
+let modelPreviewObjectUrl = null;
 const loadingCommands = new Set();
+const supplierProtocolDefaults = {
+    Wonlex: 'wonlex-json',
+    Vivistar: 'vivistar-iw',
+    '4P Touch': 'four-p-touch',
+};
 
 const request = (url, options = {}) => fetch(url, Object.assign({headers: {'Content-Type': 'application/json'}}, options)).then(r => r.json());
 const formRequest = (url, formData, options = {}) => fetch(url, Object.assign({method: 'POST', body: formData}, options)).then(r => r.json());
@@ -84,6 +91,37 @@ function modelImageHtml(modelInfo) {
     return modelInfo?.image
         ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(modelInfo.model)}" style="width:40px;height:40px;">`
         : `<i class="fa-solid fa-microchip fa-xl text-secondary" style="width:40px"></i>`;
+}
+
+function modelPreviewHtml(modelInfo, label = 'Modelo') {
+    return modelInfo?.image
+        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(modelInfo.model || label)}">`
+        : `<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
+}
+
+function supplierProtocol(supplier, models = summary.models) {
+    const existing = models.find(m => m.supplier === supplier && m.protocol);
+    return existing?.protocol || supplierProtocolDefaults[supplier] || '';
+}
+
+function suppliersFromModels(models = summary.models) {
+    return [...new Set(models.map(m => m.supplier).filter(Boolean))];
+}
+
+function modelsForSupplier(supplier, models = summary.models) {
+    return models.filter(m => m.supplier === supplier);
+}
+
+function findModelInfo(supplier, model, models = summary.models) {
+    return models.find(m => m.supplier === supplier && m.model === model) || null;
+}
+
+function renderButtonGroup(container, items, selected, action, valueKey = 'value', labelKey = 'label') {
+    container.innerHTML = items.length ? items.map(item => {
+        const value = String(item[valueKey] ?? '');
+        const label = String(item[labelKey] ?? value);
+        return `<button type="button" class="btn btn-sm ${value === selected ? 'btn-primary' : 'btn-outline-primary'}" data-action="${esc(action)}" data-value="${esc(value)}">${esc(label)}</button>`;
+    }).join('') : '<div class="text-secondary border rounded bg-body-tertiary px-3 py-2 small">Sem opções disponíveis</div>';
 }
 
 async function loadSummary() {
@@ -379,18 +417,11 @@ async function sendCommand(command) {
     }
 }
 
-function populateModelOptions() {
-    const suppliers = [...new Set(summary.models.map(m => m.supplier))];
-    const models = [...new Set(summary.models.map(m => m.model))];
-    els.supplierList.innerHTML = suppliers.map(s => `<option value="${esc(s)}">`).join('');
-    els.modelList.innerHTML = models.map(m => `<option value="${esc(m)}">`).join('');
-}
-
 function openAddDevice() {
     els.deviceModalLabel.textContent = 'Adicionar dispositivo';
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
-    populateModelOptions();
+    renderDeviceSelectors();
     deviceModal.show();
 }
 
@@ -398,16 +429,47 @@ function editDevice(imei, supplier, model) {
     els.deviceModalLabel.textContent = 'Editar dispositivo';
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
-    els.deviceSupplier.value = supplier;
-    els.deviceModel.value = model;
-    populateModelOptions();
+    renderDeviceSelectors(supplier, model);
     deviceModal.show();
+}
+
+function renderDeviceSelectors(selectedSupplier = '', selectedModel = '') {
+    const suppliers = suppliersFromModels();
+    const supplier = suppliers.includes(selectedSupplier) ? selectedSupplier : (suppliers[0] || '');
+    const models = modelsForSupplier(supplier);
+    const availableModelNames = models.map(m => m.model);
+    const model = availableModelNames.includes(selectedModel) ? selectedModel : (availableModelNames[0] || '');
+
+    els.deviceForm.dataset.supplier = supplier;
+    els.deviceForm.dataset.model = model;
+
+    renderButtonGroup(
+        els.deviceSupplierButtons,
+        suppliers.map(value => ({value, label: value})),
+        supplier,
+        'selectDeviceSupplier'
+    );
+    renderButtonGroup(
+        els.deviceModelButtons,
+        models.map(m => ({value: m.model, label: m.model})),
+        model,
+        'selectDeviceModel'
+    );
+    updateDevicePreview();
+}
+
+function updateDevicePreview() {
+    const supplier = els.deviceForm.dataset.supplier || '';
+    const model = els.deviceForm.dataset.model || '';
+    const modelInfo = findModelInfo(supplier, model);
+    els.devicePreview.innerHTML = modelPreviewHtml(modelInfo, model || 'Selecione um modelo');
+    els.deviceProtocolText.textContent = modelInfo?.protocol || supplierProtocol(supplier) || '-';
 }
 
 async function saveDevice() {
     const imei = els.deviceImei.value.trim();
-    const supplier = els.deviceSupplier.value.trim();
-    const model = els.deviceModel.value.trim();
+    const supplier = els.deviceForm.dataset.supplier || '';
+    const model = els.deviceForm.dataset.model || '';
     if (!imei || !supplier || !model) { alert('Todos os campos são obrigatórios'); return; }
 
     const originalImei = els.deviceImei.dataset.originalImei;
@@ -476,11 +538,9 @@ async function loadModels() {
         request('/api/models'),
         request('/api/suppliers'),
     ]);
-    els.modelForm.reset();
-    delete els.modelForm.dataset.modelId;
-    els.modelModalLabel.textContent = 'Modelos';
-    els.saveModelBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
-    els.modelSupplier.innerHTML = '<option value="">Fornecedor...</option>' + suppliersData.suppliers.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+    summary.models = modelsData.models;
+    modelModalSuppliers = suppliersData.suppliers;
+    resetModelForm();
     els.modelListBody.innerHTML = modelsData.models.map(m => `
         <tr>
         <td>${modelImageHtml(m)}</td>
@@ -488,27 +548,95 @@ async function loadModels() {
         <td>${esc(m.model)}</td>
         <td>${esc(m.protocol)}</td>
         <td>
-        <button class="btn btn-outline-secondary btn-sm" data-id="${m.id}" data-supplier-id="${m.supplier_id}" data-model="${esc(m.model)}" data-protocol="${esc(m.protocol)}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" data-id="${m.id}" data-supplier-id="${m.supplier_id}" data-supplier="${esc(m.supplier)}" data-model="${esc(m.model)}" data-protocol="${esc(m.protocol)}" data-image="${esc(m.image || '')}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-outline-danger btn-sm" data-id="${m.id}" data-action="deleteModel" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`).join('');
     modelModal.show();
 }
 
-function editModel(id, supplierId, model, protocol) {
+function resetModelForm(selectedSupplierId = '') {
+    if (modelPreviewObjectUrl) {
+        URL.revokeObjectURL(modelPreviewObjectUrl);
+        modelPreviewObjectUrl = null;
+    }
+    els.modelForm.reset();
+    delete els.modelForm.dataset.modelId;
+    delete els.modelForm.dataset.image;
+    els.modelModalLabel.textContent = 'Modelos';
+    els.saveModelBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
+
+    const suppliers = modelModalSuppliers.map(s => ({value: String(s.id), label: s.name}));
+    const supplierId = suppliers.some(s => s.value === String(selectedSupplierId))
+        ? String(selectedSupplierId)
+        : (suppliers[0]?.value || '');
+    const supplier = modelModalSuppliers.find(s => String(s.id) === supplierId);
+    els.modelForm.dataset.supplierId = supplierId;
+    els.modelForm.dataset.supplier = supplier?.name || '';
+
+    renderButtonGroup(els.modelSupplierButtons, suppliers, supplierId, 'selectModelSupplier');
+    updateModelProtocolAndPreview();
+}
+
+function editModel(id, supplierId, supplier, model, protocol, image) {
+    if (modelPreviewObjectUrl) {
+        URL.revokeObjectURL(modelPreviewObjectUrl);
+        modelPreviewObjectUrl = null;
+    }
     els.modelForm.dataset.modelId = String(id);
-    els.modelSupplier.value = String(supplierId);
+    els.modelForm.dataset.supplierId = String(supplierId);
+    els.modelForm.dataset.supplier = supplier;
+    els.modelForm.dataset.image = image || '';
     els.modelModel.value = model;
-    els.modelProtocol.value = protocol;
     els.modelImage.value = '';
     els.modelModalLabel.textContent = 'Editar modelo';
-    els.saveModelBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i>';
+    els.saveModelBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
+    renderButtonGroup(
+        els.modelSupplierButtons,
+        modelModalSuppliers.map(s => ({value: String(s.id), label: s.name})),
+        String(supplierId),
+        'selectModelSupplier'
+    );
+    updateModelProtocolAndPreview(protocol);
+}
+
+function selectModelSupplier(supplierId) {
+    if (modelPreviewObjectUrl) {
+        URL.revokeObjectURL(modelPreviewObjectUrl);
+        modelPreviewObjectUrl = null;
+        els.modelImage.value = '';
+    }
+    const supplier = modelModalSuppliers.find(s => String(s.id) === String(supplierId));
+    els.modelForm.dataset.supplierId = String(supplierId);
+    els.modelForm.dataset.supplier = supplier?.name || '';
+    delete els.modelForm.dataset.image;
+    renderButtonGroup(
+        els.modelSupplierButtons,
+        modelModalSuppliers.map(s => ({value: String(s.id), label: s.name})),
+        String(supplierId),
+        'selectModelSupplier'
+    );
+    updateModelProtocolAndPreview();
+}
+
+function updateModelProtocolAndPreview(protocolOverride = '') {
+    const supplier = els.modelForm.dataset.supplier || '';
+    const model = els.modelModel.value.trim();
+    const protocol = protocolOverride || supplierProtocol(supplier) || '';
+    const image = els.modelForm.dataset.image || '';
+    const modelInfo = image ? {image, model: model || 'Modelo'} : null;
+    els.modelProtocolText.textContent = protocol || '-';
+    if (modelPreviewObjectUrl) {
+        return;
+    }
+    els.modelPreview.innerHTML = modelPreviewHtml(modelInfo, model || supplier || 'Novo modelo');
 }
 
 async function saveModel() {
-    const supplierId = parseInt(els.modelSupplier.value);
+    const supplierId = parseInt(els.modelForm.dataset.supplierId || '0');
+    const supplier = els.modelForm.dataset.supplier || '';
     const model = els.modelModel.value.trim();
-    const protocol = els.modelProtocol.value.trim();
+    const protocol = supplierProtocol(supplier);
     if (!supplierId || !model || !protocol) { alert('Todos os campos são obrigatórios'); return; }
 
     const body = new FormData();
@@ -552,10 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
         deviceImei: document.getElementById('deviceImei'),
-        deviceSupplier: document.getElementById('deviceSupplier'),
-        deviceModel: document.getElementById('deviceModel'),
-        supplierList: document.getElementById('supplierList'),
-        modelList: document.getElementById('modelList'),
+        devicePreview: document.getElementById('devicePreview'),
+        deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
+        deviceModelButtons: document.getElementById('deviceModelButtons'),
+        deviceProtocolText: document.getElementById('deviceProtocolText'),
         saveDeviceBtn: document.getElementById('saveDeviceBtn'),
         manageSuppliersBtn: document.getElementById('manageSuppliersBtn'),
         manageModelsBtn: document.getElementById('manageModelsBtn'),
@@ -565,11 +693,13 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSupplierBtn: document.getElementById('saveSupplierBtn'),
         modelModalLabel: document.getElementById('modelModalLabel'),
         modelForm: document.getElementById('modelForm'),
-        modelSupplier: document.getElementById('modelSupplier'),
+        modelPreview: document.getElementById('modelPreview'),
+        modelSupplierButtons: document.getElementById('modelSupplierButtons'),
         modelModel: document.getElementById('modelModel'),
-        modelProtocol: document.getElementById('modelProtocol'),
+        modelProtocolText: document.getElementById('modelProtocolText'),
         modelImage: document.getElementById('modelImage'),
         modelListBody: document.getElementById('modelListBody'),
+        resetModelBtn: document.getElementById('resetModelBtn'),
         saveModelBtn: document.getElementById('saveModelBtn'),
     };
 
@@ -585,7 +715,41 @@ document.addEventListener('DOMContentLoaded', () => {
     els.supplierForm.addEventListener('submit', e => { e.preventDefault(); saveSupplier(); });
     els.manageModelsBtn.addEventListener('click', loadModels);
     els.saveModelBtn.addEventListener('click', saveModel);
+    els.resetModelBtn.addEventListener('click', () => resetModelForm());
     els.modelForm.addEventListener('submit', e => { e.preventDefault(); saveModel(); });
+    els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
+    els.modelImage.addEventListener('change', () => {
+        if (modelPreviewObjectUrl) {
+            URL.revokeObjectURL(modelPreviewObjectUrl);
+            modelPreviewObjectUrl = null;
+        }
+        const file = els.modelImage.files[0];
+        if (file) {
+            modelPreviewObjectUrl = URL.createObjectURL(file);
+            els.modelPreview.innerHTML = `<img src="${esc(modelPreviewObjectUrl)}" class="object-fit-contain" alt="${esc(els.modelModel.value.trim() || 'Modelo')}">`;
+        } else {
+            updateModelProtocolAndPreview();
+        }
+    });
+
+    els.deviceSupplierButtons.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action="selectDeviceSupplier"]');
+        if (!btn) return;
+        renderDeviceSelectors(btn.dataset.value, '');
+    });
+
+    els.deviceModelButtons.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action="selectDeviceModel"]');
+        if (!btn) return;
+        els.deviceForm.dataset.model = btn.dataset.value;
+        renderDeviceSelectors(els.deviceForm.dataset.supplier, btn.dataset.value);
+    });
+
+    els.modelSupplierButtons.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action="selectModelSupplier"]');
+        if (!btn) return;
+        selectModelSupplier(btn.dataset.value);
+    });
 
     els.deviceList.addEventListener('click', e => {
         const btn = e.target.closest('[data-action]');
@@ -614,7 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
         if (btn.dataset.action === 'editModel') {
-            editModel(parseInt(btn.dataset.id), parseInt(btn.dataset.supplierId), btn.dataset.model, btn.dataset.protocol);
+            editModel(parseInt(btn.dataset.id), parseInt(btn.dataset.supplierId), btn.dataset.supplier, btn.dataset.model, btn.dataset.protocol, btn.dataset.image);
         }
         if (btn.dataset.action === 'deleteModel') {
             deleteModel(parseInt(btn.dataset.id));
