@@ -446,7 +446,7 @@ final class DashboardHttpServer
             return null;
         }
 
-        $source = @\imagecreatefromstring($bytes);
+        $source = @\imagecreatefromstring($this->stripPngColorProfiles($bytes));
         if ($source === false) {
             return ['error' => ['code' => 'invalid_image', 'message' => 'Model image must be a valid image file']];
         }
@@ -473,6 +473,41 @@ final class DashboardHttpServer
         }
 
         return self::MODEL_IMAGE_ROUTE . '/' . $filename;
+    }
+
+    private function stripPngColorProfiles(string $bytes): string
+    {
+        $signature = "\x89PNG\r\n\x1a\n";
+        if (!str_starts_with($bytes, $signature)) {
+            return $bytes;
+        }
+
+        $offset = strlen($signature);
+        $length = strlen($bytes);
+        $clean = $signature;
+        $removed = false;
+
+        while ($offset + 12 <= $length) {
+            $chunkLength = unpack('N', substr($bytes, $offset, 4))[1];
+            $chunkEnd = $offset + 12 + $chunkLength;
+            if ($chunkLength < 0 || $chunkEnd > $length) {
+                return $bytes;
+            }
+
+            $chunkType = substr($bytes, $offset + 4, 4);
+            if ($chunkType !== 'iCCP') {
+                $clean .= substr($bytes, $offset, 12 + $chunkLength);
+            } else {
+                $removed = true;
+            }
+
+            $offset = $chunkEnd;
+            if ($chunkType === 'IEND') {
+                break;
+            }
+        }
+
+        return $removed ? $clean : $bytes;
     }
 
     private function deleteModel(int $id): array
