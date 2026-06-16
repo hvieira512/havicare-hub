@@ -11,13 +11,20 @@ export const formRequest = (url, formData, options = {}) => fetch(
 export const api = {
     summary: () => requestJson('/api/dashboard/summary'),
     device: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`),
-    configuration: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`),
-    saveConfiguration: (imei, configs) => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`, {
+    configuration: (imei, supplier = '', model = '') => {
+        const params = new URLSearchParams();
+        if (supplier) params.set('supplier', supplier);
+        if (model) params.set('model', model);
+        const query = params.toString();
+        return requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration${query ? `?${query}` : ''}`);
+    },
+    saveConfiguration: (imei, configs, supplier = '', model = '') => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`, {
         method: 'PUT',
-        body: JSON.stringify({configs}),
+        body: JSON.stringify({configs, supplier, model}),
     }),
-    applyConfiguration: (imei, key) => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration/${encodeURIComponent(key)}/apply`, {
+    applyConfiguration: (imei, key, supplier = '', model = '') => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration/${encodeURIComponent(key)}/apply`, {
         method: 'POST',
+        body: JSON.stringify({supplier, model}),
     }),
     sendCommand: (imei, command) => requestJson(`/api/devices/${encodeURIComponent(imei)}/commands`, {
         method: 'POST',

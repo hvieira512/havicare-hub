@@ -21,6 +21,11 @@ import {
     supplierProtocolDefaults,
     uplinkCardContent,
 } from './renderers.js';
+import {
+    catalogForProtocol,
+    readConfigPayload,
+    renderDeviceConfigurationRoot,
+} from './config.js';
 
 let els = {};
 let deviceModal = null;
@@ -98,9 +103,8 @@ async function selectDevice(imei) {
 }
 
 async function loadDevice(imei) {
-    const [detail, configuration] = await Promise.all([api.device(imei), api.configuration(imei)]);
+    const detail = await api.device(imei);
     state.selectedDetail = detail;
-    state.selectedConfiguration = configuration;
     renderSelection();
 }
 
@@ -118,7 +122,6 @@ function renderSelection() {
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
     renderRequestCards(state.selectedDetail.commands || []);
-    renderConfigurationPanel();
     renderDownlinkRequests(state.selectedDetail.recent.commands || []);
     renderConnectionLogs(state.selectedDetail.recent.events || []);
 }
@@ -201,73 +204,6 @@ function renderRequestCards(commands) {
         : `<div class="col-12">${emptyPanel('Não há pedidos disponíveis para este dispositivo.')}</div>`;
 }
 
-function renderConfigurationPanel() {
-    const configuration = state.selectedConfiguration;
-    const catalog = configuration?.catalog || [];
-    const rows = configurationRowsByKey(configuration?.configurations || []);
-    els.configurationCount.textContent = catalog.length ? `${catalog.length} opções` : '';
-
-    if (!catalog.length) {
-        els.configurationPanel.innerHTML = emptyPanel('Este modelo não tem configuração suportada.');
-        return;
-    }
-
-    els.configurationPanel.innerHTML = `
-        <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-        <thead>
-        <tr><th>Configuração</th><th>Desejado</th><th>Reportado</th><th>Estado</th><th></th></tr>
-        </thead>
-        <tbody>
-        ${catalog.map(entry => renderConfigurationRow(entry, rows[entry.key] || null)).join('')}
-        </tbody>
-        </table>
-        </div>`;
-}
-
-function configurationRowsByKey(rows) {
-    const indexed = {};
-    for (const row of rows) {
-        indexed[row.config_key] = row;
-    }
-    return indexed;
-}
-
-function renderConfigurationRow(entry, row) {
-    const desired = row?.desired_payload && Object.keys(row.desired_payload).length ? row.desired_payload : defaultConfigPayload(entry);
-    const reported = row?.reported_payload && Object.keys(row.reported_payload).length ? row.reported_payload : null;
-    const status = row?.last_status || '';
-    return `
-        <tr>
-        <td>
-        <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
-        <div class="small text-secondary">${esc(entry.command)} · ${esc(entry.input || 'json')}</div>
-        </td>
-        <td style="min-width:260px">
-        <textarea class="form-control form-control-sm font-monospace" rows="3" data-config-key="${esc(entry.key)}">${esc(JSON.stringify(desired, null, 2))}</textarea>
-        </td>
-        <td class="small text-secondary text-break" style="max-width:240px">${reported ? esc(JSON.stringify(reported)) : '-'}</td>
-        <td>${status ? statusBadge(status) : '<span class="badge text-bg-light">não aplicado</span>'}</td>
-        <td class="text-nowrap">
-        <button class="btn btn-primary btn-sm" data-config-key="${esc(entry.key)}" data-action="saveConfig"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar</button>
-        <button class="btn btn-outline-secondary btn-sm" data-config-key="${esc(entry.key)}" data-action="applyConfig"><i class="fa-solid fa-paper-plane me-1"></i>Reenviar</button>
-        </td>
-        </tr>`;
-}
-
-function defaultConfigPayload(entry) {
-    const field = (entry.fields || [])[0] || 'value';
-    if (entry.input === 'toggle') return {[field]: true};
-    if (entry.input === 'number') return {[field]: 0};
-    if (entry.input === 'intervalToggle') return {enabled: true, intervalMinutes: 60};
-    if (entry.input === 'workingMode') return {mode: 1};
-    if (entry.input === 'bloodPressure') return {systolic: 120, diastolic: 80};
-    if (entry.input === 'list') return {[field]: []};
-    if (entry.input === 'contacts') return {contacts: []};
-    if (entry.input === 'reminders') return {masterEnabled: true, items: []};
-    return {[field]: {}};
-}
-
 function renderDownlinkRequests(commands) {
     els.downlinkRequests.innerHTML = commands.length ? `
         <div class="table-responsive">
@@ -348,16 +284,53 @@ function openAddDevice() {
     els.deviceModalLabel.textContent = 'Adicionar dispositivo';
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
+    state.deviceModal = {
+        mode: 'create',
+        activeTab: 'general',
+        activeCategory: '',
+        imei: '',
+        originalImei: '',
+        supplier: '',
+        model: '',
+        protocol: '',
+        catalog: [],
+        configurations: [],
+        loading: false,
+    };
     renderDeviceSelectors();
+    renderDeviceConfigurationModal();
     deviceModal.show();
 }
 
-function editDevice(imei, supplier, model) {
+async function editDevice(imei, supplier, model) {
     els.deviceModalLabel.textContent = 'Editar dispositivo';
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
+    state.deviceModal = {
+        mode: 'edit',
+        activeTab: 'general',
+        activeCategory: '',
+        imei,
+        originalImei: imei,
+        supplier,
+        model,
+        protocol: '',
+        catalog: [],
+        configurations: [],
+        loading: true,
+    };
     renderDeviceSelectors(supplier, model);
+    renderDeviceConfigurationModal();
     deviceModal.show();
+
+    try {
+        const configuration = await api.configuration(imei, supplier, model);
+        state.deviceModal.configurations = configuration.configurations || [];
+    } finally {
+        state.deviceModal.loading = false;
+        syncDeviceModalContext();
+        renderDeviceConfigurationModal();
+    }
 }
 
 function renderDeviceSelectors(selectedSupplier = '', selectedModel = '') {
@@ -373,6 +346,8 @@ function renderDeviceSelectors(selectedSupplier = '', selectedModel = '') {
     renderButtonGroup(els.deviceSupplierButtons, suppliers.map(value => ({value, label: value})), supplier, 'selectDeviceSupplier');
     renderButtonGroup(els.deviceModelButtons, models.map(entry => ({value: entry.model, label: entry.model})), model, 'selectDeviceModel');
     updateDevicePreview();
+    syncDeviceModalContext();
+    renderDeviceConfigurationModal();
 }
 
 function updateDevicePreview() {
@@ -381,6 +356,47 @@ function updateDevicePreview() {
     const modelInfo = findModelInfo(supplier, model);
     els.devicePreview.innerHTML = modelPreviewHtml(modelInfo, model || 'Selecione um modelo');
     els.deviceProtocolText.textContent = modelInfo?.protocol || supplierProtocol(supplier) || '-';
+    syncDeviceModalContext();
+}
+
+function syncDeviceModalContext() {
+    const supplier = els.deviceForm.dataset.supplier || '';
+    const model = els.deviceForm.dataset.model || '';
+    const protocol = supplierProtocol(supplier, state.summary.models);
+    state.deviceModal.supplier = supplier;
+    state.deviceModal.model = model;
+    state.deviceModal.protocol = protocol;
+    state.deviceModal.catalog = catalogForProtocol(protocol);
+    state.deviceModal.imei = els.deviceImei.value.trim();
+    if (!state.deviceModal.activeCategory || !state.deviceModal.catalog.some(entry => entry.category === state.deviceModal.activeCategory)) {
+        state.deviceModal.activeCategory = state.deviceModal.catalog[0]?.category || '';
+    }
+}
+
+function renderDeviceConfigurationModal() {
+    if (!els.deviceConfigRoot) {
+        return;
+    }
+
+    if (state.deviceModal.loading) {
+        els.deviceConfigRoot.innerHTML = emptyPanel('A carregar configurações...');
+        return;
+    }
+
+    if (!state.deviceModal.imei) {
+        els.deviceConfigRoot.innerHTML = emptyPanel('Preencha o IMEI para gerir as configurações.');
+        return;
+    }
+
+    els.deviceConfigRoot.innerHTML = renderDeviceConfigurationRoot({
+        protocol: state.deviceModal.protocol,
+        catalog: state.deviceModal.catalog,
+        configurations: state.deviceModal.configurations,
+        supplier: state.deviceModal.supplier,
+        model: state.deviceModal.model,
+        activeCategory: state.deviceModal.activeCategory,
+        disabled: !state.deviceModal.protocol,
+    });
 }
 
 async function saveDevice() {
@@ -579,8 +595,6 @@ function cacheElements() {
         telemetryPager: document.getElementById('telemetryPager'),
         requestCardCount: document.getElementById('requestCardCount'),
         requestGrid: document.getElementById('requestGrid'),
-        configurationCount: document.getElementById('configurationCount'),
-        configurationPanel: document.getElementById('configurationPanel'),
         downlinkRequests: document.getElementById('downlinkRequests'),
         connectionLogs: document.getElementById('connectionLogs'),
         addDeviceBtn: document.getElementById('addDeviceBtn'),
@@ -591,6 +605,7 @@ function cacheElements() {
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
         deviceProtocolText: document.getElementById('deviceProtocolText'),
+        deviceConfigRoot: document.getElementById('deviceConfigRoot'),
         saveDeviceBtn: document.getElementById('saveDeviceBtn'),
         manageSuppliersBtn: document.getElementById('manageSuppliersBtn'),
         manageModelsBtn: document.getElementById('manageModelsBtn'),
@@ -615,6 +630,7 @@ function bindEvents() {
     els.addDeviceBtn.addEventListener('click', openAddDevice);
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
+    els.deviceImei.addEventListener('input', handleDeviceImeiInput);
     els.manageSuppliersBtn.addEventListener('click', loadSuppliers);
     els.saveSupplierBtn.addEventListener('click', saveSupplier);
     els.supplierForm.addEventListener('submit', event => { event.preventDefault(); saveSupplier(); });
@@ -625,7 +641,6 @@ function bindEvents() {
     els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
-    els.configurationPanel.addEventListener('click', handleConfigurationClick);
     els.deviceSupplierButtons.addEventListener('click', handleDeviceSupplierClick);
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
@@ -633,6 +648,8 @@ function bindEvents() {
     els.requestGrid.addEventListener('click', handleRequestGridClick);
     els.supplierListBody.addEventListener('click', handleSupplierListClick);
     els.modelListBody.addEventListener('click', handleModelListClick);
+    els.deviceConfigRoot.addEventListener('click', handleDeviceConfigClick);
+    els.deviceConfigRoot.addEventListener('change', handleDeviceConfigChange);
 }
 
 function handleModelImageChange() {
@@ -646,6 +663,11 @@ function handleModelImageChange() {
     }
 }
 
+function handleDeviceImeiInput() {
+    syncDeviceModalContext();
+    renderDeviceConfigurationModal();
+}
+
 function handleTelemetryPagerClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button || !state.selectedDetail) return;
@@ -656,39 +678,54 @@ function handleTelemetryPagerClick(event) {
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
 }
 
-async function handleConfigurationClick(event) {
+function handleDeviceConfigClick(event) {
     const button = event.target.closest('[data-action]');
-    if (!button || !state.selectedImei) return;
+    if (!button) return;
 
-    const key = button.dataset.configKey;
-    if (!key) return;
-
-    if (button.dataset.action === 'saveConfig') {
-        const textarea = Array.from(els.configurationPanel.querySelectorAll('textarea[data-config-key]'))
-            .find(item => item.dataset.configKey === key);
-        let payload = {};
-        try {
-            payload = JSON.parse(textarea?.value || '{}');
-        } catch (e) {
-            alert('JSON inválido para esta configuração');
-            return;
-        }
-        const result = await api.saveConfiguration(state.selectedImei, {[key]: payload});
-        if (result.error) {
-            alert(result.error.message || result.error.code);
-            return;
-        }
-        state.selectedConfiguration = result.configuration;
-        await loadDevice(state.selectedImei);
+    if (button.dataset.configCategory) {
+        state.deviceModal.activeCategory = button.dataset.configCategory;
+        renderDeviceConfigurationModal();
+        return;
     }
 
-    if (button.dataset.action === 'applyConfig') {
-        const result = await api.applyConfiguration(state.selectedImei, key);
-        if (result.error) {
-            alert(result.error.message || result.error.code);
-            return;
-        }
-        await loadDevice(state.selectedImei);
+    const section = button.closest('[data-config-section]');
+    if (!section) return;
+
+    if (button.dataset.action === 'saveConfig') {
+        void saveDeviceConfiguration(section);
+        return;
+    }
+
+    if (button.dataset.action === 'addContactRow') {
+        appendContactRow(section);
+        return;
+    }
+
+    if (button.dataset.action === 'removeContactRow') {
+        removeConfigRow(button.closest('[data-repeat-row="contacts"]'));
+        return;
+    }
+
+    if (button.dataset.action === 'addReminderRow') {
+        appendReminderRow(section);
+        return;
+    }
+
+    if (button.dataset.action === 'removeReminderRow') {
+        removeConfigRow(button.closest('[data-repeat-row="reminders"]'));
+    }
+}
+
+function handleDeviceConfigChange(event) {
+    const select = event.target.closest('[data-working-mode-select]');
+    if (!select) return;
+
+    const section = select.closest('[data-config-section]');
+    if (!section) return;
+
+    const extra = section.querySelector('[data-working-mode-extra]');
+    if (extra) {
+        extra.classList.toggle('d-none', String(select.value) !== '8');
     }
 }
 
@@ -714,7 +751,7 @@ function handleDeviceListClick(event) {
     if (!button) return;
     const {action, imei, supplier, model} = button.dataset;
     if (action === 'select') selectDevice(imei);
-    if (action === 'edit') { event.stopPropagation(); editDevice(imei, supplier, model); }
+    if (action === 'edit') { event.stopPropagation(); void editDevice(imei, supplier, model); }
     if (action === 'delete') { event.stopPropagation(); deleteDevice(imei); }
 }
 
@@ -740,6 +777,124 @@ function handleModelListClick(event) {
     if (button.dataset.action === 'deleteModel') {
         deleteModel(parseInt(button.dataset.id));
     }
+}
+
+async function saveDeviceConfiguration(section) {
+    const key = section.dataset.configKey || '';
+    if (!key) return;
+
+    let payload;
+    try {
+        payload = readConfigPayload(section);
+    } catch (error) {
+        alert(error instanceof Error ? error.message : 'Configuração inválida');
+        return;
+    }
+
+    const result = await api.saveConfiguration(
+        state.deviceModal.imei,
+        {[key]: payload},
+        state.deviceModal.supplier,
+        state.deviceModal.model
+    );
+    if (result.error) {
+        alert(result.error.message || result.error.code);
+        return;
+    }
+
+    state.deviceModal.configurations = result.configuration?.configurations || state.deviceModal.configurations;
+    renderDeviceConfigurationModal();
+}
+
+function appendContactRow(section) {
+    const list = section.querySelector('[data-repeat-limit]');
+    if (!list) return;
+
+    const limit = parseInt(list.dataset.repeatLimit || '10', 10);
+    const rows = list.querySelectorAll('[data-repeat-row="contacts"]');
+    if (rows.length >= limit) return;
+
+    const template = rows[rows.length - 1] || createContactRow();
+    const clone = template.cloneNode(true);
+    clone.querySelectorAll('input').forEach(input => { input.value = ''; });
+    list.appendChild(clone);
+}
+
+function appendReminderRow(section) {
+    const list = section.querySelector('[data-reminders-list]');
+    if (!list) return;
+
+    const clone = createReminderRow();
+    list.appendChild(clone);
+}
+
+function removeConfigRow(row) {
+    if (!row) return;
+    const parent = row.parentElement;
+    if (!parent) return;
+    if (parent.children.length <= 1) {
+        row.querySelectorAll('input, select').forEach(input => {
+            if (input.type === 'checkbox') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+        });
+        return;
+    }
+    row.remove();
+}
+
+function createContactRow() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'row g-2 align-items-end';
+    wrapper.dataset.repeatRow = 'contacts';
+    wrapper.innerHTML = `
+        <div class="col-md-6">
+            <input class="form-control" type="text" placeholder="Nome" data-repeat-field="name">
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex gap-2">
+                <input class="form-control" type="text" placeholder="Telefone" data-repeat-field="phone">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
+            </div>
+        </div>`;
+    return wrapper;
+}
+
+function createReminderRow() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'border rounded p-3 bg-body';
+    wrapper.dataset.repeatRow = 'reminders';
+    wrapper.innerHTML = `
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Hora</label>
+                <input class="form-control" type="text" placeholder="08:30" data-repeat-field="time">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Dias</label>
+                <input class="form-control" type="text" placeholder="1234567" data-repeat-field="days">
+            </div>
+            <div class="col-md-2">
+                <div class="form-check form-switch mt-4">
+                    <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" checked>
+                    <label class="form-check-label">Ativo</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Tipo</label>
+                <select class="form-select" data-repeat-field="type">
+                    <option value="1">Tipo 1</option>
+                    <option value="2">Tipo 2</option>
+                    <option value="3">Tipo 3</option>
+                </select>
+            </div>
+            <div class="col-md-1 text-end">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeReminderRow">-</button>
+            </div>
+        </div>`;
+    return wrapper;
 }
 
 export function startDashboard() {

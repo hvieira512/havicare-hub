@@ -57,35 +57,56 @@ function empty_panel(string $text): string
 function dashboard_device_modal(): string
 {
     $body = <<<HTML
-        <form id="deviceForm" class="row g-4 align-items-stretch">
-            <div class="col-lg-5">
-                {preview}
+        <div class="row g-4">
+            <div class="col-lg-3">
+                <div class="nav nav-pills flex-column gap-2" id="deviceModalNav" role="tablist">
+                    <button class="nav-link active text-start" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
+                        Geral
+                    </button>
+                    <button class="nav-link text-start" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
+                        Configurações
+                    </button>
+                </div>
             </div>
-            <div class="col-lg-7">
-                <div class="vstack gap-3 h-100">
-                    <div>
-                        <label for="deviceImei" class="form-label">IMEI</label>
-                        <input type="text" class="form-control" id="deviceImei" required>
+            <div class="col-lg-9">
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
+                        <form id="deviceForm" class="row g-4 align-items-stretch">
+                            <div class="col-lg-5">
+                                {preview}
+                            </div>
+                            <div class="col-lg-7">
+                                <div class="vstack gap-3 h-100">
+                                    <div>
+                                        <label for="deviceImei" class="form-label">IMEI</label>
+                                        <input type="text" class="form-control" id="deviceImei" required>
+                                    </div>
+                                    <div>
+                                        <div class="form-label">Fornecedor</div>
+                                        <div id="deviceSupplierButtons" class="btn-group flex-wrap" role="group"></div>
+                                    </div>
+                                    <div>
+                                        <div class="form-label">Modelo</div>
+                                        <div id="deviceModelButtons" class="btn-group flex-wrap" role="group"></div>
+                                    </div>
+                                    <div>
+                                        <div class="form-label">Protocolo</div>
+                                        <div id="deviceProtocolText" class="border rounded bg-body-tertiary px-3 py-2 text-secondary">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                    <div>
-                        <div class="form-label">Fornecedor</div>
-                        <div id="deviceSupplierButtons" class="btn-group flex-wrap" role="group"></div>
-                    </div>
-                    <div>
-                        <div class="form-label">Modelo</div>
-                        <div id="deviceModelButtons" class="btn-group flex-wrap" role="group"></div>
-                    </div>
-                    <div>
-                        <div class="form-label">Protocolo</div>
-                        <div id="deviceProtocolText" class="border rounded bg-body-tertiary px-3 py-2 text-secondary">-</div>
+                    <div class="tab-pane fade" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
+                        <div id="deviceConfigRoot"></div>
                     </div>
                 </div>
             </div>
-        </form>
+        </div>
 HTML;
     $body = str_replace('{preview}', showcase_preview('devicePreview'), $body);
     $footer = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>'
-        . '<button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar</button>';
+        . '<button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>';
 
     return modal_shell('deviceModal', 'Dispositivo', $body, $footer, 'modal-xl');
 }

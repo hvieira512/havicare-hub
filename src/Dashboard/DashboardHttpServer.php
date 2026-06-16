@@ -53,13 +53,17 @@ final class DashboardHttpServer
                 return $this->json($this->device(rawurldecode($matches[1])));
             }
             if ($method === 'GET' && preg_match('#^/api/devices/([^/]+)/configuration$#', $path, $matches) === 1) {
-                return $this->json($this->deviceConfiguration(rawurldecode($matches[1])));
+                return $this->json($this->deviceConfiguration(rawurldecode($matches[1]), (string)$request->getUri()->getQuery()));
             }
             if ($method === 'PUT' && preg_match('#^/api/devices/([^/]+)/configuration$#', $path, $matches) === 1) {
                 return $this->json($this->saveDeviceConfiguration(rawurldecode($matches[1]), (string)$request->getBody()));
             }
             if ($method === 'POST' && preg_match('#^/api/devices/([^/]+)/configuration/([^/]+)/apply$#', $path, $matches) === 1) {
-                return $this->json($this->applyDeviceConfiguration(rawurldecode($matches[1]), rawurldecode($matches[2])));
+                return $this->json($this->applyDeviceConfiguration(
+                    rawurldecode($matches[1]),
+                    rawurldecode($matches[2]),
+                    (string)$request->getBody()
+                ));
             }
             if ($method === 'POST' && preg_match('#^/api/devices/([^/]+)/commands$#', $path, $matches) === 1) {
                 return $this->json($this->command(rawurldecode($matches[1]), (string)$request->getBody()));
@@ -243,13 +247,24 @@ final class DashboardHttpServer
         ], $this->downlinkQueue->pendingFor($imei));
     }
 
-    private function deviceConfiguration(string $imei): array
+    private function deviceConfiguration(string $imei, string $query = ''): array
     {
         $device = $this->store->device($imei);
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+        $queryParams = [];
+        if ($query !== '') {
+            parse_str($query, $queryParams);
+        }
+        $supplier = trim((string)($queryParams['supplier'] ?? '')) !== ''
+            ? trim((string)$queryParams['supplier'])
+            : (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $model = trim((string)($queryParams['model'] ?? '')) !== ''
+            ? trim((string)$queryParams['model'])
+            : (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $protocol = $this->protocolForModel($supplier, $model);
+        if ($protocol === '') {
+            $protocol = (string)($device['protocol'] ?? '');
+        }
 
         return [
             'device' => array_merge($device, ['imei' => $imei, 'supplier' => $supplier, 'model' => $model, 'protocol' => $protocol]),
@@ -265,39 +280,74 @@ final class DashboardHttpServer
             return ['error' => ['code' => 'invalid_request', 'message' => 'configs object is required']];
         }
 
+        $supplier = trim((string)($decoded['supplier'] ?? ''));
+        $model = trim((string)($decoded['model'] ?? ''));
         $results = [];
         foreach ($decoded['configs'] as $key => $payload) {
             if (!is_string($key) || !is_array($payload)) {
                 return ['error' => ['code' => 'invalid_config', 'message' => 'Each config entry must be an object']];
             }
-            $result = $this->persistAndApplyConfiguration($imei, $key, $payload);
+            $result = $this->persistAndApplyConfiguration($imei, $key, $payload, $supplier, $model);
             if (isset($result['error'])) {
                 return $result;
             }
             $results[] = $result;
         }
 
-        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->deviceConfiguration($imei)];
+        $query = http_build_query(array_filter([
+            'supplier' => $supplier,
+            'model' => $model,
+        ], static fn (string $value): bool => $value !== ''));
+
+        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->deviceConfiguration($imei, $query)];
     }
 
-    private function applyDeviceConfiguration(string $imei, string $key): array
+    private function applyDeviceConfiguration(string $imei, string $key, string $body = ''): array
     {
+        $supplier = '';
+        $model = '';
+        if ($body !== '') {
+            $decoded = json_decode($body, true);
+            if (is_array($decoded)) {
+                $supplier = trim((string)($decoded['supplier'] ?? ''));
+                $model = trim((string)($decoded['model'] ?? ''));
+            }
+        }
         foreach ($this->db->configurations($imei) as $row) {
             if (($row['config_key'] ?? '') === $key) {
-                return $this->persistAndApplyConfiguration($imei, $key, $row['desired_payload'] ?? []);
+                return $this->persistAndApplyConfiguration(
+                    $imei,
+                    $key,
+                    $row['desired_payload'] ?? [],
+                    $supplier,
+                    $model
+                );
             }
         }
 
         return ['error' => ['code' => 'config_not_found', 'message' => 'Desired configuration was not found']];
     }
 
-    private function persistAndApplyConfiguration(string $imei, string $key, array $payload): array
+    private function persistAndApplyConfiguration(
+        string $imei,
+        string $key,
+        array $payload,
+        string $supplierOverride = '',
+        string $modelOverride = ''
+    ): array
     {
         $device = $this->store->device($imei);
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+        $supplier = trim($supplierOverride) !== ''
+            ? trim($supplierOverride)
+            : (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $model = trim($modelOverride) !== ''
+            ? trim($modelOverride)
+            : (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $protocol = $this->protocolForModel($supplier, $model);
+        if ($protocol === '') {
+            $protocol = (string)($device['protocol'] ?? '');
+        }
         if ($protocol === '') {
             return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
         }

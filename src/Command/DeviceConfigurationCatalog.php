@@ -9,11 +9,29 @@ final class DeviceConfigurationCatalog
      */
     public static function configsForProtocol(string $protocol): array
     {
-        return match ($protocol) {
+        $configs = match ($protocol) {
             'wonlex-json' => self::wonlexConfigs(),
             'vivistar-iw' => self::vivistarConfigs(),
             default => [],
         };
+
+        usort($configs, static function (array $a, array $b): int {
+            $categoryA = (string)($a['category'] ?? '');
+            $categoryB = (string)($b['category'] ?? '');
+            if ($categoryA !== $categoryB) {
+                return strcmp($categoryA, $categoryB);
+            }
+
+            $orderA = (int)($a['order'] ?? 0);
+            $orderB = (int)($b['order'] ?? 0);
+            if ($orderA !== $orderB) {
+                return $orderA <=> $orderB;
+            }
+
+            return strcmp((string)($a['label'] ?? ''), (string)($b['label'] ?? ''));
+        });
+
+        return $configs;
     }
 
     public static function configForProtocol(string $protocol, string $key): ?array
@@ -208,13 +226,13 @@ final class DeviceConfigurationCatalog
     private static function wonlexConfigs(): array
     {
         return [
-            self::entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['upDeviceConfig']),
-            self::entry('deviceMeasuringFrequency', 'deviceMeasuringFrequency', 'Frequência de medições', 'json', ['configs'], ['upDeviceConfig']),
-            self::entry('deviceConfig', 'deviceConfig', 'Configuração do dispositivo', 'json', ['configs'], ['upDeviceConfig']),
-            self::entry('alarmClock', 'alarmClock', 'Alarmes', 'json', ['alarmClock'], ['upDeviceConfig']),
-            self::entry('SOSNumber', 'SOSNumber', 'Números SOS', 'list', ['numbers'], ['upDeviceConfig']),
-            self::entry('dnMedicationPlan', 'dnMedicationPlan', 'Plano de medicação', 'json', ['plans'], ['upDeviceConfig']),
-            self::entry('dnDevBindStatus', 'dnDevBindStatus', 'Estado de vinculação', 'toggle', ['bindStatus']),
+            self::entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['upDeviceConfig'], 'intervals', 10),
+            self::entry('deviceMeasuringFrequency', 'deviceMeasuringFrequency', 'Frequência de medições', 'json', ['configs'], ['upDeviceConfig'], 'intervals', 20),
+            self::entry('deviceConfig', 'deviceConfig', 'Configuração do dispositivo', 'json', ['configs'], ['upDeviceConfig'], 'system', 10),
+            self::entry('alarmClock', 'alarmClock', 'Alarmes', 'json', ['alarmClock'], ['upDeviceConfig'], 'alerts', 10),
+            self::entry('SOSNumber', 'SOSNumber', 'Números SOS', 'list', ['numbers'], ['upDeviceConfig'], 'contacts', 10, 3),
+            self::entry('dnMedicationPlan', 'dnMedicationPlan', 'Plano de medicação', 'json', ['plans'], ['upDeviceConfig'], 'health', 10),
+            self::entry('dnDevBindStatus', 'dnDevBindStatus', 'Estado de vinculação', 'toggle', ['bindStatus'], [], 'system', 20),
         ];
     }
 
@@ -224,21 +242,31 @@ final class DeviceConfigurationCatalog
     private static function vivistarConfigs(): array
     {
         return [
-            self::entry('sosContacts', 'BP12', 'Contactos SOS', 'list', ['numbers'], ['AP12']),
-            self::entry('phonebook', 'BP14', 'Lista telefónica', 'contacts', ['contacts'], ['AP14']),
-            self::entry('workingMode', 'BP33', 'Modo de trabalho', 'workingMode', ['mode'], ['AP33']),
-            self::entry('fallDetection', 'BP76', 'Deteção de queda', 'toggle', ['enabled'], ['AP76']),
-            self::entry('fallSensitivity', 'BP77', 'Sensibilidade de queda', 'number', ['sensitivity'], ['AP77']),
-            self::entry('whitelistSwitch', 'BP84', 'Lista branca', 'toggle', ['enabled'], ['AP84']),
-            self::entry('reminders', 'BP85', 'Lembretes', 'reminders', ['masterEnabled', 'items'], ['AP85']),
-            self::entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86']),
-            self::entry('bloodPressureCalibration', 'BPJZ', 'Calibração da tensão arterial', 'bloodPressure', ['systolic', 'diastolic'], ['APJZ']),
+            self::entry('sosContacts', 'BP12', 'Contactos SOS', 'list', ['numbers'], ['AP12'], 'contacts', 10, 3),
+            self::entry('phonebook', 'BP14', 'Lista telefónica', 'contacts', ['contacts'], ['AP14'], 'contacts', 20, 10),
+            self::entry('workingMode', 'BP33', 'Modo de trabalho', 'workingMode', ['mode'], ['AP33'], 'system', 10),
+            self::entry('fallDetection', 'BP76', 'Deteção de queda', 'toggle', ['enabled'], ['AP76'], 'alerts', 10),
+            self::entry('fallSensitivity', 'BP77', 'Sensibilidade de queda', 'number', ['sensitivity'], ['AP77'], 'alerts', 20),
+            self::entry('whitelistSwitch', 'BP84', 'Lista branca', 'toggle', ['enabled'], ['AP84'], 'system', 20),
+            self::entry('reminders', 'BP85', 'Lembretes', 'reminders', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30),
+            self::entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10),
+            self::entry('bloodPressureCalibration', 'BPJZ', 'Calibração da tensão arterial', 'bloodPressure', ['systolic', 'diastolic'], ['APJZ'], 'health', 20),
         ];
     }
 
-    private static function entry(string $key, string $command, string $label, string $input, array $fields, array $expectedReplyTypes = []): array
+    private static function entry(
+        string $key,
+        string $command,
+        string $label,
+        string $input,
+        array $fields,
+        array $expectedReplyTypes = [],
+        string $category = 'general',
+        int $order = 0,
+        ?int $limit = null
+    ): array
     {
-        return [
+        $entry = [
             'key' => $key,
             'command' => $command,
             'label' => $label,
@@ -247,7 +275,15 @@ final class DeviceConfigurationCatalog
             'input' => $input,
             'fields' => $fields,
             'expectedReplyTypes' => $expectedReplyTypes,
+            'category' => $category,
+            'order' => $order,
         ];
+
+        if ($limit !== null) {
+            $entry['limit'] = $limit;
+        }
+
+        return $entry;
     }
 
     private static function arrayField(mixed $value, string $field): array

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Hub\Command\DeviceConfigurationCatalog;
+
 require_once __DIR__ . '/components.php';
 
 ?>
@@ -71,10 +73,6 @@ require_once __DIR__ . '/components.php';
                                         <div class="row g-3" id="requestGrid"></div>
                                     </section>
                                     <section>
-                                        <?= section_header('Configuração do dispositivo', 'configurationCount') ?>
-                                        <div id="configurationPanel"></div>
-                                    </section>
-                                    <section>
                                         <?= section_header('Pedidos ao dispositivo') ?>
                                         <div id="downlinkRequests"></div>
                                     </section>
@@ -94,6 +92,12 @@ require_once __DIR__ . '/components.php';
         <?= dashboard_supplier_modal() ?>
         <?= dashboard_model_modal() ?>
 
+        <script>
+            window.dashboardConfigurationCatalog = <?= json_encode([
+                'wonlex-json' => DeviceConfigurationCatalog::configsForProtocol('wonlex-json'),
+                'vivistar-iw' => DeviceConfigurationCatalog::configsForProtocol('vivistar-iw'),
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+        </script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script type="module" src="main.js"></script>
     </body>

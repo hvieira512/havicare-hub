@@ -22,6 +22,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertNotNull((new VivistarAdapter())->decodeIncoming(str_replace('BP76', 'AP76', preg_replace('/^IWBP76,\d{15},/', 'IWAP76,', $wire))));
     }
 
+    public function testVivistarSOSContactsMetadataIncludesCategoryAndLimit(): void
+    {
+        $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'sosContacts');
+        self::assertIsArray($config);
+        self::assertSame('contacts', $config['category'] ?? null);
+        self::assertSame(3, $config['limit'] ?? null);
+    }
+
     public function testWonlexLocationIntervalBuildsJsonPayload(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'locationInterval', ['intervalTime' => 300]);

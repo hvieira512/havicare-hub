@@ -137,7 +137,20 @@ class OpenApiSpec
                     'get' => [
                         'tags' => ['Devices'],
                         'summary' => 'Get device configuration catalog and state',
-                        'parameters' => [$imeiParam],
+                        'parameters' => array_merge([$imeiParam], [
+                            [
+                                'name' => 'supplier',
+                                'in' => 'query',
+                                'required' => false,
+                                'schema' => ['type' => 'string'],
+                            ],
+                            [
+                                'name' => 'model',
+                                'in' => 'query',
+                                'required' => false,
+                                'schema' => ['type' => 'string'],
+                            ],
+                        ]),
                         'responses' => [
                             '200' => [
                                 'description' => 'Configuration catalog with desired and reported state',
@@ -153,7 +166,11 @@ class OpenApiSpec
                             'required' => true,
                             'content' => ['application/json' => ['schema' => [
                                 'type' => 'object',
-                                'properties' => ['configs' => ['type' => 'object']],
+                                'properties' => [
+                                    'configs' => ['type' => 'object'],
+                                    'supplier' => ['type' => 'string'],
+                                    'model' => ['type' => 'string'],
+                                ],
                                 'required' => ['configs'],
                             ]]],
                         ],
@@ -178,6 +195,16 @@ class OpenApiSpec
                                 'required' => true,
                                 'schema' => ['type' => 'string'],
                             ],
+                        ],
+                        'requestBody' => [
+                            'required' => false,
+                            'content' => ['application/json' => ['schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'supplier' => ['type' => 'string'],
+                                    'model' => ['type' => 'string'],
+                                ],
+                            ]]],
                         ],
                         'responses' => [
                             '200' => [
