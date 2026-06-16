@@ -301,7 +301,9 @@ final class DashboardHttpServer
 
     private function page(): string
     {
-        return (string) file_get_contents(__DIR__ . '/index.html');
+        ob_start();
+        require __DIR__ . '/index.php';
+        return (string) ob_get_clean();
     }
 
     private function swaggerUi(): string

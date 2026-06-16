@@ -9,6 +9,20 @@ use PHPUnit\Framework\TestCase;
 
 final class DashboardHttpServerTest extends TestCase
 {
+    public function testDashboardPageRendersPhpComponentsRepeatedly(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+        $method = new \ReflectionMethod(DashboardHttpServer::class, 'page');
+
+        $first = $method->invoke($server);
+        $second = $method->invoke($server);
+
+        self::assertIsString($first);
+        self::assertStringContainsString('id="telemetryPager"', $first);
+        self::assertStringContainsString('type="module" src="main.js"', $first);
+        self::assertSame($first, $second);
+    }
+
     public function testModelImageUploadIsCompressedAndStoredAsGeneratedJpeg(): void
     {
         $source = imagecreatetruecolor(900, 300);
