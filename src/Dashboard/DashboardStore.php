@@ -32,6 +32,19 @@ final class DashboardStore
         ]);
     }
 
+    public function deleteDevice(string $imei): void
+    {
+        $this->redis->srem($this->key('devices'), $imei);
+        $this->redis->del([
+            $this->deviceKey($imei),
+            $this->deviceListKey($imei, 'raw'),
+            $this->deviceListKey($imei, 'telemetry'),
+            $this->deviceListKey($imei, 'events'),
+            $this->deviceListKey($imei, 'commands'),
+            $this->commandHashKey($imei),
+        ]);
+    }
+
     public function deviceSeen(string $imei, array $fields): void
     {
         $this->redis->sadd($this->key('devices'), $imei);

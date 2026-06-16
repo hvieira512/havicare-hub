@@ -285,6 +285,7 @@ final class DashboardHttpServer
     private function deleteDevice(string $imei): array
     {
         $this->whitelist->unregister($imei);
+        $this->store->deleteDevice($imei);
         return ['status' => 'ok', 'imei' => $imei];
     }
 
