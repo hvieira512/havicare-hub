@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\WebSocket;
+namespace Hub;
 
 interface ConnectionInterface
 {

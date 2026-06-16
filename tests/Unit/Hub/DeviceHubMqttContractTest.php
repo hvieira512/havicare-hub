@@ -10,8 +10,8 @@ use Hub\PendingDownlink;
 use Hub\PendingDownlinkQueue;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Whitelist;
+use Hub\ConnectionInterface;
 use PHPUnit\Framework\TestCase;
-use Hub\WebSocket\ConnectionInterface;
 
 final class DeviceHubMqttContractTest extends TestCase
 {

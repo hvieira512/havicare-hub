@@ -3,7 +3,6 @@
 namespace Hub;
 
 use Hub\Tcp\TcpDeviceConnection;
-use Hub\WebSocket\ConnectionInterface;
 
 class ConnectionRegistry
 {

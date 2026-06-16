@@ -6,8 +6,8 @@ namespace Tests\Unit\Hub;
 
 use Hub\DeviceEventDecoder;
 use Hub\DeviceSession;
+use Hub\ConnectionInterface;
 use PHPUnit\Framework\TestCase;
-use Hub\WebSocket\ConnectionInterface;
 
 final class DeviceEventDecoderTest extends TestCase
 {

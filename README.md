@@ -9,7 +9,7 @@ The hub accepts devices over their native transport/protocol, identifies them on
 ```text
 Device
   |
-  | TCP / WebSocket using native device protocol
+  | TCP using native device protocol
   v
 Hitecosystem Devices Hub
   - transport ingress
@@ -48,7 +48,6 @@ make test-all
 
 ## Ports
 
-- WebSocket ingress: `WS_HOST` / `WS_PORT`, default `0.0.0.0:8080`
 - TCP ingress: `VIVISTAR_TCP_HOST` / `VIVISTAR_TCP_PORT`, default `0.0.0.0:9000`
 - Dashboard: `DASHBOARD_HOST` / `DASHBOARD_PORT`, default `0.0.0.0:8081`
 - MQTT: `MQTT_HOST` / `MQTT_PORT`, default `127.0.0.1:1883`

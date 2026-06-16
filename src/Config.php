@@ -17,8 +17,6 @@ class Config
         $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
         $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
-        $wsEnabledRaw = strtolower(trim((string)(getenv('WS_ENABLED') ?: 'true')));
-        $wsEnabled = in_array($wsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $dashboardEnabledRaw = strtolower(trim((string)(getenv('DASHBOARD_ENABLED') ?: 'true')));
         $dashboardEnabled = in_array($dashboardEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $downlinkQueueTtlRaw = getenv('DOWNLINK_QUEUE_TTL_SECONDS');
@@ -27,11 +25,6 @@ class Config
             : max(1, (int)$downlinkQueueTtlRaw);
 
         return new self([
-            'websocket' => [
-                'enabled' => $wsEnabled,
-                'host' => getenv('WS_HOST') ?: '0.0.0.0',
-                'port' => (int)(getenv('WS_PORT') ?: 8080),
-            ],
             'vivistar_tcp' => [
                 'host' => getenv('VIVISTAR_TCP_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('VIVISTAR_TCP_PORT') ?: 9000),

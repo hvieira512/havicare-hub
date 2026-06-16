@@ -2,7 +2,7 @@
 
 namespace Hub\Tcp;
 
-use Hub\WebSocket\ConnectionInterface;
+use Hub\ConnectionInterface;
 use React\Socket\ConnectionInterface as ReactConnection;
 
 class TcpDeviceConnection implements ConnectionInterface

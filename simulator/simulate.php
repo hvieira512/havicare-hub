@@ -4,7 +4,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 $args = parseArgs($argv);
-$server = (string)($args['server'] ?? 'ws://127.0.0.1:8080');
+$server = (string)($args['server'] ?? 'tcp://127.0.0.1:9000');
 $model = (string)($args['model'] ?? 'VIVISTAR-CARE');
 $protocolOverride = (string)($args['protocol'] ?? '');
 $imei = (string)($args['imei'] ?? '');
@@ -22,9 +22,7 @@ if (!in_array($protocol, ['vivistar-iw', 'wonlex-json'], true)) {
     fwrite(STDERR, "Unsupported protocol: {$protocol}. Use vivistar-iw or wonlex-json.\n");
     exit(1);
 }
-$client = str_starts_with($server, 'tcp://')
-    ? new TcpTextClient($server)
-    : new WsClient($server);
+$client = new TcpTextClient($server);
 
 sendProtocolPacket($client, $protocol, loginPayload($protocol, $imei, $model));
 $reply = receiveProtocolPacket($client, $protocol, 5);
@@ -207,15 +205,11 @@ function wonlexSampleData(string $type): array
     };
 }
 
-function sendProtocolPacket(WsClient|TcpTextClient $client, string $protocol, array|string $payload): void
+function sendProtocolPacket(TcpTextClient $client, string $protocol, array|string $payload): void
 {
     if ($protocol === 'vivistar-iw') {
         $line = is_string($payload) ? $payload : '';
-        if ($client instanceof WsClient) {
-            $client->send($line, 0x1);
-        } else {
-            $client->send($line);
-        }
+        $client->send($line);
         return;
     }
 
@@ -224,16 +218,12 @@ function sendProtocolPacket(WsClient|TcpTextClient $client, string $protocol, ar
     }
     $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
     $frame = pack('nn', 0xFCAF, strlen($json)) . $json;
-    if ($client instanceof TcpTextClient) {
-        $client->send($frame);
-    } else {
-        $client->send($frame, 0x2);
-    }
+    $client->send($frame);
 }
 
-function receiveProtocolPacket(WsClient|TcpTextClient $client, string $protocol, ?int $timeout = null): ?array
+function receiveProtocolPacket(TcpTextClient $client, string $protocol, ?int $timeout = null): ?array
 {
-    $raw = $protocol === 'wonlex-json' && $client instanceof TcpTextClient
+    $raw = $protocol === 'wonlex-json'
         ? $client->receiveFrame($timeout)
         : $client->receive($timeout);
     if ($raw === null || $raw === '') {
@@ -355,106 +345,5 @@ class TcpTextClient
         }
 
         return $data;
-    }
-}
-
-class WsClient
-{
-    private $socket;
-
-    public function __construct(string $url)
-    {
-        $parts = parse_url($url);
-        $host = $parts['host'] ?? '127.0.0.1';
-        $port = (int)($parts['port'] ?? 8080);
-        $path = $parts['path'] ?? '/';
-        $this->socket = @fsockopen($host, $port, $errno, $errstr, 5);
-        if (!$this->socket) {
-            throw new RuntimeException("Failed to connect: $errstr ($errno)");
-        }
-
-        $key = base64_encode(random_bytes(16));
-        fwrite($this->socket, "GET $path HTTP/1.1\r\nHost: $host:$port\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: $key\r\nSec-WebSocket-Version: 13\r\n\r\n");
-        $response = '';
-        while (!feof($this->socket)) {
-            $line = fgets($this->socket);
-            if ($line === false) {
-                break;
-            }
-            $response .= $line;
-            if ($line === "\r\n") {
-                break;
-            }
-        }
-        if (!str_contains($response, '101 Switching Protocols')) {
-            throw new RuntimeException("Handshake failed:\n$response");
-        }
-    }
-
-    public function send(string $data, int $opcode = 0x2): void
-    {
-        fwrite($this->socket, $this->encodeFrame($data, $opcode));
-    }
-
-    public function receive(?int $timeout = null): ?string
-    {
-        stream_set_timeout($this->socket, $timeout ?? 0);
-        $header = fread($this->socket, 2);
-        if ($header === false || strlen($header) < 2) {
-            return null;
-        }
-
-        $byte1 = ord($header[0]);
-        $byte2 = ord($header[1]);
-        $opcode = $byte1 & 0x0F;
-        if ($opcode === 8) {
-            return null;
-        }
-
-        $masked = ($byte2 & 0x80) !== 0;
-        $len = $byte2 & 0x7F;
-        if ($len === 126) {
-            $len = unpack('n', fread($this->socket, 2))[1];
-        } elseif ($len === 127) {
-            $parts = unpack('N2', fread($this->socket, 8));
-            $len = ($parts[1] << 32) + $parts[2];
-        }
-
-        $mask = $masked ? fread($this->socket, 4) : '';
-        $payload = $len > 0 ? fread($this->socket, $len) : '';
-        if ($payload === false) {
-            return null;
-        }
-
-        if ($masked) {
-            $out = '';
-            for ($i = 0; $i < strlen($payload); $i++) {
-                $out .= chr(ord($payload[$i]) ^ ord($mask[$i % 4]));
-            }
-            return $out;
-        }
-
-        return $payload;
-    }
-
-    private function encodeFrame(string $data, int $opcode): string
-    {
-        $len = strlen($data);
-        $mask = random_bytes(4);
-        $masked = '';
-        for ($i = 0; $i < $len; $i++) {
-            $masked .= chr(ord($data[$i]) ^ ord($mask[$i % 4]));
-        }
-
-        $frame = chr(0x80 | ($opcode & 0x0F));
-        if ($len < 126) {
-            $frame .= chr(0x80 | $len);
-        } elseif ($len < 65536) {
-            $frame .= chr(0x80 | 126) . pack('n', $len);
-        } else {
-            $frame .= chr(0x80 | 127) . pack('NN', 0, $len);
-        }
-
-        return $frame . $mask . $masked;
     }
 }

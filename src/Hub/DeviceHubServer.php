@@ -6,10 +6,8 @@ use Hub\Log\Logger;
 use Hub\Dashboard\DashboardStore;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Whitelist;
-use Hub\WebSocket\ConnectionInterface;
-use Hub\WebSocket\MessageComponentInterface;
 
-class DeviceHubServer implements MessageComponentInterface
+class DeviceHubServer
 {
     private ConnectionRegistry $connections;
     private DeviceAuthorizer $authorizer;

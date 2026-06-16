@@ -2,8 +2,6 @@
 
 namespace Hub;
 
-use Hub\WebSocket\ConnectionInterface;
-
 class DeviceSession
 {
     public function __construct(

@@ -6,8 +6,8 @@ namespace Tests\Unit\Hub;
 
 use Hub\ConnectionRegistry;
 use Hub\DeviceIdentity;
+use Hub\ConnectionInterface;
 use PHPUnit\Framework\TestCase;
-use Hub\WebSocket\ConnectionInterface;
 
 final class ConnectionRegistryTest extends TestCase
 {

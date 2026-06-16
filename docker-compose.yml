@@ -29,7 +29,6 @@ services:
     container_name: hitecosystem-devices-hub
     command: bin/dev.sh php bin/server-hub.php
     ports:
-      - "8080:8080"
       - "8081:8081"
       - "9000:9000"
     volumes:

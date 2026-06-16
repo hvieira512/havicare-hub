@@ -25,6 +25,6 @@ RUN composer install --no-dev --optimize-autoloader
 
 COPY . .
 
-EXPOSE 8080 8081 9000
+EXPOSE 8081 9000
 
 CMD ["php", "bin/server-hub.php"]

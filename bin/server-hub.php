@@ -24,7 +24,6 @@ use React\Http\Middleware\LimitConcurrentRequestsMiddleware;
 use React\Http\Middleware\RequestBodyBufferMiddleware;
 use React\Http\Middleware\RequestBodyParserMiddleware;
 use React\Http\Middleware\StreamingRequestMiddleware;
-use Hub\WebSocket\WebSocketServer;
 use React\EventLoop\Loop;
 use React\Http\HttpServer as ReactHttpServer;
 use React\Socket\SocketServer;
@@ -138,19 +137,12 @@ $downlink = new HubDownlinkSubscriber(
 $connectMqttClient($subscriber, false);
 
 $loop = Loop::get();
-$wsHost = $config['websocket']['host'] ?? '0.0.0.0';
-$wsPort = $config['websocket']['port'] ?? 8080;
 $tcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
 $tcpPort = $config['vivistar_tcp']['port'] ?? 9000;
 $dashboardHost = (string)($dashboardConfig['host'] ?? '0.0.0.0');
 $dashboardPort = (int)($dashboardConfig['port'] ?? 8081);
 
-$wsEnabled = (bool)($config['websocket']['enabled'] ?? true);
 $dashboardEnabled = (bool)($dashboardConfig['enabled'] ?? true);
-
-if ($wsEnabled) {
-    new WebSocketServer($hubServer, "$wsHost:$wsPort", [], $loop);
-}
 
 $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
 
@@ -195,12 +187,6 @@ $loop->addPeriodicTimer(10, function () use ($dashboardStore, $dashboardConfig):
 });
 
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
-
-if ($wsEnabled) {
-    Logger::channel('hub')->info("WebSocket ingress: ws://$wsHost:$wsPort");
-} else {
-    Logger::channel('hub')->info('WebSocket ingress disabled');
-}
 
 if ($dashboardEnabled) {
     Logger::channel('hub')->info("Dashboard: http://$dashboardHost:$dashboardPort/dashboard");
