@@ -290,6 +290,7 @@ function openAddDevice() {
         activeCategory: '',
         imei: '',
         originalImei: '',
+        simNumber: '',
         supplier: '',
         model: '',
         protocol: '',
@@ -312,6 +313,7 @@ async function editDevice(imei, supplier, model) {
         activeCategory: '',
         imei,
         originalImei: imei,
+        simNumber: '',
         supplier,
         model,
         protocol: '',
@@ -324,6 +326,10 @@ async function editDevice(imei, supplier, model) {
     deviceModal.show();
 
     try {
+        const detail = await api.device(imei);
+        const device = detail.device || {};
+        els.deviceSimNumber.value = String(device.simNumber || '');
+        state.deviceModal.simNumber = String(device.simNumber || '');
         const configuration = await api.configuration(imei, supplier, model);
         state.deviceModal.configurations = configuration.configurations || [];
     } finally {
@@ -368,6 +374,7 @@ function syncDeviceModalContext() {
     state.deviceModal.protocol = protocol;
     state.deviceModal.catalog = catalogForProtocol(protocol);
     state.deviceModal.imei = els.deviceImei.value.trim();
+    state.deviceModal.simNumber = els.deviceSimNumber.value.trim();
     if (!state.deviceModal.activeCategory || !state.deviceModal.catalog.some(entry => entry.category === state.deviceModal.activeCategory)) {
         state.deviceModal.activeCategory = state.deviceModal.catalog[0]?.category || '';
     }
@@ -401,11 +408,12 @@ function renderDeviceConfigurationModal() {
 
 async function saveDevice() {
     const imei = els.deviceImei.value.trim();
+    const simNumber = els.deviceSimNumber.value.trim();
     const supplier = els.deviceForm.dataset.supplier || '';
     const model = els.deviceForm.dataset.model || '';
     if (!imei || !supplier || !model) { alert('Todos os campos são obrigatórios'); return; }
 
-    const result = await api.saveDevice(imei, supplier, model, els.deviceImei.dataset.originalImei || '');
+    const result = await api.saveDevice(imei, supplier, model, simNumber, els.deviceImei.dataset.originalImei || '');
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
     deviceModal.hide();
@@ -601,6 +609,7 @@ function cacheElements() {
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
         deviceImei: document.getElementById('deviceImei'),
+        deviceSimNumber: document.getElementById('deviceSimNumber'),
         devicePreview: document.getElementById('devicePreview'),
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
@@ -631,6 +640,7 @@ function bindEvents() {
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
     els.deviceImei.addEventListener('input', handleDeviceImeiInput);
+    els.deviceSimNumber.addEventListener('input', handleDeviceImeiInput);
     els.manageSuppliersBtn.addEventListener('click', loadSuppliers);
     els.saveSupplierBtn.addEventListener('click', saveSupplier);
     els.supplierForm.addEventListener('submit', event => { event.preventDefault(); saveSupplier(); });
@@ -718,15 +728,14 @@ function handleDeviceConfigClick(event) {
 }
 
 function handleDeviceConfigChange(event) {
-    const select = event.target.closest('[data-working-mode-select]');
-    if (!select) return;
-
-    const section = select.closest('[data-config-section]');
+    const section = event.target.closest('[data-config-section]');
     if (!section) return;
 
-    const extra = section.querySelector('[data-working-mode-extra]');
-    if (extra) {
-        extra.classList.toggle('d-none', String(select.value) !== '8');
+    if (event.target.matches('[data-config-field="mode"]')) {
+        const extra = section.querySelector('[data-working-mode-extra]');
+        if (extra) {
+            extra.classList.toggle('d-none', String(event.target.value) !== '8');
+        }
     }
 }
 
@@ -864,32 +873,51 @@ function createContactRow() {
 }
 
 function createReminderRow() {
+    const uid = `reminder-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
     const wrapper = document.createElement('div');
     wrapper.className = 'border rounded p-3 bg-body';
     wrapper.dataset.repeatRow = 'reminders';
     wrapper.innerHTML = `
-        <div class="row g-2 align-items-end">
+        <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label form-label-sm">Hora</label>
-                <input class="form-control" type="text" placeholder="08:30" data-repeat-field="time">
+                <input class="form-control" type="time" data-repeat-field="time">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label form-label-sm d-block">Dias</label>
+                <div class="btn-group flex-wrap w-100" role="group" aria-label="Dias da semana">
+                    <input class="btn-check" type="checkbox" id="${uid}-day-1" data-repeat-field="days" value="1">
+                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-1">Seg</label>
+                    <input class="btn-check" type="checkbox" id="${uid}-day-2" data-repeat-field="days" value="2">
+                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-2">Ter</label>
+                    <input class="btn-check" type="checkbox" id="${uid}-day-3" data-repeat-field="days" value="3">
+                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-3">Qua</label>
+                    <input class="btn-check" type="checkbox" id="${uid}-day-4" data-repeat-field="days" value="4">
+                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-4">Qui</label>
+                    <input class="btn-check" type="checkbox" id="${uid}-day-5" data-repeat-field="days" value="5">
+                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-5">Sex</label>
+                    <input class="btn-check" type="checkbox" id="${uid}-day-6" data-repeat-field="days" value="6">
+                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-6">Sab</label>
+                    <input class="btn-check" type="checkbox" id="${uid}-day-7" data-repeat-field="days" value="7">
+                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-7">Dom</label>
+                </div>
             </div>
             <div class="col-md-3">
-                <label class="form-label form-label-sm">Dias</label>
-                <input class="form-control" type="text" placeholder="1234567" data-repeat-field="days">
+                <label class="form-label form-label-sm d-block">Tipo</label>
+                <div class="btn-group w-100" role="group" aria-label="Tipo de lembrete">
+                    <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-1" data-repeat-field="type" value="1" checked>
+                    <label class="btn btn-outline-primary btn-sm" for="${uid}-type-1"><i class="fa-solid fa-pills me-1"></i>Medicação</label>
+                    <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-2" data-repeat-field="type" value="2">
+                    <label class="btn btn-outline-info btn-sm" for="${uid}-type-2"><i class="fa-solid fa-glass-water me-1"></i>Água</label>
+                    <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-3" data-repeat-field="type" value="3">
+                    <label class="btn btn-outline-warning btn-sm" for="${uid}-type-3"><i class="fa-solid fa-person-walking me-1"></i>Sedentarismo</label>
+                </div>
             </div>
             <div class="col-md-2">
                 <div class="form-check form-switch mt-4">
                     <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" checked>
                     <label class="form-check-label">Ativo</label>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label form-label-sm">Tipo</label>
-                <select class="form-select" data-repeat-field="type">
-                    <option value="1">Tipo 1</option>
-                    <option value="2">Tipo 2</option>
-                    <option value="3">Tipo 3</option>
-                </select>
             </div>
             <div class="col-md-1 text-end">
                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeReminderRow">-</button>

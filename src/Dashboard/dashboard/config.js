@@ -24,6 +24,8 @@ const CATEGORY_ORDER = {
     'wonlex-json': ['intervals', 'contacts', 'measurements', 'alerts', 'health', 'system'],
 };
 
+let uidCounter = 0;
+
 export function catalogForProtocol(protocol) {
     const catalog = globalThis.dashboardConfigurationCatalog?.[protocol] || [];
     return Array.isArray(catalog) ? catalog : [];
@@ -135,6 +137,9 @@ export function renderConfigInputs(entry, desired) {
     if (input === 'toggle') {
         return toggleInput(entry, desired);
     }
+    if (input === 'fallSensitivity') {
+        return fallSensitivityInput(desired);
+    }
     if (input === 'number') {
         return numberInput(entry, desired);
     }
@@ -164,6 +169,9 @@ export function readConfigPayload(section) {
     const input = section.dataset.configInput || 'json';
     if (input === 'toggle') {
         return {enabled: readCheckbox(section, 'enabled')};
+    }
+    if (input === 'fallSensitivity') {
+        return {sensitivity: readNumber(section, 'sensitivity')};
     }
     if (input === 'number') {
         return {[firstFieldName(section)]: readNumber(section, firstFieldName(section))};
@@ -206,6 +214,7 @@ export function defaultConfigPayload(entry) {
     const input = entry.input || 'json';
     const field = entry.fields?.[0] || 'value';
     if (input === 'toggle') return {enabled: true};
+    if (input === 'fallSensitivity') return {sensitivity: 2};
     if (input === 'number') return {[field]: 0};
     if (input === 'intervalToggle') return {enabled: true, intervalMinutes: 60};
     if (input === 'workingMode') return {mode: 1};
@@ -242,6 +251,9 @@ function configHelp(entry) {
     if ((entry.input || '') === 'contacts' && (entry.limit || 0) > 0) {
         return `limite ${entry.limit}`;
     }
+    if ((entry.key || '') === 'whitelistSwitch') {
+        return 'ativa os contactos da lista telefónica do BP14';
+    }
     return '';
 }
 
@@ -259,7 +271,9 @@ function readCheckbox(section, field) {
 }
 
 function readNumber(section, field) {
-    const value = section.querySelector(`[data-config-field="${CSS.escape(field)}"]`)?.value ?? '';
+    const nodes = Array.from(section.querySelectorAll(`[data-config-field="${CSS.escape(field)}"]`));
+    const input = nodes.find(node => 'checked' in node ? node.checked : false) || nodes[0] || null;
+    const value = input?.value ?? '';
     const parsed = parseInt(value, 10);
     return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -280,9 +294,9 @@ function readContacts(section) {
 function readReminders(section) {
     const items = Array.from(section.querySelectorAll('[data-repeat-row="reminders"]')).map(row => ({
         time: String(row.querySelector('[data-repeat-field="time"]')?.value || '').trim(),
-        days: String(row.querySelector('[data-repeat-field="days"]')?.value || '').trim(),
+        days: readReminderDays(row),
         enabled: row.querySelector('[data-repeat-field="enabled"]')?.checked || false,
-        type: readNumberFromRow(row, 'type'),
+        type: readCheckedNumberFromRow(row, 'type', 1),
     })).filter(item => item.time !== '' || item.days !== '');
 
     return {
@@ -295,6 +309,18 @@ function readNumberFromRow(row, field) {
     const value = row.querySelector(`[data-repeat-field="${CSS.escape(field)}"]`)?.value ?? '';
     const parsed = parseInt(value, 10);
     return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function readCheckedNumberFromRow(row, field, fallback = 0) {
+    const value = row.querySelector(`[data-repeat-field="${CSS.escape(field)}"]:checked`)?.value ?? '';
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function readReminderDays(row) {
+    return Array.from(row.querySelectorAll('[data-repeat-field="days"]:checked'))
+        .map(input => String(input.value || ''))
+        .join('');
 }
 
 function jsonInput(desired) {
@@ -328,6 +354,35 @@ function toggleInput(entry, desired) {
         </div>`;
 }
 
+function fallSensitivityInput(desired) {
+    const current = parseInt(String(desired.sensitivity ?? 2), 10) || 2;
+    const options = [
+        {value: 1, label: 'Baixa', icon: 'fa-feather-pointed', className: 'btn-success'},
+        {value: 2, label: 'Normal', icon: 'fa-shield-heart', className: 'btn-warning'},
+        {value: 3, label: 'Alta', icon: 'fa-triangle-exclamation', className: 'btn-danger'},
+    ];
+
+    return `
+        <div>
+            <label class="form-label form-label-sm">Sensibilidade</label>
+            <div class="btn-group w-100" role="group" aria-label="Sensibilidade de queda">
+                ${options.map(option => `
+                    <input
+                        class="btn-check"
+                        type="radio"
+                        name="fallSensitivity"
+                        id="fallSensitivity${option.value}"
+                        data-config-field="sensitivity"
+                        value="${option.value}"
+                        ${option.value === current ? 'checked' : ''}>
+                    <label class="btn ${option.className}" for="fallSensitivity${option.value}">
+                        <i class="fa-solid ${option.icon} me-2"></i>${option.label}
+                    </label>
+                `).join('')}
+            </div>
+        </div>`;
+}
+
 function numberInput(entry, desired) {
     const field = entry.fields?.[0] || 'value';
     const value = desired[field] ?? 0;
@@ -358,13 +413,38 @@ function workingModeInput(desired) {
     const mode = parseInt(String(desired.mode ?? 1), 10) || 1;
     const intervalSeconds = desired.intervalSeconds ?? 60;
     const gpsEnabled = boolValue(desired.gpsEnabled, true);
+    const options = [
+        {value: 1, title: 'Normal', description: 'Envia localização a cada 15 minutos com Wi-Fi e LBS.', icon: 'fa-clock', className: 'btn-outline-primary'},
+        {value: 2, title: 'Poupança', description: 'Envia localização a cada 60 minutos com Wi-Fi e LBS.', icon: 'fa-battery-half', className: 'btn-outline-success'},
+        {value: 3, title: 'Emergência', description: 'Envia localização a cada 1 minuto com GPS, Wi-Fi e LBS.', icon: 'fa-bolt', className: 'btn-outline-danger'},
+        {value: 8, title: 'Personalizado', description: 'Permite definir intervalo em segundos e ligar ou desligar GPS.', icon: 'fa-sliders', className: 'btn-outline-dark'},
+    ];
+
     return `
         <div class="vstack gap-3" data-working-mode-root>
             <div>
                 <label class="form-label form-label-sm">Modo</label>
-                <select class="form-select" data-config-field="mode" data-working-mode-select>
-                    ${[1, 2, 3, 8].map(value => `<option value="${value}" ${value === mode ? 'selected' : ''}>Modo ${value}</option>`).join('')}
-                </select>
+                <div class="row g-2" data-working-mode-select>
+                    ${options.map(option => `
+                        <div class="col-12 col-md-6">
+                            <input
+                                class="btn-check"
+                                type="radio"
+                                name="workingMode"
+                                id="workingMode${option.value}"
+                                data-config-field="mode"
+                                value="${option.value}"
+                                ${option.value === mode ? 'checked' : ''}>
+                            <label class="btn ${option.className} w-100 h-100 text-start d-flex gap-3 align-items-start p-3" for="workingMode${option.value}">
+                                <i class="fa-solid ${option.icon} mt-1"></i>
+                                <span>
+                                    <span class="d-block fw-semibold">${option.title}</span>
+                                    <span class="d-block small">${option.description}</span>
+                                </span>
+                            </label>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
             <div class="${mode === 8 ? '' : 'd-none'}" data-working-mode-extra>
                 <div class="row g-3">
@@ -450,8 +530,9 @@ function remindersInput(desired) {
         <div class="vstack gap-3">
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" role="switch" data-config-field="masterEnabled" ${boolValue(desired.masterEnabled, true) ? 'checked' : ''}>
-                <label class="form-check-label">Ativar lembretes</label>
+                <label class="form-check-label">Ativar todos os alarmes</label>
             </div>
+            <div class="small text-secondary">Cada alarme suporta hora, dias da semana, estado e tipo: medicação, água ou sedentarismo.</div>
             <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addReminderRow">Adicionar lembrete</button>
             </div>
@@ -462,28 +543,68 @@ function remindersInput(desired) {
 }
 
 function reminderRow(item = {}) {
+    const normalizedDays = String(item.days || '').replace(/[^1-7]/g, '');
+    const reminderType = parseInt(String(item.type ?? 1), 10) || 1;
+    const rowId = nextUid('reminder');
+    const dayButtons = [
+        {value: '1', label: 'Seg'},
+        {value: '2', label: 'Ter'},
+        {value: '3', label: 'Qua'},
+        {value: '4', label: 'Qui'},
+        {value: '5', label: 'Sex'},
+        {value: '6', label: 'Sab'},
+        {value: '7', label: 'Dom'},
+    ];
+    const typeButtons = [
+        {value: 1, label: 'Medicação', icon: 'fa-pills', className: 'btn-outline-primary'},
+        {value: 2, label: 'Água', icon: 'fa-glass-water', className: 'btn-outline-info'},
+        {value: 3, label: 'Sedentarismo', icon: 'fa-person-walking', className: 'btn-outline-warning'},
+    ];
     return `
         <div class="border rounded p-3 bg-body" data-repeat-row="reminders">
-            <div class="row g-2 align-items-end">
+            <div class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="text" placeholder="08:30" data-repeat-field="time" value="${esc(String(item.time || ''))}">
+                    <input class="form-control" type="time" data-repeat-field="time" value="${esc(formatReminderTime(item.time))}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm d-block">Dias</label>
+                    <div class="btn-group flex-wrap w-100" role="group" aria-label="Dias da semana">
+                        ${dayButtons.map(day => `
+                            <input
+                                class="btn-check"
+                                type="checkbox"
+                                id="${rowId}-day-${day.value}"
+                                data-repeat-field="days"
+                                value="${day.value}"
+                                ${normalizedDays.includes(day.value) ? 'checked' : ''}>
+                            <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
+                        `).join('')}
+                    </div>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label form-label-sm">Dias</label>
-                    <input class="form-control" type="text" placeholder="1234567" data-repeat-field="days" value="${esc(String(item.days || ''))}">
+                    <label class="form-label form-label-sm d-block">Tipo</label>
+                    <div class="btn-group w-100" role="group" aria-label="Tipo de lembrete">
+                        ${typeButtons.map(option => `
+                            <input
+                                class="btn-check"
+                                type="radio"
+                                name="${rowId}-type"
+                                id="${rowId}-type-${option.value}"
+                                data-repeat-field="type"
+                                value="${option.value}"
+                                ${reminderType === option.value ? 'checked' : ''}>
+                            <label class="btn ${option.className} btn-sm" for="${rowId}-type-${option.value}">
+                                <i class="fa-solid ${option.icon} me-1"></i>${option.label}
+                            </label>
+                        `).join('')}
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <div class="form-check form-switch mt-4">
                         <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" ${boolValue(item.enabled, true) ? 'checked' : ''}>
                         <label class="form-check-label">Ativo</label>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label form-label-sm">Tipo</label>
-                    <select class="form-select" data-repeat-field="type">
-                        ${[1, 2, 3].map(value => `<option value="${value}" ${parseInt(String(item.type ?? 1), 10) === value ? 'selected' : ''}>Tipo ${value}</option>`).join('')}
-                    </select>
                 </div>
                 <div class="col-md-1 text-end">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeReminderRow">-</button>
@@ -500,4 +621,17 @@ function boolValue(value, fallback = false) {
         return false;
     }
     return fallback;
+}
+
+function formatReminderTime(value) {
+    const digits = String(value || '').replace(/[^0-9]/g, '');
+    if (digits.length !== 4) {
+        return '';
+    }
+    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+}
+
+function nextUid(prefix) {
+    uidCounter += 1;
+    return `${prefix}-${uidCounter}`;
 }

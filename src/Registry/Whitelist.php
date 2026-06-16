@@ -6,7 +6,7 @@ use Hub\Dashboard\DatabaseStore;
 
 class Whitelist
 {
-    /** @var array<string, array{supplier: string, model: string}> */
+    /** @var array<string, array{supplier: string, model: string, simNumber: string}> */
     private array $devices;
     private string $filePath;
     private ?DatabaseStore $db;
@@ -26,8 +26,9 @@ class Whitelist
                 $imei = (string)$row['imei'];
                 $supplier = (string)$row['supplier'];
                 $model = (string)$row['model'];
+                $simNumber = (string)($row['sim_number'] ?? '');
                 if ($imei !== '' && $supplier !== '' && $model !== '') {
-                    $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
+                    $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
                 }
             }
             return;
@@ -45,10 +46,11 @@ class Whitelist
             $imei = trim((string)$imei);
             $supplier = trim((string)($value['supplier'] ?? ''));
             $model = trim((string)($value['model'] ?? ''));
+            $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
             if ($imei === '' || $supplier === '' || $model === '') {
                 continue;
             }
-            $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
+            $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
         }
     }
 
@@ -77,10 +79,10 @@ class Whitelist
         return $this->devices;
     }
 
-    public function register(string $imei, string $supplier, string $model): void
+    public function register(string $imei, string $supplier, string $model, string $simNumber = ''): void
     {
-        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
-        $this->db?->whitelistRegister($imei, $supplier, $model);
+        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
+        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber);
         $this->saveFile();
     }
 
@@ -91,13 +93,13 @@ class Whitelist
         $this->saveFile();
     }
 
-    public function update(string $imei, string $supplier, string $model): bool
+    public function update(string $imei, string $supplier, string $model, string $simNumber = ''): bool
     {
         if (!isset($this->devices[$imei])) {
             return false;
         }
-        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model];
-        $this->db?->whitelistRegister($imei, $supplier, $model);
+        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
+        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber);
         $this->saveFile();
         return true;
     }

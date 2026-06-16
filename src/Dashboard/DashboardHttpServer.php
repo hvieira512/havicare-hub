@@ -29,7 +29,12 @@ final class DashboardHttpServer
         private string $password,
     ) {
         foreach ($this->whitelist->all() as $imei => $metadata) {
-            $this->store->registerDevice((string)$imei, (string)($metadata['supplier'] ?? ''), (string)($metadata['model'] ?? ''));
+            $this->store->registerDevice(
+                (string)$imei,
+                (string)($metadata['supplier'] ?? ''),
+                (string)($metadata['model'] ?? ''),
+                (string)($metadata['simNumber'] ?? '')
+            );
         }
     }
 
@@ -409,11 +414,12 @@ final class DashboardHttpServer
         $imei = trim((string)($decoded['imei'] ?? ''));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
+        $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         if ($imei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
-        $this->whitelist->register($imei, $supplier, $model);
-        $this->store->registerDevice($imei, $supplier, $model);
+        $this->whitelist->register($imei, $supplier, $model, $simNumber);
+        $this->store->registerDevice($imei, $supplier, $model, $simNumber);
         return ['status' => 'ok', 'imei' => $imei];
     }
 
@@ -426,14 +432,15 @@ final class DashboardHttpServer
         $newImei = trim((string)($decoded['imei'] ?? $imei));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
+        $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         if ($newImei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
         }
-        $this->whitelist->register($newImei, $supplier, $model);
-        $this->store->registerDevice($newImei, $supplier, $model);
+        $this->whitelist->register($newImei, $supplier, $model, $simNumber);
+        $this->store->registerDevice($newImei, $supplier, $model, $simNumber);
         return ['status' => 'ok', 'imei' => $newImei];
     }
 

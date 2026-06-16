@@ -111,4 +111,21 @@ final class DatabaseStoreTest extends TestCase
             unlink($path);
         }
     }
+
+    public function testWhitelistStoresSimNumber(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'hub-dashboard-');
+        self::assertIsString($path);
+
+        try {
+            $store = new DatabaseStore($path);
+            $store->whitelistRegister('861265061009822', 'Vivistar', 'L08 Pro', '351912345678901');
+
+            $row = $store->whitelistGet('861265061009822');
+            self::assertIsArray($row);
+            self::assertSame('351912345678901', $row['sim_number'] ?? null);
+        } finally {
+            unlink($path);
+        }
+    }
 }

@@ -61,10 +61,12 @@ final class DatabaseStore
                 imei TEXT PRIMARY KEY,
                 supplier TEXT NOT NULL,
                 model TEXT NOT NULL,
+                sim_number TEXT NOT NULL DEFAULT "",
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         ');
+        $this->ensureColumn('whitelist', 'sim_number', 'TEXT NOT NULL DEFAULT ""');
         $this->pdo->exec('
             CREATE TABLE IF NOT EXISTS telemetry (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -301,7 +303,7 @@ final class DatabaseStore
     public function whitelistAll(): array
     {
         return $this->pdo
-            ->query('SELECT imei, supplier, model FROM whitelist ORDER BY imei')
+            ->query('SELECT imei, supplier, model, sim_number FROM whitelist ORDER BY imei')
             ->fetchAll();
     }
 
@@ -312,18 +314,32 @@ final class DatabaseStore
         return $stmt->fetch() ?: null;
     }
 
-    public function whitelistRegister(string $imei, string $supplier, string $model): void
+    public function whitelistRegister(string $imei, string $supplier, string $model, string $simNumber = ''): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $stmt = $this->pdo->prepare('
-            INSERT INTO whitelist (imei, supplier, model, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO whitelist (imei, supplier, model, sim_number, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(imei) DO UPDATE SET
                 supplier = excluded.supplier,
                 model = excluded.model,
+                sim_number = excluded.sim_number,
                 updated_at = ?
         ');
-        $stmt->execute([$imei, $supplier, $model, $now, $now, $now]);
+        $stmt->execute([$imei, $supplier, $model, $simNumber, $now, $now, $now]);
+    }
+
+    private function ensureColumn(string $table, string $column, string $definition): void
+    {
+        $stmt = $this->pdo->query(sprintf('PRAGMA table_info(%s)', $table));
+        $columns = $stmt ? $stmt->fetchAll() : [];
+        foreach ($columns as $info) {
+            if (($info['name'] ?? null) === $column) {
+                return;
+            }
+        }
+
+        $this->pdo->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
     }
 
     public function whitelistUnregister(string $imei): void

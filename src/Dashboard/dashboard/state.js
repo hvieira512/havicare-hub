@@ -8,6 +8,7 @@ export const state = {
         activeCategory: '',
         imei: '',
         originalImei: '',
+        simNumber: '',
         supplier: '',
         model: '',
         protocol: '',

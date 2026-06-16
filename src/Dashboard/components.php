@@ -83,6 +83,10 @@ function dashboard_device_modal(): string
                                         <input type="text" class="form-control" id="deviceImei" required>
                                     </div>
                                     <div>
+                                        <label for="deviceSimNumber" class="form-label">Número do SIM</label>
+                                        <input type="text" class="form-control" id="deviceSimNumber" placeholder="3519...">
+                                    </div>
+                                    <div>
                                         <div class="form-label">Fornecedor</div>
                                         <div id="deviceSupplierButtons" class="btn-group flex-wrap" role="group"></div>
                                     </div>
