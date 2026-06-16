@@ -679,10 +679,11 @@ function handleTelemetryPagerClick(event) {
 }
 
 function handleDeviceConfigClick(event) {
-    const button = event.target.closest('[data-action]');
+    const button = event.target.closest('[data-config-category], [data-action]');
     if (!button) return;
 
     if (button.dataset.configCategory) {
+        event.preventDefault();
         state.deviceModal.activeCategory = button.dataset.configCategory;
         renderDeviceConfigurationModal();
         return;
