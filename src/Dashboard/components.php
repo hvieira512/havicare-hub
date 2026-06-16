@@ -57,9 +57,10 @@ function empty_panel(string $text): string
 function dashboard_device_modal(): string
 {
     $body = <<<HTML
-        <div class="row g-4">
-            <div class="col-lg-3">
-                <div class="nav nav-pills flex-column gap-2" id="deviceModalNav" role="tablist">
+        <div class="device-modal-shell">
+            <div class="row g-4">
+            <div class="col-lg-3 d-flex align-items-center justify-content-center justify-content-lg-center">
+                <div class="nav nav-pills flex-row flex-lg-column justify-content-center justify-content-lg-start gap-2 w-100" id="deviceModalNav" role="tablist">
                     <button class="nav-link active text-start" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
                         Geral
                     </button>
@@ -102,13 +103,14 @@ function dashboard_device_modal(): string
                     </div>
                 </div>
             </div>
+            </div>
         </div>
 HTML;
     $body = str_replace('{preview}', showcase_preview('devicePreview'), $body);
     $footer = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>'
         . '<button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>';
 
-    return modal_shell('deviceModal', 'Dispositivo', $body, $footer, 'modal-xl');
+    return modal_shell('deviceModal', 'Dispositivo', $body, $footer, 'modal-xl modal-fullscreen-sm-down');
 }
 
 function dashboard_supplier_modal(): string

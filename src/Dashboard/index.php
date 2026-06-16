@@ -23,6 +23,17 @@ require_once __DIR__ . '/components.php';
                 max-width: 100%;
                 max-height: 260px;
             }
+            .device-modal-shell {
+                padding: 1rem;
+            }
+            @media (max-width: 575.98px) {
+                .device-modal-shell {
+                    padding: 0;
+                }
+                .device-modal-shell .nav-pills {
+                    width: 100%;
+                }
+            }
         </style>
     </head>
     <body class="bg-body-tertiary">
