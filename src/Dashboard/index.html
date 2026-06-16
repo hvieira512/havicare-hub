@@ -56,7 +56,14 @@
                                 <div class="vstack gap-4">
                                     <section>
                                         <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h2 class="h6 mb-0">Dados do dispositivo e pedidos</h2>
+                                            <h2 class="h6 mb-0">Eventos recebidos</h2>
+                                            <span class="small text-secondary" id="telemetryCount"></span>
+                                        </div>
+                                        <div id="telemetryList"></div>
+                                    </section>
+                                    <section>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h2 class="h6 mb-0">Pedir dados ao dispositivo</h2>
                                             <span class="small text-secondary" id="requestCardCount"></span>
                                         </div>
                                         <div class="row g-3" id="requestGrid"></div>
@@ -64,6 +71,10 @@
                                     <section>
                                         <h2 class="h6 mb-2">Pedidos ao dispositivo</h2>
                                         <div id="downlinkRequests"></div>
+                                    </section>
+                                    <section>
+                                        <h2 class="h6 mb-2">Ligações ao servidor</h2>
+                                        <div id="connectionLogs"></div>
                                     </section>
                                 </div>
                             </div>
@@ -74,7 +85,7 @@
         </main>
 
         <div class="modal fade" id="deviceModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="deviceModalLabel">Dispositivo</h5>
@@ -116,7 +127,7 @@
         </div>
 
         <div class="modal fade" id="supplierModal" tabindex="-1">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Fornecedores</h5>
@@ -144,7 +155,7 @@
         </div>
 
         <div class="modal fade" id="modelModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modelModalLabel">Modelos</h5>

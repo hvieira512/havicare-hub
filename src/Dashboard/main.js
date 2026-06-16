@@ -156,9 +156,8 @@ function renderSummary() {
                 <div class="flex-grow-1 min-width-0">
                 <div class="d-flex justify-content-between align-items-center">
                 <strong class="small text-break">${esc(d.imei)}</strong>
-                <span class="badge ${d.online ? 'text-bg-success' : 'text-bg-secondary'}">${d.online ? 'ligado' : 'desligado'}</span>
                 </div>
-                <div class="small text-secondary">visto ${ago(d.lastSeenAt)}</div>
+                <div class="small text-secondary d-flex align-items-center gap-1"><span class="rounded-circle ${d.online ? 'bg-success' : 'bg-danger'} d-inline-block" style="width:.55rem;height:.55rem;"></span><span>visto ${ago(d.lastSeenAt)}</span></div>
                 </div>
                 <div class="btn-group btn-group-sm" style="flex-shrink:0">
                 <button class="btn btn-outline-secondary" data-imei="${esc(d.imei)}" data-supplier="${esc(d.supplier)}" data-model="${esc(d.model)}" data-action="edit" title="Editar"><i class="fa-solid fa-pen"></i></button>
@@ -192,32 +191,83 @@ function renderSelection() {
     els.detailMeta.textContent = `${d.supplier ?? ''} ${d.model ?? ''} · ${d.protocol ?? 'desconhecido'} · visto ${ago(d.lastSeenAt)}`;
     els.detailBadge.className = `badge ${d.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = d.online ? 'ligado' : 'desligado';
-    renderRequestCards(selectedDetail.commands || [], selectedDetail.recent.telemetry || []);
+    renderTelemetryList(selectedDetail.recent.telemetry || []);
+    renderRequestCards(selectedDetail.commands || []);
     renderDownlinkRequests(selectedDetail.recent.commands || []);
+    renderConnectionLogs(selectedDetail.recent.events || []);
 }
 
-function renderRequestCards(commands, telemetryRows) {
-    const telemetry = telemetryRows.map(rowPayload).filter(payload => payload && !payload.debug);
-    const commandCards = commands.map(command => renderRequestCard(command, telemetry));
-    const commandFeatures = new Set(commands.map(commandFeature));
-    const passiveCards = latestTelemetryByType(telemetry)
-        .filter(payload => payload.type && !commandFeatures.has(payload.type))
-        .map(renderTelemetryCard);
-    const cards = [...passiveCards, ...commandCards];
-
-    const count = [
-        passiveCards.length ? `${passiveCards.length} dados` : '',
-        commands.length ? `${commands.length} ações` : '',
-    ].filter(Boolean).join(' / ');
-    els.requestCardCount.textContent = count;
-    els.requestGrid.innerHTML = cards.length ? cards.join('') : '<div class="col-12"><div class="text-secondary border rounded bg-body-tertiary p-3">Ainda não há dados nem pedidos disponíveis para este dispositivo.</div></div>';
+function renderTelemetryList(telemetryRows) {
+    const telemetry = telemetryRows
+        .map(rowPayload)
+        .filter(payload => payload && !payload.debug)
+        .sort((a, b) => eventTime(b) - eventTime(a));
+    els.telemetryCount.textContent = telemetry.length ? `${telemetry.length} eventos` : '';
+    els.telemetryList.innerHTML = telemetry.length ? `
+        <div class="list-group">
+        ${telemetry.map(renderTelemetryRow).join('')}
+        </div>` : '<div class="text-secondary border rounded bg-body-tertiary p-3">Ainda não há eventos recebidos.</div>';
 }
 
-function renderRequestCard(command, telemetry) {
-    const result = latestResultForCommand(command, telemetry);
-    const type = result?.type || commandFeature(command);
-    const data = result?.data && typeof result.data === 'object' ? result.data : {};
-    const card = uplinkCardContent(type, data, result || {});
+function renderTelemetryRow(payload) {
+    const type = payload?.type || 'telemetry';
+    const data = payload?.data && typeof payload.data === 'object' ? payload.data : {};
+    const card = uplinkCardContent(type, data, payload || {});
+    const details = telemetryDetails(data, payload);
+
+    return `
+        <div class="list-group-item">
+        <div class="d-flex justify-content-between gap-3">
+        <div class="min-width-0">
+        <div class="fw-semibold"><i class="fa-solid ${esc(card.icon)} text-secondary me-2"></i>${esc(featureLabel(type))}</div>
+        <div class="small text-secondary">${esc(payload.source?.nativeType || 'telemetria')}${payload.source?.protocol ? ` · ${esc(payload.source.protocol)}` : ''}</div>
+        </div>
+        <div class="text-end flex-shrink-0">
+        <div class="fw-semibold">${esc(card.value)}</div>
+        <div class="small text-secondary">${esc(when(payload.occurredAt || payload.recordedAt) || 'hora desconhecida')}</div>
+        </div>
+        </div>
+        ${details ? `<div class="small text-secondary mt-2 text-break">${details}</div>` : ''}
+        </div>`;
+}
+
+function telemetryDetails(data, payload) {
+    const details = [];
+    if (data && typeof data === 'object') {
+        for (const [key, value] of Object.entries(data)) {
+            if (value === undefined || value === null || value === '') continue;
+            details.push(`${fieldLabel(key)}: ${esc(displayValue(value))}`);
+        }
+    }
+    if (payload?.extra && typeof payload.extra === 'object') {
+        const extra = Object.entries(payload.extra)
+            .filter(([, value]) => value !== undefined && value !== null && value !== '')
+            .slice(0, 6)
+            .map(([key, value]) => `${fieldLabel(key)}: ${esc(displayValue(value))}`);
+        details.push(...extra);
+    }
+    return details.join(' · ');
+}
+
+function displayValue(value) {
+    if (Array.isArray(value)) return String(value.length);
+    if (value && typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+}
+
+function eventTime(payload) {
+    const time = Date.parse(payload?.occurredAt || payload?.recordedAt || '');
+    return Number.isNaN(time) ? 0 : time;
+}
+
+function renderRequestCards(commands) {
+    els.requestCardCount.textContent = commands.length ? `${commands.length} ações` : '';
+    els.requestGrid.innerHTML = commands.length ? commands.map(renderRequestCard).join('') : '<div class="col-12"><div class="text-secondary border rounded bg-body-tertiary p-3">Não há pedidos disponíveis para este dispositivo.</div></div>';
+}
+
+function renderRequestCard(command) {
+    const type = commandFeature(command);
+    const card = requestCardContent(type);
     const tone = cardTone(type, command);
     const loading = loadingCommands.has(command.command);
 
@@ -230,64 +280,26 @@ function renderRequestCard(command, telemetry) {
         <div class="card-body position-relative">
         <div class="small text-secondary">${esc(command.command)}</div>
         <h2 class="h6 mb-3">${esc(commandLabel(command))}</h2>
-        <div class="${tone.text} fw-semibold fs-5">${esc(result ? card.value : 'Sem dados')}</div>
-        ${result && card.details ? `<div class="small text-secondary mt-1">${card.details}</div>` : ''}
-        <div class="small text-secondary mt-3 mb-3">${result ? `${esc(when(result.occurredAt || result.recordedAt) || 'hora desconhecida')}${result.source?.nativeType ? ` · ${esc(result.source.nativeType)}` : ''}` : 'Pedir dados ao dispositivo'}</div>
+        <div class="${tone.text} fw-semibold fs-5">${esc(card.value)}</div>
+        ${card.details ? `<div class="small text-secondary mt-1">${card.details}</div>` : ''}
+        <div class="small text-secondary mt-3 mb-3">Pedir dados ao dispositivo</div>
         <button class="btn btn-primary btn-sm" data-command="${esc(command.command)}" data-action="sendCommand" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
         </div>
         </div>
         </div>`;
 }
 
-function renderTelemetryCard(payload) {
-    const type = payload?.type || 'telemetry';
-    const data = payload?.data && typeof payload.data === 'object' ? payload.data : {};
-    const card = uplinkCardContent(type, data, payload || {});
-    const tone = cardTone(type, {});
-
-    return `
-        <div class="col-12 col-md-6 col-xl-4">
-        <div class="card position-relative overflow-hidden h-100 border-${tone.border} ${tone.bg} bg-opacity-10">
-        <div class="position-absolute top-0 end-0 bg-white bg-opacity-75 rounded-bottom-start px-3 py-2">
-        <i class="fa-solid ${esc(card.icon)} fs-4 ${tone.text}"></i>
-        </div>
-        <div class="card-body position-relative">
-        <div class="small text-secondary">${esc(payload.source?.nativeType || 'telemetria')}</div>
-        <h2 class="h6 mb-3">${esc(featureLabel(type))}</h2>
-        <div class="${tone.text} fw-semibold fs-5">${esc(card.value)}</div>
-        ${card.details ? `<div class="small text-secondary mt-1">${card.details}</div>` : ''}
-        <div class="small text-secondary mt-3">${esc(when(payload.occurredAt || payload.recordedAt) || 'hora desconhecida')}</div>
-        </div>
-        </div>
-        </div>`;
-}
-
-function latestTelemetryByType(telemetry) {
-    const seen = new Set();
-    const rows = [];
-    for (const payload of telemetry) {
-        if (!payload?.type || seen.has(payload.type)) continue;
-        seen.add(payload.type);
-        rows.push(payload);
-    }
-    return rows;
-}
-
-function latestResultForCommand(command, telemetry) {
-    const expected = Array.isArray(command.expectedReplyTypes) ? command.expectedReplyTypes : [];
-    const feature = commandFeature(command);
-    const rows = telemetry.filter(payload => {
-        if (!payload || !payload.data || payload.debug) return false;
-        return true;
-    });
-
-    const exact = rows.find(payload => payload.type === feature);
-    if (exact) return exact;
-
-    return rows.find(payload => {
-        if (payload.type && payload.type !== feature) return false;
-        return expected.includes(payload.source?.nativeType);
-    }) || null;
+function requestCardContent(type) {
+    if (type === 'heart_rate') return {icon: 'fa-heart-pulse', value: 'Frequência cardíaca'};
+    if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: 'Tensão arterial'};
+    if (type === 'blood_oxygen') return {icon: 'fa-droplet', value: 'Oxigénio no sangue'};
+    if (type === 'temperature') return {icon: 'fa-temperature-half', value: 'Temperatura'};
+    if (type === 'location') return {icon: 'fa-location-dot', value: 'Localização'};
+    if (type === 'sleep') return {icon: 'fa-bed', value: 'Sono'};
+    if (type === 'ecg') return {icon: 'fa-wave-square', value: 'ECG'};
+    if (type === 'hrv') return {icon: 'fa-chart-line', value: 'VFC'};
+    if (type === 'weather') return {icon: 'fa-cloud-sun', value: 'Meteorologia'};
+    return {icon: 'fa-circle-info', value: featureLabel(type)};
 }
 
 function commandFeature(command) {
@@ -363,6 +375,37 @@ function renderDownlinkRequests(commands) {
         </tbody>
         </table>
         </div>` : '<div class="text-secondary border rounded bg-body-tertiary p-3">Ainda não há pedidos ao dispositivo.</div>';
+}
+
+function renderConnectionLogs(events) {
+    const logs = events
+        .map(rowPayload)
+        .filter(event => ['device.connected', 'device.disconnected'].includes(String(event?.type || '')))
+        .sort((a, b) => eventTime(b) - eventTime(a));
+
+    els.connectionLogs.innerHTML = logs.length ? `
+        <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+        <thead>
+        <tr><th>Quando</th><th>Estado</th><th>Fornecedor</th><th>Modelo</th></tr>
+        </thead>
+        <tbody>
+        ${logs.map(renderConnectionLogRow).join('')}
+        </tbody>
+        </table>
+        </div>` : '<div class="text-secondary border rounded bg-body-tertiary p-3">Ainda não há registos de ligação.</div>';
+}
+
+function renderConnectionLogRow(event) {
+    const connected = event.type === 'device.connected';
+    const device = event.device || {};
+    return `
+        <tr>
+        <td class="text-nowrap small">${esc(when(event.occurredAt || event.recordedAt) || '-')}</td>
+        <td><span class="badge ${connected ? 'text-bg-success' : 'text-bg-secondary'}">${connected ? 'ligado' : 'desligado'}</span></td>
+        <td>${esc(device.supplier || '-')}</td>
+        <td>${esc(device.model || '-')}</td>
+        </tr>`;
 }
 
 function renderDownlinkRow(command) {
@@ -673,9 +716,12 @@ document.addEventListener('DOMContentLoaded', () => {
         detailTitle: document.getElementById('detailTitle'),
         detailMeta: document.getElementById('detailMeta'),
         detailBadge: document.getElementById('detailBadge'),
+        telemetryCount: document.getElementById('telemetryCount'),
+        telemetryList: document.getElementById('telemetryList'),
         requestCardCount: document.getElementById('requestCardCount'),
         requestGrid: document.getElementById('requestGrid'),
         downlinkRequests: document.getElementById('downlinkRequests'),
+        connectionLogs: document.getElementById('connectionLogs'),
         addDeviceBtn: document.getElementById('addDeviceBtn'),
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
