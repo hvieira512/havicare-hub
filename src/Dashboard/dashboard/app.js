@@ -126,7 +126,7 @@ function renderSelection() {
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
-    renderRequestCards(state.selectedDetail.commands || []);
+    renderRequestCards(state.selectedDetail.commands || [], state.selectedDetail.recent.telemetry || []);
     renderDownlinkRequests(state.selectedDetail.recent.commands || []);
     renderConnectionLogs(state.selectedDetail.recent.events || []);
 }
@@ -202,10 +202,10 @@ function telemetryDetails(data, payload) {
     return details.join(' · ');
 }
 
-function renderRequestCards(commands) {
+function renderRequestCards(commands, telemetry = []) {
     els.requestCardCount.textContent = commands.length ? `${commands.length} ações` : '';
     els.requestGrid.innerHTML = commands.length
-        ? commands.map(command => renderRequestCardShell(command, state.loadingCommands.has(command.command))).join('')
+        ? commands.map(command => renderRequestCardShell(command, state.loadingCommands.has(command.command), telemetry)).join('')
         : `<div class="col-12">${emptyPanel('Não há pedidos disponíveis para este dispositivo.')}</div>`;
 }
 

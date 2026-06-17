@@ -1,4 +1,4 @@
-import {commandLabel, esc, featureLabel, fieldLabel, titleize} from './format.js';
+import {commandLabel, esc, eventTime, featureLabel, fieldLabel, rowPayload, titleize} from './format.js';
 
 export const supplierProtocolDefaults = {
     Wonlex: 'wonlex-json',
@@ -96,24 +96,35 @@ function batteryDetails(data) {
     return compactDetails(data, ['batteryType']);
 }
 
-export function renderRequestCardShell(command, loading) {
+export function renderRequestCardShell(command, loading, telemetry = []) {
     const type = commandFeature(command);
     const card = requestCardContent(type);
     const tone = cardTone(type, command);
+    const icon = command.icon || card.icon;
+
+    const lastTelemetry = telemetry
+        .map(rowPayload)
+        .filter(payload => payload && payload.type === type)
+        .sort((a, b) => eventTime(b) - eventTime(a))[0];
+
+    const lastValue = lastTelemetry
+        ? uplinkCardContent(type, lastTelemetry.data).value
+        : card.value;
 
     return `
         <div class="col-12">
-        <div class="card position-relative overflow-hidden h-100 border-${tone.border} ${tone.bg} bg-opacity-10">
-        <div class="position-absolute top-0 end-0 bg-white bg-opacity-75 rounded-bottom-start px-3 py-2">
-        <i class="fa-solid ${esc(command.icon || card.icon)} fs-4 ${tone.text}"></i>
+        <div class="card h-100 border-${tone.border}">
+        <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="bg-${tone.border} bg-opacity-75 rounded-3 d-flex align-items-center justify-content-center text-white" style="width:36px;height:36px;flex-shrink:0;">
+        <i class="fa-solid ${esc(icon)}"></i>
         </div>
-        <div class="card-body position-relative">
-        <div class="small text-secondary">${esc(command.command)}</div>
-        <h2 class="h6 mb-3">${esc(commandLabel(command))}</h2>
-        <div class="${tone.text} fw-semibold fs-5">${esc(card.value)}</div>
-        ${card.details ? `<div class="small text-secondary mt-1">${card.details}</div>` : ''}
-        <div class="small text-secondary mt-3 mb-3">Pedir dados ao dispositivo</div>
+        <div class="fw-bold ${tone.text}">${esc(commandLabel(command))}</div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+        <div class="fw-semibold ${lastTelemetry ? '' : 'text-secondary'}">${esc(lastValue)}</div>
         <button class="btn btn-primary btn-sm" data-command="${esc(command.command)}" data-action="sendCommand" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
+        </div>
         </div>
         </div>
         </div>`;
