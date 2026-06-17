@@ -30,11 +30,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({command}),
     }),
-    saveDevice: (imei, supplier, model, simNumber = '', originalImei = '') => requestJson(
+    saveDevice: (imei, supplier, model, simNumber = '', deviceId = '', originalImei = '') => requestJson(
         originalImei ? `/api/devices/${encodeURIComponent(originalImei)}` : '/api/devices',
         {
             method: originalImei ? 'PUT' : 'POST',
-            body: JSON.stringify({imei, supplier, model, simNumber}),
+            body: JSON.stringify({imei, supplier, model, simNumber, deviceId}),
         }
     ),
     deleteDevice: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`, {method: 'DELETE'}),

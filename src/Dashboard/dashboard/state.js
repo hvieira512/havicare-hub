@@ -9,6 +9,7 @@ export const state = {
         imei: '',
         originalImei: '',
         simNumber: '',
+        deviceId: '',
         supplier: '',
         model: '',
         protocol: '',

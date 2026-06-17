@@ -297,6 +297,7 @@ function openAddDevice() {
         imei: '',
         originalImei: '',
         simNumber: '',
+        deviceId: '',
         supplier: '',
         model: '',
         protocol: '',
@@ -306,6 +307,7 @@ function openAddDevice() {
         loading: false,
     };
     renderDeviceSimNumberField('');
+    els.deviceDeviceId.value = '';
     renderDeviceSelectors();
     renderDeviceConfigurationModal();
     deviceModal.show();
@@ -323,6 +325,7 @@ async function editDevice(imei, supplier, model) {
         imei,
         originalImei: imei,
         simNumber: '',
+        deviceId: '',
         supplier,
         model,
         protocol: '',
@@ -341,6 +344,8 @@ async function editDevice(imei, supplier, model) {
         const device = detail.device || {};
         renderDeviceSimNumberField(String(device.simNumber || ''));
         state.deviceModal.simNumber = String(device.simNumber || '');
+        els.deviceDeviceId.value = String(device.deviceId || '');
+        state.deviceModal.deviceId = String(device.deviceId || '');
         await refreshDeviceModalConfigurations(false);
     } finally {
         state.deviceModal.loading = false;
@@ -385,6 +390,7 @@ function syncDeviceModalContext() {
     state.deviceModal.catalog = catalogForProtocol(protocol);
     state.deviceModal.imei = els.deviceImei.value.trim();
     state.deviceModal.simNumber = getDeviceSimNumberValue(false);
+    state.deviceModal.deviceId = els.deviceDeviceId.value.trim();
     if (!state.deviceModal.activeCategory || !state.deviceModal.catalog.some(entry => entry.category === state.deviceModal.activeCategory)) {
         state.deviceModal.activeCategory = state.deviceModal.catalog[0]?.category || '';
     }
@@ -422,6 +428,7 @@ function renderDeviceConfigurationModal() {
 async function saveDevice() {
     const imei = els.deviceImei.value.trim();
     let simNumber = '';
+    const deviceId = els.deviceDeviceId.value.trim();
     try {
         simNumber = getDeviceSimNumberValue(true);
     } catch (error) {
@@ -432,7 +439,7 @@ async function saveDevice() {
     const model = els.deviceForm.dataset.model || '';
     if (!imei || !supplier || !model) { alert('Todos os campos são obrigatórios'); return; }
 
-    const result = await api.saveDevice(imei, supplier, model, simNumber, els.deviceImei.dataset.originalImei || '');
+    const result = await api.saveDevice(imei, supplier, model, simNumber, deviceId, els.deviceImei.dataset.originalImei || '');
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
     deviceModal.hide();
@@ -629,6 +636,7 @@ function cacheElements() {
         deviceForm: document.getElementById('deviceForm'),
         deviceImei: document.getElementById('deviceImei'),
         deviceSimNumberRoot: document.getElementById('deviceSimNumberRoot'),
+        deviceDeviceId: document.getElementById('deviceDeviceId'),
         devicePreview: document.getElementById('devicePreview'),
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
@@ -659,6 +667,7 @@ function bindEvents() {
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
     els.deviceImei.addEventListener('input', handleDeviceImeiInput);
+    els.deviceDeviceId.addEventListener('input', handleDeviceImeiInput);
     els.deviceForm.addEventListener('input', handleDeviceFormInput);
     els.deviceForm.addEventListener('change', handleDeviceFormChange);
     els.manageSuppliersBtn.addEventListener('click', loadSuppliers);

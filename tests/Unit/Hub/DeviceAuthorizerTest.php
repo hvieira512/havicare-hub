@@ -19,6 +19,7 @@ final class DeviceAuthorizerTest extends TestCase
         file_put_contents($this->whitelistPath, json_encode([
             '865028000000306' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
             '865028000000307' => ['supplier' => 'Wonlex', 'model' => 'WONLEX-HEALTH'],
+            '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '3707975737'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -59,5 +60,17 @@ final class DeviceAuthorizerTest extends TestCase
         self::assertTrue($result->allowed);
         self::assertSame('Wonlex', $result->supplier);
         self::assertSame('HW20PRO', $result->model);
+    }
+
+    public function testResolvesFourPTouchProtocolIdToCanonicalImei(): void
+    {
+        $authorizer = new DeviceAuthorizer(new Whitelist($this->whitelistPath));
+
+        $result = $authorizer->authorize(new DeviceIdentity('3707975737', 'four-p-touch', ident: '3707975737'));
+
+        self::assertTrue($result->allowed);
+        self::assertSame('637507597567372', $result->imei);
+        self::assertSame('4P Touch', $result->supplier);
+        self::assertSame('4P-TOUCH', $result->model);
     }
 }

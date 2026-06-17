@@ -58,6 +58,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('UPLOAD', $payload['command']);
         self::assertSame(['fields' => ['600']], $payload['payload']);
 
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '637507597567372', $payload['command'], $payload['payload'], ['deviceId' => '3707975737']);
+        self::assertSame('[3G*3707975737*000A*UPLOAD,600]', $wire);
+    }
+
+    public function testFourPTouchFallsBackToCanonicalImeiOnlyWhenNoDeviceIdIsProvided(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'uploadInterval', ['intervalSeconds' => 600]);
+
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertSame('[3G*8800000015*000A*UPLOAD,600]', $wire);
     }

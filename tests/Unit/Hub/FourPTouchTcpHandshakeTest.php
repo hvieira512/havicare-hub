@@ -22,7 +22,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
     {
         $this->whitelistPath = sys_get_temp_dir() . '/hub-4p-touch-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '8800000015' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH'],
+            '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '8800000015'],
         ]));
     }
 
@@ -80,6 +80,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertCount(1, $mqtt->events);
         self::assertCount(3, $mqtt->telemetry);
         self::assertCount(1, $mqtt->raw);
+        self::assertSame('637507597567372', $mqtt->statuses[0][0]);
         self::assertSame('online', $mqtt->statuses[0][1]['state']);
         self::assertSame('4P Touch', $mqtt->statuses[0][1]['device']['supplier']);
         self::assertSame('4P-TOUCH', $mqtt->statuses[0][1]['device']['model']);

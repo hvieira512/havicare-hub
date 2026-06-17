@@ -46,7 +46,7 @@ final class DeviceCommandCatalog
         return null;
     }
 
-    public static function buildDownlink(string $protocol, string $imei, string $command, array $payload = []): string
+    public static function buildDownlink(string $protocol, string $imei, string $command, array $payload = [], array $context = []): string
     {
         $entry = self::commandForProtocol($protocol, $command);
         $configEntry = null;
@@ -61,7 +61,7 @@ final class DeviceCommandCatalog
         return match ($protocol) {
             'wonlex-json' => self::buildWonlex($imei, $command, $payload),
             'vivistar-iw' => self::buildVivistar($imei, $command, $entry, $payload),
-            'four-p-touch' => self::buildFourPTouch($imei, $command, $entry, $payload),
+            'four-p-touch' => self::buildFourPTouch($imei, $command, $entry, $payload, $context),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
@@ -148,11 +148,12 @@ final class DeviceCommandCatalog
         ]);
     }
 
-    private static function buildFourPTouch(string $imei, string $command, array $entry, array $payload = []): string
+    private static function buildFourPTouch(string $imei, string $command, array $entry, array $payload = [], array $context = []): string
     {
+        $deviceId = (string)($context['deviceId'] ?? $payload['deviceId'] ?? substr($imei, -10));
         return (new FourPTouchAdapter())->encodeOutgoing([
             'type' => $command,
-            'imei' => substr($imei, -10),
+            'imei' => $deviceId,
             'manufacturer' => (string)($payload['manufacturer'] ?? '3G'),
             'data' => ['fields' => $payload['fields'] ?? ($entry['data'] ?? [])],
         ]);

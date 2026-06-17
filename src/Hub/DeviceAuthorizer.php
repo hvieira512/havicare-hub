@@ -15,13 +15,16 @@ class DeviceAuthorizer
 
     public function authorize(DeviceIdentity $identity): AuthorizationResult
     {
-        if (!$this->whitelist->isAuthorized($identity->imei)) {
+        $resolved = $this->whitelist->resolve($identity->imei, $identity->protocol, $identity->ident);
+        if ($resolved === null) {
             return AuthorizationResult::deny('device_not_authorized');
         }
 
-        $metadata = $this->metadataFor($identity->imei);
-
-        return AuthorizationResult::allow($metadata['supplier'], $metadata['model']);
+        return AuthorizationResult::allow(
+            (string)$resolved['imei'],
+            (string)$resolved['supplier'],
+            (string)$resolved['model'],
+        );
     }
 
     /**

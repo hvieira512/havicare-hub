@@ -19,8 +19,9 @@
     "supplier": "Vivistar",
     "model": "VIVISTAR-LITE"
   },
-  "8800000015": {
+  "637507597567372": {
     "supplier": "4P Touch",
-    "model": "4P-TOUCH"
+    "model": "4P-TOUCH",
+    "deviceId": "8800000015"
   }
 }

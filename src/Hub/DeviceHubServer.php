@@ -218,6 +218,10 @@ class DeviceHubServer
             return;
         }
 
+        if ($authorization->imei !== '' && $authorization->imei !== $identity->imei) {
+            $identity = $identity->withImei($authorization->imei);
+        }
+
         $session = $this->connections->authenticate($conn, $identity, $authorization->supplier, $authorization->model);
         $this->dashboardStore?->deviceSeen($identity->imei, [
             'supplier' => $session->supplier,

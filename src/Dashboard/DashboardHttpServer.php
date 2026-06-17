@@ -33,7 +33,8 @@ final class DashboardHttpServer
                 (string)$imei,
                 (string)($metadata['supplier'] ?? ''),
                 (string)($metadata['model'] ?? ''),
-                (string)($metadata['simNumber'] ?? '')
+                (string)($metadata['simNumber'] ?? ''),
+                (string)($metadata['deviceId'] ?? '')
             );
         }
     }
@@ -214,7 +215,9 @@ final class DashboardHttpServer
             return ['error' => ['code' => 'unsupported_command', 'message' => 'Command is not supported for this device']];
         }
 
-        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command);
+        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, [], [
+            'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+        ]);
         $id = bin2hex(random_bytes(8));
         $status = $this->hub->submitDownlink($imei, $bytes);
         $record = [
@@ -364,7 +367,9 @@ final class DashboardHttpServer
 
         $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $key, $payload);
         $command = $commandPayload['command'];
-        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload']);
+        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
+            'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+        ]);
         $id = bin2hex(random_bytes(8));
         $status = $this->hub->submitDownlink($imei, $bytes);
         $record = [
@@ -415,11 +420,12 @@ final class DashboardHttpServer
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
+        $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         if ($imei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
-        $this->whitelist->register($imei, $supplier, $model, $simNumber);
-        $this->store->registerDevice($imei, $supplier, $model, $simNumber);
+        $this->whitelist->register($imei, $supplier, $model, $simNumber, $deviceId);
+        $this->store->registerDevice($imei, $supplier, $model, $simNumber, $deviceId);
         return ['status' => 'ok', 'imei' => $imei];
     }
 
@@ -433,14 +439,15 @@ final class DashboardHttpServer
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
+        $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         if ($newImei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
         }
-        $this->whitelist->register($newImei, $supplier, $model, $simNumber);
-        $this->store->registerDevice($newImei, $supplier, $model, $simNumber);
+        $this->whitelist->register($newImei, $supplier, $model, $simNumber, $deviceId);
+        $this->store->registerDevice($newImei, $supplier, $model, $simNumber, $deviceId);
         return ['status' => 'ok', 'imei' => $newImei];
     }
 

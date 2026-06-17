@@ -6,7 +6,7 @@ use Hub\Dashboard\DatabaseStore;
 
 class Whitelist
 {
-    /** @var array<string, array{supplier: string, model: string, simNumber: string}> */
+    /** @var array<string, array{supplier: string, model: string, simNumber: string, deviceId: string}> */
     private array $devices;
     private string $filePath;
     private ?DatabaseStore $db;
@@ -27,8 +27,9 @@ class Whitelist
                 $supplier = (string)$row['supplier'];
                 $model = (string)$row['model'];
                 $simNumber = (string)($row['sim_number'] ?? '');
+                $deviceId = (string)($row['device_id'] ?? '');
                 if ($imei !== '' && $supplier !== '' && $model !== '') {
-                    $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
+                    $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
                 }
             }
             return;
@@ -47,10 +48,11 @@ class Whitelist
             $supplier = trim((string)($value['supplier'] ?? ''));
             $model = trim((string)($value['model'] ?? ''));
             $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
+            $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
             if ($imei === '' || $supplier === '' || $model === '') {
                 continue;
             }
-            $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
+            $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
         }
     }
 
@@ -79,10 +81,10 @@ class Whitelist
         return $this->devices;
     }
 
-    public function register(string $imei, string $supplier, string $model, string $simNumber = ''): void
+    public function register(string $imei, string $supplier, string $model, string $simNumber = '', string $deviceId = ''): void
     {
-        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
-        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber);
+        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
+        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber, $deviceId);
         $this->saveFile();
     }
 
@@ -93,15 +95,45 @@ class Whitelist
         $this->saveFile();
     }
 
-    public function update(string $imei, string $supplier, string $model, string $simNumber = ''): bool
+    public function update(string $imei, string $supplier, string $model, string $simNumber = '', string $deviceId = ''): bool
     {
         if (!isset($this->devices[$imei])) {
             return false;
         }
-        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber];
-        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber);
+        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
+        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber, $deviceId);
         $this->saveFile();
         return true;
+    }
+
+    /**
+     * @return array{imei: string, supplier: string, model: string, simNumber: string, deviceId: string}|null
+     */
+    public function resolve(string $imei, string $protocol = '', string $ident = ''): ?array
+    {
+        $exact = $this->getMetadata($imei);
+        if ($exact !== null) {
+            return ['imei' => $imei] + $exact;
+        }
+
+        if ($protocol !== 'four-p-touch') {
+            return null;
+        }
+
+        $alias = trim($ident !== '' ? $ident : $imei);
+        if ($alias === '') {
+            return null;
+        }
+
+        foreach ($this->devices as $canonicalImei => $metadata) {
+            if (($metadata['deviceId'] ?? '') !== $alias) {
+                continue;
+            }
+
+            return ['imei' => $canonicalImei] + $metadata;
+        }
+
+        return null;
     }
 
     private function saveFile(): void

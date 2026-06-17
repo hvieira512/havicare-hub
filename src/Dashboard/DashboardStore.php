@@ -23,7 +23,7 @@ final class DashboardStore
         $this->db = $db;
     }
 
-    public function registerDevice(string $imei, string $supplier, string $model, string $simNumber = ''): void
+    public function registerDevice(string $imei, string $supplier, string $model, string $simNumber = '', string $deviceId = ''): void
     {
         $this->redis->sadd($this->key('devices'), $imei);
         $this->redis->hmset($this->deviceKey($imei), [
@@ -31,6 +31,7 @@ final class DashboardStore
             'supplier' => $supplier,
             'model' => $model,
             'simNumber' => $simNumber,
+            'deviceId' => $deviceId,
         ]);
     }
 
