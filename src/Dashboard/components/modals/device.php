@@ -67,6 +67,6 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
+$footer = '<button type="button" class="btn btn-danger d-none" id="deleteDeviceBtn"><i class="fa-solid fa-trash me-1"></i>Eliminar</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
 render_modal('deviceModal', 'Dispositivo', $body, $footer, 'modal-fullscreen');

@@ -72,6 +72,17 @@ require_once __DIR__ . '/components/modal.php';
                         </div>
                         <div id="deviceList"></div>
                     </div>
+                    <div id="requestColumn" class="d-none mt-3">
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><?= icon('fa-paper-plane', 'me-2') ?>Pedir dados ao dispositivo</span>
+                                <span id="requestCardCount" class="small text-secondary"></span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3" id="requestGrid"></div>
+                            </div>
+                        </div>
+                    </div>
                 </aside>
                 <section id="detailColumn" class="col-12 col-lg-8">
                     <div class="card shadow-sm">
@@ -93,10 +104,6 @@ require_once __DIR__ . '/components/modal.php';
                                         <?= section_header('Eventos recebidos', 'telemetryCount') ?>
                                         <div id="telemetryList"></div>
                                         <div id="telemetryPager" class="d-flex justify-content-between align-items-center gap-2 mt-2 d-none"></div>
-                                    </section>
-                                    <section>
-                                        <?= section_header('Pedir dados ao dispositivo', 'requestCardCount') ?>
-                                        <div class="row g-3" id="requestGrid"></div>
                                     </section>
                                     <section>
                                         <?= section_header('Pedidos ao dispositivo') ?>

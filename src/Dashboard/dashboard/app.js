@@ -93,7 +93,6 @@ function renderSummary() {
                 </div>
                 <div class="btn-group btn-group-sm" style="flex-shrink:0">
                 <button class="btn btn-outline-secondary" data-imei="${esc(device.imei)}" data-supplier="${esc(device.supplier)}" data-model="${esc(device.model)}" data-action="edit" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn btn-outline-danger" data-imei="${esc(device.imei)}" data-action="delete" title="Apagar"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 </div>`).join('')}
             </div>`;
@@ -118,6 +117,7 @@ function renderSelection() {
     els.detailColumn.className = state.selectedImei ? 'col-12 col-lg-9' : 'col-12 col-lg-8';
     els.emptyState.classList.toggle('d-none', !!state.selectedDetail);
     els.deviceDetail.classList.toggle('d-none', !state.selectedDetail);
+    els.requestColumn.classList.toggle('d-none', !state.selectedDetail);
     if (!state.selectedDetail) return;
 
     const device = state.selectedDetail.device;
@@ -306,6 +306,7 @@ function openAddDevice() {
         configUi: {},
         loading: false,
     };
+    els.deleteDeviceBtn.classList.add('d-none');
     renderDeviceSimNumberField('');
     els.deviceDeviceId.value = '';
     renderDeviceSelectors();
@@ -334,6 +335,8 @@ async function editDevice(imei, supplier, model) {
         configUi: {},
         loading: true,
     };
+    els.deleteDeviceBtn.dataset.imei = imei;
+    els.deleteDeviceBtn.classList.remove('d-none');
     renderDeviceSelectors(supplier, model);
     renderDeviceConfigurationModal();
     renderDeviceSimNumberField('');
@@ -453,6 +456,19 @@ async function deleteDevice(imei) {
         clearSelection();
     }
     await loadSummary();
+}
+
+function handleDeleteDeviceBtnClick() {
+    const imei = els.deleteDeviceBtn.dataset.imei;
+    if (!imei) return;
+    if (!confirm(`Apagar o dispositivo ${imei}?`)) return;
+    api.deleteDevice(imei).then(() => {
+        deviceModal.hide();
+        if (state.selectedImei === imei) {
+            clearSelection();
+        }
+        loadSummary();
+    });
 }
 
 async function loadSuppliers() {
@@ -617,6 +633,7 @@ function cacheElements() {
     els = {
         hubCounts: document.getElementById('hubCounts'),
         deviceColumn: document.getElementById('deviceColumn'),
+        requestColumn: document.getElementById('requestColumn'),
         deviceList: document.getElementById('deviceList'),
         detailColumn: document.getElementById('detailColumn'),
         emptyState: document.getElementById('emptyState'),
@@ -658,6 +675,7 @@ function cacheElements() {
         modelImage: document.getElementById('modelImage'),
         modelListBody: document.getElementById('modelListBody'),
         resetModelBtn: document.getElementById('resetModelBtn'),
+        deleteDeviceBtn: document.getElementById('deleteDeviceBtn'),
         saveModelBtn: document.getElementById('saveModelBtn'),
     };
 }
@@ -680,6 +698,7 @@ function bindEvents() {
     els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
+    els.deleteDeviceBtn.addEventListener('click', handleDeleteDeviceBtnClick);
     els.deviceSupplierButtons.addEventListener('click', handleDeviceSupplierClick);
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
@@ -837,7 +856,6 @@ function handleDeviceListClick(event) {
     const {action, imei, supplier, model} = button.dataset;
     if (action === 'select') selectDevice(imei);
     if (action === 'edit') { event.stopPropagation(); void editDevice(imei, supplier, model); }
-    if (action === 'delete') { event.stopPropagation(); deleteDevice(imei); }
 }
 
 function handleRequestGridClick(event) {

@@ -102,7 +102,7 @@ export function renderRequestCardShell(command, loading) {
     const tone = cardTone(type, command);
 
     return `
-        <div class="col-12 col-md-6 col-xl-4">
+        <div class="col-12">
         <div class="card position-relative overflow-hidden h-100 border-${tone.border} ${tone.bg} bg-opacity-10">
         <div class="position-absolute top-0 end-0 bg-white bg-opacity-75 rounded-bottom-start px-3 py-2">
         <i class="fa-solid ${esc(command.icon || card.icon)} fs-4 ${tone.text}"></i>
