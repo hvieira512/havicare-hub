@@ -737,6 +737,15 @@ function handleDeviceConfigChange(event) {
             extra.classList.toggle('d-none', String(event.target.value) !== '8');
         }
     }
+
+    if (event.target.matches('.form-check-input[type="checkbox"][role="switch"]')) {
+        const label = event.target.parentElement?.querySelector('[data-switch-label]');
+        if (label) {
+            label.textContent = event.target.checked
+                ? (label.dataset.switchOn || 'Ligado')
+                : (label.dataset.switchOff || 'Desligado');
+        }
+    }
 }
 
 function handleDeviceSupplierClick(event) {
@@ -879,13 +888,19 @@ function createReminderRow() {
     wrapper.dataset.repeatRow = 'reminders';
     wrapper.innerHTML = `
         <div class="row g-3 align-items-end">
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-2">
                 <label class="form-label form-label-sm">Hora</label>
                 <input class="form-control" type="time" data-repeat-field="time">
             </div>
-            <div class="col-md-6">
+            <div class="col-sm-6 col-lg-2">
+                <div class="form-check form-switch mt-4">
+                    <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" checked>
+                    <label class="form-check-label" data-switch-label>Ligado</label>
+                </div>
+            </div>
+            <div class="col-12 col-lg-4">
                 <label class="form-label form-label-sm d-block">Dias</label>
-                <div class="btn-group flex-wrap w-100" role="group" aria-label="Dias da semana">
+                <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias da semana">
                     <input class="btn-check" type="checkbox" id="${uid}-day-1" data-repeat-field="days" value="1">
                     <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-1">Seg</label>
                     <input class="btn-check" type="checkbox" id="${uid}-day-2" data-repeat-field="days" value="2">
@@ -902,25 +917,27 @@ function createReminderRow() {
                     <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-7">Dom</label>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-lg-3">
                 <label class="form-label form-label-sm d-block">Tipo</label>
-                <div class="btn-group w-100" role="group" aria-label="Tipo de lembrete">
-                    <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-1" data-repeat-field="type" value="1" checked>
-                    <label class="btn btn-outline-primary btn-sm" for="${uid}-type-1"><i class="fa-solid fa-pills me-1"></i>Medicação</label>
-                    <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-2" data-repeat-field="type" value="2">
-                    <label class="btn btn-outline-info btn-sm" for="${uid}-type-2"><i class="fa-solid fa-glass-water me-1"></i>Água</label>
-                    <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-3" data-repeat-field="type" value="3">
-                    <label class="btn btn-outline-warning btn-sm" for="${uid}-type-3"><i class="fa-solid fa-person-walking me-1"></i>Sedentarismo</label>
+                <div class="row g-2" role="group" aria-label="Tipo de lembrete">
+                    <div class="col-12">
+                        <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-1" data-repeat-field="type" value="1" checked>
+                        <label class="btn btn-outline-primary btn-sm w-100 text-start" for="${uid}-type-1"><i class="fa-solid fa-pills me-1"></i>Medicação</label>
+                    </div>
+                    <div class="col-12">
+                        <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-2" data-repeat-field="type" value="2">
+                        <label class="btn btn-outline-info btn-sm w-100 text-start" for="${uid}-type-2"><i class="fa-solid fa-glass-water me-1"></i>Água</label>
+                    </div>
+                    <div class="col-12">
+                        <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-3" data-repeat-field="type" value="3">
+                        <label class="btn btn-outline-warning btn-sm w-100 text-start" for="${uid}-type-3"><i class="fa-solid fa-person-walking me-1"></i>Sedentarismo</label>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="form-check form-switch mt-4">
-                    <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" checked>
-                    <label class="form-check-label">Ativo</label>
-                </div>
-            </div>
-            <div class="col-md-1 text-end">
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeReminderRow">-</button>
+            <div class="col-12 col-lg-1 d-flex justify-content-lg-end">
+                <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeReminderRow" title="Remover" aria-label="Remover">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
             </div>
         </div>`;
     return wrapper;

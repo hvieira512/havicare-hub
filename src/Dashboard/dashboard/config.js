@@ -1,18 +1,17 @@
-import {esc, fieldLabel, titleize, when} from './format.js';
-import {statusBadge} from './renderers.js';
+import {esc, fieldLabel, titleize} from './format.js';
 
 const CATEGORY_LABELS = {
     'vivistar-iw': {
         contacts: 'Contactos',
         alerts: 'Alertas',
-        health: 'Saude',
+        health: 'Saúde',
         system: 'Sistema',
         intervals: 'Intervalos',
     },
     'wonlex-json': {
         contacts: 'Contactos',
         alerts: 'Alarmes',
-        health: 'Saude',
+        health: 'Saúde',
         measurements: 'Medições',
         system: 'Sistema',
         intervals: 'Intervalos',
@@ -84,7 +83,7 @@ export function renderDeviceConfigurationRoot(context) {
                 </div>
                 <span class="badge text-bg-secondary">${catalog.length} opções</span>
             </div>
-            <div class="nav nav-tabs flex-wrap gap-1" role="tablist">
+            <div class="nav nav-tabs nav-fill flex-wrap gap-1" role="tablist">
                 ${groups.map(group => `
                     <button type="button" class="nav-link ${group.key === currentCategory ? 'active' : ''}" data-config-category="${esc(group.key)}">
                         ${esc(group.label)}
@@ -103,32 +102,27 @@ export function renderDeviceConfigurationRoot(context) {
 
 export function renderConfigSection(protocol, entry, row, disabled = false) {
     const desired = normalizeDesired(entry, row?.desired_payload);
-    const reported = row?.reported_payload && Object.keys(row.reported_payload).length ? row.reported_payload : null;
-    const status = row?.last_status || '';
     const help = configHelp(entry);
 
     return `
         <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-key="${esc(entry.key)}" data-config-input="${esc(entry.input || 'json')}" data-config-protocol="${esc(protocol)}">
-            <div class="d-flex justify-content-between align-items-start gap-3">
+            <div>
                 <div>
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     <div class="small text-secondary">${esc(entry.command)} · ${esc(titleize(entry.input || 'json'))}${help ? ` · ${esc(help)}` : ''}</div>
-                </div>
-                <div class="text-end">
-                    ${status ? statusBadge(status) : '<span class="badge text-bg-light">sem estado</span>'}
                 </div>
             </div>
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ''}>
                 ${renderConfigInputs(entry, desired)}
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                    <button type="button" class="btn btn-primary btn-sm" data-action="saveConfig" data-config-key="${esc(entry.key)}" ${disabled ? 'disabled' : ''}>Guardar e enviar</button>
-                    <button type="reset" class="btn btn-outline-secondary btn-sm" ${disabled ? 'disabled' : ''}>Repor</button>
+                    <button type="button" class="btn btn-primary btn-sm" data-action="saveConfig" data-config-key="${esc(entry.key)}" ${disabled ? 'disabled' : ''}>
+                        <i class="fa-solid fa-paper-plane me-2"></i>Enviar
+                    </button>
+                    <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? 'disabled' : ''}>
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
                 </div>
             </form>
-            <div class="small text-secondary mt-3">
-                ${reported ? `Reportado: ${esc(JSON.stringify(reported))}` : 'Ainda sem resposta do dispositivo.'}
-                ${row?.requestedAt ? ` · Pedido: ${esc(when(row.requestedAt))}` : ''}
-            </div>
         </section>`;
 }
 
@@ -350,7 +344,7 @@ function toggleInput(entry, desired) {
     return `
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="${esc(field)}" ${checked ? 'checked' : ''}>
-            <label class="form-check-label">${esc(fieldLabel(field))}</label>
+            <label class="form-check-label" data-switch-label>${checked ? 'Ligado' : 'Desligado'}</label>
         </div>`;
 }
 
@@ -394,12 +388,13 @@ function numberInput(entry, desired) {
 }
 
 function intervalToggleInput(entry, desired) {
+    const enabled = boolValue(desired.enabled, true);
     return `
         <div class="row g-3">
             <div class="col-md-4">
                 <div class="form-check form-switch mt-4">
-                    <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${boolValue(desired.enabled, true) ? 'checked' : ''}>
-                    <label class="form-check-label">Ativar</label>
+                    <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? 'checked' : ''}>
+                    <label class="form-check-label" data-switch-label>${enabled ? 'Ligado' : 'Desligado'}</label>
                 </div>
             </div>
             <div class="col-md-8">
@@ -525,12 +520,13 @@ function contactsInput(entry, desired) {
 }
 
 function remindersInput(desired) {
+    const masterEnabled = boolValue(desired.masterEnabled, true);
     const items = Array.isArray(desired.items) && desired.items.length ? desired.items : [{}];
     return `
         <div class="vstack gap-3">
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="masterEnabled" ${boolValue(desired.masterEnabled, true) ? 'checked' : ''}>
-                <label class="form-check-label">Ativar todos os alarmes</label>
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="masterEnabled" ${masterEnabled ? 'checked' : ''}>
+                <label class="form-check-label" data-switch-label data-switch-on="Alertas ligados" data-switch-off="Alertas desligados">Alertas ${masterEnabled ? 'ligados' : 'desligados'}</label>
             </div>
             <div class="small text-secondary">Cada alarme suporta hora, dias da semana, estado e tipo: medicação, água ou sedentarismo.</div>
             <div class="d-flex justify-content-end">
@@ -563,13 +559,19 @@ function reminderRow(item = {}) {
     return `
         <div class="border rounded p-3 bg-body" data-repeat-row="reminders">
             <div class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-sm-6 col-lg-2">
                     <label class="form-label form-label-sm">Hora</label>
                     <input class="form-control" type="time" data-repeat-field="time" value="${esc(formatReminderTime(item.time))}">
                 </div>
-                <div class="col-md-6">
+                <div class="col-sm-6 col-lg-2">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" ${boolValue(item.enabled, true) ? 'checked' : ''}>
+                        <label class="form-check-label" data-switch-label>${boolValue(item.enabled, true) ? 'Ligado' : 'Desligado'}</label>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4">
                     <label class="form-label form-label-sm d-block">Dias</label>
-                    <div class="btn-group flex-wrap w-100" role="group" aria-label="Dias da semana">
+                    <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias da semana">
                         ${dayButtons.map(day => `
                             <input
                                 class="btn-check"
@@ -582,32 +584,30 @@ function reminderRow(item = {}) {
                         `).join('')}
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-lg-3">
                     <label class="form-label form-label-sm d-block">Tipo</label>
-                    <div class="btn-group w-100" role="group" aria-label="Tipo de lembrete">
+                    <div class="row g-2" role="group" aria-label="Tipo de lembrete">
                         ${typeButtons.map(option => `
-                            <input
-                                class="btn-check"
-                                type="radio"
-                                name="${rowId}-type"
-                                id="${rowId}-type-${option.value}"
-                                data-repeat-field="type"
-                                value="${option.value}"
-                                ${reminderType === option.value ? 'checked' : ''}>
-                            <label class="btn ${option.className} btn-sm" for="${rowId}-type-${option.value}">
-                                <i class="fa-solid ${option.icon} me-1"></i>${option.label}
-                            </label>
+                            <div class="col-12">
+                                <input
+                                    class="btn-check"
+                                    type="radio"
+                                    name="${rowId}-type"
+                                    id="${rowId}-type-${option.value}"
+                                    data-repeat-field="type"
+                                    value="${option.value}"
+                                    ${reminderType === option.value ? 'checked' : ''}>
+                                <label class="btn ${option.className} btn-sm w-100 text-start" for="${rowId}-type-${option.value}">
+                                    <i class="fa-solid ${option.icon} me-1"></i>${option.label}
+                                </label>
+                            </div>
                         `).join('')}
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" ${boolValue(item.enabled, true) ? 'checked' : ''}>
-                        <label class="form-check-label">Ativo</label>
-                    </div>
-                </div>
-                <div class="col-md-1 text-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeReminderRow">-</button>
+                <div class="col-12 col-lg-1 d-flex justify-content-lg-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeReminderRow" title="Remover" aria-label="Remover">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
                 </div>
             </div>
         </div>`;
