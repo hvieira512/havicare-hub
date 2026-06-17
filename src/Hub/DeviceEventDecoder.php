@@ -205,6 +205,20 @@ final class DeviceEventDecoder
     private function extra(array $payload, array $value): array
     {
         $extra = [];
+        $normalizedAliases = [
+            'configAck' => 'ack',
+            'configs' => 'settings',
+            'weather' => 'summary',
+            'reporttime' => 'reportedAt',
+            'reportTime' => 'reportedAt',
+            'temperature' => 'temperatureCelsius',
+            'temp' => 'temperatureCelsius',
+            'lowTemp' => 'lowCelsius',
+            'lowTemperature' => 'lowCelsius',
+            'highTemp' => 'highCelsius',
+            'highTemperature' => 'highCelsius',
+            'humidity' => 'humidityPercent',
+        ];
         foreach ($payload as $key => $field) {
             if ($key === 'source') {
                 $rawSource = is_string($field) ? trim($field) : '';
@@ -212,6 +226,9 @@ final class DeviceEventDecoder
                 if ($rawSource !== '' && $normalizedSource !== '' && $rawSource !== $normalizedSource) {
                     $extra['sourceRaw'] = $rawSource;
                 }
+                continue;
+            }
+            if (isset($normalizedAliases[$key]) && array_key_exists($normalizedAliases[$key], $value)) {
                 continue;
             }
             if (!is_string($key) || array_key_exists($key, $value) || $key === 'fields' || $key === 'raw') {

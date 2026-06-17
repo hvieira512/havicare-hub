@@ -95,6 +95,8 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertSame(['activity'], array_column($activity, 'feature'));
         self::assertSame(0, $activity[0]['value']['steps']);
+        self::assertSame(6, $activity[0]['value']['standMinutes']);
+        self::assertSame(1800, $activity[0]['value']['exerciseSeconds']);
         self::assertSame(['device_config'], array_column($config, 'feature'));
         self::assertSame('ok', $config[0]['value']['status']);
     }
@@ -149,7 +151,10 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(83, $heartRate[0]['value']['bpm']);
         self::assertSame(['heartbeat', 'battery'], array_column($heartbeat, 'feature'));
         self::assertSame('ok', $heartbeat[0]['value']['status']);
+        self::assertSame(90, $heartbeat[0]['value']['batteryPercent']);
+        self::assertSame(0, $heartbeat[0]['value']['chargingState']);
         self::assertSame(90, $heartbeat[1]['value']['percent']);
+        self::assertSame(0, $heartbeat[1]['value']['chargingState']);
     }
 
     public function testDecodesWonlexDocumentDateFields(): void
@@ -190,7 +195,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(72, $events[0]['value']['bpm']);
         self::assertSame(80, $events[1]['value']['diastolicMmHg']);
         self::assertSame(98, $events[2]['value']['spo2Percent']);
-        self::assertSame(91, $events[3]['value']['value']);
+        self::assertSame(91, $events[3]['value']['glucoseMgDl']);
     }
 
     public function testDecodesVivistarAp50IntoTemperatureAndBatteryEvents(): void
@@ -226,6 +231,59 @@ final class DeviceEventDecoderTest extends TestCase
             self::assertSame($type, $events[0]['nativeType'], "{$type} nativeType mismatch");
             self::assertSame('ok', $events[0]['value']['status'], "{$type} should have status ok");
         }
+    }
+
+    public function testDecodesFourPTouchConfigWithAckAndSettings(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'CONFIG',
+                'data' => [
+                    'configAck' => '1',
+                    'configs' => [
+                        'UPLOAD' => '600',
+                        'LANG' => 'pt',
+                    ],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('device_config', $events[0]['feature']);
+        self::assertSame('ok', $events[0]['value']['status']);
+        self::assertSame('1', $events[0]['value']['ack']);
+        self::assertSame(['UPLOAD' => '600', 'LANG' => 'pt'], $events[0]['value']['settings']);
+    }
+
+    public function testDecodesWonlexWeatherIntoStructuredPayload(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upWeather',
+                'data' => [
+                    'weather' => 'Cloudy',
+                    'weatherType' => 1,
+                    'reporttime' => '2026-06-17 14:15:00',
+                    'temp' => 22.5,
+                    'lowTemp' => 18.0,
+                    'highTemp' => 25.0,
+                    'humidity' => 61,
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('weather', $events[0]['feature']);
+        self::assertSame('ok', $events[0]['value']['status']);
+        self::assertSame('Cloudy', $events[0]['value']['summary']);
+        self::assertSame(1, $events[0]['value']['weatherType']);
+        self::assertSame('2026-06-17 14:15:00', $events[0]['value']['reportedAt']);
+        self::assertSame(22.5, $events[0]['value']['temperatureCelsius']);
+        self::assertSame(18.0, $events[0]['value']['lowCelsius']);
+        self::assertSame(25.0, $events[0]['value']['highCelsius']);
+        self::assertSame(61, $events[0]['value']['humidityPercent']);
     }
 
     public function testIgnoresVivistarRequestAckTypesAsTelemetry(): void

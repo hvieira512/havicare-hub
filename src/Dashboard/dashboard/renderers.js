@@ -76,18 +76,24 @@ export function uplinkCardContent(type, data) {
     if (type === 'heart_rate') return {icon: 'fa-heart-pulse', value: `${data.bpm ?? '-'} bpm`};
     if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: `${data.systolicMmHg ?? '-'} / ${data.diastolicMmHg ?? '-'} mmHg`, details: data.pulseBpm ? `Pulso ${esc(data.pulseBpm)} bpm` : ''};
     if (type === 'blood_oxygen') return {icon: 'fa-droplet', value: `${data.spo2Percent ?? '-'}% SpO2`};
-    if (type === 'blood_sugar') return {icon: 'fa-vial', value: `${data.value ?? '-'} mg/dL`};
+    if (type === 'blood_sugar') return {icon: 'fa-vial', value: `${data.glucoseMgDl ?? '-'} mg/dL`};
     if (type === 'temperature') return {icon: 'fa-temperature-half', value: `${data.bodyCelsius ?? '-'} °C`};
-    if (type === 'battery') return {icon: 'fa-battery-three-quarters', value: `${data.percent ?? '-'}%`, details: data.charging === true ? 'A carregar' : (data.charging === false ? 'Não está a carregar' : '')};
-    if (type === 'activity') return {icon: 'fa-person-walking', value: `${data.steps ?? 0} passos`, details: compactDetails(data, ['distanceMeters', 'caloriesKcal'])};
+    if (type === 'battery') return {icon: 'fa-battery-three-quarters', value: `${data.percent ?? '-'}%`, details: batteryDetails(data)};
+    if (type === 'activity') return {icon: 'fa-person-walking', value: `${data.steps ?? 0} passos`, details: compactDetails(data, ['distanceMeters', 'caloriesKcal', 'exerciseSeconds', 'standMinutes'])};
     if (type === 'location') return {icon: 'fa-location-dot', value: data.lat && data.lon ? `${data.lat}, ${data.lon}` : 'Atualização de localização', details: compactDetails(data, ['source', 'gpsValid', 'speedKmh', 'accuracyMeters'])};
     if (type === 'alarm') return {icon: 'fa-triangle-exclamation', value: alarmValue(data), details: compactDetails(data, ['code', 'lowBattery', 'fall', 'wearingNotice'])};
-    if (type === 'heartbeat') return {icon: 'fa-signal', value: 'Sinal de vida'};
+    if (type === 'heartbeat') return {icon: 'fa-signal', value: 'Sinal de vida', details: compactDetails(data, ['batteryPercent', 'gsmSignal', 'satelliteCount', 'steps', 'workMode'])};
     if (type === 'sleep') return {icon: 'fa-bed', value: 'Dados de sono'};
     if (type === 'ecg') return {icon: 'fa-wave-square', value: 'Dados de ECG'};
     if (type === 'hrv') return {icon: 'fa-chart-line', value: 'Dados de VFC'};
-    if (type === 'weather') return {icon: 'fa-cloud-sun', value: 'Dados meteorológicos'};
+    if (type === 'weather') return {icon: 'fa-cloud-sun', value: data.summary || 'Dados meteorológicos', details: compactDetails(data, ['temperatureCelsius', 'lowCelsius', 'highCelsius', 'humidityPercent', 'reportedAt'])};
     return {icon: 'fa-circle-info', value: featureLabel(type), details: compactDetails(data, Object.keys(data).slice(0, 4))};
+}
+
+function batteryDetails(data) {
+    if (data.chargingState === 1) return 'A carregar';
+    if (data.chargingState === 0) return 'Não está a carregar';
+    return compactDetails(data, ['batteryType']);
 }
 
 export function renderRequestCardShell(command, loading) {

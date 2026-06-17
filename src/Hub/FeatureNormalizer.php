@@ -10,7 +10,7 @@ final class FeatureNormalizer
             'heart_rate' => self::heartRate($payload),
             'blood_pressure' => self::bloodPressure($payload),
             'blood_oxygen' => self::bloodOxygen($payload),
-            'blood_sugar' => self::scalar($payload, 'value', ['bloodSugar', 'blood_sugar', 'bs', 'value', 'data']),
+            'blood_sugar' => self::bloodSugar($payload),
             'temperature' => self::temperature($payload),
             'battery' => self::battery($payload),
             'activity' => self::activity($payload),
@@ -52,6 +52,12 @@ final class FeatureNormalizer
         return $value === null ? [] : ['spo2Percent' => (int)$value];
     }
 
+    private static function bloodSugar(array $payload): array
+    {
+        $value = self::first($payload, ['bloodSugar', 'blood_sugar', 'glucoseMgDl', 'bs', 'value', 'data', 'date']);
+        return $value === null ? [] : ['glucoseMgDl' => (int)$value];
+    }
+
     private static function scalar(array $payload, string $field, array $keys): array
     {
         $value = self::first($payload, $keys);
@@ -73,7 +79,8 @@ final class FeatureNormalizer
         $value = self::first($payload, ['batteryPercent', 'battery', 'batteryLevel', 'power', 'value']);
         return array_filter([
             'percent' => $value === null ? null : (int)$value,
-            'charging' => isset($payload['charging']) ? (bool)$payload['charging'] : null,
+            'chargingState' => self::int($payload['chargingState'] ?? $payload['batteryState'] ?? null),
+            'batteryType' => self::int($payload['batteryType'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
     }
 
@@ -81,14 +88,28 @@ final class FeatureNormalizer
     {
         return array_filter([
             'steps' => self::int($payload['steps'] ?? $payload['step'] ?? null),
-            'distanceMeters' => self::float($payload['distanceMeters'] ?? null),
-            'caloriesKcal' => self::float($payload['caloriesKcal'] ?? null),
+            'distanceMeters' => self::float($payload['distanceMeters'] ?? $payload['distance'] ?? null),
+            'caloriesKcal' => self::float($payload['caloriesKcal'] ?? $payload['kcal'] ?? $payload['calories'] ?? null),
+            'exerciseSeconds' => self::int($payload['exerciseSeconds'] ?? $payload['exerciseTime'] ?? null),
+            'standMinutes' => self::int($payload['standMinutes'] ?? $payload['standTime'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
     }
 
     private static function heartbeat(array $payload): array
     {
-        return ['status' => 'ok'];
+        return array_filter([
+            'status' => 'ok',
+            'steps' => self::int($payload['steps'] ?? $payload['step'] ?? null),
+            'gsmSignal' => self::int($payload['gsmSignal'] ?? null),
+            'satelliteCount' => self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? null),
+            'batteryPercent' => self::int($payload['batteryPercent'] ?? $payload['battery'] ?? $payload['batteryLevel'] ?? null),
+            'chargingState' => self::int($payload['chargingState'] ?? $payload['batteryState'] ?? null),
+            'batteryType' => self::int($payload['batteryType'] ?? null),
+            'rollFrequency' => self::int($payload['rollFrequency'] ?? $payload['rollsFrequency'] ?? null),
+            'remainingSpace' => self::int($payload['remainingSpace'] ?? null),
+            'fortificationState' => self::int($payload['fortificationState'] ?? $payload['fortification'] ?? null),
+            'workMode' => self::int($payload['workMode'] ?? $payload['workingMode'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
     }
 
     private static function location(array $payload): array
@@ -203,12 +224,30 @@ final class FeatureNormalizer
 
     private static function deviceConfig(array $payload): array
     {
-        return ['status' => 'ok'];
+        $configs = isset($payload['configs']) && is_array($payload['configs']) ? $payload['configs'] : null;
+        $ack = $payload['configAck'] ?? null;
+
+        return array_filter([
+            'status' => 'ok',
+            'ack' => is_scalar($ack) && $ack !== '' ? (string)$ack : null,
+            'settings' => $configs !== [] ? $configs : null,
+        ], static fn (mixed $value): bool => $value !== null);
     }
 
     private static function weather(array $payload): array
     {
-        return ['status' => 'requested'];
+        $weather = array_filter([
+            'status' => 'ok',
+            'summary' => self::stringOrNull($payload['summary'] ?? $payload['weather'] ?? null),
+            'weatherType' => self::int($payload['weatherType'] ?? null),
+            'reportedAt' => self::stringOrNull($payload['reportedAt'] ?? $payload['reporttime'] ?? $payload['reportTime'] ?? null),
+            'temperatureCelsius' => self::float($payload['temperatureCelsius'] ?? $payload['temperature'] ?? $payload['temp'] ?? null),
+            'lowCelsius' => self::float($payload['lowCelsius'] ?? $payload['lowTemp'] ?? $payload['lowTemperature'] ?? null),
+            'highCelsius' => self::float($payload['highCelsius'] ?? $payload['highTemp'] ?? $payload['highTemperature'] ?? null),
+            'humidityPercent' => self::int($payload['humidityPercent'] ?? $payload['humidity'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
+
+        return count($weather) > 1 ? $weather : ['status' => 'ok'];
     }
 
     private static function first(array $payload, array $keys): mixed

@@ -192,6 +192,8 @@ Example:
 - `steps`
 - `distanceMeters`
 - `caloriesKcal`
+- `exerciseSeconds`
+- `standMinutes`
 
 #### `blood_pressure`
 
@@ -203,9 +205,27 @@ Example:
 
 - `spo2Percent`
 
+#### `blood_sugar`
+
+- `glucoseMgDl`
+
 #### `temperature`
 
 - `bodyCelsius`
+
+#### `heartbeat`
+
+- `status`
+- `steps`
+- `gsmSignal`
+- `satelliteCount`
+- `batteryPercent`
+- `chargingState`
+- `batteryType`
+- `rollFrequency`
+- `remainingSpace`
+- `fortificationState`
+- `workMode`
 
 #### `alarm`
 
@@ -214,6 +234,23 @@ Example:
 - `lowBattery`
 - `fall`
 - `wearingNotice`
+
+#### `device_config`
+
+- `status`
+- `ack`
+- `settings`
+
+#### `weather`
+
+- `status`
+- `summary`
+- `weatherType`
+- `reportedAt`
+- `temperatureCelsius`
+- `lowCelsius`
+- `highCelsius`
+- `humidityPercent`
 
 When a supplier exposes additional fields that do not map cleanly into the shared shape, keep them in `extra` rather than overloading `data` with protocol-specific names.
 
