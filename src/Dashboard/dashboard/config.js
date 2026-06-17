@@ -1,4 +1,5 @@
 import {esc, fieldLabel, titleize} from './format.js';
+import {normalizePhoneControl, renderPhoneControl} from './phone.js';
 
 const CATEGORY_LABELS = {
     'vivistar-iw': {
@@ -261,7 +262,7 @@ export function readConfigPayload(section) {
         };
     }
     if (input === 'list') {
-        return {numbers: readTextArray(section, 'numbers').slice(0, 3)};
+        return {numbers: readPhoneArray(section, 'numbers').slice(0, 3)};
     }
     if (input === 'contacts') {
         return {contacts: readContacts(section)};
@@ -347,10 +348,16 @@ function readTextArray(section, field) {
         .filter(Boolean);
 }
 
+function readPhoneArray(section, field) {
+    return Array.from(section.querySelectorAll(`[data-phone-control][data-config-field="${CSS.escape(field)}"]`))
+        .map(control => normalizePhoneControl(control))
+        .filter(Boolean);
+}
+
 function readContacts(section) {
     return Array.from(section.querySelectorAll('[data-repeat-row="contacts"]')).map(row => ({
         name: String(row.querySelector('[data-repeat-field="name"]')?.value || '').trim(),
-        phone: String(row.querySelector('[data-repeat-field="phone"]')?.value || '').trim(),
+        phone: normalizePhoneControl(row.querySelector('[data-phone-control][data-repeat-field="phone"]')),
     })).filter(contact => contact.name !== '' || contact.phone !== '');
 }
 
@@ -553,7 +560,11 @@ function listInput(entry, desired, field, label) {
             </div>
             <div class="vstack gap-2">
                 ${rows.map((value, index) => `
-                    <input class="form-control" type="text" placeholder="${esc(label)} ${index + 1}" data-config-field="${esc(field)}" value="${esc(String(value || ''))}">
+                    ${renderPhoneControl({
+                        value,
+                        configField: field,
+                        placeholder: `${label} ${index + 1}`,
+                    })}
                 `).join('')}
             </div>
         </div>`;
@@ -578,7 +589,13 @@ function contactsInput(entry, desired) {
                         </div>
                         <div class="col-md-6">
                             <div class="d-flex gap-2">
-                                <input class="form-control" type="text" placeholder="Telefone ${index + 1}" data-repeat-field="phone" value="${esc(String(contact.phone || ''))}">
+                                <div class="flex-grow-1">
+                                    ${renderPhoneControl({
+                                        value: String(contact.phone || ''),
+                                        repeatField: 'phone',
+                                        placeholder: `Telefone ${index + 1}`,
+                                    })}
+                                </div>
                                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
                             </div>
                         </div>

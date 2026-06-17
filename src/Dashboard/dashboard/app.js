@@ -26,6 +26,7 @@ import {
     readConfigPayload,
     renderDeviceConfigurationRoot,
 } from './config.js';
+import {renderPhoneControl, resetPhoneControls, syncPhoneControl} from './phone.js';
 
 let els = {};
 let deviceModal = null;
@@ -412,6 +413,7 @@ function renderDeviceConfigurationModal() {
         activeCategory: state.deviceModal.activeCategory,
         disabled: !state.deviceModal.protocol,
     });
+    resetPhoneControls(els.deviceConfigRoot);
     armConfigFeedbackAutoClose();
 }
 
@@ -668,6 +670,7 @@ function bindEvents() {
     els.supplierListBody.addEventListener('click', handleSupplierListClick);
     els.modelListBody.addEventListener('click', handleModelListClick);
     els.deviceConfigRoot.addEventListener('click', handleDeviceConfigClick);
+    els.deviceConfigRoot.addEventListener('input', handleDeviceConfigInput);
     els.deviceConfigRoot.addEventListener('change', handleDeviceConfigChange);
     els.deviceConfigRoot.addEventListener('closed.bs.alert', handleConfigFeedbackClosed);
 }
@@ -738,6 +741,11 @@ function handleDeviceConfigClick(event) {
 }
 
 function handleDeviceConfigChange(event) {
+    if (event.target.matches('[data-phone-country]')) {
+        syncPhoneControl(event.target);
+        return;
+    }
+
     const section = event.target.closest('[data-config-section]');
     if (!section) return;
 
@@ -755,6 +763,12 @@ function handleDeviceConfigChange(event) {
                 ? (label.dataset.switchOn || 'Ligado')
                 : (label.dataset.switchOff || 'Desligado');
         }
+    }
+}
+
+function handleDeviceConfigInput(event) {
+    if (event.target.matches('[data-phone-local]')) {
+        syncPhoneControl(event.target);
     }
 }
 
@@ -1079,7 +1093,18 @@ function appendContactRow(section) {
 
     const template = rows[rows.length - 1] || createContactRow();
     const clone = template.cloneNode(true);
-    clone.querySelectorAll('input').forEach(input => { input.value = ''; });
+    clone.querySelectorAll('input').forEach(input => {
+        if (input.matches('[data-phone-local]')) {
+            input.value = '';
+            return;
+        }
+        input.value = '';
+    });
+    const countrySelect = clone.querySelector('[data-phone-country]');
+    if (countrySelect) {
+        countrySelect.value = 'PT';
+    }
+    resetPhoneControls(clone);
     list.appendChild(clone);
 }
 
@@ -1099,10 +1124,13 @@ function removeConfigRow(row) {
         row.querySelectorAll('input, select').forEach(input => {
             if (input.type === 'checkbox') {
                 input.checked = false;
+            } else if (input.matches('[data-phone-country]')) {
+                input.value = 'PT';
             } else {
                 input.value = '';
             }
         });
+        resetPhoneControls(row);
         return;
     }
     row.remove();
@@ -1118,10 +1146,13 @@ function createContactRow() {
         </div>
         <div class="col-md-6">
             <div class="d-flex gap-2">
-                <input class="form-control" type="text" placeholder="Telefone" data-repeat-field="phone">
+                <div class="flex-grow-1">
+                    ${renderPhoneControl({repeatField: 'phone', placeholder: 'Telefone'})}
+                </div>
                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
             </div>
         </div>`;
+    resetPhoneControls(wrapper);
     return wrapper;
 }
 
