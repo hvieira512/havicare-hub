@@ -68,7 +68,10 @@ Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth. The dash
 Uplink from device to MQTT:
 
 ```text
-devices/{imei}/uplink
+devices/{imei}/raw
+devices/{imei}/telemetry
+devices/{imei}/events
+devices/{imei}/status
 ```
 
 Downlink from MQTT to connected device:
@@ -79,39 +82,167 @@ devices/{imei}/downlink
 
 If the device is offline, the hub stores the latest pending downlink per IMEI and native command in Redis for `DOWNLINK_QUEUE_TTL_SECONDS` seconds, default `300`. The hub publishes `device.downlink.queued` when queued and `device.downlink.sent` when it is delivered after the next device login.
 
-Status and errors:
-
-```text
-devices/{imei}/status
-devices/{imei}/error
-```
-
 `MQTT_TOPIC_PREFIX` is prepended when configured.
 
-## Raw Payloads
+## Telemetry Payload Contract
 
-Uplink payloads preserve bytes as base64:
+Telemetry messages published to `devices/{imei}/telemetry` share one envelope across all suppliers and models:
 
 ```json
 {
-  "event": {
-    "type": "device.raw.uplink",
-    "id": "raw_..."
-  },
-  "occurredAt": "2026-06-09T12:00:00Z",
+  "schemaVersion": 2,
+  "type": "location",
+  "occurredAt": "2026-06-17T13:48:29Z",
   "device": {
-    "imei": "865028000000308"
+    "id": "637507597567372",
+    "supplier": "4P Touch",
+    "model": "D46"
   },
-  "transport": "tcp",
-  "protocol": "vivistar-iw",
-  "encoding": "base64",
-  "payload": "SVdBUDQ5LDcyIw==",
-  "text": "IWAP49,72#",
-  "size": 10
+  "data": {},
+  "source": {
+    "protocol": "four-p-touch",
+    "nativeType": "UD_LTE"
+  },
+  "extra": {}
 }
 ```
 
-`payload` is canonical. `text` is included only when the bytes are valid text.
+Field meaning:
+
+- `schemaVersion`: telemetry schema version. Current value is `2`.
+- `type`: normalized feature name such as `location`, `heart_rate`, `battery`, `activity`, `alarm`, `blood_pressure`, `blood_oxygen`, `temperature`, `heartbeat`, `device_config`, or `weather`.
+- `occurredAt`: server-side publish timestamp in UTC.
+- `device.id`: canonical device identity used by the hub and MQTT topics.
+- `device.supplier` and `device.model`: whitelist/model metadata resolved by the hub.
+- `data`: normalized shared shape for the feature.
+- `source.protocol`: protocol adapter that decoded the message, for example `vivistar-iw`, `wonlex-json`, or `four-p-touch`.
+- `source.nativeType`: native supplier message type, for example `AP01`, `upLocation`, `UD_LTE`, `LK`, or `bphrt`.
+- `extra`: protocol-specific decoded fields that are intentionally preserved but not part of the normalized shared shape.
+
+### Shared Feature Shapes
+
+#### `location`
+
+`data` for `type: "location"` may contain:
+
+- `source`: normalized positioning origin. Current values include `gps`, `cell`, `wifi`, `cell_wifi`, and some legacy supplier-specific values that should be phased out.
+- `lat`
+- `lon`
+- `gpsValid`
+- `speedKmh`
+- `heading`
+- `altitudeMeters`
+- `satelliteCount`
+- `gsmSignal`
+- `mcc`
+- `mnc`
+- `lac`
+- `cellId`
+- `accuracyMeters`
+- `baseStations`: array of nearby/serving cells
+- `wifiAccessPoints`: array of nearby Wi-Fi access points
+
+Semantics:
+
+- `lat` and `lon` mean the device reported coordinates.
+- `gpsValid` means the protocol marked the GNSS fix as valid. Coordinates may still exist when `gpsValid` is `false`.
+- `source` describes how the position should be interpreted. It should not be inferred only from the presence of coordinates.
+- `baseStations` and `wifiAccessPoints` are optional evidence fields and may appear even when coordinates are absent.
+
+Example:
+
+```json
+{
+  "source": "cell",
+  "lat": 41.706128,
+  "lon": -8.7937862,
+  "gpsValid": false,
+  "speedKmh": 0,
+  "heading": 0,
+  "altitudeMeters": 19.1,
+  "satelliteCount": 0,
+  "gsmSignal": 32,
+  "mcc": "268",
+  "mnc": "6",
+  "lac": "48820",
+  "cellId": "677900",
+  "accuracyMeters": 0,
+  "baseStations": [
+    {
+      "lac": "48820",
+      "cellId": "677900",
+      "gsmSignal": 140
+    }
+  ]
+}
+```
+
+#### `heart_rate`
+
+- `bpm`
+
+#### `battery`
+
+- `percent`
+- `chargingState`
+- `batteryType`
+
+#### `activity`
+
+- `steps`
+- `distanceMeters`
+- `caloriesKcal`
+
+#### `blood_pressure`
+
+- `systolicMmHg`
+- `diastolicMmHg`
+- `pulseBpm`
+
+#### `blood_oxygen`
+
+- `spo2Percent`
+
+#### `temperature`
+
+- `bodyCelsius`
+
+#### `alarm`
+
+- `code`
+- `sos`
+- `lowBattery`
+- `fall`
+- `wearingNotice`
+
+When a supplier exposes additional fields that do not map cleanly into the shared shape, keep them in `extra` rather than overloading `data` with protocol-specific names.
+
+## Raw Payloads
+
+Raw messages published to `devices/{imei}/raw` preserve the device bytes:
+
+```json
+{
+  "schemaVersion": 1,
+  "direction": "uplink",
+  "occurredAt": "2026-06-17T13:48:29Z",
+  "device": {
+    "id": "637507597567372",
+    "supplier": "4P Touch",
+    "model": "D46"
+  },
+  "debug": {
+    "protocol": "four-p-touch",
+    "transport": "tcp",
+    "encoding": "text",
+    "payload": "[3G*3707975737*0073*UD_LTE,...]",
+    "size": 136,
+    "connectionId": "1000002"
+  }
+}
+```
+
+`debug.payload` is the canonical raw body. For non-text bytes the hub emits base64 and sets `debug.encoding` to `base64`.
 
 Downlink accepts either a raw MQTT payload string or JSON:
 
@@ -131,16 +262,25 @@ Downlink accepts either a raw MQTT payload string or JSON:
 
 ## Whitelist
 
-Devices are authorized through [config/whitelist.json](config/whitelist.json) as key-value pairs of IMEI to configured model:
+Devices are authorized through [config/whitelist.json](config/whitelist.json) as key-value pairs of canonical device identity to metadata:
 
 ```json
 {
-  "865028000000306": "WONLEX-PRO",
-  "865028000000308": "VIVISTAR-CARE"
+  "865028000000306": {
+    "supplier": "Wonlex",
+    "model": "HW20PRO"
+  },
+  "637507597567372": {
+    "supplier": "4P Touch",
+    "model": "D46",
+    "deviceId": "3707975737"
+  }
 }
 ```
 
-Unknown devices are disconnected and an auth rejection is published to `devices/{imei}/error`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by IMEI and records the configured model from the whitelist.
+For 4P Touch, store the full canonical IMEI as the whitelist key and the protocol-level 10-digit identifier separately in `deviceId`. The hub resolves `deviceId` during auth and downlink building, but all MQTT topics and stored device identity remain keyed by the canonical IMEI.
+
+Unknown devices are disconnected and a rejection is published to `devices/{imei}/status` and `devices/{imei}/events`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by identity and records the configured metadata from the whitelist.
 
 ## Tests
 

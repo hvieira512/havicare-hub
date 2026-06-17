@@ -130,7 +130,10 @@ final class DeviceEventDecoder
             'cellId' => $firstBase['cellId'] ?? null,
             'gsmSignal' => $firstBase['gsmSignal'] ?? null,
             'accuracyMeters' => null,
+            'baseStations' => $baseStations,
+            'wifi' => $wifi,
         ], static fn (mixed $value): bool => $value !== null && $value !== ''), [
+            'source' => 'vivistar-ap02',
             'raw' => $payload['raw'] ?? '',
             'fields' => $fields,
             'replyFlag' => $this->intField($fields[1] ?? null),
@@ -203,6 +206,14 @@ final class DeviceEventDecoder
     {
         $extra = [];
         foreach ($payload as $key => $field) {
+            if ($key === 'source') {
+                $rawSource = is_string($field) ? trim($field) : '';
+                $normalizedSource = is_string($value['source'] ?? null) ? trim((string)$value['source']) : '';
+                if ($rawSource !== '' && $normalizedSource !== '' && $rawSource !== $normalizedSource) {
+                    $extra['sourceRaw'] = $rawSource;
+                }
+                continue;
+            }
             if (!is_string($key) || array_key_exists($key, $value) || $key === 'fields' || $key === 'raw') {
                 continue;
             }

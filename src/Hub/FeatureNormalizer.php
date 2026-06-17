@@ -99,16 +99,20 @@ final class FeatureNormalizer
             : (isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : []);
         $wifiAccessPoints = isset($payload['wifi']) && is_array($payload['wifi']) ? $payload['wifi'] : [];
         $firstBaseStation = $baseStations[0] ?? [];
+        $lat = self::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null);
+        $lon = self::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? $gps['lon'] ?? $gps['lng'] ?? $gps['longitude'] ?? null);
+        $gpsValid = isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : (isset($gps['Type']) ? ((int)$gps['Type'] === 0) : null);
+        $satelliteCount = self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null);
 
         $location = array_filter([
-            'source' => $payload['source'] ?? ($gps !== [] ? 'gps' : ($baseStations !== [] || $wifiAccessPoints !== [] ? 'cell' : null)),
-            'lat' => self::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null),
-            'lon' => self::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? $gps['lon'] ?? $gps['lng'] ?? $gps['longitude'] ?? null),
-            'gpsValid' => isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : (isset($gps['Type']) ? ((int)$gps['Type'] === 0) : null),
+            'source' => self::normalizeLocationSource($payload, $gpsValid, $baseStations, $wifiAccessPoints, $lat, $lon, $satelliteCount),
+            'lat' => $lat,
+            'lon' => $lon,
+            'gpsValid' => $gpsValid,
             'speedKmh' => self::float($payload['speed'] ?? $payload['speedKmh'] ?? $gps['speed'] ?? null),
             'heading' => self::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
             'altitudeMeters' => self::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? $gps['height'] ?? null),
-            'satelliteCount' => self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null),
+            'satelliteCount' => $satelliteCount,
             'gsmSignal' => self::int($payload['gsmSignal'] ?? $gps['GSM'] ?? $firstBaseStation['rxlev'] ?? $firstBaseStation['gsmSignal'] ?? null),
             'mcc' => self::stringOrNull($payload['mcc'] ?? $gps['mcc'] ?? $firstBaseStation['mcc'] ?? null),
             'mnc' => self::stringOrNull($payload['mnc'] ?? $gps['mnc'] ?? $firstBaseStation['mnc'] ?? null),
@@ -129,6 +133,61 @@ final class FeatureNormalizer
         }
 
         return $location;
+    }
+
+    private static function normalizeLocationSource(
+        array $payload,
+        ?bool $gpsValid,
+        array $baseStations,
+        array $wifiAccessPoints,
+        ?float $lat,
+        ?float $lon,
+        ?int $satelliteCount,
+    ): ?string {
+        if ($gpsValid === true) {
+            return 'gps';
+        }
+
+        $hasBaseStations = $baseStations !== [];
+        $hasWifi = $wifiAccessPoints !== [];
+        $explicit = strtolower(trim((string)($payload['source'] ?? '')));
+
+        $normalized = match ($explicit) {
+            'gps', 'gnss' => 'gps',
+            'cell', 'lbs', 'gsm', 'basestation', 'base_station' => self::nonGpsLocationSource($hasBaseStations, $hasWifi),
+            'wifi' => $hasBaseStations ? 'cell_wifi' : 'wifi',
+            'cell_wifi', 'wifi_cell', 'lbs_wifi', 'wifi_lbs', 'vivistar-ap02' => self::nonGpsLocationSource($hasBaseStations, $hasWifi),
+            default => null,
+        };
+
+        if ($normalized !== null) {
+            return $normalized;
+        }
+
+        if ($hasBaseStations || $hasWifi) {
+            return self::nonGpsLocationSource($hasBaseStations, $hasWifi);
+        }
+
+        if ($lat !== null || $lon !== null || ($satelliteCount !== null && $satelliteCount > 0)) {
+            return 'gps';
+        }
+
+        return null;
+    }
+
+    private static function nonGpsLocationSource(bool $hasBaseStations, bool $hasWifi): ?string
+    {
+        if ($hasBaseStations && $hasWifi) {
+            return 'cell_wifi';
+        }
+        if ($hasWifi) {
+            return 'wifi';
+        }
+        if ($hasBaseStations) {
+            return 'cell';
+        }
+
+        return 'cell';
     }
 
     private static function alarm(array $payload): array

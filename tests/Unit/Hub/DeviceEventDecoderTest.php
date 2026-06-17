@@ -267,18 +267,19 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(1, $events);
         self::assertSame('location', $events[0]['feature']);
         self::assertSame('AP02', $events[0]['nativeType']);
-        self::assertSame('vivistar-ap02', $events[0]['value']['source']);
+        self::assertSame('cell_wifi', $events[0]['value']['source']);
         self::assertFalse($events[0]['value']['gpsValid']);
         self::assertSame('268', $events[0]['value']['mcc']);
         self::assertSame('6', $events[0]['value']['mnc']);
         self::assertSame('8820', $events[0]['value']['lac']);
         self::assertSame('677900', $events[0]['value']['cellId']);
         self::assertSame(117, $events[0]['value']['gsmSignal']);
+        self::assertCount(1, $events[0]['value']['baseStations']);
+        self::assertCount(4, $events[0]['value']['wifiAccessPoints']);
+        self::assertSame('vivistar-ap02', $events[0]['extra']['sourceRaw']);
         self::assertSame(0, $events[0]['extra']['replyFlag']);
         self::assertSame(1, $events[0]['extra']['baseCount']);
         self::assertSame(4, $events[0]['extra']['wifiCount']);
-        self::assertCount(1, $events[0]['extra']['baseStations']);
-        self::assertCount(4, $events[0]['extra']['wifi']);
     }
 
     public function testDecodesVivistarAp10IntoAlarmLocationAndBatteryEvents(): void
@@ -389,6 +390,7 @@ final class DeviceEventDecoderTest extends TestCase
         );
 
         self::assertSame(['location', 'activity', 'battery'], array_column($events, 'feature'));
+        self::assertSame('gps', $events[0]['value']['source']);
         self::assertSame(38.7167, $events[0]['value']['lat']);
         self::assertSame(-9.1399, $events[0]['value']['lon']);
         self::assertSame(9, $events[0]['value']['satelliteCount']);
@@ -427,8 +429,10 @@ final class DeviceEventDecoderTest extends TestCase
         );
 
         self::assertSame(['location', 'alarm', 'battery'], array_column($events, 'feature'));
+        self::assertSame('cell', $events[0]['value']['source']);
         self::assertSame('00200000', $events[1]['value']['code']);
         self::assertTrue($events[1]['value']['fall']);
+        self::assertSame('lbs_wifi', $events[0]['extra']['sourceRaw']);
         self::assertSame('LTE', $events[1]['extra']['networkType']);
         self::assertSame('13011', $events[0]['value']['lac']);
         self::assertSame(44, $events[2]['value']['percent']);
