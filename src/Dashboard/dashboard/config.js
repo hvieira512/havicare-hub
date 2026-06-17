@@ -185,7 +185,10 @@ function configButtonState(row, uiState) {
     }
 
     const status = String(row?.last_status || '');
-    if (['queued', 'waiting', 'acked', 'failed', 'dropped'].includes(status)) {
+    if (uiState?.trackStatus && ['queued', 'waiting', 'acked', 'failed', 'dropped'].includes(status)) {
+        return status;
+    }
+    if (['queued', 'waiting'].includes(status)) {
         return status;
     }
 

@@ -45,6 +45,9 @@ ob_start();
                                     <div class="form-label">Protocolo</div>
                                     <div id="deviceProtocolText" class="border rounded bg-body-tertiary px-3 py-2 text-secondary">-</div>
                                 </div>
+                                <div class="d-flex justify-content-end mt-auto">
+                                    <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -59,12 +62,6 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-ob_start();
-?>
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-<button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
-<?php
-$footer = (string) ob_get_clean();
+$footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
 render_modal('deviceModal', 'Dispositivo', $body, $footer, 'modal-xl modal-fullscreen-sm-down');
-

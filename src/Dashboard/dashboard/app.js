@@ -863,6 +863,7 @@ async function saveDeviceConfiguration(section) {
 
         setConfigUi(key, {
             phase: 'sent',
+            trackStatus: true,
             feedback: {tone: 'success', message: 'Configuração enviada ao dispositivo.'},
         });
         renderDeviceConfigurationModal();
@@ -1001,6 +1002,13 @@ function syncConfigUiWithRows() {
         }
 
         const status = String(row.last_status || '');
+        if (!ui?.trackStatus) {
+            if (['acked', 'failed', 'dropped'].includes(status)) {
+                stopConfigPolling(key);
+            }
+            continue;
+        }
+
         if (status === 'acked' && !ui?.feedback) {
             setConfigUi(key, {
                 feedback: {tone: 'success', message: 'Dispositivo confirmou a configuração.'},
