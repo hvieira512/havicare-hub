@@ -60,6 +60,10 @@ export const fieldLabel = key => ({
     steps: 'Passos',
     bodyCelsius: 'Temperatura',
     percent: 'Percentagem',
+    intervalSeconds: 'Intervalo (s)',
+    intervalMinutes: 'Intervalo (min)',
+    password: 'Palavra-passe',
+    phone: 'Telefone',
 }[key] || titleize(key));
 
 export const commandLabel = command => ({
@@ -76,6 +80,7 @@ export const commandLabel = command => ({
     PPG: 'PPG',
     'RR interval': 'Intervalo RR',
     Weather: 'Meteorologia',
+    'Heart rate and blood pressure': 'Frequência cardíaca e tensão arterial',
 }[command.label] || command.label || command.command);
 
 export const displayValue = value => {

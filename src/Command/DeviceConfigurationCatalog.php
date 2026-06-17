@@ -12,6 +12,7 @@ final class DeviceConfigurationCatalog
         $configs = match ($protocol) {
             'wonlex-json' => self::wonlexConfigs(),
             'vivistar-iw' => self::vivistarConfigs(),
+            'four-p-touch' => self::fourPTouchConfigs(),
             default => [],
         };
 
@@ -71,6 +72,7 @@ final class DeviceConfigurationCatalog
             'payload' => match ($protocol) {
                 'wonlex-json' => self::wonlexPayload($key, $payload),
                 'vivistar-iw' => self::vivistarPayload($key, $payload),
+                'four-p-touch' => self::fourPTouchPayload($key, $payload),
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
         ];
@@ -129,6 +131,28 @@ final class DeviceConfigurationCatalog
             ],
             'bloodPressureCalibration' => self::vivistarBloodPressureCalibration($payload),
             default => throw new \InvalidArgumentException("Unsupported Vivistar configuration {$key}"),
+        };
+
+        return ['fields' => array_map(static fn(mixed $value): string => (string)$value, $fields)];
+    }
+
+    private static function fourPTouchPayload(string $key, array $payload): array
+    {
+        if (isset($payload['fields']) && is_array($payload['fields'])) {
+            return ['fields' => array_map(static fn(mixed $value): string => trim((string)$value), $payload['fields'])];
+        }
+
+        $fields = match ($key) {
+            'uploadInterval' => [self::positiveInt($payload['intervalSeconds'] ?? null, 'intervalSeconds')],
+            'sosNumber1', 'sosNumber2', 'sosNumber3', 'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
+            'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
+            'devicePassword' => [self::requiredString($payload['password'] ?? null, 'password')],
+            'healthAutoMeasurement' => [
+                1,
+                self::boolInt($payload['enabled'] ?? null, 'enabled'),
+                self::positiveInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
+            ],
+            default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
 
         return ['fields' => array_map(static fn(mixed $value): string => (string)$value, $fields)];
@@ -254,6 +278,24 @@ final class DeviceConfigurationCatalog
         ];
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function fourPTouchConfigs(): array
+    {
+        return [
+            self::entry('uploadInterval', 'UPLOAD', 'Intervalo de localização', 'number', ['intervalSeconds'], ['UPLOAD'], 'intervals', 10),
+            self::entry('sosNumber1', 'SOS1', 'SOS 1', 'phone', ['phone'], ['SOS1'], 'contacts', 10),
+            self::entry('sosNumber2', 'SOS2', 'SOS 2', 'phone', ['phone'], ['SOS2'], 'contacts', 20),
+            self::entry('sosNumber3', 'SOS3', 'SOS 3', 'phone', ['phone'], ['SOS3'], 'contacts', 30),
+            self::entry('whitelistGroup1', 'WHITELIST1', 'Lista branca 1-5', 'list', ['numbers'], ['WHITELIST1'], 'contacts', 40, 5),
+            self::entry('whitelistGroup2', 'WHITELIST2', 'Lista branca 6-10', 'list', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
+            self::entry('monitorNumber', 'MONITOR', 'Número de monitorização', 'phone', ['phone'], ['MONITOR'], 'contacts', 60),
+            self::entry('devicePassword', 'PW', 'Palavra-passe do dispositivo', 'text', ['password'], ['PW'], 'system', 10),
+            self::entry('healthAutoMeasurement', 'HEALTHAUTOSET', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['HEALTHAUTOSET'], 'health', 10),
+        ];
+    }
+
     private static function entry(
         string $key,
         string $command,
@@ -299,6 +341,16 @@ final class DeviceConfigurationCatalog
             throw new \InvalidArgumentException("{$field} must be an array");
         }
         return array_pad(array_map(static fn(mixed $item): string => trim((string)$item), array_slice($value, 0, $max)), $max, '');
+    }
+
+    private static function requiredString(mixed $value, string $field): string
+    {
+        $value = trim((string)$value);
+        if ($value === '') {
+            throw new \InvalidArgumentException("{$field} is required");
+        }
+
+        return $value;
     }
 
     private static function boolInt(mixed $value, string $field): int

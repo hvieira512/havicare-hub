@@ -2,6 +2,7 @@
 
 namespace Hub\Command;
 
+use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
 
@@ -29,6 +30,7 @@ final class DeviceCommandCatalog
         return match ($protocol) {
             'wonlex-json' => self::wonlexCommands(),
             'vivistar-iw' => self::vivistarCommands(),
+            'four-p-touch' => self::fourPTouchCommands(),
             default => [],
         };
     }
@@ -59,6 +61,7 @@ final class DeviceCommandCatalog
         return match ($protocol) {
             'wonlex-json' => self::buildWonlex($imei, $command, $payload),
             'vivistar-iw' => self::buildVivistar($imei, $command, $entry, $payload),
+            'four-p-touch' => self::buildFourPTouch($imei, $command, $entry, $payload),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
@@ -99,6 +102,17 @@ final class DeviceCommandCatalog
         ];
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function fourPTouchCommands(): array
+    {
+        return [
+            ['command' => 'CR', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'expectedReplyTypes' => ['CR', 'UD', 'UD2', 'UD_WCDMA', 'UD_LTE', 'AL', 'AL_WCDMA', 'AL_LTE']],
+            ['command' => 'hrtstart', 'label' => 'Heart rate and blood pressure', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+        ];
+    }
+
     private static function buildWonlex(string $imei, string $command, array $payload = []): string
     {
         $timestamp = (int)round(microtime(true) * 1000);
@@ -130,6 +144,16 @@ final class DeviceCommandCatalog
             'type' => $command,
             'imei' => $imei,
             'ident' => (string)random_int(100000, 999999),
+            'data' => ['fields' => $payload['fields'] ?? ($entry['data'] ?? [])],
+        ]);
+    }
+
+    private static function buildFourPTouch(string $imei, string $command, array $entry, array $payload = []): string
+    {
+        return (new FourPTouchAdapter())->encodeOutgoing([
+            'type' => $command,
+            'imei' => substr($imei, -10),
+            'manufacturer' => (string)($payload['manufacturer'] ?? '3G'),
             'data' => ['fields' => $payload['fields'] ?? ($entry['data'] ?? [])],
         ]);
     }

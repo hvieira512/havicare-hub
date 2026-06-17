@@ -17,11 +17,18 @@ const CATEGORY_LABELS = {
         system: 'Sistema',
         intervals: 'Intervalos',
     },
+    'four-p-touch': {
+        contacts: 'Contactos',
+        health: 'Saúde',
+        system: 'Sistema',
+        intervals: 'Intervalos',
+    },
 };
 
 const CATEGORY_ORDER = {
     'vivistar-iw': ['contacts', 'alerts', 'health', 'system', 'intervals'],
     'wonlex-json': ['intervals', 'contacts', 'measurements', 'alerts', 'health', 'system'],
+    'four-p-touch': ['intervals', 'contacts', 'health', 'system'],
 };
 
 let uidCounter = 0;
@@ -106,7 +113,7 @@ export function renderConfigSection(protocol, entry, row, disabled = false, uiSt
     const help = configHelp(entry);
 
     return `
-        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-key="${esc(entry.key)}" data-config-input="${esc(entry.input || 'json')}" data-config-protocol="${esc(protocol)}">
+        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-key="${esc(entry.key)}" data-config-input="${esc(entry.input || 'json')}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ''))}">
             <div>
                 <div>
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -207,6 +214,12 @@ export function renderConfigInputs(entry, desired) {
     if (input === 'number') {
         return numberInput(entry, desired);
     }
+    if (input === 'phone') {
+        return phoneInput(entry, desired);
+    }
+    if (input === 'text') {
+        return textInput(entry, desired);
+    }
     if (input === 'intervalToggle') {
         return intervalToggleInput(entry, desired);
     }
@@ -240,6 +253,12 @@ export function readConfigPayload(section) {
     if (input === 'number') {
         return {[firstFieldName(section)]: readNumber(section, firstFieldName(section))};
     }
+    if (input === 'phone') {
+        return {[firstFieldName(section)]: readPhone(section, firstFieldName(section))};
+    }
+    if (input === 'text') {
+        return {[firstFieldName(section)]: readText(section, firstFieldName(section))};
+    }
     if (input === 'intervalToggle') {
         return {
             enabled: readCheckbox(section, 'enabled'),
@@ -262,7 +281,8 @@ export function readConfigPayload(section) {
         };
     }
     if (input === 'list') {
-        return {numbers: readPhoneArray(section, 'numbers').slice(0, 3)};
+        const limit = parseInt(section.dataset.configLimit || '3', 10) || 3;
+        return {numbers: readPhoneArray(section, 'numbers').slice(0, limit)};
     }
     if (input === 'contacts') {
         return {contacts: readContacts(section)};
@@ -280,6 +300,7 @@ export function defaultConfigPayload(entry) {
     if (input === 'toggle') return {enabled: true};
     if (input === 'fallSensitivity') return {sensitivity: 2};
     if (input === 'number') return {[field]: 0};
+    if (input === 'phone' || input === 'text') return {[field]: ''};
     if (input === 'intervalToggle') return {enabled: true, intervalMinutes: 60};
     if (input === 'workingMode') return {mode: 1};
     if (input === 'bloodPressure') return {systolic: 120, diastolic: 80};
@@ -342,6 +363,10 @@ function readNumber(section, field) {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function readText(section, field) {
+    return String(section.querySelector(`[data-config-field="${CSS.escape(field)}"]`)?.value || '').trim();
+}
+
 function readTextArray(section, field) {
     return Array.from(section.querySelectorAll(`[data-config-field="${CSS.escape(field)}"]`))
         .map(input => String(input.value || '').trim())
@@ -352,6 +377,11 @@ function readPhoneArray(section, field) {
     return Array.from(section.querySelectorAll(`[data-phone-control][data-config-field="${CSS.escape(field)}"]`))
         .map(control => normalizePhoneControl(control))
         .filter(Boolean);
+}
+
+function readPhone(section, field) {
+    const control = section.querySelector(`[data-phone-control][data-config-field="${CSS.escape(field)}"]`);
+    return control ? normalizePhoneControl(control) : '';
 }
 
 function readContacts(section) {
@@ -460,6 +490,29 @@ function numberInput(entry, desired) {
         <div>
             <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
             <input class="form-control" type="number" min="0" step="1" data-config-field="${esc(field)}" value="${esc(String(value))}">
+        </div>`;
+}
+
+function phoneInput(entry, desired) {
+    const field = entry.fields?.[0] || 'phone';
+    return `
+        <div>
+            <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
+            ${renderPhoneControl({
+                value: String(desired[field] || ''),
+                configField: field,
+                placeholder: entry.label || fieldLabel(field),
+            })}
+        </div>`;
+}
+
+function textInput(entry, desired) {
+    const field = entry.fields?.[0] || 'value';
+    const value = desired[field] ?? '';
+    return `
+        <div>
+            <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
+            <input class="form-control" type="text" data-config-field="${esc(field)}" value="${esc(String(value))}">
         </div>`;
 }
 

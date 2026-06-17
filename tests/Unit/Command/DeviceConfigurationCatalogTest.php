@@ -4,6 +4,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use PHPUnit\Framework\TestCase;
@@ -49,5 +50,42 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'intervalSeconds must be at least 30 for mode 8',
             DeviceConfigurationCatalog::validate('vivistar-iw', 'workingMode', ['mode' => 8, 'intervalSeconds' => 10, 'gpsEnabled' => true])
         );
+    }
+
+    public function testFourPTouchUploadIntervalBuildsNativeFields(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'uploadInterval', ['intervalSeconds' => 600]);
+        self::assertSame('UPLOAD', $payload['command']);
+        self::assertSame(['fields' => ['600']], $payload['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertSame('[3G*8800000015*000A*UPLOAD,600]', $wire);
+    }
+
+    public function testFourPTouchWhitelistSupportsFiveNumbers(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'whitelistGroup1', [
+            'numbers' => ['111', '222', '333', '444', '555'],
+        ]);
+
+        self::assertSame('WHITELIST1', $payload['command']);
+        self::assertSame(['fields' => ['111', '222', '333', '444', '555']], $payload['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        $decoded = (new FourPTouchAdapter())->decodeIncoming($wire);
+
+        self::assertIsArray($decoded);
+        self::assertSame('WHITELIST1', $decoded['type'] ?? null);
+        self::assertSame(['111', '222', '333', '444', '555'], $decoded['data']['fields'] ?? null);
+    }
+
+    public function testFourPTouchCommandsExposeLocationAndHealthRequests(): void
+    {
+        $commands = DeviceCommandCatalog::commandsForProtocol('four-p-touch');
+
+        self::assertCount(2, $commands);
+        self::assertSame('CR', $commands[0]['command']);
+        self::assertSame('hrtstart', $commands[1]['command']);
+        self::assertContains('bphrt', $commands[1]['expectedReplyTypes']);
     }
 }
