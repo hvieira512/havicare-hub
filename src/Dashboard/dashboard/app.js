@@ -26,7 +26,7 @@ import {
     readConfigPayload,
     renderDeviceConfigurationRoot,
 } from './config.js';
-import {renderPhoneControl, resetPhoneControls, syncPhoneControl} from './phone.js';
+import {normalizePhoneControl, renderPhoneControl, resetPhoneControls, syncPhoneControl} from './phone.js';
 
 let els = {};
 let deviceModal = null;
@@ -305,6 +305,7 @@ function openAddDevice() {
         configUi: {},
         loading: false,
     };
+    renderDeviceSimNumberField('');
     renderDeviceSelectors();
     renderDeviceConfigurationModal();
     deviceModal.show();
@@ -332,12 +333,13 @@ async function editDevice(imei, supplier, model) {
     };
     renderDeviceSelectors(supplier, model);
     renderDeviceConfigurationModal();
+    renderDeviceSimNumberField('');
     deviceModal.show();
 
     try {
         const detail = await api.device(imei);
         const device = detail.device || {};
-        els.deviceSimNumber.value = String(device.simNumber || '');
+        renderDeviceSimNumberField(String(device.simNumber || ''));
         state.deviceModal.simNumber = String(device.simNumber || '');
         await refreshDeviceModalConfigurations(false);
     } finally {
@@ -382,7 +384,7 @@ function syncDeviceModalContext() {
     state.deviceModal.protocol = protocol;
     state.deviceModal.catalog = catalogForProtocol(protocol);
     state.deviceModal.imei = els.deviceImei.value.trim();
-    state.deviceModal.simNumber = els.deviceSimNumber.value.trim();
+    state.deviceModal.simNumber = getDeviceSimNumberValue(false);
     if (!state.deviceModal.activeCategory || !state.deviceModal.catalog.some(entry => entry.category === state.deviceModal.activeCategory)) {
         state.deviceModal.activeCategory = state.deviceModal.catalog[0]?.category || '';
     }
@@ -419,7 +421,13 @@ function renderDeviceConfigurationModal() {
 
 async function saveDevice() {
     const imei = els.deviceImei.value.trim();
-    const simNumber = els.deviceSimNumber.value.trim();
+    let simNumber = '';
+    try {
+        simNumber = getDeviceSimNumberValue(true);
+    } catch (error) {
+        alert(error instanceof Error ? error.message : 'Número do SIM inválido');
+        return;
+    }
     const supplier = els.deviceForm.dataset.supplier || '';
     const model = els.deviceForm.dataset.model || '';
     if (!imei || !supplier || !model) { alert('Todos os campos são obrigatórios'); return; }
@@ -620,7 +628,7 @@ function cacheElements() {
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
         deviceImei: document.getElementById('deviceImei'),
-        deviceSimNumber: document.getElementById('deviceSimNumber'),
+        deviceSimNumberRoot: document.getElementById('deviceSimNumberRoot'),
         devicePreview: document.getElementById('devicePreview'),
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
@@ -651,7 +659,8 @@ function bindEvents() {
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
     els.deviceImei.addEventListener('input', handleDeviceImeiInput);
-    els.deviceSimNumber.addEventListener('input', handleDeviceImeiInput);
+    els.deviceForm.addEventListener('input', handleDeviceFormInput);
+    els.deviceForm.addEventListener('change', handleDeviceFormChange);
     els.manageSuppliersBtn.addEventListener('click', loadSuppliers);
     els.saveSupplierBtn.addEventListener('click', saveSupplier);
     els.supplierForm.addEventListener('submit', event => { event.preventDefault(); saveSupplier(); });
@@ -689,6 +698,20 @@ function handleModelImageChange() {
 function handleDeviceImeiInput() {
     syncDeviceModalContext();
     renderDeviceConfigurationModal();
+}
+
+function handleDeviceFormInput(event) {
+    if (event.target.matches('[data-phone-local]')) {
+        syncPhoneControl(event.target);
+        syncDeviceModalContext();
+    }
+}
+
+function handleDeviceFormChange(event) {
+    if (event.target.matches('[data-phone-country]')) {
+        syncPhoneControl(event.target);
+        syncDeviceModalContext();
+    }
 }
 
 function handleTelemetryPagerClick(event) {
@@ -1081,6 +1104,35 @@ function resetConfigUiState() {
     configPollTimers.clear();
 
     deviceConfigRefreshPromise = null;
+}
+
+function renderDeviceSimNumberField(value = '') {
+    if (!els.deviceSimNumberRoot) {
+        return;
+    }
+
+    els.deviceSimNumberRoot.innerHTML = renderPhoneControl({
+        value,
+        placeholder: 'Número do SIM',
+    });
+    resetPhoneControls(els.deviceSimNumberRoot);
+}
+
+function getDeviceSimNumberValue(strict = false) {
+    const control = els.deviceSimNumberRoot?.querySelector('[data-phone-control]') || null;
+    if (!control) {
+        return '';
+    }
+
+    if (!strict) {
+        try {
+            return normalizePhoneControl(control);
+        } catch {
+            return '';
+        }
+    }
+
+    return normalizePhoneControl(control);
 }
 
 function appendContactRow(section) {

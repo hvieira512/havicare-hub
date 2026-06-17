@@ -30,8 +30,8 @@ ob_start();
                                     <input type="text" class="form-control" id="deviceImei" required>
                                 </div>
                                 <div>
-                                    <label for="deviceSimNumber" class="form-label">Número do SIM</label>
-                                    <input type="text" class="form-control" id="deviceSimNumber" placeholder="3519...">
+                                    <label class="form-label">Número do SIM</label>
+                                    <div id="deviceSimNumberRoot"></div>
                                 </div>
                                 <div>
                                     <div class="form-label">Fornecedor</div>

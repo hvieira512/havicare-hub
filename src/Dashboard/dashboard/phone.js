@@ -1,7 +1,7 @@
 import {esc} from './format.js';
 
 const PHONE_COUNTRIES = [
-    {code: 'PT', name: 'Portugal', flag: '🇵🇹', dialCode: '351', minLength: 9, maxLength: 9, groups: [3, 3, 3], sample: '938 854 803'},
+    {code: 'PT', name: 'Portugal', flag: '🇵🇹', dialCode: '351', minLength: 9, maxLength: 9, groups: [3, 3, 3], sample: '912 345 678'},
     {code: 'ES', name: 'Espanha', flag: '🇪🇸', dialCode: '34', minLength: 9, maxLength: 9, groups: [3, 3, 3], sample: '612 345 678'},
     {code: 'FR', name: 'França', flag: '🇫🇷', dialCode: '33', minLength: 9, maxLength: 9, groups: [1, 2, 2, 2, 2], sample: '6 12 34 56 78'},
     {code: 'IT', name: 'Itália', flag: '🇮🇹', dialCode: '39', minLength: 9, maxLength: 10, groups: [3, 3, 4], sample: '312 345 6789'},
