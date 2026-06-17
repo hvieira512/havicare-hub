@@ -445,6 +445,7 @@ final class DashboardHttpServer
         }
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
+            $this->store->deleteDevice($imei);
         }
         $this->whitelist->register($newImei, $supplier, $model, $simNumber, $deviceId);
         $this->store->registerDevice($newImei, $supplier, $model, $simNumber, $deviceId);
