@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 function render_modal(string $id, string $title, string $body, string $footer = '', string $size = ''): void
 {
-    $dialogClass = trim('modal-dialog modal-dialog-centered ' . $size);
+    $isFullscreen = str_contains($size, 'modal-fullscreen');
+    $dialogClass = trim('modal-dialog ' . ($isFullscreen ? '' : 'modal-dialog-centered ') . $size);
     ?>
     <div class="modal fade" id="<?= h($id) ?>" tabindex="-1">
         <div class="<?= h($dialogClass) ?>">
@@ -24,4 +25,3 @@ function render_modal(string $id, string $title, string $body, string $footer = 
     </div>
     <?php
 }
-

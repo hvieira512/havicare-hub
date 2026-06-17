@@ -64,4 +64,4 @@ $body = (string) ob_get_clean();
 
 $footer = '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
-render_modal('deviceModal', 'Dispositivo', $body, $footer, 'modal-xl modal-fullscreen-sm-down');
+render_modal('deviceModal', 'Dispositivo', $body, $footer, 'modal-fullscreen');

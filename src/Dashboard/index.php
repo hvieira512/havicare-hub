@@ -27,7 +27,21 @@ require_once __DIR__ . '/components/modal.php';
             .device-modal-shell {
                 padding: 1rem;
             }
+            #deviceModal .modal-dialog.modal-fullscreen {
+                margin: 1rem;
+                width: calc(100vw - 2rem);
+                max-width: none;
+                height: calc(100% - 2rem);
+            }
+            #deviceModal .modal-dialog.modal-fullscreen .modal-content {
+                height: 100%;
+            }
             @media (max-width: 575.98px) {
+                #deviceModal .modal-dialog.modal-fullscreen {
+                    margin: 0;
+                    width: 100vw;
+                    height: 100%;
+                }
                 .device-modal-shell {
                     padding: 0;
                 }
