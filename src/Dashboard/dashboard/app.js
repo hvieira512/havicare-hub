@@ -92,7 +92,9 @@ function renderSummary() {
                 <div class="small text-secondary d-flex align-items-center gap-1"><span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block" style="width:.55rem;height:.55rem;"></span><span>visto ${ago(device.lastSeenAt)}</span></div>
                 </div>
                 <div class="btn-group btn-group-sm" style="flex-shrink:0">
-                <button class="btn btn-outline-secondary" data-imei="${esc(device.imei)}" data-supplier="${esc(device.supplier)}" data-model="${esc(device.model)}" data-action="edit" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-secondary" data-imei="${esc(device.imei)}" data-supplier="${esc(device.supplier)}" data-model="${esc(device.model)}" data-action="edit" title="Editar">
+                <i class="fa-solid fa-eye"></i>
+                </button>
                 </div>
                 </div>`).join('')}
             </div>`;
