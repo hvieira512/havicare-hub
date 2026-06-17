@@ -357,9 +357,9 @@ function toggleInput(entry, desired) {
 function fallSensitivityInput(desired) {
     const current = parseInt(String(desired.sensitivity ?? 2), 10) || 2;
     const options = [
-        {value: 1, label: 'Baixa', icon: 'fa-feather-pointed', className: 'btn-success'},
-        {value: 2, label: 'Normal', icon: 'fa-shield-heart', className: 'btn-warning'},
-        {value: 3, label: 'Alta', icon: 'fa-triangle-exclamation', className: 'btn-danger'},
+        {value: 1, label: 'Baixa', icon: 'fa-feather-pointed', className: 'btn-outline-success'},
+        {value: 2, label: 'Normal', icon: 'fa-shield-heart', className: 'btn-outline-warning'},
+        {value: 3, label: 'Alta', icon: 'fa-triangle-exclamation', className: 'btn-outline-danger'},
     ];
 
     return `
