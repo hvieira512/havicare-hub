@@ -32,6 +32,22 @@ final class DashboardStoreTest extends TestCase
         self::assertSame([], $store->recent('861265061009822', 'events'));
         self::assertSame([], $store->commands('861265061009822'));
     }
+
+    public function testExpireStaleDevicesMarksOldOnlineDevicesOffline(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+        $store->deviceSeen('861265061009822', ['online' => '1']);
+        $redis->hmset('test:dashboard:device:861265061009822', [
+            'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
+        ]);
+
+        $store->expireStaleDevices(60);
+
+        self::assertFalse($store->device('861265061009822')['online']);
+    }
 }
 
 final class InMemoryRedisClient implements ClientInterface

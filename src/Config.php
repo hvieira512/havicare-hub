@@ -37,6 +37,7 @@ class Config
                 'password' => getenv('DASHBOARD_PASSWORD') ?: '',
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 120),
+                'device_idle_timeout_seconds' => (int)(getenv('DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS') ?: 1800),
             ],
             'hub' => [
                 'downlink_queue_ttl_seconds' => $downlinkQueueTtl,

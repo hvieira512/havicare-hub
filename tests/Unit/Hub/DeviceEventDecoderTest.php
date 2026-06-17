@@ -337,6 +337,103 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(67, $events[1]['value']['bpm']);
     }
 
+    public function testDecodesFourPTouchOxygenReport(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'oxygen',
+                'data' => [
+                    'measureType' => 0,
+                    'spo2' => 97,
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('blood_oxygen', $events[0]['feature']);
+        self::assertSame(97, $events[0]['value']['spo2Percent']);
+    }
+
+    public function testDecodesFourPTouchPositionIntoLocationActivityAndBattery(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'UD2',
+                'data' => [
+                    'source' => 'gps',
+                    'gpsValid' => true,
+                    'lat' => 38.7167,
+                    'lon' => -9.1399,
+                    'speed' => 0.5,
+                    'direction' => 152.0,
+                    'altitude' => 12.0,
+                    'satellites' => 9,
+                    'gsmSignal' => 88,
+                    'batteryPercent' => 76,
+                    'steps' => 1042,
+                    'mcc' => '268',
+                    'mnc' => '01',
+                    'lac' => '1234',
+                    'cellId' => '5678',
+                    'accuracy' => 15.5,
+                    'baseStations' => [
+                        ['lac' => '1234', 'cellId' => '5678', 'gsmSignal' => 91],
+                    ],
+                    'wifi' => [
+                        ['label' => 'OfficeNet', 'mac' => 'bc:5f:f6:1e:07:be', 'signal' => -55],
+                    ],
+                ],
+            ]
+        );
+
+        self::assertSame(['location', 'activity', 'battery'], array_column($events, 'feature'));
+        self::assertSame(38.7167, $events[0]['value']['lat']);
+        self::assertSame(-9.1399, $events[0]['value']['lon']);
+        self::assertSame(9, $events[0]['value']['satelliteCount']);
+        self::assertSame('268', $events[0]['value']['mcc']);
+        self::assertSame('1234', $events[0]['value']['lac']);
+        self::assertCount(1, $events[0]['value']['baseStations']);
+        self::assertCount(1, $events[0]['value']['wifiAccessPoints']);
+        self::assertSame(1042, $events[1]['value']['steps']);
+        self::assertSame(76, $events[2]['value']['percent']);
+    }
+
+    public function testDecodesFourPTouchAlarmIntoLocationAlarmAndBattery(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'AL_LTE',
+                'data' => [
+                    'source' => 'lbs_wifi',
+                    'gpsValid' => false,
+                    'lat' => 0.0,
+                    'lon' => 0.0,
+                    'gsmSignal' => 55,
+                    'batteryPercent' => 44,
+                    'mcc' => '334',
+                    'mnc' => '020',
+                    'lac' => '13011',
+                    'cellId' => '23152151',
+                    'networkType' => 'LTE',
+                    'alarmCode' => '00200000',
+                    'fall' => true,
+                    'sos' => false,
+                    'lowBattery' => false,
+                ],
+            ]
+        );
+
+        self::assertSame(['location', 'alarm', 'battery'], array_column($events, 'feature'));
+        self::assertSame('00200000', $events[1]['value']['code']);
+        self::assertTrue($events[1]['value']['fall']);
+        self::assertSame('LTE', $events[1]['extra']['networkType']);
+        self::assertSame('13011', $events[0]['value']['lac']);
+        self::assertSame(44, $events[2]['value']['percent']);
+    }
+
     public function testSkipsUnknownNativePackets(): void
     {
         self::assertSame([], (new DeviceEventDecoder())->decode(

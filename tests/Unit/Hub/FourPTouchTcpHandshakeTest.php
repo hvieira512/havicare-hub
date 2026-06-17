@@ -7,6 +7,7 @@ namespace Tests\Unit\Hub;
 use Hub\DeviceHubServer;
 use Hub\HubMqttBridge;
 use Hub\HubTcpIngress;
+use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
@@ -90,6 +91,65 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertSame('activity', $mqtt->telemetry[1][1]['type']);
         self::assertSame('battery', $mqtt->telemetry[2][1]['type']);
         self::assertSame('text', $mqtt->raw[0][1]['debug']['encoding']);
+    }
+
+    public function testFourPTouchAlarmGetsProtocolAckOverTcp(): void
+    {
+        $loop = new StreamSelectLoop();
+        $port = $this->freeTcpPort();
+        if ($port === null) {
+            self::markTestSkipped('Local TCP sockets are not available in this environment');
+        }
+
+        $mqtt = new RecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        new HubTcpIngress($hub, $loop, '127.0.0.1', $port);
+
+        $received = '';
+        $error = null;
+        $phase = 'handshake';
+        $alarm = (new FourPTouchAdapter())->encodeOutgoing([
+            'type' => 'AL',
+            'imei' => '8800000015',
+            'manufacturer' => '3G',
+            'data' => ['fields' => ['240617', '101530', 'V', '0.0', 'N', '0.0', 'E', '0.0', '0', '0', '0', '55', '44', '0', '0', '00200000']],
+        ]);
+
+        $connector = new Connector($loop);
+        $loop->addTimer(0.01, static function () use ($connector, $port, &$received, &$error, &$phase, $alarm, $loop): void {
+            $connector->connect("tcp://127.0.0.1:$port")->then(
+                static function (ConnectionInterface $connection) use (&$received, &$phase, $alarm, $loop): void {
+                    $connection->on('data', static function (string $data) use (&$received, &$phase, $connection, $alarm, $loop): void {
+                        $received .= $data;
+                        if ($phase === 'handshake' && str_contains($received, '[3G*8800000015*0002*LK]')) {
+                            $phase = 'alarm';
+                            $received = '';
+                            $connection->write($alarm);
+                            return;
+                        }
+
+                        if ($phase === 'alarm' && str_contains($received, '[3G*8800000015*0002*AL]')) {
+                            $connection->end();
+                            $loop->stop();
+                        }
+                    });
+                    $connection->write('[3G*8800000015*000D*LK,50,100,100]');
+                },
+                static function (\Throwable $e) use (&$error, $loop): void {
+                    $error = $e;
+                    $loop->stop();
+                }
+            );
+        });
+        $loop->addTimer(1.0, static function () use (&$error, $loop): void {
+            $error = $error ?? new \RuntimeException('Timed out waiting for 4P Touch alarm ACK');
+            $loop->stop();
+        });
+
+        $loop->run();
+
+        self::assertNull($error, $error?->getMessage() ?? '');
+        self::assertSame('[3G*8800000015*0002*AL]', $received);
     }
 
     private function freeTcpPort(): ?int

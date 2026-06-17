@@ -143,32 +143,45 @@ final class DeviceEventDecoder
 
     private function decodeFourPTouch(string $nativeType, array $payload): array
     {
-        return match ($nativeType) {
-            'LK' => array_values(array_filter([
+        return match (true) {
+            $nativeType === 'LK' => array_values(array_filter([
                 $this->event('heartbeat', $nativeType, $payload, $payload),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
-            'bphrt' => [
+            $nativeType === 'bphrt' => [
                 $this->event('blood_pressure', $nativeType, $payload),
                 $this->event('heart_rate', $nativeType, $payload),
             ],
-            'UD_LTE' => array_values(array_filter([
+            $nativeType === 'oxygen' => [
+                $this->event('blood_oxygen', $nativeType, $payload, $payload),
+            ],
+            $this->isFourPTouchPosition($nativeType) => array_values(array_filter([
                 $this->event('location', $nativeType, $payload, $payload),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
-            'AL_LTE' => array_values(array_filter([
+            $this->isFourPTouchAlarm($nativeType) => array_values(array_filter([
                 $this->event('location', $nativeType, $payload, $payload),
                 $this->event('alarm', $nativeType, $payload, $this->only($payload, [
                     'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satellites',
-                    'batteryPercent', 'mcc', 'mnc', 'lac', 'cellId',
+                    'batteryPercent', 'mcc', 'mnc', 'lac', 'cellId', 'networkType',
                 ])),
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
-            'CONFIG' => [$this->event('device_config', $nativeType, $payload, $payload)],
+            $nativeType === 'CONFIG' => [$this->event('device_config', $nativeType, $payload, $payload)],
             default => [],
         };
+    }
+
+    private function isFourPTouchPosition(string $nativeType): bool
+    {
+        return in_array($nativeType, ['UD', 'UD2', 'UD_WCDMA', 'UD_LTE'], true);
+    }
+
+    private function isFourPTouchAlarm(string $nativeType): bool
+    {
+        return in_array($nativeType, ['AL', 'AL_WCDMA', 'AL_LTE'], true);
     }
 
     private function event(string $feature, string $nativeType, array $payload, array $extra = []): ?array

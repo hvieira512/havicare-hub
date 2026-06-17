@@ -94,7 +94,9 @@ final class FeatureNormalizer
     private static function location(array $payload): array
     {
         $gps = isset($payload['gps']) && is_array($payload['gps']) ? $payload['gps'] : [];
-        $baseStations = isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : [];
+        $baseStations = isset($payload['baseStations']) && is_array($payload['baseStations'])
+            ? $payload['baseStations']
+            : (isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : []);
         $wifiAccessPoints = isset($payload['wifi']) && is_array($payload['wifi']) ? $payload['wifi'] : [];
         $firstBaseStation = $baseStations[0] ?? [];
 
@@ -107,11 +109,11 @@ final class FeatureNormalizer
             'heading' => self::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
             'altitudeMeters' => self::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? $gps['height'] ?? null),
             'satelliteCount' => self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null),
-            'gsmSignal' => self::int($payload['gsmSignal'] ?? $gps['GSM'] ?? $firstBaseStation['rxlev'] ?? null),
+            'gsmSignal' => self::int($payload['gsmSignal'] ?? $gps['GSM'] ?? $firstBaseStation['rxlev'] ?? $firstBaseStation['gsmSignal'] ?? null),
             'mcc' => self::stringOrNull($payload['mcc'] ?? $gps['mcc'] ?? $firstBaseStation['mcc'] ?? null),
             'mnc' => self::stringOrNull($payload['mnc'] ?? $gps['mnc'] ?? $firstBaseStation['mnc'] ?? null),
             'lac' => self::stringOrNull($payload['lac'] ?? $gps['lac'] ?? $firstBaseStation['lac'] ?? null),
-            'cellId' => self::stringOrNull($payload['cellId'] ?? $gps['cellId'] ?? $gps['ci'] ?? $firstBaseStation['ci'] ?? null),
+            'cellId' => self::stringOrNull($payload['cellId'] ?? $gps['cellId'] ?? $gps['ci'] ?? $firstBaseStation['ci'] ?? $firstBaseStation['cellId'] ?? null),
             'accuracyMeters' => self::float($payload['accuracy'] ?? $payload['accuracyMeters'] ?? null),
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
 

@@ -122,6 +122,7 @@ require_once __DIR__ . '/components/modal.php';
             window.dashboardConfigurationCatalog = <?= json_encode([
                 'wonlex-json' => DeviceConfigurationCatalog::configsForProtocol('wonlex-json'),
                 'vivistar-iw' => DeviceConfigurationCatalog::configsForProtocol('vivistar-iw'),
+                'four-p-touch' => DeviceConfigurationCatalog::configsForProtocol('four-p-touch'),
             ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
         </script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

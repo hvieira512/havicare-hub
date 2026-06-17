@@ -175,6 +175,21 @@ final class DashboardStore
         }
     }
 
+    public function expireStaleDevices(int $timeoutSeconds): void
+    {
+        $cutoff = time() - max(1, $timeoutSeconds);
+        foreach ($this->devices() as $device) {
+            if (!(bool)($device['online'] ?? false)) {
+                continue;
+            }
+
+            $lastSeenAt = strtotime((string)($device['lastSeenAt'] ?? '')) ?: 0;
+            if ($lastSeenAt > 0 && $lastSeenAt <= $cutoff) {
+                $this->deviceOffline((string)($device['imei'] ?? ''));
+            }
+        }
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */

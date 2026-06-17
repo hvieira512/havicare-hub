@@ -37,6 +37,23 @@ final class ConnectionRegistryTest extends TestCase
         self::assertFalse($registry->isOnline('865028000000306'));
         self::assertNull($registry->connectionFor('865028000000306'));
     }
+
+    public function testExpiresIdleAuthenticatedConnections(): void
+    {
+        $registry = new ConnectionRegistry();
+        $connection = new FakeHubConnection(11);
+        $registry->open($connection);
+        $identity = new DeviceIdentity('865028000000307', 'wonlex-json', 'DEVICE');
+        $registry->authenticate($connection, $identity, 'Wonlex', 'HW20PRO');
+
+        sleep(2);
+        $expired = $registry->expireIdleConnections(1);
+
+        self::assertCount(1, $expired);
+        self::assertSame('865028000000307', $expired[0]->imei);
+        self::assertTrue($connection->closed);
+        self::assertFalse($registry->isOnline('865028000000307'));
+    }
 }
 
 final class FakeHubConnection implements ConnectionInterface

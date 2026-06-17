@@ -53,6 +53,7 @@ class DeviceHubServer
         $rid = $from->resourceId;
         $raw = (string)$msg;
         $session = $this->connections->get($from) ?? $this->connections->open($from);
+        $this->connections->touch($from);
 
         if (!$session->authenticated) {
             $this->authenticate($from, $raw, $session);
@@ -191,6 +192,16 @@ class DeviceHubServer
     public function isOnline(string $imei): bool
     {
         return $this->connections->isOnline($imei);
+    }
+
+    public function expireIdleConnections(int $idleSeconds): void
+    {
+        foreach ($this->connections->expireIdleConnections($idleSeconds) as $session) {
+            $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline');
+            $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected');
+            $this->dashboardStore?->deviceOffline($session->imei);
+            Logger::channel('hub')->warning("Device offline by idle timeout IMEI={$session->imei} idle_seconds={$idleSeconds}");
+        }
     }
 
     private function authenticate(ConnectionInterface $conn, string $raw, DeviceSession $session): void
@@ -444,7 +455,8 @@ class DeviceHubServer
         }
 
         $type = (string)($decoded['type'] ?? '');
-        if (!in_array($type, ['LK', 'AL_LTE', 'bphrt', 'CONFIG'], true)) {
+        $ackFields = $this->fourPTouchAckFields($type);
+        if ($ackFields === null) {
             return;
         }
 
@@ -453,8 +465,27 @@ class DeviceHubServer
             'imei' => $session->imei,
             'deviceId' => $decoded['ident'] ?? $session->imei,
             'manufacturer' => $decoded['data']['manufacturer'] ?? '3G',
-            'data' => ['fields' => $type === 'CONFIG' ? ['1'] : []],
+            'data' => ['fields' => $ackFields],
         ]));
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function fourPTouchAckFields(string $type): ?array
+    {
+        if ($type === 'LK' || $type === 'bphrt' || $type === 'TKQ' || $type === 'TKQ2') {
+            return [];
+        }
+
+        if (in_array($type, ['AL', 'AL_WCDMA', 'AL_LTE'], true)) {
+            return [];
+        }
+
+        return match ($type) {
+            'CONFIG', 'oxygen', 'WIFIINFOUP', 'TK' => ['1'],
+            default => null,
+        };
     }
 
     private function publishStatus(string $imei, string $supplier, string $model, string $state): void

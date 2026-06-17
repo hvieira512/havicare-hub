@@ -184,6 +184,10 @@ $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
 
 $loop->addPeriodicTimer(10, function () use ($dashboardStore, $dashboardConfig): void {
     $dashboardStore->expireWaitingCommands((int)($dashboardConfig['command_timeout_seconds'] ?? 120));
+    $dashboardStore->expireStaleDevices((int)($dashboardConfig['device_idle_timeout_seconds'] ?? 1800));
+});
+$loop->addPeriodicTimer(10, function () use ($hubServer, $dashboardConfig): void {
+    $hubServer->expireIdleConnections((int)($dashboardConfig['device_idle_timeout_seconds'] ?? 1800));
 });
 
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
