@@ -70,6 +70,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('[3G*8800000015*000A*UPLOAD,600]', $wire);
     }
 
+    public function testFourPTouchIgnoresEmptyDeviceIdContext(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'uploadInterval', ['intervalSeconds' => 600]);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '3707975737', $payload['command'], $payload['payload'], ['deviceId' => '']);
+        self::assertSame('[3G*3707975737*000A*UPLOAD,600]', $wire);
+    }
+
     public function testFourPTouchWhitelistSupportsFiveNumbers(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'whitelistGroup1', [

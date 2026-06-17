@@ -150,7 +150,14 @@ final class DeviceCommandCatalog
 
     private static function buildFourPTouch(string $imei, string $command, array $entry, array $payload = [], array $context = []): string
     {
-        $deviceId = (string)($context['deviceId'] ?? $payload['deviceId'] ?? substr($imei, -10));
+        $deviceId = trim((string)($context['deviceId'] ?? ''));
+        if ($deviceId === '') {
+            $deviceId = trim((string)($payload['deviceId'] ?? ''));
+        }
+        if ($deviceId === '') {
+            $deviceId = substr($imei, -10);
+        }
+
         return (new FourPTouchAdapter())->encodeOutgoing([
             'type' => $command,
             'imei' => $deviceId,
