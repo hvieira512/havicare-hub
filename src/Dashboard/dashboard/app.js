@@ -31,6 +31,10 @@ let els = {};
 let deviceModal = null;
 let supplierModal = null;
 let modelModal = null;
+const configFeedbackTimers = new Map();
+const configPhaseTimers = new Map();
+const configPollTimers = new Map();
+let deviceConfigRefreshPromise = null;
 
 function supplierProtocol(supplier, models = state.summary.models) {
     const existing = models.find(model => model.supplier === supplier && model.protocol);
@@ -284,6 +288,7 @@ function openAddDevice() {
     els.deviceModalLabel.textContent = 'Adicionar dispositivo';
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
+    resetConfigUiState();
     state.deviceModal = {
         mode: 'create',
         activeTab: 'general',
@@ -296,6 +301,7 @@ function openAddDevice() {
         protocol: '',
         catalog: [],
         configurations: [],
+        configUi: {},
         loading: false,
     };
     renderDeviceSelectors();
@@ -307,6 +313,7 @@ async function editDevice(imei, supplier, model) {
     els.deviceModalLabel.textContent = 'Editar dispositivo';
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
+    resetConfigUiState();
     state.deviceModal = {
         mode: 'edit',
         activeTab: 'general',
@@ -319,6 +326,7 @@ async function editDevice(imei, supplier, model) {
         protocol: '',
         catalog: [],
         configurations: [],
+        configUi: {},
         loading: true,
     };
     renderDeviceSelectors(supplier, model);
@@ -330,8 +338,7 @@ async function editDevice(imei, supplier, model) {
         const device = detail.device || {};
         els.deviceSimNumber.value = String(device.simNumber || '');
         state.deviceModal.simNumber = String(device.simNumber || '');
-        const configuration = await api.configuration(imei, supplier, model);
-        state.deviceModal.configurations = configuration.configurations || [];
+        await refreshDeviceModalConfigurations(false);
     } finally {
         state.deviceModal.loading = false;
         syncDeviceModalContext();
@@ -399,11 +406,13 @@ function renderDeviceConfigurationModal() {
         protocol: state.deviceModal.protocol,
         catalog: state.deviceModal.catalog,
         configurations: state.deviceModal.configurations,
+        uiByKey: state.deviceModal.configUi,
         supplier: state.deviceModal.supplier,
         model: state.deviceModal.model,
         activeCategory: state.deviceModal.activeCategory,
         disabled: !state.deviceModal.protocol,
     });
+    armConfigFeedbackAutoClose();
 }
 
 async function saveDevice() {
@@ -660,6 +669,7 @@ function bindEvents() {
     els.modelListBody.addEventListener('click', handleModelListClick);
     els.deviceConfigRoot.addEventListener('click', handleDeviceConfigClick);
     els.deviceConfigRoot.addEventListener('change', handleDeviceConfigChange);
+    els.deviceConfigRoot.addEventListener('closed.bs.alert', handleConfigFeedbackClosed);
 }
 
 function handleModelImageChange() {
@@ -748,6 +758,16 @@ function handleDeviceConfigChange(event) {
     }
 }
 
+function handleConfigFeedbackClosed(event) {
+    const alertEl = event.target.closest('[data-config-feedback-key]');
+    if (!alertEl) return;
+
+    const key = alertEl.dataset.configFeedbackKey || '';
+    clearTimeout(configFeedbackTimers.get(key));
+    configFeedbackTimers.delete(key);
+    clearConfigFeedback(key);
+}
+
 function handleDeviceSupplierClick(event) {
     const button = event.target.closest('[data-action="selectDeviceSupplier"]');
     if (button) renderDeviceSelectors(button.dataset.value, '');
@@ -810,19 +830,235 @@ async function saveDeviceConfiguration(section) {
         return;
     }
 
-    const result = await api.saveConfiguration(
+    setConfigUi(key, {phase: 'submitting'});
+    renderDeviceConfigurationModal();
+
+    try {
+        const result = await api.saveConfiguration(
+            state.deviceModal.imei,
+            {[key]: payload},
+            state.deviceModal.supplier,
+            state.deviceModal.model
+        );
+        if (result.error) {
+            setConfigUi(key, {
+                phase: 'idle',
+                feedback: {tone: 'danger', message: result.error.message || result.error.code || 'Falha ao enviar configuração'},
+            });
+            renderDeviceConfigurationModal();
+            return;
+        }
+
+        state.deviceModal.configurations = result.configuration?.configurations || state.deviceModal.configurations;
+        const row = state.deviceModal.configurations.find(entry => entry.config_key === key);
+        const rowStatus = String(row?.last_status || '');
+        if (['failed', 'dropped'].includes(rowStatus)) {
+            setConfigUi(key, {
+                phase: 'idle',
+                feedback: {tone: 'danger', message: 'O envio da configuração falhou.'},
+            });
+            renderDeviceConfigurationModal();
+            return;
+        }
+
+        setConfigUi(key, {
+            phase: 'sent',
+            feedback: {tone: 'success', message: 'Configuração enviada ao dispositivo.'},
+        });
+        renderDeviceConfigurationModal();
+        transitionConfigPhase(key, 'sent', 1200, () => {
+            clearConfigUiPhase(key, 'sent');
+            renderDeviceConfigurationModal();
+        });
+        scheduleConfigPolling(key);
+    } catch (error) {
+        setConfigUi(key, {
+            phase: 'idle',
+            feedback: {tone: 'danger', message: error instanceof Error ? error.message : 'Falha ao enviar configuração'},
+        });
+        renderDeviceConfigurationModal();
+    }
+}
+
+async function refreshDeviceModalConfigurations(shouldRender = true) {
+    if (!state.deviceModal.imei || !state.deviceModal.supplier || !state.deviceModal.model) {
+        return null;
+    }
+
+    if (deviceConfigRefreshPromise) {
+        return deviceConfigRefreshPromise;
+    }
+
+    const snapshot = [
         state.deviceModal.imei,
-        {[key]: payload},
+        state.deviceModal.supplier,
+        state.deviceModal.model,
+    ].join('|');
+
+    deviceConfigRefreshPromise = api.configuration(
+        state.deviceModal.imei,
         state.deviceModal.supplier,
         state.deviceModal.model
-    );
-    if (result.error) {
-        alert(result.error.message || result.error.code);
+    ).then(result => {
+        const current = [
+            state.deviceModal.imei,
+            state.deviceModal.supplier,
+            state.deviceModal.model,
+        ].join('|');
+        if (snapshot !== current) {
+            return result;
+        }
+
+        state.deviceModal.configurations = result.configurations || [];
+        syncConfigUiWithRows();
+        if (shouldRender) {
+            renderDeviceConfigurationModal();
+        }
+        return result;
+    }).finally(() => {
+        deviceConfigRefreshPromise = null;
+    });
+
+    return deviceConfigRefreshPromise;
+}
+
+function setConfigUi(key, updates) {
+    state.deviceModal.configUi[key] = {
+        ...(state.deviceModal.configUi[key] || {}),
+        ...updates,
+    };
+}
+
+function clearConfigUiPhase(key, phase) {
+    const current = state.deviceModal.configUi[key];
+    if (!current || current.phase !== phase) {
         return;
     }
 
-    state.deviceModal.configurations = result.configuration?.configurations || state.deviceModal.configurations;
-    renderDeviceConfigurationModal();
+    const next = {...current};
+    delete next.phase;
+    if (Object.keys(next).length === 0) {
+        delete state.deviceModal.configUi[key];
+        return;
+    }
+    state.deviceModal.configUi[key] = next;
+}
+
+function clearConfigFeedback(key) {
+    const current = state.deviceModal.configUi[key];
+    if (!current) {
+        return;
+    }
+
+    const next = {...current};
+    delete next.feedback;
+    if (Object.keys(next).length === 0) {
+        delete state.deviceModal.configUi[key];
+        return;
+    }
+    state.deviceModal.configUi[key] = next;
+}
+
+function transitionConfigPhase(key, phase, delayMs, callback) {
+    clearTimeout(configPhaseTimers.get(key));
+    configPhaseTimers.set(key, setTimeout(() => {
+        const current = state.deviceModal.configUi[key];
+        if (current?.phase === phase) {
+            callback();
+        }
+        configPhaseTimers.delete(key);
+    }, delayMs));
+}
+
+function armConfigFeedbackAutoClose() {
+    const alerts = Array.from(els.deviceConfigRoot.querySelectorAll('[data-config-feedback-key]'));
+    for (const alertEl of alerts) {
+        const key = alertEl.dataset.configFeedbackKey || '';
+        if (!key || configFeedbackTimers.has(key)) {
+            continue;
+        }
+
+        configFeedbackTimers.set(key, setTimeout(() => {
+            const liveAlert = els.deviceConfigRoot.querySelector(`[data-config-feedback-key="${CSS.escape(key)}"]`);
+            if (liveAlert) {
+                bootstrap.Alert.getOrCreateInstance(liveAlert).close();
+            } else {
+                clearConfigFeedback(key);
+            }
+            configFeedbackTimers.delete(key);
+        }, 3500));
+    }
+}
+
+function syncConfigUiWithRows() {
+    for (const row of state.deviceModal.configurations || []) {
+        const key = String(row.config_key || '');
+        if (!key) continue;
+
+        const ui = state.deviceModal.configUi[key];
+        if (ui?.phase === 'submitting' || ui?.phase === 'sent') {
+            continue;
+        }
+
+        const status = String(row.last_status || '');
+        if (status === 'acked' && !ui?.feedback) {
+            setConfigUi(key, {
+                feedback: {tone: 'success', message: 'Dispositivo confirmou a configuração.'},
+            });
+        }
+        if (['failed', 'dropped'].includes(status) && !ui?.feedback) {
+            setConfigUi(key, {
+                feedback: {tone: 'danger', message: 'O dispositivo não confirmou a configuração.'},
+            });
+        }
+
+        if (['acked', 'failed', 'dropped'].includes(status)) {
+            stopConfigPolling(key);
+        }
+    }
+}
+
+function scheduleConfigPolling(key, attempt = 0) {
+    stopConfigPolling(key);
+    configPollTimers.set(key, setTimeout(async () => {
+        if (!document.getElementById('deviceModal')?.classList.contains('show')) {
+            stopConfigPolling(key);
+            return;
+        }
+
+        await refreshDeviceModalConfigurations(true);
+        const row = (state.deviceModal.configurations || []).find(entry => entry.config_key === key);
+        const status = String(row?.last_status || '');
+        if (['acked', 'failed', 'dropped'].includes(status) || attempt >= 14) {
+            stopConfigPolling(key);
+            return;
+        }
+        scheduleConfigPolling(key, attempt + 1);
+    }, 2000));
+}
+
+function stopConfigPolling(key) {
+    clearTimeout(configPollTimers.get(key));
+    configPollTimers.delete(key);
+}
+
+function resetConfigUiState() {
+    for (const timer of configFeedbackTimers.values()) {
+        clearTimeout(timer);
+    }
+    configFeedbackTimers.clear();
+
+    for (const timer of configPhaseTimers.values()) {
+        clearTimeout(timer);
+    }
+    configPhaseTimers.clear();
+
+    for (const timer of configPollTimers.values()) {
+        clearTimeout(timer);
+    }
+    configPollTimers.clear();
+
+    deviceConfigRefreshPromise = null;
 }
 
 function appendContactRow(section) {

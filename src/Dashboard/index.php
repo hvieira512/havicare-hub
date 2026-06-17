@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 use Hub\Command\DeviceConfigurationCatalog;
 
-require_once __DIR__ . '/components.php';
+require_once __DIR__ . '/components/helpers.php';
+require_once __DIR__ . '/components/modal.php';
 
 ?>
 <!doctype html>
@@ -99,9 +100,9 @@ require_once __DIR__ . '/components.php';
             </div>
         </main>
 
-        <?= dashboard_device_modal() ?>
-        <?= dashboard_supplier_modal() ?>
-        <?= dashboard_model_modal() ?>
+        <?php require __DIR__ . '/components/modals/device.php'; ?>
+        <?php require __DIR__ . '/components/modals/supplier.php'; ?>
+        <?php require __DIR__ . '/components/modals/model.php'; ?>
 
         <script>
             window.dashboardConfigurationCatalog = <?= json_encode([

@@ -248,7 +248,7 @@ final class DeviceConfigurationCatalog
             self::entry('fallDetection', 'BP76', 'Deteção de queda', 'toggle', ['enabled'], ['AP76'], 'alerts', 10),
             self::entry('fallSensitivity', 'BP77', 'Sensibilidade de queda', 'fallSensitivity', ['sensitivity'], ['AP77'], 'alerts', 20),
             self::entry('whitelistSwitch', 'BP84', 'Filtro da lista telefónica', 'toggle', ['enabled'], ['AP84'], 'system', 20),
-            self::entry('reminders', 'BP85', 'Lembretes', 'reminders', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30),
+            self::entry('reminders', 'BP85', 'Lembretes / Alarmes', 'reminders', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30),
             self::entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10),
             self::entry('bloodPressureCalibration', 'BPJZ', 'Calibração da tensão arterial', 'bloodPressure', ['systolic', 'diastolic'], ['APJZ'], 'health', 20),
         ];
@@ -264,8 +264,7 @@ final class DeviceConfigurationCatalog
         string $category = 'general',
         int $order = 0,
         ?int $limit = null
-    ): array
-    {
+    ): array {
         $entry = [
             'key' => $key,
             'command' => $command,

@@ -47,7 +47,7 @@ export function groupedCatalog(catalog) {
 }
 
 export function renderDeviceConfigurationRoot(context) {
-    const {protocol, catalog, configurations, supplier = '', model = '', disabled = false, activeCategory = ''} = context;
+    const {protocol, catalog, configurations, supplier = '', model = '', disabled = false, activeCategory = '', uiByKey = {}} = context;
     if (!protocol) {
         return emptyConfigurationState('Selecione fornecedor e modelo para ver as configurações.');
     }
@@ -93,14 +93,14 @@ export function renderDeviceConfigurationRoot(context) {
             <div class="tab-content">
                 ${groups.map(group => `
                     <div class="tab-pane fade ${group.key === currentCategory ? 'show active' : ''}" data-config-category-pane="${esc(group.key)}">
-                        ${group.entries.map(entry => renderConfigSection(protocol, entry, rowsByKey[entry.key] || null, disabled)).join('')}
+                        ${group.entries.map(entry => renderConfigSection(protocol, entry, rowsByKey[entry.key] || null, disabled, uiByKey[entry.key] || null)).join('')}
                     </div>
                 `).join('')}
             </div>
         </div>`;
 }
 
-export function renderConfigSection(protocol, entry, row, disabled = false) {
+export function renderConfigSection(protocol, entry, row, disabled = false, uiState = null) {
     const desired = normalizeDesired(entry, row?.desired_payload);
     const help = configHelp(entry);
 
@@ -115,15 +115,81 @@ export function renderConfigSection(protocol, entry, row, disabled = false) {
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ''}>
                 ${renderConfigInputs(entry, desired)}
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                    <button type="button" class="btn btn-primary btn-sm" data-action="saveConfig" data-config-key="${esc(entry.key)}" ${disabled ? 'disabled' : ''}>
-                        <i class="fa-solid fa-paper-plane me-2"></i>Enviar
-                    </button>
+                    ${renderConfigActionButton(entry.key, row, uiState, disabled)}
                     <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? 'disabled' : ''}>
                         <i class="fa-solid fa-rotate-left"></i>
                     </button>
                 </div>
             </form>
+            ${renderConfigFeedback(entry.key, uiState)}
         </section>`;
+}
+
+function renderConfigActionButton(key, row, uiState, disabled = false) {
+    const state = configButtonState(row, uiState);
+    const icons = {
+        idle: 'fa-paper-plane',
+        submitting: 'fa-spinner fa-spin',
+        sent: 'fa-check',
+        queued: 'fa-list-check',
+        waiting: 'fa-hourglass-half',
+        acked: 'fa-circle-check',
+        failed: 'fa-triangle-exclamation',
+        dropped: 'fa-triangle-exclamation',
+    };
+    const labels = {
+        idle: 'Enviar',
+        submitting: 'A enviar',
+        sent: 'Enviado',
+        queued: 'Em fila',
+        waiting: 'À espera',
+        acked: 'Confirmado',
+        failed: 'Falhou',
+        dropped: 'Falhou',
+    };
+    const classes = {
+        idle: 'btn-primary',
+        submitting: 'btn-primary',
+        sent: 'btn-info',
+        queued: 'btn-secondary',
+        waiting: 'btn-warning',
+        acked: 'btn-success',
+        failed: 'btn-danger',
+        dropped: 'btn-danger',
+    };
+    const isDisabled = disabled || ['submitting', 'sent', 'queued', 'waiting'].includes(state);
+
+    return `
+        <button type="button" class="btn ${classes[state] || 'btn-primary'} btn-sm" data-action="saveConfig" data-config-key="${esc(key)}" ${isDisabled ? 'disabled' : ''}>
+            <i class="fa-solid ${icons[state] || 'fa-paper-plane'} me-2"></i>${labels[state] || 'Enviar'}
+        </button>`;
+}
+
+function renderConfigFeedback(key, uiState) {
+    if (!uiState?.feedback?.message) {
+        return '';
+    }
+
+    const tone = uiState.feedback.tone === 'danger' ? 'danger' : 'success';
+
+    return `
+        <div class="alert alert-${tone} alert-dismissible fade show small mt-3 mb-0 py-2 px-3" role="alert" data-config-feedback-key="${esc(key)}">
+            ${esc(uiState.feedback.message)}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>`;
+}
+
+function configButtonState(row, uiState) {
+    if (uiState?.phase === 'submitting' || uiState?.phase === 'sent') {
+        return uiState.phase;
+    }
+
+    const status = String(row?.last_status || '');
+    if (['queued', 'waiting', 'acked', 'failed', 'dropped'].includes(status)) {
+        return status;
+    }
+
+    return 'idle';
 }
 
 export function renderConfigInputs(entry, desired) {

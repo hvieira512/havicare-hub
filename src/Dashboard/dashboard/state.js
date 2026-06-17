@@ -14,6 +14,7 @@ export const state = {
         protocol: '',
         catalog: [],
         configurations: [],
+        configUi: {},
         loading: false,
     },
     modelModalSuppliers: [],
