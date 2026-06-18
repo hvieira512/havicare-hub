@@ -145,45 +145,52 @@ function renderDeviceSelector() {
         modelLookup[`${model.supplier}:${model.model}`] = model;
     }
 
-    const groups = {};
+    const tableMarkup = state.summary.devices.length ? `
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Estado</th>
+                        <th>IMEI</th>
+                        <th>Tipo</th>
+                        <th>Licença</th>
+                        <th>Fornecedor</th>
+                        <th>Modelo</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${state.summary.devices.map(device => {
+                        const modelInfo = modelLookup[`${device.supplier}:${device.model}`];
+                        const isSelected = state.selectedImei === device.imei;
+                        return `
+                            <tr${isSelected ? ' class="table-primary"' : ''}>
+                                <td style="width:52px">${modelImageHtml(modelInfo)}</td>
+                                <td>
+                                    <span class="d-inline-flex align-items-center gap-2 small">
+                                        <span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block flex-shrink-0" style="width:.55rem;height:.55rem;"></span>
+                                        ${device.online ? 'Ligado' : 'Desligado'}
+                                    </span>
+                                </td>
+                                <td class="fw-semibold text-break">${esc(device.imei)}</td>
+                                <td>${esc(deviceTypeLabel(normalizeDeviceType(device.deviceType)))}</td>
+                                <td>${esc(normalizeLicenseId(device.licenseId))}</td>
+                                <td>${esc(device.supplier || '-')}</td>
+                                <td>${esc(device.model || '-')}</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-primary'}" data-imei="${esc(device.imei)}" data-action="select" title="Escolher dispositivo">
+                                        <i class="fa-solid fa-check me-1"></i>${isSelected ? 'Selecionado' : 'Escolher'}
+                                    </button>
+                                </td>
+                            </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    ` : emptyPanel('Não há dispositivos para o filtro selecionado.');
 
-    for (const device of state.summary.devices) {
-        const deviceType = normalizeDeviceType(device.deviceType);
-        const key = `${normalizeLicenseId(device.licenseId)}:${deviceType}:${device.supplier} / ${device.model}`;
-        if (!groups[key]) {
-            groups[key] = {
-                supplier: device.supplier,
-                model: device.model,
-                deviceType,
-                licenseId: normalizeLicenseId(device.licenseId),
-                devices: [],
-            };
-        }
-        groups[key].devices.push(device);
-    }
-
-    const groupMarkup = Object.values(groups).map(group => {
-        const modelInfo = modelLookup[`${group.supplier}:${group.model}`];
-        return `
-            <div class="list-group list-group-flush">
-            <div class="small fw-semibold text-secondary px-3 py-1 bg-body-tertiary border-bottom">Licença ${esc(group.licenseId)} · ${esc(deviceTypeLabel(group.deviceType))} · ${esc(group.supplier)} ${esc(group.model)}</div>
-            ${group.devices.map(device => `
-                <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom${state.selectedImei === device.imei ? ' bg-primary-subtle' : ''}">
-                <div style="width:40px;text-align:center;flex-shrink:0">${modelImageHtml(modelInfo)}</div>
-                <div class="flex-grow-1 min-width-0 d-flex align-items-center gap-2">
-                <span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block flex-shrink-0" style="width:.55rem;height:.55rem;"></span>
-                <strong class="small text-break">${esc(device.imei)}</strong>
-                </div>
-                <div class="btn-group btn-group-sm" style="flex-shrink:0">
-                <button class="btn ${state.selectedImei === device.imei ? 'btn-primary' : 'btn-outline-primary'}" data-imei="${esc(device.imei)}" data-action="select" title="Escolher dispositivo">
-                <i class="fa-solid fa-check me-1"></i>Escolher
-                </button>
-                </div>
-                </div>`).join('')}
-            </div>`;
-    }).join('');
-
-    els.deviceList.innerHTML = groupMarkup || emptyPanel('Não há dispositivos para o filtro selecionado.');
+    els.deviceList.innerHTML = tableMarkup;
     renderDevicePagination(state.summary.devicePagination);
 }
 
