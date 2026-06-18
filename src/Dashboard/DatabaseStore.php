@@ -61,12 +61,16 @@ final class DatabaseStore
                 imei TEXT PRIMARY KEY,
                 supplier TEXT NOT NULL,
                 model TEXT NOT NULL,
+                device_type TEXT NOT NULL DEFAULT "watch",
+                license_id TEXT NOT NULL DEFAULT "0",
                 sim_number TEXT NOT NULL DEFAULT "",
                 device_id TEXT NOT NULL DEFAULT "",
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         ');
+        $this->ensureColumn('whitelist', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
+        $this->ensureColumn('whitelist', 'license_id', 'TEXT NOT NULL DEFAULT "0"');
         $this->ensureColumn('whitelist', 'sim_number', 'TEXT NOT NULL DEFAULT ""');
         $this->ensureColumn('whitelist', 'device_id', 'TEXT NOT NULL DEFAULT ""');
         $this->pdo->exec('
@@ -305,7 +309,7 @@ final class DatabaseStore
     public function whitelistAll(): array
     {
         return $this->pdo
-            ->query('SELECT imei, supplier, model, sim_number, device_id FROM whitelist ORDER BY imei')
+            ->query('SELECT imei, supplier, model, device_type, license_id, sim_number, device_id FROM whitelist ORDER BY imei')
             ->fetchAll();
     }
 
@@ -316,20 +320,46 @@ final class DatabaseStore
         return $stmt->fetch() ?: null;
     }
 
-    public function whitelistRegister(string $imei, string $supplier, string $model, string $simNumber = '', string $deviceId = ''): void
+    public function whitelistRegister(
+        string $imei,
+        string $supplier,
+        string $model,
+        string $deviceType = 'watch',
+        string $licenseId = '0',
+        string $simNumber = '',
+        string $deviceId = ''
+    ): void
     {
+        $deviceType = self::normalizeDeviceType($deviceType);
+        $licenseId = self::normalizeLicenseId($licenseId);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $stmt = $this->pdo->prepare('
-            INSERT INTO whitelist (imei, supplier, model, sim_number, device_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(imei) DO UPDATE SET
                 supplier = excluded.supplier,
                 model = excluded.model,
+                device_type = excluded.device_type,
+                license_id = excluded.license_id,
                 sim_number = excluded.sim_number,
                 device_id = excluded.device_id,
                 updated_at = ?
         ');
-        $stmt->execute([$imei, $supplier, $model, $simNumber, $deviceId, $now, $now, $now]);
+        $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $now, $now, $now]);
+    }
+
+    public static function normalizeDeviceType(string $deviceType): string
+    {
+        $normalized = strtolower(trim($deviceType));
+
+        return in_array($normalized, ['watch', 'ncs', 'radar'], true) ? $normalized : 'watch';
+    }
+
+    public static function normalizeLicenseId(string $licenseId): string
+    {
+        $normalized = trim($licenseId);
+
+        return $normalized !== '' ? $normalized : '0';
     }
 
     private function ensureColumn(string $table, string $column, string $definition): void

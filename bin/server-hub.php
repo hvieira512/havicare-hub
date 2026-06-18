@@ -107,7 +107,7 @@ $hubServer = new DeviceHubServer(
     downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds
 );
 $downlink = null;
-$downlinkTopicFilter = $topicPrefix === '' ? 'devices/+/downlink' : $topicPrefix . '/devices/+/downlink';
+$downlinkTopicFilter = $mqttBridge->downlinkTopicFilter();
 $subscriberRepository = new MemoryRepository();
 $subscriberRepository->addSubscription(new Subscription(
     $downlinkTopicFilter,
@@ -200,9 +200,9 @@ if ($dashboardEnabled) {
 
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");
 Logger::channel('hub')->info("Redis downlink queue: {$redisParameters['host']}:{$redisParameters['port']} ttl={$downlinkQueueTtlSeconds}s");
-Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('devices/{imei}/status'));
-Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('devices/{imei}/events'));
-Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('devices/{imei}/raw'));
-Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('devices/{imei}/downlink'));
+Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/status'));
+Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/events'));
+Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/raw'));
+Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/downlink'));
 
 $loop->run();

@@ -7,6 +7,9 @@ use PhpMqtt\Client\MqttClient;
 
 class HubDownlinkSubscriber
 {
+    private const DEFAULT_LICENSE_ID = '0';
+    private const DEFAULT_DEVICE_TYPE = 'watch';
+
     private MqttClient $subscriber;
     private DeviceHubServer $hubServer;
     private string $topicPrefix;
@@ -39,7 +42,7 @@ class HubDownlinkSubscriber
 
     private function subscribe(): void
     {
-        $filter = $this->topic('devices/+/downlink');
+        $filter = $this->topic(self::DEFAULT_LICENSE_ID . '/' . self::DEFAULT_DEVICE_TYPE . '/+/downlink');
         $this->subscriber->subscribe($filter, function (string $topic, string $payload): void {
             $this->handle($topic, $payload);
         }, MqttClient::QOS_AT_LEAST_ONCE);
@@ -120,11 +123,15 @@ class HubDownlinkSubscriber
         }
 
         $parts = explode('/', trim($base, '/'));
-        if (count($parts) !== 3 || $parts[0] !== 'devices' || $parts[2] !== 'downlink') {
+        if (count($parts) !== 4
+            || $parts[0] !== self::DEFAULT_LICENSE_ID
+            || $parts[1] !== self::DEFAULT_DEVICE_TYPE
+            || $parts[3] !== 'downlink'
+        ) {
             return null;
         }
 
-        return $parts[1] !== '' ? $parts[1] : null;
+        return $parts[2] !== '' ? $parts[2] : null;
     }
 
     private function topic(string $topic): string

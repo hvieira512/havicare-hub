@@ -65,11 +65,19 @@ require_once __DIR__ . '/components/modal.php';
         <main class="container-fluid py-3">
             <div class="row g-3">
                 <aside id="deviceColumn" class="col-12 col-lg-4">
-                    <div class="card shadow-sm">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span><?= icon('fa-watch-fitness', 'me-2') ?>Dispositivos</span>
-                            <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
-                        </div>
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span><?= icon('fa-microchip', 'me-2') ?>Dispositivos</span>
+                                    <select id="deviceTypeFilter" class="form-select form-select-sm">
+                                        <option value="all">Todos</option>
+                                        <option value="watch">Relógios</option>
+                                        <option value="ncs">NCS</option>
+                                        <option value="radar">Radars</option>
+                                    </select>
+                                </div>
+                                <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                            </div>
                         <div id="deviceList"></div>
                     </div>
                     <div id="requestColumn" class="d-none mt-3">

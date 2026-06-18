@@ -23,13 +23,23 @@ final class DashboardStore
         $this->db = $db;
     }
 
-    public function registerDevice(string $imei, string $supplier, string $model, string $simNumber = '', string $deviceId = ''): void
+    public function registerDevice(
+        string $imei,
+        string $supplier,
+        string $model,
+        string $deviceType = 'watch',
+        string $licenseId = '0',
+        string $simNumber = '',
+        string $deviceId = ''
+    ): void
     {
         $this->redis->sadd($this->key('devices'), $imei);
         $this->redis->hmset($this->deviceKey($imei), [
             'imei' => $imei,
             'supplier' => $supplier,
             'model' => $model,
+            'deviceType' => DatabaseStore::normalizeDeviceType($deviceType),
+            'licenseId' => DatabaseStore::normalizeLicenseId($licenseId),
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
         ]);
@@ -238,6 +248,8 @@ final class DashboardStore
     private function normalizeDevice(array $data): array
     {
         $data['online'] = ((string)($data['online'] ?? '0')) === '1';
+        $data['deviceType'] = DatabaseStore::normalizeDeviceType((string)($data['deviceType'] ?? 'watch'));
+        $data['licenseId'] = DatabaseStore::normalizeLicenseId((string)($data['licenseId'] ?? '0'));
         return $data;
     }
 

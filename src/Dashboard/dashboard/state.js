@@ -1,5 +1,6 @@
 export const state = {
     summary: {devices: [], models: [], counts: {}},
+    deviceTypeFilter: 'all',
     selectedImei: null,
     selectedDetail: null,
     deviceModal: {
@@ -8,6 +9,8 @@ export const state = {
         activeCategory: '',
         imei: '',
         originalImei: '',
+        deviceType: 'watch',
+        licenseId: '0',
         simNumber: '',
         deviceId: '',
         supplier: '',

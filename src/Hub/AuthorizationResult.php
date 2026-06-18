@@ -10,12 +10,20 @@ class AuthorizationResult
         public readonly string $imei = '',
         public readonly string $supplier = '',
         public readonly string $model = '',
+        public readonly string $deviceType = 'watch',
+        public readonly string $licenseId = '0',
     ) {
     }
 
-    public static function allow(string $imei = '', string $supplier = '', string $model = ''): self
+    public static function allow(
+        string $imei = '',
+        string $supplier = '',
+        string $model = '',
+        string $deviceType = 'watch',
+        string $licenseId = '0'
+    ): self
     {
-        return new self(true, null, $imei, $supplier, $model);
+        return new self(true, null, $imei, $supplier, $model, $deviceType, $licenseId);
     }
 
     public static function deny(string $reason): self

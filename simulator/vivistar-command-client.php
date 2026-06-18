@@ -92,10 +92,10 @@ try {
     exit(1);
 }
 
-$eventsTopic = topic($topicPrefix, "devices/$imei/events");
-$telemetryTopic = topic($topicPrefix, "devices/$imei/telemetry");
-$rawTopic = topic($topicPrefix, "devices/$imei/raw");
-$downlinkTopic = topic($topicPrefix, "devices/$imei/downlink");
+$eventsTopic = topic($topicPrefix, "0/watch/$imei/events");
+$telemetryTopic = topic($topicPrefix, "0/watch/$imei/telemetry");
+$rawTopic = topic($topicPrefix, "0/watch/$imei/raw");
+$downlinkTopic = topic($topicPrefix, "0/watch/$imei/downlink");
 
 $messages = [];
 $client->subscribe($eventsTopic, static function (string $topic, string $payload) use (&$messages): void {
@@ -205,12 +205,12 @@ Options:
   --list-commands          Print server downlinks and device uplinks, then exit.
 
 Notes:
-  - Replies are read from devices/{imei}/events, devices/{imei}/telemetry and devices/{imei}/raw.
+  - Replies are read from 0/watch/{imei}/events, 0/watch/{imei}/telemetry and 0/watch/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
   - Bulk runs require --all-requests and only send request commands; use --command to send config/control commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive BP17 factory-reset command is behind --include-risk high.
-  - This command client publishes native downlink frames to devices/{imei}/downlink.
+  - This command client publishes native downlink frames to 0/watch/{imei}/downlink.
 
 TXT;
 }

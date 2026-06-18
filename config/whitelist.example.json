@@ -1,27 +1,39 @@
 {
   "865028000000306": {
     "supplier": "Wonlex",
-    "model": "HW20PRO"
+    "model": "HW20PRO",
+    "deviceType": "watch",
+    "licenseId": "0"
   },
   "865028000000307": {
     "supplier": "Wonlex",
-    "model": "HW20PRO"
+    "model": "HW20PRO",
+    "deviceType": "watch",
+    "licenseId": "0"
   },
   "868705080300697": {
     "supplier": "Wonlex",
-    "model": "HW20PRO"
+    "model": "HW20PRO",
+    "deviceType": "watch",
+    "licenseId": "0"
   },
   "865028000000308": {
     "supplier": "Vivistar",
-    "model": "VIVISTAR-CARE"
+    "model": "VIVISTAR-CARE",
+    "deviceType": "watch",
+    "licenseId": "0"
   },
   "865028000000309": {
     "supplier": "Vivistar",
-    "model": "VIVISTAR-LITE"
+    "model": "VIVISTAR-LITE",
+    "deviceType": "watch",
+    "licenseId": "0"
   },
   "637507597567372": {
     "supplier": "4P Touch",
     "model": "4P-TOUCH",
+    "deviceType": "watch",
+    "licenseId": "0",
     "deviceId": "8800000015"
   }
 }

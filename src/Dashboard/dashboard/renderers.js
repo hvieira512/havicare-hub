@@ -112,7 +112,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         : card.value;
 
     return `
-        <div class="col-12">
+        <div class="col-12 col-md-6">
         <div class="card h-100 border-${tone.border}">
         <div class="card-body">
         <div class="d-flex align-items-center gap-2 mb-3">

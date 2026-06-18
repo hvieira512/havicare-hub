@@ -119,11 +119,31 @@ final class DatabaseStoreTest extends TestCase
 
         try {
             $store = new DatabaseStore($path);
-            $store->whitelistRegister('861265061009822', 'Vivistar', 'L08 Pro', '351912345678901');
+            $store->whitelistRegister('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '0', '351912345678901');
 
             $row = $store->whitelistGet('861265061009822');
             self::assertIsArray($row);
             self::assertSame('351912345678901', $row['sim_number'] ?? null);
+            self::assertSame('watch', $row['device_type'] ?? null);
+            self::assertSame('0', $row['license_id'] ?? null);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    public function testWhitelistDefaultsLegacyDeviceTypeAndLicenseId(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'hub-dashboard-');
+        self::assertIsString($path);
+
+        try {
+            $store = new DatabaseStore($path);
+            $store->whitelistRegister('861265061009822', 'Vivistar', 'L08 Pro');
+
+            $row = $store->whitelistGet('861265061009822');
+            self::assertIsArray($row);
+            self::assertSame('watch', $row['device_type'] ?? null);
+            self::assertSame('0', $row['license_id'] ?? null);
         } finally {
             unlink($path);
         }

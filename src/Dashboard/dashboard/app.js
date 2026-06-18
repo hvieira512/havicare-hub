@@ -36,6 +36,19 @@ const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
 const configPollTimers = new Map();
 let deviceConfigRefreshPromise = null;
+const deviceTypeOptions = [
+    {value: 'watch', label: 'Relógios'},
+    {value: 'ncs', label: 'NCS'},
+    {value: 'radar', label: 'Radars'},
+];
+
+function deviceTypeLabel(deviceType) {
+    return deviceTypeOptions.find(option => option.value === deviceType)?.label || deviceType;
+}
+
+function normalizeDeviceType(deviceType) {
+    return deviceTypeOptions.some(option => option.value === deviceType) ? deviceType : 'watch';
+}
 
 function supplierProtocol(supplier, models = state.summary.models) {
     const existing = models.find(model => model.supplier === supplier && model.protocol);
@@ -71,17 +84,24 @@ function renderSummary() {
     }
 
     const groups = {};
-    for (const device of state.summary.devices) {
-        const key = `${device.supplier} / ${device.model}`;
-        if (!groups[key]) groups[key] = {supplier: device.supplier, model: device.model, devices: []};
+    const filteredDevices = state.summary.devices.filter(device =>
+        state.deviceTypeFilter === 'all' || normalizeDeviceType(device.deviceType) === state.deviceTypeFilter
+    );
+
+    for (const device of filteredDevices) {
+        const deviceType = normalizeDeviceType(device.deviceType);
+        const key = `${deviceType}:${device.supplier} / ${device.model}`;
+        if (!groups[key]) {
+            groups[key] = {supplier: device.supplier, model: device.model, deviceType, devices: []};
+        }
         groups[key].devices.push(device);
     }
 
-    els.deviceList.innerHTML = Object.values(groups).map(group => {
+    const groupMarkup = Object.values(groups).map(group => {
         const modelInfo = modelLookup[`${group.supplier}:${group.model}`];
         return `
             <div class="list-group list-group-flush">
-            <div class="small fw-semibold text-secondary px-3 py-1 bg-body-tertiary border-bottom">${esc(group.supplier)} ${esc(group.model)}</div>
+            <div class="small fw-semibold text-secondary px-3 py-1 bg-body-tertiary border-bottom">${esc(deviceTypeLabel(group.deviceType))} · ${esc(group.supplier)} ${esc(group.model)}</div>
             ${group.devices.map(device => `
                 <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom${state.selectedImei === device.imei ? ' bg-primary-subtle' : ''}" data-imei="${esc(device.imei)}" data-action="select">
                 <div style="width:40px;text-align:center;flex-shrink:0">${modelImageHtml(modelInfo)}</div>
@@ -89,7 +109,7 @@ function renderSummary() {
                 <div class="d-flex justify-content-between align-items-center">
                 <strong class="small text-break">${esc(device.imei)}</strong>
                 </div>
-                <div class="small text-secondary d-flex align-items-center gap-1"><span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block" style="width:.55rem;height:.55rem;"></span><span>visto ${ago(device.lastSeenAt)}</span></div>
+                <div class="small text-secondary d-flex align-items-center gap-1"><span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block" style="width:.55rem;height:.55rem;"></span><span>licença ${esc(String(device.licenseId || '0'))} · visto ${ago(device.lastSeenAt)}</span></div>
                 </div>
                 <div class="btn-group btn-group-sm" style="flex-shrink:0">
                 <button class="btn btn-outline-secondary" data-imei="${esc(device.imei)}" data-supplier="${esc(device.supplier)}" data-model="${esc(device.model)}" data-action="edit" title="Editar">
@@ -99,6 +119,8 @@ function renderSummary() {
                 </div>`).join('')}
             </div>`;
     }).join('');
+
+    els.deviceList.innerHTML = groupMarkup || emptyPanel('Não há dispositivos para o filtro selecionado.');
 
     renderSelection();
 }
@@ -124,7 +146,7 @@ function renderSelection() {
 
     const device = state.selectedDetail.device;
     els.detailTitle.textContent = device.imei;
-    els.detailMeta.textContent = `${device.supplier ?? ''} ${device.model ?? ''} · ${device.protocol ?? 'desconhecido'} · visto ${ago(device.lastSeenAt)}`;
+    els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${device.licenseId ?? '0'} · ${device.supplier ?? ''} ${device.model ?? ''} · ${device.protocol ?? 'desconhecido'} · visto ${ago(device.lastSeenAt)}`;
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
@@ -298,6 +320,8 @@ function openAddDevice() {
         activeCategory: '',
         imei: '',
         originalImei: '',
+        deviceType: 'watch',
+        licenseId: '0',
         simNumber: '',
         deviceId: '',
         supplier: '',
@@ -310,6 +334,9 @@ function openAddDevice() {
     };
     els.deleteDeviceBtn.classList.add('d-none');
     renderDeviceSimNumberField('');
+    renderDeviceTypeSelector('watch');
+    els.deviceLicenseId.value = '0';
+    els.deviceLicenseId.disabled = true;
     els.deviceDeviceId.value = '';
     renderDeviceSelectors();
     renderDeviceConfigurationModal();
@@ -327,6 +354,8 @@ async function editDevice(imei, supplier, model) {
         activeCategory: '',
         imei,
         originalImei: imei,
+        deviceType: 'watch',
+        licenseId: '0',
         simNumber: '',
         deviceId: '',
         supplier,
@@ -339,6 +368,9 @@ async function editDevice(imei, supplier, model) {
     };
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove('d-none');
+    renderDeviceTypeSelector('watch');
+    els.deviceLicenseId.value = '0';
+    els.deviceLicenseId.disabled = true;
     renderDeviceSelectors(supplier, model);
     renderDeviceConfigurationModal();
     renderDeviceSimNumberField('');
@@ -347,6 +379,11 @@ async function editDevice(imei, supplier, model) {
     try {
         const detail = await api.device(imei);
         const device = detail.device || {};
+        renderDeviceTypeSelector(String(device.deviceType || 'watch'));
+        els.deviceLicenseId.value = String(device.licenseId || '0');
+        els.deviceLicenseId.disabled = normalizeDeviceType(String(device.deviceType || 'watch')) === 'watch';
+        state.deviceModal.deviceType = normalizeDeviceType(String(device.deviceType || 'watch'));
+        state.deviceModal.licenseId = String(device.licenseId || '0');
         renderDeviceSimNumberField(String(device.simNumber || ''));
         state.deviceModal.simNumber = String(device.simNumber || '');
         els.deviceDeviceId.value = String(device.deviceId || '');
@@ -376,6 +413,12 @@ function renderDeviceSelectors(selectedSupplier = '', selectedModel = '') {
     renderDeviceConfigurationModal();
 }
 
+function renderDeviceTypeSelector(selectedType = 'watch') {
+    const deviceType = normalizeDeviceType(selectedType);
+    els.deviceForm.dataset.deviceType = deviceType;
+    renderButtonGroup(els.deviceTypeButtons, deviceTypeOptions, deviceType, 'selectDeviceType');
+}
+
 function updateDevicePreview() {
     const supplier = els.deviceForm.dataset.supplier || '';
     const model = els.deviceForm.dataset.model || '';
@@ -394,6 +437,8 @@ function syncDeviceModalContext() {
     state.deviceModal.protocol = protocol;
     state.deviceModal.catalog = catalogForProtocol(protocol);
     state.deviceModal.imei = els.deviceImei.value.trim();
+    state.deviceModal.deviceType = normalizeDeviceType(els.deviceForm.dataset.deviceType || 'watch');
+    state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || '0';
     state.deviceModal.simNumber = getDeviceSimNumberValue(false);
     state.deviceModal.deviceId = els.deviceDeviceId.value.trim();
     if (!state.deviceModal.activeCategory || !state.deviceModal.catalog.some(entry => entry.category === state.deviceModal.activeCategory)) {
@@ -433,6 +478,9 @@ function renderDeviceConfigurationModal() {
 async function saveDevice() {
     const imei = els.deviceImei.value.trim();
     let simNumber = '';
+    const deviceType = normalizeDeviceType(els.deviceForm.dataset.deviceType || 'watch');
+    const rawLicenseId = els.deviceLicenseId.value.trim();
+    const licenseId = deviceType === 'watch' ? '0' : rawLicenseId;
     const deviceId = els.deviceDeviceId.value.trim();
     try {
         simNumber = getDeviceSimNumberValue(true);
@@ -442,9 +490,10 @@ async function saveDevice() {
     }
     const supplier = els.deviceForm.dataset.supplier || '';
     const model = els.deviceForm.dataset.model || '';
+    if (deviceType !== 'watch' && !licenseId) { alert('A licença é obrigatória para NCS e Radars'); return; }
     if (!imei || !supplier || !model) { alert('Todos os campos são obrigatórios'); return; }
 
-    const result = await api.saveDevice(imei, supplier, model, simNumber, deviceId, els.deviceImei.dataset.originalImei || '');
+    const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, els.deviceImei.dataset.originalImei || '');
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
     deviceModal.hide();
@@ -654,8 +703,11 @@ function cacheElements() {
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
         deviceImei: document.getElementById('deviceImei'),
+        deviceTypeFilter: document.getElementById('deviceTypeFilter'),
         deviceSimNumberRoot: document.getElementById('deviceSimNumberRoot'),
         deviceDeviceId: document.getElementById('deviceDeviceId'),
+        deviceTypeButtons: document.getElementById('deviceTypeButtons'),
+        deviceLicenseId: document.getElementById('deviceLicenseId'),
         devicePreview: document.getElementById('devicePreview'),
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
@@ -686,7 +738,9 @@ function bindEvents() {
     els.addDeviceBtn.addEventListener('click', openAddDevice);
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
+    els.deviceTypeFilter.addEventListener('change', handleDeviceTypeFilterChange);
     els.deviceImei.addEventListener('input', handleDeviceImeiInput);
+    els.deviceLicenseId.addEventListener('input', handleDeviceImeiInput);
     els.deviceDeviceId.addEventListener('input', handleDeviceImeiInput);
     els.deviceForm.addEventListener('input', handleDeviceFormInput);
     els.deviceForm.addEventListener('change', handleDeviceFormChange);
@@ -702,6 +756,7 @@ function bindEvents() {
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
     els.deleteDeviceBtn.addEventListener('click', handleDeleteDeviceBtnClick);
     els.deviceSupplierButtons.addEventListener('click', handleDeviceSupplierClick);
+    els.deviceTypeButtons.addEventListener('click', handleDeviceTypeClick);
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
     els.deviceList.addEventListener('click', handleDeviceListClick);
@@ -742,6 +797,11 @@ function handleDeviceFormChange(event) {
         syncPhoneControl(event.target);
         syncDeviceModalContext();
     }
+}
+
+function handleDeviceTypeFilterChange(event) {
+    state.deviceTypeFilter = event.target.value || 'all';
+    renderSummary();
 }
 
 function handleTelemetryPagerClick(event) {
@@ -838,6 +898,24 @@ function handleConfigFeedbackClosed(event) {
 function handleDeviceSupplierClick(event) {
     const button = event.target.closest('[data-action="selectDeviceSupplier"]');
     if (button) renderDeviceSelectors(button.dataset.value, '');
+}
+
+function handleDeviceTypeClick(event) {
+    const button = event.target.closest('[data-action="selectDeviceType"]');
+    if (!button) return;
+
+    const deviceType = normalizeDeviceType(button.dataset.value);
+    renderDeviceTypeSelector(deviceType);
+    if (deviceType === 'watch') {
+        els.deviceLicenseId.value = '0';
+        els.deviceLicenseId.disabled = true;
+    } else {
+        els.deviceLicenseId.disabled = false;
+        if (els.deviceLicenseId.value.trim() === '0') {
+            els.deviceLicenseId.value = '';
+        }
+    }
+    syncDeviceModalContext();
 }
 
 function handleDeviceModelClick(event) {

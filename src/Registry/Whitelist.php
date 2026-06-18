@@ -6,7 +6,7 @@ use Hub\Dashboard\DatabaseStore;
 
 class Whitelist
 {
-    /** @var array<string, array{supplier: string, model: string, simNumber: string, deviceId: string}> */
+    /** @var array<string, array{supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string}> */
     private array $devices;
     private string $filePath;
     private ?DatabaseStore $db;
@@ -20,40 +20,46 @@ class Whitelist
 
     private function load(): void
     {
+        $this->devices = [];
+
         if ($this->db !== null) {
-            $this->devices = [];
             foreach ($this->db->whitelistAll() as $row) {
-                $imei = (string)$row['imei'];
-                $supplier = (string)$row['supplier'];
-                $model = (string)$row['model'];
-                $simNumber = (string)($row['sim_number'] ?? '');
-                $deviceId = (string)($row['device_id'] ?? '');
-                if ($imei !== '' && $supplier !== '' && $model !== '') {
-                    $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
-                }
+                $this->loadEntry((string)$row['imei'], $row);
             }
+        }
+
+        if (file_exists($this->filePath)) {
+            $raw = json_decode(file_get_contents($this->filePath), true) ?? [];
+            foreach ($raw as $imei => $value) {
+                if (!is_scalar($imei) || !is_array($value) || isset($this->devices[trim((string)$imei)])) {
+                    continue;
+                }
+                $this->loadEntry((string)$imei, $value);
+            }
+        }
+    }
+
+    private function loadEntry(string $imei, array $value): void
+    {
+        $imei = trim($imei);
+        $supplier = trim((string)($value['supplier'] ?? ''));
+        $model = trim((string)($value['model'] ?? ''));
+        $deviceType = DatabaseStore::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch'));
+        $licenseId = DatabaseStore::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0'));
+        $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
+        $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
+        if ($imei === '' || $supplier === '' || $model === '') {
             return;
         }
 
-        $this->devices = [];
-        if (!file_exists($this->filePath)) {
-            return;
-        }
-        $raw = json_decode(file_get_contents($this->filePath), true) ?? [];
-        foreach ($raw as $imei => $value) {
-            if (!is_scalar($imei) || !is_array($value)) {
-                continue;
-            }
-            $imei = trim((string)$imei);
-            $supplier = trim((string)($value['supplier'] ?? ''));
-            $model = trim((string)($value['model'] ?? ''));
-            $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
-            $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
-            if ($imei === '' || $supplier === '' || $model === '') {
-                continue;
-            }
-            $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
-        }
+        $this->devices[$imei] = [
+            'supplier' => $supplier,
+            'model' => $model,
+            'deviceType' => $deviceType,
+            'licenseId' => $licenseId,
+            'simNumber' => $simNumber,
+            'deviceId' => $deviceId,
+        ];
     }
 
     public function isAuthorized(string $imei): bool
@@ -81,10 +87,27 @@ class Whitelist
         return $this->devices;
     }
 
-    public function register(string $imei, string $supplier, string $model, string $simNumber = '', string $deviceId = ''): void
+    public function register(
+        string $imei,
+        string $supplier,
+        string $model,
+        string $deviceType = 'watch',
+        string $licenseId = '0',
+        string $simNumber = '',
+        string $deviceId = ''
+    ): void
     {
-        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
-        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber, $deviceId);
+        $deviceType = DatabaseStore::normalizeDeviceType($deviceType);
+        $licenseId = DatabaseStore::normalizeLicenseId($licenseId);
+        $this->devices[$imei] = [
+            'supplier' => $supplier,
+            'model' => $model,
+            'deviceType' => $deviceType,
+            'licenseId' => $licenseId,
+            'simNumber' => $simNumber,
+            'deviceId' => $deviceId,
+        ];
+        $this->db?->whitelistRegister($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
         $this->saveFile();
     }
 
@@ -95,19 +118,36 @@ class Whitelist
         $this->saveFile();
     }
 
-    public function update(string $imei, string $supplier, string $model, string $simNumber = '', string $deviceId = ''): bool
+    public function update(
+        string $imei,
+        string $supplier,
+        string $model,
+        string $deviceType = 'watch',
+        string $licenseId = '0',
+        string $simNumber = '',
+        string $deviceId = ''
+    ): bool
     {
         if (!isset($this->devices[$imei])) {
             return false;
         }
-        $this->devices[$imei] = ['supplier' => $supplier, 'model' => $model, 'simNumber' => $simNumber, 'deviceId' => $deviceId];
-        $this->db?->whitelistRegister($imei, $supplier, $model, $simNumber, $deviceId);
+        $deviceType = DatabaseStore::normalizeDeviceType($deviceType);
+        $licenseId = DatabaseStore::normalizeLicenseId($licenseId);
+        $this->devices[$imei] = [
+            'supplier' => $supplier,
+            'model' => $model,
+            'deviceType' => $deviceType,
+            'licenseId' => $licenseId,
+            'simNumber' => $simNumber,
+            'deviceId' => $deviceId,
+        ];
+        $this->db?->whitelistRegister($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
         $this->saveFile();
         return true;
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, simNumber: string, deviceId: string}|null
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string}|null
      */
     public function resolve(string $imei, string $protocol = '', string $ident = ''): ?array
     {

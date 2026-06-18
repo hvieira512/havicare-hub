@@ -300,22 +300,22 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     {
     }
 
-    public function publishRaw(string $imei, array $payload): void
+    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0'): void
     {
         $this->raw[] = [$imei, $payload];
     }
 
-    public function publishStatus(string $imei, array $payload, bool $retain = true): void
+    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', string $licenseId = '0'): void
     {
         $this->statuses[] = [$imei, $payload, $retain];
     }
 
-    public function publishEvent(string $imei, array $payload): void
+    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0'): void
     {
         $this->events[] = [$imei, $payload];
     }
 
-    public function publishTelemetry(string $imei, array $payload): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0'): void
     {
         $this->telemetry[] = [$imei, $payload];
     }

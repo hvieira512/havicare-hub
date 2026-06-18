@@ -48,6 +48,18 @@ final class DashboardStoreTest extends TestCase
 
         self::assertFalse($store->device('861265061009822')['online']);
     }
+
+    public function testRegisterDevicePersistsDeviceTypeAndLicenseId(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE', 'radar', '12');
+
+        $device = $store->device('861265061009822');
+        self::assertSame('radar', $device['deviceType']);
+        self::assertSame('12', $device['licenseId']);
+    }
 }
 
 final class InMemoryRedisClient implements ClientInterface

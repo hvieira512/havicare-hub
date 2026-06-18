@@ -7,6 +7,9 @@ use PhpMqtt\Client\MqttClient;
 
 class HubMqttBridge
 {
+    private const DEFAULT_LICENSE_ID = '0';
+    private const DEFAULT_DEVICE_TYPE = 'watch';
+
     private MqttClient $publisher;
     private string $topicPrefix;
     /** @var null|callable(): MqttClient */
@@ -19,29 +22,35 @@ class HubMqttBridge
         $this->reconnectPublisher = $reconnectPublisher;
     }
 
-    public function publishRaw(string $imei, array $payload): void
+    public function publishRaw(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, string $licenseId = self::DEFAULT_LICENSE_ID): void
     {
-        $this->publish($this->topic("devices/$imei/raw"), $payload);
+        $this->publish($this->topic($this->deviceTopic($licenseId, $deviceType, $imei, 'raw')), $payload);
     }
 
-    public function publishStatus(string $imei, array $payload, bool $retain = true): void
+    public function publishStatus(
+        string $imei,
+        array $payload,
+        bool $retain = true,
+        string $deviceType = self::DEFAULT_DEVICE_TYPE,
+        string $licenseId = self::DEFAULT_LICENSE_ID
+    ): void
     {
-        $this->publish($this->topic("devices/$imei/status"), $payload, $retain);
+        $this->publish($this->topic($this->deviceTopic($licenseId, $deviceType, $imei, 'status')), $payload, $retain);
     }
 
-    public function publishEvent(string $imei, array $payload): void
+    public function publishEvent(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, string $licenseId = self::DEFAULT_LICENSE_ID): void
     {
-        $this->publish($this->topic("devices/$imei/events"), $payload, false, MqttClient::QOS_AT_LEAST_ONCE);
+        $this->publish($this->topic($this->deviceTopic($licenseId, $deviceType, $imei, 'events')), $payload, false, MqttClient::QOS_AT_LEAST_ONCE);
     }
 
-    public function publishTelemetry(string $imei, array $payload): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, string $licenseId = self::DEFAULT_LICENSE_ID): void
     {
-        $this->publish($this->topic("devices/$imei/telemetry"), $payload);
+        $this->publish($this->topic($this->deviceTopic($licenseId, $deviceType, $imei, 'telemetry')), $payload);
     }
 
     public function downlinkTopicFilter(): string
     {
-        return $this->topic('devices/+/downlink');
+        return $this->topic($this->deviceTopic(self::DEFAULT_LICENSE_ID, self::DEFAULT_DEVICE_TYPE, '+', 'downlink'));
     }
 
     private function publish(string $topic, array $payload, bool $retain = false, int $qualityOfService = MqttClient::QOS_AT_MOST_ONCE): void
@@ -67,6 +76,11 @@ class HubMqttBridge
     {
         $topic = trim($topic, '/');
         return $this->topicPrefix === '' ? $topic : $this->topicPrefix . '/' . $topic;
+    }
+
+    public function deviceTopic(string $licenseId, string $deviceType, string $deviceKey, string $kind): string
+    {
+        return trim($licenseId, '/') . '/' . trim($deviceType, '/') . '/' . trim($deviceKey, '/') . '/' . trim($kind, '/');
     }
 
     public function logPublishFailure(string $channel, string $imei, \Throwable $e): void

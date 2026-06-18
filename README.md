@@ -68,25 +68,31 @@ Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth. The dash
 Uplink from device to MQTT:
 
 ```text
-devices/{imei}/raw
-devices/{imei}/telemetry
-devices/{imei}/events
-devices/{imei}/status
+0/watch/{deviceKey}/raw
+0/watch/{deviceKey}/telemetry
+0/watch/{deviceKey}/events
+0/watch/{deviceKey}/status
 ```
 
 Downlink from MQTT to connected device:
 
 ```text
-devices/{imei}/downlink
+0/watch/{deviceKey}/downlink
 ```
 
 If the device is offline, the hub stores the latest pending downlink per IMEI and native command in Redis for `DOWNLINK_QUEUE_TTL_SECONDS` seconds, default `300`. The hub publishes `device.downlink.queued` when queued and `device.downlink.sent` when it is delivered after the next device login.
 
 `MQTT_TOPIC_PREFIX` is prepended when configured.
 
+Topic semantics:
+
+- `0` is the reserved default license scope for watches.
+- `watch` is the current TCP-ingress device type.
+- `deviceKey` is the canonical topic identity. For watches it is the IMEI.
+
 ## Telemetry Payload Contract
 
-Telemetry messages published to `devices/{imei}/telemetry` share one envelope across all suppliers and models:
+Telemetry messages published to `0/watch/{deviceKey}/telemetry` share one envelope across all suppliers and models:
 
 ```json
 {
@@ -256,7 +262,7 @@ When a supplier exposes additional fields that do not map cleanly into the share
 
 ## Raw Payloads
 
-Raw messages published to `devices/{imei}/raw` preserve the device bytes:
+Raw messages published to `0/watch/{deviceKey}/raw` preserve the device bytes:
 
 ```json
 {
@@ -317,7 +323,7 @@ Devices are authorized through [config/whitelist.json](config/whitelist.json) as
 
 For 4P Touch, store the full canonical IMEI as the whitelist key and the protocol-level 10-digit identifier separately in `deviceId`. The hub resolves `deviceId` during auth and downlink building, but all MQTT topics and stored device identity remain keyed by the canonical IMEI.
 
-Unknown devices are disconnected and a rejection is published to `devices/{imei}/status` and `devices/{imei}/events`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by identity and records the configured metadata from the whitelist.
+Unknown devices are disconnected and a rejection is published to `0/watch/{deviceKey}/status` and `0/watch/{deviceKey}/events`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by identity and records the configured metadata from the whitelist.
 
 ## Tests
 

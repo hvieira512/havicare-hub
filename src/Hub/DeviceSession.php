@@ -12,6 +12,8 @@ class DeviceSession
         public readonly string $protocol = '',
         public readonly string $supplier = '',
         public readonly string $model = '',
+        public readonly string $deviceType = 'watch',
+        public readonly string $licenseId = '0',
     ) {
     }
 
@@ -28,11 +30,19 @@ class DeviceSession
             'protocol' => $this->protocol,
             'supplier' => $this->supplier,
             'model' => $this->model,
+            'deviceType' => $this->deviceType,
+            'licenseId' => $this->licenseId,
             'transport' => $this->transport,
         ];
     }
 
-    public function authenticate(DeviceIdentity $identity, string $supplier, string $model): self
+    public function authenticate(
+        DeviceIdentity $identity,
+        string $supplier,
+        string $model,
+        string $deviceType = 'watch',
+        string $licenseId = '0'
+    ): self
     {
         return new self(
             connection: $this->connection,
@@ -42,6 +52,8 @@ class DeviceSession
             protocol: $identity->protocol,
             supplier: $supplier,
             model: $model,
+            deviceType: $deviceType,
+            licenseId: $licenseId,
         );
     }
 }

@@ -24,11 +24,13 @@ class DeviceAuthorizer
             (string)$resolved['imei'],
             (string)$resolved['supplier'],
             (string)$resolved['model'],
+            (string)($resolved['deviceType'] ?? 'watch'),
+            (string)($resolved['licenseId'] ?? '0'),
         );
     }
 
     /**
-     * @return array{supplier: string, model: string}
+     * @return array{supplier: string, model: string, deviceType: string, licenseId: string}
      */
     public function metadataFor(string $imei): array
     {
@@ -37,6 +39,8 @@ class DeviceAuthorizer
         return [
             'supplier' => (string)($metadata['supplier'] ?? ''),
             'model' => (string)($metadata['model'] ?? ''),
+            'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
+            'licenseId' => (string)($metadata['licenseId'] ?? '0'),
         ];
     }
 }

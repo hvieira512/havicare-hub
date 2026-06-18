@@ -33,6 +33,8 @@ final class DashboardHttpServer
                 (string)$imei,
                 (string)($metadata['supplier'] ?? ''),
                 (string)($metadata['model'] ?? ''),
+                (string)($metadata['deviceType'] ?? 'watch'),
+                (string)($metadata['licenseId'] ?? '0'),
                 (string)($metadata['simNumber'] ?? ''),
                 (string)($metadata['deviceId'] ?? '')
             );
@@ -419,13 +421,18 @@ final class DashboardHttpServer
         $imei = trim((string)($decoded['imei'] ?? ''));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
+        $deviceType = $this->normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
+        $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         if ($imei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
-        $this->whitelist->register($imei, $supplier, $model, $simNumber, $deviceId);
-        $this->store->registerDevice($imei, $supplier, $model, $simNumber, $deviceId);
+        if ($licenseId === '') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
+        }
+        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
+        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
         return ['status' => 'ok', 'imei' => $imei];
     }
 
@@ -438,18 +445,39 @@ final class DashboardHttpServer
         $newImei = trim((string)($decoded['imei'] ?? $imei));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
+        $deviceType = $this->normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
+        $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         if ($newImei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
+        if ($licenseId === '') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
+        }
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
         }
-        $this->whitelist->register($newImei, $supplier, $model, $simNumber, $deviceId);
-        $this->store->registerDevice($newImei, $supplier, $model, $simNumber, $deviceId);
+        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
+        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
         return ['status' => 'ok', 'imei' => $newImei];
+    }
+
+    private function normalizeDeviceType(string $deviceType): string
+    {
+        return DatabaseStore::normalizeDeviceType($deviceType);
+    }
+
+    private function normalizeLicenseId(string $licenseId, string $deviceType): string
+    {
+        if ($deviceType === 'watch') {
+            return '0';
+        }
+
+        $normalized = trim($licenseId);
+
+        return $normalized === '' ? '' : $normalized;
     }
 
     private function deleteDevice(string $imei): array

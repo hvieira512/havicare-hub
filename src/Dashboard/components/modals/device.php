@@ -39,6 +39,15 @@ ob_start();
                                     <div class="form-text">Opcional. Necessário para 4P Touch quando o ID do protocolo é diferente do IMEI.</div>
                                 </div>
                                 <div>
+                                    <div class="form-label">Tipo de dispositivo</div>
+                                    <div id="deviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
+                                </div>
+                                <div>
+                                    <label for="deviceLicenseId" class="form-label">Licença</label>
+                                    <input type="text" class="form-control" id="deviceLicenseId" value="0">
+                                    <div class="form-text">Para relógios, a licença reservada é sempre <code>0</code>.</div>
+                                </div>
+                                <div>
                                     <div class="form-label">Fornecedor</div>
                                     <div id="deviceSupplierButtons" class="btn-group flex-wrap" role="group"></div>
                                 </div>
