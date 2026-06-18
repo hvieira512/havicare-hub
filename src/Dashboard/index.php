@@ -38,6 +38,7 @@ require_once __DIR__ . '/components/modal.php';
         .selected-device-preview {
             width: 72px;
             height: 72px;
+            text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
