@@ -78,6 +78,10 @@ Uplink from device to MQTT:
 0/watch/{deviceKey}/telemetry
 0/watch/{deviceKey}/events
 0/watch/{deviceKey}/status
+{licenseId}/ncs/{deviceKey}/raw
+{licenseId}/ncs/{deviceKey}/telemetry
+{licenseId}/ncs/{deviceKey}/events
+{licenseId}/ncs/{deviceKey}/status
 ```
 
 Downlink from MQTT to connected device:
@@ -93,8 +97,8 @@ If the device is offline, the hub stores the latest pending downlink per IMEI an
 Topic semantics:
 
 - `0` is the reserved default license scope for watches.
-- `watch` is the current TCP-ingress device type.
-- `deviceKey` is the canonical topic identity. For watches it is the IMEI.
+- `watch` is the TCP-ingress device type. `ncs` is the MQTT-ingress nurse-call type.
+- `deviceKey` is the canonical topic identity. For watches it is the IMEI; for NCS it is the canonical registry key resolved from `sourceSystem + sourceDeviceId`.
 
 ## Telemetry Payload Contract
 
@@ -323,11 +327,21 @@ Devices are authorized through [config/whitelist.json](config/whitelist.json) as
     "supplier": "4P Touch",
     "model": "D46",
     "deviceId": "3707975737"
+  },
+  "ncs-gateway-01": {
+    "supplier": "Voerka",
+    "model": "W812",
+    "deviceType": "ncs",
+    "licenseId": "1001",
+    "sourceSystem": "voerka",
+    "sourceDeviceId": "gw-001"
   }
 }
 ```
 
 For 4P Touch, store the full canonical IMEI as the whitelist key and the protocol-level 10-digit identifier separately in `deviceId`. The hub resolves `deviceId` during auth and downlink building, but all MQTT topics and stored device identity remain keyed by the canonical IMEI.
+
+For NCS, register each gateway or source under its canonical hub key with `deviceType: "ncs"`, an explicit `licenseId`, `sourceSystem: "voerka"`, and the upstream `from` value in `sourceDeviceId`. The hub subscribes to `NCS_TOPIC_FILTER` (default `/voerka/#`), resolves that source through the registry, and republishes normalized records to `{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}`.
 
 Unknown devices are disconnected and a rejection is published to `0/watch/{deviceKey}/status` and `0/watch/{deviceKey}/events`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by identity and records the configured metadata from the whitelist.
 

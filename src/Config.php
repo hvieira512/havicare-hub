@@ -43,6 +43,10 @@ class Config
                 'downlink_queue_ttl_seconds' => $downlinkQueueTtl,
                 'whitelist_file' => getenv('WHITELIST_FILE') ?: '',
             ],
+            'ncs' => [
+                'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
+                'topic_filter' => getenv('NCS_TOPIC_FILTER') ?: '/voerka/#',
+            ],
             'mqtt' => [
                 'enabled' => true,
                 'host' => getenv('MQTT_HOST') ?: '',

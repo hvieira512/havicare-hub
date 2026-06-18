@@ -30,7 +30,9 @@ final class DashboardStore
         string $deviceType = 'watch',
         string $licenseId = '0',
         string $simNumber = '',
-        string $deviceId = ''
+        string $deviceId = '',
+        string $sourceSystem = '',
+        string $sourceDeviceId = ''
     ): void
     {
         $this->redis->sadd($this->key('devices'), $imei);
@@ -42,6 +44,8 @@ final class DashboardStore
             'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
+            'sourceSystem' => trim($sourceSystem),
+            'sourceDeviceId' => trim($sourceDeviceId),
         ]);
     }
 

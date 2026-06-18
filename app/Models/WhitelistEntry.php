@@ -18,5 +18,11 @@ class WhitelistEntry extends Model
         'imei',
         'supplier',
         'model',
+        'device_type',
+        'license_id',
+        'sim_number',
+        'device_id',
+        'source_system',
+        'source_device_id',
     ];
 }

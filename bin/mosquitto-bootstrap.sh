@@ -24,17 +24,23 @@ fi
 
 cat >"$ACL_FILE" <<EOF
 user $PUBLISHER_USER
+topic read /voerka/#
+topic write /voerka/#
 topic write 0/watch/+/status
 topic write 0/watch/+/events
 topic write 0/watch/+/raw
 topic readwrite 0/watch/+/downlink
+topic write +/ncs/+/status
+topic write +/ncs/+/events
+topic write +/ncs/+/raw
+topic write +/ncs/+/telemetry
 EOF
 
 if [ -n "$SMOKE_USER" ]; then
   cat >>"$ACL_FILE" <<EOF
 
 user $SMOKE_USER
-topic read 0/#
+topic read #
 EOF
 fi
 

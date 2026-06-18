@@ -22,6 +22,12 @@ return new class extends Migration
                 if (!Schema::hasColumn('whitelist', 'device_id')) {
                     $table->string('device_id')->default('')->after('sim_number');
                 }
+                if (!Schema::hasColumn('whitelist', 'source_system')) {
+                    $table->string('source_system')->default('')->after('device_id');
+                }
+                if (!Schema::hasColumn('whitelist', 'source_device_id')) {
+                    $table->string('source_device_id')->default('')->after('source_system');
+                }
             });
         }
 
@@ -52,7 +58,7 @@ return new class extends Migration
 
         if (Schema::hasTable('whitelist')) {
             Schema::table('whitelist', function (Blueprint $table) {
-                foreach (['device_type', 'license_id', 'sim_number', 'device_id'] as $column) {
+                foreach (['device_type', 'license_id', 'sim_number', 'device_id', 'source_system', 'source_device_id'] as $column) {
                     if (Schema::hasColumn('whitelist', $column)) {
                         $table->dropColumn($column);
                     }

@@ -60,7 +60,7 @@ start_mqtt_subscriber() {
     scenario_fail "stream_failure" "MQTT_SMOKE_USERNAME/MQTT_SMOKE_PASSWORD are required"
   fi
   docker compose exec -T mosquitto sh -lc 'rm -f /tmp/mqtt-scenario.log /tmp/mqtt-sub.pid'
-  docker compose exec -T mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -u '${MQTT_SMOKE_USERNAME:-}' -P '${MQTT_SMOKE_PASSWORD:-}' -v -t '0/#' > /tmp/mqtt-scenario.log 2>&1 & echo \$! > /tmp/mqtt-sub.pid"
+  docker compose exec -T mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -u '${MQTT_SMOKE_USERNAME:-}' -P '${MQTT_SMOKE_PASSWORD:-}' -v -t '#' > /tmp/mqtt-scenario.log 2>&1 & echo \$! > /tmp/mqtt-sub.pid"
 }
 
 stop_mqtt_subscriber() {

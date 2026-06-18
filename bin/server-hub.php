@@ -11,6 +11,7 @@ use Hub\DeviceHubServer;
 use Hub\HubDownlinkSubscriber;
 use Hub\HubMqttBridge;
 use Hub\HubTcpIngress;
+use Hub\Ncs\NcsMqttIngressBridge;
 use Hub\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -34,6 +35,7 @@ $config = Config::load()->all();
 $mqttConfig = $config['mqtt'] ?? [];
 $redisConfig = $config['redis'] ?? [];
 $dashboardConfig = $config['dashboard'] ?? [];
+$ncsConfig = $config['ncs'] ?? [];
 $downlinkQueueTtlSeconds = (int)($config['hub']['downlink_queue_ttl_seconds'] ?? 300);
 
 $mqttHost = trim((string)($mqttConfig['host'] ?? ''));
@@ -108,7 +110,9 @@ $hubServer = new DeviceHubServer(
     downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds
 );
 $downlink = null;
+$ncsIngress = null;
 $downlinkTopicFilter = $mqttBridge->downlinkTopicFilter();
+$ncsTopicFilter = trim((string)($ncsConfig['topic_filter'] ?? '/voerka/#'));
 $subscriberRepository = new MemoryRepository();
 $subscriberRepository->addSubscription(new Subscription(
     $downlinkTopicFilter,
@@ -136,6 +140,39 @@ $downlink = new HubDownlinkSubscriber(
     }
 );
 $connectMqttClient($subscriber, false);
+
+$ncsSubscriber = null;
+if ((bool)($ncsConfig['enabled'] ?? true)) {
+    $ncsSubscriberRepository = new MemoryRepository();
+    $ncsSubscriberRepository->addSubscription(new Subscription(
+        $ncsTopicFilter,
+        MqttClient::QOS_AT_LEAST_ONCE,
+        static function (string $topic, string $message) use (&$ncsIngress): void {
+            $ncsIngress?->handleReceivedMessage($topic, $message);
+        }
+    ));
+    $ncsSubscriber = $createMqttClient('ncs-sub', true, $ncsSubscriberRepository);
+    $ncsIngress = new NcsMqttIngressBridge(
+        $ncsSubscriber,
+        $whitelist,
+        $mqttBridge,
+        $ncsTopicFilter,
+        function () use (&$ncsIngress, $createMqttClient, $connectMqttClient, $ncsTopicFilter): MqttClient {
+            $repository = new MemoryRepository();
+            $repository->addSubscription(new Subscription(
+                $ncsTopicFilter,
+                MqttClient::QOS_AT_LEAST_ONCE,
+                static function (string $topic, string $message) use (&$ncsIngress): void {
+                    $ncsIngress?->handleReceivedMessage($topic, $message);
+                }
+            ));
+
+            return $connectMqttClient($createMqttClient('ncs-sub', true, $repository), false);
+        },
+        $dashboardStore
+    );
+    $connectMqttClient($ncsSubscriber, false);
+}
 
 $loop = Loop::get();
 $tcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
@@ -175,6 +212,15 @@ try {
     exit(1);
 }
 
+if ($ncsIngress !== null) {
+    try {
+        $ncsIngress->start();
+    } catch (\Throwable $e) {
+        Logger::channel('hub')->error('NCS ingress subscription failed: ' . $e->getMessage());
+        exit(1);
+    }
+}
+
 $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
     try {
         $downlink->tick(0.001);
@@ -182,6 +228,16 @@ $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
         Logger::channel('hub')->error('MQTT downlink loop failed: ' . $e->getMessage());
     }
 });
+
+if ($ncsIngress !== null) {
+    $loop->addPeriodicTimer(0.05, function () use ($ncsIngress): void {
+        try {
+            $ncsIngress->tick(0.001);
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error('NCS ingress loop failed: ' . $e->getMessage());
+        }
+    });
+}
 
 $loop->addPeriodicTimer(10, function () use ($dashboardStore, $dashboardConfig): void {
     $dashboardStore->expireWaitingCommands((int)($dashboardConfig['command_timeout_seconds'] ?? 120));
@@ -205,5 +261,8 @@ Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('0/watc
 Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/events'));
 Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/raw'));
 Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/downlink'));
+if ($ncsIngress !== null) {
+    Logger::channel('hub')->info("NCS ingress topics: {$ncsTopicFilter} -> " . $mqttBridge->topic('{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}'));
+}
 
 $loop->run();

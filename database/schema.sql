@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS whitelist (
     license_id TEXT NOT NULL DEFAULT '0',
     sim_number TEXT NOT NULL DEFAULT '',
     device_id TEXT NOT NULL DEFAULT '',
+    source_system TEXT NOT NULL DEFAULT '',
+    source_device_id TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
