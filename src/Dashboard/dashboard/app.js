@@ -113,7 +113,7 @@ function renderSummary() {
                 </div>
                 <div class="btn-group btn-group-sm" style="flex-shrink:0">
                 <button class="btn btn-outline-secondary" data-imei="${esc(device.imei)}" data-supplier="${esc(device.supplier)}" data-model="${esc(device.model)}" data-action="edit" title="Editar">
-                <i class="fa-solid fa-eye"></i>
+                <i class="fa-solid fa-pen"></i>
                 </button>
                 </div>
                 </div>`).join('')}
