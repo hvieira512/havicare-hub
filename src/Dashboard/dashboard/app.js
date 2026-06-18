@@ -992,10 +992,46 @@ function handlePendingDeviceFilterChange() {
     renderDeviceFilterControls();
 }
 
+const STORAGE_KEY = 'hub-dashboard-device-filters';
+
+function loadFiltersFromStorage() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && typeof parsed === 'object') {
+                return {
+                    deviceType: normalizeFilterValue(parsed.deviceType),
+                    licenseId: normalizeFilterValue(parsed.licenseId),
+                    supplier: normalizeFilterValue(parsed.supplier),
+                    model: normalizeFilterValue(parsed.model),
+                };
+            }
+        }
+    } catch {
+    }
+    return null;
+}
+
+function saveFiltersToStorage() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.deviceFilters));
+    } catch {
+    }
+}
+
+function clearFiltersFromStorage() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+    }
+}
+
 async function applyDeviceFilters() {
     syncPendingDeviceFiltersFromControls();
     state.deviceFilters = {...state.pendingDeviceFilters};
     state.deviceListPage = 1;
+    saveFiltersToStorage();
     await loadSummary();
 }
 
@@ -1009,6 +1045,7 @@ async function clearDeviceFilters() {
     state.deviceFilters = {...defaults};
     state.pendingDeviceFilters = {...defaults};
     state.deviceListPage = 1;
+    clearFiltersFromStorage();
     await loadSummary();
 }
 
@@ -1591,6 +1628,13 @@ export function startDashboard() {
     supplierModal = new bootstrap.Modal(document.getElementById('supplierModal'));
     modelModal = new bootstrap.Modal(document.getElementById('modelModal'));
     bindEvents();
+
+    const stored = loadFiltersFromStorage();
+    if (stored) {
+        state.deviceFilters = stored;
+        state.pendingDeviceFilters = {...stored};
+    }
+
     loadSummary();
     setInterval(loadSummary, 5000);
 }
