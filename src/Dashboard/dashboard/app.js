@@ -351,20 +351,12 @@ function renderSelection() {
 
     const device = state.selectedDetail.device;
     renderSelectedDeviceSummary(device);
-    els.detailTitle.textContent = device.imei;
-    els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${licenseLabel(device.licenseId)} · ${device.supplier ?? ''} ${device.model ?? ''} · visto ${ago(device.lastSeenAt)}`;
-    els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
-    els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
 
     if (!state.detailFilters.from) {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         state.detailFilters.from = sevenDaysAgo.toISOString().slice(0, 16);
     }
-
-    els.detailFiltersPanel.classList.toggle('d-none', !state.detailFiltersOpen);
-    els.toggleDetailFiltersBtn.classList.toggle('btn-outline-secondary', !state.detailFiltersOpen);
-    els.toggleDetailFiltersBtn.classList.toggle('btn-secondary', state.detailFiltersOpen);
 
     populateDetailFilterTypes();
     syncDetailFilterControls();
@@ -497,11 +489,6 @@ function syncDetailFilterControls() {
     els.detailFilterFrom.value = state.detailFilters.from;
     els.detailFilterTo.value = state.detailFilters.to;
     els.detailFilterType.value = state.detailFilters.type;
-}
-
-function toggleDetailFilters() {
-    state.detailFiltersOpen = !state.detailFiltersOpen;
-    renderSelection();
 }
 
 function applyDetailFilters() {
@@ -1206,9 +1193,6 @@ function cacheElements() {
         selectedDeviceFacts: document.getElementById('selectedDeviceFacts'),
         detailEmptyState: document.getElementById('detailEmptyState'),
         deviceDetail: document.getElementById('deviceDetail'),
-        detailTitle: document.getElementById('detailTitle'),
-        detailMeta: document.getElementById('detailMeta'),
-        detailBadge: document.getElementById('detailBadge'),
         telemetryCount: document.getElementById('telemetryCount'),
         telemetryList: document.getElementById('telemetryList'),
         telemetryPager: document.getElementById('telemetry'),
@@ -1219,7 +1203,6 @@ function cacheElements() {
         downlinkRequests: document.getElementById('downlinkRequests'),
         connectionTimeline: document.getElementById('connectionTimeline'),
         connectionStats: document.getElementById('connectionStats'),
-        toggleDetailFiltersBtn: document.getElementById('toggleDetailFiltersBtn'),
         detailFiltersPanel: document.getElementById('detailFiltersPanel'),
         detailFilterFrom: document.getElementById('detailFilterFrom'),
         detailFilterTo: document.getElementById('detailFilterTo'),
@@ -1316,7 +1299,6 @@ function bindEvents() {
     els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
-    els.toggleDetailFiltersBtn.addEventListener('click', toggleDetailFilters);
     els.applyDetailFiltersBtn.addEventListener('click', applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener('click', clearDetailFilters);
     els.deleteDeviceBtn.addEventListener('click', handleDeleteDeviceBtnClick);
