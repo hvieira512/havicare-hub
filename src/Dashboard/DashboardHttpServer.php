@@ -18,6 +18,7 @@ final class DashboardHttpServer
     private const MODEL_IMAGE_ROUTE = '/model-images';
     private const MAX_MODEL_IMAGE_BYTES = 5 * 1024 * 1024;
     private const MAX_MODEL_IMAGE_DIMENSION = 640;
+    private const DEFAULT_COLLECTION_LIMIT = 20;
 
     public function __construct(
         private DashboardStore $store,
@@ -57,6 +58,9 @@ final class DashboardHttpServer
             if ($method === 'GET' && $path === '/api/dashboard/summary') {
                 return $this->json($this->summary());
             }
+            if ($method === 'GET' && $path === '/api/devices') {
+                return $this->json($this->devicesList((string)$request->getUri()->getQuery()));
+            }
             if ($method === 'GET' && preg_match('#^/api/devices/([^/]+)$#', $path, $matches) === 1) {
                 return $this->json($this->device(rawurldecode($matches[1])));
             }
@@ -86,7 +90,7 @@ final class DashboardHttpServer
                 return $this->json($this->deleteDevice(rawurldecode($matches[1])));
             }
             if ($method === 'GET' && $path === '/api/models') {
-                return $this->json($this->modelsList());
+                return $this->json($this->modelsList((string)$request->getUri()->getQuery()));
             }
             if ($method === 'POST' && $path === '/api/models') {
                 return $this->json($this->addModel($request));
@@ -98,7 +102,7 @@ final class DashboardHttpServer
                 return $this->json($this->deleteModel((int)$matches[1]));
             }
             if ($method === 'GET' && $path === '/api/suppliers') {
-                return $this->json($this->suppliersList());
+                return $this->json($this->suppliersList((string)$request->getUri()->getQuery()));
             }
             if ($method === 'POST' && $path === '/api/suppliers') {
                 return $this->json($this->addSupplier((string)$request->getBody()));
@@ -166,8 +170,6 @@ final class DashboardHttpServer
         }
 
         return [
-            'models' => $this->db->models->all(),
-            'devices' => $devices,
             'counts' => [
                 'online' => $online,
                 'offline' => max(0, count($devices) - $online),
@@ -175,6 +177,41 @@ final class DashboardHttpServer
                 'failed' => $failed,
             ],
         ];
+    }
+
+    private function devicesList(string $query = ''): array
+    {
+        $params = $this->queryParams($query);
+        $page = $this->queryPage($params);
+        $limit = $this->queryLimit($params);
+        $filters = [
+            'deviceType' => $this->queryFilter($params, 'deviceType', 'all'),
+            'licenseId' => $this->queryFilter($params, 'licenseId', 'all'),
+            'supplier' => $this->queryFilter($params, 'supplier', 'all'),
+            'model' => $this->queryFilter($params, 'model', 'all'),
+        ];
+        $devices = $this->store->devices();
+        $filtered = $this->filterDevices($devices, $filters);
+        $available = [
+            'deviceType' => $this->uniqueValues(array_map(
+                static fn (array $device): string => DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch')),
+                $this->filterDevicesForOptions($devices, $filters, 'deviceType')
+            )),
+            'licenseId' => $this->uniqueValues(array_map(
+                static fn (array $device): string => DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0')),
+                $this->filterDevicesForOptions($devices, $filters, 'licenseId')
+            )),
+            'supplier' => $this->uniqueValues(array_map(
+                static fn (array $device): string => trim((string)($device['supplier'] ?? '')),
+                $this->filterDevicesForOptions($devices, $filters, 'supplier')
+            )),
+            'model' => $this->uniqueValues(array_map(
+                static fn (array $device): string => trim((string)($device['model'] ?? '')),
+                $this->filterDevicesForOptions($devices, $filters, 'model')
+            )),
+        ];
+
+        return $this->collectionResponse($filtered, $page, $limit, $filters, $available);
     }
 
     private function device(string $imei): array
@@ -412,6 +449,91 @@ final class DashboardHttpServer
         return '';
     }
 
+    private function queryParams(string $query): array
+    {
+        if ($query === '') {
+            return [];
+        }
+
+        parse_str($query, $params);
+
+        return is_array($params) ? $params : [];
+    }
+
+    private function queryPage(array $params): int
+    {
+        return max(1, (int)($params['page'] ?? 1));
+    }
+
+    private function queryLimit(array $params): int
+    {
+        return max(1, (int)($params['limit'] ?? self::DEFAULT_COLLECTION_LIMIT));
+    }
+
+    private function queryFilter(array $params, string $key, string $default = 'all'): string
+    {
+        $value = trim((string)($params[$key] ?? ''));
+
+        return $value === '' ? $default : $value;
+    }
+
+    private function collectionResponse(array $items, int $page, int $limit, array $appliedFilters, array $availableFilters): array
+    {
+        $total = count($items);
+        $totalPages = max(1, (int)ceil($total / max(1, $limit)));
+        $currentPage = min(max(1, $page), $totalPages);
+        $offset = ($currentPage - 1) * $limit;
+
+        return [
+            'data' => array_values(array_slice($items, $offset, $limit)),
+            'pagination' => [
+                'limit' => $limit,
+                'page' => $currentPage,
+                'total_pages' => $totalPages,
+                'total' => $total,
+            ],
+            'filters' => [
+                'applied' => $appliedFilters,
+                'available' => $availableFilters,
+            ],
+        ];
+    }
+
+    private function filterDevices(array $devices, array $filters): array
+    {
+        return array_values(array_filter($devices, static function (array $device) use ($filters): bool {
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch'));
+            $licenseId = DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0'));
+            $supplier = trim((string)($device['supplier'] ?? ''));
+            $model = trim((string)($device['model'] ?? ''));
+
+            return (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType'])
+                && (($filters['licenseId'] ?? 'all') === 'all' || $licenseId === $filters['licenseId'])
+                && (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
+                && (($filters['model'] ?? 'all') === 'all' || $model === $filters['model']);
+        }));
+    }
+
+    private function filterDevicesForOptions(array $devices, array $filters, string $excludeKey): array
+    {
+        $candidateFilters = $filters;
+        $candidateFilters[$excludeKey] = 'all';
+
+        return $this->filterDevices($devices, $candidateFilters);
+    }
+
+    private function uniqueValues(array $values): array
+    {
+        $filtered = array_values(array_filter(array_map(
+            static fn (mixed $value): string => trim((string)$value),
+            $values
+        ), static fn (string $value): bool => $value !== ''));
+        $unique = array_values(array_unique($filtered));
+        usort($unique, static fn (string $left, string $right): int => strnatcasecmp($left, $right));
+
+        return $unique;
+    }
+
     private function addDevice(string $body): array
     {
         $decoded = json_decode($body, true);
@@ -519,9 +641,40 @@ final class DashboardHttpServer
 </html>';
     }
 
-    private function modelsList(): array
+    private function modelsList(string $query = ''): array
     {
-        return ['models' => $this->db->models->all()];
+        $params = $this->queryParams($query);
+        $page = $this->queryPage($params);
+        $limit = $this->queryLimit($params);
+        $filters = [
+            'supplier' => $this->queryFilter($params, 'supplier', 'all'),
+            'protocol' => $this->queryFilter($params, 'protocol', 'all'),
+        ];
+        $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
+            $supplier = trim((string)($model['supplier'] ?? ''));
+            $protocol = trim((string)($model['protocol'] ?? ''));
+
+            return (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
+                && (($filters['protocol'] ?? 'all') === 'all' || $protocol === $filters['protocol']);
+        }));
+        $available = [
+            'supplier' => $this->uniqueValues(array_map(
+                static fn (array $model): string => trim((string)($model['supplier'] ?? '')),
+                array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
+                    $protocol = trim((string)($model['protocol'] ?? ''));
+                    return (($filters['protocol'] ?? 'all') === 'all' || $protocol === $filters['protocol']);
+                }))
+            )),
+            'protocol' => $this->uniqueValues(array_map(
+                static fn (array $model): string => trim((string)($model['protocol'] ?? '')),
+                array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
+                    $supplier = trim((string)($model['supplier'] ?? ''));
+                    return (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier']);
+                }))
+            )),
+        ];
+
+        return $this->collectionResponse($models, $page, $limit, $filters, $available);
     }
 
     private function addModel(ServerRequestInterface $request): array
@@ -727,9 +880,23 @@ final class DashboardHttpServer
         }
     }
 
-    private function suppliersList(): array
+    private function suppliersList(string $query = ''): array
     {
-        return ['suppliers' => $this->db->suppliers->all()];
+        $params = $this->queryParams($query);
+        $page = $this->queryPage($params);
+        $limit = $this->queryLimit($params);
+        $filters = [
+            'enabled' => $this->queryFilter($params, 'enabled', 'all'),
+        ];
+        $suppliers = array_values(array_filter($this->db->suppliers->all(), static function (array $supplier) use ($filters): bool {
+            $enabled = ((int)($supplier['enabled'] ?? 0)) === 1 ? 'true' : 'false';
+
+            return (($filters['enabled'] ?? 'all') === 'all' || $enabled === $filters['enabled']);
+        }));
+
+        return $this->collectionResponse($suppliers, $page, $limit, $filters, [
+            'enabled' => ['true', 'false'],
+        ]);
     }
 
     private function addSupplier(string $body): array

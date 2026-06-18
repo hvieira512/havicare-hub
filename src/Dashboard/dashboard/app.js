@@ -77,7 +77,26 @@ function findModelInfo(supplier, model, models = state.summary.models) {
 }
 
 async function loadSummary() {
-    state.summary = await api.summary();
+    const [dashboard, devicesResponse, modelsResponse] = await Promise.all([
+        api.summary(),
+        api.devices({
+            page: state.deviceListPage,
+            limit: state.deviceListPageSize,
+            deviceType: state.deviceFilters.deviceType,
+            licenseId: state.deviceFilters.licenseId,
+            supplier: state.deviceFilters.supplier,
+            model: state.deviceFilters.model,
+        }),
+        api.models({limit: 500}),
+    ]);
+    state.summary = {
+        devices: devicesResponse.data || [],
+        models: modelsResponse.data || [],
+        counts: dashboard.counts || {},
+        devicePagination: devicesResponse.pagination || {limit: state.deviceListPageSize, page: 1, total_pages: 1, total: 0},
+        deviceFiltersAvailable: devicesResponse.filters?.available || {deviceType: [], licenseId: [], supplier: [], model: []},
+    };
+    state.deviceListPage = state.summary.devicePagination.page || 1;
     renderSummary();
     if (state.selectedImei) {
         await loadDevice(state.selectedImei);
@@ -94,9 +113,8 @@ function renderSummary() {
     }
 
     const groups = {};
-    const filteredDevices = filterDevices(state.summary.devices, state.deviceFilters);
 
-    for (const device of filteredDevices) {
+    for (const device of state.summary.devices) {
         const deviceType = normalizeDeviceType(device.deviceType);
         const key = `${deviceType}:${device.supplier} / ${device.model}`;
         if (!groups[key]) {
@@ -128,62 +146,37 @@ function renderSummary() {
             </div>`;
     }).join('');
 
-    els.deviceList.innerHTML = groupMarkup || emptyPanel('Não há dispositivos para o filtro selecionado.');
+    els.deviceList.innerHTML = groupMarkup
+        ? `${renderDeviceListPager(state.summary.devicePagination)}${groupMarkup}`
+        : emptyPanel('Não há dispositivos para o filtro selecionado.');
 
     renderSelection();
 }
 
-function filterDevices(devices, filters) {
-    return devices.filter(device => {
-        const deviceType = normalizeDeviceType(device.deviceType);
-        const licenseId = normalizeLicenseId(device.licenseId);
-        return (filters.deviceType === 'all' || deviceType === filters.deviceType)
-            && (filters.licenseId === 'all' || licenseId === filters.licenseId)
-            && (filters.supplier === 'all' || String(device.supplier || '') === filters.supplier)
-            && (filters.model === 'all' || String(device.model || '') === filters.model);
-    });
-}
+function renderDeviceListPager(pagination) {
+    const totalRows = pagination?.total ?? 0;
+    const totalPages = pagination?.total_pages ?? 1;
+    const currentPage = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? state.deviceListPageSize;
 
-function filterDevicesForOptions(filters, excludeKey) {
-    const effectiveFilters = {...filters};
-    effectiveFilters[excludeKey] = 'all';
-    return filterDevices(state.summary.devices, effectiveFilters);
-}
-
-function uniqueValues(values) {
-    return [...new Set(values.filter(Boolean))].sort((left, right) => left.localeCompare(right, 'pt-PT', {numeric: true}));
-}
-
-function buildFilterOptions(filters) {
-    const typeDevices = filterDevicesForOptions(filters, 'deviceType');
-    const licenseDevices = filterDevicesForOptions(filters, 'licenseId');
-    const supplierDevices = filterDevicesForOptions(filters, 'supplier');
-    const modelDevices = filterDevicesForOptions(filters, 'model');
-
-    return {
-        deviceTypes: uniqueValues(typeDevices.map(device => normalizeDeviceType(device.deviceType))),
-        licenseIds: uniqueValues(licenseDevices.map(device => normalizeLicenseId(device.licenseId))),
-        suppliers: uniqueValues(supplierDevices.map(device => String(device.supplier || '').trim())),
-        models: uniqueValues(modelDevices.map(device => String(device.model || '').trim())),
-    };
-}
-
-function validateDeviceFilters(filters) {
-    const nextFilters = {...filters};
-    const options = buildFilterOptions(nextFilters);
-    if (!options.deviceTypes.includes(nextFilters.deviceType)) {
-        nextFilters.deviceType = 'all';
+    if (totalRows <= limit) {
+        return `<div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-body-tertiary">
+            <span class="small text-secondary">${totalRows} dispositivo${totalRows === 1 ? '' : 's'}</span>
+            <span class="small text-secondary">Página 1 de 1</span>
+        </div>`;
     }
-    if (!options.licenseIds.includes(nextFilters.licenseId)) {
-        nextFilters.licenseId = 'all';
-    }
-    if (!options.suppliers.includes(nextFilters.supplier)) {
-        nextFilters.supplier = 'all';
-    }
-    if (!options.models.includes(nextFilters.model)) {
-        nextFilters.model = 'all';
-    }
-    return nextFilters;
+
+    const pageStart = ((currentPage - 1) * limit) + 1;
+    const pageEnd = Math.min(totalRows, currentPage * limit);
+
+    return `<div class="d-flex justify-content-between align-items-center gap-2 px-3 py-2 border-bottom bg-body-tertiary flex-wrap">
+        <span class="small text-secondary">${pageStart}-${pageEnd} de ${totalRows}</span>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-action="devicePagePrev" ${currentPage <= 1 ? 'disabled' : ''}>Anterior</button>
+            <span class="small text-secondary">Página ${currentPage} de ${totalPages}</span>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-action="devicePageNext" ${currentPage >= totalPages ? 'disabled' : ''}>Seguinte</button>
+        </div>
+    </div>`;
 }
 
 function renderSelectOptions(select, options, selectedValue, labelForValue) {
@@ -197,19 +190,17 @@ function renderSelectOptions(select, options, selectedValue, labelForValue) {
 }
 
 function renderDeviceFilterControls() {
-    state.deviceFilters = validateDeviceFilters(state.deviceFilters);
-    state.pendingDeviceFilters = validateDeviceFilters(state.pendingDeviceFilters);
-    const options = buildFilterOptions(state.pendingDeviceFilters);
+    const options = state.summary.deviceFiltersAvailable || {deviceType: [], licenseId: [], supplier: [], model: []};
 
     els.deviceFiltersPanel.classList.toggle('d-none', !state.filtersOpen);
     els.toggleDeviceFiltersBtn.classList.toggle('btn-outline-secondary', !state.filtersOpen);
     els.toggleDeviceFiltersBtn.classList.toggle('btn-secondary', state.filtersOpen);
     els.toggleDeviceFiltersBtn.setAttribute('aria-expanded', state.filtersOpen ? 'true' : 'false');
 
-    renderSelectOptions(els.deviceTypeFilter, options.deviceTypes, state.pendingDeviceFilters.deviceType, value => deviceTypeLabel(value));
-    renderSelectOptions(els.deviceLicenseFilter, options.licenseIds, state.pendingDeviceFilters.licenseId, value => value);
-    renderSelectOptions(els.deviceSupplierFilter, options.suppliers, state.pendingDeviceFilters.supplier, value => value);
-    renderSelectOptions(els.deviceModelFilter, options.models, state.pendingDeviceFilters.model, value => value);
+    renderSelectOptions(els.deviceTypeFilter, options.deviceType || [], state.pendingDeviceFilters.deviceType, value => deviceTypeLabel(value));
+    renderSelectOptions(els.deviceLicenseFilter, options.licenseId || [], state.pendingDeviceFilters.licenseId, value => value);
+    renderSelectOptions(els.deviceSupplierFilter, options.supplier || [], state.pendingDeviceFilters.supplier, value => value);
+    renderSelectOptions(els.deviceModelFilter, options.model || [], state.pendingDeviceFilters.model, value => value);
 }
 
 function syncPendingDeviceFiltersFromControls() {
@@ -619,9 +610,9 @@ function handleDeleteDeviceBtnClick() {
 }
 
 async function loadSuppliers() {
-    const data = await api.suppliers();
+    const data = await api.suppliers({limit: 500});
     els.supplierForm.reset();
-    els.supplierListBody.innerHTML = data.suppliers.map(supplier => `
+    els.supplierListBody.innerHTML = (data.data || []).map(supplier => `
         <tr>
         <td>${esc(supplier.name)}</td>
         <td>${supplier.model_count}</td>
@@ -657,11 +648,11 @@ async function deleteSupplier(id) {
 }
 
 async function loadModels() {
-    const [modelsData, suppliersData] = await Promise.all([api.models(), api.suppliers()]);
-    state.summary.models = modelsData.models;
-    state.modelModalSuppliers = suppliersData.suppliers;
+    const [modelsData, suppliersData] = await Promise.all([api.models({limit: 500}), api.suppliers({limit: 500})]);
+    state.summary.models = modelsData.data || [];
+    state.modelModalSuppliers = suppliersData.data || [];
     resetModelForm();
-    els.modelListBody.innerHTML = modelsData.models.map(model => `
+    els.modelListBody.innerHTML = (modelsData.data || []).map(model => `
         <tr>
         <td>${modelImageHtml(model)}</td>
         <td>${esc(model.supplier)}</td>
@@ -918,13 +909,14 @@ function handlePendingDeviceFilterChange() {
     renderDeviceFilterControls();
 }
 
-function applyDeviceFilters() {
+async function applyDeviceFilters() {
     syncPendingDeviceFiltersFromControls();
     state.deviceFilters = {...state.pendingDeviceFilters};
-    renderSummary();
+    state.deviceListPage = 1;
+    await loadSummary();
 }
 
-function clearDeviceFilters() {
+async function clearDeviceFilters() {
     const defaults = {
         deviceType: 'all',
         licenseId: 'all',
@@ -933,7 +925,8 @@ function clearDeviceFilters() {
     };
     state.deviceFilters = {...defaults};
     state.pendingDeviceFilters = {...defaults};
-    renderSummary();
+    state.deviceListPage = 1;
+    await loadSummary();
 }
 
 function handleTelemetryPagerClick(event) {
@@ -1066,6 +1059,16 @@ function handleDeviceListClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button) return;
     const {action, imei, supplier, model} = button.dataset;
+    if (action === 'devicePagePrev') {
+        state.deviceListPage = Math.max(1, state.deviceListPage - 1);
+        void loadSummary();
+        return;
+    }
+    if (action === 'devicePageNext') {
+        state.deviceListPage += 1;
+        void loadSummary();
+        return;
+    }
     if (action === 'select') selectDevice(imei);
     if (action === 'edit') { event.stopPropagation(); void editDevice(imei, supplier, model); }
 }

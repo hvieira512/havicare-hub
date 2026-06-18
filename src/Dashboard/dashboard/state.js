@@ -1,5 +1,11 @@
 export const state = {
-    summary: {devices: [], models: [], counts: {}},
+    summary: {
+        devices: [],
+        models: [],
+        counts: {},
+        devicePagination: {limit: 5, page: 1, total_pages: 1, total: 0},
+        deviceFiltersAvailable: {deviceType: [], licenseId: [], supplier: [], model: []},
+    },
     filtersOpen: false,
     deviceFilters: {
         deviceType: 'all',
@@ -36,6 +42,8 @@ export const state = {
     modelModalSuppliers: [],
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),
+    deviceListPage: 1,
+    deviceListPageSize: 5,
     telemetryPage: 1,
     telemetryPageSize: 10,
 };

@@ -52,13 +52,31 @@ class OpenApiSpec
                         'summary' => 'Dashboard summary',
                         'responses' => [
                             '200' => [
-                                'description' => 'Dashboard state including devices, models, and counts',
+                                'description' => 'Dashboard aggregate counts',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DashboardSummaryResponse']]],
                             ],
                         ],
                     ],
                 ],
                 '/api/devices' => [
+                    'get' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'List devices',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                            ['name' => 'licenseId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                            ['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                            ['name' => 'model', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Paginated device collection',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceListResponse']]],
+                            ],
+                        ],
+                    ],
                     'post' => [
                         'tags' => ['Devices'],
                         'summary' => 'Register device',
@@ -219,9 +237,14 @@ class OpenApiSpec
                     'get' => [
                         'tags' => ['Suppliers'],
                         'summary' => 'List suppliers',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                            ['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all', 'enum' => ['all', 'true', 'false']]],
+                        ],
                         'responses' => [
                             '200' => [
-                                'description' => 'Supplier list',
+                                'description' => 'Paginated supplier collection',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/SupplierListResponse']]],
                             ],
                         ],
@@ -276,9 +299,15 @@ class OpenApiSpec
                     'get' => [
                         'tags' => ['Models'],
                         'summary' => 'List models',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                            ['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                            ['name' => 'protocol', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                        ],
                         'responses' => [
                             '200' => [
-                                'description' => 'Model list',
+                                'description' => 'Paginated model collection',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelListResponse']]],
                             ],
                         ],
@@ -410,9 +439,31 @@ class OpenApiSpec
                     'DashboardSummaryResponse' => [
                         'type' => 'object',
                         'properties' => [
-                            'models' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelRef']],
-                            'devices' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceSummary']],
                             'counts' => ['$ref' => '#/components/schemas/DashboardCounts'],
+                        ],
+                    ],
+                    'CollectionPagination' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'limit' => ['type' => 'integer', 'example' => 20],
+                            'page' => ['type' => 'integer', 'example' => 1],
+                            'total_pages' => ['type' => 'integer', 'example' => 3],
+                            'total' => ['type' => 'integer', 'example' => 42],
+                        ],
+                    ],
+                    'CollectionFilters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'applied' => ['type' => 'object', 'additionalProperties' => true],
+                            'available' => ['type' => 'object', 'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']]],
+                        ],
+                    ],
+                    'DeviceListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceSummary']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
                         ],
                     ],
                     'DeviceDetail' => [
@@ -548,7 +599,9 @@ class OpenApiSpec
                     'SupplierListResponse' => [
                         'type' => 'object',
                         'properties' => [
-                            'suppliers' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/SupplierItem']],
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/SupplierItem']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
                         ],
                     ],
                     'SupplierCreateRequest' => [
@@ -579,7 +632,9 @@ class OpenApiSpec
                     'ModelListResponse' => [
                         'type' => 'object',
                         'properties' => [
-                            'models' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelItem']],
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelItem']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
                         ],
                     ],
                     'ModelWriteRequest' => [

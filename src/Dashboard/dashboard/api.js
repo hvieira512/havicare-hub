@@ -8,8 +8,19 @@ export const formRequest = (url, formData, options = {}) => fetch(
     Object.assign({method: 'POST', body: formData}, options)
 ).then(response => response.json());
 
+const withQuery = (url, params = {}) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        query.set(key, String(value));
+    });
+    const encoded = query.toString();
+    return encoded ? `${url}?${encoded}` : url;
+};
+
 export const api = {
     summary: () => requestJson('/api/dashboard/summary'),
+    devices: (params = {}) => requestJson(withQuery('/api/devices', params)),
     device: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`),
     configuration: (imei, supplier = '', model = '') => {
         const params = new URLSearchParams();
@@ -38,11 +49,11 @@ export const api = {
         }
     ),
     deleteDevice: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`, {method: 'DELETE'}),
-    suppliers: () => requestJson('/api/suppliers'),
+    suppliers: (params = {}) => requestJson(withQuery('/api/suppliers', params)),
     saveSupplier: name => requestJson('/api/suppliers', {method: 'POST', body: JSON.stringify({name})}),
     updateSupplier: (id, enabled) => requestJson(`/api/suppliers/${id}`, {method: 'PUT', body: JSON.stringify({enabled})}),
     deleteSupplier: id => requestJson(`/api/suppliers/${id}`, {method: 'DELETE'}),
-    models: () => requestJson('/api/models'),
+    models: (params = {}) => requestJson(withQuery('/api/models', params)),
     saveModel: (id, body) => formRequest(id ? `/api/models/${encodeURIComponent(id)}` : '/api/models', body, {
         method: id ? 'PUT' : 'POST',
     }),

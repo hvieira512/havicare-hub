@@ -38,14 +38,23 @@ if [ "$unauth_status" != "401" ]; then
 fi
 
 html="$(curl -s -u admin:secret http://127.0.0.1:8081/dashboard)"
-if ! printf '%s' "$html" | grep -q 'Devices Hub'; then
+if ! printf '%s' "$html" | grep -q 'Hitecosystem Hub de Dispositivos'; then
   scenario_fail "dashboard_failure" "dashboard HTML did not render expected page"
 fi
 
 summary="$(curl -s -u admin:secret http://127.0.0.1:8081/api/dashboard/summary)"
 printf '%s' "$summary" > "$SCENARIO_DIR/dashboard-summary.json"
-if ! printf '%s' "$summary" | grep -q "$IMEI"; then
-  scenario_fail "dashboard_failure" "dashboard summary did not include whitelist device"
+if ! printf '%s' "$summary" | grep -q '"counts"'; then
+  scenario_fail "dashboard_failure" "dashboard summary did not include counts"
+fi
+
+devices="$(curl -s -u admin:secret "http://127.0.0.1:8081/api/devices?limit=100&page=1")"
+printf '%s' "$devices" > "$SCENARIO_DIR/dashboard-devices.json"
+if ! printf '%s' "$devices" | grep -q '"data"'; then
+  scenario_fail "dashboard_failure" "devices collection did not return data wrapper"
+fi
+if ! printf '%s' "$devices" | grep -q "$IMEI"; then
+  scenario_fail "dashboard_failure" "devices collection did not include whitelist device"
 fi
 
 command_response="$(curl -s -u admin:secret -H 'Content-Type: application/json' -d '{"command":"dnHeartRate"}' "http://127.0.0.1:8081/api/devices/$IMEI/commands")"
