@@ -65,6 +65,10 @@ function normalizeLicenseId(licenseId) {
     return value === '' ? '0' : value;
 }
 
+function licenseLabel(licenseId) {
+    return normalizeLicenseId(licenseId) === '0' ? 'Sem Licença' : normalizeLicenseId(licenseId);
+}
+
 function supplierProtocol(supplier, models = state.summary.models) {
     const existing = models.find(model => model.supplier === supplier && model.protocol);
     return existing?.protocol || '';
@@ -175,7 +179,7 @@ function renderDeviceSelector() {
                                 </td>
                                 <td class="fw-semibold text-break">${esc(device.imei)}</td>
                                 <td>${esc(deviceTypeLabel(normalizeDeviceType(device.deviceType)))}</td>
-                                <td>${esc(normalizeLicenseId(device.licenseId))}</td>
+                                <td>${esc(licenseLabel(device.licenseId))}</td>
                                 <td>${esc(device.supplier || '-')}</td>
                                 <td>${esc(device.model || '-')}</td>
                                 <td class="text-end">
@@ -237,7 +241,7 @@ function renderSelectOptions(select, options, selectedValue, labelForValue) {
 function renderDeviceFilterControls() {
     const options = state.summary.deviceFiltersAvailable || {deviceType: [], licenseId: [], supplier: [], model: []};
     renderSelectOptions(els.deviceTypeFilter, options.deviceType || [], state.deviceFilters.deviceType, value => deviceTypeLabel(value));
-    renderSelectOptions(els.deviceLicenseFilter, options.licenseId || [], state.deviceFilters.licenseId, value => value);
+    renderSelectOptions(els.deviceLicenseFilter, options.licenseId || [], state.deviceFilters.licenseId, value => licenseLabel(value));
     renderSelectOptions(els.deviceSupplierFilter, options.supplier || [], state.deviceFilters.supplier, value => value);
     renderSelectOptions(els.deviceModelFilter, options.model || [], state.deviceFilters.model, value => value);
     renderAppliedDeviceFilters();
@@ -250,7 +254,7 @@ function renderAppliedDeviceFilters() {
         labels.push({key: 'deviceType', label: `Tipo: ${deviceTypeLabel(state.deviceFilters.deviceType)}`});
     }
     if (state.deviceFilters.licenseId) {
-        labels.push({key: 'licenseId', label: `Licença: ${state.deviceFilters.licenseId}`});
+        labels.push({key: 'licenseId', label: `Licença: ${licenseLabel(state.deviceFilters.licenseId)}`});
     }
     if (state.deviceFilters.supplier) {
         labels.push({key: 'supplier', label: `Fornecedor: ${state.deviceFilters.supplier}`});
@@ -348,7 +352,7 @@ function renderSelection() {
     const device = state.selectedDetail.device;
     renderSelectedDeviceSummary(device);
     els.detailTitle.textContent = device.imei;
-    els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${device.licenseId ?? '0'} · ${device.supplier ?? ''} ${device.model ?? ''} · visto ${ago(device.lastSeenAt)}`;
+    els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${licenseLabel(device.licenseId)} · ${device.supplier ?? ''} ${device.model ?? ''} · visto ${ago(device.lastSeenAt)}`;
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
 
@@ -384,7 +388,7 @@ function renderSelectedDeviceSummary(device) {
     const modelInfo = findModelInfo(supplier, model);
     const facts = [
         {label: 'Tipo', value: deviceTypeLabel(normalizeDeviceType(device.deviceType))},
-        {label: 'Licença', value: String(device.licenseId || '0')},
+        {label: 'Licença', value: licenseLabel(device.licenseId)},
         {label: 'Fornecedor', value: supplier || '-'},
         {label: 'Modelo', value: model || '-'},
         {label: 'Última ligação', value: when(device.lastSeenAt) || 'Sem registo'},
