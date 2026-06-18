@@ -1,11 +1,5 @@
 import {commandLabel, esc, eventTime, featureLabel, fieldLabel, rowPayload, titleize} from './format.js';
 
-export const supplierProtocolDefaults = {
-    Wonlex: 'wonlex-json',
-    Vivistar: 'vivistar-iw',
-    '4P Touch': 'four-p-touch',
-};
-
 export function modelImageHtml(modelInfo) {
     return modelInfo?.image
         ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(modelInfo.model)}" style="width:40px;height:40px;">`

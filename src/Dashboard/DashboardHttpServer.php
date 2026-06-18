@@ -766,15 +766,34 @@ final class DashboardHttpServer
         }
         $supplierId = (int)($decoded['supplier_id'] ?? 0);
         $model = trim((string)($decoded['model'] ?? ''));
-        $protocol = trim((string)($decoded['protocol'] ?? ''));
-        if ($supplierId <= 0 || $model === '' || $protocol === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'supplier_id, model, and protocol are required']];
+        if ($supplierId <= 0 || $model === '') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'supplier_id and model are required']];
         }
-        if ($this->db->suppliers->findById($supplierId) === null) {
+        $supplier = $this->db->suppliers->findById($supplierId);
+        if ($supplier === null) {
             return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier does not exist']];
         }
 
+        $protocol = trim((string)($decoded['protocol'] ?? ''));
+        if ($protocol === '') {
+            $protocol = $this->protocolForSupplier((string)$supplier['name']);
+            if ($protocol === '') {
+                return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
+            }
+        }
+
         return ['supplier_id' => $supplierId, 'model' => $model, 'protocol' => $protocol];
+    }
+
+    private function protocolForSupplier(string $supplierName): string
+    {
+        return match ($supplierName) {
+            'Wonlex' => 'wonlex-json',
+            'Vivistar' => 'vivistar-iw',
+            '4P Touch' => 'four-p-touch',
+            'Voerka' => 'voerka-ncs',
+            default => '',
+        };
     }
 
     private function modelRequestData(ServerRequestInterface $request): ?array

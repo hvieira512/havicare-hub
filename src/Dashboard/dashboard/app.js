@@ -18,7 +18,6 @@ import {
     renderButtonGroup,
     renderRequestCardShell,
     statusBadge,
-    supplierProtocolDefaults,
     uplinkCardContent,
 } from './renderers.js';
 import {
@@ -62,7 +61,7 @@ function normalizeLicenseId(licenseId) {
 
 function supplierProtocol(supplier, models = state.summary.models) {
     const existing = models.find(model => model.supplier === supplier && model.protocol);
-    return existing?.protocol || supplierProtocolDefaults[supplier] || '';
+    return existing?.protocol || '';
 }
 
 function suppliersFromModels(models = state.summary.models) {
@@ -735,7 +734,7 @@ async function loadModels() {
         <td>${esc(model.supplier)}</td>
         <td>${esc(model.model)}</td>
         <td>
-        <button class="btn btn-outline-secondary btn-sm" data-id="${model.id}" data-supplier-id="${model.supplier_id}" data-supplier="${esc(model.supplier)}" data-model="${esc(model.model)}" data-protocol="${esc(model.protocol)}" data-image="${esc(model.image || '')}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" data-id="${model.id}" data-supplier-id="${model.supplier_id}" data-supplier="${esc(model.supplier)}" data-model="${esc(model.model)}" data-image="${esc(model.image || '')}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-outline-danger btn-sm" data-id="${model.id}" data-action="deleteModel" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`).join('');
@@ -762,7 +761,7 @@ function resetModelForm(selectedSupplierId = '') {
     updateModelProtocolAndPreview();
 }
 
-function editModel(id, supplierId, supplier, model, protocol, image) {
+function editModel(id, supplierId, supplier, model, image) {
     revokeModelPreviewUrl();
     els.modelForm.dataset.modelId = String(id);
     els.modelForm.dataset.supplierId = String(supplierId);
@@ -778,7 +777,7 @@ function editModel(id, supplierId, supplier, model, protocol, image) {
         String(supplierId),
         'selectModelSupplier'
     );
-    updateModelProtocolAndPreview(protocol);
+    updateModelProtocolAndPreview();
 }
 
 function selectModelSupplier(supplierId) {
@@ -797,10 +796,9 @@ function selectModelSupplier(supplierId) {
     updateModelProtocolAndPreview();
 }
 
-function updateModelProtocolAndPreview(protocolOverride = '') {
+function updateModelProtocolAndPreview() {
     const supplier = els.modelForm.dataset.supplier || '';
     const model = els.modelModel.value.trim();
-    const protocol = protocolOverride || supplierProtocol(supplier) || '';
     const image = els.modelForm.dataset.image || '';
     const modelInfo = image ? {image, model: model || 'Modelo'} : null;
     if (!state.modelPreviewObjectUrl) {
@@ -810,15 +808,12 @@ function updateModelProtocolAndPreview(protocolOverride = '') {
 
 async function saveModel() {
     const supplierId = parseInt(els.modelForm.dataset.supplierId || '0');
-    const supplier = els.modelForm.dataset.supplier || '';
     const model = els.modelModel.value.trim();
-    const protocol = supplierProtocol(supplier);
-    if (!supplierId || !model || !protocol) { alert('Todos os campos são obrigatórios'); return; }
+    if (!supplierId || !model) { alert('Fornecedor e modelo são obrigatórios'); return; }
 
     const body = new FormData();
     body.append('supplier_id', String(supplierId));
     body.append('model', model);
-    body.append('protocol', protocol);
     if (els.modelImage.files[0]) {
         body.append('image', els.modelImage.files[0]);
     }
@@ -1168,7 +1163,7 @@ function handleModelListClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button) return;
     if (button.dataset.action === 'editModel') {
-        editModel(parseInt(button.dataset.id), parseInt(button.dataset.supplierId), button.dataset.supplier, button.dataset.model, button.dataset.protocol, button.dataset.image);
+        editModel(parseInt(button.dataset.id), parseInt(button.dataset.supplierId), button.dataset.supplier, button.dataset.model, button.dataset.image);
     }
     if (button.dataset.action === 'deleteModel') {
         deleteModel(parseInt(button.dataset.id));
