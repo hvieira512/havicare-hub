@@ -126,7 +126,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
-        <div class="fw-bold ${tone.text}">${esc(commandLabel(command))}</div>
+        <div class="fw-bold text-${tone.border}">${esc(commandLabel(command))}</div>
         </div>
         <div class="d-flex justify-content-between align-items-center">
         <div class="fw-semibold ${lastTelemetry ? '' : 'text-secondary'}">${esc(lastValue)}</div>
