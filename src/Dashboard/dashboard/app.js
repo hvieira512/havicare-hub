@@ -83,7 +83,7 @@ function findModelInfo(supplier, model, models = state.summary.models) {
 }
 
 async function loadSummary() {
-    const [devicesResponse, modelsResponse] = await Promise.all([
+    const [devicesResponse] = await Promise.all([
         api.devices({
             page: state.deviceListPage,
             limit: state.deviceListPageSize,
@@ -93,11 +93,11 @@ async function loadSummary() {
             model: state.deviceFilters.model,
             q: state.deviceSearchQuery,
         }),
-        api.models({limit: 500}),
+        ensureModelsLoaded(),
     ]);
     state.summary = {
         devices: devicesResponse.data || [],
-        models: modelsResponse.data || [],
+        models: state.summary.models || [],
         devicePagination: devicesResponse.pagination || {limit: state.deviceListPageSize, page: 1, total_pages: 1, total: 0},
         deviceFiltersAvailable: devicesResponse.filters?.available || {deviceType: [], licenseId: [], supplier: [], model: []},
     };
@@ -109,6 +109,26 @@ async function loadSummary() {
     } else {
         renderSelection();
     }
+}
+
+async function ensureModelsLoaded(force = false) {
+    if (!force && Array.isArray(state.summary.models) && state.summary.models.length > 0) {
+        return state.summary.models;
+    }
+
+    const modelsResponse = await api.models({limit: 500});
+    state.summary.models = modelsResponse.data || [];
+    return state.summary.models;
+}
+
+async function openDeviceSelector() {
+    await loadSummary();
+    deviceSelectorModal?.show();
+}
+
+function isDeviceSelectorOpen() {
+    const modalEl = document.getElementById('deviceSelectorModal');
+    return !!modalEl && modalEl.classList.contains('show');
 }
 
 function renderDeviceSelector() {
@@ -148,15 +168,15 @@ function renderDeviceSelector() {
             <div class="list-group list-group-flush">
             <div class="small fw-semibold text-secondary px-3 py-1 bg-body-tertiary border-bottom">Licença ${esc(group.licenseId)} · ${esc(deviceTypeLabel(group.deviceType))} · ${esc(group.supplier)} ${esc(group.model)}</div>
             ${group.devices.map(device => `
-                <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom${state.selectedImei === device.imei ? ' bg-primary-subtle' : ''}" data-imei="${esc(device.imei)}" data-action="select">
+                <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom${state.selectedImei === device.imei ? ' bg-primary-subtle' : ''}">
                 <div style="width:40px;text-align:center;flex-shrink:0">${modelImageHtml(modelInfo)}</div>
                 <div class="flex-grow-1 min-width-0 d-flex align-items-center gap-2">
                 <span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block flex-shrink-0" style="width:.55rem;height:.55rem;"></span>
                 <strong class="small text-break">${esc(device.imei)}</strong>
                 </div>
                 <div class="btn-group btn-group-sm" style="flex-shrink:0">
-                <button class="btn btn-outline-secondary" data-imei="${esc(device.imei)}" data-supplier="${esc(device.supplier)}" data-model="${esc(device.model)}" data-action="edit" title="Editar">
-                <i class="fa-solid fa-pen"></i>
+                <button class="btn ${state.selectedImei === device.imei ? 'btn-primary' : 'btn-outline-primary'}" data-imei="${esc(device.imei)}" data-action="select" title="Escolher dispositivo">
+                <i class="fa-solid fa-check me-1"></i>Escolher
                 </button>
                 </div>
                 </div>`).join('')}
@@ -732,14 +752,17 @@ async function sendCommand(command) {
     try {
         const result = await api.sendCommand(state.selectedImei, command);
         if (result.error) alert(result.error.message || result.error.code);
-        await loadSummary();
+        if (state.selectedImei) {
+            await loadDevice(state.selectedImei);
+        }
     } finally {
         state.loadingCommands.delete(command);
         renderSelection();
     }
 }
 
-function openAddDevice() {
+async function openAddDevice() {
+    await ensureModelsLoaded();
     els.deviceModalLabel.textContent = 'Adicionar dispositivo';
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
@@ -777,6 +800,7 @@ function openAddDevice() {
 }
 
 async function editDevice(imei, supplier, model) {
+    await ensureModelsLoaded();
     els.deviceModalLabel.textContent = 'Editar dispositivo';
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
@@ -959,9 +983,12 @@ async function saveDevice() {
     if (state.selectedImei && originalImei && state.selectedImei === originalImei) {
         selectImei(imei);
         saveSelectedDeviceToStorage();
+        await loadDevice(imei);
     }
     deviceModal.hide();
-    await loadSummary();
+    if (isDeviceSelectorOpen()) {
+        await loadSummary();
+    }
 }
 
 async function deleteDevice(imei) {
@@ -971,7 +998,11 @@ async function deleteDevice(imei) {
         clearSelection();
         clearSelectedDeviceFromStorage();
     }
-    await loadSummary();
+    if (isDeviceSelectorOpen()) {
+        await loadSummary();
+    } else {
+        renderSelection();
+    }
 }
 
 function handleDeleteDeviceBtnClick() {
@@ -984,7 +1015,11 @@ function handleDeleteDeviceBtnClick() {
             clearSelection();
             clearSelectedDeviceFromStorage();
         }
-        loadSummary();
+        if (isDeviceSelectorOpen()) {
+            loadSummary();
+        } else {
+            renderSelection();
+        }
     });
 }
 
@@ -1156,6 +1191,7 @@ function cacheElements() {
         selectedDeviceTitle: document.getElementById('selectedDeviceTitle'),
         selectedDeviceMeta: document.getElementById('selectedDeviceMeta'),
         selectedDeviceBadge: document.getElementById('selectedDeviceBadge'),
+        selectedDeviceEditBtn: document.getElementById('selectedDeviceEditBtn'),
         selectedDeviceFacts: document.getElementById('selectedDeviceFacts'),
         detailEmptyState: document.getElementById('detailEmptyState'),
         deviceDetail: document.getElementById('deviceDetail'),
@@ -1229,13 +1265,21 @@ function cacheElements() {
 }
 
 function bindEvents() {
-    els.addDeviceBtn.addEventListener('click', openAddDevice);
+    els.addDeviceBtn.addEventListener('click', () => { void openAddDevice(); });
     els.openAddDeviceFromSelectorBtn.addEventListener('click', () => {
         deviceSelectorModal?.hide();
-        openAddDevice();
+        void openAddDevice();
     });
-    els.openDeviceSelectorBtn.addEventListener('click', () => deviceSelectorModal?.show());
-    els.emptyStateSelectDeviceBtn.addEventListener('click', () => deviceSelectorModal?.show());
+    els.openDeviceSelectorBtn.addEventListener('click', () => { void openDeviceSelector(); });
+    els.emptyStateSelectDeviceBtn.addEventListener('click', () => { void openDeviceSelector(); });
+    els.selectedDeviceEditBtn.addEventListener('click', () => {
+        if (!state.selectedDetail?.device) return;
+        void editDevice(
+            state.selectedDetail.device.imei,
+            state.selectedDetail.device.supplier || '',
+            state.selectedDetail.device.model || ''
+        );
+    });
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
     els.deviceListLimit.addEventListener('change', handleDeviceListLimitChange);
@@ -1541,9 +1585,8 @@ function handleModelSupplierClick(event) {
 function handleDeviceListClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button) return;
-    const {action, imei, supplier, model} = button.dataset;
+    const {action, imei} = button.dataset;
     if (action === 'select') selectDevice(imei);
-    if (action === 'edit') { event.stopPropagation(); void editDevice(imei, supplier, model); }
 }
 
 function handleRequestGridClick(event) {
@@ -2000,8 +2043,8 @@ export function startDashboard() {
     const storedSelectedImei = loadSelectedDeviceFromStorage();
     if (storedSelectedImei) {
         state.selectedImei = storedSelectedImei;
+        void loadDevice(storedSelectedImei);
+    } else {
+        renderSelection();
     }
-
-    loadSummary();
-    setInterval(loadSummary, 5000);
 }
