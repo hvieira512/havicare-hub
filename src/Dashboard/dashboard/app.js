@@ -161,7 +161,6 @@ function renderDeviceSelector() {
                         <th>Licença</th>
                         <th>Fornecedor</th>
                         <th>Modelo</th>
-                        <th class="text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -169,7 +168,7 @@ function renderDeviceSelector() {
                         const modelInfo = modelLookup[`${device.supplier}:${device.model}`];
                         const isSelected = state.selectedImei === device.imei;
                         return `
-                            <tr${isSelected ? ' class="table-primary"' : ''}>
+                            <tr${isSelected ? ' class="table-primary"' : ''} data-imei="${esc(device.imei)}" data-action="select" role="button" tabindex="0">
                                 <td style="width:52px">${modelImageHtml(modelInfo)}</td>
                                 <td>
                                     <span class="d-inline-flex align-items-center gap-2 small">
@@ -182,11 +181,6 @@ function renderDeviceSelector() {
                                 <td>${esc(licenseLabel(device.licenseId))}</td>
                                 <td>${esc(device.supplier || '-')}</td>
                                 <td>${esc(device.model || '-')}</td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline-primary'}" data-imei="${esc(device.imei)}" data-action="select" title="Escolher dispositivo">
-                                        <i class="fa-solid fa-check me-1"></i>${isSelected ? 'Selecionado' : 'Escolher'}
-                                    </button>
-                                </td>
                             </tr>`;
                     }).join('')}
                 </tbody>
