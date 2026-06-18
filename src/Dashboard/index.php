@@ -157,15 +157,21 @@ require_once __DIR__ . '/components/modal.php';
                                 <span id="detailBadge" class="badge"></span>
                             </div>
                             <div class="vstack gap-4">
-                                <section>
-                                    <?= section_header('Eventos recebidos', 'telemetryCount') ?>
-                                    <div id="telemetryList"></div>
-                                    <div id="telemetryPager" class="d-flex justify-content-between align-items-center gap-2 mt-2 d-none"></div>
-                                </section>
-                                <section>
-                                    <?= section_header('Pedidos ao dispositivo') ?>
-                                    <div id="downlinkRequests"></div>
-                                </section>
+                                <div class="row g-3">
+                                    <div class="col-12 col-lg-6 d-flex flex-column">
+                                        <section class="flex-grow-1 d-flex flex-column">
+                                            <?= section_header('Eventos recebidos', 'telemetryCount') ?>
+                                            <div id="telemetryList" class="overflow-auto" style="max-height:50vh;"></div>
+                                            <div id="telemetryPager" class="d-flex justify-content-between align-items-center gap-2 mt-2 d-none"></div>
+                                        </section>
+                                    </div>
+                                    <div class="col-12 col-lg-6 d-flex flex-column">
+                                        <section class="flex-grow-1 d-flex flex-column">
+                                            <?= section_header('Pedidos ao dispositivo') ?>
+                                            <div id="downlinkRequests" class="overflow-auto" style="max-height:50vh;"></div>
+                                        </section>
+                                    </div>
+                                </div>
                                 <section>
                                     <?= section_header('Ligações ao servidor') ?>
                                     <div id="connectionLogs"></div>
