@@ -137,8 +137,8 @@ async function loadDevice(imei) {
 }
 
 function renderSelection() {
-    els.deviceColumn.className = state.selectedImei ? 'col-12 col-lg-3' : 'col-12 col-lg-4';
-    els.detailColumn.className = state.selectedImei ? 'col-12 col-lg-9' : 'col-12 col-lg-8';
+    els.deviceColumn.className = 'col-12 col-lg-4';
+    els.detailColumn.className = 'col-12 col-lg-8';
     els.emptyState.classList.toggle('d-none', !!state.selectedDetail);
     els.deviceDetail.classList.toggle('d-none', !state.selectedDetail);
     els.requestColumn.classList.toggle('d-none', !state.selectedDetail);
