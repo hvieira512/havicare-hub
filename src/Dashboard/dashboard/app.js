@@ -313,17 +313,31 @@ function renderTelemetryList(telemetryRows) {
 }
 
 function renderTelemetryPager(totalRows, totalPages) {
+    const root = els.telemetryPager;
+    const summaryEl = els.telemetryPagerSummary;
+    const controlsEl = els.telemetryPagerControls;
+
     if (totalRows <= state.telemetryPageSize) {
-        els.telemetryPager.classList.add('d-none');
-        els.telemetryPager.innerHTML = '';
+        root.classList.add('d-none');
+        summaryEl.textContent = '';
+        controlsEl.innerHTML = '';
         return;
     }
 
-    els.telemetryPager.classList.remove('d-none');
-    els.telemetryPager.innerHTML = `
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryPrev" ${state.telemetryPage <= 1 ? 'disabled' : ''}>Anterior</button>
-        <span class="small text-secondary">Página ${state.telemetryPage} de ${totalPages}</span>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryNext" ${state.telemetryPage >= totalPages ? 'disabled' : ''}>Seguinte</button>`;
+    const currentPage = state.telemetryPage;
+    const limit = state.telemetryPageSize;
+    const pageStart = ((currentPage - 1) * limit) + 1;
+    const pageEnd = Math.min(totalRows, currentPage * limit);
+    root.classList.remove('d-none');
+    summaryEl.textContent = `${pageStart}–${pageEnd} de ${totalRows}`;
+    controlsEl.innerHTML = [
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryPrev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
+        ...Array.from({length: totalPages}, (_, index) => {
+            const page = index + 1;
+            return `<button type="button" class="btn ${page === currentPage ? 'btn-primary' : 'btn-outline-secondary'} btn-sm" data-action="telemetryPageGo" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ''}>${page}</button>`;
+        }),
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryNext" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
+    ].join('');
 }
 
 function renderTelemetryRow(payload) {
@@ -862,7 +876,9 @@ function cacheElements() {
         detailBadge: document.getElementById('detailBadge'),
         telemetryCount: document.getElementById('telemetryCount'),
         telemetryList: document.getElementById('telemetryList'),
-        telemetryPager: document.getElementById('telemetryPager'),
+        telemetryPager: document.getElementById('telemetry'),
+        telemetryPagerSummary: document.getElementById('telemetrySummary'),
+        telemetryPagerControls: document.getElementById('telemetryControls'),
         requestCardCount: document.getElementById('requestCardCount'),
         requestGrid: document.getElementById('requestGrid'),
         downlinkRequests: document.getElementById('downlinkRequests'),
@@ -1059,10 +1075,15 @@ async function clearDeviceFilters() {
 function handleTelemetryPagerClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button || !state.selectedDetail) return;
-    const rows = (state.selectedDetail.recent.telemetry || []).filter(row => rowPayload(row) && !rowPayload(row).debug);
-    const totalPages = Math.max(1, Math.ceil(rows.length / state.telemetryPageSize));
+    const allRows = [
+        ...(state.selectedDetail.recent.telemetry || []),
+        ...(state.selectedDetail.recent.events || []).map(rowPayload).filter(p => p?.type === 'ncs.event'),
+    ];
+    const filtered = allRows.filter(row => rowPayload(row) && !rowPayload(row).debug);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / state.telemetryPageSize));
     if (button.dataset.action === 'telemetryPrev') setTelemetryPage(state.telemetryPage - 1, totalPages);
     if (button.dataset.action === 'telemetryNext') setTelemetryPage(state.telemetryPage + 1, totalPages);
+    if (button.dataset.action === 'telemetryPageGo') setTelemetryPage(parseInt(button.dataset.page || '1', 10), totalPages);
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
 }
 

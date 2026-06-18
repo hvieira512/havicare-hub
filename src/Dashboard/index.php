@@ -162,7 +162,7 @@ require_once __DIR__ . '/components/modal.php';
                                         <section class="flex-grow-1 d-flex flex-column">
                                             <?= section_header('Eventos recebidos', 'telemetryCount') ?>
                                             <div id="telemetryList" class="overflow-auto" style="max-height:50vh;"></div>
-                                            <div id="telemetryPager" class="d-flex justify-content-between align-items-center gap-2 mt-2 d-none"></div>
+                                            <?= pagination_component('telemetry') ?>
                                         </section>
                                     </div>
                                     <div class="col-12 col-lg-6 d-flex flex-column">

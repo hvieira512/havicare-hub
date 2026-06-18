@@ -18,7 +18,7 @@ final class DashboardHttpServerTest extends TestCase
         $second = $method->invoke($server);
 
         self::assertIsString($first);
-        self::assertStringContainsString('id="telemetryPager"', $first);
+        self::assertStringContainsString('id="telemetry"', $first);
         self::assertStringContainsString('type="module" src="main.js"', $first);
         self::assertSame($first, $second);
     }
