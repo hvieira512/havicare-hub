@@ -19,10 +19,6 @@ ob_start();
                 <input type="text" class="form-control" id="modelModel" placeholder="Modelo" required>
             </div>
             <div>
-                <div class="form-label">Protocolo</div>
-                <div id="modelProtocolText" class="border rounded bg-body-tertiary px-3 py-2 text-secondary">-</div>
-            </div>
-            <div>
                 <label for="modelImage" class="form-label">Imagem</label>
                 <input type="file" class="form-control" id="modelImage" accept="image/*">
             </div>
@@ -35,7 +31,7 @@ ob_start();
 </form>
 <div class="table-responsive">
     <table class="table table-sm align-middle">
-        <thead><tr><th>Imagem</th><th>Fornecedor</th><th>Modelo</th><th>Protocolo</th><th></th></tr></thead>
+        <thead><tr><th>Imagem</th><th>Fornecedor</th><th>Modelo</th><th></th></tr></thead>
         <tbody id="modelListBody"></tbody>
     </table>
 </div>

@@ -87,7 +87,7 @@ export function renderDeviceConfigurationRoot(context) {
             <div class="d-flex justify-content-between align-items-start gap-3">
                 <div>
                     <div class="fw-semibold">Configurações do dispositivo</div>
-                    <div class="small text-secondary">${esc(protocol)}${supplier || model ? ` · ${esc(supplier)} ${esc(model)}` : ''}</div>
+                    <div class="small text-secondary">${supplier || model ? `${esc(supplier)} ${esc(model)}` : ''}</div>
                 </div>
                 <span class="badge text-bg-secondary">${catalog.length} opções</span>
             </div>

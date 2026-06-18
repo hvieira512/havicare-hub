@@ -11,7 +11,7 @@ ob_start();
                 <button class="nav-link active text-start" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
                     Geral
                 </button>
-                <button class="nav-link text-start" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
+                <button class="nav-link text-start d-none" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
                     Configurações
                 </button>
             </div>
@@ -26,26 +26,8 @@ ob_start();
                         <div class="col-lg-7">
                             <div class="vstack gap-3 h-100">
                                 <div>
-                                    <label for="deviceImei" class="form-label">IMEI</label>
-                                    <input type="text" class="form-control" id="deviceImei" required>
-                                </div>
-                                <div>
-                                    <label class="form-label">Número do SIM</label>
-                                    <div id="deviceSimNumberRoot"></div>
-                                </div>
-                                <div>
-                                    <label for="deviceDeviceId" class="form-label" id="deviceDeviceIdLabel">Device ID</label>
-                                    <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
-                                    <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
-                                </div>
-                                <div>
                                     <div class="form-label">Tipo de dispositivo</div>
                                     <div id="deviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
-                                </div>
-                                <div>
-                                    <label for="deviceLicenseId" class="form-label">Licença</label>
-                                    <input type="text" class="form-control" id="deviceLicenseId" value="0">
-                                    <div class="form-text">Para relógios, a licença reservada é sempre <code>0</code>.</div>
                                 </div>
                                 <div>
                                     <div class="form-label">Fornecedor</div>
@@ -56,8 +38,22 @@ ob_start();
                                     <div id="deviceModelButtons" class="btn-group flex-wrap" role="group"></div>
                                 </div>
                                 <div>
-                                    <div class="form-label">Protocolo</div>
-                                    <div id="deviceProtocolText" class="border rounded bg-body-tertiary px-3 py-2 text-secondary">-</div>
+                                    <label for="deviceDeviceId" class="form-label" id="deviceDeviceIdLabel">Device ID</label>
+                                    <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
+                                    <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
+                                </div>
+                                <div>
+                                    <label for="deviceLicenseId" class="form-label">Licença</label>
+                                    <input type="text" class="form-control" id="deviceLicenseId" value="0">
+                                    <div class="form-text">Para relógios, a licença reservada é sempre <code>0</code>.</div>
+                                </div>
+                                <div id="deviceImeiRow">
+                                    <label for="deviceImei" class="form-label">IMEI</label>
+                                    <input type="text" class="form-control" id="deviceImei" required>
+                                </div>
+                                <div id="deviceSimRow">
+                                    <label class="form-label">Número do SIM</label>
+                                    <div id="deviceSimNumberRoot"></div>
                                 </div>
                                 <div class="d-flex justify-content-end mt-auto">
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>

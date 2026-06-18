@@ -281,7 +281,7 @@ function renderSelection() {
 
     const device = state.selectedDetail.device;
     els.detailTitle.textContent = device.imei;
-    els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${device.licenseId ?? '0'} · ${device.supplier ?? ''} ${device.model ?? ''} · ${device.protocol ?? 'desconhecido'} · visto ${ago(device.lastSeenAt)}`;
+    els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${device.licenseId ?? '0'} · ${device.supplier ?? ''} ${device.model ?? ''} · visto ${ago(device.lastSeenAt)}`;
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
     renderTelemetryList(state.selectedDetail.recent.telemetry || []);
@@ -467,6 +467,10 @@ function openAddDevice() {
         configUi: {},
         loading: false,
     };
+    els.deviceConfigTabBtn?.classList.add('d-none');
+    els.deviceConfigPane?.classList.remove('show', 'active');
+    els.deviceGeneralTabBtn?.classList.add('active');
+    els.deviceGeneralPane?.classList.add('show', 'active');
     els.deleteDeviceBtn.classList.add('d-none');
     renderDeviceSimNumberField('');
     renderDeviceTypeSelector('watch');
@@ -474,7 +478,6 @@ function openAddDevice() {
     els.deviceLicenseId.disabled = true;
     els.deviceDeviceId.value = '';
     renderDeviceSelectors();
-    renderDeviceConfigurationModal();
     deviceModal.show();
 }
 
@@ -501,6 +504,7 @@ async function editDevice(imei, supplier, model) {
         configUi: {},
         loading: true,
     };
+    els.deviceConfigTabBtn?.classList.remove('d-none');
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove('d-none');
     renderDeviceTypeSelector('watch');
@@ -553,6 +557,10 @@ function renderDeviceTypeSelector(selectedType = 'watch') {
     els.deviceForm.dataset.deviceType = deviceType;
     renderButtonGroup(els.deviceTypeButtons, deviceTypeOptions, deviceType, 'selectDeviceType');
 
+    const showImeiSim = deviceType === 'watch';
+    els.deviceImeiRow?.classList.toggle('d-none', !showImeiSim);
+    els.deviceSimRow?.classList.toggle('d-none', !showImeiSim);
+
     if (deviceType === 'ncs') {
         els.deviceDeviceIdLabel.textContent = 'Device ID (MAC)';
         els.deviceDeviceIdHelp.textContent = 'MAC address do dispositivo NCS (ex.: bea6c3dd8e02). Obrigatório.';
@@ -573,7 +581,6 @@ function updateDevicePreview() {
     const model = els.deviceForm.dataset.model || '';
     const modelInfo = findModelInfo(supplier, model);
     els.devicePreview.innerHTML = modelPreviewHtml(modelInfo, model || 'Selecione um modelo');
-    els.deviceProtocolText.textContent = modelInfo?.protocol || supplierProtocol(supplier) || '-';
     syncDeviceModalContext();
 }
 
@@ -625,22 +632,30 @@ function renderDeviceConfigurationModal() {
 }
 
 async function saveDevice() {
-    const imei = els.deviceImei.value.trim();
+    let imei = els.deviceImei.value.trim();
     let simNumber = '';
     const deviceType = normalizeDeviceType(els.deviceForm.dataset.deviceType || 'watch');
     const rawLicenseId = els.deviceLicenseId.value.trim();
     const licenseId = deviceType === 'watch' ? '0' : rawLicenseId;
     const deviceId = els.deviceDeviceId.value.trim();
-    try {
-        simNumber = getDeviceSimNumberValue(true);
-    } catch (error) {
-        alert(error instanceof Error ? error.message : 'Número do SIM inválido');
-        return;
-    }
     const supplier = els.deviceForm.dataset.supplier || '';
     const model = els.deviceForm.dataset.model || '';
+
+    if (deviceType === 'ncs') {
+        if (!deviceId || !supplier || !model) { alert('Device ID (MAC), fornecedor e modelo são obrigatórios'); return; }
+        imei = deviceId;
+        simNumber = '';
+    } else {
+        try {
+            simNumber = getDeviceSimNumberValue(true);
+        } catch (error) {
+            alert(error instanceof Error ? error.message : 'Número do SIM inválido');
+            return;
+        }
+        if (!imei || !supplier || !model) { alert('IMEI, fornecedor e modelo são obrigatórios'); return; }
+    }
+
     if (deviceType !== 'watch' && !licenseId) { alert('A licença é obrigatória para NCS e Radars'); return; }
-    if (!imei || !supplier || !model) { alert('Todos os campos são obrigatórios'); return; }
 
     const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, els.deviceImei.dataset.originalImei || '');
     if (result.error) { alert(result.error.message || result.error.code); return; }
@@ -719,7 +734,6 @@ async function loadModels() {
         <td>${modelImageHtml(model)}</td>
         <td>${esc(model.supplier)}</td>
         <td>${esc(model.model)}</td>
-        <td>${esc(model.protocol)}</td>
         <td>
         <button class="btn btn-outline-secondary btn-sm" data-id="${model.id}" data-supplier-id="${model.supplier_id}" data-supplier="${esc(model.supplier)}" data-model="${esc(model.model)}" data-protocol="${esc(model.protocol)}" data-image="${esc(model.image || '')}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-outline-danger btn-sm" data-id="${model.id}" data-action="deleteModel" title="Apagar"><i class="fa-solid fa-trash"></i></button>
@@ -789,7 +803,6 @@ function updateModelProtocolAndPreview(protocolOverride = '') {
     const protocol = protocolOverride || supplierProtocol(supplier) || '';
     const image = els.modelForm.dataset.image || '';
     const modelInfo = image ? {image, model: model || 'Modelo'} : null;
-    els.modelProtocolText.textContent = protocol || '-';
     if (!state.modelPreviewObjectUrl) {
         els.modelPreview.innerHTML = modelPreviewHtml(modelInfo, model || supplier || 'Novo modelo');
     }
@@ -873,9 +886,14 @@ function cacheElements() {
         devicePreview: document.getElementById('devicePreview'),
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
-        deviceProtocolText: document.getElementById('deviceProtocolText'),
         deviceConfigRoot: document.getElementById('deviceConfigRoot'),
         saveDeviceBtn: document.getElementById('saveDeviceBtn'),
+        deviceImeiRow: document.getElementById('deviceImeiRow'),
+        deviceSimRow: document.getElementById('deviceSimRow'),
+        deviceConfigTabBtn: document.getElementById('deviceConfigTabBtn'),
+        deviceConfigPane: document.getElementById('deviceConfigPane'),
+        deviceGeneralTabBtn: document.getElementById('deviceGeneralTabBtn'),
+        deviceGeneralPane: document.getElementById('deviceGeneralPane'),
         manageSuppliersBtn: document.getElementById('manageSuppliersBtn'),
         manageModelsBtn: document.getElementById('manageModelsBtn'),
         supplierForm: document.getElementById('supplierForm'),
@@ -887,7 +905,6 @@ function cacheElements() {
         modelPreview: document.getElementById('modelPreview'),
         modelSupplierButtons: document.getElementById('modelSupplierButtons'),
         modelModel: document.getElementById('modelModel'),
-        modelProtocolText: document.getElementById('modelProtocolText'),
         modelImage: document.getElementById('modelImage'),
         modelListBody: document.getElementById('modelListBody'),
         resetModelBtn: document.getElementById('resetModelBtn'),
