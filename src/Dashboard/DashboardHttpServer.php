@@ -24,7 +24,7 @@ final class DashboardHttpServer
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ?PendingDownlinkQueue $downlinkQueue,
-        private DatabaseStore $db,
+        private DashboardDataAccess $db,
         private string $username,
         private string $password,
     ) {
@@ -166,7 +166,7 @@ final class DashboardHttpServer
         }
 
         return [
-            'models' => $this->db->models(),
+            'models' => $this->db->models->all(),
             'devices' => $devices,
             'counts' => [
                 'online' => $online,
@@ -187,7 +187,7 @@ final class DashboardHttpServer
             'commands' => DeviceCommandCatalog::commandsForProtocol($protocol),
             'configuration' => [
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
-                'stored' => count($this->db->configurations($imei)),
+                'stored' => count($this->db->deviceConfigurations->allForImei($imei)),
             ],
             'pending' => $this->pending($imei),
             'recent' => [
@@ -279,7 +279,7 @@ final class DashboardHttpServer
         return [
             'device' => array_merge($device, ['imei' => $imei, 'supplier' => $supplier, 'model' => $model, 'protocol' => $protocol]),
             'catalog' => DeviceConfigurationCatalog::configsForProtocol($protocol),
-            'configurations' => $this->db->configurations($imei),
+            'configurations' => $this->db->deviceConfigurations->allForImei($imei),
         ];
     }
 
@@ -323,7 +323,7 @@ final class DashboardHttpServer
                 $model = trim((string)($decoded['model'] ?? ''));
             }
         }
-        foreach ($this->db->configurations($imei) as $row) {
+        foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
             if (($row['config_key'] ?? '') === $key) {
                 return $this->persistAndApplyConfiguration(
                     $imei,
@@ -391,14 +391,14 @@ final class DashboardHttpServer
             $record['error'] = 'delivery_failed';
         }
         $this->store->recordCommand($imei, $id, $record);
-        $this->db->saveDesiredConfiguration($imei, $key, $protocol, $supplier, $model, $command, $payload, (string)$record['status'], $id);
+        $this->db->deviceConfigurations->saveDesired($imei, $key, $protocol, $supplier, $model, $command, $payload, (string)$record['status'], $id);
 
         return ['status' => $record['status'], 'key' => $key, 'command' => $command, 'id' => $id];
     }
 
     private function protocolForModel(string $supplier, string $model): string
     {
-        $protocol = $this->db->protocolForModel($supplier, $model);
+        $protocol = $this->db->models->protocolForModel($supplier, $model);
         if ($protocol !== '') {
             return $protocol;
         }
@@ -421,7 +421,7 @@ final class DashboardHttpServer
         $imei = trim((string)($decoded['imei'] ?? ''));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
-        $deviceType = $this->normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
         $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
@@ -445,7 +445,7 @@ final class DashboardHttpServer
         $newImei = trim((string)($decoded['imei'] ?? $imei));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
-        $deviceType = $this->normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
         $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
@@ -462,11 +462,6 @@ final class DashboardHttpServer
         $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
         $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId);
         return ['status' => 'ok', 'imei' => $newImei];
-    }
-
-    private function normalizeDeviceType(string $deviceType): string
-    {
-        return DatabaseStore::normalizeDeviceType($deviceType);
     }
 
     private function normalizeLicenseId(string $licenseId, string $deviceType): string
@@ -526,7 +521,7 @@ final class DashboardHttpServer
 
     private function modelsList(): array
     {
-        return ['models' => $this->db->models()];
+        return ['models' => $this->db->models->all()];
     }
 
     private function addModel(ServerRequestInterface $request): array
@@ -543,13 +538,13 @@ final class DashboardHttpServer
         if (is_array($imagePath)) {
             return $imagePath;
         }
-        $supplier = $this->db->supplierFindById($supplierId);
+        $supplier = $this->db->suppliers->findById($supplierId);
         $previousImagePath = null;
         if (is_string($imagePath) && is_array($supplier)) {
-            $existing = $this->db->findModel((string)$supplier['name'], $model);
+            $existing = $this->db->models->find((string)$supplier['name'], $model);
             $previousImagePath = is_array($existing) ? (string)($existing['image_path'] ?? '') : null;
         }
-        $this->db->addModel($supplierId, $model, $protocol, $imagePath);
+        $this->db->models->add($supplierId, $model, $protocol, $imagePath);
         if (is_string($imagePath) && $previousImagePath !== null && $previousImagePath !== $imagePath) {
             $this->deleteStoredModelImage($previousImagePath);
         }
@@ -558,7 +553,7 @@ final class DashboardHttpServer
 
     private function updateModel(int $id, ServerRequestInterface $request): array
     {
-        $current = $this->db->findModelById($id);
+        $current = $this->db->models->findById($id);
         if ($current === null) {
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
         }
@@ -570,7 +565,7 @@ final class DashboardHttpServer
         $supplierId = (int)$payload['supplier_id'];
         $model = (string)$payload['model'];
         $protocol = (string)$payload['protocol'];
-        if ($this->db->modelExistsForDifferentId($id, $supplierId, $model)) {
+        if ($this->db->models->existsForDifferentId($id, $supplierId, $model)) {
             return ['error' => ['code' => 'model_exists', 'message' => 'Another model with this supplier and model name already exists']];
         }
 
@@ -579,7 +574,7 @@ final class DashboardHttpServer
             return $imagePath;
         }
 
-        $this->db->updateModel($id, $supplierId, $model, $protocol, $imagePath);
+        $this->db->models->update($id, $supplierId, $model, $protocol, $imagePath);
         if (is_string($imagePath)) {
             $this->deleteStoredModelImage((string)($current['image_path'] ?? ''));
         }
@@ -599,7 +594,7 @@ final class DashboardHttpServer
         if ($supplierId <= 0 || $model === '' || $protocol === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'supplier_id, model, and protocol are required']];
         }
-        if ($this->db->supplierFindById($supplierId) === null) {
+        if ($this->db->suppliers->findById($supplierId) === null) {
             return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier does not exist']];
         }
 
@@ -713,8 +708,8 @@ final class DashboardHttpServer
 
     private function deleteModel(int $id): array
     {
-        $model = $this->db->findModelById($id);
-        $this->db->deleteModel($id);
+        $model = $this->db->models->findById($id);
+        $this->db->models->delete($id);
         if (is_array($model)) {
             $this->deleteStoredModelImage((string)($model['image_path'] ?? ''));
         }
@@ -734,7 +729,7 @@ final class DashboardHttpServer
 
     private function suppliersList(): array
     {
-        return ['suppliers' => $this->db->supplierList()];
+        return ['suppliers' => $this->db->suppliers->all()];
     }
 
     private function addSupplier(string $body): array
@@ -747,7 +742,7 @@ final class DashboardHttpServer
         if ($name === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
         }
-        $id = $this->db->supplierCreate($name);
+        $id = $this->db->suppliers->create($name);
         return ['status' => 'ok', 'id' => $id];
     }
 
@@ -762,29 +757,29 @@ final class DashboardHttpServer
         if ($newName !== null && $newName === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'name cannot be empty']];
         }
-        if ($this->db->supplierFindById($id) === null) {
+        if ($this->db->suppliers->findById($id) === null) {
             return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier not found']];
         }
         if ($newName !== null) {
-            $this->db->supplierRename($id, $newName);
+            $this->db->suppliers->rename($id, $newName);
         }
         if ($enabled !== null) {
-            $this->db->supplierUpdate($id, $enabled);
+            $this->db->suppliers->setEnabled($id, $enabled);
         }
         return ['status' => 'ok'];
     }
 
     private function deleteSupplier(int $id): array
     {
-        $supplier = $this->db->supplierFindById($id);
+        $supplier = $this->db->suppliers->findById($id);
         if ($supplier === null) {
             return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier not found']];
         }
-        $count = $this->db->supplierCountModels($id);
+        $count = $this->db->suppliers->countModels($id);
         if ($count > 0) {
             return ['error' => ['code' => 'supplier_in_use', 'message' => "Cannot delete supplier '{$supplier['name']}': {$count} model(s) reference it"]];
         }
-        $this->db->supplierDelete($id);
+        $this->db->suppliers->delete($id);
         return ['status' => 'ok'];
     }
 

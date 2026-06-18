@@ -31,6 +31,12 @@ MQTT Broker
 composer server
 ```
 
+SQLite dashboard/runtime schema snapshot:
+
+```text
+database/schema.sql
+```
+
 Docker:
 
 ```bash

@@ -7,7 +7,7 @@ use Predis\ClientInterface;
 
 final class DashboardStore
 {
-    private ?DatabaseStore $db = null;
+    private ?DashboardDataAccess $db = null;
 
     public function __construct(
         private ClientInterface $redis,
@@ -18,7 +18,7 @@ final class DashboardStore
         $this->limit = max(1, $this->limit);
     }
 
-    public function setDatabaseStore(?DatabaseStore $db): void
+    public function setDataAccess(?DashboardDataAccess $db): void
     {
         $this->db = $db;
     }
@@ -38,8 +38,8 @@ final class DashboardStore
             'imei' => $imei,
             'supplier' => $supplier,
             'model' => $model,
-            'deviceType' => DatabaseStore::normalizeDeviceType($deviceType),
-            'licenseId' => DatabaseStore::normalizeLicenseId($licenseId),
+            'deviceType' => DeviceMetadata::normalizeDeviceType($deviceType),
+            'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
         ]);
@@ -100,7 +100,7 @@ final class DashboardStore
                         break;
                     }
                 }
-                $this->db->saveReportedConfiguration(
+                $this->db->deviceConfigurations->saveReported(
                     $imei,
                     $key,
                     $protocol,
@@ -111,9 +111,9 @@ final class DashboardStore
                 );
             }
             match ($list) {
-                'telemetry' => $this->db->appendTelemetry($imei, $payload['type'] ?? 'unknown', $payload),
-                'events' => $this->db->appendEvent($imei, $payload['type'] ?? 'unknown', $payload),
-                default => $this->db->appendRaw($imei, $payload),
+                'telemetry' => $this->db->history->appendTelemetry($imei, $payload['type'] ?? 'unknown', $payload),
+                'events' => $this->db->history->appendEvent($imei, $payload['type'] ?? 'unknown', $payload),
+                default => $this->db->history->appendRaw($imei, $payload),
             };
         }
     }
@@ -163,7 +163,7 @@ final class DashboardStore
                 'replyNativeType' => $replyNativeType,
             ]));
             if ($this->db !== null && isset($command['configKey'])) {
-                $this->db->markConfigurationApplyStatus($imei, (string)$command['configKey'], 'acked', $id);
+                $this->db->deviceConfigurations->markApplyStatus($imei, (string)$command['configKey'], 'acked', $id);
             }
             return;
         }
@@ -248,8 +248,8 @@ final class DashboardStore
     private function normalizeDevice(array $data): array
     {
         $data['online'] = ((string)($data['online'] ?? '0')) === '1';
-        $data['deviceType'] = DatabaseStore::normalizeDeviceType((string)($data['deviceType'] ?? 'watch'));
-        $data['licenseId'] = DatabaseStore::normalizeLicenseId((string)($data['licenseId'] ?? '0'));
+        $data['deviceType'] = DeviceMetadata::normalizeDeviceType((string)($data['deviceType'] ?? 'watch'));
+        $data['licenseId'] = DeviceMetadata::normalizeLicenseId((string)($data['licenseId'] ?? '0'));
         return $data;
     }
 

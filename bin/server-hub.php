@@ -80,9 +80,10 @@ $connectMqttClient = static function (MqttClient $client, bool $cleanSession = t
 $buildMqttClient = static fn (string $suffix, bool $cleanSession = true, bool $stableClientId = false): MqttClient
     => $connectMqttClient($createMqttClient($suffix, $stableClientId), $cleanSession);
 
-$databaseStore = new Hub\Dashboard\DatabaseStore();
+$database = new Hub\Dashboard\DashboardDatabase();
+$dataAccess = Hub\Dashboard\DashboardDataAccess::fromDatabase($database);
 $whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
-$whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $databaseStore);
+$whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
 $redisParameters = [
     'host' => (string)($redisConfig['host'] ?? '127.0.0.1'),
     'port' => (int)($redisConfig['port'] ?? 6379),
@@ -93,7 +94,7 @@ if ($redisPassword !== '') {
 }
 $downlinkQueue = new RedisPendingDownlinkQueue(new RedisClient($redisParameters));
 $dashboardStore = new DashboardStore(new RedisClient($redisParameters), (int)($dashboardConfig['history_limit'] ?? 100));
-$dashboardStore->setDatabaseStore($databaseStore);
+$dashboardStore->setDataAccess($dataAccess);
 $mqttBridge = new HubMqttBridge(
     $buildMqttClient('pub'),
     $topicPrefix,
@@ -152,7 +153,7 @@ if ($dashboardEnabled) {
         $whitelist,
         $hubServer,
         $downlinkQueue,
-        $databaseStore,
+        $dataAccess,
         (string)($dashboardConfig['username'] ?? ''),
         (string)($dashboardConfig['password'] ?? '')
     );

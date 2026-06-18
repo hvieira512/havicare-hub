@@ -2,7 +2,8 @@
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Dashboard\DatabaseStore;
+use Hub\Dashboard\DashboardDataAccess;
+use Hub\Dashboard\DashboardDatabase;
 use PHPUnit\Framework\TestCase;
 
 final class DatabaseStoreTest extends TestCase
@@ -13,11 +14,11 @@ final class DatabaseStoreTest extends TestCase
         self::assertIsString($path);
 
         try {
-            $store = new DatabaseStore($path);
-            self::assertSame(5, count($store->models()));
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            self::assertSame(5, count($db->models->all()));
 
-            $store = new DatabaseStore($path);
-            self::assertSame(5, count($store->models()));
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            self::assertSame(5, count($db->models->all()));
         } finally {
             unlink($path);
         }
@@ -29,16 +30,16 @@ final class DatabaseStoreTest extends TestCase
         self::assertIsString($path);
 
         try {
-            $store = new DatabaseStore($path);
-            $supplier = $store->supplierFind('Wonlex');
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            $supplier = $db->suppliers->findByName('Wonlex');
             self::assertIsArray($supplier);
 
-            $store->addModel((int)$supplier['id'], 'HW20PRO', 'wonlex-json', '/model-images/example.jpg');
-            $model = $store->findModel('Wonlex', 'HW20PRO');
+            $db->models->add((int)$supplier['id'], 'HW20PRO', 'wonlex-json', '/model-images/example.jpg');
+            $model = $db->models->find('Wonlex', 'HW20PRO');
             self::assertSame('/model-images/example.jpg', $model['image_path'] ?? null);
 
-            $store->addModel((int)$supplier['id'], 'HW20PRO', 'wonlex-json-v2');
-            $model = $store->findModel('Wonlex', 'HW20PRO');
+            $db->models->add((int)$supplier['id'], 'HW20PRO', 'wonlex-json-v2');
+            $model = $db->models->find('Wonlex', 'HW20PRO');
             self::assertSame('wonlex-json-v2', $model['protocol'] ?? null);
             self::assertSame('/model-images/example.jpg', $model['image_path'] ?? null);
         } finally {
@@ -52,22 +53,22 @@ final class DatabaseStoreTest extends TestCase
         self::assertIsString($path);
 
         try {
-            $store = new DatabaseStore($path);
-            $supplier = $store->supplierFind('Vivistar');
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            $supplier = $db->suppliers->findByName('Vivistar');
             self::assertIsArray($supplier);
-            $model = $store->findModel('Wonlex', 'HW20PRO');
+            $model = $db->models->find('Wonlex', 'HW20PRO');
             self::assertIsArray($model);
 
-            $updated = $store->updateModel((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO', 'vivistar-iw', '/model-images/new.jpg');
+            $updated = $db->models->update((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO', 'vivistar-iw', '/model-images/new.jpg');
             self::assertTrue($updated);
 
-            self::assertNull($store->findModel('Wonlex', 'HW20PRO'));
-            $model = $store->findModel('Vivistar', 'VIVISTAR-PRO');
+            self::assertNull($db->models->find('Wonlex', 'HW20PRO'));
+            $model = $db->models->find('Vivistar', 'VIVISTAR-PRO');
             self::assertIsArray($model);
             self::assertSame('vivistar-iw', $model['protocol'] ?? null);
             self::assertSame('/model-images/new.jpg', $model['image_path'] ?? null);
-            self::assertTrue($store->modelExistsForDifferentId((int)$model['id'] + 100, (int)$supplier['id'], 'VIVISTAR-PRO'));
-            self::assertFalse($store->modelExistsForDifferentId((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO'));
+            self::assertTrue($db->models->existsForDifferentId((int)$model['id'] + 100, (int)$supplier['id'], 'VIVISTAR-PRO'));
+            self::assertFalse($db->models->existsForDifferentId((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO'));
         } finally {
             unlink($path);
         }
@@ -79,8 +80,8 @@ final class DatabaseStoreTest extends TestCase
         self::assertIsString($path);
 
         try {
-            $store = new DatabaseStore($path);
-            $store->saveDesiredConfiguration(
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            $db->deviceConfigurations->saveDesired(
                 '861265061009822',
                 'fallDetection',
                 'vivistar-iw',
@@ -91,7 +92,7 @@ final class DatabaseStoreTest extends TestCase
                 'queued',
                 'abc123'
             );
-            $store->saveReportedConfiguration(
+            $db->deviceConfigurations->saveReported(
                 '861265061009822',
                 'fallDetection',
                 'vivistar-iw',
@@ -101,7 +102,7 @@ final class DatabaseStoreTest extends TestCase
                 ['data' => ['fields' => ['1']]]
             );
 
-            $rows = $store->configurations('861265061009822');
+            $rows = $db->deviceConfigurations->allForImei('861265061009822');
             self::assertCount(1, $rows);
             self::assertSame(['enabled' => true], $rows[0]['desired_payload']);
             self::assertSame(['data' => ['fields' => ['1']]], $rows[0]['reported_payload']);
@@ -118,10 +119,10 @@ final class DatabaseStoreTest extends TestCase
         self::assertIsString($path);
 
         try {
-            $store = new DatabaseStore($path);
-            $store->whitelistRegister('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '0', '351912345678901');
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '0', '351912345678901');
 
-            $row = $store->whitelistGet('861265061009822');
+            $row = $db->whitelist->get('861265061009822');
             self::assertIsArray($row);
             self::assertSame('351912345678901', $row['sim_number'] ?? null);
             self::assertSame('watch', $row['device_type'] ?? null);
@@ -137,10 +138,10 @@ final class DatabaseStoreTest extends TestCase
         self::assertIsString($path);
 
         try {
-            $store = new DatabaseStore($path);
-            $store->whitelistRegister('861265061009822', 'Vivistar', 'L08 Pro');
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
 
-            $row = $store->whitelistGet('861265061009822');
+            $row = $db->whitelist->get('861265061009822');
             self::assertIsArray($row);
             self::assertSame('watch', $row['device_type'] ?? null);
             self::assertSame('0', $row['license_id'] ?? null);
