@@ -284,14 +284,126 @@ function renderSelection() {
     els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${device.licenseId ?? '0'} · ${device.supplier ?? ''} ${device.model ?? ''} · visto ${ago(device.lastSeenAt)}`;
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
-    const ncsEvents = (state.selectedDetail.recent.events || [])
-        .map(rowPayload)
-        .filter(p => p?.type === 'ncs.event');
-    const allTelemetry = [...(state.selectedDetail.recent.telemetry || []), ...ncsEvents];
-    renderTelemetryList(allTelemetry);
-    renderRequestCards(state.selectedDetail.commands || [], state.selectedDetail.recent.telemetry || []);
-    renderDownlinkRequests(state.selectedDetail.recent.commands || []);
-    renderConnectionLogs(state.selectedDetail.recent.events || []);
+
+    els.detailFiltersPanel.classList.toggle('d-none', !state.detailFiltersOpen);
+    els.toggleDetailFiltersBtn.classList.toggle('btn-outline-secondary', !state.detailFiltersOpen);
+    els.toggleDetailFiltersBtn.classList.toggle('btn-secondary', state.detailFiltersOpen);
+
+    populateDetailFilterTypes();
+    syncDetailFilterControls();
+
+    const allItems = allDetailItems();
+    const filtered = filterDetailItems(allItems);
+    const ncsEvents = filtered.filter(item => item._source === 'event' && item.payload?.type === 'ncs.event').map(item => item.raw);
+    const telemetry = filtered.filter(item => item._source === 'telemetry').map(item => item.raw);
+    const commands = filtered.filter(item => item._source === 'command').map(item => item.raw);
+    const connectionEvents = filtered.filter(item => item._source === 'connection').map(item => item.raw);
+
+    renderTelemetryList([...telemetry, ...ncsEvents]);
+    renderRequestCards(state.selectedDetail.commands || [], telemetry);
+    renderDownlinkRequests(commands);
+    renderConnectionLogs(connectionEvents);
+}
+
+function allDetailItems() {
+    const items = [];
+    for (const row of (state.selectedDetail.recent.telemetry || [])) {
+        const payload = rowPayload(row);
+        if (payload && !payload.debug) items.push({_source: 'telemetry', raw: row, payload});
+    }
+    for (const row of (state.selectedDetail.recent.events || [])) {
+        const payload = rowPayload(row);
+        if (!payload) continue;
+        if (payload.type === 'ncs.event') items.push({_source: 'event', raw: row, payload});
+        if (payload.type === 'device.connected' || payload.type === 'device.disconnected') items.push({_source: 'connection', raw: row, payload});
+    }
+    for (const row of (state.selectedDetail.recent.commands || [])) {
+        const payload = rowPayload(row);
+        if (payload) items.push({_source: 'command', raw: row, payload});
+    }
+    return items;
+}
+
+function filterDetailItems(items) {
+    const {from, to, type} = state.detailFilters;
+    return items.filter(item => {
+        if (type !== 'all' && type !== '') {
+            const itemType = detailItemType(item);
+            if (itemType !== type) return false;
+        }
+        if (from || to) {
+            const time = itemTime(item);
+            if (!time) return false;
+            if (from && time < new Date(from).getTime()) return false;
+            if (to && time > new Date(to).getTime()) return false;
+        }
+        return true;
+    });
+}
+
+function detailItemType(item) {
+    const p = item.payload;
+    if (p.type === 'ncs.event') return p.data?.event || 'general_alert';
+    if (p.type === 'device.connected') return 'device.connected';
+    if (p.type === 'device.disconnected') return 'device.disconnected';
+    if (p.nativeType) return p.nativeType;
+    if (p.type && p.type !== 'telemetry') return p.type;
+    return 'outros';
+}
+
+function itemTime(item) {
+    const p = item.payload;
+    return Date.parse(p.occurredAt || p.recordedAt || p.requestedAt || '');
+}
+
+function populateDetailFilterTypes() {
+    const items = allDetailItems();
+    const types = new Set();
+    for (const item of items) {
+        const t = detailItemType(item);
+        if (t) types.add(t);
+    }
+    const select = els.detailFilterType;
+    const currentValue = state.detailFilters.type;
+    const sorted = [...types].sort();
+    select.innerHTML = ['<option value="all">Todos</option>', ...sorted.map(t => `<option value="${esc(t)}">${esc(detailTypeLabel(t))}</option>`)].join('');
+    select.value = sorted.includes(currentValue) ? currentValue : 'all';
+}
+
+function detailTypeLabel(type) {
+    const labels = {
+        help_call: 'SOS',
+        reset: 'Cancelado',
+        general_alert: 'Alerta Geral',
+        'device.connected': 'Ligado',
+        'device.disconnected': 'Desligado',
+    };
+    return labels[type] || featureLabel(type) || type;
+}
+
+function syncDetailFilterControls() {
+    els.detailFilterFrom.value = state.detailFilters.from;
+    els.detailFilterTo.value = state.detailFilters.to;
+    els.detailFilterType.value = state.detailFilters.type;
+}
+
+function toggleDetailFilters() {
+    state.detailFiltersOpen = !state.detailFiltersOpen;
+    renderSelection();
+}
+
+function applyDetailFilters() {
+    state.detailFilters.from = els.detailFilterFrom.value;
+    state.detailFilters.to = els.detailFilterTo.value;
+    state.detailFilters.type = els.detailFilterType.value;
+    state.telemetryPage = 1;
+    renderSelection();
+}
+
+function clearDetailFilters() {
+    state.detailFilters = {from: '', to: '', type: 'all'};
+    state.telemetryPage = 1;
+    renderSelection();
 }
 
 function renderTelemetryList(telemetryRows) {
@@ -883,6 +995,13 @@ function cacheElements() {
         requestGrid: document.getElementById('requestGrid'),
         downlinkRequests: document.getElementById('downlinkRequests'),
         connectionLogs: document.getElementById('connectionLogs'),
+        toggleDetailFiltersBtn: document.getElementById('toggleDetailFiltersBtn'),
+        detailFiltersPanel: document.getElementById('detailFiltersPanel'),
+        detailFilterFrom: document.getElementById('detailFilterFrom'),
+        detailFilterTo: document.getElementById('detailFilterTo'),
+        detailFilterType: document.getElementById('detailFilterType'),
+        applyDetailFiltersBtn: document.getElementById('applyDetailFiltersBtn'),
+        clearDetailFiltersBtn: document.getElementById('clearDetailFiltersBtn'),
         addDeviceBtn: document.getElementById('addDeviceBtn'),
         toggleDeviceFiltersBtn: document.getElementById('toggleDeviceFiltersBtn'),
         deviceFiltersPanel: document.getElementById('deviceFiltersPanel'),
@@ -959,6 +1078,9 @@ function bindEvents() {
     els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
+    els.toggleDetailFiltersBtn.addEventListener('click', toggleDetailFilters);
+    els.applyDetailFiltersBtn.addEventListener('click', applyDetailFilters);
+    els.clearDetailFiltersBtn.addEventListener('click', clearDetailFilters);
     els.deleteDeviceBtn.addEventListener('click', handleDeleteDeviceBtnClick);
     els.deviceSupplierButtons.addEventListener('click', handleDeviceSupplierClick);
     els.deviceTypeButtons.addEventListener('click', handleDeviceTypeClick);
@@ -1075,16 +1197,14 @@ async function clearDeviceFilters() {
 function handleTelemetryPagerClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button || !state.selectedDetail) return;
-    const allRows = [
-        ...(state.selectedDetail.recent.telemetry || []),
-        ...(state.selectedDetail.recent.events || []).map(rowPayload).filter(p => p?.type === 'ncs.event'),
-    ];
-    const filtered = allRows.filter(row => rowPayload(row) && !rowPayload(row).debug);
-    const totalPages = Math.max(1, Math.ceil(filtered.length / state.telemetryPageSize));
+    const allItems = allDetailItems();
+    const filtered = filterDetailItems(allItems);
+    const telemetryRows = filtered.filter(item => ['telemetry', 'event'].includes(item._source)).map(item => item.raw);
+    const totalPages = Math.max(1, Math.ceil(telemetryRows.length / state.telemetryPageSize));
     if (button.dataset.action === 'telemetryPrev') setTelemetryPage(state.telemetryPage - 1, totalPages);
     if (button.dataset.action === 'telemetryNext') setTelemetryPage(state.telemetryPage + 1, totalPages);
     if (button.dataset.action === 'telemetryPageGo') setTelemetryPage(parseInt(button.dataset.page || '1', 10), totalPages);
-    renderTelemetryList(state.selectedDetail.recent.telemetry || []);
+    renderTelemetryList(telemetryRows);
 }
 
 function handleDeviceConfigClick(event) {

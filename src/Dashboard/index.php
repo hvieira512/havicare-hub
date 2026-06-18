@@ -154,7 +154,32 @@ require_once __DIR__ . '/components/modal.php';
                                     <h1 class="h4 mb-1" id="detailTitle"></h1>
                                     <div class="text-secondary" id="detailMeta"></div>
                                 </div>
-                                <span id="detailBadge" class="badge"></span>
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <button id="toggleDetailFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button" title="Filtrar"><?= icon('fa-filter') ?></button>
+                                    <span id="detailBadge" class="badge"></span>
+                                </div>
+                            </div>
+                            <div id="detailFiltersPanel" class="border rounded bg-body-tertiary p-2 mb-3 d-none">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-auto">
+                                        <label for="detailFilterFrom" class="form-label form-label-sm small text-secondary mb-1">De</label>
+                                        <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-auto">
+                                        <label for="detailFilterTo" class="form-label form-label-sm small text-secondary mb-1">Até</label>
+                                        <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-auto">
+                                        <label for="detailFilterType" class="form-label form-label-sm small text-secondary mb-1">Tipo</label>
+                                        <select id="detailFilterType" class="form-select form-select-sm">
+                                            <option value="all">Todos</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-auto d-flex gap-1">
+                                        <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check') ?></button>
+                                        <button id="clearDetailFiltersBtn" class="btn btn-sm btn-outline-secondary"><?= icon('fa-xmark') ?></button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="vstack gap-4">
                                 <div class="row g-3">

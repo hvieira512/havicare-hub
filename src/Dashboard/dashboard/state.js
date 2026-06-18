@@ -6,6 +6,12 @@ export const state = {
         deviceFiltersAvailable: {deviceType: [], licenseId: [], supplier: [], model: []},
     },
     filtersOpen: false,
+    detailFiltersOpen: false,
+    detailFilters: {
+        from: '',
+        to: '',
+        type: 'all',
+    },
     deviceFilters: {
         deviceType: null,
         licenseId: null,
