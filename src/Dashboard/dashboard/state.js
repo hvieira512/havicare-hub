@@ -1,6 +1,18 @@
 export const state = {
     summary: {devices: [], models: [], counts: {}},
-    deviceTypeFilter: 'all',
+    filtersOpen: false,
+    deviceFilters: {
+        deviceType: 'all',
+        licenseId: 'all',
+        supplier: 'all',
+        model: 'all',
+    },
+    pendingDeviceFilters: {
+        deviceType: 'all',
+        licenseId: 'all',
+        supplier: 'all',
+        model: 'all',
+    },
     selectedImei: null,
     selectedDetail: null,
     deviceModal: {

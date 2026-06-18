@@ -50,6 +50,15 @@ function normalizeDeviceType(deviceType) {
     return deviceTypeOptions.some(option => option.value === deviceType) ? deviceType : 'watch';
 }
 
+function normalizeFilterValue(value) {
+    return value && value !== 'undefined' ? String(value) : 'all';
+}
+
+function normalizeLicenseId(licenseId) {
+    const value = String(licenseId ?? '0').trim();
+    return value === '' ? '0' : value;
+}
+
 function supplierProtocol(supplier, models = state.summary.models) {
     const existing = models.find(model => model.supplier === supplier && model.protocol);
     return existing?.protocol || supplierProtocolDefaults[supplier] || '';
@@ -77,6 +86,7 @@ async function loadSummary() {
 
 function renderSummary() {
     els.hubCounts.textContent = `${state.summary.counts?.online ?? 0} ligados / ${state.summary.counts?.offline ?? 0} desligados`;
+    renderDeviceFilterControls();
 
     const modelLookup = {};
     for (const model of state.summary.models) {
@@ -84,9 +94,7 @@ function renderSummary() {
     }
 
     const groups = {};
-    const filteredDevices = state.summary.devices.filter(device =>
-        state.deviceTypeFilter === 'all' || normalizeDeviceType(device.deviceType) === state.deviceTypeFilter
-    );
+    const filteredDevices = filterDevices(state.summary.devices, state.deviceFilters);
 
     for (const device of filteredDevices) {
         const deviceType = normalizeDeviceType(device.deviceType);
@@ -123,6 +131,94 @@ function renderSummary() {
     els.deviceList.innerHTML = groupMarkup || emptyPanel('Não há dispositivos para o filtro selecionado.');
 
     renderSelection();
+}
+
+function filterDevices(devices, filters) {
+    return devices.filter(device => {
+        const deviceType = normalizeDeviceType(device.deviceType);
+        const licenseId = normalizeLicenseId(device.licenseId);
+        return (filters.deviceType === 'all' || deviceType === filters.deviceType)
+            && (filters.licenseId === 'all' || licenseId === filters.licenseId)
+            && (filters.supplier === 'all' || String(device.supplier || '') === filters.supplier)
+            && (filters.model === 'all' || String(device.model || '') === filters.model);
+    });
+}
+
+function filterDevicesForOptions(filters, excludeKey) {
+    const effectiveFilters = {...filters};
+    effectiveFilters[excludeKey] = 'all';
+    return filterDevices(state.summary.devices, effectiveFilters);
+}
+
+function uniqueValues(values) {
+    return [...new Set(values.filter(Boolean))].sort((left, right) => left.localeCompare(right, 'pt-PT', {numeric: true}));
+}
+
+function buildFilterOptions(filters) {
+    const typeDevices = filterDevicesForOptions(filters, 'deviceType');
+    const licenseDevices = filterDevicesForOptions(filters, 'licenseId');
+    const supplierDevices = filterDevicesForOptions(filters, 'supplier');
+    const modelDevices = filterDevicesForOptions(filters, 'model');
+
+    return {
+        deviceTypes: uniqueValues(typeDevices.map(device => normalizeDeviceType(device.deviceType))),
+        licenseIds: uniqueValues(licenseDevices.map(device => normalizeLicenseId(device.licenseId))),
+        suppliers: uniqueValues(supplierDevices.map(device => String(device.supplier || '').trim())),
+        models: uniqueValues(modelDevices.map(device => String(device.model || '').trim())),
+    };
+}
+
+function validateDeviceFilters(filters) {
+    const nextFilters = {...filters};
+    const options = buildFilterOptions(nextFilters);
+    if (!options.deviceTypes.includes(nextFilters.deviceType)) {
+        nextFilters.deviceType = 'all';
+    }
+    if (!options.licenseIds.includes(nextFilters.licenseId)) {
+        nextFilters.licenseId = 'all';
+    }
+    if (!options.suppliers.includes(nextFilters.supplier)) {
+        nextFilters.supplier = 'all';
+    }
+    if (!options.models.includes(nextFilters.model)) {
+        nextFilters.model = 'all';
+    }
+    return nextFilters;
+}
+
+function renderSelectOptions(select, options, selectedValue, labelForValue) {
+    const normalizedSelectedValue = normalizeFilterValue(selectedValue);
+    const html = [
+        '<option value="all">Todos</option>',
+        ...options.map(option => `<option value="${esc(option)}"${option === normalizedSelectedValue ? ' selected' : ''}>${esc(labelForValue(option))}</option>`),
+    ];
+    select.innerHTML = html.join('');
+    select.value = options.includes(normalizedSelectedValue) ? normalizedSelectedValue : 'all';
+}
+
+function renderDeviceFilterControls() {
+    state.deviceFilters = validateDeviceFilters(state.deviceFilters);
+    state.pendingDeviceFilters = validateDeviceFilters(state.pendingDeviceFilters);
+    const options = buildFilterOptions(state.pendingDeviceFilters);
+
+    els.deviceFiltersPanel.classList.toggle('d-none', !state.filtersOpen);
+    els.toggleDeviceFiltersBtn.classList.toggle('btn-outline-secondary', !state.filtersOpen);
+    els.toggleDeviceFiltersBtn.classList.toggle('btn-secondary', state.filtersOpen);
+    els.toggleDeviceFiltersBtn.setAttribute('aria-expanded', state.filtersOpen ? 'true' : 'false');
+
+    renderSelectOptions(els.deviceTypeFilter, options.deviceTypes, state.pendingDeviceFilters.deviceType, value => deviceTypeLabel(value));
+    renderSelectOptions(els.deviceLicenseFilter, options.licenseIds, state.pendingDeviceFilters.licenseId, value => value);
+    renderSelectOptions(els.deviceSupplierFilter, options.suppliers, state.pendingDeviceFilters.supplier, value => value);
+    renderSelectOptions(els.deviceModelFilter, options.models, state.pendingDeviceFilters.model, value => value);
+}
+
+function syncPendingDeviceFiltersFromControls() {
+    state.pendingDeviceFilters = {
+        deviceType: normalizeFilterValue(els.deviceTypeFilter.value),
+        licenseId: normalizeFilterValue(els.deviceLicenseFilter.value),
+        supplier: normalizeFilterValue(els.deviceSupplierFilter.value),
+        model: normalizeFilterValue(els.deviceModelFilter.value),
+    };
 }
 
 async function selectDevice(imei) {
@@ -700,10 +796,17 @@ function cacheElements() {
         downlinkRequests: document.getElementById('downlinkRequests'),
         connectionLogs: document.getElementById('connectionLogs'),
         addDeviceBtn: document.getElementById('addDeviceBtn'),
+        toggleDeviceFiltersBtn: document.getElementById('toggleDeviceFiltersBtn'),
+        deviceFiltersPanel: document.getElementById('deviceFiltersPanel'),
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
         deviceImei: document.getElementById('deviceImei'),
         deviceTypeFilter: document.getElementById('deviceTypeFilter'),
+        deviceLicenseFilter: document.getElementById('deviceLicenseFilter'),
+        deviceSupplierFilter: document.getElementById('deviceSupplierFilter'),
+        deviceModelFilter: document.getElementById('deviceModelFilter'),
+        applyDeviceFiltersBtn: document.getElementById('applyDeviceFiltersBtn'),
+        clearDeviceFiltersBtn: document.getElementById('clearDeviceFiltersBtn'),
         deviceSimNumberRoot: document.getElementById('deviceSimNumberRoot'),
         deviceDeviceId: document.getElementById('deviceDeviceId'),
         deviceTypeButtons: document.getElementById('deviceTypeButtons'),
@@ -738,7 +841,13 @@ function bindEvents() {
     els.addDeviceBtn.addEventListener('click', openAddDevice);
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
-    els.deviceTypeFilter.addEventListener('change', handleDeviceTypeFilterChange);
+    els.toggleDeviceFiltersBtn.addEventListener('click', toggleDeviceFilters);
+    els.deviceTypeFilter.addEventListener('change', handlePendingDeviceFilterChange);
+    els.deviceLicenseFilter.addEventListener('change', handlePendingDeviceFilterChange);
+    els.deviceSupplierFilter.addEventListener('change', handlePendingDeviceFilterChange);
+    els.deviceModelFilter.addEventListener('change', handlePendingDeviceFilterChange);
+    els.applyDeviceFiltersBtn.addEventListener('click', applyDeviceFilters);
+    els.clearDeviceFiltersBtn.addEventListener('click', clearDeviceFilters);
     els.deviceImei.addEventListener('input', handleDeviceImeiInput);
     els.deviceLicenseId.addEventListener('input', handleDeviceImeiInput);
     els.deviceDeviceId.addEventListener('input', handleDeviceImeiInput);
@@ -799,8 +908,31 @@ function handleDeviceFormChange(event) {
     }
 }
 
-function handleDeviceTypeFilterChange(event) {
-    state.deviceTypeFilter = event.target.value || 'all';
+function toggleDeviceFilters() {
+    state.filtersOpen = !state.filtersOpen;
+    renderDeviceFilterControls();
+}
+
+function handlePendingDeviceFilterChange() {
+    syncPendingDeviceFiltersFromControls();
+    renderDeviceFilterControls();
+}
+
+function applyDeviceFilters() {
+    syncPendingDeviceFiltersFromControls();
+    state.deviceFilters = {...state.pendingDeviceFilters};
+    renderSummary();
+}
+
+function clearDeviceFilters() {
+    const defaults = {
+        deviceType: 'all',
+        licenseId: 'all',
+        supplier: 'all',
+        model: 'all',
+    };
+    state.deviceFilters = {...defaults};
+    state.pendingDeviceFilters = {...defaults};
     renderSummary();
 }
 

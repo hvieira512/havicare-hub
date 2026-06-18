@@ -66,17 +66,38 @@ require_once __DIR__ . '/components/modal.php';
             <div class="row g-3">
                 <aside id="deviceColumn" class="col-12 col-lg-4">
                         <div class="card shadow-sm">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center gap-2">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                     <span><?= icon('fa-microchip', 'me-2') ?>Dispositivos</span>
-                                    <select id="deviceTypeFilter" class="form-select form-select-sm">
-                                        <option value="all">Todos</option>
-                                        <option value="watch">Relógios</option>
-                                        <option value="ncs">NCS</option>
-                                        <option value="radar">Radars</option>
-                                    </select>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button id="toggleDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-filter', 'me-1') ?>Filtros</button>
+                                        <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                                    </div>
                                 </div>
-                                <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                                <div id="deviceFiltersPanel" class="border-top mt-3 pt-3 d-none">
+                                    <div class="row g-2">
+                                        <div class="col-12 col-md-3">
+                                            <label for="deviceTypeFilter" class="form-label form-label-sm mb-1 small text-secondary">Tipo</label>
+                                            <select id="deviceTypeFilter" class="form-select form-select-sm"></select>
+                                        </div>
+                                        <div class="col-12 col-md-3">
+                                            <label for="deviceLicenseFilter" class="form-label form-label-sm mb-1 small text-secondary">Licença</label>
+                                            <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
+                                        </div>
+                                        <div class="col-12 col-md-3">
+                                            <label for="deviceSupplierFilter" class="form-label form-label-sm mb-1 small text-secondary">Fornecedor</label>
+                                            <select id="deviceSupplierFilter" class="form-select form-select-sm"></select>
+                                        </div>
+                                        <div class="col-12 col-md-3">
+                                            <label for="deviceModelFilter" class="form-label form-label-sm mb-1 small text-secondary">Modelo</label>
+                                            <select id="deviceModelFilter" class="form-select form-select-sm"></select>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2 mt-3">
+                                        <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button">Limpar</button>
+                                        <button id="applyDeviceFiltersBtn" class="btn btn-sm btn-primary" type="button">Aplicar filtros</button>
+                                    </div>
+                                </div>
                             </div>
                         <div id="deviceList"></div>
                     </div>
