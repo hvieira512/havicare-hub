@@ -77,6 +77,8 @@ final class NcsMqttIngressBridgeTest extends TestCase
         self::assertSame('6', (string)$event['data']['code']);
         self::assertSame('8', (string)$event['data']['key']);
         self::assertSame('button-07', $event['data']['deviceId']);
+        self::assertSame('help_call', $event['data']['event']);
+        self::assertTrue($event['data']['alarm']);
         self::assertSame(['raw' => '0A01'], $event['data']['transparent']);
 
         $telemetry = json_decode($publisher->published[2]['message'], true, flags: JSON_THROW_ON_ERROR);
@@ -172,6 +174,8 @@ final class NcsMqttIngressBridgeTest extends TestCase
             ]
         );
 
+        self::assertSame('help_call', $normalized['event']['data']['event']);
+        self::assertTrue($normalized['event']['data']['alarm']);
         self::assertSame(['raw' => 'A1'], $normalized['event']['data']['transparent']);
         self::assertSame(40.0, $normalized['event']['data']['location']['lat']);
         self::assertSame(-7.0, $normalized['telemetry']['data']['lon']);

@@ -50,6 +50,7 @@ export function cardTone(type, command = {}) {
     if (key === 'heartbeat') return {border: 'info', bg: 'bg-info', text: 'text-info'};
     if (key === 'sleep') return {border: 'primary', bg: 'bg-primary', text: 'text-primary'};
     if (key === 'weather') return {border: 'secondary', bg: 'bg-secondary', text: 'text-secondary'};
+    if (key === 'ncs.event') return {border: 'danger', bg: 'bg-danger', text: 'text-danger'};
     return {border: 'secondary', bg: 'bg-secondary', text: 'text-secondary'};
 }
 
@@ -81,7 +82,19 @@ export function uplinkCardContent(type, data) {
     if (type === 'ecg') return {icon: 'fa-wave-square', value: 'Dados de ECG'};
     if (type === 'hrv') return {icon: 'fa-chart-line', value: 'Dados de VFC'};
     if (type === 'weather') return {icon: 'fa-cloud-sun', value: data.summary || 'Dados meteorológicos', details: compactDetails(data, ['temperatureCelsius', 'lowCelsius', 'highCelsius', 'humidityPercent', 'reportedAt'])};
+    if (type === 'ncs.event') return ncsEventContent(data);
     return {icon: 'fa-circle-info', value: featureLabel(type), details: compactDetails(data, Object.keys(data).slice(0, 4))};
+}
+
+function ncsEventContent(data) {
+    const value = data.event === 'help_call' ? 'SOS'
+        : data.event === 'reset' ? 'Cancelado'
+        : data.event === 'general_alert' ? 'Alerta Geral'
+        : featureLabel(data.event);
+    const icon = data.event === 'reset' ? 'fa-bell-slash'
+        : data.event === 'help_call' ? 'fa-triangle-exclamation'
+        : 'fa-bell';
+    return {icon, value};
 }
 
 function batteryDetails(data) {

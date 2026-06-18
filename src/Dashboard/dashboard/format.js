@@ -42,6 +42,7 @@ export const featureLabel = type => ({
     hrv: 'VFC',
     weather: 'Meteorologia',
     device_config: 'Configuração',
+    'ncs.event': 'Chamada de Enfermeiros',
 }[type] || titleize(type));
 
 export const fieldLabel = key => ({
@@ -81,6 +82,13 @@ export const fieldLabel = key => ({
     intervalMinutes: 'Intervalo (min)',
     password: 'Palavra-passe',
     phone: 'Telefone',
+    event: 'Evento',
+    deviceId: 'ID do dispositivo',
+    topicSourceId: 'Origem',
+    messageType: 'Tipo',
+    from: 'Gateway',
+    transparent: 'Transparente',
+    key: 'Tecla',
 }[key] || titleize(key));
 
 export const commandLabel = command => ({
@@ -103,6 +111,7 @@ export const commandLabel = command => ({
 export const displayValue = value => {
     if (Array.isArray(value)) return String(value.length);
     if (value && typeof value === 'object') return JSON.stringify(value);
+    if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
     return String(value);
 };
 

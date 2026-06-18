@@ -76,13 +76,18 @@ final class NcsMessageNormalizer
         $locationPayload = $this->locationPayload($payload);
         $normalizedLocation = $locationPayload !== null ? FeatureNormalizer::normalize('location', $locationPayload) : [];
 
+        $key = $this->scalarOrNull($payload['key'] ?? null);
+        $ncsEvent = $key !== null ? $this->resolveNcsEvent((string)$key) : [];
+
         $eventData = array_filter([
             'from' => trim((string)($message['from'] ?? '')),
             'topicSourceId' => $topic->sourceId,
             'messageType' => $message['type'] ?? null,
             'code' => $this->scalarOrNull($payload['code'] ?? $message['type'] ?? null),
-            'key' => $this->scalarOrNull($payload['key'] ?? null),
+            'key' => $key,
             'deviceId' => $this->scalarOrNull($payload['id'] ?? null),
+            'event' => $ncsEvent['event'] ?? null,
+            'alarm' => $ncsEvent['alarm'] ?? null,
             'location' => $normalizedLocation !== [] ? $normalizedLocation : $locationPayload,
             'transparent' => $payload['transparent'] ?? null,
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
@@ -132,28 +137,25 @@ final class NcsMessageNormalizer
      */
     private function rawPayload(NcsTopic $topic, array $message, array $device): array
     {
-        $json = json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($json === false) {
-            throw new \RuntimeException('Failed to encode NCS raw payload');
-        }
-
-        $raw = RawPayload::raw(
-            (string)$device['imei'],
-            (string)$device['supplier'],
-            (string)$device['model'],
-            'mqtt',
-            'voerka-ncs',
-            $json,
-            'uplink'
-        );
-        $raw['debug']['sourceTopic'] = $topic->original;
-        $raw['debug']['sourceScope'] = $topic->scope;
-        $raw['debug']['sourceMessageKind'] = $topic->kind;
-        if ($topic->statusName !== null) {
-            $raw['debug']['sourceStatus'] = $topic->statusName;
-        }
-
-        return $raw;
+        return [
+            'schemaVersion' => 1,
+            'direction' => 'uplink',
+            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            'device' => [
+                'id' => (string)$device['imei'],
+                'supplier' => (string)$device['supplier'],
+                'model' => (string)$device['model'],
+            ],
+            'debug' => array_filter([
+                'protocol' => 'voerka-ncs',
+                'transport' => 'mqtt',
+                'payload' => $message,
+                'sourceTopic' => $topic->original,
+                'sourceScope' => $topic->scope,
+                'sourceMessageKind' => $topic->kind,
+                'sourceStatus' => $topic->statusName,
+            ], static fn (mixed $value): bool => $value !== null),
+        ];
     }
 
     /**
@@ -183,6 +185,18 @@ final class NcsMessageNormalizer
             'nativeType' => $topic->nativeType(),
             'topic' => $topic->original,
         ];
+    }
+
+    /**
+     * @return array{event: string, alarm: bool}
+     */
+    private function resolveNcsEvent(string $key): array
+    {
+        return match ($key) {
+            '8' => ['event' => 'help_call', 'alarm' => true],
+            '0', '1', '2' => ['event' => 'reset', 'alarm' => false],
+            default => ['event' => 'general_alert', 'alarm' => true],
+        };
     }
 
     /**

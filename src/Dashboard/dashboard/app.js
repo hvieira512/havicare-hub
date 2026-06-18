@@ -51,7 +51,8 @@ function normalizeDeviceType(deviceType) {
 }
 
 function normalizeFilterValue(value) {
-    return value && value !== 'undefined' ? String(value) : 'all';
+    if (!value || value === 'undefined' || value === 'all') return null;
+    return String(value);
 }
 
 function normalizeLicenseId(licenseId) {
@@ -283,7 +284,11 @@ function renderSelection() {
     els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${device.licenseId ?? '0'} · ${device.supplier ?? ''} ${device.model ?? ''} · visto ${ago(device.lastSeenAt)}`;
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
-    renderTelemetryList(state.selectedDetail.recent.telemetry || []);
+    const ncsEvents = (state.selectedDetail.recent.events || [])
+        .map(rowPayload)
+        .filter(p => p?.type === 'ncs.event');
+    const allTelemetry = [...(state.selectedDetail.recent.telemetry || []), ...ncsEvents];
+    renderTelemetryList(allTelemetry);
     renderRequestCards(state.selectedDetail.commands || [], state.selectedDetail.recent.telemetry || []);
     renderDownlinkRequests(state.selectedDetail.recent.commands || []);
     renderConnectionLogs(state.selectedDetail.recent.events || []);
@@ -345,9 +350,11 @@ function renderTelemetryRow(payload) {
 
 function telemetryDetails(data, payload) {
     const details = [];
+    const skipKeys = payload?.type === 'ncs.event' ? new Set(['event', 'alarm']) : new Set();
     if (data && typeof data === 'object') {
         for (const [key, value] of Object.entries(data)) {
             if (value === undefined || value === null || value === '') continue;
+            if (skipKeys.has(key)) continue;
             details.push(`${fieldLabel(key)}: ${esc(displayValue(value))}`);
         }
     }
@@ -1037,10 +1044,10 @@ async function applyDeviceFilters() {
 
 async function clearDeviceFilters() {
     const defaults = {
-        deviceType: 'all',
-        licenseId: 'all',
-        supplier: 'all',
-        model: 'all',
+        deviceType: null,
+        licenseId: null,
+        supplier: null,
+        model: null,
     };
     state.deviceFilters = {...defaults};
     state.pendingDeviceFilters = {...defaults};
