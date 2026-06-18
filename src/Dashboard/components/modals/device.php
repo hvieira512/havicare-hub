@@ -34,9 +34,9 @@ ob_start();
                                     <div id="deviceSimNumberRoot"></div>
                                 </div>
                                 <div>
-                                    <label for="deviceDeviceId" class="form-label">Device ID 4P Touch</label>
-                                    <input type="text" class="form-control" id="deviceDeviceId" placeholder="Ex.: 3707975737">
-                                    <div class="form-text">Opcional. Necessário para 4P Touch quando o ID do protocolo é diferente do IMEI.</div>
+                                    <label for="deviceDeviceId" class="form-label" id="deviceDeviceIdLabel">Device ID</label>
+                                    <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
+                                    <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                 </div>
                                 <div>
                                     <div class="form-label">Tipo de dispositivo</div>

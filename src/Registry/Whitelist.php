@@ -173,43 +173,37 @@ class Whitelist
             return ['imei' => $imei] + $exact;
         }
 
-        if ($protocol !== 'four-p-touch') {
-            return null;
-        }
-
         $alias = trim($ident !== '' ? $ident : $imei);
         if ($alias === '') {
             return null;
         }
 
-        foreach ($this->devices as $canonicalImei => $metadata) {
-            if (($metadata['deviceId'] ?? '') !== $alias) {
-                continue;
+        if ($protocol === 'four-p-touch') {
+            foreach ($this->devices as $canonicalImei => $metadata) {
+                if (($metadata['deviceId'] ?? '') !== $alias) {
+                    continue;
+                }
+
+                return ['imei' => $canonicalImei] + $metadata;
             }
 
-            return ['imei' => $canonicalImei] + $metadata;
-        }
-
-        return null;
-    }
-
-    /**
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}|null
-     */
-    public function resolveSource(string $sourceSystem, string $sourceDeviceId): ?array
-    {
-        $sourceSystem = strtolower(trim($sourceSystem));
-        $sourceDeviceId = trim($sourceDeviceId);
-        if ($sourceSystem === '' || $sourceDeviceId === '') {
             return null;
         }
 
-        foreach ($this->devices as $canonicalImei => $metadata) {
-            if (($metadata['sourceSystem'] ?? '') !== $sourceSystem || ($metadata['sourceDeviceId'] ?? '') !== $sourceDeviceId) {
-                continue;
+        if ($protocol === 'ncs') {
+            foreach ($this->devices as $canonicalImei => $metadata) {
+                if (($metadata['deviceType'] ?? '') !== 'ncs') {
+                    continue;
+                }
+
+                if (($metadata['deviceId'] ?? '') !== $alias) {
+                    continue;
+                }
+
+                return ['imei' => $canonicalImei] + $metadata;
             }
 
-            return ['imei' => $canonicalImei] + $metadata;
+            return null;
         }
 
         return null;

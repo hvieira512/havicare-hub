@@ -119,8 +119,8 @@ final class NcsMqttIngressBridge
             return;
         }
 
-        $device = $this->whitelist->resolveSource('voerka', $from);
-        if ($device === null || ($device['deviceType'] ?? '') !== 'ncs' || trim((string)($device['licenseId'] ?? '')) === '') {
+        $device = $this->whitelist->resolve($from, 'ncs');
+        if ($device === null || trim((string)($device['licenseId'] ?? '')) === '') {
             Logger::channel('hub')->warning("Ignoring unregistered NCS source from={$from}");
             return;
         }

@@ -552,6 +552,20 @@ function renderDeviceTypeSelector(selectedType = 'watch') {
     const deviceType = normalizeDeviceType(selectedType);
     els.deviceForm.dataset.deviceType = deviceType;
     renderButtonGroup(els.deviceTypeButtons, deviceTypeOptions, deviceType, 'selectDeviceType');
+
+    if (deviceType === 'ncs') {
+        els.deviceDeviceIdLabel.textContent = 'Device ID (MAC)';
+        els.deviceDeviceIdHelp.textContent = 'MAC address do dispositivo NCS (ex.: bea6c3dd8e02). Obrigatório.';
+        els.deviceDeviceId.placeholder = 'MAC address (ex.: bea6c3dd8e02)';
+    } else if (deviceType === 'radar') {
+        els.deviceDeviceIdLabel.textContent = 'Device ID';
+        els.deviceDeviceIdHelp.textContent = 'Identificador do dispositivo radar no protocolo.';
+        els.deviceDeviceId.placeholder = 'ID do dispositivo';
+    } else {
+        els.deviceDeviceIdLabel.textContent = 'Device ID';
+        els.deviceDeviceIdHelp.textContent = 'Identificador do dispositivo no protocolo (IMEI, MAC, etc.).';
+        els.deviceDeviceId.placeholder = 'ID do dispositivo no protocolo';
+    }
 }
 
 function updateDevicePreview() {
@@ -852,6 +866,8 @@ function cacheElements() {
         clearDeviceFiltersBtn: document.getElementById('clearDeviceFiltersBtn'),
         deviceSimNumberRoot: document.getElementById('deviceSimNumberRoot'),
         deviceDeviceId: document.getElementById('deviceDeviceId'),
+        deviceDeviceIdLabel: document.getElementById('deviceDeviceIdLabel'),
+        deviceDeviceIdHelp: document.getElementById('deviceDeviceIdHelp'),
         deviceTypeButtons: document.getElementById('deviceTypeButtons'),
         deviceLicenseId: document.getElementById('deviceLicenseId'),
         devicePreview: document.getElementById('devicePreview'),
