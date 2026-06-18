@@ -27,6 +27,8 @@ import {
 } from './config.js';
 import {normalizePhoneControl, renderPhoneControl, resetPhoneControls, syncPhoneControl} from './phone.js';
 
+let connectionChartRoot = null;
+
 let els = {};
 let deviceModal = null;
 let supplierModal = null;
@@ -285,6 +287,12 @@ function renderSelection() {
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
     els.detailBadge.textContent = device.online ? 'ligado' : 'desligado';
 
+    if (!state.detailFilters.from) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        state.detailFilters.from = sevenDaysAgo.toISOString().slice(0, 16);
+    }
+
     els.detailFiltersPanel.classList.toggle('d-none', !state.detailFiltersOpen);
     els.toggleDetailFiltersBtn.classList.toggle('btn-outline-secondary', !state.detailFiltersOpen);
     els.toggleDetailFiltersBtn.classList.toggle('btn-secondary', state.detailFiltersOpen);
@@ -302,7 +310,7 @@ function renderSelection() {
     renderTelemetryList([...telemetry, ...ncsEvents]);
     renderRequestCards(state.selectedDetail.commands || [], telemetry);
     renderDownlinkRequests(commands);
-    renderConnectionLogs(connectionEvents);
+    renderConnectionTimeline(connectionEvents);
 }
 
 function allDetailItems() {
@@ -526,35 +534,117 @@ function renderDownlinkRow(command) {
         </tr>`;
 }
 
-function renderConnectionLogs(events) {
-    const logs = events
+function renderConnectionTimeline(rows) {
+    const events = rows
         .map(rowPayload)
         .filter(event => ['device.connected', 'device.disconnected'].includes(String(event?.type || '')))
-        .sort((a, b) => eventTime(b) - eventTime(a));
+        .sort((a, b) => eventTime(a) - eventTime(b));
 
-    els.connectionLogs.innerHTML = logs.length ? `
-        <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-        <thead>
-        <tr><th>Quando</th><th>Estado</th><th>Fornecedor</th><th>Modelo</th></tr>
-        </thead>
-        <tbody>
-        ${logs.map(renderConnectionLogRow).join('')}
-        </tbody>
-        </table>
-        </div>` : emptyPanel('Ainda não há registos de ligação.');
+    const connectedCount = events.filter(e => e.type === 'device.connected').length;
+    const disconnectedCount = events.filter(e => e.type === 'device.disconnected').length;
+    els.connectionStats.textContent = events.length ? `${connectedCount} ligações · ${disconnectedCount} desligamentos` : '';
+
+    if (events.length < 2) {
+        if (connectionChartRoot) {
+            connectionChartRoot.dispose();
+            connectionChartRoot = null;
+        }
+        els.connectionTimeline.innerHTML = events.length === 1
+            ? `<div class="text-center text-secondary py-4"><i class="fa-solid fa-circle ${events[0].type === 'device.connected' ? 'text-success' : 'text-secondary'} me-2"></i>${events[0].type === 'device.connected' ? 'Ligado' : 'Desligado'} · ${esc(when(events[0].occurredAt || events[0].recordedAt))}</div>`
+            : emptyPanel('Ainda não há registos de ligação.');
+        return;
+    }
+
+    if (connectionChartRoot) {
+        connectionChartRoot.dispose();
+    }
+
+    connectionChartRoot = am5.Root.new(els.connectionTimeline);
+
+    connectionChartRoot.setThemes([am5themes_Animated.new(connectionChartRoot)]);
+
+    const chart = connectionChartRoot.container.children.push(am5xy.XYChart.new(connectionChartRoot, {
+        panX: false,
+        panY: false,
+        wheelX: 'none',
+        wheelY: 'none',
+        paddingTop: 8,
+        paddingBottom: 8,
+        paddingLeft: 0,
+        paddingRight: 0,
+    }));
+
+    const dateAxis = chart.xAxes.push(am5xy.DateAxis.new(connectionChartRoot, {
+        baseInterval: {timeUnit: 'minute', count: 1},
+        renderer: am5xy.AxisRendererX.new(connectionChartRoot, {
+            minGridDistance: 60,
+        }),
+        tooltip: am5.Tooltip.new(connectionChartRoot, {}),
+    }));
+
+    const valueAxis = chart.yAxes.push(am5xy.ValueAxis.new(connectionChartRoot, {
+        renderer: am5xy.AxisRendererY.new(connectionChartRoot, {}),
+        min: -0.5,
+        max: 1.5,
+        strictMinMax: true,
+        numberFormat: "#'##",
+    }));
+    valueAxis.get('renderer').labels.template.set('text', '');
+    valueAxis.get('renderer').setAll({minGridDistance: Infinity});
+
+    const data = connectionStepData(events);
+    const series = chart.series.push(am5xy.StepLineSeries.new(connectionChartRoot, {
+        name: 'Ligação',
+        xAxis: dateAxis,
+        yAxis: valueAxis,
+        valueYField: 'value',
+        valueXField: 'date',
+        stroke: am5.color(0x6c757d),
+        strokeWidth: 2,
+        noRisers: false,
+        tooltip: am5.Tooltip.new(connectionChartRoot, {
+            labelText: '{label} em {valueX.formatDate("dd/MM/yyyy HH:mm")}',
+        }),
+    }));
+    series.data.setAll(data);
+
+    series.bullets.push(function (_root, _series, dataItem) {
+        const color = dataItem.dataContext?.bulletColor || '#6c757d';
+        return am5.Bullet.new(connectionChartRoot, {
+            sprite: am5.Circle.new(connectionChartRoot, {
+                radius: 5,
+                fill: am5.color(color),
+                stroke: am5.color(0xffffff),
+                strokeWidth: 1,
+            }),
+        });
+    });
+
+    dateAxis.start = 0;
+    dateAxis.end = 1;
+
+    chart.set('cursor', am5xy.XYCursor.new(connectionChartRoot, {
+        behavior: 'none',
+        xAxis: dateAxis,
+    }));
 }
 
-function renderConnectionLogRow(event) {
-    const connected = event.type === 'device.connected';
-    const device = event.device || {};
-    return `
-        <tr>
-        <td class="text-nowrap small">${esc(when(event.occurredAt || event.recordedAt) || '-')}</td>
-        <td><span class="badge ${connected ? 'text-bg-success' : 'text-bg-secondary'}">${connected ? 'ligado' : 'desligado'}</span></td>
-        <td>${esc(device.supplier || '-')}</td>
-        <td>${esc(device.model || '-')}</td>
-        </tr>`;
+function connectionStepData(events) {
+    const data = [];
+    let currentState = events.length > 0 && events[0].type === 'device.disconnected' ? 1 : 0;
+
+    for (const event of events) {
+        const time = eventTime(event);
+        if (!time) continue;
+        const newState = event.type === 'device.connected' ? 1 : 0;
+        const label = newState ? 'Ligado' : 'Desligado';
+        const color = newState ? '#198754' : '#dc3545';
+        data.push({date: time, value: currentState, label, bulletColor: color});
+        currentState = newState;
+        data.push({date: time, value: currentState, label, bulletColor: color});
+    }
+
+    return data;
 }
 
 function expectedReplies(command) {
@@ -994,7 +1084,8 @@ function cacheElements() {
         requestCardCount: document.getElementById('requestCardCount'),
         requestGrid: document.getElementById('requestGrid'),
         downlinkRequests: document.getElementById('downlinkRequests'),
-        connectionLogs: document.getElementById('connectionLogs'),
+        connectionTimeline: document.getElementById('connectionTimeline'),
+        connectionStats: document.getElementById('connectionStats'),
         toggleDetailFiltersBtn: document.getElementById('toggleDetailFiltersBtn'),
         detailFiltersPanel: document.getElementById('detailFiltersPanel'),
         detailFilterFrom: document.getElementById('detailFilterFrom'),

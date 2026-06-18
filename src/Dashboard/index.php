@@ -199,7 +199,8 @@ require_once __DIR__ . '/components/modal.php';
                                 </div>
                                 <section>
                                     <?= section_header('Ligações ao servidor') ?>
-                                    <div id="connectionLogs"></div>
+                                    <div id="connectionTimeline" style="height:180px;width:100%;"></div>
+                                    <div id="connectionStats" class="small text-secondary mt-1"></div>
                                 </section>
                             </div>
                         </div>
@@ -220,6 +221,9 @@ require_once __DIR__ . '/components/modal.php';
                                                     'four-p-touch' => DeviceConfigurationCatalog::configsForProtocol('four-p-touch'),
                                                 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     </script>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="main.js"></script>
 </body>
