@@ -477,7 +477,7 @@ final class DashboardHttpServer
 
     private function filterDevices(array $devices, array $filters): array
     {
-        return array_values(array_filter($devices, static function (array $device) use ($filters): bool {
+        return array_values(array_filter($devices, function (array $device) use ($filters): bool {
             $deviceType = DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch'));
             $licenseId = DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0'));
             $supplier = trim((string)($device['supplier'] ?? ''));
