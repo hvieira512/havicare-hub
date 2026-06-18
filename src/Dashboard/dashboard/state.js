@@ -5,7 +5,6 @@ export const state = {
         devicePagination: {limit: 5, page: 1, total_pages: 1, total: 0},
         deviceFiltersAvailable: {deviceType: [], licenseId: [], supplier: [], model: []},
     },
-    filtersOpen: false,
     detailFiltersOpen: false,
     detailFilters: {
         from: '',
@@ -13,12 +12,6 @@ export const state = {
         type: 'all',
     },
     deviceFilters: {
-        deviceType: null,
-        licenseId: null,
-        supplier: null,
-        model: null,
-    },
-    pendingDeviceFilters: {
         deviceType: null,
         licenseId: null,
         supplier: null,

@@ -110,32 +110,7 @@ require_once __DIR__ . '/components/modal.php';
                             <span><?= icon('fa-microchip', 'me-2') ?>Dispositivo selecionado</span>
                             <div class="d-flex align-items-center gap-2">
                                 <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher</button>
-                                <button id="toggleDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-filter', 'me-1') ?>Filtros</button>
                                 <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
-                            </div>
-                        </div>
-                        <div id="deviceFiltersPanel" class="border-top mt-3 pt-3 d-none">
-                            <div class="row g-2">
-                                <div class="col-12 col-md-3">
-                                    <label for="deviceTypeFilter" class="form-label form-label-sm mb-1 small text-secondary">Tipo</label>
-                                    <select id="deviceTypeFilter" class="form-select form-select-sm"></select>
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <label for="deviceLicenseFilter" class="form-label form-label-sm mb-1 small text-secondary">Licença</label>
-                                    <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <label for="deviceSupplierFilter" class="form-label form-label-sm mb-1 small text-secondary">Fornecedor</label>
-                                    <select id="deviceSupplierFilter" class="form-select form-select-sm"></select>
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <label for="deviceModelFilter" class="form-label form-label-sm mb-1 small text-secondary">Modelo</label>
-                                    <select id="deviceModelFilter" class="form-select form-select-sm"></select>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-                                <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button">Limpar</button>
-                                <button id="applyDeviceFiltersBtn" class="btn btn-sm btn-primary" type="button">Aplicar filtros</button>
                             </div>
                         </div>
                     </div>
@@ -249,6 +224,30 @@ require_once __DIR__ . '/components/modal.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="border rounded bg-body-tertiary p-3 mb-3">
+                        <div class="row g-2">
+                            <div class="col-12 col-md-3">
+                                <label for="deviceTypeFilter" class="form-label form-label-sm mb-1 small text-secondary">Tipo</label>
+                                <select id="deviceTypeFilter" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="deviceLicenseFilter" class="form-label form-label-sm mb-1 small text-secondary">Licença</label>
+                                <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="deviceSupplierFilter" class="form-label form-label-sm mb-1 small text-secondary">Fornecedor</label>
+                                <select id="deviceSupplierFilter" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="deviceModelFilter" class="form-label form-label-sm mb-1 small text-secondary">Modelo</label>
+                                <select id="deviceModelFilter" class="form-select form-select-sm"></select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mt-3">
+                            <div id="deviceActiveFilters" class="d-inline-flex flex-wrap gap-2"></div>
+                            <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button">Limpar filtros</button>
+                        </div>
+                    </div>
                     <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
                         <select id="deviceListLimit" class="form-select form-select-sm w-auto">
                             <option value="5">5</option>

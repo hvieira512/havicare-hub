@@ -209,25 +209,39 @@ function renderSelectOptions(select, options, selectedValue, labelForValue) {
 
 function renderDeviceFilterControls() {
     const options = state.summary.deviceFiltersAvailable || {deviceType: [], licenseId: [], supplier: [], model: []};
-
-    els.deviceFiltersPanel.classList.toggle('d-none', !state.filtersOpen);
-    els.toggleDeviceFiltersBtn.classList.toggle('btn-outline-secondary', !state.filtersOpen);
-    els.toggleDeviceFiltersBtn.classList.toggle('btn-secondary', state.filtersOpen);
-    els.toggleDeviceFiltersBtn.setAttribute('aria-expanded', state.filtersOpen ? 'true' : 'false');
-
-    renderSelectOptions(els.deviceTypeFilter, options.deviceType || [], state.pendingDeviceFilters.deviceType, value => deviceTypeLabel(value));
-    renderSelectOptions(els.deviceLicenseFilter, options.licenseId || [], state.pendingDeviceFilters.licenseId, value => value);
-    renderSelectOptions(els.deviceSupplierFilter, options.supplier || [], state.pendingDeviceFilters.supplier, value => value);
-    renderSelectOptions(els.deviceModelFilter, options.model || [], state.pendingDeviceFilters.model, value => value);
+    renderSelectOptions(els.deviceTypeFilter, options.deviceType || [], state.deviceFilters.deviceType, value => deviceTypeLabel(value));
+    renderSelectOptions(els.deviceLicenseFilter, options.licenseId || [], state.deviceFilters.licenseId, value => value);
+    renderSelectOptions(els.deviceSupplierFilter, options.supplier || [], state.deviceFilters.supplier, value => value);
+    renderSelectOptions(els.deviceModelFilter, options.model || [], state.deviceFilters.model, value => value);
+    renderAppliedDeviceFilters();
 }
 
-function syncPendingDeviceFiltersFromControls() {
-    state.pendingDeviceFilters = {
-        deviceType: normalizeFilterValue(els.deviceTypeFilter.value),
-        licenseId: normalizeFilterValue(els.deviceLicenseFilter.value),
-        supplier: normalizeFilterValue(els.deviceSupplierFilter.value),
-        model: normalizeFilterValue(els.deviceModelFilter.value),
-    };
+function renderAppliedDeviceFilters() {
+    const labels = [];
+
+    if (state.deviceFilters.deviceType) {
+        labels.push({key: 'deviceType', label: `Tipo: ${deviceTypeLabel(state.deviceFilters.deviceType)}`});
+    }
+    if (state.deviceFilters.licenseId) {
+        labels.push({key: 'licenseId', label: `Licença: ${state.deviceFilters.licenseId}`});
+    }
+    if (state.deviceFilters.supplier) {
+        labels.push({key: 'supplier', label: `Fornecedor: ${state.deviceFilters.supplier}`});
+    }
+    if (state.deviceFilters.model) {
+        labels.push({key: 'model', label: `Modelo: ${state.deviceFilters.model}`});
+    }
+
+    els.deviceActiveFilters.innerHTML = labels.length
+        ? labels.map(item => `
+            <span class="badge text-bg-secondary d-inline-flex align-items-center gap-2">
+                <span>${esc(item.label)}</span>
+                <button type="button" class="btn btn-sm p-0 border-0 text-white" data-action="removeDeviceFilter" data-filter-key="${esc(item.key)}" aria-label="Remover filtro">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </span>
+        `).join('')
+        : '<span class="small text-secondary">Sem filtros ativos</span>';
 }
 
 function handleDeviceListLimitChange() {
@@ -1169,8 +1183,7 @@ function cacheElements() {
         openDeviceSelectorBtn: document.getElementById('openDeviceSelectorBtn'),
         emptyStateSelectDeviceBtn: document.getElementById('emptyStateSelectDeviceBtn'),
         openAddDeviceFromSelectorBtn: document.getElementById('openAddDeviceFromSelectorBtn'),
-        toggleDeviceFiltersBtn: document.getElementById('toggleDeviceFiltersBtn'),
-        deviceFiltersPanel: document.getElementById('deviceFiltersPanel'),
+        deviceActiveFilters: document.getElementById('deviceActiveFilters'),
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
         deviceImei: document.getElementById('deviceImei'),
@@ -1178,7 +1191,6 @@ function cacheElements() {
         deviceLicenseFilter: document.getElementById('deviceLicenseFilter'),
         deviceSupplierFilter: document.getElementById('deviceSupplierFilter'),
         deviceModelFilter: document.getElementById('deviceModelFilter'),
-        applyDeviceFiltersBtn: document.getElementById('applyDeviceFiltersBtn'),
         clearDeviceFiltersBtn: document.getElementById('clearDeviceFiltersBtn'),
         deviceSimNumberRoot: document.getElementById('deviceSimNumberRoot'),
         deviceDeviceId: document.getElementById('deviceDeviceId'),
@@ -1228,13 +1240,12 @@ function bindEvents() {
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
     els.deviceListLimit.addEventListener('change', handleDeviceListLimitChange);
     els.deviceListSearch.addEventListener('input', handleDeviceListSearchInput);
-    els.toggleDeviceFiltersBtn.addEventListener('click', toggleDeviceFilters);
-    els.deviceTypeFilter.addEventListener('change', handlePendingDeviceFilterChange);
-    els.deviceLicenseFilter.addEventListener('change', handlePendingDeviceFilterChange);
-    els.deviceSupplierFilter.addEventListener('change', handlePendingDeviceFilterChange);
-    els.deviceModelFilter.addEventListener('change', handlePendingDeviceFilterChange);
-    els.applyDeviceFiltersBtn.addEventListener('click', applyDeviceFilters);
+    els.deviceTypeFilter.addEventListener('change', handleDeviceFilterChange);
+    els.deviceLicenseFilter.addEventListener('change', handleDeviceFilterChange);
+    els.deviceSupplierFilter.addEventListener('change', handleDeviceFilterChange);
+    els.deviceModelFilter.addEventListener('change', handleDeviceFilterChange);
     els.clearDeviceFiltersBtn.addEventListener('click', clearDeviceFilters);
+    els.deviceActiveFilters.addEventListener('click', handleActiveDeviceFiltersClick);
     els.deviceImei.addEventListener('input', handleDeviceImeiInput);
     els.deviceLicenseId.addEventListener('input', handleDeviceImeiInput);
     els.deviceDeviceId.addEventListener('input', handleDeviceImeiInput);
@@ -1299,14 +1310,32 @@ function handleDeviceFormChange(event) {
     }
 }
 
-function toggleDeviceFilters() {
-    state.filtersOpen = !state.filtersOpen;
-    renderDeviceFilterControls();
+async function handleDeviceFilterChange() {
+    state.deviceFilters = {
+        deviceType: normalizeFilterValue(els.deviceTypeFilter.value),
+        licenseId: normalizeFilterValue(els.deviceLicenseFilter.value),
+        supplier: normalizeFilterValue(els.deviceSupplierFilter.value),
+        model: normalizeFilterValue(els.deviceModelFilter.value),
+    };
+    state.deviceListPage = 1;
+    saveFiltersToStorage();
+    await loadSummary();
 }
 
-function handlePendingDeviceFilterChange() {
-    syncPendingDeviceFiltersFromControls();
-    renderDeviceFilterControls();
+async function handleActiveDeviceFiltersClick(event) {
+    const button = event.target.closest('[data-action="removeDeviceFilter"]');
+    if (!button) return;
+
+    const key = button.dataset.filterKey;
+    if (!key || !(key in state.deviceFilters)) return;
+
+    state.deviceFilters = {
+        ...state.deviceFilters,
+        [key]: null,
+    };
+    state.deviceListPage = 1;
+    saveFiltersToStorage();
+    await loadSummary();
 }
 
 function loadFiltersFromStorage() {
@@ -1367,14 +1396,6 @@ function clearSelectedDeviceFromStorage() {
     }
 }
 
-async function applyDeviceFilters() {
-    syncPendingDeviceFiltersFromControls();
-    state.deviceFilters = {...state.pendingDeviceFilters};
-    state.deviceListPage = 1;
-    saveFiltersToStorage();
-    await loadSummary();
-}
-
 async function clearDeviceFilters() {
     const defaults = {
         deviceType: null,
@@ -1383,7 +1404,6 @@ async function clearDeviceFilters() {
         model: null,
     };
     state.deviceFilters = {...defaults};
-    state.pendingDeviceFilters = {...defaults};
     state.deviceListPage = 1;
     clearFiltersFromStorage();
     await loadSummary();
@@ -1976,7 +1996,6 @@ export function startDashboard() {
     const stored = loadFiltersFromStorage();
     if (stored) {
         state.deviceFilters = stored;
-        state.pendingDeviceFilters = {...stored};
     }
     const storedSelectedImei = loadSelectedDeviceFromStorage();
     if (storedSelectedImei) {
