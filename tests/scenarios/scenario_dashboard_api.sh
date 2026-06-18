@@ -32,7 +32,7 @@ if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 8081, $e, $m,
   scenario_fail "dashboard_failure" "dashboard HTTP listener did not become ready"
 fi
 
-unauth_status="$(curl -s -o /tmp/dashboard-unauth.txt -w '%{http_code}' http://127.0.0.1:8081/api/dashboard/summary)"
+unauth_status="$(curl -s -o /tmp/dashboard-unauth.txt -w '%{http_code}' http://127.0.0.1:8081/api/devices)"
 if [ "$unauth_status" != "401" ]; then
   scenario_fail "auth_failure" "dashboard API did not require basic auth"
 fi
@@ -40,12 +40,6 @@ fi
 html="$(curl -s -u admin:secret http://127.0.0.1:8081/dashboard)"
 if ! printf '%s' "$html" | grep -q 'Hitecosystem Hub de Dispositivos'; then
   scenario_fail "dashboard_failure" "dashboard HTML did not render expected page"
-fi
-
-summary="$(curl -s -u admin:secret http://127.0.0.1:8081/api/dashboard/summary)"
-printf '%s' "$summary" > "$SCENARIO_DIR/dashboard-summary.json"
-if ! printf '%s' "$summary" | grep -q '"counts"'; then
-  scenario_fail "dashboard_failure" "dashboard summary did not include counts"
 fi
 
 devices="$(curl -s -u admin:secret "http://127.0.0.1:8081/api/devices?limit=100&page=1")"

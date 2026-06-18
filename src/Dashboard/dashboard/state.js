@@ -2,7 +2,6 @@ export const state = {
     summary: {
         devices: [],
         models: [],
-        counts: {},
         devicePagination: {limit: 5, page: 1, total_pages: 1, total: 0},
         deviceFiltersAvailable: {deviceType: [], licenseId: [], supplier: [], model: []},
     },
@@ -19,6 +18,7 @@ export const state = {
         supplier: 'all',
         model: 'all',
     },
+    deviceSearchQuery: '',
     selectedImei: null,
     selectedDetail: null,
     deviceModal: {

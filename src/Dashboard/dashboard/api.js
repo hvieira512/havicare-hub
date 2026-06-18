@@ -19,7 +19,6 @@ const withQuery = (url, params = {}) => {
 };
 
 export const api = {
-    summary: () => requestJson('/api/dashboard/summary'),
     devices: (params = {}) => requestJson(withQuery('/api/devices', params)),
     device: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`),
     configuration: (imei, supplier = '', model = '') => {

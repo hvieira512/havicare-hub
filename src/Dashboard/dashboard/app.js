@@ -36,6 +36,7 @@ const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
 const configPollTimers = new Map();
 let deviceConfigRefreshPromise = null;
+let deviceSearchTimer = null;
 const deviceTypeOptions = [
     {value: 'watch', label: 'Relógios'},
     {value: 'ncs', label: 'NCS'},
@@ -77,8 +78,7 @@ function findModelInfo(supplier, model, models = state.summary.models) {
 }
 
 async function loadSummary() {
-    const [dashboard, devicesResponse, modelsResponse] = await Promise.all([
-        api.summary(),
+    const [devicesResponse, modelsResponse] = await Promise.all([
         api.devices({
             page: state.deviceListPage,
             limit: state.deviceListPageSize,
@@ -86,16 +86,17 @@ async function loadSummary() {
             licenseId: state.deviceFilters.licenseId,
             supplier: state.deviceFilters.supplier,
             model: state.deviceFilters.model,
+            q: state.deviceSearchQuery,
         }),
         api.models({limit: 500}),
     ]);
     state.summary = {
         devices: devicesResponse.data || [],
         models: modelsResponse.data || [],
-        counts: dashboard.counts || {},
         devicePagination: devicesResponse.pagination || {limit: state.deviceListPageSize, page: 1, total_pages: 1, total: 0},
         deviceFiltersAvailable: devicesResponse.filters?.available || {deviceType: [], licenseId: [], supplier: [], model: []},
     };
+    state.deviceListPageSize = state.summary.devicePagination.limit || state.deviceListPageSize;
     state.deviceListPage = state.summary.devicePagination.page || 1;
     renderSummary();
     if (state.selectedImei) {
@@ -104,7 +105,12 @@ async function loadSummary() {
 }
 
 function renderSummary() {
-    els.hubCounts.textContent = `${state.summary.counts?.online ?? 0} ligados / ${state.summary.counts?.offline ?? 0} desligados`;
+    if (els.deviceListLimit) {
+        els.deviceListLimit.value = String(state.deviceListPageSize);
+    }
+    if (els.deviceListSearch) {
+        els.deviceListSearch.value = state.deviceSearchQuery;
+    }
     renderDeviceFilterControls();
 
     const modelLookup = {};
@@ -116,9 +122,15 @@ function renderSummary() {
 
     for (const device of state.summary.devices) {
         const deviceType = normalizeDeviceType(device.deviceType);
-        const key = `${deviceType}:${device.supplier} / ${device.model}`;
+        const key = `${normalizeLicenseId(device.licenseId)}:${deviceType}:${device.supplier} / ${device.model}`;
         if (!groups[key]) {
-            groups[key] = {supplier: device.supplier, model: device.model, deviceType, devices: []};
+            groups[key] = {
+                supplier: device.supplier,
+                model: device.model,
+                deviceType,
+                licenseId: normalizeLicenseId(device.licenseId),
+                devices: [],
+            };
         }
         groups[key].devices.push(device);
     }
@@ -127,15 +139,13 @@ function renderSummary() {
         const modelInfo = modelLookup[`${group.supplier}:${group.model}`];
         return `
             <div class="list-group list-group-flush">
-            <div class="small fw-semibold text-secondary px-3 py-1 bg-body-tertiary border-bottom">${esc(deviceTypeLabel(group.deviceType))} · ${esc(group.supplier)} ${esc(group.model)}</div>
+            <div class="small fw-semibold text-secondary px-3 py-1 bg-body-tertiary border-bottom">Licença ${esc(group.licenseId)} · ${esc(deviceTypeLabel(group.deviceType))} · ${esc(group.supplier)} ${esc(group.model)}</div>
             ${group.devices.map(device => `
                 <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom${state.selectedImei === device.imei ? ' bg-primary-subtle' : ''}" data-imei="${esc(device.imei)}" data-action="select">
                 <div style="width:40px;text-align:center;flex-shrink:0">${modelImageHtml(modelInfo)}</div>
-                <div class="flex-grow-1 min-width-0">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="flex-grow-1 min-width-0 d-flex align-items-center gap-2">
+                <span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block flex-shrink-0" style="width:.55rem;height:.55rem;"></span>
                 <strong class="small text-break">${esc(device.imei)}</strong>
-                </div>
-                <div class="small text-secondary d-flex align-items-center gap-1"><span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block" style="width:.55rem;height:.55rem;"></span><span>licença ${esc(String(device.licenseId || '0'))} · visto ${ago(device.lastSeenAt)}</span></div>
                 </div>
                 <div class="btn-group btn-group-sm" style="flex-shrink:0">
                 <button class="btn btn-outline-secondary" data-imei="${esc(device.imei)}" data-supplier="${esc(device.supplier)}" data-model="${esc(device.model)}" data-action="edit" title="Editar">
@@ -146,37 +156,40 @@ function renderSummary() {
             </div>`;
     }).join('');
 
-    els.deviceList.innerHTML = groupMarkup
-        ? `${renderDeviceListPager(state.summary.devicePagination)}${groupMarkup}`
-        : emptyPanel('Não há dispositivos para o filtro selecionado.');
+    els.deviceList.innerHTML = groupMarkup || emptyPanel('Não há dispositivos para o filtro selecionado.');
+    renderDevicePagination(state.summary.devicePagination);
 
     renderSelection();
 }
 
-function renderDeviceListPager(pagination) {
+function renderDevicePagination(pagination) {
+    const root = els.deviceListPagination;
+    const summaryEl = els.deviceListPaginationSummary;
+    const controlsEl = els.deviceListPaginationControls;
     const totalRows = pagination?.total ?? 0;
     const totalPages = pagination?.total_pages ?? 1;
     const currentPage = pagination?.page ?? 1;
     const limit = pagination?.limit ?? state.deviceListPageSize;
 
-    if (totalRows <= limit) {
-        return `<div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-body-tertiary">
-            <span class="small text-secondary">${totalRows} dispositivo${totalRows === 1 ? '' : 's'}</span>
-            <span class="small text-secondary">Página 1 de 1</span>
-        </div>`;
+    if (totalPages <= 1) {
+        root.classList.add('d-none');
+        summaryEl.textContent = '';
+        controlsEl.innerHTML = '';
+        return;
     }
 
     const pageStart = ((currentPage - 1) * limit) + 1;
     const pageEnd = Math.min(totalRows, currentPage * limit);
-
-    return `<div class="d-flex justify-content-between align-items-center gap-2 px-3 py-2 border-bottom bg-body-tertiary flex-wrap">
-        <span class="small text-secondary">${pageStart}-${pageEnd} de ${totalRows}</span>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-action="devicePagePrev" ${currentPage <= 1 ? 'disabled' : ''}>Anterior</button>
-            <span class="small text-secondary">Página ${currentPage} de ${totalPages}</span>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-action="devicePageNext" ${currentPage >= totalPages ? 'disabled' : ''}>Seguinte</button>
-        </div>
-    </div>`;
+    root.classList.remove('d-none');
+    summaryEl.textContent = `A mostrar de ${pageStart} até ${pageEnd} | ${totalRows}`;
+    controlsEl.innerHTML = [
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="devicePagePrev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
+        ...Array.from({length: totalPages}, (_, index) => {
+            const page = index + 1;
+            return `<button type="button" class="btn ${page === currentPage ? 'btn-primary' : 'btn-outline-secondary'} btn-sm" data-action="devicePageGo" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ''}>${page}</button>`;
+        }),
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="devicePageNext" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
+    ].join('');
 }
 
 function renderSelectOptions(select, options, selectedValue, labelForValue) {
@@ -210,6 +223,41 @@ function syncPendingDeviceFiltersFromControls() {
         supplier: normalizeFilterValue(els.deviceSupplierFilter.value),
         model: normalizeFilterValue(els.deviceModelFilter.value),
     };
+}
+
+function handleDeviceListLimitChange() {
+    const nextLimit = parseInt(els.deviceListLimit.value || '5', 10) || 5;
+    if (state.deviceListPageSize === nextLimit) {
+        return;
+    }
+    state.deviceListPageSize = nextLimit;
+    state.deviceListPage = 1;
+    void loadSummary();
+}
+
+function handleDeviceListSearchInput() {
+    state.deviceSearchQuery = els.deviceListSearch.value.trim();
+    state.deviceListPage = 1;
+    clearTimeout(deviceSearchTimer);
+    deviceSearchTimer = setTimeout(() => {
+        void loadSummary();
+    }, 250);
+}
+
+function handleDevicePaginationClick(event) {
+    const button = event.target.closest('[data-action="devicePagePrev"], [data-action="devicePageNext"], [data-action="devicePageGo"]');
+    if (!button) return;
+
+    const currentPage = state.summary.devicePagination?.page || 1;
+    const totalPages = state.summary.devicePagination?.total_pages || 1;
+    if (button.dataset.action === 'devicePagePrev') {
+        state.deviceListPage = Math.max(1, currentPage - 1);
+    } else if (button.dataset.action === 'devicePageNext') {
+        state.deviceListPage = Math.min(totalPages, currentPage + 1);
+    } else {
+        state.deviceListPage = Math.min(Math.max(1, parseInt(button.dataset.page || '1', 10) || 1), totalPages);
+    }
+    void loadSummary();
 }
 
 async function selectDevice(imei) {
@@ -769,10 +817,14 @@ function revokeModelPreviewUrl() {
 
 function cacheElements() {
     els = {
-        hubCounts: document.getElementById('hubCounts'),
         deviceColumn: document.getElementById('deviceColumn'),
         requestColumn: document.getElementById('requestColumn'),
         deviceList: document.getElementById('deviceList'),
+        deviceListLimit: document.getElementById('deviceListLimit'),
+        deviceListSearch: document.getElementById('deviceListSearch'),
+        deviceListPagination: document.getElementById('deviceListPagination'),
+        deviceListPaginationSummary: document.getElementById('deviceListPaginationSummary'),
+        deviceListPaginationControls: document.getElementById('deviceListPaginationControls'),
         detailColumn: document.getElementById('detailColumn'),
         emptyState: document.getElementById('emptyState'),
         deviceDetail: document.getElementById('deviceDetail'),
@@ -832,6 +884,8 @@ function bindEvents() {
     els.addDeviceBtn.addEventListener('click', openAddDevice);
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
+    els.deviceListLimit.addEventListener('change', handleDeviceListLimitChange);
+    els.deviceListSearch.addEventListener('input', handleDeviceListSearchInput);
     els.toggleDeviceFiltersBtn.addEventListener('click', toggleDeviceFilters);
     els.deviceTypeFilter.addEventListener('change', handlePendingDeviceFilterChange);
     els.deviceLicenseFilter.addEventListener('change', handlePendingDeviceFilterChange);
@@ -860,6 +914,7 @@ function bindEvents() {
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
     els.deviceList.addEventListener('click', handleDeviceListClick);
+    els.deviceListPagination.addEventListener('click', handleDevicePaginationClick);
     els.requestGrid.addEventListener('click', handleRequestGridClick);
     els.supplierListBody.addEventListener('click', handleSupplierListClick);
     els.modelListBody.addEventListener('click', handleModelListClick);
@@ -1059,16 +1114,6 @@ function handleDeviceListClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button) return;
     const {action, imei, supplier, model} = button.dataset;
-    if (action === 'devicePagePrev') {
-        state.deviceListPage = Math.max(1, state.deviceListPage - 1);
-        void loadSummary();
-        return;
-    }
-    if (action === 'devicePageNext') {
-        state.deviceListPage += 1;
-        void loadSummary();
-        return;
-    }
     if (action === 'select') selectDevice(imei);
     if (action === 'edit') { event.stopPropagation(); void editDevice(imei, supplier, model); }
 }

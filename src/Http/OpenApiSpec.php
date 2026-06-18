@@ -46,29 +46,18 @@ class OpenApiSpec
                 ['name' => 'System'],
             ],
             'paths' => [
-                '/api/dashboard/summary' => [
-                    'get' => [
-                        'tags' => ['Dashboard'],
-                        'summary' => 'Dashboard summary',
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Dashboard aggregate counts',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DashboardSummaryResponse']]],
-                            ],
-                        ],
-                    ],
-                ],
                 '/api/devices' => [
                     'get' => [
                         'tags' => ['Devices'],
                         'summary' => 'List devices',
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
-                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 5]],
                             ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
                             ['name' => 'licenseId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
                             ['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
                             ['name' => 'model', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                            ['name' => 'q', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => '']],
                         ],
                         'responses' => [
                             '200' => [
@@ -425,21 +414,6 @@ class OpenApiSpec
                             'model' => ['type' => 'string', 'example' => 'HW20PRO'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'example' => '/images/wonlex.png'],
-                        ],
-                    ],
-                    'DashboardCounts' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'online' => ['type' => 'integer', 'example' => 3],
-                            'offline' => ['type' => 'integer', 'example' => 2],
-                            'waiting' => ['type' => 'integer', 'example' => 1],
-                            'failed' => ['type' => 'integer', 'example' => 0],
-                        ],
-                    ],
-                    'DashboardSummaryResponse' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'counts' => ['$ref' => '#/components/schemas/DashboardCounts'],
                         ],
                     ],
                     'CollectionPagination' => [

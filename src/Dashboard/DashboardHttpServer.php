@@ -55,9 +55,6 @@ final class DashboardHttpServer
             if ($method === 'GET' && ($path === '/' || $path === '/dashboard')) {
                 return $this->html($this->page());
             }
-            if ($method === 'GET' && $path === '/api/dashboard/summary') {
-                return $this->json($this->summary());
-            }
             if ($method === 'GET' && $path === '/api/devices') {
                 return $this->json($this->devicesList((string)$request->getUri()->getQuery()));
             }
@@ -155,40 +152,17 @@ final class DashboardHttpServer
         return hash_equals($this->username, $username) && hash_equals($this->password, $password);
     }
 
-    private function summary(): array
-    {
-        $devices = $this->store->devices();
-        $online = count(array_filter($devices, static fn(array $device): bool => (bool)($device['online'] ?? false)));
-        $waiting = 0;
-        $failed = 0;
-        foreach ($devices as $device) {
-            foreach ($this->store->commands((string)($device['imei'] ?? '')) as $command) {
-                $status = (string)($command['status'] ?? '');
-                $waiting += $status === 'waiting' ? 1 : 0;
-                $failed += in_array($status, ['failed', 'dropped'], true) ? 1 : 0;
-            }
-        }
-
-        return [
-            'counts' => [
-                'online' => $online,
-                'offline' => max(0, count($devices) - $online),
-                'waiting' => $waiting,
-                'failed' => $failed,
-            ],
-        ];
-    }
-
     private function devicesList(string $query = ''): array
     {
         $params = $this->queryParams($query);
         $page = $this->queryPage($params);
-        $limit = $this->queryLimit($params);
+        $limit = $this->queryLimit($params, 5);
         $filters = [
             'deviceType' => $this->queryFilter($params, 'deviceType', 'all'),
             'licenseId' => $this->queryFilter($params, 'licenseId', 'all'),
             'supplier' => $this->queryFilter($params, 'supplier', 'all'),
             'model' => $this->queryFilter($params, 'model', 'all'),
+            'q' => $this->queryFilter($params, 'q', ''),
         ];
         $devices = $this->store->devices();
         $filtered = $this->filterDevices($devices, $filters);
@@ -465,9 +439,9 @@ final class DashboardHttpServer
         return max(1, (int)($params['page'] ?? 1));
     }
 
-    private function queryLimit(array $params): int
+    private function queryLimit(array $params, int $default = self::DEFAULT_COLLECTION_LIMIT): int
     {
-        return max(1, (int)($params['limit'] ?? self::DEFAULT_COLLECTION_LIMIT));
+        return max(1, (int)($params['limit'] ?? $default));
     }
 
     private function queryFilter(array $params, string $key, string $default = 'all'): string
@@ -506,12 +480,55 @@ final class DashboardHttpServer
             $licenseId = DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0'));
             $supplier = trim((string)($device['supplier'] ?? ''));
             $model = trim((string)($device['model'] ?? ''));
+            $query = trim((string)($filters['q'] ?? ''));
 
             return (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType'])
                 && (($filters['licenseId'] ?? 'all') === 'all' || $licenseId === $filters['licenseId'])
                 && (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
-                && (($filters['model'] ?? 'all') === 'all' || $model === $filters['model']);
+                && (($filters['model'] ?? 'all') === 'all' || $model === $filters['model'])
+                && ($query === '' || $this->matchesDeviceQuery($device, $query));
         }));
+    }
+
+    private function matchesDeviceQuery(array $device, string $query): bool
+    {
+        $normalizedQuery = $this->normalizeSearchText($query);
+        $tokens = array_values(array_filter(preg_split('/\s+/u', $normalizedQuery) ?: [], static fn (string $token): bool => $token !== ''));
+        if ($tokens === []) {
+            return true;
+        }
+
+        $haystack = $this->normalizeSearchText(implode(' ', [
+            (string)($device['imei'] ?? ''),
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? ''),
+        ]));
+
+        foreach ($tokens as $token) {
+            if ($token === '') {
+                continue;
+            }
+            if (str_contains($haystack, $token)) {
+                continue;
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    private function normalizeSearchText(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $lower = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+        $normalized = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $lower) ?? $lower;
+        $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? trim($normalized);
+
+        return $normalized;
     }
 
     private function filterDevicesForOptions(array $devices, array $filters, string $excludeKey): array

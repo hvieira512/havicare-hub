@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Hub\Command\DeviceConfigurationCatalog;
 
 require_once __DIR__ . '/components/helpers.php';
+require_once __DIR__ . '/components/pagination.php';
 require_once __DIR__ . '/components/modal.php';
 
 ?>
@@ -56,7 +57,6 @@ require_once __DIR__ . '/components/modal.php';
             <div class="container-fluid">
                 <span class="navbar-brand"><?= icon('fa-satellite-dish', 'me-2') ?>hitHub</span>
                 <div class="d-flex align-items-center gap-2">
-                    <span id="hubCounts" class="navbar-text small"></span>
                     <button id="manageSuppliersBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-building', 'me-1') ?>Fornecedores</button>
                     <button id="manageModelsBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-cubes', 'me-1') ?>Modelos</button>
                 </div>
@@ -65,41 +65,63 @@ require_once __DIR__ . '/components/modal.php';
         <main class="container-fluid py-3">
             <div class="row g-3">
                 <aside id="deviceColumn" class="col-12 col-lg-4">
-                        <div class="card shadow-sm">
-                            <div class="card-header">
-                                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                                    <span><?= icon('fa-microchip', 'me-2') ?>Dispositivos</span>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <button id="toggleDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-filter', 'me-1') ?>Filtros</button>
-                                        <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                <span><?= icon('fa-microchip', 'me-2') ?>Dispositivos</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button id="toggleDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-filter', 'me-1') ?>Filtros</button>
+                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                                </div>
+                            </div>
+                            <div id="deviceFiltersPanel" class="border-top mt-3 pt-3 d-none">
+                                <div class="row g-2">
+                                    <div class="col-12 col-md-3">
+                                        <label for="deviceTypeFilter" class="form-label form-label-sm mb-1 small text-secondary">Tipo</label>
+                                        <select id="deviceTypeFilter" class="form-select form-select-sm"></select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label for="deviceLicenseFilter" class="form-label form-label-sm mb-1 small text-secondary">Licença</label>
+                                        <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label for="deviceSupplierFilter" class="form-label form-label-sm mb-1 small text-secondary">Fornecedor</label>
+                                        <select id="deviceSupplierFilter" class="form-select form-select-sm"></select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label for="deviceModelFilter" class="form-label form-label-sm mb-1 small text-secondary">Modelo</label>
+                                        <select id="deviceModelFilter" class="form-select form-select-sm"></select>
                                     </div>
                                 </div>
-                                <div id="deviceFiltersPanel" class="border-top mt-3 pt-3 d-none">
-                                    <div class="row g-2">
-                                        <div class="col-12 col-md-3">
-                                            <label for="deviceTypeFilter" class="form-label form-label-sm mb-1 small text-secondary">Tipo</label>
-                                            <select id="deviceTypeFilter" class="form-select form-select-sm"></select>
-                                        </div>
-                                        <div class="col-12 col-md-3">
-                                            <label for="deviceLicenseFilter" class="form-label form-label-sm mb-1 small text-secondary">Licença</label>
-                                            <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
-                                        </div>
-                                        <div class="col-12 col-md-3">
-                                            <label for="deviceSupplierFilter" class="form-label form-label-sm mb-1 small text-secondary">Fornecedor</label>
-                                            <select id="deviceSupplierFilter" class="form-select form-select-sm"></select>
-                                        </div>
-                                        <div class="col-12 col-md-3">
-                                            <label for="deviceModelFilter" class="form-label form-label-sm mb-1 small text-secondary">Modelo</label>
-                                            <select id="deviceModelFilter" class="form-select form-select-sm"></select>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-end gap-2 mt-3">
-                                        <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button">Limpar</button>
-                                        <button id="applyDeviceFiltersBtn" class="btn btn-sm btn-primary" type="button">Aplicar filtros</button>
+                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                    <button id="clearDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button">Limpar</button>
+                                    <button id="applyDeviceFiltersBtn" class="btn btn-sm btn-primary" type="button">Aplicar filtros</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="deviceListLimit" class="small text-secondary text-nowrap mb-0">Linhas</label>
+                                    <select id="deviceListLimit" class="form-select form-select-sm w-auto">
+                                        <option value="5">5</option>
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                        <option value="20">20</option>
+                                        <option value="30">30</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                </div>
+                                <div class="flex-grow-1" style="min-width: 220px;">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
+                                        <input id="deviceListSearch" type="search" class="form-control" placeholder="Pesquisar IMEI, fornecedor ou modelo">
                                     </div>
                                 </div>
                             </div>
-                        <div id="deviceList"></div>
+                            <div id="deviceList"></div>
+                            <?= pagination_component('deviceListPagination') ?>
+                        </div>
                     </div>
                     <div id="requestColumn" class="d-none mt-3">
                         <div class="card shadow-sm">
