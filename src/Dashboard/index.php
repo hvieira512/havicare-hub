@@ -32,6 +32,36 @@ require_once __DIR__ . '/components/modal.php';
             padding: 1rem;
         }
 
+        .selected-device-preview {
+            width: 72px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            background: var(--bs-tertiary-bg);
+            flex-shrink: 0;
+        }
+
+        .selected-device-preview img {
+            max-width: 56px;
+            max-height: 56px;
+        }
+
+        .selected-device-facts dt {
+            color: var(--bs-secondary-color);
+            font-size: .8rem;
+            font-weight: 600;
+            margin-bottom: .25rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .selected-device-facts dd {
+            margin-bottom: 0;
+            font-size: .95rem;
+        }
+
         #deviceModal .modal-dialog.modal-fullscreen {
             margin: 1rem;
             width: calc(100vw - 2rem);
@@ -74,11 +104,12 @@ require_once __DIR__ . '/components/modal.php';
     <main class="container-fluid py-3">
         <div class="row g-3">
             <aside id="deviceColumn" class="col-12 col-lg-4">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm h-100">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                            <span><?= icon('fa-microchip', 'me-2') ?>Dispositivos</span>
+                            <span><?= icon('fa-microchip', 'me-2') ?>Dispositivo selecionado</span>
                             <div class="d-flex align-items-center gap-2">
+                                <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher</button>
                                 <button id="toggleDeviceFiltersBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-filter', 'me-1') ?>Filtros</button>
                                 <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
                             </div>
@@ -109,34 +140,31 @@ require_once __DIR__ . '/components/modal.php';
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
-                            <select id="deviceListLimit" class="form-select form-select-sm w-auto">
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                                <option value="15">15</option>
-                                <option value="20">20</option>
-                                <option value="30">30</option>
-                                <option value="50">50</option>
-                            </select>
-                            <div class="flex-grow-1" style="min-width: 220px;">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
-                                    <input id="deviceListSearch" type="search" class="form-control" placeholder="Pesquisar IMEI, fornecedor ou modelo">
+                        <div id="deviceSelectionEmptyState" class="text-center text-secondary py-5">
+                            <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
+                            <h1 class="h5 mt-3">Selecione um dispositivo</h1>
+                            <p class="small mb-3">Escolha um dispositivo para ver o resumo operacional, pedir dados e analisar a atividade recente.</p>
+                            <button id="emptyStateSelectDeviceBtn" class="btn btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher dispositivo</button>
+                        </div>
+                        <div id="selectedDevicePanel" class="d-none">
+                            <div class="d-flex align-items-start gap-3 mb-4">
+                                <div id="selectedDevicePreview" class="selected-device-preview"></div>
+                                <div class="min-width-0 flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                        <h1 class="h4 mb-0 text-break" id="selectedDeviceTitle"></h1>
+                                        <span id="selectedDeviceBadge" class="badge"></span>
+                                    </div>
+                                    <div id="selectedDeviceMeta" class="text-secondary small"></div>
                                 </div>
                             </div>
-                        </div>
-                        <div id="deviceList"></div>
-                        <?= pagination_component('deviceListPagination') ?>
-                    </div>
-                </div>
-                <div id="requestColumn" class="d-none mt-3">
-                    <div class="card shadow-sm">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span><?= icon('fa-paper-plane', 'me-2') ?>Pedir dados ao dispositivo</span>
-                            <span id="requestCardCount" class="small text-secondary"></span>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3" id="requestGrid"></div>
+                            <dl id="selectedDeviceFacts" class="selected-device-facts row g-3 mb-0"></dl>
+                            <div class="border-top pt-4 mt-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="fw-semibold"><?= icon('fa-paper-plane', 'me-2') ?>Pedir dados ao dispositivo</span>
+                                    <span id="requestCardCount" class="small text-secondary"></span>
+                                </div>
+                                <div class="row g-3" id="requestGrid"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -144,7 +172,7 @@ require_once __DIR__ . '/components/modal.php';
             <section id="detailColumn" class="col-12 col-lg-8">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <div id="emptyState" class="text-center text-secondary py-5">
+                        <div id="detailEmptyState" class="text-center text-secondary py-5">
                             <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
                             <h1 class="h5 mt-3">Selecione um dispositivo</h1>
                         </div>
@@ -213,6 +241,40 @@ require_once __DIR__ . '/components/modal.php';
     <?php require __DIR__ . '/components/modals/device.php'; ?>
     <?php require __DIR__ . '/components/modals/supplier.php'; ?>
     <?php require __DIR__ . '/components/modals/model.php'; ?>
+    <div class="modal fade" id="deviceSelectorModal" tabindex="-1" aria-labelledby="deviceSelectorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deviceSelectorModalLabel">Selecionar dispositivo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                        <select id="deviceListLimit" class="form-select form-select-sm w-auto">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                        </select>
+                        <div class="flex-grow-1" style="min-width: 220px;">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
+                                <input id="deviceListSearch" type="search" class="form-control" placeholder="Pesquisar IMEI, fornecedor ou modelo">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="deviceList"></div>
+                    <?= pagination_component('deviceListPagination') ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="openAddDeviceFromSelectorBtn"><?= icon('fa-plus', 'me-1') ?>Adicionar dispositivo</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         window.dashboardConfigurationCatalog = <?= json_encode([

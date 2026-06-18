@@ -31,6 +31,7 @@ let connectionChartRoot = null;
 
 let els = {};
 let deviceModal = null;
+let deviceSelectorModal = null;
 let supplierModal = null;
 let modelModal = null;
 const configFeedbackTimers = new Map();
@@ -38,6 +39,8 @@ const configPhaseTimers = new Map();
 const configPollTimers = new Map();
 let deviceConfigRefreshPromise = null;
 let deviceSearchTimer = null;
+const FILTERS_STORAGE_KEY = 'hub-dashboard-device-filters';
+const SELECTED_DEVICE_STORAGE_KEY = 'hub-dashboard-selected-device';
 const deviceTypeOptions = [
     {value: 'watch', label: 'Relógios'},
     {value: 'ncs', label: 'NCS'},
@@ -100,13 +103,15 @@ async function loadSummary() {
     };
     state.deviceListPageSize = state.summary.devicePagination.limit || state.deviceListPageSize;
     state.deviceListPage = state.summary.devicePagination.page || 1;
-    renderSummary();
+    renderDeviceSelector();
     if (state.selectedImei) {
         await loadDevice(state.selectedImei);
+    } else {
+        renderSelection();
     }
 }
 
-function renderSummary() {
+function renderDeviceSelector() {
     if (els.deviceListLimit) {
         els.deviceListLimit.value = String(state.deviceListPageSize);
     }
@@ -160,8 +165,6 @@ function renderSummary() {
 
     els.deviceList.innerHTML = groupMarkup || emptyPanel('Não há dispositivos para o filtro selecionado.');
     renderDevicePagination(state.summary.devicePagination);
-
-    renderSelection();
 }
 
 function renderDevicePagination(pagination) {
@@ -264,24 +267,45 @@ function handleDevicePaginationClick(event) {
 
 async function selectDevice(imei) {
     selectImei(imei);
-    await loadDevice(imei);
+    saveSelectedDeviceToStorage();
+    const loaded = await loadDevice(imei);
+    if (loaded) {
+        deviceSelectorModal?.hide();
+    }
 }
 
 async function loadDevice(imei) {
     const detail = await api.device(imei);
+    if (detail?.error) {
+        if (state.selectedImei === imei) {
+            clearSelection();
+            clearSelectedDeviceFromStorage();
+        }
+        renderSelection();
+        return false;
+    }
     state.selectedDetail = detail;
     renderSelection();
+    return true;
 }
 
 function renderSelection() {
-    els.deviceColumn.className = 'col-12 col-lg-4';
-    els.detailColumn.className = 'col-12 col-lg-8';
-    els.emptyState.classList.toggle('d-none', !!state.selectedDetail);
+    els.deviceSelectionEmptyState.classList.toggle('d-none', !!state.selectedDetail);
+    els.selectedDevicePanel.classList.toggle('d-none', !state.selectedDetail);
+    els.detailEmptyState.classList.toggle('d-none', !!state.selectedDetail);
     els.deviceDetail.classList.toggle('d-none', !state.selectedDetail);
-    els.requestColumn.classList.toggle('d-none', !state.selectedDetail);
-    if (!state.selectedDetail) return;
+    if (!state.selectedDetail) {
+        if (connectionChartRoot) {
+            connectionChartRoot.dispose();
+            connectionChartRoot = null;
+        }
+        els.requestCardCount.textContent = '';
+        els.requestGrid.innerHTML = '';
+        return;
+    }
 
     const device = state.selectedDetail.device;
+    renderSelectedDeviceSummary(device);
     els.detailTitle.textContent = device.imei;
     els.detailMeta.textContent = `${deviceTypeLabel(normalizeDeviceType(device.deviceType))} · licença ${device.licenseId ?? '0'} · ${device.supplier ?? ''} ${device.model ?? ''} · visto ${ago(device.lastSeenAt)}`;
     els.detailBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
@@ -311,6 +335,41 @@ function renderSelection() {
     renderRequestCards(state.selectedDetail.commands || [], telemetry);
     renderDownlinkRequests(commands);
     renderConnectionTimeline(connectionEvents);
+}
+
+function renderSelectedDeviceSummary(device) {
+    const supplier = String(device.supplier || '');
+    const model = String(device.model || '');
+    const modelInfo = findModelInfo(supplier, model);
+    const facts = [
+        {label: 'Tipo', value: deviceTypeLabel(normalizeDeviceType(device.deviceType))},
+        {label: 'Licença', value: String(device.licenseId || '0')},
+        {label: 'Fornecedor', value: supplier || '-'},
+        {label: 'Modelo', value: model || '-'},
+        {label: 'Última ligação', value: when(device.lastSeenAt) || 'Sem registo'},
+    ];
+
+    if (device.protocol) {
+        facts.push({label: 'Protocolo', value: String(device.protocol)});
+    }
+    if (device.simNumber) {
+        facts.push({label: 'SIM', value: String(device.simNumber)});
+    }
+    if (device.deviceId && String(device.deviceId) !== String(device.imei)) {
+        facts.push({label: 'Device ID', value: String(device.deviceId)});
+    }
+
+    els.selectedDevicePreview.innerHTML = modelImageHtml(modelInfo);
+    els.selectedDeviceTitle.textContent = device.imei;
+    els.selectedDeviceMeta.textContent = `${supplier || 'Sem fornecedor'}${model ? ` · ${model}` : ''}`;
+    els.selectedDeviceBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
+    els.selectedDeviceBadge.textContent = device.online ? 'ligado' : 'desligado';
+    els.selectedDeviceFacts.innerHTML = facts.map(item => `
+        <div class="col-12 col-sm-6">
+            <dt>${esc(item.label)}</dt>
+            <dd class="text-break">${esc(item.value)}</dd>
+        </div>
+    `).join('');
 }
 
 function allDetailItems() {
@@ -877,11 +936,16 @@ async function saveDevice() {
         if (!imei || !supplier || !model) { alert('IMEI, fornecedor e modelo são obrigatórios'); return; }
     }
 
+    const originalImei = els.deviceImei.dataset.originalImei || '';
     if (deviceType !== 'watch' && !licenseId) { alert('A licença é obrigatória para NCS e Radars'); return; }
 
-    const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, els.deviceImei.dataset.originalImei || '');
+    const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, originalImei);
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
+    if (state.selectedImei && originalImei && state.selectedImei === originalImei) {
+        selectImei(imei);
+        saveSelectedDeviceToStorage();
+    }
     deviceModal.hide();
     await loadSummary();
 }
@@ -891,6 +955,7 @@ async function deleteDevice(imei) {
     await api.deleteDevice(imei);
     if (state.selectedImei === imei) {
         clearSelection();
+        clearSelectedDeviceFromStorage();
     }
     await loadSummary();
 }
@@ -903,6 +968,7 @@ function handleDeleteDeviceBtnClick() {
         deviceModal.hide();
         if (state.selectedImei === imei) {
             clearSelection();
+            clearSelectedDeviceFromStorage();
         }
         loadSummary();
     });
@@ -1063,7 +1129,6 @@ function revokeModelPreviewUrl() {
 function cacheElements() {
     els = {
         deviceColumn: document.getElementById('deviceColumn'),
-        requestColumn: document.getElementById('requestColumn'),
         deviceList: document.getElementById('deviceList'),
         deviceListLimit: document.getElementById('deviceListLimit'),
         deviceListSearch: document.getElementById('deviceListSearch'),
@@ -1071,7 +1136,14 @@ function cacheElements() {
         deviceListPaginationSummary: document.getElementById('deviceListPaginationSummary'),
         deviceListPaginationControls: document.getElementById('deviceListPaginationControls'),
         detailColumn: document.getElementById('detailColumn'),
-        emptyState: document.getElementById('emptyState'),
+        deviceSelectionEmptyState: document.getElementById('deviceSelectionEmptyState'),
+        selectedDevicePanel: document.getElementById('selectedDevicePanel'),
+        selectedDevicePreview: document.getElementById('selectedDevicePreview'),
+        selectedDeviceTitle: document.getElementById('selectedDeviceTitle'),
+        selectedDeviceMeta: document.getElementById('selectedDeviceMeta'),
+        selectedDeviceBadge: document.getElementById('selectedDeviceBadge'),
+        selectedDeviceFacts: document.getElementById('selectedDeviceFacts'),
+        detailEmptyState: document.getElementById('detailEmptyState'),
         deviceDetail: document.getElementById('deviceDetail'),
         detailTitle: document.getElementById('detailTitle'),
         detailMeta: document.getElementById('detailMeta'),
@@ -1094,6 +1166,9 @@ function cacheElements() {
         applyDetailFiltersBtn: document.getElementById('applyDetailFiltersBtn'),
         clearDetailFiltersBtn: document.getElementById('clearDetailFiltersBtn'),
         addDeviceBtn: document.getElementById('addDeviceBtn'),
+        openDeviceSelectorBtn: document.getElementById('openDeviceSelectorBtn'),
+        emptyStateSelectDeviceBtn: document.getElementById('emptyStateSelectDeviceBtn'),
+        openAddDeviceFromSelectorBtn: document.getElementById('openAddDeviceFromSelectorBtn'),
         toggleDeviceFiltersBtn: document.getElementById('toggleDeviceFiltersBtn'),
         deviceFiltersPanel: document.getElementById('deviceFiltersPanel'),
         deviceModalLabel: document.getElementById('deviceModalLabel'),
@@ -1143,6 +1218,12 @@ function cacheElements() {
 
 function bindEvents() {
     els.addDeviceBtn.addEventListener('click', openAddDevice);
+    els.openAddDeviceFromSelectorBtn.addEventListener('click', () => {
+        deviceSelectorModal?.hide();
+        openAddDevice();
+    });
+    els.openDeviceSelectorBtn.addEventListener('click', () => deviceSelectorModal?.show());
+    els.emptyStateSelectDeviceBtn.addEventListener('click', () => deviceSelectorModal?.show());
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
     els.deviceListLimit.addEventListener('change', handleDeviceListLimitChange);
@@ -1228,11 +1309,9 @@ function handlePendingDeviceFilterChange() {
     renderDeviceFilterControls();
 }
 
-const STORAGE_KEY = 'hub-dashboard-device-filters';
-
 function loadFiltersFromStorage() {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = localStorage.getItem(FILTERS_STORAGE_KEY);
         if (stored) {
             const parsed = JSON.parse(stored);
             if (parsed && typeof parsed === 'object') {
@@ -1251,14 +1330,39 @@ function loadFiltersFromStorage() {
 
 function saveFiltersToStorage() {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.deviceFilters));
+        localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(state.deviceFilters));
     } catch {
     }
 }
 
 function clearFiltersFromStorage() {
     try {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(FILTERS_STORAGE_KEY);
+    } catch {
+    }
+}
+
+function loadSelectedDeviceFromStorage() {
+    try {
+        const stored = localStorage.getItem(SELECTED_DEVICE_STORAGE_KEY);
+        return stored ? String(stored) : null;
+    } catch {
+        return null;
+    }
+}
+
+function saveSelectedDeviceToStorage() {
+    try {
+        if (state.selectedImei) {
+            localStorage.setItem(SELECTED_DEVICE_STORAGE_KEY, state.selectedImei);
+        }
+    } catch {
+    }
+}
+
+function clearSelectedDeviceFromStorage() {
+    try {
+        localStorage.removeItem(SELECTED_DEVICE_STORAGE_KEY);
     } catch {
     }
 }
@@ -1864,6 +1968,7 @@ function createReminderRow() {
 export function startDashboard() {
     cacheElements();
     deviceModal = new bootstrap.Modal(document.getElementById('deviceModal'));
+    deviceSelectorModal = new bootstrap.Modal(document.getElementById('deviceSelectorModal'));
     supplierModal = new bootstrap.Modal(document.getElementById('supplierModal'));
     modelModal = new bootstrap.Modal(document.getElementById('modelModal'));
     bindEvents();
@@ -1872,6 +1977,10 @@ export function startDashboard() {
     if (stored) {
         state.deviceFilters = stored;
         state.pendingDeviceFilters = {...stored};
+    }
+    const storedSelectedImei = loadSelectedDeviceFromStorage();
+    if (storedSelectedImei) {
+        state.selectedImei = storedSelectedImei;
     }
 
     loadSummary();
