@@ -129,7 +129,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         <div class="fw-bold ${tone.text}">${esc(commandLabel(command))}</div>
         </div>
         <div class="d-flex justify-content-between align-items-center">
-        <div class="fw-semibold ${lastTelemetry ? '' : 'text-secondary'}">${esc(lastValue)}</div>
+        <div class="fw-semibold ${lastTelemetry ? tone.text : 'text-secondary'}">${esc(lastValue)}</div>
         <button class="btn btn-primary btn-sm" data-command="${esc(command.command)}" data-action="sendCommand" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
         </div>
         </div>
