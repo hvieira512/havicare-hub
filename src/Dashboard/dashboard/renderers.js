@@ -123,7 +123,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         <div class="card h-100 border-${tone.border}">
         <div class="card-body">
         <div class="d-flex align-items-center gap-2 mb-3">
-        <div class="bg-${tone.border} bg-opacity-75 rounded-3 d-flex align-items-center justify-content-center text-white" style="width:36px;height:36px;flex-shrink:0;">
+        <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
         <div class="fw-bold ${tone.text}">${esc(commandLabel(command))}</div>

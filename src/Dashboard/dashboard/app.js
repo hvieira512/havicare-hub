@@ -633,7 +633,7 @@ function renderConnectionTimeline(rows) {
 
     const connectedCount = events.filter(e => e.type === 'device.connected').length;
     const disconnectedCount = events.filter(e => e.type === 'device.disconnected').length;
-    els.connectionStats.textContent = events.length ? `${connectedCount} ligações · ${disconnectedCount} desligamentos` : '';
+    els.connectionStats.textContent = events.length ? `${connectedCount} conexões · ${disconnectedCount} desconexões` : '';
 
     if (events.length < 2) {
         if (connectionChartRoot) {
