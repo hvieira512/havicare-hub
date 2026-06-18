@@ -65,6 +65,12 @@ require_once __DIR__ . '/components/modal.php';
             font-size: .95rem;
         }
 
+        .navbar-brand img {
+            height: 30px;
+            width: auto;
+            display: block;
+        }
+
         #deviceModal .modal-dialog.modal-fullscreen {
             margin: 1rem;
             width: calc(100vw - 2rem);
@@ -97,7 +103,7 @@ require_once __DIR__ . '/components/modal.php';
 <body class="bg-body-tertiary">
     <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
         <div class="container-fluid">
-            <span class="navbar-brand"><?= icon('fa-satellite-dish', 'me-2') ?>hitHub</span>
+            <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
             <div class="d-flex align-items-center gap-2">
                 <button id="manageSuppliersBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-building', 'me-1') ?>Fornecedores</button>
                 <button id="manageModelsBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-cubes', 'me-1') ?>Modelos</button>
