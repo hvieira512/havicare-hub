@@ -651,6 +651,7 @@ function renderConnectionTimeline(rows) {
     }
 
     connectionChartRoot = am5.Root.new(els.connectionTimeline);
+    connectionChartRoot._logo?.dispose();
 
     connectionChartRoot.setThemes([am5themes_Animated.new(connectionChartRoot)]);
 
@@ -672,19 +673,20 @@ function renderConnectionTimeline(rows) {
         }),
         tooltip: am5.Tooltip.new(connectionChartRoot, {}),
     }));
+    dateAxis.get('renderer').grid.template.set('visible', false);
 
     const valueAxis = chart.yAxes.push(am5xy.ValueAxis.new(connectionChartRoot, {
         renderer: am5xy.AxisRendererY.new(connectionChartRoot, {}),
-        min: -0.5,
-        max: 1.5,
+        min: -0.2,
+        max: 0.2,
         strictMinMax: true,
-        numberFormat: "#'##",
     }));
-    valueAxis.get('renderer').labels.template.set('text', '');
-    valueAxis.get('renderer').setAll({minGridDistance: Infinity});
+    valueAxis.get('renderer').grid.template.set('visible', false);
+    valueAxis.get('renderer').labels.template.set('forceHidden', true);
+    valueAxis.get('renderer').set('visible', false);
 
-    const data = connectionStepData(events);
-    const series = chart.series.push(am5xy.StepLineSeries.new(connectionChartRoot, {
+    const data = connectionTimelineData(events);
+    const series = chart.series.push(am5xy.LineSeries.new(connectionChartRoot, {
         name: 'Ligação',
         xAxis: dateAxis,
         yAxis: valueAxis,
@@ -692,7 +694,6 @@ function renderConnectionTimeline(rows) {
         valueXField: 'date',
         stroke: am5.color(0x6c757d),
         strokeWidth: 2,
-        noRisers: false,
         tooltip: am5.Tooltip.new(connectionChartRoot, {
             labelText: '{label} em {valueX.formatDate("dd/MM/yyyy HH:mm")}',
         }),
@@ -720,22 +721,16 @@ function renderConnectionTimeline(rows) {
     }));
 }
 
-function connectionStepData(events) {
-    const data = [];
-    let currentState = events.length > 0 && events[0].type === 'device.disconnected' ? 1 : 0;
-
-    for (const event of events) {
-        const time = eventTime(event);
-        if (!time) continue;
-        const newState = event.type === 'device.connected' ? 1 : 0;
-        const label = newState ? 'Ligado' : 'Desligado';
-        const color = newState ? '#198754' : '#dc3545';
-        data.push({date: time, value: currentState, label, bulletColor: color});
-        currentState = newState;
-        data.push({date: time, value: currentState, label, bulletColor: color});
-    }
-
-    return data;
+function connectionTimelineData(events) {
+    return events.map(event => {
+        const isConnected = event.type === 'device.connected';
+        return {
+            date: eventTime(event),
+            value: 0,
+            label: isConnected ? 'Ligado' : 'Desligado',
+            bulletColor: isConnected ? '#198754' : '#dc3545',
+        };
+    }).filter(point => point.date > 0);
 }
 
 function expectedReplies(command) {
