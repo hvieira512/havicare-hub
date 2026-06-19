@@ -257,10 +257,10 @@ if ($dashboardEnabled) {
 
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");
 Logger::channel('hub')->info("Redis downlink queue: {$redisParameters['host']}:{$redisParameters['port']} ttl={$downlinkQueueTtlSeconds}s");
-Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/status'));
-Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/events'));
-Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/raw'));
-Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('0/watch/{deviceKey}/downlink'));
+Logger::channel('hub')->info('MQTT status topics: ' . $mqttBridge->topic('{licenseId}/watch/{deviceKey}/status'));
+Logger::channel('hub')->info('MQTT event topics: ' . $mqttBridge->topic('{licenseId}/watch/{deviceKey}/events'));
+Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('{licenseId}/watch/{deviceKey}/raw'));
+Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('{licenseId}/watch/{deviceKey}/downlink'));
 if ($ncsIngress !== null) {
     Logger::channel('hub')->info("NCS ingress topics: {$ncsTopicFilter} -> " . $mqttBridge->topic('{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}'));
 }

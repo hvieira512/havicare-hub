@@ -459,10 +459,6 @@ final class Devices
 
     private function normalizeLicenseId(string $licenseId, string $deviceType): string
     {
-        if ($deviceType === 'watch') {
-            return '0';
-        }
-
         $normalized = trim($licenseId);
 
         return $normalized === '' ? '' : $normalized;

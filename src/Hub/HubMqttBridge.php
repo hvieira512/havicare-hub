@@ -50,7 +50,7 @@ class HubMqttBridge
 
     public function downlinkTopicFilter(): string
     {
-        return $this->topic($this->deviceTopic(self::DEFAULT_LICENSE_ID, self::DEFAULT_DEVICE_TYPE, '+', 'downlink'));
+        return $this->topic($this->deviceTopic('+', self::DEFAULT_DEVICE_TYPE, '+', 'downlink'));
     }
 
     private function publish(string $topic, array $payload, bool $retain = false, int $qualityOfService = MqttClient::QOS_AT_MOST_ONCE): void
