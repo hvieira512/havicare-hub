@@ -38,6 +38,16 @@ export const state = {
         loading: false,
     },
     modelModalSuppliers: [],
+    modelModal: {
+        availableRequests: [],
+        enabledRequests: [],
+    },
+    settingsModal: {
+        section: 'suppliers',
+        capabilitySupplier: '',
+        capabilityModelId: null,
+        capabilityEnabledRequests: [],
+    },
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),
     deviceListPage: 1,

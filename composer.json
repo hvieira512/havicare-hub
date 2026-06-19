@@ -11,15 +11,11 @@
         "monolog/monolog": "^3.10",
         "php-mqtt/client": "^2.3",
         "vlucas/phpdotenv": "^5.6",
-        "predis/predis": "^2.2",
-        "laravel/framework": "^12.0"
+        "predis/predis": "^2.2"
     },
     "autoload": {
         "psr-4": {
-            "Hub\\": ["src/Hub/", "src/"],
-            "App\\": "app/",
-            "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Hub\\": ["src/Hub/", "src/"]
         }
     },
     "scripts": {

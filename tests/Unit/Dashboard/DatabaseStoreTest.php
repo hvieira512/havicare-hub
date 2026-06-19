@@ -15,10 +15,45 @@ final class DatabaseStoreTest extends TestCase
 
         try {
             $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
-            self::assertSame(5, count($db->models->all()));
+            self::assertSame(6, count($db->models->all()));
+            self::assertSame('vivistar-iw', $db->models->protocolForModel('Vivistar', 'L08 PRO'));
+            $model = $db->models->find('Vivistar', 'L08 PRO');
+            self::assertIsArray($model);
+            self::assertSame(
+                ['BP16', 'BP87', 'BPXL', 'BPXT', 'BPXY', 'BPXZ'],
+                $db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id'])
+            );
 
             $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
-            self::assertSame(5, count($db->models->all()));
+            self::assertSame(6, count($db->models->all()));
+            self::assertSame('vivistar-iw', $db->models->protocolForModel('Vivistar', 'L08 PRO'));
+            $model = $db->models->find('Vivistar', 'L08 PRO');
+            self::assertIsArray($model);
+            self::assertSame(
+                ['BP16', 'BP87', 'BPXL', 'BPXT', 'BPXY', 'BPXZ'],
+                $db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id'])
+            );
+        } finally {
+            unlink($path);
+        }
+    }
+
+    public function testModelRequestCapabilitiesCanBeReplacedPerModel(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'hub-dashboard-');
+        self::assertIsString($path);
+
+        try {
+            $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+            $model = $db->models->find('Vivistar', 'L08 Pro');
+            self::assertIsArray($model);
+
+            $db->modelRequestCapabilities->replaceForModelId((int)$model['id'], ['BPXL', 'BP16']);
+
+            self::assertSame(
+                ['BP16', 'BPXL'],
+                $db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id'])
+            );
         } finally {
             unlink($path);
         }

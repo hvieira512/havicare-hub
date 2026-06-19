@@ -4,6 +4,9 @@ namespace Tests\Unit\Dashboard;
 
 use GuzzleHttp\Psr7\Utils;
 use GuzzleHttp\Psr7\UploadedFile;
+use Hub\Api\Routes\Models;
+use Hub\Dashboard\DashboardDataAccess;
+use Hub\Dashboard\DashboardDatabase;
 use Hub\Dashboard\DashboardHttpServer;
 use PHPUnit\Framework\TestCase;
 
@@ -36,10 +39,10 @@ final class DashboardHttpServerTest extends TestCase
         $bytes = (string)ob_get_clean();
 
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
-        $method = new \ReflectionMethod(DashboardHttpServer::class, 'storeModelImage');
+        $api = new Models(DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared')));
+        $method = new \ReflectionMethod(Models::class, 'storeModelImage');
 
-        $route = $method->invoke($server, $upload);
+        $route = $method->invoke($api, $upload);
         self::assertIsString($route);
         self::assertMatchesRegularExpression('#^/model-images/[a-f0-9]{32}\.jpg$#', $route);
 
@@ -68,10 +71,10 @@ final class DashboardHttpServerTest extends TestCase
         $bytes = $this->insertPngChunk((string)ob_get_clean(), 'iCCP', "profile\0\0invalid-profile");
 
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
-        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
-        $method = new \ReflectionMethod(DashboardHttpServer::class, 'storeModelImage');
+        $api = new Models(DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared')));
+        $method = new \ReflectionMethod(Models::class, 'storeModelImage');
 
-        $route = $method->invoke($server, $upload);
+        $route = $method->invoke($api, $upload);
         self::assertIsString($route);
         self::assertMatchesRegularExpression('#^/model-images/[a-f0-9]{32}\.jpg$#', $route);
 

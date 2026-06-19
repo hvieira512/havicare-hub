@@ -22,6 +22,13 @@ ob_start();
                 <label for="modelImage" class="form-label">Imagem</label>
                 <input type="file" class="form-control" id="modelImage" accept="image/*">
             </div>
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="form-label mb-0">Pedidos disponíveis</div>
+                    <span id="modelRequestSummary" class="small text-secondary"></span>
+                </div>
+                <div id="modelRequestCapabilities" class="border rounded bg-body-tertiary p-3 vstack gap-2"></div>
+            </div>
             <div class="d-flex justify-content-end gap-2 mt-auto">
                 <button id="resetModelBtn" type="button" class="btn btn-outline-secondary">Cancelar</button>
                 <button id="saveModelBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
@@ -45,4 +52,3 @@ ob_start();
 $footer = (string) ob_get_clean();
 
 render_modal('modelModal', 'Modelos', $body, $footer, 'modal-xl');
-

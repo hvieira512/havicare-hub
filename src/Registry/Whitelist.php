@@ -2,17 +2,17 @@
 
 namespace Hub\Registry;
 
-use App\Repositories\DashboardWhitelistRepository;
 use Hub\Dashboard\DeviceMetadata;
+use Hub\Dashboard\Repository\WhitelistRepository;
 
 class Whitelist
 {
     /** @var array<string, array{supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}> */
     private array $devices;
     private string $filePath;
-    private ?DashboardWhitelistRepository $db;
+    private ?WhitelistRepository $db;
 
-    public function __construct(?string $filePath = null, ?DashboardWhitelistRepository $db = null)
+    public function __construct(?string $filePath = null, ?WhitelistRepository $db = null)
     {
         $this->filePath = $filePath ?? __DIR__ . '/../../config/whitelist.json';
         $this->db = $db;

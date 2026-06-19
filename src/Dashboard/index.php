@@ -72,19 +72,22 @@ require_once __DIR__ . '/components/modal.php';
             display: block;
         }
 
-        #deviceModal .modal-dialog.modal-fullscreen {
+        #deviceModal .modal-dialog.modal-fullscreen,
+        #settingsModal .modal-dialog.modal-fullscreen {
             margin: 1rem;
             width: calc(100vw - 2rem);
             max-width: none;
             height: calc(100% - 2rem);
         }
 
-        #deviceModal .modal-dialog.modal-fullscreen .modal-content {
+        #deviceModal .modal-dialog.modal-fullscreen .modal-content,
+        #settingsModal .modal-dialog.modal-fullscreen .modal-content {
             height: 100%;
         }
 
         @media (max-width: 575.98px) {
-            #deviceModal .modal-dialog.modal-fullscreen {
+            #deviceModal .modal-dialog.modal-fullscreen,
+            #settingsModal .modal-dialog.modal-fullscreen {
                 margin: 0;
                 width: 100vw;
                 height: 100%;
@@ -97,6 +100,10 @@ require_once __DIR__ . '/components/modal.php';
             .device-modal-shell .nav-pills {
                 width: 100%;
             }
+
+            .settings-modal-shell .nav-pills {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -106,8 +113,7 @@ require_once __DIR__ . '/components/modal.php';
         <div class="container-fluid">
             <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
             <div class="d-flex align-items-center gap-2">
-                <button id="manageSuppliersBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-building', 'me-1') ?>Fornecedores</button>
-                <button id="manageModelsBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-cubes', 'me-1') ?>Modelos</button>
+                <button id="manageSettingsBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-sliders', 'me-1') ?>Definições</button>
             </div>
         </div>
     </nav>
@@ -215,8 +221,7 @@ require_once __DIR__ . '/components/modal.php';
     </main>
 
     <?php require __DIR__ . '/components/modals/device.php'; ?>
-    <?php require __DIR__ . '/components/modals/supplier.php'; ?>
-    <?php require __DIR__ . '/components/modals/model.php'; ?>
+    <?php require __DIR__ . '/components/modals/settings.php'; ?>
     <div class="modal fade" id="deviceSelectorModal" tabindex="-1" aria-labelledby="deviceSelectorModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">

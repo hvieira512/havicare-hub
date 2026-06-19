@@ -17,6 +17,15 @@ CREATE TABLE IF NOT EXISTS models (
     UNIQUE(supplier_id, model)
 );
 
+CREATE TABLE IF NOT EXISTS model_request_capabilities (
+    model_id INTEGER NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+    downlink_command TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (model_id, downlink_command)
+);
+
 CREATE TABLE IF NOT EXISTS whitelist (
     imei TEXT PRIMARY KEY,
     supplier TEXT NOT NULL,
@@ -76,3 +85,4 @@ CREATE INDEX IF NOT EXISTS idx_telemetry_recorded ON telemetry(recorded_at);
 CREATE INDEX IF NOT EXISTS idx_events_imei ON events(imei);
 CREATE INDEX IF NOT EXISTS idx_raw_payloads_imei ON raw_payloads(imei);
 CREATE INDEX IF NOT EXISTS idx_device_configurations_imei ON device_configurations(imei);
+CREATE INDEX IF NOT EXISTS idx_model_request_capabilities_model ON model_request_capabilities(model_id);

@@ -2,20 +2,22 @@
 
 namespace Hub\Dashboard;
 
-use App\Repositories\DashboardDeviceConfigurationRepository;
-use App\Repositories\DashboardHistoryRepository;
-use App\Repositories\DashboardModelRepository;
-use App\Repositories\DashboardSupplierRepository;
-use App\Repositories\DashboardWhitelistRepository;
+use Hub\Dashboard\Repository\DeviceConfigurationRepository;
+use Hub\Dashboard\Repository\HistoryRepository;
+use Hub\Dashboard\Repository\ModelRepository;
+use Hub\Dashboard\Repository\ModelRequestCapabilityRepository;
+use Hub\Dashboard\Repository\SupplierRepository;
+use Hub\Dashboard\Repository\WhitelistRepository;
 
 final class DashboardDataAccess
 {
     public function __construct(
-        public readonly DashboardSupplierRepository $suppliers,
-        public readonly DashboardModelRepository $models,
-        public readonly DashboardWhitelistRepository $whitelist,
-        public readonly DashboardHistoryRepository $history,
-        public readonly DashboardDeviceConfigurationRepository $deviceConfigurations,
+        public readonly SupplierRepository $suppliers,
+        public readonly ModelRepository $models,
+        public readonly ModelRequestCapabilityRepository $modelRequestCapabilities,
+        public readonly WhitelistRepository $whitelist,
+        public readonly HistoryRepository $history,
+        public readonly DeviceConfigurationRepository $deviceConfigurations,
     ) {
     }
 
@@ -24,11 +26,12 @@ final class DashboardDataAccess
         $pdo = $database->pdo();
 
         return new self(
-            new DashboardSupplierRepository($pdo),
-            new DashboardModelRepository($pdo),
-            new DashboardWhitelistRepository($pdo),
-            new DashboardHistoryRepository($pdo),
-            new DashboardDeviceConfigurationRepository($pdo),
+            new SupplierRepository($pdo),
+            new ModelRepository($pdo),
+            new ModelRequestCapabilityRepository($pdo),
+            new WhitelistRepository($pdo),
+            new HistoryRepository($pdo),
+            new DeviceConfigurationRepository($pdo),
         );
     }
 }

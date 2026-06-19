@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard;
 
+use Hub\Command\DeviceCommandCatalog;
 use PDO;
 
 final class DashboardDatabase
@@ -11,6 +12,7 @@ final class DashboardDatabase
     private const DEFAULT_MODELS = [
         ['Wonlex', 'HW20PRO', 'wonlex-json', ''],
         ['Wonlex', 'L08 Pro', 'wonlex-json', ''],
+        ['Vivistar', 'L08 Pro', 'vivistar-iw', ''],
         ['Vivistar', 'VIVISTAR-CARE', 'vivistar-iw', ''],
         ['Vivistar', 'VIVISTAR-LITE', 'vivistar-iw', ''],
         ['4P Touch', '4P-TOUCH', 'four-p-touch', ''],
@@ -33,6 +35,7 @@ final class DashboardDatabase
 
         $this->bootstrapSchema();
         $this->seedDefaults();
+        $this->seedDefaultModelRequestCapabilities();
     }
 
     public function pdo(): PDO
@@ -74,11 +77,6 @@ final class DashboardDatabase
 
     private function seedDefaults(): void
     {
-        $count = (int)$this->pdo->query('SELECT COUNT(*) FROM models')->fetchColumn();
-        if ($count > 0) {
-            return;
-        }
-
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $seen = [];
         $supplierStmt = $this->pdo->prepare('INSERT OR IGNORE INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, 1, ?, ?)');
@@ -103,5 +101,54 @@ final class DashboardDatabase
 
             $modelStmt->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $now, $now]);
         }
+    }
+
+    private function seedDefaultModelRequestCapabilities(): void
+    {
+        $models = $this->pdo
+            ->query('SELECT id, protocol FROM models ORDER BY id')
+            ->fetchAll();
+
+        if (!is_array($models) || $models === []) {
+            return;
+        }
+
+        $insert = $this->pdo->prepare('
+            INSERT OR IGNORE INTO model_request_capabilities (model_id, downlink_command, enabled, created_at, updated_at)
+            VALUES (?, ?, 1, ?, ?)
+        ');
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+
+        foreach ($models as $model) {
+            $modelId = (int)($model['id'] ?? 0);
+            $protocol = (string)($model['protocol'] ?? '');
+            if ($modelId <= 0 || $protocol === '') {
+                continue;
+            }
+
+            foreach ($this->requestCommandsForProtocol($protocol) as $command) {
+                $insert->execute([$modelId, $command, $now, $now]);
+            }
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function requestCommandsForProtocol(string $protocol): array
+    {
+        $commands = [];
+        foreach (DeviceCommandCatalog::commandsForProtocol($protocol) as $entry) {
+            if ((string)($entry['kind'] ?? '') !== 'request') {
+                continue;
+            }
+            $command = trim((string)($entry['command'] ?? ''));
+            if ($command === '') {
+                continue;
+            }
+            $commands[] = $command;
+        }
+
+        return array_values(array_unique($commands));
     }
 }

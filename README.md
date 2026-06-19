@@ -4,6 +4,8 @@ Raw multi-transport device hub that bridges authorized devices to MQTT.
 
 The hub accepts devices over their native transport/protocol, identifies them only enough to enforce the whitelist, then forwards raw bytes through MQTT. It queues offline downlinks in Redis so intermittently connected devices receive pending commands after they reconnect.
 
+The project runs as a plain PHP/ReactPHP application. There is no framework HTTP layer or ORM in the active runtime path.
+
 ## Architecture
 
 ```text
@@ -36,6 +38,8 @@ SQLite dashboard/runtime schema snapshot:
 ```text
 database/schema.sql
 ```
+
+The schema file is the source of truth for local bootstrap. Runtime initialization applies it directly in [src/Dashboard/DashboardDatabase.php](/Users/hugo/dev/hitecosystem-devices-hub/src/Dashboard/DashboardDatabase.php).
 
 Docker:
 

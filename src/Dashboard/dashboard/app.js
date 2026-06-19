@@ -12,6 +12,7 @@ import {
     when,
 } from './format.js';
 import {
+    commandFeature,
     emptyPanel,
     modelImageHtml,
     modelPreviewHtml,
@@ -32,8 +33,7 @@ let connectionChartRoot = null;
 let els = {};
 let deviceModal = null;
 let deviceSelectorModal = null;
-let supplierModal = null;
-let modelModal = null;
+let settingsModal = null;
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
 const configPollTimers = new Map();
@@ -84,6 +84,32 @@ function modelsForSupplier(supplier, models = state.summary.models) {
 
 function findModelInfo(supplier, model, models = state.summary.models) {
     return models.find(entry => entry.supplier === supplier && entry.model === model) || null;
+}
+
+function availableRequestsForSupplier(supplier, models = state.summary.models) {
+    const entry = models.find(model => model.supplier === supplier && Array.isArray(model.availableRequests) && model.availableRequests.length);
+    return Array.isArray(entry?.availableRequests) ? entry.availableRequests : [];
+}
+
+function capabilityGroupKey(command) {
+    const feature = commandFeature(command);
+    if (feature === 'location') return 'localization';
+    if (['heart_rate', 'blood_pressure', 'blood_oxygen', 'temperature', 'ecg', 'hrv', 'blood_sugar'].includes(feature)) {
+        return 'vital_signs';
+    }
+    return 'other';
+}
+
+function capabilityGroupLabel(group) {
+    return {
+        localization: 'Localization',
+        vital_signs: 'Vital Signs',
+        other: 'Other',
+    }[group] || group;
+}
+
+function modelsForCapabilitySupplier(supplier, models = state.summary.models) {
+    return models.filter(model => model.supplier === supplier);
 }
 
 async function loadSummary() {
@@ -1010,10 +1036,24 @@ function handleDeleteDeviceBtnClick() {
     });
 }
 
-async function loadSuppliers() {
-    const data = await api.suppliers({limit: 500});
+async function loadSettingsModal(section = state.settingsModal.section || 'suppliers') {
+    const [suppliersData, modelsData] = await Promise.all([
+        api.suppliers({limit: 500}),
+        api.models({limit: 500}),
+    ]);
+    state.modelModalSuppliers = suppliersData.data || [];
+    state.summary.models = modelsData.data || [];
+    renderSuppliersSection(state.modelModalSuppliers);
+    renderModelsSection(state.summary.models);
+    syncCapabilitiesSelection();
+    renderCapabilitiesSection();
+    activateSettingsSection(section);
+    settingsModal.show();
+}
+
+function renderSuppliersSection(suppliers) {
     els.supplierForm.reset();
-    els.supplierListBody.innerHTML = (data.data || []).map(supplier => `
+    els.supplierListBody.innerHTML = (suppliers || []).map(supplier => `
         <tr>
         <td>${esc(supplier.name)}</td>
         <td>${supplier.model_count}</td>
@@ -1023,7 +1063,6 @@ async function loadSuppliers() {
         <button class="btn btn-outline-danger btn-sm" data-id="${supplier.id}" data-action="deleteSupplier" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`).join('');
-    supplierModal.show();
 }
 
 async function saveSupplier() {
@@ -1032,28 +1071,25 @@ async function saveSupplier() {
     const result = await api.saveSupplier(name);
     if (result.error) { alert(result.error.message || result.error.code); return; }
     els.supplierName.value = '';
-    await loadSuppliers();
+    await loadSettingsModal('suppliers');
 }
 
 async function toggleSupplier(id, enabled) {
     const result = await api.updateSupplier(id, !enabled);
     if (result.error) { alert(result.error.message || result.error.code); return; }
-    await loadSuppliers();
+    await loadSettingsModal('suppliers');
 }
 
 async function deleteSupplier(id) {
     if (!confirm('Apagar fornecedor?')) return;
     const result = await api.deleteSupplier(id);
     if (result.error) { alert(result.error.message || result.error.code); return; }
-    await loadSuppliers();
+    await loadSettingsModal('suppliers');
 }
 
-async function loadModels() {
-    const [modelsData, suppliersData] = await Promise.all([api.models({limit: 500}), api.suppliers({limit: 500})]);
-    state.summary.models = modelsData.data || [];
-    state.modelModalSuppliers = suppliersData.data || [];
+function renderModelsSection(models) {
     resetModelForm();
-    els.modelListBody.innerHTML = (modelsData.data || []).map(model => `
+    els.modelListBody.innerHTML = (models || []).map(model => `
         <tr>
         <td>${modelImageHtml(model)}</td>
         <td>${esc(model.supplier)}</td>
@@ -1063,7 +1099,6 @@ async function loadModels() {
         <button class="btn btn-outline-danger btn-sm" data-id="${model.id}" data-action="deleteModel" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`).join('');
-    modelModal.show();
 }
 
 function resetModelForm(selectedSupplierId = '') {
@@ -1071,7 +1106,6 @@ function resetModelForm(selectedSupplierId = '') {
     els.modelForm.reset();
     delete els.modelForm.dataset.modelId;
     delete els.modelForm.dataset.image;
-    els.modelModalLabel.textContent = 'Modelos';
     els.saveModelBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
 
     const suppliers = state.modelModalSuppliers.map(supplier => ({value: String(supplier.id), label: supplier.name}));
@@ -1094,7 +1128,6 @@ function editModel(id, supplierId, supplier, model, image) {
     els.modelForm.dataset.image = image || '';
     els.modelModel.value = model;
     els.modelImage.value = '';
-    els.modelModalLabel.textContent = 'Editar modelo';
     els.saveModelBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
     renderButtonGroup(
         els.modelSupplierButtons,
@@ -1146,13 +1179,151 @@ async function saveModel() {
     const result = await api.saveModel(els.modelForm.dataset.modelId || '', body);
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
-    await loadModels();
+    await loadSettingsModal('models');
 }
 
 async function deleteModel(id) {
     if (!confirm('Apagar modelo?')) return;
     await api.deleteModel(id);
-    await loadModels();
+    await loadSettingsModal('models');
+}
+
+function activateSettingsSection(section) {
+    state.settingsModal.section = section;
+    const button = {
+        suppliers: els.settingsSuppliersTabBtn,
+        models: els.settingsModelsTabBtn,
+        capabilities: els.settingsCapabilitiesTabBtn,
+    }[section] || els.settingsSuppliersTabBtn;
+    bootstrap.Tab.getOrCreateInstance(button).show();
+}
+
+function syncCapabilitiesSelection() {
+    const availableSuppliers = suppliersFromModels(state.summary.models);
+    const currentSupplier = availableSuppliers.includes(state.settingsModal.capabilitySupplier)
+        ? state.settingsModal.capabilitySupplier
+        : (availableSuppliers[0] || '');
+    state.settingsModal.capabilitySupplier = currentSupplier;
+
+    const models = modelsForCapabilitySupplier(currentSupplier);
+    const currentModel = models.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId))
+        || models[0]
+        || null;
+
+    state.settingsModal.capabilityModelId = currentModel ? Number(currentModel.id) : null;
+    state.settingsModal.capabilityEnabledRequests = Array.isArray(currentModel?.enabledRequests)
+        ? [...currentModel.enabledRequests]
+        : [];
+}
+
+function renderCapabilitiesSection() {
+    const supplier = state.settingsModal.capabilitySupplier || '';
+    const models = modelsForCapabilitySupplier(supplier);
+    const selectedModel = models.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId)) || null;
+    const enabled = new Set(state.settingsModal.capabilityEnabledRequests || []);
+
+    renderButtonGroup(
+        els.capabilitySupplierButtons,
+        suppliersFromModels(state.summary.models).map(entry => ({value: entry, label: entry})),
+        supplier,
+        'selectCapabilitySupplier'
+    );
+    renderButtonGroup(
+        els.capabilityModelButtons,
+        models.map(entry => ({value: String(entry.id), label: entry.model})),
+        selectedModel ? String(selectedModel.id) : '',
+        'selectCapabilityModel'
+    );
+
+    const requests = Array.isArray(selectedModel?.availableRequests) ? selectedModel.availableRequests : [];
+    els.capabilitySelectionEmpty.classList.toggle('d-none', !!selectedModel);
+    els.capabilityEditor.classList.toggle('d-none', !selectedModel);
+    if (!selectedModel) {
+        els.capabilityGroups.innerHTML = '';
+        els.capabilitySummary.textContent = '';
+        return;
+    }
+
+    els.capabilityTitle.textContent = selectedModel.model;
+    els.capabilitySubtitle.textContent = `${selectedModel.supplier} · ${selectedModel.protocol || 'sem protocolo'}`;
+    els.capabilitySummary.textContent = `${enabled.size}/${requests.length} ativos`;
+
+    const groups = new Map();
+    for (const request of requests) {
+        const key = capabilityGroupKey(request);
+        groups.set(key, [...(groups.get(key) || []), request]);
+    }
+
+    els.capabilityGroups.innerHTML = [...groups.entries()].map(([group, entries]) => `
+        <section class="border rounded bg-body-tertiary p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h6 mb-0">${esc(capabilityGroupLabel(group))}</h3>
+                <span class="small text-secondary">${entries.filter(entry => enabled.has(String(entry.command || ''))).length}/${entries.length} ativos</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr><th>Ativo</th><th>Pedido</th><th>Comando nativo</th><th>Resposta esperada</th></tr>
+                    </thead>
+                    <tbody>
+                        ${entries.map(entry => {
+                            const command = String(entry.command || '');
+                            const reply = Array.isArray(entry.expectedReplyTypes) && entry.expectedReplyTypes.length
+                                ? entry.expectedReplyTypes.map(type => `<span class="badge text-bg-light border me-1">${esc(type)}</span>`).join('')
+                                : '<span class="text-secondary small">Sem resposta esperada</span>';
+                            return `
+                                <tr>
+                                    <td><input class="form-check-input" type="checkbox" data-action="toggleCapabilityRequest" data-command="${esc(command)}" ${enabled.has(command) ? 'checked' : ''}></td>
+                                    <td>
+                                        <div class="fw-semibold">${esc(commandLabel(entry) || command)}</div>
+                                        <div class="small text-secondary">${esc(entry.label || '')}</div>
+                                    </td>
+                                    <td><code>${esc(command)}</code></td>
+                                    <td>${reply}</td>
+                                </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    `).join('');
+}
+
+function selectCapabilitySupplier(supplier) {
+    state.settingsModal.capabilitySupplier = supplier;
+    state.settingsModal.capabilityModelId = null;
+    syncCapabilitiesSelection();
+    renderCapabilitiesSection();
+}
+
+function selectCapabilityModel(modelId) {
+    state.settingsModal.capabilityModelId = Number(modelId);
+    syncCapabilitiesSelection();
+    renderCapabilitiesSection();
+}
+
+async function saveCapabilities() {
+    const model = state.summary.models.find(entry => Number(entry.id) === Number(state.settingsModal.capabilityModelId)) || null;
+    if (!model) {
+        alert('Selecione um modelo');
+        return;
+    }
+
+    const body = new FormData();
+    body.append('supplier_id', String(model.supplier_id));
+    body.append('model', String(model.model || ''));
+    body.append('enabledRequestsConfigured', '1');
+    for (const command of state.settingsModal.capabilityEnabledRequests || []) {
+        body.append('enabledRequests[]', String(command));
+    }
+
+    const result = await api.saveModel(model.id, body);
+    if (result.error) {
+        alert(result.error.message || result.error.code);
+        return;
+    }
+
+    await loadSettingsModal('capabilities');
 }
 
 function revokeModelPreviewUrl() {
@@ -1228,13 +1399,14 @@ function cacheElements() {
         deviceConfigPane: document.getElementById('deviceConfigPane'),
         deviceGeneralTabBtn: document.getElementById('deviceGeneralTabBtn'),
         deviceGeneralPane: document.getElementById('deviceGeneralPane'),
-        manageSuppliersBtn: document.getElementById('manageSuppliersBtn'),
-        manageModelsBtn: document.getElementById('manageModelsBtn'),
+        manageSettingsBtn: document.getElementById('manageSettingsBtn'),
+        settingsSuppliersTabBtn: document.getElementById('settingsSuppliersTabBtn'),
+        settingsModelsTabBtn: document.getElementById('settingsModelsTabBtn'),
+        settingsCapabilitiesTabBtn: document.getElementById('settingsCapabilitiesTabBtn'),
         supplierForm: document.getElementById('supplierForm'),
         supplierName: document.getElementById('supplierName'),
         supplierListBody: document.getElementById('supplierListBody'),
         saveSupplierBtn: document.getElementById('saveSupplierBtn'),
-        modelModalLabel: document.getElementById('modelModalLabel'),
         modelForm: document.getElementById('modelForm'),
         modelPreview: document.getElementById('modelPreview'),
         modelSupplierButtons: document.getElementById('modelSupplierButtons'),
@@ -1244,6 +1416,15 @@ function cacheElements() {
         resetModelBtn: document.getElementById('resetModelBtn'),
         deleteDeviceBtn: document.getElementById('deleteDeviceBtn'),
         saveModelBtn: document.getElementById('saveModelBtn'),
+        capabilitySupplierButtons: document.getElementById('capabilitySupplierButtons'),
+        capabilityModelButtons: document.getElementById('capabilityModelButtons'),
+        capabilitySelectionEmpty: document.getElementById('capabilitySelectionEmpty'),
+        capabilityEditor: document.getElementById('capabilityEditor'),
+        capabilityTitle: document.getElementById('capabilityTitle'),
+        capabilitySubtitle: document.getElementById('capabilitySubtitle'),
+        capabilitySummary: document.getElementById('capabilitySummary'),
+        saveCapabilitiesBtn: document.getElementById('saveCapabilitiesBtn'),
+        capabilityGroups: document.getElementById('capabilityGroups'),
     };
 }
 
@@ -1278,15 +1459,15 @@ function bindEvents() {
     els.deviceDeviceId.addEventListener('input', handleDeviceImeiInput);
     els.deviceForm.addEventListener('input', handleDeviceFormInput);
     els.deviceForm.addEventListener('change', handleDeviceFormChange);
-    els.manageSuppliersBtn.addEventListener('click', loadSuppliers);
+    els.manageSettingsBtn.addEventListener('click', () => { void loadSettingsModal('suppliers'); });
     els.saveSupplierBtn.addEventListener('click', saveSupplier);
     els.supplierForm.addEventListener('submit', event => { event.preventDefault(); saveSupplier(); });
-    els.manageModelsBtn.addEventListener('click', loadModels);
     els.saveModelBtn.addEventListener('click', saveModel);
     els.resetModelBtn.addEventListener('click', () => resetModelForm());
     els.modelForm.addEventListener('submit', event => { event.preventDefault(); saveModel(); });
     els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
+    els.saveCapabilitiesBtn.addEventListener('click', () => { void saveCapabilities(); });
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
     els.applyDetailFiltersBtn.addEventListener('click', applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener('click', clearDetailFilters);
@@ -1295,6 +1476,18 @@ function bindEvents() {
     els.deviceTypeButtons.addEventListener('click', handleDeviceTypeClick);
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
+    els.capabilitySupplierButtons.addEventListener('click', handleCapabilitySupplierClick);
+    els.capabilityModelButtons.addEventListener('click', handleCapabilityModelClick);
+    els.capabilityGroups.addEventListener('change', handleCapabilityGroupsChange);
+    els.settingsSuppliersTabBtn.addEventListener('shown.bs.tab', () => {
+        state.settingsModal.section = 'suppliers';
+    });
+    els.settingsModelsTabBtn.addEventListener('shown.bs.tab', () => {
+        state.settingsModal.section = 'models';
+    });
+    els.settingsCapabilitiesTabBtn.addEventListener('shown.bs.tab', () => {
+        state.settingsModal.section = 'capabilities';
+    });
     els.deviceList.addEventListener('click', handleDeviceListClick);
     els.deviceListPagination.addEventListener('click', handleDevicePaginationClick);
     els.requestGrid.addEventListener('click', handleRequestGridClick);
@@ -1562,6 +1755,33 @@ function handleDeviceModelClick(event) {
 function handleModelSupplierClick(event) {
     const button = event.target.closest('[data-action="selectModelSupplier"]');
     if (button) selectModelSupplier(button.dataset.value);
+}
+
+function handleCapabilitySupplierClick(event) {
+    const button = event.target.closest('[data-action="selectCapabilitySupplier"]');
+    if (button) selectCapabilitySupplier(button.dataset.value);
+}
+
+function handleCapabilityModelClick(event) {
+    const button = event.target.closest('[data-action="selectCapabilityModel"]');
+    if (button) selectCapabilityModel(button.dataset.value);
+}
+
+function handleCapabilityGroupsChange(event) {
+    const checkbox = event.target.closest('[data-action="toggleCapabilityRequest"]');
+    if (!checkbox) return;
+
+    const command = String(checkbox.dataset.command || '');
+    if (!command) return;
+
+    const enabled = new Set(state.settingsModal.capabilityEnabledRequests || []);
+    if (checkbox.checked) {
+        enabled.add(command);
+    } else {
+        enabled.delete(command);
+    }
+    state.settingsModal.capabilityEnabledRequests = [...enabled];
+    renderCapabilitiesSection();
 }
 
 function handleDeviceListClick(event) {
@@ -2014,8 +2234,7 @@ export function startDashboard() {
     cacheElements();
     deviceModal = new bootstrap.Modal(document.getElementById('deviceModal'));
     deviceSelectorModal = new bootstrap.Modal(document.getElementById('deviceSelectorModal'));
-    supplierModal = new bootstrap.Modal(document.getElementById('supplierModal'));
-    modelModal = new bootstrap.Modal(document.getElementById('modelModal'));
+    settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
     bindEvents();
 
     const stored = loadFiltersFromStorage();
