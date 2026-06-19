@@ -27,7 +27,7 @@ export function emptyPanel(text) {
 export function commandFeature(command) {
     const haystack = `${command.command || ''} ${command.label || ''}`.toLowerCase();
     if (haystack.includes('heart')) return 'heart_rate';
-    if (haystack.includes('pressure') || haystack.includes('bp')) return 'blood_pressure';
+    if (haystack.includes('blood pressure')) return 'blood_pressure';
     if (haystack.includes('oxygen') || haystack.includes('bo')) return 'blood_oxygen';
     if (haystack.includes('temp')) return 'temperature';
     if (haystack.includes('location')) return 'location';

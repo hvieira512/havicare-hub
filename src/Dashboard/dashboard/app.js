@@ -102,9 +102,9 @@ function capabilityGroupKey(command) {
 
 function capabilityGroupLabel(group) {
     return {
-        localization: 'Localization',
-        vital_signs: 'Vital Signs',
-        other: 'Other',
+        localization: 'Localização',
+        vital_signs: 'Sinais Vitais',
+        other: 'Outros',
     }[group] || group;
 }
 
