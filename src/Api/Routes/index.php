@@ -25,6 +25,7 @@ return static function (
         new ApiRoute('PUT', '/api/devices/{imei}', fn(array $params, ServerRequestInterface $request): Response => $json($devices->update($params['imei'], (string)$request->getBody()))),
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),
         new ApiRoute('GET', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->list((string)$request->getUri()->getQuery()))),
+        new ApiRoute('GET', '/api/models/{id:\d+}', fn(array $params): Response => $json($models->show((int)$params['id']))),
         new ApiRoute('POST', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->create($request))),
         new ApiRoute('PUT', '/api/models/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($models->update((int)$params['id'], $request))),
         new ApiRoute('DELETE', '/api/models/{id:\d+}', fn(array $params): Response => $json($models->delete((int)$params['id']))),

@@ -3,6 +3,7 @@
 namespace Hub\Api\Routes;
 
 use Hub\Api\Support\CollectionResponse;
+use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\DashboardDataAccess;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
@@ -68,6 +69,28 @@ final class Models
         }, $models);
 
         return $this->collectionResponse($models, $page, $limit, $filters, $available);
+    }
+
+    public function show(int $id): array
+    {
+        $entry = $this->db->models->findById($id);
+        if ($entry === null) {
+            return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
+        }
+
+        $protocol = (string)($entry['protocol'] ?? '');
+        $imagePath = (string)($entry['image_path'] ?? '');
+
+        return [
+            'id' => $id,
+            'supplier' => (string)($entry['supplier_name'] ?? ''),
+            'model' => (string)($entry['model'] ?? ''),
+            'protocol' => $protocol,
+            'image' => $imagePath !== '' ? $imagePath : null,
+            'configurationCatalog' => DeviceConfigurationCatalog::configsForProtocol($protocol),
+            'availableRequests' => $this->requestCatalogForProtocol($protocol),
+            'enabledRequests' => $this->db->modelRequestCapabilities->enabledCommandsForModelId($id),
+        ];
     }
 
     public function create(ServerRequestInterface $request): array
