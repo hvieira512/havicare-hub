@@ -109,7 +109,7 @@ export function renderDeviceConfigurationRoot(context) {
 }
 
 export function renderConfigSection(protocol, entry, row, disabled = false, uiState = null) {
-    const desired = normalizeDesired(entry, row?.desired);
+    const desired = normalizeDesired(entry, row);
     const help = configHelp(entry);
 
     return `

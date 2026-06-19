@@ -1846,7 +1846,7 @@ async function saveDeviceConfiguration(section) {
             return;
         }
 
-        state.deviceModal.configurations = result.configuration?.configurations || state.deviceModal.configurations;
+        state.deviceModal.configurations = result.configuration || state.deviceModal.configurations;
 
         setConfigUi(key, {
             phase: 'sent',
@@ -1881,11 +1881,7 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
         state.deviceModal.model,
     ].join('|');
 
-    deviceConfigRefreshPromise = api.configuration(
-        state.deviceModal.imei,
-        state.deviceModal.supplier,
-        state.deviceModal.model
-    ).then(result => {
+    deviceConfigRefreshPromise = api.configuration(state.deviceModal.imei).then(result => {
         const current = [
             state.deviceModal.imei,
             state.deviceModal.supplier,
@@ -1895,7 +1891,7 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
             return result;
         }
 
-        state.deviceModal.configurations = result.configurations || {};
+        state.deviceModal.configurations = result || {};
         if (shouldRender) {
             renderDeviceConfigurationModal();
         }

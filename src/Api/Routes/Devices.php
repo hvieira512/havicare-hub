@@ -136,57 +136,15 @@ final class Devices
 
     public function configuration(string $imei, string $query = ''): array
     {
-        $device = $this->store->device($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $queryParams = [];
-        if ($query !== '') {
-            parse_str($query, $queryParams);
-        }
-        $supplier = trim((string)($queryParams['supplier'] ?? '')) !== ''
-            ? trim((string)$queryParams['supplier'])
-            : (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = trim((string)($queryParams['model'] ?? '')) !== ''
-            ? trim((string)$queryParams['model'])
-            : (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = $this->protocolForModel($supplier, $model);
-        if ($protocol === '') {
-            $protocol = (string)($device['protocol'] ?? '');
-        }
-
-        $catalog = array_map(static fn (array $entry): array => array_filter([
-            'key' => $entry['key'],
-            'command' => $entry['command'],
-            'label' => $entry['label'],
-            'input' => $entry['input'],
-            'fields' => $entry['fields'],
-            'expectedReplyTypes' => $entry['expectedReplyTypes'],
-            'category' => $entry['category'],
-            'limit' => $entry['limit'] ?? null,
-        ], static fn (mixed $value): bool => $value !== null), DeviceConfigurationCatalog::configsForProtocol($protocol));
-
         $configurations = [];
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
             $desired = $row['desired_payload'];
             if (is_array($desired) && $desired !== []) {
-                $configurations[$row['config_key']] = ['desired' => $desired];
+                $configurations[$row['config_key']] = $desired;
             }
         }
 
-        return [
-            'device' => array_filter([
-                'imei' => $device['imei'] ?? $imei,
-                'supplier' => $device['supplier'] ?? $supplier,
-                'model' => $device['model'] ?? $model,
-                'protocol' => $protocol,
-                'online' => (bool)($device['online'] ?? false),
-                'deviceType' => $device['deviceType'] ?? 'watch',
-                'licenseId' => $device['licenseId'] ?? '0',
-                'simNumber' => $device['simNumber'] ?? '',
-                'deviceId' => $device['deviceId'] ?? '',
-            ], static fn (mixed $value): bool => $value !== null && $value !== ''),
-            'catalog' => $catalog,
-            'configurations' => $configurations,
-        ];
+        return $configurations;
     }
 
     public function saveConfiguration(string $imei, string $body): array
@@ -210,12 +168,7 @@ final class Devices
             $results[] = $result;
         }
 
-        $query = http_build_query(array_filter([
-            'supplier' => $supplier,
-            'model' => $model,
-        ], static fn (string $value): bool => $value !== ''));
-
-        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->configuration($imei, $query)];
+        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->configuration($imei)];
     }
 
     public function applyConfiguration(string $imei, string $key, string $body = ''): array
