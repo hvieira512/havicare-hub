@@ -806,7 +806,6 @@ async function openAddDevice() {
     renderDeviceSimNumberField('');
     renderDeviceTypeSelector('watch');
     els.deviceLicenseId.value = '0';
-    els.deviceLicenseId.disabled = true;
     els.deviceDeviceId.value = '';
     renderDeviceSelectors();
     deviceModal.show();
@@ -841,7 +840,6 @@ async function editDevice(imei, supplier, model) {
     els.deleteDeviceBtn.classList.remove('d-none');
     renderDeviceTypeSelector('watch');
     els.deviceLicenseId.value = '0';
-    els.deviceLicenseId.disabled = true;
     renderDeviceSelectors(supplier, model);
     renderDeviceConfigurationModal();
     renderDeviceSimNumberField('');
@@ -852,7 +850,6 @@ async function editDevice(imei, supplier, model) {
         const device = detail.device || {};
         renderDeviceTypeSelector(String(device.deviceType || 'watch'));
         els.deviceLicenseId.value = String(device.licenseId || '0');
-        els.deviceLicenseId.disabled = normalizeDeviceType(String(device.deviceType || 'watch')) === 'watch';
         state.deviceModal.deviceType = normalizeDeviceType(String(device.deviceType || 'watch'));
         state.deviceModal.licenseId = String(device.licenseId || '0');
         renderDeviceSimNumberField(String(device.simNumber || ''));
@@ -967,8 +964,7 @@ async function saveDevice() {
     let imei = els.deviceImei.value.trim();
     let simNumber = '';
     const deviceType = normalizeDeviceType(els.deviceForm.dataset.deviceType || 'watch');
-    const rawLicenseId = els.deviceLicenseId.value.trim();
-    const licenseId = deviceType === 'watch' ? '0' : rawLicenseId;
+    const licenseId = els.deviceLicenseId.value.trim();
     const deviceId = els.deviceDeviceId.value.trim();
     const supplier = els.deviceForm.dataset.supplier || '';
     const model = els.deviceForm.dataset.model || '';
@@ -1733,11 +1729,7 @@ function handleDeviceTypeClick(event) {
 
     const deviceType = normalizeDeviceType(button.dataset.value);
     renderDeviceTypeSelector(deviceType);
-    if (deviceType === 'watch') {
-        els.deviceLicenseId.value = '0';
-        els.deviceLicenseId.disabled = true;
-    } else {
-        els.deviceLicenseId.disabled = false;
+    if (deviceType !== 'watch') {
         if (els.deviceLicenseId.value.trim() === '0') {
             els.deviceLicenseId.value = '';
         }

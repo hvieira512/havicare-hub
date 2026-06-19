@@ -45,7 +45,7 @@ ob_start();
                                 <div>
                                     <label for="deviceLicenseId" class="form-label">Licença</label>
                                     <input type="text" class="form-control" id="deviceLicenseId" value="0">
-                                    <div class="form-text">Para relógios, a licença reservada é sempre <code>0</code>.</div>
+                                    <div class="form-text">Deixe <code>0</code> ou vazio para dispositivos sem licença atribuída.</div>
                                 </div>
                                 <div id="deviceImeiRow">
                                     <label for="deviceImei" class="form-label">IMEI</label>
