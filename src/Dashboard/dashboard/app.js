@@ -2248,4 +2248,10 @@ export function startDashboard() {
     } else {
         renderSelection();
     }
+
+    setInterval(() => {
+        if (state.selectedImei) {
+            void loadDevice(state.selectedImei);
+        }
+    }, 5000);
 }
