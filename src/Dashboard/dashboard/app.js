@@ -1847,8 +1847,8 @@ async function saveDeviceConfiguration(section) {
         }
 
         state.deviceModal.configurations = result.configuration?.configurations || state.deviceModal.configurations;
-        const row = state.deviceModal.configurations.find(entry => entry.config_key === key);
-        const rowStatus = String(row?.last_status || '');
+        const row = state.deviceModal.configurations.find(entry => entry.key === key);
+        const rowStatus = String(row?.status || '');
         if (['failed', 'dropped'].includes(rowStatus)) {
             setConfigUi(key, {
                 phase: 'idle',
@@ -1990,7 +1990,7 @@ function armConfigFeedbackAutoClose() {
 
 function syncConfigUiWithRows() {
     for (const row of state.deviceModal.configurations || []) {
-        const key = String(row.config_key || '');
+        const key = String(row.key || '');
         if (!key) continue;
 
         const ui = state.deviceModal.configUi[key];
@@ -1998,7 +1998,7 @@ function syncConfigUiWithRows() {
             continue;
         }
 
-        const status = String(row.last_status || '');
+        const status = String(row.status || '');
         if (!ui?.trackStatus) {
             if (['acked', 'failed', 'dropped'].includes(status)) {
                 stopConfigPolling(key);
@@ -2032,8 +2032,8 @@ function scheduleConfigPolling(key, attempt = 0) {
         }
 
         await refreshDeviceModalConfigurations(true);
-        const row = (state.deviceModal.configurations || []).find(entry => entry.config_key === key);
-        const status = String(row?.last_status || '');
+        const row = (state.deviceModal.configurations || []).find(entry => entry.key === key);
+        const status = String(row?.status || '');
         if (['acked', 'failed', 'dropped'].includes(status) || attempt >= 14) {
             stopConfigPolling(key);
             return;

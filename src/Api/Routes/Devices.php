@@ -153,10 +153,45 @@ final class Devices
             $protocol = (string)($device['protocol'] ?? '');
         }
 
+        $catalog = array_map(static fn (array $entry): array => array_filter([
+            'key' => $entry['key'],
+            'command' => $entry['command'],
+            'label' => $entry['label'],
+            'input' => $entry['input'],
+            'fields' => $entry['fields'],
+            'expectedReplyTypes' => $entry['expectedReplyTypes'],
+            'category' => $entry['category'],
+            'limit' => $entry['limit'] ?? null,
+        ], static fn (mixed $value): bool => $value !== null), DeviceConfigurationCatalog::configsForProtocol($protocol));
+
+        $configurations = array_map(static fn (array $row): array => [
+            'key' => $row['config_key'],
+            'command' => $row['command'],
+            'desired' => $row['desired_payload'],
+            'reported' => (static function (array $payload): mixed {
+                $data = $payload['data'] ?? null;
+                return $data !== null && is_array($data) ? $data : $payload;
+            })($row['reported_payload']),
+            'status' => $row['last_status'],
+            'desiredAt' => $row['desired_updated_at'],
+            'reportedAt' => $row['reported_at'],
+            'appliedAt' => $row['applied_at'],
+        ], $this->db->deviceConfigurations->allForImei($imei));
+
         return [
-            'device' => array_merge($device, ['imei' => $imei, 'supplier' => $supplier, 'model' => $model, 'protocol' => $protocol]),
-            'catalog' => DeviceConfigurationCatalog::configsForProtocol($protocol),
-            'configurations' => $this->db->deviceConfigurations->allForImei($imei),
+            'device' => array_filter([
+                'imei' => $device['imei'] ?? $imei,
+                'supplier' => $device['supplier'] ?? $supplier,
+                'model' => $device['model'] ?? $model,
+                'protocol' => $protocol,
+                'online' => (bool)($device['online'] ?? false),
+                'deviceType' => $device['deviceType'] ?? 'watch',
+                'licenseId' => $device['licenseId'] ?? '0',
+                'simNumber' => $device['simNumber'] ?? '',
+                'deviceId' => $device['deviceId'] ?? '',
+            ], static fn (mixed $value): bool => $value !== null && $value !== ''),
+            'catalog' => $catalog,
+            'configurations' => $configurations,
         ];
     }
 

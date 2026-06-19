@@ -109,7 +109,7 @@ export function renderDeviceConfigurationRoot(context) {
 }
 
 export function renderConfigSection(protocol, entry, row, disabled = false, uiState = null) {
-    const desired = normalizeDesired(entry, row?.desired_payload);
+    const desired = normalizeDesired(entry, row?.desired);
     const help = configHelp(entry);
 
     return `
@@ -192,7 +192,7 @@ function configButtonState(row, uiState) {
         return uiState.phase;
     }
 
-    const status = String(row?.last_status || '');
+    const status = String(row?.status || '');
     if (uiState?.trackStatus && ['queued', 'waiting', 'acked', 'failed', 'dropped'].includes(status)) {
         return status;
     }
@@ -313,7 +313,7 @@ export function defaultConfigPayload(entry) {
 function rowsByConfigKey(rows) {
     const indexed = {};
     for (const row of rows || []) {
-        indexed[row.config_key] = row;
+        indexed[row.key] = row;
     }
     return indexed;
 }
