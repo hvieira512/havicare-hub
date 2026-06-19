@@ -166,12 +166,10 @@ final class Devices
 
         $configurations = [];
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
-            $reported = $row['reported_payload'];
-            $reportedData = is_array($reported) ? ($reported['data'] ?? null) : null;
-            $configurations[$row['config_key']] = array_filter([
-                'desired' => $row['desired_payload'] ?: null,
-                'reported' => $reportedData !== null && is_array($reportedData) ? $reportedData : ($reported ?: null),
-            ], static fn (mixed $value): bool => $value !== null);
+            $desired = $row['desired_payload'];
+            if (is_array($desired) && $desired !== []) {
+                $configurations[$row['config_key']] = ['desired' => $desired];
+            }
         }
 
         return [

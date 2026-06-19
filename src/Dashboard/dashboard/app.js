@@ -36,7 +36,7 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
-const configPollTimers = new Map();
+
 let deviceConfigRefreshPromise = null;
 let deviceSearchTimer = null;
 const FILTERS_STORAGE_KEY = 'hub-dashboard-device-filters';
@@ -1846,12 +1846,10 @@ async function saveDeviceConfiguration(section) {
             return;
         }
 
-        const reportedBefore = (state.deviceModal.configurations || {})[key]?.reported || null;
         state.deviceModal.configurations = result.configuration?.configurations || state.deviceModal.configurations;
 
         setConfigUi(key, {
             phase: 'sent',
-            reportedSnapshot: reportedBefore,
             feedback: {tone: 'success', message: 'Configuração enviada ao dispositivo.'},
         });
         renderDeviceConfigurationModal();
@@ -1859,7 +1857,6 @@ async function saveDeviceConfiguration(section) {
             clearConfigUiPhase(key, 'sent');
             renderDeviceConfigurationModal();
         });
-        scheduleConfigPolling(key);
     } catch (error) {
         setConfigUi(key, {
             phase: 'idle',
@@ -1978,51 +1975,7 @@ function armConfigFeedbackAutoClose() {
     }
 }
 
-function ackConfigPolling(key) {
-    setConfigUi(key, {
-        feedback: {tone: 'success', message: 'Dispositivo confirmou a configuração.'},
-    });
-    renderDeviceConfigurationModal();
-    stopConfigPolling(key);
-}
 
-function failConfigPolling(key) {
-    setConfigUi(key, {
-        phase: 'idle',
-        feedback: {tone: 'danger', message: 'O dispositivo não confirmou a configuração.'},
-    });
-    renderDeviceConfigurationModal();
-    stopConfigPolling(key);
-}
-
-function scheduleConfigPolling(key, attempt = 0) {
-    stopConfigPolling(key);
-    configPollTimers.set(key, setTimeout(async () => {
-        if (!document.getElementById('deviceModal')?.classList.contains('show')) {
-            stopConfigPolling(key);
-            return;
-        }
-
-        await refreshDeviceModalConfigurations(false);
-        const entry = (state.deviceModal.configurations || {})[key];
-        const ui = state.deviceModal.configUi?.[key];
-        const reportedChanged = entry?.reported && ui?.reportedSnapshot !== entry.reported;
-        if (reportedChanged || attempt >= 14) {
-            if (reportedChanged) {
-                ackConfigPolling(key);
-            } else {
-                failConfigPolling(key);
-            }
-            return;
-        }
-        scheduleConfigPolling(key, attempt + 1);
-    }, 2000));
-}
-
-function stopConfigPolling(key) {
-    clearTimeout(configPollTimers.get(key));
-    configPollTimers.delete(key);
-}
 
 function resetConfigUiState() {
     for (const timer of configFeedbackTimers.values()) {
@@ -2034,11 +1987,6 @@ function resetConfigUiState() {
         clearTimeout(timer);
     }
     configPhaseTimers.clear();
-
-    for (const timer of configPollTimers.values()) {
-        clearTimeout(timer);
-    }
-    configPollTimers.clear();
 
     deviceConfigRefreshPromise = null;
 }
