@@ -55,7 +55,7 @@ export function groupedCatalog(catalog) {
 }
 
 export function renderDeviceConfigurationRoot(context) {
-    const {protocol, catalog, configurations, supplier = '', model = '', disabled = false, activeCategory = '', uiByKey = {}} = context;
+    const {protocol, catalog, configurations = {}, supplier = '', model = '', disabled = false, activeCategory = '', uiByKey = {}} = context;
     if (!protocol) {
         return emptyConfigurationState('Selecione fornecedor e modelo para ver as configurações.');
     }
@@ -64,7 +64,7 @@ export function renderDeviceConfigurationRoot(context) {
         return emptyConfigurationState('Este protocolo não tem configurações suportadas.');
     }
 
-    const rowsByKey = rowsByConfigKey(configurations);
+    const rowsByKey = configurations;
     const groups = groupedCatalog(catalog);
     const order = CATEGORY_ORDER[protocol] || [];
     groups.sort((a, b) => {
@@ -187,19 +187,10 @@ function renderConfigFeedback(key, uiState) {
         </div>`;
 }
 
-function configButtonState(row, uiState) {
+function configButtonState(_row, uiState) {
     if (uiState?.phase === 'submitting' || uiState?.phase === 'sent') {
         return uiState.phase;
     }
-
-    const status = String(row?.status || '');
-    if (uiState?.trackStatus && ['queued', 'waiting', 'acked', 'failed', 'dropped'].includes(status)) {
-        return status;
-    }
-    if (['queued', 'waiting'].includes(status)) {
-        return status;
-    }
-
     return 'idle';
 }
 
@@ -308,14 +299,6 @@ export function defaultConfigPayload(entry) {
     if (input === 'contacts') return {contacts: [{name: '', phone: ''}]};
     if (input === 'reminders') return {masterEnabled: true, items: []};
     return {};
-}
-
-function rowsByConfigKey(rows) {
-    const indexed = {};
-    for (const row of rows || []) {
-        indexed[row.key] = row;
-    }
-    return indexed;
 }
 
 function normalizeDesired(entry, desired) {

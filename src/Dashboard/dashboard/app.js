@@ -1846,21 +1846,12 @@ async function saveDeviceConfiguration(section) {
             return;
         }
 
+        const reportedBefore = (state.deviceModal.configurations || {})[key]?.reported || null;
         state.deviceModal.configurations = result.configuration?.configurations || state.deviceModal.configurations;
-        const row = state.deviceModal.configurations.find(entry => entry.key === key);
-        const rowStatus = String(row?.status || '');
-        if (['failed', 'dropped'].includes(rowStatus)) {
-            setConfigUi(key, {
-                phase: 'idle',
-                feedback: {tone: 'danger', message: 'O envio da configuração falhou.'},
-            });
-            renderDeviceConfigurationModal();
-            return;
-        }
 
         setConfigUi(key, {
             phase: 'sent',
-            trackStatus: true,
+            reportedSnapshot: reportedBefore,
             feedback: {tone: 'success', message: 'Configuração enviada ao dispositivo.'},
         });
         renderDeviceConfigurationModal();
@@ -1907,8 +1898,7 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
             return result;
         }
 
-        state.deviceModal.configurations = result.configurations || [];
-        syncConfigUiWithRows();
+        state.deviceModal.configurations = result.configurations || {};
         if (shouldRender) {
             renderDeviceConfigurationModal();
         }
@@ -1988,39 +1978,21 @@ function armConfigFeedbackAutoClose() {
     }
 }
 
-function syncConfigUiWithRows() {
-    for (const row of state.deviceModal.configurations || []) {
-        const key = String(row.key || '');
-        if (!key) continue;
+function ackConfigPolling(key) {
+    setConfigUi(key, {
+        feedback: {tone: 'success', message: 'Dispositivo confirmou a configuração.'},
+    });
+    renderDeviceConfigurationModal();
+    stopConfigPolling(key);
+}
 
-        const ui = state.deviceModal.configUi[key];
-        if (ui?.phase === 'submitting' || ui?.phase === 'sent') {
-            continue;
-        }
-
-        const status = String(row.status || '');
-        if (!ui?.trackStatus) {
-            if (['acked', 'failed', 'dropped'].includes(status)) {
-                stopConfigPolling(key);
-            }
-            continue;
-        }
-
-        if (status === 'acked' && !ui?.feedback) {
-            setConfigUi(key, {
-                feedback: {tone: 'success', message: 'Dispositivo confirmou a configuração.'},
-            });
-        }
-        if (['failed', 'dropped'].includes(status) && !ui?.feedback) {
-            setConfigUi(key, {
-                feedback: {tone: 'danger', message: 'O dispositivo não confirmou a configuração.'},
-            });
-        }
-
-        if (['acked', 'failed', 'dropped'].includes(status)) {
-            stopConfigPolling(key);
-        }
-    }
+function failConfigPolling(key) {
+    setConfigUi(key, {
+        phase: 'idle',
+        feedback: {tone: 'danger', message: 'O dispositivo não confirmou a configuração.'},
+    });
+    renderDeviceConfigurationModal();
+    stopConfigPolling(key);
 }
 
 function scheduleConfigPolling(key, attempt = 0) {
@@ -2031,11 +2003,16 @@ function scheduleConfigPolling(key, attempt = 0) {
             return;
         }
 
-        await refreshDeviceModalConfigurations(true);
-        const row = (state.deviceModal.configurations || []).find(entry => entry.key === key);
-        const status = String(row?.status || '');
-        if (['acked', 'failed', 'dropped'].includes(status) || attempt >= 14) {
-            stopConfigPolling(key);
+        await refreshDeviceModalConfigurations(false);
+        const entry = (state.deviceModal.configurations || {})[key];
+        const ui = state.deviceModal.configUi?.[key];
+        const reportedChanged = entry?.reported && ui?.reportedSnapshot !== entry.reported;
+        if (reportedChanged || attempt >= 14) {
+            if (reportedChanged) {
+                ackConfigPolling(key);
+            } else {
+                failConfigPolling(key);
+            }
             return;
         }
         scheduleConfigPolling(key, attempt + 1);

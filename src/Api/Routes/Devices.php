@@ -164,19 +164,15 @@ final class Devices
             'limit' => $entry['limit'] ?? null,
         ], static fn (mixed $value): bool => $value !== null), DeviceConfigurationCatalog::configsForProtocol($protocol));
 
-        $configurations = array_map(static fn (array $row): array => [
-            'key' => $row['config_key'],
-            'command' => $row['command'],
-            'desired' => $row['desired_payload'],
-            'reported' => (static function (array $payload): mixed {
-                $data = $payload['data'] ?? null;
-                return $data !== null && is_array($data) ? $data : $payload;
-            })($row['reported_payload']),
-            'status' => $row['last_status'],
-            'desiredAt' => $row['desired_updated_at'],
-            'reportedAt' => $row['reported_at'],
-            'appliedAt' => $row['applied_at'],
-        ], $this->db->deviceConfigurations->allForImei($imei));
+        $configurations = [];
+        foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
+            $reported = $row['reported_payload'];
+            $reportedData = is_array($reported) ? ($reported['data'] ?? null) : null;
+            $configurations[$row['config_key']] = array_filter([
+                'desired' => $row['desired_payload'] ?: null,
+                'reported' => $reportedData !== null && is_array($reportedData) ? $reportedData : ($reported ?: null),
+            ], static fn (mixed $value): bool => $value !== null);
+        }
 
         return [
             'device' => array_filter([
