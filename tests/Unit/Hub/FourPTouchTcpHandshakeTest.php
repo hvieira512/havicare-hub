@@ -22,7 +22,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
     {
         $this->whitelistPath = sys_get_temp_dir() . '/hub-4p-touch-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '8800000015'],
+            '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '7597567372'],
         ]));
     }
 
@@ -59,7 +59,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
                             $loop->stop();
                         }
                     });
-                    $connection->write('[3G*8800000015*000D*LK,50,100,100]');
+                    $connection->write('[3G*7597567372*000D*LK,50,100,100]');
                 },
                 static function (\Throwable $e) use (&$error, $loop): void {
                     $error = $e;
@@ -75,7 +75,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         $loop->run();
 
         self::assertNull($error, $error?->getMessage() ?? '');
-        self::assertSame('[3G*8800000015*0002*LK]', $received);
+        self::assertSame('[3G*7597567372*0002*LK]', $received);
         self::assertCount(1, $mqtt->statuses);
         self::assertCount(1, $mqtt->events);
         self::assertCount(3, $mqtt->telemetry);
@@ -111,7 +111,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         $phase = 'handshake';
         $alarm = (new FourPTouchAdapter())->encodeOutgoing([
             'type' => 'AL',
-            'imei' => '8800000015',
+            'imei' => '7597567372',
             'manufacturer' => '3G',
             'data' => ['fields' => ['240617', '101530', 'V', '0.0', 'N', '0.0', 'E', '0.0', '0', '0', '0', '55', '44', '0', '0', '00200000']],
         ]);
@@ -122,7 +122,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
                 static function (ConnectionInterface $connection) use (&$received, &$phase, $alarm, $loop): void {
                     $connection->on('data', static function (string $data) use (&$received, &$phase, $connection, $alarm, $loop): void {
                         $received .= $data;
-                        if ($phase === 'handshake' && str_contains($received, '[3G*8800000015*0002*LK]')) {
+                        if ($phase === 'handshake' && str_contains($received, '[3G*7597567372*0002*LK]')) {
                             $phase = 'alarm';
                             $received = '';
                             $connection->write($alarm);
@@ -134,7 +134,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
                             $loop->stop();
                         }
                     });
-                    $connection->write('[3G*8800000015*000D*LK,50,100,100]');
+                    $connection->write('[3G*7597567372*000D*LK,50,100,100]');
                 },
                 static function (\Throwable $e) use (&$error, $loop): void {
                     $error = $e;
@@ -150,7 +150,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         $loop->run();
 
         self::assertNull($error, $error?->getMessage() ?? '');
-        self::assertSame('[3G*8800000015*0002*AL]', $received);
+        self::assertSame('[3G*7597567372*0002*AL]', $received);
     }
 
     private function freeTcpPort(): ?int

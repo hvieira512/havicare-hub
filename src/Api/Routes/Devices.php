@@ -218,6 +218,7 @@ final class Devices
         if ($licenseId === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
+        $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceId);
         $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
         $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
 
@@ -245,6 +246,7 @@ final class Devices
         if ($licenseId === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
+        $deviceId = $this->normalizeDeviceId($newImei, $supplier, $model, $deviceId);
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
@@ -337,6 +339,16 @@ final class Devices
     private function protocolForModel(string $supplier, string $model): string
     {
         return $this->db->models->protocolForModel($supplier, $model);
+    }
+
+    private function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceId): string
+    {
+        if ($this->protocolForModel($supplier, $model) !== 'four-p-touch') {
+            return $deviceId;
+        }
+
+        $derived = DeviceCommandCatalog::deriveFourPTouchDeviceId($imei);
+        return $derived !== '' ? $derived : $deviceId;
     }
 
     private function modelForDevice(array $device): ?array

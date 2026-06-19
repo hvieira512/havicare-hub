@@ -86,6 +86,18 @@ function findModelInfo(supplier, model, models = state.summary.models) {
     return models.find(entry => entry.supplier === supplier && entry.model === model) || null;
 }
 
+function deriveFourPTouchDeviceId(imei) {
+    const digits = String(imei || '').replace(/\D+/g, '');
+    if (digits.length === 15) return digits.slice(4, 14);
+    if (digits.length === 10) return digits;
+    if (digits.length > 10) return digits.slice(-10);
+    return digits;
+}
+
+function isFourPTouchSelection(supplier = els.deviceForm?.dataset?.supplier || '', model = els.deviceForm?.dataset?.model || '') {
+    return supplierProtocol(supplier, state.summary.models) === 'four-p-touch' || (supplier === '4P Touch' && model === '4P-TOUCH');
+}
+
 function availableRequestsForSupplier(supplier, models = state.summary.models) {
     const entry = models.find(model => model.supplier === supplier && Array.isArray(model.availableRequests) && model.availableRequests.length);
     return Array.isArray(entry?.availableRequests) ? entry.availableRequests : [];
@@ -855,6 +867,7 @@ async function editDevice(imei, supplier, model) {
         renderDeviceSimNumberField(String(device.simNumber || ''));
         state.deviceModal.simNumber = String(device.simNumber || '');
         els.deviceDeviceId.value = String(device.deviceId || '');
+        applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || '');
         await refreshDeviceModalConfigurations(false);
     } finally {
@@ -903,6 +916,8 @@ function renderDeviceTypeSelector(selectedType = 'watch') {
         els.deviceDeviceIdHelp.textContent = 'Identificador do dispositivo no protocolo (IMEI, MAC, etc.).';
         els.deviceDeviceId.placeholder = 'ID do dispositivo no protocolo';
     }
+
+    applyFourPTouchDeviceIdUi();
 }
 
 function updateDevicePreview() {
@@ -910,6 +925,7 @@ function updateDevicePreview() {
     const model = els.deviceForm.dataset.model || '';
     const modelInfo = findModelInfo(supplier, model);
     els.devicePreview.innerHTML = modelPreviewHtml(modelInfo, model || 'Selecione um modelo');
+    applyFourPTouchDeviceIdUi();
     syncDeviceModalContext();
 }
 
@@ -928,6 +944,20 @@ function syncDeviceModalContext() {
     state.deviceModal.deviceId = els.deviceDeviceId.value.trim();
     if (!state.deviceModal.activeCategory || !state.deviceModal.catalog.some(entry => entry.category === state.deviceModal.activeCategory)) {
         state.deviceModal.activeCategory = state.deviceModal.catalog[0]?.category || '';
+    }
+}
+
+function applyFourPTouchDeviceIdUi() {
+    const isFourPTouch = isFourPTouchSelection();
+    if (isFourPTouch) {
+        const derived = deriveFourPTouchDeviceId(els.deviceImei.value.trim());
+        els.deviceDeviceId.value = derived;
+        els.deviceDeviceId.readOnly = true;
+        els.deviceDeviceIdLabel.textContent = 'Device ID';
+        els.deviceDeviceIdHelp.textContent = 'Derivado automaticamente do IMEI para 4P Touch.';
+        els.deviceDeviceId.placeholder = 'Derivado do IMEI';
+    } else {
+        els.deviceDeviceId.readOnly = false;
     }
 }
 
@@ -965,9 +995,11 @@ async function saveDevice() {
     let simNumber = '';
     const deviceType = normalizeDeviceType(els.deviceForm.dataset.deviceType || 'watch');
     const licenseId = els.deviceLicenseId.value.trim();
-    const deviceId = els.deviceDeviceId.value.trim();
     const supplier = els.deviceForm.dataset.supplier || '';
     const model = els.deviceForm.dataset.model || '';
+    const deviceId = isFourPTouchSelection(supplier, model)
+        ? deriveFourPTouchDeviceId(imei)
+        : els.deviceDeviceId.value.trim();
 
     if (deviceType === 'ncs') {
         if (!deviceId || !supplier || !model) { alert('Device ID (MAC), fornecedor e modelo são obrigatórios'); return; }
@@ -981,6 +1013,7 @@ async function saveDevice() {
             return;
         }
         if (!imei || !supplier || !model) { alert('IMEI, fornecedor e modelo são obrigatórios'); return; }
+        if (isFourPTouchSelection(supplier, model) && !deviceId) { alert('IMEI 4P Touch inválido'); return; }
     }
 
     const originalImei = els.deviceImei.dataset.originalImei || '';

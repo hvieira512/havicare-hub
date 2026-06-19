@@ -58,8 +58,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('UPLOAD', $payload['command']);
         self::assertSame(['fields' => ['600']], $payload['payload']);
 
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '637507597567372', $payload['command'], $payload['payload'], ['deviceId' => '3707975737']);
-        self::assertSame('[3G*3707975737*000A*UPLOAD,600]', $wire);
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '637507597567372', $payload['command'], $payload['payload'], ['deviceId' => '7597567372']);
+        self::assertSame('[3G*7597567372*000A*UPLOAD,600]', $wire);
     }
 
     public function testFourPTouchFallsBackToCanonicalImeiOnlyWhenNoDeviceIdIsProvided(): void
@@ -74,8 +74,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'uploadInterval', ['intervalSeconds' => 600]);
 
-        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '3707975737', $payload['command'], $payload['payload'], ['deviceId' => '']);
-        self::assertSame('[3G*3707975737*000A*UPLOAD,600]', $wire);
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '7597567372', $payload['command'], $payload['payload'], ['deviceId' => '']);
+        self::assertSame('[3G*7597567372*000A*UPLOAD,600]', $wire);
     }
 
     public function testFourPTouchWhitelistSupportsFiveNumbers(): void

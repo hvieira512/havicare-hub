@@ -57,6 +57,23 @@ final class DevicesApiTest extends TestCase
         self::assertSame('unsupported_for_model', $response['error']['code'] ?? null);
     }
 
+    public function testCreateDerivesFourPTouchDeviceIdFromImei(): void
+    {
+        [$api, $db] = $this->makeApi();
+
+        $response = $api->create(json_encode([
+            'imei' => '868017032159118',
+            'supplier' => '4P Touch',
+            'model' => '4P-TOUCH',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+            'deviceId' => '',
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('1703215911', $api->show('868017032159118')['device']['deviceId'] ?? null);
+    }
+
     /**
      * @return array{0: Devices, 1: DashboardDataAccess}
      */
