@@ -51,8 +51,12 @@ final class DashboardHttpServer
 
     public function __invoke(ServerRequestInterface $request): Response
     {
+        if (strtoupper($request->getMethod()) === 'OPTIONS') {
+            return $this->cors(new Response(204));
+        }
+
         if (!$this->isAuthorized($request)) {
-            return new Response(401, ['WWW-Authenticate' => 'Basic realm="Devices Hub"', 'Content-Type' => 'text/plain'], 'Unauthorized');
+            return $this->cors(new Response(401, ['WWW-Authenticate' => 'Basic realm="Devices Hub"', 'Content-Type' => 'text/plain'], 'Unauthorized'));
         }
 
         $path = $request->getUri()->getPath();
@@ -63,7 +67,7 @@ final class DashboardHttpServer
                 return $this->html($this->page());
             }
             if (str_starts_with($path, '/api/')) {
-                return $this->dispatchApi($request);
+                return $this->cors($this->dispatchApi($request));
             }
             if ($method === 'GET' && preg_match('#^' . self::MODEL_IMAGE_ROUTE . '/([a-f0-9]{32}\.jpg)$#', $path, $matches) === 1) {
                 return $this->modelImage($matches[1]);
@@ -75,10 +79,18 @@ final class DashboardHttpServer
                 }
             }
         } catch (\Throwable $e) {
-            return $this->json(['error' => ['code' => 'server_error', 'message' => $e->getMessage()]], 500);
+            return $this->cors($this->json(['error' => ['code' => 'server_error', 'message' => $e->getMessage()]], 500));
         }
 
-        return $this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
+        return $this->cors($this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404));
+    }
+
+    private function cors(Response $response): Response
+    {
+        return $response->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            ->withHeader('Access-Control-Max-Age', '86400');
     }
 
     private function isAuthorized(ServerRequestInterface $request): bool
