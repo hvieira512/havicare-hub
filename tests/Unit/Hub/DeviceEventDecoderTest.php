@@ -67,8 +67,9 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(1, (int)$events[0]['value']['mnc']);
         self::assertSame(1234, (int)$events[0]['value']['lac']);
         self::assertSame(5679, (int)$events[0]['value']['cellId']);
-        self::assertCount(1, $events[0]['extra']['baseStation']);
-        self::assertCount(1, $events[0]['extra']['wifi']);
+        self::assertTrue($events[0]['value']['hasCoordinates']);
+        self::assertCount(1, $events[0]['value']['baseStations']);
+        self::assertCount(1, $events[0]['value']['wifiAccessPoints']);
     }
 
     public function testWonlexGpsCoordinateSystemDoesNotOverrideGpsSourceInference(): void
@@ -359,6 +360,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('location', $events[0]['feature']);
         self::assertSame('AP02', $events[0]['nativeType']);
         self::assertSame('cell_wifi', $events[0]['value']['source']);
+        self::assertFalse($events[0]['value']['hasCoordinates']);
         self::assertFalse($events[0]['value']['gpsValid']);
         self::assertSame('268', $events[0]['value']['mcc']);
         self::assertSame('6', $events[0]['value']['mnc']);
@@ -405,6 +407,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('location', $events[0]['feature']);
         self::assertSame('AP01', $events[0]['nativeType']);
         self::assertSame('gps', $events[0]['value']['source']);
+        self::assertTrue($events[0]['value']['hasCoordinates']);
         self::assertTrue($events[0]['value']['gpsValid']);
         self::assertSame(22.549676666666667, $events[0]['value']['lat']);
         self::assertSame(114.08225833333333, $events[0]['value']['lon']);
@@ -442,12 +445,14 @@ final class DeviceEventDecoderTest extends TestCase
         );
 
         self::assertSame(['alarm', 'location', 'battery'], array_column($events, 'feature'));
-        self::assertSame('06', $events[0]['value']['code']);
+        self::assertSame('fall', $events[0]['value']['code']);
         self::assertTrue($events[0]['value']['fall']);
         self::assertFalse($events[0]['value']['wearingNotice']);
+        self::assertSame('06', $events[0]['extra']['rawCode']);
+        self::assertTrue($events[1]['value']['hasCoordinates']);
         self::assertSame(22.549676666666667, $events[1]['value']['lat']);
         self::assertSame(114.08225833333333, $events[1]['value']['lon']);
-        self::assertSame('06', $events[1]['extra']['alarmCode']);
+        self::assertArrayNotHasKey('rawCode', $events[1]['extra'] ?? []);
         self::assertSame(80, $events[2]['value']['percent']);
         self::assertArrayNotHasKey('extra', $events[2]);
     }
@@ -543,6 +548,7 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertSame(['location', 'activity', 'battery'], array_column($events, 'feature'));
         self::assertSame('gps', $events[0]['value']['source']);
+        self::assertTrue($events[0]['value']['hasCoordinates']);
         self::assertSame(38.7167, $events[0]['value']['lat']);
         self::assertSame(-9.1399, $events[0]['value']['lon']);
         self::assertSame(9, $events[0]['value']['satelliteCount']);
@@ -582,8 +588,12 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertSame(['location', 'alarm', 'battery'], array_column($events, 'feature'));
         self::assertSame('cell', $events[0]['value']['source']);
-        self::assertSame('00200000', $events[1]['value']['code']);
+        self::assertFalse($events[0]['value']['hasCoordinates']);
+        self::assertArrayNotHasKey('lat', $events[0]['value']);
+        self::assertArrayNotHasKey('lon', $events[0]['value']);
+        self::assertSame('fall', $events[1]['value']['code']);
         self::assertTrue($events[1]['value']['fall']);
+        self::assertSame('00200000', $events[1]['extra']['rawCode']);
         self::assertSame('lbs_wifi', $events[0]['extra']['sourceRaw']);
         self::assertSame('LTE', $events[1]['extra']['networkType']);
         self::assertSame('13011', $events[0]['value']['lac']);

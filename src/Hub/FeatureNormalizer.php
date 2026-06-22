@@ -114,18 +114,30 @@ final class FeatureNormalizer
     private static function location(array $payload): array
     {
         $gps = isset($payload['gps']) && is_array($payload['gps']) ? $payload['gps'] : [];
-        $baseStations = isset($payload['baseStations']) && is_array($payload['baseStations'])
-            ? $payload['baseStations']
-            : (isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : []);
-        $wifiAccessPoints = isset($payload['wifi']) && is_array($payload['wifi']) ? $payload['wifi'] : [];
+        $baseStations = self::normalizeBaseStations(
+            isset($payload['baseStations']) && is_array($payload['baseStations'])
+                ? $payload['baseStations']
+                : (isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : [])
+        );
+        $wifiAccessPoints = self::normalizeWifiAccessPoints(
+            isset($payload['wifiAccessPoints']) && is_array($payload['wifiAccessPoints'])
+                ? $payload['wifiAccessPoints']
+                : (isset($payload['wifi']) && is_array($payload['wifi']) ? $payload['wifi'] : [])
+        );
         $firstBaseStation = $baseStations[0] ?? [];
         $lat = self::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null);
         $lon = self::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? $gps['lon'] ?? $gps['lng'] ?? $gps['longitude'] ?? null);
         $gpsValid = isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : null;
         $satelliteCount = self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null);
+        if ($gpsValid !== true && $lat === 0.0 && $lon === 0.0) {
+            $lat = null;
+            $lon = null;
+        }
+        $hasCoordinates = $lat !== null && $lon !== null;
 
         $location = array_filter([
             'source' => self::normalizeLocationSource($payload, $gps, $gpsValid, $baseStations, $wifiAccessPoints, $lat, $lon, $satelliteCount),
+            'hasCoordinates' => $hasCoordinates,
             'lat' => $lat,
             'lon' => $lon,
             'gpsValid' => $gpsValid,
@@ -217,12 +229,19 @@ final class FeatureNormalizer
 
     private static function alarm(array $payload): array
     {
+        $sos = isset($payload['sos']) ? (bool)$payload['sos'] : null;
+        $lowBattery = isset($payload['lowBattery']) ? (bool)$payload['lowBattery'] : null;
+        $fall = isset($payload['fall']) ? (bool)$payload['fall'] : null;
+        $wearingNotice = isset($payload['wearingNotice'])
+            ? (bool)$payload['wearingNotice']
+            : (isset($payload['removeAlarm']) ? (bool)$payload['removeAlarm'] : null);
+
         return array_filter([
-            'code' => isset($payload['alarmCode']) ? (string)$payload['alarmCode'] : null,
-            'sos' => isset($payload['sos']) ? (bool)$payload['sos'] : null,
-            'lowBattery' => isset($payload['lowBattery']) ? (bool)$payload['lowBattery'] : null,
-            'fall' => isset($payload['fall']) ? (bool)$payload['fall'] : null,
-            'wearingNotice' => isset($payload['wearingNotice']) ? (bool)$payload['wearingNotice'] : null,
+            'code' => self::normalizeAlarmCode($sos, $lowBattery, $fall, $wearingNotice),
+            'sos' => $sos,
+            'lowBattery' => $lowBattery,
+            'fall' => $fall,
+            'wearingNotice' => $wearingNotice,
         ], static fn (mixed $value): bool => $value !== null);
     }
 
@@ -278,5 +297,71 @@ final class FeatureNormalizer
     private static function stringOrNull(mixed $value): ?string
     {
         return $value === null || $value === '' ? null : (string)$value;
+    }
+
+    private static function normalizeAlarmCode(?bool $sos, ?bool $lowBattery, ?bool $fall, ?bool $wearingNotice): ?string
+    {
+        $flags = array_filter([
+            'sos' => $sos === true,
+            'low_battery' => $lowBattery === true,
+            'fall' => $fall === true,
+            'wearing_notice' => $wearingNotice === true,
+        ]);
+
+        return count($flags) === 1 ? array_key_first($flags) : null;
+    }
+
+    /**
+     * @param array<int, mixed> $stations
+     * @return array<int, array<string, mixed>>
+     */
+    private static function normalizeBaseStations(array $stations): array
+    {
+        $normalized = [];
+        foreach ($stations as $station) {
+            if (!is_array($station)) {
+                continue;
+            }
+
+            $entry = array_filter([
+                'mcc' => self::stringOrNull($station['mcc'] ?? null),
+                'mnc' => self::stringOrNull($station['mnc'] ?? null),
+                'lac' => self::stringOrNull($station['lac'] ?? null),
+                'cellId' => self::stringOrNull($station['cellId'] ?? $station['ci'] ?? null),
+                'gsmSignal' => self::int($station['gsmSignal'] ?? $station['rxlev'] ?? null),
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+            if ($entry !== []) {
+                $normalized[] = $entry;
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<int, mixed> $points
+     * @return array<int, array<string, mixed>>
+     */
+    private static function normalizeWifiAccessPoints(array $points): array
+    {
+        $normalized = [];
+        foreach ($points as $point) {
+            if (!is_array($point)) {
+                continue;
+            }
+
+            $entry = array_filter([
+                'ssid' => self::stringOrNull($point['ssid'] ?? $point['label'] ?? null),
+                'mac' => self::stringOrNull($point['mac'] ?? null),
+                'signal' => self::int($point['signal'] ?? $point['rssi'] ?? null),
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+            if ($entry !== []) {
+                $normalized[] = $entry;
+            }
+        }
+
+        return $normalized;
     }
 }

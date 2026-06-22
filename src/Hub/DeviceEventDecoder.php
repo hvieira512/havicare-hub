@@ -96,12 +96,13 @@ final class DeviceEventDecoder
             ],
             'AP10' => array_values(array_filter([
                 $this->event('alarm', $nativeType, $payload, $this->only($payload, [
+                    'alarmCode',
                     'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satelliteCount',
                     'battery', 'mcc', 'mnc', 'lac', 'cellId', 'language',
                     'replyAddressRequested', 'mobileLinkRequested', 'wifiRaw', 'date', 'timeUtc',
                 ])),
                 $this->event('location', $nativeType, $payload, $this->only($payload, [
-                    'alarmCode', 'sos', 'lowBattery', 'fall', 'wearingNotice', 'battery', 'language',
+                    'battery', 'language',
                 ])),
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
             ])),
@@ -176,6 +177,7 @@ final class DeviceEventDecoder
             $this->isFourPTouchAlarm($nativeType) => array_values(array_filter([
                 $this->event('location', $nativeType, $payload, $payload),
                 $this->event('alarm', $nativeType, $payload, $this->only($payload, [
+                    'alarmCode',
                     'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satellites',
                     'batteryPercent', 'mcc', 'mnc', 'lac', 'cellId', 'networkType',
                 ])),
@@ -243,6 +245,14 @@ final class DeviceEventDecoder
             'highTemp' => 'highCelsius',
             'highTemperature' => 'highCelsius',
             'humidity' => 'humidityPercent',
+            'wifi' => 'wifiAccessPoints',
+            'baseStation' => 'baseStations',
+            'workingMode' => 'workMode',
+            'battery' => 'batteryPercent',
+            'batteryLevel' => 'batteryPercent',
+            'rollsFrequency' => 'rollFrequency',
+            'fortification' => 'fortificationState',
+            'removeAlarm' => 'wearingNotice',
         ];
         foreach ($payload as $key => $field) {
             if ($key === 'source') {
@@ -250,6 +260,12 @@ final class DeviceEventDecoder
                 $normalizedSource = is_string($value['source'] ?? null) ? trim((string)$value['source']) : '';
                 if ($rawSource !== '' && $normalizedSource !== '' && $rawSource !== $normalizedSource) {
                     $extra['sourceRaw'] = $rawSource;
+                }
+                continue;
+            }
+            if ($key === 'alarmCode') {
+                if ($field !== null && $field !== '') {
+                    $extra['rawCode'] = (string)$field;
                 }
                 continue;
             }
