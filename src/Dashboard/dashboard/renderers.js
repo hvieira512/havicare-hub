@@ -25,6 +25,7 @@ export function emptyPanel(text) {
 }
 
 export function commandFeature(command) {
+    if (command.feature) return command.feature;
     const haystack = `${command.command || ''} ${command.label || ''}`.toLowerCase();
     if (haystack.includes('heart')) return 'heart_rate';
     if (haystack.includes('blood pressure')) return 'blood_pressure';
@@ -40,7 +41,7 @@ export function commandFeature(command) {
 
 export function cardTone(type, command = {}) {
     const key = type || commandFeature(command);
-    if (['heart_rate', 'blood_pressure', 'ecg', 'hrv'].includes(key)) return {border: 'danger', bg: 'bg-danger', text: 'text-danger'};
+    if (['heart_rate', 'blood_pressure', 'blood_pressure_systolic', 'blood_pressure_diastolic', 'ecg', 'hrv'].includes(key)) return {border: 'danger', bg: 'bg-danger', text: 'text-danger'};
     if (key === 'blood_oxygen') return {border: 'info', bg: 'bg-info', text: 'text-info'};
     if (key === 'blood_sugar') return {border: 'warning', bg: 'bg-warning', text: 'text-warning'};
     if (key === 'temperature') return {border: 'warning', bg: 'bg-warning', text: 'text-warning'};
@@ -57,6 +58,8 @@ export function cardTone(type, command = {}) {
 export function requestCardContent(type) {
     if (type === 'heart_rate') return {icon: 'fa-heart-pulse', value: 'Frequência cardíaca'};
     if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: 'Tensão arterial'};
+    if (type === 'blood_pressure_systolic') return {icon: 'fa-heart-circle-bolt', value: 'Tensão sistólica'};
+    if (type === 'blood_pressure_diastolic') return {icon: 'fa-stethoscope', value: 'Tensão diastólica'};
     if (type === 'blood_oxygen') return {icon: 'fa-droplet', value: 'Oxigénio no sangue'};
     if (type === 'temperature') return {icon: 'fa-temperature-half', value: 'Temperatura'};
     if (type === 'location') return {icon: 'fa-location-dot', value: 'Localização'};
@@ -70,6 +73,8 @@ export function requestCardContent(type) {
 export function uplinkCardContent(type, data) {
     if (type === 'heart_rate') return {icon: 'fa-heart-pulse', value: `${data.bpm ?? '-'} bpm`};
     if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: `${data.systolicMmHg ?? '-'} / ${data.diastolicMmHg ?? '-'} mmHg`, details: data.pulseBpm ? `Pulso ${esc(data.pulseBpm)} bpm` : ''};
+    if (type === 'blood_pressure_systolic') return {icon: 'fa-heart-circle-bolt', value: `${data.systolicMmHg ?? '-'} mmHg`};
+    if (type === 'blood_pressure_diastolic') return {icon: 'fa-stethoscope', value: `${data.diastolicMmHg ?? '-'} mmHg`};
     if (type === 'blood_oxygen') return {icon: 'fa-droplet', value: `${data.spo2Percent ?? '-'}% SpO2`};
     if (type === 'blood_sugar') return {icon: 'fa-vial', value: `${data.glucoseMgDl ?? '-'} mg/dL`};
     if (type === 'temperature') return {icon: 'fa-temperature-half', value: `${data.bodyCelsius ?? '-'} °C`};
@@ -130,7 +135,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         </div>
         <div class="d-flex justify-content-between align-items-center">
         <div class="fw-semibold ${lastTelemetry ? tone.text : 'text-secondary'}">${esc(lastValue)}</div>
-        <button class="btn btn-primary btn-sm" data-command="${esc(command.command)}" data-action="sendCommand" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
+        <button class="btn btn-primary btn-sm" data-request-id="${esc(command.id || command.command)}" data-action="sendCommand" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
         </div>
         </div>
         </div>

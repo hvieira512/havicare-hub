@@ -160,6 +160,9 @@ final class DeviceEventDecoder
             $nativeType === 'oxygen' => [
                 $this->event('blood_oxygen', $nativeType, $payload, $payload),
             ],
+            $nativeType === 'btemp2' => [
+                $this->event('temperature', $nativeType, $payload, $payload),
+            ],
             $this->isFourPTouchPosition($nativeType) => array_values(array_filter([
                 $this->event('location', $nativeType, $payload, $payload),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),

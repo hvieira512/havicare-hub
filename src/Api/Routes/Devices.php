@@ -89,8 +89,11 @@ final class Devices
     public function command(string $imei, string $body): array
     {
         $decoded = json_decode($body, true);
-        if (!is_array($decoded) || !is_string($decoded['command'] ?? null)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'command is required']];
+        $requestId = is_array($decoded)
+            ? trim((string)($decoded['requestId'] ?? $decoded['command'] ?? ''))
+            : '';
+        if ($requestId === '') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'requestId is required']];
         }
 
         $device = $this->store->device($imei);
@@ -98,17 +101,17 @@ final class Devices
         $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
         $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
-        $command = (string)$decoded['command'];
+        $entry = DeviceCommandCatalog::requestForProtocol($protocol, $requestId);
         $modelRow = $this->modelForSupplierAndName($supplier, $model);
-        $entry = DeviceCommandCatalog::commandForProtocol($protocol, $command);
         if ($entry === null) {
             return ['error' => ['code' => 'unsupported_command', 'message' => 'Command is not supported for this device']];
         }
-        if (!$this->isModelRequestEnabled($modelRow, $protocol, $command)) {
+        if (!$this->isModelRequestEnabled($modelRow, $protocol, $requestId)) {
             return ['error' => ['code' => 'unsupported_for_model', 'message' => 'Command is not enabled for this model']];
         }
 
-        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, [], [
+        $nativeCommand = (string)($entry['command'] ?? '');
+        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, ['fields' => $entry['data'] ?? []], [
             'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
         ]);
         $id = bin2hex(random_bytes(8));
@@ -117,8 +120,10 @@ final class Devices
             'status' => $status,
             'imei' => $imei,
             'protocol' => $protocol,
-            'nativeType' => $command,
-            'label' => (string)($entry['label'] ?? $command),
+            'requestId' => $requestId,
+            'nativeType' => $nativeCommand,
+            'label' => (string)($entry['label'] ?? $nativeCommand),
+            'feature' => (string)($entry['feature'] ?? ''),
             'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
             'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
         ];
@@ -381,20 +386,21 @@ final class Devices
 
         $enabled = array_flip($this->db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id']));
 
-        return array_values(array_filter(
-            $commands,
-            static fn(array $entry): bool => isset($enabled[(string)($entry['command'] ?? '')])
-        ));
+        return array_values(array_filter($commands, static function (array $entry) use ($enabled): bool {
+            $requestId = (string)($entry['id'] ?? $entry['command'] ?? '');
+            $nativeCommand = (string)($entry['command'] ?? '');
+            return isset($enabled[$requestId]) || ($nativeCommand !== '' && isset($enabled[$nativeCommand]));
+        }));
     }
 
-    private function isModelRequestEnabled(?array $model, string $protocol, string $command): bool
+    private function isModelRequestEnabled(?array $model, string $protocol, string $requestId): bool
     {
         if ($model === null) {
             return false;
         }
 
         foreach ($this->enabledRequestCommandsForModel($model, $protocol) as $entry) {
-            if ((string)($entry['command'] ?? '') === $command) {
+            if ((string)($entry['id'] ?? $entry['command'] ?? '') === $requestId || (string)($entry['command'] ?? '') === $requestId) {
                 return true;
             }
         }

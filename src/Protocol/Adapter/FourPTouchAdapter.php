@@ -119,6 +119,12 @@ class FourPTouchAdapter implements DeviceAdapterInterface
             return;
         }
 
+        if ($type === 'btemp2') {
+            $data['measureType'] = $this->int($fields[0] ?? null);
+            $data['temp'] = $this->float($fields[1] ?? null);
+            return;
+        }
+
         if ($this->isPositionType($type) || $this->isAlarmType($type)) {
             $this->enrichPosition($type, $fields, $data);
             if ($this->isAlarmType($type)) {

@@ -62,6 +62,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('[3G*7597567372*000A*UPLOAD,600]', $wire);
     }
 
+    public function testFourPTouchUploadIntervalRequiresProtocolMinimum(): void
+    {
+        self::assertSame(
+            'intervalSeconds must be between 60 and 65535',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'uploadInterval', ['intervalSeconds' => 59])
+        );
+    }
+
     public function testFourPTouchFallsBackToCanonicalImeiOnlyWhenNoDeviceIdIsProvided(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'uploadInterval', ['intervalSeconds' => 600]);
@@ -95,13 +103,56 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['111', '222', '333', '444', '555'], $decoded['data']['fields'] ?? null);
     }
 
-    public function testFourPTouchCommandsExposeLocationAndHealthRequests(): void
+    public function testFourPTouchLanguageTimezoneBuildsNativeFields(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'languageTimezone', [
+            'language' => 3,
+            'timeZone' => '0',
+        ]);
+
+        self::assertSame('LZ', $payload['command']);
+        self::assertSame(['fields' => ['3', '0']], $payload['payload']);
+    }
+
+    public function testFourPTouchFallDownSensitivityBuildsFirmwareAwarePayload(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fallDownSensitivity', [
+            'sensitivityLevel' => 5,
+            'totalLevels' => 8,
+        ]);
+
+        self::assertSame('LSSET', $payload['command']);
+        self::assertSame(['fields' => ['5+8']], $payload['payload']);
+    }
+
+    public function testFourPTouchWalkTimeAndTemperatureIntervalBuildNativeFields(): void
+    {
+        $walkTime = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'walkTime', [
+            'ranges' => ['08:10-09:30', '10:10-11:30'],
+        ]);
+        self::assertSame('WALKTIME', $walkTime['command']);
+        self::assertSame(['fields' => ['08:10-09:30', '10:10-11:30']], $walkTime['payload']);
+
+        $temperature = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'bodyTemperatureInterval', [
+            'enabled' => true,
+            'intervalHours' => 2,
+        ]);
+        self::assertSame('bodytemp', $temperature['command']);
+        self::assertSame(['fields' => ['1', '2']], $temperature['payload']);
+    }
+
+    public function testFourPTouchCommandsExposeSplitHealthRequests(): void
     {
         $commands = DeviceCommandCatalog::commandsForProtocol('four-p-touch');
 
-        self::assertCount(2, $commands);
+        self::assertCount(5, $commands);
         self::assertSame('CR', $commands[0]['command']);
+        self::assertSame('fourPHeartRate', $commands[1]['id']);
         self::assertSame('hrtstart', $commands[1]['command']);
+        self::assertSame('fourPSystolicPressure', $commands[2]['id']);
+        self::assertSame('fourPDiastolicPressure', $commands[3]['id']);
+        self::assertSame('fourPBodyTemperature', $commands[4]['id']);
         self::assertContains('bphrt', $commands[1]['expectedReplyTypes']);
+        self::assertContains('btemp2', $commands[4]['expectedReplyTypes']);
     }
 }

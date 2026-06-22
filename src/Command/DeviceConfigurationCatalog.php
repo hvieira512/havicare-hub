@@ -143,14 +143,32 @@ final class DeviceConfigurationCatalog
         }
 
         $fields = match ($key) {
-            'uploadInterval' => [self::positiveInt($payload['intervalSeconds'] ?? null, 'intervalSeconds')],
+            'uploadInterval' => [self::rangeInt($payload['intervalSeconds'] ?? null, 60, 65535, 'intervalSeconds')],
             'sosNumber1', 'sosNumber2', 'sosNumber3', 'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
             'devicePassword' => [self::requiredString($payload['password'] ?? null, 'password')],
+            'languageTimezone' => [
+                self::rangeInt($payload['language'] ?? null, 0, 36, 'language'),
+                self::requiredString($payload['timeZone'] ?? null, 'timeZone'),
+            ],
+            'sosSmsAlerts', 'lowBatterySmsAlerts', 'removeWatchAlarm', 'removeWatchSmsAlerts' => [
+                self::boolInt($payload['enabled'] ?? null, 'enabled'),
+            ],
             'healthAutoMeasurement' => [
                 1,
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
                 self::positiveInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
+            ],
+            'walkTime' => self::timeRanges($payload['ranges'] ?? [], 3, 'ranges'),
+            'sleepTime' => [self::timeRange($payload['range'] ?? null, 'range')],
+            'fallDownAlert' => [
+                self::boolInt($payload['enabled'] ?? null, 'enabled'),
+                self::boolInt($payload['callCenterOnFall'] ?? null, 'callCenterOnFall'),
+            ],
+            'fallDownSensitivity' => [self::fallDownSensitivity($payload)],
+            'bodyTemperatureInterval' => [
+                self::boolInt($payload['enabled'] ?? null, 'enabled'),
+                self::rangeInt($payload['intervalHours'] ?? null, 1, 12, 'intervalHours'),
             ],
             default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
@@ -292,7 +310,17 @@ final class DeviceConfigurationCatalog
             self::entry('whitelistGroup2', 'WHITELIST2', 'Lista branca 6-10', 'list', ['numbers'], ['WHITELIST2'], 'contacts', 50, 5),
             self::entry('monitorNumber', 'MONITOR', 'Número de monitorização', 'phone', ['phone'], ['MONITOR'], 'contacts', 60),
             self::entry('devicePassword', 'PW', 'Palavra-passe do dispositivo', 'text', ['password'], ['PW'], 'system', 10),
+            self::entry('languageTimezone', 'LZ', 'Idioma e fuso horário', 'languageTimezone', ['language', 'timeZone'], ['LZ'], 'system', 20),
+            self::entry('sosSmsAlerts', 'SOSSMS', 'SMS em alarme SOS', 'toggle', ['enabled'], ['SOSSMS'], 'alerts', 10),
+            self::entry('lowBatterySmsAlerts', 'LOWBAT', 'SMS em bateria fraca', 'toggle', ['enabled'], ['LOWBAT'], 'alerts', 20),
+            self::entry('removeWatchAlarm', 'REMOVE', 'Alarme ao retirar relógio', 'toggle', ['enabled'], ['REMOVE'], 'alerts', 30),
+            self::entry('removeWatchSmsAlerts', 'REMOVESMS', 'SMS ao retirar relógio', 'toggle', ['enabled'], ['REMOVESMS'], 'alerts', 40),
+            self::entry('fallDownAlert', 'FALLDOWN', 'Alerta de queda', 'dualToggle', ['enabled', 'callCenterOnFall'], ['FALLDOWN'], 'alerts', 50),
+            self::entry('fallDownSensitivity', 'LSSET', 'Sensibilidade de queda', 'fallSensitivityLevels', ['sensitivityLevel', 'totalLevels'], ['LSSET'], 'alerts', 60),
             self::entry('healthAutoMeasurement', 'HEALTHAUTOSET', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['HEALTHAUTOSET'], 'health', 10),
+            self::entry('walkTime', 'WALKTIME', 'Janela de pedómetro', 'timeRanges', ['ranges'], ['WALKTIME'], 'health', 20, 3),
+            self::entry('sleepTime', 'SLEEPTIME', 'Deteção de sono e rotação', 'timeRange', ['range'], ['SLEEPTIME'], 'health', 30),
+            self::entry('bodyTemperatureInterval', 'bodytemp', 'Temperatura periódica', 'intervalHoursToggle', ['enabled', 'intervalHours'], ['bodytemp'], 'health', 40),
         ];
     }
 
@@ -393,5 +421,65 @@ final class DeviceConfigurationCatalog
     {
         $encoded = iconv('UTF-8', 'UTF-16BE//IGNORE', $value);
         return strtoupper(bin2hex($encoded !== false ? $encoded : $value));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function timeRanges(mixed $value, int $max, string $field): array
+    {
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException("{$field} must be an array");
+        }
+
+        $ranges = [];
+        foreach (array_slice($value, 0, $max) as $item) {
+            if (trim((string)$item) === '') {
+                continue;
+            }
+            $ranges[] = self::timeRange($item, $field);
+        }
+
+        if ($ranges === []) {
+            throw new \InvalidArgumentException("{$field} must contain at least one time range");
+        }
+
+        return $ranges;
+    }
+
+    private static function timeRange(mixed $value, string $field): string
+    {
+        $value = trim((string)$value);
+        if (!preg_match('/^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/', $value)) {
+            throw new \InvalidArgumentException("{$field} must use HH:MM-HH:MM");
+        }
+
+        [$start, $end] = explode('-', $value, 2);
+        self::validateClockTime($start, $field);
+        self::validateClockTime($end, $field);
+
+        return $value;
+    }
+
+    private static function validateClockTime(string $value, string $field): void
+    {
+        [$hour, $minute] = array_map('intval', explode(':', $value, 2));
+        if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+            throw new \InvalidArgumentException("{$field} must use valid 24h times");
+        }
+    }
+
+    private static function fallDownSensitivity(array $payload): string
+    {
+        $level = self::positiveInt($payload['sensitivityLevel'] ?? null, 'sensitivityLevel');
+        $totalLevels = self::rangeInt($payload['totalLevels'] ?? null, 6, 8, 'totalLevels');
+        if (!in_array($totalLevels, [6, 8], true)) {
+            throw new \InvalidArgumentException('totalLevels must be 6 or 8');
+        }
+        if ($level > $totalLevels) {
+            throw new \InvalidArgumentException('sensitivityLevel must not exceed totalLevels');
+        }
+
+        return "{$level}+{$totalLevels}";
     }
 }

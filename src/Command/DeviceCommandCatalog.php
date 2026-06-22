@@ -46,6 +46,17 @@ final class DeviceCommandCatalog
         return null;
     }
 
+    public static function requestForProtocol(string $protocol, string $requestId): ?array
+    {
+        foreach (self::commandsForProtocol($protocol) as $entry) {
+            if (($entry['id'] ?? $entry['command'] ?? '') === $requestId || ($entry['command'] ?? '') === $requestId) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
     public static function buildDownlink(string $protocol, string $imei, string $command, array $payload = [], array $context = []): string
     {
         $entry = self::commandForProtocol($protocol, $command);
@@ -72,18 +83,18 @@ final class DeviceCommandCatalog
     private static function wonlexCommands(): array
     {
         return [
-            ['command' => 'dnHeartRate', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
-            ['command' => 'dnBP', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'expectedReplyTypes' => ['upBP', 'upBatch']],
-            ['command' => 'dnBO', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'expectedReplyTypes' => ['upBO', 'upBatch']],
-            ['command' => 'dnTemperature', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'expectedReplyTypes' => ['upBodyTemperature']],
-            ['command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'expectedReplyTypes' => ['upBreathe']],
-            ['command' => 'dnLocation', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'expectedReplyTypes' => ['upLocation']],
-            ['command' => 'dnUpSleep', 'label' => 'Sleep data', 'icon' => 'fa-bed', 'kind' => 'request', 'expectedReplyTypes' => ['upSleep']],
-            ['command' => 'dnECG', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'expectedReplyTypes' => ['upECG']],
-            ['command' => 'dnHRV', 'label' => 'HRV', 'icon' => 'fa-chart-line', 'kind' => 'request', 'expectedReplyTypes' => ['upHRV']],
-            ['command' => 'dnPPG', 'label' => 'PPG', 'icon' => 'fa-circle-nodes', 'kind' => 'request', 'expectedReplyTypes' => ['upPPG']],
-            ['command' => 'dnRR', 'label' => 'RR interval', 'icon' => 'fa-stopwatch', 'kind' => 'request', 'expectedReplyTypes' => ['upRR']],
-            ['command' => 'dnWeather', 'label' => 'Weather', 'icon' => 'fa-cloud-sun', 'kind' => 'data', 'expectedReplyTypes' => ['upWeather']],
+            ['id' => 'dnHeartRate', 'command' => 'dnHeartRate', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
+            ['id' => 'dnBP', 'command' => 'dnBP', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['upBP', 'upBatch']],
+            ['id' => 'dnBO', 'command' => 'dnBO', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['upBO', 'upBatch']],
+            ['id' => 'dnTemperature', 'command' => 'dnTemperature', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['upBodyTemperature']],
+            ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'expectedReplyTypes' => ['upBreathe']],
+            ['id' => 'dnLocation', 'command' => 'dnLocation', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['upLocation']],
+            ['id' => 'dnUpSleep', 'command' => 'dnUpSleep', 'label' => 'Sleep data', 'icon' => 'fa-bed', 'kind' => 'request', 'feature' => 'sleep', 'expectedReplyTypes' => ['upSleep']],
+            ['id' => 'dnECG', 'command' => 'dnECG', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['upECG']],
+            ['id' => 'dnHRV', 'command' => 'dnHRV', 'label' => 'HRV', 'icon' => 'fa-chart-line', 'kind' => 'request', 'feature' => 'hrv', 'expectedReplyTypes' => ['upHRV']],
+            ['id' => 'dnPPG', 'command' => 'dnPPG', 'label' => 'PPG', 'icon' => 'fa-circle-nodes', 'kind' => 'request', 'expectedReplyTypes' => ['upPPG']],
+            ['id' => 'dnRR', 'command' => 'dnRR', 'label' => 'RR interval', 'icon' => 'fa-stopwatch', 'kind' => 'request', 'expectedReplyTypes' => ['upRR']],
+            ['id' => 'dnWeather', 'command' => 'dnWeather', 'label' => 'Weather', 'icon' => 'fa-cloud-sun', 'kind' => 'data', 'feature' => 'weather', 'expectedReplyTypes' => ['upWeather']],
         ];
     }
 
@@ -93,12 +104,12 @@ final class DeviceCommandCatalog
     private static function vivistarCommands(): array
     {
         return [
-            ['command' => 'BPXL', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'expectedReplyTypes' => ['APXL']],
-            ['command' => 'BPXY', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'expectedReplyTypes' => ['APXY']],
-            ['command' => 'BPXZ', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'expectedReplyTypes' => ['APXZ']],
-            ['command' => 'BPXT', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'expectedReplyTypes' => ['APXT']],
-            ['command' => 'BP16', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'expectedReplyTypes' => ['AP16', 'AP01']],
-            ['command' => 'BP87', 'label' => 'Temperature variant', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'expectedReplyTypes' => ['AP87']],
+            ['id' => 'BPXL', 'command' => 'BPXL', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['APXL']],
+            ['id' => 'BPXY', 'command' => 'BPXY', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['APXY']],
+            ['id' => 'BPXZ', 'command' => 'BPXZ', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['APXZ']],
+            ['id' => 'BPXT', 'command' => 'BPXT', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['APXT']],
+            ['id' => 'BP16', 'command' => 'BP16', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['AP16', 'AP01']],
+            ['id' => 'BP87', 'command' => 'BP87', 'label' => 'Temperature variant', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['AP87']],
         ];
     }
 
@@ -108,8 +119,11 @@ final class DeviceCommandCatalog
     private static function fourPTouchCommands(): array
     {
         return [
-            ['command' => 'CR', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'expectedReplyTypes' => ['CR', 'UD', 'UD2', 'UD_WCDMA', 'UD_LTE', 'AL', 'AL_WCDMA', 'AL_LTE']],
-            ['command' => 'hrtstart', 'label' => 'Heart rate and blood pressure', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+            ['id' => 'CR', 'command' => 'CR', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['CR', 'UD', 'UD2', 'UD_WCDMA', 'UD_LTE', 'AL', 'AL_WCDMA', 'AL_LTE']],
+            ['id' => 'fourPHeartRate', 'command' => 'hrtstart', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+            ['id' => 'fourPSystolicPressure', 'command' => 'hrtstart', 'label' => 'Systolic blood pressure', 'icon' => 'fa-heart-circle-bolt', 'kind' => 'request', 'feature' => 'blood_pressure_systolic', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+            ['id' => 'fourPDiastolicPressure', 'command' => 'hrtstart', 'label' => 'Diastolic blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure_diastolic', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+            ['id' => 'fourPBodyTemperature', 'command' => 'bodytemp2', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['bodytemp2', 'btemp2']],
         ];
     }
 

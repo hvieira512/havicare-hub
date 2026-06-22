@@ -19,6 +19,7 @@ const CATEGORY_LABELS = {
     },
     'four-p-touch': {
         contacts: 'Contactos',
+        alerts: 'Alertas',
         health: 'Saúde',
         system: 'Sistema',
         intervals: 'Intervalos',
@@ -28,7 +29,7 @@ const CATEGORY_LABELS = {
 const CATEGORY_ORDER = {
     'vivistar-iw': ['contacts', 'alerts', 'health', 'system', 'intervals'],
     'wonlex-json': ['intervals', 'contacts', 'measurements', 'alerts', 'health', 'system'],
-    'four-p-touch': ['intervals', 'contacts', 'health', 'system'],
+    'four-p-touch': ['intervals', 'contacts', 'alerts', 'health', 'system'],
 };
 
 let uidCounter = 0;
@@ -214,11 +215,29 @@ export function renderConfigInputs(entry, desired) {
     if (input === 'intervalToggle') {
         return intervalToggleInput(entry, desired);
     }
+    if (input === 'intervalHoursToggle') {
+        return intervalHoursToggleInput(desired);
+    }
     if (input === 'workingMode') {
         return workingModeInput(desired);
     }
     if (input === 'bloodPressure') {
         return bloodPressureInput(desired);
+    }
+    if (input === 'languageTimezone') {
+        return languageTimezoneInput(desired);
+    }
+    if (input === 'dualToggle') {
+        return dualToggleInput(desired);
+    }
+    if (input === 'fallSensitivityLevels') {
+        return fallSensitivityLevelsInput(desired);
+    }
+    if (input === 'timeRanges') {
+        return timeRangesInput(entry, desired);
+    }
+    if (input === 'timeRange') {
+        return timeRangeInput(desired);
     }
     if (input === 'list') {
         return listInput(entry, desired, 'numbers', 'Números SOS');
@@ -256,6 +275,12 @@ export function readConfigPayload(section) {
             intervalMinutes: readNumber(section, 'intervalMinutes'),
         };
     }
+    if (input === 'intervalHoursToggle') {
+        return {
+            enabled: readCheckbox(section, 'enabled'),
+            intervalHours: readNumber(section, 'intervalHours'),
+        };
+    }
     if (input === 'workingMode') {
         const mode = readNumber(section, 'mode');
         const payload = {mode};
@@ -270,6 +295,30 @@ export function readConfigPayload(section) {
             systolic: readNumber(section, 'systolic'),
             diastolic: readNumber(section, 'diastolic'),
         };
+    }
+    if (input === 'languageTimezone') {
+        return {
+            language: readNumber(section, 'language'),
+            timeZone: readText(section, 'timeZone'),
+        };
+    }
+    if (input === 'dualToggle') {
+        return {
+            enabled: readCheckbox(section, 'enabled'),
+            callCenterOnFall: readCheckbox(section, 'callCenterOnFall'),
+        };
+    }
+    if (input === 'fallSensitivityLevels') {
+        return {
+            sensitivityLevel: readNumber(section, 'sensitivityLevel'),
+            totalLevels: readNumber(section, 'totalLevels'),
+        };
+    }
+    if (input === 'timeRanges') {
+        return {ranges: readTextArray(section, 'ranges')};
+    }
+    if (input === 'timeRange') {
+        return {range: readText(section, 'range')};
     }
     if (input === 'list') {
         const limit = parseInt(section.dataset.configLimit || '3', 10) || 3;
@@ -293,8 +342,14 @@ export function defaultConfigPayload(entry) {
     if (input === 'number') return {[field]: 0};
     if (input === 'phone' || input === 'text') return {[field]: ''};
     if (input === 'intervalToggle') return {enabled: true, intervalMinutes: 60};
+    if (input === 'intervalHoursToggle') return {enabled: true, intervalHours: 2};
     if (input === 'workingMode') return {mode: 1};
     if (input === 'bloodPressure') return {systolic: 120, diastolic: 80};
+    if (input === 'languageTimezone') return {language: 3, timeZone: '0'};
+    if (input === 'dualToggle') return {enabled: true, callCenterOnFall: false};
+    if (input === 'fallSensitivityLevels') return {sensitivityLevel: 5, totalLevels: 8};
+    if (input === 'timeRanges') return {ranges: ['08:10-09:30']};
+    if (input === 'timeRange') return {range: '21:10-07:30'};
     if (input === 'list') return {numbers: ['', '', '']};
     if (input === 'contacts') return {contacts: [{name: '', phone: ''}]};
     if (input === 'reminders') return {masterEnabled: true, items: []};
@@ -516,6 +571,23 @@ function intervalToggleInput(entry, desired) {
         </div>`;
 }
 
+function intervalHoursToggleInput(desired) {
+    const enabled = boolValue(desired.enabled, true);
+    return `
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="form-check form-switch mt-4">
+                    <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? 'checked' : ''}>
+                    <label class="form-check-label" data-switch-label>${enabled ? 'Ligado' : 'Desligado'}</label>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label form-label-sm">Intervalo (horas)</label>
+                <input class="form-control" type="number" min="1" max="12" step="1" data-config-field="intervalHours" value="${esc(String(desired.intervalHours ?? 2))}">
+            </div>
+        </div>`;
+}
+
 function workingModeInput(desired) {
     const mode = parseInt(String(desired.mode ?? 1), 10) || 1;
     const intervalSeconds = desired.intervalSeconds ?? 60;
@@ -581,6 +653,93 @@ function bloodPressureInput(desired) {
                 <label class="form-label form-label-sm">Diastólica</label>
                 <input class="form-control" type="number" min="0" step="1" data-config-field="diastolic" value="${esc(String(desired.diastolic ?? 80))}">
             </div>
+        </div>`;
+}
+
+function languageTimezoneInput(desired) {
+    const currentLanguage = parseInt(String(desired.language ?? 3), 10) || 3;
+    const options = [
+        {value: 0, label: 'English'},
+        {value: 1, label: '中文'},
+        {value: 3, label: 'Português'},
+        {value: 4, label: 'Español'},
+        {value: 5, label: 'Deutsch'},
+        {value: 10, label: 'Français'},
+    ];
+
+    return `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label form-label-sm">Idioma</label>
+                <select class="form-select" data-config-field="language">
+                    ${options.map(option => `
+                        <option value="${option.value}" ${option.value === currentLanguage ? 'selected' : ''}>${esc(option.label)} (${option.value})</option>
+                    `).join('')}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label form-label-sm">Fuso horário</label>
+                <input class="form-control" type="text" data-config-field="timeZone" value="${esc(String(desired.timeZone ?? '0'))}" placeholder="Ex.: 0, 1, 8">
+            </div>
+        </div>`;
+}
+
+function dualToggleInput(desired) {
+    const enabled = boolValue(desired.enabled, true);
+    const callCenterOnFall = boolValue(desired.callCenterOnFall, false);
+    return `
+        <div class="vstack gap-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? 'checked' : ''}>
+                <label class="form-check-label" data-switch-label>${enabled ? 'Ligado' : 'Desligado'}</label>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="callCenterOnFall" ${callCenterOnFall ? 'checked' : ''}>
+                <label class="form-check-label" data-switch-label data-switch-on="Liga para o centro" data-switch-off="Não liga para o centro">${callCenterOnFall ? 'Liga para o centro' : 'Não liga para o centro'}</label>
+            </div>
+        </div>`;
+}
+
+function fallSensitivityLevelsInput(desired) {
+    const sensitivityLevel = parseInt(String(desired.sensitivityLevel ?? 5), 10) || 5;
+    const totalLevels = parseInt(String(desired.totalLevels ?? 8), 10) || 8;
+    return `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label form-label-sm">Nível de sensibilidade</label>
+                <input class="form-control" type="number" min="1" max="${esc(String(totalLevels))}" step="1" data-config-field="sensitivityLevel" value="${esc(String(sensitivityLevel))}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label form-label-sm">Níveis totais do firmware</label>
+                <select class="form-select" data-config-field="totalLevels">
+                    <option value="6" ${totalLevels === 6 ? 'selected' : ''}>6</option>
+                    <option value="8" ${totalLevels === 8 ? 'selected' : ''}>8</option>
+                </select>
+            </div>
+        </div>`;
+}
+
+function timeRangesInput(entry, desired) {
+    const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
+    const ranges = Array.isArray(desired.ranges) ? desired.ranges : [];
+    const values = Array.from({length: limit}, (_, index) => ranges[index] ?? '');
+    return `
+        <div class="vstack gap-2">
+            <div class="small text-secondary">Formato HH:MM-HH:MM. Envie pelo menos um intervalo.</div>
+            ${values.map((value, index) => `
+                <div>
+                    <label class="form-label form-label-sm">Intervalo ${index + 1}</label>
+                    <input class="form-control" type="text" data-config-field="ranges" value="${esc(String(value))}" placeholder="08:10-09:30">
+                </div>
+            `).join('')}
+        </div>`;
+}
+
+function timeRangeInput(desired) {
+    return `
+        <div>
+            <label class="form-label form-label-sm">Intervalo</label>
+            <input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? '21:10-07:30'))}" placeholder="21:10-07:30">
         </div>`;
 }
 

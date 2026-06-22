@@ -63,6 +63,18 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertSame(96, $payload['data']['spo2']);
     }
 
+    public function testDecodeIncomingParsesBodyTemperatureReport(): void
+    {
+        $adapter = new FourPTouchAdapter();
+
+        $payload = $adapter->decodeIncoming('[3G*8800000015*000D*btemp2,1,36.7]');
+
+        self::assertIsArray($payload);
+        self::assertSame('btemp2', $payload['type']);
+        self::assertSame(1, $payload['data']['measureType']);
+        self::assertSame(36.7, $payload['data']['temp']);
+    }
+
     public function testDecodeIncomingParsesUd2LocationWithBaseStations(): void
     {
         $adapter = new FourPTouchAdapter();

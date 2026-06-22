@@ -487,6 +487,25 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(97, $events[0]['value']['spo2Percent']);
     }
 
+    public function testDecodesFourPTouchBodyTemperatureReport(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'btemp2',
+                'data' => [
+                    'measureType' => 1,
+                    'temp' => 36.7,
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('temperature', $events[0]['feature']);
+        self::assertSame(36.7, $events[0]['value']['bodyCelsius']);
+        self::assertSame(1, $events[0]['extra']['measureType']);
+    }
+
     public function testDecodesFourPTouchPositionIntoLocationActivityAndBattery(): void
     {
         $events = (new DeviceEventDecoder())->decode(

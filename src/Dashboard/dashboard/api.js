@@ -30,9 +30,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({supplier, model}),
     }),
-    sendCommand: (imei, command) => requestJson(`/api/devices/${encodeURIComponent(imei)}/commands`, {
+    sendCommand: (imei, requestId) => requestJson(`/api/devices/${encodeURIComponent(imei)}/commands`, {
         method: 'POST',
-        body: JSON.stringify({command}),
+        body: JSON.stringify({requestId}),
     }),
     saveDevice: (imei, supplier, model, deviceType = 'watch', licenseId = '0', simNumber = '', deviceId = '', originalImei = '') => requestJson(
         originalImei ? `/api/devices/${encodeURIComponent(originalImei)}` : '/api/devices',

@@ -512,7 +512,7 @@ class DeviceHubServer
      */
     private function fourPTouchAckFields(string $type): ?array
     {
-        if ($type === 'LK' || $type === 'bphrt' || $type === 'TKQ' || $type === 'TKQ2') {
+        if ($type === 'LK' || $type === 'bphrt' || $type === 'btemp2' || $type === 'TKQ' || $type === 'TKQ2') {
             return [];
         }
 

@@ -627,7 +627,7 @@ function telemetryDetails(data, payload) {
 function renderRequestCards(commands, telemetry = []) {
     els.requestCardCount.textContent = commands.length ? `${commands.length} ações` : '';
     els.requestGrid.innerHTML = commands.length
-        ? commands.map(command => renderRequestCardShell(command, state.loadingCommands.has(command.command), telemetry)).join('')
+        ? commands.map(command => renderRequestCardShell(command, state.loadingCommands.has(String(command.id || command.command || '')), telemetry)).join('')
         : `<div class="col-12">${emptyPanel('Não há pedidos disponíveis para este dispositivo.')}</div>`;
 }
 
@@ -771,17 +771,17 @@ function expectedReplies(command) {
         : '';
 }
 
-async function sendCommand(command) {
-    state.loadingCommands.add(command);
+async function sendCommand(requestId) {
+    state.loadingCommands.add(requestId);
     renderSelection();
     try {
-        const result = await api.sendCommand(state.selectedImei, command);
+        const result = await api.sendCommand(state.selectedImei, requestId);
         if (result.error) alert(result.error.message || result.error.code);
         if (state.selectedImei) {
             await loadDevice(state.selectedImei);
         }
     } finally {
-        state.loadingCommands.delete(command);
+        state.loadingCommands.delete(requestId);
         renderSelection();
     }
 }
@@ -1296,13 +1296,14 @@ function renderCapabilitiesSection() {
                     </thead>
                     <tbody>
                         ${entries.map(entry => {
+                            const requestId = String(entry.id || entry.command || '');
                             const command = String(entry.command || '');
                             const reply = Array.isArray(entry.expectedReplyTypes) && entry.expectedReplyTypes.length
                                 ? entry.expectedReplyTypes.map(type => `<span class="badge text-bg-light border me-1">${esc(type)}</span>`).join('')
                                 : '<span class="text-secondary small">Sem resposta esperada</span>';
                             return `
                                 <tr>
-                                    <td><input class="form-check-input" type="checkbox" data-action="toggleCapabilityRequest" data-command="${esc(command)}" ${enabled.has(command) ? 'checked' : ''}></td>
+                                    <td><input class="form-check-input" type="checkbox" data-action="toggleCapabilityRequest" data-request-id="${esc(requestId)}" ${enabled.has(requestId) ? 'checked' : ''}></td>
                                     <td>
                                         <div class="fw-semibold">${esc(commandLabel(entry) || command)}</div>
                                         <div class="small text-secondary">${esc(entry.label || '')}</div>
@@ -1796,14 +1797,14 @@ function handleCapabilityGroupsChange(event) {
     const checkbox = event.target.closest('[data-action="toggleCapabilityRequest"]');
     if (!checkbox) return;
 
-    const command = String(checkbox.dataset.command || '');
-    if (!command) return;
+    const requestId = String(checkbox.dataset.requestId || checkbox.dataset.command || '');
+    if (!requestId) return;
 
     const enabled = new Set(state.settingsModal.capabilityEnabledRequests || []);
     if (checkbox.checked) {
-        enabled.add(command);
+        enabled.add(requestId);
     } else {
-        enabled.delete(command);
+        enabled.delete(requestId);
     }
     state.settingsModal.capabilityEnabledRequests = [...enabled];
     renderCapabilitiesSection();
@@ -1818,7 +1819,7 @@ function handleDeviceListClick(event) {
 
 function handleRequestGridClick(event) {
     const button = event.target.closest('[data-action="sendCommand"]');
-    if (button) sendCommand(button.dataset.command);
+    if (button) sendCommand(String(button.dataset.requestId || button.dataset.command || ''));
 }
 
 function handleSupplierListClick(event) {

@@ -255,10 +255,20 @@ final class Models
         }
 
         $availableRequests = $this->requestCatalogForProtocol($protocol);
-        $availableCommandIds = array_map(
-            static fn(array $entry): string => (string)($entry['command'] ?? ''),
-            $availableRequests
-        );
+        $availableCommandIds = [];
+        $requestAliases = [];
+        foreach ($availableRequests as $entry) {
+            $requestId = (string)($entry['id'] ?? $entry['command'] ?? '');
+            $nativeCommand = (string)($entry['command'] ?? '');
+            if ($requestId === '') {
+                continue;
+            }
+            $availableCommandIds[] = $requestId;
+            $requestAliases[$requestId] = $requestId;
+            if ($nativeCommand !== '') {
+                $requestAliases[$nativeCommand] = $requestId;
+            }
+        }
         $hasEnabledRequestsSelection = array_key_exists('enabledRequestsConfigured', $decoded)
             || array_key_exists('enabledRequests', $decoded)
             || array_key_exists('enabledRequests[]', $decoded);
@@ -266,10 +276,14 @@ final class Models
         if (!$hasEnabledRequestsSelection) {
             $enabledRequests = $availableCommandIds;
         } else {
-            $enabledRequests = array_values(array_filter(
-                $enabledRequests,
-                static fn(string $command): bool => in_array($command, $availableCommandIds, true)
-            ));
+            $normalized = [];
+            foreach ($enabledRequests as $command) {
+                $requestId = $requestAliases[$command] ?? null;
+                if ($requestId !== null) {
+                    $normalized[$requestId] = true;
+                }
+            }
+            $enabledRequests = array_keys($normalized);
         }
 
         return ['supplier_id' => $supplierId, 'model' => $model, 'protocol' => $protocol, 'enabled_requests' => $enabledRequests];

@@ -29,6 +29,8 @@ export const when = value => {
 export const featureLabel = type => ({
     heart_rate: 'Frequência cardíaca',
     blood_pressure: 'Tensão arterial',
+    blood_pressure_systolic: 'Tensão arterial sistólica',
+    blood_pressure_diastolic: 'Tensão arterial diastólica',
     blood_oxygen: 'Oxigénio no sangue',
     blood_sugar: 'Glicemia',
     temperature: 'Temperatura',
@@ -94,6 +96,8 @@ export const fieldLabel = key => ({
 export const commandLabel = command => ({
     'Heart rate': 'Frequência cardíaca',
     'Blood pressure': 'Tensão arterial',
+    'Systolic blood pressure': 'Tensão arterial sistólica',
+    'Diastolic blood pressure': 'Tensão arterial diastólica',
     'Blood oxygen': 'Oxigénio no sangue',
     Temperature: 'Temperatura',
     'Temperature variant': 'Temperatura',

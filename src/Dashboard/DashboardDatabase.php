@@ -142,7 +142,7 @@ final class DashboardDatabase
             if ((string)($entry['kind'] ?? '') !== 'request') {
                 continue;
             }
-            $command = trim((string)($entry['command'] ?? ''));
+            $command = trim((string)($entry['id'] ?? $entry['command'] ?? ''));
             if ($command === '') {
                 continue;
             }

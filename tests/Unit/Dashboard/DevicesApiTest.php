@@ -74,6 +74,26 @@ final class DevicesApiTest extends TestCase
         self::assertSame('1703215911', $api->show('868017032159118')['device']['deviceId'] ?? null);
     }
 
+    public function testFourPTouchShowReturnsSplitHealthRequestIds(): void
+    {
+        [$api] = $this->makeApi();
+        $api->create(json_encode([
+            'imei' => '868017032159118',
+            'supplier' => '4P Touch',
+            'model' => '4P-TOUCH',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+            'deviceId' => '',
+        ], JSON_THROW_ON_ERROR));
+
+        $response = $api->show('868017032159118');
+
+        self::assertContains('fourPHeartRate', array_column($response['commands'], 'id'));
+        self::assertContains('fourPSystolicPressure', array_column($response['commands'], 'id'));
+        self::assertContains('fourPDiastolicPressure', array_column($response['commands'], 'id'));
+        self::assertContains('fourPBodyTemperature', array_column($response['commands'], 'id'));
+    }
+
     /**
      * @return array{0: Devices, 1: DashboardDataAccess}
      */
