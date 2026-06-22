@@ -25,10 +25,11 @@ final class DeviceEventDecoderTest extends TestCase
             ]
         );
 
-        self::assertSame(['heart_rate', 'blood_pressure', 'blood_oxygen'], array_column($events, 'feature'));
+        self::assertSame(['heart_rate', 'blood_pressure', 'heart_rate', 'blood_oxygen'], array_column($events, 'feature'));
         self::assertSame(100, $events[0]['value']['bpm']);
         self::assertSame(120, $events[1]['value']['systolicMmHg']);
-        self::assertSame(98, $events[2]['value']['spo2Percent']);
+        self::assertSame(72, $events[2]['value']['bpm']);
+        self::assertSame(98, $events[3]['value']['spo2Percent']);
     }
 
     public function testDecodesWonlexLocationWithBaseStationsAndWifi(): void
@@ -201,7 +202,8 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(75, $heartRate[0]['value']['bpm']);
         self::assertSame(118, $bloodPressure[0]['value']['systolicMmHg']);
         self::assertSame(78, $bloodPressure[0]['value']['diastolicMmHg']);
-        self::assertSame(75, $bloodPressure[0]['value']['pulseBpm']);
+        self::assertSame('heart_rate', $bloodPressure[1]['feature']);
+        self::assertSame(75, $bloodPressure[1]['value']['bpm']);
         self::assertSame(97, $bloodOxygen[0]['value']['spo2Percent']);
         self::assertSame(36.6, $temperature[0]['value']['bodyCelsius']);
     }

@@ -42,7 +42,6 @@ final class FeatureNormalizer
         return array_filter([
             'systolicMmHg' => self::int($payload['systolic'] ?? $payload['systolicMmHg'] ?? $payload['sbp'] ?? null),
             'diastolicMmHg' => self::int($payload['diastolic'] ?? $payload['diastolicMmHg'] ?? $payload['dbp'] ?? null),
-            'pulseBpm' => self::int($payload['pulse'] ?? $payload['pulseBpm'] ?? $payload['heartRate'] ?? $payload['hr'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
     }
 

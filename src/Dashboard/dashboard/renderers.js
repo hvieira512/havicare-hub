@@ -72,7 +72,7 @@ export function requestCardContent(type) {
 
 export function uplinkCardContent(type, data) {
     if (type === 'heart_rate') return {icon: 'fa-heart-pulse', value: `${data.bpm ?? '-'} bpm`};
-    if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: `${data.systolicMmHg ?? '-'} / ${data.diastolicMmHg ?? '-'} mmHg`, details: data.pulseBpm ? `Pulso ${esc(data.pulseBpm)} bpm` : ''};
+    if (type === 'blood_pressure') return {icon: 'fa-stethoscope', value: `${data.systolicMmHg ?? '-'} / ${data.diastolicMmHg ?? '-'} mmHg`};
     if (type === 'blood_pressure_systolic') return {icon: 'fa-heart-circle-bolt', value: `${data.systolicMmHg ?? '-'} mmHg`};
     if (type === 'blood_pressure_diastolic') return {icon: 'fa-stethoscope', value: `${data.diastolicMmHg ?? '-'} mmHg`};
     if (type === 'blood_oxygen') return {icon: 'fa-droplet', value: `${data.spo2Percent ?? '-'}% SpO2`};

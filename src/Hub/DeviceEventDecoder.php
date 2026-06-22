@@ -31,7 +31,10 @@ final class DeviceEventDecoder
         return match ($nativeType) {
             'upHeartRate' => [$this->event('heart_rate', $nativeType, $payload)],
             'upBO' => [$this->event('blood_oxygen', $nativeType, $payload)],
-            'upBP' => [$this->event('blood_pressure', $nativeType, $payload)],
+            'upBP' => array_values(array_filter([
+                $this->event('blood_pressure', $nativeType, $payload),
+                $this->heartRateFromBloodPressure($nativeType, $payload),
+            ])),
             'upBS' => [$this->event('blood_sugar', $nativeType, $payload)],
             'upBodyTemperature' => [$this->event('temperature', $nativeType, $payload)],
             'upBattery' => [$this->event('battery', $nativeType, $payload)],
@@ -59,8 +62,10 @@ final class DeviceEventDecoder
             $events[] = $this->event('blood_pressure', $nativeType, [
                 'systolic' => $parts[0] ?? null,
                 'diastolic' => $parts[1] ?? null,
-                'pulse' => $parts[2] ?? null,
             ], $payload);
+            $events[] = $this->heartRateFromBloodPressure($nativeType, [
+                'pulse' => $parts[2] ?? null,
+            ]);
         }
         if (isset($payload['bo'])) {
             $events[] = $this->event('blood_oxygen', $nativeType, ['spo2' => $payload['bo']], $payload);
@@ -204,6 +209,22 @@ final class DeviceEventDecoder
             'value' => $value,
             'extra' => $this->extra($extra, $value),
         ], static fn (mixed $field): bool => $field !== []);
+    }
+
+    private function heartRateFromBloodPressure(string $nativeType, array $payload): ?array
+    {
+        $pulse = $payload['pulse'] ?? $payload['pulseBpm'] ?? $payload['heartRate'] ?? $payload['hr'] ?? null;
+        if ($pulse === null) {
+            $rawData = $payload['data'] ?? $payload['date'] ?? null;
+            if (is_string($rawData) && str_contains($rawData, '/')) {
+                $parts = preg_split('/[\/,\-]+/', $rawData) ?: [];
+                $pulse = $parts[2] ?? null;
+            }
+        }
+
+        return $this->event('heart_rate', $nativeType, [
+            'pulse' => $pulse,
+        ]);
     }
 
     private function extra(array $payload, array $value): array
