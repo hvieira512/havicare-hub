@@ -16,6 +16,7 @@ final class DashboardDatabase
         ['Vivistar', 'VIVISTAR-CARE', 'vivistar-iw', ''],
         ['Vivistar', 'VIVISTAR-LITE', 'vivistar-iw', ''],
         ['4P Touch', '4P-TOUCH', 'four-p-touch', ''],
+        ['4P Touch', 'D46', 'four-p-touch', ''],
     ];
 
     public function __construct(?string $path = null)

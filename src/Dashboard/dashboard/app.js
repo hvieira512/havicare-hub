@@ -95,7 +95,7 @@ function deriveFourPTouchDeviceId(imei) {
 }
 
 function isFourPTouchSelection(supplier = els.deviceForm?.dataset?.supplier || '', model = els.deviceForm?.dataset?.model || '') {
-    return supplierProtocol(supplier, state.summary.models) === 'four-p-touch' || (supplier === '4P Touch' && model === '4P-TOUCH');
+    return supplierProtocol(supplier, state.summary.models) === 'four-p-touch' || supplier === '4P Touch';
 }
 
 function availableRequestsForSupplier(supplier, models = state.summary.models) {

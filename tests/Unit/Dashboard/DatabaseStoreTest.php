@@ -15,8 +15,9 @@ final class DatabaseStoreTest extends TestCase
 
         try {
             $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
-            self::assertSame(6, count($db->models->all()));
+            self::assertSame(7, count($db->models->all()));
             self::assertSame('vivistar-iw', $db->models->protocolForModel('Vivistar', 'L08 PRO'));
+            self::assertSame('four-p-touch', $db->models->protocolForModel('4P Touch', 'D46'));
             $model = $db->models->find('Vivistar', 'L08 PRO');
             self::assertIsArray($model);
             self::assertSame(
@@ -25,8 +26,9 @@ final class DatabaseStoreTest extends TestCase
             );
 
             $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
-            self::assertSame(6, count($db->models->all()));
+            self::assertSame(7, count($db->models->all()));
             self::assertSame('vivistar-iw', $db->models->protocolForModel('Vivistar', 'L08 PRO'));
+            self::assertSame('four-p-touch', $db->models->protocolForModel('4P Touch', 'D46'));
             $model = $db->models->find('Vivistar', 'L08 PRO');
             self::assertIsArray($model);
             self::assertSame(

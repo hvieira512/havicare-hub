@@ -114,9 +114,10 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const tone = cardTone(type, command);
     const icon = command.icon || card.icon;
 
+    const telemetryTypes = requestTelemetryTypes(type);
     const lastTelemetry = telemetry
         .map(rowPayload)
-        .filter(payload => payload && payload.type === type)
+        .filter(payload => payload && telemetryTypes.includes(String(payload.type || '')))
         .sort((a, b) => eventTime(b) - eventTime(a))[0];
 
     const lastValue = lastTelemetry
@@ -140,6 +141,14 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         </div>
         </div>
         </div>`;
+}
+
+function requestTelemetryTypes(type) {
+    if (type === 'blood_pressure_systolic' || type === 'blood_pressure_diastolic') {
+        return ['blood_pressure'];
+    }
+
+    return [type];
 }
 
 export function statusBadge(status) {
