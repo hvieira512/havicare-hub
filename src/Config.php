@@ -25,9 +25,9 @@ class Config
             : max(1, (int)$downlinkQueueTtlRaw);
 
         return new self([
-            'vivistar_tcp' => [
-                'host' => getenv('VIVISTAR_TCP_HOST') ?: '0.0.0.0',
-                'port' => (int)(getenv('VIVISTAR_TCP_PORT') ?: 9000),
+            'tcp_ingress' => [
+                'host' => getenv('TCP_INGRESS_HOST') ?: '0.0.0.0',
+                'port' => (int)(getenv('TCP_INGRESS_PORT') ?: 9000),
             ],
             'dashboard' => [
                 'enabled' => $dashboardEnabled,

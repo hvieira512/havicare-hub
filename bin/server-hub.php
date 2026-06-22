@@ -175,8 +175,8 @@ if ((bool)($ncsConfig['enabled'] ?? true)) {
 }
 
 $loop = Loop::get();
-$tcpHost = $config['vivistar_tcp']['host'] ?? '0.0.0.0';
-$tcpPort = $config['vivistar_tcp']['port'] ?? 9000;
+$tcpHost = $config['tcp_ingress']['host'] ?? '0.0.0.0';
+$tcpPort = $config['tcp_ingress']['port'] ?? 9000;
 $dashboardHost = (string)($dashboardConfig['host'] ?? '0.0.0.0');
 $dashboardPort = (int)($dashboardConfig['port'] ?? 8081);
 

@@ -58,7 +58,7 @@ make test-all
 
 ## Ports
 
-- TCP ingress: `VIVISTAR_TCP_HOST` / `VIVISTAR_TCP_PORT`, default `0.0.0.0:9000`
+- TCP ingress: `TCP_INGRESS_HOST` / `TCP_INGRESS_PORT`, default `0.0.0.0:9000`
 - Dashboard: `DASHBOARD_HOST` / `DASHBOARD_PORT`, default `0.0.0.0:8081`
 - MQTT: `MQTT_HOST` / `MQTT_PORT`, default `127.0.0.1:1883`
 - Redis downlink queue: `REDIS_HOST` / `REDIS_PORT`, default `127.0.0.1:6379`
