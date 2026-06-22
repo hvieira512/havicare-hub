@@ -91,34 +91,27 @@ final class DashboardStore
         $this->redis->lpush($key, [$encoded]);
         $this->redis->ltrim($key, 0, $this->limit - 1);
 
-        if ($this->db !== null) {
-            if ($list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
-                $device = isset($payload['device']) && is_array($payload['device']) ? $payload['device'] : [];
-                $source = isset($payload['source']) && is_array($payload['source']) ? $payload['source'] : [];
-                $nativeType = (string)($source['nativeType'] ?? 'device_config');
-                $protocol = (string)($source['protocol'] ?? '');
-                $key = $nativeType;
-                foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
-                    if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {
-                        $key = (string)$entry['key'];
-                        break;
-                    }
+        if ($this->db !== null && $list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
+            $device = isset($payload['device']) && is_array($payload['device']) ? $payload['device'] : [];
+            $source = isset($payload['source']) && is_array($payload['source']) ? $payload['source'] : [];
+            $nativeType = (string)($source['nativeType'] ?? 'device_config');
+            $protocol = (string)($source['protocol'] ?? '');
+            $key = $nativeType;
+            foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
+                if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {
+                    $key = (string)$entry['key'];
+                    break;
                 }
-                $this->db->deviceConfigurations->saveReported(
-                    $imei,
-                    $key,
-                    $protocol,
-                    (string)($device['supplier'] ?? ''),
-                    (string)($device['model'] ?? ''),
-                    $nativeType,
-                    $payload
-                );
             }
-            match ($list) {
-                'telemetry' => $this->db->history->appendTelemetry($imei, $payload['type'] ?? 'unknown', $payload),
-                'events' => $this->db->history->appendEvent($imei, $payload['type'] ?? 'unknown', $payload),
-                default => $this->db->history->appendRaw($imei, $payload),
-            };
+            $this->db->deviceConfigurations->saveReported(
+                $imei,
+                $key,
+                $protocol,
+                (string)($device['supplier'] ?? ''),
+                (string)($device['model'] ?? ''),
+                $nativeType,
+                $payload
+            );
         }
     }
 

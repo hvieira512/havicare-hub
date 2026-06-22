@@ -186,4 +186,43 @@ final class DatabaseStoreTest extends TestCase
             unlink($path);
         }
     }
+
+    public function testBootstrapDropsLegacyHistoryTables(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'hub-dashboard-');
+        self::assertIsString($path);
+
+        try {
+            $pdo = new \PDO("sqlite:{$path}");
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $pdo->exec('CREATE TABLE telemetry (id INTEGER PRIMARY KEY AUTOINCREMENT, imei TEXT NOT NULL, type TEXT NOT NULL, payload TEXT NOT NULL, recorded_at TEXT NOT NULL)');
+            $pdo->exec('CREATE TABLE events (id INTEGER PRIMARY KEY AUTOINCREMENT, imei TEXT NOT NULL, type TEXT NOT NULL, payload TEXT NOT NULL, recorded_at TEXT NOT NULL)');
+            $pdo->exec('CREATE TABLE raw_payloads (id INTEGER PRIMARY KEY AUTOINCREMENT, imei TEXT NOT NULL, payload TEXT NOT NULL, recorded_at TEXT NOT NULL)');
+            $pdo->exec('CREATE INDEX idx_telemetry_imei ON telemetry(imei)');
+            $pdo->exec('CREATE INDEX idx_telemetry_recorded ON telemetry(recorded_at)');
+            $pdo->exec('CREATE INDEX idx_events_imei ON events(imei)');
+            $pdo->exec('CREATE INDEX idx_raw_payloads_imei ON raw_payloads(imei)');
+
+            DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
+
+            self::assertFalse($this->sqliteObjectExists($path, 'table', 'telemetry'));
+            self::assertFalse($this->sqliteObjectExists($path, 'table', 'events'));
+            self::assertFalse($this->sqliteObjectExists($path, 'table', 'raw_payloads'));
+            self::assertFalse($this->sqliteObjectExists($path, 'index', 'idx_telemetry_imei'));
+            self::assertFalse($this->sqliteObjectExists($path, 'index', 'idx_telemetry_recorded'));
+            self::assertFalse($this->sqliteObjectExists($path, 'index', 'idx_events_imei'));
+            self::assertFalse($this->sqliteObjectExists($path, 'index', 'idx_raw_payloads_imei'));
+        } finally {
+            unlink($path);
+        }
+    }
+
+    private function sqliteObjectExists(string $path, string $type, string $name): bool
+    {
+        $pdo = new \PDO("sqlite:{$path}");
+        $stmt = $pdo->prepare('SELECT 1 FROM sqlite_master WHERE type = ? AND name = ?');
+        $stmt->execute([$type, $name]);
+
+        return $stmt->fetchColumn() !== false;
+    }
 }

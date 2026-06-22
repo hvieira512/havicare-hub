@@ -40,29 +40,6 @@ CREATE TABLE IF NOT EXISTS whitelist (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS telemetry (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    imei TEXT NOT NULL,
-    type TEXT NOT NULL,
-    payload TEXT NOT NULL,
-    recorded_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    imei TEXT NOT NULL,
-    type TEXT NOT NULL,
-    payload TEXT NOT NULL,
-    recorded_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS raw_payloads (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    imei TEXT NOT NULL,
-    payload TEXT NOT NULL,
-    recorded_at TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS device_configurations (
     imei TEXT NOT NULL,
     config_key TEXT NOT NULL,
@@ -80,9 +57,5 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     PRIMARY KEY (imei, config_key)
 );
 
-CREATE INDEX IF NOT EXISTS idx_telemetry_imei ON telemetry(imei);
-CREATE INDEX IF NOT EXISTS idx_telemetry_recorded ON telemetry(recorded_at);
-CREATE INDEX IF NOT EXISTS idx_events_imei ON events(imei);
-CREATE INDEX IF NOT EXISTS idx_raw_payloads_imei ON raw_payloads(imei);
 CREATE INDEX IF NOT EXISTS idx_device_configurations_imei ON device_configurations(imei);
 CREATE INDEX IF NOT EXISTS idx_model_request_capabilities_model ON model_request_capabilities(model_id);

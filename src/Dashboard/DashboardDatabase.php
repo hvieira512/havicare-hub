@@ -53,6 +53,7 @@ final class DashboardDatabase
         }
 
         $this->pdo->exec($schema);
+        $this->dropLegacyHistoryStorage();
 
         // Compatibility for databases created before device type and license support.
         $this->ensureColumn('whitelist', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
@@ -74,6 +75,22 @@ final class DashboardDatabase
         }
 
         $this->pdo->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
+    }
+
+    private function dropLegacyHistoryStorage(): void
+    {
+        foreach ([
+            'idx_telemetry_imei',
+            'idx_telemetry_recorded',
+            'idx_events_imei',
+            'idx_raw_payloads_imei',
+        ] as $index) {
+            $this->pdo->exec(sprintf('DROP INDEX IF EXISTS %s', $index));
+        }
+
+        foreach (['telemetry', 'events', 'raw_payloads'] as $table) {
+            $this->pdo->exec(sprintf('DROP TABLE IF EXISTS %s', $table));
+        }
     }
 
     private function seedDefaults(): void
