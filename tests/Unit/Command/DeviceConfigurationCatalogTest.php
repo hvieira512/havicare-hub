@@ -44,6 +44,101 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(300, $decoded['data']['intervalTime'] ?? null);
     }
 
+    public function testWonlexMeasurementIntervalsBuildNestedConfigPayloads(): void
+    {
+        $ppg = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGInterval', ['interval' => 60]);
+        self::assertSame('deviceMeasuringFrequency', $ppg['command']);
+        self::assertSame(['configs' => ['upPPG' => ['interval' => '60']]], $ppg['payload']);
+
+        $rr = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexRRInterval', ['interval' => 15]);
+        self::assertSame('deviceMeasuringFrequency', $rr['command']);
+        self::assertSame(['configs' => ['upRR' => ['interval' => '15']]], $rr['payload']);
+    }
+
+    public function testWonlexStructuredDeviceConfigBuildsNestedPayloads(): void
+    {
+        $toggle = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGBPTrend', ['switchState' => true]);
+        self::assertSame('deviceConfig', $toggle['command']);
+        self::assertSame(['configs' => ['PPGBPTrend' => ['switchState' => 1]]], $toggle['payload']);
+
+        $steps = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexStepTarget', ['steps' => 7500]);
+        self::assertSame('deviceConfig', $steps['command']);
+        self::assertSame(['configs' => ['StepTarget' => ['steps' => 7500]]], $steps['payload']);
+    }
+
+    public function testWonlexSleepAndThresholdConfigsBuildStructuredPayloads(): void
+    {
+        $sleep = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexSleepIntervalOrSwitch', [
+            'switchState' => true,
+            'sleepStartTime' => '220000',
+            'sleepEndTime' => '100000',
+            'sleepTarget' => 480,
+        ]);
+        self::assertSame('deviceConfig', $sleep['command']);
+        self::assertSame([
+            'configs' => [
+                'SleepIntervalOrSwitch' => [
+                    'switchState' => 1,
+                    'sleepStartTime' => '220000',
+                    'sleepEndTime' => '100000',
+                    'sleepTarget' => 480,
+                ],
+            ],
+        ], $sleep['payload']);
+
+        $oxygen = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexBloodOxygenWarn', [
+            'switchState' => true,
+            'reminderValue' => 90,
+        ]);
+        self::assertSame([
+            'configs' => [
+                'bloodOxygenWarn' => [
+                    'switchState' => 1,
+                    'reminderValue' => 90,
+                ],
+            ],
+        ], $oxygen['payload']);
+    }
+
+    public function testWonlexHeartRateAndBloodPressureWarningsBuildStructuredPayloads(): void
+    {
+        $heartRate = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexHeartRateHighRemind', [
+            'switchState' => true,
+            'remindValue' => 120,
+            'exerciseSwitchState' => true,
+            'exerciseHRMin' => 100,
+            'exerciseHRMax' => 140,
+            'exerciseRemindValue' => 140,
+        ]);
+        self::assertSame([
+            'configs' => [
+                'HROvertopRemind' => [
+                    'switchState' => 1,
+                    'remindValue' => 120,
+                    'exerciseSwitchState' => 1,
+                    'exerciseHRMin' => 100,
+                    'exerciseHRMax' => 140,
+                    'exerciseRemindValue' => 140,
+                ],
+            ],
+        ], $heartRate['payload']);
+
+        $bpWarning = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexBPEarlyWarning', [
+            'switchState' => true,
+            'hpWarn' => 135,
+            'LPWarn' => 90,
+        ]);
+        self::assertSame([
+            'configs' => [
+                'BPEarlyWarning' => [
+                    'switchState' => 1,
+                    'hpWarn' => 135,
+                    'LPWarn' => 90,
+                ],
+            ],
+        ], $bpWarning['payload']);
+    }
+
     public function testInvalidConfigIsRejected(): void
     {
         self::assertSame(

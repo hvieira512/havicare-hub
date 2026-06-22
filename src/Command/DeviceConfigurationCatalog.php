@@ -103,6 +103,32 @@ final class DeviceConfigurationCatalog
             'locationInterval' => ['intervalTime' => self::nonNegativeInt($payload['intervalTime'] ?? null, 'intervalTime')],
             'deviceMeasuringFrequency' => ['configs' => self::arrayField($payload['configs'] ?? null, 'configs')],
             'deviceConfig' => ['configs' => self::arrayField($payload['configs'] ?? null, 'configs')],
+            'wonlexHeartRateInterval' => self::wonlexMeasurementIntervalPayload('upHeartRate', $payload),
+            'wonlexBPInterval' => self::wonlexMeasurementIntervalPayload('upBP', $payload),
+            'wonlexBOInterval' => self::wonlexMeasurementIntervalPayload('upBO', $payload),
+            'wonlexBodyTemperatureInterval' => self::wonlexMeasurementIntervalPayload('upBodyTemperature', $payload),
+            'wonlexStepInterval' => self::wonlexMeasurementIntervalPayload('upStep', $payload),
+            'wonlexBreatheInterval' => self::wonlexMeasurementIntervalPayload('upBreathe', $payload),
+            'wonlexECGInterval' => self::wonlexMeasurementIntervalPayload('upECG', $payload),
+            'wonlexHRVInterval' => self::wonlexMeasurementIntervalPayload('upHRV', $payload),
+            'wonlexPPGInterval' => self::wonlexMeasurementIntervalPayload('upPPG', $payload),
+            'wonlexRRInterval' => self::wonlexMeasurementIntervalPayload('upRR', $payload),
+            'wonlexContinuousBOCheck' => self::wonlexDeviceTogglePayload('ContinuousBOCheck', $payload),
+            'wonlexContinuousHRSwitch' => self::wonlexDeviceTogglePayload('ContinuousHRSwitch', $payload),
+            'wonlexPPGBPTrend' => self::wonlexDeviceTogglePayload('PPGBPTrend', $payload),
+            'wonlexContinuousTempSwitch' => self::wonlexDeviceTogglePayload('ContinuousTempSwitch', $payload),
+            'wonlexFallWarnSwitch' => self::wonlexDeviceTogglePayload('FallWarnSwitch', $payload),
+            'wonlexSOSSwitch' => self::wonlexDeviceTogglePayload('SOSSwitch', $payload),
+            'wonlexCallInLimitSwitch' => self::wonlexDeviceTogglePayload('CallInLimitSwitch', $payload),
+            'wonlexStepTarget' => self::wonlexDeviceNumberPayload('StepTarget', 'steps', $payload),
+            'wonlexLowPower' => self::wonlexDeviceNumberPayload('LowPower', 'Battery', $payload),
+            'wonlexSleepIntervalOrSwitch' => self::wonlexSleepSettingsPayload($payload),
+            'wonlexBloodOxygenWarn' => self::wonlexReminderThresholdPayload('bloodOxygenWarn', $payload),
+            'wonlexTemperatureExceedRemind' => self::wonlexReminderThresholdPayload('TemperatureExceedRemind', $payload),
+            'wonlexTemperatureBelowRemind' => self::wonlexReminderThresholdPayload('TemperatureBelowRemind', $payload),
+            'wonlexHeartRateHighRemind' => self::wonlexHeartRateRangePayload('HROvertopRemind', $payload),
+            'wonlexHeartRateLowRemind' => self::wonlexHeartRateRangePayload('HeartRateBelowRemind', $payload),
+            'wonlexBPEarlyWarning' => self::wonlexBloodPressureWarningPayload($payload),
             'alarmClock' => ['alarmClock' => self::arrayField($payload['alarmClock'] ?? $payload['alarms'] ?? null, 'alarmClock')],
             'SOSNumber' => ['SOSNumber' => self::stringList($payload['numbers'] ?? [], 3, 'numbers')],
             'dnMedicationPlan' => ['plans' => self::arrayField($payload['plans'] ?? $payload['medicationPlan'] ?? null, 'plans')],
@@ -269,8 +295,34 @@ final class DeviceConfigurationCatalog
     {
         return [
             self::entry('locationInterval', 'locationInterval', 'Intervalo de localização', 'number', ['intervalTime'], ['upDeviceConfig'], 'intervals', 10),
-            self::entry('deviceMeasuringFrequency', 'deviceMeasuringFrequency', 'Frequência de medições', 'json', ['configs'], ['upDeviceConfig'], 'intervals', 20),
-            self::entry('deviceConfig', 'deviceConfig', 'Configuração do dispositivo', 'json', ['configs'], ['upDeviceConfig'], 'system', 10),
+            self::entry('deviceMeasuringFrequency', 'deviceMeasuringFrequency', 'Frequência de medições (JSON)', 'json', ['configs'], ['upDeviceConfig'], 'intervals', 90),
+            self::entry('wonlexHeartRateInterval', 'deviceMeasuringFrequency', 'Intervalo de frequência cardíaca', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 10),
+            self::entry('wonlexBPInterval', 'deviceMeasuringFrequency', 'Intervalo de tensão arterial', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 20),
+            self::entry('wonlexBOInterval', 'deviceMeasuringFrequency', 'Intervalo de oxigénio no sangue', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 30),
+            self::entry('wonlexBodyTemperatureInterval', 'deviceMeasuringFrequency', 'Intervalo de temperatura', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 40),
+            self::entry('wonlexStepInterval', 'deviceMeasuringFrequency', 'Intervalo de passos', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 50),
+            self::entry('wonlexBreatheInterval', 'deviceMeasuringFrequency', 'Intervalo de frequência respiratória', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 60),
+            self::entry('wonlexECGInterval', 'deviceMeasuringFrequency', 'Intervalo de ECG', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 70),
+            self::entry('wonlexHRVInterval', 'deviceMeasuringFrequency', 'Intervalo de VFC', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 80),
+            self::entry('wonlexPPGInterval', 'deviceMeasuringFrequency', 'Intervalo de PPG', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 90),
+            self::entry('wonlexRRInterval', 'deviceMeasuringFrequency', 'Intervalo de RR', 'number', ['interval'], ['upDeviceConfig'], 'measurements', 100),
+            self::entry('deviceConfig', 'deviceConfig', 'Configuração do dispositivo (JSON)', 'json', ['configs'], ['upDeviceConfig'], 'system', 90),
+            self::entry('wonlexStepTarget', 'deviceConfig', 'Meta de passos', 'number', ['steps'], ['upDeviceConfig'], 'health', 10),
+            self::entry('wonlexContinuousBOCheck', 'deviceConfig', 'Oxigénio contínuo em repouso', 'toggle', ['switchState'], ['upDeviceConfig'], 'health', 20),
+            self::entry('wonlexContinuousHRSwitch', 'deviceConfig', 'Frequência cardíaca contínua', 'toggle', ['switchState'], ['upDeviceConfig'], 'health', 30),
+            self::entry('wonlexPPGBPTrend', 'deviceConfig', 'Tendência PPG da pressão arterial', 'toggle', ['switchState'], ['upDeviceConfig'], 'health', 40),
+            self::entry('wonlexContinuousTempSwitch', 'deviceConfig', 'Temperatura automática', 'toggle', ['switchState'], ['upDeviceConfig'], 'health', 50),
+            self::entry('wonlexSleepIntervalOrSwitch', 'deviceConfig', 'Definições de sono', 'wonlexSleepSettings', ['switchState', 'sleepStartTime', 'sleepEndTime', 'sleepTarget'], ['upDeviceConfig'], 'health', 60),
+            self::entry('wonlexBloodOxygenWarn', 'deviceConfig', 'Alerta de oxigénio baixo', 'wonlexReminderThreshold', ['switchState', 'reminderValue'], ['upDeviceConfig'], 'alerts', 40),
+            self::entry('wonlexTemperatureExceedRemind', 'deviceConfig', 'Alerta de temperatura alta', 'wonlexReminderThreshold', ['switchState', 'RemindValue'], ['upDeviceConfig'], 'alerts', 50),
+            self::entry('wonlexTemperatureBelowRemind', 'deviceConfig', 'Alerta de temperatura baixa', 'wonlexReminderThreshold', ['switchState', 'RemindValue'], ['upDeviceConfig'], 'alerts', 60),
+            self::entry('wonlexBPEarlyWarning', 'deviceConfig', 'Alerta de tensão arterial', 'wonlexBloodPressureWarning', ['switchState', 'hpWarn', 'LPWarn'], ['upDeviceConfig'], 'alerts', 70),
+            self::entry('wonlexHeartRateHighRemind', 'deviceConfig', 'Alerta de frequência cardíaca alta', 'wonlexHeartRateRange', ['switchState', 'remindValue', 'exerciseSwitchState', 'exerciseHRMin', 'exerciseHRMax', 'exerciseRemindValue'], ['upDeviceConfig'], 'alerts', 80),
+            self::entry('wonlexHeartRateLowRemind', 'deviceConfig', 'Alerta de frequência cardíaca baixa', 'wonlexHeartRateRange', ['switchState', 'remindValue', 'exerciseSwitchState', 'exerciseHRMin', 'exerciseHRMax', 'exerciseRemindValue'], ['upDeviceConfig'], 'alerts', 90),
+            self::entry('wonlexLowPower', 'deviceConfig', 'Limiar de bateria fraca', 'number', ['Battery'], ['upDeviceConfig'], 'alerts', 10),
+            self::entry('wonlexFallWarnSwitch', 'deviceConfig', 'Deteção de queda', 'toggle', ['switchState'], ['upDeviceConfig'], 'alerts', 20),
+            self::entry('wonlexSOSSwitch', 'deviceConfig', 'SMS SOS', 'toggle', ['switchState'], ['upDeviceConfig'], 'alerts', 30),
+            self::entry('wonlexCallInLimitSwitch', 'deviceConfig', 'Restringir chamadas recebidas', 'toggle', ['switchState'], ['upDeviceConfig'], 'system', 20),
             self::entry('alarmClock', 'alarmClock', 'Alarmes', 'json', ['alarmClock'], ['upDeviceConfig'], 'alerts', 10),
             self::entry('SOSNumber', 'SOSNumber', 'Números SOS', 'list', ['numbers'], ['upDeviceConfig'], 'contacts', 10, 3),
             self::entry('dnMedicationPlan', 'dnMedicationPlan', 'Plano de medicação', 'json', ['plans'], ['upDeviceConfig'], 'health', 10),
@@ -361,6 +413,96 @@ final class DeviceConfigurationCatalog
             throw new \InvalidArgumentException("{$field} must be an object or array");
         }
         return $value;
+    }
+
+    private static function wonlexMeasurementIntervalPayload(string $metric, array $payload): array
+    {
+        return [
+            'configs' => [
+                $metric => [
+                    'interval' => (string)self::positiveInt($payload['interval'] ?? null, 'interval'),
+                ],
+            ],
+        ];
+    }
+
+    private static function wonlexDeviceTogglePayload(string $configName, array $payload): array
+    {
+        return [
+            'configs' => [
+                $configName => [
+                    'switchState' => self::boolInt($payload['switchState'] ?? $payload['enabled'] ?? null, 'switchState'),
+                ],
+            ],
+        ];
+    }
+
+    private static function wonlexDeviceNumberPayload(string $configName, string $field, array $payload): array
+    {
+        return [
+            'configs' => [
+                $configName => [
+                    $field => self::nonNegativeInt($payload[$field] ?? $payload['value'] ?? null, $field),
+                ],
+            ],
+        ];
+    }
+
+    private static function wonlexSleepSettingsPayload(array $payload): array
+    {
+        return [
+            'configs' => [
+                'SleepIntervalOrSwitch' => [
+                    'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
+                    'sleepStartTime' => self::requiredString($payload['sleepStartTime'] ?? null, 'sleepStartTime'),
+                    'sleepEndTime' => self::requiredString($payload['sleepEndTime'] ?? null, 'sleepEndTime'),
+                    'sleepTarget' => self::nonNegativeInt($payload['sleepTarget'] ?? null, 'sleepTarget'),
+                ],
+            ],
+        ];
+    }
+
+    private static function wonlexReminderThresholdPayload(string $configName, array $payload): array
+    {
+        $valueKey = array_key_exists('RemindValue', $payload) ? 'RemindValue' : 'reminderValue';
+
+        return [
+            'configs' => [
+                $configName => [
+                    'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
+                    $valueKey => self::nonNegativeInt($payload[$valueKey] ?? null, $valueKey),
+                ],
+            ],
+        ];
+    }
+
+    private static function wonlexHeartRateRangePayload(string $configName, array $payload): array
+    {
+        return [
+            'configs' => [
+                $configName => [
+                    'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
+                    'remindValue' => self::nonNegativeInt($payload['remindValue'] ?? null, 'remindValue'),
+                    'exerciseSwitchState' => self::boolInt($payload['exerciseSwitchState'] ?? null, 'exerciseSwitchState'),
+                    'exerciseHRMin' => self::nonNegativeInt($payload['exerciseHRMin'] ?? null, 'exerciseHRMin'),
+                    'exerciseHRMax' => self::nonNegativeInt($payload['exerciseHRMax'] ?? null, 'exerciseHRMax'),
+                    'exerciseRemindValue' => self::nonNegativeInt($payload['exerciseRemindValue'] ?? null, 'exerciseRemindValue'),
+                ],
+            ],
+        ];
+    }
+
+    private static function wonlexBloodPressureWarningPayload(array $payload): array
+    {
+        return [
+            'configs' => [
+                'BPEarlyWarning' => [
+                    'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
+                    'hpWarn' => self::nonNegativeInt($payload['hpWarn'] ?? null, 'hpWarn'),
+                    'LPWarn' => self::nonNegativeInt($payload['LPWarn'] ?? null, 'LPWarn'),
+                ],
+            ],
+        ];
     }
 
     private static function stringList(mixed $value, int $max, string $field): array

@@ -224,6 +224,9 @@ export function renderConfigInputs(entry, desired) {
     if (input === 'bloodPressure') {
         return bloodPressureInput(desired);
     }
+    if (input === 'wonlexBloodPressureWarning') {
+        return wonlexBloodPressureWarningInput(desired);
+    }
     if (input === 'languageTimezone') {
         return languageTimezoneInput(desired);
     }
@@ -238,6 +241,15 @@ export function renderConfigInputs(entry, desired) {
     }
     if (input === 'timeRange') {
         return timeRangeInput(desired);
+    }
+    if (input === 'wonlexSleepSettings') {
+        return wonlexSleepSettingsInput(desired);
+    }
+    if (input === 'wonlexReminderThreshold') {
+        return wonlexReminderThresholdInput(entry, desired);
+    }
+    if (input === 'wonlexHeartRateRange') {
+        return wonlexHeartRateRangeInput(desired);
     }
     if (input === 'list') {
         return listInput(entry, desired, 'numbers', 'Números SOS');
@@ -255,7 +267,8 @@ export function renderConfigInputs(entry, desired) {
 export function readConfigPayload(section) {
     const input = section.dataset.configInput || 'json';
     if (input === 'toggle') {
-        return {enabled: readCheckbox(section, 'enabled')};
+        const field = firstFieldName(section);
+        return {[field]: readCheckbox(section, field)};
     }
     if (input === 'fallSensitivity') {
         return {sensitivity: readNumber(section, 'sensitivity')};
@@ -296,6 +309,13 @@ export function readConfigPayload(section) {
             diastolic: readNumber(section, 'diastolic'),
         };
     }
+    if (input === 'wonlexBloodPressureWarning') {
+        return {
+            switchState: readCheckbox(section, 'switchState'),
+            hpWarn: readNumber(section, 'hpWarn'),
+            LPWarn: readNumber(section, 'LPWarn'),
+        };
+    }
     if (input === 'languageTimezone') {
         return {
             language: readNumber(section, 'language'),
@@ -320,6 +340,31 @@ export function readConfigPayload(section) {
     if (input === 'timeRange') {
         return {range: readText(section, 'range')};
     }
+    if (input === 'wonlexSleepSettings') {
+        return {
+            switchState: readCheckbox(section, 'switchState'),
+            sleepStartTime: readText(section, 'sleepStartTime'),
+            sleepEndTime: readText(section, 'sleepEndTime'),
+            sleepTarget: readNumber(section, 'sleepTarget'),
+        };
+    }
+    if (input === 'wonlexReminderThreshold') {
+        const valueField = section.querySelector('[data-config-field="RemindValue"]') ? 'RemindValue' : 'reminderValue';
+        return {
+            switchState: readCheckbox(section, 'switchState'),
+            [valueField]: readNumber(section, valueField),
+        };
+    }
+    if (input === 'wonlexHeartRateRange') {
+        return {
+            switchState: readCheckbox(section, 'switchState'),
+            remindValue: readNumber(section, 'remindValue'),
+            exerciseSwitchState: readCheckbox(section, 'exerciseSwitchState'),
+            exerciseHRMin: readNumber(section, 'exerciseHRMin'),
+            exerciseHRMax: readNumber(section, 'exerciseHRMax'),
+            exerciseRemindValue: readNumber(section, 'exerciseRemindValue'),
+        };
+    }
     if (input === 'list') {
         const limit = parseInt(section.dataset.configLimit || '3', 10) || 3;
         return {numbers: readPhoneArray(section, 'numbers').slice(0, limit)};
@@ -337,7 +382,7 @@ export function readConfigPayload(section) {
 export function defaultConfigPayload(entry) {
     const input = entry.input || 'json';
     const field = entry.fields?.[0] || 'value';
-    if (input === 'toggle') return {enabled: true};
+    if (input === 'toggle') return {[field]: true};
     if (input === 'fallSensitivity') return {sensitivity: 2};
     if (input === 'number') return {[field]: 0};
     if (input === 'phone' || input === 'text') return {[field]: ''};
@@ -345,11 +390,15 @@ export function defaultConfigPayload(entry) {
     if (input === 'intervalHoursToggle') return {enabled: true, intervalHours: 2};
     if (input === 'workingMode') return {mode: 1};
     if (input === 'bloodPressure') return {systolic: 120, diastolic: 80};
+    if (input === 'wonlexBloodPressureWarning') return {switchState: true, hpWarn: 135, LPWarn: 90};
     if (input === 'languageTimezone') return {language: 3, timeZone: '0'};
     if (input === 'dualToggle') return {enabled: true, callCenterOnFall: false};
     if (input === 'fallSensitivityLevels') return {sensitivityLevel: 5, totalLevels: 8};
     if (input === 'timeRanges') return {ranges: ['08:10-09:30']};
     if (input === 'timeRange') return {range: '21:10-07:30'};
+    if (input === 'wonlexSleepSettings') return {switchState: true, sleepStartTime: '220000', sleepEndTime: '100000', sleepTarget: 480};
+    if (input === 'wonlexReminderThreshold') return {switchState: true, reminderValue: 90};
+    if (input === 'wonlexHeartRateRange') return {switchState: true, remindValue: 120, exerciseSwitchState: true, exerciseHRMin: 100, exerciseHRMax: 140, exerciseRemindValue: 140};
     if (input === 'list') return {numbers: ['', '', '']};
     if (input === 'contacts') return {contacts: [{name: '', phone: ''}]};
     if (input === 'reminders') return {masterEnabled: true, items: []};
@@ -656,6 +705,27 @@ function bloodPressureInput(desired) {
         </div>`;
 }
 
+function wonlexBloodPressureWarningInput(desired) {
+    const enabled = boolValue(desired.switchState, true);
+    return `
+        <div class="vstack gap-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? 'checked' : ''}>
+                <label class="form-check-label" data-switch-label>${enabled ? 'Ligado' : 'Desligado'}</label>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm">Sistólica máxima</label>
+                    <input class="form-control" type="number" min="0" step="1" data-config-field="hpWarn" value="${esc(String(desired.hpWarn ?? 135))}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm">Diastólica máxima</label>
+                    <input class="form-control" type="number" min="0" step="1" data-config-field="LPWarn" value="${esc(String(desired.LPWarn ?? 90))}">
+                </div>
+            </div>
+        </div>`;
+}
+
 function languageTimezoneInput(desired) {
     const currentLanguage = parseInt(String(desired.language ?? 3), 10) || 3;
     const options = [
@@ -740,6 +810,84 @@ function timeRangeInput(desired) {
         <div>
             <label class="form-label form-label-sm">Intervalo</label>
             <input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? '21:10-07:30'))}" placeholder="21:10-07:30">
+        </div>`;
+}
+
+function wonlexSleepSettingsInput(desired) {
+    const enabled = boolValue(desired.switchState, true);
+    return `
+        <div class="vstack gap-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? 'checked' : ''}>
+                <label class="form-check-label" data-switch-label>${enabled ? 'Ligado' : 'Desligado'}</label>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Início (HHmmss)</label>
+                    <input class="form-control" type="text" data-config-field="sleepStartTime" value="${esc(String(desired.sleepStartTime ?? '220000'))}" placeholder="220000">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Fim (HHmmss)</label>
+                    <input class="form-control" type="text" data-config-field="sleepEndTime" value="${esc(String(desired.sleepEndTime ?? '100000'))}" placeholder="100000">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Meta (minutos)</label>
+                    <input class="form-control" type="number" min="0" step="1" data-config-field="sleepTarget" value="${esc(String(desired.sleepTarget ?? 480))}">
+                </div>
+            </div>
+        </div>`;
+}
+
+function wonlexReminderThresholdInput(entry, desired) {
+    const enabled = boolValue(desired.switchState, true);
+    const valueField = (entry.fields || []).includes('RemindValue') ? 'RemindValue' : 'reminderValue';
+    const value = desired[valueField] ?? desired.reminderValue ?? desired.RemindValue ?? 90;
+    return `
+        <div class="vstack gap-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? 'checked' : ''}>
+                <label class="form-check-label" data-switch-label>${enabled ? 'Ligado' : 'Desligado'}</label>
+            </div>
+            <div>
+                <label class="form-label form-label-sm">${esc(fieldLabel(valueField))}</label>
+                <input class="form-control" type="number" min="0" step="1" data-config-field="${esc(valueField)}" value="${esc(String(value))}">
+            </div>
+        </div>`;
+}
+
+function wonlexHeartRateRangeInput(desired) {
+    const enabled = boolValue(desired.switchState, true);
+    const exerciseEnabled = boolValue(desired.exerciseSwitchState, true);
+    return `
+        <div class="vstack gap-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? 'checked' : ''}>
+                <label class="form-check-label" data-switch-label>${enabled ? 'Ligado' : 'Desligado'}</label>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm">Limite principal</label>
+                    <input class="form-control" type="number" min="0" step="1" data-config-field="remindValue" value="${esc(String(desired.remindValue ?? 120))}">
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="exerciseSwitchState" ${exerciseEnabled ? 'checked' : ''}>
+                        <label class="form-check-label">Usar limites de exercício</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Mínimo exercício</label>
+                    <input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMin" value="${esc(String(desired.exerciseHRMin ?? 100))}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Máximo exercício</label>
+                    <input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMax" value="${esc(String(desired.exerciseHRMax ?? 140))}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Alerta em exercício</label>
+                    <input class="form-control" type="number" min="0" step="1" data-config-field="exerciseRemindValue" value="${esc(String(desired.exerciseRemindValue ?? 140))}">
+                </div>
+            </div>
         </div>`;
 }
 

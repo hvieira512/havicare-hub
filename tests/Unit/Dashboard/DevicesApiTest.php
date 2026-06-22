@@ -94,6 +94,23 @@ final class DevicesApiTest extends TestCase
         self::assertContains('fourPBodyTemperature', array_column($response['commands'], 'id'));
     }
 
+    public function testWonlexShowKeepsPpgAndRrAsRequestCards(): void
+    {
+        [$api] = $this->makeApi();
+        $api->create(json_encode([
+            'imei' => '865028000000308',
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR));
+
+        $response = $api->show('865028000000308');
+
+        self::assertContains('dnPPG', array_column($response['commands'], 'id'));
+        self::assertContains('dnRR', array_column($response['commands'], 'id'));
+    }
+
     /**
      * @return array{0: Devices, 1: DashboardDataAccess}
      */
