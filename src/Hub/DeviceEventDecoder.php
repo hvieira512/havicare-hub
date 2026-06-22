@@ -72,6 +72,7 @@ final class DeviceEventDecoder
     private function decodeVivistar(string $nativeType, array $payload): array
     {
         return match ($nativeType) {
+            'AP01' => [$this->event('location', $nativeType, $payload, $payload)],
             'AP02' => [$this->decodeVivistarAp02($payload)],
             'AP49' => [$this->event('heart_rate', $nativeType, $payload)],
             'APHT' => [

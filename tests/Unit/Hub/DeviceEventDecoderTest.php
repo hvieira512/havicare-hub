@@ -58,6 +58,7 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertCount(1, $events);
         self::assertSame('location', $events[0]['feature']);
+        self::assertSame('gps', $events[0]['value']['source']);
         self::assertSame(38.715, $events[0]['value']['lat']);
         self::assertSame(-9.145, $events[0]['value']['lon']);
         self::assertSame(8, $events[0]['value']['satelliteCount']);
@@ -67,6 +68,36 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(5679, (int)$events[0]['value']['cellId']);
         self::assertCount(1, $events[0]['extra']['baseStation']);
         self::assertCount(1, $events[0]['extra']['wifi']);
+    }
+
+    public function testWonlexGpsCoordinateSystemDoesNotOverrideGpsSourceInference(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upLocation',
+                'data' => [
+                    'gps' => [
+                        'GSM' => 66,
+                        'lat' => '38.782034',
+                        'lon' => '-9.17531',
+                        'Type' => 3,
+                        'height' => 11,
+                        'satelliteNum' => 8,
+                    ],
+                    'wifi' => [
+                        ['mac' => 'AA:BB:CC:DD:EE:FF', 'ssid' => 'HOME', 'signal' => '-58'],
+                    ],
+                    'baseStation' => [
+                        ['ci' => 5679, 'lac' => 1234, 'mcc' => 268, 'mnc' => 1, 'rxlev' => 49],
+                    ],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('gps', $events[0]['value']['source']);
+        self::assertArrayNotHasKey('gpsValid', $events[0]['value']);
     }
 
     public function testDecodesWonlexActivityAndDeviceConfigPackets(): void
@@ -338,6 +369,48 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(0, $events[0]['extra']['replyFlag']);
         self::assertSame(1, $events[0]['extra']['baseCount']);
         self::assertSame(4, $events[0]['extra']['wifiCount']);
+    }
+
+    public function testDecodesVivistarAp01IntoLocationEvent(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('vivistar-iw'),
+            [
+                'type' => 'AP01',
+                'data' => [
+                    'gpsValid' => true,
+                    'lat' => 22.549676666666667,
+                    'lon' => 114.08225833333333,
+                    'speed' => 0.1,
+                    'direction' => 323.87,
+                    'gsmSignal' => 60,
+                    'satelliteCount' => 9,
+                    'mcc' => 460,
+                    'mnc' => 0,
+                    'lac' => 9520,
+                    'cellId' => 3671,
+                    'baseStation' => [
+                        ['ci' => 3671, 'lac' => 9520, 'mcc' => 460, 'mnc' => 0, 'rxlev' => 60],
+                    ],
+                    'wifi' => [
+                        ['ssid' => 'Home', 'mac' => '74-DE-2B-44-88-8C', 'signal' => 97],
+                    ],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('location', $events[0]['feature']);
+        self::assertSame('AP01', $events[0]['nativeType']);
+        self::assertSame('gps', $events[0]['value']['source']);
+        self::assertTrue($events[0]['value']['gpsValid']);
+        self::assertSame(22.549676666666667, $events[0]['value']['lat']);
+        self::assertSame(114.08225833333333, $events[0]['value']['lon']);
+        self::assertSame(9, $events[0]['value']['satelliteCount']);
+        self::assertSame('460', $events[0]['value']['mcc']);
+        self::assertSame('9520', $events[0]['value']['lac']);
+        self::assertCount(1, $events[0]['value']['baseStations']);
+        self::assertCount(1, $events[0]['value']['wifiAccessPoints']);
     }
 
     public function testDecodesVivistarAp10IntoAlarmLocationAndBatteryEvents(): void

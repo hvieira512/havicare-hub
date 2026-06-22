@@ -122,11 +122,11 @@ final class FeatureNormalizer
         $firstBaseStation = $baseStations[0] ?? [];
         $lat = self::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null);
         $lon = self::float($payload['lon'] ?? $payload['lng'] ?? $payload['longitude'] ?? $gps['lon'] ?? $gps['lng'] ?? $gps['longitude'] ?? null);
-        $gpsValid = isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : (isset($gps['Type']) ? ((int)$gps['Type'] === 0) : null);
+        $gpsValid = isset($payload['gpsValid']) ? (bool)$payload['gpsValid'] : null;
         $satelliteCount = self::int($payload['satellites'] ?? $payload['satelliteCount'] ?? $gps['satelliteNum'] ?? null);
 
         $location = array_filter([
-            'source' => self::normalizeLocationSource($payload, $gpsValid, $baseStations, $wifiAccessPoints, $lat, $lon, $satelliteCount),
+            'source' => self::normalizeLocationSource($payload, $gps, $gpsValid, $baseStations, $wifiAccessPoints, $lat, $lon, $satelliteCount),
             'lat' => $lat,
             'lon' => $lon,
             'gpsValid' => $gpsValid,
@@ -158,6 +158,7 @@ final class FeatureNormalizer
 
     private static function normalizeLocationSource(
         array $payload,
+        array $gps,
         ?bool $gpsValid,
         array $baseStations,
         array $wifiAccessPoints,
@@ -183,6 +184,10 @@ final class FeatureNormalizer
 
         if ($normalized !== null) {
             return $normalized;
+        }
+
+        if ($gps !== [] && ($lat !== null || $lon !== null || ($satelliteCount !== null && $satelliteCount > 0))) {
+            return 'gps';
         }
 
         if ($hasBaseStations || $hasWifi) {

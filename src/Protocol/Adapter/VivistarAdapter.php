@@ -207,25 +207,95 @@ class VivistarAdapter implements DeviceAdapterInterface
 
         if ($type === 'AP10') {
             $this->enrichAlarmLocation($fields, $data);
+            return;
+        }
+
+        if ($type === 'AP01') {
+            $this->enrichLocationPacket($fields, $data);
+        }
+    }
+
+    private function enrichLocationPacket(array $fields, array &$data): void
+    {
+        $compact = trim((string)($fields[0] ?? ''));
+        $parsed = $this->parseCompactLocation($compact, true);
+        if ($parsed !== null) {
+            $data['date'] = $parsed['date'];
+            $data['timeUtc'] = $parsed['timeUtc'];
+            $data['gpsValid'] = $parsed['gpsValid'];
+            $data['lat'] = $parsed['lat'];
+            $data['lon'] = $parsed['lon'];
+            $data['speed'] = $parsed['speed'];
+            $data['direction'] = $parsed['direction'];
+            $this->enrichStatusBlock($parsed['status'], $data);
+
+            $beacon = ltrim(trim($parsed['rest']), '|');
+            if ($beacon !== '') {
+                $data['beacon'] = $beacon;
+            }
+        }
+
+        $mcc = $this->num(trim((string)($fields[1] ?? '')));
+        $mnc = $this->num(trim((string)($fields[2] ?? '')));
+        $lac = $this->num(trim((string)($fields[3] ?? '')));
+        $cellId = $this->num(trim((string)($fields[4] ?? '')));
+
+        if ($mcc !== null) {
+            $data['mcc'] = $mcc;
+        }
+        if ($mnc !== null) {
+            $data['mnc'] = $mnc;
+        }
+        if ($lac !== null) {
+            $data['lac'] = $lac;
+        }
+        if ($cellId !== null) {
+            $data['cellId'] = $cellId;
+        }
+
+        $baseStation = array_filter([
+            'mcc' => $mcc,
+            'mnc' => $mnc,
+            'lac' => $lac,
+            'ci' => $cellId,
+            'rxlev' => $data['gsmSignal'] ?? null,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+        if ($baseStation !== []) {
+            $data['baseStation'] = [$baseStation];
+        }
+
+        $wifi = [];
+        foreach (array_slice($fields, 5) as $entry) {
+            $parts = array_map('trim', explode('|', (string)$entry));
+            if (count($parts) < 3) {
+                continue;
+            }
+
+            $wifi[] = array_filter([
+                'ssid' => $parts[0] !== '' ? $parts[0] : null,
+                'mac' => $parts[1] !== '' ? $parts[1] : null,
+                'signal' => $this->num($parts[2] ?? null),
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+        }
+
+        if ($wifi !== []) {
+            $data['wifi'] = $wifi;
         }
     }
 
     private function enrichAlarmLocation(array $fields, array &$data): void
     {
         $compact = trim((string)($fields[0] ?? ''));
-        if (preg_match(
-            '/^(?<date>\d{6})(?<valid>[AV])(?<lat>\d{4}\.\d+)(?<latDir>[NS])(?<lon>\d{5}\.\d+)(?<lonDir>[EW])(?<speed>\d{3}\.\d)(?<time>\d{6})(?<direction>\d+(?:\.\d+)?)(?<status>\d{14})$/',
-            $compact,
-            $m
-        ) === 1) {
-            $data['date'] = $m['date'];
-            $data['timeUtc'] = $m['time'];
-            $data['gpsValid'] = $m['valid'] === 'A';
-            $data['lat'] = $this->coordinate((string)$m['lat'], (string)$m['latDir']);
-            $data['lon'] = $this->coordinate((string)$m['lon'], (string)$m['lonDir']);
-            $data['speed'] = $this->num($m['speed']);
-            $data['direction'] = $this->num($m['direction']);
-            $this->enrichStatusBlock((string)$m['status'], $data);
+        $parsed = $this->parseCompactLocation($compact, false);
+        if ($parsed !== null) {
+            $data['date'] = $parsed['date'];
+            $data['timeUtc'] = $parsed['timeUtc'];
+            $data['gpsValid'] = $parsed['gpsValid'];
+            $data['lat'] = $parsed['lat'];
+            $data['lon'] = $parsed['lon'];
+            $data['speed'] = $parsed['speed'];
+            $data['direction'] = $parsed['direction'];
+            $this->enrichStatusBlock($parsed['status'], $data);
         }
 
         $data['mcc'] = $this->num(trim((string)($fields[1] ?? '')));
@@ -261,6 +331,52 @@ class VivistarAdapter implements DeviceAdapterInterface
         if ($wifi !== '') {
             $data['wifiRaw'] = $wifi;
         }
+    }
+
+    /**
+     * @return array{date: string, timeUtc: string, gpsValid: bool, lat: ?float, lon: ?float, speed: int|float|null, direction: int|float|null, status: string, rest: string}|null
+     */
+    private function parseCompactLocation(string $compact, bool $allowRest): ?array
+    {
+        if (preg_match(
+            '/^(?<date>\d{6})(?<valid>[AV])(?<lat>\d{4}\.\d+)(?<latDir>[NS])(?<lon>\d{5}\.\d+)(?<lonDir>[EW])(?<speed>\d{3}\.\d)(?<time>\d{6})(?<tail>.+)$/',
+            $compact,
+            $m
+        ) !== 1) {
+            return null;
+        }
+
+        $tail = (string)$m['tail'];
+        $rest = '';
+        if ($allowRest) {
+            $pipePos = strpos($tail, '|');
+            if ($pipePos !== false) {
+                $rest = substr($tail, $pipePos);
+                $tail = substr($tail, 0, $pipePos);
+            }
+        }
+
+        if (strlen($tail) < 15) {
+            return null;
+        }
+
+        $status = substr($tail, -14);
+        $direction = substr($tail, 0, -14);
+        if ($direction === '' || preg_match('/^\d+(?:\.\d+)?$/', $direction) !== 1 || preg_match('/^\d{14}$/', $status) !== 1) {
+            return null;
+        }
+
+        return [
+            'date' => (string)$m['date'],
+            'timeUtc' => (string)$m['time'],
+            'gpsValid' => $m['valid'] === 'A',
+            'lat' => $this->coordinate((string)$m['lat'], (string)$m['latDir']),
+            'lon' => $this->coordinate((string)$m['lon'], (string)$m['lonDir']),
+            'speed' => $this->num($m['speed']),
+            'direction' => $this->num($direction),
+            'status' => $status,
+            'rest' => $rest,
+        ];
     }
 
     private function enrichStatusBlock(string $status, array &$data): void

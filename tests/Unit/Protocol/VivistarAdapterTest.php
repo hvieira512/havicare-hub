@@ -56,6 +56,29 @@ final class VivistarAdapterTest extends TestCase
         self::assertSame(90, $payload['data']['battery']);
     }
 
+    public function testDecodeIncomingParsesAp01LocationPacket(): void
+    {
+        $adapter = new VivistarAdapter();
+
+        $payload = $adapter->decodeIncoming(
+            'IWAP01080524A2232.9806N11404.9355E000.1061830323.8706000908000102|2@bt0|23-46-89-ab-cd-ef|23,460,0,9520,3671,Home|74-DE-2B-44-88-8C|97#',
+            ['session' => ['imei' => '861265062542599']]
+        );
+
+        self::assertIsArray($payload);
+        self::assertSame('AP01', $payload['type']);
+        self::assertSame('861265062542599', $payload['imei']);
+        self::assertTrue($payload['data']['gpsValid']);
+        self::assertSame(22.549676666666667, $payload['data']['lat']);
+        self::assertSame(114.08225833333333, $payload['data']['lon']);
+        self::assertSame(60, $payload['data']['gsmSignal']);
+        self::assertSame(9, $payload['data']['satelliteCount']);
+        self::assertSame(9520, $payload['data']['lac']);
+        self::assertSame(3671, $payload['data']['cellId']);
+        self::assertCount(1, $payload['data']['baseStation']);
+        self::assertCount(1, $payload['data']['wifi']);
+    }
+
     public function testDecodeIncomingParsesAp10AlarmPacket(): void
     {
         $adapter = new VivistarAdapter();
