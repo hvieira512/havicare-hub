@@ -37,14 +37,14 @@ docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^0/watch/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAP00' "$MQTT_LOG_FILE"; then
+  if grep -q "^42/watch/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAP00' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q "^0/watch/$IMEI/raw " "$MQTT_LOG_FILE"; then
+if ! grep -q "^42/watch/$IMEI/raw " "$MQTT_LOG_FILE"; then
   scenario_fail "publish_failure" "missing raw login topic"
 fi
 if ! grep -q '"debug":{"protocol":"vivistar-iw","transport":"tcp","encoding":"text","payload":"IWAP00' "$MQTT_LOG_FILE"; then
@@ -67,7 +67,7 @@ fi
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^0/watch/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
+  if grep -q "^42/watch/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1

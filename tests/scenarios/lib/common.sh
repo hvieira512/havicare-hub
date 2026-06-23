@@ -59,14 +59,33 @@ start_mqtt_subscriber() {
   if [ -z "${MQTT_SMOKE_USERNAME:-}" ] || [ -z "${MQTT_SMOKE_PASSWORD:-}" ]; then
     scenario_fail "stream_failure" "MQTT_SMOKE_USERNAME/MQTT_SMOKE_PASSWORD are required"
   fi
-  : > "$MQTT_LOG_FILE"
 
   local probe_topic="0/watch/scenario-subscriber-probe/raw"
   local probe_payload="ready-$(date +%s)-$$"
+
+  : > "$MQTT_LOG_FILE"
+
+  docker compose exec -T mosquitto sh -lc '
+    pkill -f "mosquitto_sub.*scenario-mqtt-capture" 2>/dev/null
+    rm -f /tmp/scenario-mqtt-capture.log
+  ' >/dev/null 2>&1 || true
+
+  docker compose exec -d mosquitto sh -lc "
+    mosquitto_sub -h 127.0.0.1 -p 1883 -u '${MQTT_SMOKE_USERNAME}' -P '${MQTT_SMOKE_PASSWORD}' -v -t '#' > /tmp/scenario-mqtt-capture.log 2>&1
+  "
+
+  sleep 2
+
+  docker compose exec -T mosquitto sh -lc "
+    mosquitto_pub -h 127.0.0.1 -p 1883 -u '${MQTT_PUBLISHER_USERNAME}' -P '${MQTT_PUBLISHER_PASSWORD}' -t '$probe_topic' -m '$probe_payload' -r
+  " >/dev/null 2>&1 || true
+
   for _ in $(seq 1 20); do
-    docker compose exec -T mosquitto sh -lc "mosquitto_pub -h 127.0.0.1 -p 1883 -u '${MQTT_PUBLISHER_USERNAME:-}' -P '${MQTT_PUBLISHER_PASSWORD:-}' -t '$probe_topic' -m '$probe_payload'" >/dev/null 2>&1 || true
     capture_mqtt_log
-    if grep -q "^$probe_topic $probe_payload\$" "$MQTT_LOG_FILE"; then
+    if grep -Fq "$probe_topic $probe_payload" "$MQTT_LOG_FILE"; then
+      docker compose exec -T mosquitto sh -lc "
+        mosquitto_pub -h 127.0.0.1 -p 1883 -u '${MQTT_PUBLISHER_USERNAME}' -P '${MQTT_PUBLISHER_PASSWORD}' -t '$probe_topic' -n -r
+      " >/dev/null 2>&1 || true
       return 0
     fi
     sleep 1
@@ -76,11 +95,14 @@ start_mqtt_subscriber() {
 }
 
 stop_mqtt_subscriber() {
-  true
+  docker compose exec -T mosquitto sh -lc '
+    pkill -f "mosquitto_sub.*scenario-mqtt-capture" 2>/dev/null
+    rm -f /tmp/scenario-mqtt-capture.log
+  ' >/dev/null 2>&1 || true
 }
 
 capture_mqtt_log() {
-  docker compose exec -T mosquitto sh -lc "mosquitto_sub -C 20 -W 1 -h 127.0.0.1 -p 1883 -u '${MQTT_SMOKE_USERNAME:-}' -P '${MQTT_SMOKE_PASSWORD:-}' -v -t '#'" >> "$MQTT_LOG_FILE" 2>/dev/null || true
+  docker compose exec -T mosquitto sh -lc 'cat /tmp/scenario-mqtt-capture.log 2>/dev/null || true' > "$MQTT_LOG_FILE" 2>/dev/null || true
 }
 
 capture_artifacts() {

@@ -26,10 +26,10 @@ cat >"$ACL_FILE" <<EOF
 user $PUBLISHER_USER
 topic read /voerka/#
 topic write /voerka/#
-topic write 0/watch/+/status
-topic write 0/watch/+/events
-topic write 0/watch/+/raw
-topic readwrite 0/watch/+/downlink
+topic write +/watch/+/status
+topic write +/watch/+/events
+topic write +/watch/+/raw
+topic readwrite +/watch/+/downlink
 topic write +/ncs/+/status
 topic write +/ncs/+/events
 topic write +/ncs/+/raw
