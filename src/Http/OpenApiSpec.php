@@ -30,6 +30,14 @@ class OpenApiSpec
             'schema' => ['type' => 'integer', 'example' => 1],
         ];
 
+        $commandIdParam = [
+            'name' => 'id',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'Command ID',
+            'schema' => ['type' => 'string', 'example' => '9f395f4f04fe589e'],
+        ];
+
         return [
             'openapi' => '3.1.0',
             'info' => [
@@ -46,6 +54,30 @@ class OpenApiSpec
                 ['name' => 'System'],
             ],
             'paths' => [
+                '/api/auth/login' => [
+                    'post' => [
+                        'tags' => ['System'],
+                        'summary' => 'Issue bearer token for API access',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'username' => ['type' => 'string'],
+                                    'password' => ['type' => 'string'],
+                                ],
+                                'required' => ['username', 'password'],
+                            ]]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Bearer token issued',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                            ],
+                            '401' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/devices' => [
                     'get' => [
                         'tags' => ['Devices'],
@@ -137,6 +169,20 @@ class OpenApiSpec
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CommandResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/commands/{id}' => [
+                    'get' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Get command lifecycle by command ID',
+                        'parameters' => [$commandIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Command detail with associated device',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],

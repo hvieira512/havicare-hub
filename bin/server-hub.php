@@ -5,6 +5,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Bootstrap;
 use Hub\Config;
+use Hub\Dashboard\ApiTokenStore;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
 use Hub\DeviceHubServer;
@@ -187,12 +188,14 @@ $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
 if ($dashboardEnabled) {
     $dashboard = new DashboardHttpServer(
         $dashboardStore,
+        new ApiTokenStore(new RedisClient($redisParameters)),
         $whitelist,
         $hubServer,
         $downlinkQueue,
         $dataAccess,
         (string)($dashboardConfig['username'] ?? ''),
-        (string)($dashboardConfig['password'] ?? '')
+        (string)($dashboardConfig['password'] ?? ''),
+        (int)($dashboardConfig['api_token_ttl_seconds'] ?? 3600)
     );
     $dashboardServer = new ReactHttpServer(
         new StreamingRequestMiddleware(),

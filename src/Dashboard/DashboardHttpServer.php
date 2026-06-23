@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard;
 
+use Hub\Api\Routes\Auth;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Models;
 use Hub\Api\Routes\Suppliers;
@@ -22,12 +23,14 @@ final class DashboardHttpServer
 
     public function __construct(
         private DashboardStore $store,
+        private ApiTokenStore $tokens,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ?PendingDownlinkQueue $downlinkQueue,
         private DashboardDataAccess $db,
         private string $username,
         private string $password,
+        private int $apiTokenTtlSeconds = 3600,
     ) {
         foreach ($this->whitelist->all() as $imei => $metadata) {
             $this->store->registerDevice(
@@ -51,16 +54,20 @@ final class DashboardHttpServer
 
     public function __invoke(ServerRequestInterface $request): Response
     {
-        if (strtoupper($request->getMethod()) === 'OPTIONS') {
+        $method = strtoupper($request->getMethod());
+        $path = $request->getUri()->getPath();
+
+        if ($method === 'OPTIONS') {
             return $this->cors(new Response(204));
         }
 
-        if (!$this->isAuthorized($request)) {
+        if ($this->isApiPath($path)) {
+            if (!$this->isApiAuthorized($request)) {
+                return $this->cors($this->json(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
+            }
+        } elseif (!$this->isDashboardAuthorized($request)) {
             return $this->cors(new Response(401, ['WWW-Authenticate' => 'Basic realm="Devices Hub"', 'Content-Type' => 'text/plain'], 'Unauthorized'));
         }
-
-        $path = $request->getUri()->getPath();
-        $method = strtoupper($request->getMethod());
 
         try {
             if ($method === 'GET' && ($path === '/' || $path === '/dashboard')) {
@@ -93,7 +100,30 @@ final class DashboardHttpServer
             ->withHeader('Access-Control-Max-Age', '86400');
     }
 
-    private function isAuthorized(ServerRequestInterface $request): bool
+    private function isApiPath(string $path): bool
+    {
+        return str_starts_with($path, '/api/');
+    }
+
+    private function isApiAuthorized(ServerRequestInterface $request): bool
+    {
+        if ($request->getUri()->getPath() === '/api/auth/login') {
+            return true;
+        }
+
+        if ($this->username === '' || $this->password === '') {
+            return true;
+        }
+
+        $header = $request->getHeaderLine('Authorization');
+        if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
+            return false;
+        }
+
+        return $this->tokens->validate((string)$matches[1]);
+    }
+
+    private function isDashboardAuthorized(ServerRequestInterface $request): bool
     {
         if ($this->username === '' || $this->password === '') {
             return true;
@@ -121,6 +151,7 @@ final class DashboardHttpServer
         $factory = require __DIR__ . '/../Api/Routes/index.php';
 
         return $factory(
+            new Auth($this->username, $this->password, $this->tokens, $this->apiTokenTtlSeconds),
             $this->devicesApi,
             $this->modelsApi,
             $this->suppliersApi,

@@ -242,6 +242,31 @@ final class DashboardStore
         return $commands;
     }
 
+    public function findCommand(string $id): ?array
+    {
+        foreach ($this->devices() as $device) {
+            $imei = (string)($device['imei'] ?? '');
+            if ($imei === '') {
+                continue;
+            }
+
+            $raw = $this->redis->hget($this->commandHashKey($imei), $id);
+            if (!is_string($raw)) {
+                continue;
+            }
+
+            $command = json_decode($raw, true);
+            if (is_array($command)) {
+                return [
+                    'device' => $device,
+                    'command' => $command,
+                ];
+            }
+        }
+
+        return null;
+    }
+
     private function normalizeDevice(array $data): array
     {
         $data['online'] = ((string)($data['online'] ?? '0')) === '1';

@@ -59,16 +59,28 @@ start_mqtt_subscriber() {
   if [ -z "${MQTT_SMOKE_USERNAME:-}" ] || [ -z "${MQTT_SMOKE_PASSWORD:-}" ]; then
     scenario_fail "stream_failure" "MQTT_SMOKE_USERNAME/MQTT_SMOKE_PASSWORD are required"
   fi
-  docker compose exec -T mosquitto sh -lc 'rm -f /tmp/mqtt-scenario.log /tmp/mqtt-sub.pid'
-  docker compose exec -T mosquitto sh -lc "mosquitto_sub -h 127.0.0.1 -p 1883 -u '${MQTT_SMOKE_USERNAME:-}' -P '${MQTT_SMOKE_PASSWORD:-}' -v -t '#' > /tmp/mqtt-scenario.log 2>&1 & echo \$! > /tmp/mqtt-sub.pid"
+  : > "$MQTT_LOG_FILE"
+
+  local probe_topic="0/watch/scenario-subscriber-probe/raw"
+  local probe_payload="ready-$(date +%s)-$$"
+  for _ in $(seq 1 20); do
+    docker compose exec -T mosquitto sh -lc "mosquitto_pub -h 127.0.0.1 -p 1883 -u '${MQTT_PUBLISHER_USERNAME:-}' -P '${MQTT_PUBLISHER_PASSWORD:-}' -t '$probe_topic' -m '$probe_payload'" >/dev/null 2>&1 || true
+    capture_mqtt_log
+    if grep -q "^$probe_topic $probe_payload\$" "$MQTT_LOG_FILE"; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  scenario_fail "stream_failure" "MQTT scenario subscriber did not become ready"
 }
 
 stop_mqtt_subscriber() {
-  docker compose exec -T mosquitto sh -lc 'test -f /tmp/mqtt-sub.pid && kill "$(cat /tmp/mqtt-sub.pid)" 2>/dev/null || true' >/dev/null 2>&1 || true
+  true
 }
 
 capture_mqtt_log() {
-  docker compose exec -T mosquitto sh -lc 'cat /tmp/mqtt-scenario.log 2>/dev/null || true' > "$MQTT_LOG_FILE" || true
+  docker compose exec -T mosquitto sh -lc "mosquitto_sub -C 20 -W 1 -h 127.0.0.1 -p 1883 -u '${MQTT_SMOKE_USERNAME:-}' -P '${MQTT_SMOKE_PASSWORD:-}' -v -t '#'" >> "$MQTT_LOG_FILE" 2>/dev/null || true
 }
 
 capture_artifacts() {

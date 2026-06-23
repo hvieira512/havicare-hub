@@ -1,5 +1,6 @@
 <?php
 
+use Hub\Api\Routes\Auth;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Models;
 use Hub\Api\Routes\Suppliers;
@@ -8,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
 
 return static function (
+    Auth $auth,
     Devices $devices,
     Models $models,
     Suppliers $suppliers,
@@ -15,12 +17,20 @@ return static function (
     callable $html
 ): array {
     return [
+        new ApiRoute('POST', '/api/auth/login', function (array $params, ServerRequestInterface $request) use ($auth, $json): Response {
+            $result = $auth->login((string)$request->getBody());
+            return $json($result, isset($result['error']) ? 401 : 200);
+        }),
         new ApiRoute('GET', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->list((string)$request->getUri()->getQuery()))),
         new ApiRoute('GET', '/api/devices/{imei}', fn(array $params): Response => $json($devices->show($params['imei']))),
         new ApiRoute('GET', '/api/devices/{imei}/configuration', fn(array $params, ServerRequestInterface $request): Response => $json($devices->configuration($params['imei'], (string)$request->getUri()->getQuery()))),
         new ApiRoute('PUT', '/api/devices/{imei}/configuration', fn(array $params, ServerRequestInterface $request): Response => $json($devices->saveConfiguration($params['imei'], (string)$request->getBody()))),
         new ApiRoute('POST', '/api/devices/{imei}/configuration/{key}/apply', fn(array $params, ServerRequestInterface $request): Response => $json($devices->applyConfiguration($params['imei'], $params['key'], (string)$request->getBody()))),
         new ApiRoute('POST', '/api/devices/{imei}/commands', fn(array $params, ServerRequestInterface $request): Response => $json($devices->command($params['imei'], (string)$request->getBody()))),
+        new ApiRoute('GET', '/api/commands/{id}', function (array $params) use ($devices, $json): Response {
+            $result = $devices->commandStatus($params['id']);
+            return $json($result, isset($result['error']) ? 404 : 200);
+        }),
         new ApiRoute('POST', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->create((string)$request->getBody()))),
         new ApiRoute('PUT', '/api/devices/{imei}', fn(array $params, ServerRequestInterface $request): Response => $json($devices->update($params['imei'], (string)$request->getBody()))),
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),

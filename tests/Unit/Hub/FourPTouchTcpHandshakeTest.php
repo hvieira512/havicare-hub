@@ -129,7 +129,7 @@ final class FourPTouchTcpHandshakeTest extends TestCase
                             return;
                         }
 
-                        if ($phase === 'alarm' && str_contains($received, '[3G*8800000015*0002*AL]')) {
+                        if ($phase === 'alarm' && str_contains($received, '[3G*7597567372*0002*AL]')) {
                             $connection->end();
                             $loop->stop();
                         }

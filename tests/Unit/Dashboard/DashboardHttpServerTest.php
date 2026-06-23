@@ -2,16 +2,37 @@
 
 namespace Tests\Unit\Dashboard;
 
+use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use GuzzleHttp\Psr7\UploadedFile;
 use Hub\Api\Routes\Models;
+use Hub\Dashboard\ApiTokenStore;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DashboardDatabase;
 use Hub\Dashboard\DashboardHttpServer;
+use Hub\Dashboard\DashboardStore;
+use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 
 final class DashboardHttpServerTest extends TestCase
 {
+    private string $whitelistPath;
+
+    protected function setUp(): void
+    {
+        $this->whitelistPath = sys_get_temp_dir() . '/hub-dashboard-http-whitelist-' . bin2hex(random_bytes(4)) . '.json';
+        file_put_contents($this->whitelistPath, json_encode([
+            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro'],
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    protected function tearDown(): void
+    {
+        if (is_file($this->whitelistPath)) {
+            unlink($this->whitelistPath);
+        }
+    }
+
     public function testDashboardPageRendersPhpComponentsRepeatedly(): void
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
@@ -60,6 +81,43 @@ final class DashboardHttpServerTest extends TestCase
         }
     }
 
+    public function testApiLoginIssuesBearerTokenAndAllowsApiAccess(): void
+    {
+        $server = $this->makeServer();
+
+        $login = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'admin', 'password' => 'secret'], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(200, $login->getStatusCode());
+        $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $token = (string)($payload['token']['access_token'] ?? '');
+        self::assertNotSame('', $token);
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testApiRejectsBasicAuthWhileDashboardAcceptsIt(): void
+    {
+        $server = $this->makeServer();
+        $basic = 'Basic ' . base64_encode('admin:secret');
+
+        $apiResponse = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => $basic]));
+        self::assertSame(401, $apiResponse->getStatusCode());
+
+        $dashboardResponse = $server(new ServerRequest('GET', '/dashboard', ['Authorization' => $basic]));
+        self::assertSame(200, $dashboardResponse->getStatusCode());
+    }
+
     public function testModelImageUploadStripsPngColorProfileChunksBeforeDecode(): void
     {
         $source = imagecreatetruecolor(20, 20);
@@ -95,5 +153,29 @@ final class DashboardHttpServerTest extends TestCase
         $chunk = pack('N', strlen($data)) . $type . $data . pack('N', crc32($type . $data));
 
         return substr($png, 0, $signatureLength) . $chunk . substr($png, $signatureLength);
+    }
+
+    private function makeServer(): DashboardHttpServer
+    {
+        $redis = new InMemoryRedisClientForDevicesApi();
+        $db = DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared'));
+        $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
+        $store->setDataAccess($db);
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
+
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturn('sent');
+
+        return new DashboardHttpServer(
+            $store,
+            new ApiTokenStore($redis, 'test:api-tokens'),
+            new Whitelist($this->whitelistPath),
+            $hub,
+            null,
+            $db,
+            'admin',
+            'secret',
+            3600
+        );
     }
 }

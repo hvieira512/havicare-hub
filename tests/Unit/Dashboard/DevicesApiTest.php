@@ -111,6 +111,20 @@ final class DevicesApiTest extends TestCase
         self::assertContains('dnRR', array_column($response['commands'], 'id'));
     }
 
+    public function testCommandStatusReturnsStoredCommandById(): void
+    {
+        [$api] = $this->makeApi();
+
+        $created = $api->command('861265061009822', json_encode(['command' => 'BPXL'], JSON_THROW_ON_ERROR));
+        $id = (string)($created['command']['id'] ?? '');
+
+        $response = $api->commandStatus($id);
+
+        self::assertSame('861265061009822', $response['device']['imei'] ?? null);
+        self::assertSame($id, $response['command']['id'] ?? null);
+        self::assertSame('BPXL', $response['command']['requestId'] ?? null);
+    }
+
     /**
      * @return array{0: Devices, 1: DashboardDataAccess}
      */
@@ -125,12 +139,20 @@ final class DevicesApiTest extends TestCase
         $api = new Devices(
             $store,
             $whitelist,
-            $this->createMock(\Hub\DeviceHubServer::class),
+            $this->makeHubServerMock(),
             null,
             $db
         );
 
         return [$api, $db];
+    }
+
+    private function makeHubServerMock(): \Hub\DeviceHubServer
+    {
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturn('sent');
+
+        return $hub;
     }
 }
 
@@ -144,6 +166,9 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
 
     /** @var array<string, array<int, string>> */
     private array $lists = [];
+
+    /** @var array<string, string> */
+    private array $strings = [];
 
     public function getCommandFactory()
     {
@@ -192,6 +217,8 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
             'ltrim' => $this->ltrim((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrem' => $this->lrem((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
+            'setex' => $this->setex((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
+            'get' => $this->get((string)$arguments[0]),
             'del' => $this->del($arguments[0]),
             default => throw new \BadMethodCallException("Redis method {$method} is not implemented"),
         };
@@ -282,12 +309,24 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
         return $removed;
     }
 
+    private function setex(string $key, int $ttlSeconds, string $value): string
+    {
+        $this->strings[$key] = $value;
+
+        return 'OK';
+    }
+
+    private function get(string $key): ?string
+    {
+        return $this->strings[$key] ?? null;
+    }
+
     private function del(array|string $keys): int
     {
         $removed = 0;
         foreach ((array)$keys as $key) {
-            $removed += isset($this->hashes[$key]) || isset($this->lists[$key]) || isset($this->sets[$key]) ? 1 : 0;
-            unset($this->hashes[$key], $this->lists[$key], $this->sets[$key]);
+            $removed += isset($this->hashes[$key]) || isset($this->lists[$key]) || isset($this->sets[$key]) || isset($this->strings[$key]) ? 1 : 0;
+            unset($this->hashes[$key], $this->lists[$key], $this->sets[$key], $this->strings[$key]);
         }
 
         return $removed;

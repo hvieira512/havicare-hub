@@ -139,6 +139,16 @@ final class Devices
         return ['status' => $record['status'], 'command' => array_merge($record, ['id' => $id])];
     }
 
+    public function commandStatus(string $id): array
+    {
+        $result = $this->store->findCommand($id);
+        if ($result === null) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Command was not found']];
+        }
+
+        return $result;
+    }
+
     public function configuration(string $imei, string $query = ''): array
     {
         $configurations = [];
