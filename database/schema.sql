@@ -57,5 +57,17 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     PRIMARY KEY (imei, config_key)
 );
 
+CREATE TABLE IF NOT EXISTS api_users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL,
+    license_id TEXT NOT NULL DEFAULT '',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_device_configurations_imei ON device_configurations(imei);
 CREATE INDEX IF NOT EXISTS idx_model_request_capabilities_model ON model_request_capabilities(model_id);
+CREATE INDEX IF NOT EXISTS idx_api_users_role_license ON api_users(role, license_id);

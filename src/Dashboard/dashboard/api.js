@@ -1,11 +1,20 @@
+const authHeaders = () => {
+    const token = window.hubDashboardApiToken?.access_token || '';
+    return token === '' ? {} : {Authorization: `Bearer ${token}`};
+};
+
 export const requestJson = (url, options = {}) => fetch(
     url,
-    Object.assign({headers: {'Content-Type': 'application/json'}}, options)
+    Object.assign({}, options, {
+        headers: Object.assign({'Content-Type': 'application/json'}, authHeaders(), options.headers || {}),
+    })
 ).then(response => response.json());
 
 export const formRequest = (url, formData, options = {}) => fetch(
     url,
-    Object.assign({method: 'POST', body: formData}, options)
+    Object.assign({method: 'POST', body: formData}, options, {
+        headers: Object.assign({}, authHeaders(), options.headers || {}),
+    })
 ).then(response => response.json());
 
 const withQuery = (url, params = {}) => {
@@ -51,4 +60,10 @@ export const api = {
         method: id ? 'PUT' : 'POST',
     }),
     deleteModel: id => requestJson(`/api/models/${id}`, {method: 'DELETE'}),
+    apiUsers: (params = {}) => requestJson(withQuery('/api/api-users', params)),
+    saveApiUser: (id, body) => requestJson(id ? `/api/api-users/${encodeURIComponent(id)}` : '/api/api-users', {
+        method: id ? 'PUT' : 'POST',
+        body: JSON.stringify(body),
+    }),
+    deleteApiUser: id => requestJson(`/api/api-users/${encodeURIComponent(id)}`, {method: 'DELETE'}),
 };

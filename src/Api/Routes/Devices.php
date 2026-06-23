@@ -5,6 +5,7 @@ namespace Hub\Api\Routes;
 use Hub\Api\Support\CollectionResponse;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Dashboard\ApiAuthContext;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DashboardStore;
 use Hub\Dashboard\DeviceMetadata;
@@ -27,7 +28,7 @@ final class Devices
     ) {
     }
 
-    public function list(string $query = ''): array
+    public function list(string $query = '', ?ApiAuthContext $auth = null): array
     {
         $params = $this->queryParams($query);
         $page = $this->queryPage($params);
@@ -39,7 +40,7 @@ final class Devices
             'model' => $this->queryFilter($params, 'model', 'all'),
             'q' => $this->queryFilter($params, 'q', ''),
         ];
-        $devices = $this->store->devices();
+        $devices = $this->scopeDevices($this->store->devices(), $auth);
         $filtered = $this->filterDevices($devices, $filters);
         $available = [
             'deviceType' => $this->uniqueValues(array_map(
@@ -63,9 +64,12 @@ final class Devices
         return $this->collectionResponse($filtered, $page, $limit, $filters, $available);
     }
 
-    public function show(string $imei): array
+    public function show(string $imei, ?ApiAuthContext $auth = null): array
     {
         $device = $this->store->device($imei);
+        if (!$this->canAccessDevice($imei, $auth, $device)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
         $model = $this->modelForDevice($device);
 
@@ -86,8 +90,12 @@ final class Devices
         ];
     }
 
-    public function command(string $imei, string $body): array
+    public function command(string $imei, string $body, ?ApiAuthContext $auth = null): array
     {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
         $decoded = json_decode($body, true);
         $requestId = is_array($decoded)
             ? trim((string)($decoded['requestId'] ?? $decoded['command'] ?? ''))
@@ -139,18 +147,27 @@ final class Devices
         return ['status' => $record['status'], 'command' => array_merge($record, ['id' => $id])];
     }
 
-    public function commandStatus(string $id): array
+    public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
     {
         $result = $this->store->findCommand($id);
         if ($result === null) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Command was not found']];
+        }
+        $device = is_array($result['device'] ?? null) ? $result['device'] : [];
+        $imei = (string)($device['imei'] ?? '');
+        if ($imei === '' || !$this->canAccessDevice($imei, $auth, $device)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Command was not found']];
         }
 
         return $result;
     }
 
-    public function configuration(string $imei, string $query = ''): array
+    public function configuration(string $imei, string $query = '', ?ApiAuthContext $auth = null): array
     {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
         $configurations = [];
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
             $desired = $row['desired_payload'];
@@ -162,8 +179,12 @@ final class Devices
         return $configurations;
     }
 
-    public function saveConfiguration(string $imei, string $body): array
+    public function saveConfiguration(string $imei, string $body, ?ApiAuthContext $auth = null): array
     {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
         $decoded = json_decode($body, true);
         if (!is_array($decoded) || !isset($decoded['configs']) || !is_array($decoded['configs'])) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'configs object is required']];
@@ -183,11 +204,15 @@ final class Devices
             $results[] = $result;
         }
 
-        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->configuration($imei)];
+        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->configuration($imei, '', $auth)];
     }
 
-    public function applyConfiguration(string $imei, string $key, string $body = ''): array
+    public function applyConfiguration(string $imei, string $key, string $body = '', ?ApiAuthContext $auth = null): array
     {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
         $supplier = '';
         $model = '';
         if ($body !== '') {
@@ -483,6 +508,41 @@ final class Devices
         $candidateFilters[$excludeKey] = 'all';
 
         return $this->filterDevices($devices, $candidateFilters);
+    }
+
+    private function canAccessDevice(string $imei, ?ApiAuthContext $auth, ?array $device = null): bool
+    {
+        if ($auth === null || $auth->isAdmin()) {
+            return true;
+        }
+
+        $device ??= $this->store->device($imei);
+        $licenseId = $this->deviceLicenseId($imei, $device);
+
+        return $auth->canAccessLicense($licenseId);
+    }
+
+    private function deviceLicenseId(string $imei, array $device): string
+    {
+        $licenseId = trim((string)($device['licenseId'] ?? ''));
+        if ($licenseId !== '') {
+            return DeviceMetadata::normalizeLicenseId($licenseId);
+        }
+
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        return DeviceMetadata::normalizeLicenseId((string)($metadata['licenseId'] ?? '0'));
+    }
+
+    private function scopeDevices(array $devices, ?ApiAuthContext $auth): array
+    {
+        if ($auth === null || $auth->isAdmin()) {
+            return $devices;
+        }
+
+        return array_values(array_filter(
+            $devices,
+            fn(array $device): bool => $this->canAccessDevice((string)($device['imei'] ?? ''), $auth, $device)
+        ));
     }
 
     private function normalizeLicenseId(string $licenseId, string $deviceType): string

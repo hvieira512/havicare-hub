@@ -17,12 +17,15 @@ use PHPUnit\Framework\TestCase;
 final class DashboardHttpServerTest extends TestCase
 {
     private string $whitelistPath;
+    private string $databasePath;
 
     protected function setUp(): void
     {
         $this->whitelistPath = sys_get_temp_dir() . '/hub-dashboard-http-whitelist-' . bin2hex(random_bytes(4)) . '.json';
+        $this->databasePath = sys_get_temp_dir() . '/hub-dashboard-http-db-' . bin2hex(random_bytes(4)) . '.sqlite';
         file_put_contents($this->whitelistPath, json_encode([
-            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro'],
+            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001'],
+            '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -30,6 +33,11 @@ final class DashboardHttpServerTest extends TestCase
     {
         if (is_file($this->whitelistPath)) {
             unlink($this->whitelistPath);
+        }
+        foreach ([$this->databasePath, $this->databasePath . '-shm', $this->databasePath . '-wal'] as $path) {
+            if (is_file($path)) {
+                unlink($path);
+            }
         }
     }
 
@@ -92,7 +100,7 @@ final class DashboardHttpServerTest extends TestCase
             json_encode(['username' => 'admin', 'password' => 'secret'], JSON_THROW_ON_ERROR)
         ));
 
-        self::assertSame(200, $login->getStatusCode());
+        self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
         $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
         $token = (string)($payload['token']['access_token'] ?? '');
         self::assertNotSame('', $token);
@@ -104,6 +112,101 @@ final class DashboardHttpServerTest extends TestCase
         ));
 
         self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testTenantClientTokenCanUseAllowedDeviceRoutes(): void
+    {
+        $server = $this->makeServer();
+
+        $login = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'tenant', 'password' => 'tenant-secret'], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
+        $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('license_client', $payload['token']['role'] ?? null);
+        self::assertSame('1001', $payload['token']['license_id'] ?? null);
+        $token = (string)($payload['token']['access_token'] ?? '');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testTenantClientTokenOnlyListsItsLicenseDevices(): void
+    {
+        $server = $this->makeServer();
+
+        $payload = json_decode((string)$server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'tenant', 'password' => 'tenant-secret'], JSON_THROW_ON_ERROR)
+        ))->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $token = (string)($payload['token']['access_token'] ?? '');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(['861265061009822'], array_map(
+            static fn(array $device): string => (string)$device['imei'],
+            $body['data'] ?? []
+        ));
+    }
+
+    public function testTenantClientTokenCannotReadOtherLicenseDevice(): void
+    {
+        $server = $this->makeServer();
+
+        $payload = json_decode((string)$server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'tenant', 'password' => 'tenant-secret'], JSON_THROW_ON_ERROR)
+        ))->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $token = (string)($payload['token']['access_token'] ?? '');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009833',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+
+        self::assertSame(404, $response->getStatusCode());
+    }
+
+    public function testTenantClientTokenCannotUseAdminRoutes(): void
+    {
+        $server = $this->makeServer();
+
+        $login = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'tenant', 'password' => 'tenant-secret'], JSON_THROW_ON_ERROR)
+        ));
+        $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $token = (string)($payload['token']['access_token'] ?? '');
+
+        $response = $server(new ServerRequest(
+            'DELETE',
+            '/api/models/1',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+
+        self::assertSame(403, $response->getStatusCode());
     }
 
     public function testApiRejectsBasicAuthWhileDashboardAcceptsIt(): void
@@ -158,10 +261,12 @@ final class DashboardHttpServerTest extends TestCase
     private function makeServer(): DashboardHttpServer
     {
         $redis = new InMemoryRedisClientForDevicesApi();
-        $db = DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared'));
+        $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($this->databasePath));
+        $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
         $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '1001');
+        $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', '2002');
 
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
@@ -175,6 +280,8 @@ final class DashboardHttpServerTest extends TestCase
             $db,
             'admin',
             'secret',
+            'tenant',
+            'tenant-secret',
             3600
         );
     }

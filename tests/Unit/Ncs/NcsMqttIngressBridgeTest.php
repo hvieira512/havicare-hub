@@ -25,7 +25,8 @@ final class NcsMqttIngressBridgeTest extends TestCase
                 'model' => 'W812',
                 'deviceType' => 'ncs',
                 'licenseId' => '1001',
-                'deviceId' => 'gw-001',
+                'sourceSystem' => 'voerka',
+                'sourceDeviceId' => 'gw-001',
             ],
         ], JSON_THROW_ON_ERROR));
     }

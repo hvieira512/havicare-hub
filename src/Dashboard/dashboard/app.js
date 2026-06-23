@@ -69,6 +69,10 @@ function licenseLabel(licenseId) {
     return normalizeLicenseId(licenseId) === '0' ? 'Sem Licença' : normalizeLicenseId(licenseId);
 }
 
+function apiRoleLabel(role) {
+    return role === 'hub_admin' ? 'Admin Hub' : 'Cliente por licença';
+}
+
 function supplierProtocol(supplier, models = state.summary.models) {
     const existing = models.find(model => model.supplier === supplier && model.protocol);
     return existing?.protocol || '';
@@ -1066,14 +1070,17 @@ function handleDeleteDeviceBtnClick() {
 }
 
 async function loadSettingsModal(section = state.settingsModal.section || 'suppliers') {
-    const [suppliersData, modelsData] = await Promise.all([
+    const [suppliersData, modelsData, apiUsersData] = await Promise.all([
         api.suppliers({limit: 500}),
         api.models({limit: 500}),
+        api.apiUsers({limit: 500}),
     ]);
     state.modelModalSuppliers = suppliersData.data || [];
     state.summary.models = modelsData.data || [];
+    state.settingsModal.apiUsers = apiUsersData.data || [];
     renderSuppliersSection(state.modelModalSuppliers);
     renderModelsSection(state.summary.models);
+    renderApiUsersSection(state.settingsModal.apiUsers);
     syncCapabilitiesSelection();
     renderCapabilitiesSection();
     activateSettingsSection(section);
@@ -1217,12 +1224,94 @@ async function deleteModel(id) {
     await loadSettingsModal('models');
 }
 
+function renderApiUsersSection(users) {
+    resetApiUserForm();
+    els.apiUserListBody.innerHTML = (users || []).map(user => `
+        <tr>
+        <td>${esc(user.username)}</td>
+        <td><span class="badge text-bg-light border">${esc(apiRoleLabel(user.role))}</span></td>
+        <td>${user.role === 'hub_admin' ? '<span class="text-secondary">Todas</span>' : esc(user.license_id || '-')}</td>
+        <td><span class="badge ${Number(user.enabled) === 1 ? 'text-bg-success' : 'text-bg-secondary'}">${Number(user.enabled) === 1 ? 'ativo' : 'inativo'}</span></td>
+        <td>
+        <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-id="${esc(user.license_id || '')}" data-enabled="${Number(user.enabled) === 1 ? '1' : ''}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-${Number(user.enabled) === 1 ? 'warning' : 'success'} btn-sm" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-id="${esc(user.license_id || '')}" data-enabled="${Number(user.enabled) === 1 ? '1' : ''}" title="${Number(user.enabled) === 1 ? 'Desativar' : 'Ativar'}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? 'pause' : 'play'}"></i></button>
+        <button class="btn btn-outline-danger btn-sm" data-id="${user.id}" data-action="deleteApiUser" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+        </td>
+        </tr>`).join('');
+}
+
+function resetApiUserForm() {
+    els.apiUserForm.reset();
+    els.apiUserId.value = '';
+    els.apiUserRole.value = 'license_client';
+    els.apiUserEnabled.checked = true;
+    els.apiUserPassword.placeholder = 'Obrigatória para novo utilizador';
+    syncApiUserRoleFields();
+}
+
+function editApiUser(button) {
+    els.apiUserId.value = button.dataset.id || '';
+    els.apiUsername.value = button.dataset.username || '';
+    els.apiUserRole.value = button.dataset.role || 'license_client';
+    els.apiUserLicenseId.value = button.dataset.licenseId || '';
+    els.apiUserEnabled.checked = !!button.dataset.enabled;
+    els.apiUserPassword.value = '';
+    els.apiUserPassword.placeholder = 'Deixar vazio para manter';
+    syncApiUserRoleFields();
+}
+
+function syncApiUserRoleFields() {
+    const isAdmin = els.apiUserRole.value === 'hub_admin';
+    els.apiUserLicenseId.disabled = isAdmin;
+    if (isAdmin) {
+        els.apiUserLicenseId.value = '';
+    }
+}
+
+async function saveApiUser() {
+    const id = els.apiUserId.value.trim();
+    const body = {
+        username: els.apiUsername.value.trim(),
+        password: els.apiUserPassword.value,
+        role: els.apiUserRole.value,
+        licenseId: els.apiUserLicenseId.value.trim(),
+        enabled: els.apiUserEnabled.checked,
+    };
+    if (!body.username) { alert('Utilizador é obrigatório'); return; }
+    if (!id && !body.password.trim()) { alert('Password é obrigatória para novo utilizador'); return; }
+    if (body.role === 'license_client' && !body.licenseId) { alert('Licença é obrigatória para clientes'); return; }
+
+    const result = await api.saveApiUser(id, body);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+
+    await loadSettingsModal('apiUsers');
+}
+
+async function toggleApiUser(button) {
+    const result = await api.saveApiUser(button.dataset.id, {
+        username: button.dataset.username || '',
+        role: button.dataset.role || 'license_client',
+        licenseId: button.dataset.licenseId || '',
+        enabled: !button.dataset.enabled,
+    });
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    await loadSettingsModal('apiUsers');
+}
+
+async function deleteApiUser(id) {
+    if (!confirm('Apagar utilizador API?')) return;
+    const result = await api.deleteApiUser(id);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    await loadSettingsModal('apiUsers');
+}
+
 function activateSettingsSection(section) {
     state.settingsModal.section = section;
     const button = {
         suppliers: els.settingsSuppliersTabBtn,
         models: els.settingsModelsTabBtn,
         capabilities: els.settingsCapabilitiesTabBtn,
+        apiUsers: els.settingsApiUsersTabBtn,
     }[section] || els.settingsSuppliersTabBtn;
     bootstrap.Tab.getOrCreateInstance(button).show();
 }
@@ -1433,6 +1522,7 @@ function cacheElements() {
         settingsSuppliersTabBtn: document.getElementById('settingsSuppliersTabBtn'),
         settingsModelsTabBtn: document.getElementById('settingsModelsTabBtn'),
         settingsCapabilitiesTabBtn: document.getElementById('settingsCapabilitiesTabBtn'),
+        settingsApiUsersTabBtn: document.getElementById('settingsApiUsersTabBtn'),
         supplierForm: document.getElementById('supplierForm'),
         supplierName: document.getElementById('supplierName'),
         supplierListBody: document.getElementById('supplierListBody'),
@@ -1455,6 +1545,16 @@ function cacheElements() {
         capabilitySummary: document.getElementById('capabilitySummary'),
         saveCapabilitiesBtn: document.getElementById('saveCapabilitiesBtn'),
         capabilityGroups: document.getElementById('capabilityGroups'),
+        apiUserForm: document.getElementById('apiUserForm'),
+        apiUserId: document.getElementById('apiUserId'),
+        apiUsername: document.getElementById('apiUsername'),
+        apiUserPassword: document.getElementById('apiUserPassword'),
+        apiUserRole: document.getElementById('apiUserRole'),
+        apiUserLicenseId: document.getElementById('apiUserLicenseId'),
+        apiUserEnabled: document.getElementById('apiUserEnabled'),
+        resetApiUserBtn: document.getElementById('resetApiUserBtn'),
+        saveApiUserBtn: document.getElementById('saveApiUserBtn'),
+        apiUserListBody: document.getElementById('apiUserListBody'),
     };
 }
 
@@ -1498,6 +1598,10 @@ function bindEvents() {
     els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
     els.saveCapabilitiesBtn.addEventListener('click', () => { void saveCapabilities(); });
+    els.saveApiUserBtn.addEventListener('click', () => { void saveApiUser(); });
+    els.resetApiUserBtn.addEventListener('click', resetApiUserForm);
+    els.apiUserForm.addEventListener('submit', event => { event.preventDefault(); saveApiUser(); });
+    els.apiUserRole.addEventListener('change', syncApiUserRoleFields);
     els.telemetryPager.addEventListener('click', handleTelemetryPagerClick);
     els.applyDetailFiltersBtn.addEventListener('click', applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener('click', clearDetailFilters);
@@ -1518,11 +1622,15 @@ function bindEvents() {
     els.settingsCapabilitiesTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'capabilities';
     });
+    els.settingsApiUsersTabBtn.addEventListener('shown.bs.tab', () => {
+        state.settingsModal.section = 'apiUsers';
+    });
     els.deviceList.addEventListener('click', handleDeviceListClick);
     els.deviceListPagination.addEventListener('click', handleDevicePaginationClick);
     els.requestGrid.addEventListener('click', handleRequestGridClick);
     els.supplierListBody.addEventListener('click', handleSupplierListClick);
     els.modelListBody.addEventListener('click', handleModelListClick);
+    els.apiUserListBody.addEventListener('click', handleApiUserListClick);
     els.deviceConfigRoot.addEventListener('click', handleDeviceConfigClick);
     els.deviceConfigRoot.addEventListener('input', handleDeviceConfigInput);
     els.deviceConfigRoot.addEventListener('change', handleDeviceConfigChange);
@@ -1838,6 +1946,20 @@ function handleModelListClick(event) {
     }
     if (button.dataset.action === 'deleteModel') {
         deleteModel(parseInt(button.dataset.id));
+    }
+}
+
+function handleApiUserListClick(event) {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    if (button.dataset.action === 'editApiUser') {
+        editApiUser(button);
+    }
+    if (button.dataset.action === 'toggleApiUser') {
+        toggleApiUser(button);
+    }
+    if (button.dataset.action === 'deleteApiUser') {
+        deleteApiUser(parseInt(button.dataset.id));
     }
 }
 

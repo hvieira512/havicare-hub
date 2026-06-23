@@ -13,14 +13,17 @@ final class ApiTokenStore
         $this->prefix = trim($this->prefix, ':');
     }
 
-    public function issue(string $username, int $ttlSeconds): array
+    public function issue(string $username, string $role, int $ttlSeconds, ?int $userId = null, ?string $licenseId = null): array
     {
         $ttlSeconds = max(1, $ttlSeconds);
         $issuedAt = time();
         $expiresAt = $issuedAt + $ttlSeconds;
         $token = bin2hex(random_bytes(32));
         $payload = [
+            'userId' => $userId,
             'username' => $username,
+            'role' => $role,
+            'licenseId' => $licenseId,
             'issuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $issuedAt),
             'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $expiresAt),
         ];
@@ -30,19 +33,47 @@ final class ApiTokenStore
         return [
             'access_token' => $token,
             'token_type' => 'Bearer',
+            'role' => $role,
+            'license_id' => $licenseId,
             'expires_in' => $ttlSeconds,
             'expires_at' => $payload['expiresAt'],
         ];
     }
 
-    public function validate(string $token): bool
+    public function context(string $token): ?ApiAuthContext
     {
         $token = trim($token);
         if ($token === '') {
-            return false;
+            return null;
         }
 
-        return is_string($this->redis->get($this->key($token)));
+        $raw = $this->redis->get($this->key($token));
+        if (!is_string($raw)) {
+            return null;
+        }
+
+        $payload = json_decode($raw, true);
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        $username = trim((string)($payload['username'] ?? ''));
+        $role = trim((string)($payload['role'] ?? ''));
+        if ($username === '' || $role === '') {
+            return null;
+        }
+
+        $userId = isset($payload['userId']) && $payload['userId'] !== null ? (int)$payload['userId'] : null;
+        $licenseId = isset($payload['licenseId']) && $payload['licenseId'] !== null
+            ? trim((string)$payload['licenseId'])
+            : null;
+
+        return new ApiAuthContext($userId, $username, $role, $licenseId);
+    }
+
+    public function validate(string $token): bool
+    {
+        return $this->context($token) instanceof ApiAuthContext;
     }
 
     private function key(string $token): string

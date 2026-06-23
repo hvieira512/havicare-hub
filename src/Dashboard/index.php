@@ -282,6 +282,7 @@ require_once __DIR__ . '/components/modal.php';
     </div>
 
     <script>
+        window.hubDashboardApiToken = <?= json_encode($dashboardApiToken, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
         window.dashboardConfigurationCatalog = <?= json_encode([
                                                     'wonlex-json' => DeviceConfigurationCatalog::configsForProtocol('wonlex-json'),
                                                     'vivistar-iw' => DeviceConfigurationCatalog::configsForProtocol('vivistar-iw'),

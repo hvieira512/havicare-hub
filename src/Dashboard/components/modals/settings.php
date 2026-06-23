@@ -11,6 +11,7 @@ ob_start();
                 <button class="nav-link active text-start" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores</button>
                 <button class="nav-link text-start" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos</button>
                 <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
+                <button class="nav-link text-start" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API</button>
             </div>
         </div>
         <div class="col-lg-9">
@@ -93,6 +94,46 @@ ob_start();
                             </div>
                             <div id="capabilityGroups" class="vstack gap-3"></div>
                         </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
+                    <form id="apiUserForm" class="row g-3 mb-4 p-3 border rounded bg-body-tertiary">
+                        <input type="hidden" id="apiUserId">
+                        <div class="col-md-4">
+                            <label for="apiUsername" class="form-label">Utilizador</label>
+                            <input type="text" class="form-control form-control-sm" id="apiUsername" autocomplete="off" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="apiUserPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control form-control-sm" id="apiUserPassword" autocomplete="new-password">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="apiUserRole" class="form-label">Perfil</label>
+                            <select class="form-select form-select-sm" id="apiUserRole">
+                                <option value="license_client">Cliente por licença</option>
+                                <option value="hub_admin">Admin Hub</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="apiUserLicenseId" class="form-label">Licença</label>
+                            <input type="text" class="form-control form-control-sm" id="apiUserLicenseId" placeholder="1001">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="apiUserEnabled" checked>
+                                <label class="form-check-label" for="apiUserEnabled">Ativo</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end gap-2">
+                            <button id="resetApiUserBtn" type="button" class="btn btn-outline-secondary btn-sm flex-fill">Cancelar</button>
+                            <button id="saveApiUserBtn" type="button" class="btn btn-primary btn-sm flex-fill"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
+                        </div>
+                    </form>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead><tr><th>Utilizador</th><th>Perfil</th><th>Licença</th><th>Estado</th><th></th></tr></thead>
+                            <tbody id="apiUserListBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>

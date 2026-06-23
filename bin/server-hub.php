@@ -195,6 +195,8 @@ if ($dashboardEnabled) {
         $dataAccess,
         (string)($dashboardConfig['username'] ?? ''),
         (string)($dashboardConfig['password'] ?? ''),
+        (string)($dashboardConfig['client_username'] ?? ''),
+        (string)($dashboardConfig['client_password'] ?? ''),
         (int)($dashboardConfig['api_token_ttl_seconds'] ?? 3600)
     );
     $dashboardServer = new ReactHttpServer(

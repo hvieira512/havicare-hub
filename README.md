@@ -71,7 +71,16 @@ The hub serves a Bootstrap 5 dashboard at:
 http://127.0.0.1:8081/dashboard
 ```
 
-Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth. The dashboard uses Redis for recent device history, queued downlinks, and command outcomes.
+Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth and bootstrap the dashboard admin session. The dashboard uses Redis for recent device history, queued downlinks, and command outcomes.
+
+API access uses `POST /api/auth/login` and bearer tokens. The env dashboard credentials issue a bootstrap `hub_admin` token. Additional users are managed by admins in the dashboard settings modal or through `/api/api-users`.
+
+API user roles:
+
+- `hub_admin`: unrestricted hub administration.
+- `license_client`: tied to exactly one `license_id`; can list/read devices in that license, request telemetry/configuration downlinks, inspect those command statuses, and update configuration for those devices. Devices with license `0` are admin-only.
+
+`API_CLIENT_USERNAME` and `API_CLIENT_PASSWORD` remain available as a legacy restricted login fallback, but DB-backed `license_client` users should be used for real tenants because they carry the license scope in the token.
 
 ## MQTT Topics
 

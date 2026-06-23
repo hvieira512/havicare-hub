@@ -196,7 +196,7 @@ class Whitelist
                     continue;
                 }
 
-                if (($metadata['deviceId'] ?? '') !== $alias) {
+                if (($metadata['deviceId'] ?? '') !== $alias && ($metadata['sourceDeviceId'] ?? '') !== $alias) {
                     continue;
                 }
 

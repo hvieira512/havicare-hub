@@ -3,6 +3,7 @@
 namespace Hub\Dashboard;
 
 use Hub\Dashboard\Repository\DeviceConfigurationRepository;
+use Hub\Dashboard\Repository\ApiUserRepository;
 use Hub\Dashboard\Repository\ModelRepository;
 use Hub\Dashboard\Repository\ModelRequestCapabilityRepository;
 use Hub\Dashboard\Repository\SupplierRepository;
@@ -16,6 +17,7 @@ final class DashboardDataAccess
         public readonly ModelRequestCapabilityRepository $modelRequestCapabilities,
         public readonly WhitelistRepository $whitelist,
         public readonly DeviceConfigurationRepository $deviceConfigurations,
+        public readonly ApiUserRepository $apiUsers,
     ) {
     }
 
@@ -29,6 +31,7 @@ final class DashboardDataAccess
             new ModelRequestCapabilityRepository($pdo),
             new WhitelistRepository($pdo),
             new DeviceConfigurationRepository($pdo),
+            new ApiUserRepository($pdo),
         );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard;
 
+use Hub\Api\Routes\ApiUsers;
 use Hub\Api\Routes\Auth;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Models;
@@ -20,6 +21,8 @@ final class DashboardHttpServer
     private Devices $devicesApi;
     private Models $modelsApi;
     private Suppliers $suppliersApi;
+    private ApiUsers $apiUsersApi;
+    private array $apiCredentials = [];
 
     public function __construct(
         private DashboardStore $store,
@@ -30,8 +33,23 @@ final class DashboardHttpServer
         private DashboardDataAccess $db,
         private string $username,
         private string $password,
+        private string $clientUsername = '',
+        private string $clientPassword = '',
         private int $apiTokenTtlSeconds = 3600,
     ) {
+        $this->apiCredentials = array_values(array_filter([
+            [
+                'username' => $this->username,
+                'password' => $this->password,
+                'role' => ApiAuthContext::ROLE_HUB_ADMIN,
+            ],
+            [
+                'username' => $this->clientUsername,
+                'password' => $this->clientPassword,
+                'role' => ApiAuthContext::ROLE_LICENSE_CLIENT,
+            ],
+        ], static fn (array $credential): bool => trim((string)$credential['username']) !== '' && (string)$credential['password'] !== ''));
+
         foreach ($this->whitelist->all() as $imei => $metadata) {
             $this->store->registerDevice(
                 (string)$imei,
@@ -49,6 +67,7 @@ final class DashboardHttpServer
         $this->devicesApi = new Devices($this->store, $this->whitelist, $this->hub, $this->downlinkQueue, $this->db);
         $this->modelsApi = new Models($this->db);
         $this->suppliersApi = new Suppliers($this->db);
+        $this->apiUsersApi = new ApiUsers($this->db);
         $this->apiRouter = new ApiRouter($this->apiRoutes());
     }
 
@@ -62,11 +81,22 @@ final class DashboardHttpServer
         }
 
         if ($this->isApiPath($path)) {
-            if (!$this->isApiAuthorized($request)) {
+            if ($path !== '/api/auth/login') {
+                $authContext = $this->apiAuthContext($request);
+                if ($authContext === null) {
+                    return $this->cors($this->json(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
+                }
+            } else {
+                $authContext = null;
+            }
+
+            if ($path !== '/api/auth/login' && $authContext === null) {
                 return $this->cors($this->json(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
             }
         } elseif (!$this->isDashboardAuthorized($request)) {
             return $this->cors(new Response(401, ['WWW-Authenticate' => 'Basic realm="Devices Hub"', 'Content-Type' => 'text/plain'], 'Unauthorized'));
+        } else {
+            $authContext = null;
         }
 
         try {
@@ -74,7 +104,7 @@ final class DashboardHttpServer
                 return $this->html($this->page());
             }
             if (str_starts_with($path, '/api/')) {
-                return $this->cors($this->dispatchApi($request));
+                return $this->cors($this->dispatchApi($request, $authContext));
             }
             if ($method === 'GET' && preg_match('#^' . self::MODEL_IMAGE_ROUTE . '/([a-f0-9]{32}\.jpg)$#', $path, $matches) === 1) {
                 return $this->modelImage($matches[1]);
@@ -105,22 +135,18 @@ final class DashboardHttpServer
         return str_starts_with($path, '/api/');
     }
 
-    private function isApiAuthorized(ServerRequestInterface $request): bool
+    private function apiAuthContext(ServerRequestInterface $request): ?ApiAuthContext
     {
-        if ($request->getUri()->getPath() === '/api/auth/login') {
-            return true;
-        }
-
-        if ($this->username === '' || $this->password === '') {
-            return true;
+        if ($this->apiCredentials === []) {
+            return new ApiAuthContext(null, 'anonymous', ApiAuthContext::ROLE_HUB_ADMIN);
         }
 
         $header = $request->getHeaderLine('Authorization');
         if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
-            return false;
+            return null;
         }
 
-        return $this->tokens->validate((string)$matches[1]);
+        return $this->tokens->context((string)$matches[1]);
     }
 
     private function isDashboardAuthorized(ServerRequestInterface $request): bool
@@ -151,25 +177,51 @@ final class DashboardHttpServer
         $factory = require __DIR__ . '/../Api/Routes/index.php';
 
         return $factory(
-            new Auth($this->username, $this->password, $this->tokens, $this->apiTokenTtlSeconds),
+            new Auth($this->apiCredentials, $this->tokens, $this->db, $this->apiTokenTtlSeconds),
             $this->devicesApi,
             $this->modelsApi,
             $this->suppliersApi,
+            $this->apiUsersApi,
             fn(array $payload, int $status = 200): Response => $this->json($payload, $status),
             fn(string $body): Response => $this->html($body)
         );
     }
 
-    private function dispatchApi(ServerRequestInterface $request): Response
+    private function dispatchApi(ServerRequestInterface $request, ?ApiAuthContext $authContext): Response
     {
         $match = $this->apiRouter->match(strtoupper($request->getMethod()), $request->getUri()->getPath());
         if ($match === null) {
             return $this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
         }
 
+        if ($authContext !== null && !$this->isRouteAllowed($match['route'], $authContext)) {
+            return $this->json(['error' => ['code' => 'forbidden', 'message' => 'Forbidden']], 403);
+        }
+
+        if ($authContext !== null) {
+            $request = $request->withAttribute('apiAuth', $authContext);
+        }
+
         $handler = $match['route']->handler();
 
         return $handler($match['parameters'], $request);
+    }
+
+    private function isRouteAllowed(ApiRoute $route, ApiAuthContext $authContext): bool
+    {
+        if ($authContext->isAdmin()) {
+            return true;
+        }
+
+        return in_array($route->method() . ' ' . $route->pattern(), [
+            'GET /api/devices',
+            'GET /api/devices/{imei}',
+            'POST /api/devices/{imei}/commands',
+            'GET /api/commands/{id}',
+            'GET /api/devices/{imei}/configuration',
+            'PUT /api/devices/{imei}/configuration',
+            'POST /api/devices/{imei}/configuration/{key}/apply',
+        ], true);
     }
 
     private function json(array $payload, int $status = 200): Response
@@ -184,6 +236,11 @@ final class DashboardHttpServer
 
     private function page(): string
     {
+        $dashboardApiToken = null;
+        if (isset($this->tokens, $this->username, $this->password) && $this->apiCredentials !== [] && $this->username !== '' && $this->password !== '') {
+            $dashboardApiToken = $this->tokens->issue($this->username, ApiAuthContext::ROLE_HUB_ADMIN, $this->apiTokenTtlSeconds);
+        }
+
         ob_start();
         require __DIR__ . '/index.php';
         return (string) ob_get_clean();

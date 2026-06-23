@@ -35,6 +35,8 @@ class Config
                 'port' => (int)(getenv('DASHBOARD_PORT') ?: 8081),
                 'username' => getenv('DASHBOARD_USERNAME') ?: '',
                 'password' => getenv('DASHBOARD_PASSWORD') ?: '',
+                'client_username' => getenv('API_CLIENT_USERNAME') ?: '',
+                'client_password' => getenv('API_CLIENT_PASSWORD') ?: '',
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 3600),

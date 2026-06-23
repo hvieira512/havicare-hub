@@ -38,6 +38,14 @@ class OpenApiSpec
             'schema' => ['type' => 'string', 'example' => '9f395f4f04fe589e'],
         ];
 
+        $apiUserIdParam = [
+            'name' => 'id',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'API user ID',
+            'schema' => ['type' => 'integer', 'example' => 1],
+        ];
+
         return [
             'openapi' => '3.1.0',
             'info' => [
@@ -51,6 +59,7 @@ class OpenApiSpec
                 ['name' => 'Devices'],
                 ['name' => 'Suppliers'],
                 ['name' => 'Models'],
+                ['name' => 'API Users'],
                 ['name' => 'System'],
             ],
             'paths' => [
@@ -72,7 +81,7 @@ class OpenApiSpec
                         'responses' => [
                             '200' => [
                                 'description' => 'Bearer token issued',
-                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/AuthTokenResponse']]],
                             ],
                             '401' => ['$ref' => '#/components/responses/Error'],
                         ],
@@ -405,6 +414,70 @@ class OpenApiSpec
                         'responses' => ['200' => ['description' => 'OpenAPI document']],
                     ],
                 ],
+                '/api/api-users' => [
+                    'get' => [
+                        'tags' => ['API Users'],
+                        'summary' => 'List API users',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                            ['name' => 'role', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                            ['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Paginated API user collection',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ApiUserListResponse']]],
+                            ],
+                        ],
+                    ],
+                    'post' => [
+                        'tags' => ['API Users'],
+                        'summary' => 'Create API user',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ApiUserWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '201' => [
+                                'description' => 'API user created',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/SupplierCreateResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/api-users/{id}' => [
+                    'put' => [
+                        'tags' => ['API Users'],
+                        'summary' => 'Update API user',
+                        'parameters' => [$apiUserIdParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ApiUserWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'API user updated',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'delete' => [
+                        'tags' => ['API Users'],
+                        'summary' => 'Delete API user',
+                        'parameters' => [$apiUserIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'API user deleted',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/docs' => [
                     'get' => [
                         'tags' => ['System'],
@@ -603,6 +676,54 @@ class OpenApiSpec
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'sent'],
                             'command' => ['type' => 'object'],
+                        ],
+                    ],
+                    'AuthTokenResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'token' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'access_token' => ['type' => 'string'],
+                                    'token_type' => ['type' => 'string', 'example' => 'Bearer'],
+                                    'role' => ['type' => 'string', 'enum' => ['hub_admin', 'license_client'], 'example' => 'license_client'],
+                                    'license_id' => ['type' => 'string', 'nullable' => true, 'example' => '1001'],
+                                    'expires_in' => ['type' => 'integer', 'example' => 3600],
+                                    'expires_at' => ['type' => 'string', 'example' => '2026-06-23T12:00:00Z'],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'ApiUserItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'username' => ['type' => 'string', 'example' => 'tenant-1001'],
+                            'role' => ['type' => 'string', 'enum' => ['hub_admin', 'license_client'], 'example' => 'license_client'],
+                            'license_id' => ['type' => 'string', 'example' => '1001'],
+                            'enabled' => ['type' => 'integer', 'example' => 1],
+                            'created_at' => ['type' => 'string'],
+                            'updated_at' => ['type' => 'string'],
+                        ],
+                    ],
+                    'ApiUserListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ApiUserItem']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
+                        ],
+                    ],
+                    'ApiUserWriteRequest' => [
+                        'type' => 'object',
+                        'required' => ['username', 'role'],
+                        'properties' => [
+                            'username' => ['type' => 'string', 'example' => 'tenant-1001'],
+                            'password' => ['type' => 'string', 'description' => 'Required on create; optional on update.'],
+                            'role' => ['type' => 'string', 'enum' => ['hub_admin', 'license_client'], 'example' => 'license_client'],
+                            'licenseId' => ['type' => 'string', 'description' => 'Required for license_client and ignored for hub_admin.', 'example' => '1001'],
+                            'enabled' => ['type' => 'boolean', 'example' => true],
                         ],
                     ],
                     'SupplierItem' => [

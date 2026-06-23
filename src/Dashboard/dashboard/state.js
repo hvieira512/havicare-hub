@@ -47,6 +47,7 @@ export const state = {
         capabilitySupplier: '',
         capabilityModelId: null,
         capabilityEnabledRequests: [],
+        apiUsers: [],
     },
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),

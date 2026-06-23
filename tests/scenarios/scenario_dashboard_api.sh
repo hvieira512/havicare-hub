@@ -34,7 +34,14 @@ fi
 
 unauth_status="$(curl -s -o /tmp/dashboard-unauth.txt -w '%{http_code}' http://127.0.0.1:8081/api/devices)"
 if [ "$unauth_status" != "401" ]; then
-  scenario_fail "auth_failure" "dashboard API did not require basic auth"
+  scenario_fail "auth_failure" "dashboard API did not require bearer auth"
+fi
+
+login_response="$(curl -s -H 'Content-Type: application/json' -d '{"username":"admin","password":"secret"}' http://127.0.0.1:8081/api/auth/login)"
+printf '%s' "$login_response" > "$SCENARIO_DIR/dashboard-login.json"
+api_token="$(printf '%s' "$login_response" | php -r '$j=json_decode(stream_get_contents(STDIN), true); echo (string)($j["token"]["access_token"] ?? "");')"
+if [ -z "$api_token" ]; then
+  scenario_fail "auth_failure" "dashboard API login did not issue bearer token"
 fi
 
 html="$(curl -s -u admin:secret http://127.0.0.1:8081/dashboard)"
@@ -42,7 +49,7 @@ if ! printf '%s' "$html" | grep -q 'Hitecosystem Hub de Dispositivos'; then
   scenario_fail "dashboard_failure" "dashboard HTML did not render expected page"
 fi
 
-devices="$(curl -s -u admin:secret "http://127.0.0.1:8081/api/devices?limit=100&page=1")"
+devices="$(curl -s -H "Authorization: Bearer $api_token" "http://127.0.0.1:8081/api/devices?limit=100&page=1")"
 printf '%s' "$devices" > "$SCENARIO_DIR/dashboard-devices.json"
 if ! printf '%s' "$devices" | grep -q '"data"'; then
   scenario_fail "dashboard_failure" "devices collection did not return data wrapper"
@@ -51,13 +58,13 @@ if ! printf '%s' "$devices" | grep -q "$IMEI"; then
   scenario_fail "dashboard_failure" "devices collection did not include whitelist device"
 fi
 
-command_response="$(curl -s -u admin:secret -H 'Content-Type: application/json' -d '{"command":"dnHeartRate"}' "http://127.0.0.1:8081/api/devices/$IMEI/commands")"
+command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' -d '{"command":"dnHeartRate"}' "http://127.0.0.1:8081/api/devices/$IMEI/commands")"
 printf '%s' "$command_response" > "$SCENARIO_DIR/dashboard-command.json"
 if ! printf '%s' "$command_response" | grep -q '"status":"queued"'; then
   scenario_fail "command_failure" "offline dashboard command was not queued"
 fi
 
-device="$(curl -s -u admin:secret "http://127.0.0.1:8081/api/devices/$IMEI")"
+device="$(curl -s -H "Authorization: Bearer $api_token" "http://127.0.0.1:8081/api/devices/$IMEI")"
 printf '%s' "$device" > "$SCENARIO_DIR/dashboard-device.json"
 if ! printf '%s' "$device" | grep -q '"dnHeartRate"'; then
   scenario_fail "dashboard_failure" "device detail did not include command or pending queue state"
