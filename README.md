@@ -115,7 +115,14 @@ Topic semantics:
 
 ## Telemetry Payload Contract
 
-Telemetry messages published to `0/watch/{deviceKey}/telemetry` share one envelope across all suppliers and models:
+Telemetry messages are published to:
+
+```text
+0/watch/{deviceKey}/telemetry
+{licenseId}/ncs/{deviceKey}/telemetry
+```
+
+They share one envelope across all suppliers, models, and supported device types:
 
 ```json
 {
@@ -285,7 +292,12 @@ When a supplier exposes additional fields that do not map cleanly into the share
 
 ## Raw Payloads
 
-Raw messages published to `0/watch/{deviceKey}/raw` preserve the device bytes:
+Raw messages preserve the device or upstream payload on:
+
+```text
+0/watch/{deviceKey}/raw
+{licenseId}/ncs/{deviceKey}/raw
+```
 
 ```json
 {
