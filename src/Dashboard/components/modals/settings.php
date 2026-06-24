@@ -11,23 +11,18 @@ ob_start();
                 <button class="nav-link active text-start" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores</button>
                 <button class="nav-link text-start" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos</button>
                 <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
+                <button class="nav-link text-start" id="settingsSoftwareTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSoftwarePane" type="button" role="tab" aria-controls="settingsSoftwarePane" aria-selected="false">Software</button>
+                <button class="nav-link text-start" id="settingsLicensesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsLicensesPane" type="button" role="tab" aria-controls="settingsLicensesPane" aria-selected="false">Licenças</button>
                 <button class="nav-link text-start" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API</button>
             </div>
         </div>
         <div class="col-lg-9">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
-                    <form id="supplierForm" class="row g-2 mb-3 p-3 border rounded bg-body-tertiary">
-                        <div class="col-md-8">
-                            <input type="text" class="form-control form-control-sm" id="supplierName" placeholder="Nome do fornecedor" required>
-                        </div>
-                        <div class="col-md-4">
-                            <button id="saveSupplierBtn" type="button" class="btn btn-primary btn-sm w-100"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
-                        </div>
-                    </form>
+                    <div class="small text-secondary mb-3 p-3 border rounded bg-body-tertiary">Os fornecedores são definidos em código. Não é possível adicionar ou remover fornecedores através do painel.</div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
-                            <thead><tr><th>Nome</th><th>Modelos</th><th>Estado</th><th></th></tr></thead>
+                            <thead><tr><th>Nome</th><th>Tipo</th><th>Modelos</th><th>Estado</th><th></th></tr></thead>
                             <tbody id="supplierListBody"></tbody>
                         </table>
                     </div>
@@ -94,6 +89,50 @@ ob_start();
                             </div>
                             <div id="capabilityGroups" class="vstack gap-3"></div>
                         </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="settingsSoftwarePane" role="tabpanel" aria-labelledby="settingsSoftwareTabBtn">
+                    <form id="softwareForm" class="row g-2 mb-3 p-3 border rounded bg-body-tertiary">
+                        <input type="hidden" id="softwareId">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm" id="softwareName" placeholder="Nome do software" required>
+                        </div>
+                        <div class="col-md-6 d-flex gap-2">
+                            <button id="resetSoftwareBtn" type="button" class="btn btn-outline-secondary btn-sm">Cancelar</button>
+                            <button id="saveSoftwareBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
+                        </div>
+                    </form>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead><tr><th>Nome</th><th>Licenças</th><th></th></tr></thead>
+                            <tbody id="softwareListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="settingsLicensesPane" role="tabpanel" aria-labelledby="settingsLicensesTabBtn">
+                    <form id="licenseForm" class="row g-2 mb-3 p-3 border rounded bg-body-tertiary">
+                        <input type="hidden" id="licenseId">
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" id="licenseSoftwareSelect">
+                                <option value="">Selecionar software</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control form-control-sm" id="licenseLicenseId" placeholder="ID da licença (ex: 1001)" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control form-control-sm" id="licenseName" placeholder="Nome (ex: gucc.dev)">
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button id="resetLicenseBtn" type="button" class="btn btn-outline-secondary btn-sm">Cancelar</button>
+                            <button id="saveLicenseBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
+                        </div>
+                    </form>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead><tr><th>Software</th><th>ID</th><th>Nome</th><th></th></tr></thead>
+                            <tbody id="licenseListBody"></tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">

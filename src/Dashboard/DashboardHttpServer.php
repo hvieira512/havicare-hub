@@ -265,6 +265,7 @@ final class DashboardHttpServer
             'jpg', 'jpeg' => 'image/jpeg',
             'svg' => 'image/svg+xml',
             'ico' => 'image/x-icon',
+            'woff2' => 'font/woff2',
             default => 'text/plain',
         };
         return new Response(200, ['Content-Type' => $mime], (string) file_get_contents($path));

@@ -43,17 +43,17 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({requestId}),
     }),
-    saveDevice: (imei, supplier, model, deviceType = 'watch', licenseId = '0', simNumber = '', deviceId = '', originalImei = '') => requestJson(
+    saveDevice: (imei, supplier, model, deviceType = 'watch', licenseId = '0', simNumber = '', deviceId = '', originalImei = '', software = 'null') => requestJson(
         originalImei ? `/api/devices/${encodeURIComponent(originalImei)}` : '/api/devices',
         {
             method: originalImei ? 'PUT' : 'POST',
-            body: JSON.stringify({imei, supplier, model, deviceType, licenseId, simNumber, deviceId}),
+            body: JSON.stringify({imei, supplier, model, deviceType, licenseId, simNumber, deviceId, software}),
         }
     ),
     deleteDevice: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`, {method: 'DELETE'}),
     suppliers: (params = {}) => requestJson(withQuery('/api/suppliers', params)),
-    saveSupplier: name => requestJson('/api/suppliers', {method: 'POST', body: JSON.stringify({name})}),
-    updateSupplier: (id, enabled) => requestJson(`/api/suppliers/${id}`, {method: 'PUT', body: JSON.stringify({enabled})}),
+    saveSupplier: (name, deviceType = 'watch') => requestJson('/api/suppliers', {method: 'POST', body: JSON.stringify({name, deviceType})}),
+    updateSupplier: (id, body) => requestJson(`/api/suppliers/${id}`, {method: 'PUT', body: JSON.stringify(body)}),
     deleteSupplier: id => requestJson(`/api/suppliers/${id}`, {method: 'DELETE'}),
     models: (params = {}) => requestJson(withQuery('/api/models', params)),
     saveModel: (id, body) => formRequest(id ? `/api/models/${encodeURIComponent(id)}` : '/api/models', body, {
@@ -66,4 +66,16 @@ export const api = {
         body: JSON.stringify(body),
     }),
     deleteApiUser: id => requestJson(`/api/api-users/${encodeURIComponent(id)}`, {method: 'DELETE'}),
+    software: (params = {}) => requestJson(withQuery('/api/software', params)),
+    saveSoftware: (id, name) => requestJson(id ? `/api/software/${encodeURIComponent(id)}` : '/api/software', {
+        method: id ? 'PUT' : 'POST',
+        body: JSON.stringify({name}),
+    }),
+    deleteSoftware: id => requestJson(`/api/software/${encodeURIComponent(id)}`, {method: 'DELETE'}),
+    licenses: (params = {}) => requestJson(withQuery('/api/licenses', params)),
+    saveLicense: (id, body) => requestJson(id ? `/api/licenses/${encodeURIComponent(id)}` : '/api/licenses', {
+        method: id ? 'PUT' : 'POST',
+        body: JSON.stringify(body),
+    }),
+    deleteLicense: id => requestJson(`/api/licenses/${encodeURIComponent(id)}`, {method: 'DELETE'}),
 };

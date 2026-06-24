@@ -51,6 +51,17 @@ function deviceTypeLabel(deviceType) {
     return deviceTypeOptions.find(option => option.value === deviceType)?.label || deviceType;
 }
 
+function suppliersForDeviceType(deviceType, models = state.summary.models) {
+    const allSuppliers = suppliersFromModels(models);
+    if (!deviceType || deviceType === 'watch') {
+        return allSuppliers;
+    }
+    const deviceTypeSuppliers = (state.modelModalSuppliers || [])
+        .filter(s => s.device_type === deviceType)
+        .map(s => s.name);
+    return allSuppliers.filter(name => deviceTypeSuppliers.includes(name));
+}
+
 function normalizeDeviceType(deviceType) {
     return deviceTypeOptions.some(option => option.value === deviceType) ? deviceType : 'watch';
 }
@@ -165,6 +176,16 @@ async function ensureModelsLoaded(force = false) {
     const modelsResponse = await api.models({limit: 500});
     state.summary.models = modelsResponse.data || [];
     return state.summary.models;
+}
+
+async function ensureSuppliersLoaded(force = false) {
+    if (!force && Array.isArray(state.modelModalSuppliers) && state.modelModalSuppliers.length > 0) {
+        return state.modelModalSuppliers;
+    }
+
+    const suppliersResponse = await api.suppliers({limit: 500});
+    state.modelModalSuppliers = suppliersResponse.data || [];
+    return state.modelModalSuppliers;
 }
 
 async function openDeviceSelector() {
@@ -790,8 +811,65 @@ async function sendCommand(requestId) {
     }
 }
 
+async function populateSoftwareSelect() {
+    try {
+        const data = await api.software({limit: 500});
+        const software = data.data || [];
+        els.deviceSoftwareSelect.innerHTML = '<option value="">Sem software</option>'
+            + software.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+    } catch {
+        els.deviceSoftwareSelect.innerHTML = '<option value="">Sem software</option>';
+    }
+}
+
+async function populateLicenseSelectForSoftware(softwareName) {
+    const select = els.deviceLicenseSelect;
+    if (!softwareName) {
+        select.innerHTML = '<option value="0">Nenhuma</option>';
+        select.disabled = true;
+        els.deviceLicenseId.value = '0';
+        return;
+    }
+    try {
+        const data = await api.software({limit: 500});
+        const softwareList = data.data || [];
+        const sw = softwareList.find(s => s.name === softwareName);
+        if (!sw) {
+            select.innerHTML = '<option value="0">Nenhuma</option>';
+            select.disabled = true;
+            els.deviceLicenseId.value = '0';
+            return;
+        }
+        const licData = await api.licenses({limit: 500, softwareId: sw.id});
+        const licenses = licData.data || [];
+        select.innerHTML = '<option value="0">Nenhuma</option>'
+            + licenses.map(l => `<option value="${esc(l.license_id)}">${esc(l.license_id)}${l.name ? ` — ${esc(l.name)}` : ''}</option>`).join('');
+        select.disabled = false;
+    } catch {
+        select.innerHTML = '<option value="0">Nenhuma</option>';
+        select.disabled = true;
+        els.deviceLicenseId.value = '0';
+    }
+}
+
+function handleSoftwareSelect() {
+    const softwareName = els.deviceSoftwareSelect.value;
+    els.deviceSoftware.value = softwareName || '';
+    if (softwareName) {
+        void populateLicenseSelectForSoftware(softwareName);
+    } else {
+        els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
+        els.deviceLicenseSelect.disabled = true;
+        els.deviceLicenseId.value = '0';
+    }
+}
+
+function handleLicenseSelect() {
+    els.deviceLicenseId.value = els.deviceLicenseSelect.value || '0';
+}
+
 async function openAddDevice() {
-    await ensureModelsLoaded();
+    await Promise.all([ensureModelsLoaded(), ensureSuppliersLoaded()]);
     els.deviceModalLabel.textContent = 'Adicionar dispositivo';
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
@@ -821,6 +899,10 @@ async function openAddDevice() {
     els.deleteDeviceBtn.classList.add('d-none');
     renderDeviceSimNumberField('');
     renderDeviceTypeSelector('watch');
+    await populateSoftwareSelect();
+    els.deviceSoftware.value = '';
+    els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
+    els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = '0';
     els.deviceDeviceId.value = '';
     renderDeviceSelectors();
@@ -828,7 +910,7 @@ async function openAddDevice() {
 }
 
 async function editDevice(imei, supplier, model) {
-    await ensureModelsLoaded();
+    await Promise.all([ensureModelsLoaded(), ensureSuppliersLoaded()]);
     els.deviceModalLabel.textContent = 'Editar dispositivo';
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
@@ -855,6 +937,10 @@ async function editDevice(imei, supplier, model) {
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove('d-none');
     renderDeviceTypeSelector('watch');
+    await populateSoftwareSelect();
+    els.deviceSoftware.value = '';
+    els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
+    els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = '0';
     renderDeviceSelectors(supplier, model);
     renderDeviceConfigurationModal();
@@ -864,10 +950,36 @@ async function editDevice(imei, supplier, model) {
     try {
         const detail = await api.device(imei);
         const device = detail.device || {};
-        renderDeviceTypeSelector(String(device.deviceType || 'watch'));
-        els.deviceLicenseId.value = String(device.licenseId || '0');
-        state.deviceModal.deviceType = normalizeDeviceType(String(device.deviceType || 'watch'));
-        state.deviceModal.licenseId = String(device.licenseId || '0');
+        const deviceType = String(device.deviceType || 'watch');
+        const licenseId = String(device.licenseId || '0');
+        const deviceSoftware = String(device.software || '');
+        renderDeviceTypeSelector(deviceType);
+        renderDeviceSelectors(
+            String(device.supplier || supplier),
+            String(device.model || model),
+            deviceType
+        );
+        if (deviceSoftware !== '' && deviceSoftware !== 'null') {
+            const optExists = [...els.deviceSoftwareSelect.options].some(o => o.value === deviceSoftware);
+            if (!optExists) {
+                const opt = document.createElement('option');
+                opt.value = deviceSoftware;
+                opt.textContent = deviceSoftware;
+                els.deviceSoftwareSelect.appendChild(opt);
+            }
+            els.deviceSoftwareSelect.value = deviceSoftware;
+            els.deviceSoftware.value = deviceSoftware;
+            await populateLicenseSelectForSoftware(deviceSoftware);
+            if (licenseId !== '0' && licenseId !== '') {
+                const licOptExists = [...els.deviceLicenseSelect.options].some(o => o.value === licenseId);
+                if (licOptExists) {
+                    els.deviceLicenseSelect.value = licenseId;
+                    els.deviceLicenseId.value = licenseId;
+                }
+            }
+        }
+        state.deviceModal.deviceType = normalizeDeviceType(deviceType);
+        state.deviceModal.licenseId = licenseId;
         renderDeviceSimNumberField(String(device.simNumber || ''));
         state.deviceModal.simNumber = String(device.simNumber || '');
         els.deviceDeviceId.value = String(device.deviceId || '');
@@ -881,8 +993,9 @@ async function editDevice(imei, supplier, model) {
     }
 }
 
-function renderDeviceSelectors(selectedSupplier = '', selectedModel = '') {
-    const suppliers = suppliersFromModels();
+function renderDeviceSelectors(selectedSupplier = '', selectedModel = '', deviceType = '') {
+    const currentDeviceType = normalizeDeviceType(deviceType || els.deviceForm.dataset.deviceType || 'watch');
+    const suppliers = suppliersForDeviceType(currentDeviceType);
     const supplier = suppliers.includes(selectedSupplier) ? selectedSupplier : (suppliers[0] || '');
     const models = modelsForSupplier(supplier);
     const availableModelNames = models.map(model => model.model);
@@ -920,8 +1033,6 @@ function renderDeviceTypeSelector(selectedType = 'watch') {
         els.deviceDeviceIdHelp.textContent = 'Identificador do dispositivo no protocolo (IMEI, MAC, etc.).';
         els.deviceDeviceId.placeholder = 'ID do dispositivo no protocolo';
     }
-
-    applyFourPTouchDeviceIdUi();
 }
 
 function updateDevicePreview() {
@@ -1005,8 +1116,8 @@ async function saveDevice() {
         ? deriveFourPTouchDeviceId(imei)
         : els.deviceDeviceId.value.trim();
 
-    if (deviceType === 'ncs') {
-        if (!deviceId || !supplier || !model) { alert('Device ID (MAC), fornecedor e modelo são obrigatórios'); return; }
+    if (deviceType === 'ncs' || deviceType === 'radar') {
+        if (!deviceId || !supplier || !model) { alert('Device ID, fornecedor e modelo são obrigatórios'); return; }
         imei = deviceId;
         simNumber = '';
     } else {
@@ -1021,9 +1132,10 @@ async function saveDevice() {
     }
 
     const originalImei = els.deviceImei.dataset.originalImei || '';
-    if (deviceType !== 'watch' && !licenseId) { alert('A licença é obrigatória para NCS e Radars'); return; }
+    const software = els.deviceSoftware.value || 'null';
+    if (deviceType !== 'watch' && (licenseId === '' || licenseId === '0')) { alert('É necessário selecionar uma licença para este tipo de dispositivo'); return; }
 
-    const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, originalImei);
+    const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, originalImei, software);
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
     if (state.selectedImei && originalImei && state.selectedImei === originalImei) {
@@ -1070,17 +1182,23 @@ function handleDeleteDeviceBtnClick() {
 }
 
 async function loadSettingsModal(section = state.settingsModal.section || 'suppliers') {
-    const [suppliersData, modelsData, apiUsersData] = await Promise.all([
+    const [suppliersData, modelsData, apiUsersData, softwareData, licensesData] = await Promise.all([
         api.suppliers({limit: 500}),
         api.models({limit: 500}),
         api.apiUsers({limit: 500}),
+        api.software({limit: 500}),
+        api.licenses({limit: 500}),
     ]);
     state.modelModalSuppliers = suppliersData.data || [];
     state.summary.models = modelsData.data || [];
     state.settingsModal.apiUsers = apiUsersData.data || [];
+    state.settingsModal.software = softwareData.data || [];
+    state.settingsModal.licenses = licensesData.data || [];
     renderSuppliersSection(state.modelModalSuppliers);
     renderModelsSection(state.summary.models);
     renderApiUsersSection(state.settingsModal.apiUsers);
+    renderSoftwareSection(state.settingsModal.software);
+    renderLicensesSection(state.settingsModal.licenses, state.settingsModal.software);
     syncCapabilitiesSelection();
     renderCapabilitiesSection();
     activateSettingsSection(section);
@@ -1088,37 +1206,20 @@ async function loadSettingsModal(section = state.settingsModal.section || 'suppl
 }
 
 function renderSuppliersSection(suppliers) {
-    els.supplierForm.reset();
     els.supplierListBody.innerHTML = (suppliers || []).map(supplier => `
         <tr>
         <td>${esc(supplier.name)}</td>
+        <td>${deviceTypeLabel(supplier.device_type || 'watch')}</td>
         <td>${supplier.model_count}</td>
         <td><span class="badge ${supplier.enabled ? 'text-bg-success' : 'text-bg-secondary'}">${supplier.enabled ? 'ativo' : 'inativo'}</span></td>
         <td>
         <button class="btn btn-outline-${supplier.enabled ? 'warning' : 'success'} btn-sm" data-id="${supplier.id}" data-enabled="${supplier.enabled ? '1' : ''}" data-action="toggleSupplier" title="${supplier.enabled ? 'Desativar' : 'Ativar'}"><i class="fa-solid fa-${supplier.enabled ? 'pause' : 'play'}"></i></button>
-        <button class="btn btn-outline-danger btn-sm" data-id="${supplier.id}" data-action="deleteSupplier" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`).join('');
 }
 
-async function saveSupplier() {
-    const name = els.supplierName.value.trim();
-    if (!name) { alert('O nome é obrigatório'); return; }
-    const result = await api.saveSupplier(name);
-    if (result.error) { alert(result.error.message || result.error.code); return; }
-    els.supplierName.value = '';
-    await loadSettingsModal('suppliers');
-}
-
 async function toggleSupplier(id, enabled) {
-    const result = await api.updateSupplier(id, !enabled);
-    if (result.error) { alert(result.error.message || result.error.code); return; }
-    await loadSettingsModal('suppliers');
-}
-
-async function deleteSupplier(id) {
-    if (!confirm('Apagar fornecedor?')) return;
-    const result = await api.deleteSupplier(id);
+    const result = await api.updateSupplier(id, {enabled: !enabled});
     if (result.error) { alert(result.error.message || result.error.code); return; }
     await loadSettingsModal('suppliers');
 }
@@ -1305,12 +1406,137 @@ async function deleteApiUser(id) {
     await loadSettingsModal('apiUsers');
 }
 
+function renderSoftwareSection(software) {
+    resetSoftwareForm();
+    els.softwareListBody.innerHTML = (software || []).map(item => `
+        <tr>
+        <td>${esc(item.name)}</td>
+        <td>${item.license_count ?? 0}</td>
+        <td>
+        <button class="btn btn-outline-secondary btn-sm" data-action="editSoftware" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteSoftware" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+        </td>
+        </tr>`).join('');
+}
+
+function resetSoftwareForm() {
+    els.softwareForm.reset();
+    els.softwareId.value = '';
+}
+
+function editSoftware(button) {
+    els.softwareId.value = button.dataset.id || '';
+    els.softwareName.value = button.dataset.name || '';
+}
+
+async function saveSoftware() {
+    const id = els.softwareId.value.trim();
+    const name = els.softwareName.value.trim();
+    if (!name) { alert('O nome é obrigatório'); return; }
+    const result = await api.saveSoftware(id, name);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    await loadSettingsModal('software');
+}
+
+async function deleteSoftware(id) {
+    if (!confirm('Apagar software? Todas as licenças associadas serão apagadas.')) return;
+    const result = await api.deleteSoftware(id);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    await loadSettingsModal('software');
+}
+
+function renderLicensesSection(licenses, software) {
+    resetLicenseForm();
+    const softwareOptions = (software || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+    els.licenseSoftwareSelect.innerHTML = '<option value="">Selecionar software</option>' + softwareOptions;
+    els.licenseListBody.innerHTML = (licenses || []).map(item => `
+        <tr>
+        <td>${esc(item.software_name || '-')}</td>
+        <td>${esc(item.license_id)}</td>
+        <td>${esc(item.name || '-')}</td>
+        <td>
+        <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${item.id}" data-software-id="${item.software_id}" data-software-name="${esc(item.software_name || '')}" data-license-id="${esc(item.license_id)}" data-name="${esc(item.name || '')}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+        </td>
+        </tr>`).join('');
+}
+
+function resetLicenseForm() {
+    els.licenseForm.reset();
+    els.licenseId.value = '';
+}
+
+function editLicense(button) {
+    els.licenseId.value = button.dataset.id || '';
+    els.licenseSoftwareSelect.value = button.dataset.softwareId || '';
+    els.licenseLicenseId.value = button.dataset.licenseId || '';
+    els.licenseName.value = button.dataset.name || '';
+}
+
+async function saveLicense() {
+    const id = els.licenseId.value.trim();
+    const softwareId = els.licenseSoftwareSelect.value;
+    const licenseId = els.licenseLicenseId.value.trim();
+    const name = els.licenseName.value.trim();
+    if (!softwareId) { alert('Selecione um software'); return; }
+    if (!licenseId) { alert('O ID da licença é obrigatório'); return; }
+    const body = {softwareId: Number(softwareId), licenseId, name};
+    const result = await api.saveLicense(id, body);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    await loadSettingsModal('licenses');
+}
+
+async function deleteLicense(id) {
+    if (!confirm('Apagar licença?')) return;
+    const result = await api.deleteLicense(id);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    await loadSettingsModal('licenses');
+}
+
+async function loadSettingsSoftwareSection() {
+    const softwareData = await api.software({limit: 500});
+    state.settingsModal.software = softwareData.data || [];
+    renderSoftwareSection(state.settingsModal.software);
+}
+
+async function loadSettingsLicensesSection() {
+    const [softwareData, licensesData] = await Promise.all([
+        api.software({limit: 500}),
+        api.licenses({limit: 500}),
+    ]);
+    state.settingsModal.software = softwareData.data || [];
+    state.settingsModal.licenses = licensesData.data || [];
+    renderLicensesSection(state.settingsModal.licenses, state.settingsModal.software);
+}
+
+function handleSoftwareListClick(event) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.action === 'editSoftware') {
+        editSoftware(button);
+    } else if (button.dataset.action === 'deleteSoftware') {
+        void deleteSoftware(Number(button.dataset.id));
+    }
+}
+
+function handleLicenseListClick(event) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.action === 'editLicense') {
+        editLicense(button);
+    } else if (button.dataset.action === 'deleteLicense') {
+        void deleteLicense(Number(button.dataset.id));
+    }
+}
+
 function activateSettingsSection(section) {
     state.settingsModal.section = section;
     const button = {
         suppliers: els.settingsSuppliersTabBtn,
         models: els.settingsModelsTabBtn,
         capabilities: els.settingsCapabilitiesTabBtn,
+        software: els.settingsSoftwareTabBtn,
+        licenses: els.settingsLicensesTabBtn,
         apiUsers: els.settingsApiUsersTabBtn,
     }[section] || els.settingsSuppliersTabBtn;
     bootstrap.Tab.getOrCreateInstance(button).show();
@@ -1507,6 +1733,9 @@ function cacheElements() {
         deviceDeviceIdHelp: document.getElementById('deviceDeviceIdHelp'),
         deviceTypeButtons: document.getElementById('deviceTypeButtons'),
         deviceLicenseId: document.getElementById('deviceLicenseId'),
+        deviceLicenseSelect: document.getElementById('deviceLicenseSelect'),
+        deviceSoftware: document.getElementById('deviceSoftware'),
+        deviceSoftwareSelect: document.getElementById('deviceSoftwareSelect'),
         devicePreview: document.getElementById('devicePreview'),
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
@@ -1523,10 +1752,7 @@ function cacheElements() {
         settingsModelsTabBtn: document.getElementById('settingsModelsTabBtn'),
         settingsCapabilitiesTabBtn: document.getElementById('settingsCapabilitiesTabBtn'),
         settingsApiUsersTabBtn: document.getElementById('settingsApiUsersTabBtn'),
-        supplierForm: document.getElementById('supplierForm'),
-        supplierName: document.getElementById('supplierName'),
         supplierListBody: document.getElementById('supplierListBody'),
-        saveSupplierBtn: document.getElementById('saveSupplierBtn'),
         modelForm: document.getElementById('modelForm'),
         modelPreview: document.getElementById('modelPreview'),
         modelSupplierButtons: document.getElementById('modelSupplierButtons'),
@@ -1555,6 +1781,22 @@ function cacheElements() {
         resetApiUserBtn: document.getElementById('resetApiUserBtn'),
         saveApiUserBtn: document.getElementById('saveApiUserBtn'),
         apiUserListBody: document.getElementById('apiUserListBody'),
+        settingsSoftwareTabBtn: document.getElementById('settingsSoftwareTabBtn'),
+        settingsLicensesTabBtn: document.getElementById('settingsLicensesTabBtn'),
+        softwareForm: document.getElementById('softwareForm'),
+        softwareId: document.getElementById('softwareId'),
+        softwareName: document.getElementById('softwareName'),
+        resetSoftwareBtn: document.getElementById('resetSoftwareBtn'),
+        saveSoftwareBtn: document.getElementById('saveSoftwareBtn'),
+        softwareListBody: document.getElementById('softwareListBody'),
+        licenseForm: document.getElementById('licenseForm'),
+        licenseId: document.getElementById('licenseId'),
+        licenseSoftwareSelect: document.getElementById('licenseSoftwareSelect'),
+        licenseLicenseId: document.getElementById('licenseLicenseId'),
+        licenseName: document.getElementById('licenseName'),
+        resetLicenseBtn: document.getElementById('resetLicenseBtn'),
+        saveLicenseBtn: document.getElementById('saveLicenseBtn'),
+        licenseListBody: document.getElementById('licenseListBody'),
     };
 }
 
@@ -1576,6 +1818,8 @@ function bindEvents() {
     });
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
+    els.deviceSoftwareSelect.addEventListener('change', handleSoftwareSelect);
+    els.deviceLicenseSelect.addEventListener('change', handleLicenseSelect);
     els.deviceListLimit.addEventListener('change', handleDeviceListLimitChange);
     els.deviceListSearch.addEventListener('input', handleDeviceListSearchInput);
     els.deviceTypeFilter.addEventListener('change', handleDeviceFilterChange);
@@ -1590,8 +1834,7 @@ function bindEvents() {
     els.deviceForm.addEventListener('input', handleDeviceFormInput);
     els.deviceForm.addEventListener('change', handleDeviceFormChange);
     els.manageSettingsBtn.addEventListener('click', () => { void loadSettingsModal('suppliers'); });
-    els.saveSupplierBtn.addEventListener('click', saveSupplier);
-    els.supplierForm.addEventListener('submit', event => { event.preventDefault(); saveSupplier(); });
+
     els.saveModelBtn.addEventListener('click', saveModel);
     els.resetModelBtn.addEventListener('click', () => resetModelForm());
     els.modelForm.addEventListener('submit', event => { event.preventDefault(); saveModel(); });
@@ -1625,12 +1868,28 @@ function bindEvents() {
     els.settingsApiUsersTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'apiUsers';
     });
+    els.settingsSoftwareTabBtn.addEventListener('shown.bs.tab', () => {
+        state.settingsModal.section = 'software';
+        void loadSettingsSoftwareSection();
+    });
+    els.settingsLicensesTabBtn.addEventListener('shown.bs.tab', () => {
+        state.settingsModal.section = 'licenses';
+        void loadSettingsLicensesSection();
+    });
+    els.saveSoftwareBtn.addEventListener('click', () => { void saveSoftware(); });
+    els.resetSoftwareBtn.addEventListener('click', resetSoftwareForm);
+    els.softwareForm.addEventListener('submit', event => { event.preventDefault(); saveSoftware(); });
+    els.saveLicenseBtn.addEventListener('click', () => { void saveLicense(); });
+    els.resetLicenseBtn.addEventListener('click', resetLicenseForm);
+    els.licenseForm.addEventListener('submit', event => { event.preventDefault(); saveLicense(); });
     els.deviceList.addEventListener('click', handleDeviceListClick);
     els.deviceListPagination.addEventListener('click', handleDevicePaginationClick);
     els.requestGrid.addEventListener('click', handleRequestGridClick);
     els.supplierListBody.addEventListener('click', handleSupplierListClick);
     els.modelListBody.addEventListener('click', handleModelListClick);
     els.apiUserListBody.addEventListener('click', handleApiUserListClick);
+    els.softwareListBody.addEventListener('click', handleSoftwareListClick);
+    els.licenseListBody.addEventListener('click', handleLicenseListClick);
     els.deviceConfigRoot.addEventListener('click', handleDeviceConfigClick);
     els.deviceConfigRoot.addEventListener('input', handleDeviceConfigInput);
     els.deviceConfigRoot.addEventListener('change', handleDeviceConfigChange);
@@ -1871,12 +2130,7 @@ function handleDeviceTypeClick(event) {
 
     const deviceType = normalizeDeviceType(button.dataset.value);
     renderDeviceTypeSelector(deviceType);
-    if (deviceType !== 'watch') {
-        if (els.deviceLicenseId.value.trim() === '0') {
-            els.deviceLicenseId.value = '';
-        }
-    }
-    syncDeviceModalContext();
+    renderDeviceSelectors('', '', deviceType);
 }
 
 function handleDeviceModelClick(event) {
@@ -1935,7 +2189,6 @@ function handleSupplierListClick(event) {
     if (!button) return;
     const {id, action, enabled} = button.dataset;
     if (action === 'toggleSupplier') toggleSupplier(parseInt(id), !!enabled);
-    if (action === 'deleteSupplier') deleteSupplier(parseInt(id));
 }
 
 function handleModelListClick(event) {
