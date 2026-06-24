@@ -62,6 +62,8 @@ final class DashboardDatabase
         $this->ensureColumn('whitelist', 'device_id', 'TEXT NOT NULL DEFAULT ""');
         $this->ensureColumn('whitelist', 'source_system', 'TEXT NOT NULL DEFAULT ""');
         $this->ensureColumn('whitelist', 'source_device_id', 'TEXT NOT NULL DEFAULT ""');
+        $this->ensureColumn('suppliers', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
+        $this->ensureColumn('whitelist', 'software', 'TEXT NOT NULL DEFAULT "null"');
     }
 
     private function ensureColumn(string $table, string $column, string $definition): void

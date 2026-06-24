@@ -32,7 +32,8 @@ final class DashboardStore
         string $simNumber = '',
         string $deviceId = '',
         string $sourceSystem = '',
-        string $sourceDeviceId = ''
+        string $sourceDeviceId = '',
+        string $software = 'null'
     ): void
     {
         $this->redis->sadd($this->key('devices'), $imei);
@@ -46,6 +47,7 @@ final class DashboardStore
             'deviceId' => $deviceId,
             'sourceSystem' => trim($sourceSystem),
             'sourceDeviceId' => trim($sourceDeviceId),
+            'software' => trim($software),
         ]);
     }
 

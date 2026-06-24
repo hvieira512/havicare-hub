@@ -7,7 +7,7 @@ use Hub\Dashboard\Repository\WhitelistRepository;
 
 class Whitelist
 {
-    /** @var array<string, array{supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}> */
+    /** @var array<string, array{supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string, software: string}> */
     private array $devices;
     private string $filePath;
     private ?WhitelistRepository $db;
@@ -47,6 +47,7 @@ class Whitelist
         $model = trim((string)($value['model'] ?? ''));
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch'));
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0'));
+        $software = trim((string)($value['software'] ?? 'null'));
         $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
         $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
         $sourceSystem = strtolower(trim((string)($value['sourceSystem'] ?? $value['source_system'] ?? '')));
@@ -60,6 +61,7 @@ class Whitelist
             'model' => $model,
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
+            'software' => $software,
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
             'sourceSystem' => $sourceSystem,
@@ -101,11 +103,13 @@ class Whitelist
         string $simNumber = '',
         string $deviceId = '',
         string $sourceSystem = '',
-        string $sourceDeviceId = ''
+        string $sourceDeviceId = '',
+        string $software = 'null',
     ): void
     {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
+        $software = trim($software);
         $sourceSystem = strtolower(trim($sourceSystem));
         $sourceDeviceId = trim($sourceDeviceId);
         $this->devices[$imei] = [
@@ -113,12 +117,13 @@ class Whitelist
             'model' => $model,
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
+            'software' => $software,
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
             'sourceSystem' => $sourceSystem,
             'sourceDeviceId' => $sourceDeviceId,
         ];
-        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $software);
         $this->saveFile();
     }
 
@@ -138,7 +143,8 @@ class Whitelist
         string $simNumber = '',
         string $deviceId = '',
         string $sourceSystem = '',
-        string $sourceDeviceId = ''
+        string $sourceDeviceId = '',
+        string $software = 'null',
     ): bool
     {
         if (!isset($this->devices[$imei])) {
@@ -146,6 +152,7 @@ class Whitelist
         }
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
+        $software = trim($software);
         $sourceSystem = strtolower(trim($sourceSystem));
         $sourceDeviceId = trim($sourceDeviceId);
         $this->devices[$imei] = [
@@ -153,18 +160,19 @@ class Whitelist
             'model' => $model,
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
+            'software' => $software,
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
             'sourceSystem' => $sourceSystem,
             'sourceDeviceId' => $sourceDeviceId,
         ];
-        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $software);
         $this->saveFile();
         return true;
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}|null
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, software: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}|null
      */
     public function resolve(string $imei, string $protocol = '', string $ident = ''): ?array
     {
