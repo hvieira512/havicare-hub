@@ -17,6 +17,7 @@ echo "Command:  $CMD"
 echo ""
 
 while true; do
+    composer install --quiet 2>/dev/null
     $CMD &
     PID=$!
     TMPREF=$(mktemp)
