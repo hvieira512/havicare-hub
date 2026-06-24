@@ -59,6 +59,10 @@ final class Devices
                 static fn (array $device): string => trim((string)($device['model'] ?? '')),
                 $this->filterDevicesForOptions($devices, $filters, 'model')
             )),
+            'software' => $this->uniqueValues(array_map(
+                static fn (array $device): string => trim((string)($device['software'] ?? 'null')),
+                $this->filterDevicesForOptions($devices, $filters, 'software')
+            )),
         ];
 
         return $this->collectionResponse($filtered, $page, $limit, $filters, $available);
@@ -252,6 +256,7 @@ final class Devices
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         $sourceSystem = trim((string)($decoded['sourceSystem'] ?? $decoded['source_system'] ?? ''));
         $sourceDeviceId = trim((string)($decoded['sourceDeviceId'] ?? $decoded['source_device_id'] ?? ''));
+        $software = trim((string)($decoded['software'] ?? 'null'));
         if ($imei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
@@ -259,8 +264,8 @@ final class Devices
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
         $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceId);
-        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
-        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $software);
+        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $software);
 
         return ['status' => 'ok', 'imei' => $imei];
     }
@@ -280,6 +285,7 @@ final class Devices
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         $sourceSystem = trim((string)($decoded['sourceSystem'] ?? $decoded['source_system'] ?? ''));
         $sourceDeviceId = trim((string)($decoded['sourceDeviceId'] ?? $decoded['source_device_id'] ?? ''));
+        $software = trim((string)($decoded['software'] ?? 'null'));
         if ($newImei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
@@ -291,8 +297,8 @@ final class Devices
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
         }
-        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
-        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $software);
+        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $software);
 
         return ['status' => 'ok', 'imei' => $newImei];
     }

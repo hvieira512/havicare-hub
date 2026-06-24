@@ -17,6 +17,15 @@ final class DashboardDatabase
         ['Vivistar', 'VIVISTAR-LITE', 'vivistar-iw', ''],
         ['4P Touch', '4P-TOUCH', 'four-p-touch', ''],
         ['4P Touch', 'D46', 'four-p-touch', ''],
+        ['Qinglanst', 'RD-V1', 'qinglanst', ''],
+    ];
+
+    private const DEFAULT_SUPPLIER_DEVICE_TYPES = [
+        'Wonlex' => 'watch',
+        'Vivistar' => 'watch',
+        '4P Touch' => 'watch',
+        'Voerka' => 'ncs',
+        'Qinglanst' => 'radar',
     ];
 
     public function __construct(?string $path = null)
@@ -99,14 +108,20 @@ final class DashboardDatabase
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $seen = [];
-        $supplierStmt = $this->pdo->prepare('INSERT OR IGNORE INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, 1, ?, ?)');
+        $supplierStmt = $this->pdo->prepare('INSERT OR IGNORE INTO suppliers (name, device_type, enabled, created_at, updated_at) VALUES (?, ?, 1, ?, ?)');
         foreach (self::DEFAULT_MODELS as $row) {
             $name = $row[0];
             if (isset($seen[$name])) {
                 continue;
             }
             $seen[$name] = true;
-            $supplierStmt->execute([$name, $now, $now]);
+            $deviceType = self::DEFAULT_SUPPLIER_DEVICE_TYPES[$name] ?? 'watch';
+            $supplierStmt->execute([$name, $deviceType, $now, $now]);
+        }
+
+        // Set device_type for suppliers that may have been created before device_type column existed.
+        foreach (self::DEFAULT_SUPPLIER_DEVICE_TYPES as $name => $deviceType) {
+            $this->pdo->prepare('UPDATE suppliers SET device_type = ? WHERE name = ? AND device_type = "watch"')->execute([$deviceType, $name]);
         }
 
         $nameToId = $this->pdo
@@ -120,6 +135,25 @@ final class DashboardDatabase
             }
 
             $modelStmt->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $now, $now]);
+        }
+
+        $this->seedDefaultSoftware();
+    }
+
+    private function seedDefaultSoftware(): void
+    {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $softwareStmt = $this->pdo->prepare('INSERT OR IGNORE INTO software (name, created_at, updated_at) VALUES (?, ?, ?)');
+        foreach (['hitCare', 'haviCare'] as $name) {
+            $softwareStmt->execute([$name, $now, $now]);
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id FROM software WHERE name = ?");
+        $stmt->execute(['hitCare']);
+        $hitCareId = (int)($stmt->fetchColumn() ?: 0);
+        if ($hitCareId > 0) {
+            $licenseStmt = $this->pdo->prepare('INSERT OR IGNORE INTO licenses (software_id, license_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
+            $licenseStmt->execute([$hitCareId, '1001', 'gucc.dev', $now, $now]);
         }
     }
 

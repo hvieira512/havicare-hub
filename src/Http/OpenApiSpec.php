@@ -46,6 +46,22 @@ class OpenApiSpec
             'schema' => ['type' => 'integer', 'example' => 1],
         ];
 
+        $softwareIdParam = [
+            'name' => 'id',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'Software ID',
+            'schema' => ['type' => 'integer', 'example' => 1],
+        ];
+
+        $licenseIdParam = [
+            'name' => 'id',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'License ID',
+            'schema' => ['type' => 'integer', 'example' => 1],
+        ];
+
         return [
             'openapi' => '3.1.0',
             'info' => [
@@ -59,6 +75,8 @@ class OpenApiSpec
                 ['name' => 'Devices'],
                 ['name' => 'Suppliers'],
                 ['name' => 'Models'],
+                ['name' => 'Software'],
+                ['name' => 'Licenses'],
                 ['name' => 'API Users'],
                 ['name' => 'System'],
             ],
@@ -478,6 +496,131 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/api/software' => [
+                    'get' => [
+                        'tags' => ['Software'],
+                        'summary' => 'List software',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Paginated software collection',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/SoftwareListResponse']]],
+                            ],
+                        ],
+                    ],
+                    'post' => [
+                        'tags' => ['Software'],
+                        'summary' => 'Create software',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/SoftwareWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Software created',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/SoftwareCreateResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/software/{id}' => [
+                    'put' => [
+                        'tags' => ['Software'],
+                        'summary' => 'Update software name',
+                        'parameters' => [$softwareIdParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/SoftwareWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Software updated',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'delete' => [
+                        'tags' => ['Software'],
+                        'summary' => 'Delete software and its licenses',
+                        'parameters' => [$softwareIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Software deleted',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/licenses' => [
+                    'get' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'List licenses',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                            ['name' => 'softwareId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 'all']],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Paginated license collection',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseListResponse']]],
+                            ],
+                        ],
+                    ],
+                    'post' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'Create license',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'License created',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseCreateResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/licenses/{id}' => [
+                    'put' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'Update license',
+                        'parameters' => [$licenseIdParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'License updated',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'delete' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'Delete license',
+                        'parameters' => [$licenseIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'License deleted',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/docs' => [
                     'get' => [
                         'tags' => ['System'],
@@ -786,6 +929,76 @@ class OpenApiSpec
                             'model' => ['type' => 'string', 'example' => 'HW20PRO'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'format' => 'binary'],
+                        ],
+                    ],
+                    'SoftwareItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'name' => ['type' => 'string', 'example' => 'hitCare'],
+                            'license_count' => ['type' => 'integer', 'example' => 1],
+                            'created_at' => ['type' => 'string'],
+                            'updated_at' => ['type' => 'string'],
+                        ],
+                    ],
+                    'SoftwareListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/SoftwareItem']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
+                        ],
+                    ],
+                    'SoftwareWriteRequest' => [
+                        'type' => 'object',
+                        'required' => ['name'],
+                        'properties' => [
+                            'name' => ['type' => 'string', 'example' => 'hitCare'],
+                        ],
+                    ],
+                    'SoftwareCreateResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'id'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'id' => ['type' => 'integer', 'example' => 1],
+                        ],
+                    ],
+                    'LicenseItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'software_id' => ['type' => 'integer', 'example' => 1],
+                            'software_name' => ['type' => 'string', 'example' => 'hitCare'],
+                            'license_id' => ['type' => 'string', 'example' => '1001'],
+                            'name' => ['type' => 'string', 'example' => 'gucc.dev'],
+                            'created_at' => ['type' => 'string'],
+                            'updated_at' => ['type' => 'string'],
+                        ],
+                    ],
+                    'LicenseListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/LicenseItem']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
+                        ],
+                    ],
+                    'LicenseWriteRequest' => [
+                        'type' => 'object',
+                        'required' => ['softwareId', 'licenseId'],
+                        'properties' => [
+                            'softwareId' => ['type' => 'integer', 'example' => 1],
+                            'licenseId' => ['type' => 'string', 'example' => '1001'],
+                            'name' => ['type' => 'string', 'example' => 'gucc.dev'],
+                        ],
+                    ],
+                    'LicenseCreateResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'id'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'id' => ['type' => 'integer', 'example' => 1],
                         ],
                     ],
                     'ErrorResponse' => [

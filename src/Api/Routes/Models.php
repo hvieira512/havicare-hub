@@ -296,6 +296,7 @@ final class Models
             'Vivistar' => 'vivistar-iw',
             '4P Touch' => 'four-p-touch',
             'Voerka' => 'voerka-ncs',
+            'Qinglanst' => 'qinglanst',
             default => '',
         };
     }

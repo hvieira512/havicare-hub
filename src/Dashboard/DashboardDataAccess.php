@@ -3,9 +3,11 @@
 namespace Hub\Dashboard;
 
 use Hub\Dashboard\Repository\DeviceConfigurationRepository;
+use Hub\Dashboard\Repository\LicenseRepository;
 use Hub\Dashboard\Repository\ApiUserRepository;
 use Hub\Dashboard\Repository\ModelRepository;
 use Hub\Dashboard\Repository\ModelRequestCapabilityRepository;
+use Hub\Dashboard\Repository\SoftwareRepository;
 use Hub\Dashboard\Repository\SupplierRepository;
 use Hub\Dashboard\Repository\WhitelistRepository;
 
@@ -18,6 +20,8 @@ final class DashboardDataAccess
         public readonly WhitelistRepository $whitelist,
         public readonly DeviceConfigurationRepository $deviceConfigurations,
         public readonly ApiUserRepository $apiUsers,
+        public readonly SoftwareRepository $software,
+        public readonly LicenseRepository $licenses,
     ) {
     }
 
@@ -32,6 +36,8 @@ final class DashboardDataAccess
             new WhitelistRepository($pdo),
             new DeviceConfigurationRepository($pdo),
             new ApiUserRepository($pdo),
+            new SoftwareRepository($pdo),
+            new LicenseRepository($pdo),
         );
     }
 }

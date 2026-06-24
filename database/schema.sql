@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS suppliers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
+    device_type TEXT NOT NULL DEFAULT 'watch',
     enabled INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS whitelist (
     device_id TEXT NOT NULL DEFAULT '',
     source_system TEXT NOT NULL DEFAULT '',
     source_device_id TEXT NOT NULL DEFAULT '',
+    software TEXT NOT NULL DEFAULT 'null',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -68,6 +70,24 @@ CREATE TABLE IF NOT EXISTS api_users (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS software (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS licenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    software_id INTEGER NOT NULL REFERENCES software(id),
+    license_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE(software_id, license_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_device_configurations_imei ON device_configurations(imei);
 CREATE INDEX IF NOT EXISTS idx_model_request_capabilities_model ON model_request_capabilities(model_id);
 CREATE INDEX IF NOT EXISTS idx_api_users_role_license ON api_users(role, license_id);
+CREATE INDEX IF NOT EXISTS idx_licenses_software_id ON licenses(software_id);
