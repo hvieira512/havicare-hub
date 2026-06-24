@@ -27,9 +27,96 @@ const withQuery = (url, params = {}) => {
     return encoded ? `${url}?${encoded}` : url;
 };
 
+const authFetch = (url, options = {}) => fetch(
+    url,
+    Object.assign({}, options, {
+        headers: Object.assign({'Content-Type': 'application/json'}, authHeaders(), options.headers || {}),
+    })
+);
+
+const authTokenQuery = () => {
+    const token = window.hubDashboardApiToken?.access_token || '';
+    return token === '' ? '' : `token=${encodeURIComponent(token)}`;
+};
+
+function readNdjsonStream(response, onMessage, onError, signal) {
+    if (!response.ok) {
+        onError(new Error(`Stream request failed with HTTP ${response.status}`));
+        return;
+    }
+    if (!response.body?.getReader) {
+        onError(new Error('Streaming is not supported by this browser'));
+        return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const readNext = async () => {
+        try {
+            while (true) {
+                if (signal?.aborted) {
+                    await reader.cancel();
+                    return;
+                }
+                const {done, value} = await reader.read();
+                if (done) {
+                    return;
+                }
+                buffer += decoder.decode(value, {stream: true});
+                let newlineIndex = buffer.indexOf('\n');
+                while (newlineIndex !== -1) {
+                    const line = buffer.slice(0, newlineIndex).trim();
+                    buffer = buffer.slice(newlineIndex + 1);
+                    if (line !== '') {
+                        try {
+                            onMessage(JSON.parse(line));
+                        } catch (error) {
+                            onError(error instanceof Error ? error : new Error(String(error)));
+                        }
+                    }
+                    newlineIndex = buffer.indexOf('\n');
+                }
+            }
+        } catch (error) {
+            if (!signal?.aborted) {
+                onError(error instanceof Error ? error : new Error(String(error)));
+            }
+        }
+    };
+
+    void readNext();
+}
+
 export const api = {
     devices: (params = {}) => requestJson(withQuery('/api/devices', params)),
     device: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`),
+    deviceLive: (imei, handlers = {}) => {
+        const controller = new AbortController();
+        authFetch(`/api/devices/${encodeURIComponent(imei)}/live`, {
+            method: 'GET',
+            signal: controller.signal,
+            headers: Object.assign({
+                Accept: 'application/x-ndjson',
+            }, authHeaders()),
+        }).then(response => {
+            readNdjsonStream(
+                response,
+                handlers.onMessage || (() => {}),
+                handlers.onError || (() => {}),
+                controller.signal
+            );
+        }).catch(error => {
+            if (!controller.signal.aborted) {
+                (handlers.onError || (() => {}))(error instanceof Error ? error : new Error(String(error)));
+            }
+        });
+
+        return {
+            close: () => controller.abort(),
+        };
+    },
     configuration: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`),
     saveConfiguration: (imei, configs, supplier = '', model = '') => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`, {
         method: 'PUT',

@@ -216,6 +216,7 @@ final class DashboardHttpServer
         return in_array($route->method() . ' ' . $route->pattern(), [
             'GET /api/devices',
             'GET /api/devices/{imei}',
+            'GET /api/devices/{imei}/live',
             'POST /api/devices/{imei}/commands',
             'GET /api/commands/{id}',
             'GET /api/devices/{imei}/configuration',

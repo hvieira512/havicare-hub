@@ -8,6 +8,9 @@ use Predis\ClientInterface;
 final class DashboardStore
 {
     private ?DashboardDataAccess $db = null;
+    /** @var array<string, array<int, callable(array<string, mixed>): void>> */
+    private array $listeners = [];
+    private int $listenerSequence = 0;
 
     public function __construct(
         private ClientInterface $redis,
@@ -60,23 +63,37 @@ final class DashboardStore
             $this->deviceListKey($imei, 'commands'),
             $this->commandHashKey($imei),
         ]);
+        $this->notify($imei, [
+            'kind' => 'device.deleted',
+            'imei' => $imei,
+        ]);
     }
 
     public function deviceSeen(string $imei, array $fields): void
     {
         $this->redis->sadd($this->key('devices'), $imei);
-        $this->redis->hmset($this->deviceKey($imei), array_merge($fields, [
+        $device = array_merge($fields, [
             'imei' => $imei,
             'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-        ]));
+        ]);
+        $this->redis->hmset($this->deviceKey($imei), $device);
+        $this->notify($imei, [
+            'kind' => 'device',
+            'device' => $this->normalizeDevice($device),
+        ]);
     }
 
     public function deviceOffline(string $imei): void
     {
-        $this->redis->hmset($this->deviceKey($imei), [
+        $device = [
             'imei' => $imei,
             'online' => '0',
             'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+        ];
+        $this->redis->hmset($this->deviceKey($imei), $device);
+        $this->notify($imei, [
+            'kind' => 'device',
+            'device' => $this->normalizeDevice($this->redis->hgetall($this->deviceKey($imei)) ?: $device),
         ]);
     }
 
@@ -90,6 +107,11 @@ final class DashboardStore
         $key = $this->deviceListKey($imei, $list);
         $this->redis->lpush($key, [$encoded]);
         $this->redis->ltrim($key, 0, $this->limit - 1);
+        $this->notify($imei, [
+            'kind' => 'recent',
+            'list' => $list,
+            'item' => $payload,
+        ]);
 
         if ($this->db !== null && $list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
             $device = isset($payload['device']) && is_array($payload['device']) ? $payload['device'] : [];
@@ -127,6 +149,10 @@ final class DashboardStore
         $this->redis->lrem($this->deviceListKey($imei, 'commands'), 0, $id);
         $this->redis->lpush($this->deviceListKey($imei, 'commands'), [$id]);
         $this->redis->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+        $this->notify($imei, [
+            'kind' => 'command',
+            'item' => $record,
+        ]);
     }
 
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
@@ -265,6 +291,40 @@ final class DashboardStore
         }
 
         return null;
+    }
+
+    /**
+     * Register a listener for live device updates.
+     *
+     * @return callable(): void
+     */
+    public function subscribe(string $imei, callable $listener): callable
+    {
+        $key = trim($imei);
+        $id = ++$this->listenerSequence;
+        $this->listeners[$key][$id] = $listener;
+
+        return function () use ($key, $id): void {
+            unset($this->listeners[$key][$id]);
+            if (($this->listeners[$key] ?? []) === []) {
+                unset($this->listeners[$key]);
+            }
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     */
+    private function notify(string $imei, array $event): void
+    {
+        $listeners = $this->listeners[trim($imei)] ?? [];
+        foreach ($listeners as $listener) {
+            try {
+                $listener($event);
+            } catch (\Throwable) {
+                // Live listeners are best-effort; a broken client must not break persistence.
+            }
+        }
     }
 
     private function normalizeDevice(array $data): array

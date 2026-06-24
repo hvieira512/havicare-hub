@@ -60,6 +60,29 @@ final class DashboardStoreTest extends TestCase
         self::assertSame('radar', $device['deviceType']);
         self::assertSame('12', $device['licenseId']);
     }
+
+    public function testSubscribersReceiveDeviceAndHistoryUpdates(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $events = [];
+        $unsubscribe = $store->subscribe('861265061009822', static function (array $event) use (&$events): void {
+            $events[] = $event;
+        });
+
+        $store->deviceSeen('861265061009822', ['online' => '1']);
+        $store->append('861265061009822', 'telemetry', ['type' => 'heartbeat']);
+        $store->recordCommand('861265061009822', 'cmd-1', ['status' => 'waiting']);
+        $unsubscribe();
+        $store->deviceOffline('861265061009822');
+
+        self::assertGreaterThanOrEqual(3, count($events));
+        self::assertSame('device', $events[0]['kind'] ?? null);
+        self::assertSame('recent', $events[1]['kind'] ?? null);
+        self::assertSame('command', $events[2]['kind'] ?? null);
+        self::assertSame('device', $events[0]['kind'] ?? null);
+        self::assertSame('1', (string)($events[0]['device']['online'] ?? ''));
+    }
 }
 
 final class InMemoryRedisClient implements ClientInterface

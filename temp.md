@@ -7,13 +7,15 @@
     - Desligar tão rápido do servidor
     - Não enviar dados de volta de pedidos
     - Ver que dados ele mede automaticamente sem pedir
+- Request Cards NCS
+- Ver mais configurações da 4P
+- Explicar melhor a dinâmica do Hub
 
 # Doing
 
 ## Integração hitCare
 
-- Como estão as tabelas do hitCare?
-- Vou ser eu a fazer a integração?
+- Investigar tabelas `relógios` no hitCare
 
 # Review
 
