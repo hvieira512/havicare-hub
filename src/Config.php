@@ -50,6 +50,15 @@ class Config
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
                 'topic_filter' => getenv('NCS_TOPIC_FILTER') ?: '/voerka/#',
             ],
+            'qinglanst' => [
+                'enabled' => !in_array(strtolower(trim((string)(getenv('QINGLANST_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
+                'host' => getenv('QINGLANST_MQTT_HOST') ?: '88.99.104.197',
+                'port' => (int)(getenv('QINGLANST_MQTT_PORT') ?: 1883),
+                'username' => getenv('QINGLANST_MQTT_USERNAME') ?: 'havicare',
+                'password' => getenv('QINGLANST_MQTT_PASSWORD') ?: 'hitCare',
+                'topic_filter' => getenv('QINGLANST_TOPIC_FILTER') ?: 'radar/1001/#',
+                'client_id_prefix' => getenv('QINGLANST_CLIENT_ID_PREFIX') ?: 'qinglanst-radar',
+            ],
             'mqtt' => [
                 'enabled' => true,
                 'host' => getenv('MQTT_HOST') ?: '',

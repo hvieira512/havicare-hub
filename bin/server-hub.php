@@ -12,7 +12,8 @@ use Hub\DeviceHubServer;
 use Hub\HubDownlinkSubscriber;
 use Hub\HubMqttBridge;
 use Hub\HubTcpIngress;
-use Hub\Ncs\NcsMqttIngressBridge;
+use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
+use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
 use Hub\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -37,6 +38,7 @@ $mqttConfig = $config['mqtt'] ?? [];
 $redisConfig = $config['redis'] ?? [];
 $dashboardConfig = $config['dashboard'] ?? [];
 $ncsConfig = $config['ncs'] ?? [];
+$qinglanstConfig = $config['qinglanst'] ?? [];
 $downlinkQueueTtlSeconds = (int)($config['hub']['downlink_queue_ttl_seconds'] ?? 300);
 
 $mqttHost = trim((string)($mqttConfig['host'] ?? ''));
@@ -153,7 +155,7 @@ if ((bool)($ncsConfig['enabled'] ?? true)) {
         }
     ));
     $ncsSubscriber = $createMqttClient('ncs-sub', true, $ncsSubscriberRepository);
-    $ncsIngress = new NcsMqttIngressBridge(
+    $ncsIngress = new NcsBridge(
         $ncsSubscriber,
         $whitelist,
         $mqttBridge,
@@ -173,6 +175,63 @@ if ((bool)($ncsConfig['enabled'] ?? true)) {
         $dashboardStore
     );
     $connectMqttClient($ncsSubscriber, false);
+}
+
+$qinglanstIngress = null;
+if ((bool)($qinglanstConfig['enabled'] ?? true)) {
+    $qinglanstHost = trim((string)($qinglanstConfig['host'] ?? ''));
+    if ($qinglanstHost !== '') {
+        $qinglanstPort = (int)($qinglanstConfig['port'] ?? 1883);
+        $qinglanstUsername = trim((string)($qinglanstConfig['username'] ?? ''));
+        $qinglanstPassword = trim((string)($qinglanstConfig['password'] ?? ''));
+        $qinglanstTopicFilter = trim((string)($qinglanstConfig['topic_filter'] ?? 'radar/1001/#'));
+        $qinglanstClientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($qinglanstConfig['client_id_prefix'] ?? 'qinglanst-radar')) ?: 'qinglanst-radar';
+
+        $createQinglanstClient = static function (string $suffix, ?Repository $repository = null) use ($qinglanstHost, $qinglanstPort, $qinglanstClientIdPrefix): MqttClient {
+            $clientId = substr($qinglanstClientIdPrefix . '-' . $suffix . '-' . getmypid(), 0, 23);
+            return new MqttClient($qinglanstHost, $qinglanstPort, $clientId, MqttClient::MQTT_3_1_1, $repository);
+        };
+
+        $connectQinglanstClient = static function (MqttClient $client, bool $cleanSession = true) use ($qinglanstUsername, $qinglanstPassword): MqttClient {
+            $settings = (new ConnectionSettings())
+                ->setUsername($qinglanstUsername !== '' ? $qinglanstUsername : null)
+                ->setPassword($qinglanstPassword !== '' ? $qinglanstPassword : null)
+                ->setKeepAliveInterval(60)
+                ->setConnectTimeout(5)
+                ->setSocketTimeout(5);
+            $client->connect($settings, $cleanSession);
+            return $client;
+        };
+
+        $qinglanstSubscriberRepository = new MemoryRepository();
+        $qinglanstSubscriberRepository->addSubscription(new Subscription(
+            $qinglanstTopicFilter,
+            MqttClient::QOS_AT_LEAST_ONCE,
+            static function (string $topic, string $message) use (&$qinglanstIngress): void {
+                $qinglanstIngress?->handleReceivedMessage($topic, $message);
+            }
+        ));
+        $qinglanstSubscriber = $createQinglanstClient('sub', $qinglanstSubscriberRepository);
+        $qinglanstIngress = new QinglanstBridge(
+            $qinglanstSubscriber,
+            $whitelist,
+            $mqttBridge,
+            $qinglanstTopicFilter,
+            function () use (&$qinglanstIngress, $createQinglanstClient, $connectQinglanstClient, $qinglanstTopicFilter): MqttClient {
+                $repository = new MemoryRepository();
+                $repository->addSubscription(new Subscription(
+                    $qinglanstTopicFilter,
+                    MqttClient::QOS_AT_LEAST_ONCE,
+                    static function (string $topic, string $message) use (&$qinglanstIngress): void {
+                        $qinglanstIngress?->handleReceivedMessage($topic, $message);
+                    }
+                ));
+                return $connectQinglanstClient($createQinglanstClient('sub', $repository), false);
+            },
+            $dashboardStore,
+        );
+        $connectQinglanstClient($qinglanstSubscriber, false);
+    }
 }
 
 $loop = Loop::get();
@@ -226,6 +285,15 @@ if ($ncsIngress !== null) {
     }
 }
 
+if ($qinglanstIngress !== null) {
+    try {
+        $qinglanstIngress->start();
+    } catch (\Throwable $e) {
+        Logger::channel('hub')->error('Qinglanst ingress subscription failed: ' . $e->getMessage());
+        exit(1);
+    }
+}
+
 $loop->addPeriodicTimer(0.05, function () use ($downlink): void {
     try {
         $downlink->tick(0.001);
@@ -240,6 +308,16 @@ if ($ncsIngress !== null) {
             $ncsIngress->tick(0.001);
         } catch (\Throwable $e) {
             Logger::channel('hub')->error('NCS ingress loop failed: ' . $e->getMessage());
+        }
+    });
+}
+
+if ($qinglanstIngress !== null) {
+    $loop->addPeriodicTimer(0.05, function () use ($qinglanstIngress): void {
+        try {
+            $qinglanstIngress->tick(0.001);
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error('Qinglanst ingress loop failed: ' . $e->getMessage());
         }
     });
 }
@@ -268,6 +346,9 @@ Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('{licenseI
 Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('{licenseId}/watch/{deviceKey}/downlink'));
 if ($ncsIngress !== null) {
     Logger::channel('hub')->info("NCS ingress topics: {$ncsTopicFilter} -> " . $mqttBridge->topic('{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}'));
+}
+if ($qinglanstIngress !== null) {
+    Logger::channel('hub')->info("Qinglanst radar ingress: {$qinglanstTopicFilter} -> " . $mqttBridge->topic('{software}/{licenseId}/radar/{deviceUid}/{telemetry|events}'));
 }
 
 $loop->run();

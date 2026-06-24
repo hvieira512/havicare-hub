@@ -206,6 +206,20 @@ class Whitelist
             return null;
         }
 
+        if ($protocol === 'qinglanst') {
+            foreach ($this->devices as $canonicalImei => $metadata) {
+                if (($metadata['deviceType'] ?? '') !== 'radar') {
+                    continue;
+                }
+
+                if ($canonicalImei === $alias || ($metadata['deviceId'] ?? '') === $alias) {
+                    return ['imei' => $canonicalImei] + $metadata;
+                }
+            }
+
+            return null;
+        }
+
         return null;
     }
 
