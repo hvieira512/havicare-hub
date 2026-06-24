@@ -10,7 +10,6 @@ use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
-use React\Http\Message\Response;
 
 final class DevicesApiTest extends TestCase
 {
@@ -44,27 +43,6 @@ final class DevicesApiTest extends TestCase
             static fn(array $entry): string => (string)($entry['command'] ?? ''),
             $response['commands']
         ));
-    }
-
-    public function testShowDoesNotExposeRecentHistoryWindow(): void
-    {
-        [$api] = $this->makeApi();
-
-        $response = $api->show('861265061009822');
-
-        self::assertArrayNotHasKey('recent', $response);
-        self::assertArrayHasKey('configuration', $response);
-        self::assertArrayHasKey('pending', $response);
-    }
-
-    public function testLiveReturnsStreamingResponse(): void
-    {
-        [$api] = $this->makeApi();
-
-        $response = $api->live('861265061009822');
-
-        self::assertInstanceOf(Response::class, $response);
-        self::assertSame('application/x-ndjson; charset=utf-8', $response->getHeaderLine('Content-Type'));
     }
 
     public function testCommandRejectsDisabledModelRequest(): void

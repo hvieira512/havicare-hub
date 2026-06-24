@@ -8,12 +8,10 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\ApiAuthContext;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DashboardStore;
-use Hub\Dashboard\DeviceLiveStream;
 use Hub\Dashboard\DeviceMetadata;
 use Hub\DeviceHubServer;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
-use React\Http\Message\Response;
 
 final class Devices
 {
@@ -68,22 +66,28 @@ final class Devices
 
     public function show(string $imei, ?ApiAuthContext $auth = null): array
     {
-        return $this->detail($imei, $auth, false);
-    }
-
-    public function live(string $imei, ?ApiAuthContext $auth = null): array|Response
-    {
-        $detail = $this->detail($imei, $auth, true);
-        if (isset($detail['error'])) {
-            return $detail;
+        $device = $this->store->device($imei);
+        if (!$this->canAccessDevice($imei, $auth, $device)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
+        $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
+        $model = $this->modelForDevice($device);
 
-        return new Response(200, [
-            'Content-Type' => 'application/x-ndjson; charset=utf-8',
-            'Cache-Control' => 'no-cache, no-transform',
-            'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no',
-        ], new DeviceLiveStream($this->store, $imei, $detail));
+        return [
+            'device' => $device,
+            'commands' => $this->enabledRequestCommandsForModel($model, $protocol),
+            'configuration' => [
+                'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
+                'stored' => count($this->db->deviceConfigurations->allForImei($imei)),
+            ],
+            'pending' => $this->pending($imei),
+            'recent' => [
+                'raw' => $this->store->recent($imei, 'raw'),
+                'telemetry' => $this->store->recent($imei, 'telemetry'),
+                'events' => $this->store->recent($imei, 'events'),
+                'commands' => $this->store->commands($imei),
+            ],
+        ];
     }
 
     public function command(string $imei, string $body, ?ApiAuthContext $auth = null): array
@@ -313,37 +317,6 @@ final class Devices
             'queuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->queuedAt),
             'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->expiresAt),
         ], $this->downlinkQueue->pendingFor($imei));
-    }
-
-    private function detail(string $imei, ?ApiAuthContext $auth = null, bool $includeRecent = true): array
-    {
-        $device = $this->store->device($imei);
-        if (!$this->canAccessDevice($imei, $auth, $device)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
-        $model = $this->modelForDevice($device);
-
-        $detail = [
-            'device' => $device,
-            'commands' => $this->enabledRequestCommandsForModel($model, $protocol),
-            'configuration' => [
-                'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
-                'stored' => count($this->db->deviceConfigurations->allForImei($imei)),
-            ],
-            'pending' => $this->pending($imei),
-        ];
-
-        if ($includeRecent) {
-            $detail['recent'] = [
-                'raw' => $this->store->recent($imei, 'raw'),
-                'telemetry' => $this->store->recent($imei, 'telemetry'),
-                'events' => $this->store->recent($imei, 'events'),
-                'commands' => $this->store->commands($imei),
-            ];
-        }
-
-        return $detail;
     }
 
     private function persistAndApplyConfiguration(

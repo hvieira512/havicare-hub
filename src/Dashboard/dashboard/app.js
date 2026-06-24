@@ -36,7 +36,6 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
-let selectedDeviceLiveStream = null;
 
 let deviceConfigRefreshPromise = null;
 let deviceSearchTimer = null;
@@ -64,25 +63,6 @@ function normalizeFilterValue(value) {
 function normalizeLicenseId(licenseId) {
     const value = String(licenseId ?? '0').trim();
     return value === '' ? '0' : value;
-}
-
-function emptyRecentDetail() {
-    return {raw: [], telemetry: [], events: [], commands: []};
-}
-
-function normalizeSelectedDetail(detail) {
-    if (!detail) return null;
-    return {
-        ...detail,
-        recent: detail.recent || emptyRecentDetail(),
-    };
-}
-
-function closeSelectedDeviceLiveStream() {
-    if (selectedDeviceLiveStream) {
-        selectedDeviceLiveStream.close();
-        selectedDeviceLiveStream = null;
-    }
 }
 
 function licenseLabel(licenseId) {
@@ -376,7 +356,6 @@ async function selectDevice(imei) {
 }
 
 async function loadDevice(imei) {
-    closeSelectedDeviceLiveStream();
     const detail = await api.device(imei);
     if (detail?.error) {
         if (state.selectedImei === imei) {
@@ -386,16 +365,8 @@ async function loadDevice(imei) {
         renderSelection();
         return false;
     }
-    state.selectedDetail = normalizeSelectedDetail(detail);
+    state.selectedDetail = detail;
     renderSelection();
-    selectedDeviceLiveStream = api.deviceLive(imei, {
-        onMessage: handleDeviceLiveMessage,
-        onError: error => {
-            if (state.selectedImei === imei) {
-                console.warn('Device live stream failed', error);
-            }
-        },
-    });
     return true;
 }
 
@@ -405,7 +376,6 @@ function renderSelection() {
     els.detailEmptyState.classList.toggle('d-none', !!state.selectedDetail);
     els.deviceDetail.classList.toggle('d-none', !state.selectedDetail);
     if (!state.selectedDetail) {
-        closeSelectedDeviceLiveStream();
         if (connectionChartRoot) {
             connectionChartRoot.dispose();
             connectionChartRoot = null;
@@ -438,67 +408,6 @@ function renderSelection() {
     renderRequestCards(state.selectedDetail.commands || [], telemetry);
     renderDownlinkRequests(commands);
     renderConnectionTimeline(connectionEvents);
-}
-
-function handleDeviceLiveMessage(message) {
-    if (!state.selectedDetail || state.selectedImei === null) {
-        return;
-    }
-
-    if (message.kind === 'snapshot') {
-        state.selectedDetail = normalizeSelectedDetail({
-            ...state.selectedDetail,
-            ...message,
-            recent: message.recent || state.selectedDetail.recent,
-        });
-        renderSelection();
-        return;
-    }
-
-    if (message.kind === 'device' && message.device) {
-        state.selectedDetail.device = {
-            ...(state.selectedDetail.device || {}),
-            ...message.device,
-        };
-        renderSelectedDeviceSummary(state.selectedDetail.device);
-        return;
-    }
-
-    if (message.kind === 'device.deleted') {
-        clearSelection();
-        clearSelectedDeviceFromStorage();
-        closeSelectedDeviceLiveStream();
-        renderSelection();
-        return;
-    }
-
-    if (message.kind === 'command' && message.item) {
-        state.selectedDetail.recent.commands = [
-            message.item,
-            ...state.selectedDetail.recent.commands.filter(command => String(command.id || '') !== String(message.item.id || '')),
-        ].slice(0, 100);
-        renderSelection();
-        return;
-    }
-
-    if (message.kind === 'recent' && message.list && message.item) {
-        const list = String(message.list);
-        if (!state.selectedDetail.recent[list]) {
-            state.selectedDetail.recent[list] = [];
-        }
-        if (list === 'commands' && message.item.id) {
-            state.selectedDetail.recent.commands = [
-                message.item,
-                ...state.selectedDetail.recent.commands.filter(command => String(command.id || '') !== String(message.item.id)),
-            ].slice(0, 100);
-        } else {
-            state.selectedDetail.recent[list] = [
-                message.item,
-                ...state.selectedDetail.recent[list],
-            ].slice(0, 100);
-        }
-        renderSelection();
-    }
 }
 
 function renderSelectedDeviceSummary(device) {

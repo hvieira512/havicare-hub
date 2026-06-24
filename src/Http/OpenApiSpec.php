@@ -130,7 +130,7 @@ class OpenApiSpec
                         'parameters' => [$imeiParam],
                         'responses' => [
                             '200' => [
-                                'description' => 'Device detail with commands, configuration, and pending downlinks',
+                                'description' => 'Device detail with commands and recent data',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceDetailResponse']]],
                             ],
                         ],
@@ -178,19 +178,6 @@ class OpenApiSpec
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CommandResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
-                        ],
-                    ],
-                ],
-                '/api/devices/{imei}/live' => [
-                    'get' => [
-                        'tags' => ['Devices'],
-                        'summary' => 'Open live device stream',
-                        'parameters' => [$imeiParam],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'NDJSON stream with the device snapshot followed by live updates',
-                                'content' => ['application/x-ndjson' => ['schema' => ['type' => 'string']]],
-                            ],
                         ],
                     ],
                 ],
@@ -624,6 +611,7 @@ class OpenApiSpec
                             'device' => ['$ref' => '#/components/schemas/DeviceDetail'],
                             'commands' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandCatalogEntry']],
                             'pending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
+                            'recent' => ['$ref' => '#/components/schemas/RecentSection'],
                         ],
                     ],
                     'DeviceCreateRequest' => [

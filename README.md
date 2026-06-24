@@ -71,14 +71,9 @@ The hub serves a Bootstrap 5 dashboard at:
 http://127.0.0.1:8081/dashboard
 ```
 
-Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth and bootstrap the dashboard admin session. The dashboard uses Redis for queued downlinks and command outcomes, and a live NDJSON stream for device telemetry/events/history while the device is selected.
+Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth and bootstrap the dashboard admin session. The dashboard uses Redis for recent device history, queued downlinks, and command outcomes.
 
 API access uses `POST /api/auth/login` and bearer tokens. The env dashboard credentials issue a bootstrap `hub_admin` token. Additional users are managed by admins in the dashboard settings modal or through `/api/api-users`.
-
-Device detail is split into two endpoints:
-
-- `GET /api/devices/{imei}` returns the snapshot metadata needed for the selected device panel: device, command catalog, configuration state, and pending downlinks.
-- `GET /api/devices/{imei}/live` returns an authenticated NDJSON stream with the initial recent device snapshot followed by live updates. The dashboard uses this stream instead of polling the recent window from the detail endpoint.
 
 API user roles:
 

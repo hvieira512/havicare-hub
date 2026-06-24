@@ -33,10 +33,6 @@ return static function (
             $result = $devices->show($params['imei'], $apiAuthContext($request));
             return $json($result, $status($result));
         }),
-        new ApiRoute('GET', '/api/devices/{imei}/live', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->live($params['imei'], $apiAuthContext($request));
-            return $result instanceof Response ? $result : $json($result, $status($result));
-        }),
         new ApiRoute('GET', '/api/devices/{imei}/configuration', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
             $result = $devices->configuration($params['imei'], (string)$request->getUri()->getQuery(), $apiAuthContext($request));
             return $json($result, $status($result));
