@@ -85,14 +85,13 @@ class Config
                 'password' => getenv('REDIS_PASSWORD') ?: '',
             ],
             'database' => [
-                'driver' => getenv('DB_DRIVER') ?: 'sqlite',
+                'driver' => getenv('DB_DRIVER') ?: 'mysql',
                 'host' => getenv('DB_HOST') ?: '127.0.0.1',
                 'port' => (int)(getenv('DB_PORT') ?: 3306),
                 'name' => getenv('DB_NAME') ?: 'hitecosystem_hub',
                 'username' => getenv('DB_USER') ?: 'hub',
                 'password' => getenv('DB_PASSWORD') ?: 'hub_pass',
                 'charset' => getenv('DB_CHARSET') ?: 'utf8mb4',
-                'path' => getenv('DB_PATH') ?: '',
             ],
         ]);
     }

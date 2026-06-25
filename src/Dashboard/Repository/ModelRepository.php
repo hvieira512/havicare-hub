@@ -46,19 +46,11 @@ final class ModelRepository
         $existing = $this->findBySupplierId($supplierId, $internalModel);
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
         if ($existing === null) {
-            if ($this->hasColumn('model')) {
-                $stmt = $this->pdo->prepare('
-                    INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, protocol, image_path, created_at, updated_at, model)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ');
-                $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $protocol, $storedImagePath, $now, $now, $internalModel]);
-            } else {
-                $stmt = $this->pdo->prepare('
-                    INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, protocol, image_path, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ');
-                $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $protocol, $storedImagePath, $now, $now]);
-            }
+            $stmt = $this->pdo->prepare('
+                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, protocol, image_path, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ');
+            $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $protocol, $storedImagePath, $now, $now]);
             return;
         }
 
@@ -105,16 +97,5 @@ final class ModelRepository
         $stmt->execute([$supplierId, $internalModel]);
 
         return $stmt->fetch() ?: null;
-    }
-
-    private function hasColumn(string $column): bool
-    {
-        static $cache = [];
-        if (!array_key_exists($column, $cache)) {
-            $stmt = $this->pdo->query('PRAGMA table_info(models)');
-            $columns = $stmt ? $stmt->fetchAll(\PDO::FETCH_COLUMN, 1) : [];
-            $cache[$column] = in_array($column, $columns, true);
-        }
-        return $cache[$column];
     }
 }

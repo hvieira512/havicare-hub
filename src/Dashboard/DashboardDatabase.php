@@ -8,7 +8,6 @@ use PDO;
 final class DashboardDatabase
 {
     private PDO $pdo;
-    private string $driver;
 
     private const DEFAULT_MODELS = [
         ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', 'wonlex-json', ''],
@@ -21,54 +20,25 @@ final class DashboardDatabase
         ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', 'qinglanst', ''],
     ];
 
-    public function __construct(array|string|null $config = null)
+    public function __construct(array $config)
     {
-        if (is_string($config) || $config === null) {
-            $path = $config ?: (__DIR__ . '/../../var/db/dashboard.sqlite');
-            $dir = dirname($path);
-            if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
-
-            $this->driver = 'sqlite';
-            $this->pdo = new PDO("sqlite:{$path}", null, null, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]);
-            $this->pdo->exec('PRAGMA journal_mode=WAL');
-            $this->pdo->exec('PRAGMA foreign_keys=ON');
-        } else {
-            $driver = strtolower(trim((string)($config['driver'] ?? 'sqlite')));
-            if ($driver === 'mysql') {
-                $charset = trim((string)($config['charset'] ?? 'utf8mb4')) ?: 'utf8mb4';
-                $dsn = sprintf(
-                    'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-                    (string)($config['host'] ?? '127.0.0.1'),
-                    (int)($config['port'] ?? 3306),
-                    (string)($config['name'] ?? 'hitecosystem_hub'),
-                    $charset,
-                );
-                $this->driver = 'mysql';
-                $this->pdo = new PDO($dsn, (string)($config['username'] ?? ''), (string)($config['password'] ?? ''), [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                ]);
-            } else {
-                $path = (string)($config['path'] ?? (__DIR__ . '/../../var/db/dashboard.sqlite'));
-                $dir = dirname($path);
-                if (!is_dir($dir)) {
-                    mkdir($dir, 0755, true);
-                }
-
-                $this->driver = 'sqlite';
-                $this->pdo = new PDO("sqlite:{$path}", null, null, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                ]);
-                $this->pdo->exec('PRAGMA journal_mode=WAL');
-                $this->pdo->exec('PRAGMA foreign_keys=ON');
-            }
+        $driver = strtolower(trim((string)($config['driver'] ?? '')));
+        if ($driver !== 'mysql') {
+            throw new \InvalidArgumentException('DashboardDatabase only supports the mysql driver');
         }
+
+        $charset = trim((string)($config['charset'] ?? 'utf8mb4')) ?: 'utf8mb4';
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+            (string)($config['host'] ?? '127.0.0.1'),
+            (int)($config['port'] ?? 3306),
+            (string)($config['name'] ?? 'hitecosystem_hub'),
+            $charset,
+        );
+        $this->pdo = new PDO($dsn, (string)($config['username'] ?? ''), (string)($config['password'] ?? ''), [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
 
         $this->bootstrapSchema();
         $this->seedDefaults();
@@ -81,42 +51,16 @@ final class DashboardDatabase
         return $this->pdo;
     }
 
-    public function driver(): string
-    {
-        return $this->driver;
-    }
-
     private function bootstrapSchema(): void
     {
-        $schemaPath = $this->driver === 'mysql'
-            ? __DIR__ . '/../../database/schema.mysql.sql'
-            : __DIR__ . '/../../database/schema.sql';
+        $schemaPath = __DIR__ . '/../../database/schema.mysql.sql';
         $schema = file_get_contents($schemaPath);
         if (!is_string($schema) || trim($schema) === '') {
             throw new \RuntimeException('database schema file is missing or empty');
         }
 
         $this->pdo->exec($schema);
-        $this->dropLegacyHistoryStorage();
-
-        if ($this->driver === 'mysql') {
-            $this->ensureMysqlIndexes();
-        }
-
-        if ($this->driver === 'sqlite') {
-            // Compatibility for databases created before device type and license support.
-            $this->ensureColumn('whitelist', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
-            $this->ensureColumn('whitelist', 'license_id', 'TEXT NOT NULL DEFAULT "0"');
-            $this->ensureColumn('whitelist', 'sim_number', 'TEXT NOT NULL DEFAULT ""');
-            $this->ensureColumn('whitelist', 'device_id', 'TEXT NOT NULL DEFAULT ""');
-            $this->ensureColumn('whitelist', 'source_system', 'TEXT NOT NULL DEFAULT ""');
-            $this->ensureColumn('whitelist', 'source_device_id', 'TEXT NOT NULL DEFAULT ""');
-            $this->ensureColumn('whitelist', 'company', 'TEXT NOT NULL DEFAULT "null"');
-            $this->ensureColumn('models', 'internal_model', 'TEXT NOT NULL DEFAULT ""');
-            $this->ensureColumn('models', 'commercial_name', 'TEXT NOT NULL DEFAULT ""');
-            $this->ensureColumn('models', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
-            $this->migrateModelCatalogColumns();
-        }
+        $this->ensureMysqlIndexes();
     }
 
     private function ensureMysqlIndexes(): void
@@ -140,92 +84,6 @@ final class DashboardDatabase
         }
 
         $this->pdo->exec("CREATE INDEX `{$indexName}` ON `{$table}` ({$columns})");
-    }
-
-    private function ensureColumn(string $table, string $column, string $definition): void
-    {
-        $stmt = $this->pdo->query(sprintf('PRAGMA table_info(%s)', $table));
-        $columns = $stmt ? $stmt->fetchAll() : [];
-        foreach ($columns as $info) {
-            if (($info['name'] ?? null) === $column) {
-                return;
-            }
-        }
-
-        $this->pdo->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
-    }
-
-    private function dropLegacyHistoryStorage(): void
-    {
-        if ($this->driver !== 'sqlite') {
-            return;
-        }
-
-        foreach ([
-            'idx_telemetry_imei',
-            'idx_telemetry_recorded',
-            'idx_events_imei',
-            'idx_raw_payloads_imei',
-        ] as $index) {
-            $this->pdo->exec(sprintf('DROP INDEX IF EXISTS %s', $index));
-        }
-
-        foreach (['telemetry', 'events', 'raw_payloads'] as $table) {
-            $this->pdo->exec(sprintf('DROP TABLE IF EXISTS %s', $table));
-        }
-    }
-
-    private function migrateModelCatalogColumns(): void
-    {
-        $modelColumns = $this->tableColumnNames('models');
-        if (in_array('model', $modelColumns, true)) {
-            $this->pdo->exec("UPDATE models SET internal_model = model WHERE trim(COALESCE(internal_model, '')) = ''");
-            $this->pdo->exec("UPDATE models SET commercial_name = model WHERE trim(COALESCE(commercial_name, '')) = ''");
-            try {
-                $this->pdo->exec('ALTER TABLE models DROP COLUMN model');
-            } catch (\Exception $e) {
-            }
-        }
-
-        if (in_array('device_type', $modelColumns, true)) {
-            $supplierColumns = $this->tableColumnNames('suppliers');
-            if (in_array('device_type', $supplierColumns, true)) {
-                $this->pdo->exec("
-                    UPDATE models
-                    SET device_type = (
-                        SELECT COALESCE(NULLIF(trim(suppliers.device_type), ''), 'watch')
-                        FROM suppliers
-                        WHERE suppliers.id = models.supplier_id
-                    )
-                    WHERE trim(COALESCE(device_type, '')) = '' OR device_type = 'watch'
-                ");
-            }
-
-            $this->pdo->exec("
-                UPDATE models
-                SET device_type = 'radar'
-                WHERE protocol = 'qinglanst' AND (trim(COALESCE(device_type, '')) = '' OR device_type = 'watch')
-            ");
-            $this->pdo->exec("
-                UPDATE models
-                SET device_type = 'ncs'
-                WHERE protocol = 'voerka-ncs' AND (trim(COALESCE(device_type, '')) = '' OR device_type = 'watch')
-            ");
-        }
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function tableColumnNames(string $table): array
-    {
-        $stmt = $this->pdo->query(sprintf('PRAGMA table_info(%s)', $table));
-        $columns = $stmt ? $stmt->fetchAll() : [];
-
-        return array_values(array_filter(array_map(
-            static fn (array $column): ?string => isset($column['name']) ? (string)$column['name'] : null,
-            $columns
-        )));
     }
 
     private function seedDefaults(): void

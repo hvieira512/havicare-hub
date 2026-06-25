@@ -4,14 +4,13 @@ namespace Tests\Unit\Dashboard;
 
 use Hub\Api\Routes\Devices;
 use Hub\Dashboard\DashboardDataAccess;
-use Hub\Dashboard\DashboardDatabase;
 use Hub\Dashboard\DashboardStore;
 use Hub\Registry\Whitelist;
-use PHPUnit\Framework\TestCase;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
+use Tests\Support\MysqlDashboardTestCase;
 
-final class DevicesApiTest extends TestCase
+final class DevicesApiTest extends MysqlDashboardTestCase
 {
     private string $whitelistPath;
 
@@ -129,7 +128,7 @@ final class DevicesApiTest extends TestCase
      */
     private function makeApi(): array
     {
-        $db = DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared'));
+        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
         $store = new DashboardStore(new InMemoryRedisClientForDevicesApi(), prefix: 'test:dashboard:devices-api');
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');

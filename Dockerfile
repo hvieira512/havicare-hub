@@ -7,14 +7,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg62-turbo-dev \
     libpng-dev \
     default-libmysqlclient-dev \
-    libsqlite3-dev \
     && docker-php-ext-configure gd --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         gd \
         sockets \
         pcntl \
         pdo_mysql \
-        pdo_sqlite \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

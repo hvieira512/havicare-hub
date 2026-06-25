@@ -37,7 +37,6 @@ composer server
 Database schemas:
 
 ```text
-database/schema.sql
 database/schema.mysql.sql
 ```
 
