@@ -161,15 +161,14 @@ function isFourPTouchSelection(supplier = els.deviceForm?.dataset?.supplier || '
     return supplierProtocol(supplier, state.summary.models) === 'four-p-touch' || supplier === '4P Touch';
 }
 
-function availableRequestsForSupplier(supplier, models = state.summary.models) {
-    const entry = models.find(model => model.supplier === supplier && Array.isArray(model.availableRequests) && model.availableRequests.length);
-    return Array.isArray(entry?.availableRequests) ? entry.availableRequests : [];
+function capabilitiesForSupplier(supplier, models = state.summary.models) {
+    const entry = models.find(model => model.supplier === supplier && Array.isArray(model.capabilities) && model.capabilities.length);
+    return Array.isArray(entry?.capabilities) ? entry.capabilities : [];
 }
 
-function capabilityGroupKey(command) {
-    const feature = commandFeature(command);
+function capabilityGroupKey(feature) {
     if (feature === 'location') return 'localization';
-    if (['heart_rate', 'blood_pressure', 'blood_oxygen', 'temperature', 'ecg', 'hrv', 'blood_sugar'].includes(feature)) {
+    if (['heart_rate', 'blood_pressure', 'blood_pressure_systolic', 'blood_pressure_diastolic', 'blood_oxygen', 'temperature', 'ecg', 'hrv', 'blood_sugar', 'breath_rate', 'ppg', 'rr_interval'].includes(feature)) {
         return 'vital_signs';
     }
     return 'other';
@@ -1781,8 +1780,8 @@ function syncCapabilitiesSelection() {
         || null;
 
     state.settingsModal.capabilityModelId = currentModel ? Number(currentModel.id) : null;
-    state.settingsModal.capabilityEnabledRequests = Array.isArray(currentModel?.enabledRequests)
-        ? [...currentModel.enabledRequests]
+    state.settingsModal.capabilityEnabledCapabilities = Array.isArray(currentModel?.enabledCapabilities)
+        ? [...currentModel.enabledCapabilities]
         : [];
 }
 
@@ -1796,7 +1795,7 @@ function renderCapabilitiesSection() {
         (!supplier || model.supplier === supplier)
     );
     const selectedModel = filteredModels.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId)) || null;
-    const enabled = new Set(state.settingsModal.capabilityEnabledRequests || []);
+    const enabled = new Set(state.settingsModal.capabilityEnabledCapabilities || []);
 
     renderButtonGroup(
         els.capabilityDeviceTypeButtons,
@@ -1833,7 +1832,7 @@ function renderCapabilitiesSection() {
         els.capabilityModelName.textContent = 'Modelo';
     }
 
-    const requests = Array.isArray(selectedModel?.availableRequests) ? selectedModel.availableRequests : [];
+    const features = Array.isArray(selectedModel?.capabilities) ? selectedModel.capabilities : [];
     els.capabilitySelectionEmpty.classList.toggle('d-none', !!selectedModel);
     els.capabilityEditor.classList.toggle('d-none', !selectedModel);
     if (!selectedModel) {
@@ -1844,45 +1843,27 @@ function renderCapabilitiesSection() {
 
     els.capabilityTitle.textContent = modelCommercialName(selectedModel);
     els.capabilitySubtitle.textContent = `${selectedModel.supplier} · ${selectedModel.protocol || 'sem protocolo'}`;
-    els.capabilitySummary.textContent = `${enabled.size}/${requests.length} ativos`;
+    els.capabilitySummary.textContent = `${enabled.size}/${features.length} ativos`;
 
     const groups = new Map();
-    for (const request of requests) {
-        const key = capabilityGroupKey(request);
-        groups.set(key, [...(groups.get(key) || []), request]);
+    for (const feature of features) {
+        const key = capabilityGroupKey(feature);
+        groups.set(key, [...(groups.get(key) || []), feature]);
     }
 
     els.capabilityGroups.innerHTML = [...groups.entries()].map(([group, entries]) => `
         <section class="border rounded bg-body-tertiary p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="h6 mb-0">${esc(capabilityGroupLabel(group))}</h3>
-                <span class="small text-secondary">${entries.filter(entry => enabled.has(String(entry.command || ''))).length}/${entries.length} ativos</span>
+                <span class="small text-secondary">${entries.filter(f => enabled.has(f)).length}/${entries.length} ativos</span>
             </div>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead>
-                        <tr><th>Ativo</th><th>Pedido</th><th>Comando nativo</th><th>Resposta esperada</th></tr>
-                    </thead>
-                    <tbody>
-                        ${entries.map(entry => {
-                            const requestId = String(entry.id || entry.command || '');
-                            const command = String(entry.command || '');
-                            const reply = Array.isArray(entry.expectedReplyTypes) && entry.expectedReplyTypes.length
-                                ? entry.expectedReplyTypes.map(type => `<span class="badge text-bg-light border me-1">${esc(type)}</span>`).join('')
-                                : '<span class="text-secondary small">Sem resposta esperada</span>';
-                            return `
-                                <tr>
-                                    <td><input class="form-check-input" type="checkbox" data-action="toggleCapabilityRequest" data-request-id="${esc(requestId)}" ${enabled.has(requestId) ? 'checked' : ''}></td>
-                                    <td>
-                                        <div class="fw-semibold">${esc(commandLabel(entry) || command)}</div>
-                                        <div class="small text-secondary">${esc(entry.label || '')}</div>
-                                    </td>
-                                    <td><code>${esc(command)}</code></td>
-                                    <td>${reply}</td>
-                                </tr>`;
-                        }).join('')}
-                    </tbody>
-                </table>
+            <div class="d-flex flex-column gap-2">
+                ${entries.map(feature => `
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequest" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? 'checked' : ''}>
+                            <label class="form-check-label" for="cap-${esc(feature)}">${esc(featureLabel(feature))}</label>
+                        </div>`
+                ).join('')}
             </div>
         </section>
     `).join('');
@@ -1924,9 +1905,10 @@ async function saveCapabilities() {
     body.append('internalModel', String(modelInternalName(model)));
     body.append('commercialName', String(modelCommercialName(model)));
     body.append('deviceType', String(modelDeviceType(model)));
-    body.append('enabledRequestsConfigured', '1');
-    for (const command of state.settingsModal.capabilityEnabledRequests || []) {
-        body.append('enabledRequests[]', String(command));
+    body.append('protocol', String(model.protocol || ''));
+    body.append('enabledCapabilitiesConfigured', '1');
+    for (const feature of state.settingsModal.capabilityEnabledCapabilities || []) {
+        body.append('enabledCapabilities[]', String(feature));
     }
 
     const result = await api.saveModel(model.id, body);
@@ -2481,16 +2463,16 @@ function handleCapabilityGroupsChange(event) {
     const checkbox = event.target.closest('[data-action="toggleCapabilityRequest"]');
     if (!checkbox) return;
 
-    const requestId = String(checkbox.dataset.requestId || checkbox.dataset.command || '');
-    if (!requestId) return;
+    const feature = String(checkbox.dataset.feature || '');
+    if (!feature) return;
 
-    const enabled = new Set(state.settingsModal.capabilityEnabledRequests || []);
+    const enabled = new Set(state.settingsModal.capabilityEnabledCapabilities || []);
     if (checkbox.checked) {
-        enabled.add(requestId);
+        enabled.add(feature);
     } else {
-        enabled.delete(requestId);
+        enabled.delete(feature);
     }
-    state.settingsModal.capabilityEnabledRequests = [...enabled];
+    state.settingsModal.capabilityEnabledCapabilities = [...enabled];
     renderCapabilitiesSection();
 }
 

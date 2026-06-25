@@ -20,14 +20,14 @@ CREATE TABLE IF NOT EXISTS models (
     CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS model_request_capabilities (
+CREATE TABLE IF NOT EXISTS model_capabilities (
     model_id BIGINT UNSIGNED NOT NULL,
-    downlink_command VARCHAR(191) NOT NULL,
+    feature VARCHAR(191) NOT NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at VARCHAR(32) NOT NULL,
     updated_at VARCHAR(32) NOT NULL,
-    PRIMARY KEY (model_id, downlink_command),
-    CONSTRAINT fk_model_request_capabilities_model FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
+    PRIMARY KEY (model_id, feature),
+    CONSTRAINT fk_model_capabilities_model FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS whitelist (

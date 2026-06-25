@@ -240,14 +240,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
     {
         $commands = DeviceCommandCatalog::commandsForProtocol('four-p-touch');
 
-        self::assertCount(5, $commands);
+        self::assertCount(4, $commands);
         self::assertSame('CR', $commands[0]['command']);
         self::assertSame('fourPHeartRate', $commands[1]['id']);
         self::assertSame('hrtstart', $commands[1]['command']);
-        self::assertSame('fourPSystolicPressure', $commands[2]['id']);
-        self::assertSame('fourPDiastolicPressure', $commands[3]['id']);
-        self::assertSame('fourPBodyTemperature', $commands[4]['id']);
+        self::assertSame('fourPBloodPressure', $commands[2]['id']);
+        self::assertSame('fourPBodyTemperature', $commands[3]['id']);
         self::assertContains('bphrt', $commands[1]['expectedReplyTypes']);
-        self::assertContains('btemp2', $commands[4]['expectedReplyTypes']);
+        self::assertContains('bphrt', $commands[2]['expectedReplyTypes']);
+        self::assertContains('btemp2', $commands[3]['expectedReplyTypes']);
     }
 }

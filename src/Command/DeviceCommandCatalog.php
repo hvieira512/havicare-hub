@@ -47,6 +47,37 @@ final class DeviceCommandCatalog
         return null;
     }
 
+    /**
+     * @return list<string>
+     */
+    public static function featuresForProtocol(string $protocol): array
+    {
+        $features = [];
+        foreach (self::commandsForProtocol($protocol) as $entry) {
+            if ((string)($entry['kind'] ?? '') !== 'request') {
+                continue;
+            }
+            $feature = trim((string)($entry['feature'] ?? ''));
+            if ($feature !== '') {
+                $features[$feature] = true;
+            }
+        }
+
+        return array_keys($features);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function commandsForFeature(string $protocol, string $feature): array
+    {
+        return array_values(array_filter(
+            self::commandsForProtocol($protocol),
+            static fn(array $entry): bool => (string)($entry['kind'] ?? '') === 'request'
+                && trim((string)($entry['feature'] ?? '')) === $feature
+        ));
+    }
+
     public static function requestForProtocol(string $protocol, string $requestId): ?array
     {
         foreach (self::commandsForProtocol($protocol) as $entry) {
@@ -88,13 +119,13 @@ final class DeviceCommandCatalog
             ['id' => 'dnBP', 'command' => 'dnBP', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['upBP', 'upBatch']],
             ['id' => 'dnBO', 'command' => 'dnBO', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['upBO', 'upBatch']],
             ['id' => 'dnTemperature', 'command' => 'dnTemperature', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['upBodyTemperature']],
-            ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'expectedReplyTypes' => ['upBreathe']],
+            ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'feature' => 'breath_rate', 'expectedReplyTypes' => ['upBreathe']],
             ['id' => 'dnLocation', 'command' => 'dnLocation', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['upLocation']],
             ['id' => 'dnUpSleep', 'command' => 'dnUpSleep', 'label' => 'Sleep data', 'icon' => 'fa-bed', 'kind' => 'request', 'feature' => 'sleep', 'expectedReplyTypes' => ['upSleep']],
             ['id' => 'dnECG', 'command' => 'dnECG', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['upECG']],
             ['id' => 'dnHRV', 'command' => 'dnHRV', 'label' => 'HRV', 'icon' => 'fa-chart-line', 'kind' => 'request', 'feature' => 'hrv', 'expectedReplyTypes' => ['upHRV']],
-            ['id' => 'dnPPG', 'command' => 'dnPPG', 'label' => 'PPG', 'icon' => 'fa-circle-nodes', 'kind' => 'request', 'expectedReplyTypes' => ['upPPG']],
-            ['id' => 'dnRR', 'command' => 'dnRR', 'label' => 'RR interval', 'icon' => 'fa-stopwatch', 'kind' => 'request', 'expectedReplyTypes' => ['upRR']],
+            ['id' => 'dnPPG', 'command' => 'dnPPG', 'label' => 'PPG', 'icon' => 'fa-circle-nodes', 'kind' => 'request', 'feature' => 'ppg', 'expectedReplyTypes' => ['upPPG']],
+            ['id' => 'dnRR', 'command' => 'dnRR', 'label' => 'RR interval', 'icon' => 'fa-stopwatch', 'kind' => 'request', 'feature' => 'rr_interval', 'expectedReplyTypes' => ['upRR']],
             ['id' => 'dnWeather', 'command' => 'dnWeather', 'label' => 'Weather', 'icon' => 'fa-cloud-sun', 'kind' => 'data', 'feature' => 'weather', 'expectedReplyTypes' => ['upWeather']],
         ];
     }
@@ -122,8 +153,7 @@ final class DeviceCommandCatalog
         return [
             ['id' => 'CR', 'command' => 'CR', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['CR', 'UD', 'UD2', 'UD_WCDMA', 'UD_LTE', 'AL', 'AL_WCDMA', 'AL_LTE']],
             ['id' => 'fourPHeartRate', 'command' => 'hrtstart', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
-            ['id' => 'fourPSystolicPressure', 'command' => 'hrtstart', 'label' => 'Systolic blood pressure', 'icon' => 'fa-heart-circle-bolt', 'kind' => 'request', 'feature' => 'blood_pressure_systolic', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
-            ['id' => 'fourPDiastolicPressure', 'command' => 'hrtstart', 'label' => 'Diastolic blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure_diastolic', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
+            ['id' => 'fourPBloodPressure', 'command' => 'hrtstart', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['hrtstart', 'bphrt'], 'data' => ['1']],
             ['id' => 'fourPBodyTemperature', 'command' => 'bodytemp2', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['bodytemp2', 'btemp2']],
         ];
     }

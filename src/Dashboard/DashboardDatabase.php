@@ -72,7 +72,8 @@ final class DashboardDatabase
 
         $this->bootstrapSchema();
         $this->seedDefaults();
-        $this->seedDefaultModelRequestCapabilities();
+        $this->migrateLegacyModelRequestCapabilities();
+        $this->seedDefaultModelCapabilities();
     }
 
     public function pdo(): PDO
@@ -121,7 +122,7 @@ final class DashboardDatabase
     private function ensureMysqlIndexes(): void
     {
         $this->ensureMysqlIndex('device_configurations', 'idx_device_configurations_imei', 'imei');
-        $this->ensureMysqlIndex('model_request_capabilities', 'idx_model_request_capabilities_model', 'model_id');
+        $this->ensureMysqlIndex('model_capabilities', 'idx_model_capabilities_model', 'model_id');
         $this->ensureMysqlIndex('api_users', 'idx_api_users_role_license', 'role, license_id');
         $this->ensureMysqlIndex('licenses', 'idx_licenses_company_id', 'company_id');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_type_license', 'device_type, license_id');
@@ -297,7 +298,64 @@ final class DashboardDatabase
         }
     }
 
-    private function seedDefaultModelRequestCapabilities(): void
+    private function migrateLegacyModelRequestCapabilities(): void
+    {
+        try {
+            $this->pdo->query('SELECT COUNT(*) FROM model_request_capabilities');
+        } catch (\Exception $e) {
+            return;
+        }
+
+        $count = $this->pdo->query('SELECT COUNT(*) FROM model_capabilities')->fetchColumn();
+        if ($count > 0) {
+            return;
+        }
+
+        $rows = $this->pdo->query('
+            SELECT mrc.model_id, mrc.downlink_command, mrc.enabled, mrc.created_at, mrc.updated_at,
+                   m.protocol
+            FROM model_request_capabilities mrc
+            JOIN models m ON m.id = mrc.model_id
+        ')->fetchAll();
+
+        if (!is_array($rows) || $rows === []) {
+            return;
+        }
+
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $insert = $this->pdo->prepare('
+            INSERT INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        ');
+
+        foreach ($rows as $row) {
+            $modelId = (int)($row['model_id'] ?? 0);
+            $commandId = (string)($row['downlink_command'] ?? '');
+            $protocol = (string)($row['protocol'] ?? '');
+            $enabled = (int)($row['enabled'] ?? 0);
+            $createdAt = (string)($row['created_at'] ?? $now);
+
+            if ($modelId <= 0 || $commandId === '' || $protocol === '') {
+                continue;
+            }
+
+            $entry = DeviceCommandCatalog::requestForProtocol($protocol, $commandId);
+            $feature = (string)($entry['feature'] ?? '');
+            if ($feature === '') {
+                continue;
+            }
+
+            $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND feature = ?');
+            $existing->execute([$modelId, $feature]);
+            if ((int)$existing->fetchColumn() > 0) {
+                continue;
+            }
+
+            $insert->execute([$modelId, $feature, $enabled, $createdAt, $now]);
+        }
+    }
+
+    private function seedDefaultModelCapabilities(): void
     {
         $models = $this->pdo
             ->query('SELECT id, protocol FROM models ORDER BY id')
@@ -316,38 +374,18 @@ final class DashboardDatabase
                 continue;
             }
 
-            foreach ($this->requestCommandsForProtocol($protocol) as $command) {
-                $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_request_capabilities WHERE model_id = ? AND downlink_command = ?');
-                $existing->execute([$modelId, $command]);
+            foreach (DeviceCommandCatalog::featuresForProtocol($protocol) as $feature) {
+                $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND feature = ?');
+                $existing->execute([$modelId, $feature]);
                 if ((int)$existing->fetchColumn() > 0) {
                     continue;
                 }
                 $insert = $this->pdo->prepare('
-                    INSERT INTO model_request_capabilities (model_id, downlink_command, enabled, created_at, updated_at)
+                    INSERT INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
                     VALUES (?, ?, 1, ?, ?)
                 ');
-                $insert->execute([$modelId, $command, $now, $now]);
+                $insert->execute([$modelId, $feature, $now, $now]);
             }
         }
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function requestCommandsForProtocol(string $protocol): array
-    {
-        $commands = [];
-        foreach (DeviceCommandCatalog::commandsForProtocol($protocol) as $entry) {
-            if ((string)($entry['kind'] ?? '') !== 'request') {
-                continue;
-            }
-            $command = trim((string)($entry['id'] ?? $entry['command'] ?? ''));
-            if ($command === '') {
-                continue;
-            }
-            $commands[] = $command;
-        }
-
-        return array_values(array_unique($commands));
     }
 }

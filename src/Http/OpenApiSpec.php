@@ -812,9 +812,10 @@ class OpenApiSpec
                     ],
                     'CommandRequest' => [
                         'type' => 'object',
-                        'required' => ['command'],
                         'properties' => [
                             'command' => ['type' => 'string', 'example' => 'dnHeartRate'],
+                            'requestId' => ['type' => 'string', 'example' => 'dnHeartRate'],
+                            'feature' => ['type' => 'string', 'example' => 'heart_rate'],
                         ],
                     ],
                     'CommandResponse' => [
@@ -822,6 +823,7 @@ class OpenApiSpec
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'sent'],
                             'command' => ['type' => 'object'],
+                            'commands' => ['type' => 'array', 'items' => ['type' => 'object']],
                         ],
                     ],
                     'AuthTokenResponse' => [
@@ -916,6 +918,8 @@ class OpenApiSpec
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'example' => '/images/wonlex.png'],
+                            'capabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'blood_pressure']],
+                            'enabledCapabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate']],
                         ],
                     ],
                     'ModelListResponse' => [
@@ -936,6 +940,8 @@ class OpenApiSpec
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'format' => 'binary'],
+                            'enabledCapabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
+                            'enabledCapabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate']],
                         ],
                     ],
                     'CompanyItem' => [

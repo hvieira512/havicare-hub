@@ -129,8 +129,10 @@ final class Devices
         $requestId = is_array($decoded)
             ? trim((string)($decoded['requestId'] ?? $decoded['command'] ?? ''))
             : '';
-        if ($requestId === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'requestId is required']];
+        $feature = is_array($decoded) ? trim((string)($decoded['feature'] ?? '')) : '';
+
+        if ($requestId === '' && $feature === '') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'requestId or feature is required']];
         }
 
         $device = $this->deviceSnapshot($imei);
@@ -138,6 +140,11 @@ final class Devices
         $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
         $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+
+        if ($feature !== '') {
+            return $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
+        }
+
         $entry = DeviceCommandCatalog::requestForProtocol($protocol, $requestId);
         $modelRow = $this->modelForSupplierAndName($supplier, $model);
         if ($entry === null) {
@@ -174,6 +181,49 @@ final class Devices
         $this->store->recordCommand($imei, $id, $record);
 
         return ['status' => $record['status'], 'command' => array_merge($record, ['id' => $id])];
+    }
+
+    private function sendFeatureCommands(string $imei, string $protocol, string $feature, array $metadata, array $device): array
+    {
+        $entries = DeviceCommandCatalog::commandsForFeature($protocol, $feature);
+        if ($entries === []) {
+            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
+        }
+
+        $commands = [];
+        foreach ($entries as $entry) {
+            $nativeCommand = (string)($entry['command'] ?? '');
+            if ($nativeCommand === '') {
+                continue;
+            }
+            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, ['fields' => $entry['data'] ?? []], [
+                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+            ]);
+            $id = bin2hex(random_bytes(8));
+            $status = $this->hub->submitDownlink($imei, $bytes);
+            $record = [
+                'status' => $status,
+                'imei' => $imei,
+                'protocol' => $protocol,
+                'requestId' => (string)($entry['id'] ?? $nativeCommand),
+                'feature' => $feature,
+                'nativeType' => $nativeCommand,
+                'label' => (string)($entry['label'] ?? $nativeCommand),
+                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            ];
+            if ($status === 'sent') {
+                $record['status'] = 'waiting';
+                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+            }
+            if ($status === 'dropped') {
+                $record['error'] = 'delivery_failed';
+            }
+            $this->store->recordCommand($imei, $id, $record);
+            $commands[] = array_merge($record, ['id' => $id]);
+        }
+
+        return ['status' => 'sent', 'commands' => $commands];
     }
 
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
@@ -458,12 +508,11 @@ final class Devices
             return [];
         }
 
-        $enabled = array_flip($this->db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id']));
+        $enabled = array_flip($this->db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']));
 
         return array_values(array_filter($commands, static function (array $entry) use ($enabled): bool {
-            $requestId = (string)($entry['id'] ?? $entry['command'] ?? '');
-            $nativeCommand = (string)($entry['command'] ?? '');
-            return isset($enabled[$requestId]) || ($nativeCommand !== '' && isset($enabled[$nativeCommand]));
+            $feature = (string)($entry['feature'] ?? '');
+            return $feature !== '' && isset($enabled[$feature]);
         }));
     }
 

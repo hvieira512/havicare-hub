@@ -35,7 +35,7 @@ final class DevicesApiTest extends TestCase
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
-        $db->modelRequestCapabilities->replaceForModelId((int)$model['id'], ['BPXL', 'BP16']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'location']);
 
         $response = $api->show('861265061009822');
 
@@ -50,7 +50,7 @@ final class DevicesApiTest extends TestCase
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
-        $db->modelRequestCapabilities->replaceForModelId((int)$model['id'], ['BP16']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['location']);
 
         $response = $api->command('861265061009822', json_encode(['command' => 'BPXL'], JSON_THROW_ON_ERROR));
 
@@ -89,8 +89,7 @@ final class DevicesApiTest extends TestCase
         $response = $api->show('868017032159118');
 
         self::assertContains('fourPHeartRate', array_column($response['commands'], 'id'));
-        self::assertContains('fourPSystolicPressure', array_column($response['commands'], 'id'));
-        self::assertContains('fourPDiastolicPressure', array_column($response['commands'], 'id'));
+        self::assertContains('fourPBloodPressure', array_column($response['commands'], 'id'));
         self::assertContains('fourPBodyTemperature', array_column($response['commands'], 'id'));
     }
 

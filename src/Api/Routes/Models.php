@@ -71,7 +71,7 @@ final class Models
             )),
         ];
 
-        $enabledByModel = $this->db->modelRequestCapabilities->enabledCommandsForModelIds(array_map(
+        $enabledByModel = $this->db->modelCapabilities->enabledFeaturesForModelIds(array_map(
             static fn(array $model): int => (int)($model['id'] ?? 0),
             $models
         ));
@@ -87,8 +87,8 @@ final class Models
                 'deviceType' => (string)($model['device_type'] ?? 'watch'),
                 'protocol' => $protocol,
                 'image' => (string)($model['image'] ?? ''),
-                'availableRequests' => $this->requestCatalogForProtocol($protocol),
-                'enabledRequests' => $enabledByModel[$modelId] ?? [],
+                'capabilities' => \Hub\Command\DeviceCommandCatalog::featuresForProtocol($protocol),
+                'enabledCapabilities' => $enabledByModel[$modelId] ?? [],
             ];
         }, $models);
 
@@ -114,8 +114,8 @@ final class Models
             'protocol' => $protocol,
             'image' => $imagePath !== '' ? $imagePath : null,
             'configurationCatalog' => DeviceConfigurationCatalog::configsForProtocol($protocol),
-            'availableRequests' => $this->requestCatalogForProtocol($protocol),
-            'enabledRequests' => $this->db->modelRequestCapabilities->enabledCommandsForModelId($id),
+            'capabilities' => \Hub\Command\DeviceCommandCatalog::featuresForProtocol($protocol),
+            'enabledCapabilities' => $this->db->modelCapabilities->enabledFeaturesForModelId($id),
         ];
     }
 
@@ -130,7 +130,7 @@ final class Models
         $commercialName = (string)$payload['commercial_name'];
         $deviceType = (string)$payload['device_type'];
         $protocol = (string)$payload['protocol'];
-        $enabledRequests = $payload['enabled_requests'];
+        $enabledCapabilities = $payload['enabled_capabilities'];
 
         $imagePath = $this->storeModelImage($request->getUploadedFiles()['image'] ?? null);
         if (is_array($imagePath)) {
@@ -146,7 +146,7 @@ final class Models
         $supplier = $this->db->suppliers->findById($supplierId);
         $stored = is_array($supplier) ? $this->db->models->find((string)$supplier['name'], $internalModel) : null;
         if (is_array($stored)) {
-            $this->db->modelRequestCapabilities->replaceForModelId((int)$stored['id'], $enabledRequests);
+            $this->db->modelCapabilities->replaceForModelId((int)$stored['id'], $enabledCapabilities);
         }
         if (is_string($imagePath) && $previousImagePath !== null && $previousImagePath !== $imagePath) {
             $this->deleteStoredModelImage($previousImagePath);
@@ -171,7 +171,7 @@ final class Models
         $commercialName = (string)$payload['commercial_name'];
         $deviceType = (string)$payload['device_type'];
         $protocol = (string)$payload['protocol'];
-        $enabledRequests = $payload['enabled_requests'];
+        $enabledCapabilities = $payload['enabled_capabilities'];
         if ($this->db->models->existsForDifferentId($id, $supplierId, $internalModel)) {
             return ['error' => ['code' => 'model_exists', 'message' => 'Another model with this supplier and model name already exists']];
         }
@@ -182,7 +182,7 @@ final class Models
         }
 
         $this->db->models->update($id, $supplierId, $internalModel, $commercialName, $deviceType, $protocol, $imagePath);
-        $this->db->modelRequestCapabilities->replaceForModelId($id, $enabledRequests);
+        $this->db->modelCapabilities->replaceForModelId($id, $enabledCapabilities);
         if (is_string($imagePath)) {
             $this->deleteStoredModelImage((string)($current['image_path'] ?? ''));
         }
@@ -286,36 +286,16 @@ final class Models
             }
         }
 
-        $availableRequests = $this->requestCatalogForProtocol($protocol);
-        $availableCommandIds = [];
-        $requestAliases = [];
-        foreach ($availableRequests as $entry) {
-            $requestId = (string)($entry['id'] ?? $entry['command'] ?? '');
-            $nativeCommand = (string)($entry['command'] ?? '');
-            if ($requestId === '') {
-                continue;
-            }
-            $availableCommandIds[] = $requestId;
-            $requestAliases[$requestId] = $requestId;
-            if ($nativeCommand !== '') {
-                $requestAliases[$nativeCommand] = $requestId;
-            }
-        }
-        $hasEnabledRequestsSelection = array_key_exists('enabledRequestsConfigured', $decoded)
-            || array_key_exists('enabledRequests', $decoded)
-            || array_key_exists('enabledRequests[]', $decoded);
-        $enabledRequests = $this->requestValues($decoded['enabledRequests'] ?? $decoded['enabledRequests[]'] ?? null);
-        if (!$hasEnabledRequestsSelection) {
-            $enabledRequests = $availableCommandIds;
+        $availableFeatures = \Hub\Command\DeviceCommandCatalog::featuresForProtocol($protocol);
+        $hasEnabledCapabilitiesSelection = array_key_exists('enabledCapabilitiesConfigured', $decoded)
+            || array_key_exists('enabledCapabilities', $decoded)
+            || array_key_exists('enabledCapabilities[]', $decoded);
+        $enabledCapabilities = $this->featureValues($decoded['enabledCapabilities'] ?? $decoded['enabledCapabilities[]'] ?? null);
+        if (!$hasEnabledCapabilitiesSelection) {
+            $enabledCapabilities = $availableFeatures;
         } else {
-            $normalized = [];
-            foreach ($enabledRequests as $command) {
-                $requestId = $requestAliases[$command] ?? null;
-                if ($requestId !== null) {
-                    $normalized[$requestId] = true;
-                }
-            }
-            $enabledRequests = array_keys($normalized);
+            $featureSet = array_flip($availableFeatures);
+            $enabledCapabilities = array_values(array_filter($enabledCapabilities, static fn(string $f): bool => isset($featureSet[$f])));
         }
 
         return [
@@ -324,7 +304,7 @@ final class Models
             'commercial_name' => $commercialName,
             'device_type' => $deviceType,
             'protocol' => $protocol,
-            'enabled_requests' => $enabledRequests,
+            'enabled_capabilities' => $enabledCapabilities,
         ];
     }
 
@@ -353,20 +333,9 @@ final class Models
     }
 
     /**
-     * @return list<array<string, mixed>>
-     */
-    private function requestCatalogForProtocol(string $protocol): array
-    {
-        return array_values(array_filter(
-            \Hub\Command\DeviceCommandCatalog::commandsForProtocol($protocol),
-            static fn(array $entry): bool => (string)($entry['kind'] ?? '') === 'request'
-        ));
-    }
-
-    /**
      * @return list<string>
      */
-    private function requestValues(mixed $value): array
+    private function featureValues(mixed $value): array
     {
         if (is_string($value)) {
             $value = [$value];
@@ -377,11 +346,11 @@ final class Models
 
         $normalized = [];
         foreach ($value as $item) {
-            $command = trim((string)$item);
-            if ($command === '') {
+            $feature = trim((string)$item);
+            if ($feature === '') {
                 continue;
             }
-            $normalized[$command] = true;
+            $normalized[$feature] = true;
         }
 
         return array_keys($normalized);

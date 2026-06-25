@@ -37,7 +37,7 @@ ob_start();
                     <div class="form-label mb-0">Pedidos disponíveis</div>
                     <span id="modelRequestSummary" class="small text-secondary"></span>
                 </div>
-                <div id="modelRequestCapabilities" class="border rounded bg-body-tertiary p-3 vstack gap-2"></div>
+                <div id="modelCapabilities" class="border rounded bg-body-tertiary p-3 vstack gap-2"></div>
             </div>
             <div class="d-flex justify-content-end gap-2 mt-auto">
                 <button id="resetModelBtn" type="button" class="btn btn-outline-secondary">Cancelar</button>

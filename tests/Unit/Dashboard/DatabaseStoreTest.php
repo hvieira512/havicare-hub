@@ -23,8 +23,8 @@ final class DatabaseStoreTest extends TestCase
             self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
             self::assertSame('watch', $model['device_type'] ?? null);
             self::assertSame(
-                ['BP16', 'BP87', 'BPXL', 'BPXT', 'BPXY', 'BPXZ'],
-                $db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id'])
+                ['blood_oxygen', 'blood_pressure', 'heart_rate', 'location', 'temperature'],
+                $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
             );
 
             $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($path));
@@ -36,15 +36,15 @@ final class DatabaseStoreTest extends TestCase
             self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
             self::assertSame('watch', $model['device_type'] ?? null);
             self::assertSame(
-                ['BP16', 'BP87', 'BPXL', 'BPXT', 'BPXY', 'BPXZ'],
-                $db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id'])
+                ['blood_oxygen', 'blood_pressure', 'heart_rate', 'location', 'temperature'],
+                $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
             );
         } finally {
             unlink($path);
         }
     }
 
-    public function testModelRequestCapabilitiesCanBeReplacedPerModel(): void
+    public function testModelCapabilitiesCanBeReplacedPerModel(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'hub-dashboard-');
         self::assertIsString($path);
@@ -54,11 +54,11 @@ final class DatabaseStoreTest extends TestCase
             $model = $db->models->find('Vivistar', 'L08 Pro');
             self::assertIsArray($model);
 
-            $db->modelRequestCapabilities->replaceForModelId((int)$model['id'], ['BPXL', 'BP16']);
+            $db->modelCapabilities->replaceForModelId((int)$model['id'], ['blood_pressure', 'heart_rate']);
 
             self::assertSame(
-                ['BP16', 'BPXL'],
-                $db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id'])
+                ['blood_pressure', 'heart_rate'],
+                $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
             );
         } finally {
             unlink($path);

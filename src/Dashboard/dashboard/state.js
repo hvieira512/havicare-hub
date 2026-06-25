@@ -39,15 +39,15 @@ export const state = {
     },
     modelModalSuppliers: [],
     modelModal: {
-        availableRequests: [],
-        enabledRequests: [],
+        capabilities: [],
+        enabledCapabilities: [],
     },
     settingsModal: {
         section: 'suppliers',
         capabilityDeviceType: '',
         capabilitySupplier: '',
         capabilityModelId: null,
-        capabilityEnabledRequests: [],
+        capabilityEnabledCapabilities: [],
         sectionLoaded: {
             suppliers: false,
             models: false,
