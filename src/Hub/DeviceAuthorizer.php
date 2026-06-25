@@ -21,16 +21,17 @@ class DeviceAuthorizer
         }
 
         return AuthorizationResult::allow(
-            (string)$resolved['imei'],
-            (string)$resolved['supplier'],
-            (string)$resolved['model'],
-            (string)($resolved['deviceType'] ?? 'watch'),
-            (string)($resolved['licenseId'] ?? '0'),
+            imei: (string)$resolved['imei'],
+            supplier: (string)$resolved['supplier'],
+            model: (string)$resolved['model'],
+            deviceType: (string)($resolved['deviceType'] ?? 'watch'),
+            licenseId: (string)($resolved['licenseId'] ?? '0'),
+            company: (string)($resolved['company'] ?? 'null'),
         );
     }
 
     /**
-     * @return array{supplier: string, model: string, deviceType: string, licenseId: string}
+     * @return array{supplier: string, model: string, deviceType: string, licenseId: string, company: string}
      */
     public function metadataFor(string $imei): array
     {
@@ -41,6 +42,7 @@ class DeviceAuthorizer
             'model' => (string)($metadata['model'] ?? ''),
             'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
             'licenseId' => (string)($metadata['licenseId'] ?? '0'),
+            'company' => (string)($metadata['company'] ?? 'null'),
         ];
     }
 }

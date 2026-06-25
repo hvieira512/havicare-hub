@@ -27,7 +27,7 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame(1, $failedPublisher->publishCalls);
         self::assertSame(1, $failedPublisher->disconnectCalls);
         self::assertSame(1, $reconnectedPublisher->publishCalls);
-        self::assertSame('prefix/0/watch/8800000015/raw', $reconnectedPublisher->lastTopic);
+        self::assertSame('prefix/null/0/watch/8800000015/raw', $reconnectedPublisher->lastTopic);
     }
 
     public function testEventsPublishWithQosOne(): void
@@ -39,7 +39,7 @@ final class HubMqttBridgeTest extends TestCase
             'type' => 'device.downlink.queued',
         ]);
 
-        self::assertSame('prefix/0/watch/8800000015/events', $publisher->lastTopic);
+        self::assertSame('prefix/null/0/watch/8800000015/events', $publisher->lastTopic);
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
     }
 }

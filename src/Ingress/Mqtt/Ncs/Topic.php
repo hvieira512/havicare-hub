@@ -1,8 +1,8 @@
 <?php
 
-namespace Hub\Ncs;
+namespace Hub\Ingress\Mqtt\Ncs;
 
-final class NcsTopic
+final class Topic
 {
     public function __construct(
         public readonly string $original,

@@ -6,13 +6,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     inotify-tools \
     libjpeg62-turbo-dev \
     libpng-dev \
-    libsqlite3-dev \
+    default-libmysqlclient-dev \
     && docker-php-ext-configure gd --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         gd \
         sockets \
         pcntl \
-        pdo_sqlite \
+        pdo_mysql \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

@@ -42,11 +42,12 @@ class ConnectionRegistry
         string $supplier,
         string $model,
         string $deviceType = 'watch',
-        string $licenseId = '0'
+        string $licenseId = '0',
+        string $company = 'null',
     ): DeviceSession
     {
         $current = $this->get($connection) ?? $this->open($connection);
-        $session = $current->authenticate($identity, $supplier, $model, $deviceType, $licenseId);
+        $session = $current->authenticate($identity, $supplier, $model, $deviceType, $licenseId, $company);
 
         $this->sessions[$connection->resourceId] = $session;
         $this->deviceMap[$identity->imei] = $connection;

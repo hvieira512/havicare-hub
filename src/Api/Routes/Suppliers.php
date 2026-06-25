@@ -21,32 +21,23 @@ final class Suppliers
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
-            'enabled' => $this->queryFilter($params, 'enabled', 'all'),
+            'enabled' => $this->queryFilter($params, 'enabled'),
         ];
         $suppliers = array_values(array_filter($this->db->suppliers->all(), static function (array $supplier) use ($filters): bool {
             $enabled = ((int)($supplier['enabled'] ?? 0)) === 1 ? 'true' : 'false';
 
-            return (($filters['enabled'] ?? 'all') === 'all' || $enabled === $filters['enabled']);
+            return (($filters['enabled'] ?? null) === null || $enabled === $filters['enabled']);
         }));
-
-        return $this->collectionResponse($suppliers, $page, $limit, $filters, [
+        $available = [
             'enabled' => ['true', 'false'],
-        ]);
+        ];
+
+        return $this->collectionResponse($suppliers, $page, $limit, $filters, $available);
     }
 
     public function create(string $body): array
     {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-        $name = trim((string)($decoded['name'] ?? ''));
-        if ($name === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
-        }
-        $id = $this->db->suppliers->create($name);
-
-        return ['status' => 'ok', 'id' => $id];
+        return ['error' => ['code' => 'read_only', 'message' => 'Suppliers are defined in code and cannot be created through the API']];
     }
 
     public function update(int $id, string $body): array
@@ -55,19 +46,14 @@ final class Suppliers
         if (!is_array($decoded)) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
-        $newName = isset($decoded['name']) ? trim((string)$decoded['name']) : null;
         $enabled = array_key_exists('enabled', $decoded) ? (bool)$decoded['enabled'] : null;
-        if ($newName !== null && $newName === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'name cannot be empty']];
-        }
         if ($this->db->suppliers->findById($id) === null) {
             return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier not found']];
         }
-        if ($newName !== null) {
-            $this->db->suppliers->rename($id, $newName);
-        }
         if ($enabled !== null) {
             $this->db->suppliers->setEnabled($id, $enabled);
+        } else {
+            return ['error' => ['code' => 'read_only', 'message' => 'Only toggling enabled is allowed; supplier properties are defined in code']];
         }
 
         return ['status' => 'ok'];
@@ -75,16 +61,6 @@ final class Suppliers
 
     public function delete(int $id): array
     {
-        $supplier = $this->db->suppliers->findById($id);
-        if ($supplier === null) {
-            return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier not found']];
-        }
-        $count = $this->db->suppliers->countModels($id);
-        if ($count > 0) {
-            return ['error' => ['code' => 'supplier_in_use', 'message' => "Cannot delete supplier '{$supplier['name']}': {$count} model(s) reference it"]];
-        }
-        $this->db->suppliers->delete($id);
-
-        return ['status' => 'ok'];
+        return ['error' => ['code' => 'read_only', 'message' => 'Suppliers are defined in code and cannot be deleted through the API']];
     }
 }

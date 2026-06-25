@@ -8,21 +8,19 @@ use GuzzleHttp\Psr7\UploadedFile;
 use Hub\Api\Routes\Models;
 use Hub\Dashboard\ApiTokenStore;
 use Hub\Dashboard\DashboardDataAccess;
-use Hub\Dashboard\DashboardDatabase;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
 use Hub\Registry\Whitelist;
-use PHPUnit\Framework\TestCase;
+use Tests\Support\MysqlDashboardTestCase;
 
-final class DashboardHttpServerTest extends TestCase
+final class DashboardHttpServerTest extends MysqlDashboardTestCase
 {
     private string $whitelistPath;
-    private string $databasePath;
 
     protected function setUp(): void
     {
+        parent::setUp();
         $this->whitelistPath = sys_get_temp_dir() . '/hub-dashboard-http-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        $this->databasePath = sys_get_temp_dir() . '/hub-dashboard-http-db-' . bin2hex(random_bytes(4)) . '.sqlite';
         file_put_contents($this->whitelistPath, json_encode([
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001'],
             '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002'],
@@ -34,11 +32,7 @@ final class DashboardHttpServerTest extends TestCase
         if (is_file($this->whitelistPath)) {
             unlink($this->whitelistPath);
         }
-        foreach ([$this->databasePath, $this->databasePath . '-shm', $this->databasePath . '-wal'] as $path) {
-            if (is_file($path)) {
-                unlink($path);
-            }
-        }
+        parent::tearDown();
     }
 
     public function testDashboardPageRendersPhpComponentsRepeatedly(): void
@@ -68,7 +62,7 @@ final class DashboardHttpServerTest extends TestCase
         $bytes = (string)ob_get_clean();
 
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
-        $api = new Models(DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared')));
+        $api = new Models(DashboardDataAccess::fromDatabase($this->createDashboardDatabase()));
         $method = new \ReflectionMethod(Models::class, 'storeModelImage');
 
         $route = $method->invoke($api, $upload);
@@ -232,7 +226,7 @@ final class DashboardHttpServerTest extends TestCase
         $bytes = $this->insertPngChunk((string)ob_get_clean(), 'iCCP', "profile\0\0invalid-profile");
 
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
-        $api = new Models(DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared')));
+        $api = new Models(DashboardDataAccess::fromDatabase($this->createDashboardDatabase()));
         $method = new \ReflectionMethod(Models::class, 'storeModelImage');
 
         $route = $method->invoke($api, $upload);
@@ -261,7 +255,7 @@ final class DashboardHttpServerTest extends TestCase
     private function makeServer(): DashboardHttpServer
     {
         $redis = new InMemoryRedisClientForDevicesApi();
-        $db = DashboardDataAccess::fromDatabase(new DashboardDatabase($this->databasePath));
+        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
         $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);

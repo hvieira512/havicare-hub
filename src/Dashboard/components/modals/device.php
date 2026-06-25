@@ -37,16 +37,25 @@ ob_start();
                                     <div class="form-label">Modelo</div>
                                     <div id="deviceModelButtons" class="btn-group flex-wrap" role="group"></div>
                                 </div>
-                                <div>
+                                <div id="deviceDeviceIdRow" class="d-none">
                                     <label for="deviceDeviceId" class="form-label" id="deviceDeviceIdLabel">Device ID</label>
                                     <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
                                     <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                 </div>
                                 <div>
-                                    <label for="deviceLicenseId" class="form-label">Licença</label>
-                                    <input type="text" class="form-control" id="deviceLicenseId" value="0">
-                                    <div class="form-text">Deixe <code>0</code> ou vazio para dispositivos sem licença atribuída.</div>
+                                    <label for="deviceCompanySelect" class="form-label">Empresa</label>
+                                    <select class="form-select" id="deviceCompanySelect">
+                                        <option value="">Sem empresa</option>
+                                    </select>
                                 </div>
+                                <input type="hidden" id="deviceCompany" value="">
+                                <div>
+                                    <label for="deviceLicenseSelect" class="form-label">Licença</label>
+                                    <select class="form-select" id="deviceLicenseSelect" disabled>
+                                        <option value="0">Nenhuma</option>
+                                    </select>
+                                </div>
+                                <input type="hidden" id="deviceLicenseId" value="0">
                                 <div id="deviceImeiRow">
                                     <label for="deviceImei" class="form-label">IMEI</label>
                                     <input type="text" class="form-control" id="deviceImei" required>

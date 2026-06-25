@@ -43,6 +43,9 @@ export const featureLabel = type => ({
     ecg: 'ECG',
     hrv: 'VFC',
     weather: 'Meteorologia',
+    breath_rate: 'Frequência respiratória',
+    ppg: 'PPG',
+    rr_interval: 'Intervalo RR',
     device_config: 'Configuração',
     'ncs.event': 'Chamada de Enfermeiros',
 }[type] || titleize(type));

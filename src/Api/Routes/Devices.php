@@ -34,39 +34,68 @@ final class Devices
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, 5);
         $filters = [
-            'deviceType' => $this->queryFilter($params, 'deviceType', 'all'),
-            'licenseId' => $this->queryFilter($params, 'licenseId', 'all'),
-            'supplier' => $this->queryFilter($params, 'supplier', 'all'),
-            'model' => $this->queryFilter($params, 'model', 'all'),
+            'deviceType' => $this->queryFilter($params, 'deviceType'),
+            'licenseId' => $this->queryFilter($params, 'licenseId'),
+            'supplier' => $this->queryFilter($params, 'supplier'),
+            'model' => $this->queryFilter($params, 'model'),
             'q' => $this->queryFilter($params, 'q', ''),
         ];
-        $devices = $this->scopeDevices($this->store->devices(), $auth);
-        $filtered = $this->filterDevices($devices, $filters);
-        $available = [
-            'deviceType' => $this->uniqueValues(array_map(
-                static fn (array $device): string => DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch')),
-                $this->filterDevicesForOptions($devices, $filters, 'deviceType')
-            )),
-            'licenseId' => $this->uniqueValues(array_map(
-                static fn (array $device): string => DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0')),
-                $this->filterDevicesForOptions($devices, $filters, 'licenseId')
-            )),
-            'supplier' => $this->uniqueValues(array_map(
-                static fn (array $device): string => trim((string)($device['supplier'] ?? '')),
-                $this->filterDevicesForOptions($devices, $filters, 'supplier')
-            )),
-            'model' => $this->uniqueValues(array_map(
-                static fn (array $device): string => trim((string)($device['model'] ?? '')),
-                $this->filterDevicesForOptions($devices, $filters, 'model')
-            )),
-        ];
+        $licenseScope = $auth !== null && !$auth->isAdmin() ? $auth->licenseId : null;
+        $result = $this->db->whitelist->listPage($filters, $page, $limit, $licenseScope);
+        if ((int)$result['total'] === 0) {
+            $devices = $this->scopeDevices($this->store->devices(), $auth);
+            $filtered = $this->filterDevices($devices, $filters);
+            $available = [
+                'deviceType' => $this->uniqueValues(array_map(
+                    static fn (array $device): string => DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch')),
+                    $this->filterDevicesForOptions($devices, $filters, 'deviceType')
+                )),
+                'licenseId' => $this->uniqueValues(array_map(
+                    static fn (array $device): string => DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0')),
+                    $this->filterDevicesForOptions($devices, $filters, 'licenseId')
+                )),
+                'supplier' => $this->uniqueValues(array_map(
+                    static fn (array $device): string => trim((string)($device['supplier'] ?? '')),
+                    $this->filterDevicesForOptions($devices, $filters, 'supplier')
+                )),
+                'model' => $this->uniqueValues(array_map(
+                    static fn (array $device): string => trim((string)($device['model'] ?? '')),
+                    $this->filterDevicesForOptions($devices, $filters, 'model')
+                )),
+                'company' => $this->uniqueValues(array_map(
+                    static fn (array $device): string => trim((string)($device['company'] ?? 'null')),
+                    $this->filterDevicesForOptions($devices, $filters, 'company')
+                )),
+            ];
 
-        return $this->collectionResponse($filtered, $page, $limit, $filters, $available);
+            return $this->collectionResponse($filtered, $page, $limit, $filters, $available);
+        }
+
+        $runtimeStates = $this->store->runtimeStates(array_map(
+            static fn (array $device): string => (string)($device['imei'] ?? ''),
+            $result['items']
+        ));
+        $items = array_map(fn (array $device): array => $this->overlayRuntimeState($device, $runtimeStates), $result['items']);
+        $totalPages = max(1, (int)ceil(((int)$result['total']) / max(1, $limit)));
+
+        return [
+            'data' => $items,
+            'pagination' => [
+                'limit' => $limit,
+                'page' => min(max(1, $page), $totalPages),
+                'total_pages' => $totalPages,
+                'total' => (int)$result['total'],
+            ],
+            'filters' => [
+                'applied' => $filters,
+                'available' => $result['available'],
+            ],
+        ];
     }
 
     public function show(string $imei, ?ApiAuthContext $auth = null): array
     {
-        $device = $this->store->device($imei);
+        $device = $this->deviceSnapshot($imei);
         if (!$this->canAccessDevice($imei, $auth, $device)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
@@ -100,15 +129,22 @@ final class Devices
         $requestId = is_array($decoded)
             ? trim((string)($decoded['requestId'] ?? $decoded['command'] ?? ''))
             : '';
-        if ($requestId === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'requestId is required']];
+        $feature = is_array($decoded) ? trim((string)($decoded['feature'] ?? '')) : '';
+
+        if ($requestId === '' && $feature === '') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'requestId or feature is required']];
         }
 
-        $device = $this->store->device($imei);
+        $device = $this->deviceSnapshot($imei);
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
         $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+
+        if ($feature !== '') {
+            return $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
+        }
+
         $entry = DeviceCommandCatalog::requestForProtocol($protocol, $requestId);
         $modelRow = $this->modelForSupplierAndName($supplier, $model);
         if ($entry === null) {
@@ -145,6 +181,49 @@ final class Devices
         $this->store->recordCommand($imei, $id, $record);
 
         return ['status' => $record['status'], 'command' => array_merge($record, ['id' => $id])];
+    }
+
+    private function sendFeatureCommands(string $imei, string $protocol, string $feature, array $metadata, array $device): array
+    {
+        $entries = DeviceCommandCatalog::commandsForFeature($protocol, $feature);
+        if ($entries === []) {
+            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
+        }
+
+        $commands = [];
+        foreach ($entries as $entry) {
+            $nativeCommand = (string)($entry['command'] ?? '');
+            if ($nativeCommand === '') {
+                continue;
+            }
+            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, ['fields' => $entry['data'] ?? []], [
+                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+            ]);
+            $id = bin2hex(random_bytes(8));
+            $status = $this->hub->submitDownlink($imei, $bytes);
+            $record = [
+                'status' => $status,
+                'imei' => $imei,
+                'protocol' => $protocol,
+                'requestId' => (string)($entry['id'] ?? $nativeCommand),
+                'feature' => $feature,
+                'nativeType' => $nativeCommand,
+                'label' => (string)($entry['label'] ?? $nativeCommand),
+                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            ];
+            if ($status === 'sent') {
+                $record['status'] = 'waiting';
+                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+            }
+            if ($status === 'dropped') {
+                $record['error'] = 'delivery_failed';
+            }
+            $this->store->recordCommand($imei, $id, $record);
+            $commands[] = array_merge($record, ['id' => $id]);
+        }
+
+        return ['status' => 'sent', 'commands' => $commands];
     }
 
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
@@ -246,21 +325,26 @@ final class Devices
         $imei = trim((string)($decoded['imei'] ?? ''));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
+        $modelRecord = $this->modelForSupplierAndName($supplier, $model);
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $decoded['deviceType'] ?? 'watch'));
         $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         $sourceSystem = trim((string)($decoded['sourceSystem'] ?? $decoded['source_system'] ?? ''));
         $sourceDeviceId = trim((string)($decoded['sourceDeviceId'] ?? $decoded['source_device_id'] ?? ''));
+        $company = trim((string)($decoded['company'] ?? 'null'));
         if ($imei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
+        }
+        if ($modelRecord === null) {
+            return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
         }
         if ($licenseId === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
         $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceId);
-        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
-        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
+        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
 
         return ['status' => 'ok', 'imei' => $imei];
     }
@@ -274,14 +358,19 @@ final class Devices
         $newImei = trim((string)($decoded['imei'] ?? $imei));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($decoded['deviceType'] ?? 'watch'));
+        $modelRecord = $this->modelForSupplierAndName($supplier, $model);
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $decoded['deviceType'] ?? 'watch'));
         $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         $sourceSystem = trim((string)($decoded['sourceSystem'] ?? $decoded['source_system'] ?? ''));
         $sourceDeviceId = trim((string)($decoded['sourceDeviceId'] ?? $decoded['source_device_id'] ?? ''));
+        $company = trim((string)($decoded['company'] ?? 'null'));
         if ($newImei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
+        }
+        if ($modelRecord === null) {
+            return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
         }
         if ($licenseId === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
@@ -291,8 +380,8 @@ final class Devices
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
         }
-        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
-        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
+        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
 
         return ['status' => 'ok', 'imei' => $newImei];
     }
@@ -326,7 +415,7 @@ final class Devices
         string $supplierOverride = '',
         string $modelOverride = ''
     ): array {
-        $device = $this->store->device($imei);
+        $device = $this->deviceSnapshot($imei);
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $supplier = trim($supplierOverride) !== ''
             ? trim($supplierOverride)
@@ -419,12 +508,11 @@ final class Devices
             return [];
         }
 
-        $enabled = array_flip($this->db->modelRequestCapabilities->enabledCommandsForModelId((int)$model['id']));
+        $enabled = array_flip($this->db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']));
 
         return array_values(array_filter($commands, static function (array $entry) use ($enabled): bool {
-            $requestId = (string)($entry['id'] ?? $entry['command'] ?? '');
-            $nativeCommand = (string)($entry['command'] ?? '');
-            return isset($enabled[$requestId]) || ($nativeCommand !== '' && isset($enabled[$nativeCommand]));
+            $feature = (string)($entry['feature'] ?? '');
+            return $feature !== '' && isset($enabled[$feature]);
         }));
     }
 
@@ -452,10 +540,10 @@ final class Devices
             $model = trim((string)($device['model'] ?? ''));
             $query = trim((string)($filters['q'] ?? ''));
 
-            return (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType'])
-                && (($filters['licenseId'] ?? 'all') === 'all' || $licenseId === $filters['licenseId'])
-                && (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
-                && (($filters['model'] ?? 'all') === 'all' || $model === $filters['model'])
+            return (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType'])
+                && (($filters['licenseId'] ?? null) === null || $licenseId === $filters['licenseId'])
+                && (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
+                && (($filters['model'] ?? null) === null || $model === $filters['model'])
                 && ($query === '' || $this->matchesDeviceQuery($device, $query));
         }));
     }
@@ -505,7 +593,7 @@ final class Devices
     private function filterDevicesForOptions(array $devices, array $filters, string $excludeKey): array
     {
         $candidateFilters = $filters;
-        $candidateFilters[$excludeKey] = 'all';
+        $candidateFilters[$excludeKey] = null;
 
         return $this->filterDevices($devices, $candidateFilters);
     }
@@ -516,7 +604,7 @@ final class Devices
             return true;
         }
 
-        $device ??= $this->store->device($imei);
+        $device ??= $this->deviceSnapshot($imei);
         $licenseId = $this->deviceLicenseId($imei, $device);
 
         return $auth->canAccessLicense($licenseId);
@@ -550,5 +638,58 @@ final class Devices
         $normalized = trim($licenseId);
 
         return $normalized === '' ? '' : $normalized;
+    }
+
+    private function deviceSnapshot(string $imei): array
+    {
+        $device = $this->db->whitelist->getDevice($imei) ?? ['imei' => $imei];
+        $storeDevice = $this->store->device($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $device = array_merge(
+            $device,
+            array_filter($storeDevice, static fn (mixed $value): bool => $value !== '' && $value !== null)
+        );
+        $device += [
+            'supplier' => (string)($metadata['supplier'] ?? ''),
+            'model' => (string)($metadata['model'] ?? ''),
+            'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
+            'licenseId' => (string)($metadata['licenseId'] ?? '0'),
+            'simNumber' => (string)($metadata['simNumber'] ?? ''),
+            'deviceId' => (string)($metadata['deviceId'] ?? ''),
+            'sourceSystem' => (string)($metadata['sourceSystem'] ?? ''),
+            'sourceDeviceId' => (string)($metadata['sourceDeviceId'] ?? ''),
+            'company' => (string)($metadata['company'] ?? 'null'),
+        ];
+        $runtimeStates = $this->store->runtimeStates([$imei]);
+
+        return $this->overlayRuntimeState($device, $runtimeStates);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $runtimeStates
+     */
+    private function overlayRuntimeState(array $device, array $runtimeStates): array
+    {
+        $imei = (string)($device['imei'] ?? '');
+        if ($imei === '' || !isset($runtimeStates[$imei])) {
+            $device['online'] = (bool)($device['online'] ?? false);
+            return $device;
+        }
+
+        $runtime = $runtimeStates[$imei];
+        foreach ([
+            'online',
+            'lastSeenAt',
+            'lastStateAt',
+            'protocol',
+            'transport',
+            'lastConnectionId',
+        ] as $field) {
+            if (array_key_exists($field, $runtime)) {
+                $device[$field] = $runtime[$field];
+            }
+        }
+
+        return $device;
     }
 }

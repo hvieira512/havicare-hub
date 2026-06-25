@@ -7,7 +7,7 @@ use Hub\Dashboard\Repository\WhitelistRepository;
 
 class Whitelist
 {
-    /** @var array<string, array{supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}> */
+    /** @var array<string, array{supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string, company: string}> */
     private array $devices;
     private string $filePath;
     private ?WhitelistRepository $db;
@@ -36,6 +36,23 @@ class Whitelist
                     continue;
                 }
                 $this->loadEntry((string)$imei, $value);
+                if ($this->db !== null) {
+                    $metadata = $this->devices[trim((string)$imei)] ?? null;
+                    if (is_array($metadata)) {
+                        $this->db->register(
+                            trim((string)$imei),
+                            (string)($metadata['supplier'] ?? ''),
+                            (string)($metadata['model'] ?? ''),
+                            (string)($metadata['deviceType'] ?? 'watch'),
+                            (string)($metadata['licenseId'] ?? '0'),
+                            (string)($metadata['simNumber'] ?? ''),
+                            (string)($metadata['deviceId'] ?? ''),
+                            (string)($metadata['sourceSystem'] ?? ''),
+                            (string)($metadata['sourceDeviceId'] ?? ''),
+                            (string)($metadata['company'] ?? 'null'),
+                        );
+                    }
+                }
             }
         }
     }
@@ -47,6 +64,7 @@ class Whitelist
         $model = trim((string)($value['model'] ?? ''));
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch'));
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0'));
+        $company = trim((string)($value['company'] ?? 'null'));
         $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
         $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
         $sourceSystem = strtolower(trim((string)($value['sourceSystem'] ?? $value['source_system'] ?? '')));
@@ -60,6 +78,7 @@ class Whitelist
             'model' => $model,
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
+            'company' => $company,
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
             'sourceSystem' => $sourceSystem,
@@ -101,11 +120,13 @@ class Whitelist
         string $simNumber = '',
         string $deviceId = '',
         string $sourceSystem = '',
-        string $sourceDeviceId = ''
+        string $sourceDeviceId = '',
+        string $company = 'null',
     ): void
     {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
+        $company = trim($company);
         $sourceSystem = strtolower(trim($sourceSystem));
         $sourceDeviceId = trim($sourceDeviceId);
         $this->devices[$imei] = [
@@ -113,12 +134,13 @@ class Whitelist
             'model' => $model,
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
+            'company' => $company,
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
             'sourceSystem' => $sourceSystem,
             'sourceDeviceId' => $sourceDeviceId,
         ];
-        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
         $this->saveFile();
     }
 
@@ -138,7 +160,8 @@ class Whitelist
         string $simNumber = '',
         string $deviceId = '',
         string $sourceSystem = '',
-        string $sourceDeviceId = ''
+        string $sourceDeviceId = '',
+        string $company = 'null',
     ): bool
     {
         if (!isset($this->devices[$imei])) {
@@ -146,6 +169,7 @@ class Whitelist
         }
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
+        $company = trim($company);
         $sourceSystem = strtolower(trim($sourceSystem));
         $sourceDeviceId = trim($sourceDeviceId);
         $this->devices[$imei] = [
@@ -153,18 +177,19 @@ class Whitelist
             'model' => $model,
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
+            'company' => $company,
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
             'sourceSystem' => $sourceSystem,
             'sourceDeviceId' => $sourceDeviceId,
         ];
-        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId);
+        $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
         $this->saveFile();
         return true;
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}|null
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string}|null
      */
     public function resolve(string $imei, string $protocol = '', string $ident = ''): ?array
     {
@@ -201,6 +226,20 @@ class Whitelist
                 }
 
                 return ['imei' => $canonicalImei] + $metadata;
+            }
+
+            return null;
+        }
+
+        if ($protocol === 'qinglanst') {
+            foreach ($this->devices as $canonicalImei => $metadata) {
+                if (($metadata['deviceType'] ?? '') !== 'radar') {
+                    continue;
+                }
+
+                if ($canonicalImei === $alias || ($metadata['deviceId'] ?? '') === $alias) {
+                    return ['imei' => $canonicalImei] + $metadata;
+                }
             }
 
             return null;

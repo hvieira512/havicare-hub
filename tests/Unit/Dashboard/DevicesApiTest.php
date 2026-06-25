@@ -4,14 +4,13 @@ namespace Tests\Unit\Dashboard;
 
 use Hub\Api\Routes\Devices;
 use Hub\Dashboard\DashboardDataAccess;
-use Hub\Dashboard\DashboardDatabase;
 use Hub\Dashboard\DashboardStore;
 use Hub\Registry\Whitelist;
-use PHPUnit\Framework\TestCase;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
+use Tests\Support\MysqlDashboardTestCase;
 
-final class DevicesApiTest extends TestCase
+final class DevicesApiTest extends MysqlDashboardTestCase
 {
     private string $whitelistPath;
 
@@ -35,7 +34,7 @@ final class DevicesApiTest extends TestCase
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
-        $db->modelRequestCapabilities->replaceForModelId((int)$model['id'], ['BPXL', 'BP16']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'location']);
 
         $response = $api->show('861265061009822');
 
@@ -50,7 +49,7 @@ final class DevicesApiTest extends TestCase
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
-        $db->modelRequestCapabilities->replaceForModelId((int)$model['id'], ['BP16']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['location']);
 
         $response = $api->command('861265061009822', json_encode(['command' => 'BPXL'], JSON_THROW_ON_ERROR));
 
@@ -89,8 +88,7 @@ final class DevicesApiTest extends TestCase
         $response = $api->show('868017032159118');
 
         self::assertContains('fourPHeartRate', array_column($response['commands'], 'id'));
-        self::assertContains('fourPSystolicPressure', array_column($response['commands'], 'id'));
-        self::assertContains('fourPDiastolicPressure', array_column($response['commands'], 'id'));
+        self::assertContains('fourPBloodPressure', array_column($response['commands'], 'id'));
         self::assertContains('fourPBodyTemperature', array_column($response['commands'], 'id'));
     }
 
@@ -130,7 +128,7 @@ final class DevicesApiTest extends TestCase
      */
     private function makeApi(): array
     {
-        $db = DashboardDataAccess::fromDatabase(new DashboardDatabase('file::memory:?cache=shared'));
+        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
         $store = new DashboardStore(new InMemoryRedisClientForDevicesApi(), prefix: 'test:dashboard:devices-api');
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
@@ -169,6 +167,9 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
 
     /** @var array<string, string> */
     private array $strings = [];
+
+    /** @var array<string, array<string, float>> */
+    private array $sortedSets = [];
 
     public function getCommandFactory()
     {
@@ -212,11 +213,15 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
             'hmset' => $this->hmset((string)$arguments[0], $arguments[1]),
             'hgetall' => $this->hgetall((string)$arguments[0]),
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
+            'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
             'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
             'lpush' => $this->lpush((string)$arguments[0], $arguments[1]),
             'ltrim' => $this->ltrim((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrem' => $this->lrem((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
+            'zadd' => $this->zadd((string)$arguments[0], $arguments[1]),
+            'zrem' => $this->zrem((string)$arguments[0], $arguments[1]),
+            'zrangebyscore' => $this->zrangebyscore((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'setex' => $this->setex((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
             'get' => $this->get((string)$arguments[0]),
             'del' => $this->del($arguments[0]),
@@ -270,6 +275,19 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
         return $this->hashes[$key][$field] ?? null;
     }
 
+    private function hdel(string $key, array|string $fields): int
+    {
+        $removed = 0;
+        foreach ((array)$fields as $field) {
+            if (isset($this->hashes[$key][(string)$field])) {
+                unset($this->hashes[$key][(string)$field]);
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
     private function lpush(string $key, array $values): int
     {
         $this->lists[$key] ??= [];
@@ -309,6 +327,51 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
         return $removed;
     }
 
+    private function zadd(string $key, array $members): int
+    {
+        $added = 0;
+        $this->sortedSets[$key] ??= [];
+        foreach ($members as $member => $score) {
+            $member = (string)$member;
+            if (!isset($this->sortedSets[$key][$member])) {
+                $added++;
+            }
+            $this->sortedSets[$key][$member] = (float)$score;
+        }
+
+        return $added;
+    }
+
+    private function zrem(string $key, array|string $members): int
+    {
+        $removed = 0;
+        foreach ((array)$members as $member) {
+            $member = (string)$member;
+            if (isset($this->sortedSets[$key][$member])) {
+                unset($this->sortedSets[$key][$member]);
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
+    private function zrangebyscore(string $key, string $min, string $max): array
+    {
+        $minScore = $min === '-inf' ? -INF : (float)$min;
+        $maxScore = $max === '+inf' ? INF : (float)$max;
+        $matches = [];
+        foreach ($this->sortedSets[$key] ?? [] as $member => $score) {
+            if ($score < $minScore || $score > $maxScore) {
+                continue;
+            }
+            $matches[$member] = $score;
+        }
+        asort($matches, SORT_NUMERIC);
+
+        return array_keys($matches);
+    }
+
     private function setex(string $key, int $ttlSeconds, string $value): string
     {
         $this->strings[$key] = $value;
@@ -325,8 +388,8 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
     {
         $removed = 0;
         foreach ((array)$keys as $key) {
-            $removed += isset($this->hashes[$key]) || isset($this->lists[$key]) || isset($this->sets[$key]) || isset($this->strings[$key]) ? 1 : 0;
-            unset($this->hashes[$key], $this->lists[$key], $this->sets[$key], $this->strings[$key]);
+            $removed += isset($this->hashes[$key]) || isset($this->lists[$key]) || isset($this->sets[$key]) || isset($this->strings[$key]) || isset($this->sortedSets[$key]) ? 1 : 0;
+            unset($this->hashes[$key], $this->lists[$key], $this->sets[$key], $this->strings[$key], $this->sortedSets[$key]);
         }
 
         return $removed;

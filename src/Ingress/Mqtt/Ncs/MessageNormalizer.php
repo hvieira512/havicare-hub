@@ -1,17 +1,17 @@
 <?php
 
-namespace Hub\Ncs;
+namespace Hub\Ingress\Mqtt\Ncs;
 
 use Hub\FeatureNormalizer;
 use Hub\RawPayload;
 
-final class NcsMessageNormalizer
+final class MessageNormalizer
 {
     /**
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string} $device
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>, telemetry?: array<string, mixed>}
      */
-    public function normalize(NcsTopic $topic, array $message, array $device): array
+    public function normalize(Topic $topic, array $message, array $device): array
     {
         $raw = $this->rawPayload($topic, $message, $device);
 
@@ -27,7 +27,7 @@ final class NcsMessageNormalizer
      * @param array<string, mixed> $device
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>, telemetry?: array<string, mixed>}
      */
-    private function normalizeStatus(NcsTopic $topic, array $message, array $device, array $raw): array
+    private function normalizeStatus(Topic $topic, array $message, array $device, array $raw): array
     {
         if ($topic->statusName !== 'online') {
             return ['raw' => $raw];
@@ -70,7 +70,7 @@ final class NcsMessageNormalizer
      * @param array<string, mixed> $device
      * @return array{raw: array<string, mixed>, event: array<string, mixed>, telemetry?: array<string, mixed>}
      */
-    private function normalizeEvent(NcsTopic $topic, array $message, array $device, array $raw): array
+    private function normalizeEvent(Topic $topic, array $message, array $device, array $raw): array
     {
         $payload = isset($message['payload']) && is_array($message['payload']) ? $message['payload'] : [];
         $locationPayload = $this->locationPayload($payload);
@@ -135,7 +135,7 @@ final class NcsMessageNormalizer
      * @param array<string, mixed> $device
      * @return array<string, mixed>
      */
-    private function rawPayload(NcsTopic $topic, array $message, array $device): array
+    private function rawPayload(Topic $topic, array $message, array $device): array
     {
         return [
             'schemaVersion' => 1,
@@ -178,7 +178,7 @@ final class NcsMessageNormalizer
     /**
      * @return array{protocol: string, nativeType: string, topic: string}
      */
-    private function source(NcsTopic $topic): array
+    private function source(Topic $topic): array
     {
         return [
             'protocol' => 'voerka-ncs',

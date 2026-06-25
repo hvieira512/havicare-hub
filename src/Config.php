@@ -50,6 +50,15 @@ class Config
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
                 'topic_filter' => getenv('NCS_TOPIC_FILTER') ?: '/voerka/#',
             ],
+            'qinglanst' => [
+                'enabled' => !in_array(strtolower(trim((string)(getenv('QINGLANST_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
+                'host' => getenv('QINGLANST_MQTT_HOST') ?: '88.99.104.197',
+                'port' => (int)(getenv('QINGLANST_MQTT_PORT') ?: 1883),
+                'username' => getenv('QINGLANST_MQTT_USERNAME') ?: 'havicare',
+                'password' => getenv('QINGLANST_MQTT_PASSWORD') ?: 'hitCare',
+                'topic_filter' => getenv('QINGLANST_TOPIC_FILTER') ?: 'radar/1001/#',
+                'client_id_prefix' => getenv('QINGLANST_CLIENT_ID_PREFIX') ?: 'qinglanst-radar',
+            ],
             'mqtt' => [
                 'enabled' => true,
                 'host' => getenv('MQTT_HOST') ?: '',
@@ -74,6 +83,15 @@ class Config
                 'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
                 'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 'password' => getenv('REDIS_PASSWORD') ?: '',
+            ],
+            'database' => [
+                'driver' => getenv('DB_DRIVER') ?: 'mysql',
+                'host' => getenv('DB_HOST') ?: '127.0.0.1',
+                'port' => (int)(getenv('DB_PORT') ?: 3306),
+                'name' => getenv('DB_NAME') ?: 'hitecosystem_hub',
+                'username' => getenv('DB_USER') ?: 'hub',
+                'password' => getenv('DB_PASSWORD') ?: 'hub_pass',
+                'charset' => getenv('DB_CHARSET') ?: 'utf8mb4',
             ],
         ]);
     }

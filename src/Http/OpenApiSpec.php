@@ -46,6 +46,22 @@ class OpenApiSpec
             'schema' => ['type' => 'integer', 'example' => 1],
         ];
 
+        $companyIdParam = [
+            'name' => 'id',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'Company ID',
+            'schema' => ['type' => 'integer', 'example' => 1],
+        ];
+
+        $licenseIdParam = [
+            'name' => 'id',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'License ID',
+            'schema' => ['type' => 'integer', 'example' => 1],
+        ];
+
         return [
             'openapi' => '3.1.0',
             'info' => [
@@ -53,12 +69,13 @@ class OpenApiSpec
                 'version' => '1.0.0',
                 'description' => 'Dashboard API for managing devices, suppliers and models.',
             ],
-            'servers' => [['url' => 'http://localhost:8081']],
+            'servers' => [['url' => '/']],
             'tags' => [
-                ['name' => 'Dashboard'],
-                ['name' => 'Devices'],
                 ['name' => 'Suppliers'],
                 ['name' => 'Models'],
+                ['name' => 'Companies'],
+                ['name' => 'Licenses'],
+                ['name' => 'Devices'],
                 ['name' => 'API Users'],
                 ['name' => 'System'],
             ],
@@ -94,10 +111,10 @@ class OpenApiSpec
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                             ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 5]],
-                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'licenseId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'model', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+							['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'licenseId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'model', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
                             ['name' => 'q', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => '']],
                         ],
                         'responses' => [
@@ -284,7 +301,7 @@ class OpenApiSpec
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                             ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
-                            ['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all', 'enum' => ['all', 'true', 'false']]],
+							['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['true', 'false']]],
                         ],
                         'responses' => [
                             '200' => [
@@ -339,16 +356,17 @@ class OpenApiSpec
                         ],
                     ],
                 ],
-                '/api/models' => [
-                    'get' => [
-                        'tags' => ['Models'],
-                        'summary' => 'List models',
-                        'parameters' => [
-                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
-                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
-                            ['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'protocol', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                        ],
+                    '/api/models' => [
+                        'get' => [
+                            'tags' => ['Models'],
+                            'summary' => 'List models',
+                            'parameters' => [
+                                ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                                ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+								['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+								['name' => 'protocol', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+								['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+                            ],
                         'responses' => [
                             '200' => [
                                 'description' => 'Paginated model collection',
@@ -421,8 +439,8 @@ class OpenApiSpec
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                             ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
-                            ['name' => 'role', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+							['name' => 'role', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
                         ],
                         'responses' => [
                             '200' => [
@@ -478,6 +496,131 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/api/companies' => [
+                    'get' => [
+                        'tags' => ['Companies'],
+                        'summary' => 'List companies',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Paginated company collection',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CompanyListResponse']]],
+                            ],
+                        ],
+                    ],
+                    'post' => [
+                        'tags' => ['Companies'],
+                        'summary' => 'Create company',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CompanyWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Company created',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CompanyCreateResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/companies/{id}' => [
+                    'put' => [
+                        'tags' => ['Companies'],
+                        'summary' => 'Update company name',
+                        'parameters' => [$companyIdParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CompanyWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Company updated',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'delete' => [
+                        'tags' => ['Companies'],
+                        'summary' => 'Delete company and its licenses',
+                        'parameters' => [$companyIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Company deleted',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/licenses' => [
+                    'get' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'List licenses',
+                        'parameters' => [
+                            ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
+							['name' => 'companyId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer']],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Paginated license collection',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseListResponse']]],
+                            ],
+                        ],
+                    ],
+                    'post' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'Create license',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'License created',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseCreateResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/licenses/{id}' => [
+                    'put' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'Update license',
+                        'parameters' => [$licenseIdParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/LicenseWriteRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'License updated',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'delete' => [
+                        'tags' => ['Licenses'],
+                        'summary' => 'Delete license',
+                        'parameters' => [$licenseIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'License deleted',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/docs' => [
                     'get' => [
                         'tags' => ['System'],
@@ -520,6 +663,7 @@ class OpenApiSpec
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                             'model' => ['type' => 'string', 'example' => 'HW20PRO'],
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'company' => ['type' => 'string', 'example' => 'hitCare'],
                             'licenseId' => ['type' => 'string', 'example' => '0'],
                             'protocol' => ['type' => 'string', 'nullable' => true, 'example' => 'wonlex-json'],
                             'online' => ['type' => 'boolean', 'example' => false],
@@ -531,6 +675,7 @@ class OpenApiSpec
                         'properties' => [
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                             'model' => ['type' => 'string', 'example' => 'HW20PRO'],
+                            'commercialName' => ['type' => 'string', 'example' => 'HW20PRO'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'example' => '/images/wonlex.png'],
                         ],
@@ -566,6 +711,7 @@ class OpenApiSpec
                             'supplier' => ['type' => 'string'],
                             'model' => ['type' => 'string'],
                             'deviceType' => ['type' => 'string'],
+                            'company' => ['type' => 'string'],
                             'licenseId' => ['type' => 'string'],
                             'protocol' => ['type' => 'string', 'nullable' => true],
                             'online' => ['type' => 'boolean'],
@@ -621,7 +767,7 @@ class OpenApiSpec
                             'imei' => ['type' => 'string', 'example' => '865028000000306'],
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                             'model' => ['type' => 'string', 'example' => 'HW20PRO'],
-                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'company' => ['type' => 'string', 'example' => 'hitCare'],
                             'licenseId' => ['type' => 'string', 'example' => '0'],
                             'simNumber' => ['type' => 'string', 'example' => '+351912345678'],
                             'deviceId' => ['type' => 'string', 'example' => '8800000015'],
@@ -642,7 +788,7 @@ class OpenApiSpec
                             'imei' => ['type' => 'string', 'example' => '865028000000307'],
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                             'model' => ['type' => 'string', 'example' => 'L08 Pro'],
-                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'company' => ['type' => 'string', 'example' => 'hitCare'],
                             'licenseId' => ['type' => 'string', 'example' => '0'],
                             'simNumber' => ['type' => 'string', 'example' => '+351912345678'],
                             'deviceId' => ['type' => 'string', 'example' => '8800000015'],
@@ -666,9 +812,10 @@ class OpenApiSpec
                     ],
                     'CommandRequest' => [
                         'type' => 'object',
-                        'required' => ['command'],
                         'properties' => [
                             'command' => ['type' => 'string', 'example' => 'dnHeartRate'],
+                            'requestId' => ['type' => 'string', 'example' => 'dnHeartRate'],
+                            'feature' => ['type' => 'string', 'example' => 'heart_rate'],
                         ],
                     ],
                     'CommandResponse' => [
@@ -676,6 +823,7 @@ class OpenApiSpec
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'sent'],
                             'command' => ['type' => 'object'],
+                            'commands' => ['type' => 'array', 'items' => ['type' => 'object']],
                         ],
                     ],
                     'AuthTokenResponse' => [
@@ -765,9 +913,13 @@ class OpenApiSpec
                             'id' => ['type' => 'integer', 'example' => 1],
                             'supplier_id' => ['type' => 'integer', 'example' => 1],
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
-                            'model' => ['type' => 'string', 'example' => 'HW20PRO'],
+                            'internalModel' => ['type' => 'string', 'example' => 'HW20PRO'],
+                            'commercialName' => ['type' => 'string', 'example' => 'Wonlex HW20 Pro'],
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'example' => '/images/wonlex.png'],
+                            'capabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'blood_pressure']],
+                            'enabledCapabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate']],
                         ],
                     ],
                     'ModelListResponse' => [
@@ -780,12 +932,86 @@ class OpenApiSpec
                     ],
                     'ModelWriteRequest' => [
                         'type' => 'object',
-                        'required' => ['supplier_id', 'model', 'protocol'],
+                        'required' => ['supplier_id', 'internalModel', 'commercialName'],
                         'properties' => [
                             'supplier_id' => ['type' => 'integer', 'example' => 1],
-                            'model' => ['type' => 'string', 'example' => 'HW20PRO'],
+                            'internalModel' => ['type' => 'string', 'example' => 'HW20PRO'],
+                            'commercialName' => ['type' => 'string', 'example' => 'Wonlex HW20 Pro'],
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'format' => 'binary'],
+                            'enabledCapabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
+                            'enabledCapabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate']],
+                        ],
+                    ],
+                    'CompanyItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'name' => ['type' => 'string', 'example' => 'hitCare'],
+                            'license_count' => ['type' => 'integer', 'example' => 1],
+                            'created_at' => ['type' => 'string'],
+                            'updated_at' => ['type' => 'string'],
+                        ],
+                    ],
+                    'CompanyListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CompanyItem']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
+                        ],
+                    ],
+                    'CompanyWriteRequest' => [
+                        'type' => 'object',
+                        'required' => ['name'],
+                        'properties' => [
+                            'name' => ['type' => 'string', 'example' => 'hitCare'],
+                        ],
+                    ],
+                    'CompanyCreateResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'id'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'id' => ['type' => 'integer', 'example' => 1],
+                        ],
+                    ],
+                    'LicenseItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'company_id' => ['type' => 'integer', 'example' => 1],
+                            'company_name' => ['type' => 'string', 'example' => 'hitCare'],
+                            'license_id' => ['type' => 'string', 'example' => '1001'],
+                            'name' => ['type' => 'string', 'example' => 'gucc.dev'],
+                            'created_at' => ['type' => 'string'],
+                            'updated_at' => ['type' => 'string'],
+                        ],
+                    ],
+                    'LicenseListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/LicenseItem']],
+                            'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
+                            'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
+                        ],
+                    ],
+                    'LicenseWriteRequest' => [
+                        'type' => 'object',
+                        'required' => ['companyId', 'licenseId'],
+                        'properties' => [
+                            'companyId' => ['type' => 'integer', 'example' => 1],
+                            'licenseId' => ['type' => 'string', 'example' => '1001'],
+                            'name' => ['type' => 'string', 'example' => 'gucc.dev'],
+                        ],
+                    ],
+                    'LicenseCreateResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'id'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'id' => ['type' => 'integer', 'example' => 1],
                         ],
                     ],
                     'ErrorResponse' => [

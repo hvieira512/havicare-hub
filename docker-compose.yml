@@ -15,6 +15,10 @@ services:
       MQTT_PUBLISHER_PASSWORD: ${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}
       MQTT_SMOKE_USERNAME: ${MQTT_SMOKE_USERNAME:-hub_smoke}
       MQTT_SMOKE_PASSWORD: ${MQTT_SMOKE_PASSWORD:-hub_smoke_pass}
+    networks:
+      default:
+        aliases:
+          - mosquitto
     restart: unless-stopped
 
   redis:
@@ -22,6 +26,28 @@ services:
     container_name: hitecosystem-redis
     ports:
       - "6379:6379"
+    networks:
+      default:
+        aliases:
+          - redis
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    container_name: hitecosystem-mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-hitecosystem_hub}
+      MYSQL_USER: ${DB_USER:-hub}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-hub_pass}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      default:
+        aliases:
+          - mysql
     restart: unless-stopped
 
   hub:
@@ -44,6 +70,13 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      DB_DRIVER: ${DB_DRIVER:-mysql}
+      DB_HOST: mysql
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-hitecosystem_hub}
+      DB_USER: ${DB_USER:-hub}
+      DB_PASSWORD: ${DB_PASSWORD:-hub_pass}
+      DB_CHARSET: ${DB_CHARSET:-utf8mb4}
       DOWNLINK_QUEUE_TTL_SECONDS: ${DOWNLINK_QUEUE_TTL_SECONDS:-300}
       WHITELIST_FILE: ${WHITELIST_FILE-}
       DASHBOARD_ENABLED: ${DASHBOARD_ENABLED:-true}
@@ -58,4 +91,12 @@ services:
     depends_on:
       - mosquitto
       - redis
+      - mysql
+    networks:
+      default:
+        aliases:
+          - hub
     restart: unless-stopped
+
+volumes:
+  mysql_data:

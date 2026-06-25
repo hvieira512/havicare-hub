@@ -1,14 +1,16 @@
 import {commandLabel, esc, eventTime, featureLabel, fieldLabel, rowPayload, titleize} from './format.js';
 
 export function modelImageHtml(modelInfo) {
+    const label = modelInfo?.commercial_name || modelInfo?.commercialName || modelInfo?.internal_model || modelInfo?.internalModel || modelInfo?.model || 'Modelo';
     return modelInfo?.image
-        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(modelInfo.model)}" style="width:40px;height:40px;">`
+        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(label)}" style="width:40px;height:40px;">`
         : '<i class="fa-solid fa-microchip fa-xl text-secondary" style="width:40px"></i>';
 }
 
 export function modelPreviewHtml(modelInfo, label = 'Modelo') {
+    const imageLabel = modelInfo?.commercial_name || modelInfo?.commercialName || modelInfo?.internal_model || modelInfo?.internalModel || modelInfo?.model || label;
     return modelInfo?.image
-        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(modelInfo.model || label)}">`
+        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(imageLabel)}">`
         : `<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
 }
 
@@ -36,6 +38,9 @@ export function commandFeature(command) {
     if (haystack.includes('ecg')) return 'ecg';
     if (haystack.includes('hrv')) return 'hrv';
     if (haystack.includes('weather')) return 'weather';
+    if (haystack.includes('breath')) return 'breath_rate';
+    if (haystack.includes('ppg')) return 'ppg';
+    if (haystack.includes('rr')) return 'rr_interval';
     return 'device_config';
 }
 
@@ -49,6 +54,8 @@ export function cardTone(type, command = {}) {
     if (key === 'activity') return {border: 'primary', bg: 'bg-primary', text: 'text-primary'};
     if (key === 'location') return {border: 'success', bg: 'bg-success', text: 'text-success'};
     if (key === 'heartbeat') return {border: 'info', bg: 'bg-info', text: 'text-info'};
+    if (key === 'breath_rate') return {border: 'info', bg: 'bg-info', text: 'text-info'};
+    if (key === 'rr_interval') return {border: 'info', bg: 'bg-info', text: 'text-info'};
     if (key === 'sleep') return {border: 'primary', bg: 'bg-primary', text: 'text-primary'};
     if (key === 'weather') return {border: 'secondary', bg: 'bg-secondary', text: 'text-secondary'};
     if (key === 'ncs.event') return {border: 'danger', bg: 'bg-danger', text: 'text-danger'};
@@ -67,6 +74,9 @@ export function requestCardContent(type) {
     if (type === 'ecg') return {icon: 'fa-wave-square', value: 'ECG'};
     if (type === 'hrv') return {icon: 'fa-chart-line', value: 'VFC'};
     if (type === 'weather') return {icon: 'fa-cloud-sun', value: 'Meteorologia'};
+    if (type === 'breath_rate') return {icon: 'fa-lungs', value: 'Frequência respiratória'};
+    if (type === 'ppg') return {icon: 'fa-circle-nodes', value: 'PPG'};
+    if (type === 'rr_interval') return {icon: 'fa-stopwatch', value: 'Intervalo RR'};
     return {icon: 'fa-circle-info', value: featureLabel(type)};
 }
 
@@ -86,6 +96,9 @@ export function uplinkCardContent(type, data) {
     if (type === 'sleep') return {icon: 'fa-bed', value: 'Dados de sono'};
     if (type === 'ecg') return {icon: 'fa-wave-square', value: 'Dados de ECG'};
     if (type === 'hrv') return {icon: 'fa-chart-line', value: 'Dados de VFC'};
+    if (type === 'breath_rate') return {icon: 'fa-lungs', value: 'Dados de frequência respiratória'};
+    if (type === 'ppg') return {icon: 'fa-circle-nodes', value: 'Dados de PPG'};
+    if (type === 'rr_interval') return {icon: 'fa-stopwatch', value: 'Intervalo RR', details: compactDetails(data, ['intervalMs'])};
     if (type === 'weather') return {icon: 'fa-cloud-sun', value: data.summary || 'Dados meteorológicos', details: compactDetails(data, ['temperatureCelsius', 'lowCelsius', 'highCelsius', 'humidityPercent', 'reportedAt'])};
     if (type === 'ncs.event') return ncsEventContent(data);
     return {icon: 'fa-circle-info', value: featureLabel(type), details: compactDetails(data, Object.keys(data).slice(0, 4))};

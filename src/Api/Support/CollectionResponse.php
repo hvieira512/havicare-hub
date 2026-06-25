@@ -25,7 +25,7 @@ trait CollectionResponse
         return max(1, (int)($params['limit'] ?? $default));
     }
 
-    private function queryFilter(array $params, string $key, string $default = 'all'): string
+    private function queryFilter(array $params, string $key, ?string $default = null): ?string
     {
         $value = trim((string)($params[$key] ?? ''));
 

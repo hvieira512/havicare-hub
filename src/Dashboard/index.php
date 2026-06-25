@@ -22,6 +22,37 @@ require_once __DIR__ . '/components/modal.php';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <style>
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('/assets/fonts/Poppins-Regular.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 500;
+            font-display: swap;
+            src: url('/assets/fonts/Poppins-Medium.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: url('/assets/fonts/Poppins-SemiBold.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: url('/assets/fonts/Poppins-Bold.woff2') format('woff2');
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
         .showcase-preview {
             min-height: 280px;
         }

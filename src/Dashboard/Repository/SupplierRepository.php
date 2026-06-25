@@ -35,14 +35,15 @@ final class SupplierRepository
 
     public function create(string $name, bool $enabled = true): int
     {
+        $existing = $this->findByName($name);
+        if ($existing !== null) {
+            return (int)($existing['id'] ?? 0);
+        }
+
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('INSERT OR IGNORE INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, ?, ?, ?)');
+        $stmt = $this->pdo->prepare('INSERT INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, ?, ?, ?)');
         $stmt->execute([$name, $enabled ? 1 : 0, $now, $now]);
-
-        $stmt = $this->pdo->prepare('SELECT id FROM suppliers WHERE name = ?');
-        $stmt->execute([$name]);
-
-        return (int)$stmt->fetchColumn();
+        return (int)$this->pdo->lastInsertId();
     }
 
     public function setEnabled(int $id, bool $enabled): void

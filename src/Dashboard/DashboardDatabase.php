@@ -10,33 +10,40 @@ final class DashboardDatabase
     private PDO $pdo;
 
     private const DEFAULT_MODELS = [
-        ['Wonlex', 'HW20PRO', 'wonlex-json', ''],
-        ['Wonlex', 'L08 Pro', 'wonlex-json', ''],
-        ['Vivistar', 'L08 Pro', 'vivistar-iw', ''],
-        ['Vivistar', 'VIVISTAR-CARE', 'vivistar-iw', ''],
-        ['Vivistar', 'VIVISTAR-LITE', 'vivistar-iw', ''],
-        ['4P Touch', '4P-TOUCH', 'four-p-touch', ''],
-        ['4P Touch', 'D46', 'four-p-touch', ''],
+        ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', 'wonlex-json', ''],
+        ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', 'wonlex-json', ''],
+        ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', 'vivistar-iw', ''],
+        ['Vivistar', 'VIVISTAR-CARE', 'VIVISTAR-CARE', 'watch', 'vivistar-iw', ''],
+        ['Vivistar', 'VIVISTAR-LITE', 'VIVISTAR-LITE', 'watch', 'vivistar-iw', ''],
+        ['4P Touch', '4P-TOUCH', '4P-TOUCH', 'watch', 'four-p-touch', ''],
+        ['4P Touch', 'D46', 'D46', 'watch', 'four-p-touch', ''],
+        ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', 'qinglanst', ''],
     ];
 
-    public function __construct(?string $path = null)
+    public function __construct(array $config)
     {
-        $path ??= __DIR__ . '/../../var/db/dashboard.sqlite';
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        $driver = strtolower(trim((string)($config['driver'] ?? '')));
+        if ($driver !== 'mysql') {
+            throw new \InvalidArgumentException('DashboardDatabase only supports the mysql driver');
         }
 
-        $this->pdo = new PDO("sqlite:{$path}", null, null, [
+        $charset = trim((string)($config['charset'] ?? 'utf8mb4')) ?: 'utf8mb4';
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+            (string)($config['host'] ?? '127.0.0.1'),
+            (int)($config['port'] ?? 3306),
+            (string)($config['name'] ?? 'hitecosystem_hub'),
+            $charset,
+        );
+        $this->pdo = new PDO($dsn, (string)($config['username'] ?? ''), (string)($config['password'] ?? ''), [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]);
-        $this->pdo->exec('PRAGMA journal_mode=WAL');
-        $this->pdo->exec('PRAGMA foreign_keys=ON');
 
         $this->bootstrapSchema();
         $this->seedDefaults();
-        $this->seedDefaultModelRequestCapabilities();
+        $this->migrateLegacyModelRequestCapabilities();
+        $this->seedDefaultModelCapabilities();
     }
 
     public function pdo(): PDO
@@ -46,82 +53,167 @@ final class DashboardDatabase
 
     private function bootstrapSchema(): void
     {
-        $schemaPath = __DIR__ . '/../../database/schema.sql';
+        $schemaPath = __DIR__ . '/../../database/schema.mysql.sql';
         $schema = file_get_contents($schemaPath);
         if (!is_string($schema) || trim($schema) === '') {
-            throw new \RuntimeException('database/schema.sql is missing or empty');
+            throw new \RuntimeException('database schema file is missing or empty');
         }
 
         $this->pdo->exec($schema);
-        $this->dropLegacyHistoryStorage();
-
-        // Compatibility for databases created before device type and license support.
-        $this->ensureColumn('whitelist', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
-        $this->ensureColumn('whitelist', 'license_id', 'TEXT NOT NULL DEFAULT "0"');
-        $this->ensureColumn('whitelist', 'sim_number', 'TEXT NOT NULL DEFAULT ""');
-        $this->ensureColumn('whitelist', 'device_id', 'TEXT NOT NULL DEFAULT ""');
-        $this->ensureColumn('whitelist', 'source_system', 'TEXT NOT NULL DEFAULT ""');
-        $this->ensureColumn('whitelist', 'source_device_id', 'TEXT NOT NULL DEFAULT ""');
+        $this->ensureMysqlIndexes();
     }
 
-    private function ensureColumn(string $table, string $column, string $definition): void
+    private function ensureMysqlIndexes(): void
     {
-        $stmt = $this->pdo->query(sprintf('PRAGMA table_info(%s)', $table));
-        $columns = $stmt ? $stmt->fetchAll() : [];
-        foreach ($columns as $info) {
-            if (($info['name'] ?? null) === $column) {
-                return;
-            }
-        }
-
-        $this->pdo->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
+        $this->ensureMysqlIndex('device_configurations', 'idx_device_configurations_imei', 'imei');
+        $this->ensureMysqlIndex('model_capabilities', 'idx_model_capabilities_model', 'model_id');
+        $this->ensureMysqlIndex('api_users', 'idx_api_users_role_license', 'role, license_id');
+        $this->ensureMysqlIndex('licenses', 'idx_licenses_company_id', 'company_id');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_type_license', 'device_type, license_id');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_supplier_model', 'supplier, model');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_company', 'company');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_id', 'device_id');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_source_alias', 'source_system, source_device_id');
     }
 
-    private function dropLegacyHistoryStorage(): void
+    private function ensureMysqlIndex(string $table, string $indexName, string $columns): void
     {
-        foreach ([
-            'idx_telemetry_imei',
-            'idx_telemetry_recorded',
-            'idx_events_imei',
-            'idx_raw_payloads_imei',
-        ] as $index) {
-            $this->pdo->exec(sprintf('DROP INDEX IF EXISTS %s', $index));
+        $stmt = $this->pdo->query("SHOW INDEX FROM `{$table}` WHERE Key_name = '{$indexName}'");
+        if ($stmt && $stmt->fetch()) {
+            return;
         }
 
-        foreach (['telemetry', 'events', 'raw_payloads'] as $table) {
-            $this->pdo->exec(sprintf('DROP TABLE IF EXISTS %s', $table));
-        }
+        $this->pdo->exec("CREATE INDEX `{$indexName}` ON `{$table}` ({$columns})");
     }
 
     private function seedDefaults(): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $seen = [];
-        $supplierStmt = $this->pdo->prepare('INSERT OR IGNORE INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, 1, ?, ?)');
         foreach (self::DEFAULT_MODELS as $row) {
             $name = $row[0];
             if (isset($seen[$name])) {
                 continue;
             }
             $seen[$name] = true;
-            $supplierStmt->execute([$name, $now, $now]);
+            $existing = $this->pdo->prepare('SELECT id FROM suppliers WHERE name = ?');
+            $existing->execute([$name]);
+            if ($existing->fetchColumn() !== false) {
+                continue;
+            }
+            $insertSupplier = $this->pdo->prepare('INSERT INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, 1, ?, ?)');
+            $insertSupplier->execute([$name, $now, $now]);
         }
 
         $nameToId = $this->pdo
             ->query("SELECT name, id FROM suppliers WHERE name IN ('" . implode("','", array_keys($seen)) . "')")
             ->fetchAll(PDO::FETCH_KEY_PAIR);
 
-        $modelStmt = $this->pdo->prepare('INSERT OR IGNORE INTO models (supplier_id, model, protocol, image_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
         foreach (self::DEFAULT_MODELS as $row) {
             if (!isset($nameToId[$row[0]])) {
                 throw new \RuntimeException("Default supplier '{$row[0]}' was not created");
             }
 
-            $modelStmt->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $now, $now]);
+            $existing = $this->pdo->prepare('SELECT id FROM models WHERE supplier_id = ? AND internal_model = ?');
+            $existing->execute([(int)$nameToId[$row[0]], $row[1]]);
+            if ($existing->fetchColumn() !== false) {
+                continue;
+            }
+
+            $insertModel = $this->pdo->prepare('
+                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, protocol, image_path, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ');
+            $insertModel->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $row[4], $row[5], $now, $now]);
+        }
+
+        $this->seedDefaultCompanies();
+    }
+
+    private function seedDefaultCompanies(): void
+    {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        foreach (['hitCare', 'haviCare'] as $name) {
+            $existing = $this->pdo->prepare('SELECT id FROM companies WHERE name = ?');
+            $existing->execute([$name]);
+            if ($existing->fetchColumn() !== false) {
+                continue;
+            }
+            $insertCompany = $this->pdo->prepare('INSERT INTO companies (name, created_at, updated_at) VALUES (?, ?, ?)');
+            $insertCompany->execute([$name, $now, $now]);
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id FROM companies WHERE name = ?");
+        $stmt->execute(['hitCare']);
+        $hitCareId = (int)($stmt->fetchColumn() ?: 0);
+        if ($hitCareId > 0) {
+            $existing = $this->pdo->prepare('SELECT id FROM licenses WHERE company_id = ? AND license_id = ?');
+            $existing->execute([$hitCareId, '1001']);
+            if ($existing->fetchColumn() === false) {
+                $licenseStmt = $this->pdo->prepare('INSERT INTO licenses (company_id, license_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
+                $licenseStmt->execute([$hitCareId, '1001', 'gucc.dev', $now, $now]);
+            }
         }
     }
 
-    private function seedDefaultModelRequestCapabilities(): void
+    private function migrateLegacyModelRequestCapabilities(): void
+    {
+        try {
+            $this->pdo->query('SELECT COUNT(*) FROM model_request_capabilities');
+        } catch (\Exception $e) {
+            return;
+        }
+
+        $count = $this->pdo->query('SELECT COUNT(*) FROM model_capabilities')->fetchColumn();
+        if ($count > 0) {
+            return;
+        }
+
+        $rows = $this->pdo->query('
+            SELECT mrc.model_id, mrc.downlink_command, mrc.enabled, mrc.created_at, mrc.updated_at,
+                   m.protocol
+            FROM model_request_capabilities mrc
+            JOIN models m ON m.id = mrc.model_id
+        ')->fetchAll();
+
+        if (!is_array($rows) || $rows === []) {
+            return;
+        }
+
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $insert = $this->pdo->prepare('
+            INSERT INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        ');
+
+        foreach ($rows as $row) {
+            $modelId = (int)($row['model_id'] ?? 0);
+            $commandId = (string)($row['downlink_command'] ?? '');
+            $protocol = (string)($row['protocol'] ?? '');
+            $enabled = (int)($row['enabled'] ?? 0);
+            $createdAt = (string)($row['created_at'] ?? $now);
+
+            if ($modelId <= 0 || $commandId === '' || $protocol === '') {
+                continue;
+            }
+
+            $entry = DeviceCommandCatalog::requestForProtocol($protocol, $commandId);
+            $feature = (string)($entry['feature'] ?? '');
+            if ($feature === '') {
+                continue;
+            }
+
+            $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND feature = ?');
+            $existing->execute([$modelId, $feature]);
+            if ((int)$existing->fetchColumn() > 0) {
+                continue;
+            }
+
+            $insert->execute([$modelId, $feature, $enabled, $createdAt, $now]);
+        }
+    }
+
+    private function seedDefaultModelCapabilities(): void
     {
         $models = $this->pdo
             ->query('SELECT id, protocol FROM models ORDER BY id')
@@ -131,10 +223,6 @@ final class DashboardDatabase
             return;
         }
 
-        $insert = $this->pdo->prepare('
-            INSERT OR IGNORE INTO model_request_capabilities (model_id, downlink_command, enabled, created_at, updated_at)
-            VALUES (?, ?, 1, ?, ?)
-        ');
         $now = gmdate('Y-m-d\TH:i:s\Z');
 
         foreach ($models as $model) {
@@ -144,29 +232,18 @@ final class DashboardDatabase
                 continue;
             }
 
-            foreach ($this->requestCommandsForProtocol($protocol) as $command) {
-                $insert->execute([$modelId, $command, $now, $now]);
+            foreach (DeviceCommandCatalog::featuresForProtocol($protocol) as $feature) {
+                $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND feature = ?');
+                $existing->execute([$modelId, $feature]);
+                if ((int)$existing->fetchColumn() > 0) {
+                    continue;
+                }
+                $insert = $this->pdo->prepare('
+                    INSERT INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
+                    VALUES (?, ?, 1, ?, ?)
+                ');
+                $insert->execute([$modelId, $feature, $now, $now]);
             }
         }
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function requestCommandsForProtocol(string $protocol): array
-    {
-        $commands = [];
-        foreach (DeviceCommandCatalog::commandsForProtocol($protocol) as $entry) {
-            if ((string)($entry['kind'] ?? '') !== 'request') {
-                continue;
-            }
-            $command = trim((string)($entry['id'] ?? $entry['command'] ?? ''));
-            if ($command === '') {
-                continue;
-            }
-            $commands[] = $command;
-        }
-
-        return array_values(array_unique($commands));
     }
 }

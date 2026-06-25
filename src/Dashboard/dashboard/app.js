@@ -42,13 +42,25 @@ let deviceSearchTimer = null;
 const FILTERS_STORAGE_KEY = 'hub-dashboard-device-filters';
 const SELECTED_DEVICE_STORAGE_KEY = 'hub-dashboard-selected-device';
 const deviceTypeOptions = [
-    {value: 'watch', label: 'Relógios'},
+    {value: 'watch', label: 'Relógio'},
     {value: 'ncs', label: 'NCS'},
     {value: 'radar', label: 'Radars'},
 ];
 
 function deviceTypeLabel(deviceType) {
     return deviceTypeOptions.find(option => option.value === deviceType)?.label || deviceType;
+}
+
+function suppliersForDeviceType(deviceType, models = state.summary.models) {
+    const allSuppliers = suppliersFromModels(models);
+    if (!deviceType || deviceType === 'watch') {
+        return allSuppliers;
+    }
+    const deviceTypeSuppliers = (models || [])
+        .filter(model => normalizeDeviceType(model.device_type || model.deviceType || 'watch') === deviceType)
+        .map(model => model.supplier)
+        .filter(Boolean);
+    return allSuppliers.filter(name => deviceTypeSuppliers.includes(name));
 }
 
 function normalizeDeviceType(deviceType) {
@@ -69,6 +81,26 @@ function licenseLabel(licenseId) {
     return normalizeLicenseId(licenseId) === '0' ? 'Sem Licença' : normalizeLicenseId(licenseId);
 }
 
+function companyLabel(company) {
+    const value = String(company ?? '').trim();
+    return value === '' || value === 'null' ? 'Sem empresa' : value;
+}
+
+function licenseDisplayLabel(licenseId, licenses = state.settingsModal.licenses || []) {
+    const normalized = normalizeLicenseId(licenseId);
+    if (normalized === '0') {
+        return 'Sem Licença';
+    }
+
+    const match = (licenses || []).find(item => String(item.license_id || item.licenseId || '') === normalized);
+    if (!match) {
+        return normalized;
+    }
+
+    const name = String(match.name || '').trim();
+    return name !== '' ? `${name} (${normalized})` : normalized;
+}
+
 function apiRoleLabel(role) {
     return role === 'hub_admin' ? 'Admin Hub' : 'Cliente por licença';
 }
@@ -76,6 +108,18 @@ function apiRoleLabel(role) {
 function supplierProtocol(supplier, models = state.summary.models) {
     const existing = models.find(model => model.supplier === supplier && model.protocol);
     return existing?.protocol || '';
+}
+
+function modelInternalName(model) {
+    return String(model.internal_model || model.internalModel || model.model || '');
+}
+
+function modelCommercialName(model) {
+    return String(model.commercial_name || model.commercialName || model.internal_model || model.internalModel || model.model || '');
+}
+
+function modelDeviceType(model) {
+    return normalizeDeviceType(model?.device_type || model?.deviceType || 'watch');
 }
 
 function suppliersFromModels(models = state.summary.models) {
@@ -87,7 +131,22 @@ function modelsForSupplier(supplier, models = state.summary.models) {
 }
 
 function findModelInfo(supplier, model, models = state.summary.models) {
-    return models.find(entry => entry.supplier === supplier && entry.model === model) || null;
+    return models.find(entry => entry.supplier === supplier && modelInternalName(entry) === model) || null;
+}
+
+function modelDisplayName(supplier, model, models = state.summary.models) {
+    const info = findModelInfo(supplier, model, models);
+    return info ? modelCommercialName(info) : model;
+}
+
+function modelsForSupplierAndType(supplier, deviceType, models = state.summary.models) {
+    return modelsForSupplier(supplier, models).filter(model => modelDeviceType(model) === normalizeDeviceType(deviceType));
+}
+
+function modelDisplayLabel(model) {
+    const commercialName = modelCommercialName(model);
+    const internalName = modelInternalName(model);
+    return commercialName === internalName ? commercialName : `${commercialName} (${internalName})`;
 }
 
 function deriveFourPTouchDeviceId(imei) {
@@ -102,15 +161,14 @@ function isFourPTouchSelection(supplier = els.deviceForm?.dataset?.supplier || '
     return supplierProtocol(supplier, state.summary.models) === 'four-p-touch' || supplier === '4P Touch';
 }
 
-function availableRequestsForSupplier(supplier, models = state.summary.models) {
-    const entry = models.find(model => model.supplier === supplier && Array.isArray(model.availableRequests) && model.availableRequests.length);
-    return Array.isArray(entry?.availableRequests) ? entry.availableRequests : [];
+function capabilitiesForSupplier(supplier, models = state.summary.models) {
+    const entry = models.find(model => model.supplier === supplier && Array.isArray(model.capabilities) && model.capabilities.length);
+    return Array.isArray(entry?.capabilities) ? entry.capabilities : [];
 }
 
-function capabilityGroupKey(command) {
-    const feature = commandFeature(command);
+function capabilityGroupKey(feature) {
     if (feature === 'location') return 'localization';
-    if (['heart_rate', 'blood_pressure', 'blood_oxygen', 'temperature', 'ecg', 'hrv', 'blood_sugar'].includes(feature)) {
+    if (['heart_rate', 'blood_pressure', 'blood_pressure_systolic', 'blood_pressure_diastolic', 'blood_oxygen', 'temperature', 'ecg', 'hrv', 'blood_sugar', 'breath_rate', 'ppg', 'rr_interval'].includes(feature)) {
         return 'vital_signs';
     }
     return 'other';
@@ -140,6 +198,7 @@ async function loadSummary() {
             q: state.deviceSearchQuery,
         }),
         ensureModelsLoaded(),
+        ensureLicensesLoaded(),
     ]);
     state.summary = {
         devices: devicesResponse.data || [],
@@ -167,6 +226,26 @@ async function ensureModelsLoaded(force = false) {
     return state.summary.models;
 }
 
+async function ensureLicensesLoaded(force = false) {
+    if (!force && Array.isArray(state.settingsModal.licenses) && state.settingsModal.licenses.length > 0) {
+        return state.settingsModal.licenses;
+    }
+
+    const licensesResponse = await api.licenses({limit: 500});
+    state.settingsModal.licenses = licensesResponse.data || [];
+    return state.settingsModal.licenses;
+}
+
+async function ensureSuppliersLoaded(force = false) {
+    if (!force && Array.isArray(state.modelModalSuppliers) && state.modelModalSuppliers.length > 0) {
+        return state.modelModalSuppliers;
+    }
+
+    const suppliersResponse = await api.suppliers({limit: 500});
+    state.modelModalSuppliers = suppliersResponse.data || [];
+    return state.modelModalSuppliers;
+}
+
 async function openDeviceSelector() {
     await loadSummary();
     deviceSelectorModal?.show();
@@ -188,7 +267,7 @@ function renderDeviceSelector() {
 
     const modelLookup = {};
     for (const model of state.summary.models) {
-        modelLookup[`${model.supplier}:${model.model}`] = model;
+        modelLookup[`${model.supplier}:${modelInternalName(model)}`] = model;
     }
 
     const tableMarkup = state.summary.devices.length ? `
@@ -200,7 +279,9 @@ function renderDeviceSelector() {
                         <th>Estado</th>
                         <th>IMEI</th>
                         <th>Tipo</th>
+                        <th>Empresa</th>
                         <th>Licença</th>
+                        <th>SIM</th>
                         <th>Fornecedor</th>
                         <th>Modelo</th>
                     </tr>
@@ -220,9 +301,11 @@ function renderDeviceSelector() {
                                 </td>
                                 <td class="fw-semibold text-break">${esc(device.imei)}</td>
                                 <td>${esc(deviceTypeLabel(normalizeDeviceType(device.deviceType)))}</td>
-                                <td>${esc(licenseLabel(device.licenseId))}</td>
+                                <td>${esc(companyLabel(device.company))}</td>
+                                <td>${esc(licenseDisplayLabel(device.licenseId))}</td>
+                                <td class="text-break">${esc(device.simNumber || '-')}</td>
                                 <td>${esc(device.supplier || '-')}</td>
-                                <td>${esc(device.model || '-')}</td>
+                                <td>${esc(modelInfo ? modelCommercialName(modelInfo) : (device.model || '-'))}</td>
                             </tr>`;
                     }).join('')}
                 </tbody>
@@ -279,7 +362,7 @@ function renderDeviceFilterControls() {
     renderSelectOptions(els.deviceTypeFilter, options.deviceType || [], state.deviceFilters.deviceType, value => deviceTypeLabel(value));
     renderSelectOptions(els.deviceLicenseFilter, options.licenseId || [], state.deviceFilters.licenseId, value => licenseLabel(value));
     renderSelectOptions(els.deviceSupplierFilter, options.supplier || [], state.deviceFilters.supplier, value => value);
-    renderSelectOptions(els.deviceModelFilter, options.model || [], state.deviceFilters.model, value => value);
+    renderSelectOptions(els.deviceModelFilter, options.model || [], state.deviceFilters.model, value => modelDisplayName('', value));
     renderAppliedDeviceFilters();
 }
 
@@ -296,7 +379,7 @@ function renderAppliedDeviceFilters() {
         labels.push({key: 'supplier', label: `Fornecedor: ${state.deviceFilters.supplier}`});
     }
     if (state.deviceFilters.model) {
-        labels.push({key: 'model', label: `Modelo: ${state.deviceFilters.model}`});
+        labels.push({key: 'model', label: `Modelo: ${modelDisplayName('', state.deviceFilters.model)}`});
     }
 
     els.deviceActiveFilters.innerHTML = labels.length
@@ -418,7 +501,7 @@ function renderSelectedDeviceSummary(device) {
         {label: 'Tipo', value: deviceTypeLabel(normalizeDeviceType(device.deviceType))},
         {label: 'Licença', value: licenseLabel(device.licenseId)},
         {label: 'Fornecedor', value: supplier || '-'},
-        {label: 'Modelo', value: model || '-'},
+        {label: 'Modelo', value: modelInfo ? modelCommercialName(modelInfo) : (model || '-')},
         {label: 'Última ligação', value: when(device.lastSeenAt) || 'Sem registo'},
     ];
 
@@ -790,8 +873,65 @@ async function sendCommand(requestId) {
     }
 }
 
+async function populateCompanySelect() {
+    try {
+        const data = await api.companies({limit: 500});
+        const companies = data.data || [];
+        els.deviceCompanySelect.innerHTML = '<option value="">Sem empresa</option>'
+            + companies.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+    } catch {
+        els.deviceCompanySelect.innerHTML = '<option value="">Sem empresa</option>';
+    }
+}
+
+async function populateLicenseSelectForCompany(companyName) {
+    const select = els.deviceLicenseSelect;
+    if (!companyName) {
+        select.innerHTML = '<option value="0">Nenhuma</option>';
+        select.disabled = true;
+        els.deviceLicenseId.value = '0';
+        return;
+    }
+    try {
+        const data = await api.companies({limit: 500});
+        const companyList = data.data || [];
+        const company = companyList.find(s => s.name === companyName);
+        if (!company) {
+            select.innerHTML = '<option value="0">Nenhuma</option>';
+            select.disabled = true;
+            els.deviceLicenseId.value = '0';
+            return;
+        }
+        const licData = await api.licenses({limit: 500, companyId: company.id});
+        const licenses = licData.data || [];
+        select.innerHTML = '<option value="0">Nenhuma</option>'
+            + licenses.map(l => `<option value="${esc(l.license_id)}">${esc(l.license_id)}${l.name ? ` — ${esc(l.name)}` : ''}</option>`).join('');
+        select.disabled = false;
+    } catch {
+        select.innerHTML = '<option value="0">Nenhuma</option>';
+        select.disabled = true;
+        els.deviceLicenseId.value = '0';
+    }
+}
+
+function handleCompanySelect() {
+    const companyName = els.deviceCompanySelect.value;
+    els.deviceCompany.value = companyName || '';
+    if (companyName) {
+        void populateLicenseSelectForCompany(companyName);
+    } else {
+        els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
+        els.deviceLicenseSelect.disabled = true;
+        els.deviceLicenseId.value = '0';
+    }
+}
+
+function handleLicenseSelect() {
+    els.deviceLicenseId.value = els.deviceLicenseSelect.value || '0';
+}
+
 async function openAddDevice() {
-    await ensureModelsLoaded();
+    await Promise.all([ensureModelsLoaded(), ensureSuppliersLoaded()]);
     els.deviceModalLabel.textContent = 'Adicionar dispositivo';
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
@@ -821,6 +961,10 @@ async function openAddDevice() {
     els.deleteDeviceBtn.classList.add('d-none');
     renderDeviceSimNumberField('');
     renderDeviceTypeSelector('watch');
+    await populateCompanySelect();
+    els.deviceCompany.value = '';
+    els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
+    els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = '0';
     els.deviceDeviceId.value = '';
     renderDeviceSelectors();
@@ -828,7 +972,7 @@ async function openAddDevice() {
 }
 
 async function editDevice(imei, supplier, model) {
-    await ensureModelsLoaded();
+    await Promise.all([ensureModelsLoaded(), ensureSuppliersLoaded()]);
     els.deviceModalLabel.textContent = 'Editar dispositivo';
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
@@ -855,6 +999,10 @@ async function editDevice(imei, supplier, model) {
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove('d-none');
     renderDeviceTypeSelector('watch');
+    await populateCompanySelect();
+    els.deviceCompany.value = '';
+    els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
+    els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = '0';
     renderDeviceSelectors(supplier, model);
     renderDeviceConfigurationModal();
@@ -864,10 +1012,36 @@ async function editDevice(imei, supplier, model) {
     try {
         const detail = await api.device(imei);
         const device = detail.device || {};
-        renderDeviceTypeSelector(String(device.deviceType || 'watch'));
-        els.deviceLicenseId.value = String(device.licenseId || '0');
-        state.deviceModal.deviceType = normalizeDeviceType(String(device.deviceType || 'watch'));
-        state.deviceModal.licenseId = String(device.licenseId || '0');
+        const deviceType = String(device.deviceType || 'watch');
+        const licenseId = String(device.licenseId || '0');
+        const deviceCompany = String(device.company || '');
+        renderDeviceTypeSelector(deviceType);
+        renderDeviceSelectors(
+            String(device.supplier || supplier),
+            String(device.model || model),
+            deviceType
+        );
+        if (deviceCompany !== '' && deviceCompany !== 'null') {
+            const optExists = [...els.deviceCompanySelect.options].some(o => o.value === deviceCompany);
+            if (!optExists) {
+                const opt = document.createElement('option');
+                opt.value = deviceCompany;
+                opt.textContent = deviceCompany;
+                els.deviceCompanySelect.appendChild(opt);
+            }
+            els.deviceCompanySelect.value = deviceCompany;
+            els.deviceCompany.value = deviceCompany;
+            await populateLicenseSelectForCompany(deviceCompany);
+            if (licenseId !== '0' && licenseId !== '') {
+                const licOptExists = [...els.deviceLicenseSelect.options].some(o => o.value === licenseId);
+                if (licOptExists) {
+                    els.deviceLicenseSelect.value = licenseId;
+                    els.deviceLicenseId.value = licenseId;
+                }
+            }
+        }
+        state.deviceModal.deviceType = normalizeDeviceType(deviceType);
+        state.deviceModal.licenseId = licenseId;
         renderDeviceSimNumberField(String(device.simNumber || ''));
         state.deviceModal.simNumber = String(device.simNumber || '');
         els.deviceDeviceId.value = String(device.deviceId || '');
@@ -881,18 +1055,19 @@ async function editDevice(imei, supplier, model) {
     }
 }
 
-function renderDeviceSelectors(selectedSupplier = '', selectedModel = '') {
-    const suppliers = suppliersFromModels();
+function renderDeviceSelectors(selectedSupplier = '', selectedModel = '', deviceType = '') {
+    const currentDeviceType = normalizeDeviceType(deviceType || els.deviceForm.dataset.deviceType || 'watch');
+    const suppliers = suppliersForDeviceType(currentDeviceType);
     const supplier = suppliers.includes(selectedSupplier) ? selectedSupplier : (suppliers[0] || '');
-    const models = modelsForSupplier(supplier);
-    const availableModelNames = models.map(model => model.model);
+    const models = modelsForSupplierAndType(supplier, currentDeviceType);
+    const availableModelNames = models.map(model => modelInternalName(model));
     const model = availableModelNames.includes(selectedModel) ? selectedModel : (availableModelNames[0] || '');
 
     els.deviceForm.dataset.supplier = supplier;
     els.deviceForm.dataset.model = model;
 
     renderButtonGroup(els.deviceSupplierButtons, suppliers.map(value => ({value, label: value})), supplier, 'selectDeviceSupplier');
-    renderButtonGroup(els.deviceModelButtons, models.map(entry => ({value: entry.model, label: entry.model})), model, 'selectDeviceModel');
+    renderButtonGroup(els.deviceModelButtons, models.map(entry => ({value: modelInternalName(entry), label: modelDisplayLabel(entry)})), model, 'selectDeviceModel');
     updateDevicePreview();
     syncDeviceModalContext();
     renderDeviceConfigurationModal();
@@ -904,8 +1079,10 @@ function renderDeviceTypeSelector(selectedType = 'watch') {
     renderButtonGroup(els.deviceTypeButtons, deviceTypeOptions, deviceType, 'selectDeviceType');
 
     const showImeiSim = deviceType === 'watch';
+    const showDeviceId = deviceType !== 'watch';
     els.deviceImeiRow?.classList.toggle('d-none', !showImeiSim);
     els.deviceSimRow?.classList.toggle('d-none', !showImeiSim);
+    els.deviceDeviceIdRow?.classList.toggle('d-none', !showDeviceId);
 
     if (deviceType === 'ncs') {
         els.deviceDeviceIdLabel.textContent = 'Device ID (MAC)';
@@ -920,8 +1097,6 @@ function renderDeviceTypeSelector(selectedType = 'watch') {
         els.deviceDeviceIdHelp.textContent = 'Identificador do dispositivo no protocolo (IMEI, MAC, etc.).';
         els.deviceDeviceId.placeholder = 'ID do dispositivo no protocolo';
     }
-
-    applyFourPTouchDeviceIdUi();
 }
 
 function updateDevicePreview() {
@@ -945,13 +1120,17 @@ function syncDeviceModalContext() {
     state.deviceModal.deviceType = normalizeDeviceType(els.deviceForm.dataset.deviceType || 'watch');
     state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || '0';
     state.deviceModal.simNumber = getDeviceSimNumberValue(false);
-    state.deviceModal.deviceId = els.deviceDeviceId.value.trim();
+    state.deviceModal.deviceId = els.deviceDeviceId?.value.trim() || '';
     if (!state.deviceModal.activeCategory || !state.deviceModal.catalog.some(entry => entry.category === state.deviceModal.activeCategory)) {
         state.deviceModal.activeCategory = state.deviceModal.catalog[0]?.category || '';
     }
 }
 
 function applyFourPTouchDeviceIdUi() {
+    if (!els.deviceDeviceId) {
+        return;
+    }
+
     const isFourPTouch = isFourPTouchSelection();
     if (isFourPTouch) {
         const derived = deriveFourPTouchDeviceId(els.deviceImei.value.trim());
@@ -1005,8 +1184,8 @@ async function saveDevice() {
         ? deriveFourPTouchDeviceId(imei)
         : els.deviceDeviceId.value.trim();
 
-    if (deviceType === 'ncs') {
-        if (!deviceId || !supplier || !model) { alert('Device ID (MAC), fornecedor e modelo são obrigatórios'); return; }
+    if (deviceType === 'ncs' || deviceType === 'radar') {
+        if (!deviceId || !supplier || !model) { alert('Device ID, fornecedor e modelo são obrigatórios'); return; }
         imei = deviceId;
         simNumber = '';
     } else {
@@ -1021,9 +1200,10 @@ async function saveDevice() {
     }
 
     const originalImei = els.deviceImei.dataset.originalImei || '';
-    if (deviceType !== 'watch' && !licenseId) { alert('A licença é obrigatória para NCS e Radars'); return; }
+    const company = els.deviceCompany.value || 'null';
+    if (deviceType !== 'watch' && (licenseId === '' || licenseId === '0')) { alert('É necessário selecionar uma licença para este tipo de dispositivo'); return; }
 
-    const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, originalImei);
+    const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, originalImei, company);
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
     if (state.selectedImei && originalImei && state.selectedImei === originalImei) {
@@ -1070,25 +1250,139 @@ function handleDeleteDeviceBtnClick() {
 }
 
 async function loadSettingsModal(section = state.settingsModal.section || 'suppliers') {
-    const [suppliersData, modelsData, apiUsersData] = await Promise.all([
-        api.suppliers({limit: 500}),
-        api.models({limit: 500}),
-        api.apiUsers({limit: 500}),
-    ]);
-    state.modelModalSuppliers = suppliersData.data || [];
-    state.summary.models = modelsData.data || [];
-    state.settingsModal.apiUsers = apiUsersData.data || [];
-    renderSuppliersSection(state.modelModalSuppliers);
-    renderModelsSection(state.summary.models);
-    renderApiUsersSection(state.settingsModal.apiUsers);
-    syncCapabilitiesSelection();
-    renderCapabilitiesSection();
+    state.settingsModal.sectionLoaded = {
+        suppliers: false,
+        models: false,
+        capabilities: false,
+        company: false,
+        apiUsers: false,
+    };
+    state.settingsModal.suppliersPagination = null;
+    state.settingsModal.modelsPagination = null;
+    state.settingsModal.companyPagination = null;
+    state.settingsModal.licensesPagination = null;
+    state.settingsModal.apiUsersPagination = null;
+    state.settingsModal.capabilitySupplier = '';
+    state.settingsModal.capabilityModelId = null;
+    state.settingsModal.capabilityEnabledRequests = [];
     activateSettingsSection(section);
     settingsModal.show();
+    if (section === 'suppliers') {
+        void loadSettingsSuppliersSection();
+    } else if (section === 'models') {
+        void loadSettingsModelsSection();
+    } else if (section === 'capabilities') {
+        void loadSettingsCapabilitiesSection();
+    } else if (section === 'company') {
+        void loadSettingsCompanySection();
+    } else if (section === 'apiUsers') {
+        void loadSettingsApiUsersSection();
+    }
+}
+
+function renderSettingsPagination(pagination, rootEl, summaryEl, controlsEl, action) {
+    const total = pagination?.total ?? 0;
+    const totalPages = pagination?.total_pages ?? 1;
+    const currentPage = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 20;
+
+    if (totalPages <= 1) {
+        rootEl.classList.add('d-none');
+        summaryEl.textContent = '';
+        controlsEl.innerHTML = '';
+        return;
+    }
+
+    const pageStart = ((currentPage - 1) * limit) + 1;
+    const pageEnd = Math.min(total, currentPage * limit);
+    rootEl.classList.remove('d-none');
+    summaryEl.textContent = `A mostrar de ${pageStart} até ${pageEnd} | ${total}`;
+    controlsEl.innerHTML = [
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(action)}Prev" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
+        ...Array.from({length: totalPages}, (_, index) => {
+            const page = index + 1;
+            return `<button type="button" class="btn ${page === currentPage ? 'btn-primary' : 'btn-outline-secondary'} btn-sm" data-action="${esc(action)}Go" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ''}>${page}</button>`;
+        }),
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(action)}Next" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
+    ].join('');
+}
+
+function handleSettingsPaginationClick(event, paginationKey, loadFn) {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    const action = button.dataset.action;
+    const pagination = state.settingsModal[paginationKey];
+    const currentPage = pagination?.page ?? 1;
+    const totalPages = pagination?.total_pages ?? 1;
+    let nextPage;
+    if (action.endsWith('Prev')) nextPage = Math.max(1, currentPage - 1);
+    else if (action.endsWith('Next')) nextPage = Math.min(totalPages, currentPage + 1);
+    else if (action.endsWith('Go')) nextPage = Math.min(Math.max(1, parseInt(button.dataset.page || '1', 10) || 1), totalPages);
+    else return;
+    void loadFn(nextPage);
+}
+
+async function loadSettingsSuppliersSection(page = 1) {
+    const response = await api.suppliers({page});
+    const suppliers = response.data || [];
+    state.settingsModal.suppliersPagination = response.pagination || null;
+    state.modelModalSuppliers = suppliers;
+    state.settingsModal.sectionLoaded.suppliers = true;
+    renderSuppliersSection(suppliers);
+    renderSettingsPagination(
+        state.settingsModal.suppliersPagination,
+        els.settingsSuppliersPagination,
+        els.settingsSuppliersPaginationSummary,
+        els.settingsSuppliersPaginationControls,
+        'settingsSuppliersPage'
+    );
+}
+
+async function loadSettingsModelsSection(page = 1) {
+    if (!state.settingsModal.sectionLoaded.suppliers) {
+        await loadSettingsSuppliersSection();
+    }
+    const response = await api.models({page});
+    const models = response.data || [];
+    state.settingsModal.modelsPagination = response.pagination || null;
+    state.summary.models = models;
+    state.settingsModal.sectionLoaded.models = true;
+    renderModelsSection(models);
+    renderSettingsPagination(
+        state.settingsModal.modelsPagination,
+        els.settingsModelsPagination,
+        els.settingsModelsPaginationSummary,
+        els.settingsModelsPaginationControls,
+        'settingsModelsPage'
+    );
+}
+
+async function loadSettingsCapabilitiesSection() {
+    if (!state.settingsModal.sectionLoaded.capabilities) {
+        const response = await api.models();
+        state.summary.models = response.data || [];
+        state.settingsModal.sectionLoaded.capabilities = true;
+    }
+    syncCapabilitiesSelection();
+    renderCapabilitiesSection();
+}
+
+async function loadSettingsApiUsersSection(page = 1) {
+    const response = await api.apiUsers({page});
+    const users = response.data || [];
+    state.settingsModal.apiUsersPagination = response.pagination || null;
+    state.settingsModal.sectionLoaded.apiUsers = true;
+    renderApiUsersSection(users);
+    renderSettingsPagination(
+        state.settingsModal.apiUsersPagination,
+        els.settingsApiUsersPagination,
+        els.settingsApiUsersPaginationSummary,
+        els.settingsApiUsersPaginationControls,
+        'settingsApiUsersPage'
+    );
 }
 
 function renderSuppliersSection(suppliers) {
-    els.supplierForm.reset();
     els.supplierListBody.innerHTML = (suppliers || []).map(supplier => `
         <tr>
         <td>${esc(supplier.name)}</td>
@@ -1096,31 +1390,15 @@ function renderSuppliersSection(suppliers) {
         <td><span class="badge ${supplier.enabled ? 'text-bg-success' : 'text-bg-secondary'}">${supplier.enabled ? 'ativo' : 'inativo'}</span></td>
         <td>
         <button class="btn btn-outline-${supplier.enabled ? 'warning' : 'success'} btn-sm" data-id="${supplier.id}" data-enabled="${supplier.enabled ? '1' : ''}" data-action="toggleSupplier" title="${supplier.enabled ? 'Desativar' : 'Ativar'}"><i class="fa-solid fa-${supplier.enabled ? 'pause' : 'play'}"></i></button>
-        <button class="btn btn-outline-danger btn-sm" data-id="${supplier.id}" data-action="deleteSupplier" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`).join('');
 }
 
-async function saveSupplier() {
-    const name = els.supplierName.value.trim();
-    if (!name) { alert('O nome é obrigatório'); return; }
-    const result = await api.saveSupplier(name);
-    if (result.error) { alert(result.error.message || result.error.code); return; }
-    els.supplierName.value = '';
-    await loadSettingsModal('suppliers');
-}
-
 async function toggleSupplier(id, enabled) {
-    const result = await api.updateSupplier(id, !enabled);
+    const result = await api.updateSupplier(id, {enabled: !enabled});
     if (result.error) { alert(result.error.message || result.error.code); return; }
-    await loadSettingsModal('suppliers');
-}
-
-async function deleteSupplier(id) {
-    if (!confirm('Apagar fornecedor?')) return;
-    const result = await api.deleteSupplier(id);
-    if (result.error) { alert(result.error.message || result.error.code); return; }
-    await loadSettingsModal('suppliers');
+    state.settingsModal.sectionLoaded.suppliers = false;
+    await loadSettingsSuppliersSection();
 }
 
 function renderModelsSection(models) {
@@ -1129,9 +1407,11 @@ function renderModelsSection(models) {
         <tr>
         <td>${modelImageHtml(model)}</td>
         <td>${esc(model.supplier)}</td>
-        <td>${esc(model.model)}</td>
+        <td>${esc(modelCommercialName(model))}</td>
+        <td>${esc(modelInternalName(model))}</td>
+        <td>${esc(deviceTypeLabel(modelDeviceType(model)))}</td>
         <td>
-        <button class="btn btn-outline-secondary btn-sm" data-id="${model.id}" data-supplier-id="${model.supplier_id}" data-supplier="${esc(model.supplier)}" data-model="${esc(model.model)}" data-image="${esc(model.image || '')}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" data-id="${model.id}" data-supplier-id="${model.supplier_id}" data-supplier="${esc(model.supplier)}" data-internal-model="${esc(modelInternalName(model))}" data-commercial-name="${esc(modelCommercialName(model))}" data-device-type="${esc(modelDeviceType(model))}" data-image="${esc(model.image || '')}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-outline-danger btn-sm" data-id="${model.id}" data-action="deleteModel" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`).join('');
@@ -1142,7 +1422,11 @@ function resetModelForm(selectedSupplierId = '') {
     els.modelForm.reset();
     delete els.modelForm.dataset.modelId;
     delete els.modelForm.dataset.image;
+    els.modelForm.dataset.deviceType = 'watch';
     els.saveModelBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
+    els.modelImage.value = '';
+
+    renderButtonGroup(els.modelDeviceTypeButtons, deviceTypeOptions, 'watch', 'selectModelDeviceType');
 
     const suppliers = state.modelModalSuppliers.map(supplier => ({value: String(supplier.id), label: supplier.name}));
     const supplierId = suppliers.some(supplier => supplier.value === String(selectedSupplierId))
@@ -1156,15 +1440,18 @@ function resetModelForm(selectedSupplierId = '') {
     updateModelProtocolAndPreview();
 }
 
-function editModel(id, supplierId, supplier, model, image) {
+function editModel(id, supplierId, supplier, internalModel, commercialName, deviceType, image) {
     revokeModelPreviewUrl();
     els.modelForm.dataset.modelId = String(id);
     els.modelForm.dataset.supplierId = String(supplierId);
     els.modelForm.dataset.supplier = supplier;
     els.modelForm.dataset.image = image || '';
-    els.modelModel.value = model;
+    els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
+    els.modelInternalModel.value = internalModel;
+    els.modelCommercialName.value = commercialName;
     els.modelImage.value = '';
     els.saveModelBtn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
+    renderButtonGroup(els.modelDeviceTypeButtons, deviceTypeOptions, els.modelForm.dataset.deviceType, 'selectModelDeviceType');
     renderButtonGroup(
         els.modelSupplierButtons,
         state.modelModalSuppliers.map(entry => ({value: String(entry.id), label: entry.name})),
@@ -1190,24 +1477,37 @@ function selectModelSupplier(supplierId) {
     updateModelProtocolAndPreview();
 }
 
+function selectModelDeviceType(deviceType) {
+    els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
+    renderButtonGroup(els.modelDeviceTypeButtons, deviceTypeOptions, els.modelForm.dataset.deviceType, 'selectModelDeviceType');
+}
+
 function updateModelProtocolAndPreview() {
     const supplier = els.modelForm.dataset.supplier || '';
-    const model = els.modelModel.value.trim();
+    const internalModel = els.modelInternalModel.value.trim();
+    const commercialName = els.modelCommercialName.value.trim();
     const image = els.modelForm.dataset.image || '';
-    const modelInfo = image ? {image, model: model || 'Modelo'} : null;
+    const modelInfo = image ? {image, internal_model: internalModel || '', commercial_name: commercialName || internalModel || 'Modelo'} : null;
     if (!state.modelPreviewObjectUrl) {
-        els.modelPreview.innerHTML = modelPreviewHtml(modelInfo, model || supplier || 'Novo modelo');
+        const label = commercialName || internalModel || supplier || 'Novo modelo';
+        els.modelPreviewContent.innerHTML = modelInfo?.image
+            ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain w-100 h-100" alt="${esc(label)}" style="max-height:180px;">`
+            : `<i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div>`;
     }
 }
 
 async function saveModel() {
     const supplierId = parseInt(els.modelForm.dataset.supplierId || '0');
-    const model = els.modelModel.value.trim();
-    if (!supplierId || !model) { alert('Fornecedor e modelo são obrigatórios'); return; }
+    const internalModel = els.modelInternalModel.value.trim();
+    const commercialName = els.modelCommercialName.value.trim();
+    const deviceType = normalizeDeviceType(els.modelForm.dataset.deviceType || 'watch');
+    if (!supplierId || !internalModel || !commercialName) { alert('Fornecedor, modelo interno e nome comercial são obrigatórios'); return; }
 
     const body = new FormData();
     body.append('supplier_id', String(supplierId));
-    body.append('model', model);
+    body.append('internalModel', internalModel);
+    body.append('commercialName', commercialName);
+    body.append('deviceType', deviceType);
     if (els.modelImage.files[0]) {
         body.append('image', els.modelImage.files[0]);
     }
@@ -1215,13 +1515,17 @@ async function saveModel() {
     const result = await api.saveModel(els.modelForm.dataset.modelId || '', body);
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
-    await loadSettingsModal('models');
+    state.settingsModal.sectionLoaded.models = false;
+    state.settingsModal.sectionLoaded.capabilities = false;
+    await loadSettingsModelsSection();
 }
 
 async function deleteModel(id) {
     if (!confirm('Apagar modelo?')) return;
     await api.deleteModel(id);
-    await loadSettingsModal('models');
+    state.settingsModal.sectionLoaded.models = false;
+    state.settingsModal.sectionLoaded.capabilities = false;
+    await loadSettingsModelsSection();
 }
 
 function renderApiUsersSection(users) {
@@ -1284,7 +1588,8 @@ async function saveApiUser() {
     const result = await api.saveApiUser(id, body);
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
-    await loadSettingsModal('apiUsers');
+    state.settingsModal.sectionLoaded.apiUsers = false;
+    await loadSettingsApiUsersSection();
 }
 
 async function toggleApiUser(button) {
@@ -1295,14 +1600,155 @@ async function toggleApiUser(button) {
         enabled: !button.dataset.enabled,
     });
     if (result.error) { alert(result.error.message || result.error.code); return; }
-    await loadSettingsModal('apiUsers');
+    state.settingsModal.sectionLoaded.apiUsers = false;
+    await loadSettingsApiUsersSection();
 }
 
 async function deleteApiUser(id) {
     if (!confirm('Apagar utilizador API?')) return;
     const result = await api.deleteApiUser(id);
     if (result.error) { alert(result.error.message || result.error.code); return; }
-    await loadSettingsModal('apiUsers');
+    state.settingsModal.sectionLoaded.apiUsers = false;
+    await loadSettingsApiUsersSection();
+}
+
+function renderCompanySection(companies) {
+    resetCompanyForm();
+    els.companyListBody.innerHTML = (companies || []).map(item => `
+        <tr>
+        <td>${esc(item.name)}</td>
+        <td>${item.license_count ?? 0}</td>
+        <td>
+        <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+        </td>
+        </tr>`).join('');
+}
+
+function resetCompanyForm() {
+    els.companyForm.reset();
+    els.companyId.value = '';
+}
+
+function editCompany(button) {
+    els.companyId.value = button.dataset.id || '';
+    els.companyName.value = button.dataset.name || '';
+}
+
+async function saveCompany() {
+    const id = els.companyId.value.trim();
+    const name = els.companyName.value.trim();
+    if (!name) { alert('O nome é obrigatório'); return; }
+    const result = await api.saveCompany(id, name);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    state.settingsModal.sectionLoaded.company = false;
+    await loadSettingsCompanySection();
+}
+
+async function deleteCompany(id) {
+    if (!confirm('Apagar empresa? Todas as licenças associadas serão apagadas.')) return;
+    const result = await api.deleteCompany(id);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    state.settingsModal.sectionLoaded.company = false;
+    await loadSettingsCompanySection();
+}
+
+function renderLicensesSection(licenses, companies) {
+    resetLicenseForm();
+    const companyOptions = (companies || []).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+    els.licenseCompanySelect.innerHTML = '<option value="">Selecionar empresa</option>' + companyOptions;
+    els.licenseListBody.innerHTML = (licenses || []).map(item => `
+        <tr>
+        <td>${esc(item.company_name || '-')}</td>
+        <td>${esc(item.license_id)}</td>
+        <td>${esc(item.name || '-')}</td>
+        <td>
+        <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${item.id}" data-company-id="${item.company_id}" data-company-name="${esc(item.company_name || '')}" data-license-id="${esc(item.license_id)}" data-name="${esc(item.name || '')}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+        </td>
+        </tr>`).join('');
+}
+
+function resetLicenseForm() {
+    els.licenseForm.reset();
+    els.licenseId.value = '';
+}
+
+function editLicense(button) {
+    els.licenseId.value = button.dataset.id || '';
+    els.licenseCompanySelect.value = button.dataset.companyId || '';
+    els.licenseLicenseId.value = button.dataset.licenseId || '';
+    els.licenseName.value = button.dataset.name || '';
+}
+
+async function saveLicense() {
+    const id = els.licenseId.value.trim();
+    const companyId = els.licenseCompanySelect.value;
+    const licenseId = els.licenseLicenseId.value.trim();
+    const name = els.licenseName.value.trim();
+    if (!companyId) { alert('Selecione uma empresa'); return; }
+    if (!licenseId) { alert('O ID da licença é obrigatório'); return; }
+    const body = {companyId: Number(companyId), licenseId, name};
+    const result = await api.saveLicense(id, body);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    state.settingsModal.sectionLoaded.company = false;
+    await loadSettingsCompanySection();
+}
+
+async function deleteLicense(id) {
+    if (!confirm('Apagar licença?')) return;
+    const result = await api.deleteLicense(id);
+    if (result.error) { alert(result.error.message || result.error.code); return; }
+    state.settingsModal.sectionLoaded.company = false;
+    await loadSettingsCompanySection();
+}
+
+async function loadSettingsCompanySection(companiesPage = 1, licensesPage = 1) {
+    const [companyData, licensesData] = await Promise.all([
+        api.companies({page: companiesPage}),
+        api.licenses({page: licensesPage}),
+    ]);
+    const companies = companyData.data || [];
+    const licenses = licensesData.data || [];
+    state.settingsModal.sectionLoaded.company = true;
+    state.settingsModal.companyPagination = companyData.pagination || null;
+    state.settingsModal.licensesPagination = licensesData.pagination || null;
+    renderCompanySection(companies);
+    renderLicensesSection(licenses, companies);
+    renderSettingsPagination(
+        state.settingsModal.companyPagination,
+        els.settingsCompanyPagination,
+        els.settingsCompanyPaginationSummary,
+        els.settingsCompanyPaginationControls,
+        'settingsCompanyPage'
+    );
+    renderSettingsPagination(
+        state.settingsModal.licensesPagination,
+        els.settingsLicensesPagination,
+        els.settingsLicensesPaginationSummary,
+        els.settingsLicensesPaginationControls,
+        'settingsLicensesPage'
+    );
+}
+
+function handleCompanyListClick(event) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.action === 'editCompany') {
+        editCompany(button);
+    } else if (button.dataset.action === 'deleteCompany') {
+        void deleteCompany(Number(button.dataset.id));
+    }
+}
+
+function handleLicenseListClick(event) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.action === 'editLicense') {
+        editLicense(button);
+    } else if (button.dataset.action === 'deleteLicense') {
+        void deleteLicense(Number(button.dataset.id));
+    }
 }
 
 function activateSettingsSection(section) {
@@ -1311,49 +1757,82 @@ function activateSettingsSection(section) {
         suppliers: els.settingsSuppliersTabBtn,
         models: els.settingsModelsTabBtn,
         capabilities: els.settingsCapabilitiesTabBtn,
+        company: els.settingsCompanyTabBtn,
         apiUsers: els.settingsApiUsersTabBtn,
     }[section] || els.settingsSuppliersTabBtn;
     bootstrap.Tab.getOrCreateInstance(button).show();
 }
 
 function syncCapabilitiesSelection() {
-    const availableSuppliers = suppliersFromModels(state.summary.models);
-    const currentSupplier = availableSuppliers.includes(state.settingsModal.capabilitySupplier)
-        ? state.settingsModal.capabilitySupplier
-        : (availableSuppliers[0] || '');
+    const deviceType = state.settingsModal.capabilityDeviceType || '';
+    const models = state.summary.models.filter(model => !deviceType || modelDeviceType(model) === deviceType);
+
+    let currentSupplier = state.settingsModal.capabilitySupplier || '';
+    const availableSuppliers = [...new Set(models.map(model => model.supplier).filter(Boolean))];
+    if (!availableSuppliers.includes(currentSupplier)) {
+        currentSupplier = availableSuppliers[0] || '';
+    }
     state.settingsModal.capabilitySupplier = currentSupplier;
 
-    const models = modelsForCapabilitySupplier(currentSupplier);
-    const currentModel = models.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId))
-        || models[0]
+    const supplierModels = modelsForCapabilitySupplier(currentSupplier).filter(m => !deviceType || modelDeviceType(m) === deviceType);
+    const currentModel = supplierModels.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId))
+        || supplierModels[0]
         || null;
 
     state.settingsModal.capabilityModelId = currentModel ? Number(currentModel.id) : null;
-    state.settingsModal.capabilityEnabledRequests = Array.isArray(currentModel?.enabledRequests)
-        ? [...currentModel.enabledRequests]
+    state.settingsModal.capabilityEnabledCapabilities = Array.isArray(currentModel?.enabledCapabilities)
+        ? [...currentModel.enabledCapabilities]
         : [];
 }
 
+let capabilityDebounceTimer = null;
+
 function renderCapabilitiesSection() {
     const supplier = state.settingsModal.capabilitySupplier || '';
-    const models = modelsForCapabilitySupplier(supplier);
-    const selectedModel = models.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId)) || null;
-    const enabled = new Set(state.settingsModal.capabilityEnabledRequests || []);
+    const deviceType = state.settingsModal.capabilityDeviceType || '';
+    const filteredModels = (state.summary.models || []).filter(model =>
+        (!deviceType || modelDeviceType(model) === deviceType) &&
+        (!supplier || model.supplier === supplier)
+    );
+    const selectedModel = filteredModels.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId)) || null;
+    const enabled = new Set(state.settingsModal.capabilityEnabledCapabilities || []);
 
     renderButtonGroup(
+        els.capabilityDeviceTypeButtons,
+        deviceTypeOptions.map(entry => ({value: entry.value, label: entry.label})),
+        deviceType || 'watch',
+        'selectCapabilityDeviceType'
+    );
+
+    const suppliers = suppliersFromModels(state.summary.models).filter(s => {
+        if (!deviceType) return true;
+        return state.summary.models.some(m => m.supplier === s && modelDeviceType(m) === deviceType);
+    });
+    renderButtonGroup(
         els.capabilitySupplierButtons,
-        suppliersFromModels(state.summary.models).map(entry => ({value: entry, label: entry})),
+        suppliers.map(entry => ({value: entry, label: entry})),
         supplier,
         'selectCapabilitySupplier'
     );
     renderButtonGroup(
         els.capabilityModelButtons,
-        models.map(entry => ({value: String(entry.id), label: entry.model})),
+        filteredModels.map(entry => ({value: String(entry.id), label: modelDisplayLabel(entry)})),
         selectedModel ? String(selectedModel.id) : '',
         'selectCapabilityModel'
     );
 
-    const requests = Array.isArray(selectedModel?.availableRequests) ? selectedModel.availableRequests : [];
+    if (selectedModel) {
+        const label = modelCommercialName(selectedModel);
+        els.capabilityModelPreview.innerHTML = modelImageHtml(selectedModel)
+            ? modelImageHtml(selectedModel).replace('style="width:40px;height:40px;"', 'style="max-height:100px;" class="object-fit-contain"')
+            : `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
+        els.capabilityModelName.textContent = label;
+    } else {
+        els.capabilityModelPreview.innerHTML = `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">Modelo</div></div>`;
+        els.capabilityModelName.textContent = 'Modelo';
+    }
+
+    const features = Array.isArray(selectedModel?.capabilities) ? selectedModel.capabilities : [];
     els.capabilitySelectionEmpty.classList.toggle('d-none', !!selectedModel);
     els.capabilityEditor.classList.toggle('d-none', !selectedModel);
     if (!selectedModel) {
@@ -1362,50 +1841,43 @@ function renderCapabilitiesSection() {
         return;
     }
 
-    els.capabilityTitle.textContent = selectedModel.model;
+    els.capabilityTitle.textContent = modelCommercialName(selectedModel);
     els.capabilitySubtitle.textContent = `${selectedModel.supplier} · ${selectedModel.protocol || 'sem protocolo'}`;
-    els.capabilitySummary.textContent = `${enabled.size}/${requests.length} ativos`;
+    els.capabilitySummary.textContent = `${enabled.size}/${features.length} ativos`;
 
     const groups = new Map();
-    for (const request of requests) {
-        const key = capabilityGroupKey(request);
-        groups.set(key, [...(groups.get(key) || []), request]);
+    for (const feature of features) {
+        const key = capabilityGroupKey(feature);
+        groups.set(key, [...(groups.get(key) || []), feature]);
     }
 
     els.capabilityGroups.innerHTML = [...groups.entries()].map(([group, entries]) => `
         <section class="border rounded bg-body-tertiary p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="h6 mb-0">${esc(capabilityGroupLabel(group))}</h3>
-                <span class="small text-secondary">${entries.filter(entry => enabled.has(String(entry.command || ''))).length}/${entries.length} ativos</span>
+                <span class="small text-secondary">${entries.filter(f => enabled.has(f)).length}/${entries.length} ativos</span>
             </div>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead>
-                        <tr><th>Ativo</th><th>Pedido</th><th>Comando nativo</th><th>Resposta esperada</th></tr>
-                    </thead>
-                    <tbody>
-                        ${entries.map(entry => {
-                            const requestId = String(entry.id || entry.command || '');
-                            const command = String(entry.command || '');
-                            const reply = Array.isArray(entry.expectedReplyTypes) && entry.expectedReplyTypes.length
-                                ? entry.expectedReplyTypes.map(type => `<span class="badge text-bg-light border me-1">${esc(type)}</span>`).join('')
-                                : '<span class="text-secondary small">Sem resposta esperada</span>';
-                            return `
-                                <tr>
-                                    <td><input class="form-check-input" type="checkbox" data-action="toggleCapabilityRequest" data-request-id="${esc(requestId)}" ${enabled.has(requestId) ? 'checked' : ''}></td>
-                                    <td>
-                                        <div class="fw-semibold">${esc(commandLabel(entry) || command)}</div>
-                                        <div class="small text-secondary">${esc(entry.label || '')}</div>
-                                    </td>
-                                    <td><code>${esc(command)}</code></td>
-                                    <td>${reply}</td>
-                                </tr>`;
-                        }).join('')}
-                    </tbody>
-                </table>
+            <div class="d-flex flex-column gap-2">
+                ${entries.map(feature => `
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequest" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? 'checked' : ''}>
+                            <label class="form-check-label" for="cap-${esc(feature)}">${esc(featureLabel(feature))}</label>
+                        </div>`
+                ).join('')}
             </div>
         </section>
     `).join('');
+}
+
+function selectCapabilityDeviceType(deviceType) {
+    clearTimeout(capabilityDebounceTimer);
+    capabilityDebounceTimer = setTimeout(() => {
+        state.settingsModal.capabilityDeviceType = deviceType;
+        state.settingsModal.capabilitySupplier = '';
+        state.settingsModal.capabilityModelId = null;
+        syncCapabilitiesSelection();
+        renderCapabilitiesSection();
+    }, 150);
 }
 
 function selectCapabilitySupplier(supplier) {
@@ -1430,10 +1902,13 @@ async function saveCapabilities() {
 
     const body = new FormData();
     body.append('supplier_id', String(model.supplier_id));
-    body.append('model', String(model.model || ''));
-    body.append('enabledRequestsConfigured', '1');
-    for (const command of state.settingsModal.capabilityEnabledRequests || []) {
-        body.append('enabledRequests[]', String(command));
+    body.append('internalModel', String(modelInternalName(model)));
+    body.append('commercialName', String(modelCommercialName(model)));
+    body.append('deviceType', String(modelDeviceType(model)));
+    body.append('protocol', String(model.protocol || ''));
+    body.append('enabledCapabilitiesConfigured', '1');
+    for (const feature of state.settingsModal.capabilityEnabledCapabilities || []) {
+        body.append('enabledCapabilities[]', String(feature));
     }
 
     const result = await api.saveModel(model.id, body);
@@ -1442,7 +1917,9 @@ async function saveCapabilities() {
         return;
     }
 
-    await loadSettingsModal('capabilities');
+    state.settingsModal.sectionLoaded.models = false;
+    state.settingsModal.sectionLoaded.capabilities = false;
+    await loadSettingsCapabilitiesSection();
 }
 
 function revokeModelPreviewUrl() {
@@ -1502,11 +1979,15 @@ function cacheElements() {
         deviceModelFilter: document.getElementById('deviceModelFilter'),
         clearDeviceFiltersBtn: document.getElementById('clearDeviceFiltersBtn'),
         deviceSimNumberRoot: document.getElementById('deviceSimNumberRoot'),
+        deviceDeviceIdRow: document.getElementById('deviceDeviceIdRow'),
         deviceDeviceId: document.getElementById('deviceDeviceId'),
         deviceDeviceIdLabel: document.getElementById('deviceDeviceIdLabel'),
         deviceDeviceIdHelp: document.getElementById('deviceDeviceIdHelp'),
         deviceTypeButtons: document.getElementById('deviceTypeButtons'),
         deviceLicenseId: document.getElementById('deviceLicenseId'),
+        deviceLicenseSelect: document.getElementById('deviceLicenseSelect'),
+        deviceCompany: document.getElementById('deviceCompany'),
+        deviceCompanySelect: document.getElementById('deviceCompanySelect'),
         devicePreview: document.getElementById('devicePreview'),
         deviceSupplierButtons: document.getElementById('deviceSupplierButtons'),
         deviceModelButtons: document.getElementById('deviceModelButtons'),
@@ -1523,19 +2004,26 @@ function cacheElements() {
         settingsModelsTabBtn: document.getElementById('settingsModelsTabBtn'),
         settingsCapabilitiesTabBtn: document.getElementById('settingsCapabilitiesTabBtn'),
         settingsApiUsersTabBtn: document.getElementById('settingsApiUsersTabBtn'),
-        supplierForm: document.getElementById('supplierForm'),
-        supplierName: document.getElementById('supplierName'),
         supplierListBody: document.getElementById('supplierListBody'),
-        saveSupplierBtn: document.getElementById('saveSupplierBtn'),
+        settingsSuppliersPagination: document.getElementById('settingsSuppliers'),
+        settingsSuppliersPaginationSummary: document.getElementById('settingsSuppliersSummary'),
+        settingsSuppliersPaginationControls: document.getElementById('settingsSuppliersControls'),
         modelForm: document.getElementById('modelForm'),
         modelPreview: document.getElementById('modelPreview'),
         modelSupplierButtons: document.getElementById('modelSupplierButtons'),
-        modelModel: document.getElementById('modelModel'),
+        modelInternalModel: document.getElementById('modelInternalModel'),
+        modelCommercialName: document.getElementById('modelCommercialName'),
+        modelDeviceTypeButtons: document.getElementById('modelDeviceTypeButtons'),
         modelImage: document.getElementById('modelImage'),
+        modelPreviewContent: document.getElementById('modelPreviewContent'),
         modelListBody: document.getElementById('modelListBody'),
+        settingsModelsPagination: document.getElementById('settingsModels'),
+        settingsModelsPaginationSummary: document.getElementById('settingsModelsSummary'),
+        settingsModelsPaginationControls: document.getElementById('settingsModelsControls'),
         resetModelBtn: document.getElementById('resetModelBtn'),
         deleteDeviceBtn: document.getElementById('deleteDeviceBtn'),
         saveModelBtn: document.getElementById('saveModelBtn'),
+        capabilityDeviceTypeButtons: document.getElementById('capabilityDeviceTypeButtons'),
         capabilitySupplierButtons: document.getElementById('capabilitySupplierButtons'),
         capabilityModelButtons: document.getElementById('capabilityModelButtons'),
         capabilitySelectionEmpty: document.getElementById('capabilitySelectionEmpty'),
@@ -1545,6 +2033,8 @@ function cacheElements() {
         capabilitySummary: document.getElementById('capabilitySummary'),
         saveCapabilitiesBtn: document.getElementById('saveCapabilitiesBtn'),
         capabilityGroups: document.getElementById('capabilityGroups'),
+        capabilityModelPreview: document.getElementById('capabilityModelPreview'),
+        capabilityModelName: document.getElementById('capabilityModelName'),
         apiUserForm: document.getElementById('apiUserForm'),
         apiUserId: document.getElementById('apiUserId'),
         apiUsername: document.getElementById('apiUsername'),
@@ -1555,6 +2045,30 @@ function cacheElements() {
         resetApiUserBtn: document.getElementById('resetApiUserBtn'),
         saveApiUserBtn: document.getElementById('saveApiUserBtn'),
         apiUserListBody: document.getElementById('apiUserListBody'),
+        settingsApiUsersPagination: document.getElementById('settingsApiUsers'),
+        settingsApiUsersPaginationSummary: document.getElementById('settingsApiUsersSummary'),
+        settingsApiUsersPaginationControls: document.getElementById('settingsApiUsersControls'),
+        settingsCompanyTabBtn: document.getElementById('settingsCompanyTabBtn'),
+        companyForm: document.getElementById('companyForm'),
+        companyId: document.getElementById('companyId'),
+        companyName: document.getElementById('companyName'),
+        resetCompanyBtn: document.getElementById('resetCompanyBtn'),
+        saveCompanyBtn: document.getElementById('saveCompanyBtn'),
+        companyListBody: document.getElementById('companyListBody'),
+        licenseForm: document.getElementById('licenseForm'),
+        licenseId: document.getElementById('licenseId'),
+        licenseCompanySelect: document.getElementById('licenseCompanySelect'),
+        licenseLicenseId: document.getElementById('licenseLicenseId'),
+        licenseName: document.getElementById('licenseName'),
+        resetLicenseBtn: document.getElementById('resetLicenseBtn'),
+        saveLicenseBtn: document.getElementById('saveLicenseBtn'),
+        licenseListBody: document.getElementById('licenseListBody'),
+        settingsCompanyPagination: document.getElementById('settingsCompany'),
+        settingsCompanyPaginationSummary: document.getElementById('settingsCompanySummary'),
+        settingsCompanyPaginationControls: document.getElementById('settingsCompanyControls'),
+        settingsLicensesPagination: document.getElementById('settingsLicenses'),
+        settingsLicensesPaginationSummary: document.getElementById('settingsLicensesSummary'),
+        settingsLicensesPaginationControls: document.getElementById('settingsLicensesControls'),
     };
 }
 
@@ -1576,6 +2090,8 @@ function bindEvents() {
     });
     els.saveDeviceBtn.addEventListener('click', saveDevice);
     els.deviceForm.addEventListener('submit', event => { event.preventDefault(); saveDevice(); });
+    els.deviceCompanySelect.addEventListener('change', handleCompanySelect);
+    els.deviceLicenseSelect.addEventListener('change', handleLicenseSelect);
     els.deviceListLimit.addEventListener('change', handleDeviceListLimitChange);
     els.deviceListSearch.addEventListener('input', handleDeviceListSearchInput);
     els.deviceTypeFilter.addEventListener('change', handleDeviceFilterChange);
@@ -1590,12 +2106,12 @@ function bindEvents() {
     els.deviceForm.addEventListener('input', handleDeviceFormInput);
     els.deviceForm.addEventListener('change', handleDeviceFormChange);
     els.manageSettingsBtn.addEventListener('click', () => { void loadSettingsModal('suppliers'); });
-    els.saveSupplierBtn.addEventListener('click', saveSupplier);
-    els.supplierForm.addEventListener('submit', event => { event.preventDefault(); saveSupplier(); });
+
     els.saveModelBtn.addEventListener('click', saveModel);
     els.resetModelBtn.addEventListener('click', () => resetModelForm());
     els.modelForm.addEventListener('submit', event => { event.preventDefault(); saveModel(); });
-    els.modelModel.addEventListener('input', () => updateModelProtocolAndPreview());
+    els.modelInternalModel.addEventListener('input', () => updateModelProtocolAndPreview());
+    els.modelCommercialName.addEventListener('input', () => updateModelProtocolAndPreview());
     els.modelImage.addEventListener('change', handleModelImageChange);
     els.saveCapabilitiesBtn.addEventListener('click', () => { void saveCapabilities(); });
     els.saveApiUserBtn.addEventListener('click', () => { void saveApiUser(); });
@@ -1610,27 +2126,63 @@ function bindEvents() {
     els.deviceTypeButtons.addEventListener('click', handleDeviceTypeClick);
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
+    els.modelDeviceTypeButtons.addEventListener('click', handleModelDeviceTypeClick);
+    els.capabilityDeviceTypeButtons.addEventListener('click', handleCapabilityDeviceTypeClick);
     els.capabilitySupplierButtons.addEventListener('click', handleCapabilitySupplierClick);
     els.capabilityModelButtons.addEventListener('click', handleCapabilityModelClick);
     els.capabilityGroups.addEventListener('change', handleCapabilityGroupsChange);
     els.settingsSuppliersTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'suppliers';
+        if (!state.settingsModal.sectionLoaded.suppliers) {
+            void loadSettingsSuppliersSection();
+        }
     });
     els.settingsModelsTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'models';
+        if (!state.settingsModal.sectionLoaded.models) {
+            void loadSettingsModelsSection();
+        }
     });
     els.settingsCapabilitiesTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'capabilities';
+        if (!state.settingsModal.sectionLoaded.capabilities) {
+            void loadSettingsCapabilitiesSection();
+        } else {
+            syncCapabilitiesSelection();
+            renderCapabilitiesSection();
+        }
     });
     els.settingsApiUsersTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'apiUsers';
+        if (!state.settingsModal.sectionLoaded.apiUsers) {
+            void loadSettingsApiUsersSection();
+        }
     });
+    els.settingsCompanyTabBtn.addEventListener('shown.bs.tab', () => {
+        state.settingsModal.section = 'company';
+        if (!state.settingsModal.sectionLoaded.company) {
+            void loadSettingsCompanySection();
+        }
+    });
+    els.saveCompanyBtn.addEventListener('click', () => { void saveCompany(); });
+    els.resetCompanyBtn.addEventListener('click', resetCompanyForm);
+    els.companyForm.addEventListener('submit', event => { event.preventDefault(); saveCompany(); });
+    els.saveLicenseBtn.addEventListener('click', () => { void saveLicense(); });
+    els.resetLicenseBtn.addEventListener('click', resetLicenseForm);
+    els.licenseForm.addEventListener('submit', event => { event.preventDefault(); saveLicense(); });
+    els.settingsSuppliersPagination?.addEventListener('click', event => handleSettingsPaginationClick(event, 'suppliersPagination', loadSettingsSuppliersSection));
+    els.settingsModelsPagination?.addEventListener('click', event => handleSettingsPaginationClick(event, 'modelsPagination', loadSettingsModelsSection));
+    els.settingsApiUsersPagination?.addEventListener('click', event => handleSettingsPaginationClick(event, 'apiUsersPagination', loadSettingsApiUsersSection));
+    els.settingsCompanyPagination?.addEventListener('click', event => handleSettingsPaginationClick(event, 'companyPagination', (page) => loadSettingsCompanySection(page, 1)));
+    els.settingsLicensesPagination?.addEventListener('click', event => handleSettingsPaginationClick(event, 'licensesPagination', (page) => loadSettingsCompanySection(1, page)));
     els.deviceList.addEventListener('click', handleDeviceListClick);
     els.deviceListPagination.addEventListener('click', handleDevicePaginationClick);
     els.requestGrid.addEventListener('click', handleRequestGridClick);
     els.supplierListBody.addEventListener('click', handleSupplierListClick);
     els.modelListBody.addEventListener('click', handleModelListClick);
     els.apiUserListBody.addEventListener('click', handleApiUserListClick);
+    els.companyListBody.addEventListener('click', handleCompanyListClick);
+    els.licenseListBody.addEventListener('click', handleLicenseListClick);
     els.deviceConfigRoot.addEventListener('click', handleDeviceConfigClick);
     els.deviceConfigRoot.addEventListener('input', handleDeviceConfigInput);
     els.deviceConfigRoot.addEventListener('change', handleDeviceConfigChange);
@@ -1642,7 +2194,8 @@ function handleModelImageChange() {
     const file = els.modelImage.files[0];
     if (file) {
         state.modelPreviewObjectUrl = URL.createObjectURL(file);
-        els.modelPreview.innerHTML = `<img src="${esc(state.modelPreviewObjectUrl)}" class="object-fit-contain" alt="${esc(els.modelModel.value.trim() || 'Modelo')}">`;
+        const label = els.modelCommercialName.value.trim() || els.modelInternalModel.value.trim() || 'Modelo';
+        els.modelPreviewContent.innerHTML = `<img src="${esc(state.modelPreviewObjectUrl)}" class="object-fit-contain w-100 h-100" alt="${esc(label)}" style="max-height:180px;">`;
     } else {
         updateModelProtocolAndPreview();
     }
@@ -1871,12 +2424,7 @@ function handleDeviceTypeClick(event) {
 
     const deviceType = normalizeDeviceType(button.dataset.value);
     renderDeviceTypeSelector(deviceType);
-    if (deviceType !== 'watch') {
-        if (els.deviceLicenseId.value.trim() === '0') {
-            els.deviceLicenseId.value = '';
-        }
-    }
-    syncDeviceModalContext();
+    renderDeviceSelectors('', '', deviceType);
 }
 
 function handleDeviceModelClick(event) {
@@ -1889,6 +2437,16 @@ function handleDeviceModelClick(event) {
 function handleModelSupplierClick(event) {
     const button = event.target.closest('[data-action="selectModelSupplier"]');
     if (button) selectModelSupplier(button.dataset.value);
+}
+
+function handleModelDeviceTypeClick(event) {
+    const button = event.target.closest('[data-action="selectModelDeviceType"]');
+    if (button) selectModelDeviceType(button.dataset.value);
+}
+
+function handleCapabilityDeviceTypeClick(event) {
+    const button = event.target.closest('[data-action="selectCapabilityDeviceType"]');
+    if (button) selectCapabilityDeviceType(button.dataset.value);
 }
 
 function handleCapabilitySupplierClick(event) {
@@ -1905,16 +2463,16 @@ function handleCapabilityGroupsChange(event) {
     const checkbox = event.target.closest('[data-action="toggleCapabilityRequest"]');
     if (!checkbox) return;
 
-    const requestId = String(checkbox.dataset.requestId || checkbox.dataset.command || '');
-    if (!requestId) return;
+    const feature = String(checkbox.dataset.feature || '');
+    if (!feature) return;
 
-    const enabled = new Set(state.settingsModal.capabilityEnabledRequests || []);
+    const enabled = new Set(state.settingsModal.capabilityEnabledCapabilities || []);
     if (checkbox.checked) {
-        enabled.add(requestId);
+        enabled.add(feature);
     } else {
-        enabled.delete(requestId);
+        enabled.delete(feature);
     }
-    state.settingsModal.capabilityEnabledRequests = [...enabled];
+    state.settingsModal.capabilityEnabledCapabilities = [...enabled];
     renderCapabilitiesSection();
 }
 
@@ -1935,14 +2493,13 @@ function handleSupplierListClick(event) {
     if (!button) return;
     const {id, action, enabled} = button.dataset;
     if (action === 'toggleSupplier') toggleSupplier(parseInt(id), !!enabled);
-    if (action === 'deleteSupplier') deleteSupplier(parseInt(id));
 }
 
 function handleModelListClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button) return;
     if (button.dataset.action === 'editModel') {
-        editModel(parseInt(button.dataset.id), parseInt(button.dataset.supplierId), button.dataset.supplier, button.dataset.model, button.dataset.image);
+        editModel(parseInt(button.dataset.id), parseInt(button.dataset.supplierId), button.dataset.supplier, button.dataset.internalModel, button.dataset.commercialName, button.dataset.deviceType, button.dataset.image);
     }
     if (button.dataset.action === 'deleteModel') {
         deleteModel(parseInt(button.dataset.id));

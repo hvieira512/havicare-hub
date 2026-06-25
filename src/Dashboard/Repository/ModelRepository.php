@@ -13,14 +13,14 @@ final class ModelRepository
     public function all(): array
     {
         return $this->pdo
-            ->query('SELECT m.id, m.supplier_id, s.name AS supplier, m.model, m.protocol, m.image_path AS "image" FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.model')
+            ->query('SELECT m.id, m.supplier_id, s.name AS supplier, m.internal_model, m.commercial_name, m.device_type, m.protocol, m.image_path AS image FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.commercial_name, m.internal_model')
             ->fetchAll();
     }
 
-    public function find(string $supplier, string $model): ?array
+    public function find(string $supplier, string $internalModel): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT m.*, s.name AS supplier_name FROM models m JOIN suppliers s ON s.id = m.supplier_id WHERE lower(s.name) = lower(?) AND lower(m.model) = lower(?)');
-        $stmt->execute([$supplier, $model]);
+        $stmt = $this->pdo->prepare('SELECT m.*, s.name AS supplier_name FROM models m JOIN suppliers s ON s.id = m.supplier_id WHERE lower(s.name) = lower(?) AND lower(m.internal_model) = lower(?)');
+        $stmt->execute([$supplier, $internalModel]);
 
         return $stmt->fetch() ?: null;
     }
@@ -33,30 +33,36 @@ final class ModelRepository
         return $stmt->fetch() ?: null;
     }
 
-    public function protocolForModel(string $supplier, string $model): string
+    public function protocolForModel(string $supplier, string $internalModel): string
     {
-        $entry = $this->find($supplier, $model);
+        $entry = $this->find($supplier, $internalModel);
 
         return (string)($entry['protocol'] ?? '');
     }
 
-    public function add(int $supplierId, string $model, string $protocol, ?string $imagePath = null): void
+    public function add(int $supplierId, string $internalModel, string $commercialName, string $deviceType, string $protocol, ?string $imagePath = null): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $existing = $this->findBySupplierId($supplierId, $model);
+        $existing = $this->findBySupplierId($supplierId, $internalModel);
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
+        if ($existing === null) {
+            $stmt = $this->pdo->prepare('
+                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, protocol, image_path, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ');
+            $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $protocol, $storedImagePath, $now, $now]);
+            return;
+        }
+
         $stmt = $this->pdo->prepare('
-            INSERT INTO models (supplier_id, model, protocol, image_path, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(supplier_id, model) DO UPDATE SET
-                protocol = excluded.protocol,
-                image_path = excluded.image_path,
-                updated_at = ?
+            UPDATE models
+            SET commercial_name = ?, device_type = ?, protocol = ?, image_path = ?, updated_at = ?
+            WHERE supplier_id = ? AND lower(internal_model) = lower(?)
         ');
-        $stmt->execute([$supplierId, $model, $protocol, $storedImagePath, $now, $now, $now]);
+        $stmt->execute([$commercialName, $deviceType, $protocol, $storedImagePath, $now, $supplierId, $internalModel]);
     }
 
-    public function update(int $id, int $supplierId, string $model, string $protocol, ?string $imagePath = null): bool
+    public function update(int $id, int $supplierId, string $internalModel, string $commercialName, string $deviceType, string $protocol, ?string $imagePath = null): bool
     {
         $existing = $this->findById($id);
         if ($existing === null) {
@@ -65,16 +71,16 @@ final class ModelRepository
 
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
-        $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, model = ?, protocol = ?, image_path = ?, updated_at = ? WHERE id = ?');
-        $stmt->execute([$supplierId, $model, $protocol, $storedImagePath, $now, $id]);
+        $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, internal_model = ?, commercial_name = ?, device_type = ?, protocol = ?, image_path = ?, updated_at = ? WHERE id = ?');
+        $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $protocol, $storedImagePath, $now, $id]);
 
         return $stmt->rowCount() > 0;
     }
 
-    public function existsForDifferentId(int $id, int $supplierId, string $model): bool
+    public function existsForDifferentId(int $id, int $supplierId, string $internalModel): bool
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM models WHERE id != ? AND supplier_id = ? AND lower(model) = lower(?)');
-        $stmt->execute([$id, $supplierId, $model]);
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM models WHERE id != ? AND supplier_id = ? AND lower(internal_model) = lower(?)');
+        $stmt->execute([$id, $supplierId, $internalModel]);
 
         return (int)$stmt->fetchColumn() > 0;
     }
@@ -85,10 +91,10 @@ final class ModelRepository
         $stmt->execute([$id]);
     }
 
-    private function findBySupplierId(int $supplierId, string $model): ?array
+    private function findBySupplierId(int $supplierId, string $internalModel): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM models WHERE supplier_id = ? AND lower(model) = lower(?)');
-        $stmt->execute([$supplierId, $model]);
+        $stmt = $this->pdo->prepare('SELECT * FROM models WHERE supplier_id = ? AND lower(internal_model) = lower(?)');
+        $stmt->execute([$supplierId, $internalModel]);
 
         return $stmt->fetch() ?: null;
     }
