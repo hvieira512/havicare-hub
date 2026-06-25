@@ -69,7 +69,7 @@ class OpenApiSpec
                 'version' => '1.0.0',
                 'description' => 'Dashboard API for managing devices, suppliers and models.',
             ],
-            'servers' => [['url' => 'http://localhost:8081']],
+            'servers' => [['url' => '/']],
             'tags' => [
                 ['name' => 'Suppliers'],
                 ['name' => 'Models'],
