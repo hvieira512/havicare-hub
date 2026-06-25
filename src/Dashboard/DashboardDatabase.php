@@ -98,6 +98,10 @@ final class DashboardDatabase
         $this->pdo->exec($schema);
         $this->dropLegacyHistoryStorage();
 
+        if ($this->driver === 'mysql') {
+            $this->ensureMysqlIndexes();
+        }
+
         if ($this->driver === 'sqlite') {
             // Compatibility for databases created before device type and license support.
             $this->ensureColumn('whitelist', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
@@ -112,6 +116,29 @@ final class DashboardDatabase
             $this->ensureColumn('models', 'device_type', 'TEXT NOT NULL DEFAULT "watch"');
             $this->migrateModelCatalogColumns();
         }
+    }
+
+    private function ensureMysqlIndexes(): void
+    {
+        $this->ensureMysqlIndex('device_configurations', 'idx_device_configurations_imei', 'imei');
+        $this->ensureMysqlIndex('model_request_capabilities', 'idx_model_request_capabilities_model', 'model_id');
+        $this->ensureMysqlIndex('api_users', 'idx_api_users_role_license', 'role, license_id');
+        $this->ensureMysqlIndex('licenses', 'idx_licenses_company_id', 'company_id');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_type_license', 'device_type, license_id');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_supplier_model', 'supplier, model');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_company', 'company');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_id', 'device_id');
+        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_source_alias', 'source_system, source_device_id');
+    }
+
+    private function ensureMysqlIndex(string $table, string $indexName, string $columns): void
+    {
+        $stmt = $this->pdo->query("SHOW INDEX FROM `{$table}` WHERE Key_name = '{$indexName}'");
+        if ($stmt && $stmt->fetch()) {
+            return;
+        }
+
+        $this->pdo->exec("CREATE INDEX `{$indexName}` ON `{$table}` ({$columns})");
     }
 
     private function ensureColumn(string $table, string $column, string $definition): void

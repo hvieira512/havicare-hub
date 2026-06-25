@@ -90,13 +90,3 @@ CREATE TABLE IF NOT EXISTS licenses (
     UNIQUE KEY uq_licenses_company_license (company_id, license_id),
     CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE INDEX idx_device_configurations_imei ON device_configurations(imei);
-CREATE INDEX idx_model_request_capabilities_model ON model_request_capabilities(model_id);
-CREATE INDEX idx_api_users_role_license ON api_users(role, license_id);
-CREATE INDEX idx_licenses_company_id ON licenses(company_id);
-CREATE INDEX idx_whitelist_device_type_license ON whitelist(device_type, license_id);
-CREATE INDEX idx_whitelist_supplier_model ON whitelist(supplier, model);
-CREATE INDEX idx_whitelist_company ON whitelist(company);
-CREATE INDEX idx_whitelist_device_id ON whitelist(device_id);
-CREATE INDEX idx_whitelist_source_alias ON whitelist(source_system, source_device_id);
