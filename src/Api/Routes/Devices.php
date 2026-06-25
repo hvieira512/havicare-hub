@@ -34,10 +34,10 @@ final class Devices
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, 5);
         $filters = [
-            'deviceType' => $this->queryFilter($params, 'deviceType', 'all'),
-            'licenseId' => $this->queryFilter($params, 'licenseId', 'all'),
-            'supplier' => $this->queryFilter($params, 'supplier', 'all'),
-            'model' => $this->queryFilter($params, 'model', 'all'),
+            'deviceType' => $this->queryFilter($params, 'deviceType'),
+            'licenseId' => $this->queryFilter($params, 'licenseId'),
+            'supplier' => $this->queryFilter($params, 'supplier'),
+            'model' => $this->queryFilter($params, 'model'),
             'q' => $this->queryFilter($params, 'q', ''),
         ];
         $licenseScope = $auth !== null && !$auth->isAdmin() ? $auth->licenseId : null;
@@ -491,10 +491,10 @@ final class Devices
             $model = trim((string)($device['model'] ?? ''));
             $query = trim((string)($filters['q'] ?? ''));
 
-            return (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType'])
-                && (($filters['licenseId'] ?? 'all') === 'all' || $licenseId === $filters['licenseId'])
-                && (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
-                && (($filters['model'] ?? 'all') === 'all' || $model === $filters['model'])
+            return (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType'])
+                && (($filters['licenseId'] ?? null) === null || $licenseId === $filters['licenseId'])
+                && (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
+                && (($filters['model'] ?? null) === null || $model === $filters['model'])
                 && ($query === '' || $this->matchesDeviceQuery($device, $query));
         }));
     }
@@ -544,7 +544,7 @@ final class Devices
     private function filterDevicesForOptions(array $devices, array $filters, string $excludeKey): array
     {
         $candidateFilters = $filters;
-        $candidateFilters[$excludeKey] = 'all';
+        $candidateFilters[$excludeKey] = null;
 
         return $this->filterDevices($devices, $candidateFilters);
     }

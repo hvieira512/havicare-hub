@@ -21,12 +21,12 @@ final class Suppliers
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
-            'enabled' => $this->queryFilter($params, 'enabled', 'all'),
+            'enabled' => $this->queryFilter($params, 'enabled'),
         ];
         $suppliers = array_values(array_filter($this->db->suppliers->all(), static function (array $supplier) use ($filters): bool {
             $enabled = ((int)($supplier['enabled'] ?? 0)) === 1 ? 'true' : 'false';
 
-            return (($filters['enabled'] ?? 'all') === 'all' || $enabled === $filters['enabled']);
+            return (($filters['enabled'] ?? null) === null || $enabled === $filters['enabled']);
         }));
         $available = [
             'enabled' => ['true', 'false'],

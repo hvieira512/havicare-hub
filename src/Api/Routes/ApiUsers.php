@@ -23,15 +23,15 @@ final class ApiUsers
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
-            'role' => $this->queryFilter($params, 'role', 'all'),
-            'enabled' => $this->queryFilter($params, 'enabled', 'all'),
+            'role' => $this->queryFilter($params, 'role'),
+            'enabled' => $this->queryFilter($params, 'enabled'),
         ];
         $users = array_values(array_filter($this->db->apiUsers->all(), static function (array $user) use ($filters): bool {
             $enabled = ((int)($user['enabled'] ?? 0)) === 1 ? 'true' : 'false';
             $role = (string)($user['role'] ?? '');
 
-            return (($filters['role'] ?? 'all') === 'all' || $role === $filters['role'])
-                && (($filters['enabled'] ?? 'all') === 'all' || $enabled === $filters['enabled']);
+            return (($filters['role'] ?? null) === null || $role === $filters['role'])
+                && (($filters['enabled'] ?? null) === null || $enabled === $filters['enabled']);
         }));
 
         return $this->collectionResponse($users, $page, $limit, $filters, [

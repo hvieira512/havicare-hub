@@ -20,8 +20,8 @@ final class Licenses
         $params = $this->queryParams($query);
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $companyId = $this->queryFilter($params, 'companyId', 'all');
-        $items = $companyId !== 'all'
+        $companyId = $this->queryFilter($params, 'companyId');
+        $items = $companyId !== null
             ? $this->db->licenses->findByCompanyId((int)$companyId)
             : $this->db->licenses->all();
         $available = [

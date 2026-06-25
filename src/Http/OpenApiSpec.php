@@ -111,10 +111,10 @@ class OpenApiSpec
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                             ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 5]],
-                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'licenseId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'model', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+							['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'licenseId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'model', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
                             ['name' => 'q', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => '']],
                         ],
                         'responses' => [
@@ -301,7 +301,7 @@ class OpenApiSpec
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                             ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
-                            ['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all', 'enum' => ['all', 'true', 'false']]],
+							['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['true', 'false']]],
                         ],
                         'responses' => [
                             '200' => [
@@ -363,9 +363,9 @@ class OpenApiSpec
                             'parameters' => [
                                 ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                                 ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
-                                ['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                                ['name' => 'protocol', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                                ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+								['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+								['name' => 'protocol', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+								['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
                             ],
                         'responses' => [
                             '200' => [
@@ -439,8 +439,8 @@ class OpenApiSpec
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                             ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
-                            ['name' => 'role', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
-                            ['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'all']],
+							['name' => 'role', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+							['name' => 'enabled', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
                         ],
                         'responses' => [
                             '200' => [
@@ -565,7 +565,7 @@ class OpenApiSpec
                         'parameters' => [
                             ['name' => 'page', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 1]],
                             ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20]],
-                            ['name' => 'companyId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 'all']],
+							['name' => 'companyId', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer']],
                         ],
                         'responses' => [
                             '200' => [

@@ -28,18 +28,18 @@ final class Models
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
-            'supplier' => $this->queryFilter($params, 'supplier', 'all'),
-            'protocol' => $this->queryFilter($params, 'protocol', 'all'),
-            'deviceType' => $this->queryFilter($params, 'deviceType', 'all'),
+            'supplier' => $this->queryFilter($params, 'supplier'),
+            'protocol' => $this->queryFilter($params, 'protocol'),
+            'deviceType' => $this->queryFilter($params, 'deviceType'),
         ];
         $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
             $supplier = trim((string)($model['supplier'] ?? ''));
             $protocol = trim((string)($model['protocol'] ?? ''));
             $deviceType = trim((string)($model['device_type'] ?? 'watch'));
 
-            return (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
-                && (($filters['protocol'] ?? 'all') === 'all' || $protocol === $filters['protocol'])
-                && (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType']);
+            return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
+                && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol'])
+                && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
         }));
         $available = [
             'supplier' => $this->uniqueValues(array_map(
@@ -47,8 +47,8 @@ final class Models
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
                     $protocol = trim((string)($model['protocol'] ?? ''));
                     $deviceType = trim((string)($model['device_type'] ?? 'watch'));
-                    return (($filters['protocol'] ?? 'all') === 'all' || $protocol === $filters['protocol'])
-                        && (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType']);
+                    return (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol'])
+                        && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
                 }))
             )),
             'protocol' => $this->uniqueValues(array_map(
@@ -56,8 +56,8 @@ final class Models
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
                     $supplier = trim((string)($model['supplier'] ?? ''));
                     $deviceType = trim((string)($model['device_type'] ?? 'watch'));
-                    return (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
-                        && (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType']);
+                    return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
+                        && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
                 }))
             )),
             'deviceType' => $this->uniqueValues(array_map(
@@ -65,8 +65,8 @@ final class Models
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
                     $supplier = trim((string)($model['supplier'] ?? ''));
                     $protocol = trim((string)($model['protocol'] ?? ''));
-                    return (($filters['supplier'] ?? 'all') === 'all' || $supplier === $filters['supplier'])
-                        && (($filters['protocol'] ?? 'all') === 'all' || $protocol === $filters['protocol']);
+                    return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
+                        && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol']);
                 }))
             )),
         ];
