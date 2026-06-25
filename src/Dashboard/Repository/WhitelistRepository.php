@@ -48,7 +48,13 @@ final class WhitelistRepository
         [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope);
 
         $stmt = $this->pdo->prepare($this->deviceSelectSql() . $whereSql . ' ORDER BY w.imei LIMIT ? OFFSET ?');
-        $stmt->execute(array_merge($params, [$limit, $offset]));
+        $bindIndex = 1;
+        foreach ($params as $param) {
+            $stmt->bindValue($bindIndex++, $param);
+        }
+        $stmt->bindValue($bindIndex++, (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue($bindIndex++, (int)$offset, PDO::PARAM_INT);
+        $stmt->execute();
         $items = array_map([$this, 'normalizeDeviceRow'], $stmt->fetchAll() ?: []);
 
         $count = $this->pdo->prepare('SELECT COUNT(*) FROM whitelist w' . $this->deviceJoinSql() . $whereSql);
