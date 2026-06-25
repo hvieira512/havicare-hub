@@ -31,22 +31,22 @@ final class DeviceConfigurationRepository
     ): void {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        if ($this->exists($imei, $key)) {
+            $stmt = $this->pdo->prepare('
+                UPDATE device_configurations
+                SET protocol = ?, supplier = ?, model = ?, command = ?, desired_payload = ?, last_status = ?, last_command_id = ?, desired_updated_at = ?, applied_at = ?
+                WHERE imei = ? AND config_key = ?
+            ');
+            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $now, $imei, $key]);
+            return;
+        }
+
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
                 imei, config_key, protocol, supplier, model, command, desired_payload,
                 last_status, last_command_id, desired_updated_at, applied_at
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(imei, config_key) DO UPDATE SET
-                protocol = excluded.protocol,
-                supplier = excluded.supplier,
-                model = excluded.model,
-                command = excluded.command,
-                desired_payload = excluded.desired_payload,
-                last_status = excluded.last_status,
-                last_command_id = excluded.last_command_id,
-                desired_updated_at = excluded.desired_updated_at,
-                applied_at = excluded.applied_at
         ');
         $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $now]);
     }
@@ -69,20 +69,31 @@ final class DeviceConfigurationRepository
     ): void {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        if ($this->exists($imei, $key)) {
+            $stmt = $this->pdo->prepare('
+                UPDATE device_configurations
+                SET protocol = ?, supplier = ?, model = ?, command = ?, reported_payload = ?, reported_at = ?
+                WHERE imei = ? AND config_key = ?
+            ');
+            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $now, $imei, $key]);
+            return;
+        }
+
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
                 imei, config_key, protocol, supplier, model, command, reported_payload, reported_at
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(imei, config_key) DO UPDATE SET
-                protocol = excluded.protocol,
-                supplier = excluded.supplier,
-                model = excluded.model,
-                command = excluded.command,
-                reported_payload = excluded.reported_payload,
-                reported_at = excluded.reported_at
         ');
         $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, $now]);
+    }
+
+    private function exists(string $imei, string $key): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM device_configurations WHERE imei = ? AND config_key = ?');
+        $stmt->execute([$imei, $key]);
+
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     private function normalizeRow(array $row): array

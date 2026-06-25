@@ -24,7 +24,7 @@ final class MessageNormalizer
 
     /**
      * @param array{type: string, device_code: string, ...} $decoded
-     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, software?: string} $device
+     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string} $device
      * @return array{telemetry?: array, event?: array}
      */
     public function normalize(array $decoded, Topic $topic, array $device): array

@@ -12,7 +12,7 @@ class AuthorizationResult
         public readonly string $model = '',
         public readonly string $deviceType = 'watch',
         public readonly string $licenseId = '0',
-        public readonly string $software = 'null',
+        public readonly string $company = 'null',
     ) {
     }
 
@@ -22,10 +22,10 @@ class AuthorizationResult
         string $model = '',
         string $deviceType = 'watch',
         string $licenseId = '0',
-        string $software = 'null',
+        string $company = 'null',
     ): self
     {
-        return new self(true, null, $imei, $supplier, $model, $deviceType, $licenseId, $software);
+        return new self(true, null, $imei, $supplier, $model, $deviceType, $licenseId, $company);
     }
 
     public static function deny(string $reason): self

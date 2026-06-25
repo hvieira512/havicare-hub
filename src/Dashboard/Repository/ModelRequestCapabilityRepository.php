@@ -83,12 +83,17 @@ final class ModelRequestCapabilityRepository
         }
 
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $insert = $this->pdo->prepare('
-            INSERT OR IGNORE INTO model_request_capabilities (model_id, downlink_command, enabled, created_at, updated_at)
-            VALUES (?, ?, 1, ?, ?)
-        ');
-
         foreach ($commands as $command) {
+            $exists = $this->pdo->prepare('SELECT COUNT(*) FROM model_request_capabilities WHERE model_id = ? AND downlink_command = ?');
+            $exists->execute([$modelId, $command]);
+            if ((int)$exists->fetchColumn() > 0) {
+                continue;
+            }
+
+            $insert = $this->pdo->prepare('
+                INSERT INTO model_request_capabilities (model_id, downlink_command, enabled, created_at, updated_at)
+                VALUES (?, ?, 1, ?, ?)
+            ');
             $insert->execute([$modelId, $command, $now, $now]);
         }
     }

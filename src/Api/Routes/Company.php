@@ -5,7 +5,7 @@ namespace Hub\Api\Routes;
 use Hub\Api\Support\CollectionResponse;
 use Hub\Dashboard\DashboardDataAccess;
 
-final class Software
+final class Company
 {
     use CollectionResponse;
 
@@ -20,7 +20,7 @@ final class Software
         $params = $this->queryParams($query);
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $items = $this->db->software->all();
+        $items = $this->db->companies->all();
 
         return $this->collectionResponse($items, $page, $limit, [], []);
     }
@@ -35,9 +35,9 @@ final class Software
         if ($name === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
         }
-        $id = $this->db->software->create($name);
+        $id = $this->db->companies->create($name);
         if ($id <= 0) {
-            return ['error' => ['code' => 'duplicate', 'message' => 'Software with this name already exists']];
+            return ['error' => ['code' => 'duplicate', 'message' => 'Company with this name already exists']];
         }
 
         return ['status' => 'ok', 'id' => $id];
@@ -45,9 +45,9 @@ final class Software
 
     public function update(int $id, string $body): array
     {
-        $existing = $this->db->software->findById($id);
+        $existing = $this->db->companies->findById($id);
         if ($existing === null) {
-            return ['error' => ['code' => 'software_not_found', 'message' => 'Software not found']];
+            return ['error' => ['code' => 'company_not_found', 'message' => 'Company not found']];
         }
         $decoded = json_decode($body, true);
         if (!is_array($decoded)) {
@@ -57,18 +57,18 @@ final class Software
         if ($name === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
         }
-        $this->db->software->update($id, $name);
+        $this->db->companies->update($id, $name);
 
         return ['status' => 'ok'];
     }
 
     public function delete(int $id): array
     {
-        $existing = $this->db->software->findById($id);
+        $existing = $this->db->companies->findById($id);
         if ($existing === null) {
-            return ['error' => ['code' => 'software_not_found', 'message' => 'Software not found']];
+            return ['error' => ['code' => 'company_not_found', 'message' => 'Company not found']];
         }
-        $this->db->software->delete($id);
+        $this->db->companies->delete($id);
 
         return ['status' => 'ok'];
     }

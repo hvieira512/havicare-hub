@@ -33,7 +33,7 @@ final class DashboardStore
         string $deviceId = '',
         string $sourceSystem = '',
         string $sourceDeviceId = '',
-        string $software = 'null'
+        string $company = 'null'
     ): void
     {
         $this->redis->sadd($this->key('devices'), $imei);
@@ -47,13 +47,18 @@ final class DashboardStore
             'deviceId' => $deviceId,
             'sourceSystem' => trim($sourceSystem),
             'sourceDeviceId' => trim($sourceDeviceId),
-            'software' => trim($software),
+            'company' => trim($company),
         ]);
     }
 
     public function deleteDevice(string $imei): void
     {
+        foreach ($this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1) as $id) {
+            $this->redis->hdel($this->commandIndexKey(), (string)$id);
+        }
+
         $this->redis->srem($this->key('devices'), $imei);
+        $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
         $this->redis->del([
             $this->deviceKey($imei),
             $this->deviceListKey($imei, 'raw'),
@@ -66,11 +71,13 @@ final class DashboardStore
 
     public function deviceSeen(string $imei, array $fields): void
     {
+        $now = gmdate('Y-m-d\\TH:i:s\\Z');
         $this->redis->sadd($this->key('devices'), $imei);
         $this->redis->hmset($this->deviceKey($imei), array_merge($fields, [
             'imei' => $imei,
-            'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'lastSeenAt' => $now,
         ]));
+        $this->redis->zadd($this->onlineDeviceSetKey(), [$imei => time()]);
     }
 
     public function deviceOffline(string $imei): void
@@ -80,6 +87,7 @@ final class DashboardStore
             'online' => '0',
             'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
         ]);
+        $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
     }
 
     public function append(string $imei, string $list, array $payload): void
@@ -126,6 +134,7 @@ final class DashboardStore
             return;
         }
         $this->redis->hset($this->commandHashKey($imei), $id, $encoded);
+        $this->redis->hset($this->commandIndexKey(), $id, $imei);
         $this->redis->lrem($this->deviceListKey($imei, 'commands'), 0, $id);
         $this->redis->lpush($this->deviceListKey($imei, 'commands'), [$id]);
         $this->redis->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
@@ -188,15 +197,8 @@ final class DashboardStore
     public function expireStaleDevices(int $timeoutSeconds): void
     {
         $cutoff = time() - max(1, $timeoutSeconds);
-        foreach ($this->devices() as $device) {
-            if (!(bool)($device['online'] ?? false)) {
-                continue;
-            }
-
-            $lastSeenAt = strtotime((string)($device['lastSeenAt'] ?? '')) ?: 0;
-            if ($lastSeenAt > 0 && $lastSeenAt <= $cutoff) {
-                $this->deviceOffline((string)($device['imei'] ?? ''));
-            }
+        foreach ($this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', (string)$cutoff) as $imei) {
+            $this->deviceOffline((string)$imei);
         }
     }
 
@@ -219,6 +221,24 @@ final class DashboardStore
     public function device(string $imei): array
     {
         return $this->normalizeDevice($this->redis->hgetall($this->deviceKey($imei)) ?: ['imei' => $imei]);
+    }
+
+    /**
+     * @param list<string> $imeis
+     * @return array<string, array<string, mixed>>
+     */
+    public function runtimeStates(array $imeis): array
+    {
+        $states = [];
+        foreach (array_values(array_unique(array_filter(array_map('strval', $imeis), static fn (string $imei): bool => $imei !== ''))) as $imei) {
+            $state = $this->redis->hgetall($this->deviceKey($imei));
+            if ($state === []) {
+                continue;
+            }
+            $states[$imei] = $this->normalizeDevice($state);
+        }
+
+        return $states;
     }
 
     public function recent(string $imei, string $list): array
@@ -246,24 +266,23 @@ final class DashboardStore
 
     public function findCommand(string $id): ?array
     {
-        foreach ($this->devices() as $device) {
-            $imei = (string)($device['imei'] ?? '');
-            if ($imei === '') {
-                continue;
-            }
+        $imei = (string)($this->redis->hget($this->commandIndexKey(), $id) ?? '');
+        if ($imei === '') {
+            return null;
+        }
 
-            $raw = $this->redis->hget($this->commandHashKey($imei), $id);
-            if (!is_string($raw)) {
-                continue;
-            }
+        $raw = $this->redis->hget($this->commandHashKey($imei), $id);
+        if (!is_string($raw)) {
+            $this->redis->hdel($this->commandIndexKey(), $id);
+            return null;
+        }
 
-            $command = json_decode($raw, true);
-            if (is_array($command)) {
-                return [
-                    'device' => $device,
-                    'command' => $command,
-                ];
-            }
+        $command = json_decode($raw, true);
+        if (is_array($command)) {
+            return [
+                'device' => $this->device($imei),
+                'command' => $command,
+            ];
         }
 
         return null;
@@ -295,5 +314,15 @@ final class DashboardStore
     private function commandHashKey(string $imei): string
     {
         return $this->key("device:{$imei}:command-records");
+    }
+
+    private function commandIndexKey(): string
+    {
+        return $this->key('command-index');
+    }
+
+    private function onlineDeviceSetKey(): string
+    {
+        return $this->key('online-devices-by-last-seen');
     }
 }

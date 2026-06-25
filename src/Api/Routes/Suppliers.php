@@ -22,21 +22,14 @@ final class Suppliers
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
             'enabled' => $this->queryFilter($params, 'enabled', 'all'),
-            'deviceType' => $this->queryFilter($params, 'deviceType', 'all'),
         ];
         $suppliers = array_values(array_filter($this->db->suppliers->all(), static function (array $supplier) use ($filters): bool {
             $enabled = ((int)($supplier['enabled'] ?? 0)) === 1 ? 'true' : 'false';
-            $deviceType = trim((string)($supplier['device_type'] ?? 'watch'));
 
-            return (($filters['enabled'] ?? 'all') === 'all' || $enabled === $filters['enabled'])
-                && (($filters['deviceType'] ?? 'all') === 'all' || $deviceType === $filters['deviceType']);
+            return (($filters['enabled'] ?? 'all') === 'all' || $enabled === $filters['enabled']);
         }));
         $available = [
             'enabled' => ['true', 'false'],
-            'deviceType' => $this->uniqueValues(array_map(
-                static fn (array $supplier): string => trim((string)($supplier['device_type'] ?? 'watch')),
-                $this->db->suppliers->all()
-            )),
         ];
 
         return $this->collectionResponse($suppliers, $page, $limit, $filters, $available);

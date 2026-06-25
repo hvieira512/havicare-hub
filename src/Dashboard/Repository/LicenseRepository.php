@@ -10,13 +10,13 @@ final class LicenseRepository
     {
     }
 
-    public function all(?int $softwareId = null): array
+    public function all(?int $companyId = null): array
     {
-        if ($softwareId !== null) {
-            $stmt = $this->pdo->prepare("SELECT l.id, l.software_id, l.license_id, l.name, l.created_at, l.updated_at, s.name AS software_name FROM licenses l LEFT JOIN software s ON s.id = l.software_id WHERE l.software_id = ? ORDER BY l.license_id");
-            $stmt->execute([$softwareId]);
+        if ($companyId !== null) {
+            $stmt = $this->pdo->prepare("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id");
+            $stmt->execute([$companyId]);
         } else {
-            $stmt = $this->pdo->query("SELECT l.id, l.software_id, l.license_id, l.name, l.created_at, l.updated_at, s.name AS software_name FROM licenses l LEFT JOIN software s ON s.id = l.software_id ORDER BY s.name, l.license_id");
+            $stmt = $this->pdo->query("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id ORDER BY c.name, l.license_id");
         }
 
         return $stmt->fetchAll();
@@ -32,37 +32,40 @@ final class LicenseRepository
 
     public function findByLicenseId(string $licenseId): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_id = ? ORDER BY software_id');
+        $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_id = ? ORDER BY company_id');
         $stmt->execute([$licenseId]);
 
         return $stmt->fetchAll();
     }
 
-    public function findBySoftwareId(int $softwareId): array
+    public function findByCompanyId(int $companyId): array
     {
-        $stmt = $this->pdo->prepare("SELECT l.id, l.software_id, l.license_id, l.name, l.created_at, l.updated_at, s.name AS software_name FROM licenses l LEFT JOIN software s ON s.id = l.software_id WHERE l.software_id = ? ORDER BY l.license_id");
-        $stmt->execute([$softwareId]);
+        $stmt = $this->pdo->prepare("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id");
+        $stmt->execute([$companyId]);
 
         return $stmt->fetchAll();
     }
 
-    public function create(int $softwareId, string $licenseId, string $name): int
+    public function create(int $companyId, string $licenseId, string $name): int
     {
+        $stmt = $this->pdo->prepare('SELECT id FROM licenses WHERE company_id = ? AND license_id = ?');
+        $stmt->execute([$companyId, $licenseId]);
+        $existing = $stmt->fetchColumn();
+        if ($existing !== false) {
+            return (int)$existing;
+        }
+
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('INSERT OR IGNORE INTO licenses (software_id, license_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$softwareId, $licenseId, $name, $now, $now]);
-
-        $stmt = $this->pdo->prepare('SELECT id FROM licenses WHERE software_id = ? AND license_id = ?');
-        $stmt->execute([$softwareId, $licenseId]);
-
-        return (int)$stmt->fetchColumn();
+        $stmt = $this->pdo->prepare('INSERT INTO licenses (company_id, license_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([$companyId, $licenseId, $name, $now, $now]);
+        return (int)$this->pdo->lastInsertId();
     }
 
-    public function update(int $id, int $softwareId, string $licenseId, string $name): void
+    public function update(int $id, int $companyId, string $licenseId, string $name): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('UPDATE licenses SET software_id = ?, license_id = ?, name = ?, updated_at = ? WHERE id = ?');
-        $stmt->execute([$softwareId, $licenseId, $name, $now, $id]);
+        $stmt = $this->pdo->prepare('UPDATE licenses SET company_id = ?, license_id = ?, name = ?, updated_at = ? WHERE id = ?');
+        $stmt->execute([$companyId, $licenseId, $name, $now, $id]);
     }
 
     public function delete(int $id): void

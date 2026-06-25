@@ -36,6 +36,7 @@ Bootstrap::loadEnv(__DIR__ . '/..');
 $config = Config::load()->all();
 $mqttConfig = $config['mqtt'] ?? [];
 $redisConfig = $config['redis'] ?? [];
+$databaseConfig = $config['database'] ?? [];
 $dashboardConfig = $config['dashboard'] ?? [];
 $ncsConfig = $config['ncs'] ?? [];
 $qinglanstConfig = $config['qinglanst'] ?? [];
@@ -85,7 +86,7 @@ $connectMqttClient = static function (MqttClient $client, bool $cleanSession = t
 $buildMqttClient = static fn (string $suffix, bool $cleanSession = true, bool $stableClientId = false): MqttClient
     => $connectMqttClient($createMqttClient($suffix, $stableClientId), $cleanSession);
 
-$database = new Hub\Dashboard\DashboardDatabase();
+$database = new Hub\Dashboard\DashboardDatabase($databaseConfig);
 $dataAccess = Hub\Dashboard\DashboardDataAccess::fromDatabase($database);
 $whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
 $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
@@ -348,7 +349,7 @@ if ($ncsIngress !== null) {
     Logger::channel('hub')->info("NCS ingress topics: {$ncsTopicFilter} -> " . $mqttBridge->topic('{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}'));
 }
 if ($qinglanstIngress !== null) {
-    Logger::channel('hub')->info("Qinglanst radar ingress: {$qinglanstTopicFilter} -> " . $mqttBridge->topic('{software}/{licenseId}/radar/{deviceUid}/{telemetry|events}'));
+    Logger::channel('hub')->info("Qinglanst radar ingress: {$qinglanstTopicFilter} -> " . $mqttBridge->topic('{company}/{licenseId}/radar/{deviceUid}/{telemetry|events}'));
 }
 
 $loop->run();

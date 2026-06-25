@@ -20,18 +20,18 @@ final class Licenses
         $params = $this->queryParams($query);
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $softwareId = $this->queryFilter($params, 'softwareId', 'all');
-        $items = $softwareId !== 'all'
-            ? $this->db->licenses->findBySoftwareId((int)$softwareId)
+        $companyId = $this->queryFilter($params, 'companyId', 'all');
+        $items = $companyId !== 'all'
+            ? $this->db->licenses->findByCompanyId((int)$companyId)
             : $this->db->licenses->all();
         $available = [
-            'softwareId' => $this->uniqueValues(array_map(
+            'companyId' => $this->uniqueValues(array_map(
                 static fn (array $s): string => (string)($s['id'] ?? ''),
-                $this->db->software->all()
+                $this->db->companies->all()
             )),
         ];
 
-        return $this->collectionResponse($items, $page, $limit, ['softwareId' => $softwareId], $available);
+        return $this->collectionResponse($items, $page, $limit, ['companyId' => $companyId], $available);
     }
 
     public function create(string $body): array
@@ -40,16 +40,16 @@ final class Licenses
         if (!is_array($decoded)) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
-        $softwareId = (int)($decoded['softwareId'] ?? 0);
+        $companyId = (int)($decoded['companyId'] ?? 0);
         $licenseId = trim((string)($decoded['licenseId'] ?? ''));
         $name = trim((string)($decoded['name'] ?? ''));
-        if ($softwareId <= 0) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'softwareId is required']];
+        if ($companyId <= 0) {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'companyId is required']];
         }
         if ($licenseId === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required']];
         }
-        $id = $this->db->licenses->create($softwareId, $licenseId, $name);
+        $id = $this->db->licenses->create($companyId, $licenseId, $name);
 
         return ['status' => 'ok', 'id' => $id];
     }
@@ -64,10 +64,10 @@ final class Licenses
         if (!is_array($decoded)) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
-        $softwareId = (int)($decoded['softwareId'] ?? $existing['software_id']);
+        $companyId = (int)($decoded['companyId'] ?? $existing['company_id']);
         $licenseId = trim((string)($decoded['licenseId'] ?? $existing['license_id']));
         $name = trim((string)($decoded['name'] ?? $existing['name']));
-        $this->db->licenses->update($id, $softwareId, $licenseId, $name);
+        $this->db->licenses->update($id, $companyId, $licenseId, $name);
 
         return ['status' => 'ok'];
     }

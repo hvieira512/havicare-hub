@@ -37,18 +37,18 @@ ob_start();
                                     <div class="form-label">Modelo</div>
                                     <div id="deviceModelButtons" class="btn-group flex-wrap" role="group"></div>
                                 </div>
-                                <div>
+                                <div id="deviceDeviceIdRow" class="d-none">
                                     <label for="deviceDeviceId" class="form-label" id="deviceDeviceIdLabel">Device ID</label>
                                     <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
                                     <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                 </div>
                                 <div>
-                                    <label for="deviceSoftwareSelect" class="form-label">Software</label>
-                                    <select class="form-select" id="deviceSoftwareSelect">
-                                        <option value="">Sem software</option>
+                                    <label for="deviceCompanySelect" class="form-label">Empresa</label>
+                                    <select class="form-select" id="deviceCompanySelect">
+                                        <option value="">Sem empresa</option>
                                     </select>
                                 </div>
-                                <input type="hidden" id="deviceSoftware" value="">
+                                <input type="hidden" id="deviceCompany" value="">
                                 <div>
                                     <label for="deviceLicenseSelect" class="form-label">Licença</label>
                                     <select class="form-select" id="deviceLicenseSelect" disabled>

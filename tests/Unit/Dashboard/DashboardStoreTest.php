@@ -43,6 +43,7 @@ final class DashboardStoreTest extends TestCase
         $redis->hmset('test:dashboard:device:861265061009822', [
             'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
         ]);
+        $redis->zadd('test:dashboard:online-devices-by-last-seen', ['861265061009822' => time() - 7200]);
 
         $store->expireStaleDevices(60);
 
@@ -72,6 +73,9 @@ final class InMemoryRedisClient implements ClientInterface
 
     /** @var array<string, array<int, string>> */
     private array $lists = [];
+
+    /** @var array<string, array<string, float>> */
+    private array $sortedSets = [];
 
     public function getCommandFactory()
     {
@@ -115,11 +119,15 @@ final class InMemoryRedisClient implements ClientInterface
             'hmset' => $this->hmset((string)$arguments[0], $arguments[1]),
             'hgetall' => $this->hgetall((string)$arguments[0]),
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
+            'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
             'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
             'lpush' => $this->lpush((string)$arguments[0], $arguments[1]),
             'ltrim' => $this->ltrim((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrem' => $this->lrem((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
+            'zadd' => $this->zadd((string)$arguments[0], $arguments[1]),
+            'zrem' => $this->zrem((string)$arguments[0], $arguments[1]),
+            'zrangebyscore' => $this->zrangebyscore((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'del' => $this->del($arguments[0]),
             default => throw new \BadMethodCallException("Redis method {$method} is not implemented"),
         };
@@ -171,6 +179,19 @@ final class InMemoryRedisClient implements ClientInterface
         return $this->hashes[$key][$field] ?? null;
     }
 
+    private function hdel(string $key, array|string $fields): int
+    {
+        $removed = 0;
+        foreach ((array)$fields as $field) {
+            if (isset($this->hashes[$key][(string)$field])) {
+                unset($this->hashes[$key][(string)$field]);
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
     private function lpush(string $key, array $values): int
     {
         $this->lists[$key] ??= [];
@@ -210,12 +231,57 @@ final class InMemoryRedisClient implements ClientInterface
         return $removed;
     }
 
+    private function zadd(string $key, array $members): int
+    {
+        $added = 0;
+        $this->sortedSets[$key] ??= [];
+        foreach ($members as $member => $score) {
+            $member = (string)$member;
+            if (!isset($this->sortedSets[$key][$member])) {
+                $added++;
+            }
+            $this->sortedSets[$key][$member] = (float)$score;
+        }
+
+        return $added;
+    }
+
+    private function zrem(string $key, array|string $members): int
+    {
+        $removed = 0;
+        foreach ((array)$members as $member) {
+            $member = (string)$member;
+            if (isset($this->sortedSets[$key][$member])) {
+                unset($this->sortedSets[$key][$member]);
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
+    private function zrangebyscore(string $key, string $min, string $max): array
+    {
+        $minScore = $min === '-inf' ? -INF : (float)$min;
+        $maxScore = $max === '+inf' ? INF : (float)$max;
+        $matches = [];
+        foreach ($this->sortedSets[$key] ?? [] as $member => $score) {
+            if ($score < $minScore || $score > $maxScore) {
+                continue;
+            }
+            $matches[$member] = $score;
+        }
+        asort($matches, SORT_NUMERIC);
+
+        return array_keys($matches);
+    }
+
     private function del(array|string $keys): int
     {
         $removed = 0;
         foreach ((array)$keys as $key) {
-            $removed += isset($this->hashes[$key]) || isset($this->lists[$key]) || isset($this->sets[$key]) ? 1 : 0;
-            unset($this->hashes[$key], $this->lists[$key], $this->sets[$key]);
+            $removed += isset($this->hashes[$key]) || isset($this->lists[$key]) || isset($this->sets[$key]) || isset($this->sortedSets[$key]) ? 1 : 0;
+            unset($this->hashes[$key], $this->lists[$key], $this->sets[$key], $this->sortedSets[$key]);
         }
 
         return $removed;

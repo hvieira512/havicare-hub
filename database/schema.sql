@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS suppliers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    device_type TEXT NOT NULL DEFAULT 'watch',
     enabled INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -10,12 +9,14 @@ CREATE TABLE IF NOT EXISTS suppliers (
 CREATE TABLE IF NOT EXISTS models (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
-    model TEXT NOT NULL,
+    internal_model TEXT NOT NULL,
+    commercial_name TEXT NOT NULL,
+    device_type TEXT NOT NULL DEFAULT 'watch',
     protocol TEXT NOT NULL,
     image_path TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    UNIQUE(supplier_id, model)
+    UNIQUE(supplier_id, internal_model)
 );
 
 CREATE TABLE IF NOT EXISTS model_request_capabilities (
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS whitelist (
     device_id TEXT NOT NULL DEFAULT '',
     source_system TEXT NOT NULL DEFAULT '',
     source_device_id TEXT NOT NULL DEFAULT '',
-    software TEXT NOT NULL DEFAULT 'null',
+    company TEXT NOT NULL DEFAULT 'null',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -70,7 +71,7 @@ CREATE TABLE IF NOT EXISTS api_users (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS software (
+CREATE TABLE IF NOT EXISTS companies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL,
@@ -79,15 +80,20 @@ CREATE TABLE IF NOT EXISTS software (
 
 CREATE TABLE IF NOT EXISTS licenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    software_id INTEGER NOT NULL REFERENCES software(id),
+    company_id INTEGER NOT NULL REFERENCES companies(id),
     license_id TEXT NOT NULL,
     name TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    UNIQUE(software_id, license_id)
+    UNIQUE(company_id, license_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_device_configurations_imei ON device_configurations(imei);
 CREATE INDEX IF NOT EXISTS idx_model_request_capabilities_model ON model_request_capabilities(model_id);
 CREATE INDEX IF NOT EXISTS idx_api_users_role_license ON api_users(role, license_id);
-CREATE INDEX IF NOT EXISTS idx_licenses_software_id ON licenses(software_id);
+CREATE INDEX IF NOT EXISTS idx_licenses_company_id ON licenses(company_id);
+CREATE INDEX IF NOT EXISTS idx_whitelist_device_type_license ON whitelist(device_type, license_id);
+CREATE INDEX IF NOT EXISTS idx_whitelist_supplier_model ON whitelist(supplier, model);
+CREATE INDEX IF NOT EXISTS idx_whitelist_company ON whitelist(company);
+CREATE INDEX IF NOT EXISTS idx_whitelist_device_id ON whitelist(device_id);
+CREATE INDEX IF NOT EXISTS idx_whitelist_source_alias ON whitelist(source_system, source_device_id);

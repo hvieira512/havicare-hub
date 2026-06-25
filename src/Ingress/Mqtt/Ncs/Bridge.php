@@ -75,15 +75,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $deviceKey = (string)$device['imei'];
         $deviceType = (string)$device['deviceType'];
         $licenseId = (string)$device['licenseId'];
-        $software = (string)($device['software'] ?? 'null');
+        $company = (string)($device['company'] ?? 'null');
 
-        $this->mqttBridge->publishRaw($deviceKey, $normalized['raw'], $deviceType, $licenseId, $software);
+        $this->mqttBridge->publishRaw($deviceKey, $normalized['raw'], $deviceType, $licenseId, $company);
         $this->dashboardStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'],
             'model' => (string)$device['model'],
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
-            'software' => $software,
+            'company' => $company,
             'sourceSystem' => (string)($device['sourceSystem'] ?? ''),
             'sourceDeviceId' => (string)($device['sourceDeviceId'] ?? ''),
             'protocol' => 'voerka-ncs',
@@ -97,14 +97,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         if (isset($normalized['status']) && is_array($normalized['status'])) {
             $retain = ((string)($normalized['status']['state'] ?? '')) !== 'error';
-            $this->mqttBridge->publishStatus($deviceKey, $normalized['status'], $retain, $deviceType, $licenseId, $software);
+            $this->mqttBridge->publishStatus($deviceKey, $normalized['status'], $retain, $deviceType, $licenseId, $company);
             if (($normalized['status']['state'] ?? '') === 'offline') {
                 $this->dashboardStore?->deviceOffline($deviceKey);
             }
         }
 
         if (isset($normalized['event']) && is_array($normalized['event'])) {
-            $this->mqttBridge->publishEvent($deviceKey, $normalized['event'], $deviceType, $licenseId, $software);
+            $this->mqttBridge->publishEvent($deviceKey, $normalized['event'], $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'events', array_merge($normalized['event'], [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
@@ -112,7 +112,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         }
 
         if (isset($normalized['telemetry']) && is_array($normalized['telemetry'])) {
-            $this->mqttBridge->publishTelemetry($deviceKey, $normalized['telemetry'], $deviceType, $licenseId, $software);
+            $this->mqttBridge->publishTelemetry($deviceKey, $normalized['telemetry'], $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'telemetry', array_merge($normalized['telemetry'], [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,

@@ -1,14 +1,16 @@
 import {commandLabel, esc, eventTime, featureLabel, fieldLabel, rowPayload, titleize} from './format.js';
 
 export function modelImageHtml(modelInfo) {
+    const label = modelInfo?.commercial_name || modelInfo?.commercialName || modelInfo?.internal_model || modelInfo?.internalModel || modelInfo?.model || 'Modelo';
     return modelInfo?.image
-        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(modelInfo.model)}" style="width:40px;height:40px;">`
+        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(label)}" style="width:40px;height:40px;">`
         : '<i class="fa-solid fa-microchip fa-xl text-secondary" style="width:40px"></i>';
 }
 
 export function modelPreviewHtml(modelInfo, label = 'Modelo') {
+    const imageLabel = modelInfo?.commercial_name || modelInfo?.commercialName || modelInfo?.internal_model || modelInfo?.internalModel || modelInfo?.model || label;
     return modelInfo?.image
-        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(modelInfo.model || label)}">`
+        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(imageLabel)}">`
         : `<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
 }
 

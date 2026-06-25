@@ -1,7 +1,12 @@
+# Reunião 24/06/2026
+
+- Investigar funcionalidades de câmara dos 4P
+- Não perder tempo com Wonlex, para já
+- Chave primária composta chave do dispositivo + empresa
+
 # Backlog
 
-- Verificar IMEI único ao inserir dispositivo
-- Esconder device ID quando se trata de um relógio, apenas inserir automaticamente quando se trata de um 4PTouch
+- Chave Primária Composta Empresa + IMEI
 - Verificar se os filtros estão a funcionar
 - Verificar documentação Wonlex ver se falta algo para o relógio estar:
     - Desligar tão rápido do servidor
@@ -12,9 +17,23 @@
 
 ## Integração hitCare
 
-- Como estão as tabelas do hitCare?
-- Vou ser eu a fazer a integração?
+- Alterar integração para ouvir dentro do hitCare no tópico
+- API
+    - Esconder device ID quando se trata de um relógio, apenas inserir automaticamente quando se trata de um 4PTouch
+- Dispositivos são sempre adicionados sem empresa e sem licença
 
 # Review
 
 # Done
+
+- Adicionar tópico company antes da licença
+- Endpoint API associar dispositivo pela chave usada para empresa + licença
+- Endpoint API deassociar dispositivo a licença e empresa
+- Radares passarem pelo Hub, criar generalização de MQTT
+    - Ouvir tópico
+    - Tratar dados
+    - Redirecionar dados para tópico dentro do Hub
+- API
+    - Generalizar configurações entre os relógios
+    - Registar o que cada modelo pode ou não enviar a nível de telemetria
+    - Pedido genérico de configuração do relógio

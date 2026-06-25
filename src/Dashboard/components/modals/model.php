@@ -14,9 +14,19 @@ ob_start();
                 <div class="form-label">Fornecedor</div>
                 <div id="modelSupplierButtons" class="btn-group flex-wrap" role="group"></div>
             </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="modelInternalModel" class="form-label">Modelo interno</label>
+                    <input type="text" class="form-control" id="modelInternalModel" placeholder="Identificador interno" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="modelCommercialName" class="form-label">Nome comercial</label>
+                    <input type="text" class="form-control" id="modelCommercialName" placeholder="Nome visível" required>
+                </div>
+            </div>
             <div>
-                <label for="modelModel" class="form-label">Modelo</label>
-                <input type="text" class="form-control" id="modelModel" placeholder="Modelo" required>
+                <div class="form-label">Tipo de dispositivo</div>
+                <div id="modelDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
             </div>
             <div>
                 <label for="modelImage" class="form-label">Imagem</label>
@@ -38,7 +48,7 @@ ob_start();
 </form>
 <div class="table-responsive">
     <table class="table table-sm align-middle">
-        <thead><tr><th>Imagem</th><th>Fornecedor</th><th>Modelo</th><th></th></tr></thead>
+        <thead><tr><th>Imagem</th><th>Fornecedor</th><th>Nome comercial</th><th>Modelo interno</th><th>Tipo</th><th></th></tr></thead>
         <tbody id="modelListBody"></tbody>
     </table>
 </div>

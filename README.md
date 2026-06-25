@@ -5,6 +5,7 @@ Raw multi-transport device hub that bridges authorized devices to MQTT.
 The hub accepts devices over their native transport/protocol, identifies them only enough to enforce the whitelist, then forwards raw bytes through MQTT. It queues offline downlinks in Redis so intermittently connected devices receive pending commands after they reconnect.
 
 The project runs as a plain PHP/ReactPHP application. There is no framework HTTP layer or ORM in the active runtime path.
+MySQL is the control-plane source of truth for registered devices and dashboard data. Redis is used for runtime state such as presence, pending downlinks, and short-lived command/history buffers.
 
 ## Architecture
 
@@ -33,13 +34,14 @@ MQTT Broker
 composer server
 ```
 
-SQLite dashboard/runtime schema snapshot:
+Database schemas:
 
 ```text
 database/schema.sql
+database/schema.mysql.sql
 ```
 
-The schema file is the source of truth for local bootstrap. Runtime initialization applies it directly in [src/Dashboard/DashboardDatabase.php](/Users/hugo/dev/hitecosystem-devices-hub/src/Dashboard/DashboardDatabase.php).
+Runtime initialization applies the driver-appropriate schema directly in [src/Dashboard/DashboardDatabase.php](/Users/hugo/dev/hitecosystem-devices-hub/src/Dashboard/DashboardDatabase.php).
 
 Docker:
 
@@ -61,6 +63,7 @@ make test-all
 - TCP ingress: `TCP_INGRESS_HOST` / `TCP_INGRESS_PORT`, default `0.0.0.0:9000`
 - Dashboard: `DASHBOARD_HOST` / `DASHBOARD_PORT`, default `0.0.0.0:8081`
 - MQTT: `MQTT_HOST` / `MQTT_PORT`, default `127.0.0.1:1883`
+- MySQL control-plane DB: `DB_HOST` / `DB_PORT`, default `127.0.0.1:3306`
 - Redis downlink queue: `REDIS_HOST` / `REDIS_PORT`, default `127.0.0.1:6379`
 
 ## Dashboard
@@ -71,7 +74,7 @@ The hub serves a Bootstrap 5 dashboard at:
 http://127.0.0.1:8081/dashboard
 ```
 
-Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth and bootstrap the dashboard admin session. The dashboard uses Redis for recent device history, queued downlinks, and command outcomes.
+Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth and bootstrap the dashboard admin session. The dashboard queries registered devices from MySQL and overlays runtime status from Redis.
 
 API access uses `POST /api/auth/login` and bearer tokens. The env dashboard credentials issue a bootstrap `hub_admin` token. Additional users are managed by admins in the dashboard settings modal or through `/api/api-users`.
 

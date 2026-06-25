@@ -61,14 +61,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $deviceKey = (string)$device['imei'];
         $deviceType = (string)$device['deviceType'];
         $licenseId = (string)$device['licenseId'];
-        $software = (string)($device['software'] ?? 'null');
+        $company = (string)($device['company'] ?? 'null');
 
         $this->dashboardStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'],
             'model' => (string)$device['model'],
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
-            'software' => $software,
+            'company' => $company,
             'sourceSystem' => (string)($device['sourceSystem'] ?? ''),
             'sourceDeviceId' => (string)($device['sourceDeviceId'] ?? ''),
             'protocol' => 'qinglanst-radar',
@@ -77,7 +77,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ]);
 
         if (isset($normalized['telemetry']) && is_array($normalized['telemetry'])) {
-            $this->mqttBridge->publishTelemetry($deviceKey, $normalized['telemetry'], $deviceType, $licenseId, $software);
+            $this->mqttBridge->publishTelemetry($deviceKey, $normalized['telemetry'], $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'telemetry', array_merge($normalized['telemetry'], [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
@@ -85,7 +85,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         }
 
         if (isset($normalized['event']) && is_array($normalized['event'])) {
-            $this->mqttBridge->publishEvent($deviceKey, $normalized['event'], $deviceType, $licenseId, $software);
+            $this->mqttBridge->publishEvent($deviceKey, $normalized['event'], $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'events', array_merge($normalized['event'], [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
@@ -94,7 +94,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, software?: string}|null
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string}|null
      */
     private function resolveDevice(Topic $topic): ?array
     {

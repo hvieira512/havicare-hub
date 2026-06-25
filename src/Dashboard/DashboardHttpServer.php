@@ -4,10 +4,10 @@ namespace Hub\Dashboard;
 
 use Hub\Api\Routes\ApiUsers;
 use Hub\Api\Routes\Auth;
+use Hub\Api\Routes\Company;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Licenses;
 use Hub\Api\Routes\Models;
-use Hub\Api\Routes\Software;
 use Hub\Api\Routes\Suppliers;
 use Hub\DeviceHubServer;
 use Hub\PendingDownlinkQueue;
@@ -24,7 +24,7 @@ final class DashboardHttpServer
     private Models $modelsApi;
     private Suppliers $suppliersApi;
     private ApiUsers $apiUsersApi;
-    private Software $softwareApi;
+    private Company $companyApi;
     private Licenses $licensesApi;
     private array $apiCredentials = [];
 
@@ -65,7 +65,7 @@ final class DashboardHttpServer
                 (string)($metadata['deviceId'] ?? ''),
                 (string)($metadata['sourceSystem'] ?? ''),
                 (string)($metadata['sourceDeviceId'] ?? ''),
-                (string)($metadata['software'] ?? 'null')
+                (string)($metadata['company'] ?? 'null')
             );
         }
 
@@ -73,7 +73,7 @@ final class DashboardHttpServer
         $this->modelsApi = new Models($this->db);
         $this->suppliersApi = new Suppliers($this->db);
         $this->apiUsersApi = new ApiUsers($this->db);
-        $this->softwareApi = new Software($this->db);
+        $this->companyApi = new Company($this->db);
         $this->licensesApi = new Licenses($this->db);
         $this->apiRouter = new ApiRouter($this->apiRoutes());
     }
@@ -189,7 +189,7 @@ final class DashboardHttpServer
             $this->modelsApi,
             $this->suppliersApi,
             $this->apiUsersApi,
-            $this->softwareApi,
+            $this->companyApi,
             $this->licensesApi,
             fn(array $payload, int $status = 200): Response => $this->json($payload, $status),
             fn(string $body): Response => $this->html($body)

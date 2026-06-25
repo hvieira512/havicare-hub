@@ -66,7 +66,7 @@ class DeviceHubServer
                 RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $raw, 'uplink', (string)$rid),
                 $session->deviceType,
                 $session->licenseId,
-                $session->software,
+                $session->company,
             );
             $this->recordRaw($session, $raw, (string)$rid);
         } catch (\Throwable $e) {
@@ -88,8 +88,8 @@ class DeviceHubServer
             return;
         }
 
-        $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $session->licenseId, $session->software);
-        $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $session->licenseId, $session->software);
+        $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $session->licenseId, $session->company);
+        $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $session->licenseId, $session->company);
         $this->dashboardStore?->deviceOffline($session->imei);
         Logger::channel('hub')->info("Device offline IMEI={$session->imei}");
     }
@@ -117,7 +117,7 @@ class DeviceHubServer
                 'device.downlink.sent',
                 null,
                 $this->commandMetadata($bytes, $session?->protocol)
-            ), $session?->deviceType ?? 'watch', $session?->licenseId ?? '0', $session?->software ?? 'null');
+            ), $session?->deviceType ?? 'watch', $session?->licenseId ?? '0', $session?->company ?? 'null');
             $this->recordDownlinkEvent(
                 $imei,
                 $session?->supplier ?? '',
@@ -133,7 +133,7 @@ class DeviceHubServer
                     RawPayload::raw($imei, $session->supplier, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId),
                     $session->deviceType,
                     $session->licenseId,
-                    $session->software,
+                    $session->company,
                 );
             }
         } catch (\Throwable $e) {
@@ -167,7 +167,7 @@ class DeviceHubServer
                 'device.downlink.dropped',
                 $error,
                 $bytes !== null ? $this->commandMetadata($bytes) : null
-            ), $metadata['deviceType'], $metadata['licenseId'], $metadata['software']);
+            ), $metadata['deviceType'], $metadata['licenseId'], $metadata['company']);
             $this->recordEvent(
                 $imei,
                 $metadata['supplier'],
@@ -201,7 +201,7 @@ class DeviceHubServer
                 'device.downlink.queued',
                 null,
                 $command
-            ), $metadata['deviceType'], $metadata['licenseId'], $metadata['software']);
+            ), $metadata['deviceType'], $metadata['licenseId'], $metadata['company']);
             $this->recordEvent($imei, $metadata['supplier'], $metadata['model'], 'device.downlink.queued', $command, $metadata['deviceType'], $metadata['licenseId']);
             return true;
         } catch (\Throwable $e) {
@@ -219,8 +219,8 @@ class DeviceHubServer
     public function expireIdleConnections(int $idleSeconds): void
     {
         foreach ($this->connections->expireIdleConnections($idleSeconds) as $session) {
-            $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $session->licenseId, $session->software);
-            $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $session->licenseId, $session->software);
+        $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $session->licenseId, $session->company);
+        $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $session->licenseId, $session->company);
             $this->dashboardStore?->deviceOffline($session->imei);
             Logger::channel('hub')->warning("Device offline by idle timeout IMEI={$session->imei} idle_seconds={$idleSeconds}");
         }
@@ -251,7 +251,7 @@ class DeviceHubServer
             $authorization->model,
             $authorization->deviceType,
             $authorization->licenseId,
-            $authorization->software,
+            $authorization->company,
         );
         $this->dashboardStore?->deviceSeen($identity->imei, [
             'supplier' => $session->supplier,
@@ -265,8 +265,8 @@ class DeviceHubServer
         ]);
 
         $this->sendLoginAccepted($conn, $identity);
-        $this->publishStatus($identity->imei, $session->supplier, $session->model, 'online', $session->deviceType, $session->licenseId, $session->software);
-        $this->publishEvent($identity->imei, $session->supplier, $session->model, 'device.connected', $session->deviceType, $session->licenseId, $session->software);
+        $this->publishStatus($identity->imei, $session->supplier, $session->model, 'online', $session->deviceType, $session->licenseId, $session->company);
+        $this->publishEvent($identity->imei, $session->supplier, $session->model, 'device.connected', $session->deviceType, $session->licenseId, $session->company);
 
         try {
             $this->mqtt->publishRaw(
@@ -274,7 +274,7 @@ class DeviceHubServer
                 RawPayload::raw($identity->imei, $session->supplier, $session->model, $session->transport, $identity->protocol, $raw, 'uplink', (string)$conn->resourceId),
                 $session->deviceType,
                 $session->licenseId,
-                $session->software,
+                $session->company,
             );
             $this->recordRaw($session, $raw, (string)$conn->resourceId);
         } catch (\Throwable $e) {
@@ -351,7 +351,7 @@ class DeviceHubServer
         foreach ($this->eventDecoder->decode($session, $decoded) as $event) {
             try {
                 $payload = DeviceEventPayloadBuilder::decoded($session, $event);
-                $this->mqtt->publishTelemetry($session->imei, $payload, $session->deviceType, $session->licenseId, $session->software);
+                $this->mqtt->publishTelemetry($session->imei, $payload, $session->deviceType, $session->licenseId, $session->company);
                 $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
                     $payload,
                     ['deviceType' => $session->deviceType, 'licenseId' => $session->licenseId]
@@ -476,7 +476,7 @@ class DeviceHubServer
                 RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId),
                 $session->deviceType,
                 $session->licenseId,
-                $session->software,
+                $session->company,
             );
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);
@@ -533,10 +533,10 @@ class DeviceHubServer
         };
     }
 
-    private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType = 'watch', string $licenseId = '0', string $software = 'null'): void
+    private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
     {
         try {
-            $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state), true, $deviceType, $licenseId, $software);
+            $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state), true, $deviceType, $licenseId, $company);
             if ($state === 'online') {
                 $this->dashboardStore?->deviceSeen($imei, [
                     'supplier' => $supplier,
@@ -553,10 +553,10 @@ class DeviceHubServer
         }
     }
 
-    private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType = 'watch', string $licenseId = '0', string $software = 'null'): void
+    private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
     {
         try {
-            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type), $deviceType, $licenseId, $software);
+            $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type), $deviceType, $licenseId, $company);
             $this->recordEvent($imei, $supplier, $model, $type, null, $deviceType, $licenseId);
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $imei, $e);

@@ -2,10 +2,10 @@
 
 use Hub\Api\Routes\Auth;
 use Hub\Api\Routes\ApiUsers;
+use Hub\Api\Routes\Company;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Licenses;
 use Hub\Api\Routes\Models;
-use Hub\Api\Routes\Software;
 use Hub\Api\Routes\Suppliers;
 use Hub\Dashboard\ApiRoute;
 use Psr\Http\Message\ServerRequestInterface;
@@ -17,7 +17,7 @@ return static function (
     Models $models,
     Suppliers $suppliers,
     ApiUsers $apiUsers,
-    Software $software,
+    Company $company,
     Licenses $licenses,
     callable $json,
     callable $html
@@ -82,10 +82,10 @@ return static function (
             $result = $apiUsers->delete((int)$params['id']);
             return $json($result, $status($result));
         }),
-        new ApiRoute('GET', '/api/software', fn(array $params, ServerRequestInterface $request): Response => $json($software->list((string)$request->getUri()->getQuery()))),
-        new ApiRoute('POST', '/api/software', fn(array $params, ServerRequestInterface $request): Response => $json($software->create((string)$request->getBody()))),
-        new ApiRoute('PUT', '/api/software/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($software->update((int)$params['id'], (string)$request->getBody()))),
-        new ApiRoute('DELETE', '/api/software/{id:\d+}', fn(array $params): Response => $json($software->delete((int)$params['id']))),
+        new ApiRoute('GET', '/api/companies', fn(array $params, ServerRequestInterface $request): Response => $json($company->list((string)$request->getUri()->getQuery()))),
+        new ApiRoute('POST', '/api/companies', fn(array $params, ServerRequestInterface $request): Response => $json($company->create((string)$request->getBody()))),
+        new ApiRoute('PUT', '/api/companies/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($company->update((int)$params['id'], (string)$request->getBody()))),
+        new ApiRoute('DELETE', '/api/companies/{id:\d+}', fn(array $params): Response => $json($company->delete((int)$params['id']))),
         new ApiRoute('GET', '/api/licenses', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->list((string)$request->getUri()->getQuery()))),
         new ApiRoute('POST', '/api/licenses', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->create((string)$request->getBody()))),
         new ApiRoute('PUT', '/api/licenses/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->update((int)$params['id'], (string)$request->getBody()))),
