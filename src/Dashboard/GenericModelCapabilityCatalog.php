@@ -159,6 +159,17 @@ final class GenericModelCapabilityCatalog
         return self::mapTelemetryFeature($key) ?? self::mapConfigurationKey($key);
     }
 
+    public static function sectionForCapabilityKey(string $key): ?string
+    {
+        foreach (self::definitions() as $definition) {
+            if ($definition['key'] === $key) {
+                return $definition['section'];
+            }
+        }
+
+        return null;
+    }
+
     public static function mapTelemetryFeature(string $feature): ?string
     {
         $feature = trim($feature);

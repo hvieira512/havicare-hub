@@ -7,6 +7,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\ApiAuthContext;
 use Hub\Dashboard\DashboardDataAccess;
+use Hub\Dashboard\GenericModelCapabilityCatalog;
 use Hub\Dashboard\DeviceProtocol;
 use Hub\Dashboard\DashboardStore;
 use Hub\Dashboard\DeviceMetadata;
@@ -102,14 +103,16 @@ final class Devices
         }
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
         $model = $this->modelForDevice($device);
+        $configRows = $this->db->deviceConfigurations->allForImei($imei);
 
         return [
             'device' => $device,
             'commands' => $this->enabledRequestCommandsForModel($model, $protocol),
             'configuration' => [
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
-                'stored' => count($this->db->deviceConfigurations->allForImei($imei)),
+                'stored' => count($configRows),
             ],
+            'capabilities' => $this->deviceCapabilities($model, $protocol, $configRows),
             'pending' => $this->pending($imei),
             'recent' => [
                 'raw' => $this->store->recent($imei, 'raw'),
@@ -713,6 +716,171 @@ final class Devices
         $normalized = trim($licenseId);
 
         return $normalized === '' ? '' : $normalized;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $configRows
+     * @return array<string, array<string, mixed>>
+     */
+    private function deviceCapabilities(?array $model, string $protocol, array $configRows): array
+    {
+        $catalog = $this->db->genericCapabilities->all();
+        $supportedKeys = $model !== null
+            ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
+            : GenericModelCapabilityCatalog::keysForProtocol($protocol);
+        $matrix = GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
+        $capabilities = [];
+
+        foreach (GenericModelCapabilityCatalog::sections() as $section => $_label) {
+            $capabilities[$section] = [];
+        }
+
+        foreach ($matrix['telemetry'] ?? [] as $key => $supported) {
+            if ($supported) {
+                $capabilities['telemetry'][$key] = true;
+            }
+        }
+
+        foreach ($configRows as $row) {
+            $nativeKey = trim((string)($row['config_key'] ?? ''));
+            $desired = is_array($row['desired_payload'] ?? null) ? $row['desired_payload'] : [];
+            if ($nativeKey === '' || $desired === []) {
+                continue;
+            }
+
+            $genericKey = GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey);
+            if ($genericKey === null) {
+                continue;
+            }
+
+            $section = GenericModelCapabilityCatalog::sectionForCapabilityKey($genericKey);
+            if ($section === null || $section === 'telemetry') {
+                continue;
+            }
+
+            $normalized = $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
+            if ($normalized === null) {
+                continue;
+            }
+
+            $capabilities[$section][$genericKey] = $this->mergeCapabilityValue(
+                $genericKey,
+                $capabilities[$section][$genericKey] ?? null,
+                $normalized
+            );
+        }
+
+        return $capabilities;
+    }
+
+    private function normalizeCapabilityValue(string $genericKey, string $nativeKey, array $desired): mixed
+    {
+        return match ($genericKey) {
+            'sos_contacts' => $this->normalizeSosContactsValue($nativeKey, $desired),
+            'phonebook' => $desired['contacts'] ?? null,
+            'call_whitelist' => $this->normalizeCallWhitelistValue($nativeKey, $desired),
+            'monitor_number' => $desired['phone'] ?? $desired,
+            'alarm_clock' => $desired['alarmClock'] ?? $desired['items'] ?? $desired,
+            'medication_reminders' => $desired['plans'] ?? $desired['items'] ?? $desired,
+            default => $desired,
+        };
+    }
+
+    private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed
+    {
+        if ($existing === null) {
+            return $incoming;
+        }
+
+        return match ($genericKey) {
+            'sos_contacts' => $this->mergeStringLists($existing, $incoming),
+            'call_whitelist' => $this->mergeAssociativeValues($existing, $incoming, ['numbers']),
+            'phonebook', 'alarm_clock', 'medication_reminders' => $this->mergeListValues($existing, $incoming),
+            default => $this->mergeAssociativeValues($existing, $incoming),
+        };
+    }
+
+    private function normalizeSosContactsValue(string $nativeKey, array $desired): array
+    {
+        if (isset($desired['numbers']) && is_array($desired['numbers'])) {
+            return $this->stringList($desired['numbers']);
+        }
+        if (isset($desired['phone'])) {
+            return $this->stringList([$desired['phone']]);
+        }
+        if ($nativeKey === 'SOSNumber' && isset($desired['SOSNumber']) && is_array($desired['SOSNumber'])) {
+            return $this->stringList($desired['SOSNumber']);
+        }
+
+        return [];
+    }
+
+    private function normalizeCallWhitelistValue(string $nativeKey, array $desired): array
+    {
+        if ($nativeKey === 'whitelistSwitch') {
+            return ['enabled' => (bool)($desired['enabled'] ?? false)];
+        }
+
+        return ['numbers' => $this->stringList($desired['numbers'] ?? [])];
+    }
+
+    private function mergeStringLists(mixed $existing, mixed $incoming): array
+    {
+        return $this->stringList(array_merge(
+            is_array($existing) ? $existing : [],
+            is_array($incoming) ? $incoming : []
+        ));
+    }
+
+    private function mergeListValues(mixed $existing, mixed $incoming): array
+    {
+        $existingList = is_array($existing) ? array_values($existing) : [];
+        $incomingList = is_array($incoming) ? array_values($incoming) : [];
+
+        return array_values(array_merge($existingList, $incomingList));
+    }
+
+    /**
+     * @param list<string> $listKeys
+     */
+    private function mergeAssociativeValues(mixed $existing, mixed $incoming, array $listKeys = []): mixed
+    {
+        if (!is_array($existing) || !is_array($incoming)) {
+            return $incoming;
+        }
+
+        $merged = $existing;
+        foreach ($incoming as $key => $value) {
+            if (in_array((string)$key, $listKeys, true)) {
+                $merged[$key] = $this->stringList(array_merge(
+                    is_array($existing[$key] ?? null) ? $existing[$key] : [],
+                    is_array($value) ? $value : []
+                ));
+                continue;
+            }
+
+            $merged[$key] = $value;
+        }
+
+        return $merged;
+    }
+
+    /**
+     * @param list<mixed> $values
+     * @return list<string>
+     */
+    private function stringList(array $values): array
+    {
+        $normalized = [];
+        foreach ($values as $value) {
+            $item = trim((string)$value);
+            if ($item === '') {
+                continue;
+            }
+            $normalized[$item] = true;
+        }
+
+        return array_keys($normalized);
     }
 
     private function licenseForAssociation(string $company, string $licenseId): ?array

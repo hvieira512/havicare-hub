@@ -43,12 +43,12 @@ final class DeviceConfigurationRepository
 
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, protocol, supplier, model, command, desired_payload,
+                imei, config_key, protocol, supplier, model, command, desired_payload, reported_payload,
                 last_status, last_command_id, desired_updated_at, applied_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $now]);
+        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, '{}', $status, $commandId, $now, $now]);
     }
 
     public function markApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
@@ -81,11 +81,11 @@ final class DeviceConfigurationRepository
 
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, protocol, supplier, model, command, reported_payload, reported_at
+                imei, config_key, protocol, supplier, model, command, desired_payload, reported_payload, reported_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, $now]);
+        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, '{}', $encoded, $now]);
     }
 
     private function exists(string $imei, string $key): bool
