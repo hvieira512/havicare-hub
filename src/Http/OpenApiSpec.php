@@ -427,6 +427,18 @@ class OpenApiSpec
                     ],
                 ],
                 '/api/models/{id}' => [
+                    'get' => [
+                        'tags' => ['Models'],
+                        'summary' => 'Get model detail',
+                        'parameters' => [$modelIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Model detail',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelItem']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
                     'put' => [
                         'tags' => ['Models'],
                         'summary' => 'Update model',
@@ -976,8 +988,26 @@ class OpenApiSpec
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'example' => '/images/wonlex.png'],
-                            'capabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'blood_pressure']],
-                            'enabledCapabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate']],
+                            'capabilities' => ['$ref' => '#/components/schemas/ModelCapabilitiesMatrix'],
+                        ],
+                    ],
+                    'ModelCapabilitySection' => [
+                        'type' => 'object',
+                        'additionalProperties' => ['type' => 'boolean'],
+                        'example' => [
+                            'heart_rate' => true,
+                            'blood_pressure' => true,
+                            'blood_oxygen' => false,
+                        ],
+                    ],
+                    'ModelCapabilitiesMatrix' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'telemetry' => ['$ref' => '#/components/schemas/ModelCapabilitySection'],
+                            'health' => ['$ref' => '#/components/schemas/ModelCapabilitySection'],
+                            'contacts' => ['$ref' => '#/components/schemas/ModelCapabilitySection'],
+                            'alarms' => ['$ref' => '#/components/schemas/ModelCapabilitySection'],
+                            'settings_system' => ['$ref' => '#/components/schemas/ModelCapabilitySection'],
                         ],
                     ],
                     'ModelListResponse' => [
@@ -998,8 +1028,8 @@ class OpenApiSpec
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'format' => 'binary'],
-                            'enabledCapabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
-                            'enabledCapabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate']],
+                            'capabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
+                            'capabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'phonebook']],
                         ],
                     ],
                     'CompanyItem' => [

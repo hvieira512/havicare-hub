@@ -42,7 +42,9 @@ final class DashboardDatabase
 
         $this->bootstrapSchema();
         $this->seedDefaults();
+        $this->seedDefaultGenericCapabilities();
         $this->migrateLegacyModelRequestCapabilities();
+        $this->migrateModelCapabilitiesToGenericCatalog();
         $this->seedDefaultModelCapabilities();
     }
 
@@ -70,6 +72,7 @@ final class DashboardDatabase
         $this->ensureMysqlIndex('model_capabilities', 'idx_model_capabilities_model', 'model_id');
         $this->ensureMysqlIndex('api_users', 'idx_api_users_role_license', 'role, license_id');
         $this->ensureMysqlIndex('licenses', 'idx_licenses_company_id', 'company_id');
+        $this->ensureMysqlIndex('generic_capabilities', 'idx_generic_capabilities_section_order', 'section, sort_order');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_type_license', 'device_type, license_id');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_supplier_model', 'supplier, model');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_company', 'company');
@@ -156,6 +159,44 @@ final class DashboardDatabase
         }
     }
 
+    private function seedDefaultGenericCapabilities(): void
+    {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $select = $this->pdo->prepare('SELECT id FROM generic_capabilities WHERE capability_key = ?');
+        $insert = $this->pdo->prepare('
+            INSERT INTO generic_capabilities (section, capability_key, label, sort_order, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ');
+        $update = $this->pdo->prepare('
+            UPDATE generic_capabilities
+            SET section = ?, label = ?, sort_order = ?, updated_at = ?
+            WHERE capability_key = ?
+        ');
+
+        foreach (GenericModelCapabilityCatalog::definitions() as $definition) {
+            $select->execute([$definition['key']]);
+            if ($select->fetchColumn() === false) {
+                $insert->execute([
+                    $definition['section'],
+                    $definition['key'],
+                    $definition['label'],
+                    $definition['sortOrder'],
+                    $now,
+                    $now,
+                ]);
+                continue;
+            }
+
+            $update->execute([
+                $definition['section'],
+                $definition['label'],
+                $definition['sortOrder'],
+                $now,
+                $definition['key'],
+            ]);
+        }
+    }
+
     private function migrateLegacyModelRequestCapabilities(): void
     {
         try {
@@ -233,7 +274,7 @@ final class DashboardDatabase
                 continue;
             }
 
-            foreach (DeviceCommandCatalog::featuresForProtocol($protocol) as $feature) {
+            foreach (GenericModelCapabilityCatalog::keysForProtocol($protocol) as $feature) {
                 $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND feature = ?');
                 $existing->execute([$modelId, $feature]);
                 if ((int)$existing->fetchColumn() > 0) {
@@ -246,6 +287,47 @@ final class DashboardDatabase
                 $insert->execute([$modelId, $feature, $now, $now]);
             }
         }
+    }
+
+    private function migrateModelCapabilitiesToGenericCatalog(): void
+    {
+        $rows = $this->pdo->query('SELECT model_id, feature, enabled, created_at, updated_at FROM model_capabilities ORDER BY model_id, feature')->fetchAll();
+        if (!is_array($rows) || $rows === []) {
+            return;
+        }
+
+        $insert = $this->pdo->prepare('
+            INSERT IGNORE INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        ');
+        $delete = $this->pdo->prepare('DELETE FROM model_capabilities WHERE model_id = ? AND feature = ?');
+
+        $this->pdo->beginTransaction();
+        foreach ($rows as $row) {
+            $modelId = (int)($row['model_id'] ?? 0);
+            $feature = (string)($row['feature'] ?? '');
+            if ($modelId <= 0 || $feature === '') {
+                continue;
+            }
+
+            $canonical = GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($feature);
+            if ($canonical === null) {
+                $delete->execute([$modelId, $feature]);
+                continue;
+            }
+
+            if ($canonical !== $feature) {
+                $insert->execute([
+                    $modelId,
+                    $canonical,
+                    (int)($row['enabled'] ?? 1),
+                    (string)($row['created_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
+                    (string)($row['updated_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
+                ]);
+                $delete->execute([$modelId, $feature]);
+            }
+        }
+        $this->pdo->commit();
     }
 
     private function migrateSchema(): void

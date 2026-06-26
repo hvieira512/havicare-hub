@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS model_capabilities (
     CONSTRAINT fk_model_capabilities_model FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS generic_capabilities (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    section VARCHAR(64) NOT NULL,
+    capability_key VARCHAR(191) NOT NULL UNIQUE,
+    label VARCHAR(191) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at VARCHAR(32) NOT NULL,
+    updated_at VARCHAR(32) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS whitelist (
     imei VARCHAR(64) NOT NULL PRIMARY KEY,
     supplier VARCHAR(191) NOT NULL,

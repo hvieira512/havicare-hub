@@ -36,6 +36,70 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
+const capabilitySectionLabels = {
+    telemetry: 'Telemetry',
+    health: 'Health',
+    contacts: 'Contacts',
+    alarms: 'Alarms',
+    settings_system: 'Settings / System',
+};
+const capabilityLabels = {
+    location: 'Location telemetry',
+    heart_rate: 'Heart rate telemetry',
+    blood_pressure: 'Blood pressure telemetry',
+    blood_oxygen: 'Blood oxygen telemetry',
+    temperature: 'Temperature telemetry',
+    breath_rate: 'Breath rate telemetry',
+    sleep: 'Sleep telemetry',
+    ecg: 'ECG telemetry',
+    hrv: 'HRV telemetry',
+    ppg: 'PPG telemetry',
+    rr_interval: 'RR interval telemetry',
+    auto_vitals_interval: 'Auto vitals interval',
+    heart_rate_measurement_interval: 'Heart rate interval',
+    blood_pressure_measurement_interval: 'Blood pressure interval',
+    blood_oxygen_measurement_interval: 'Blood oxygen interval',
+    temperature_measurement_interval: 'Temperature interval',
+    breath_rate_measurement_interval: 'Breath rate interval',
+    ecg_measurement_interval: 'ECG interval',
+    hrv_measurement_interval: 'HRV interval',
+    ppg_measurement_interval: 'PPG interval',
+    rr_interval_measurement_interval: 'RR interval setting',
+    heart_rate_continuous: 'Continuous heart rate',
+    blood_oxygen_continuous: 'Continuous blood oxygen',
+    blood_pressure_trend: 'Blood pressure trend',
+    temperature_continuous: 'Continuous temperature',
+    step_goal: 'Step goal',
+    sleep_monitoring: 'Sleep monitoring',
+    blood_pressure_calibration: 'Blood pressure calibration',
+    step_reporting_interval: 'Step interval',
+    pedometer_schedule: 'Pedometer schedule',
+    sos_contacts: 'SOS contacts',
+    phonebook: 'Phonebook',
+    call_whitelist: 'Call whitelist',
+    monitor_number: 'Monitor number',
+    alarm_clock: 'Alarm clock',
+    medication_reminders: 'Medication reminders',
+    low_battery_alert: 'Low battery alert',
+    fall_detection: 'Fall detection',
+    fall_sensitivity: 'Fall sensitivity',
+    sos_sms_alert: 'SOS SMS alert',
+    blood_oxygen_alert: 'Blood oxygen alert',
+    temperature_high_alert: 'High temperature alert',
+    temperature_low_alert: 'Low temperature alert',
+    blood_pressure_alert: 'Blood pressure alert',
+    heart_rate_high_alert: 'High heart rate alert',
+    heart_rate_low_alert: 'Low heart rate alert',
+    remove_watch_alarm: 'Remove watch alarm',
+    remove_watch_sms_alert: 'Remove watch SMS alert',
+    location_reporting_interval: 'Location reporting interval',
+    working_mode: 'Working mode',
+    device_binding: 'Device binding',
+    call_in_restriction: 'Incoming call restriction',
+    device_settings_sync: 'Device settings sync',
+    device_password: 'Device password',
+    language_timezone: 'Language and timezone',
+};
 
 let deviceConfigRefreshPromise = null;
 let deviceSearchTimer = null;
@@ -162,24 +226,27 @@ function isFourPTouchSelection(supplier = els.deviceForm?.dataset?.supplier || '
 }
 
 function capabilitiesForSupplier(supplier, models = state.summary.models) {
-    const entry = models.find(model => model.supplier === supplier && Array.isArray(model.capabilities) && model.capabilities.length);
-    return Array.isArray(entry?.capabilities) ? entry.capabilities : [];
+    const entry = models.find(model => model.supplier === supplier && model?.capabilities && typeof model.capabilities === 'object');
+    return flattenedCapabilityKeys(entry?.capabilities || {});
 }
 
-function capabilityGroupKey(feature) {
-    if (feature === 'location') return 'localization';
-    if (['heart_rate', 'blood_pressure', 'blood_pressure_systolic', 'blood_pressure_diastolic', 'blood_oxygen', 'temperature', 'ecg', 'hrv', 'blood_sugar', 'breath_rate', 'ppg', 'rr_interval'].includes(feature)) {
-        return 'vital_signs';
+function flattenedCapabilityKeys(capabilities) {
+    const enabled = [];
+    for (const entries of Object.values(capabilities || {})) {
+        if (!entries || typeof entries !== 'object') {
+            continue;
+        }
+        for (const [key, supported] of Object.entries(entries)) {
+            if (supported) {
+                enabled.push(key);
+            }
+        }
     }
-    return 'other';
+    return enabled;
 }
 
-function capabilityGroupLabel(group) {
-    return {
-        localization: 'Localização',
-        vital_signs: 'Sinais Vitais',
-        other: 'Outros',
-    }[group] || group;
+function capabilityLabelByKey(key) {
+    return capabilityLabels[key] || String(key || '').replace(/_/g, ' ');
 }
 
 function modelsForCapabilitySupplier(supplier, models = state.summary.models) {
@@ -1780,9 +1847,7 @@ function syncCapabilitiesSelection() {
         || null;
 
     state.settingsModal.capabilityModelId = currentModel ? Number(currentModel.id) : null;
-    state.settingsModal.capabilityEnabledCapabilities = Array.isArray(currentModel?.enabledCapabilities)
-        ? [...currentModel.enabledCapabilities]
-        : [];
+    state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(currentModel?.capabilities || {});
 }
 
 let capabilityDebounceTimer = null;
@@ -1832,7 +1897,9 @@ function renderCapabilitiesSection() {
         els.capabilityModelName.textContent = 'Modelo';
     }
 
-    const features = Array.isArray(selectedModel?.capabilities) ? selectedModel.capabilities : [];
+    const capabilities = selectedModel?.capabilities && typeof selectedModel.capabilities === 'object'
+        ? selectedModel.capabilities
+        : {};
     els.capabilitySelectionEmpty.classList.toggle('d-none', !!selectedModel);
     els.capabilityEditor.classList.toggle('d-none', !selectedModel);
     if (!selectedModel) {
@@ -1843,30 +1910,31 @@ function renderCapabilitiesSection() {
 
     els.capabilityTitle.textContent = modelCommercialName(selectedModel);
     els.capabilitySubtitle.textContent = `${selectedModel.supplier} · ${selectedModel.protocol || 'sem protocolo'}`;
-    els.capabilitySummary.textContent = `${enabled.size}/${features.length} ativos`;
+    const totalCapabilities = Object.values(capabilities).reduce((count, entries) => count + Object.keys(entries || {}).length, 0);
+    els.capabilitySummary.textContent = `${enabled.size}/${totalCapabilities} ativos`;
 
-    const groups = new Map();
-    for (const feature of features) {
-        const key = capabilityGroupKey(feature);
-        groups.set(key, [...(groups.get(key) || []), feature]);
-    }
+    els.capabilityGroups.innerHTML = Object.entries(capabilitySectionLabels).map(([section, label]) => {
+        const entries = Object.keys(capabilities[section] || {});
+        if (entries.length === 0) {
+            return '';
+        }
 
-    els.capabilityGroups.innerHTML = [...groups.entries()].map(([group, entries]) => `
+        return `
         <section class="border rounded bg-body-tertiary p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h6 mb-0">${esc(capabilityGroupLabel(group))}</h3>
+                <h3 class="h6 mb-0">${esc(label)}</h3>
                 <span class="small text-secondary">${entries.filter(f => enabled.has(f)).length}/${entries.length} ativos</span>
             </div>
             <div class="d-flex flex-column gap-2">
                 ${entries.map(feature => `
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequest" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? 'checked' : ''}>
-                            <label class="form-check-label" for="cap-${esc(feature)}">${esc(featureLabel(feature))}</label>
+                            <label class="form-check-label" for="cap-${esc(feature)}">${esc(capabilityLabelByKey(feature))}</label>
                         </div>`
                 ).join('')}
             </div>
-        </section>
-    `).join('');
+        </section>`;
+    }).join('');
 }
 
 function selectCapabilityDeviceType(deviceType) {
@@ -1906,9 +1974,9 @@ async function saveCapabilities() {
     body.append('commercialName', String(modelCommercialName(model)));
     body.append('deviceType', String(modelDeviceType(model)));
     body.append('protocol', String(model.protocol || ''));
-    body.append('enabledCapabilitiesConfigured', '1');
+    body.append('capabilitiesConfigured', '1');
     for (const feature of state.settingsModal.capabilityEnabledCapabilities || []) {
-        body.append('enabledCapabilities[]', String(feature));
+        body.append('capabilities[]', String(feature));
     }
 
     const result = await api.saveModel(model.id, body);

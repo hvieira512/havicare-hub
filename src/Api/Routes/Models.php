@@ -3,9 +3,9 @@
 namespace Hub\Api\Routes;
 
 use Hub\Api\Support\CollectionResponse;
-use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DeviceProtocol;
+use Hub\Dashboard\GenericModelCapabilityCatalog;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
@@ -72,11 +72,12 @@ final class Models
             )),
         ];
 
+        $catalog = $this->db->genericCapabilities->all();
         $enabledByModel = $this->db->modelCapabilities->enabledFeaturesForModelIds(array_map(
             static fn(array $model): int => (int)($model['id'] ?? 0),
             $models
         ));
-        $models = array_map(function (array $model) use ($enabledByModel): array {
+        $models = array_map(function (array $model) use ($enabledByModel, $catalog): array {
             $modelId = (int)($model['id'] ?? 0);
             $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
             return [
@@ -88,8 +89,7 @@ final class Models
                 'deviceType' => (string)($model['device_type'] ?? 'watch'),
                 'protocol' => $protocol,
                 'image' => (string)($model['image'] ?? ''),
-                'capabilities' => \Hub\Command\DeviceCommandCatalog::featuresForProtocol($protocol),
-                'enabledCapabilities' => $enabledByModel[$modelId] ?? [],
+                'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $enabledByModel[$modelId] ?? []),
             ];
         }, $models);
 
@@ -105,6 +105,7 @@ final class Models
 
         $protocol = DeviceProtocol::forSupplier((string)($entry['supplier_name'] ?? ''));
         $imagePath = (string)($entry['image_path'] ?? '');
+        $catalog = $this->db->genericCapabilities->all();
 
         return [
             'id' => $id,
@@ -114,9 +115,10 @@ final class Models
             'deviceType' => (string)($entry['device_type'] ?? 'watch'),
             'protocol' => $protocol,
             'image' => $imagePath !== '' ? $imagePath : null,
-            'configurationCatalog' => DeviceConfigurationCatalog::configsForProtocol($protocol),
-            'capabilities' => \Hub\Command\DeviceCommandCatalog::featuresForProtocol($protocol),
-            'enabledCapabilities' => $this->db->modelCapabilities->enabledFeaturesForModelId($id),
+            'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix(
+                $catalog,
+                $this->db->modelCapabilities->enabledFeaturesForModelId($id)
+            ),
         ];
     }
 
@@ -282,11 +284,20 @@ final class Models
             return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
         }
 
-        $availableFeatures = \Hub\Command\DeviceCommandCatalog::featuresForProtocol($protocol);
-        $hasEnabledCapabilitiesSelection = array_key_exists('enabledCapabilitiesConfigured', $decoded)
+        $availableFeatures = GenericModelCapabilityCatalog::keysForProtocol($protocol);
+        $hasEnabledCapabilitiesSelection = array_key_exists('capabilitiesConfigured', $decoded)
+            || array_key_exists('capabilities', $decoded)
+            || array_key_exists('capabilities[]', $decoded)
+            || array_key_exists('enabledCapabilitiesConfigured', $decoded)
             || array_key_exists('enabledCapabilities', $decoded)
             || array_key_exists('enabledCapabilities[]', $decoded);
-        $enabledCapabilities = $this->featureValues($decoded['enabledCapabilities'] ?? $decoded['enabledCapabilities[]'] ?? null);
+        $enabledCapabilities = $this->featureValues(
+            $decoded['capabilities']
+            ?? $decoded['capabilities[]']
+            ?? $decoded['enabledCapabilities']
+            ?? $decoded['enabledCapabilities[]']
+            ?? null
+        );
         if (!$hasEnabledCapabilitiesSelection) {
             $enabledCapabilities = $availableFeatures;
         } else {
