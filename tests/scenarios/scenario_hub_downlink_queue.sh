@@ -14,6 +14,7 @@ export MQTT_TOPIC_PREFIX=""
 export WHITELIST_FILE="config/whitelist.example.json"
 
 IMEI="865028000000308"
+DEVICE_TOPIC_PREFIX="null/42/watch/$IMEI"
 DOWNLINK='{"encoding":"text","payload":"IWBPXL,865028000000308,654321,1,2#"}'
 
 docker compose up -d --force-recreate --remove-orphans mosquitto redis hub >/dev/null
@@ -36,7 +37,7 @@ docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downl
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^0/watch/$IMEI/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
+  if grep -q "^$DEVICE_TOPIC_PREFIX/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
@@ -64,7 +65,7 @@ fi
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^0/watch/$IMEI/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.sent"' "$MQTT_LOG_FILE"; then
+  if grep -q "^$DEVICE_TOPIC_PREFIX/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.sent"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1

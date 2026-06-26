@@ -147,11 +147,17 @@ final class DashboardHttpServer
         }
 
         $header = $request->getHeaderLine('Authorization');
-        if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
+        if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
+            return $this->tokens->context((string)$matches[1]);
+        }
+
+        parse_str((string)$request->getUri()->getQuery(), $params);
+        $queryToken = trim((string)($params['access_token'] ?? ''));
+        if ($queryToken === '') {
             return null;
         }
 
-        return $this->tokens->context((string)$matches[1]);
+        return $this->tokens->context($queryToken);
     }
 
     private function isDashboardAuthorized(ServerRequestInterface $request): bool
@@ -223,6 +229,9 @@ final class DashboardHttpServer
         return in_array($route->method() . ' ' . $route->pattern(), [
             'GET /api/devices',
             'GET /api/devices/{imei}',
+            'GET /api/devices/{imei}/recent',
+            'GET /api/devices/{imei}/actions',
+            'GET /api/devices/{imei}/stream',
             'POST /api/devices/{imei}/commands',
             'PATCH /api/devices/{imei}/association',
             'DELETE /api/devices/{imei}/association',

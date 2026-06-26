@@ -17,7 +17,22 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
         self::assertSame(
-            ['blood_oxygen', 'blood_pressure', 'heart_rate', 'location', 'temperature'],
+            [
+                'alarm_clock',
+                'auto_vitals_interval',
+                'blood_oxygen',
+                'blood_pressure',
+                'blood_pressure_calibration',
+                'call_whitelist',
+                'fall_detection',
+                'fall_sensitivity',
+                'heart_rate',
+                'location',
+                'phonebook',
+                'sos_contacts',
+                'temperature',
+                'working_mode',
+            ],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
 
@@ -28,7 +43,22 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
         self::assertSame(
-            ['blood_oxygen', 'blood_pressure', 'heart_rate', 'location', 'temperature'],
+            [
+                'alarm_clock',
+                'auto_vitals_interval',
+                'blood_oxygen',
+                'blood_pressure',
+                'blood_pressure_calibration',
+                'call_whitelist',
+                'fall_detection',
+                'fall_sensitivity',
+                'heart_rate',
+                'location',
+                'phonebook',
+                'sos_contacts',
+                'temperature',
+                'working_mode',
+            ],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
     }

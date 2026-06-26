@@ -15,6 +15,7 @@ export WHITELIST_FILE="config/whitelist.example.json"
 
 EVENT_PAYLOAD='{"from":"gw-001","type":6,"timestamp":1718700000,"payload":{"id":"button-07","key":"8","transparent":{"raw":"0A01"},"location":{"lat":41.1579,"lon":-8.6291,"accuracy":12}}}'
 STATUS_PAYLOAD='{"from":"gw-001","payload":{"status":{"online":false}}}'
+DEVICE_TOPIC_PREFIX="null/1001/ncs/ncs-gateway-01"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 
@@ -38,32 +39,32 @@ docker compose exec -T mosquitto sh -lc "printf '%s' '$STATUS_PAYLOAD' >/tmp/ncs
 
 for _ in $(seq 1 30); do
   capture_mqtt_log
-  if grep -q "^1001/ncs/ncs-gateway-01/raw " "$MQTT_LOG_FILE" \
-    && grep -q "^1001/ncs/ncs-gateway-01/events " "$MQTT_LOG_FILE" \
-    && grep -q "^1001/ncs/ncs-gateway-01/telemetry " "$MQTT_LOG_FILE" \
-    && grep -q "^1001/ncs/ncs-gateway-01/status " "$MQTT_LOG_FILE"; then
+  if grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE" \
+    && grep -q "^$DEVICE_TOPIC_PREFIX/events " "$MQTT_LOG_FILE" \
+    && grep -q "^$DEVICE_TOPIC_PREFIX/telemetry " "$MQTT_LOG_FILE" \
+    && grep -q "^$DEVICE_TOPIC_PREFIX/status " "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q "^1001/ncs/ncs-gateway-01/raw " "$MQTT_LOG_FILE"; then
+if ! grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE"; then
   scenario_fail "publish_failure" "missing NCS raw topic"
 fi
 if ! grep -q '"sourceTopic":"/voerka/ncs/devices/gw-001/events"' "$MQTT_LOG_FILE"; then
   scenario_fail "contract_failure" "NCS raw payload did not preserve the upstream topic"
 fi
-if ! grep -q "^1001/ncs/ncs-gateway-01/events " "$MQTT_LOG_FILE" || ! grep -q '"type":"ncs.event"' "$MQTT_LOG_FILE"; then
+if ! grep -q "^$DEVICE_TOPIC_PREFIX/events " "$MQTT_LOG_FILE" || ! grep -q '"type":"ncs.event"' "$MQTT_LOG_FILE"; then
   scenario_fail "publish_failure" "missing normalized NCS event topic"
 fi
 if ! grep -q '"transparent":{"raw":"0A01"}' "$MQTT_LOG_FILE"; then
   scenario_fail "contract_failure" "NCS event did not preserve transparent payload"
 fi
-if ! grep -q "^1001/ncs/ncs-gateway-01/telemetry " "$MQTT_LOG_FILE" || ! grep -q '"type":"location"' "$MQTT_LOG_FILE"; then
+if ! grep -q "^$DEVICE_TOPIC_PREFIX/telemetry " "$MQTT_LOG_FILE" || ! grep -q '"type":"location"' "$MQTT_LOG_FILE"; then
   scenario_fail "publish_failure" "missing NCS location telemetry topic"
 fi
-if ! grep -q "^1001/ncs/ncs-gateway-01/status " "$MQTT_LOG_FILE" || ! grep -q '"state":"offline"' "$MQTT_LOG_FILE"; then
+if ! grep -q "^$DEVICE_TOPIC_PREFIX/status " "$MQTT_LOG_FILE" || ! grep -q '"state":"offline"' "$MQTT_LOG_FILE"; then
   scenario_fail "publish_failure" "missing retained NCS offline status topic"
 fi
 

@@ -14,6 +14,7 @@ export MQTT_TOPIC_PREFIX=""
 export WHITELIST_FILE="config/whitelist.example.json"
 
 IMEI="865028000000308"
+DEVICE_TOPIC_PREFIX="null/42/watch/$IMEI"
 DOWNLINK='{"encoding":"text","payload":"IWBPXL,865028000000308,123456,1,2#"}'
 
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
@@ -37,14 +38,14 @@ docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^42/watch/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAP00' "$MQTT_LOG_FILE"; then
+  if grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAP00' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q "^42/watch/$IMEI/raw " "$MQTT_LOG_FILE"; then
+if ! grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE"; then
   scenario_fail "publish_failure" "missing raw login topic"
 fi
 if ! grep -q '"debug":{"protocol":"vivistar-iw","transport":"tcp","encoding":"text","payload":"IWAP00' "$MQTT_LOG_FILE"; then
@@ -67,7 +68,7 @@ fi
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^42/watch/$IMEI/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
+  if grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1

@@ -234,6 +234,51 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/api/devices/{imei}/recent' => [
+                    'get' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Get recent telemetry, events and command history for a device',
+                        'parameters' => [$imeiParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Recent device activity',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceRecentResponse']]],
+                            ],
+                            '403' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/devices/{imei}/actions' => [
+                    'get' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Get available device action buttons',
+                        'parameters' => [$imeiParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Available request commands for this device model',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceActionsResponse']]],
+                            ],
+                            '403' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/devices/{imei}/stream' => [
+                    'get' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Open a server-sent events stream for recent device activity',
+                        'parameters' => [$imeiParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'SSE stream emitting snapshot and update events',
+                                'content' => ['text/event-stream' => ['schema' => ['$ref' => '#/components/schemas/DeviceStreamResponse']]],
+                            ],
+                            '403' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/commands/{id}' => [
                     'get' => [
                         'tags' => ['Devices'],
@@ -833,6 +878,22 @@ class OpenApiSpec
                             'pending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
                         ],
                     ],
+                    'DeviceRecentResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'telemetry' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/RecentItem']],
+                            'events' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/RecentItem']],
+                            'commands' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandRecord']],
+                        ],
+                    ],
+                    'DeviceActionsResponse' => [
+                        'type' => 'array',
+                        'items' => ['$ref' => '#/components/schemas/CommandCatalogEntry'],
+                    ],
+                    'DeviceStreamResponse' => [
+                        'type' => 'string',
+                        'example' => "event: snapshot\ndata: {\"telemetry\":[],\"events\":[],\"commands\":[],\"actions\":[]}\n\n",
+                    ],
                     'DeviceConfigurationSummary' => [
                         'type' => 'object',
                         'properties' => [
@@ -848,14 +909,62 @@ class OpenApiSpec
                             'location' => true,
                         ],
                     ],
+                    'CapabilityOption' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'value' => ['type' => 'integer'],
+                            'label' => ['type' => 'string'],
+                            'fields' => [
+                                'type' => 'object',
+                                'nullable' => true,
+                                'additionalProperties' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'type' => ['type' => 'string'],
+                                        'min' => ['type' => 'integer'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'CapabilityMetaField' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'options' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CapabilityOption']],
+                        ],
+                    ],
+                    'CapabilityWithMeta' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'value' => ['type' => 'object'],
+                            '_meta' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'limit' => ['type' => 'integer'],
+                                ],
+                                'additionalProperties' => ['$ref' => '#/components/schemas/CapabilityMetaField'],
+                            ],
+                        ],
+                    ],
                     'DeviceConfiguredCapabilitiesSection' => [
                         'type' => 'object',
                         'additionalProperties' => true,
                         'example' => [
                             'phonebook' => [
-                                ['name' => 'Ana', 'phone' => '+351911111111'],
+                                'value' => [['name' => 'Ana', 'phone' => '+351911111111']],
+                                '_meta' => ['limit' => 10],
                             ],
-                            'device_password' => ['password' => '2468'],
+                            'call_whitelist' => ['enabled' => true],
+                            'fall_sensitivity' => [
+                                'value' => ['sensitivity' => 2],
+                                '_meta' => [
+                                    'sensitivity' => ['options' => [
+                                        ['value' => 1, 'label' => 'Baixa'],
+                                        ['value' => 2, 'label' => 'Normal'],
+                                        ['value' => 3, 'label' => 'Alta'],
+                                    ]],
+                                ],
+                            ],
                         ],
                     ],
                     'DeviceCapabilitiesMatrix' => [

@@ -42,6 +42,14 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame('prefix/null/0/watch/8800000015/events', $publisher->lastTopic);
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
     }
+
+    public function testDownlinkTopicFilterUsesLegacyFourSegmentContract(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        self::assertSame('prefix/+/watch/+/downlink', $bridge->downlinkTopicFilter());
+    }
 }
 
 final class FakeMqttPublisher extends MqttClient

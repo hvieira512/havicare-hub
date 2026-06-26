@@ -115,8 +115,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('blood_pressure', $response['capabilities']['telemetry'] ?? []);
         self::assertSame(
             [['name' => 'Ana', 'phone' => '+351911111111']],
-            $response['capabilities']['contacts']['phonebook'] ?? null
+            $response['capabilities']['contacts']['phonebook']['value'] ?? null
         );
+        self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
         self::assertTrue($response['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
         self::assertSame(
             ['+351922222222', '+351933333333'],
@@ -128,6 +129,41 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertSame([], $response['capabilities']['health'] ?? null);
         self::assertSame([], $response['capabilities']['alarms'] ?? null);
+    }
+
+    public function testRecentReturnsTelemetryEventsAndCommands(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
+        $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 72]);
+        $store->append('861265061009822', 'events', ['type' => 'sos', 'status' => 'triggered']);
+        $api->command('861265061009822', json_encode(['command' => 'BPXL'], JSON_THROW_ON_ERROR));
+
+        $response = $api->recent('861265061009822');
+
+        self::assertSame('heart_rate', $response['telemetry'][0]['type'] ?? null);
+        self::assertSame(72, $response['telemetry'][0]['value'] ?? null);
+        self::assertSame('sos', $response['events'][0]['type'] ?? null);
+        self::assertSame('BPXL', $response['commands'][0]['requestId'] ?? null);
+    }
+
+    public function testAvailableActionsReturnsEnabledRequestCommands(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'location']);
+
+        $response = $api->availableActions('861265061009822');
+
+        self::assertSame(['BPXL', 'BP16'], array_map(
+            static fn(array $entry): string => (string)($entry['command'] ?? ''),
+            $response
+        ));
     }
 
     public function testCommandStatusReturnsStoredCommandById(): void
@@ -145,7 +181,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * @return array{0: Devices, 1: DashboardDataAccess}
+     * @return array{0: Devices, 1: DashboardDataAccess, 2: DashboardStore}
      */
     private function makeApi(): array
     {
@@ -163,7 +199,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $db
         );
 
-        return [$api, $db];
+        return [$api, $db, $store];
     }
 
     private function makeHubServerMock(): \Hub\DeviceHubServer

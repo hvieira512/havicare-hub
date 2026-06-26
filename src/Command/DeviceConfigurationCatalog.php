@@ -338,11 +338,42 @@ final class DeviceConfigurationCatalog
         return [
             self::entry('sosContacts', 'BP12', 'Contactos SOS', 'list', ['numbers'], ['AP12'], 'contacts', 10, 3),
             self::entry('phonebook', 'BP14', 'Lista telefónica', 'contacts', ['contacts'], ['AP14'], 'contacts', 20, 10),
-            self::entry('workingMode', 'BP33', 'Modo de trabalho', 'workingMode', ['mode'], ['AP33'], 'system', 10),
+            self::entry('workingMode', 'BP33', 'Modo de trabalho', 'workingMode', ['mode'], ['AP33'], 'system', 10, null, [
+                'mode' => [
+                    ['value' => 1, 'label' => 'Normal'],
+                    ['value' => 2, 'label' => 'Poupança'],
+                    ['value' => 3, 'label' => 'Emergência'],
+                    ['value' => 8, 'label' => 'Personalizado', 'fields' => [
+                        'intervalSeconds' => ['type' => 'integer', 'min' => 30],
+                        'gpsEnabled' => ['type' => 'boolean'],
+                    ]],
+                ],
+            ]),
             self::entry('fallDetection', 'BP76', 'Deteção de queda', 'toggle', ['enabled'], ['AP76'], 'alerts', 10),
-            self::entry('fallSensitivity', 'BP77', 'Sensibilidade de queda', 'fallSensitivity', ['sensitivity'], ['AP77'], 'alerts', 20),
+            self::entry('fallSensitivity', 'BP77', 'Sensibilidade de queda', 'fallSensitivity', ['sensitivity'], ['AP77'], 'alerts', 20, null, [
+                'sensitivity' => [
+                    ['value' => 1, 'label' => 'Baixa'],
+                    ['value' => 2, 'label' => 'Normal'],
+                    ['value' => 3, 'label' => 'Alta'],
+                ],
+            ]),
             self::entry('whitelistSwitch', 'BP84', 'Filtro da lista telefónica', 'toggle', ['enabled'], ['AP84'], 'system', 20),
-            self::entry('reminders', 'BP85', 'Lembretes / Alarmes', 'reminders', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30),
+            self::entry('reminders', 'BP85', 'Lembretes / Alarmes', 'reminders', ['masterEnabled', 'items'], ['AP85'], 'alerts', 30, null, [
+                'days' => [
+                    ['value' => 1, 'label' => 'Seg'],
+                    ['value' => 2, 'label' => 'Ter'],
+                    ['value' => 3, 'label' => 'Qua'],
+                    ['value' => 4, 'label' => 'Qui'],
+                    ['value' => 5, 'label' => 'Sex'],
+                    ['value' => 6, 'label' => 'Sab'],
+                    ['value' => 7, 'label' => 'Dom'],
+                ],
+                'type' => [
+                    ['value' => 1, 'label' => 'Medicação'],
+                    ['value' => 2, 'label' => 'Água'],
+                    ['value' => 3, 'label' => 'Sedentarismo'],
+                ],
+            ]),
             self::entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10),
             self::entry('bloodPressureCalibration', 'BPJZ', 'Calibração da tensão arterial', 'bloodPressure', ['systolic', 'diastolic'], ['APJZ'], 'health', 20),
         ];
@@ -385,7 +416,8 @@ final class DeviceConfigurationCatalog
         array $expectedReplyTypes = [],
         string $category = 'general',
         int $order = 0,
-        ?int $limit = null
+        ?int $limit = null,
+        ?array $options = null
     ): array {
         $entry = [
             'key' => $key,
@@ -402,6 +434,10 @@ final class DeviceConfigurationCatalog
 
         if ($limit !== null) {
             $entry['limit'] = $limit;
+        }
+
+        if ($options !== null) {
+            $entry['options'] = $options;
         }
 
         return $entry;

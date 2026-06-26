@@ -28,6 +28,51 @@ import {
 } from './config.js';
 import {normalizePhoneControl, renderPhoneControl, resetPhoneControls, syncPhoneControl} from './phone.js';
 
+let deviceEventSource = null;
+
+function connectDeviceStream(imei) {
+    disconnectDeviceStream();
+    const url = new URL(`/api/devices/${encodeURIComponent(imei)}/stream`, window.location.origin);
+    const token = window.hubDashboardApiToken?.access_token || '';
+    if (token) {
+        url.searchParams.set('access_token', token);
+    }
+    deviceEventSource = new EventSource(url);
+    deviceEventSource.addEventListener('snapshot', function (e) {
+        const data = JSON.parse(e.data);
+        if (!state.selectedDetail) return;
+        state.selectedDetail.recent = {
+            telemetry: data.telemetry || [],
+            events: data.events || [],
+            commands: data.commands || [],
+        };
+        state.selectedDetail.commands = data.actions || [];
+        renderSelection();
+    });
+    deviceEventSource.addEventListener('update', function (e) {
+        const data = JSON.parse(e.data);
+        if (!state.selectedDetail) return;
+        state.selectedDetail.recent = {
+            telemetry: data.telemetry || [],
+            events: data.events || [],
+            commands: data.commands || [],
+        };
+        renderSelection();
+    });
+    deviceEventSource.onerror = function () {
+        if (deviceEventSource?.readyState === EventSource.CLOSED) {
+            disconnectDeviceStream();
+        }
+    };
+}
+
+function disconnectDeviceStream() {
+    if (deviceEventSource) {
+        deviceEventSource.close();
+        deviceEventSource = null;
+    }
+}
+
 let connectionChartRoot = null;
 
 let els = {};
@@ -509,14 +554,19 @@ async function loadDevice(imei) {
     const detail = await api.device(imei);
     if (detail?.error) {
         if (state.selectedImei === imei) {
+            disconnectDeviceStream();
             clearSelection();
             clearSelectedDeviceFromStorage();
         }
         renderSelection();
         return false;
     }
+    disconnectDeviceStream();
     state.selectedDetail = detail;
+    state.selectedDetail.recent = null;
+    state.selectedDetail.commands = [];
     renderSelection();
+    connectDeviceStream(imei);
     return true;
 }
 
@@ -597,17 +647,18 @@ function renderSelectedDeviceSummary(device) {
 
 function allDetailItems() {
     const items = [];
-    for (const row of (state.selectedDetail.recent.telemetry || [])) {
+    const recent = state.selectedDetail.recent || {};
+    for (const row of (recent.telemetry || [])) {
         const payload = rowPayload(row);
         if (payload && !payload.debug) items.push({_source: 'telemetry', raw: row, payload});
     }
-    for (const row of (state.selectedDetail.recent.events || [])) {
+    for (const row of (recent.events || [])) {
         const payload = rowPayload(row);
         if (!payload) continue;
         if (payload.type === 'ncs.event') items.push({_source: 'event', raw: row, payload});
         if (payload.type === 'device.connected' || payload.type === 'device.disconnected') items.push({_source: 'connection', raw: row, payload});
     }
-    for (const row of (state.selectedDetail.recent.commands || [])) {
+    for (const row of (recent.commands || [])) {
         const payload = rowPayload(row);
         if (payload) items.push({_source: 'command', raw: row, payload});
     }
@@ -1288,6 +1339,7 @@ async function deleteDevice(imei) {
     if (!confirm(`Apagar o dispositivo ${imei}?`)) return;
     await api.deleteDevice(imei);
     if (state.selectedImei === imei) {
+        disconnectDeviceStream();
         clearSelection();
         clearSelectedDeviceFromStorage();
     }
@@ -1305,6 +1357,7 @@ function handleDeleteDeviceBtnClick() {
     api.deleteDevice(imei).then(() => {
         deviceModal.hide();
         if (state.selectedImei === imei) {
+            disconnectDeviceStream();
             clearSelection();
             clearSelectedDeviceFromStorage();
         }
@@ -2945,7 +2998,16 @@ export function startDashboard() {
 
     setInterval(() => {
         if (state.selectedImei) {
-            void loadDevice(state.selectedImei);
+            api.device(state.selectedImei).then(detail => {
+                if (detail?.error) return;
+                if (state.selectedImei !== detail.device?.imei) return;
+                const recent = state.selectedDetail?.recent;
+                const commands = state.selectedDetail?.commands;
+                state.selectedDetail = detail;
+                state.selectedDetail.recent = recent;
+                state.selectedDetail.commands = commands;
+                renderSelection();
+            });
         }
-    }, 5000);
+    }, 30000);
 }

@@ -465,6 +465,35 @@ final class Devices
         return ['status' => 'ok', 'imei' => $imei];
     }
 
+    public function recent(string $imei, ?ApiAuthContext $auth = null): array
+    {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
+        return [
+            'telemetry' => $this->store->recent($imei, 'telemetry'),
+            'events' => $this->store->recent($imei, 'events'),
+            'commands' => $this->store->commands($imei),
+        ];
+    }
+
+    public function availableActions(string $imei, ?ApiAuthContext $auth = null): array
+    {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
+        $device = $this->deviceSnapshot($imei);
+        $protocol = (string)($device['protocol'] ?? $this->protocolForModel(
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? '')
+        ));
+        $model = $this->modelForDevice($device);
+
+        return $this->enabledRequestCommandsForModel($model, $protocol);
+    }
+
     private function pending(string $imei): array
     {
         if ($this->downlinkQueue === null) {
@@ -734,6 +763,9 @@ final class Devices
             }
         }
 
+        $meta = [];
+        $nativeKeysPerGeneric = [];
+
         foreach ($configRows as $row) {
             $nativeKey = trim((string)($row['config_key'] ?? ''));
             $desired = is_array($row['desired_payload'] ?? null) ? $row['desired_payload'] : [];
@@ -761,6 +793,41 @@ final class Devices
                 $capabilities[$section][$genericKey] ?? null,
                 $normalized
             );
+
+            $nativeKeysPerGeneric[$genericKey][$nativeKey] = true;
+
+            $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey);
+            if ($entry === null) {
+                continue;
+            }
+
+            if (isset($entry['options'])) {
+                foreach ($entry['options'] as $field => $options) {
+                    $meta[$genericKey][$field] = ['options' => $options];
+                }
+            }
+
+            if (isset($entry['limit'])) {
+                $existing = $meta[$genericKey]['limit'] ?? 0;
+                $meta[$genericKey]['limit'] = max($existing, (int)$entry['limit']);
+            }
+        }
+
+        foreach ($meta as $genericKey => $metaData) {
+            if (count($nativeKeysPerGeneric[$genericKey] ?? []) > 1) {
+                continue;
+            }
+
+            foreach ($capabilities as $section => &$sectionCaps) {
+                if (array_key_exists($genericKey, $sectionCaps)) {
+                    $sectionCaps[$genericKey] = [
+                        'value' => $sectionCaps[$genericKey],
+                        '_meta' => $metaData,
+                    ];
+                    break;
+                }
+            }
+            unset($sectionCaps);
         }
 
         return $capabilities;

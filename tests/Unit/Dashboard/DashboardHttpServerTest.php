@@ -13,6 +13,7 @@ use Hub\Dashboard\DashboardStore;
 use Hub\Registry\Whitelist;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
+use React\EventLoop\Loop;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DashboardHttpServerTest extends MysqlDashboardTestCase
@@ -353,8 +354,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertTrue($body['capabilities']['telemetry']['location'] ?? false);
         self::assertSame(
             [['name' => 'Ana', 'phone' => '+351911111111']],
-            $body['capabilities']['contacts']['phonebook'] ?? null
+            $body['capabilities']['contacts']['phonebook']['value'] ?? null
         );
+        self::assertSame(10, $body['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
         self::assertTrue($body['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
         self::assertSame(
             ['+351922222222'],
@@ -366,6 +368,77 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         );
         self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
+    }
+
+    public function testTenantClientCanUseRecentActionsAndStreamRoutes(): void
+    {
+        [$server, $db, $store] = $this->makeServerWithDatabase();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'location']);
+        $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 72]);
+        $store->append('861265061009822', 'events', ['type' => 'sos', 'status' => 'triggered']);
+        $store->recordCommand('861265061009822', 'cmd-1', [
+            'status' => 'waiting',
+            'imei' => '861265061009822',
+            'protocol' => 'vivistar',
+            'requestId' => 'BPXL',
+            'nativeType' => 'BPXL',
+            'label' => 'Heart rate',
+            'feature' => 'heart_rate',
+            'expectedReplyTypes' => [],
+            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+        ]);
+
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $recentResponse = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/recent',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $recent = json_decode((string)$recentResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(200, $recentResponse->getStatusCode(), (string)$recentResponse->getBody());
+        self::assertSame('heart_rate', $recent['telemetry'][0]['type'] ?? null);
+        self::assertSame('sos', $recent['events'][0]['type'] ?? null);
+        self::assertSame('BPXL', $recent['commands'][0]['requestId'] ?? null);
+
+        $actionsResponse = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/actions',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $actions = json_decode((string)$actionsResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(200, $actionsResponse->getStatusCode(), (string)$actionsResponse->getBody());
+        self::assertSame(['BPXL', 'BP16'], array_map(
+            static fn(array $entry): string => (string)($entry['command'] ?? ''),
+            $actions
+        ));
+
+        $streamResponse = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+        ));
+        self::assertSame(200, $streamResponse->getStatusCode());
+        self::assertSame('text/event-stream', $streamResponse->getHeaderLine('Content-Type'));
+
+        $snapshotFrame = $this->readSseFrame($streamResponse);
+        self::assertStringContainsString("event: snapshot\n", $snapshotFrame);
+        $snapshot = $this->decodeSseFrame($snapshotFrame);
+        self::assertSame('heart_rate', $snapshot['telemetry'][0]['type'] ?? null);
+        self::assertSame('BPXL', $snapshot['commands'][0]['requestId'] ?? null);
+        self::assertSame(['BPXL', 'BP16'], array_map(
+            static fn(array $entry): string => (string)($entry['command'] ?? ''),
+            $snapshot['actions'] ?? []
+        ));
+
+        $otherRecent = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009833/recent',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        self::assertSame(404, $otherRecent->getStatusCode(), (string)$otherRecent->getBody());
     }
 
     public function testApiRejectsBasicAuthWhileDashboardAcceptsIt(): void
@@ -425,7 +498,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
-     * @return array{0: DashboardHttpServer, 1: DashboardDataAccess}
+     * @return array{0: DashboardHttpServer, 1: DashboardDataAccess, 2: DashboardStore}
      */
     private function makeServerWithDatabase(): array
     {
@@ -459,7 +532,44 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             3600
         );
 
-        return [$server, $db];
+        return [$server, $db, $store];
+    }
+
+    private function readSseFrame(\Psr\Http\Message\ResponseInterface $response): string
+    {
+        $body = $response->getBody();
+        $frame = '';
+        $loop = Loop::get();
+
+        $body->on('data', static function (string $chunk) use (&$frame, $body, $loop): void {
+            $frame .= $chunk;
+            if (str_contains($frame, "\n\n")) {
+                $body->close();
+                $loop->stop();
+            }
+        });
+
+        $loop->addTimer(0.2, static function () use (&$frame, $body, $loop): void {
+            if (method_exists($body, 'close')) {
+                $body->close();
+            }
+            $loop->stop();
+        });
+
+        $loop->run();
+
+        return $frame;
+    }
+
+    private function decodeSseFrame(string $frame): array
+    {
+        foreach (explode("\n", trim($frame)) as $line) {
+            if (str_starts_with($line, 'data: ')) {
+                return json_decode(substr($line, 6), true, 512, JSON_THROW_ON_ERROR);
+            }
+        }
+
+        self::fail('SSE frame did not contain a data line.');
     }
 
     private function loginToken(DashboardHttpServer $server, string $username, string $password): string

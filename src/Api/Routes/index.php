@@ -9,7 +9,9 @@ use Hub\Api\Routes\Models;
 use Hub\Api\Routes\Suppliers;
 use Hub\Dashboard\ApiRoute;
 use Psr\Http\Message\ServerRequestInterface;
+use React\EventLoop\Loop;
 use React\Http\Message\Response;
+use React\Stream\ThroughStream;
 
 return static function (
     Auth $auth,
@@ -48,6 +50,54 @@ return static function (
         new ApiRoute('GET', '/api/devices/{imei}', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
             $result = $devices->show($params['imei'], $apiAuthContext($request));
             return $json($result, $status($result));
+        }),
+        new ApiRoute('GET', '/api/devices/{imei}/recent', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
+            $result = $devices->recent($params['imei'], $apiAuthContext($request));
+            return $json($result, $status($result));
+        }),
+        new ApiRoute('GET', '/api/devices/{imei}/actions', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
+            $result = $devices->availableActions($params['imei'], $apiAuthContext($request));
+            return $json($result, $status($result));
+        }),
+        new ApiRoute('GET', '/api/devices/{imei}/stream', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext): Response {
+            $imei = $params['imei'];
+            $auth = $apiAuthContext($request);
+
+            $snapshot = $devices->recent($imei, $auth);
+            if (isset($snapshot['error'])) {
+                return $json($snapshot, 404);
+            }
+
+            $loop = Loop::get();
+            $stream = new ThroughStream();
+
+            $snapshot['actions'] = $devices->availableActions($imei, $auth);
+            $initialPayload = "event: snapshot\ndata: " . json_encode($snapshot, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n\n";
+            $loop->futureTick(static function () use ($stream, $initialPayload): void {
+                if ($stream->isWritable()) {
+                    $stream->write($initialPayload);
+                }
+            });
+
+            $timer = $loop->addPeriodicTimer(2, function () use ($imei, $devices, $auth, $stream): void {
+                if (!$stream->isWritable()) {
+                    return;
+                }
+                $data = $devices->recent($imei, $auth);
+                if (!isset($data['error'])) {
+                    $stream->write("event: update\ndata: " . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n\n");
+                }
+            });
+
+            $stream->on('close', static function () use ($timer, $loop): void {
+                $loop->cancelTimer($timer);
+            });
+
+            return new Response(200, [
+                'Content-Type' => 'text/event-stream',
+                'Cache-Control' => 'no-cache',
+                'X-Accel-Buffering' => 'no',
+            ], $stream);
         }),
         new ApiRoute('GET', '/api/devices/{imei}/configuration', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
             $result = $devices->configuration($params['imei'], (string)$request->getUri()->getQuery(), $apiAuthContext($request));
