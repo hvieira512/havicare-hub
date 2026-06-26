@@ -290,6 +290,84 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame('0', $device['device']['licenseId'] ?? null);
     }
 
+    public function testDeviceDetailEndpointReturnsSparseCapabilitiesAndStoredValues(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], [
+            'heart_rate',
+            'location',
+            'phonebook',
+            'call_whitelist',
+            'device_password',
+        ]);
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'phonebook',
+            'vivistar',
+            'Vivistar',
+            'L08 Pro',
+            'PB',
+            ['contacts' => [['name' => 'Ana', 'phone' => '+351911111111']]]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'whitelistSwitch',
+            'vivistar',
+            'Vivistar',
+            'L08 Pro',
+            'WHITELIST_SWITCH',
+            ['enabled' => true]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'whitelistGroup1',
+            'vivistar',
+            'Vivistar',
+            'L08 Pro',
+            'WHITELIST_GROUP_1',
+            ['numbers' => ['+351922222222']]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'devicePassword',
+            'four-p-touch',
+            'Vivistar',
+            'L08 Pro',
+            'PASSWORD',
+            ['password' => '2468']
+        );
+
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        self::assertTrue($body['capabilities']['telemetry']['heart_rate'] ?? false);
+        self::assertTrue($body['capabilities']['telemetry']['location'] ?? false);
+        self::assertSame(
+            [['name' => 'Ana', 'phone' => '+351911111111']],
+            $body['capabilities']['contacts']['phonebook'] ?? null
+        );
+        self::assertTrue($body['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
+        self::assertSame(
+            ['+351922222222'],
+            $body['capabilities']['contacts']['call_whitelist']['numbers'] ?? null
+        );
+        self::assertSame(
+            ['password' => '2468'],
+            $body['capabilities']['settings_system']['device_password'] ?? null
+        );
+        self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
+        self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
+    }
+
     public function testApiRejectsBasicAuthWhileDashboardAcceptsIt(): void
     {
         $server = $this->makeServer();
@@ -343,6 +421,14 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
     private function makeServer(): DashboardHttpServer
     {
+        return $this->makeServerWithDatabase()[0];
+    }
+
+    /**
+     * @return array{0: DashboardHttpServer, 1: DashboardDataAccess}
+     */
+    private function makeServerWithDatabase(): array
+    {
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
@@ -359,7 +445,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
 
-        return new DashboardHttpServer(
+        $server = new DashboardHttpServer(
             $store,
             new ApiTokenStore($redis, 'test:api-tokens'),
             new Whitelist($this->whitelistPath),
@@ -372,6 +458,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'tenant-secret',
             3600
         );
+
+        return [$server, $db];
     }
 
     private function loginToken(DashboardHttpServer $server, string $username, string $password): string

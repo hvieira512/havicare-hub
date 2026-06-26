@@ -109,6 +109,78 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertContains('dnRR', array_column($response['commands'], 'id'));
     }
 
+    public function testShowReturnsSparseCapabilitiesWithStoredConfigurationValues(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], [
+            'heart_rate',
+            'location',
+            'phonebook',
+            'call_whitelist',
+            'device_password',
+        ]);
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'phonebook',
+            'vivistar',
+            'Vivistar',
+            'L08 Pro',
+            'PB',
+            ['contacts' => [['name' => 'Ana', 'phone' => '+351911111111']]]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'whitelistSwitch',
+            'vivistar',
+            'Vivistar',
+            'L08 Pro',
+            'WHITELIST_SWITCH',
+            ['enabled' => true]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'whitelistGroup1',
+            'vivistar',
+            'Vivistar',
+            'L08 Pro',
+            'WHITELIST_GROUP_1',
+            ['numbers' => ['+351922222222', '+351933333333']]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'devicePassword',
+            'four-p-touch',
+            'Vivistar',
+            'L08 Pro',
+            'PASSWORD',
+            ['password' => '2468']
+        );
+
+        $response = $api->show('861265061009822');
+
+        self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
+        self::assertTrue($response['capabilities']['telemetry']['location'] ?? false);
+        self::assertArrayNotHasKey('blood_pressure', $response['capabilities']['telemetry'] ?? []);
+        self::assertSame(
+            [['name' => 'Ana', 'phone' => '+351911111111']],
+            $response['capabilities']['contacts']['phonebook'] ?? null
+        );
+        self::assertTrue($response['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
+        self::assertSame(
+            ['+351922222222', '+351933333333'],
+            $response['capabilities']['contacts']['call_whitelist']['numbers'] ?? null
+        );
+        self::assertSame(
+            ['password' => '2468'],
+            $response['capabilities']['settings_system']['device_password'] ?? null
+        );
+        self::assertSame([], $response['capabilities']['health'] ?? null);
+        self::assertSame([], $response['capabilities']['alarms'] ?? null);
+    }
+
     public function testCommandStatusReturnsStoredCommandById(): void
     {
         [$api] = $this->makeApi();
