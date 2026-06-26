@@ -107,19 +107,12 @@ final class Devices
 
         return [
             'device' => $device,
-            'commands' => $this->enabledRequestCommandsForModel($model, $protocol),
             'configuration' => [
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
                 'stored' => count($configRows),
             ],
             'capabilities' => $this->deviceCapabilities($model, $protocol, $configRows),
             'pending' => $this->pending($imei),
-            'recent' => [
-                'raw' => $this->store->recent($imei, 'raw'),
-                'telemetry' => $this->store->recent($imei, 'telemetry'),
-                'events' => $this->store->recent($imei, 'events'),
-                'commands' => $this->store->commands($imei),
-            ],
         ];
     }
 

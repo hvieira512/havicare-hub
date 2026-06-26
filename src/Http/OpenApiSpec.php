@@ -147,7 +147,7 @@ class OpenApiSpec
                         'parameters' => [$imeiParam],
                         'responses' => [
                             '200' => [
-                                'description' => 'Device detail with commands and recent data',
+                                'description' => 'Device detail with configuration, capabilities and pending commands',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceDetailResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
@@ -828,11 +828,9 @@ class OpenApiSpec
                         'type' => 'object',
                         'properties' => [
                             'device' => ['$ref' => '#/components/schemas/DeviceDetail'],
-                            'commands' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandCatalogEntry']],
                             'configuration' => ['$ref' => '#/components/schemas/DeviceConfigurationSummary'],
                             'capabilities' => ['$ref' => '#/components/schemas/DeviceCapabilitiesMatrix'],
                             'pending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
-                            'recent' => ['$ref' => '#/components/schemas/RecentSection'],
                         ],
                     ],
                     'DeviceConfigurationSummary' => [

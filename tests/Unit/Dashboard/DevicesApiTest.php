@@ -29,21 +29,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         }
     }
 
-    public function testShowReturnsOnlyEnabledModelRequests(): void
-    {
-        [$api, $db] = $this->makeApi();
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-        self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'location']);
-
-        $response = $api->show('861265061009822');
-
-        self::assertSame(['BPXL', 'BP16'], array_map(
-            static fn(array $entry): string => (string)($entry['command'] ?? ''),
-            $response['commands']
-        ));
-    }
-
     public function testCommandRejectsDisabledModelRequest(): void
     {
         [$api, $db] = $this->makeApi();
@@ -71,42 +56,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('1703215911', $api->show('868017032159118')['device']['deviceId'] ?? null);
-    }
-
-    public function testFourPTouchShowReturnsSplitHealthRequestIds(): void
-    {
-        [$api] = $this->makeApi();
-        $api->create(json_encode([
-            'imei' => '868017032159118',
-            'supplier' => '4P Touch',
-            'model' => '4P-TOUCH',
-            'deviceType' => 'watch',
-            'licenseId' => '0',
-            'deviceId' => '',
-        ], JSON_THROW_ON_ERROR));
-
-        $response = $api->show('868017032159118');
-
-        self::assertContains('fourPHeartRate', array_column($response['commands'], 'id'));
-        self::assertContains('fourPBloodPressure', array_column($response['commands'], 'id'));
-        self::assertContains('fourPBodyTemperature', array_column($response['commands'], 'id'));
-    }
-
-    public function testWonlexShowKeepsPpgAndRrAsRequestCards(): void
-    {
-        [$api] = $this->makeApi();
-        $api->create(json_encode([
-            'imei' => '865028000000308',
-            'supplier' => 'Wonlex',
-            'model' => 'HW20PRO',
-            'deviceType' => 'watch',
-            'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR));
-
-        $response = $api->show('865028000000308');
-
-        self::assertContains('dnPPG', array_column($response['commands'], 'id'));
-        self::assertContains('dnRR', array_column($response['commands'], 'id'));
     }
 
     public function testShowReturnsSparseCapabilitiesWithStoredConfigurationValues(): void
