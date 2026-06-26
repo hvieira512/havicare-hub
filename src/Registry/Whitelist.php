@@ -173,6 +173,22 @@ class Whitelist
         return true;
     }
 
+    public function updateAssociation(string $imei, string $company, string $licenseId): bool
+    {
+        if (!isset($this->devices[$imei])) {
+            return false;
+        }
+
+        $company = trim($company);
+        $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
+        $this->devices[$imei]['company'] = $company;
+        $this->devices[$imei]['licenseId'] = $licenseId;
+        $this->db?->updateAssociation($imei, $company, $licenseId);
+        $this->saveFile();
+
+        return true;
+    }
+
     /**
      * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company: string, simNumber: string, deviceId: string}|null
      */

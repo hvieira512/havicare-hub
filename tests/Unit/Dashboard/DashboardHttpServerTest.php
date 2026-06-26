@@ -11,6 +11,8 @@ use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
 use Hub\Registry\Whitelist;
+use Predis\ClientInterface;
+use Predis\Command\CommandInterface;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DashboardHttpServerTest extends MysqlDashboardTestCase
@@ -22,8 +24,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         parent::setUp();
         $this->whitelistPath = sys_get_temp_dir() . '/hub-dashboard-http-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001'],
-            '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002'],
+            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitCare'],
+            '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002', 'company' => 'otherCare'],
+            '861265061009844' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '0', 'company' => 'null'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -72,8 +75,10 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $path = __DIR__ . '/../../../var/dashboard/model-images/' . basename($route);
         try {
             self::assertFileExists($path);
-            self::assertSame(IMAGETYPE_JPEG, exif_imagetype($path));
-            [$width, $height] = getimagesize($path);
+            $imageInfo = getimagesize($path);
+            self::assertIsArray($imageInfo);
+            self::assertSame(IMAGETYPE_JPEG, $imageInfo[2] ?? null);
+            [$width, $height] = $imageInfo;
             self::assertSame(640, $width);
             self::assertSame(213, $height);
         } finally {
@@ -203,6 +208,88 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(403, $response->getStatusCode());
     }
 
+    public function testTenantClientCanAssociateUnassignedDeviceViaPatchEndpoint(): void
+    {
+        $server = $this->makeServer();
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $response = $server(new ServerRequest(
+            'PATCH',
+            '/api/devices/861265061009844/association',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode(['company' => 'hitCare', 'licenseId' => '1001'], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('hitCare', $body['association']['company'] ?? null);
+        self::assertSame('1001', $body['association']['licenseId'] ?? null);
+
+        $deviceResponse = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009844',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $device = json_decode((string)$deviceResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $deviceResponse->getStatusCode(), (string)$deviceResponse->getBody());
+        self::assertSame('hitCare', $device['device']['company'] ?? null);
+        self::assertSame('1001', $device['device']['licenseId'] ?? null);
+    }
+
+    public function testTenantClientCannotAssociateAlreadyAssignedDevice(): void
+    {
+        $server = $this->makeServer();
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $response = $server(new ServerRequest(
+            'PATCH',
+            '/api/devices/861265061009833/association',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode(['company' => 'hitCare', 'licenseId' => '1001'], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(400, $response->getStatusCode(), (string)$response->getBody());
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('device_already_associated', $body['error']['code'] ?? null);
+    }
+
+    public function testTenantClientCanDeleteItsOwnAssociation(): void
+    {
+        $server = $this->makeServer();
+        $tenantToken = $this->loginToken($server, 'tenant', 'tenant-secret');
+        $adminToken = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $server(new ServerRequest(
+            'DELETE',
+            '/api/devices/861265061009822/association',
+            ['Authorization' => 'Bearer ' . $tenantToken]
+        ));
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('null', $body['association']['company'] ?? null);
+        self::assertSame('0', $body['association']['licenseId'] ?? null);
+
+        $tenantRead = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $tenantToken]
+        ));
+        self::assertSame(404, $tenantRead->getStatusCode(), (string)$tenantRead->getBody());
+
+        $adminRead = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $adminToken]
+        ));
+        $device = json_decode((string)$adminRead->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $adminRead->getStatusCode(), (string)$adminRead->getBody());
+        self::assertSame('null', $device['device']['company'] ?? null);
+        self::assertSame('0', $device['device']['licenseId'] ?? null);
+    }
+
     public function testApiRejectsBasicAuthWhileDashboardAcceptsIt(): void
     {
         $server = $this->makeServer();
@@ -236,7 +323,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $path = __DIR__ . '/../../../var/dashboard/model-images/' . basename($route);
         try {
             self::assertFileExists($path);
-            self::assertSame(IMAGETYPE_JPEG, exif_imagetype($path));
+            $imageInfo = getimagesize($path);
+            self::assertIsArray($imageInfo);
+            self::assertSame(IMAGETYPE_JPEG, $imageInfo[2] ?? null);
         } finally {
             if (is_file($path)) {
                 unlink($path);
@@ -254,13 +343,18 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
     private function makeServer(): DashboardHttpServer
     {
-        $redis = new InMemoryRedisClientForDevicesApi();
+        $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
+        $hitCareId = $db->companies->create('hitCare');
+        $otherCareId = $db->companies->create('otherCare');
+        $db->licenses->create($hitCareId, '1001', 'hitcare-license');
+        $db->licenses->create($otherCareId, '2002', 'othercare-license');
         $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '1001');
-        $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', '2002');
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '1001', '', '', 'hitCare');
+        $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', '2002', '', '', 'otherCare');
+        $store->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', '0', '', '', 'null');
 
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
@@ -278,5 +372,275 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'tenant-secret',
             3600
         );
+    }
+
+    private function loginToken(DashboardHttpServer $server, string $username, string $password): string
+    {
+        $login = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => $username, 'password' => $password], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
+        $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        return (string)($payload['token']['access_token'] ?? '');
+    }
+}
+
+final class InMemoryRedisClientForDashboardHttpServerTest implements ClientInterface
+{
+    /** @var array<string, array<string, bool>> */
+    private array $sets = [];
+
+    /** @var array<string, array<string, string>> */
+    private array $hashes = [];
+
+    /** @var array<string, array<int, string>> */
+    private array $lists = [];
+
+    /** @var array<string, string> */
+    private array $strings = [];
+
+    /** @var array<string, array<string, float>> */
+    private array $sortedSets = [];
+
+    public function getCommandFactory()
+    {
+        throw new \BadMethodCallException('Not implemented');
+    }
+
+    public function getOptions()
+    {
+        throw new \BadMethodCallException('Not implemented');
+    }
+
+    public function connect()
+    {
+    }
+
+    public function disconnect()
+    {
+    }
+
+    public function getConnection()
+    {
+        throw new \BadMethodCallException('Not implemented');
+    }
+
+    public function createCommand($method, $arguments = [])
+    {
+        throw new \BadMethodCallException('Not implemented');
+    }
+
+    public function executeCommand(CommandInterface $command)
+    {
+        throw new \BadMethodCallException('Not implemented');
+    }
+
+    public function __call($method, $arguments)
+    {
+        return match (strtolower((string)$method)) {
+            'sadd' => $this->sadd((string)$arguments[0], (string)$arguments[1]),
+            'srem' => $this->srem((string)$arguments[0], (string)$arguments[1]),
+            'smembers' => $this->smembers((string)$arguments[0]),
+            'hmset' => $this->hmset((string)$arguments[0], $arguments[1]),
+            'hgetall' => $this->hgetall((string)$arguments[0]),
+            'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
+            'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
+            'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
+            'lpush' => $this->lpush((string)$arguments[0], $arguments[1]),
+            'ltrim' => $this->ltrim((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
+            'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
+            'lrem' => $this->lrem((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
+            'zadd' => $this->zadd((string)$arguments[0], $arguments[1]),
+            'zrem' => $this->zrem((string)$arguments[0], $arguments[1]),
+            'zrangebyscore' => $this->zrangebyscore((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
+            'setex' => $this->setex((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
+            'get' => $this->get((string)$arguments[0]),
+            'del' => $this->del($arguments[0]),
+            default => throw new \BadMethodCallException("Redis method {$method} is not implemented"),
+        };
+    }
+
+    private function sadd(string $key, string $member): int
+    {
+        $exists = isset($this->sets[$key][$member]);
+        $this->sets[$key][$member] = true;
+
+        return $exists ? 0 : 1;
+    }
+
+    private function srem(string $key, string $member): int
+    {
+        $exists = isset($this->sets[$key][$member]);
+        unset($this->sets[$key][$member]);
+
+        return $exists ? 1 : 0;
+    }
+
+    private function smembers(string $key): array
+    {
+        return array_keys($this->sets[$key] ?? []);
+    }
+
+    private function hmset(string $key, array $dictionary): string
+    {
+        $this->hashes[$key] = array_merge($this->hashes[$key] ?? [], array_map('strval', $dictionary));
+
+        return 'OK';
+    }
+
+    private function hgetall(string $key): array
+    {
+        return $this->hashes[$key] ?? [];
+    }
+
+    private function hset(string $key, string $field, string $value): int
+    {
+        $exists = array_key_exists($field, $this->hashes[$key] ?? []);
+        $this->hashes[$key][$field] = $value;
+
+        return $exists ? 0 : 1;
+    }
+
+    private function hdel(string $key, $fields): int
+    {
+        $fields = is_array($fields) ? $fields : [$fields];
+        $deleted = 0;
+        foreach ($fields as $field) {
+            $field = (string)$field;
+            if (isset($this->hashes[$key][$field])) {
+                unset($this->hashes[$key][$field]);
+                $deleted++;
+            }
+        }
+
+        return $deleted;
+    }
+
+    private function hget(string $key, string $field): ?string
+    {
+        return $this->hashes[$key][$field] ?? null;
+    }
+
+    private function lpush(string $key, $values): int
+    {
+        $values = is_array($values) ? array_values(array_map('strval', $values)) : [(string)$values];
+        $this->lists[$key] = array_merge($values, $this->lists[$key] ?? []);
+
+        return count($this->lists[$key]);
+    }
+
+    private function ltrim(string $key, int $start, int $stop): string
+    {
+        $list = $this->lists[$key] ?? [];
+        if ($stop < 0) {
+            $stop = count($list) + $stop;
+        }
+        $length = max(0, $stop - $start + 1);
+        $this->lists[$key] = array_slice($list, $start, $length);
+
+        return 'OK';
+    }
+
+    private function lrange(string $key, int $start, int $stop): array
+    {
+        $list = $this->lists[$key] ?? [];
+        if ($stop < 0) {
+            $stop = count($list) + $stop;
+        }
+        $length = max(0, $stop - $start + 1);
+
+        return array_slice($list, $start, $length);
+    }
+
+    private function lrem(string $key, int $count, string $value): int
+    {
+        $list = $this->lists[$key] ?? [];
+        $removed = 0;
+        $result = [];
+
+        foreach ($list as $item) {
+            if ($item === $value && ($count === 0 || $removed < abs($count))) {
+                $removed++;
+                continue;
+            }
+            $result[] = $item;
+        }
+
+        $this->lists[$key] = $result;
+
+        return $removed;
+    }
+
+    private function zadd(string $key, array $members): int
+    {
+        $added = 0;
+        foreach ($members as $member => $score) {
+            if (!isset($this->sortedSets[$key][(string)$member])) {
+                $added++;
+            }
+            $this->sortedSets[$key][(string)$member] = (float)$score;
+        }
+
+        return $added;
+    }
+
+    private function zrem(string $key, $members): int
+    {
+        $members = is_array($members) ? $members : [$members];
+        $deleted = 0;
+        foreach ($members as $member) {
+            $member = (string)$member;
+            if (isset($this->sortedSets[$key][$member])) {
+                unset($this->sortedSets[$key][$member]);
+                $deleted++;
+            }
+        }
+
+        return $deleted;
+    }
+
+    private function zrangebyscore(string $key, string $min, string $max): array
+    {
+        $items = $this->sortedSets[$key] ?? [];
+        $lower = $min === '-inf' ? -INF : (float)$min;
+        $upper = $max === '+inf' ? INF : (float)$max;
+        $filtered = array_filter($items, static fn(float $score): bool => $score >= $lower && $score <= $upper);
+        asort($filtered, SORT_NUMERIC);
+
+        return array_keys($filtered);
+    }
+
+    private function setex(string $key, int $seconds, string $value): string
+    {
+        $this->strings[$key] = $value;
+
+        return 'OK';
+    }
+
+    private function get(string $key): ?string
+    {
+        return $this->strings[$key] ?? null;
+    }
+
+    private function del($keys): int
+    {
+        $keys = is_array($keys) ? $keys : [$keys];
+        $deleted = 0;
+        foreach ($keys as $key) {
+            $key = (string)$key;
+            foreach (['hashes', 'lists', 'strings', 'sets', 'sortedSets'] as $bucket) {
+                if (isset($this->{$bucket}[$key])) {
+                    unset($this->{$bucket}[$key]);
+                    $deleted++;
+                }
+            }
+        }
+
+        return $deleted;
     }
 }

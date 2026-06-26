@@ -36,10 +36,10 @@ services:
     image: mysql:8.4
     container_name: hitecosystem-mysql
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-hitecosystem_hub}
-      MYSQL_USER: ${DB_USER:-hub}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-hub_pass}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_pass}
+      MYSQL_DATABASE: ${MYSQL_DB_NAME:-hitecosystem_hub}
+      MYSQL_USER: ${MYSQL_DB_USER:-hub}
+      MYSQL_PASSWORD: ${MYSQL_DB_PASSWORD:-hub_pass}
+      MYSQL_ROOT_PASSWORD: ${HUB_DB_ROOT_PASSWORD:-root_pass}
     ports:
       - "3306:3306"
     volumes:
@@ -70,13 +70,20 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      DB_DRIVER: ${DB_DRIVER:-mysql}
-      DB_HOST: mysql
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-hitecosystem_hub}
-      DB_USER: ${DB_USER:-hub}
-      DB_PASSWORD: ${DB_PASSWORD:-hub_pass}
-      DB_CHARSET: ${DB_CHARSET:-utf8mb4}
+      DB_DRIVER: ${HUB_DB_DRIVER:-mysql}
+      DB_HOST: ${HUB_DB_HOST:-mysql}
+      DB_PORT: ${HUB_DB_PORT:-3306}
+      DB_NAME: ${HUB_DB_NAME:-hitecosystem_hub}
+      DB_USER: ${HUB_DB_USER:-hub}
+      DB_PASSWORD: ${HUB_DB_PASSWORD:-hub_pass}
+      DB_CHARSET: ${HUB_DB_CHARSET:-utf8mb4}
+      DB_ROOT_USER: ${HUB_DB_ROOT_USER:-root}
+      DB_ROOT_PASSWORD: ${HUB_DB_ROOT_PASSWORD:-root_pass}
+      TEST_DB_HOST: ${TEST_DB_HOST:-mysql}
+      TEST_DB_PORT: ${TEST_DB_PORT:-3306}
+      TEST_DB_ADMIN_USER: ${TEST_DB_ADMIN_USER:-root}
+      TEST_DB_ADMIN_PASSWORD: ${TEST_DB_ADMIN_PASSWORD:-root_pass}
+      TEST_DB_CHARSET: ${TEST_DB_CHARSET:-utf8mb4}
       DOWNLINK_QUEUE_TTL_SECONDS: ${DOWNLINK_QUEUE_TTL_SECONDS:-300}
       WHITELIST_FILE: ${WHITELIST_FILE-}
       DASHBOARD_ENABLED: ${DASHBOARD_ENABLED:-true}

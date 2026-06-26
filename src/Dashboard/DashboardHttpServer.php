@@ -130,7 +130,7 @@ final class DashboardHttpServer
     private function cors(Response $response): Response
     {
         return $response->withHeader('Access-Control-Allow-Origin', '*')
-            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
             ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
             ->withHeader('Access-Control-Max-Age', '86400');
     }
@@ -224,6 +224,8 @@ final class DashboardHttpServer
             'GET /api/devices',
             'GET /api/devices/{imei}',
             'POST /api/devices/{imei}/commands',
+            'PATCH /api/devices/{imei}/association',
+            'DELETE /api/devices/{imei}/association',
             'GET /api/commands/{id}',
             'GET /api/devices/{imei}/configuration',
             'PUT /api/devices/{imei}/configuration',

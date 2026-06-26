@@ -23,9 +23,21 @@ return static function (
     callable $html
 ): array {
     $apiAuthContext = static fn(ServerRequestInterface $request): ?\Hub\Dashboard\ApiAuthContext => $request->getAttribute('apiAuth');
-    $status = static fn(array $result, int $success = 200): int => isset($result['error'])
-        ? (((string)($result['error']['code'] ?? '')) === 'not_found' || str_ends_with((string)($result['error']['code'] ?? ''), '_not_found') ? 404 : 400)
-        : $success;
+    $status = static function (array $result, int $success = 200): int {
+        if (!isset($result['error'])) {
+            return $success;
+        }
+
+        $code = (string)($result['error']['code'] ?? '');
+        if ($code === 'forbidden') {
+            return 403;
+        }
+        if ($code === 'not_found' || str_ends_with($code, '_not_found')) {
+            return 404;
+        }
+
+        return 400;
+    };
 
     return [
         new ApiRoute('POST', '/api/auth/login', function (array $params, ServerRequestInterface $request) use ($auth, $json): Response {
@@ -51,6 +63,14 @@ return static function (
         }),
         new ApiRoute('POST', '/api/devices/{imei}/commands', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
             $result = $devices->command($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
+            return $json($result, $status($result));
+        }),
+        new ApiRoute('PATCH', '/api/devices/{imei}/association', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
+            $result = $devices->patchAssociation($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
+            return $json($result, $status($result));
+        }),
+        new ApiRoute('DELETE', '/api/devices/{imei}/association', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
+            $result = $devices->deleteAssociation($params['imei'], $apiAuthContext($request));
             return $json($result, $status($result));
         }),
         new ApiRoute('GET', '/api/commands/{id}', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {

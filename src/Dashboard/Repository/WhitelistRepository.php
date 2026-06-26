@@ -111,6 +111,21 @@ final class WhitelistRepository
         $stmt->execute([$imei]);
     }
 
+    public function updateAssociation(string $imei, string $company, string $licenseId): bool
+    {
+        $company = trim($company);
+        $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $stmt = $this->pdo->prepare('
+            UPDATE whitelist
+            SET company = ?, license_id = ?, updated_at = ?
+            WHERE imei = ?
+        ');
+        $stmt->execute([$company, $licenseId, $now, $imei]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     private function deviceSelectSql(): string
     {
         return '

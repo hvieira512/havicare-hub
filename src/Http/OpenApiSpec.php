@@ -198,6 +198,39 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/api/devices/{imei}/association' => [
+                    'patch' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Associate a registered device to a company and license',
+                        'parameters' => [$imeiParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceAssociationRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Device association updated',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceAssociationResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '403' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'delete' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Remove the current company and license association from a device',
+                        'parameters' => [$imeiParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Device association removed',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceAssociationResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/commands/{id}' => [
                     'get' => [
                         'tags' => ['Devices'],
@@ -800,6 +833,31 @@ class OpenApiSpec
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'ok'],
                             'imei' => ['type' => 'string', 'example' => '865028000000307'],
+                        ],
+                    ],
+                    'DeviceAssociation' => [
+                        'type' => 'object',
+                        'required' => ['company', 'licenseId'],
+                        'properties' => [
+                            'company' => ['type' => 'string', 'example' => 'hitCare'],
+                            'licenseId' => ['type' => 'string', 'example' => '1001'],
+                        ],
+                    ],
+                    'DeviceAssociationRequest' => [
+                        'type' => 'object',
+                        'required' => ['company', 'licenseId'],
+                        'properties' => [
+                            'company' => ['type' => 'string', 'example' => 'hitCare'],
+                            'licenseId' => ['type' => 'string', 'example' => '1001'],
+                        ],
+                    ],
+                    'DeviceAssociationResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'imei', 'association'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'imei' => ['type' => 'string', 'example' => '865028000000306'],
+                            'association' => ['$ref' => '#/components/schemas/DeviceAssociation'],
                         ],
                     ],
                     'DeviceDeleteResponse' => [

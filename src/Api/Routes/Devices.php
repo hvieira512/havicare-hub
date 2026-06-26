@@ -383,6 +383,84 @@ final class Devices
         return ['status' => 'ok', 'imei' => $newImei];
     }
 
+    public function patchAssociation(string $imei, string $body, ?ApiAuthContext $auth = null): array
+    {
+        $existing = $this->whitelist->getMetadata($imei);
+        if ($existing === null) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded)) {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
+        }
+
+        $company = trim((string)($decoded['company'] ?? ''));
+        $licenseId = DeviceMetadata::normalizeLicenseId((string)($decoded['licenseId'] ?? ''));
+        if ($company === '' || $licenseId === '' || $licenseId === '0') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'company and licenseId are required']];
+        }
+
+        if ($auth !== null && !$auth->isAdmin()) {
+            if (!$auth->canAccessLicense($licenseId)) {
+                return ['error' => ['code' => 'forbidden', 'message' => 'Forbidden']];
+            }
+
+            $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
+            $currentCompany = trim((string)($existing['company'] ?? 'null'));
+            if ($currentLicenseId !== '0' || $currentCompany !== 'null') {
+                return ['error' => ['code' => 'device_already_associated', 'message' => 'Device is already associated']];
+            }
+        }
+
+        $license = $this->licenseForAssociation($company, $licenseId);
+        if ($license === null) {
+            return ['error' => ['code' => 'invalid_association', 'message' => 'company and licenseId do not match a registered license']];
+        }
+
+        $this->whitelist->updateAssociation($imei, $company, $licenseId);
+        $this->store->updateDeviceAssociation($imei, $company, $licenseId);
+
+        return [
+            'status' => 'ok',
+            'imei' => $imei,
+            'association' => [
+                'company' => $company,
+                'licenseId' => $licenseId,
+            ],
+        ];
+    }
+
+    public function deleteAssociation(string $imei, ?ApiAuthContext $auth = null): array
+    {
+        $existing = $this->whitelist->getMetadata($imei);
+        if ($existing === null) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
+        $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
+        $currentCompany = trim((string)($existing['company'] ?? 'null'));
+        if ($currentLicenseId === '0' && $currentCompany === 'null') {
+            return ['error' => ['code' => 'association_not_found', 'message' => 'Device association was not found']];
+        }
+
+        if ($auth !== null && !$auth->isAdmin() && !$auth->canAccessLicense($currentLicenseId)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
+        $this->whitelist->updateAssociation($imei, 'null', '0');
+        $this->store->updateDeviceAssociation($imei, 'null', '0');
+
+        return [
+            'status' => 'ok',
+            'imei' => $imei,
+            'association' => [
+                'company' => 'null',
+                'licenseId' => '0',
+            ],
+        ];
+    }
+
     public function delete(string $imei): array
     {
         $this->whitelist->unregister($imei);
@@ -635,6 +713,22 @@ final class Devices
         $normalized = trim($licenseId);
 
         return $normalized === '' ? '' : $normalized;
+    }
+
+    private function licenseForAssociation(string $company, string $licenseId): ?array
+    {
+        $companyRow = $this->db->companies->findByName($company);
+        if ($companyRow === null) {
+            return null;
+        }
+
+        foreach ($this->db->licenses->findByLicenseId($licenseId) as $row) {
+            if ((int)($row['company_id'] ?? 0) === (int)($companyRow['id'] ?? 0)) {
+                return $row;
+            }
+        }
+
+        return null;
     }
 
     private function deviceSnapshot(string $imei): array

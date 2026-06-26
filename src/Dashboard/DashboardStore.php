@@ -65,6 +65,16 @@ final class DashboardStore
         ]);
     }
 
+    public function updateDeviceAssociation(string $imei, string $company, string $licenseId): void
+    {
+        $this->redis->sadd($this->key('devices'), $imei);
+        $this->redis->hmset($this->deviceKey($imei), [
+            'imei' => $imei,
+            'company' => trim($company),
+            'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
+        ]);
+    }
+
     public function deviceSeen(string $imei, array $fields): void
     {
         $now = gmdate('Y-m-d\\TH:i:s\\Z');
