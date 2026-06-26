@@ -5,6 +5,7 @@ namespace Hub\Api\Routes;
 use Hub\Api\Support\CollectionResponse;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\DashboardDataAccess;
+use Hub\Dashboard\DeviceProtocol;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
@@ -34,7 +35,7 @@ final class Models
         ];
         $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
             $supplier = trim((string)($model['supplier'] ?? ''));
-            $protocol = trim((string)($model['protocol'] ?? ''));
+            $protocol = DeviceProtocol::forSupplier($supplier);
             $deviceType = trim((string)($model['device_type'] ?? 'watch'));
 
             return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
@@ -45,14 +46,14 @@ final class Models
             'supplier' => $this->uniqueValues(array_map(
                 static fn (array $model): string => trim((string)($model['supplier'] ?? '')),
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
-                    $protocol = trim((string)($model['protocol'] ?? ''));
+                    $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
                     $deviceType = trim((string)($model['device_type'] ?? 'watch'));
                     return (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol'])
                         && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
                 }))
             )),
             'protocol' => $this->uniqueValues(array_map(
-                static fn (array $model): string => trim((string)($model['protocol'] ?? '')),
+                static fn (array $model): string => DeviceProtocol::forSupplier((string)($model['supplier'] ?? '')),
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
                     $supplier = trim((string)($model['supplier'] ?? ''));
                     $deviceType = trim((string)($model['device_type'] ?? 'watch'));
@@ -64,7 +65,7 @@ final class Models
                 static fn (array $model): string => trim((string)($model['device_type'] ?? 'watch')),
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
                     $supplier = trim((string)($model['supplier'] ?? ''));
-                    $protocol = trim((string)($model['protocol'] ?? ''));
+                    $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
                     return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
                         && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol']);
                 }))
@@ -77,7 +78,7 @@ final class Models
         ));
         $models = array_map(function (array $model) use ($enabledByModel): array {
             $modelId = (int)($model['id'] ?? 0);
-            $protocol = (string)($model['protocol'] ?? '');
+            $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
             return [
                 'id' => $modelId,
                 'supplier_id' => (int)($model['supplier_id'] ?? 0),
@@ -102,7 +103,7 @@ final class Models
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
         }
 
-        $protocol = (string)($entry['protocol'] ?? '');
+        $protocol = DeviceProtocol::forSupplier((string)($entry['supplier_name'] ?? ''));
         $imagePath = (string)($entry['image_path'] ?? '');
 
         return [
@@ -129,7 +130,6 @@ final class Models
         $internalModel = (string)$payload['internal_model'];
         $commercialName = (string)$payload['commercial_name'];
         $deviceType = (string)$payload['device_type'];
-        $protocol = (string)$payload['protocol'];
         $enabledCapabilities = $payload['enabled_capabilities'];
 
         $imagePath = $this->storeModelImage($request->getUploadedFiles()['image'] ?? null);
@@ -142,7 +142,7 @@ final class Models
             $existing = $this->db->models->find((string)$supplier['name'], $internalModel);
             $previousImagePath = is_array($existing) ? (string)($existing['image_path'] ?? '') : null;
         }
-        $this->db->models->add($supplierId, $internalModel, $commercialName, $deviceType, $protocol, $imagePath);
+        $this->db->models->add($supplierId, $internalModel, $commercialName, $deviceType, $imagePath);
         $supplier = $this->db->suppliers->findById($supplierId);
         $stored = is_array($supplier) ? $this->db->models->find((string)$supplier['name'], $internalModel) : null;
         if (is_array($stored)) {
@@ -170,7 +170,6 @@ final class Models
         $internalModel = (string)$payload['internal_model'];
         $commercialName = (string)$payload['commercial_name'];
         $deviceType = (string)$payload['device_type'];
-        $protocol = (string)$payload['protocol'];
         $enabledCapabilities = $payload['enabled_capabilities'];
         if ($this->db->models->existsForDifferentId($id, $supplierId, $internalModel)) {
             return ['error' => ['code' => 'model_exists', 'message' => 'Another model with this supplier and model name already exists']];
@@ -181,7 +180,7 @@ final class Models
             return $imagePath;
         }
 
-        $this->db->models->update($id, $supplierId, $internalModel, $commercialName, $deviceType, $protocol, $imagePath);
+        $this->db->models->update($id, $supplierId, $internalModel, $commercialName, $deviceType, $imagePath);
         $this->db->modelCapabilities->replaceForModelId($id, $enabledCapabilities);
         if (is_string($imagePath)) {
             $this->deleteStoredModelImage((string)($current['image_path'] ?? ''));
@@ -278,12 +277,9 @@ final class Models
             return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier does not exist']];
         }
 
-        $protocol = trim((string)($decoded['protocol'] ?? ''));
+        $protocol = DeviceProtocol::forSupplier((string)$supplier['name']);
         if ($protocol === '') {
-            $protocol = $this->protocolForSupplier((string)$supplier['name']);
-            if ($protocol === '') {
-                return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
-            }
+            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
         }
 
         $availableFeatures = \Hub\Command\DeviceCommandCatalog::featuresForProtocol($protocol);
@@ -303,21 +299,8 @@ final class Models
             'internal_model' => $internalModel,
             'commercial_name' => $commercialName,
             'device_type' => $deviceType,
-            'protocol' => $protocol,
             'enabled_capabilities' => $enabledCapabilities,
         ];
-    }
-
-    private function protocolForSupplier(string $supplierName): string
-    {
-        return match ($supplierName) {
-            'Wonlex' => 'wonlex-json',
-            'Vivistar' => 'vivistar-iw',
-            '4P Touch' => 'four-p-touch',
-            'Voerka' => 'voerka-ncs',
-            'Qinglanst' => 'qinglanst',
-            default => '',
-        };
     }
 
     private function modelRequestData(ServerRequestInterface $request): ?array

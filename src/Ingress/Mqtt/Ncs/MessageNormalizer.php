@@ -8,7 +8,7 @@ use Hub\RawPayload;
 final class MessageNormalizer
 {
     /**
-     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, sourceSystem: string, sourceDeviceId: string} $device
+     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string} $device
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>, telemetry?: array<string, mixed>}
      */
     public function normalize(Topic $topic, array $message, array $device): array

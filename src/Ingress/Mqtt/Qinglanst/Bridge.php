@@ -69,8 +69,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'deviceType' => $deviceType,
             'licenseId' => $licenseId,
             'company' => $company,
-            'sourceSystem' => (string)($device['sourceSystem'] ?? ''),
-            'sourceDeviceId' => (string)($device['sourceDeviceId'] ?? ''),
             'protocol' => 'qinglanst-radar',
             'transport' => 'mqtt',
             'online' => '1',

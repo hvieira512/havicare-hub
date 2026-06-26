@@ -7,6 +7,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\ApiAuthContext;
 use Hub\Dashboard\DashboardDataAccess;
+use Hub\Dashboard\DeviceProtocol;
 use Hub\Dashboard\DashboardStore;
 use Hub\Dashboard\DeviceMetadata;
 use Hub\DeviceHubServer;
@@ -330,8 +331,6 @@ final class Devices
         $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
-        $sourceSystem = trim((string)($decoded['sourceSystem'] ?? $decoded['source_system'] ?? ''));
-        $sourceDeviceId = trim((string)($decoded['sourceDeviceId'] ?? $decoded['source_device_id'] ?? ''));
         $company = trim((string)($decoded['company'] ?? 'null'));
         if ($imei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
@@ -343,8 +342,8 @@ final class Devices
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
         $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceId);
-        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
-        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
+        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
 
         return ['status' => 'ok', 'imei' => $imei];
     }
@@ -363,8 +362,6 @@ final class Devices
         $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
-        $sourceSystem = trim((string)($decoded['sourceSystem'] ?? $decoded['source_system'] ?? ''));
-        $sourceDeviceId = trim((string)($decoded['sourceDeviceId'] ?? $decoded['source_device_id'] ?? ''));
         $company = trim((string)($decoded['company'] ?? 'null'));
         if ($newImei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
@@ -380,8 +377,8 @@ final class Devices
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
         }
-        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
-        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company);
+        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
 
         return ['status' => 'ok', 'imei' => $newImei];
     }
@@ -467,7 +464,7 @@ final class Devices
 
     private function protocolForModel(string $supplier, string $model): string
     {
-        return $this->db->models->protocolForModel($supplier, $model);
+        return DeviceProtocol::forSupplier($supplier);
     }
 
     private function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceId): string
@@ -656,8 +653,6 @@ final class Devices
             'licenseId' => (string)($metadata['licenseId'] ?? '0'),
             'simNumber' => (string)($metadata['simNumber'] ?? ''),
             'deviceId' => (string)($metadata['deviceId'] ?? ''),
-            'sourceSystem' => (string)($metadata['sourceSystem'] ?? ''),
-            'sourceDeviceId' => (string)($metadata['sourceDeviceId'] ?? ''),
             'company' => (string)($metadata['company'] ?? 'null'),
         ];
         $runtimeStates = $this->store->runtimeStates([$imei]);

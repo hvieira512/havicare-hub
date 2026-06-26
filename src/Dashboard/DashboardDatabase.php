@@ -10,14 +10,14 @@ final class DashboardDatabase
     private PDO $pdo;
 
     private const DEFAULT_MODELS = [
-        ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', 'wonlex-json', ''],
-        ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', 'wonlex-json', ''],
-        ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', 'vivistar-iw', ''],
-        ['Vivistar', 'VIVISTAR-CARE', 'VIVISTAR-CARE', 'watch', 'vivistar-iw', ''],
-        ['Vivistar', 'VIVISTAR-LITE', 'VIVISTAR-LITE', 'watch', 'vivistar-iw', ''],
-        ['4P Touch', '4P-TOUCH', '4P-TOUCH', 'watch', 'four-p-touch', ''],
-        ['4P Touch', 'D46', 'D46', 'watch', 'four-p-touch', ''],
-        ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', 'qinglanst', ''],
+        ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', ''],
+        ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', ''],
+        ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', ''],
+        ['Vivistar', 'VIVISTAR-CARE', 'VIVISTAR-CARE', 'watch', ''],
+        ['Vivistar', 'VIVISTAR-LITE', 'VIVISTAR-LITE', 'watch', ''],
+        ['4P Touch', '4P-TOUCH', '4P-TOUCH', 'watch', ''],
+        ['4P Touch', 'D46', 'D46', 'watch', ''],
+        ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
     ];
 
     public function __construct(array $config)
@@ -53,13 +53,14 @@ final class DashboardDatabase
 
     private function bootstrapSchema(): void
     {
-        $schemaPath = __DIR__ . '/../../database/schema.mysql.sql';
+        $schemaPath = __DIR__ . '/../../database/schema.sql';
         $schema = file_get_contents($schemaPath);
         if (!is_string($schema) || trim($schema) === '') {
             throw new \RuntimeException('database schema file is missing or empty');
         }
 
         $this->pdo->exec($schema);
+        $this->migrateSchema();
         $this->ensureMysqlIndexes();
     }
 
@@ -73,7 +74,6 @@ final class DashboardDatabase
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_supplier_model', 'supplier, model');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_company', 'company');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_id', 'device_id');
-        $this->ensureMysqlIndex('whitelist', 'idx_whitelist_source_alias', 'source_system, source_device_id');
     }
 
     private function ensureMysqlIndex(string $table, string $indexName, string $columns): void
@@ -121,10 +121,10 @@ final class DashboardDatabase
             }
 
             $insertModel = $this->pdo->prepare('
-                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, protocol, image_path, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ');
-            $insertModel->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $row[4], $row[5], $now, $now]);
+            $insertModel->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $row[4], $now, $now]);
         }
 
         $this->seedDefaultCompanies();
@@ -171,9 +171,10 @@ final class DashboardDatabase
 
         $rows = $this->pdo->query('
             SELECT mrc.model_id, mrc.downlink_command, mrc.enabled, mrc.created_at, mrc.updated_at,
-                   m.protocol
+                   s.name AS supplier_name
             FROM model_request_capabilities mrc
             JOIN models m ON m.id = mrc.model_id
+            JOIN suppliers s ON s.id = m.supplier_id
         ')->fetchAll();
 
         if (!is_array($rows) || $rows === []) {
@@ -189,7 +190,7 @@ final class DashboardDatabase
         foreach ($rows as $row) {
             $modelId = (int)($row['model_id'] ?? 0);
             $commandId = (string)($row['downlink_command'] ?? '');
-            $protocol = (string)($row['protocol'] ?? '');
+            $protocol = DeviceProtocol::forSupplier((string)($row['supplier_name'] ?? ''));
             $enabled = (int)($row['enabled'] ?? 0);
             $createdAt = (string)($row['created_at'] ?? $now);
 
@@ -216,7 +217,7 @@ final class DashboardDatabase
     private function seedDefaultModelCapabilities(): void
     {
         $models = $this->pdo
-            ->query('SELECT id, protocol FROM models ORDER BY id')
+            ->query('SELECT m.id, s.name AS supplier_name FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY m.id')
             ->fetchAll();
 
         if (!is_array($models) || $models === []) {
@@ -227,7 +228,7 @@ final class DashboardDatabase
 
         foreach ($models as $model) {
             $modelId = (int)($model['id'] ?? 0);
-            $protocol = (string)($model['protocol'] ?? '');
+            $protocol = DeviceProtocol::forSupplier((string)($model['supplier_name'] ?? ''));
             if ($modelId <= 0 || $protocol === '') {
                 continue;
             }
@@ -245,5 +246,52 @@ final class DashboardDatabase
                 $insert->execute([$modelId, $feature, $now, $now]);
             }
         }
+    }
+
+    private function migrateSchema(): void
+    {
+        if ($this->columnExists('whitelist', 'source_device_id')) {
+            $this->pdo->exec("UPDATE whitelist SET device_id = source_device_id WHERE device_id = '' AND source_device_id != ''");
+        }
+
+        $this->dropIndexIfExists('whitelist', 'idx_whitelist_source_alias');
+
+        if ($this->columnExists('whitelist', 'source_system')) {
+            $this->pdo->exec('ALTER TABLE whitelist DROP COLUMN source_system');
+        }
+        if ($this->columnExists('whitelist', 'source_device_id')) {
+            $this->pdo->exec('ALTER TABLE whitelist DROP COLUMN source_device_id');
+        }
+        if ($this->columnExists('models', 'protocol')) {
+            $this->pdo->exec('ALTER TABLE models DROP COLUMN protocol');
+        }
+
+        $this->pdo->exec("UPDATE models SET device_type = 'watch' WHERE device_type NOT IN ('watch', 'ncs', 'radar') OR device_type IS NULL");
+        $this->pdo->exec("UPDATE whitelist SET device_type = 'watch' WHERE device_type NOT IN ('watch', 'ncs', 'radar') OR device_type IS NULL");
+        $this->pdo->exec("UPDATE device_configurations SET last_status = '' WHERE last_status NOT IN ('', 'queued', 'waiting', 'acked', 'failed', 'dropped', 'sent') OR last_status IS NULL");
+
+        $this->pdo->exec("ALTER TABLE models MODIFY COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch'");
+        $this->pdo->exec("ALTER TABLE whitelist MODIFY COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch'");
+        $this->pdo->exec("ALTER TABLE api_users MODIFY COLUMN role ENUM('hub_admin', 'license_client') NOT NULL");
+        $this->pdo->exec("ALTER TABLE device_configurations MODIFY COLUMN last_status ENUM('', 'queued', 'waiting', 'acked', 'failed', 'dropped', 'sent') NOT NULL DEFAULT ''");
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        $stmt = $this->pdo->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
+        $stmt->execute([$column]);
+
+        return $stmt->fetch() !== false;
+    }
+
+    private function dropIndexIfExists(string $table, string $indexName): void
+    {
+        $stmt = $this->pdo->prepare("SHOW INDEX FROM `{$table}` WHERE Key_name = ?");
+        $stmt->execute([$indexName]);
+        if ($stmt->fetch() === false) {
+            return;
+        }
+
+        $this->pdo->exec("DROP INDEX `{$indexName}` ON `{$table}`");
     }
 }

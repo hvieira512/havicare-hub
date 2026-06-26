@@ -31,8 +31,6 @@ final class DashboardStore
         string $licenseId = '0',
         string $simNumber = '',
         string $deviceId = '',
-        string $sourceSystem = '',
-        string $sourceDeviceId = '',
         string $company = 'null'
     ): void
     {
@@ -45,8 +43,6 @@ final class DashboardStore
             'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
-            'sourceSystem' => trim($sourceSystem),
-            'sourceDeviceId' => trim($sourceDeviceId),
             'company' => trim($company),
         ]);
     }

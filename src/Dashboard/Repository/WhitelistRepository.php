@@ -14,7 +14,7 @@ final class WhitelistRepository
     public function all(): array
     {
         return $this->pdo
-            ->query('SELECT imei, supplier, model, device_type, license_id, sim_number, device_id, source_system, source_device_id, company FROM whitelist ORDER BY imei')
+            ->query('SELECT imei, supplier, model, device_type, license_id, sim_number, device_id, company FROM whitelist ORDER BY imei')
             ->fetchAll();
     }
 
@@ -81,32 +81,28 @@ final class WhitelistRepository
         string $licenseId = '0',
         string $simNumber = '',
         string $deviceId = '',
-        string $sourceSystem = '',
-        string $sourceDeviceId = '',
         string $company = 'null'
     ): void {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $sourceSystem = trim($sourceSystem);
-        $sourceDeviceId = trim($sourceDeviceId);
         $company = trim($company);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $existing = $this->get($imei);
         if ($existing === null) {
             $stmt = $this->pdo->prepare('
-                INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, source_system, source_device_id, company, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ');
-            $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company, $now, $now]);
+            $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $now, $now]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             UPDATE whitelist
-            SET supplier = ?, model = ?, device_type = ?, license_id = ?, sim_number = ?, device_id = ?, source_system = ?, source_device_id = ?, company = ?, updated_at = ?
+            SET supplier = ?, model = ?, device_type = ?, license_id = ?, sim_number = ?, device_id = ?, company = ?, updated_at = ?
             WHERE imei = ?
         ');
-        $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $sourceSystem, $sourceDeviceId, $company, $now, $imei]);
+        $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $now, $imei]);
     }
 
     public function unregister(string $imei): void
@@ -126,8 +122,6 @@ final class WhitelistRepository
                 w.license_id AS licenseId,
                 w.sim_number AS simNumber,
                 w.device_id AS deviceId,
-                w.source_system AS sourceSystem,
-                w.source_device_id AS sourceDeviceId,
                 w.company,
                 l.name AS licenseName
             FROM whitelist w
@@ -227,8 +221,6 @@ final class WhitelistRepository
         $row['licenseId'] = DeviceMetadata::normalizeLicenseId((string)($row['licenseId'] ?? $row['license_id'] ?? '0'));
         $row['simNumber'] = (string)($row['simNumber'] ?? $row['sim_number'] ?? '');
         $row['deviceId'] = (string)($row['deviceId'] ?? $row['device_id'] ?? '');
-        $row['sourceSystem'] = (string)($row['sourceSystem'] ?? $row['source_system'] ?? '');
-        $row['sourceDeviceId'] = (string)($row['sourceDeviceId'] ?? $row['source_device_id'] ?? '');
         $row['licenseName'] = (string)($row['licenseName'] ?? '');
 
         return $row;

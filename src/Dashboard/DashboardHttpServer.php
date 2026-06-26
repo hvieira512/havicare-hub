@@ -63,8 +63,6 @@ final class DashboardHttpServer
                 (string)($metadata['licenseId'] ?? '0'),
                 (string)($metadata['simNumber'] ?? ''),
                 (string)($metadata['deviceId'] ?? ''),
-                (string)($metadata['sourceSystem'] ?? ''),
-                (string)($metadata['sourceDeviceId'] ?? ''),
                 (string)($metadata['company'] ?? 'null')
             );
         }

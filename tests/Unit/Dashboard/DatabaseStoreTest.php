@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Command\DeviceCommandCatalog;
 use Hub\Dashboard\DashboardDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -13,8 +12,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $database = $this->createDashboardDatabase();
         $db = DashboardDataAccess::fromDatabase($database);
         self::assertSame(8, count($db->models->all()));
-        self::assertSame('vivistar-iw', $db->models->protocolForModel('Vivistar', 'L08 PRO'));
-        self::assertSame('four-p-touch', $db->models->protocolForModel('4P Touch', 'D46'));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -26,8 +23,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
         $db = DashboardDataAccess::fromDatabase($database);
         self::assertSame(8, count($db->models->all()));
-        self::assertSame('vivistar-iw', $db->models->protocolForModel('Vivistar', 'L08 PRO'));
-        self::assertSame('four-p-touch', $db->models->protocolForModel('4P Touch', 'D46'));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -58,15 +53,14 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $supplier = $db->suppliers->findByName('Wonlex');
         self::assertIsArray($supplier);
 
-        $db->models->add((int)$supplier['id'], 'HW20PRO', 'HW20PRO', 'watch', 'wonlex-json', '/model-images/example.jpg');
+        $db->models->add((int)$supplier['id'], 'HW20PRO', 'HW20PRO', 'watch', '/model-images/example.jpg');
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertSame('/model-images/example.jpg', $model['image_path'] ?? null);
         self::assertSame('HW20PRO', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
 
-        $db->models->add((int)$supplier['id'], 'HW20PRO', 'HW20PRO', 'watch', 'wonlex-json-v2');
+        $db->models->add((int)$supplier['id'], 'HW20PRO', 'HW20PRO', 'watch');
         $model = $db->models->find('Wonlex', 'HW20PRO');
-        self::assertSame('wonlex-json-v2', $model['protocol'] ?? null);
         self::assertSame('/model-images/example.jpg', $model['image_path'] ?? null);
     }
 
@@ -78,13 +72,12 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
 
-        $updated = $db->models->update((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO', 'Vivistar Pro', 'radar', 'vivistar-iw', '/model-images/new.jpg');
+        $updated = $db->models->update((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO', 'Vivistar Pro', 'radar', '/model-images/new.jpg');
         self::assertTrue($updated);
 
         self::assertNull($db->models->find('Wonlex', 'HW20PRO'));
         $model = $db->models->find('Vivistar', 'VIVISTAR-PRO');
         self::assertIsArray($model);
-        self::assertSame('vivistar-iw', $model['protocol'] ?? null);
         self::assertSame('Vivistar Pro', $model['commercial_name'] ?? null);
         self::assertSame('radar', $model['device_type'] ?? null);
         self::assertSame('/model-images/new.jpg', $model['image_path'] ?? null);

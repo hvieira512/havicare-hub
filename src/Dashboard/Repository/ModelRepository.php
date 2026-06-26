@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard\Repository;
 
+use Hub\Dashboard\DeviceProtocol;
 use PDO;
 
 final class ModelRepository
@@ -13,7 +14,7 @@ final class ModelRepository
     public function all(): array
     {
         return $this->pdo
-            ->query('SELECT m.id, m.supplier_id, s.name AS supplier, m.internal_model, m.commercial_name, m.device_type, m.protocol, m.image_path AS image FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.commercial_name, m.internal_model')
+            ->query('SELECT m.id, m.supplier_id, s.name AS supplier, m.internal_model, m.commercial_name, m.device_type, m.image_path AS image FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.commercial_name, m.internal_model')
             ->fetchAll();
     }
 
@@ -35,34 +36,32 @@ final class ModelRepository
 
     public function protocolForModel(string $supplier, string $internalModel): string
     {
-        $entry = $this->find($supplier, $internalModel);
-
-        return (string)($entry['protocol'] ?? '');
+        return DeviceProtocol::forSupplier($supplier);
     }
 
-    public function add(int $supplierId, string $internalModel, string $commercialName, string $deviceType, string $protocol, ?string $imagePath = null): void
+    public function add(int $supplierId, string $internalModel, string $commercialName, string $deviceType, ?string $imagePath = null): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $existing = $this->findBySupplierId($supplierId, $internalModel);
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
         if ($existing === null) {
             $stmt = $this->pdo->prepare('
-                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, protocol, image_path, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ');
-            $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $protocol, $storedImagePath, $now, $now]);
+            $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath, $now, $now]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             UPDATE models
-            SET commercial_name = ?, device_type = ?, protocol = ?, image_path = ?, updated_at = ?
+            SET commercial_name = ?, device_type = ?, image_path = ?, updated_at = ?
             WHERE supplier_id = ? AND lower(internal_model) = lower(?)
         ');
-        $stmt->execute([$commercialName, $deviceType, $protocol, $storedImagePath, $now, $supplierId, $internalModel]);
+        $stmt->execute([$commercialName, $deviceType, $storedImagePath, $now, $supplierId, $internalModel]);
     }
 
-    public function update(int $id, int $supplierId, string $internalModel, string $commercialName, string $deviceType, string $protocol, ?string $imagePath = null): bool
+    public function update(int $id, int $supplierId, string $internalModel, string $commercialName, string $deviceType, ?string $imagePath = null): bool
     {
         $existing = $this->findById($id);
         if ($existing === null) {
@@ -71,8 +70,8 @@ final class ModelRepository
 
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
-        $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, internal_model = ?, commercial_name = ?, device_type = ?, protocol = ?, image_path = ?, updated_at = ? WHERE id = ?');
-        $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $protocol, $storedImagePath, $now, $id]);
+        $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, internal_model = ?, commercial_name = ?, device_type = ?, image_path = ?, updated_at = ? WHERE id = ?');
+        $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath, $now, $id]);
 
         return $stmt->rowCount() > 0;
     }

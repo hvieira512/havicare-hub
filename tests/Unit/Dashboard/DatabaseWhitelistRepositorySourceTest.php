@@ -9,14 +9,13 @@ use Tests\Support\MysqlDashboardTestCase;
 
 final class DatabaseWhitelistRepositorySourceTest extends MysqlDashboardTestCase
 {
-    public function testWhitelistStoresSourceSystemAndSourceDeviceId(): void
+    public function testWhitelistStoresNcsAliasInDeviceId(): void
     {
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->whitelist->register('ncs-gateway-01', 'Voerka', 'W812', 'ncs', '1001', '', '', 'voerka', 'gw-001');
+        $db->whitelist->register('ncs-gateway-01', 'Voerka', 'W812', 'ncs', '1001', '', 'gw-001');
 
         $row = $db->whitelist->get('ncs-gateway-01');
         self::assertIsArray($row);
-        self::assertSame('voerka', $row['source_system'] ?? null);
-        self::assertSame('gw-001', $row['source_device_id'] ?? null);
+        self::assertSame('gw-001', $row['device_id'] ?? null);
     }
 }
