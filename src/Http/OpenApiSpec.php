@@ -150,6 +150,9 @@ class OpenApiSpec
                                 'description' => 'Device detail with commands and recent data',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceDetailResponse']]],
                             ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '403' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                     'put' => [
@@ -758,9 +761,14 @@ class OpenApiSpec
                             'deviceType' => ['type' => 'string'],
                             'company' => ['type' => 'string'],
                             'licenseId' => ['type' => 'string'],
+                            'simNumber' => ['type' => 'string'],
+                            'deviceId' => ['type' => 'string'],
                             'protocol' => ['type' => 'string', 'nullable' => true],
+                            'transport' => ['type' => 'string', 'nullable' => true],
+                            'lastConnectionId' => ['type' => 'string', 'nullable' => true],
                             'online' => ['type' => 'boolean'],
                             'lastSeenAt' => ['type' => 'string', 'nullable' => true],
+                            'lastStateAt' => ['type' => 'string', 'nullable' => true],
                         ],
                     ],
                     'CommandCatalogEntry' => [
@@ -780,6 +788,26 @@ class OpenApiSpec
                             'expiresAt' => ['type' => 'string'],
                         ],
                     ],
+                    'CommandRecord' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'string'],
+                            'status' => ['type' => 'string'],
+                            'imei' => ['type' => 'string'],
+                            'protocol' => ['type' => 'string'],
+                            'nativeType' => ['type' => 'string'],
+                            'label' => ['type' => 'string'],
+                            'feature' => ['type' => 'string'],
+                            'configKey' => ['type' => 'string'],
+                            'expectedReplyTypes' => ['type' => 'array', 'items' => ['type' => 'string']],
+                            'requestedAt' => ['type' => 'string'],
+                            'sentAt' => ['type' => 'string', 'nullable' => true],
+                            'updatedAt' => ['type' => 'string'],
+                            'ackedAt' => ['type' => 'string', 'nullable' => true],
+                            'error' => ['type' => 'string', 'nullable' => true],
+                            'replyNativeType' => ['type' => 'string', 'nullable' => true],
+                        ],
+                    ],
                     'RecentItem' => [
                         'type' => 'object',
                         'properties' => [
@@ -793,7 +821,7 @@ class OpenApiSpec
                             'raw' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/RecentItem']],
                             'telemetry' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/RecentItem']],
                             'events' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/RecentItem']],
-                            'commands' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/RecentItem']],
+                            'commands' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandRecord']],
                         ],
                     ],
                     'DeviceDetailResponse' => [
@@ -801,8 +829,45 @@ class OpenApiSpec
                         'properties' => [
                             'device' => ['$ref' => '#/components/schemas/DeviceDetail'],
                             'commands' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandCatalogEntry']],
+                            'configuration' => ['$ref' => '#/components/schemas/DeviceConfigurationSummary'],
+                            'capabilities' => ['$ref' => '#/components/schemas/DeviceCapabilitiesMatrix'],
                             'pending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
                             'recent' => ['$ref' => '#/components/schemas/RecentSection'],
+                        ],
+                    ],
+                    'DeviceConfigurationSummary' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'supported' => ['type' => 'integer', 'example' => 12],
+                            'stored' => ['type' => 'integer', 'example' => 3],
+                        ],
+                    ],
+                    'DeviceTelemetryCapabilitiesSection' => [
+                        'type' => 'object',
+                        'additionalProperties' => ['type' => 'boolean'],
+                        'example' => [
+                            'heart_rate' => true,
+                            'location' => true,
+                        ],
+                    ],
+                    'DeviceConfiguredCapabilitiesSection' => [
+                        'type' => 'object',
+                        'additionalProperties' => true,
+                        'example' => [
+                            'phonebook' => [
+                                ['name' => 'Ana', 'phone' => '+351911111111'],
+                            ],
+                            'device_password' => ['password' => '2468'],
+                        ],
+                    ],
+                    'DeviceCapabilitiesMatrix' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'telemetry' => ['$ref' => '#/components/schemas/DeviceTelemetryCapabilitiesSection'],
+                            'health' => ['$ref' => '#/components/schemas/DeviceConfiguredCapabilitiesSection'],
+                            'contacts' => ['$ref' => '#/components/schemas/DeviceConfiguredCapabilitiesSection'],
+                            'alarms' => ['$ref' => '#/components/schemas/DeviceConfiguredCapabilitiesSection'],
+                            'settings_system' => ['$ref' => '#/components/schemas/DeviceConfiguredCapabilitiesSection'],
                         ],
                     ],
                     'DeviceCreateRequest' => [
