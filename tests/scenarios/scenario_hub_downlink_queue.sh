@@ -33,7 +33,7 @@ if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m,
   scenario_fail "routing_failure" "hub TCP listener did not become ready"
 fi
 
-docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '0/watch/$IMEI/downlink' -f /tmp/hub-downlink.json"
+docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t 'null/42/watch/$IMEI/downlink' -f /tmp/hub-downlink.json"
 
 for _ in $(seq 1 20); do
   capture_mqtt_log

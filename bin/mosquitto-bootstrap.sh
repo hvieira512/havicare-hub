@@ -29,7 +29,7 @@ topic write /voerka/#
 topic write +/watch/+/status
 topic write +/watch/+/events
 topic write +/watch/+/raw
-topic readwrite +/watch/+/downlink
+topic readwrite +/+/watch/+/downlink
 topic write +/ncs/+/status
 topic write +/ncs/+/events
 topic write +/ncs/+/raw

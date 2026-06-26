@@ -30,7 +30,7 @@ $host = (string)($args['host'] ?? ($mqttConfig['host'] ?? '127.0.0.1'));
 $port = (int)($args['port'] ?? ($mqttConfig['port'] ?? 1883));
 $username = (string)($args['username'] ?? ($mqttConfig['username'] ?? ''));
 $password = (string)($args['password'] ?? ($mqttConfig['password'] ?? ''));
-$topicPrefix = trim((string)($args['topic-prefix'] ?? ($mqttConfig['topic_prefix'] ?? 'hitecosystem-hub')), '/');
+$topicPrefix = trim((string)($args['topic-prefix'] ?? ($mqttConfig['topic_prefix'] ?? 'havicare-hub')), '/');
 $timeoutSeconds = max(0.5, (float)($args['timeout'] ?? 8.0));
 $settleSeconds = max(0.1, (float)($args['settle'] ?? 1.0));
 $commandFilter = trim((string)($args['command'] ?? ''));
@@ -91,10 +91,10 @@ try {
     exit(1);
 }
 
-$eventsTopic = topic($topicPrefix, "0/watch/$imei/events");
-$telemetryTopic = topic($topicPrefix, "0/watch/$imei/telemetry");
-$rawTopic = topic($topicPrefix, "0/watch/$imei/raw");
-$downlinkTopic = topic($topicPrefix, "0/watch/$imei/downlink");
+$eventsTopic = topic($topicPrefix, "null/0/watch/$imei/events");
+$telemetryTopic = topic($topicPrefix, "null/0/watch/$imei/telemetry");
+$rawTopic = topic($topicPrefix, "null/0/watch/$imei/raw");
+$downlinkTopic = topic($topicPrefix, "null/0/watch/$imei/downlink");
 
 $messages = [];
 $client->subscribe($eventsTopic, static function (string $topic, string $payload) use (&$messages): void {
@@ -205,17 +205,17 @@ Options:
                           Select risk level for bulk request runs. Default: normal.
   --timeout 8             Maximum seconds to wait for replies per command.
   --settle 1.0            Stop early after this many quiet seconds.
-  --topic-prefix PREFIX    MQTT topic prefix. Default: hitecosystem-hub
+  --topic-prefix PREFIX    MQTT topic prefix. Default: havicare-hub
   --show-raw              Print raw MQTT packets. By default raw is used only to detect device replies.
   --list-commands         Print server downlinks and device uplinks, then exit.
 
 Notes:
-  - Replies are read from 0/watch/{imei}/events, 0/watch/{imei}/telemetry and 0/watch/{imei}/raw.
+  - Replies are read from null/0/watch/{imei}/events, null/0/watch/{imei}/telemetry and null/0/watch/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
   - Bulk runs require --all-requests and only send request commands; use --command to send config/control/data commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive reset/restart/powerOff commands are behind --include-risk high.
-  - This command client publishes base64-encoded Wonlex JSON frames to 0/watch/{imei}/downlink.
+  - This command client publishes base64-encoded Wonlex JSON frames to null/0/watch/{imei}/downlink.
 
 TXT;
 }

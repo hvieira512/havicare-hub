@@ -52,7 +52,7 @@ if ! grep -q '"debug":{"protocol":"vivistar-iw","transport":"tcp","encoding":"te
   scenario_fail "contract_failure" "raw login did not include text debug payload"
 fi
 
-docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '0/watch/$IMEI/downlink' -f /tmp/hub-downlink.json"
+docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t 'null/42/watch/$IMEI/downlink' -f /tmp/hub-downlink.json"
 
 for _ in $(seq 1 20); do
   if docker compose exec -T hub sh -lc "grep -q '\\[COMMAND\\] BPXL' /tmp/hub-vivistar-listener.log"; then

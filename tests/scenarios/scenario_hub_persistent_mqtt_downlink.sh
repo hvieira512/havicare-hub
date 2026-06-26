@@ -35,13 +35,13 @@ fi
 sleep 2
 docker compose stop hub >/dev/null
 
-docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -q 1 -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '0/watch/$IMEI/downlink' -f /tmp/hub-downlink.json"
+docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -q 1 -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t 'null/42/watch/$IMEI/downlink' -f /tmp/hub-downlink.json"
 
 docker compose up -d hub >/dev/null
 
 for _ in $(seq 1 40); do
   capture_mqtt_log
-  if grep -q "^0/watch/$IMEI/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
+  if grep -q "^null/42/watch/$IMEI/events " "$MQTT_LOG_FILE" && grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1

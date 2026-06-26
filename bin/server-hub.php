@@ -48,7 +48,7 @@ if ($mqttHost === '') {
     exit(1);
 }
 
-$clientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($mqttConfig['client_id_prefix'] ?? 'hitecosystem-hub')) ?: 'hitecosystem-hub';
+$clientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($mqttConfig['client_id_prefix'] ?? 'havicare-hub')) ?: 'havicare-hub';
 $topicPrefix = trim((string)($mqttConfig['topic_prefix'] ?? ''), '/');
 
 $createMqttClient = static function (string $suffix, bool $stableClientId = false, ?Repository $repository = null) use ($mqttConfig, $mqttHost, $clientIdPrefix): MqttClient {

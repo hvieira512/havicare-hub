@@ -60,7 +60,7 @@ start_mqtt_subscriber() {
     scenario_fail "stream_failure" "MQTT_SMOKE_USERNAME/MQTT_SMOKE_PASSWORD are required"
   fi
 
-  local probe_topic="0/watch/scenario-subscriber-probe/raw"
+  local probe_topic="null/0/watch/scenario-subscriber-probe/raw"
   local probe_payload="ready-$(date +%s)-$$"
 
   : > "$MQTT_LOG_FILE"

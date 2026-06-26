@@ -89,10 +89,10 @@ API user roles:
 Uplink from device to MQTT:
 
 ```text
-0/watch/{deviceKey}/raw
-0/watch/{deviceKey}/telemetry
-0/watch/{deviceKey}/events
-0/watch/{deviceKey}/status
+{company}/{licenseId}/watch/{deviceKey}/raw
+{company}/{licenseId}/watch/{deviceKey}/telemetry
+{company}/{licenseId}/watch/{deviceKey}/events
+{company}/{licenseId}/watch/{deviceKey}/status
 {licenseId}/ncs/{deviceKey}/raw
 {licenseId}/ncs/{deviceKey}/telemetry
 {licenseId}/ncs/{deviceKey}/events
@@ -102,7 +102,7 @@ Uplink from device to MQTT:
 Downlink from MQTT to connected device:
 
 ```text
-0/watch/{deviceKey}/downlink
+{company}/{licenseId}/watch/{deviceKey}/downlink
 ```
 
 If the device is offline, the hub stores the latest pending downlink per IMEI and native command in Redis for `DOWNLINK_QUEUE_TTL_SECONDS` seconds, default `300`. The hub publishes `device.downlink.queued` when queued and `device.downlink.sent` when it is delivered after the next device login.
@@ -111,7 +111,8 @@ If the device is offline, the hub stores the latest pending downlink per IMEI an
 
 Topic semantics:
 
-- `0` is the reserved default license scope for watches.
+- `company` is the tenant namespace for watch devices. Unassociated devices use `null`.
+- `licenseId` is the tenant license scope for watches. Unassociated devices use `0`.
 - `watch` is the TCP-ingress device type. `ncs` is the MQTT-ingress nurse-call type.
 - `deviceKey` is the canonical topic identity. For watches it is the IMEI; for NCS it is the canonical registry key resolved from the whitelist alias in `deviceId`.
 
@@ -120,7 +121,7 @@ Topic semantics:
 Telemetry messages are published to:
 
 ```text
-0/watch/{deviceKey}/telemetry
+{company}/{licenseId}/watch/{deviceKey}/telemetry
 {licenseId}/ncs/{deviceKey}/telemetry
 ```
 
@@ -297,7 +298,7 @@ When a supplier exposes additional fields that do not map cleanly into the share
 Raw messages preserve the device or upstream payload on:
 
 ```text
-0/watch/{deviceKey}/raw
+{company}/{licenseId}/watch/{deviceKey}/raw
 {licenseId}/ncs/{deviceKey}/raw
 ```
 
@@ -369,7 +370,7 @@ For 4P Touch, store the full canonical IMEI as the whitelist key and the protoco
 
 For NCS, register each gateway or source under its canonical hub key with `deviceType: "ncs"`, an explicit `licenseId`, and the upstream `from` value in `deviceId`. The hub subscribes to `NCS_TOPIC_FILTER` (default `/voerka/#`), resolves that source through the registry, and republishes normalized records to `{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}`.
 
-Unknown devices are disconnected and a rejection is published to `0/watch/{deviceKey}/status` and `0/watch/{deviceKey}/events`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by identity and records the configured metadata from the whitelist.
+Unknown devices are disconnected and a rejection is published to `null/0/watch/{deviceKey}/status` and `null/0/watch/{deviceKey}/events`. The model is checked only when the device protocol includes a model in its login payload; otherwise the hub authorizes by identity and records the configured metadata from the whitelist.
 
 ## Tests
 

@@ -41,7 +41,7 @@ class HubDownlinkSubscriber
 
     private function subscribe(): void
     {
-        $filter = $this->topic('+/' . self::DEFAULT_DEVICE_TYPE . '/+/downlink');
+        $filter = $this->topic('+/+/' . self::DEFAULT_DEVICE_TYPE . '/+/downlink');
         $this->subscriber->subscribe($filter, function (string $topic, string $payload): void {
             $this->handle($topic, $payload);
         }, MqttClient::QOS_AT_LEAST_ONCE);
@@ -122,14 +122,14 @@ class HubDownlinkSubscriber
         }
 
         $parts = explode('/', trim($base, '/'));
-        if (count($parts) !== 4
-            || $parts[1] !== self::DEFAULT_DEVICE_TYPE
-            || $parts[3] !== 'downlink'
+        if (count($parts) !== 5
+            || $parts[2] !== self::DEFAULT_DEVICE_TYPE
+            || $parts[4] !== 'downlink'
         ) {
             return null;
         }
 
-        return $parts[2] !== '' ? $parts[2] : null;
+        return $parts[3] !== '' ? $parts[3] : null;
     }
 
     private function topic(string $topic): string

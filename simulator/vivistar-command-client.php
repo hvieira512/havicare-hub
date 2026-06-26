@@ -30,7 +30,7 @@ $host = (string)($args['host'] ?? ($mqttConfig['host'] ?? '127.0.0.1'));
 $port = (int)($args['port'] ?? ($mqttConfig['port'] ?? 1883));
 $username = (string)($args['username'] ?? ($mqttConfig['username'] ?? ''));
 $password = (string)($args['password'] ?? ($mqttConfig['password'] ?? ''));
-$topicPrefix = trim((string)($args['topic-prefix'] ?? ($mqttConfig['topic_prefix'] ?? 'hitecosystem-hub')), '/');
+$topicPrefix = trim((string)($args['topic-prefix'] ?? ($mqttConfig['topic_prefix'] ?? 'havicare-hub')), '/');
 $timeoutSeconds = max(0.5, (float)($args['timeout'] ?? 6.0));
 $settleSeconds = max(0.1, (float)($args['settle'] ?? 0.6));
 $commandIdent = (string)($args['ident'] ?? '080835');
@@ -56,10 +56,10 @@ if ($commandFilter === '' && !$runAllRequests) {
 }
 
 $selected = $commandFilter !== ''
-    ? array_values(array_filter($manifest, static fn (array $entry): bool => $entry['command'] === $commandFilter))
+    ? array_values(array_filter($manifest, static fn(array $entry): bool => $entry['command'] === $commandFilter))
     : array_values(array_filter(
         $manifest,
-        static fn (array $entry): bool => in_array((string)($entry['risk'] ?? 'normal'), $riskFilter, true)
+        static fn(array $entry): bool => in_array((string)($entry['risk'] ?? 'normal'), $riskFilter, true)
             && (string)($entry['kind'] ?? 'request') === 'request'
     ));
 
@@ -92,10 +92,10 @@ try {
     exit(1);
 }
 
-$eventsTopic = topic($topicPrefix, "0/watch/$imei/events");
-$telemetryTopic = topic($topicPrefix, "0/watch/$imei/telemetry");
-$rawTopic = topic($topicPrefix, "0/watch/$imei/raw");
-$downlinkTopic = topic($topicPrefix, "0/watch/$imei/downlink");
+$eventsTopic = topic($topicPrefix, "null/0/watch/$imei/events");
+$telemetryTopic = topic($topicPrefix, "null/0/watch/$imei/telemetry");
+$rawTopic = topic($topicPrefix, "null/0/watch/$imei/raw");
+$downlinkTopic = topic($topicPrefix, "null/0/watch/$imei/downlink");
 
 $messages = [];
 $client->subscribe($eventsTopic, static function (string $topic, string $payload) use (&$messages): void {
@@ -160,8 +160,8 @@ foreach ($selected as $entry) {
         echo indent(prettyPayload($message['payload'])) . PHP_EOL;
     }
 
-    $replyMessages = array_values(array_filter($captured, static fn (array $message): bool => isDeviceReply($message)));
-    $decodedReplies = array_values(array_filter($captured, static fn (array $message): bool => isDecodedReply($message)));
+    $replyMessages = array_values(array_filter($captured, static fn(array $message): bool => isDeviceReply($message)));
+    $decodedReplies = array_values(array_filter($captured, static fn(array $message): bool => isDecodedReply($message)));
     $downlinkState = downlinkState($captured);
 
     if ($downlinkState !== null) {
@@ -200,17 +200,17 @@ Options:
                            Select risk level for bulk request runs. Default: normal.
   --timeout 6              Maximum seconds to wait for replies per command.
   --settle 0.6             Stop early after this many quiet seconds.
-  --topic-prefix PREFIX     MQTT topic prefix, if the broker uses one. Default: hitecosystem-hub
+  --topic-prefix PREFIX     MQTT topic prefix, if the broker uses one. Default: havicare-hub
   --show-raw               Print raw MQTT packets. By default raw is used only to detect device replies.
   --list-commands          Print server downlinks and device uplinks, then exit.
 
 Notes:
-  - Replies are read from 0/watch/{imei}/events, 0/watch/{imei}/telemetry and 0/watch/{imei}/raw.
+  - Replies are read from null/0/watch/{imei}/events, null/0/watch/{imei}/telemetry and null/0/watch/{imei}/raw.
   - Commands listed under "server -> device" can be used with --command.
   - Bulk runs require --all-requests and only send request commands; use --command to send config/control commands explicitly.
   - Commands listed under "device -> server" are native uplinks the device may send.
   - The destructive BP17 factory-reset command is behind --include-risk high.
-  - This command client publishes native downlink frames to 0/watch/{imei}/downlink.
+  - This command client publishes native downlink frames to null/0/watch/{imei}/downlink.
 
 TXT;
 }
@@ -238,7 +238,7 @@ function parseArgs(array $argv): array
 function parseCsv(string $value): array
 {
     $parts = array_map('trim', explode(',', $value));
-    $parts = array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
+    $parts = array_values(array_filter($parts, static fn(string $part): bool => $part !== ''));
     return $parts !== [] ? $parts : ['normal'];
 }
 
