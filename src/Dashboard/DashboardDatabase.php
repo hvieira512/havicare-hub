@@ -13,9 +13,6 @@ final class DashboardDatabase
         ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', ''],
         ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', ''],
-        ['Vivistar', 'VIVISTAR-CARE', 'VIVISTAR-CARE', 'watch', ''],
-        ['Vivistar', 'VIVISTAR-LITE', 'VIVISTAR-LITE', 'watch', ''],
-        ['4P Touch', '4P-TOUCH', '4P-TOUCH', 'watch', ''],
         ['4P Touch', 'D46', 'D46', 'watch', ''],
         ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
     ];
