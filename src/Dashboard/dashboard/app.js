@@ -870,7 +870,6 @@ function renderConnectionTimeline(rows) {
 
     const connectedCount = events.filter(e => e.type === 'device.connected').length;
     const disconnectedCount = events.filter(e => e.type === 'device.disconnected').length;
-    els.connectionStats.textContent = events.length ? `${connectedCount} conexões · ${disconnectedCount} desconexões` : '';
 
     if (events.length < 2) {
         if (connectionChartRoot) {
@@ -2079,7 +2078,6 @@ function cacheElements() {
         requestGrid: document.getElementById('requestGrid'),
         downlinkRequests: document.getElementById('downlinkRequests'),
         connectionTimeline: document.getElementById('connectionTimeline'),
-        connectionStats: document.getElementById('connectionStats'),
         detailFiltersPanel: document.getElementById('detailFiltersPanel'),
         detailFilterFrom: document.getElementById('detailFilterFrom'),
         detailFilterTo: document.getElementById('detailFilterTo'),

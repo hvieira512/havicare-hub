@@ -241,7 +241,6 @@ require_once __DIR__ . '/components/modal.php';
                                 <section>
                                     <?= section_header('Ligações ao servidor') ?>
                                     <div id="connectionTimeline" style="height:180px;width:100%;"></div>
-                                    <div id="connectionStats" class="small text-secondary mt-1"></div>
                                 </section>
                             </div>
                         </div>
