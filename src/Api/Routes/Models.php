@@ -29,30 +29,23 @@ final class Models
         $params = $this->queryParams((string)$request->getUri()->getQuery());
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $search = $this->queryFilter($params, 'search');
         $filters = [
-            'search' => $search,
             'supplier' => $this->queryFilter($params, 'supplier'),
             'protocol' => $this->queryFilter($params, 'protocol'),
             'deviceType' => $this->queryFilter($params, 'deviceType'),
+            'model' => $this->queryFilter($params, 'model'),
         ];
-        $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters, $search): bool {
+        $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
             $supplier = trim((string)($model['supplier'] ?? ''));
             $protocol = DeviceProtocol::forSupplier($supplier);
             $deviceType = trim((string)($model['device_type'] ?? 'watch'));
-
-            if ($search !== null) {
-                $internal = mb_strtolower(trim((string)($model['internal_model'] ?? '')));
-                $commercial = mb_strtolower(trim((string)($model['commercial_name'] ?? '')));
-                $needle = mb_strtolower($search);
-                if (!str_contains($internal, $needle) && !str_contains($commercial, $needle)) {
-                    return false;
-                }
-            }
+            $internalModel = trim((string)($model['internal_model'] ?? ''));
+            $commercialName = trim((string)($model['commercial_name'] ?? ''));
 
             return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
                 && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol'])
-                && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
+                && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType'])
+                && (($filters['model'] ?? null) === null || $internalModel === $filters['model'] || $commercialName === $filters['model']);
         }));
         $available = [
             'supplier' => $this->uniqueValues(array_map(
@@ -81,6 +74,10 @@ final class Models
                     return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
                         && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol']);
                 }))
+            )),
+            'model' => $this->uniqueValues(array_merge(
+                array_map(static fn (array $m): string => trim((string)($m['internal_model'] ?? '')), $this->db->models->all()),
+                array_map(static fn (array $m): string => trim((string)($m['commercial_name'] ?? '')), $this->db->models->all()),
             )),
         ];
 

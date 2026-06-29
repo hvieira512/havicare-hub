@@ -447,6 +447,7 @@ class OpenApiSpec
 								['name' => 'supplier', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
 								['name' => 'protocol', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
 								['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string']],
+								['name' => 'model', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'description' => 'Filter by internal model or commercial name (exact match)']],
                             ],
                         'responses' => [
                             '200' => [
