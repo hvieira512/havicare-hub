@@ -30,14 +30,9 @@ const withQuery = (url, params = {}) => {
 export const api = {
     devices: (params = {}) => requestJson(withQuery('/api/devices', params)),
     device: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`),
-    configuration: imei => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`),
-    saveConfiguration: (imei, configs, supplier = '', model = '') => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration`, {
+    saveConfiguration: (imei, configs, supplier = '', model = '') => requestJson(`/api/devices/${encodeURIComponent(imei)}`, {
         method: 'PUT',
         body: JSON.stringify({configs, supplier, model}),
-    }),
-    applyConfiguration: (imei, key, supplier = '', model = '') => requestJson(`/api/devices/${encodeURIComponent(imei)}/configuration/${encodeURIComponent(key)}/apply`, {
-        method: 'POST',
-        body: JSON.stringify({supplier, model}),
     }),
     sendCommand: (imei, requestId) => requestJson(`/api/devices/${encodeURIComponent(imei)}/commands`, {
         method: 'POST',

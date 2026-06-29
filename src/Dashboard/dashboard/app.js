@@ -1193,6 +1193,7 @@ async function editDevice(imei, supplier, model) {
         els.deviceDeviceId.value = String(device.deviceId || '');
         applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || '');
+        state.deviceModal.configurations = detail.configurations || {};
         await refreshDeviceModalConfigurations(false);
     } finally {
         state.deviceModal.loading = false;
@@ -2735,7 +2736,7 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
         state.deviceModal.model,
     ].join('|');
 
-    deviceConfigRefreshPromise = api.configuration(state.deviceModal.imei).then(result => {
+    deviceConfigRefreshPromise = api.device(state.deviceModal.imei).then(result => {
         const current = [
             state.deviceModal.imei,
             state.deviceModal.supplier,
@@ -2745,7 +2746,7 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
             return result;
         }
 
-        state.deviceModal.configurations = result || {};
+        state.deviceModal.configurations = result?.configurations || {};
         if (shouldRender) {
             renderDeviceConfigurationModal();
         }
