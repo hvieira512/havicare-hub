@@ -7,20 +7,18 @@ final class PayloadDecoder
     /**
      * @return array{type: string, device_code: string, ...}|null
      */
-    public function decode(string $base64, ?string $deviceCode): ?array
+    public function decode(string $messageType, string $base64, ?string $deviceCode): ?array
     {
         $raw = base64_decode($base64, true);
         if ($raw === false || $raw === '') {
             return null;
         }
 
-        $length = strlen($raw);
-
-        $decoder = match (true) {
-            $length === 16 && $this->isHeartBreath($raw) => $this->decodeHeartBreath(...),
-            $length === 16 && $this->isHbStatics($raw) => $this->decodeHbStatics(...),
-            $length === 16 => $this->decodePosStatics(...),
-            $length % 16 === 0 && $length >= 16 => $this->decodePosition(...),
+        $decoder = match ($messageType) {
+            'position' => $this->decodePosition(...),
+            'heartbreath' => $this->decodeHeartBreath(...),
+            'posstatics' => $this->decodePosStatics(...),
+            'hbstatics' => $this->decodeHbStatics(...),
             default => null,
         };
 
@@ -29,18 +27,6 @@ final class PayloadDecoder
         }
 
         return $decoder($raw, $deviceCode);
-    }
-
-    private function isHeartBreath(string $raw): bool
-    {
-        $typeField = ord($raw[0]);
-        return $typeField >= 0x30 && $typeField <= 0x39;
-    }
-
-    private function isHbStatics(string $raw): bool
-    {
-        $statusByte = ord($raw[13]);
-        return ($statusByte & 0b00000011) !== 0 || (($statusByte & 0b00001100) >> 2) !== 0;
     }
 
     /**
@@ -90,7 +76,7 @@ final class PayloadDecoder
         $sleepStateBits = ($statusByte & 0b11000000) >> 6;
 
         return [
-            'type' => 'vitals',
+            'type' => 'heartbreath',
             'device_code' => $deviceCode,
             'breathing' => ord($raw[1]),
             'heart_rate' => ord($raw[2]),
@@ -107,7 +93,7 @@ final class PayloadDecoder
         $breathingActive = ($version >= 2) ? ((ord($raw[10]) & 0b00000001) !== 0) : false;
 
         return [
-            'type' => 'minute_stats',
+            'type' => 'posstatics',
             'device_code' => $deviceCode,
             'version' => $version,
             'people' => ord($raw[2]),

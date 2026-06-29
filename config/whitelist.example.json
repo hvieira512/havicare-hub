@@ -1,47 +1,128 @@
 {
-  "865028000000306": {
-    "supplier": "Wonlex",
-    "model": "HW20PRO",
-    "deviceType": "watch",
-    "licenseId": "0"
-  },
-  "865028000000307": {
-    "supplier": "Wonlex",
-    "model": "HW20PRO",
-    "deviceType": "watch",
-    "licenseId": "0"
-  },
-  "868705080300697": {
-    "supplier": "Wonlex",
-    "model": "HW20PRO",
-    "deviceType": "watch",
-    "licenseId": "0"
-  },
-  "865028000000308": {
-    "supplier": "Vivistar",
-    "model": "VIVISTAR-CARE",
-    "deviceType": "watch",
-    "licenseId": "42"
-  },
-  "865028000000309": {
-    "supplier": "Vivistar",
-    "model": "VIVISTAR-LITE",
-    "deviceType": "watch",
-    "licenseId": "0"
-  },
-  "637507597567372": {
-    "supplier": "4P Touch",
-    "model": "4P-TOUCH",
-    "deviceType": "watch",
-    "licenseId": "0",
-    "deviceId": "7597567372"
-  },
-  "ncs-gateway-01": {
-    "supplier": "Voerka",
-    "model": "W812",
-    "deviceType": "ncs",
-    "licenseId": "1001",
-    "sourceSystem": "voerka",
-    "sourceDeviceId": "gw-001"
-  }
+    "594B3CF100A7": {
+        "supplier": "Qinglanst",
+        "model": "RD-V1",
+        "deviceType": "radar",
+        "licenseId": "1001",
+        "company": "hitCare",
+        "simNumber": "",
+        "deviceId": "594B3CF100A7"
+    },
+    "637507597567372": {
+        "supplier": "4P Touch",
+        "model": "4P-TOUCH",
+        "deviceType": "watch",
+        "licenseId": "0",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": "7597567372"
+    },
+    "861265061009822": {
+        "supplier": "Vivistar",
+        "model": "L08 Pro",
+        "deviceType": "watch",
+        "licenseId": "1001",
+        "company": "hitCare",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "861265062542599": {
+        "supplier": "Vivistar",
+        "model": "VL17",
+        "deviceType": "watch",
+        "licenseId": "0",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "865028000000306": {
+        "supplier": "Wonlex",
+        "model": "HW20PRO",
+        "deviceType": "watch",
+        "licenseId": "0",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "865028000000307": {
+        "supplier": "Wonlex",
+        "model": "HW20PRO",
+        "deviceType": "watch",
+        "licenseId": "0",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "865028000000308": {
+        "supplier": "Vivistar",
+        "model": "VIVISTAR-CARE",
+        "deviceType": "watch",
+        "licenseId": "42",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "865028000000309": {
+        "supplier": "Vivistar",
+        "model": "VIVISTAR-LITE",
+        "deviceType": "watch",
+        "licenseId": "0",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "865028009999901": {
+        "supplier": "Wonlex",
+        "model": "HW20PRO",
+        "deviceType": "watch",
+        "licenseId": "2002",
+        "company": "haviCare",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "868705080300697": {
+        "supplier": "Wonlex",
+        "model": "HW20PRO",
+        "deviceType": "watch",
+        "licenseId": "0",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "868888888888888": {
+        "supplier": "Vivistar",
+        "model": "VIVISTAR-CARE",
+        "deviceType": "watch",
+        "licenseId": "0",
+        "company": "hitCare",
+        "simNumber": "",
+        "deviceId": ""
+    },
+    "9D8A3204F853": {
+        "supplier": "Qinglanst",
+        "model": "RD-V1",
+        "deviceType": "radar",
+        "licenseId": "1001",
+        "company": "hitCare",
+        "simNumber": "",
+        "deviceId": "9D8A3204F853"
+    },
+    "ncs-gateway-01": {
+        "supplier": "Voerka",
+        "model": "W812",
+        "deviceType": "ncs",
+        "licenseId": "1001",
+        "company": "null",
+        "simNumber": "",
+        "deviceId": "gw-001"
+    },
+    "AD8A613B0493": {
+        "supplier": "Qinglanst",
+        "model": "RD-V1",
+        "deviceType": "radar",
+        "licenseId": "1001",
+        "company": "hitCare",
+        "simNumber": "",
+        "deviceId": "AD8A613B0493"
+    }
 }

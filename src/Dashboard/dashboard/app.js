@@ -808,6 +808,10 @@ function renderTelemetryRow(payload) {
 }
 
 function telemetryDetails(data, payload) {
+    if (payload?.type === 'radar.position') {
+        return radarPositionDetails(data);
+    }
+
     const details = [];
     const skipKeys = payload?.type === 'ncs.event' ? new Set(['event', 'alarm']) : new Set();
     if (data && typeof data === 'object') {
@@ -824,6 +828,32 @@ function telemetryDetails(data, payload) {
             .map(([key, value]) => `${fieldLabel(key)}: ${esc(displayValue(value))}`));
     }
     return details.join(' · ');
+}
+
+function radarPositionDetails(data) {
+    const people = Array.isArray(data?.people) ? data.people : [];
+    if (!people.length) {
+        return 'People: 0';
+    }
+
+    const countLabel = `People: ${people.length}`;
+    const personLines = people.map((person, index) => {
+        const personIndex = person?.person_index ?? index + 1;
+        const x = displayValue(person?.x_position_dm);
+        const y = displayValue(person?.y_position_dm);
+        const z = displayValue(person?.z_position_cm);
+        const posture = displayValue(person?.posture_state);
+
+        return [
+            `Person ${esc(personIndex)}`,
+            `x: ${esc(x)} dm`,
+            `y: ${esc(y)} dm`,
+            `z: ${esc(z)} cm`,
+            `posture: ${esc(posture)}`,
+        ].join(' · ');
+    });
+
+    return [countLabel, ...personLines].join('<br>');
 }
 
 function renderRequestCards(commands, telemetry = []) {

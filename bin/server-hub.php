@@ -13,6 +13,7 @@ use Hub\HubDownlinkSubscriber;
 use Hub\HubMqttBridge;
 use Hub\HubTcpIngress;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
+use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
 use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
 use Hub\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
@@ -187,6 +188,10 @@ if ((bool)($qinglanstConfig['enabled'] ?? true)) {
         $qinglanstPassword = trim((string)($qinglanstConfig['password'] ?? ''));
         $qinglanstTopicFilter = trim((string)($qinglanstConfig['topic_filter'] ?? 'radar/1001/#'));
         $qinglanstClientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($qinglanstConfig['client_id_prefix'] ?? 'qinglanst-radar')) ?: 'qinglanst-radar';
+        $qinglanstDashboardWritePolicy = new QinglanstDashboardWritePolicy(
+            (int)($qinglanstConfig['dashboard_seen_min_interval_ms'] ?? 5000),
+            (int)($qinglanstConfig['position_history_sample_ms'] ?? 1000),
+        );
 
         $createQinglanstClient = static function (string $suffix, ?Repository $repository = null) use ($qinglanstHost, $qinglanstPort, $qinglanstClientIdPrefix): MqttClient {
             $clientId = substr($qinglanstClientIdPrefix . '-' . $suffix . '-' . getmypid(), 0, 23);
@@ -230,6 +235,7 @@ if ((bool)($qinglanstConfig['enabled'] ?? true)) {
                 return $connectQinglanstClient($createQinglanstClient('sub', $repository), false);
             },
             $dashboardStore,
+            dashboardWritePolicy: $qinglanstDashboardWritePolicy,
         );
         $connectQinglanstClient($qinglanstSubscriber, false);
     }
@@ -241,12 +247,9 @@ $tcpPort = $config['tcp_ingress']['port'] ?? 9000;
 $dashboardHost = (string)($dashboardConfig['host'] ?? '0.0.0.0');
 $dashboardPort = (int)($dashboardConfig['port'] ?? 8081);
 
-$dashboardEnabled = (bool)($dashboardConfig['enabled'] ?? true);
-
 $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
 
-if ($dashboardEnabled) {
-    $dashboard = new DashboardHttpServer(
+$dashboard = new DashboardHttpServer(
         $dashboardStore,
         new ApiTokenStore(new RedisClient($redisParameters)),
         $whitelist,
@@ -266,9 +269,8 @@ if ($dashboardEnabled) {
         new RequestBodyParserMiddleware(5 * 1024 * 1024),
         $dashboard
     );
-    $dashboardSocket = new SocketServer("$dashboardHost:$dashboardPort", [], $loop);
-    $dashboardServer->listen($dashboardSocket);
-}
+$dashboardSocket = new SocketServer("$dashboardHost:$dashboardPort", [], $loop);
+$dashboardServer->listen($dashboardSocket);
 
 try {
     $downlink->start();
@@ -333,11 +335,7 @@ $loop->addPeriodicTimer(10, function () use ($hubServer, $dashboardConfig): void
 
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');
 
-if ($dashboardEnabled) {
-    Logger::channel('hub')->info("Dashboard: http://$dashboardHost:$dashboardPort/dashboard");
-} else {
-    Logger::channel('hub')->info('Dashboard disabled');
-}
+Logger::channel('hub')->info("Dashboard: http://$dashboardHost:$dashboardPort/dashboard");
 
 Logger::channel('hub')->info("TCP ingress: tcp://$tcpHost:$tcpPort");
 Logger::channel('hub')->info("Redis downlink queue: {$redisParameters['host']}:{$redisParameters['port']} ttl={$downlinkQueueTtlSeconds}s");

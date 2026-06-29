@@ -8,6 +8,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
     private readonly ?PayloadDecoder $decoder;
     private readonly ?MessageNormalizer $normalizer;
+    private readonly IngestStats $stats;
+    private readonly DashboardWritePolicy $dashboardWritePolicy;
+    private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
 
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
@@ -18,6 +21,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ?\Hub\Dashboard\DashboardStore $dashboardStore = null,
         ?PayloadDecoder $decoder = null,
         ?MessageNormalizer $normalizer = null,
+        ?IngestStats $stats = null,
+        ?DashboardWritePolicy $dashboardWritePolicy = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -30,65 +35,165 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         );
         $this->decoder = $decoder;
         $this->normalizer = $normalizer;
+        $this->stats = $stats ?? new IngestStats($topicFilter);
+        $this->dashboardWritePolicy = $dashboardWritePolicy ?? new DashboardWritePolicy();
     }
 
     protected function handleMessage(string $topic, string $payload): void
     {
+        $totalStart = hrtime(true);
+
         $parsedTopic = Topic::parse($topic);
         if ($parsedTopic === null) {
+            $this->stats->recordRejected('unsupported_topic', [
+                'total' => hrtime(true) - $totalStart,
+            ]);
             Logger::channel('hub')->warning("Ignoring unsupported Qinglanst topic {$topic}");
             return;
         }
 
+        $resolveStart = hrtime(true);
         $device = $this->resolveDevice($parsedTopic);
+        $resolveDuration = hrtime(true) - $resolveStart;
         if ($device === null) {
+            $this->stats->recordRejected('unregistered_device', [
+                'resolve' => $resolveDuration,
+                'total' => hrtime(true) - $totalStart,
+            ]);
             return;
         }
 
-        $decoded = ($this->decoder ?? new PayloadDecoder())->decode($payload, $parsedTopic->deviceUid);
+        $jsonStart = hrtime(true);
+        $upstreamPayload = $this->extractUpstreamPayload($payload);
+        $jsonDuration = hrtime(true) - $jsonStart;
+        if ($upstreamPayload === null) {
+            $this->stats->recordRejected('invalid_json', [
+                'resolve' => $resolveDuration,
+                'json' => $jsonDuration,
+                'total' => hrtime(true) - $totalStart,
+            ]);
+            Logger::channel('hub')->warning("Ignoring invalid Qinglanst JSON payload on {$topic}");
+            return;
+        }
+
+        $messageType = $this->messageType($upstreamPayload);
+        if ($messageType === null) {
+            $this->stats->recordRejected('unsupported_payload_type', [
+                'resolve' => $resolveDuration,
+                'json' => $jsonDuration,
+                'total' => hrtime(true) - $totalStart,
+            ]);
+            Logger::channel('hub')->warning("Ignoring unsupported Qinglanst payload type on {$topic}");
+            return;
+        }
+
+        $deviceCode = trim((string)($upstreamPayload['deviceCode'] ?? $parsedTopic->deviceUid));
+        $encodedPayload = (string)($upstreamPayload[$messageType] ?? '');
+
+        $decodeStart = hrtime(true);
+        $decoded = ($this->decoder ?? new PayloadDecoder())->decode($messageType, $encodedPayload, $deviceCode);
+        $decodeDuration = hrtime(true) - $decodeStart;
         if ($decoded === null) {
+            $this->stats->recordRejected('decode_failed', [
+                'resolve' => $resolveDuration,
+                'json' => $jsonDuration,
+                'decode' => $decodeDuration,
+                'total' => hrtime(true) - $totalStart,
+            ]);
             Logger::channel('hub')->warning("Ignoring undecodable Qinglanst payload on {$topic}");
             return;
         }
 
         try {
+            $normalizeStart = hrtime(true);
             $normalized = ($this->normalizer ?? new MessageNormalizer())->normalize($decoded, $parsedTopic, $device);
+            $normalizeDuration = hrtime(true) - $normalizeStart;
         } catch (\Throwable $e) {
+            $this->stats->recordRejected('normalize_failed', [
+                'resolve' => $resolveDuration,
+                'json' => $jsonDuration,
+                'decode' => $decodeDuration,
+                'total' => hrtime(true) - $totalStart,
+            ]);
             Logger::channel('hub')->warning("Ignoring invalid Qinglanst message from {$parsedTopic->deviceUid}: {$e->getMessage()}");
             return;
         }
 
-        $deviceKey = (string)$device['imei'];
+        $dashboardKey = (string)$device['imei'];
+        $topicDeviceKey = $parsedTopic->deviceUid;
         $deviceType = (string)$device['deviceType'];
         $licenseId = (string)$device['licenseId'];
         $company = (string)($device['company'] ?? 'null');
+        $nowMs = (int) floor(microtime(true) * 1000);
 
-        $this->dashboardStore?->deviceSeen($deviceKey, [
-            'supplier' => (string)$device['supplier'],
-            'model' => (string)$device['model'],
-            'deviceType' => $deviceType,
-            'licenseId' => $licenseId,
-            'company' => $company,
-            'protocol' => 'qinglanst-radar',
-            'transport' => 'mqtt',
-            'online' => '1',
-        ]);
-
-        if (isset($normalized['telemetry']) && is_array($normalized['telemetry'])) {
-            $this->mqttBridge->publishTelemetry($deviceKey, $normalized['telemetry'], $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'telemetry', array_merge($normalized['telemetry'], [
+        $redisSeenDuration = 0;
+        if ($this->dashboardStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($dashboardKey, $nowMs)) {
+            $redisSeenStart = hrtime(true);
+            $this->dashboardStore->deviceSeen($dashboardKey, [
+                'supplier' => (string)$device['supplier'],
+                'model' => (string)$device['model'],
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
-            ]));
+                'company' => $company,
+                'protocol' => 'qinglanst-radar',
+                'transport' => 'mqtt',
+                'online' => '1',
+            ]);
+            $redisSeenDuration = hrtime(true) - $redisSeenStart;
+        }
+
+        $mqttTelemetryDuration = 0;
+        $redisTelemetryDuration = 0;
+        $mqttEventDuration = 0;
+        $redisEventDuration = 0;
+        $publishedTelemetry = false;
+        $publishedEvent = false;
+
+        if (isset($normalized['telemetry']) && is_array($normalized['telemetry'])) {
+            $mqttTelemetryStart = hrtime(true);
+            $this->mqttBridge->publishTelemetry($topicDeviceKey, $normalized['telemetry'], $deviceType, $licenseId, $company);
+            $mqttTelemetryDuration = hrtime(true) - $mqttTelemetryStart;
+
+            if (
+                $this->dashboardStore !== null
+                && $this->dashboardWritePolicy->shouldStoreTelemetry($dashboardKey, (string)($normalized['telemetry']['type'] ?? ''), $nowMs)
+            ) {
+                $redisTelemetryStart = hrtime(true);
+                $this->dashboardStore->append($dashboardKey, 'telemetry', array_merge($normalized['telemetry'], [
+                    'deviceType' => $deviceType,
+                    'licenseId' => $licenseId,
+                ]));
+                $redisTelemetryDuration = hrtime(true) - $redisTelemetryStart;
+            }
+            $publishedTelemetry = true;
         }
 
         if (isset($normalized['event']) && is_array($normalized['event'])) {
-            $this->mqttBridge->publishEvent($deviceKey, $normalized['event'], $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'events', array_merge($normalized['event'], [
+            $mqttEventStart = hrtime(true);
+            $this->mqttBridge->publishEvent($topicDeviceKey, $normalized['event'], $deviceType, $licenseId, $company);
+            $mqttEventDuration = hrtime(true) - $mqttEventStart;
+
+            $redisEventStart = hrtime(true);
+            $this->dashboardStore?->append($dashboardKey, 'events', array_merge($normalized['event'], [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
             ]));
+            $redisEventDuration = hrtime(true) - $redisEventStart;
+            $publishedEvent = true;
         }
+
+        $this->stats->recordAccepted($messageType, $publishedTelemetry, $publishedEvent, [
+            'resolve' => $resolveDuration,
+            'json' => $jsonDuration,
+            'decode' => $decodeDuration,
+            'normalize' => $normalizeDuration,
+            'redis_seen' => $redisSeenDuration,
+            'mqtt_telemetry' => $mqttTelemetryDuration,
+            'redis_telemetry' => $redisTelemetryDuration,
+            'mqtt_event' => $mqttEventDuration,
+            'redis_event' => $redisEventDuration,
+            'total' => hrtime(true) - $totalStart,
+        ]);
     }
 
     /**
@@ -111,5 +216,28 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         Logger::channel('hub')->warning("Ignoring unregistered Qinglanst device uid={$deviceUid}");
         return null;
+    }
+
+    private function extractUpstreamPayload(string $payload): ?array
+    {
+        $decoded = json_decode($payload, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $wrapped = $decoded['payload'] ?? $decoded;
+        return is_array($wrapped) ? $wrapped : null;
+    }
+
+    private function messageType(array $payload): ?string
+    {
+        $presentTypes = [];
+        foreach (self::SUPPORTED_TYPES as $type) {
+            if (!empty($payload[$type])) {
+                $presentTypes[] = $type;
+            }
+        }
+
+        return count($presentTypes) === 1 ? $presentTypes[0] : null;
     }
 }

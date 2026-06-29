@@ -17,8 +17,6 @@ class Config
         $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
         $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
-        $dashboardEnabledRaw = strtolower(trim((string)(getenv('DASHBOARD_ENABLED') ?: 'true')));
-        $dashboardEnabled = in_array($dashboardEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $downlinkQueueTtlRaw = getenv('DOWNLINK_QUEUE_TTL_SECONDS');
         $downlinkQueueTtl = $downlinkQueueTtlRaw === false || trim((string)$downlinkQueueTtlRaw) === ''
             ? 300
@@ -30,7 +28,6 @@ class Config
                 'port' => (int)(getenv('TCP_INGRESS_PORT') ?: 9000),
             ],
             'dashboard' => [
-                'enabled' => $dashboardEnabled,
                 'host' => getenv('DASHBOARD_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('DASHBOARD_PORT') ?: 8081),
                 'username' => getenv('DASHBOARD_USERNAME') ?: '',
@@ -58,9 +55,10 @@ class Config
                 'password' => getenv('QINGLANST_MQTT_PASSWORD') ?: 'hitCare',
                 'topic_filter' => getenv('QINGLANST_TOPIC_FILTER') ?: 'radar/1001/#',
                 'client_id_prefix' => getenv('QINGLANST_CLIENT_ID_PREFIX') ?: 'qinglanst-radar',
+                'dashboard_seen_min_interval_ms' => max(0, (int)(getenv('QINGLANST_DASHBOARD_SEEN_MIN_INTERVAL_MS') ?: 5000)),
+                'position_history_sample_ms' => max(0, (int)(getenv('QINGLANST_POSITION_HISTORY_SAMPLE_MS') ?: 1000)),
             ],
             'mqtt' => [
-                'enabled' => true,
                 'host' => getenv('MQTT_HOST') ?: '',
                 'port' => (int)(getenv('MQTT_PORT') ?: 1883),
                 'username' => getenv('MQTT_USERNAME') ?: (getenv('MQTT_PUBLISHER_USERNAME') ?: ''),
@@ -74,10 +72,6 @@ class Config
                 'tls_ca_file' => getenv('MQTT_TLS_CA_FILE') ?: '',
                 'tls_cert_file' => getenv('MQTT_TLS_CERT_FILE') ?: '',
                 'tls_key_file' => getenv('MQTT_TLS_KEY_FILE') ?: '',
-            ],
-            'logging' => [
-                'level' => getenv('LOG_LEVEL') ?: 'info',
-                'file' => getenv('LOG_FILE') ?: 'var/log/server.log',
             ],
             'redis' => [
                 'host' => getenv('REDIS_HOST') ?: '127.0.0.1',

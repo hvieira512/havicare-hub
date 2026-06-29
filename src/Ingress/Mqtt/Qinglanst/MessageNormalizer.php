@@ -31,8 +31,8 @@ final class MessageNormalizer
     {
         return match ($decoded['type']) {
             'position' => $this->normalizePosition($decoded, $topic, $device),
-            'vitals' => $this->normalizeVitals($decoded, $topic, $device),
-            'minute_stats' => $this->normalizeMinuteStats($decoded, $topic, $device),
+            'heartbreath' => $this->normalizeVitals($decoded, $topic, $device),
+            'posstatics' => $this->normalizeMinuteStats($decoded, $topic, $device),
             'hbstatics' => $this->normalizeHbStatics($decoded, $topic, $device),
             default => [],
         };
@@ -49,7 +49,7 @@ final class MessageNormalizer
             'schemaVersion' => 2,
             'type' => 'radar.position',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $this->deviceInfo($device),
+            'device' => $this->deviceInfo($topic, $device),
             'source' => $this->source($topic, 'position'),
             'data' => [
                 'people' => array_map(function (array $person): array {
@@ -69,7 +69,7 @@ final class MessageNormalizer
 
         $result = ['telemetry' => $telemetry];
 
-        $event = $this->detectPositionEvent($decoded['people']);
+        $event = $this->detectPositionEvent($topic, $device, $decoded['people']);
         if ($event !== null) {
             $result['event'] = $event;
         }
@@ -81,7 +81,7 @@ final class MessageNormalizer
      * @param array $people
      * @return array|null
      */
-    private function detectPositionEvent(array $people): ?array
+    private function detectPositionEvent(Topic $topic, array $device, array $people): ?array
     {
         foreach ($people as $person) {
             $posture = (string)($person['posture_state'] ?? '');
@@ -89,6 +89,8 @@ final class MessageNormalizer
 
             if ($posture === 'Fall Confirmation') {
                 return $this->detectionEvent(
+                    $topic,
+                    $device,
                     'fall_confirmed',
                     RadarValueMapper::DETECTION_LEVEL_DANGER,
                     RadarValueMapper::DETECTION_SOURCE_POSITION,
@@ -98,6 +100,8 @@ final class MessageNormalizer
 
             if ($posture === 'Suspected Fall') {
                 return $this->detectionEvent(
+                    $topic,
+                    $device,
                     'fall_confirmed',
                     RadarValueMapper::DETECTION_LEVEL_WARNING,
                     RadarValueMapper::DETECTION_SOURCE_POSITION,
@@ -107,6 +111,8 @@ final class MessageNormalizer
 
             if ($eventCode === 'Enter Room') {
                 return $this->detectionEvent(
+                    $topic,
+                    $device,
                     'room_entry',
                     RadarValueMapper::DETECTION_LEVEL_INFO,
                     RadarValueMapper::DETECTION_SOURCE_POSITION,
@@ -116,6 +122,8 @@ final class MessageNormalizer
 
             if ($eventCode === 'Leave Room') {
                 return $this->detectionEvent(
+                    $topic,
+                    $device,
                     'room_exit',
                     RadarValueMapper::DETECTION_LEVEL_INFO,
                     RadarValueMapper::DETECTION_SOURCE_POSITION,
@@ -125,6 +133,8 @@ final class MessageNormalizer
 
             if ($eventCode === 'Enter Area') {
                 return $this->detectionEvent(
+                    $topic,
+                    $device,
                     'area_entry',
                     RadarValueMapper::DETECTION_LEVEL_INFO,
                     RadarValueMapper::DETECTION_SOURCE_POSITION,
@@ -134,6 +144,8 @@ final class MessageNormalizer
 
             if ($eventCode === 'Leave Area') {
                 return $this->detectionEvent(
+                    $topic,
+                    $device,
                     'area_exit',
                     RadarValueMapper::DETECTION_LEVEL_INFO,
                     RadarValueMapper::DETECTION_SOURCE_POSITION,
@@ -158,8 +170,8 @@ final class MessageNormalizer
             'schemaVersion' => 2,
             'type' => 'radar.vitals',
             'occurredAt' => $now,
-            'device' => $this->deviceInfo($device),
-            'source' => $this->source($topic, 'vitals'),
+            'device' => $this->deviceInfo($topic, $device),
+            'source' => $this->source($topic, 'heartbreath'),
             'data' => [
                 'breathing' => $breathing,
                 'heart_rate' => $heartRate,
@@ -171,33 +183,41 @@ final class MessageNormalizer
 
         $events = [];
 
-        if ($heartRate > 120) {
+        if ($heartRate > 160) {
             $events[] = $this->detectionEvent(
-                'heart_rate_high',
-                RadarValueMapper::DETECTION_LEVEL_WARNING,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
-                ['heart_rate' => $heartRate]
-            );
-        } elseif ($heartRate > 160) {
-            $events[] = $this->detectionEvent(
+                $topic,
+                $device,
                 'heart_rate_high_critical',
                 RadarValueMapper::DETECTION_LEVEL_DANGER,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
                 ['heart_rate' => $heartRate]
             );
-        }
-
-        if ($heartRate > 0 && $heartRate < 40) {
+        } elseif ($heartRate > 120) {
             $events[] = $this->detectionEvent(
-                'heart_rate_low',
+                $topic,
+                $device,
+                'heart_rate_high',
                 RadarValueMapper::DETECTION_LEVEL_WARNING,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
                 ['heart_rate' => $heartRate]
             );
-        } elseif ($heartRate > 0 && $heartRate < 20) {
+        }
+
+        if ($heartRate > 0 && $heartRate < 20) {
             $events[] = $this->detectionEvent(
+                $topic,
+                $device,
                 'heart_rate_low_critical',
                 RadarValueMapper::DETECTION_LEVEL_DANGER,
+                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                ['heart_rate' => $heartRate]
+            );
+        } elseif ($heartRate > 0 && $heartRate < 40) {
+            $events[] = $this->detectionEvent(
+                $topic,
+                $device,
+                'heart_rate_low',
+                RadarValueMapper::DETECTION_LEVEL_WARNING,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
                 ['heart_rate' => $heartRate]
             );
@@ -205,6 +225,8 @@ final class MessageNormalizer
 
         if ($breathing === 0 && $heartRate === 0) {
             $events[] = $this->detectionEvent(
+                $topic,
+                $device,
                 'vitals_signal_lost',
                 RadarValueMapper::DETECTION_LEVEL_DANGER,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
@@ -229,8 +251,8 @@ final class MessageNormalizer
                 'schemaVersion' => 2,
                 'type' => 'radar.minute_stats',
                 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => $this->deviceInfo($device),
-                'source' => $this->source($topic, 'minute_stats'),
+                'device' => $this->deviceInfo($topic, $device),
+                'source' => $this->source($topic, 'posstatics'),
                 'data' => [
                     'version' => $decoded['version'],
                     'people' => $decoded['people'],
@@ -257,7 +279,7 @@ final class MessageNormalizer
             'schemaVersion' => 2,
             'type' => 'radar.hbstatics',
             'occurredAt' => $now,
-            'device' => $this->deviceInfo($device),
+            'device' => $this->deviceInfo($topic, $device),
             'source' => $this->source($topic, 'hbstatics'),
             'data' => [
                 'real_time_breathing' => $decoded['real_time_breathing'],
@@ -280,6 +302,8 @@ final class MessageNormalizer
 
         if ($breathingStatus === 'Apnea') {
             $events[] = $this->detectionEvent(
+                $topic,
+                $device,
                 'apnea',
                 RadarValueMapper::DETECTION_LEVEL_DANGER,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
@@ -289,6 +313,8 @@ final class MessageNormalizer
 
         if ($heartStatus === 'High') {
             $events[] = $this->detectionEvent(
+                $topic,
+                $device,
                 'heart_rate_high',
                 RadarValueMapper::DETECTION_LEVEL_WARNING,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
@@ -298,6 +324,8 @@ final class MessageNormalizer
 
         if ($heartStatus === 'Low') {
             $events[] = $this->detectionEvent(
+                $topic,
+                $device,
                 'heart_rate_low',
                 RadarValueMapper::DETECTION_LEVEL_WARNING,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
@@ -307,6 +335,8 @@ final class MessageNormalizer
 
         if ($vitalStatus === 'Weak') {
             $events[] = $this->detectionEvent(
+                $topic,
+                $device,
                 'vitals_signal_lost',
                 RadarValueMapper::DETECTION_LEVEL_WARNING,
                 RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
@@ -325,7 +355,7 @@ final class MessageNormalizer
      * @param array<string, mixed> $data
      * @return array
      */
-    private function detectionEvent(string $type, int $level, int $source, array $data): array
+    private function detectionEvent(Topic $topic, array $device, string $type, int $level, int $source, array $data): array
     {
         $typeCode = self::DETECTION_TYPE_MAP[$type] ?? RadarValueMapper::UNKNOWN_CODE;
         $alarmTypes = RadarValueMapper::detectionAlarmTypeCodes();
@@ -337,6 +367,8 @@ final class MessageNormalizer
             'schemaVersion' => 1,
             'type' => 'radar.detection',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            'device' => $this->deviceInfo($topic, $device),
+            'source' => $this->source($topic, RadarValueMapper::decodeDetectionSource($source)),
             'data' => [
                 'detectionType' => $type,
                 'detectionCategory' => RadarValueMapper::decodeDetectionCategory($category),
@@ -351,9 +383,9 @@ final class MessageNormalizer
      * @param array{supplier?: string, model?: string, ...} $device
      * @return array{id: string, supplier?: string, model?: string}
      */
-    private function deviceInfo(array $device): array
+    private function deviceInfo(Topic $topic, array $device): array
     {
-        $info = ['id' => (string)($device['imei'] ?? '')];
+        $info = ['id' => $topic->deviceUid];
         if ((string)($device['supplier'] ?? '') !== '') {
             $info['supplier'] = (string)$device['supplier'];
         }

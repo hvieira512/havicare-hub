@@ -93,6 +93,8 @@ Uplink from device to MQTT:
 {company}/{licenseId}/watch/{deviceKey}/telemetry
 {company}/{licenseId}/watch/{deviceKey}/events
 {company}/{licenseId}/watch/{deviceKey}/status
+{company}/{licenseId}/radar/{deviceKey}/telemetry
+{company}/{licenseId}/radar/{deviceKey}/events
 {licenseId}/ncs/{deviceKey}/raw
 {licenseId}/ncs/{deviceKey}/telemetry
 {licenseId}/ncs/{deviceKey}/events
@@ -113,8 +115,8 @@ Topic semantics:
 
 - `company` is the tenant namespace for watch devices. Unassociated devices use `null`.
 - `licenseId` is the tenant license scope for watches. Unassociated devices use `0`.
-- `watch` is the TCP-ingress device type. `ncs` is the MQTT-ingress nurse-call type.
-- `deviceKey` is the canonical topic identity. For watches it is the IMEI; for NCS it is the canonical registry key resolved from the whitelist alias in `deviceId`.
+- `watch` is the TCP-ingress device type. `radar` and `ncs` are MQTT-ingress device types.
+- `deviceKey` is the canonical topic identity for watches and NCS. For Qinglanst radars the hub republishes on the upstream radar UID from the source topic.
 
 ## Telemetry Payload Contract
 
@@ -122,6 +124,7 @@ Telemetry messages are published to:
 
 ```text
 {company}/{licenseId}/watch/{deviceKey}/telemetry
+{company}/{licenseId}/radar/{deviceKey}/telemetry
 {licenseId}/ncs/{deviceKey}/telemetry
 ```
 
