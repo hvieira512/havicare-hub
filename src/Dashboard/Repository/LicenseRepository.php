@@ -30,7 +30,7 @@ final class LicenseRepository
         return $stmt->fetch() ?: null;
     }
 
-    public function findByLicenseId(string $licenseId): array
+    public function findByLicenseId(int $licenseId): array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_id = ? ORDER BY company_id');
         $stmt->execute([$licenseId]);
@@ -46,7 +46,7 @@ final class LicenseRepository
         return $stmt->fetchAll();
     }
 
-    public function create(int $companyId, string $licenseId, string $name): int
+    public function create(int $companyId, int $licenseId, string $name): int
     {
         $stmt = $this->pdo->prepare('SELECT id FROM licenses WHERE company_id = ? AND license_id = ?');
         $stmt->execute([$companyId, $licenseId]);
@@ -61,7 +61,7 @@ final class LicenseRepository
         return (int)$this->pdo->lastInsertId();
     }
 
-    public function update(int $id, int $companyId, string $licenseId, string $name): void
+    public function update(int $id, int $companyId, int $licenseId, string $name): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $stmt = $this->pdo->prepare('UPDATE licenses SET company_id = ?, license_id = ?, name = ?, updated_at = ? WHERE id = ?');

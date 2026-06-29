@@ -156,7 +156,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertIsArray($row);
         self::assertSame('351912345678901', $row['sim_number'] ?? null);
         self::assertSame('watch', $row['device_type'] ?? null);
-        self::assertSame('0', $row['license_id'] ?? null);
+        self::assertSame(0, $row['license_id'] ?? null);
     }
 
     public function testWhitelistDefaultsLegacyDeviceTypeAndLicenseId(): void
@@ -167,6 +167,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $row = $db->whitelist->get('861265061009822');
         self::assertIsArray($row);
         self::assertSame('watch', $row['device_type'] ?? null);
-        self::assertSame('0', $row['license_id'] ?? null);
+        self::assertSame(0, $row['license_id'] ?? null);
     }
 }

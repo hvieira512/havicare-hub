@@ -13,7 +13,7 @@ final class ApiTokenStore
         $this->prefix = trim($this->prefix, ':');
     }
 
-    public function issue(string $username, string $role, int $ttlSeconds, ?int $userId = null, ?string $licenseId = null): array
+    public function issue(string $username, string $role, int $ttlSeconds, ?int $userId = null, int|string|null $licenseId = null): array
     {
         $ttlSeconds = max(1, $ttlSeconds);
         $issuedAt = time();
@@ -65,7 +65,7 @@ final class ApiTokenStore
 
         $userId = isset($payload['userId']) && $payload['userId'] !== null ? (int)$payload['userId'] : null;
         $licenseId = isset($payload['licenseId']) && $payload['licenseId'] !== null
-            ? trim((string)$payload['licenseId'])
+            ? (int)$payload['licenseId']
             : null;
 
         return new ApiAuthContext($userId, $username, $role, $licenseId);

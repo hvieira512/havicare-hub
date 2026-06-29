@@ -12,7 +12,7 @@ final class ApiAuthContext
         public readonly ?int $userId,
         public readonly string $username,
         public readonly string $role,
-        public readonly ?string $licenseId = null,
+        public readonly ?int $licenseId = null,
     ) {
     }
 
@@ -26,19 +26,17 @@ final class ApiAuthContext
         return $this->role === self::ROLE_LICENSE_CLIENT;
     }
 
-    public function canAccessLicense(string $licenseId): bool
+    public function canAccessLicense(int $licenseId): bool
     {
         if ($this->isAdmin()) {
             return true;
         }
 
-        $licenseId = trim($licenseId);
         return $this->isLicenseClient()
             && $this->licenseId !== null
-            && $this->licenseId !== ''
-            && $licenseId !== ''
-            && $licenseId !== '0'
-            && hash_equals($this->licenseId, $licenseId);
+            && $this->licenseId > 0
+            && $licenseId > 0
+            && $this->licenseId === $licenseId;
     }
 
     /**

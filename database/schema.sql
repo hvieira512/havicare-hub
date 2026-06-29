@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS whitelist (
     supplier VARCHAR(191) NOT NULL,
     model VARCHAR(191) NOT NULL,
     device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
-    license_id VARCHAR(64) NOT NULL DEFAULT '0',
+    license_id INT UNSIGNED NOT NULL DEFAULT 0,
     sim_number VARCHAR(64) NOT NULL DEFAULT '',
     device_id VARCHAR(191) NOT NULL DEFAULT '',
     company VARCHAR(191) NOT NULL DEFAULT 'null',
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS api_users (
     username VARCHAR(191) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('hub_admin', 'license_client') NOT NULL,
-    license_id VARCHAR(64) NOT NULL DEFAULT '',
+    license_id INT UNSIGNED NOT NULL DEFAULT 0,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at VARCHAR(32) NOT NULL,
     updated_at VARCHAR(32) NOT NULL
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS companies (
 CREATE TABLE IF NOT EXISTS licenses (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     company_id BIGINT UNSIGNED NOT NULL,
-    license_id VARCHAR(64) NOT NULL,
+    license_id INT UNSIGNED NOT NULL,
     name VARCHAR(191) NOT NULL,
     created_at VARCHAR(32) NOT NULL,
     updated_at VARCHAR(32) NOT NULL,

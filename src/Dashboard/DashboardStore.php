@@ -28,14 +28,13 @@ final class DashboardStore
         string $supplier,
         string $model,
         string $deviceType = 'watch',
-        string $licenseId = '0',
+        int $licenseId = 0,
         string $simNumber = '',
         string $deviceId = '',
         string $company = 'null'
     ): void
     {
-        $this->redis->sadd($this->key('devices'), $imei);
-        $this->redis->hmset($this->deviceKey($imei), [
+        $payload = [
             'imei' => $imei,
             'supplier' => $supplier,
             'model' => $model,
@@ -44,7 +43,11 @@ final class DashboardStore
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
             'company' => trim($company),
-        ]);
+        ];
+        $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {
+            $pipe->sadd($this->key('devices'), $imei);
+            $pipe->hmset($this->deviceKey($imei), $payload);
+        });
     }
 
     public function deleteDevice(string $imei): void
@@ -65,25 +68,32 @@ final class DashboardStore
         ]);
     }
 
-    public function updateDeviceAssociation(string $imei, string $company, string $licenseId): void
+    public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void
     {
-        $this->redis->sadd($this->key('devices'), $imei);
-        $this->redis->hmset($this->deviceKey($imei), [
+        $payload = [
             'imei' => $imei,
             'company' => trim($company),
             'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
-        ]);
+        ];
+        $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {
+            $pipe->sadd($this->key('devices'), $imei);
+            $pipe->hmset($this->deviceKey($imei), $payload);
+        });
     }
 
     public function deviceSeen(string $imei, array $fields): void
     {
         $now = gmdate('Y-m-d\\TH:i:s\\Z');
-        $this->redis->sadd($this->key('devices'), $imei);
-        $this->redis->hmset($this->deviceKey($imei), array_merge($fields, [
+        $payload = array_merge($fields, [
             'imei' => $imei,
             'lastSeenAt' => $now,
-        ]));
-        $this->redis->zadd($this->onlineDeviceSetKey(), [$imei => time()]);
+        ]);
+        $score = time();
+        $this->redis->pipeline(function ($pipe) use ($imei, $payload, $score): void {
+            $pipe->sadd($this->key('devices'), $imei);
+            $pipe->hmset($this->deviceKey($imei), $payload);
+            $pipe->zadd($this->onlineDeviceSetKey(), [$imei => $score]);
+        });
     }
 
     public function deviceOffline(string $imei): void
@@ -104,8 +114,10 @@ final class DashboardStore
             return;
         }
         $key = $this->deviceListKey($imei, $list);
-        $this->redis->lpush($key, [$encoded]);
-        $this->redis->ltrim($key, 0, $this->limit - 1);
+        $this->redis->pipeline(function ($pipe) use ($key, $encoded): void {
+            $pipe->lpush($key, [$encoded]);
+            $pipe->ltrim($key, 0, $this->limit - 1);
+        });
 
         if ($this->db !== null && $list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
             $device = isset($payload['device']) && is_array($payload['device']) ? $payload['device'] : [];

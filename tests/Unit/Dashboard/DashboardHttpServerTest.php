@@ -128,7 +128,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
         $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame('license_client', $payload['token']['role'] ?? null);
-        self::assertSame('1001', $payload['token']['license_id'] ?? null);
+        self::assertSame(1001, $payload['token']['license_id'] ?? null);
         $token = (string)($payload['token']['access_token'] ?? '');
 
         $response = $server(new ServerRequest(
@@ -224,7 +224,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame('hitCare', $body['association']['company'] ?? null);
-        self::assertSame('1001', $body['association']['licenseId'] ?? null);
+        self::assertSame(1001, $body['association']['licenseId'] ?? null);
 
         $deviceResponse = $server(new ServerRequest(
             'GET',
@@ -235,7 +235,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         self::assertSame(200, $deviceResponse->getStatusCode(), (string)$deviceResponse->getBody());
         self::assertSame('hitCare', $device['device']['company'] ?? null);
-        self::assertSame('1001', $device['device']['licenseId'] ?? null);
+        self::assertSame(1001, $device['device']['licenseId'] ?? null);
     }
 
     public function testTenantClientCannotAssociateAlreadyAssignedDevice(): void
@@ -270,7 +270,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame('null', $body['association']['company'] ?? null);
-        self::assertSame('0', $body['association']['licenseId'] ?? null);
+        self::assertSame(0, $body['association']['licenseId'] ?? null);
 
         $tenantRead = $server(new ServerRequest(
             'GET',
@@ -288,7 +288,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         self::assertSame(200, $adminRead->getStatusCode(), (string)$adminRead->getBody());
         self::assertSame('null', $device['device']['company'] ?? null);
-        self::assertSame('0', $device['device']['licenseId'] ?? null);
+        self::assertSame(0, $device['device']['licenseId'] ?? null);
     }
 
     public function testDeviceDetailEndpointReturnsSparseCapabilitiesAndStoredValues(): void
@@ -511,9 +511,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $db->licenses->create($otherCareId, '2002', 'othercare-license');
         $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '1001', '', '', 'hitCare');
-        $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', '2002', '', '', 'otherCare');
-        $store->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', '0', '', '', 'null');
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitCare');
+        $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
+        $store->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
@@ -636,6 +636,11 @@ final class InMemoryRedisClientForDashboardHttpServerTest implements ClientInter
     public function executeCommand(CommandInterface $command)
     {
         throw new \BadMethodCallException('Not implemented');
+    }
+
+    public function pipeline(callable $callback): void
+    {
+        $callback($this);
     }
 
     public function __call($method, $arguments)

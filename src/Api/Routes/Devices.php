@@ -102,16 +102,32 @@ final class Devices
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
-        $model = $this->modelForDevice($device);
+        $modelRow = $this->modelForDevice($device);
         $configRows = $this->db->deviceConfigurations->allForImei($imei);
+
+        $model = null;
+        if ($modelRow !== null) {
+            $model = [
+                'supplier' => (string)($device['supplier'] ?? ''),
+                'internalModel' => (string)($modelRow['internal_model'] ?? ''),
+                'commercialName' => (string)($modelRow['commercial_name'] ?? ''),
+                'deviceType' => (string)($modelRow['device_type'] ?? ''),
+                'image' => ($modelRow['image_path'] ?? '') !== '' ? $modelRow['image_path'] : null,
+            ];
+        }
+
+        $device = array_diff_key($device, array_flip([
+            'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
+        ]));
 
         return [
             'device' => $device,
+            'model' => $model,
             'configuration' => [
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
                 'stored' => count($configRows),
             ],
-            'capabilities' => $this->deviceCapabilities($model, $protocol, $configRows),
+            'capabilities' => $this->deviceCapabilities($modelRow, $protocol, $configRows),
             'pending' => $this->pending($imei),
         ];
     }
@@ -334,7 +350,7 @@ final class Devices
         if ($modelRecord === null) {
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
         }
-        if ($licenseId === '') {
+        if ($licenseId === 0 && $deviceType !== 'watch') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
         $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceId);
@@ -365,7 +381,7 @@ final class Devices
         if ($modelRecord === null) {
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
         }
-        if ($licenseId === '') {
+        if ($licenseId === 0 && $deviceType !== 'watch') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
         $deviceId = $this->normalizeDeviceId($newImei, $supplier, $model, $deviceId);
@@ -393,7 +409,7 @@ final class Devices
 
         $company = trim((string)($decoded['company'] ?? ''));
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($decoded['licenseId'] ?? ''));
-        if ($company === '' || $licenseId === '' || $licenseId === '0') {
+        if ($company === '' || $licenseId === 0) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'company and licenseId are required']];
         }
 
@@ -404,7 +420,7 @@ final class Devices
 
             $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
             $currentCompany = trim((string)($existing['company'] ?? 'null'));
-            if ($currentLicenseId !== '0' || $currentCompany !== 'null') {
+            if ($currentLicenseId !== 0 || $currentCompany !== 'null') {
                 return ['error' => ['code' => 'device_already_associated', 'message' => 'Device is already associated']];
             }
         }
@@ -436,7 +452,7 @@ final class Devices
 
         $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
         $currentCompany = trim((string)($existing['company'] ?? 'null'));
-        if ($currentLicenseId === '0' && $currentCompany === 'null') {
+        if ($currentLicenseId === 0 && $currentCompany === 'null') {
             return ['error' => ['code' => 'association_not_found', 'message' => 'Device association was not found']];
         }
 
@@ -444,15 +460,15 @@ final class Devices
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
 
-        $this->whitelist->updateAssociation($imei, 'null', '0');
-        $this->store->updateDeviceAssociation($imei, 'null', '0');
+        $this->whitelist->updateAssociation($imei, 'null', 0);
+        $this->store->updateDeviceAssociation($imei, 'null', 0);
 
         return [
             'status' => 'ok',
             'imei' => $imei,
             'association' => [
                 'company' => 'null',
-                'licenseId' => '0',
+                'licenseId' => 0,
             ],
         ];
     }
@@ -710,7 +726,7 @@ final class Devices
         return $auth->canAccessLicense($licenseId);
     }
 
-    private function deviceLicenseId(string $imei, array $device): string
+    private function deviceLicenseId(string $imei, array $device): int
     {
         $licenseId = trim((string)($device['licenseId'] ?? ''));
         if ($licenseId !== '') {
@@ -733,11 +749,15 @@ final class Devices
         ));
     }
 
-    private function normalizeLicenseId(string $licenseId, string $deviceType): string
+    private function normalizeLicenseId(string $licenseId, string $deviceType): int
     {
         $normalized = trim($licenseId);
 
-        return $normalized === '' ? '' : $normalized;
+        if ($normalized === '' && $deviceType === 'watch') {
+            return 0;
+        }
+
+        return $normalized !== '' ? (int)$normalized : 0;
     }
 
     /**
@@ -972,7 +992,7 @@ final class Devices
             'supplier' => (string)($metadata['supplier'] ?? ''),
             'model' => (string)($metadata['model'] ?? ''),
             'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
-            'licenseId' => (string)($metadata['licenseId'] ?? '0'),
+            'licenseId' => (int)($metadata['licenseId'] ?? 0),
             'simNumber' => (string)($metadata['simNumber'] ?? ''),
             'deviceId' => (string)($metadata['deviceId'] ?? ''),
             'company' => (string)($metadata['company'] ?? 'null'),

@@ -11,10 +11,10 @@ final class DeviceMetadata
         return in_array($normalized, ['watch', 'ncs', 'radar'], true) ? $normalized : 'watch';
     }
 
-    public static function normalizeLicenseId(string $licenseId): string
+    public static function normalizeLicenseId(string $licenseId): int
     {
         $normalized = trim($licenseId);
 
-        return $normalized !== '' ? $normalized : '0';
+        return $normalized !== '' ? (int)$normalized : 0;
     }
 }

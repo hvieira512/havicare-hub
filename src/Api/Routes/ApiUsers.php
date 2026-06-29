@@ -52,13 +52,13 @@ final class ApiUsers
             return ['error' => ['code' => 'user_exists', 'message' => 'Username already exists']];
         }
 
-        $id = $this->db->apiUsers->create(
-            $username,
-            password_hash((string)$payload['password'], PASSWORD_DEFAULT),
-            (string)$payload['role'],
-            (string)$payload['licenseId'],
-            (bool)$payload['enabled']
-        );
+            $id = $this->db->apiUsers->create(
+                $username,
+                password_hash((string)$payload['password'], PASSWORD_DEFAULT),
+                (string)$payload['role'],
+                (int)$payload['licenseId'],
+                (bool)$payload['enabled']
+            );
 
         return ['status' => 'ok', 'id' => $id];
     }
@@ -86,7 +86,7 @@ final class ApiUsers
             $id,
             $username,
             (string)$payload['role'],
-            (string)$payload['licenseId'],
+            (int)$payload['licenseId'],
             (bool)$payload['enabled'],
             $passwordHash
         );
@@ -130,11 +130,11 @@ final class ApiUsers
         if (!in_array($role, ApiAuthContext::roles(), true)) {
             return ['error' => ['code' => 'invalid_role', 'message' => 'role must be hub_admin or license_client']];
         }
-        if ($role === ApiAuthContext::ROLE_LICENSE_CLIENT && ($licenseId === '' || $licenseId === '0')) {
+        if ($role === ApiAuthContext::ROLE_LICENSE_CLIENT && $licenseId === 0) {
             return ['error' => ['code' => 'invalid_license', 'message' => 'licenseId is required for license clients']];
         }
         if ($role === ApiAuthContext::ROLE_HUB_ADMIN) {
-            $licenseId = '';
+            $licenseId = 0;
         }
 
         return [

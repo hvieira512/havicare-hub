@@ -261,6 +261,11 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
         throw new \BadMethodCallException('Not implemented');
     }
 
+    public function pipeline(callable $callback): void
+    {
+        $callback($this);
+    }
+
     public function __call($method, $arguments)
     {
         return match (strtolower((string)$method)) {

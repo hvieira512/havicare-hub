@@ -78,7 +78,7 @@ final class WhitelistRepository
         string $supplier,
         string $model,
         string $deviceType = 'watch',
-        string $licenseId = '0',
+        int $licenseId = 0,
         string $simNumber = '',
         string $deviceId = '',
         string $company = 'null'
@@ -111,7 +111,7 @@ final class WhitelistRepository
         $stmt->execute([$imei]);
     }
 
-    public function updateAssociation(string $imei, string $company, string $licenseId): bool
+    public function updateAssociation(string $imei, string $company, int $licenseId): bool
     {
         $company = trim($company);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);

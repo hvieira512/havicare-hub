@@ -33,7 +33,7 @@ final class ApiUserRepository
         return $stmt->fetch() ?: null;
     }
 
-    public function create(string $username, string $passwordHash, string $role, string $licenseId, bool $enabled): int
+    public function create(string $username, string $passwordHash, string $role, int $licenseId, bool $enabled): int
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $stmt = $this->pdo->prepare('
@@ -45,7 +45,7 @@ final class ApiUserRepository
         return (int)$this->pdo->lastInsertId();
     }
 
-    public function update(int $id, string $username, string $role, string $licenseId, bool $enabled, ?string $passwordHash = null): bool
+    public function update(int $id, string $username, string $role, int $licenseId, bool $enabled, ?string $passwordHash = null): bool
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
         if ($passwordHash !== null) {

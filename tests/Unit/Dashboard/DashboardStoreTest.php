@@ -55,11 +55,11 @@ final class DashboardStoreTest extends TestCase
         $redis = new InMemoryRedisClient();
         $store = new DashboardStore($redis, prefix: 'test:dashboard');
 
-        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE', 'radar', '12');
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE', 'radar', 12);
 
         $device = $store->device('861265061009822');
         self::assertSame('radar', $device['deviceType']);
-        self::assertSame('12', $device['licenseId']);
+        self::assertSame(12, $device['licenseId']);
     }
 }
 
@@ -108,6 +108,11 @@ final class InMemoryRedisClient implements ClientInterface
     public function executeCommand(CommandInterface $command)
     {
         throw new \BadMethodCallException('Not implemented');
+    }
+
+    public function pipeline(callable $callback): void
+    {
+        $callback($this);
     }
 
     public function __call($method, $arguments)

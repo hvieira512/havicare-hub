@@ -41,12 +41,12 @@ final class Licenses
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
         $companyId = (int)($decoded['companyId'] ?? 0);
-        $licenseId = trim((string)($decoded['licenseId'] ?? ''));
+        $licenseId = (int)($decoded['licenseId'] ?? 0);
         $name = trim((string)($decoded['name'] ?? ''));
         if ($companyId <= 0) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'companyId is required']];
         }
-        if ($licenseId === '') {
+        if ($licenseId <= 0) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required']];
         }
         $id = $this->db->licenses->create($companyId, $licenseId, $name);
@@ -65,7 +65,7 @@ final class Licenses
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
         $companyId = (int)($decoded['companyId'] ?? $existing['company_id']);
-        $licenseId = trim((string)($decoded['licenseId'] ?? $existing['license_id']));
+        $licenseId = (int)($decoded['licenseId'] ?? $existing['license_id']);
         $name = trim((string)($decoded['name'] ?? $existing['name']));
         $this->db->licenses->update($id, $companyId, $licenseId, $name);
 
