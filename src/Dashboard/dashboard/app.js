@@ -622,9 +622,6 @@ function renderSelectedDeviceSummary(device) {
         {label: 'Última ligação', value: when(device.lastSeenAt) || 'Sem registo'},
     ];
 
-    if (device.protocol) {
-        facts.push({label: 'Protocolo', value: String(device.protocol)});
-    }
     if (device.simNumber) {
         facts.push({label: 'SIM', value: String(device.simNumber)});
     }
@@ -799,7 +796,7 @@ function renderTelemetryRow(payload) {
         <div class="d-flex justify-content-between gap-3">
         <div class="min-width-0">
         <div class="fw-semibold"><i class="fa-solid ${esc(card.icon)} text-secondary me-2"></i>${esc(featureLabel(type))}</div>
-        <div class="small text-secondary">${esc(payload.source?.nativeType || 'telemetria')}${payload.source?.protocol ? ` · ${esc(payload.source.protocol)}` : ''}</div>
+        <div class="small text-secondary">${esc(payload.source?.nativeType || 'telemetria')}</div>
         </div>
         <div class="text-end flex-shrink-0">
         <div class="fw-semibold">${esc(card.value)}</div>
@@ -1961,7 +1958,7 @@ function renderCapabilitiesSection() {
     }
 
     els.capabilityTitle.textContent = modelCommercialName(selectedModel);
-    els.capabilitySubtitle.textContent = `${selectedModel.supplier} · ${selectedModel.protocol || 'sem protocolo'}`;
+    els.capabilitySubtitle.textContent = String(selectedModel.supplier || '');
     const totalCapabilities = Object.values(capabilities).reduce((count, entries) => count + Object.keys(entries || {}).length, 0);
     els.capabilitySummary.textContent = `${enabled.size}/${totalCapabilities} ativos`;
 
