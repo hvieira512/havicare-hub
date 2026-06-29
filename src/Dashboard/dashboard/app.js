@@ -586,7 +586,8 @@ function renderSelection() {
     }
 
     const device = state.selectedDetail.device;
-    renderSelectedDeviceSummary(device);
+    const deviceModel = state.selectedDetail.model;
+    renderSelectedDeviceSummary(device, deviceModel);
 
     if (!state.detailFilters.from) {
         const sevenDaysAgo = new Date();
@@ -610,12 +611,12 @@ function renderSelection() {
     renderConnectionTimeline(connectionEvents);
 }
 
-function renderSelectedDeviceSummary(device) {
-    const supplier = String(device.supplier || '');
-    const model = String(device.model || '');
+function renderSelectedDeviceSummary(device, deviceModel) {
+    const supplier = String(deviceModel?.supplier || '');
+    const model = String(deviceModel?.internalModel || '');
     const modelInfo = findModelInfo(supplier, model);
     const facts = [
-        {label: 'Tipo', value: deviceTypeLabel(normalizeDeviceType(device.deviceType))},
+        {label: 'Tipo', value: deviceTypeLabel(normalizeDeviceType(deviceModel?.deviceType || 'watch'))},
         {label: 'Licença', value: licenseLabel(device.licenseId)},
         {label: 'Fornecedor', value: supplier || '-'},
         {label: 'Modelo', value: modelInfo ? modelCommercialName(modelInfo) : (model || '-')},
@@ -1156,13 +1157,14 @@ async function editDevice(imei, supplier, model) {
     try {
         const detail = await api.device(imei);
         const device = detail.device || {};
-        const deviceType = String(device.deviceType || 'watch');
+        const deviceModel = detail.model;
+        const deviceType = String(deviceModel?.deviceType || 'watch');
         const licenseId = String(device.licenseId || '0');
         const deviceCompany = String(device.company || '');
         renderDeviceTypeSelector(deviceType);
         renderDeviceSelectors(
-            String(device.supplier || supplier),
-            String(device.model || model),
+            String(deviceModel?.supplier || supplier),
+            String(deviceModel?.internalModel || model),
             deviceType
         );
         if (deviceCompany !== '' && deviceCompany !== 'null') {
@@ -2228,10 +2230,11 @@ function bindEvents() {
     els.emptyStateSelectDeviceBtn.addEventListener('click', () => { void openDeviceSelector(); });
     els.selectedDeviceEditBtn.addEventListener('click', () => {
         if (!state.selectedDetail?.device) return;
+        const m = state.selectedDetail.model;
         void editDevice(
             state.selectedDetail.device.imei,
-            state.selectedDetail.device.supplier || '',
-            state.selectedDetail.device.model || ''
+            m?.supplier || '',
+            m?.internalModel || ''
         );
     });
     els.saveDeviceBtn.addEventListener('click', saveDevice);
