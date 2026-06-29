@@ -36,16 +36,31 @@ final class Models
             'model' => $this->queryFilter($params, 'model'),
         ];
         $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
-            $supplier = trim((string)($model['supplier'] ?? ''));
-            $protocol = DeviceProtocol::forSupplier($supplier);
-            $deviceType = trim((string)($model['device_type'] ?? 'watch'));
-            $internalModel = trim((string)($model['internal_model'] ?? ''));
-            $commercialName = trim((string)($model['commercial_name'] ?? ''));
+            $supplierRaw = trim((string)($model['supplier'] ?? ''));
+            $supplier = mb_strtolower($supplierRaw);
+            $protocol = mb_strtolower(DeviceProtocol::forSupplier($supplierRaw));
+            $deviceType = mb_strtolower(trim((string)($model['device_type'] ?? 'watch')));
+            $internalModel = mb_strtolower(trim((string)($model['internal_model'] ?? '')));
+            $commercialName = mb_strtolower(trim((string)($model['commercial_name'] ?? '')));
 
-            return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
-                && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol'])
-                && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType'])
-                && (($filters['model'] ?? null) === null || $internalModel === $filters['model'] || $commercialName === $filters['model']);
+            foreach ($filters as $key => $value) {
+                if ($value === null) {
+                    continue;
+                }
+                $needle = mb_strtolower($value);
+                $haystack = match ($key) {
+                    'supplier' => $supplier,
+                    'protocol' => $protocol,
+                    'deviceType' => $deviceType,
+                    'model' => $internalModel . "\0" . $commercialName,
+                    default => '',
+                };
+                if (!str_contains($haystack, $needle)) {
+                    return false;
+                }
+            }
+
+            return true;
         }));
         $available = [
             'supplier' => $this->uniqueValues(array_map(
