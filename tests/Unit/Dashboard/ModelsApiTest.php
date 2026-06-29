@@ -5,17 +5,23 @@ namespace Tests\Unit\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Routes\Models;
 use Hub\Dashboard\DashboardDataAccess;
+use Psr\Http\Message\ServerRequestInterface;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class ModelsApiTest extends MysqlDashboardTestCase
 {
+    private function request(): ServerRequestInterface
+    {
+        return new ServerRequest('GET', 'http://localhost/api/models');
+    }
+
     public function testShowReturnsGroupedGenericCapabilitiesWithoutLegacyFields(): void
     {
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $response = $api->show((int)$model['id']);
+        $response = $api->show((int)$model['id'], $this->request());
 
         self::assertArrayNotHasKey('enabledCapabilities', $response);
         self::assertArrayNotHasKey('configurationCatalog', $response);
@@ -31,7 +37,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->list();
+        $response = $api->list($this->request());
         $wonlex = null;
         foreach ($response['data'] ?? [] as $entry) {
             if (($entry['supplier'] ?? '') === 'Wonlex' && ($entry['internalModel'] ?? '') === 'L08 Pro') {
@@ -73,7 +79,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
 
-        $updated = $api->show((int)$model['id']);
+        $updated = $api->show((int)$model['id'], $this->request());
         self::assertTrue($updated['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertTrue($updated['capabilities']['contacts']['phonebook'] ?? false);
         self::assertTrue($updated['capabilities']['settings_system']['working_mode'] ?? false);

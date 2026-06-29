@@ -23,9 +23,10 @@ final class Models
     {
     }
 
-    public function list(string $query = ''): array
+    public function list(ServerRequestInterface $request): array
     {
-        $params = $this->queryParams($query);
+        $baseUrl = $this->baseUrlFromRequest($request);
+        $params = $this->queryParams((string)$request->getUri()->getQuery());
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
@@ -77,7 +78,7 @@ final class Models
             static fn(array $model): int => (int)($model['id'] ?? 0),
             $models
         ));
-        $models = array_map(function (array $model) use ($enabledByModel, $catalog): array {
+        $models = array_map(function (array $model) use ($enabledByModel, $catalog, $baseUrl): array {
             $modelId = (int)($model['id'] ?? 0);
             $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
             return [
@@ -88,7 +89,7 @@ final class Models
                 'commercialName' => (string)($model['commercial_name'] ?? ''),
                 'deviceType' => (string)($model['device_type'] ?? 'watch'),
                 'protocol' => $protocol,
-                'image' => (string)($model['image'] ?? ''),
+                'image' => $this->fullModelImage((string)($model['image'] ?? ''), $baseUrl),
                 'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $enabledByModel[$modelId] ?? []),
             ];
         }, $models);
@@ -96,13 +97,14 @@ final class Models
         return $this->collectionResponse($models, $page, $limit, $filters, $available);
     }
 
-    public function show(int $id): array
+    public function show(int $id, ServerRequestInterface $request): array
     {
         $entry = $this->db->models->findById($id);
         if ($entry === null) {
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
         }
 
+        $baseUrl = $this->baseUrlFromRequest($request);
         $protocol = DeviceProtocol::forSupplier((string)($entry['supplier_name'] ?? ''));
         $imagePath = (string)($entry['image_path'] ?? '');
         $catalog = $this->db->genericCapabilities->all();
@@ -114,7 +116,7 @@ final class Models
             'commercialName' => (string)($entry['commercial_name'] ?? ''),
             'deviceType' => (string)($entry['device_type'] ?? 'watch'),
             'protocol' => $protocol,
-            'image' => $imagePath !== '' ? $imagePath : null,
+            'image' => $this->fullModelImage($imagePath, $baseUrl),
             'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix(
                 $catalog,
                 $this->db->modelCapabilities->enabledFeaturesForModelId($id)
@@ -394,5 +396,26 @@ final class Models
         if (is_file($path)) {
             unlink($path);
         }
+    }
+
+    private function baseUrlFromRequest(ServerRequestInterface $request): string
+    {
+        $uri = $request->getUri();
+        $scheme = $uri->getScheme();
+        $host = $uri->getHost();
+        $port = $uri->getPort();
+        $base = "$scheme://$host";
+        if ($port !== null && $port !== 80 && $port !== 443) {
+            $base .= ":$port";
+        }
+        return $base;
+    }
+
+    private function fullModelImage(string $path, string $baseUrl): ?string
+    {
+        if ($path === '') {
+            return null;
+        }
+        return $baseUrl . $path;
     }
 }

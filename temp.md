@@ -15,12 +15,12 @@
 
 # Doing
 
-## Integração hitCare
-
-- Alterar integração para ouvir dentro do hitCare no tópico
-- API
-    - Esconder device ID quando se trata de um relógio, apenas inserir automaticamente quando se trata de um 4PTouch
-- Dispositivos são sempre adicionados sem empresa e sem licença
+- Verificar integração do PUT `/api/devices/{imei}` se envia em bruto downlinks para o dispositivo
+- Remover endpoints inutilizados (verificar se a dashboard não a usa):
+    - `POST /api/devices/{imei}/configuration/{key}/apply`
+    - `GET /api/devices/{imei}/configuration`
+    - `PUT /api/devices/{imei}/configuration`
+- `GET /api/devices/{imei}` deverá refletir a última configuração enviada, independentemente se o relógio já devolveu de volta que a configuração foi aplicada. Temos de remover o conceito de timeout de um pedido de configuração ou apenas exagerar bastante no timeout?
 
 # Review
 
@@ -37,3 +37,8 @@
     - Generalizar configurações entre os relógios
     - Registar o que cada modelo pode ou não enviar a nível de telemetria
     - Pedido genérico de configuração do relógio
+- Integração hitCare
+    - Alterar integração para ouvir dentro do hitCare no tópico
+    - API
+    - Esconder device ID quando se trata de um relógio, apenas inserir automaticamente quando se trata de um 4PTouch
+    - Dispositivos são sempre adicionados sem empresa e sem licença
