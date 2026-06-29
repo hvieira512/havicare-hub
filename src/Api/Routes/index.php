@@ -99,18 +99,6 @@ return static function (
                 'X-Accel-Buffering' => 'no',
             ], $stream);
         }),
-        new ApiRoute('GET', '/api/devices/{imei}/configuration', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->configuration($params['imei'], (string)$request->getUri()->getQuery(), $apiAuthContext($request));
-            return $json($result, $status($result));
-        }),
-        new ApiRoute('PUT', '/api/devices/{imei}/configuration', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->saveConfiguration($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
-            return $json($result, $status($result));
-        }),
-        new ApiRoute('POST', '/api/devices/{imei}/configuration/{key}/apply', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->applyConfiguration($params['imei'], $params['key'], (string)$request->getBody(), $apiAuthContext($request));
-            return $json($result, $status($result));
-        }),
         new ApiRoute('POST', '/api/devices/{imei}/commands', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
             $result = $devices->command($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
             return $json($result, $status($result));
@@ -128,7 +116,10 @@ return static function (
             return $json($result, $status($result));
         }),
         new ApiRoute('POST', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->create((string)$request->getBody()))),
-        new ApiRoute('PUT', '/api/devices/{imei}', fn(array $params, ServerRequestInterface $request): Response => $json($devices->update($params['imei'], (string)$request->getBody()))),
+        new ApiRoute('PUT', '/api/devices/{imei}', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
+            $result = $devices->update($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
+            return $json($result, $status($result));
+        }),
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),
         new ApiRoute('GET', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->list($request))),
         new ApiRoute('GET', '/api/models/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($models->show((int)$params['id'], $request))),

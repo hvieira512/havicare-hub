@@ -127,8 +127,10 @@ final class Devices
                 'supported' => count(DeviceConfigurationCatalog::configsForProtocol($protocol)),
                 'stored' => count($configRows),
             ],
+            'configurations' => $this->configuration($imei),
             'capabilities' => $this->deviceCapabilities($modelRow, $protocol, $configRows),
-            'pending' => $this->pending($imei),
+            'pending' => $this->pendingConfiguration($modelRow, $protocol, $configRows),
+            'transportPending' => $this->transportPending($imei),
         ];
     }
 
@@ -278,8 +280,16 @@ final class Devices
         }
 
         $decoded = json_decode($body, true);
-        if (!is_array($decoded) || !isset($decoded['configs']) || !is_array($decoded['configs'])) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'configs object is required']];
+        if (!is_array($decoded)) {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
+        }
+
+        if (isset($decoded['capabilities'])) {
+            return $this->saveGenericConfiguration($imei, $decoded);
+        }
+
+        if (!isset($decoded['configs']) || !is_array($decoded['configs'])) {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'capabilities object is required']];
         }
 
         $supplier = trim((string)($decoded['supplier'] ?? ''));
@@ -297,36 +307,6 @@ final class Devices
         }
 
         return ['status' => 'ok', 'results' => $results, 'configuration' => $this->configuration($imei, '', $auth)];
-    }
-
-    public function applyConfiguration(string $imei, string $key, string $body = '', ?ApiAuthContext $auth = null): array
-    {
-        if (!$this->canAccessDevice($imei, $auth)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        $supplier = '';
-        $model = '';
-        if ($body !== '') {
-            $decoded = json_decode($body, true);
-            if (is_array($decoded)) {
-                $supplier = trim((string)($decoded['supplier'] ?? ''));
-                $model = trim((string)($decoded['model'] ?? ''));
-            }
-        }
-        foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
-            if (($row['config_key'] ?? '') === $key) {
-                return $this->persistAndApplyConfiguration(
-                    $imei,
-                    $key,
-                    $row['desired_payload'] ?? [],
-                    $supplier,
-                    $model
-                );
-            }
-        }
-
-        return ['error' => ['code' => 'config_not_found', 'message' => 'Desired configuration was not found']];
     }
 
     public function create(string $body): array
@@ -360,12 +340,20 @@ final class Devices
         return ['status' => 'ok', 'imei' => $imei];
     }
 
-    public function update(string $imei, string $body): array
+    public function update(string $imei, string $body, ?ApiAuthContext $auth = null): array
     {
         $decoded = json_decode($body, true);
         if (!is_array($decoded)) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
+        if (isset($decoded['capabilities']) || isset($decoded['configs'])) {
+            return $this->saveConfiguration($imei, $body, $auth);
+        }
+
+        if ($auth !== null && !$auth->isAdmin()) {
+            return ['error' => ['code' => 'forbidden', 'message' => 'Forbidden']];
+        }
+
         $newImei = trim((string)($decoded['imei'] ?? $imei));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
@@ -510,7 +498,7 @@ final class Devices
         return $this->enabledRequestCommandsForModel($model, $protocol);
     }
 
-    private function pending(string $imei): array
+    private function transportPending(string $imei): array
     {
         if ($this->downlinkQueue === null) {
             return [];
@@ -522,6 +510,36 @@ final class Devices
             'queuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->queuedAt),
             'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->expiresAt),
         ], $this->downlinkQueue->pendingFor($imei));
+    }
+
+    private function pendingConfiguration(?array $model, string $protocol, array $configRows): array
+    {
+        $desiredCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload');
+        $reportedCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'reported_payload');
+        $desiredValues = $this->flattenWritableCapabilities($desiredCapabilities);
+        $reportedValues = $this->flattenWritableCapabilities($reportedCapabilities);
+        $rowMeta = $this->genericCapabilityRowMeta($configRows);
+        $pending = [];
+
+        foreach ($desiredValues as $path => $desiredValue) {
+            $reportedExists = array_key_exists($path, $reportedValues);
+            $reportedValue = $reportedExists ? $reportedValues[$path] : null;
+            if ($reportedExists && $this->capabilityValuesEqual($desiredValue, $reportedValue)) {
+                continue;
+            }
+
+            [$section, $key] = explode('.', $path, 2);
+            $meta = $rowMeta[$key] ?? [];
+            $pending[$section][$key] = [
+                'status' => $this->pendingStatus($meta['last_status'] ?? '', $reportedExists),
+                'desired' => $desiredValue,
+                'reported' => $reportedValue,
+                'updatedAt' => $meta['updated_at'] ?? '',
+                'lastCommandId' => $meta['last_command_id'] ?? '',
+            ];
+        }
+
+        return $pending;
     }
 
     private function persistAndApplyConfiguration(
@@ -579,6 +597,105 @@ final class Devices
         $this->db->deviceConfigurations->saveDesired($imei, $key, $protocol, $supplier, $model, $command, $payload, (string)$record['status'], $id);
 
         return ['status' => $record['status'], 'key' => $key, 'command' => $command, 'id' => $id];
+    }
+
+    private function saveGenericConfiguration(string $imei, array $decoded): array
+    {
+        if (!is_array($decoded['capabilities'] ?? null)) {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'capabilities object is required']];
+        }
+
+        $device = $this->deviceSnapshot($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $supplier = trim((string)($decoded['supplier'] ?? '')) !== ''
+            ? trim((string)$decoded['supplier'])
+            : (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $modelName = trim((string)($decoded['model'] ?? '')) !== ''
+            ? trim((string)$decoded['model'])
+            : (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $protocol = $this->protocolForModel($supplier, $modelName);
+        if ($protocol === '') {
+            $protocol = (string)($device['protocol'] ?? '');
+        }
+        if ($protocol === '') {
+            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
+        }
+
+        $modelRow = $this->modelForSupplierAndName($supplier, $modelName);
+        $enabled = array_flip($modelRow !== null
+            ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
+            : GenericModelCapabilityCatalog::keysForProtocol($protocol));
+        $configRows = $this->db->deviceConfigurations->allForImei($imei);
+        $currentValues = $this->flattenWritableCapabilities($this->deviceCapabilities($modelRow, $protocol, $configRows));
+        $currentRowsByKey = [];
+        foreach ($configRows as $row) {
+            $currentRowsByKey[(string)($row['config_key'] ?? '')] = $row;
+        }
+
+        try {
+            $requested = $this->parseWritableCapabilitiesInput($decoded['capabilities'], $enabled);
+        } catch (\InvalidArgumentException $e) {
+            return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
+        }
+
+        $changed = [];
+        $unchanged = [];
+        foreach ($requested as $path => $value) {
+            $currentValue = $currentValues[$path] ?? null;
+            if (array_key_exists($path, $currentValues) && $this->capabilityValuesEqual($currentValue, $value)) {
+                $unchanged[] = $path;
+                continue;
+            }
+
+            [, $genericKey] = explode('.', $path, 2);
+            try {
+                $nativeUpdates = $this->genericCapabilityToNativeUpdates($protocol, $genericKey, $value);
+            } catch (\InvalidArgumentException $e) {
+                return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
+            }
+
+            $pathResults = [];
+            foreach ($nativeUpdates as $nativeKey => $payload) {
+                $existingPayload = is_array($currentRowsByKey[$nativeKey]['desired_payload'] ?? null)
+                    ? $currentRowsByKey[$nativeKey]['desired_payload']
+                    : null;
+                if ($existingPayload !== null && $this->capabilityValuesEqual($existingPayload, $payload)) {
+                    continue;
+                }
+
+                $result = $this->persistAndApplyConfiguration($imei, $nativeKey, $payload, $supplier, $modelName);
+                if (isset($result['error'])) {
+                    return $result;
+                }
+                $pathResults[] = [
+                    'key' => $nativeKey,
+                    'command' => $result['command'],
+                    'deliveryStatus' => $result['status'],
+                    'lastCommandId' => $result['id'],
+                ];
+            }
+
+            if ($pathResults === []) {
+                $unchanged[] = $path;
+                continue;
+            }
+
+            $changed[$path] = count($pathResults) === 1
+                ? $pathResults[0]
+                : ['operations' => $pathResults];
+        }
+
+        $snapshot = $this->show($imei);
+
+        return [
+            'status' => 'ok',
+            'changed' => $changed,
+            'unchanged' => $unchanged,
+            'configuration' => $snapshot['configuration'] ?? [],
+            'capabilities' => $snapshot['capabilities'] ?? [],
+            'pending' => $snapshot['pending'] ?? [],
+            'transportPending' => $snapshot['transportPending'] ?? [],
+        ];
     }
 
     private function protocolForModel(string $supplier, string $model): string
@@ -766,6 +883,15 @@ final class Devices
      */
     private function deviceCapabilities(?array $model, string $protocol, array $configRows): array
     {
+        return $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload');
+    }
+
+    /**
+     * @param list<array<string, mixed>> $configRows
+     * @return array<string, array<string, mixed>>
+     */
+    private function deviceCapabilitiesFromPayloadKey(?array $model, string $protocol, array $configRows, string $payloadKey): array
+    {
         $catalog = $this->db->genericCapabilities->all();
         $supportedKeys = $model !== null
             ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
@@ -788,8 +914,8 @@ final class Devices
 
         foreach ($configRows as $row) {
             $nativeKey = trim((string)($row['config_key'] ?? ''));
-            $desired = is_array($row['desired_payload'] ?? null) ? $row['desired_payload'] : [];
-            if ($nativeKey === '' || $desired === []) {
+            $payload = is_array($row[$payloadKey] ?? null) ? $row[$payloadKey] : [];
+            if ($nativeKey === '' || $payload === []) {
                 continue;
             }
 
@@ -803,7 +929,7 @@ final class Devices
                 continue;
             }
 
-            $normalized = $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
+            $normalized = $this->normalizeCapabilityValue($genericKey, $nativeKey, $payload);
             if ($normalized === null) {
                 continue;
             }
@@ -851,6 +977,369 @@ final class Devices
         }
 
         return $capabilities;
+    }
+
+    /**
+     * @param array<string, mixed> $capabilities
+     * @return array<string, mixed>
+     */
+    private function flattenWritableCapabilities(array $capabilities): array
+    {
+        $flattened = [];
+        foreach ($capabilities as $section => $entries) {
+            if ($section === 'telemetry' || !is_array($entries)) {
+                continue;
+            }
+            foreach ($entries as $key => $value) {
+                $flattened["{$section}.{$key}"] = $this->extractCapabilityValue($value);
+            }
+        }
+
+        return $flattened;
+    }
+
+    private function extractCapabilityValue(mixed $value): mixed
+    {
+        if (is_array($value) && array_key_exists('value', $value) && count(array_diff(array_keys($value), ['value', '_meta'])) === 0) {
+            return $value['value'];
+        }
+
+        return $value;
+    }
+
+    private function capabilityValuesEqual(mixed $left, mixed $right): bool
+    {
+        return $this->normalizeComparableValue($left) === $this->normalizeComparableValue($right);
+    }
+
+    private function normalizeComparableValue(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)) {
+            return array_map(fn(mixed $item): mixed => $this->normalizeComparableValue($item), $value);
+        }
+
+        $normalized = [];
+        foreach ($value as $key => $item) {
+            $normalized[(string)$key] = $this->normalizeComparableValue($item);
+        }
+        ksort($normalized);
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<string, bool> $enabled
+     * @return array<string, mixed>
+     */
+    private function parseWritableCapabilitiesInput(array $capabilities, array $enabled): array
+    {
+        $requested = [];
+        foreach ($capabilities as $section => $entries) {
+            if (!is_string($section) || !is_array($entries)) {
+                throw new \InvalidArgumentException('Each capabilities section must be an object');
+            }
+            if ($section === 'telemetry') {
+                throw new \InvalidArgumentException('Telemetry capabilities are read-only');
+            }
+            if (!array_key_exists($section, GenericModelCapabilityCatalog::sections())) {
+                throw new \InvalidArgumentException("Unknown capability section {$section}");
+            }
+
+            foreach ($entries as $key => $rawValue) {
+                if (!is_string($key)) {
+                    throw new \InvalidArgumentException('Capability keys must be strings');
+                }
+                $expectedSection = GenericModelCapabilityCatalog::sectionForCapabilityKey($key);
+                if ($expectedSection === null || $expectedSection !== $section) {
+                    throw new \InvalidArgumentException("Unsupported capability {$section}.{$key}");
+                }
+                if (!isset($enabled[$key])) {
+                    throw new \InvalidArgumentException("Capability {$key} is not enabled for this model");
+                }
+
+                $value = $this->sanitizeWritableCapabilityValue($rawValue);
+                $requested["{$section}.{$key}"] = $value;
+            }
+        }
+
+        return $requested;
+    }
+
+    private function sanitizeWritableCapabilityValue(mixed $rawValue): mixed
+    {
+        if (is_array($rawValue) && array_key_exists('value', $rawValue)) {
+            return $rawValue['value'];
+        }
+        if (is_array($rawValue) && array_key_exists('_meta', $rawValue) && !array_key_exists('value', $rawValue)) {
+            throw new \InvalidArgumentException('Capability value is required');
+        }
+
+        return $rawValue;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function genericCapabilityToNativeUpdates(string $protocol, string $genericKey, mixed $value): array
+    {
+        return match ($protocol) {
+            'vivistar-iw' => $this->vivistarGenericCapabilityUpdates($genericKey, $value),
+            'wonlex-json' => $this->wonlexGenericCapabilityUpdates($genericKey, $value),
+            'four-p-touch' => $this->fourPTouchGenericCapabilityUpdates($genericKey, $value),
+            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
+        };
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function vivistarGenericCapabilityUpdates(string $genericKey, mixed $value): array
+    {
+        return match ($genericKey) {
+            'sos_contacts' => ['sosContacts' => ['numbers' => $this->requireStringListValue($value, 'numbers')]],
+            'phonebook' => ['phonebook' => ['contacts' => $this->requireListValue($value, 'contacts')]],
+            'working_mode' => ['workingMode' => $this->requireObjectValue($value, 'workingMode')],
+            'fall_detection' => ['fallDetection' => ['enabled' => $this->requireBoolLikeField($value, 'enabled')]],
+            'fall_sensitivity' => ['fallSensitivity' => ['sensitivity' => $this->requireIntField($value, 'sensitivity')]],
+            'call_whitelist' => ['whitelistSwitch' => ['enabled' => $this->requireBoolLikeField($value, 'enabled')]],
+            'alarm_clock' => ['reminders' => $this->normalizeReminderCapabilityValue($value)],
+            'auto_vitals_interval' => ['autoHealthMeasurement' => $this->requireObjectValue($value, 'autoHealthMeasurement')],
+            'blood_pressure_calibration' => ['bloodPressureCalibration' => $this->requireObjectValue($value, 'bloodPressureCalibration')],
+            default => throw new \InvalidArgumentException("Unsupported vivistar-iw capability {$genericKey}"),
+        };
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function wonlexGenericCapabilityUpdates(string $genericKey, mixed $value): array
+    {
+        return match ($genericKey) {
+            'sos_contacts' => ['SOSNumber' => ['numbers' => $this->requireStringListValue($value, 'numbers')]],
+            'alarm_clock' => ['alarmClock' => ['alarmClock' => $this->requireListValue($value, 'alarmClock')]],
+            'medication_reminders' => ['dnMedicationPlan' => ['plans' => $this->requireListValue($value, 'plans')]],
+            default => [$this->resolveWonlexNativeKey($genericKey) => $this->requireObjectValue($value, $genericKey)],
+        };
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function fourPTouchGenericCapabilityUpdates(string $genericKey, mixed $value): array
+    {
+        return match ($genericKey) {
+            'location_reporting_interval' => ['uploadInterval' => $this->requireObjectValue($value, 'uploadInterval')],
+            'sos_contacts' => $this->fourPTouchSosUpdates($value),
+            'call_whitelist' => $this->fourPTouchWhitelistUpdates($value),
+            'monitor_number' => ['monitorNumber' => ['phone' => $this->requireStringValue($value, 'phone')]],
+            'device_password' => ['devicePassword' => $this->requireObjectValue($value, 'devicePassword')],
+            'language_timezone' => ['languageTimezone' => $this->requireObjectValue($value, 'languageTimezone')],
+            'sos_sms_alert' => ['sosSmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
+            'low_battery_alert' => ['lowBatterySmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
+            'remove_watch_alarm' => ['removeWatchAlarm' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
+            'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
+            'fall_detection' => ['fallDownAlert' => $this->requireObjectValue($value, 'fallDownAlert')],
+            'fall_sensitivity' => ['fallDownSensitivity' => $this->requireObjectValue($value, 'fallDownSensitivity')],
+            'auto_vitals_interval' => ['healthAutoMeasurement' => $this->requireObjectValue($value, 'healthAutoMeasurement')],
+            'pedometer_schedule' => ['walkTime' => ['ranges' => $this->requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
+            'sleep_monitoring' => ['sleepTime' => ['range' => $this->requireStringField($value, 'range')]],
+            'temperature_measurement_interval' => ['bodyTemperatureInterval' => $this->requireObjectValue($value, 'bodyTemperatureInterval')],
+            default => throw new \InvalidArgumentException("Unsupported four-p-touch capability {$genericKey}"),
+        };
+    }
+
+    private function resolveWonlexNativeKey(string $genericKey): string
+    {
+        foreach (DeviceConfigurationCatalog::configsForProtocol('wonlex-json') as $entry) {
+            $nativeKey = trim((string)($entry['key'] ?? ''));
+            if (GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey) === $genericKey) {
+                return $nativeKey;
+            }
+        }
+
+        throw new \InvalidArgumentException("Unsupported wonlex-json capability {$genericKey}");
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function fourPTouchSosUpdates(mixed $value): array
+    {
+        $numbers = $this->requireStringListValue($value, 'numbers');
+        $updates = [];
+        foreach (array_slice($numbers, 0, 3) as $index => $phone) {
+            if (trim($phone) === '') {
+                continue;
+            }
+            $updates['sosNumber' . ($index + 1)] = ['phone' => $phone];
+        }
+
+        return $updates;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function fourPTouchWhitelistUpdates(mixed $value): array
+    {
+        $numbers = [];
+        if (is_array($value) && array_key_exists('numbers', $value)) {
+            $numbers = $this->requireStringListValue($value['numbers'], 'numbers');
+        } else {
+            throw new \InvalidArgumentException('numbers must be an array');
+        }
+
+        return [
+            'whitelistGroup1' => ['numbers' => array_slice($numbers, 0, 5)],
+            'whitelistGroup2' => ['numbers' => array_slice($numbers, 5, 5)],
+        ];
+    }
+
+    private function normalizeReminderCapabilityValue(mixed $value): array
+    {
+        if (is_array($value) && array_is_list($value)) {
+            return [
+                'masterEnabled' => true,
+                'items' => $value,
+            ];
+        }
+
+        $payload = $this->requireObjectValue($value, 'reminders');
+        $payload['items'] = $this->requireListValue($payload['items'] ?? [], 'items');
+        $payload['masterEnabled'] = $payload['masterEnabled'] ?? true;
+
+        return $payload;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function requireStringListValue(mixed $value, string $field): array
+    {
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException("{$field} must be an array");
+        }
+
+        return $this->stringList($value);
+    }
+
+    /**
+     * @return list<mixed>
+     */
+    private function requireListValue(mixed $value, string $field): array
+    {
+        if (!is_array($value) || !array_is_list($value)) {
+            throw new \InvalidArgumentException("{$field} must be an array");
+        }
+
+        return array_values($value);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function requireObjectValue(mixed $value, string $field): array
+    {
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException("{$field} must be an object");
+        }
+
+        return $value;
+    }
+
+    private function requireStringValue(mixed $value, string $field): string
+    {
+        if (is_array($value)) {
+            if (!array_key_exists($field, $value)) {
+                throw new \InvalidArgumentException("{$field} is required");
+            }
+            $value = $value[$field];
+        }
+
+        $string = trim((string)$value);
+        if ($string === '') {
+            throw new \InvalidArgumentException("{$field} is required");
+        }
+
+        return $string;
+    }
+
+    private function requireStringField(mixed $value, string $field): string
+    {
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException("{$field} is required");
+        }
+
+        return $this->requireStringValue($value[$field] ?? null, $field);
+    }
+
+    private function requireIntField(mixed $value, string $field): int
+    {
+        if (!is_array($value) || !is_numeric((string)($value[$field] ?? null))) {
+            throw new \InvalidArgumentException("{$field} must be an integer");
+        }
+
+        return (int)$value[$field];
+    }
+
+    private function requireBoolLikeField(mixed $value, string $field): bool|int|string
+    {
+        if (!is_array($value) || !array_key_exists($field, $value)) {
+            throw new \InvalidArgumentException("{$field} is required");
+        }
+
+        return $value[$field];
+    }
+
+    private function requireBoolLikeValue(mixed $value, string $field): bool|int|string
+    {
+        if (is_array($value)) {
+            return $this->requireBoolLikeField($value, $field);
+        }
+        if (is_bool($value) || $value === 0 || $value === 1 || $value === '0' || $value === '1') {
+            return $value;
+        }
+
+        throw new \InvalidArgumentException("{$field} must be boolean or 0/1");
+    }
+
+    /**
+     * @param list<array<string, mixed>> $configRows
+     * @return array<string, array{updated_at: string, last_status: string, last_command_id: string}>
+     */
+    private function genericCapabilityRowMeta(array $configRows): array
+    {
+        $meta = [];
+        foreach ($configRows as $row) {
+            $nativeKey = trim((string)($row['config_key'] ?? ''));
+            $genericKey = GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey);
+            if ($genericKey === null) {
+                continue;
+            }
+            $updatedAt = (string)($row['desired_updated_at'] ?? '');
+            if (!isset($meta[$genericKey]) || strcmp($updatedAt, $meta[$genericKey]['updated_at']) >= 0) {
+                $meta[$genericKey] = [
+                    'updated_at' => $updatedAt,
+                    'last_status' => (string)($row['last_status'] ?? ''),
+                    'last_command_id' => (string)($row['last_command_id'] ?? ''),
+                ];
+            }
+        }
+
+        return $meta;
+    }
+
+    private function pendingStatus(string $lastStatus, bool $reportedExists): string
+    {
+        if (!$reportedExists) {
+            return in_array($lastStatus, ['queued', 'waiting', 'sent', 'acked'], true) ? 'waiting_device' : 'never_reported';
+        }
+
+        return 'diverged';
     }
 
     private function normalizeCapabilityValue(string $genericKey, string $nativeKey, array $desired): mixed

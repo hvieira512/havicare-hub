@@ -10,6 +10,8 @@ use Hub\Dashboard\ApiTokenStore;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
+use Hub\PendingDownlink;
+use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
@@ -209,6 +211,49 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(403, $response->getStatusCode());
     }
 
+    public function testTenantClientCanPutConfigurationButCannotUpdateDeviceMetadata(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $configResponse = $server(new ServerRequest(
+            'PUT',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode([
+                'capabilities' => [
+                    'alarms' => [
+                        'fall_detection' => ['enabled' => true],
+                    ],
+                ],
+            ], JSON_THROW_ON_ERROR)
+        ));
+        $configBody = json_decode((string)$configResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $configResponse->getStatusCode(), (string)$configResponse->getBody());
+        self::assertSame('ok', $configBody['status'] ?? null);
+
+        $metadataResponse = $server(new ServerRequest(
+            'PUT',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode([
+                'imei' => '861265061009822',
+                'supplier' => 'Vivistar',
+                'model' => 'L08 Pro',
+                'licenseId' => '2002',
+            ], JSON_THROW_ON_ERROR)
+        ));
+        $metadataBody = json_decode((string)$metadataResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(403, $metadataResponse->getStatusCode(), (string)$metadataResponse->getBody());
+        self::assertSame('forbidden', $metadataBody['error']['code'] ?? null);
+    }
+
     public function testTenantClientCanAssociateUnassignedDeviceViaPatchEndpoint(): void
     {
         $server = $this->makeServer();
@@ -368,6 +413,73 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         );
         self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
+        self::assertSame([], $body['pending'] ?? null);
+        self::assertSame([], $body['transportPending'] ?? null);
+    }
+
+    public function testDeviceDetailAndGenericConfigurationPutExposeNewPendingShape(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        $queue = new class implements PendingDownlinkQueue {
+            public function enqueue(string $imei, string $bytes, ?array $command, int $ttlSeconds): PendingDownlink
+            {
+                return new PendingDownlink($imei, 'dedupe', $bytes, $command, time(), time() + $ttlSeconds);
+            }
+
+            public function pendingFor(string $imei): array
+            {
+                return [
+                    new PendingDownlink($imei, 'cfg:BP76', 'IWBP76,...', ['command' => 'BP76'], 1719650000, 1719650300),
+                ];
+            }
+
+            public function remove(PendingDownlink $downlink): void
+            {
+            }
+        };
+        [$server, $db] = $this->makeServerWithDatabase($hub, $queue);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $put = $server(new ServerRequest(
+            'PUT',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode([
+                'capabilities' => [
+                    'alarms' => [
+                        'fall_detection' => ['enabled' => true],
+                    ],
+                ],
+            ], JSON_THROW_ON_ERROR)
+        ));
+        $putBody = json_decode((string)$put->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $put->getStatusCode(), (string)$put->getBody());
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('BP76', $submitted[0]['bytes']);
+        self::assertSame('waiting_device', $putBody['pending']['alarms']['fall_detection']['status'] ?? null);
+        self::assertSame('cfg:BP76', $putBody['transportPending'][0]['dedupeKey'] ?? null);
+
+        $detail = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $detailBody = json_decode((string)$detail->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $detail->getStatusCode(), (string)$detail->getBody());
+        self::assertSame(['enabled' => true], $detailBody['capabilities']['alarms']['fall_detection'] ?? null);
+        self::assertSame('waiting_device', $detailBody['pending']['alarms']['fall_detection']['status'] ?? null);
+        self::assertSame('cfg:BP76', $detailBody['transportPending'][0]['dedupeKey'] ?? null);
     }
 
     public function testTenantClientCanUseRecentActionsAndStreamRoutes(): void
@@ -500,7 +612,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     /**
      * @return array{0: DashboardHttpServer, 1: DashboardDataAccess, 2: DashboardStore}
      */
-    private function makeServerWithDatabase(): array
+    private function makeServerWithDatabase(?\Hub\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null): array
     {
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
@@ -515,15 +627,17 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
         $store->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturn('sent');
+        if ($hub === null) {
+            $hub = $this->createMock(\Hub\DeviceHubServer::class);
+            $hub->method('submitDownlink')->willReturn('sent');
+        }
 
         $server = new DashboardHttpServer(
             $store,
             new ApiTokenStore($redis, 'test:api-tokens'),
             new Whitelist($this->whitelistPath),
             $hub,
-            null,
+            $queue,
             $db,
             'admin',
             'secret',

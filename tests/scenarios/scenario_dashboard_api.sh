@@ -66,8 +66,11 @@ fi
 
 device="$(curl -s -H "Authorization: Bearer $api_token" "http://127.0.0.1:8081/api/devices/$IMEI")"
 printf '%s' "$device" > "$SCENARIO_DIR/dashboard-device.json"
+if ! printf '%s' "$device" | grep -q '"transportPending"'; then
+  scenario_fail "dashboard_failure" "device detail did not include transportPending"
+fi
 if ! printf '%s' "$device" | grep -q '"dnHeartRate"'; then
-  scenario_fail "dashboard_failure" "device detail did not include command or pending queue state"
+  scenario_fail "dashboard_failure" "device detail did not include queued command state"
 fi
 
 scenario_pass

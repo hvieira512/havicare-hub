@@ -157,11 +157,33 @@ class OpenApiSpec
                     ],
                     'put' => [
                         'tags' => ['Devices'],
-                        'summary' => 'Update device',
+                        'summary' => 'Update device metadata or submit generic configuration',
                         'parameters' => [$imeiParam],
                         'requestBody' => [
                             'required' => true,
-                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceUpdateRequest']]],
+                            'content' => ['application/json' => ['schema' => [
+                                'oneOf' => [
+                                    ['$ref' => '#/components/schemas/DeviceUpdateRequest'],
+                                    [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'configs' => ['type' => 'object'],
+                                            'supplier' => ['type' => 'string'],
+                                            'model' => ['type' => 'string'],
+                                        ],
+                                        'required' => ['configs'],
+                                    ],
+                                    [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'capabilities' => ['type' => 'object'],
+                                            'supplier' => ['type' => 'string'],
+                                            'model' => ['type' => 'string'],
+                                        ],
+                                        'required' => ['capabilities'],
+                                    ],
+                                ],
+                            ]]],
                         ],
                         'responses' => [
                             '200' => [
@@ -290,88 +312,6 @@ class OpenApiSpec
                                 'content' => ['application/json' => ['schema' => ['type' => 'object']]],
                             ],
                             '404' => ['$ref' => '#/components/responses/Error'],
-                        ],
-                    ],
-                ],
-                '/api/devices/{imei}/configuration' => [
-                    'get' => [
-                        'tags' => ['Devices'],
-                        'summary' => 'Get device configuration catalog and state',
-                        'parameters' => array_merge([$imeiParam], [
-                            [
-                                'name' => 'supplier',
-                                'in' => 'query',
-                                'required' => false,
-                                'schema' => ['type' => 'string'],
-                            ],
-                            [
-                                'name' => 'model',
-                                'in' => 'query',
-                                'required' => false,
-                                'schema' => ['type' => 'string'],
-                            ],
-                        ]),
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Configuration catalog with desired and reported state',
-                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
-                            ],
-                        ],
-                    ],
-                    'put' => [
-                        'tags' => ['Devices'],
-                        'summary' => 'Save and apply device configuration',
-                        'parameters' => [$imeiParam],
-                        'requestBody' => [
-                            'required' => true,
-                            'content' => ['application/json' => ['schema' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'configs' => ['type' => 'object'],
-                                    'supplier' => ['type' => 'string'],
-                                    'model' => ['type' => 'string'],
-                                ],
-                                'required' => ['configs'],
-                            ]]],
-                        ],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Configuration saved and downlinks submitted',
-                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
-                            ],
-                            '400' => ['$ref' => '#/components/responses/Error'],
-                        ],
-                    ],
-                ],
-                '/api/devices/{imei}/configuration/{key}/apply' => [
-                    'post' => [
-                        'tags' => ['Devices'],
-                        'summary' => 'Re-apply one stored device configuration item',
-                        'parameters' => [
-                            $imeiParam,
-                            [
-                                'name' => 'key',
-                                'in' => 'path',
-                                'required' => true,
-                                'schema' => ['type' => 'string'],
-                            ],
-                        ],
-                        'requestBody' => [
-                            'required' => false,
-                            'content' => ['application/json' => ['schema' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'supplier' => ['type' => 'string'],
-                                    'model' => ['type' => 'string'],
-                                ],
-                            ]]],
-                        ],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Configuration downlink submitted',
-                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
-                            ],
-                            '400' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],
@@ -870,8 +810,10 @@ class OpenApiSpec
                             'device' => ['$ref' => '#/components/schemas/DeviceDetail'],
                             'model' => ['$ref' => '#/components/schemas/ModelDetail'],
                             'configuration' => ['$ref' => '#/components/schemas/DeviceConfigurationSummary'],
+                            'configurations' => ['type' => 'object'],
                             'capabilities' => ['$ref' => '#/components/schemas/DeviceCapabilitiesMatrix'],
-                            'pending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
+                            'pending' => ['type' => 'object'],
+                            'transportPending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
                         ],
                     ],
                     'ModelDetail' => [

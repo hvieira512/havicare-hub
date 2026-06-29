@@ -229,6 +229,7 @@ final class DashboardHttpServer
         return in_array($route->method() . ' ' . $route->pattern(), [
             'GET /api/devices',
             'GET /api/devices/{imei}',
+            'PUT /api/devices/{imei}',
             'GET /api/devices/{imei}/recent',
             'GET /api/devices/{imei}/actions',
             'GET /api/devices/{imei}/stream',
@@ -236,9 +237,6 @@ final class DashboardHttpServer
             'PATCH /api/devices/{imei}/association',
             'DELETE /api/devices/{imei}/association',
             'GET /api/commands/{id}',
-            'GET /api/devices/{imei}/configuration',
-            'PUT /api/devices/{imei}/configuration',
-            'POST /api/devices/{imei}/configuration/{key}/apply',
         ], true);
     }
 
