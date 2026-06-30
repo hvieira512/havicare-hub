@@ -8,6 +8,14 @@ use Hub\Command\DeviceConfigurationCatalog;
 final class GenericModelCapabilityCatalog
 {
     /**
+     * @return list<string>
+     */
+    public static function deviceTypes(): array
+    {
+        return ['watch', 'ncs', 'radar'];
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function sections(): array
@@ -22,67 +30,15 @@ final class GenericModelCapabilityCatalog
     }
 
     /**
-     * @return list<array{section: string, key: string, label: string, sortOrder: int}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
      */
     public static function definitions(): array
     {
-        return [
-            ['section' => 'telemetry', 'key' => 'location', 'label' => 'Location telemetry', 'sortOrder' => 10],
-            ['section' => 'telemetry', 'key' => 'heart_rate', 'label' => 'Heart rate telemetry', 'sortOrder' => 20],
-            ['section' => 'telemetry', 'key' => 'blood_pressure', 'label' => 'Blood pressure telemetry', 'sortOrder' => 30],
-            ['section' => 'telemetry', 'key' => 'blood_oxygen', 'label' => 'Blood oxygen telemetry', 'sortOrder' => 40],
-            ['section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperature telemetry', 'sortOrder' => 50],
-            ['section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Breath rate telemetry', 'sortOrder' => 60],
-            ['section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sleep telemetry', 'sortOrder' => 70],
-            ['section' => 'telemetry', 'key' => 'ecg', 'label' => 'ECG telemetry', 'sortOrder' => 80],
-            ['section' => 'telemetry', 'key' => 'hrv', 'label' => 'HRV telemetry', 'sortOrder' => 90],
-            ['section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG telemetry', 'sortOrder' => 100],
-            ['section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'RR interval telemetry', 'sortOrder' => 110],
-            ['section' => 'health', 'key' => 'auto_vitals_interval', 'label' => 'Auto vitals interval', 'sortOrder' => 10],
-            ['section' => 'health', 'key' => 'heart_rate_measurement_interval', 'label' => 'Heart rate interval', 'sortOrder' => 20],
-            ['section' => 'health', 'key' => 'blood_pressure_measurement_interval', 'label' => 'Blood pressure interval', 'sortOrder' => 30],
-            ['section' => 'health', 'key' => 'blood_oxygen_measurement_interval', 'label' => 'Blood oxygen interval', 'sortOrder' => 40],
-            ['section' => 'health', 'key' => 'temperature_measurement_interval', 'label' => 'Temperature interval', 'sortOrder' => 50],
-            ['section' => 'health', 'key' => 'breath_rate_measurement_interval', 'label' => 'Breath rate interval', 'sortOrder' => 60],
-            ['section' => 'health', 'key' => 'ecg_measurement_interval', 'label' => 'ECG interval', 'sortOrder' => 70],
-            ['section' => 'health', 'key' => 'hrv_measurement_interval', 'label' => 'HRV interval', 'sortOrder' => 80],
-            ['section' => 'health', 'key' => 'ppg_measurement_interval', 'label' => 'PPG interval', 'sortOrder' => 90],
-            ['section' => 'health', 'key' => 'rr_interval_measurement_interval', 'label' => 'RR interval setting', 'sortOrder' => 100],
-            ['section' => 'health', 'key' => 'heart_rate_continuous', 'label' => 'Continuous heart rate', 'sortOrder' => 110],
-            ['section' => 'health', 'key' => 'blood_oxygen_continuous', 'label' => 'Continuous blood oxygen', 'sortOrder' => 120],
-            ['section' => 'health', 'key' => 'blood_pressure_trend', 'label' => 'Blood pressure trend', 'sortOrder' => 130],
-            ['section' => 'health', 'key' => 'temperature_continuous', 'label' => 'Continuous temperature', 'sortOrder' => 140],
-            ['section' => 'health', 'key' => 'step_goal', 'label' => 'Step goal', 'sortOrder' => 150],
-            ['section' => 'health', 'key' => 'sleep_monitoring', 'label' => 'Sleep monitoring', 'sortOrder' => 160],
-            ['section' => 'health', 'key' => 'blood_pressure_calibration', 'label' => 'Blood pressure calibration', 'sortOrder' => 170],
-            ['section' => 'health', 'key' => 'step_reporting_interval', 'label' => 'Step interval', 'sortOrder' => 180],
-            ['section' => 'health', 'key' => 'pedometer_schedule', 'label' => 'Pedometer schedule', 'sortOrder' => 190],
-            ['section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'SOS contacts', 'sortOrder' => 10],
-            ['section' => 'contacts', 'key' => 'phonebook', 'label' => 'Phonebook', 'sortOrder' => 20],
-            ['section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Call whitelist', 'sortOrder' => 30],
-            ['section' => 'contacts', 'key' => 'monitor_number', 'label' => 'Monitor number', 'sortOrder' => 40],
-            ['section' => 'alarms', 'key' => 'alarm_clock', 'label' => 'Alarm clock', 'sortOrder' => 10],
-            ['section' => 'alarms', 'key' => 'medication_reminders', 'label' => 'Medication reminders', 'sortOrder' => 20],
-            ['section' => 'alarms', 'key' => 'low_battery_alert', 'label' => 'Low battery alert', 'sortOrder' => 30],
-            ['section' => 'alarms', 'key' => 'fall_detection', 'label' => 'Fall detection', 'sortOrder' => 40],
-            ['section' => 'alarms', 'key' => 'fall_sensitivity', 'label' => 'Fall sensitivity', 'sortOrder' => 50],
-            ['section' => 'alarms', 'key' => 'sos_sms_alert', 'label' => 'SOS SMS alert', 'sortOrder' => 60],
-            ['section' => 'alarms', 'key' => 'blood_oxygen_alert', 'label' => 'Blood oxygen alert', 'sortOrder' => 70],
-            ['section' => 'alarms', 'key' => 'temperature_high_alert', 'label' => 'High temperature alert', 'sortOrder' => 80],
-            ['section' => 'alarms', 'key' => 'temperature_low_alert', 'label' => 'Low temperature alert', 'sortOrder' => 90],
-            ['section' => 'alarms', 'key' => 'blood_pressure_alert', 'label' => 'Blood pressure alert', 'sortOrder' => 100],
-            ['section' => 'alarms', 'key' => 'heart_rate_high_alert', 'label' => 'High heart rate alert', 'sortOrder' => 110],
-            ['section' => 'alarms', 'key' => 'heart_rate_low_alert', 'label' => 'Low heart rate alert', 'sortOrder' => 120],
-            ['section' => 'alarms', 'key' => 'remove_watch_alarm', 'label' => 'Remove watch alarm', 'sortOrder' => 130],
-            ['section' => 'alarms', 'key' => 'remove_watch_sms_alert', 'label' => 'Remove watch SMS alert', 'sortOrder' => 140],
-            ['section' => 'settings_system', 'key' => 'location_reporting_interval', 'label' => 'Location reporting interval', 'sortOrder' => 10],
-            ['section' => 'settings_system', 'key' => 'working_mode', 'label' => 'Working mode', 'sortOrder' => 20],
-            ['section' => 'settings_system', 'key' => 'device_binding', 'label' => 'Device binding', 'sortOrder' => 30],
-            ['section' => 'settings_system', 'key' => 'call_in_restriction', 'label' => 'Incoming call restriction', 'sortOrder' => 40],
-            ['section' => 'settings_system', 'key' => 'device_settings_sync', 'label' => 'Device settings sync', 'sortOrder' => 50],
-            ['section' => 'settings_system', 'key' => 'device_password', 'label' => 'Device password', 'sortOrder' => 60],
-            ['section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Language and timezone', 'sortOrder' => 70],
-        ];
+        return array_merge(
+            self::watchDefinitions(),
+            self::deviceTypePlaceholderDefinitions('ncs'),
+            self::deviceTypePlaceholderDefinitions('radar'),
+        );
     }
 
     /**
@@ -90,9 +46,32 @@ final class GenericModelCapabilityCatalog
      */
     public static function keys(): array
     {
-        return array_values(array_map(
-            static fn(array $definition): string => $definition['key'],
-            self::definitions()
+        return self::keysForDeviceType('watch');
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function keysForDeviceType(string $deviceType): array
+    {
+        $keys = [];
+        foreach (self::definitionsForDeviceType($deviceType) as $definition) {
+            $keys[$definition['key']] = true;
+        }
+
+        return array_keys($keys);
+    }
+
+    /**
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     */
+    public static function definitionsForDeviceType(string $deviceType): array
+    {
+        $normalized = DeviceMetadata::normalizeDeviceType($deviceType);
+
+        return array_values(array_filter(
+            self::definitions(),
+            static fn(array $definition): bool => ($definition['deviceType'] ?? 'watch') === $normalized
         ));
     }
 
@@ -259,5 +238,92 @@ final class GenericModelCapabilityCatalog
         }
 
         return array_keys($normalized);
+    }
+
+    /**
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     */
+    private static function watchDefinitions(): array
+    {
+        $watch = [];
+        foreach ([
+            ['section' => 'telemetry', 'key' => 'location', 'label' => 'Location telemetry', 'sortOrder' => 10],
+            ['section' => 'telemetry', 'key' => 'heart_rate', 'label' => 'Heart rate telemetry', 'sortOrder' => 20],
+            ['section' => 'telemetry', 'key' => 'blood_pressure', 'label' => 'Blood pressure telemetry', 'sortOrder' => 30],
+            ['section' => 'telemetry', 'key' => 'blood_oxygen', 'label' => 'Blood oxygen telemetry', 'sortOrder' => 40],
+            ['section' => 'telemetry', 'key' => 'temperature', 'label' => 'Temperature telemetry', 'sortOrder' => 50],
+            ['section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Breath rate telemetry', 'sortOrder' => 60],
+            ['section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sleep telemetry', 'sortOrder' => 70],
+            ['section' => 'telemetry', 'key' => 'ecg', 'label' => 'ECG telemetry', 'sortOrder' => 80],
+            ['section' => 'telemetry', 'key' => 'hrv', 'label' => 'HRV telemetry', 'sortOrder' => 90],
+            ['section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG telemetry', 'sortOrder' => 100],
+            ['section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'RR interval telemetry', 'sortOrder' => 110],
+            ['section' => 'health', 'key' => 'auto_vitals_interval', 'label' => 'Auto vitals interval', 'sortOrder' => 10],
+            ['section' => 'health', 'key' => 'heart_rate_measurement_interval', 'label' => 'Heart rate interval', 'sortOrder' => 20],
+            ['section' => 'health', 'key' => 'blood_pressure_measurement_interval', 'label' => 'Blood pressure interval', 'sortOrder' => 30],
+            ['section' => 'health', 'key' => 'blood_oxygen_measurement_interval', 'label' => 'Blood oxygen interval', 'sortOrder' => 40],
+            ['section' => 'health', 'key' => 'temperature_measurement_interval', 'label' => 'Temperature interval', 'sortOrder' => 50],
+            ['section' => 'health', 'key' => 'breath_rate_measurement_interval', 'label' => 'Breath rate interval', 'sortOrder' => 60],
+            ['section' => 'health', 'key' => 'ecg_measurement_interval', 'label' => 'ECG interval', 'sortOrder' => 70],
+            ['section' => 'health', 'key' => 'hrv_measurement_interval', 'label' => 'HRV interval', 'sortOrder' => 80],
+            ['section' => 'health', 'key' => 'ppg_measurement_interval', 'label' => 'PPG interval', 'sortOrder' => 90],
+            ['section' => 'health', 'key' => 'rr_interval_measurement_interval', 'label' => 'RR interval setting', 'sortOrder' => 100],
+            ['section' => 'health', 'key' => 'heart_rate_continuous', 'label' => 'Continuous heart rate', 'sortOrder' => 110],
+            ['section' => 'health', 'key' => 'blood_oxygen_continuous', 'label' => 'Continuous blood oxygen', 'sortOrder' => 120],
+            ['section' => 'health', 'key' => 'blood_pressure_trend', 'label' => 'Blood pressure trend', 'sortOrder' => 130],
+            ['section' => 'health', 'key' => 'temperature_continuous', 'label' => 'Continuous temperature', 'sortOrder' => 140],
+            ['section' => 'health', 'key' => 'step_goal', 'label' => 'Step goal', 'sortOrder' => 150],
+            ['section' => 'health', 'key' => 'sleep_monitoring', 'label' => 'Sleep monitoring', 'sortOrder' => 160],
+            ['section' => 'health', 'key' => 'blood_pressure_calibration', 'label' => 'Blood pressure calibration', 'sortOrder' => 170],
+            ['section' => 'health', 'key' => 'step_reporting_interval', 'label' => 'Step interval', 'sortOrder' => 180],
+            ['section' => 'health', 'key' => 'pedometer_schedule', 'label' => 'Pedometer schedule', 'sortOrder' => 190],
+            ['section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'SOS contacts', 'sortOrder' => 10],
+            ['section' => 'contacts', 'key' => 'phonebook', 'label' => 'Phonebook', 'sortOrder' => 20],
+            ['section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Call whitelist', 'sortOrder' => 30],
+            ['section' => 'contacts', 'key' => 'monitor_number', 'label' => 'Monitor number', 'sortOrder' => 40],
+            ['section' => 'alarms', 'key' => 'alarm_clock', 'label' => 'Alarm clock', 'sortOrder' => 10],
+            ['section' => 'alarms', 'key' => 'medication_reminders', 'label' => 'Medication reminders', 'sortOrder' => 20],
+            ['section' => 'alarms', 'key' => 'low_battery_alert', 'label' => 'Low battery alert', 'sortOrder' => 30],
+            ['section' => 'alarms', 'key' => 'fall_detection', 'label' => 'Fall detection', 'sortOrder' => 40],
+            ['section' => 'alarms', 'key' => 'fall_sensitivity', 'label' => 'Fall sensitivity', 'sortOrder' => 50],
+            ['section' => 'alarms', 'key' => 'sos_sms_alert', 'label' => 'SOS SMS alert', 'sortOrder' => 60],
+            ['section' => 'alarms', 'key' => 'blood_oxygen_alert', 'label' => 'Blood oxygen alert', 'sortOrder' => 70],
+            ['section' => 'alarms', 'key' => 'temperature_high_alert', 'label' => 'High temperature alert', 'sortOrder' => 80],
+            ['section' => 'alarms', 'key' => 'temperature_low_alert', 'label' => 'Low temperature alert', 'sortOrder' => 90],
+            ['section' => 'alarms', 'key' => 'blood_pressure_alert', 'label' => 'Blood pressure alert', 'sortOrder' => 100],
+            ['section' => 'alarms', 'key' => 'heart_rate_high_alert', 'label' => 'High heart rate alert', 'sortOrder' => 110],
+            ['section' => 'alarms', 'key' => 'heart_rate_low_alert', 'label' => 'Low heart rate alert', 'sortOrder' => 120],
+            ['section' => 'alarms', 'key' => 'remove_watch_alarm', 'label' => 'Remove watch alarm', 'sortOrder' => 130],
+            ['section' => 'alarms', 'key' => 'remove_watch_sms_alert', 'label' => 'Remove watch SMS alert', 'sortOrder' => 140],
+            ['section' => 'settings_system', 'key' => 'location_reporting_interval', 'label' => 'Location reporting interval', 'sortOrder' => 10],
+            ['section' => 'settings_system', 'key' => 'working_mode', 'label' => 'Working mode', 'sortOrder' => 20],
+            ['section' => 'settings_system', 'key' => 'device_binding', 'label' => 'Device binding', 'sortOrder' => 30],
+            ['section' => 'settings_system', 'key' => 'call_in_restriction', 'label' => 'Incoming call restriction', 'sortOrder' => 40],
+            ['section' => 'settings_system', 'key' => 'device_settings_sync', 'label' => 'Device settings sync', 'sortOrder' => 50],
+            ['section' => 'settings_system', 'key' => 'device_password', 'label' => 'Device password', 'sortOrder' => 60],
+            ['section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Language and timezone', 'sortOrder' => 70],
+        ] as $definition) {
+            $isTelemetry = $definition['section'] === 'telemetry';
+            $watch[] = [
+                'deviceType' => 'watch',
+                'section' => $definition['section'],
+                'key' => $definition['key'],
+                'label' => $definition['label'],
+                'sortOrder' => $definition['sortOrder'],
+                'isTelemetry' => $isTelemetry,
+                'isConfigurable' => !$isTelemetry,
+                'isRequestable' => $isTelemetry,
+            ];
+        }
+
+        return $watch;
+    }
+
+    /**
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     */
+    private static function deviceTypePlaceholderDefinitions(string $deviceType): array
+    {
+        return [];
     }
 }

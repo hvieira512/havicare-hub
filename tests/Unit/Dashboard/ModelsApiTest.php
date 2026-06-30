@@ -26,6 +26,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('enabledCapabilities', $response);
         self::assertArrayNotHasKey('configurationCatalog', $response);
         self::assertIsArray($response['capabilities'] ?? null);
+        self::assertSame((int)$model['supplier_id'], $response['supplier_id'] ?? null);
         self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertTrue($response['capabilities']['telemetry']['location'] ?? false);
         self::assertTrue($response['capabilities']['health']['auto_vitals_interval'] ?? false);
@@ -84,6 +85,27 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($updated['capabilities']['contacts']['phonebook'] ?? false);
         self::assertTrue($updated['capabilities']['settings_system']['working_mode'] ?? false);
         self::assertFalse($updated['capabilities']['telemetry']['blood_pressure'] ?? true);
+    }
+
+    public function testUpdateRejectsCapabilitiesOutsideDeviceTypeCatalog(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Qinglanst', 'RD-V1');
+
+        self::assertIsArray($model);
+        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
+            ->withParsedBody([
+                'supplier_id' => (int)$model['supplier_id'],
+                'internalModel' => (string)$model['internal_model'],
+                'commercialName' => (string)$model['commercial_name'],
+                'deviceType' => (string)$model['device_type'],
+                'capabilitiesConfigured' => '1',
+                'capabilities' => ['heart_rate'],
+            ]);
+
+        $result = $api->update((int)$model['id'], $request);
+
+        self::assertSame('unsupported_capability', $result['error']['code'] ?? null);
     }
 
     /**

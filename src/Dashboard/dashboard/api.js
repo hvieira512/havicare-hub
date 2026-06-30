@@ -44,10 +44,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({feature}),
     }),
-    sendCommand: (imei, requestId) => requestJson(`/api/devices/${encodeURIComponent(imei)}/commands`, {
-        method: 'POST',
-        body: JSON.stringify({requestId}),
-    }),
     saveDevice: (imei, supplier, model, deviceType = 'watch', licenseId = '0', simNumber = '', deviceId = '', originalImei = '', company = 'null') => requestJson(
         originalImei ? `/api/devices/${encodeURIComponent(originalImei)}` : '/api/devices',
         {
@@ -61,6 +57,9 @@ export const api = {
     updateSupplier: (id, body) => requestJson(`/api/suppliers/${id}`, {method: 'PUT', body: JSON.stringify(body)}),
     deleteSupplier: id => requestJson(`/api/suppliers/${id}`, {method: 'DELETE'}),
     models: (params = {}) => requestJson(withQuery('/api/models', params)),
+    model: id => requestJson(`/api/models/${encodeURIComponent(id)}`),
+    capabilities: (params = {}) => requestJson(withQuery('/api/capabilities', params)),
+    capability: id => requestJson(`/api/capabilities/${encodeURIComponent(id)}`),
     saveModel: (id, body) => formRequest(id ? `/api/models/${encodeURIComponent(id)}` : '/api/models', body, {
         method: id ? 'PUT' : 'POST',
     }),

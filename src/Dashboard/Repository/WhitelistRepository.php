@@ -191,8 +191,8 @@ final class WhitelistRepository
 
         $model = trim((string)($filters['model'] ?? 'all'));
         if ($model !== '' && $model !== 'all') {
-            $clauses[] = 'w.model = ?';
-            $params[] = $model;
+            $clauses[] = 'LOWER(w.model) LIKE LOWER(?)';
+            $params[] = '%' . $model . '%';
         }
 
         $query = trim((string)($filters['q'] ?? ''));

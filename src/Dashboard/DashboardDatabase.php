@@ -39,9 +39,9 @@ final class DashboardDatabase
 
         $this->bootstrapSchema();
         $this->seedDefaults();
-        $this->seedDefaultGenericCapabilities();
+        $this->seedDefaultCapabilities();
         $this->migrateLegacyModelRequestCapabilities();
-        $this->migrateModelCapabilitiesToGenericCatalog();
+        $this->migrateModelCapabilitiesToCapabilityIds();
         $this->seedDefaultModelCapabilities();
     }
 
@@ -67,9 +67,10 @@ final class DashboardDatabase
     {
         $this->ensureMysqlIndex('device_configurations', 'idx_device_configurations_imei', 'imei');
         $this->ensureMysqlIndex('model_capabilities', 'idx_model_capabilities_model', 'model_id');
+        $this->ensureMysqlIndex('model_capabilities', 'idx_model_capabilities_capability', 'capability_id');
         $this->ensureMysqlIndex('api_users', 'idx_api_users_role_license', 'role, license_id');
         $this->ensureMysqlIndex('licenses', 'idx_licenses_company_id', 'company_id');
-        $this->ensureMysqlIndex('generic_capabilities', 'idx_generic_capabilities_section_order', 'section, sort_order');
+        $this->ensureMysqlIndex('capabilities', 'idx_capabilities_device_type_section_order', 'device_type, section, sort_order');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_type_license', 'device_type, license_id');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_supplier_model', 'supplier, model');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_company', 'company');
@@ -156,27 +157,31 @@ final class DashboardDatabase
         }
     }
 
-    private function seedDefaultGenericCapabilities(): void
+    private function seedDefaultCapabilities(): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $select = $this->pdo->prepare('SELECT id FROM generic_capabilities WHERE capability_key = ?');
+        $select = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
         $insert = $this->pdo->prepare('
-            INSERT INTO generic_capabilities (section, capability_key, label, sort_order, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO capabilities (device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $update = $this->pdo->prepare('
-            UPDATE generic_capabilities
-            SET section = ?, label = ?, sort_order = ?, updated_at = ?
-            WHERE capability_key = ?
+            UPDATE capabilities
+            SET section = ?, label = ?, is_telemetry = ?, is_configurable = ?, is_requestable = ?, sort_order = ?, updated_at = ?
+            WHERE device_type = ? AND capability_key = ?
         ');
 
         foreach (GenericModelCapabilityCatalog::definitions() as $definition) {
-            $select->execute([$definition['key']]);
+            $select->execute([$definition['deviceType'], $definition['key']]);
             if ($select->fetchColumn() === false) {
                 $insert->execute([
+                    $definition['deviceType'],
                     $definition['section'],
                     $definition['key'],
                     $definition['label'],
+                    (int)$definition['isTelemetry'],
+                    (int)$definition['isConfigurable'],
+                    (int)$definition['isRequestable'],
                     $definition['sortOrder'],
                     $now,
                     $now,
@@ -187,8 +192,12 @@ final class DashboardDatabase
             $update->execute([
                 $definition['section'],
                 $definition['label'],
+                (int)$definition['isTelemetry'],
+                (int)$definition['isConfigurable'],
+                (int)$definition['isRequestable'],
                 $definition['sortOrder'],
                 $now,
+                $definition['deviceType'],
                 $definition['key'],
             ]);
         }
@@ -221,7 +230,7 @@ final class DashboardDatabase
 
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $insert = $this->pdo->prepare('
-            INSERT INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
+            INSERT INTO model_capabilities (model_id, capability_id, enabled, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
         ');
 
@@ -242,20 +251,28 @@ final class DashboardDatabase
                 continue;
             }
 
-            $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND feature = ?');
-            $existing->execute([$modelId, $feature]);
+            $model = $this->pdo->prepare('SELECT device_type FROM models WHERE id = ?');
+            $model->execute([$modelId]);
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($model->fetchColumn() ?: 'watch'));
+            $capabilityId = $this->capabilityIdForDeviceTypeAndKey($deviceType, $feature);
+            if ($capabilityId === null) {
+                continue;
+            }
+
+            $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
+            $existing->execute([$modelId, $capabilityId]);
             if ((int)$existing->fetchColumn() > 0) {
                 continue;
             }
 
-            $insert->execute([$modelId, $feature, $enabled, $createdAt, $now]);
+            $insert->execute([$modelId, $capabilityId, $enabled, $createdAt, $now]);
         }
     }
 
     private function seedDefaultModelCapabilities(): void
     {
         $models = $this->pdo
-            ->query('SELECT m.id, s.name AS supplier_name FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY m.id')
+            ->query('SELECT m.id, m.device_type, s.name AS supplier_name FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY m.id')
             ->fetchAll();
 
         if (!is_array($models) || $models === []) {
@@ -266,38 +283,48 @@ final class DashboardDatabase
 
         foreach ($models as $model) {
             $modelId = (int)($model['id'] ?? 0);
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
             $protocol = DeviceProtocol::forSupplier((string)($model['supplier_name'] ?? ''));
             if ($modelId <= 0 || $protocol === '') {
                 continue;
             }
 
             foreach (GenericModelCapabilityCatalog::keysForProtocol($protocol) as $feature) {
-                $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND feature = ?');
-                $existing->execute([$modelId, $feature]);
+                $capabilityId = $this->capabilityIdForDeviceTypeAndKey($deviceType, $feature);
+                if ($capabilityId === null) {
+                    continue;
+                }
+
+                $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
+                $existing->execute([$modelId, $capabilityId]);
                 if ((int)$existing->fetchColumn() > 0) {
                     continue;
                 }
                 $insert = $this->pdo->prepare('
-                    INSERT INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
+                    INSERT INTO model_capabilities (model_id, capability_id, enabled, created_at, updated_at)
                     VALUES (?, ?, 1, ?, ?)
                 ');
-                $insert->execute([$modelId, $feature, $now, $now]);
+                $insert->execute([$modelId, $capabilityId, $now, $now]);
             }
         }
     }
 
-    private function migrateModelCapabilitiesToGenericCatalog(): void
+    private function migrateModelCapabilitiesToCapabilityIds(): void
     {
-        $rows = $this->pdo->query('SELECT model_id, feature, enabled, created_at, updated_at FROM model_capabilities ORDER BY model_id, feature')->fetchAll();
+        if (!$this->tableExists('model_capabilities_legacy')) {
+            return;
+        }
+
+        $rows = $this->pdo->query('SELECT model_id, feature, enabled, created_at, updated_at FROM model_capabilities_legacy ORDER BY model_id, feature')->fetchAll();
         if (!is_array($rows) || $rows === []) {
             return;
         }
 
         $insert = $this->pdo->prepare('
-            INSERT IGNORE INTO model_capabilities (model_id, feature, enabled, created_at, updated_at)
+            INSERT IGNORE INTO model_capabilities (model_id, capability_id, enabled, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
         ');
-        $delete = $this->pdo->prepare('DELETE FROM model_capabilities WHERE model_id = ? AND feature = ?');
+        $deviceTypeStmt = $this->pdo->prepare('SELECT device_type FROM models WHERE id = ?');
 
         $this->pdo->beginTransaction();
         foreach ($rows as $row) {
@@ -309,26 +336,34 @@ final class DashboardDatabase
 
             $canonical = GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($feature);
             if ($canonical === null) {
-                $delete->execute([$modelId, $feature]);
                 continue;
             }
 
-            if ($canonical !== $feature) {
-                $insert->execute([
-                    $modelId,
-                    $canonical,
-                    (int)($row['enabled'] ?? 1),
-                    (string)($row['created_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
-                    (string)($row['updated_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
-                ]);
-                $delete->execute([$modelId, $feature]);
+            $deviceTypeStmt->execute([$modelId]);
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($deviceTypeStmt->fetchColumn() ?: 'watch'));
+            $capabilityId = $this->capabilityIdForDeviceTypeAndKey($deviceType, $canonical);
+            if ($capabilityId === null) {
+                continue;
             }
+
+            $insert->execute([
+                $modelId,
+                $capabilityId,
+                (int)($row['enabled'] ?? 1),
+                (string)($row['created_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
+                (string)($row['updated_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
+            ]);
         }
         $this->pdo->commit();
+        $this->pdo->exec('DROP TABLE model_capabilities_legacy');
     }
 
     private function migrateSchema(): void
     {
+        if ($this->tableExists('generic_capabilities') && !$this->tableExists('capabilities')) {
+            $this->pdo->exec('RENAME TABLE generic_capabilities TO capabilities');
+        }
+
         if ($this->columnExists('whitelist', 'source_device_id')) {
             $this->pdo->exec("UPDATE whitelist SET device_id = source_device_id WHERE device_id = '' AND source_device_id != ''");
         }
@@ -344,27 +379,82 @@ final class DashboardDatabase
         if ($this->columnExists('models', 'protocol')) {
             $this->pdo->exec('ALTER TABLE models DROP COLUMN protocol');
         }
+        if ($this->tableExists('model_capabilities') && $this->columnExists('model_capabilities', 'feature')) {
+            if ($this->tableExists('model_capabilities_legacy')) {
+                $this->pdo->exec('DROP TABLE model_capabilities_legacy');
+            }
+            $this->pdo->exec('RENAME TABLE model_capabilities TO model_capabilities_legacy');
+            $this->pdo->exec('
+                CREATE TABLE IF NOT EXISTS model_capabilities (
+                    model_id BIGINT UNSIGNED NOT NULL,
+                    capability_id BIGINT UNSIGNED NOT NULL,
+                    enabled TINYINT(1) NOT NULL DEFAULT 1,
+                    created_at VARCHAR(32) NOT NULL,
+                    updated_at VARCHAR(32) NOT NULL,
+                    PRIMARY KEY (model_id, capability_id),
+                    CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
+                    CONSTRAINT fk_model_capabilities_capability_v2 FOREIGN KEY (capability_id) REFERENCES capabilities(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ');
+        }
+        if ($this->tableExists('capabilities')) {
+            if (!$this->columnExists('capabilities', 'device_type')) {
+                $this->pdo->exec("ALTER TABLE capabilities ADD COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch' AFTER id");
+            }
+            if (!$this->columnExists('capabilities', 'is_telemetry')) {
+                $this->pdo->exec('ALTER TABLE capabilities ADD COLUMN is_telemetry TINYINT(1) NOT NULL DEFAULT 0 AFTER label');
+            }
+            if (!$this->columnExists('capabilities', 'is_configurable')) {
+                $this->pdo->exec('ALTER TABLE capabilities ADD COLUMN is_configurable TINYINT(1) NOT NULL DEFAULT 0 AFTER is_telemetry');
+            }
+            if (!$this->columnExists('capabilities', 'is_requestable')) {
+                $this->pdo->exec('ALTER TABLE capabilities ADD COLUMN is_requestable TINYINT(1) NOT NULL DEFAULT 0 AFTER is_configurable');
+            }
+        }
 
         $this->pdo->exec("UPDATE models SET device_type = 'watch' WHERE device_type NOT IN ('watch', 'ncs', 'radar') OR device_type IS NULL");
         $this->pdo->exec("UPDATE whitelist SET device_type = 'watch' WHERE device_type NOT IN ('watch', 'ncs', 'radar') OR device_type IS NULL");
         $this->pdo->exec("UPDATE device_configurations SET last_status = '' WHERE last_status NOT IN ('', 'queued', 'waiting', 'acked', 'failed', 'dropped', 'sent') OR last_status IS NULL");
+        if ($this->tableExists('capabilities')) {
+            $this->pdo->exec("UPDATE capabilities SET device_type = 'watch' WHERE device_type NOT IN ('watch', 'ncs', 'radar') OR device_type IS NULL");
+        }
 
         $this->pdo->exec("ALTER TABLE models MODIFY COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch'");
         $this->pdo->exec("ALTER TABLE whitelist MODIFY COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch'");
         $this->pdo->exec("ALTER TABLE api_users MODIFY COLUMN role ENUM('hub_admin', 'license_client') NOT NULL");
         $this->pdo->exec("ALTER TABLE device_configurations MODIFY COLUMN last_status ENUM('', 'queued', 'waiting', 'acked', 'failed', 'dropped', 'sent') NOT NULL DEFAULT ''");
+        if ($this->tableExists('capabilities')) {
+            $this->dropIndexIfExists('capabilities', 'capability_key');
+            $this->dropIndexIfExists('capabilities', 'uq_generic_capabilities_capability_key');
+            $this->dropIndexIfExists('capabilities', 'idx_generic_capabilities_section_order');
+            $this->pdo->exec("ALTER TABLE capabilities MODIFY COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch'");
+        }
     }
 
     private function columnExists(string $table, string $column): bool
     {
+        if (!$this->tableExists($table)) {
+            return false;
+        }
         $stmt = $this->pdo->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
         $stmt->execute([$column]);
 
         return $stmt->fetch() !== false;
     }
 
+    private function tableExists(string $table): bool
+    {
+        $stmt = $this->pdo->prepare('SHOW TABLES LIKE ?');
+        $stmt->execute([$table]);
+
+        return $stmt->fetch() !== false;
+    }
+
     private function dropIndexIfExists(string $table, string $indexName): void
     {
+        if (!$this->tableExists($table)) {
+            return;
+        }
         $stmt = $this->pdo->prepare("SHOW INDEX FROM `{$table}` WHERE Key_name = ?");
         $stmt->execute([$indexName]);
         if ($stmt->fetch() === false) {
@@ -372,5 +462,14 @@ final class DashboardDatabase
         }
 
         $this->pdo->exec("DROP INDEX `{$indexName}` ON `{$table}`");
+    }
+
+    private function capabilityIdForDeviceTypeAndKey(string $deviceType, string $key): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
+        $stmt->execute([DeviceMetadata::normalizeDeviceType($deviceType), $key]);
+        $value = $stmt->fetchColumn();
+
+        return $value === false ? null : (int)$value;
     }
 }

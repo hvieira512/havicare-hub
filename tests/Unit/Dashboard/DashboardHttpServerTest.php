@@ -189,6 +189,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(401, $protected->getStatusCode(), (string)$protected->getBody());
     }
 
+    public function testApiCanBeExposedWithoutAuthForDevelopment(): void
+    {
+        $server = $this->makeServer(apiAuthRequired: false);
+
+        $response = $server(new ServerRequest('GET', '/api/devices'));
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+    }
+
     public function testCreateDeviceReturnsConflictWhenImeiAlreadyExists(): void
     {
         $server = $this->makeServer();
@@ -744,15 +753,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         return substr($png, 0, $signatureLength) . $chunk . substr($png, $signatureLength);
     }
 
-    private function makeServer(): DashboardHttpServer
+    private function makeServer(bool $apiAuthRequired = true): DashboardHttpServer
     {
-        return $this->makeServerWithDatabase()[0];
+        return $this->makeServerWithDatabase(apiAuthRequired: $apiAuthRequired)[0];
     }
 
     /**
      * @return array{0: DashboardHttpServer, 1: DashboardDataAccess, 2: DashboardStore}
      */
-    private function makeServerWithDatabase(?\Hub\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null): array
+    private function makeServerWithDatabase(?\Hub\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null, bool $apiAuthRequired = true): array
     {
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
@@ -783,6 +792,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'secret',
             'tenant',
             'tenant-secret',
+            $apiAuthRequired,
             3600
         );
 

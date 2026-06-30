@@ -47,9 +47,16 @@ export const state = {
     settingsModal: {
         section: 'suppliers',
         capabilityDeviceType: '',
+        capabilityCatalog: [],
+        capabilityCatalogByType: {},
         capabilitySupplier: '',
         capabilityModelId: null,
         capabilityEnabledCapabilities: [],
+        currentCapabilitiesModel: null,
+        modelsDeviceType: '',
+        modelsSupplier: '',
+        modelsSearchQuery: '',
+        modelsPageSize: 20,
         sectionLoaded: {
             suppliers: false,
             models: false,

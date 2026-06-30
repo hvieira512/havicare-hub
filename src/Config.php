@@ -17,6 +17,8 @@ class Config
         $mqttTlsEnabled = in_array($mqttTlsEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $mqttTlsVerifyPeerRaw = strtolower(trim((string)(getenv('MQTT_TLS_VERIFY_PEER') ?: 'true')));
         $mqttTlsVerifyPeer = in_array($mqttTlsVerifyPeerRaw, ['1', 'true', 'yes', 'on'], true);
+        $dashboardApiAuthRequiredRaw = strtolower(trim((string)(getenv('DASHBOARD_API_AUTH_REQUIRED') ?: 'true')));
+        $dashboardApiAuthRequired = in_array($dashboardApiAuthRequiredRaw, ['1', 'true', 'yes', 'on'], true);
         $downlinkQueueTtlRaw = getenv('DOWNLINK_QUEUE_TTL_SECONDS');
         $downlinkQueueTtl = $downlinkQueueTtlRaw === false || trim((string)$downlinkQueueTtlRaw) === ''
             ? 300
@@ -34,6 +36,7 @@ class Config
                 'password' => getenv('DASHBOARD_PASSWORD') ?: 'secret',
                 'client_username' => getenv('API_CLIENT_USERNAME') ?: '',
                 'client_password' => getenv('API_CLIENT_PASSWORD') ?: '',
+                'api_auth_required' => $dashboardApiAuthRequired,
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 3600),

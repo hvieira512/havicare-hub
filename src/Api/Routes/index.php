@@ -2,6 +2,7 @@
 
 use Hub\Api\Routes\Auth;
 use Hub\Api\Routes\ApiUsers;
+use Hub\Api\Routes\Capabilities;
 use Hub\Api\Routes\Company;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Licenses;
@@ -17,6 +18,7 @@ return static function (
     Auth $auth,
     Devices $devices,
     Models $models,
+    Capabilities $capabilities,
     Suppliers $suppliers,
     ApiUsers $apiUsers,
     Company $company,
@@ -122,6 +124,11 @@ return static function (
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),
         new ApiRoute('GET', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->list($request))),
         new ApiRoute('GET', '/api/models/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($models->show((int)$params['id'], $request))),
+        new ApiRoute('GET', '/api/capabilities', fn(array $params, ServerRequestInterface $request): Response => $json($capabilities->list((string)$request->getUri()->getQuery()))),
+        new ApiRoute('GET', '/api/capabilities/{id:\d+}', function (array $params) use ($capabilities, $json, $status): Response {
+            $result = $capabilities->show((int)$params['id']);
+            return $json($result, $status($result));
+        }),
         new ApiRoute('POST', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->create($request))),
         new ApiRoute('PUT', '/api/models/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($models->update((int)$params['id'], $request))),
         new ApiRoute('DELETE', '/api/models/{id:\d+}', fn(array $params): Response => $json($models->delete((int)$params['id']))),

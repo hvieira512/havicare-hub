@@ -14,6 +14,7 @@ export MQTT_TOPIC_PREFIX=""
 export WHITELIST_FILE="config/whitelist.example.json"
 export DASHBOARD_USERNAME="admin"
 export DASHBOARD_PASSWORD="secret"
+export DASHBOARD_API_AUTH_REQUIRED="true"
 
 IMEI="868705080300697"
 
@@ -58,10 +59,13 @@ if ! printf '%s' "$devices" | grep -q "$IMEI"; then
   scenario_fail "dashboard_failure" "devices collection did not include whitelist device"
 fi
 
-command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' -d '{"command":"dnHeartRate"}' "http://127.0.0.1:8081/api/devices/$IMEI/commands")"
+command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' -d '{"feature":"heart_rate"}' "http://127.0.0.1:8081/api/devices/$IMEI/requests")"
 printf '%s' "$command_response" > "$SCENARIO_DIR/dashboard-command.json"
 if ! printf '%s' "$command_response" | grep -q '"status":"queued"'; then
   scenario_fail "command_failure" "offline dashboard command was not queued"
+fi
+if ! printf '%s' "$command_response" | grep -q '"feature":"heart_rate"'; then
+  scenario_fail "command_failure" "generic telemetry request did not echo requested feature"
 fi
 
 device="$(curl -s -H "Authorization: Bearer $api_token" "http://127.0.0.1:8081/api/devices/$IMEI")"
@@ -69,8 +73,8 @@ printf '%s' "$device" > "$SCENARIO_DIR/dashboard-device.json"
 if ! printf '%s' "$device" | grep -q '"transportPending"'; then
   scenario_fail "dashboard_failure" "device detail did not include transportPending"
 fi
-if ! printf '%s' "$device" | grep -q '"dnHeartRate"'; then
-  scenario_fail "dashboard_failure" "device detail did not include queued command state"
+if ! printf '%s' "$device" | grep -q '"heart_rate"'; then
+  scenario_fail "dashboard_failure" "device detail did not include queued generic request state"
 fi
 
 scenario_pass

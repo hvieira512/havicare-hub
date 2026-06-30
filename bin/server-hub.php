@@ -260,6 +260,7 @@ $dashboard = new DashboardHttpServer(
         (string)($dashboardConfig['password'] ?? ''),
         (string)($dashboardConfig['client_username'] ?? ''),
         (string)($dashboardConfig['client_password'] ?? ''),
+        (bool)($dashboardConfig['api_auth_required'] ?? true),
         (int)($dashboardConfig['api_token_ttl_seconds'] ?? 3600)
     );
     $dashboardServer = new ReactHttpServer(

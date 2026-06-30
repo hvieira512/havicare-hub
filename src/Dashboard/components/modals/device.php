@@ -42,20 +42,26 @@ ob_start();
                                     <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
                                     <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                 </div>
-                                <div>
-                                    <label for="deviceCompanySelect" class="form-label">Empresa</label>
-                                    <select class="form-select" id="deviceCompanySelect">
-                                        <option value="">Sem empresa</option>
-                                    </select>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <div>
+                                            <label for="deviceCompanySelect" class="form-label">Empresa</label>
+                                            <select class="form-select" id="deviceCompanySelect">
+                                                <option value="">Sem empresa</option>
+                                            </select>
+                                        </div>
+                                        <input type="hidden" id="deviceCompany" value="">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <div>
+                                            <label for="deviceLicenseSelect" class="form-label">Licença</label>
+                                            <select class="form-select" id="deviceLicenseSelect" disabled>
+                                                <option value="0">Nenhuma</option>
+                                            </select>
+                                        </div>
+                                        <input type="hidden" id="deviceLicenseId" value="0">
+                                    </div>
                                 </div>
-                                <input type="hidden" id="deviceCompany" value="">
-                                <div>
-                                    <label for="deviceLicenseSelect" class="form-label">Licença</label>
-                                    <select class="form-select" id="deviceLicenseSelect" disabled>
-                                        <option value="0">Nenhuma</option>
-                                    </select>
-                                </div>
-                                <input type="hidden" id="deviceLicenseId" value="0">
                                 <div id="deviceImeiRow">
                                     <label for="deviceImei" class="form-label">IMEI</label>
                                     <input type="text" class="form-control" id="deviceImei" required>

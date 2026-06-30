@@ -19,24 +19,30 @@ CREATE TABLE IF NOT EXISTS models (
     CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS capabilities (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
+    section VARCHAR(64) NOT NULL,
+    capability_key VARCHAR(191) NOT NULL,
+    label VARCHAR(191) NOT NULL,
+    is_telemetry TINYINT(1) NOT NULL DEFAULT 0,
+    is_configurable TINYINT(1) NOT NULL DEFAULT 0,
+    is_requestable TINYINT(1) NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at VARCHAR(32) NOT NULL,
+    updated_at VARCHAR(32) NOT NULL,
+    UNIQUE KEY uq_capabilities_device_type_key (device_type, capability_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS model_capabilities (
     model_id BIGINT UNSIGNED NOT NULL,
-    feature VARCHAR(191) NOT NULL,
+    capability_id BIGINT UNSIGNED NOT NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at VARCHAR(32) NOT NULL,
     updated_at VARCHAR(32) NOT NULL,
-    PRIMARY KEY (model_id, feature),
-    CONSTRAINT fk_model_capabilities_model FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS generic_capabilities (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    section VARCHAR(64) NOT NULL,
-    capability_key VARCHAR(191) NOT NULL UNIQUE,
-    label VARCHAR(191) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL
+    PRIMARY KEY (model_id, capability_id),
+    CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
+    CONSTRAINT fk_model_capabilities_capability_v2 FOREIGN KEY (capability_id) REFERENCES capabilities(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS whitelist (

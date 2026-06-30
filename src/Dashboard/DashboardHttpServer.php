@@ -4,6 +4,7 @@ namespace Hub\Dashboard;
 
 use Hub\Api\Routes\ApiUsers;
 use Hub\Api\Routes\Auth;
+use Hub\Api\Routes\Capabilities;
 use Hub\Api\Routes\Company;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Licenses;
@@ -26,6 +27,7 @@ final class DashboardHttpServer
     private ApiRouter $apiRouter;
     private Devices $devicesApi;
     private Models $modelsApi;
+    private Capabilities $capabilitiesApi;
     private Suppliers $suppliersApi;
     private ApiUsers $apiUsersApi;
     private Company $companyApi;
@@ -43,20 +45,25 @@ final class DashboardHttpServer
         private string $password,
         private string $clientUsername = '',
         private string $clientPassword = '',
+        private bool $apiAuthRequired = true,
         private int $apiTokenTtlSeconds = 3600,
     ) {
-        $this->apiCredentials = array_values(array_filter([
-            [
-                'username' => $this->username,
-                'password' => $this->password,
-                'role' => ApiAuthContext::ROLE_HUB_ADMIN,
-            ],
-            [
-                'username' => $this->clientUsername,
-                'password' => $this->clientPassword,
-                'role' => ApiAuthContext::ROLE_LICENSE_CLIENT,
-            ],
-        ], static fn (array $credential): bool => trim((string)$credential['username']) !== '' && (string)$credential['password'] !== ''));
+        if ($this->apiAuthRequired) {
+            $this->apiCredentials = array_values(array_filter([
+                [
+                    'username' => $this->username,
+                    'password' => $this->password,
+                    'role' => ApiAuthContext::ROLE_HUB_ADMIN,
+                ],
+                [
+                    'username' => $this->clientUsername,
+                    'password' => $this->clientPassword,
+                    'role' => ApiAuthContext::ROLE_LICENSE_CLIENT,
+                ],
+            ], static fn (array $credential): bool => trim((string)$credential['username']) !== '' && (string)$credential['password'] !== ''));
+        } else {
+            $this->apiCredentials = [];
+        }
 
         foreach ($this->whitelist->all() as $imei => $metadata) {
             $this->store->registerDevice(
@@ -73,6 +80,7 @@ final class DashboardHttpServer
 
         $this->devicesApi = new Devices($this->store, $this->whitelist, $this->hub, $this->downlinkQueue, $this->db);
         $this->modelsApi = new Models($this->db);
+        $this->capabilitiesApi = new Capabilities($this->db);
         $this->suppliersApi = new Suppliers($this->db);
         $this->apiUsersApi = new ApiUsers($this->db);
         $this->companyApi = new Company($this->db);
@@ -229,6 +237,7 @@ final class DashboardHttpServer
             new Auth($this->apiCredentials, $this->tokens, $this->db, $this->apiTokenTtlSeconds),
             $this->devicesApi,
             $this->modelsApi,
+            $this->capabilitiesApi,
             $this->suppliersApi,
             $this->apiUsersApi,
             $this->companyApi,

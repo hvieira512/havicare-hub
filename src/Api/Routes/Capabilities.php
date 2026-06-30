@@ -1,0 +1,54 @@
+<?php
+
+namespace Hub\Api\Routes;
+
+use Hub\Dashboard\DashboardDataAccess;
+use Hub\Dashboard\DeviceMetadata;
+
+final class Capabilities
+{
+    public function __construct(private DashboardDataAccess $db)
+    {
+    }
+
+    public function list(string $query = ''): array
+    {
+        parse_str($query, $params);
+        $deviceType = trim((string)($params['deviceType'] ?? ''));
+        if ($deviceType !== '') {
+            $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
+        }
+
+        return [
+            'data' => array_map(
+                fn(array $row): array => $this->serializeCapability($row),
+                $this->db->genericCapabilities->all($deviceType !== '' ? $deviceType : null)
+            ),
+        ];
+    }
+
+    public function show(int $id): array
+    {
+        $row = $this->db->genericCapabilities->findById($id);
+        if ($row === null) {
+            return ['error' => ['code' => 'capability_not_found', 'message' => 'Capability not found']];
+        }
+
+        return $this->serializeCapability($row);
+    }
+
+    private function serializeCapability(array $row): array
+    {
+        return [
+            'id' => (int)($row['id'] ?? 0),
+            'deviceType' => (string)($row['device_type'] ?? 'watch'),
+            'section' => (string)($row['section'] ?? ''),
+            'key' => (string)($row['capability_key'] ?? ''),
+            'label' => (string)($row['label'] ?? ''),
+            'sortOrder' => (int)($row['sort_order'] ?? 0),
+            'isTelemetry' => (bool)($row['is_telemetry'] ?? false),
+            'isConfigurable' => (bool)($row['is_configurable'] ?? false),
+            'isRequestable' => (bool)($row['is_requestable'] ?? false),
+        ];
+    }
+}

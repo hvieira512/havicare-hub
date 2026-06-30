@@ -75,7 +75,7 @@ http://127.0.0.1:8081/dashboard
 
 The dashboard page itself is public. `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` define the bootstrap admin API credential used to issue the dashboard session token; by default that credential is `admin` / `secret`. Override it when needed. The dashboard queries registered devices from MySQL and overlays runtime status from Redis.
 
-API access uses `POST /api/auth/login` and bearer tokens. The dashboard credentials issue a bootstrap `hub_admin` token. Additional users are managed by admins in the dashboard settings modal or through `/api/users`.
+API access uses `POST /api/auth/login` and bearer tokens when `DASHBOARD_API_AUTH_REQUIRED=true` (default). In development, set `DASHBOARD_API_AUTH_REQUIRED=false` to expose `/api/*` without login, which is useful for Swagger and local exploration without refreshing bearer tokens. The dashboard credentials issue a bootstrap `hub_admin` token when auth is enabled. Additional users are managed by admins in the dashboard settings modal or through `/api/users`.
 
 API user roles:
 

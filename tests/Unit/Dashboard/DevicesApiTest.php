@@ -76,6 +76,29 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('Device with this IMEI already exists', $response['error']['message'] ?? null);
     }
 
+    public function testListFiltersByPartialModelOnWhitelistRepository(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
+
+        $response = $api->list('page=1&limit=5&model=L08');
+
+        self::assertSame(1, $response['pagination']['total'] ?? null);
+        self::assertSame('861265061009822', $response['data'][0]['imei'] ?? null);
+        self::assertSame('L08 Pro', $response['data'][0]['model'] ?? null);
+    }
+
+    public function testListFiltersByPartialModelOnStoreFallback(): void
+    {
+        [$api] = $this->makeApi();
+
+        $response = $api->list('page=1&limit=5&model=L08');
+
+        self::assertSame(1, $response['pagination']['total'] ?? null);
+        self::assertSame('861265061009822', $response['data'][0]['imei'] ?? null);
+        self::assertSame('L08 Pro', $response['data'][0]['model'] ?? null);
+    }
+
     public function testShowReturnsSparseCapabilitiesWithStoredConfigurationValues(): void
     {
         [$api, $db] = $this->makeApi();

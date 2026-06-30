@@ -136,111 +136,6 @@ final class Devices
         ];
     }
 
-    public function command(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
-    {
-        if (!$this->canAccessDevice($imei, $auth)) {
-            Logger::channel('api')->warning('API device command rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'not_found',
-            ]);
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        $decoded = json_decode($body, true);
-        $commandRequestId = is_array($decoded)
-            ? trim((string)($decoded['requestId'] ?? $decoded['command'] ?? ''))
-            : '';
-        $feature = is_array($decoded) ? trim((string)($decoded['feature'] ?? '')) : '';
-
-        if ($commandRequestId === '' && $feature === '') {
-            Logger::channel('api')->warning('API device command rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'missing_request_id_or_feature',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'requestId or feature is required']];
-        }
-
-        $device = $this->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
-
-        if ($feature !== '') {
-            $result = $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
-            Logger::channel('api')->info('API device feature command processed', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'feature' => $feature,
-                'status' => $result['status'] ?? null,
-                'error_code' => $result['error']['code'] ?? null,
-                'command_count' => count($result['commands'] ?? []),
-            ]);
-            return $result;
-        }
-
-        $entry = DeviceCommandCatalog::requestForProtocol($protocol, $commandRequestId);
-        $modelRow = $this->modelForSupplierAndName($supplier, $model);
-        if ($entry === null) {
-            Logger::channel('api')->warning('API device command rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'command_request_id' => $commandRequestId,
-                'error_code' => 'unsupported_command',
-            ]);
-            return ['error' => ['code' => 'unsupported_command', 'message' => 'Command is not supported for this device']];
-        }
-        if (!$this->isModelRequestEnabled($modelRow, $protocol, $commandRequestId)) {
-            Logger::channel('api')->warning('API device command rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'command_request_id' => $commandRequestId,
-                'error_code' => 'unsupported_for_model',
-            ]);
-            return ['error' => ['code' => 'unsupported_for_model', 'message' => 'Command is not enabled for this model']];
-        }
-
-        $nativeCommand = (string)($entry['command'] ?? '');
-        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, ['fields' => $entry['data'] ?? []], [
-            'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
-        ]);
-        $id = bin2hex(random_bytes(8));
-        $status = $this->hub->submitDownlink($imei, $bytes);
-        $record = [
-            'status' => $status,
-            'imei' => $imei,
-            'protocol' => $protocol,
-            'requestId' => $commandRequestId,
-            'nativeType' => $nativeCommand,
-            'label' => (string)($entry['label'] ?? $nativeCommand),
-            'feature' => (string)($entry['feature'] ?? ''),
-            'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
-            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-        ];
-        if ($status === 'sent') {
-            $record['status'] = 'waiting';
-            $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-        }
-        if ($status === 'dropped') {
-            $record['error'] = 'delivery_failed';
-        }
-        $this->store->recordCommand($imei, $id, $record);
-
-        Logger::channel('api')->info('API device command processed', [
-            'request_id' => $requestId,
-            'imei' => $imei,
-            'command_request_id' => $commandRequestId,
-            'native_type' => $nativeCommand,
-            'delivery_status' => $record['status'],
-            'command_id' => $id,
-        ]);
-
-        return ['status' => $record['status'], 'command' => array_merge($record, ['id' => $id])];
-    }
-
     public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->canAccessDevice($imei, $auth)) {
@@ -993,21 +888,6 @@ final class Devices
         }));
     }
 
-    private function isModelRequestEnabled(?array $model, string $protocol, string $requestId): bool
-    {
-        if ($model === null) {
-            return false;
-        }
-
-        foreach ($this->enabledRequestCommandsForModel($model, $protocol) as $entry) {
-            if ((string)($entry['id'] ?? $entry['command'] ?? '') === $requestId || (string)($entry['command'] ?? '') === $requestId) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private function filterDevices(array $devices, array $filters): array
     {
         return array_values(array_filter($devices, function (array $device) use ($filters): bool {
@@ -1016,13 +896,14 @@ final class Devices
             $company = trim((string)($device['company'] ?? 'null'));
             $supplier = trim((string)($device['supplier'] ?? ''));
             $model = trim((string)($device['model'] ?? ''));
+            $modelFilter = trim((string)($filters['model'] ?? ''));
             $query = trim((string)($filters['q'] ?? ''));
 
             return (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType'])
                 && (($filters['licenseId'] ?? null) === null || $licenseId === $filters['licenseId'])
                 && (($filters['company'] ?? null) === null || $company === $filters['company'])
                 && (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
-                && (($filters['model'] ?? null) === null || $model === $filters['model'])
+                && ($modelFilter === '' || str_contains($this->normalizeSearchText($model), $this->normalizeSearchText($modelFilter)))
                 && ($query === '' || $this->matchesDeviceQuery($device, $query));
         }));
     }
@@ -1140,7 +1021,8 @@ final class Devices
      */
     private function deviceCapabilitiesFromPayloadKey(?array $model, string $protocol, array $configRows, string $payloadKey): array
     {
-        $catalog = $this->db->genericCapabilities->all();
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
+        $catalog = $this->db->genericCapabilities->all($deviceType);
         $supportedKeys = $model !== null
             ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
             : GenericModelCapabilityCatalog::keysForProtocol($protocol);
@@ -1230,7 +1112,8 @@ final class Devices
     private function telemetryCapabilities(?array $model, string $protocol, ?array $matrix = null): array
     {
         if ($matrix === null) {
-            $catalog = $this->db->genericCapabilities->all();
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
+            $catalog = $this->db->genericCapabilities->all($deviceType);
             $supportedKeys = $model !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
                 : GenericModelCapabilityCatalog::keysForProtocol($protocol);

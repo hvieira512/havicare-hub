@@ -30,6 +30,14 @@ class OpenApiSpec
             'schema' => ['type' => 'integer', 'example' => 1],
         ];
 
+        $capabilityIdParam = [
+            'name' => 'id',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'Capability ID',
+            'schema' => ['type' => 'integer', 'example' => 1],
+        ];
+
         $commandIdParam = [
             'name' => 'id',
             'in' => 'path',
@@ -73,6 +81,7 @@ class OpenApiSpec
             'tags' => [
                 ['name' => 'Suppliers'],
                 ['name' => 'Models'],
+                ['name' => 'Capabilities'],
                 ['name' => 'Companies'],
                 ['name' => 'Licenses'],
                 ['name' => 'Devices'],
@@ -500,6 +509,35 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/api/capabilities' => [
+                    'get' => [
+                        'tags' => ['Capabilities'],
+                        'summary' => 'List generalized capabilities',
+                        'parameters' => [
+                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['watch', 'ncs', 'radar']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Capability catalog',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CapabilityListResponse']]],
+                            ],
+                        ],
+                    ],
+                ],
+                '/api/capabilities/{id}' => [
+                    'get' => [
+                        'tags' => ['Capabilities'],
+                        'summary' => 'Get generalized capability detail',
+                        'parameters' => [$capabilityIdParam],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Capability detail',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CapabilityItem']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
                 '/api/companies' => [
                     'get' => [
                         'tags' => ['Companies'],
@@ -724,7 +762,7 @@ class OpenApiSpec
                     'CommandCatalogEntry' => [
                         'type' => 'object',
                         'properties' => [
-                            'command' => ['type' => 'string', 'example' => 'dnHeartRate'],
+                            'command' => ['type' => 'string', 'example' => 'heart_rate'],
                             'label' => ['type' => 'string', 'example' => 'Heart Rate'],
                             'icon' => ['type' => 'string', 'example' => 'fa-heart-pulse'],
                         ],
@@ -1133,6 +1171,26 @@ class OpenApiSpec
                             'image' => ['type' => 'string', 'format' => 'binary'],
                             'capabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
                             'capabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'phonebook']],
+                        ],
+                    ],
+                    'CapabilityItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'section' => ['type' => 'string', 'example' => 'telemetry'],
+                            'key' => ['type' => 'string', 'example' => 'heart_rate'],
+                            'label' => ['type' => 'string', 'example' => 'Heart rate telemetry'],
+                            'sortOrder' => ['type' => 'integer', 'example' => 20],
+                            'isTelemetry' => ['type' => 'boolean', 'example' => true],
+                            'isConfigurable' => ['type' => 'boolean', 'example' => false],
+                            'isRequestable' => ['type' => 'boolean', 'example' => true],
+                        ],
+                    ],
+                    'CapabilityListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CapabilityItem']],
                         ],
                     ],
                     'CompanyItem' => [

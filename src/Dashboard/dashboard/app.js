@@ -80,70 +80,6 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
-const capabilitySectionLabels = {
-    telemetry: 'Telemetry',
-    health: 'Health',
-    contacts: 'Contacts',
-    alarms: 'Alarms',
-    settings_system: 'Settings / System',
-};
-const capabilityLabels = {
-    location: 'Location telemetry',
-    heart_rate: 'Heart rate telemetry',
-    blood_pressure: 'Blood pressure telemetry',
-    blood_oxygen: 'Blood oxygen telemetry',
-    temperature: 'Temperature telemetry',
-    breath_rate: 'Breath rate telemetry',
-    sleep: 'Sleep telemetry',
-    ecg: 'ECG telemetry',
-    hrv: 'HRV telemetry',
-    ppg: 'PPG telemetry',
-    rr_interval: 'RR interval telemetry',
-    auto_vitals_interval: 'Auto vitals interval',
-    heart_rate_measurement_interval: 'Heart rate interval',
-    blood_pressure_measurement_interval: 'Blood pressure interval',
-    blood_oxygen_measurement_interval: 'Blood oxygen interval',
-    temperature_measurement_interval: 'Temperature interval',
-    breath_rate_measurement_interval: 'Breath rate interval',
-    ecg_measurement_interval: 'ECG interval',
-    hrv_measurement_interval: 'HRV interval',
-    ppg_measurement_interval: 'PPG interval',
-    rr_interval_measurement_interval: 'RR interval setting',
-    heart_rate_continuous: 'Continuous heart rate',
-    blood_oxygen_continuous: 'Continuous blood oxygen',
-    blood_pressure_trend: 'Blood pressure trend',
-    temperature_continuous: 'Continuous temperature',
-    step_goal: 'Step goal',
-    sleep_monitoring: 'Sleep monitoring',
-    blood_pressure_calibration: 'Blood pressure calibration',
-    step_reporting_interval: 'Step interval',
-    pedometer_schedule: 'Pedometer schedule',
-    sos_contacts: 'SOS contacts',
-    phonebook: 'Phonebook',
-    call_whitelist: 'Call whitelist',
-    monitor_number: 'Monitor number',
-    alarm_clock: 'Alarm clock',
-    medication_reminders: 'Medication reminders',
-    low_battery_alert: 'Low battery alert',
-    fall_detection: 'Fall detection',
-    fall_sensitivity: 'Fall sensitivity',
-    sos_sms_alert: 'SOS SMS alert',
-    blood_oxygen_alert: 'Blood oxygen alert',
-    temperature_high_alert: 'High temperature alert',
-    temperature_low_alert: 'Low temperature alert',
-    blood_pressure_alert: 'Blood pressure alert',
-    heart_rate_high_alert: 'High heart rate alert',
-    heart_rate_low_alert: 'Low heart rate alert',
-    remove_watch_alarm: 'Remove watch alarm',
-    remove_watch_sms_alert: 'Remove watch SMS alert',
-    location_reporting_interval: 'Location reporting interval',
-    working_mode: 'Working mode',
-    device_binding: 'Device binding',
-    call_in_restriction: 'Incoming call restriction',
-    device_settings_sync: 'Device settings sync',
-    device_password: 'Device password',
-    language_timezone: 'Language and timezone',
-};
 
 let deviceConfigRefreshPromise = null;
 let deviceSearchTimer = null;
@@ -290,11 +226,42 @@ function flattenedCapabilityKeys(capabilities) {
 }
 
 function capabilityLabelByKey(key) {
-    return capabilityLabels[key] || String(key || '').replace(/_/g, ' ');
+    return capabilityCatalogEntryByKey(key)?.label || humanizeCapabilityKey(key);
 }
 
-function modelsForCapabilitySupplier(supplier, models = state.summary.models) {
-    return models.filter(model => model.supplier === supplier);
+function capabilitySectionLabel(section) {
+    const label = state.settingsModal.capabilityCatalog.find(entry => entry.section === section)?.sectionLabel;
+    if (label) {
+        return label;
+    }
+
+    return humanizeCapabilityKey(section);
+}
+
+function capabilityCatalogEntryByKey(key, catalog = state.settingsModal.capabilityCatalog) {
+    return (catalog || []).find(entry => entry.key === key) || null;
+}
+
+function capabilitiesGroupedBySection(catalog = state.settingsModal.capabilityCatalog) {
+    const grouped = new Map();
+    for (const entry of catalog || []) {
+        const section = String(entry.section || '').trim();
+        if (!section) {
+            continue;
+        }
+        if (!grouped.has(section)) {
+            grouped.set(section, []);
+        }
+        grouped.get(section).push(entry);
+    }
+
+    return [...grouped.entries()].map(([section, entries]) => ({section, label: capabilitySectionLabel(section), entries}));
+}
+
+function humanizeCapabilityKey(value) {
+    return String(value || '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
 }
 
 async function loadSummary() {
@@ -641,12 +608,10 @@ function renderSelectedDeviceSummary(device, deviceModel) {
     }
 
     els.selectedDevicePreview.innerHTML = modelImageHtml(modelInfo);
-    els.selectedDeviceTitle.textContent = device.imei;
+    els.selectedDeviceTitle.innerHTML = `<span class="rounded-circle ${device.online ? 'bg-success' : 'bg-danger'} d-inline-block flex-shrink-0 me-2" style="width:.75rem;height:.75rem;"></span>${esc(device.imei)}`;
     els.selectedDeviceMeta.textContent = `${supplier || 'Sem fornecedor'}${model ? ` · ${model}` : ''}`;
-    els.selectedDeviceBadge.className = `badge ${device.online ? 'text-bg-success' : 'text-bg-secondary'}`;
-    els.selectedDeviceBadge.textContent = device.online ? 'ligado' : 'desligado';
     els.selectedDeviceFacts.innerHTML = facts.map(item => `
-        <div class="col-12 col-sm-6">
+        <div class="col-6">
             <dt>${esc(item.label)}</dt>
             <dd class="text-break">${esc(item.value)}</dd>
         </div>
@@ -1442,9 +1407,11 @@ async function loadSettingsModal(section = state.settingsModal.section || 'suppl
     state.settingsModal.companyPagination = null;
     state.settingsModal.licensesPagination = null;
     state.settingsModal.apiUsersPagination = null;
+    state.settingsModal.capabilityCatalog = [];
     state.settingsModal.capabilitySupplier = '';
     state.settingsModal.capabilityModelId = null;
-    state.settingsModal.capabilityEnabledRequests = [];
+    state.settingsModal.capabilityEnabledCapabilities = [];
+    state.settingsModal.currentCapabilitiesModel = null;
     activateSettingsSection(section);
     settingsModal.show();
     if (section === 'suppliers') {
@@ -1522,12 +1489,26 @@ async function loadSettingsModelsSection(page = 1) {
     if (!state.settingsModal.sectionLoaded.suppliers) {
         await loadSettingsSuppliersSection();
     }
-    const response = await api.models({page});
+    const params = {
+        page,
+        limit: state.settingsModal.modelsPageSize || 20,
+    };
+    if (state.settingsModal.modelsDeviceType) {
+        params.deviceType = state.settingsModal.modelsDeviceType;
+    }
+    if (state.settingsModal.modelsSupplier) {
+        params.supplier = state.settingsModal.modelsSupplier;
+    }
+    if (state.settingsModal.modelsSearchQuery) {
+        params.q = state.settingsModal.modelsSearchQuery;
+    }
+    const response = await api.models(params);
     const models = response.data || [];
     state.settingsModal.modelsPagination = response.pagination || null;
     state.summary.models = models;
     state.settingsModal.sectionLoaded.models = true;
     renderModelsSection(models);
+    renderModelsFilterButtons();
     renderSettingsPagination(
         state.settingsModal.modelsPagination,
         els.settingsModelsPagination,
@@ -1535,16 +1516,132 @@ async function loadSettingsModelsSection(page = 1) {
         els.settingsModelsPaginationControls,
         'settingsModelsPage'
     );
+    if (els.modelsListLimit) {
+        els.modelsListLimit.value = String(state.settingsModal.modelsPageSize);
+    }
+    if (els.modelsListSearch) {
+        els.modelsListSearch.value = state.settingsModal.modelsSearchQuery;
+    }
 }
 
-async function loadSettingsCapabilitiesSection() {
-    if (!state.settingsModal.sectionLoaded.capabilities) {
-        const response = await api.models();
-        state.summary.models = response.data || [];
-        state.settingsModal.sectionLoaded.capabilities = true;
+async function ensureCapabilityCatalog(deviceType) {
+    const normalized = normalizeDeviceType(deviceType || state.settingsModal.capabilityDeviceType || 'watch');
+    const cached = state.settingsModal.capabilityCatalogByType?.[normalized];
+    if (cached) {
+        state.settingsModal.capabilityCatalog = cached;
+        return cached;
     }
-    syncCapabilitiesSelection();
-    renderCapabilitiesSection();
+
+    const response = await api.capabilities({deviceType: normalized});
+    const catalog = response.data || [];
+    state.settingsModal.capabilityCatalogByType = {
+        ...(state.settingsModal.capabilityCatalogByType || {}),
+        [normalized]: catalog,
+    };
+    state.settingsModal.capabilityCatalog = catalog;
+    return catalog;
+}
+
+async function loadSettingsCapabilitiesSection(deviceType = state.settingsModal.capabilityDeviceType || 'watch') {
+    const normalized = normalizeDeviceType(deviceType);
+    state.settingsModal.capabilityDeviceType = normalized;
+    await ensureCapabilityCatalog(normalized);
+    state.settingsModal.sectionLoaded.capabilities = true;
+    renderCapabilitiesCatalogSection();
+}
+
+function renderCapabilitiesCatalogSection() {
+    renderButtonGroup(
+        els.capabilityDeviceTypeButtons,
+        deviceTypeOptions,
+        state.settingsModal.capabilityDeviceType || 'watch',
+        'selectCapabilityDeviceType'
+    );
+
+    const sections = capabilitiesGroupedBySection(state.settingsModal.capabilityCatalog);
+    els.capabilityCatalogEmpty.classList.toggle('d-none', sections.length > 0);
+    els.capabilityCatalogViewer.innerHTML = sections.map(({section, label, entries}) => `
+        <section class="border rounded bg-body-tertiary p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h6 mb-0">${esc(label)}</h3>
+                <span class="small text-secondary">${entries.length} capacidades</span>
+            </div>
+            <div class="vstack gap-2">
+                ${entries.map(entry => `
+                    <div class="border rounded px-3 py-2 bg-white">
+                        <div class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</div>
+                        <div class="small text-secondary">${esc(entry.key)}</div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <span class="badge text-bg-${entry.isTelemetry ? 'info' : 'secondary'}">${entry.isTelemetry ? 'telemetria' : 'configuração'}</span>
+                            <span class="badge text-bg-${entry.isConfigurable ? 'primary' : 'secondary'}">${entry.isConfigurable ? 'configurável' : 'não configurável'}</span>
+                            <span class="badge text-bg-${entry.isRequestable ? 'success' : 'secondary'}">${entry.isRequestable ? 'solicitável' : 'não solicitável'}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </section>
+    `).join('');
+}
+
+function renderModelsFilterButtons() {
+    const models = state.summary.models || [];
+
+    const deviceTypeValues = new Set(models.map(m => modelDeviceType(m)));
+    const supplierNames = new Set(models.map(m => m.supplier).filter(Boolean));
+
+    const deviceTypeOptionsFiltered = deviceTypeValues.size > 0
+        ? deviceTypeOptions.filter(o => deviceTypeValues.has(o.value))
+        : deviceTypeOptions;
+
+    const supplierOptionsFiltered = supplierNames.size > 0
+        ? (state.modelModalSuppliers || []).filter(o => supplierNames.has(o.name))
+        : (state.modelModalSuppliers || []);
+
+    renderButtonGroup(
+        els.modelsDeviceTypeButtons,
+        deviceTypeOptionsFiltered.map(o => ({value: o.value, label: o.label})),
+        state.settingsModal.modelsDeviceType || '',
+        'selectModelsDeviceType'
+    );
+    renderButtonGroup(
+        els.modelsSupplierButtons,
+        supplierOptionsFiltered.map(o => ({value: o.name, label: o.name})),
+        state.settingsModal.modelsSupplier,
+        'selectModelsSupplier'
+    );
+}
+
+function selectModelsDeviceType(deviceType) {
+    state.settingsModal.modelsDeviceType = deviceType;
+    state.settingsModal.modelsPage = 1;
+    renderModelsFilterButtons();
+    void loadSettingsModelsSection(1);
+}
+
+function selectModelsSupplier(supplier) {
+    state.settingsModal.modelsSupplier = supplier;
+    state.settingsModal.modelsPage = 1;
+    renderModelsFilterButtons();
+    void loadSettingsModelsSection(1);
+}
+
+function handleModelsListLimitChange() {
+    const nextLimit = parseInt(els.modelsListLimit.value || '20', 10) || 20;
+    if (state.settingsModal.modelsPageSize === nextLimit) {
+        return;
+    }
+    state.settingsModal.modelsPageSize = nextLimit;
+    void loadSettingsModelsSection(1);
+}
+
+let modelsSearchTimer = null;
+
+function handleModelsListSearchInput() {
+    state.settingsModal.modelsSearchQuery = els.modelsListSearch.value.trim();
+    clearTimeout(modelsSearchTimer);
+    modelsSearchTimer = setTimeout(() => {
+        void loadSettingsModelsSection(1);
+    }, 250);
 }
 
 async function loadSettingsApiUsersSection(page = 1) {
@@ -1584,16 +1681,12 @@ async function toggleSupplier(id, enabled) {
 function renderModelsSection(models) {
     resetModelForm();
     els.modelListBody.innerHTML = (models || []).map(model => `
-        <tr>
+        <tr data-action="modelCapabilities" data-id="${model.id}" role="button" tabindex="0">
         <td>${modelImageHtml(model)}</td>
         <td>${esc(model.supplier)}</td>
         <td>${esc(modelCommercialName(model))}</td>
         <td>${esc(modelInternalName(model))}</td>
         <td>${esc(deviceTypeLabel(modelDeviceType(model)))}</td>
-        <td>
-        <button class="btn btn-outline-secondary btn-sm" data-id="${model.id}" data-supplier-id="${model.supplier_id}" data-supplier="${esc(model.supplier)}" data-internal-model="${esc(modelInternalName(model))}" data-commercial-name="${esc(modelCommercialName(model))}" data-device-type="${esc(modelDeviceType(model))}" data-image="${esc(model.image || '')}" data-action="editModel" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-danger btn-sm" data-id="${model.id}" data-action="deleteModel" title="Apagar"><i class="fa-solid fa-trash"></i></button>
-        </td>
         </tr>`).join('');
 }
 
@@ -1695,17 +1788,7 @@ async function saveModel() {
     const result = await api.saveModel(els.modelForm.dataset.modelId || '', body);
     if (result.error) { alert(result.error.message || result.error.code); return; }
 
-    state.settingsModal.sectionLoaded.models = false;
-    state.settingsModal.sectionLoaded.capabilities = false;
-    await loadSettingsModelsSection();
-}
-
-async function deleteModel(id) {
-    if (!confirm('Apagar modelo?')) return;
-    await api.deleteModel(id);
-    state.settingsModal.sectionLoaded.models = false;
-    state.settingsModal.sectionLoaded.capabilities = false;
-    await loadSettingsModelsSection();
+    backToModelList();
 }
 
 function renderApiUsersSection(users) {
@@ -1943,139 +2026,195 @@ function activateSettingsSection(section) {
     bootstrap.Tab.getOrCreateInstance(button).show();
 }
 
-function syncCapabilitiesSelection() {
-    const deviceType = state.settingsModal.capabilityDeviceType || '';
-    const models = state.summary.models.filter(model => !deviceType || modelDeviceType(model) === deviceType);
+async function openModelDetail(modelId) {
+    const response = await api.model(modelId);
+    const model = response.data || response;
+    await ensureCapabilityCatalog(model.device_type || model.deviceType || 'watch');
 
-    let currentSupplier = state.settingsModal.capabilitySupplier || '';
-    const availableSuppliers = [...new Set(models.map(model => model.supplier).filter(Boolean))];
-    if (!availableSuppliers.includes(currentSupplier)) {
-        currentSupplier = availableSuppliers[0] || '';
+    state.settingsModal.currentCapabilitiesModel = model;
+    state.settingsModal.capabilityModelId = Number(model.id);
+    state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(model.capabilities || {});
+
+    els.modelsBreadcrumbModels.classList.remove('active');
+    els.modelsBreadcrumbNew.classList.add('d-none');
+    els.modelsBreadcrumbCurrent.textContent = modelCommercialName(model);
+    els.modelsBreadcrumbCurrent.classList.remove('d-none');
+    els.modelsBreadcrumbCurrent.classList.add('active');
+
+    renderModelDetailInfo(model);
+    renderCapabilitiesSection();
+
+    if (state.settingsModal.modelsCarousel) {
+        state.settingsModal.modelsCarousel.to(2);
     }
-    state.settingsModal.capabilitySupplier = currentSupplier;
-
-    const supplierModels = modelsForCapabilitySupplier(currentSupplier).filter(m => !deviceType || modelDeviceType(m) === deviceType);
-    const currentModel = supplierModels.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId))
-        || supplierModels[0]
-        || null;
-
-    state.settingsModal.capabilityModelId = currentModel ? Number(currentModel.id) : null;
-    state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(currentModel?.capabilities || {});
 }
 
-let capabilityDebounceTimer = null;
+function renderModelDetailInfo(model) {
+    const label = modelCommercialName(model);
+    els.modelDetailImage.innerHTML = modelImageHtml(model)
+        ? modelImageHtml(model).replace('style="width:40px;height:40px;"', 'style="max-height:120px;" class="object-fit-contain"')
+        : `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
+    els.modelDetailName.textContent = label;
+    els.modelDetailTitle.textContent = label;
+    els.modelDetailSupplier.textContent = String(model.supplier || '');
+    els.modelDetailSupplierValue.textContent = String(model.supplier || '');
+    els.modelDetailTypeValue.textContent = deviceTypeLabel(modelDeviceType(model));
+    els.modelDetailInternalModelValue.textContent = modelInternalName(model);
+}
 
-function renderCapabilitiesSection() {
-    const supplier = state.settingsModal.capabilitySupplier || '';
-    const deviceType = state.settingsModal.capabilityDeviceType || '';
-    const filteredModels = (state.summary.models || []).filter(model =>
-        (!deviceType || modelDeviceType(model) === deviceType) &&
-        (!supplier || model.supplier === supplier)
-    );
-    const selectedModel = filteredModels.find(model => Number(model.id) === Number(state.settingsModal.capabilityModelId)) || null;
-    const enabled = new Set(state.settingsModal.capabilityEnabledCapabilities || []);
+function backToModelList() {
+    if (!state.settingsModal.modelsCarousel) return;
 
-    renderButtonGroup(
-        els.capabilityDeviceTypeButtons,
-        deviceTypeOptions.map(entry => ({value: entry.value, label: entry.label})),
-        deviceType || 'watch',
-        'selectCapabilityDeviceType'
-    );
-
-    const suppliers = suppliersFromModels(state.summary.models).filter(s => {
-        if (!deviceType) return true;
-        return state.summary.models.some(m => m.supplier === s && modelDeviceType(m) === deviceType);
-    });
-    renderButtonGroup(
-        els.capabilitySupplierButtons,
-        suppliers.map(entry => ({value: entry, label: entry})),
-        supplier,
-        'selectCapabilitySupplier'
-    );
-    renderButtonGroup(
-        els.capabilityModelButtons,
-        filteredModels.map(entry => ({value: String(entry.id), label: modelDisplayLabel(entry)})),
-        selectedModel ? String(selectedModel.id) : '',
-        'selectCapabilityModel'
-    );
-
-    if (selectedModel) {
-        const label = modelCommercialName(selectedModel);
-        els.capabilityModelPreview.innerHTML = modelImageHtml(selectedModel)
-            ? modelImageHtml(selectedModel).replace('style="width:40px;height:40px;"', 'style="max-height:100px;" class="object-fit-contain"')
-            : `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
-        els.capabilityModelName.textContent = label;
-    } else {
-        els.capabilityModelPreview.innerHTML = `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">Modelo</div></div>`;
-        els.capabilityModelName.textContent = 'Modelo';
-    }
-
-    const capabilities = selectedModel?.capabilities && typeof selectedModel.capabilities === 'object'
-        ? selectedModel.capabilities
-        : {};
-    els.capabilitySelectionEmpty.classList.toggle('d-none', !!selectedModel);
-    els.capabilityEditor.classList.toggle('d-none', !selectedModel);
-    if (!selectedModel) {
-        els.capabilityGroups.innerHTML = '';
-        els.capabilitySummary.textContent = '';
+    if (state.settingsModal.modelsCarousel._element.querySelector('.carousel-item.active') === state.settingsModal.modelsCarousel._element.firstElementChild?.firstElementChild) {
         return;
     }
 
-    els.capabilityTitle.textContent = modelCommercialName(selectedModel);
-    els.capabilitySubtitle.textContent = String(selectedModel.supplier || '');
-    const totalCapabilities = Object.values(capabilities).reduce((count, entries) => count + Object.keys(entries || {}).length, 0);
-    els.capabilitySummary.textContent = `${enabled.size}/${totalCapabilities} ativos`;
+    els.modelsBreadcrumbModels.classList.add('active');
+    els.modelsBreadcrumbNew.classList.add('d-none');
+    els.modelsBreadcrumbNew.classList.remove('active');
+    els.modelsBreadcrumbCurrent.classList.add('d-none');
+    els.modelsBreadcrumbCurrent.classList.remove('active');
+    els.modelsBreadcrumbCurrent.textContent = '';
 
-    els.capabilityGroups.innerHTML = Object.entries(capabilitySectionLabels).map(([section, label]) => {
-        const entries = Object.keys(capabilities[section] || {});
-        if (entries.length === 0) {
-            return '';
+    state.settingsModal.modelsCarousel.to(0);
+
+    state.settingsModal.currentCapabilitiesModel = null;
+    state.settingsModal.sectionLoaded.models = false;
+    void loadSettingsModelsSection();
+}
+
+function openNewModelForm() {
+    resetModelForm();
+
+    els.modelsBreadcrumbModels.classList.remove('active');
+    els.modelsBreadcrumbNew.textContent = 'Novo modelo';
+    els.modelsBreadcrumbNew.classList.remove('d-none');
+    els.modelsBreadcrumbNew.classList.add('active');
+    els.modelsBreadcrumbCurrent.classList.add('d-none');
+    els.modelsBreadcrumbCurrent.classList.remove('active');
+
+    if (state.settingsModal.modelsCarousel) {
+        state.settingsModal.modelsCarousel.to(1);
+    }
+}
+
+function editCurrentModel() {
+    const model = state.settingsModal.currentCapabilitiesModel;
+    if (!model) return;
+
+    editModel(
+        Number(model.id),
+        Number(model.supplier_id || model.supplierId || 0),
+        model.supplier || '',
+        model.internal_model || model.internalModel || '',
+        model.commercial_name || model.commercialName || '',
+        model.device_type || model.deviceType || 'watch',
+        model.image || ''
+    );
+
+    els.modelsBreadcrumbModels.classList.remove('active');
+    els.modelsBreadcrumbNew.textContent = `Editar: ${modelCommercialName(model)}`;
+    els.modelsBreadcrumbNew.classList.remove('d-none');
+    els.modelsBreadcrumbNew.classList.add('active');
+    els.modelsBreadcrumbCurrent.classList.add('d-none');
+    els.modelsBreadcrumbCurrent.classList.remove('active');
+
+    if (state.settingsModal.modelsCarousel) {
+        state.settingsModal.modelsCarousel.to(1);
+    }
+}
+
+async function deleteCurrentModel() {
+    const model = state.settingsModal.currentCapabilitiesModel;
+    if (!model) return;
+    if (!window.confirm(`Tem a certeza que deseja apagar o modelo "${modelCommercialName(model)}"?`)) return;
+
+    await api.deleteModel(model.id);
+    backToModelList();
+}
+
+function renderCapabilitiesSection() {
+    const model = state.settingsModal.currentCapabilitiesModel;
+    const enabled = new Set(state.settingsModal.capabilityEnabledCapabilities || []);
+    const catalogSections = capabilitiesGroupedBySection(state.settingsModal.capabilityCatalog);
+
+    if (model) {
+        const label = modelCommercialName(model);
+        els.modelDetailImage.innerHTML = modelImageHtml(model)
+            ? modelImageHtml(model).replace('style="width:40px;height:40px;"', 'style="max-height:120px;" class="object-fit-contain"')
+            : `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
+        els.modelDetailName.textContent = label;
+    } else {
+        els.modelDetailImage.innerHTML = `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">Modelo</div></div>`;
+        els.modelDetailName.textContent = 'Modelo';
+    }
+
+    const capabilities = model?.capabilities && typeof model.capabilities === 'object'
+        ? model.capabilities
+        : {};
+
+    els.capabilityTitle.textContent = model ? modelCommercialName(model) : 'Capacidades';
+    els.capabilitySubtitle.textContent = String(model?.supplier || '');
+    const sections = catalogSections.map(({section, label, entries}) => {
+        const sectionEntries = entries
+            .filter(entry => entry.isTelemetry || entry.isConfigurable)
+            .map(entry => entry.key);
+        if (sectionEntries.length === 0) {
+            return null;
         }
 
+        return {section, label, entries: sectionEntries};
+    }).filter(Boolean);
+    const totalCapabilities = sections.reduce((count, item) => count + item.entries.length, 0);
+    els.capabilitySummary.textContent = `${enabled.size}/${totalCapabilities} ativos`;
+
+    const sectionButtonConfig = {
+        telemetry:     {icon: 'fa-chart-line', color: 'btn-outline-info'},
+        health:        {icon: 'fa-heart-pulse', color: 'btn-outline-success'},
+        contacts:      {icon: 'fa-address-book', color: 'btn-outline-primary'},
+        alarms:        {icon: 'fa-bell', color: 'btn-outline-danger'},
+        settings_system: {icon: 'fa-gear', color: 'btn-outline-secondary'},
+    };
+
+    els.capabilitySectionNav.innerHTML = sections.map(({section, label}) => {
+        const cfg = sectionButtonConfig[section] || {icon: 'fa-gear', color: 'btn-secondary'};
         return `
-        <section class="border rounded bg-body-tertiary p-3">
+        <button type="button" class="btn btn-sm ${cfg.color} w-100 d-flex align-items-center gap-2 text-start" data-action="jumpCapabilitySection" data-section="${esc(section)}">
+            <i class="fa-solid ${cfg.icon}"></i> ${esc(label)}
+        </button>`;
+    }).join('');
+
+    els.capabilityGroups.innerHTML = sections.map(({section, label, entries}) => `
+        <section class="border rounded bg-body-tertiary p-3" id="capability-section-${esc(section)}" data-capability-section="${esc(section)}">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="h6 mb-0">${esc(label)}</h3>
                 <span class="small text-secondary">${entries.filter(f => enabled.has(f)).length}/${entries.length} ativos</span>
             </div>
             <div class="d-flex flex-column gap-2">
-                ${entries.map(feature => `
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequest" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? 'checked' : ''}>
-                            <label class="form-check-label" for="cap-${esc(feature)}">${esc(capabilityLabelByKey(feature))}</label>
+                ${entries.map(feature => {
+                    const labelText = capabilityLabelByKey(feature);
+                    const sectionState = capabilities[section] || {};
+                    const isInModelPayload = Object.prototype.hasOwnProperty.call(sectionState, feature);
+                    return `
+                        <div class="d-flex justify-content-between align-items-start gap-3 border rounded px-3 py-2 bg-white">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequest" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? 'checked' : ''}>
+                                <label class="form-check-label" for="cap-${esc(feature)}">${esc(labelText)}</label>
+                                ${!isInModelPayload ? '<div class="small text-secondary">Disponível no catálogo do tipo de dispositivo.</div>' : ''}
+                            </div>
+                            ${section === 'telemetry' && capabilityCatalogEntryByKey(feature)?.isRequestable
+            ? `<span class="badge text-bg-success">${esc('Solicitável')}</span>`
+            : ''
+        }
                         </div>`
-                ).join('')}
+                }).join('')}
             </div>
-        </section>`;
-    }).join('');
-}
-
-function selectCapabilityDeviceType(deviceType) {
-    clearTimeout(capabilityDebounceTimer);
-    capabilityDebounceTimer = setTimeout(() => {
-        state.settingsModal.capabilityDeviceType = deviceType;
-        state.settingsModal.capabilitySupplier = '';
-        state.settingsModal.capabilityModelId = null;
-        syncCapabilitiesSelection();
-        renderCapabilitiesSection();
-    }, 150);
-}
-
-function selectCapabilitySupplier(supplier) {
-    state.settingsModal.capabilitySupplier = supplier;
-    state.settingsModal.capabilityModelId = null;
-    syncCapabilitiesSelection();
-    renderCapabilitiesSection();
-}
-
-function selectCapabilityModel(modelId) {
-    state.settingsModal.capabilityModelId = Number(modelId);
-    syncCapabilitiesSelection();
-    renderCapabilitiesSection();
+        </section>`
+    ).join('');
 }
 
 async function saveCapabilities() {
-    const model = state.summary.models.find(entry => Number(entry.id) === Number(state.settingsModal.capabilityModelId)) || null;
+    const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) {
         alert('Selecione um modelo');
         return;
@@ -2098,9 +2237,7 @@ async function saveCapabilities() {
         return;
     }
 
-    state.settingsModal.sectionLoaded.models = false;
-    state.settingsModal.sectionLoaded.capabilities = false;
-    await loadSettingsCapabilitiesSection();
+    backToModelList();
 }
 
 function revokeModelPreviewUrl() {
@@ -2199,24 +2336,39 @@ function cacheElements() {
         modelImage: document.getElementById('modelImage'),
         modelPreviewContent: document.getElementById('modelPreviewContent'),
         modelListBody: document.getElementById('modelListBody'),
+        modelsDeviceTypeButtons: document.getElementById('modelsDeviceTypeButtons'),
+        modelsSupplierButtons: document.getElementById('modelsSupplierButtons'),
+        modelsListLimit: document.getElementById('modelsListLimit'),
+        modelsListSearch: document.getElementById('modelsListSearch'),
         settingsModelsPagination: document.getElementById('settingsModels'),
         settingsModelsPaginationSummary: document.getElementById('settingsModelsSummary'),
         settingsModelsPaginationControls: document.getElementById('settingsModelsControls'),
         resetModelBtn: document.getElementById('resetModelBtn'),
         deleteDeviceBtn: document.getElementById('deleteDeviceBtn'),
         saveModelBtn: document.getElementById('saveModelBtn'),
-        capabilityDeviceTypeButtons: document.getElementById('capabilityDeviceTypeButtons'),
-        capabilitySupplierButtons: document.getElementById('capabilitySupplierButtons'),
-        capabilityModelButtons: document.getElementById('capabilityModelButtons'),
-        capabilitySelectionEmpty: document.getElementById('capabilitySelectionEmpty'),
-        capabilityEditor: document.getElementById('capabilityEditor'),
+        modelsBreadcrumbModels: document.getElementById('modelsBreadcrumbModels'),
+        modelsBreadcrumbNew: document.getElementById('modelsBreadcrumbNew'),
+        modelsBreadcrumbCurrent: document.getElementById('modelsBreadcrumbCurrent'),
+        modelsCarousel: document.getElementById('modelsCarousel'),
+        modelsNewModelBtn: document.getElementById('modelsNewModelBtn'),
+        modelDetailImage: document.getElementById('modelDetailImage'),
+        modelDetailName: document.getElementById('modelDetailName'),
+        modelDetailTitle: document.getElementById('modelDetailTitle'),
+        modelDetailSupplier: document.getElementById('modelDetailSupplier'),
+        modelDetailSupplierValue: document.getElementById('modelDetailSupplierValue'),
+        modelDetailTypeValue: document.getElementById('modelDetailTypeValue'),
+        modelDetailInternalModelValue: document.getElementById('modelDetailInternalModelValue'),
+        modelDetailEditBtn: document.getElementById('modelDetailEditBtn'),
+        modelDetailDeleteBtn: document.getElementById('modelDetailDeleteBtn'),
         capabilityTitle: document.getElementById('capabilityTitle'),
         capabilitySubtitle: document.getElementById('capabilitySubtitle'),
         capabilitySummary: document.getElementById('capabilitySummary'),
         saveCapabilitiesBtn: document.getElementById('saveCapabilitiesBtn'),
         capabilityGroups: document.getElementById('capabilityGroups'),
-        capabilityModelPreview: document.getElementById('capabilityModelPreview'),
-        capabilityModelName: document.getElementById('capabilityModelName'),
+        capabilitySectionNav: document.getElementById('capabilitySectionNav'),
+        capabilityDeviceTypeButtons: document.getElementById('capabilityDeviceTypeButtons'),
+        capabilityCatalogEmpty: document.getElementById('capabilityCatalogEmpty'),
+        capabilityCatalogViewer: document.getElementById('capabilityCatalogViewer'),
         apiUserForm: document.getElementById('apiUserForm'),
         apiUserId: document.getElementById('apiUserId'),
         apiUsername: document.getElementById('apiUsername'),
@@ -2311,10 +2463,17 @@ function bindEvents() {
     els.deviceModelButtons.addEventListener('click', handleDeviceModelClick);
     els.modelSupplierButtons.addEventListener('click', handleModelSupplierClick);
     els.modelDeviceTypeButtons.addEventListener('click', handleModelDeviceTypeClick);
-    els.capabilityDeviceTypeButtons.addEventListener('click', handleCapabilityDeviceTypeClick);
-    els.capabilitySupplierButtons.addEventListener('click', handleCapabilitySupplierClick);
-    els.capabilityModelButtons.addEventListener('click', handleCapabilityModelClick);
     els.capabilityGroups.addEventListener('change', handleCapabilityGroupsChange);
+    els.capabilitySectionNav.addEventListener('click', jumpCapabilitySection);
+    els.capabilityDeviceTypeButtons.addEventListener('click', handleCapabilityDeviceTypeClick);
+    els.modelsBreadcrumbModels.addEventListener('click', backToModelList);
+    els.modelsNewModelBtn.addEventListener('click', openNewModelForm);
+    els.modelDetailEditBtn.addEventListener('click', editCurrentModel);
+    els.modelDetailDeleteBtn.addEventListener('click', () => { void deleteCurrentModel(); });
+    els.modelsCarousel.addEventListener('click', event => {
+        const button = event.target.closest('[data-action="backToModelList"]');
+        if (button) backToModelList();
+    });
     els.settingsSuppliersTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'suppliers';
         if (!state.settingsModal.sectionLoaded.suppliers) {
@@ -2326,14 +2485,18 @@ function bindEvents() {
         if (!state.settingsModal.sectionLoaded.models) {
             void loadSettingsModelsSection();
         }
+        if (!state.settingsModal.modelsCarousel && els.modelsCarousel) {
+            state.settingsModal.modelsCarousel = new bootstrap.Carousel(els.modelsCarousel, {
+                interval: false,
+                wrap: false,
+                touch: false,
+            });
+        }
     });
     els.settingsCapabilitiesTabBtn.addEventListener('shown.bs.tab', () => {
         state.settingsModal.section = 'capabilities';
         if (!state.settingsModal.sectionLoaded.capabilities) {
             void loadSettingsCapabilitiesSection();
-        } else {
-            syncCapabilitiesSelection();
-            renderCapabilitiesSection();
         }
     });
     els.settingsApiUsersTabBtn.addEventListener('shown.bs.tab', () => {
@@ -2364,6 +2527,10 @@ function bindEvents() {
     els.requestGrid.addEventListener('click', handleRequestGridClick);
     els.supplierListBody.addEventListener('click', handleSupplierListClick);
     els.modelListBody.addEventListener('click', handleModelListClick);
+    els.modelsDeviceTypeButtons.addEventListener('click', handleModelsDeviceTypeClick);
+    els.modelsSupplierButtons.addEventListener('click', handleModelsSupplierClick);
+    els.modelsListLimit.addEventListener('change', handleModelsListLimitChange);
+    els.modelsListSearch.addEventListener('input', handleModelsListSearchInput);
     els.apiUserListBody.addEventListener('click', handleApiUserListClick);
     els.companyListBody.addEventListener('click', handleCompanyListClick);
     els.licenseListBody.addEventListener('click', handleLicenseListClick);
@@ -2633,19 +2800,20 @@ function handleModelDeviceTypeClick(event) {
     if (button) selectModelDeviceType(button.dataset.value);
 }
 
+function handleModelsDeviceTypeClick(event) {
+    const button = event.target.closest('[data-action="selectModelsDeviceType"]');
+    if (button) selectModelsDeviceType(button.dataset.value);
+}
+
+function handleModelsSupplierClick(event) {
+    const button = event.target.closest('[data-action="selectModelsSupplier"]');
+    if (button) selectModelsSupplier(button.dataset.value);
+}
+
 function handleCapabilityDeviceTypeClick(event) {
     const button = event.target.closest('[data-action="selectCapabilityDeviceType"]');
-    if (button) selectCapabilityDeviceType(button.dataset.value);
-}
-
-function handleCapabilitySupplierClick(event) {
-    const button = event.target.closest('[data-action="selectCapabilitySupplier"]');
-    if (button) selectCapabilitySupplier(button.dataset.value);
-}
-
-function handleCapabilityModelClick(event) {
-    const button = event.target.closest('[data-action="selectCapabilityModel"]');
-    if (button) selectCapabilityModel(button.dataset.value);
+    if (!button) return;
+    void loadSettingsCapabilitiesSection(button.dataset.value);
 }
 
 function handleCapabilityGroupsChange(event) {
@@ -2663,6 +2831,19 @@ function handleCapabilityGroupsChange(event) {
     }
     state.settingsModal.capabilityEnabledCapabilities = [...enabled];
     renderCapabilitiesSection();
+}
+
+function jumpCapabilitySection(event) {
+    const button = event.target.closest('[data-action="jumpCapabilitySection"]');
+    if (!button) return;
+
+    const section = button.dataset.section;
+    if (!section) return;
+
+    const target = document.querySelector(`[data-capability-section="${section}"]`);
+    if (target) {
+        target.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
 }
 
 function handleDeviceListClick(event) {
@@ -2687,11 +2868,8 @@ function handleSupplierListClick(event) {
 function handleModelListClick(event) {
     const button = event.target.closest('[data-action]');
     if (!button) return;
-    if (button.dataset.action === 'editModel') {
-        editModel(parseInt(button.dataset.id), parseInt(button.dataset.supplierId), button.dataset.supplier, button.dataset.internalModel, button.dataset.commercialName, button.dataset.deviceType, button.dataset.image);
-    }
-    if (button.dataset.action === 'deleteModel') {
-        deleteModel(parseInt(button.dataset.id));
+    if (button.dataset.action === 'modelCapabilities') {
+        void openModelDetail(parseInt(button.dataset.id));
     }
 }
 

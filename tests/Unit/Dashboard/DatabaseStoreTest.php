@@ -11,6 +11,9 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
     {
         $database = $this->createDashboardDatabase();
         $db = DashboardDataAccess::fromDatabase($database);
+        $catalog = $db->genericCapabilities->all('watch');
+        self::assertNotEmpty($catalog);
+        self::assertSame('watch', $catalog[0]['device_type'] ?? null);
         self::assertSame(8, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);

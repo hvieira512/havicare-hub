@@ -96,24 +96,26 @@ final class Models
             )),
         ];
 
-        $catalog = $this->db->genericCapabilities->all();
+        $catalogByType = [];
         $enabledByModel = $this->db->modelCapabilities->enabledFeaturesForModelIds(array_map(
             static fn(array $model): int => (int)($model['id'] ?? 0),
             $models
         ));
-        $models = array_map(function (array $model) use ($enabledByModel, $catalog, $baseUrl): array {
+        $models = array_map(function (array $model) use ($enabledByModel, &$catalogByType, $baseUrl): array {
             $modelId = (int)($model['id'] ?? 0);
             $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
+            $deviceType = (string)($model['device_type'] ?? 'watch');
+            $catalogByType[$deviceType] ??= $this->db->genericCapabilities->all($deviceType);
             return [
                 'id' => $modelId,
                 'supplier_id' => (int)($model['supplier_id'] ?? 0),
                 'supplier' => (string)($model['supplier'] ?? ''),
                 'internalModel' => (string)($model['internal_model'] ?? ''),
                 'commercialName' => (string)($model['commercial_name'] ?? ''),
-                'deviceType' => (string)($model['device_type'] ?? 'watch'),
+                'deviceType' => $deviceType,
                 'protocol' => $protocol,
                 'image' => $this->fullModelImage((string)($model['image'] ?? ''), $baseUrl),
-                'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $enabledByModel[$modelId] ?? []),
+                'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix($catalogByType[$deviceType], $enabledByModel[$modelId] ?? []),
             ];
         }, $models);
 
@@ -130,14 +132,16 @@ final class Models
         $baseUrl = $this->baseUrlFromRequest($request);
         $protocol = DeviceProtocol::forSupplier((string)($entry['supplier_name'] ?? ''));
         $imagePath = (string)($entry['image_path'] ?? '');
-        $catalog = $this->db->genericCapabilities->all();
+        $deviceType = (string)($entry['device_type'] ?? 'watch');
+        $catalog = $this->db->genericCapabilities->all($deviceType);
 
         return [
             'id' => $id,
+            'supplier_id' => (int)($entry['supplier_id'] ?? 0),
             'supplier' => (string)($entry['supplier_name'] ?? ''),
             'internalModel' => (string)($entry['internal_model'] ?? ''),
             'commercialName' => (string)($entry['commercial_name'] ?? ''),
-            'deviceType' => (string)($entry['device_type'] ?? 'watch'),
+            'deviceType' => $deviceType,
             'protocol' => $protocol,
             'image' => $this->fullModelImage($imagePath, $baseUrl),
             'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix(
@@ -309,7 +313,12 @@ final class Models
             return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
         }
 
-        $availableFeatures = GenericModelCapabilityCatalog::keysForProtocol($protocol);
+        $availableFeatures = $this->db->genericCapabilities->keysForDeviceType($deviceType);
+        $availableFeatureSet = array_flip($availableFeatures);
+        $defaultFeatures = array_values(array_filter(
+            GenericModelCapabilityCatalog::keysForProtocol($protocol),
+            static fn(string $feature): bool => isset($availableFeatureSet[$feature])
+        ));
         $hasEnabledCapabilitiesSelection = array_key_exists('capabilitiesConfigured', $decoded)
             || array_key_exists('capabilities', $decoded)
             || array_key_exists('capabilities[]', $decoded)
@@ -324,18 +333,22 @@ final class Models
             ?? null
         );
         if (!$hasEnabledCapabilitiesSelection) {
-            $enabledCapabilities = $availableFeatures;
+            $enabledCapabilities = $defaultFeatures;
         } else {
-            $featureSet = array_flip($availableFeatures);
-            $enabledCapabilities = array_values(array_filter($enabledCapabilities, static fn(string $f): bool => isset($featureSet[$f])));
+            $unsupported = array_values(array_filter($enabledCapabilities, static fn(string $f): bool => !isset($availableFeatureSet[$f])));
+            if ($unsupported !== []) {
+                return ['error' => ['code' => 'unsupported_capability', 'message' => 'One or more capabilities are not allowed for this device type']];
+            }
         }
+
+        $capabilityIds = $this->capabilityIdsForDeviceTypeAndKeys($deviceType, $enabledCapabilities);
 
         return [
             'supplier_id' => $supplierId,
             'internal_model' => $internalModel,
             'commercial_name' => $commercialName,
             'device_type' => $deviceType,
-            'enabled_capabilities' => $enabledCapabilities,
+            'enabled_capabilities' => $capabilityIds,
         ];
     }
 
@@ -440,5 +453,23 @@ final class Models
             return null;
         }
         return $baseUrl . $path;
+    }
+
+    /**
+     * @param list<string> $keys
+     * @return list<int>
+     */
+    private function capabilityIdsForDeviceTypeAndKeys(string $deviceType, array $keys): array
+    {
+        $ids = [];
+        foreach ($keys as $key) {
+            $id = $this->db->genericCapabilities->findIdByDeviceTypeAndKey($deviceType, (string)$key);
+            if ($id === null) {
+                continue;
+            }
+            $ids[$id] = $id;
+        }
+
+        return array_values($ids);
     }
 }

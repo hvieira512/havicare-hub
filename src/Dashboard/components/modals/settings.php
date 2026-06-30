@@ -28,97 +28,155 @@ ob_start();
                     <?= pagination_component('settingsSuppliers') ?>
                 </div>
                 <div class="tab-pane fade" id="settingsModelsPane" role="tabpanel" aria-labelledby="settingsModelsTabBtn">
-                    <form id="modelForm" class="row g-4 align-items-stretch mb-4">
-                        <div class="col-lg-5">
-                            <div id="modelPreview" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
-                                <input type="file" id="modelImage" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
-                                <div id="modelPreviewContent" class="text-center text-secondary w-100">
-                                    <i class="fa-solid fa-microchip fs-1 opacity-50"></i>
-                                    <div class="small mt-2">Novo modelo</div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-3">
+                            <li class="breadcrumb-item" id="modelsBreadcrumbModels">Modelos</li>
+                            <li class="breadcrumb-item d-none" id="modelsBreadcrumbNew">Novo modelo</li>
+                            <li class="breadcrumb-item d-none" id="modelsBreadcrumbCurrent"></li>
+                        </ol>
+                    </nav>
+                    <div id="modelsCarousel" class="carousel slide" data-bs-touch="false">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <div class="d-flex justify-content-end mb-3">
+                                    <button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn"><?= icon('fa-plus', 'me-1') ?>Novo modelo</button>
                                 </div>
+                                <div class="border rounded bg-body-tertiary p-3 mb-3">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-6">
+                                            <div class="form-label">Tipo de dispositivo</div>
+                                            <div id="modelsDeviceTypeButtons" class="btn-group flex-wrap w-100" role="group"></div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="form-label">Fornecedor</div>
+                                            <div id="modelsSupplierButtons" class="btn-group flex-wrap w-100" role="group"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                                    <select id="modelsListLimit" class="form-select form-select-sm w-auto">
+                                        <option value="5">5</option>
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                        <option value="20">20</option>
+                                        <option value="30">30</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                    <div class="flex-grow-1" style="min-width: 220px;">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
+                                            <input id="modelsListSearch" type="search" class="form-control" placeholder="Pesquisar modelo">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle table-hover">
+                                        <thead><tr><th>Imagem</th><th>Fornecedor</th><th>Nome comercial</th><th>Modelo interno</th><th>Tipo</th></tr></thead>
+                                        <tbody id="modelListBody"></tbody>
+                                    </table>
+                                </div>
+                                <?= pagination_component('settingsModels') ?>
                             </div>
-                        </div>
-                        <div class="col-lg-7">
-                            <div class="vstack gap-3 h-100">
-                                <div>
-                                    <div class="form-label">Tipo de dispositivo</div>
-                                    <div id="modelDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
+                            <div class="carousel-item">
+                                <form id="modelForm" class="row g-4 align-items-stretch mb-4">
+                                    <div class="col-lg-5">
+                                        <div id="modelPreview" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
+                                            <input type="file" id="modelImage" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
+                                            <div id="modelPreviewContent" class="text-center text-secondary w-100">
+                                                <i class="fa-solid fa-microchip fs-1 opacity-50"></i>
+                                                <div class="small mt-2">Novo modelo</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-7">
+                                        <div class="vstack gap-3 h-100">
+                                            <div>
+                                                <div class="form-label">Tipo de dispositivo</div>
+                                                <div id="modelDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
+                                            </div>
+                                            <div>
+                                                <div class="form-label">Fornecedor</div>
+                                                <div id="modelSupplierButtons" class="btn-group flex-wrap" role="group"></div>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="modelInternalModel" class="form-label">Modelo interno</label>
+                                                    <input type="text" class="form-control" id="modelInternalModel" placeholder="Identificador interno" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="modelCommercialName" class="form-label">Nome comercial</label>
+                                                    <input type="text" class="form-control" id="modelCommercialName" placeholder="Nome visível" required>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-end gap-2 mt-auto">
+                                                <button id="resetModelBtn" type="button" class="btn btn-outline-secondary">Cancelar</button>
+                                                <button id="saveModelBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="carousel-item">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="backToModelList"><?= icon('fa-arrow-left', 'me-1') ?>Voltar</button>
                                 </div>
-                                <div>
-                                    <div class="form-label">Fornecedor</div>
-                                    <div id="modelSupplierButtons" class="btn-group flex-wrap" role="group"></div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-lg-4">
+                                        <div id="modelDetailImage" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-3 h-100">
+                                            <div class="text-center text-secondary w-100">
+                                                <i class="fa-solid fa-microchip fs-1 opacity-50"></i>
+                                                <div class="small mt-2" id="modelDetailName">Modelo</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="border rounded bg-body-tertiary p-3 h-100">
+                                            <h3 class="h5 mb-0" id="modelDetailTitle"></h3>
+                                            <div class="small text-secondary mb-3" id="modelDetailSupplier"></div>
+                                            <div class="vstack gap-1 small" id="modelDetailInfo">
+                                                <div>Fornecedor: <strong id="modelDetailSupplierValue"></strong></div>
+                                                <div>Tipo: <strong id="modelDetailTypeValue"></strong></div>
+                                                <div>Modelo interno: <strong id="modelDetailInternalModelValue"></strong></div>
+                                            </div>
+                                            <div class="d-flex gap-2 mt-3">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="modelDetailEditBtn"><?= icon('fa-pen', 'me-1') ?>Editar</button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" id="modelDetailDeleteBtn"><?= icon('fa-trash', 'me-1') ?>Apagar</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="modelInternalModel" class="form-label">Modelo interno</label>
-                                        <input type="text" class="form-control" id="modelInternalModel" placeholder="Identificador interno" required>
+                                    <div class="col-lg-3">
+                                        <div id="capabilitySectionNav" class="d-flex flex-column gap-1" role="group" aria-label="Secções de capacidade"></div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="modelCommercialName" class="form-label">Nome comercial</label>
-                                        <input type="text" class="form-control" id="modelCommercialName" placeholder="Nome visível" required>
+                                    <div class="col-lg-9">
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                            <div>
+                                                <h2 class="h5 mb-1" id="capabilityTitle">Capacidades</h2>
+                                                <div class="small text-secondary" id="capabilitySubtitle"></div>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span id="capabilitySummary" class="small text-secondary"></span>
+                                                <button id="saveCapabilitiesBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar capacidades</button>
+                                            </div>
+                                        </div>
+                                        <div id="capabilityGroups" class="vstack gap-3"></div>
                                     </div>
-                                </div>
-                                <div class="d-flex justify-content-end gap-2 mt-auto">
-                                    <button id="resetModelBtn" type="button" class="btn btn-outline-secondary">Cancelar</button>
-                                    <button id="saveModelBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
                                 </div>
                             </div>
                         </div>
-                    </form>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead><tr><th>Imagem</th><th>Fornecedor</th><th>Nome comercial</th><th>Modelo interno</th><th>Tipo</th><th></th></tr></thead>
-                            <tbody id="modelListBody"></tbody>
-                        </table>
                     </div>
-                    <?= pagination_component('settingsModels') ?>
                 </div>
                 <div class="tab-pane fade" id="settingsCapabilitiesPane" role="tabpanel" aria-labelledby="settingsCapabilitiesTabBtn">
-                    <div class="vstack gap-4">
-                        <div class="border rounded bg-body-tertiary p-3">
-                            <div class="mb-3">
-                                <div class="form-label">Tipo de dispositivo</div>
-                                <div id="capabilityDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-label">Fornecedor</div>
-                                <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
-                            </div>
-                            <div>
-                                <div class="form-label">Modelo</div>
-                                <div id="capabilityModelButtons" class="btn-group flex-wrap" role="group"></div>
-                            </div>
-                        </div>
-                        <div id="capabilitySelectionEmpty" class="text-secondary border rounded bg-body-tertiary p-4 text-center">
-                            <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
-                            <div class="mt-2">Selecione o tipo, fornecedor e modelo para editar as capacidades.</div>
-                        </div>
-                        <div id="capabilityEditor" class="d-none">
-                            <div class="row g-3">
-                                <div class="col-lg-4">
-                                    <div id="capabilityModelPreview" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-3 h-100">
-                                        <div class="text-center text-secondary w-100">
-                                            <i class="fa-solid fa-microchip fs-1 opacity-50"></i>
-                                            <div class="small mt-2" id="capabilityModelName">Modelo</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                                        <div>
-                                            <h2 class="h5 mb-1" id="capabilityTitle">Capacidades</h2>
-                                            <div class="small text-secondary" id="capabilitySubtitle"></div>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span id="capabilitySummary" class="small text-secondary"></span>
-                                            <button id="saveCapabilitiesBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar capacidades</button>
-                                        </div>
-                                    </div>
-                                    <div id="capabilityGroups" class="vstack gap-3"></div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="border rounded bg-body-tertiary p-3 mb-3">
+                        <div class="form-label">Tipo de dispositivo</div>
+                        <div id="capabilityDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
                     </div>
+                    <div id="capabilityCatalogEmpty" class="text-secondary border rounded bg-body-tertiary p-4 text-center d-none">
+                        <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
+                        <div class="mt-2">Sem capacidades generalizadas definidas para este tipo de dispositivo.</div>
+                    </div>
+                    <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
                     <form id="companyForm" class="row g-2 mb-3 p-3 border rounded bg-body-tertiary">
