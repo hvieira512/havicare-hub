@@ -126,6 +126,8 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const card = requestCardContent(type);
     const tone = cardTone(type, command);
     const icon = command.icon || card.icon;
+    const title = card.value || featureLabel(type);
+    const requestable = command.requestable !== false;
 
     const telemetryTypes = requestTelemetryTypes(type);
     const lastTelemetry = telemetry
@@ -145,11 +147,13 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
-        <div class="fw-bold ${tone.text}">${esc(commandLabel(command))}</div>
+        <div class="fw-bold ${tone.text}">${esc(title)}</div>
         </div>
         <div class="d-flex justify-content-between align-items-center">
         <div class="fw-semibold ${lastTelemetry ? tone.text : 'text-secondary'}">${esc(lastValue)}</div>
-        <button class="btn btn-primary btn-sm" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
+        ${requestable
+            ? `<button class="btn btn-primary btn-sm" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>`
+            : '<span class="badge text-bg-secondary">Leitura apenas</span>'}
         </div>
         </div>
         </div>

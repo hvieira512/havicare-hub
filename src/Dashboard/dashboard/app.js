@@ -604,15 +604,15 @@ function renderSelection() {
     const connectionEvents = filtered.filter(item => item._source === 'connection').map(item => item.raw);
 
     renderTelemetryList([...telemetry, ...ncsEvents]);
-    renderRequestCards(requestableTelemetryActions(state.selectedDetail?.capabilities?.telemetry || {}), telemetry);
+    renderRequestCards(telemetryRequestCards(state.selectedDetail?.capabilities?.telemetry || {}), telemetry);
     renderDownlinkRequests(commands);
     renderConnectionTimeline(connectionEvents);
 }
 
-function requestableTelemetryActions(telemetryCapabilities = {}) {
+function telemetryRequestCards(telemetryCapabilities = {}) {
     return Object.entries(telemetryCapabilities || {})
-        .filter(([, entry]) => entry?.supported && entry?.requestable)
-        .map(([feature]) => ({id: feature, feature}))
+        .filter(([, entry]) => entry?.supported)
+        .map(([feature, entry]) => ({id: feature, feature, requestable: !!entry?.requestable}))
         .sort((a, b) => String(featureLabel(a.feature || '')).localeCompare(String(featureLabel(b.feature || '')), 'pt-PT'));
 }
 
