@@ -39,6 +39,9 @@ return static function (
         if ($code === 'not_found' || str_ends_with($code, '_not_found')) {
             return 404;
         }
+        if ($code === 'conflict' || str_ends_with($code, '_exists') || str_starts_with($code, 'duplicate_')) {
+            return 409;
+        }
 
         return 400;
     };
@@ -108,7 +111,10 @@ return static function (
             $result = $devices->commandStatus($params['id'], $apiAuthContext($request));
             return $json($result, $status($result));
         }),
-        new ApiRoute('POST', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->create($requestBody($request)))),
+        new ApiRoute('POST', '/api/devices', function (array $params, ServerRequestInterface $request) use ($devices, $json, $status, $requestBody): Response {
+            $result = $devices->create($requestBody($request));
+            return $json($result, $status($result, 201));
+        }),
         new ApiRoute('PUT', '/api/devices/{imei}', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody, $apiRequestId): Response {
             $result = $devices->update($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
             return $json($result, $status($result));

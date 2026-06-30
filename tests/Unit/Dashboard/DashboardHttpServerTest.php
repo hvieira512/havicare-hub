@@ -189,6 +189,29 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(401, $protected->getStatusCode(), (string)$protected->getBody());
     }
 
+    public function testCreateDeviceReturnsConflictWhenImeiAlreadyExists(): void
+    {
+        $server = $this->makeServer();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $server(new ServerRequest(
+            'POST',
+            '/api/devices',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode([
+                'imei' => '861265061009822',
+                'supplier' => 'Vivistar',
+                'model' => 'L08 Pro',
+                'deviceType' => 'watch',
+                'licenseId' => '0',
+            ], JSON_THROW_ON_ERROR)
+        ));
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(409, $response->getStatusCode(), (string)$response->getBody());
+        self::assertSame('device_exists', $body['error']['code'] ?? null);
+    }
+
     public function testTenantClientTokenCanUseAllowedDeviceRoutes(): void
     {
         $server = $this->makeServer();

@@ -60,6 +60,22 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('1703215911', $api->show('868017032159118')['device']['deviceId'] ?? null);
     }
 
+    public function testCreateRejectsDuplicateImei(): void
+    {
+        [$api, $db] = $this->makeApi();
+
+        $response = $api->create(json_encode([
+            'imei' => '861265061009822',
+            'supplier' => 'Vivistar',
+            'model' => 'L08 Pro',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('device_exists', $response['error']['code'] ?? null);
+        self::assertSame('Device with this IMEI already exists', $response['error']['message'] ?? null);
+    }
+
     public function testShowReturnsSparseCapabilitiesWithStoredConfigurationValues(): void
     {
         [$api, $db] = $this->makeApi();

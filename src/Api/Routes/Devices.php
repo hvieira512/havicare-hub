@@ -499,6 +499,9 @@ final class Devices
         if ($modelRecord === null) {
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
         }
+        if ($this->whitelist->getMetadata($imei) !== null) {
+            return ['error' => ['code' => 'device_exists', 'message' => 'Device with this IMEI already exists']];
+        }
         if ($licenseId === 0 && $deviceType !== 'watch') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
@@ -560,6 +563,15 @@ final class Devices
                 'error_code' => 'model_not_found',
             ]);
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
+        }
+        if ($newImei !== $imei && $this->whitelist->getMetadata($newImei) !== null) {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'new_imei' => $newImei,
+                'error_code' => 'device_exists',
+            ]);
+            return ['error' => ['code' => 'device_exists', 'message' => 'Device with this IMEI already exists']];
         }
         if ($licenseId === 0 && $deviceType !== 'watch') {
             Logger::channel('api')->warning('API device update rejected', [

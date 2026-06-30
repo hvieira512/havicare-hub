@@ -1080,6 +1080,15 @@ function handleLicenseSelect() {
     els.deviceLicenseId.value = els.deviceLicenseSelect.value || '0';
 }
 
+function setDeviceFormError(message = '') {
+    state.deviceModal.errorMessage = String(message || '');
+    if (!els.deviceFormError) {
+        return;
+    }
+    els.deviceFormError.textContent = state.deviceModal.errorMessage;
+    els.deviceFormError.classList.toggle('d-none', state.deviceModal.errorMessage === '');
+}
+
 async function openAddDevice() {
     await Promise.all([ensureModelsLoaded(), ensureSuppliersLoaded()]);
     els.deviceModalLabel.textContent = 'Adicionar dispositivo';
@@ -1102,8 +1111,10 @@ async function openAddDevice() {
         catalog: [],
         configurations: [],
         configUi: {},
+        errorMessage: '',
         loading: false,
     };
+    setDeviceFormError('');
     els.deviceConfigTabBtn?.classList.add('d-none');
     els.deviceConfigPane?.classList.remove('show', 'active');
     els.deviceGeneralTabBtn?.classList.add('active');
@@ -1143,8 +1154,10 @@ async function editDevice(imei, supplier, model) {
         catalog: [],
         configurations: [],
         configUi: {},
+        errorMessage: '',
         loading: true,
     };
+    setDeviceFormError('');
     els.deviceConfigTabBtn?.classList.remove('d-none');
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove('d-none');
@@ -1326,6 +1339,7 @@ function renderDeviceConfigurationModal() {
 }
 
 async function saveDevice() {
+    setDeviceFormError('');
     let imei = els.deviceImei.value.trim();
     let simNumber = '';
     const deviceType = normalizeDeviceType(els.deviceForm.dataset.deviceType || 'watch');
@@ -1356,7 +1370,10 @@ async function saveDevice() {
     if (deviceType !== 'watch' && (licenseId === '' || licenseId === '0')) { alert('É necessário selecionar uma licença para este tipo de dispositivo'); return; }
 
     const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, originalImei, company);
-    if (result.error) { alert(result.error.message || result.error.code); return; }
+    if (result.error) {
+        setDeviceFormError(result.error.message || result.error.code);
+        return;
+    }
 
     if (state.selectedImei && originalImei && state.selectedImei === originalImei) {
         selectImei(imei);
@@ -2126,6 +2143,7 @@ function cacheElements() {
         deviceActiveFilters: document.getElementById('deviceActiveFilters'),
         deviceModalLabel: document.getElementById('deviceModalLabel'),
         deviceForm: document.getElementById('deviceForm'),
+        deviceFormError: document.getElementById('deviceFormError'),
         deviceImei: document.getElementById('deviceImei'),
         deviceTypeFilter: document.getElementById('deviceTypeFilter'),
         deviceLicenseFilter: document.getElementById('deviceLicenseFilter'),
@@ -2362,6 +2380,7 @@ function handleDeviceImeiInput() {
 }
 
 function handleDeviceFormInput(event) {
+    setDeviceFormError('');
     if (event.target.matches('[data-phone-local]')) {
         syncPhoneControl(event.target);
         syncDeviceModalContext();
@@ -2369,6 +2388,7 @@ function handleDeviceFormInput(event) {
 }
 
 function handleDeviceFormChange(event) {
+    setDeviceFormError('');
     if (event.target.matches('[data-phone-country]')) {
         syncPhoneControl(event.target);
         syncDeviceModalContext();

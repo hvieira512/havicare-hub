@@ -35,6 +35,7 @@ export const state = {
         catalog: [],
         configurations: [],
         configUi: {},
+        errorMessage: '',
         loading: false,
     },
     modelModalSuppliers: [],

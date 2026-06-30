@@ -64,6 +64,7 @@ ob_start();
                                     <label class="form-label">Número do SIM</label>
                                     <div id="deviceSimNumberRoot"></div>
                                 </div>
+                                <div id="deviceFormError" class="small text-danger d-none"></div>
                                 <div class="d-flex justify-content-end mt-auto">
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
                                 </div>
