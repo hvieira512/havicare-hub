@@ -101,10 +101,6 @@ return static function (
                 'X-Accel-Buffering' => 'no',
             ], $stream);
         }),
-        new ApiRoute('POST', '/api/devices/{imei}/commands', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody, $apiRequestId): Response {
-            $result = $devices->command($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
-            return $json($result, $status($result));
-        }),
         new ApiRoute('POST', '/api/devices/{imei}/requests', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody, $apiRequestId): Response {
             $result = $devices->requestFeature($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
             return $json($result, $status($result));

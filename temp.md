@@ -15,14 +15,10 @@
 
 # Doing
 
+- Adicionar logging à API
 - Verificar integração do PUT `/api/devices/{imei}` se envia em bruto downlinks para o dispositivo
-- Remover endpoints inutilizados (verificar se a dashboard não a usa):
-    - `POST /api/devices/{imei}/configuration/{key}/apply`
-    - `GET /api/devices/{imei}/configuration`
-    - `PUT /api/devices/{imei}/configuration`
+    - Funciona mas o Chavarria dá erro
 - `GET /api/devices/{imei}` deverá refletir a última configuração enviada, independentemente se o relógio já devolveu de volta que a configuração foi aplicada. Temos de remover o conceito de timeout de um pedido de configuração ou apenas exagerar bastante no timeout?
-
-# Review
 
 # Done
 

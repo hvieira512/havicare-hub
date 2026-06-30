@@ -31,16 +31,16 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         }
     }
 
-    public function testCommandRejectsDisabledModelRequest(): void
+    public function testRequestFeatureRejectsDisabledModelRequest(): void
     {
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['location']);
 
-        $response = $api->command('861265061009822', json_encode(['command' => 'BPXL'], JSON_THROW_ON_ERROR));
+        $response = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
 
-        self::assertSame('unsupported_for_model', $response['error']['code'] ?? null);
+        self::assertSame('unsupported_feature', $response['error']['code'] ?? null);
     }
 
     public function testCreateDerivesFourPTouchDeviceIdFromImei(): void
@@ -309,7 +309,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
         $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 72]);
         $store->append('861265061009822', 'events', ['type' => 'sos', 'status' => 'triggered']);
-        $api->command('861265061009822', json_encode(['command' => 'BPXL'], JSON_THROW_ON_ERROR));
+        $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
 
         $response = $api->recent('861265061009822');
 
@@ -374,8 +374,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $created = $api->command('861265061009822', json_encode(['command' => 'BPXL'], JSON_THROW_ON_ERROR));
-        $id = (string)($created['command']['id'] ?? '');
+        $created = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+        $id = (string)($created['commands'][0]['id'] ?? '');
 
         $response = $api->commandStatus($id);
 
