@@ -84,6 +84,73 @@ API user roles:
 
 `API_CLIENT_USERNAME` and `API_CLIENT_PASSWORD` remain available as a legacy restricted login fallback, but DB-backed `license_client` users should be used for real tenants because they carry the license scope in the token.
 
+## Device Configuration API
+
+Generic device configuration now lives directly on `GET /api/devices/{imei}` and `PUT /api/devices/{imei}`.
+The legacy `GET/PUT /api/devices/{imei}/configuration` endpoints were removed.
+
+`GET /api/devices/{imei}` returns:
+
+- `device`: registered device metadata plus runtime status.
+- `model`: supplier/model metadata.
+- `configuration`: summary counters for supported vs stored native configuration entries.
+- `configurations`: raw native desired configuration rows currently stored for the device.
+- `capabilities`: normalized device capabilities grouped by section. This is the main generic configuration shape for clients.
+- `pending`: normalized configuration entries whose desired state still differs from the last reported state from the device.
+- `transportPending`: raw queued transport downlinks still waiting in Redis because the device was offline.
+
+Important semantics:
+
+- `capabilities` always reflects the last configuration accepted by the API, not only the last configuration acknowledged by the device.
+- `pending` exists to show which normalized configuration values are still waiting for device confirmation or have diverged from the last reported state.
+- `transportPending` is lower-level transport state. It does not replace `pending`.
+
+Writable sections inside `capabilities` are currently:
+
+- `health`
+- `contacts`
+- `alarms`
+- `settings_system`
+
+`capabilities.telemetry` is read-only and only describes telemetry features that can be requested or reported for the model.
+
+`PUT /api/devices/{imei}` supports two modes:
+
+- Device metadata update when the body contains standard device fields like `imei`, `supplier`, `model`, `licenseId`, and related metadata.
+- Generic configuration update when the body contains `capabilities`.
+
+For generic configuration updates, the client should send the same normalized `capabilities` structure returned by `GET`, but only writable entries and without helper metadata like `_meta`.
+The backend validates the payload against the model capability catalog, compares it against the current desired state, persists only real changes, and sends downlinks only for the native configuration entries that actually changed.
+
+Example:
+
+```json
+{
+  "capabilities": {
+    "settings_system": {
+      "working_mode": {
+        "value": {
+          "mode": 8,
+          "intervalSeconds": 60,
+          "gpsEnabled": true
+        }
+      }
+    }
+  }
+}
+```
+
+Successful configuration updates return:
+
+- `changed`: normalized capability paths that produced one or more native downlinks.
+- `unchanged`: normalized capability paths ignored because the desired state already matched.
+- `configuration`
+- `capabilities`
+- `pending`
+- `transportPending`
+
+The current implementation still accepts the older native payload form with `configs` on `PUT /api/devices/{imei}` for compatibility, but new clients should use the generic `capabilities` form.
+
 ## MQTT Topics
 
 Uplink from device to MQTT:
