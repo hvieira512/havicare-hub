@@ -75,7 +75,7 @@ http://127.0.0.1:8081/dashboard
 
 Set `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` to enable Basic auth and bootstrap the dashboard admin session. The dashboard queries registered devices from MySQL and overlays runtime status from Redis.
 
-API access uses `POST /api/auth/login` and bearer tokens. The env dashboard credentials issue a bootstrap `hub_admin` token. Additional users are managed by admins in the dashboard settings modal or through `/api/api-users`.
+API access uses `POST /api/auth/login` and bearer tokens. The env dashboard credentials issue a bootstrap `hub_admin` token. Additional users are managed by admins in the dashboard settings modal or through `/api/users`.
 
 API user roles:
 

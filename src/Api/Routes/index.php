@@ -123,16 +123,16 @@ return static function (
         new ApiRoute('POST', '/api/suppliers', fn(array $params, ServerRequestInterface $request): Response => $json($suppliers->create($requestBody($request)))),
         new ApiRoute('PUT', '/api/suppliers/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($suppliers->update((int)$params['id'], $requestBody($request)))),
         new ApiRoute('DELETE', '/api/suppliers/{id:\d+}', fn(array $params): Response => $json($suppliers->delete((int)$params['id']))),
-        new ApiRoute('GET', '/api/api-users', fn(array $params, ServerRequestInterface $request): Response => $json($apiUsers->list((string)$request->getUri()->getQuery()))),
-        new ApiRoute('POST', '/api/api-users', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status, $requestBody): Response {
+        new ApiRoute('GET', '/api/users', fn(array $params, ServerRequestInterface $request): Response => $json($apiUsers->list((string)$request->getUri()->getQuery()))),
+        new ApiRoute('POST', '/api/users', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status, $requestBody): Response {
             $result = $apiUsers->create($requestBody($request));
             return $json($result, $status($result, 201));
         }),
-        new ApiRoute('PUT', '/api/api-users/{id:\d+}', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status, $requestBody): Response {
+        new ApiRoute('PUT', '/api/users/{id:\d+}', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status, $requestBody): Response {
             $result = $apiUsers->update((int)$params['id'], $requestBody($request));
             return $json($result, $status($result));
         }),
-        new ApiRoute('DELETE', '/api/api-users/{id:\d+}', function (array $params) use ($apiUsers, $json, $status): Response {
+        new ApiRoute('DELETE', '/api/users/{id:\d+}', function (array $params) use ($apiUsers, $json, $status): Response {
             $result = $apiUsers->delete((int)$params['id']);
             return $json($result, $status($result));
         }),

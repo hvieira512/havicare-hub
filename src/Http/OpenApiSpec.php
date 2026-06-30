@@ -436,7 +436,7 @@ class OpenApiSpec
                         'responses' => ['200' => ['description' => 'OpenAPI document']],
                     ],
                 ],
-                '/api/api-users' => [
+                '/api/users' => [
                     'get' => [
                         'tags' => ['API Users'],
                         'summary' => 'List API users',
@@ -469,7 +469,7 @@ class OpenApiSpec
                         ],
                     ],
                 ],
-                '/api/api-users/{id}' => [
+                '/api/users/{id}' => [
                     'put' => [
                         'tags' => ['API Users'],
                         'summary' => 'Update API user',

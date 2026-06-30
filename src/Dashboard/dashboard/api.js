@@ -59,12 +59,12 @@ export const api = {
         method: id ? 'PUT' : 'POST',
     }),
     deleteModel: id => requestJson(`/api/models/${id}`, {method: 'DELETE'}),
-    apiUsers: (params = {}) => requestJson(withQuery('/api/api-users', params)),
-    saveApiUser: (id, body) => requestJson(id ? `/api/api-users/${encodeURIComponent(id)}` : '/api/api-users', {
+    apiUsers: (params = {}) => requestJson(withQuery('/api/users', params)),
+    saveApiUser: (id, body) => requestJson(id ? `/api/users/${encodeURIComponent(id)}` : '/api/users', {
         method: id ? 'PUT' : 'POST',
         body: JSON.stringify(body),
     }),
-    deleteApiUser: id => requestJson(`/api/api-users/${encodeURIComponent(id)}`, {method: 'DELETE'}),
+    deleteApiUser: id => requestJson(`/api/users/${encodeURIComponent(id)}`, {method: 'DELETE'}),
     companies: (params = {}) => requestJson(withQuery('/api/companies', params)),
     saveCompany: (id, name) => requestJson(id ? `/api/companies/${encodeURIComponent(id)}` : '/api/companies', {
         method: id ? 'PUT' : 'POST',
