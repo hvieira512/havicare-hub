@@ -1398,6 +1398,7 @@ async function loadSettingsModal(section = state.settingsModal.section || 'suppl
     state.settingsModal.sectionLoaded = {
         suppliers: false,
         models: false,
+        modelFilters: false,
         capabilities: false,
         company: false,
         apiUsers: false,
@@ -1407,6 +1408,7 @@ async function loadSettingsModal(section = state.settingsModal.section || 'suppl
     state.settingsModal.companyPagination = null;
     state.settingsModal.licensesPagination = null;
     state.settingsModal.apiUsersPagination = null;
+    state.settingsModal.modelFilters = [];
     state.settingsModal.capabilityCatalog = [];
     state.settingsModal.capabilitySupplier = '';
     state.settingsModal.capabilityModelId = null;
@@ -1485,9 +1487,24 @@ async function loadSettingsSuppliersSection(page = 1) {
     );
 }
 
+async function loadSettingsModelFilters() {
+    if (state.settingsModal.sectionLoaded.modelFilters) {
+        return state.settingsModal.modelFilters;
+    }
+
+    const response = await api.modelFilters();
+    const filters = response.data || [];
+    state.settingsModal.modelFilters = filters;
+    state.settingsModal.sectionLoaded.modelFilters = true;
+    return filters;
+}
+
 async function loadSettingsModelsSection(page = 1) {
     if (!state.settingsModal.sectionLoaded.suppliers) {
         await loadSettingsSuppliersSection();
+    }
+    if (!state.settingsModal.sectionLoaded.modelFilters) {
+        await loadSettingsModelFilters();
     }
     const params = {
         page,
@@ -1584,18 +1601,48 @@ function renderCapabilitiesCatalogSection() {
 }
 
 function renderModelsFilterButtons() {
-    const models = state.summary.models || [];
+    const filters = state.settingsModal.modelFilters || [];
+    const deviceTypeToSuppliers = new Map();
+    const supplierToDeviceTypes = new Map();
+    const deviceTypes = [];
 
-    const deviceTypeValues = new Set(models.map(m => modelDeviceType(m)));
-    const supplierNames = new Set(models.map(m => m.supplier).filter(Boolean));
+    for (const entry of filters) {
+        const deviceType = normalizeDeviceType(entry?.deviceType || entry?.device_type || 'watch');
+        if (!deviceTypes.includes(deviceType)) {
+            deviceTypes.push(deviceType);
+        }
 
-    const deviceTypeOptionsFiltered = deviceTypeValues.size > 0
-        ? deviceTypeOptions.filter(o => deviceTypeValues.has(o.value))
-        : deviceTypeOptions;
+        const suppliers = Array.isArray(entry?.suppliers) ? entry.suppliers : [];
+        deviceTypeToSuppliers.set(deviceType, suppliers.map(supplier => String(supplier?.name || '')).filter(Boolean));
 
-    const supplierOptionsFiltered = supplierNames.size > 0
-        ? (state.modelModalSuppliers || []).filter(o => supplierNames.has(o.name))
-        : (state.modelModalSuppliers || []);
+        for (const supplier of suppliers) {
+            const supplierName = String(supplier?.name || '').trim();
+            if (supplierName === '') {
+                continue;
+            }
+            const list = supplierToDeviceTypes.get(supplierName) || [];
+            if (!list.includes(deviceType)) {
+                list.push(deviceType);
+            }
+            supplierToDeviceTypes.set(supplierName, list);
+        }
+    }
+
+    const selectedSupplierTypes = state.settingsModal.modelsSupplier
+        ? supplierToDeviceTypes.get(state.settingsModal.modelsSupplier) || []
+        : [];
+    const selectedDeviceTypeSuppliers = state.settingsModal.modelsDeviceType
+        ? deviceTypeToSuppliers.get(state.settingsModal.modelsDeviceType) || []
+        : [];
+
+    const deviceTypeOptionsFiltered = state.settingsModal.modelsSupplier
+        ? deviceTypeOptions.filter(option => selectedSupplierTypes.includes(option.value))
+        : deviceTypeOptions.filter(option => deviceTypes.length === 0 || deviceTypes.includes(option.value));
+
+    const supplierNames = state.settingsModal.modelsDeviceType
+        ? selectedDeviceTypeSuppliers
+        : [...supplierToDeviceTypes.keys()];
+    const supplierOptionsFiltered = (state.modelModalSuppliers || []).filter(option => supplierNames.includes(option.name));
 
     renderButtonGroup(
         els.modelsDeviceTypeButtons,
@@ -1614,6 +1661,12 @@ function renderModelsFilterButtons() {
 function selectModelsDeviceType(deviceType) {
     state.settingsModal.modelsDeviceType = deviceType;
     state.settingsModal.modelsPage = 1;
+    const filters = state.settingsModal.modelFilters || [];
+    const currentSuppliers = filters.find(entry => normalizeDeviceType(entry?.deviceType || entry?.device_type || 'watch') === deviceType)?.suppliers || [];
+    const allowedSuppliers = new Set(currentSuppliers.map(supplier => String(supplier?.name || '')).filter(Boolean));
+    if (state.settingsModal.modelsSupplier && !allowedSuppliers.has(state.settingsModal.modelsSupplier)) {
+        state.settingsModal.modelsSupplier = '';
+    }
     renderModelsFilterButtons();
     void loadSettingsModelsSection(1);
 }
@@ -1621,6 +1674,25 @@ function selectModelsDeviceType(deviceType) {
 function selectModelsSupplier(supplier) {
     state.settingsModal.modelsSupplier = supplier;
     state.settingsModal.modelsPage = 1;
+    const filters = state.settingsModal.modelFilters || [];
+    const allowedDeviceTypes = filters
+        .filter(entry => Array.isArray(entry?.suppliers) && entry.suppliers.some(item => String(item?.name || '') === supplier))
+        .map(entry => normalizeDeviceType(entry?.deviceType || entry?.device_type || 'watch'));
+    if (state.settingsModal.modelsDeviceType && !allowedDeviceTypes.includes(state.settingsModal.modelsDeviceType)) {
+        state.settingsModal.modelsDeviceType = '';
+    }
+    renderModelsFilterButtons();
+    void loadSettingsModelsSection(1);
+}
+
+function clearModelsFilters() {
+    state.settingsModal.modelsDeviceType = '';
+    state.settingsModal.modelsSupplier = '';
+    state.settingsModal.modelsSearchQuery = '';
+    state.settingsModal.modelsPage = 1;
+    if (els.modelsListSearch) {
+        els.modelsListSearch.value = '';
+    }
     renderModelsFilterButtons();
     void loadSettingsModelsSection(1);
 }
@@ -2080,6 +2152,7 @@ function backToModelList() {
 
     state.settingsModal.currentCapabilitiesModel = null;
     state.settingsModal.sectionLoaded.models = false;
+    state.settingsModal.sectionLoaded.modelFilters = false;
     void loadSettingsModelsSection();
 }
 
@@ -2340,6 +2413,7 @@ function cacheElements() {
         modelsSupplierButtons: document.getElementById('modelsSupplierButtons'),
         modelsListLimit: document.getElementById('modelsListLimit'),
         modelsListSearch: document.getElementById('modelsListSearch'),
+        clearModelsFiltersBtn: document.getElementById('clearModelsFiltersBtn'),
         settingsModelsPagination: document.getElementById('settingsModels'),
         settingsModelsPaginationSummary: document.getElementById('settingsModelsSummary'),
         settingsModelsPaginationControls: document.getElementById('settingsModelsControls'),
@@ -2468,6 +2542,7 @@ function bindEvents() {
     els.capabilityDeviceTypeButtons.addEventListener('click', handleCapabilityDeviceTypeClick);
     els.modelsBreadcrumbModels.addEventListener('click', backToModelList);
     els.modelsNewModelBtn.addEventListener('click', openNewModelForm);
+    els.clearModelsFiltersBtn.addEventListener('click', clearModelsFilters);
     els.modelDetailEditBtn.addEventListener('click', editCurrentModel);
     els.modelDetailDeleteBtn.addEventListener('click', () => { void deleteCurrentModel(); });
     els.modelsCarousel.addEventListener('click', event => {

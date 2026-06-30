@@ -38,9 +38,6 @@ ob_start();
                     <div id="modelsCarousel" class="carousel slide" data-bs-touch="false">
                         <div class="carousel-inner">
                             <div class="carousel-item active">
-                                <div class="d-flex justify-content-end mb-3">
-                                    <button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn"><?= icon('fa-plus', 'me-1') ?>Novo modelo</button>
-                                </div>
                                 <div class="border rounded bg-body-tertiary p-3 mb-3">
                                     <div class="row g-3">
                                         <div class="col-12 col-md-6">
@@ -52,6 +49,9 @@ ob_start();
                                             <div id="modelsSupplierButtons" class="btn-group flex-wrap w-100" role="group"></div>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="d-flex justify-content-end mb-3">
+                                    <button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn"><?= icon('fa-plus', 'me-1') ?>Novo modelo</button>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
                                     <select id="modelsListLimit" class="form-select form-select-sm w-auto">
@@ -68,6 +68,7 @@ ob_start();
                                             <input id="modelsListSearch" type="search" class="form-control" placeholder="Pesquisar modelo">
                                         </div>
                                     </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="clearModelsFiltersBtn"><?= icon('fa-eraser', 'me-1') ?>Limpar filtros</button>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle table-hover">

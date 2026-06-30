@@ -394,6 +394,18 @@ class OpenApiSpec
                         ],
                     ],
                 ],
+                '/api/models/filters' => [
+                    'get' => [
+                        'tags' => ['Models'],
+                        'summary' => 'List model filter metadata',
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Device type to supplier associations used by the models filter UI',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelFiltersResponse']]],
+                            ],
+                        ],
+                    ],
+                ],
                 '/api/models/{id}' => [
                     'get' => [
                         'tags' => ['Models'],
@@ -1157,6 +1169,27 @@ class OpenApiSpec
                             'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelItem']],
                             'pagination' => ['$ref' => '#/components/schemas/CollectionPagination'],
                             'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
+                        ],
+                    ],
+                    'ModelFilterSupplierItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'name' => ['type' => 'string', 'example' => 'Wonlex'],
+                            'enabled' => ['type' => 'boolean', 'example' => true],
+                        ],
+                    ],
+                    'ModelFilterGroupItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'suppliers' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelFilterSupplierItem']],
+                        ],
+                    ],
+                    'ModelFiltersResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelFilterGroupItem']],
                         ],
                     ],
                     'ModelWriteRequest' => [

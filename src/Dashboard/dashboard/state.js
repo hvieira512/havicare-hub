@@ -53,6 +53,7 @@ export const state = {
         capabilityModelId: null,
         capabilityEnabledCapabilities: [],
         currentCapabilitiesModel: null,
+        modelFilters: [],
         modelsDeviceType: '',
         modelsSupplier: '',
         modelsSearchQuery: '',
@@ -60,6 +61,7 @@ export const state = {
         sectionLoaded: {
             suppliers: false,
             models: false,
+            modelFilters: false,
             capabilities: false,
             company: false,
             apiUsers: false,

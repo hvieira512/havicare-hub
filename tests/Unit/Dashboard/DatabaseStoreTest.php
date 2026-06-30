@@ -118,6 +118,22 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertFalse($db->models->existsForDifferentId((int)$model['id'], (int)$supplier['id'], 'VIVISTAR-PRO'));
     }
 
+    public function testModelWritesBackfillSupplierDeviceTypes(): void
+    {
+        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $supplier = $db->suppliers->findByName('Wonlex');
+        self::assertIsArray($supplier);
+
+        $db->models->add((int)$supplier['id'], 'RADAR-1', 'Radar 1', 'radar');
+
+        $rows = array_values(array_filter(
+            $db->supplierDeviceTypes->all(),
+            static fn (array $row): bool => ($row['supplier'] ?? '') === 'Wonlex' && ($row['device_type'] ?? '') === 'radar'
+        ));
+
+        self::assertNotEmpty($rows);
+    }
+
     public function testDeviceConfigurationStoresDesiredAndReportedStateSeparately(): void
     {
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());

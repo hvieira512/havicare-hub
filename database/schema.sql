@@ -19,6 +19,16 @@ CREATE TABLE IF NOT EXISTS models (
     CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS supplier_device_types (
+    supplier_id BIGINT UNSIGNED NOT NULL,
+    device_type ENUM('watch', 'ncs', 'radar') NOT NULL,
+    created_at VARCHAR(32) NOT NULL,
+    updated_at VARCHAR(32) NOT NULL,
+    PRIMARY KEY (supplier_id, device_type),
+    KEY idx_supplier_device_types_device_type (device_type, supplier_id),
+    CONSTRAINT fk_supplier_device_types_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS capabilities (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',

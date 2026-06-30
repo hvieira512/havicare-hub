@@ -56,6 +56,31 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($wonlex['capabilities']['settings_system']['location_reporting_interval'] ?? false);
     }
 
+    public function testFiltersListDeviceTypesAndSuppliersFromAssociationTable(): void
+    {
+        [$api] = $this->makeApi();
+
+        $response = $api->filters($this->request());
+        $groups = $response['data'] ?? [];
+
+        self::assertCount(3, $groups);
+        self::assertSame('watch', $groups[0]['deviceType'] ?? null);
+        self::assertSame('ncs', $groups[1]['deviceType'] ?? null);
+        self::assertSame('radar', $groups[2]['deviceType'] ?? null);
+        self::assertSame(['4P Touch', 'Vivistar', 'Wonlex'], array_values(array_map(
+            static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
+            $groups[0]['suppliers'] ?? []
+        )));
+        self::assertSame(['Voerka'], array_values(array_map(
+            static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
+            $groups[1]['suppliers'] ?? []
+        )));
+        self::assertSame(['Qinglanst'], array_values(array_map(
+            static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
+            $groups[2]['suppliers'] ?? []
+        )));
+    }
+
     public function testUpdateAcceptsGenericCapabilityKeys(): void
     {
         [$api, $db] = $this->makeApi();

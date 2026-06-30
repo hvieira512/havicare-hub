@@ -57,6 +57,7 @@ export const api = {
     updateSupplier: (id, body) => requestJson(`/api/suppliers/${id}`, {method: 'PUT', body: JSON.stringify(body)}),
     deleteSupplier: id => requestJson(`/api/suppliers/${id}`, {method: 'DELETE'}),
     models: (params = {}) => requestJson(withQuery('/api/models', params)),
+    modelFilters: () => requestJson('/api/models/filters'),
     model: id => requestJson(`/api/models/${encodeURIComponent(id)}`),
     capabilities: (params = {}) => requestJson(withQuery('/api/capabilities', params)),
     capability: id => requestJson(`/api/capabilities/${encodeURIComponent(id)}`),

@@ -130,6 +130,14 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
 
         self::assertSame(200, $response->getStatusCode());
+
+        $filters = $server(new ServerRequest(
+            'GET',
+            '/api/models/filters',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+
+        self::assertSame(200, $filters->getStatusCode(), (string)$filters->getBody());
     }
 
     public function testApiLoginLogsExactRawBodyAndReturnsRequestIdHeader(): void

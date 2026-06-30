@@ -50,6 +50,7 @@ final class ModelRepository
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ');
             $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath, $now, $now]);
+            $this->ensureSupplierDeviceType($supplierId, $deviceType);
             return;
         }
 
@@ -59,6 +60,7 @@ final class ModelRepository
             WHERE supplier_id = ? AND lower(internal_model) = lower(?)
         ');
         $stmt->execute([$commercialName, $deviceType, $storedImagePath, $now, $supplierId, $internalModel]);
+        $this->ensureSupplierDeviceType($supplierId, $deviceType);
     }
 
     public function update(int $id, int $supplierId, string $internalModel, string $commercialName, string $deviceType, ?string $imagePath = null): bool
@@ -72,6 +74,7 @@ final class ModelRepository
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
         $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, internal_model = ?, commercial_name = ?, device_type = ?, image_path = ?, updated_at = ? WHERE id = ?');
         $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath, $now, $id]);
+        $this->ensureSupplierDeviceType($supplierId, $deviceType);
 
         return $stmt->rowCount() > 0;
     }
@@ -96,5 +99,16 @@ final class ModelRepository
         $stmt->execute([$supplierId, $internalModel]);
 
         return $stmt->fetch() ?: null;
+    }
+
+    private function ensureSupplierDeviceType(int $supplierId, string $deviceType): void
+    {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $stmt = $this->pdo->prepare('
+            INSERT INTO supplier_device_types (supplier_id, device_type, created_at, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)
+        ');
+        $stmt->execute([$supplierId, $deviceType, $now, $now]);
     }
 }

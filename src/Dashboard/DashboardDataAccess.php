@@ -9,6 +9,7 @@ use Hub\Dashboard\Repository\ApiUserRepository;
 use Hub\Dashboard\Repository\CompanyRepository;
 use Hub\Dashboard\Repository\ModelRepository;
 use Hub\Dashboard\Repository\ModelCapabilityRepository;
+use Hub\Dashboard\Repository\SupplierDeviceTypeRepository;
 use Hub\Dashboard\Repository\SupplierRepository;
 use Hub\Dashboard\Repository\WhitelistRepository;
 
@@ -18,6 +19,7 @@ final class DashboardDataAccess
         public readonly SupplierRepository $suppliers,
         public readonly ModelRepository $models,
         public readonly ModelCapabilityRepository $modelCapabilities,
+        public readonly SupplierDeviceTypeRepository $supplierDeviceTypes,
         public readonly GenericCapabilityRepository $genericCapabilities,
         public readonly WhitelistRepository $whitelist,
         public readonly DeviceConfigurationRepository $deviceConfigurations,
@@ -35,6 +37,7 @@ final class DashboardDataAccess
             new SupplierRepository($pdo),
             new ModelRepository($pdo),
             new ModelCapabilityRepository($pdo),
+            new SupplierDeviceTypeRepository($pdo),
             new GenericCapabilityRepository($pdo),
             new WhitelistRepository($pdo),
             new DeviceConfigurationRepository($pdo),

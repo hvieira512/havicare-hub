@@ -9,12 +9,31 @@ final class DashboardDatabase
 {
     private PDO $pdo;
 
+    private const DEFAULT_SUPPLIERS = [
+        'Wonlex',
+        'Vivistar',
+        '4P Touch',
+        'Qinglanst',
+        'Voerka',
+    ];
+
     private const DEFAULT_MODELS = [
         ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', ''],
         ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['4P Touch', 'D46', 'D46', 'watch', ''],
         ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
+    ];
+
+    /**
+     * @var list<array{0: string, 1: string}>
+     */
+    private const DEFAULT_SUPPLIER_DEVICE_TYPES = [
+        ['Wonlex', 'watch'],
+        ['Vivistar', 'watch'],
+        ['4P Touch', 'watch'],
+        ['Qinglanst', 'radar'],
+        ['Voerka', 'ncs'],
     ];
 
     public function __construct(array $config)
@@ -39,6 +58,7 @@ final class DashboardDatabase
 
         $this->bootstrapSchema();
         $this->seedDefaults();
+        $this->seedDefaultSupplierDeviceTypes();
         $this->seedDefaultCapabilities();
         $this->migrateLegacyModelRequestCapabilities();
         $this->migrateModelCapabilitiesToCapabilityIds();
@@ -71,6 +91,7 @@ final class DashboardDatabase
         $this->ensureMysqlIndex('api_users', 'idx_api_users_role_license', 'role, license_id');
         $this->ensureMysqlIndex('licenses', 'idx_licenses_company_id', 'company_id');
         $this->ensureMysqlIndex('capabilities', 'idx_capabilities_device_type_section_order', 'device_type, section, sort_order');
+        $this->ensureMysqlIndex('supplier_device_types', 'idx_supplier_device_types_device_type', 'device_type, supplier_id');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_device_type_license', 'device_type, license_id');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_supplier_model', 'supplier, model');
         $this->ensureMysqlIndex('whitelist', 'idx_whitelist_company', 'company');
@@ -90,13 +111,7 @@ final class DashboardDatabase
     private function seedDefaults(): void
     {
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $seen = [];
-        foreach (self::DEFAULT_MODELS as $row) {
-            $name = $row[0];
-            if (isset($seen[$name])) {
-                continue;
-            }
-            $seen[$name] = true;
+        foreach (self::DEFAULT_SUPPLIERS as $name) {
             $existing = $this->pdo->prepare('SELECT id FROM suppliers WHERE name = ?');
             $existing->execute([$name]);
             if ($existing->fetchColumn() !== false) {
@@ -107,7 +122,7 @@ final class DashboardDatabase
         }
 
         $nameToId = $this->pdo
-            ->query("SELECT name, id FROM suppliers WHERE name IN ('" . implode("','", array_keys($seen)) . "')")
+            ->query("SELECT name, id FROM suppliers WHERE name IN ('" . implode("','", self::DEFAULT_SUPPLIERS) . "')")
             ->fetchAll(PDO::FETCH_KEY_PAIR);
 
         foreach (self::DEFAULT_MODELS as $row) {
@@ -129,6 +144,48 @@ final class DashboardDatabase
         }
 
         $this->seedDefaultCompanies();
+    }
+
+    private function seedDefaultSupplierDeviceTypes(): void
+    {
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $nameToId = $this->pdo
+            ->query("SELECT name, id FROM suppliers WHERE name IN ('" . implode("','", self::DEFAULT_SUPPLIERS) . "')")
+            ->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $pairs = [];
+        foreach (self::DEFAULT_SUPPLIER_DEVICE_TYPES as [$supplierName, $deviceType]) {
+            $supplierId = (int)($nameToId[$supplierName] ?? 0);
+            if ($supplierId <= 0) {
+                continue;
+            }
+            $pairs[$supplierId . ':' . $deviceType] = [$supplierId, $deviceType, $now, $now];
+        }
+
+        $modelRows = $this->pdo
+            ->query('SELECT DISTINCT supplier_id, device_type FROM models ORDER BY supplier_id, device_type')
+            ->fetchAll();
+        foreach ($modelRows as $row) {
+            $supplierId = (int)($row['supplier_id'] ?? 0);
+            $deviceType = (string)($row['device_type'] ?? '');
+            if ($supplierId <= 0 || $deviceType === '') {
+                continue;
+            }
+            $pairs[$supplierId . ':' . $deviceType] = [$supplierId, $deviceType, $now, $now];
+        }
+
+        if ($pairs === []) {
+            return;
+        }
+
+        $stmt = $this->pdo->prepare('
+            INSERT INTO supplier_device_types (supplier_id, device_type, created_at, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)
+        ');
+        foreach ($pairs as [$supplierId, $deviceType, $createdAt, $updatedAt]) {
+            $stmt->execute([$supplierId, $deviceType, $createdAt, $updatedAt]);
+        }
     }
 
     private function seedDefaultCompanies(): void

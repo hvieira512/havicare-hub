@@ -123,6 +123,7 @@ return static function (
         }),
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),
         new ApiRoute('GET', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->list($request))),
+        new ApiRoute('GET', '/api/models/filters', fn(array $params, ServerRequestInterface $request): Response => $json($models->filters($request))),
         new ApiRoute('GET', '/api/models/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($models->show((int)$params['id'], $request))),
         new ApiRoute('GET', '/api/capabilities', fn(array $params, ServerRequestInterface $request): Response => $json($capabilities->list((string)$request->getUri()->getQuery()))),
         new ApiRoute('GET', '/api/capabilities/{id:\d+}', function (array $params) use ($capabilities, $json, $status): Response {

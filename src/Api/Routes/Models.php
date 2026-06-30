@@ -122,6 +122,34 @@ final class Models
         return $this->collectionResponse($models, $page, $limit, $filters, $available);
     }
 
+    public function filters(ServerRequestInterface $request): array
+    {
+        $groups = [];
+        foreach (GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {
+            $groups[$deviceType] = [
+                'deviceType' => $deviceType,
+                'suppliers' => [],
+            ];
+        }
+
+        foreach ($this->db->supplierDeviceTypes->all() as $row) {
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($row['device_type'] ?? 'watch'));
+            if (!isset($groups[$deviceType])) {
+                continue;
+            }
+
+            $groups[$deviceType]['suppliers'][] = [
+                'id' => (int)($row['supplier_id'] ?? 0),
+                'name' => (string)($row['supplier'] ?? ''),
+                'enabled' => ((int)($row['enabled'] ?? 0)) === 1,
+            ];
+        }
+
+        return [
+            'data' => array_values($groups),
+        ];
+    }
+
     public function show(int $id, ServerRequestInterface $request): array
     {
         $entry = $this->db->models->findById($id);
