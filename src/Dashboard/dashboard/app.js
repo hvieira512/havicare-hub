@@ -304,6 +304,7 @@ async function loadSummary() {
             limit: state.deviceListPageSize,
             deviceType: state.deviceFilters.deviceType,
             licenseId: state.deviceFilters.licenseId,
+            company: state.deviceFilters.company,
             supplier: state.deviceFilters.supplier,
             model: state.deviceFilters.model,
             q: state.deviceSearchQuery,
@@ -315,7 +316,7 @@ async function loadSummary() {
         devices: devicesResponse.data || [],
         models: state.summary.models || [],
         devicePagination: devicesResponse.pagination || {limit: state.deviceListPageSize, page: 1, total_pages: 1, total: 0},
-        deviceFiltersAvailable: devicesResponse.filters?.available || {deviceType: [], licenseId: [], supplier: [], model: []},
+        deviceFiltersAvailable: devicesResponse.filters?.available || {deviceType: [], licenseId: [], company: [], supplier: [], model: []},
     };
     state.deviceListPageSize = state.summary.devicePagination.limit || state.deviceListPageSize;
     state.deviceListPage = state.summary.devicePagination.page || 1;
@@ -469,9 +470,10 @@ function renderSelectOptions(select, options, selectedValue, labelForValue) {
 }
 
 function renderDeviceFilterControls() {
-    const options = state.summary.deviceFiltersAvailable || {deviceType: [], licenseId: [], supplier: [], model: []};
+    const options = state.summary.deviceFiltersAvailable || {deviceType: [], licenseId: [], company: [], supplier: [], model: []};
     renderSelectOptions(els.deviceTypeFilter, options.deviceType || [], state.deviceFilters.deviceType, value => deviceTypeLabel(value));
     renderSelectOptions(els.deviceLicenseFilter, options.licenseId || [], state.deviceFilters.licenseId, value => licenseLabel(value));
+    renderSelectOptions(els.deviceCompanyFilter, options.company || [], state.deviceFilters.company, value => companyLabel(value));
     renderSelectOptions(els.deviceSupplierFilter, options.supplier || [], state.deviceFilters.supplier, value => value);
     renderSelectOptions(els.deviceModelFilter, options.model || [], state.deviceFilters.model, value => modelDisplayName('', value));
     renderAppliedDeviceFilters();
@@ -485,6 +487,9 @@ function renderAppliedDeviceFilters() {
     }
     if (state.deviceFilters.licenseId) {
         labels.push({key: 'licenseId', label: `Licença: ${licenseLabel(state.deviceFilters.licenseId)}`});
+    }
+    if (state.deviceFilters.company) {
+        labels.push({key: 'company', label: `Empresa: ${companyLabel(state.deviceFilters.company)}`});
     }
     if (state.deviceFilters.supplier) {
         labels.push({key: 'supplier', label: `Fornecedor: ${state.deviceFilters.supplier}`});
@@ -2151,6 +2156,7 @@ function cacheElements() {
         deviceImei: document.getElementById('deviceImei'),
         deviceTypeFilter: document.getElementById('deviceTypeFilter'),
         deviceLicenseFilter: document.getElementById('deviceLicenseFilter'),
+        deviceCompanyFilter: document.getElementById('deviceCompanyFilter'),
         deviceSupplierFilter: document.getElementById('deviceSupplierFilter'),
         deviceModelFilter: document.getElementById('deviceModelFilter'),
         clearDeviceFiltersBtn: document.getElementById('clearDeviceFiltersBtn'),
@@ -2273,6 +2279,7 @@ function bindEvents() {
     els.deviceListSearch.addEventListener('input', handleDeviceListSearchInput);
     els.deviceTypeFilter.addEventListener('change', handleDeviceFilterChange);
     els.deviceLicenseFilter.addEventListener('change', handleDeviceFilterChange);
+    els.deviceCompanyFilter.addEventListener('change', handleDeviceFilterChange);
     els.deviceSupplierFilter.addEventListener('change', handleDeviceFilterChange);
     els.deviceModelFilter.addEventListener('change', handleDeviceFilterChange);
     els.clearDeviceFiltersBtn.addEventListener('click', clearDeviceFilters);
@@ -2403,6 +2410,7 @@ async function handleDeviceFilterChange() {
     state.deviceFilters = {
         deviceType: normalizeFilterValue(els.deviceTypeFilter.value),
         licenseId: normalizeFilterValue(els.deviceLicenseFilter.value),
+        company: normalizeFilterValue(els.deviceCompanyFilter.value),
         supplier: normalizeFilterValue(els.deviceSupplierFilter.value),
         model: normalizeFilterValue(els.deviceModelFilter.value),
     };
@@ -2436,6 +2444,7 @@ function loadFiltersFromStorage() {
                 return {
                     deviceType: normalizeFilterValue(parsed.deviceType),
                     licenseId: normalizeFilterValue(parsed.licenseId),
+                    company: normalizeFilterValue(parsed.company),
                     supplier: normalizeFilterValue(parsed.supplier),
                     model: normalizeFilterValue(parsed.model),
                 };
@@ -2489,6 +2498,7 @@ async function clearDeviceFilters() {
     const defaults = {
         deviceType: null,
         licenseId: null,
+        company: null,
         supplier: null,
         model: null,
     };

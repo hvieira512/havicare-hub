@@ -30,8 +30,8 @@ class Config
             'dashboard' => [
                 'host' => getenv('DASHBOARD_HOST') ?: '0.0.0.0',
                 'port' => (int)(getenv('DASHBOARD_PORT') ?: 8081),
-                'username' => getenv('DASHBOARD_USERNAME') ?: '',
-                'password' => getenv('DASHBOARD_PASSWORD') ?: '',
+                'username' => getenv('DASHBOARD_USERNAME') ?: 'admin',
+                'password' => getenv('DASHBOARD_PASSWORD') ?: 'secret',
                 'client_username' => getenv('API_CLIENT_USERNAME') ?: '',
                 'client_password' => getenv('API_CLIENT_PASSWORD') ?: '',
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),

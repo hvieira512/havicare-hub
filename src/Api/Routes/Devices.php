@@ -39,6 +39,7 @@ final class Devices
         $filters = [
             'deviceType' => $this->queryFilter($params, 'deviceType'),
             'licenseId' => $this->queryFilter($params, 'licenseId'),
+            'company' => $this->queryFilter($params, 'company'),
             'supplier' => $this->queryFilter($params, 'supplier'),
             'model' => $this->queryFilter($params, 'model'),
             'q' => $this->queryFilter($params, 'q', ''),
@@ -1012,12 +1013,14 @@ final class Devices
         return array_values(array_filter($devices, function (array $device) use ($filters): bool {
             $deviceType = DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch'));
             $licenseId = DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0'));
+            $company = trim((string)($device['company'] ?? 'null'));
             $supplier = trim((string)($device['supplier'] ?? ''));
             $model = trim((string)($device['model'] ?? ''));
             $query = trim((string)($filters['q'] ?? ''));
 
             return (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType'])
                 && (($filters['licenseId'] ?? null) === null || $licenseId === $filters['licenseId'])
+                && (($filters['company'] ?? null) === null || $company === $filters['company'])
                 && (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
                 && (($filters['model'] ?? null) === null || $model === $filters['model'])
                 && ($query === '' || $this->matchesDeviceQuery($device, $query));
@@ -1036,6 +1039,8 @@ final class Devices
             (string)($device['imei'] ?? ''),
             (string)($device['supplier'] ?? ''),
             (string)($device['model'] ?? ''),
+            (string)($device['simNumber'] ?? ''),
+            (string)($device['company'] ?? ''),
         ]));
 
         foreach ($tokens as $token) {

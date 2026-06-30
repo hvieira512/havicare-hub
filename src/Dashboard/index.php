@@ -271,6 +271,10 @@ require_once __DIR__ . '/components/modal.php';
                                 <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
                             </div>
                             <div class="col-12 col-md-3">
+                                <label for="deviceCompanyFilter" class="form-label form-label-sm mb-1 small text-secondary">Empresa</label>
+                                <select id="deviceCompanyFilter" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-12 col-md-3">
                                 <label for="deviceSupplierFilter" class="form-label form-label-sm mb-1 small text-secondary">Fornecedor</label>
                                 <select id="deviceSupplierFilter" class="form-select form-select-sm"></select>
                             </div>

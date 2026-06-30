@@ -264,6 +264,26 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
     }
 
+    public function testAdminCanFilterDevicesByCompany(): void
+    {
+        $server = $this->makeServer();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices?company=hitCare',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        self::assertSame('hitCare', $body['filters']['applied']['company'] ?? null);
+        self::assertSame(['861265061009822'], array_map(
+            static fn(array $device): string => (string)$device['imei'],
+            $body['data'] ?? []
+        ));
+    }
+
     public function testTenantClientTokenCannotReadOtherLicenseDevice(): void
     {
         $server = $this->makeServer();

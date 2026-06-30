@@ -36,7 +36,7 @@ final class WhitelistRepository
     }
 
     /**
-     * @param array{deviceType?: string, licenseId?: string, supplier?: string, model?: string, q?: string} $filters
+     * @param array{deviceType?: string, licenseId?: string, company?: string, supplier?: string, model?: string, q?: string} $filters
      * @return array{items: array<int, array<string, mixed>>, total: int, available: array<string, array<int, string>>}
      */
     public function listPage(array $filters, int $page, int $limit, ?string $licenseScope = null): array
@@ -177,6 +177,12 @@ final class WhitelistRepository
             $params[] = DeviceMetadata::normalizeLicenseId($licenseId);
         }
 
+        $company = trim((string)($filters['company'] ?? 'all'));
+        if ($company !== '' && $company !== 'all') {
+            $clauses[] = 'w.company = ?';
+            $params[] = $company;
+        }
+
         $supplier = trim((string)($filters['supplier'] ?? 'all'));
         if ($supplier !== '' && $supplier !== 'all') {
             $clauses[] = 'w.supplier = ?';
@@ -208,7 +214,7 @@ final class WhitelistRepository
     }
 
     /**
-     * @param array{deviceType?: string, licenseId?: string, supplier?: string, model?: string, q?: string} $filters
+     * @param array{deviceType?: string, licenseId?: string, company?: string, supplier?: string, model?: string, q?: string} $filters
      * @return list<string>
      */
     private function distinctValues(string $column, string $alias, array $filters, string $excludeKey, ?string $licenseScope = null): array

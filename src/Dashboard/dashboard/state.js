@@ -3,7 +3,7 @@ export const state = {
         devices: [],
         models: [],
         devicePagination: {limit: 5, page: 1, total_pages: 1, total: 0},
-        deviceFiltersAvailable: {deviceType: [], licenseId: [], supplier: [], model: []},
+        deviceFiltersAvailable: {deviceType: [], licenseId: [], company: [], supplier: [], model: []},
     },
     detailFilters: {
         from: '',
@@ -13,6 +13,7 @@ export const state = {
     deviceFilters: {
         deviceType: null,
         licenseId: null,
+        company: null,
         supplier: null,
         model: null,
     },
