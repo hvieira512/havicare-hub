@@ -53,10 +53,6 @@ return static function (
             $result = $devices->show($params['imei'], $apiAuthContext($request));
             return $json($result, $status($result));
         }),
-        new ApiRoute('GET', '/api/devices/{imei}/recent', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->recent($params['imei'], $apiAuthContext($request));
-            return $json($result, $status($result));
-        }),
         new ApiRoute('GET', '/api/devices/{imei}/stream', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext): Response {
             $imei = $params['imei'];
             $auth = $apiAuthContext($request);

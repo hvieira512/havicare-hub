@@ -291,7 +291,6 @@ final class DashboardHttpServer
             'GET /api/devices',
             'GET /api/devices/{imei}',
             'PUT /api/devices/{imei}',
-            'GET /api/devices/{imei}/recent',
             'GET /api/devices/{imei}/stream',
             'POST /api/devices/{imei}/requests',
             'PATCH /api/devices/{imei}/association',

@@ -618,17 +618,6 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
 
-        $recentResponse = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/recent',
-            ['Authorization' => 'Bearer ' . $token]
-        ));
-        $recent = json_decode((string)$recentResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame(200, $recentResponse->getStatusCode(), (string)$recentResponse->getBody());
-        self::assertSame('heart_rate', $recent['telemetry'][0]['type'] ?? null);
-        self::assertSame('sos', $recent['events'][0]['type'] ?? null);
-        self::assertSame('BPXL', $recent['commands'][0]['requestId'] ?? null);
-
         $requestResponse = $server(new ServerRequest(
             'POST',
             '/api/devices/861265061009822/requests',
@@ -650,15 +639,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString("event: snapshot\n", $snapshotFrame);
         $snapshot = $this->decodeSseFrame($snapshotFrame);
         self::assertSame('heart_rate', $snapshot['telemetry'][0]['type'] ?? null);
+        self::assertSame('sos', $snapshot['events'][0]['type'] ?? null);
         self::assertSame('BPXL', $snapshot['commands'][0]['requestId'] ?? null);
         self::assertArrayNotHasKey('actions', $snapshot);
 
-        $otherRecent = $server(new ServerRequest(
+        $otherStream = $server(new ServerRequest(
             'GET',
-            '/api/devices/861265061009833/recent',
-            ['Authorization' => 'Bearer ' . $token]
+            '/api/devices/861265061009833/stream?access_token=' . rawurlencode($token)
         ));
-        self::assertSame(404, $otherRecent->getStatusCode(), (string)$otherRecent->getBody());
+        self::assertSame(404, $otherStream->getStatusCode(), (string)$otherStream->getBody());
     }
 
     public function testApiRejectsBasicAuthWhileDashboardAcceptsIt(): void

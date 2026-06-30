@@ -256,21 +256,6 @@ class OpenApiSpec
                         ],
                     ],
                 ],
-                '/api/devices/{imei}/recent' => [
-                    'get' => [
-                        'tags' => ['Devices'],
-                        'summary' => 'Get recent telemetry, events and command history for a device',
-                        'parameters' => [$imeiParam],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Recent device activity',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceRecentResponse']]],
-                            ],
-                            '403' => ['$ref' => '#/components/responses/Error'],
-                            '404' => ['$ref' => '#/components/responses/Error'],
-                        ],
-                    ],
-                ],
                 '/api/devices/{imei}/stream' => [
                     'get' => [
                         'tags' => ['Devices'],
