@@ -6,7 +6,6 @@
 
 # Backlog
 
-- Chave Primária Composta Empresa + IMEI
 - Verificar se os filtros estão a funcionar
 - Verificar documentação Wonlex ver se falta algo para o relógio estar:
     - Desligar tão rápido do servidor
@@ -38,3 +37,4 @@
     - API
     - Esconder device ID quando se trata de um relógio, apenas inserir automaticamente quando se trata de um 4PTouch
     - Dispositivos são sempre adicionados sem empresa e sem licença
+- Chave Primária Composta Empresa + IMEI

@@ -1371,6 +1371,10 @@ async function saveDevice() {
 
     const result = await api.saveDevice(imei, supplier, model, deviceType, licenseId, simNumber, deviceId, originalImei, company);
     if (result.error) {
+        if (result._httpStatus === 409) {
+            setDeviceFormError('Este IMEI já existe.');
+            return;
+        }
         setDeviceFormError(result.error.message || result.error.code);
         return;
     }

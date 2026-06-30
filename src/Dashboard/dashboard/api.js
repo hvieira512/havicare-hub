@@ -8,7 +8,13 @@ export const requestJson = (url, options = {}) => fetch(
     Object.assign({}, options, {
         headers: Object.assign({'Content-Type': 'application/json'}, authHeaders(), options.headers || {}),
     })
-).then(response => response.json());
+).then(async response => {
+    const body = await response.json();
+    if (body && typeof body === 'object' && !Array.isArray(body)) {
+        return Object.assign({}, body, {_httpStatus: response.status});
+    }
+    return body;
+});
 
 export const formRequest = (url, formData, options = {}) => fetch(
     url,
