@@ -271,21 +271,6 @@ class OpenApiSpec
                         ],
                     ],
                 ],
-                '/api/devices/{imei}/actions' => [
-                    'get' => [
-                        'tags' => ['Devices'],
-                        'summary' => 'Get available device action buttons',
-                        'parameters' => [$imeiParam],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Available request commands for this device model',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceActionsResponse']]],
-                            ],
-                            '403' => ['$ref' => '#/components/responses/Error'],
-                            '404' => ['$ref' => '#/components/responses/Error'],
-                        ],
-                    ],
-                ],
                 '/api/devices/{imei}/stream' => [
                     'get' => [
                         'tags' => ['Devices'],
@@ -835,13 +820,9 @@ class OpenApiSpec
                             'commands' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/CommandRecord']],
                         ],
                     ],
-                    'DeviceActionsResponse' => [
-                        'type' => 'array',
-                        'items' => ['$ref' => '#/components/schemas/TelemetryAction'],
-                    ],
                     'DeviceStreamResponse' => [
                         'type' => 'string',
-                        'example' => "event: snapshot\ndata: {\"telemetry\":[],\"events\":[],\"commands\":[],\"actions\":[]}\n\n",
+                        'example' => "event: snapshot\ndata: {\"telemetry\":[],\"events\":[],\"commands\":[]}\n\n",
                     ],
                     'DeviceConfigurationSummary' => [
                         'type' => 'object',

@@ -595,7 +595,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame('cfg:BP76', $detailBody['transportPending'][0]['dedupeKey'] ?? null);
     }
 
-    public function testTenantClientCanUseRecentActionsAndStreamRoutes(): void
+    public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
         $model = $db->models->find('Vivistar', 'L08 Pro');
@@ -629,18 +629,6 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame('sos', $recent['events'][0]['type'] ?? null);
         self::assertSame('BPXL', $recent['commands'][0]['requestId'] ?? null);
 
-        $actionsResponse = $server(new ServerRequest(
-            'GET',
-            '/api/devices/861265061009822/actions',
-            ['Authorization' => 'Bearer ' . $token]
-        ));
-        $actions = json_decode((string)$actionsResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame(200, $actionsResponse->getStatusCode(), (string)$actionsResponse->getBody());
-        self::assertSame(['heart_rate', 'location'], array_map(
-            static fn(array $entry): string => (string)($entry['feature'] ?? ''),
-            $actions
-        ));
-
         $requestResponse = $server(new ServerRequest(
             'POST',
             '/api/devices/861265061009822/requests',
@@ -663,10 +651,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $snapshot = $this->decodeSseFrame($snapshotFrame);
         self::assertSame('heart_rate', $snapshot['telemetry'][0]['type'] ?? null);
         self::assertSame('BPXL', $snapshot['commands'][0]['requestId'] ?? null);
-        self::assertSame(['heart_rate', 'location'], array_map(
-            static fn(array $entry): string => (string)($entry['feature'] ?? ''),
-            $snapshot['actions'] ?? []
-        ));
+        self::assertArrayNotHasKey('actions', $snapshot);
 
         $otherRecent = $server(new ServerRequest(
             'GET',

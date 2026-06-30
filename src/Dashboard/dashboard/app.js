@@ -46,7 +46,6 @@ function connectDeviceStream(imei) {
             events: data.events || [],
             commands: data.commands || [],
         };
-        state.selectedDetail.commands = data.actions || [];
         renderSelection();
     });
     deviceEventSource.addEventListener('update', function (e) {
@@ -564,7 +563,6 @@ async function loadDevice(imei) {
     disconnectDeviceStream();
     state.selectedDetail = detail;
     state.selectedDetail.recent = null;
-    state.selectedDetail.commands = [];
     renderSelection();
     connectDeviceStream(imei);
     return true;
@@ -606,9 +604,16 @@ function renderSelection() {
     const connectionEvents = filtered.filter(item => item._source === 'connection').map(item => item.raw);
 
     renderTelemetryList([...telemetry, ...ncsEvents]);
-    renderRequestCards(state.selectedDetail.commands || [], telemetry);
+    renderRequestCards(requestableTelemetryActions(state.selectedDetail?.capabilities?.telemetry || {}), telemetry);
     renderDownlinkRequests(commands);
     renderConnectionTimeline(connectionEvents);
+}
+
+function requestableTelemetryActions(telemetryCapabilities = {}) {
+    return Object.entries(telemetryCapabilities || {})
+        .filter(([, entry]) => entry?.supported && entry?.requestable)
+        .map(([feature]) => ({id: feature, feature}))
+        .sort((a, b) => String(featureLabel(a.feature || '')).localeCompare(String(featureLabel(b.feature || '')), 'pt-PT'));
 }
 
 function renderSelectedDeviceSummary(device, deviceModel) {
@@ -860,7 +865,7 @@ function radarPositionDetails(data) {
 function renderRequestCards(commands, telemetry = []) {
     els.requestCardCount.textContent = commands.length ? `${commands.length} ações` : '';
     els.requestGrid.innerHTML = commands.length
-        ? commands.map(command => renderRequestCardShell(command, state.loadingCommands.has(String(command.id || command.command || '')), telemetry)).join('')
+        ? commands.map(command => renderRequestCardShell(command, state.loadingCommands.has(String(command.id || command.feature || command.command || '')), telemetry)).join('')
         : `<div class="col-12">${emptyPanel('Não há pedidos disponíveis para este dispositivo.')}</div>`;
 }
 
@@ -3031,10 +3036,8 @@ export function startDashboard() {
                 if (detail?.error) return;
                 if (state.selectedImei !== detail.device?.imei) return;
                 const recent = state.selectedDetail?.recent;
-                const commands = state.selectedDetail?.commands;
                 state.selectedDetail = detail;
                 state.selectedDetail.recent = recent;
-                state.selectedDetail.commands = commands;
                 renderSelection();
             });
         }

@@ -229,7 +229,7 @@ with payload:
 The client should not depend on native command ids such as `BPXL` or `dnHeartRate`.
 The hub maps the generic feature to the correct protocol-specific downlink internally and later publishes the resulting normalized telemetry through MQTT.
 
-`GET /api/devices/{imei}/actions` remains available for dashboard rendering, but it returns generic requestable telemetry actions keyed by feature instead of exposing native command ids as the primary contract.
+The dashboard derives requestable telemetry actions directly from `GET /api/devices/{imei}` by reading `capabilities.telemetry.{feature}.requestable`.
 
 ## MQTT Topics
 

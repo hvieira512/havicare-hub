@@ -690,22 +690,6 @@ final class Devices
         ];
     }
 
-    public function availableActions(string $imei, ?ApiAuthContext $auth = null): array
-    {
-        if (!$this->canAccessDevice($imei, $auth)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        $device = $this->deviceSnapshot($imei);
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel(
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? '')
-        ));
-        $model = $this->modelForDevice($device);
-
-        return $this->requestableTelemetryActions($model, $protocol);
-    }
-
     private function transportPending(string $imei): array
     {
         if ($this->downlinkQueue === null) {
@@ -1258,27 +1242,6 @@ final class Devices
         return $telemetry;
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function requestableTelemetryActions(?array $model, string $protocol): array
-    {
-        $actions = [];
-        foreach ($this->enabledRequestCommandsForModel($model, $protocol) as $entry) {
-            $feature = trim((string)($entry['feature'] ?? ''));
-            if ($feature === '' || isset($actions[$feature])) {
-                continue;
-            }
-            $actions[$feature] = [
-                'id' => $feature,
-                'feature' => $feature,
-                'label' => (string)($entry['label'] ?? $feature),
-                'icon' => (string)($entry['icon'] ?? 'fa-circle-info'),
-            ];
-        }
-
-        return array_values($actions);
-    }
 
     /**
      * @param array<string, mixed> $capabilities

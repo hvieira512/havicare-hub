@@ -57,10 +57,6 @@ return static function (
             $result = $devices->recent($params['imei'], $apiAuthContext($request));
             return $json($result, $status($result));
         }),
-        new ApiRoute('GET', '/api/devices/{imei}/actions', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->availableActions($params['imei'], $apiAuthContext($request));
-            return $json($result, $status($result));
-        }),
         new ApiRoute('GET', '/api/devices/{imei}/stream', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext): Response {
             $imei = $params['imei'];
             $auth = $apiAuthContext($request);
@@ -73,7 +69,6 @@ return static function (
             $loop = Loop::get();
             $stream = new ThroughStream();
 
-            $snapshot['actions'] = $devices->availableActions($imei, $auth);
             $initialPayload = "event: snapshot\ndata: " . json_encode($snapshot, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n\n";
             $loop->futureTick(static function () use ($stream, $initialPayload): void {
                 if ($stream->isWritable()) {

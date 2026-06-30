@@ -319,22 +319,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('BPXL', $response['commands'][0]['requestId'] ?? null);
     }
 
-    public function testAvailableActionsReturnsEnabledRequestCommands(): void
-    {
-        [$api, $db] = $this->makeApi();
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-
-        self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'location']);
-
-        $response = $api->availableActions('861265061009822');
-
-        self::assertSame(['heart_rate', 'location'], array_map(
-            static fn(array $entry): string => (string)($entry['feature'] ?? ''),
-            $response
-        ));
-    }
-
     public function testRequestFeatureSendsGenericTelemetryRequest(): void
     {
         $submitted = [];
