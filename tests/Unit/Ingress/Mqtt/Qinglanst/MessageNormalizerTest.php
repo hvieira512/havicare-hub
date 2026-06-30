@@ -23,7 +23,7 @@ final class MessageNormalizerTest extends TestCase
             'sleep_state' => 'Light Sleep',
         ], $topic, $this->device());
 
-        self::assertSame('radar.vitals', $result['telemetry']['type']);
+        self::assertSame('vitals', $result['telemetry']['type']);
         self::assertSame('radar-topic-uid', $result['telemetry']['device']['id']);
         self::assertSame('heartbreath', $result['telemetry']['source']['nativeType']);
     }
@@ -47,7 +47,7 @@ final class MessageNormalizerTest extends TestCase
             'breathing_active' => true,
         ], $topic, $this->device());
 
-        self::assertSame('radar.minute_stats', $result['telemetry']['type']);
+        self::assertSame('minute_stats', $result['telemetry']['type']);
         self::assertSame('posstatics', $result['telemetry']['source']['nativeType']);
         self::assertSame(42, $result['telemetry']['data']['walking_distance']);
     }
@@ -72,7 +72,7 @@ final class MessageNormalizerTest extends TestCase
             ]],
         ], $topic, $this->device());
 
-        self::assertSame('radar.detection', $result['event']['type']);
+        self::assertSame('detection', $result['event']['type']);
         self::assertSame('radar-topic-uid', $result['event']['device']['id']);
         self::assertSame('position', $result['event']['source']['nativeType']);
         self::assertSame('fall_confirmed', $result['event']['data']['detectionType']);

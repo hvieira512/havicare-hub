@@ -47,7 +47,7 @@ final class MessageNormalizer
     {
         $telemetry = [
             'schemaVersion' => 2,
-            'type' => 'radar.position',
+            'type' => 'position',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->deviceInfo($topic, $device),
             'source' => $this->source($topic, 'position'),
@@ -168,7 +168,7 @@ final class MessageNormalizer
 
         $telemetry = [
             'schemaVersion' => 2,
-            'type' => 'radar.vitals',
+            'type' => 'vitals',
             'occurredAt' => $now,
             'device' => $this->deviceInfo($topic, $device),
             'source' => $this->source($topic, 'heartbreath'),
@@ -249,7 +249,7 @@ final class MessageNormalizer
         return [
             'telemetry' => [
                 'schemaVersion' => 2,
-                'type' => 'radar.minute_stats',
+                'type' => 'minute_stats',
                 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
                 'device' => $this->deviceInfo($topic, $device),
                 'source' => $this->source($topic, 'posstatics'),
@@ -277,7 +277,7 @@ final class MessageNormalizer
 
         $telemetry = [
             'schemaVersion' => 2,
-            'type' => 'radar.hbstatics',
+            'type' => 'hbstatics',
             'occurredAt' => $now,
             'device' => $this->deviceInfo($topic, $device),
             'source' => $this->source($topic, 'hbstatics'),
@@ -365,7 +365,7 @@ final class MessageNormalizer
 
         return [
             'schemaVersion' => 1,
-            'type' => 'radar.detection',
+            'type' => 'detection',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->deviceInfo($topic, $device),
             'source' => $this->source($topic, RadarValueMapper::decodeDetectionSource($source)),

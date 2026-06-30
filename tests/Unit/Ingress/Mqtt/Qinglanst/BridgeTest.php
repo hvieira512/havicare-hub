@@ -48,7 +48,7 @@ final class BridgeTest extends TestCase
         );
 
         self::assertSame('radar-topic-uid', $mqttBridge->telemetryDeviceKey);
-        self::assertSame('radar.minute_stats', $mqttBridge->telemetryPayload['type'] ?? null);
+        self::assertSame('minute_stats', $mqttBridge->telemetryPayload['type'] ?? null);
 
         @unlink($whitelistPath);
     }

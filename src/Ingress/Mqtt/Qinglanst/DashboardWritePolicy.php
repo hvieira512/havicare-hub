@@ -33,7 +33,7 @@ final class DashboardWritePolicy
 
     public function shouldStoreTelemetry(string $deviceKey, string $telemetryType, int $nowMs): bool
     {
-        if ($telemetryType !== 'radar.position' || $this->positionHistorySampleMs <= 0) {
+        if ($telemetryType !== 'position' || $this->positionHistorySampleMs <= 0) {
             $this->lastTelemetryMs[$deviceKey . '|' . $telemetryType] = $nowMs;
             return true;
         }

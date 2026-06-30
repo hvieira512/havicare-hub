@@ -814,7 +814,7 @@ function renderTelemetryRow(payload) {
 }
 
 function telemetryDetails(data, payload) {
-    if (payload?.type === 'radar.position') {
+    if (payload?.type === 'position') {
         return radarPositionDetails(data);
     }
 
