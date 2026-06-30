@@ -116,8 +116,6 @@ final class DashboardHttpServer
             if ($routePattern !== null) {
                 $request = $request->withAttribute(self::API_ROUTE_PATTERN_ATTR, $routePattern);
             }
-        } elseif (!$this->isDashboardAuthorized($request)) {
-            return $this->cors(new Response(401, ['WWW-Authenticate' => 'Basic realm="Devices Hub"', 'Content-Type' => 'text/plain'], 'Unauthorized'));
         } else {
             $authContext = null;
         }
@@ -218,26 +216,6 @@ final class DashboardHttpServer
 
         $context = $this->tokens->context($queryToken);
         return ['context' => $context, 'state' => $context !== null ? 'query_token' : 'invalid_query_token'];
-    }
-
-    private function isDashboardAuthorized(ServerRequestInterface $request): bool
-    {
-        if ($this->username === '' || $this->password === '') {
-            return true;
-        }
-
-        $header = $request->getHeaderLine('Authorization');
-        if (!str_starts_with($header, 'Basic ')) {
-            return false;
-        }
-
-        $decoded = base64_decode(substr($header, 6), true);
-        if (!is_string($decoded) || !str_contains($decoded, ':')) {
-            return false;
-        }
-
-        [$username, $password] = explode(':', $decoded, 2);
-        return hash_equals($this->username, $username) && hash_equals($this->password, $password);
     }
 
     /**

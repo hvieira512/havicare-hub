@@ -693,7 +693,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(404, $otherStream->getStatusCode(), (string)$otherStream->getBody());
     }
 
-    public function testApiRejectsBasicAuthWhileDashboardAcceptsIt(): void
+    public function testApiRejectsBasicAuthWhileDashboardIsPublic(): void
     {
         $server = $this->makeServer();
         $basic = 'Basic ' . base64_encode('admin:secret');
@@ -701,7 +701,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $apiResponse = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => $basic]));
         self::assertSame(401, $apiResponse->getStatusCode());
 
-        $dashboardResponse = $server(new ServerRequest('GET', '/dashboard', ['Authorization' => $basic]));
+        $dashboardResponse = $server(new ServerRequest('GET', '/dashboard'));
         self::assertSame(200, $dashboardResponse->getStatusCode());
     }
 
