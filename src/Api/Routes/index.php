@@ -105,6 +105,10 @@ return static function (
             $result = $devices->command($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
             return $json($result, $status($result));
         }),
+        new ApiRoute('POST', '/api/devices/{imei}/requests', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody, $apiRequestId): Response {
+            $result = $devices->requestFeature($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
+            return $json($result, $status($result));
+        }),
         new ApiRoute('PATCH', '/api/devices/{imei}/association', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody): Response {
             $result = $devices->patchAssociation($params['imei'], $requestBody($request), $apiAuthContext($request));
             return $json($result, $status($result));

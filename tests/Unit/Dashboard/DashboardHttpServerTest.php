@@ -173,6 +173,22 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('"auth_state":"missing"', $log);
     }
 
+    public function testApiDocsAndOpenApiJsonArePublicWhileDevicesRemainProtected(): void
+    {
+        $server = $this->makeServer();
+
+        $docs = $server(new ServerRequest('GET', '/api/docs'));
+        self::assertSame(200, $docs->getStatusCode(), (string)$docs->getBody());
+        self::assertSame('text/html; charset=utf-8', $docs->getHeaderLine('Content-Type'));
+
+        $openapi = $server(new ServerRequest('GET', '/api/openapi.json'));
+        self::assertSame(200, $openapi->getStatusCode(), (string)$openapi->getBody());
+        self::assertSame('application/json', $openapi->getHeaderLine('Content-Type'));
+
+        $protected = $server(new ServerRequest('GET', '/api/devices'));
+        self::assertSame(401, $protected->getStatusCode(), (string)$protected->getBody());
+    }
+
     public function testTenantClientTokenCanUseAllowedDeviceRoutes(): void
     {
         $server = $this->makeServer();
@@ -484,8 +500,14 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
-        self::assertTrue($body['capabilities']['telemetry']['heart_rate'] ?? false);
-        self::assertTrue($body['capabilities']['telemetry']['location'] ?? false);
+        self::assertSame(
+            ['supported' => true, 'requestable' => true],
+            $body['capabilities']['telemetry']['heart_rate'] ?? null
+        );
+        self::assertSame(
+            ['supported' => true, 'requestable' => true],
+            $body['capabilities']['telemetry']['location'] ?? null
+        );
         self::assertSame(
             [['name' => 'Ana', 'phone' => '+351911111111']],
             $body['capabilities']['contacts']['phonebook']['value'] ?? null
@@ -502,7 +524,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         );
         self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
-        self::assertSame([], $body['pending'] ?? null);
+        self::assertSame('never_reported', $body['pending']['contacts']['phonebook']['status'] ?? null);
+        self::assertSame('never_reported', $body['pending']['contacts']['call_whitelist']['status'] ?? null);
+        self::assertSame('never_reported', $body['pending']['settings_system']['device_password']['status'] ?? null);
         self::assertSame([], $body['transportPending'] ?? null);
     }
 
@@ -612,10 +636,20 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
         $actions = json_decode((string)$actionsResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame(200, $actionsResponse->getStatusCode(), (string)$actionsResponse->getBody());
-        self::assertSame(['BPXL', 'BP16'], array_map(
-            static fn(array $entry): string => (string)($entry['command'] ?? ''),
+        self::assertSame(['heart_rate', 'location'], array_map(
+            static fn(array $entry): string => (string)($entry['feature'] ?? ''),
             $actions
         ));
+
+        $requestResponse = $server(new ServerRequest(
+            'POST',
+            '/api/devices/861265061009822/requests',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+            json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR)
+        ));
+        $requestBody = json_decode((string)$requestResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(200, $requestResponse->getStatusCode(), (string)$requestResponse->getBody());
+        self::assertSame('heart_rate', $requestBody['feature'] ?? null);
 
         $streamResponse = $server(new ServerRequest(
             'GET',
@@ -629,8 +663,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $snapshot = $this->decodeSseFrame($snapshotFrame);
         self::assertSame('heart_rate', $snapshot['telemetry'][0]['type'] ?? null);
         self::assertSame('BPXL', $snapshot['commands'][0]['requestId'] ?? null);
-        self::assertSame(['BPXL', 'BP16'], array_map(
-            static fn(array $entry): string => (string)($entry['command'] ?? ''),
+        self::assertSame(['heart_rate', 'location'], array_map(
+            static fn(array $entry): string => (string)($entry['feature'] ?? ''),
             $snapshot['actions'] ?? []
         ));
 

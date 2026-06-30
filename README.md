@@ -149,6 +149,29 @@ Writable sections inside `capabilities` are currently:
 - `settings_system`
 
 `capabilities.telemetry` is read-only and only describes telemetry features that can be requested or reported for the model.
+Each telemetry entry now exposes:
+
+- `supported`
+- `requestable`
+
+Example:
+
+```json
+{
+  "capabilities": {
+    "telemetry": {
+      "heart_rate": {
+        "supported": true,
+        "requestable": true
+      },
+      "location": {
+        "supported": true,
+        "requestable": true
+      }
+    }
+  }
+}
+```
 
 `PUT /api/devices/{imei}` supports two modes:
 
@@ -186,6 +209,27 @@ Successful configuration updates return:
 - `transportPending`
 
 The current implementation still accepts the older native payload form with `configs` on `PUT /api/devices/{imei}` for compatibility, but new clients should use the generic `capabilities` form.
+
+## Telemetry Requests
+
+Telemetry measurement requests should use the generic endpoint:
+
+```text
+POST /api/devices/{imei}/requests
+```
+
+with payload:
+
+```json
+{
+  "feature": "heart_rate"
+}
+```
+
+The client should not depend on native command ids such as `BPXL` or `dnHeartRate`.
+The hub maps the generic feature to the correct protocol-specific downlink internally and later publishes the resulting normalized telemetry through MQTT.
+
+`GET /api/devices/{imei}/actions` remains available for dashboard rendering, but it returns generic requestable telemetry actions keyed by feature instead of exposing native command ids as the primary contract.
 
 ## MQTT Topics
 

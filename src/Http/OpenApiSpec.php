@@ -208,7 +208,7 @@ class OpenApiSpec
                 '/api/devices/{imei}/commands' => [
                     'post' => [
                         'tags' => ['Devices'],
-                        'summary' => 'Send command to device',
+                        'summary' => 'Send native or legacy command to device',
                         'parameters' => [$imeiParam],
                         'requestBody' => [
                             'required' => true,
@@ -218,6 +218,24 @@ class OpenApiSpec
                             '200' => [
                                 'description' => 'Command result',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CommandResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/devices/{imei}/requests' => [
+                    'post' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Request generic telemetry feature from device',
+                        'parameters' => [$imeiParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/TelemetryRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Telemetry request result',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/TelemetryRequestResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
                         ],
@@ -837,7 +855,7 @@ class OpenApiSpec
                     ],
                     'DeviceActionsResponse' => [
                         'type' => 'array',
-                        'items' => ['$ref' => '#/components/schemas/CommandCatalogEntry'],
+                        'items' => ['$ref' => '#/components/schemas/TelemetryAction'],
                     ],
                     'DeviceStreamResponse' => [
                         'type' => 'string',
@@ -852,11 +870,19 @@ class OpenApiSpec
                     ],
                     'DeviceTelemetryCapabilitiesSection' => [
                         'type' => 'object',
-                        'additionalProperties' => ['type' => 'boolean'],
+                        'additionalProperties' => ['$ref' => '#/components/schemas/DeviceTelemetryCapability'],
                         'example' => [
-                            'heart_rate' => true,
-                            'location' => true,
+                            'heart_rate' => ['supported' => true, 'requestable' => true],
+                            'location' => ['supported' => true, 'requestable' => true],
                         ],
+                    ],
+                    'DeviceTelemetryCapability' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'supported' => ['type' => 'boolean'],
+                            'requestable' => ['type' => 'boolean'],
+                        ],
+                        'required' => ['supported', 'requestable'],
                     ],
                     'CapabilityOption' => [
                         'type' => 'object',
@@ -1009,11 +1035,35 @@ class OpenApiSpec
                             'feature' => ['type' => 'string', 'example' => 'heart_rate'],
                         ],
                     ],
+                    'TelemetryRequest' => [
+                        'type' => 'object',
+                        'required' => ['feature'],
+                        'properties' => [
+                            'feature' => ['type' => 'string', 'example' => 'heart_rate'],
+                        ],
+                    ],
+                    'TelemetryAction' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'string', 'example' => 'heart_rate'],
+                            'feature' => ['type' => 'string', 'example' => 'heart_rate'],
+                            'label' => ['type' => 'string', 'example' => 'Heart rate'],
+                            'icon' => ['type' => 'string', 'example' => 'fa-heart-pulse'],
+                        ],
+                    ],
                     'CommandResponse' => [
                         'type' => 'object',
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'sent'],
                             'command' => ['type' => 'object'],
+                            'commands' => ['type' => 'array', 'items' => ['type' => 'object']],
+                        ],
+                    ],
+                    'TelemetryRequestResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'waiting'],
+                            'feature' => ['type' => 'string', 'example' => 'heart_rate'],
                             'commands' => ['type' => 'array', 'items' => ['type' => 'object']],
                         ],
                     ],

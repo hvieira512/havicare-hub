@@ -50,7 +50,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->create(json_encode([
             'imei' => '868017032159118',
             'supplier' => '4P Touch',
-            'model' => '4P-TOUCH',
+            'model' => 'D46',
             'deviceType' => 'watch',
             'licenseId' => '0',
             'deviceId' => '',
@@ -112,8 +112,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->show('861265061009822');
 
-        self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
-        self::assertTrue($response['capabilities']['telemetry']['location'] ?? false);
+        self::assertSame(
+            ['supported' => true, 'requestable' => true],
+            $response['capabilities']['telemetry']['heart_rate'] ?? null
+        );
+        self::assertSame(
+            ['supported' => true, 'requestable' => true],
+            $response['capabilities']['telemetry']['location'] ?? null
+        );
         self::assertArrayNotHasKey('blood_pressure', $response['capabilities']['telemetry'] ?? []);
         self::assertSame(
             [['name' => 'Ana', 'phone' => '+351911111111']],
@@ -131,7 +137,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertSame([], $response['capabilities']['health'] ?? null);
         self::assertSame([], $response['capabilities']['alarms'] ?? null);
-        self::assertSame([], $response['pending'] ?? null);
+        self::assertSame('never_reported', $response['pending']['contacts']['phonebook']['status'] ?? null);
+        self::assertSame('never_reported', $response['pending']['contacts']['call_whitelist']['status'] ?? null);
+        self::assertSame('never_reported', $response['pending']['settings_system']['device_password']['status'] ?? null);
         self::assertSame([], $response['transportPending'] ?? null);
     }
 
@@ -321,10 +329,45 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->availableActions('861265061009822');
 
-        self::assertSame(['BPXL', 'BP16'], array_map(
-            static fn(array $entry): string => (string)($entry['command'] ?? ''),
+        self::assertSame(['heart_rate', 'location'], array_map(
+            static fn(array $entry): string => (string)($entry['feature'] ?? ''),
             $response
         ));
+    }
+
+    public function testRequestFeatureSendsGenericTelemetryRequest(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
+
+        $response = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+
+        self::assertSame('waiting', $response['status'] ?? null);
+        self::assertSame('heart_rate', $response['feature'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('BPXL', $submitted[0]['bytes']);
+    }
+
+    public function testRequestFeatureRejectsNonRequestableTelemetry(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
+
+        $response = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+
+        self::assertSame('unsupported_feature', $response['error']['code'] ?? null);
     }
 
     public function testCommandStatusReturnsStoredCommandById(): void

@@ -240,6 +240,96 @@ final class Devices
         return ['status' => $record['status'], 'command' => array_merge($record, ['id' => $id])];
     }
 
+    public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            Logger::channel('api')->warning('API telemetry request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'not_found',
+            ]);
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded)) {
+            Logger::channel('api')->warning('API telemetry request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'invalid_json',
+            ]);
+            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
+        }
+
+        $feature = trim((string)($decoded['feature'] ?? ''));
+        if ($feature === '') {
+            Logger::channel('api')->warning('API telemetry request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'missing_feature',
+            ]);
+            return ['error' => ['code' => 'invalid_request', 'message' => 'feature is required']];
+        }
+
+        $device = $this->deviceSnapshot($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+        $modelRow = $this->modelForSupplierAndName($supplier, $model);
+
+        $telemetrySupport = $this->telemetryCapabilities($modelRow, $protocol);
+        if (!($telemetrySupport[$feature]['supported'] ?? false)) {
+            Logger::channel('api')->warning('API telemetry request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'feature' => $feature,
+                'error_code' => 'unsupported_feature',
+            ]);
+            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
+        }
+        if (!($telemetrySupport[$feature]['requestable'] ?? false)) {
+            Logger::channel('api')->warning('API telemetry request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'feature' => $feature,
+                'error_code' => 'feature_not_requestable',
+            ]);
+            return ['error' => ['code' => 'feature_not_requestable', 'message' => 'Feature cannot be requested for this device']];
+        }
+
+        $result = $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
+        Logger::channel('api')->info('API telemetry request processed', [
+            'request_id' => $requestId,
+            'imei' => $imei,
+            'feature' => $feature,
+            'status' => $result['status'] ?? null,
+            'error_code' => $result['error']['code'] ?? null,
+            'command_count' => count($result['commands'] ?? []),
+        ]);
+
+        if (isset($result['error'])) {
+            return $result;
+        }
+
+        $requestStatus = 'ok';
+        if (($result['commands'] ?? []) !== []) {
+            $statuses = array_values(array_unique(array_map(
+                static fn(array $command): string => (string)($command['status'] ?? 'unknown'),
+                $result['commands']
+            )));
+            $requestStatus = count($statuses) === 1 ? $statuses[0] : 'partial';
+        }
+
+        return [
+            'status' => $requestStatus,
+            'feature' => $feature,
+            'commands' => $result['commands'] ?? [],
+        ];
+    }
+
     private function sendFeatureCommands(string $imei, string $protocol, string $feature, array $metadata, array $device): array
     {
         $entries = DeviceCommandCatalog::commandsForFeature($protocol, $feature);
@@ -613,7 +703,7 @@ final class Devices
         ));
         $model = $this->modelForDevice($device);
 
-        return $this->enabledRequestCommandsForModel($model, $protocol);
+        return $this->requestableTelemetryActions($model, $protocol);
     }
 
     private function transportPending(string $imei): array
@@ -1060,11 +1150,7 @@ final class Devices
             $capabilities[$section] = [];
         }
 
-        foreach ($matrix['telemetry'] ?? [] as $key => $supported) {
-            if ($supported) {
-                $capabilities['telemetry'][$key] = true;
-            }
-        }
+        $capabilities['telemetry'] = $this->telemetryCapabilities($model, $protocol, $matrix);
 
         $meta = [];
         $nativeKeysPerGeneric = [];
@@ -1134,6 +1220,64 @@ final class Devices
         }
 
         return $capabilities;
+    }
+
+    /**
+     * @param array<string, mixed>|null $matrix
+     * @return array<string, array{supported: bool, requestable: bool}>
+     */
+    private function telemetryCapabilities(?array $model, string $protocol, ?array $matrix = null): array
+    {
+        if ($matrix === null) {
+            $catalog = $this->db->genericCapabilities->all();
+            $supportedKeys = $model !== null
+                ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
+                : GenericModelCapabilityCatalog::keysForProtocol($protocol);
+            $matrix = GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
+        }
+
+        $requestable = [];
+        foreach ($this->enabledRequestCommandsForModel($model, $protocol) as $entry) {
+            $feature = trim((string)($entry['feature'] ?? ''));
+            if ($feature !== '') {
+                $requestable[$feature] = true;
+            }
+        }
+
+        $telemetry = [];
+        foreach ($matrix['telemetry'] ?? [] as $key => $supported) {
+            if (!$supported) {
+                continue;
+            }
+            $telemetry[$key] = [
+                'supported' => true,
+                'requestable' => isset($requestable[$key]),
+            ];
+        }
+
+        return $telemetry;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function requestableTelemetryActions(?array $model, string $protocol): array
+    {
+        $actions = [];
+        foreach ($this->enabledRequestCommandsForModel($model, $protocol) as $entry) {
+            $feature = trim((string)($entry['feature'] ?? ''));
+            if ($feature === '' || isset($actions[$feature])) {
+                continue;
+            }
+            $actions[$feature] = [
+                'id' => $feature,
+                'feature' => $feature,
+                'label' => (string)($entry['label'] ?? $feature),
+                'icon' => (string)($entry['icon'] ?? 'fa-circle-info'),
+            ];
+        }
+
+        return array_values($actions);
     }
 
     /**

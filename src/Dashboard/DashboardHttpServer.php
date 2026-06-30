@@ -98,13 +98,13 @@ final class DashboardHttpServer
             $startedAt = microtime(true);
             $match = $this->apiRouter->match($method, $path);
             $routePattern = $match !== null ? $match['route']->pattern() : null;
-            $authResolution = $path === '/api/auth/login'
+            $authResolution = $this->isPublicApiPath($path)
                 ? ['context' => null, 'state' => 'public_login']
                 : $this->resolveApiAuthContext($request);
             $authContext = $authResolution['context'];
             $authState = $authResolution['state'];
 
-            if ($path !== '/api/auth/login') {
+            if (!$this->isPublicApiPath($path)) {
                 if ($authContext === null) {
                     $response = $this->cors($this->json(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
                     $response = $response->withHeader('X-Request-Id', $requestId);
@@ -184,6 +184,15 @@ final class DashboardHttpServer
     private function isApiPath(string $path): bool
     {
         return str_starts_with($path, '/api/');
+    }
+
+    private function isPublicApiPath(string $path): bool
+    {
+        return in_array($path, [
+            '/api/auth/login',
+            '/api/docs',
+            '/api/openapi.json',
+        ], true);
     }
 
     private function resolveApiAuthContext(ServerRequestInterface $request): array
@@ -286,6 +295,7 @@ final class DashboardHttpServer
             'GET /api/devices/{imei}/actions',
             'GET /api/devices/{imei}/stream',
             'POST /api/devices/{imei}/commands',
+            'POST /api/devices/{imei}/requests',
             'PATCH /api/devices/{imei}/association',
             'DELETE /api/devices/{imei}/association',
             'GET /api/commands/{id}',

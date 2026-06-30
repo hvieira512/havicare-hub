@@ -1003,17 +1003,17 @@ function expectedReplies(command) {
         : '';
 }
 
-async function sendCommand(requestId) {
-    state.loadingCommands.add(requestId);
+async function requestTelemetryFeature(feature) {
+    state.loadingCommands.add(feature);
     renderSelection();
     try {
-        const result = await api.sendCommand(state.selectedImei, requestId);
+        const result = await api.requestFeature(state.selectedImei, feature);
         if (result.error) alert(result.error.message || result.error.code);
         if (state.selectedImei) {
             await loadDevice(state.selectedImei);
         }
     } finally {
-        state.loadingCommands.delete(requestId);
+        state.loadingCommands.delete(feature);
         renderSelection();
     }
 }
@@ -2634,8 +2634,8 @@ function handleDeviceListClick(event) {
 }
 
 function handleRequestGridClick(event) {
-    const button = event.target.closest('[data-action="sendCommand"]');
-    if (button) sendCommand(String(button.dataset.requestId || button.dataset.command || ''));
+    const button = event.target.closest('[data-action="requestFeature"]');
+    if (button) requestTelemetryFeature(String(button.dataset.feature || ''));
 }
 
 function handleSupplierListClick(event) {

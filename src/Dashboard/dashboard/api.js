@@ -34,6 +34,10 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify({configs, supplier, model}),
     }),
+    requestFeature: (imei, feature) => requestJson(`/api/devices/${encodeURIComponent(imei)}/requests`, {
+        method: 'POST',
+        body: JSON.stringify({feature}),
+    }),
     sendCommand: (imei, requestId) => requestJson(`/api/devices/${encodeURIComponent(imei)}/commands`, {
         method: 'POST',
         body: JSON.stringify({requestId}),
