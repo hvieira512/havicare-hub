@@ -6,6 +6,7 @@ use Hub\Dashboard\ApiAuthContext;
 use Hub\Dashboard\ApiTokenStore;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DeviceMetadata;
+use Hub\Log\Logger;
 
 final class Auth
 {
@@ -17,23 +18,47 @@ final class Auth
     ) {
     }
 
-    public function login(string $body): array
+    public function login(string $body, string $requestId = ''): array
     {
         $decoded = json_decode($body, true);
         if (!is_array($decoded)) {
+            Logger::channel('api')->warning('API login rejected', [
+                'request_id' => $requestId,
+                'error_code' => 'invalid_request',
+                'reason' => 'invalid_json',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
 
         $username = trim((string)($decoded['username'] ?? ''));
         $password = (string)($decoded['password'] ?? '');
         if ($username === '' || $password === '') {
+            Logger::channel('api')->warning('API login rejected', [
+                'request_id' => $requestId,
+                'username' => $username,
+                'error_code' => 'invalid_request',
+                'reason' => 'missing_credentials',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'username and password are required']];
         }
 
         $identity = $this->identityForCredentials($username, $password);
         if ($identity === null) {
+            Logger::channel('api')->warning('API login rejected', [
+                'request_id' => $requestId,
+                'username' => $username,
+                'error_code' => 'invalid_credentials',
+            ]);
             return ['error' => ['code' => 'invalid_credentials', 'message' => 'Invalid credentials']];
         }
+
+        Logger::channel('api')->info('API login accepted', [
+            'request_id' => $requestId,
+            'username' => (string)$identity['username'],
+            'role' => (string)$identity['role'],
+            'license_id' => $identity['licenseId'],
+            'auth_source' => $identity['userId'] !== null ? 'db_user' : 'fallback_credential',
+        ]);
 
         return [
             'status' => 'ok',

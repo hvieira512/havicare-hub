@@ -46,4 +46,9 @@ class Logger
         self::$instances[$name] = $log;
         return $log;
     }
+
+    public static function reset(): void
+    {
+        self::$instances = [];
+    }
 }

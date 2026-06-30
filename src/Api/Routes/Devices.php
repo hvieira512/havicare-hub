@@ -12,6 +12,7 @@ use Hub\Dashboard\DeviceProtocol;
 use Hub\Dashboard\DashboardStore;
 use Hub\Dashboard\DeviceMetadata;
 use Hub\DeviceHubServer;
+use Hub\Log\Logger;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 
@@ -134,19 +135,30 @@ final class Devices
         ];
     }
 
-    public function command(string $imei, string $body, ?ApiAuthContext $auth = null): array
+    public function command(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->canAccessDevice($imei, $auth)) {
+            Logger::channel('api')->warning('API device command rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'not_found',
+            ]);
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
 
         $decoded = json_decode($body, true);
-        $requestId = is_array($decoded)
+        $commandRequestId = is_array($decoded)
             ? trim((string)($decoded['requestId'] ?? $decoded['command'] ?? ''))
             : '';
         $feature = is_array($decoded) ? trim((string)($decoded['feature'] ?? '')) : '';
 
-        if ($requestId === '' && $feature === '') {
+        if ($commandRequestId === '' && $feature === '') {
+            Logger::channel('api')->warning('API device command rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'missing_request_id_or_feature',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'requestId or feature is required']];
         }
 
@@ -157,15 +169,36 @@ final class Devices
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
 
         if ($feature !== '') {
-            return $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
+            $result = $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
+            Logger::channel('api')->info('API device feature command processed', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'feature' => $feature,
+                'status' => $result['status'] ?? null,
+                'error_code' => $result['error']['code'] ?? null,
+                'command_count' => count($result['commands'] ?? []),
+            ]);
+            return $result;
         }
 
-        $entry = DeviceCommandCatalog::requestForProtocol($protocol, $requestId);
+        $entry = DeviceCommandCatalog::requestForProtocol($protocol, $commandRequestId);
         $modelRow = $this->modelForSupplierAndName($supplier, $model);
         if ($entry === null) {
+            Logger::channel('api')->warning('API device command rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'command_request_id' => $commandRequestId,
+                'error_code' => 'unsupported_command',
+            ]);
             return ['error' => ['code' => 'unsupported_command', 'message' => 'Command is not supported for this device']];
         }
-        if (!$this->isModelRequestEnabled($modelRow, $protocol, $requestId)) {
+        if (!$this->isModelRequestEnabled($modelRow, $protocol, $commandRequestId)) {
+            Logger::channel('api')->warning('API device command rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'command_request_id' => $commandRequestId,
+                'error_code' => 'unsupported_for_model',
+            ]);
             return ['error' => ['code' => 'unsupported_for_model', 'message' => 'Command is not enabled for this model']];
         }
 
@@ -179,7 +212,7 @@ final class Devices
             'status' => $status,
             'imei' => $imei,
             'protocol' => $protocol,
-            'requestId' => $requestId,
+            'requestId' => $commandRequestId,
             'nativeType' => $nativeCommand,
             'label' => (string)($entry['label'] ?? $nativeCommand),
             'feature' => (string)($entry['feature'] ?? ''),
@@ -194,6 +227,15 @@ final class Devices
             $record['error'] = 'delivery_failed';
         }
         $this->store->recordCommand($imei, $id, $record);
+
+        Logger::channel('api')->info('API device command processed', [
+            'request_id' => $requestId,
+            'imei' => $imei,
+            'command_request_id' => $commandRequestId,
+            'native_type' => $nativeCommand,
+            'delivery_status' => $record['status'],
+            'command_id' => $id,
+        ]);
 
         return ['status' => $record['status'], 'command' => array_merge($record, ['id' => $id])];
     }
@@ -273,22 +315,39 @@ final class Devices
         return $configurations;
     }
 
-    public function saveConfiguration(string $imei, string $body, ?ApiAuthContext $auth = null): array
+    public function saveConfiguration(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->canAccessDevice($imei, $auth)) {
+            Logger::channel('api')->warning('API device configuration rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'not_found',
+            ]);
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
 
         $decoded = json_decode($body, true);
         if (!is_array($decoded)) {
+            Logger::channel('api')->warning('API device configuration rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'invalid_json',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
 
         if (isset($decoded['capabilities'])) {
-            return $this->saveGenericConfiguration($imei, $decoded);
+            return $this->saveGenericConfiguration($imei, $decoded, $requestId);
         }
 
         if (!isset($decoded['configs']) || !is_array($decoded['configs'])) {
+            Logger::channel('api')->warning('API device configuration rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'missing_capabilities_object',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'capabilities object is required']];
         }
 
@@ -297,14 +356,34 @@ final class Devices
         $results = [];
         foreach ($decoded['configs'] as $key => $payload) {
             if (!is_string($key) || !is_array($payload)) {
+                Logger::channel('api')->warning('API device configuration rejected', [
+                    'request_id' => $requestId,
+                    'imei' => $imei,
+                    'error_code' => 'invalid_config',
+                    'reason' => 'invalid_config_entry',
+                ]);
                 return ['error' => ['code' => 'invalid_config', 'message' => 'Each config entry must be an object']];
             }
             $result = $this->persistAndApplyConfiguration($imei, $key, $payload, $supplier, $model);
             if (isset($result['error'])) {
+                Logger::channel('api')->warning('API device configuration rejected', [
+                    'request_id' => $requestId,
+                    'imei' => $imei,
+                    'config_key' => $key,
+                    'error_code' => $result['error']['code'] ?? 'invalid_config',
+                ]);
                 return $result;
             }
             $results[] = $result;
         }
+
+        Logger::channel('api')->info('API device configuration processed', [
+            'request_id' => $requestId,
+            'imei' => $imei,
+            'mode' => 'configs',
+            'result_count' => count($results),
+            'config_keys' => array_keys($decoded['configs']),
+        ]);
 
         return ['status' => 'ok', 'results' => $results, 'configuration' => $this->configuration($imei, '', $auth)];
     }
@@ -340,17 +419,29 @@ final class Devices
         return ['status' => 'ok', 'imei' => $imei];
     }
 
-    public function update(string $imei, string $body, ?ApiAuthContext $auth = null): array
+    public function update(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         $decoded = json_decode($body, true);
         if (!is_array($decoded)) {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'invalid_json',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
         if (isset($decoded['capabilities']) || isset($decoded['configs'])) {
-            return $this->saveConfiguration($imei, $body, $auth);
+            return $this->saveConfiguration($imei, $body, $auth, $requestId);
         }
 
         if ($auth !== null && !$auth->isAdmin()) {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'forbidden',
+                'reason' => 'metadata_update_requires_admin',
+            ]);
             return ['error' => ['code' => 'forbidden', 'message' => 'Forbidden']];
         }
 
@@ -364,12 +455,29 @@ final class Devices
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         $company = trim((string)($decoded['company'] ?? 'null'));
         if ($newImei === '' || $supplier === '' || $model === '') {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'missing_required_metadata_fields',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
         if ($modelRecord === null) {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'model_not_found',
+            ]);
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
         }
         if ($licenseId === 0 && $deviceType !== 'watch') {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'missing_license_id',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
         $deviceId = $this->normalizeDeviceId($newImei, $supplier, $model, $deviceId);
@@ -379,6 +487,16 @@ final class Devices
         }
         $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+
+        Logger::channel('api')->info('API device metadata updated', [
+            'request_id' => $requestId,
+            'imei' => $imei,
+            'new_imei' => $newImei,
+            'supplier' => $supplier,
+            'model' => $model,
+            'license_id' => $licenseId,
+            'company' => $company,
+        ]);
 
         return ['status' => 'ok', 'imei' => $newImei];
     }
@@ -599,9 +717,15 @@ final class Devices
         return ['status' => $record['status'], 'key' => $key, 'command' => $command, 'id' => $id];
     }
 
-    private function saveGenericConfiguration(string $imei, array $decoded): array
+    private function saveGenericConfiguration(string $imei, array $decoded, string $requestId = ''): array
     {
         if (!is_array($decoded['capabilities'] ?? null)) {
+            Logger::channel('api')->warning('API device configuration rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'missing_capabilities_object',
+            ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'capabilities object is required']];
         }
 
@@ -618,6 +742,11 @@ final class Devices
             $protocol = (string)($device['protocol'] ?? '');
         }
         if ($protocol === '') {
+            Logger::channel('api')->warning('API device configuration rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'unknown_protocol',
+            ]);
             return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
         }
 
@@ -635,6 +764,12 @@ final class Devices
         try {
             $requested = $this->parseWritableCapabilitiesInput($decoded['capabilities'], $enabled);
         } catch (\InvalidArgumentException $e) {
+            Logger::channel('api')->warning('API device configuration rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_config',
+                'message' => $e->getMessage(),
+            ]);
             return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
         }
 
@@ -651,6 +786,13 @@ final class Devices
             try {
                 $nativeUpdates = $this->genericCapabilityToNativeUpdates($protocol, $genericKey, $value);
             } catch (\InvalidArgumentException $e) {
+                Logger::channel('api')->warning('API device configuration rejected', [
+                    'request_id' => $requestId,
+                    'imei' => $imei,
+                    'capability_path' => $path,
+                    'error_code' => 'invalid_config',
+                    'message' => $e->getMessage(),
+                ]);
                 return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
             }
 
@@ -665,6 +807,13 @@ final class Devices
 
                 $result = $this->persistAndApplyConfiguration($imei, $nativeKey, $payload, $supplier, $modelName);
                 if (isset($result['error'])) {
+                    Logger::channel('api')->warning('API device configuration rejected', [
+                        'request_id' => $requestId,
+                        'imei' => $imei,
+                        'capability_path' => $path,
+                        'config_key' => $nativeKey,
+                        'error_code' => $result['error']['code'] ?? 'invalid_config',
+                    ]);
                     return $result;
                 }
                 $pathResults[] = [
@@ -686,6 +835,14 @@ final class Devices
         }
 
         $snapshot = $this->show($imei);
+
+        Logger::channel('api')->info('API device configuration processed', [
+            'request_id' => $requestId,
+            'imei' => $imei,
+            'mode' => 'capabilities',
+            'changed_paths' => array_keys($changed),
+            'unchanged_paths' => array_values($unchanged),
+        ]);
 
         return [
             'status' => 'ok',

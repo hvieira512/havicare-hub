@@ -25,6 +25,8 @@ return static function (
     callable $html
 ): array {
     $apiAuthContext = static fn(ServerRequestInterface $request): ?\Hub\Dashboard\ApiAuthContext => $request->getAttribute('apiAuth');
+    $requestBody = static fn(ServerRequestInterface $request): string => (string)($request->getAttribute('apiRawBody') ?? (string)$request->getBody());
+    $apiRequestId = static fn(ServerRequestInterface $request): string => (string)($request->getAttribute('apiRequestId') ?? '');
     $status = static function (array $result, int $success = 200): int {
         if (!isset($result['error'])) {
             return $success;
@@ -42,8 +44,8 @@ return static function (
     };
 
     return [
-        new ApiRoute('POST', '/api/auth/login', function (array $params, ServerRequestInterface $request) use ($auth, $json): Response {
-            $result = $auth->login((string)$request->getBody());
+        new ApiRoute('POST', '/api/auth/login', function (array $params, ServerRequestInterface $request) use ($auth, $json, $requestBody, $apiRequestId): Response {
+            $result = $auth->login($requestBody($request), $apiRequestId($request));
             return $json($result, isset($result['error']) ? 401 : 200);
         }),
         new ApiRoute('GET', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->list((string)$request->getUri()->getQuery(), $apiAuthContext($request)))),
@@ -99,12 +101,12 @@ return static function (
                 'X-Accel-Buffering' => 'no',
             ], $stream);
         }),
-        new ApiRoute('POST', '/api/devices/{imei}/commands', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->command($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
+        new ApiRoute('POST', '/api/devices/{imei}/commands', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody, $apiRequestId): Response {
+            $result = $devices->command($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
             return $json($result, $status($result));
         }),
-        new ApiRoute('PATCH', '/api/devices/{imei}/association', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->patchAssociation($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
+        new ApiRoute('PATCH', '/api/devices/{imei}/association', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody): Response {
+            $result = $devices->patchAssociation($params['imei'], $requestBody($request), $apiAuthContext($request));
             return $json($result, $status($result));
         }),
         new ApiRoute('DELETE', '/api/devices/{imei}/association', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
@@ -115,9 +117,9 @@ return static function (
             $result = $devices->commandStatus($params['id'], $apiAuthContext($request));
             return $json($result, $status($result));
         }),
-        new ApiRoute('POST', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->create((string)$request->getBody()))),
-        new ApiRoute('PUT', '/api/devices/{imei}', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->update($params['imei'], (string)$request->getBody(), $apiAuthContext($request));
+        new ApiRoute('POST', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->create($requestBody($request)))),
+        new ApiRoute('PUT', '/api/devices/{imei}', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody, $apiRequestId): Response {
+            $result = $devices->update($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
             return $json($result, $status($result));
         }),
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),
@@ -127,16 +129,16 @@ return static function (
         new ApiRoute('PUT', '/api/models/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($models->update((int)$params['id'], $request))),
         new ApiRoute('DELETE', '/api/models/{id:\d+}', fn(array $params): Response => $json($models->delete((int)$params['id']))),
         new ApiRoute('GET', '/api/suppliers', fn(array $params, ServerRequestInterface $request): Response => $json($suppliers->list((string)$request->getUri()->getQuery()))),
-        new ApiRoute('POST', '/api/suppliers', fn(array $params, ServerRequestInterface $request): Response => $json($suppliers->create((string)$request->getBody()))),
-        new ApiRoute('PUT', '/api/suppliers/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($suppliers->update((int)$params['id'], (string)$request->getBody()))),
+        new ApiRoute('POST', '/api/suppliers', fn(array $params, ServerRequestInterface $request): Response => $json($suppliers->create($requestBody($request)))),
+        new ApiRoute('PUT', '/api/suppliers/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($suppliers->update((int)$params['id'], $requestBody($request)))),
         new ApiRoute('DELETE', '/api/suppliers/{id:\d+}', fn(array $params): Response => $json($suppliers->delete((int)$params['id']))),
         new ApiRoute('GET', '/api/api-users', fn(array $params, ServerRequestInterface $request): Response => $json($apiUsers->list((string)$request->getUri()->getQuery()))),
-        new ApiRoute('POST', '/api/api-users', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status): Response {
-            $result = $apiUsers->create((string)$request->getBody());
+        new ApiRoute('POST', '/api/api-users', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status, $requestBody): Response {
+            $result = $apiUsers->create($requestBody($request));
             return $json($result, $status($result, 201));
         }),
-        new ApiRoute('PUT', '/api/api-users/{id:\d+}', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status): Response {
-            $result = $apiUsers->update((int)$params['id'], (string)$request->getBody());
+        new ApiRoute('PUT', '/api/api-users/{id:\d+}', function (array $params, ServerRequestInterface $request) use ($apiUsers, $json, $status, $requestBody): Response {
+            $result = $apiUsers->update((int)$params['id'], $requestBody($request));
             return $json($result, $status($result));
         }),
         new ApiRoute('DELETE', '/api/api-users/{id:\d+}', function (array $params) use ($apiUsers, $json, $status): Response {
@@ -144,12 +146,12 @@ return static function (
             return $json($result, $status($result));
         }),
         new ApiRoute('GET', '/api/companies', fn(array $params, ServerRequestInterface $request): Response => $json($company->list((string)$request->getUri()->getQuery()))),
-        new ApiRoute('POST', '/api/companies', fn(array $params, ServerRequestInterface $request): Response => $json($company->create((string)$request->getBody()))),
-        new ApiRoute('PUT', '/api/companies/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($company->update((int)$params['id'], (string)$request->getBody()))),
+        new ApiRoute('POST', '/api/companies', fn(array $params, ServerRequestInterface $request): Response => $json($company->create($requestBody($request)))),
+        new ApiRoute('PUT', '/api/companies/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($company->update((int)$params['id'], $requestBody($request)))),
         new ApiRoute('DELETE', '/api/companies/{id:\d+}', fn(array $params): Response => $json($company->delete((int)$params['id']))),
         new ApiRoute('GET', '/api/licenses', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->list((string)$request->getUri()->getQuery()))),
-        new ApiRoute('POST', '/api/licenses', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->create((string)$request->getBody()))),
-        new ApiRoute('PUT', '/api/licenses/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->update((int)$params['id'], (string)$request->getBody()))),
+        new ApiRoute('POST', '/api/licenses', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->create($requestBody($request)))),
+        new ApiRoute('PUT', '/api/licenses/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($licenses->update((int)$params['id'], $requestBody($request)))),
         new ApiRoute('DELETE', '/api/licenses/{id:\d+}', fn(array $params): Response => $json($licenses->delete((int)$params['id']))),
         new ApiRoute('GET', '/api/openapi.json', fn(array $params): Response => $json(Hub\Http\OpenApiSpec::get())),
         new ApiRoute('GET', '/api/docs', fn(array $params): Response => $html('<!doctype html>

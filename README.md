@@ -84,6 +84,42 @@ API user roles:
 
 `API_CLIENT_USERNAME` and `API_CLIENT_PASSWORD` remain available as a legacy restricted login fallback, but DB-backed `license_client` users should be used for real tenants because they carry the license scope in the token.
 
+### API Logging
+
+Every `/api/*` request is logged through the `api` log channel.
+
+Each API log entry includes:
+
+- `request_id`
+- `method`
+- `path`
+- `query`
+- `route`
+- `status`
+- `duration_ms`
+- `auth_state`
+- `username`
+- `role`
+- `license_id`
+- exact raw `request_body`
+
+If the client sends `X-Request-Id`, the hub reuses it and returns it in the response header.
+Otherwise the hub generates one.
+
+This logging is intentionally request-complete:
+
+- successful requests are logged
+- validation failures are logged
+- unauthorized and forbidden requests are logged
+- the exact raw request body is logged as received by the API
+
+Operational note:
+
+- `POST /api/auth/login` bodies are logged exactly as sent, including credentials
+- API logs therefore need to be treated as sensitive production data
+
+Logs go to stdout and, when `LOG_FILE` is set, also to that file.
+
 ## Device Configuration API
 
 Generic device configuration now lives directly on `GET /api/devices/{imei}` and `PUT /api/devices/{imei}`.

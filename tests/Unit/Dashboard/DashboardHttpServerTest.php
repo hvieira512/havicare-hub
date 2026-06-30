@@ -10,6 +10,7 @@ use Hub\Dashboard\ApiTokenStore;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
+use Hub\Log\Logger;
 use Hub\PendingDownlink;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
@@ -21,10 +22,19 @@ use Tests\Support\MysqlDashboardTestCase;
 final class DashboardHttpServerTest extends MysqlDashboardTestCase
 {
     private string $whitelistPath;
+    private string $apiLogPath;
+    private string|false $originalLogFile;
+    private string|false $originalLogLevel;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->originalLogFile = getenv('LOG_FILE');
+        $this->originalLogLevel = getenv('LOG_LEVEL');
+        $this->apiLogPath = sys_get_temp_dir() . '/hub-dashboard-api-log-' . bin2hex(random_bytes(4)) . '.log';
+        putenv('LOG_FILE=' . $this->apiLogPath);
+        putenv('LOG_LEVEL=info');
+        Logger::reset();
         $this->whitelistPath = sys_get_temp_dir() . '/hub-dashboard-http-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitCare'],
@@ -38,6 +48,12 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         if (is_file($this->whitelistPath)) {
             unlink($this->whitelistPath);
         }
+        if (is_file($this->apiLogPath)) {
+            unlink($this->apiLogPath);
+        }
+        putenv($this->originalLogFile === false ? 'LOG_FILE' : 'LOG_FILE=' . $this->originalLogFile);
+        putenv($this->originalLogLevel === false ? 'LOG_LEVEL' : 'LOG_LEVEL=' . $this->originalLogLevel);
+        Logger::reset();
         parent::tearDown();
     }
 
@@ -114,6 +130,47 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
 
         self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testApiLoginLogsExactRawBodyAndReturnsRequestIdHeader(): void
+    {
+        $server = $this->makeServer();
+        $body = json_encode(['username' => 'admin', 'password' => 'secret'], JSON_THROW_ON_ERROR);
+        $requestId = 'req-login-123';
+
+        $response = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json', 'X-Request-Id' => $requestId],
+            $body
+        ));
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        self::assertSame($requestId, $response->getHeaderLine('X-Request-Id'));
+
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('API login accepted', $log);
+        self::assertStringContainsString('API request completed', $log);
+        self::assertStringContainsString('"request_id":"' . $requestId . '"', $log);
+        self::assertStringContainsString('"request_body":' . json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $log);
+    }
+
+    public function testUnauthorizedApiRequestIsStillLogged(): void
+    {
+        $server = $this->makeServer();
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices'
+        ));
+
+        self::assertSame(401, $response->getStatusCode(), (string)$response->getBody());
+        self::assertNotSame('', $response->getHeaderLine('X-Request-Id'));
+
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('API request completed', $log);
+        self::assertStringContainsString('"status":401', $log);
+        self::assertStringContainsString('"auth_state":"missing"', $log);
     }
 
     public function testTenantClientTokenCanUseAllowedDeviceRoutes(): void
@@ -252,6 +309,38 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         self::assertSame(403, $metadataResponse->getStatusCode(), (string)$metadataResponse->getBody());
         self::assertSame('forbidden', $metadataBody['error']['code'] ?? null);
+    }
+
+    public function testConfigurationPutLogsExactRawBody(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+        $body = json_encode([
+            'capabilities' => [
+                'alarms' => [
+                    'fall_detection' => ['enabled' => true],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        $response = $server(new ServerRequest(
+            'PUT',
+            '/api/devices/861265061009822',
+            ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json', 'X-Request-Id' => 'req-config-1'],
+            $body
+        ));
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('API device configuration processed', $log);
+        self::assertStringContainsString('"request_id":"req-config-1"', $log);
+        self::assertStringContainsString('"request_body":' . json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $log);
+        self::assertStringContainsString('"path":"/api/devices/861265061009822"', $log);
     }
 
     public function testTenantClientCanAssociateUnassignedDeviceViaPatchEndpoint(): void
@@ -699,6 +788,12 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
         return (string)($payload['token']['access_token'] ?? '');
+    }
+
+    private function apiLogContents(): string
+    {
+        clearstatcache(true, $this->apiLogPath);
+        return is_file($this->apiLogPath) ? (string)file_get_contents($this->apiLogPath) : '';
     }
 }
 

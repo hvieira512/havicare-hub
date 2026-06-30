@@ -10,6 +10,7 @@ use Hub\Api\Routes\Licenses;
 use Hub\Api\Routes\Models;
 use Hub\Api\Routes\Suppliers;
 use Hub\DeviceHubServer;
+use Hub\Log\Logger;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,6 +20,9 @@ final class DashboardHttpServer
 {
     private const MODEL_IMAGE_DIR = __DIR__ . '/../../var/dashboard/model-images';
     private const MODEL_IMAGE_ROUTE = '/model-images';
+    private const API_RAW_BODY_ATTR = 'apiRawBody';
+    private const API_REQUEST_ID_ATTR = 'apiRequestId';
+    private const API_ROUTE_PATTERN_ATTR = 'apiRoutePattern';
     private ApiRouter $apiRouter;
     private Devices $devicesApi;
     private Models $modelsApi;
@@ -86,17 +90,31 @@ final class DashboardHttpServer
         }
 
         if ($this->isApiPath($path)) {
+            $requestId = $this->apiRequestId($request);
+            $rawBody = (string)$request->getBody();
+            $request = $request
+                ->withAttribute(self::API_REQUEST_ID_ATTR, $requestId)
+                ->withAttribute(self::API_RAW_BODY_ATTR, $rawBody);
+            $startedAt = microtime(true);
+            $match = $this->apiRouter->match($method, $path);
+            $routePattern = $match !== null ? $match['route']->pattern() : null;
+            $authResolution = $path === '/api/auth/login'
+                ? ['context' => null, 'state' => 'public_login']
+                : $this->resolveApiAuthContext($request);
+            $authContext = $authResolution['context'];
+            $authState = $authResolution['state'];
+
             if ($path !== '/api/auth/login') {
-                $authContext = $this->apiAuthContext($request);
                 if ($authContext === null) {
-                    return $this->cors($this->json(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
+                    $response = $this->cors($this->json(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
+                    $response = $response->withHeader('X-Request-Id', $requestId);
+                    $this->logApiRequest($request, $response, $startedAt, $routePattern, $authContext, $authState);
+                    return $response;
                 }
-            } else {
-                $authContext = null;
             }
 
-            if ($path !== '/api/auth/login' && $authContext === null) {
-                return $this->cors($this->json(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
+            if ($routePattern !== null) {
+                $request = $request->withAttribute(self::API_ROUTE_PATTERN_ATTR, $routePattern);
             }
         } elseif (!$this->isDashboardAuthorized($request)) {
             return $this->cors(new Response(401, ['WWW-Authenticate' => 'Basic realm="Devices Hub"', 'Content-Type' => 'text/plain'], 'Unauthorized'));
@@ -105,6 +123,12 @@ final class DashboardHttpServer
         }
 
         try {
+            if ($this->isApiPath($path)) {
+                $response = $this->cors($this->dispatchApi($request, $authContext, $match ?? null));
+                $response = $response->withHeader('X-Request-Id', $requestId);
+                $this->logApiRequest($request, $response, $startedAt, $routePattern, $authContext, $authState);
+                return $response;
+            }
             if ($method === 'GET' && ($path === '/' || $path === '/dashboard')) {
                 return $this->html($this->page());
             }
@@ -121,6 +145,28 @@ final class DashboardHttpServer
                 }
             }
         } catch (\Throwable $e) {
+            if ($this->isApiPath($path)) {
+                Logger::channel('api')->error('Unhandled API exception', [
+                    'request_id' => $request->getAttribute(self::API_REQUEST_ID_ATTR, ''),
+                    'method' => $method,
+                    'path' => $path,
+                    'route' => $request->getAttribute(self::API_ROUTE_PATTERN_ATTR, $routePattern ?? null),
+                    'exception' => $e::class,
+                    'message' => $e->getMessage(),
+                ]);
+                $response = $this->cors($this->json(['error' => ['code' => 'server_error', 'message' => $e->getMessage()]], 500));
+                $response = $response->withHeader('X-Request-Id', $request->getAttribute(self::API_REQUEST_ID_ATTR, ''));
+                $this->logApiRequest(
+                    $request,
+                    $response,
+                    $startedAt ?? microtime(true),
+                    $request->getAttribute(self::API_ROUTE_PATTERN_ATTR, $routePattern ?? null),
+                    $authContext ?? null,
+                    $authState ?? 'error'
+                );
+                return $response;
+            }
+
             return $this->cors($this->json(['error' => ['code' => 'server_error', 'message' => $e->getMessage()]], 500));
         }
 
@@ -140,24 +186,29 @@ final class DashboardHttpServer
         return str_starts_with($path, '/api/');
     }
 
-    private function apiAuthContext(ServerRequestInterface $request): ?ApiAuthContext
+    private function resolveApiAuthContext(ServerRequestInterface $request): array
     {
         if ($this->apiCredentials === []) {
-            return new ApiAuthContext(null, 'anonymous', ApiAuthContext::ROLE_HUB_ADMIN);
+            return [
+                'context' => new ApiAuthContext(null, 'anonymous', ApiAuthContext::ROLE_HUB_ADMIN),
+                'state' => 'anonymous_admin',
+            ];
         }
 
         $header = $request->getHeaderLine('Authorization');
         if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
-            return $this->tokens->context((string)$matches[1]);
+            $context = $this->tokens->context((string)$matches[1]);
+            return ['context' => $context, 'state' => $context !== null ? 'bearer' : 'invalid_bearer'];
         }
 
         parse_str((string)$request->getUri()->getQuery(), $params);
         $queryToken = trim((string)($params['access_token'] ?? ''));
         if ($queryToken === '') {
-            return null;
+            return ['context' => null, 'state' => 'missing'];
         }
 
-        return $this->tokens->context($queryToken);
+        $context = $this->tokens->context($queryToken);
+        return ['context' => $context, 'state' => $context !== null ? 'query_token' : 'invalid_query_token'];
     }
 
     private function isDashboardAuthorized(ServerRequestInterface $request): bool
@@ -200,9 +251,9 @@ final class DashboardHttpServer
         );
     }
 
-    private function dispatchApi(ServerRequestInterface $request, ?ApiAuthContext $authContext): Response
+    private function dispatchApi(ServerRequestInterface $request, ?ApiAuthContext $authContext, ?array $match = null): Response
     {
-        $match = $this->apiRouter->match(strtoupper($request->getMethod()), $request->getUri()->getPath());
+        $match = $match ?? $this->apiRouter->match(strtoupper($request->getMethod()), $request->getUri()->getPath());
         if ($match === null) {
             return $this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
         }
@@ -214,6 +265,7 @@ final class DashboardHttpServer
         if ($authContext !== null) {
             $request = $request->withAttribute('apiAuth', $authContext);
         }
+        $request = $request->withAttribute(self::API_ROUTE_PATTERN_ATTR, $match['route']->pattern());
 
         $handler = $match['route']->handler();
 
@@ -285,5 +337,46 @@ final class DashboardHttpServer
             return $this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
         }
         return new Response(200, ['Content-Type' => 'image/jpeg', 'Cache-Control' => 'public, max-age=31536000, immutable'], (string)file_get_contents($path));
+    }
+
+    private function apiRequestId(ServerRequestInterface $request): string
+    {
+        $requestId = trim($request->getHeaderLine('X-Request-Id'));
+        if ($requestId !== '') {
+            return $requestId;
+        }
+
+        return bin2hex(random_bytes(8));
+    }
+
+    private function logApiRequest(
+        ServerRequestInterface $request,
+        Response $response,
+        float $startedAt,
+        ?string $routePattern,
+        ?ApiAuthContext $authContext,
+        string $authState
+    ): void {
+        $query = $request->getUri()->getQuery();
+        $serverParams = $request->getServerParams();
+        $status = $response->getStatusCode();
+        $level = $status >= 500 ? 'error' : ($status >= 400 ? 'warning' : 'info');
+
+        Logger::channel('api')->log($level, 'API request completed', [
+            'request_id' => (string)$request->getAttribute(self::API_REQUEST_ID_ATTR, ''),
+            'method' => strtoupper($request->getMethod()),
+            'path' => $request->getUri()->getPath(),
+            'query' => $query,
+            'route' => $routePattern,
+            'status' => $status,
+            'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
+            'remote_ip' => (string)($serverParams['REMOTE_ADDR'] ?? ''),
+            'user_agent' => $request->getHeaderLine('User-Agent'),
+            'auth_state' => $authState,
+            'username' => $authContext?->username,
+            'role' => $authContext?->role,
+            'license_id' => $authContext?->licenseId,
+            'request_body' => (string)$request->getAttribute(self::API_RAW_BODY_ATTR, ''),
+        ]);
     }
 }
