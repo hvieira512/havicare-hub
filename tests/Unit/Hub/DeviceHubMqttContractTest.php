@@ -287,6 +287,22 @@ final class DeviceHubMqttContractTest extends TestCase
             'ident' => '080835',
         ], $mqtt->events[1][1]['command']);
     }
+
+    public function testVivistarTelemetryPacketsReceiveProtocolAck(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $connection = new ContractFakeConnection(7);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000308#');
+        $hub->onMessage($connection, 'IWAP49,72#');
+
+        self::assertCount(2, $connection->sent);
+        self::assertStringStartsWith('IWBP00,', $connection->sent[0]);
+        self::assertStringEndsWith('#', $connection->sent[0]);
+        self::assertSame('IWBP49#', $connection->sent[1]);
+    }
 }
 
 final class ContractRecordingHubMqttBridge extends HubMqttBridge

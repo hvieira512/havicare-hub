@@ -75,6 +75,7 @@ class DeviceHubServer
 
         $this->publishDecodedEvents($session, $raw);
         $this->sendProtocolAck($from, $session, $raw);
+        $this->sendVivistarUploadAck($from, $session, $raw);
         $this->sendWonlexUploadAck($from, $session, $raw);
         $this->sendWonlexHeartbeatReply($from, $session, $raw);
     }
@@ -283,6 +284,7 @@ class DeviceHubServer
 
         $this->publishDecodedEvents($session, $raw);
         $this->sendProtocolAck($conn, $session, $raw);
+        $this->sendVivistarUploadAck($conn, $session, $raw);
         $this->sendWonlexUploadAck($conn, $session, $raw);
         $this->flushPendingDownlinks($session);
 
@@ -425,6 +427,42 @@ class DeviceHubServer
             ],
             'timestamp' => $timestamp,
         ]));
+    }
+
+    private function sendVivistarUploadAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
+    {
+        if ($session->protocol !== 'vivistar-iw') {
+            return;
+        }
+
+        $adapter = $this->adapters->get($session->protocol);
+        if ($adapter === null) {
+            return;
+        }
+
+        $decoded = $adapter->decodeIncoming($raw, ['session' => $session->identityContext()]);
+        if (!is_array($decoded)) {
+            return;
+        }
+
+        $ack = match ((string)($decoded['type'] ?? '')) {
+            'AP01' => 'IWBP01#',
+            'AP02' => 'IWBP02#',
+            'AP03' => 'IWBP03#',
+            'AP10' => 'IWBP10#',
+            'AP49' => 'IWBP49#',
+            'APHT' => 'IWBPHT#',
+            'APHP' => 'IWBPHP#',
+            'AP50' => 'IWBP50#',
+            'APHD' => 'IWBPHD#',
+            default => null,
+        };
+
+        if ($ack === null) {
+            return;
+        }
+
+        $conn->send($ack);
     }
 
     private function sendWonlexUploadAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
