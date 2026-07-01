@@ -174,6 +174,10 @@ final class Devices
         }
 
         $feature = trim((string)($decoded['feature'] ?? ''));
+        $capability = trim((string)($decoded['capability'] ?? ''));
+        if ($feature === '' && $capability !== '') {
+            return $this->requestCapabilityAction($imei, $decoded, $auth, $requestId);
+        }
         if ($feature === '') {
             Logger::channel('api')->warning('API telemetry request rejected', [
                 'request_id' => $requestId,
@@ -238,6 +242,104 @@ final class Devices
             'status' => $requestStatus,
             'feature' => $feature,
             'commands' => $result['commands'] ?? [],
+        ];
+    }
+
+    private function requestCapabilityAction(string $imei, array $decoded, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    {
+        $capability = trim((string)($decoded['capability'] ?? ''));
+        if (!$this->canAccessDevice($imei, $auth)) {
+            Logger::channel('api')->warning('API capability request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'capability' => $capability,
+                'error_code' => 'not_found',
+            ]);
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+
+        if ($capability === '') {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'capability is required']];
+        }
+
+        $device = $this->deviceSnapshot($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
+        $modelRow = $this->modelForSupplierAndName($supplier, $model);
+        $enabled = array_flip($modelRow !== null
+            ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
+            : GenericModelCapabilityCatalog::keysForProtocol($protocol));
+
+        if (!isset($enabled[$capability])) {
+            Logger::channel('api')->warning('API capability request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'capability' => $capability,
+                'error_code' => 'unsupported_feature',
+            ]);
+            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Capability is not supported for this device']];
+        }
+
+        try {
+            $nativeUpdates = $this->genericCapabilityToNativeUpdates($protocol, $capability, $decoded['value'] ?? null);
+        } catch (\InvalidArgumentException $e) {
+            Logger::channel('api')->warning('API capability request rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'capability' => $capability,
+                'error_code' => 'invalid_config',
+                'message' => $e->getMessage(),
+            ]);
+            return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
+        }
+
+        $commands = [];
+        foreach ($nativeUpdates as $nativeKey => $payload) {
+            $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
+            if ($error !== null) {
+                return ['error' => ['code' => 'invalid_config', 'message' => $error]];
+            }
+
+            $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
+            $command = $commandPayload['command'];
+            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
+                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+            ]);
+            $id = bin2hex(random_bytes(8));
+            $status = $this->hub->submitDownlink($imei, $bytes);
+            $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey) ?? [];
+            $record = [
+                'status' => $status,
+                'imei' => $imei,
+                'protocol' => $protocol,
+                'capability' => $capability,
+                'nativeType' => $command,
+                'label' => (string)($entry['label'] ?? $nativeKey),
+                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            ];
+            if ($status === 'sent') {
+                $record['status'] = 'waiting';
+                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+            }
+            if ($status === 'dropped') {
+                $record['error'] = 'delivery_failed';
+            }
+            $this->store->recordCommand($imei, $id, $record);
+            $commands[] = array_merge($record, ['id' => $id]);
+        }
+
+        $statuses = array_values(array_unique(array_map(
+            static fn(array $command): string => (string)($command['status'] ?? 'unknown'),
+            $commands
+        )));
+
+        return [
+            'status' => count($statuses) === 1 ? $statuses[0] : 'partial',
+            'capability' => $capability,
+            'commands' => $commands,
         ];
     }
 
@@ -678,6 +780,11 @@ final class Devices
         }
         if ($protocol === '') {
             return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
+        }
+
+        $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $key);
+        if (($entry['transient'] ?? false) === true) {
+            return ['error' => ['code' => 'invalid_config', 'message' => "{$key} is a transient action and must be requested via /requests"]];
         }
 
         $error = DeviceConfigurationCatalog::validate($protocol, $key, $payload);
@@ -1336,6 +1443,7 @@ final class Devices
             'fall_detection' => ['fallDetection' => ['enabled' => $this->requireBoolLikeField($value, 'enabled')]],
             'fall_sensitivity' => ['fallSensitivity' => ['sensitivity' => $this->requireIntField($value, 'sensitivity')]],
             'call_whitelist' => ['whitelistSwitch' => ['enabled' => $this->requireBoolLikeField($value, 'enabled')]],
+            'push_message' => ['pushMessage' => ['message' => $this->requireStringField($value, 'message')]],
             'alarm_clock' => ['reminders' => $this->normalizeReminderCapabilityValue($value)],
             'auto_vitals_interval' => ['autoHealthMeasurement' => $this->requireObjectValue($value, 'autoHealthMeasurement')],
             'blood_pressure_calibration' => ['bloodPressureCalibration' => $this->requireObjectValue($value, 'bloodPressureCalibration')],

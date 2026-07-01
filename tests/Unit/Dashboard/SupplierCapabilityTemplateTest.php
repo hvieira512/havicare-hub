@@ -3,10 +3,26 @@
 namespace Tests\Unit\Dashboard;
 
 use Hub\Dashboard\SupplierCapabilityTemplate;
+use Hub\Dashboard\GenericModelCapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 final class SupplierCapabilityTemplateTest extends TestCase
 {
+    public function testWatchCatalogIncludesPushMessageInSystemSettings(): void
+    {
+        $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('watch');
+        $match = array_values(array_filter(
+            $definitions,
+            static fn(array $definition): bool => ($definition['key'] ?? '') === 'push_message'
+        ));
+
+        self::assertCount(1, $match);
+        self::assertSame('settings_system', $match[0]['section'] ?? null);
+        self::assertTrue($match[0]['isConfigurable'] ?? false);
+        self::assertFalse($match[0]['isTelemetry'] ?? true);
+        self::assertFalse($match[0]['isRequestable'] ?? true);
+    }
+
     public function testVivistarWatchTemplateMatchesProtocolCapabilities(): void
     {
         $expected = [
@@ -21,6 +37,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
             'heart_rate',
             'location',
             'phonebook',
+            'push_message',
             'sos_contacts',
             'temperature',
             'working_mode',
@@ -44,6 +61,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertContains('hrv_measurement_interval', $keys);
         self::assertContains('ppg_measurement_interval', $keys);
         self::assertContains('rr_interval_measurement_interval', $keys);
+        self::assertNotContains('push_message', $keys);
     }
 
     public function testFourPTouchWatchTemplateReturnsSupportedSubset(): void
@@ -75,5 +93,6 @@ final class SupplierCapabilityTemplateTest extends TestCase
         sort($actual);
 
         self::assertSame($expected, $actual);
+        self::assertNotContains('push_message', $actual);
     }
 }

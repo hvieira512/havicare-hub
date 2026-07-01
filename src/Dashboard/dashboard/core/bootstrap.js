@@ -2,6 +2,7 @@ import {
     getCompanies as apiGetCompanies,
     getDevice as apiGetDevice,
     getLicenses as apiGetLicenses,
+    requestCapability as apiRequestCapability,
     saveConfiguration as apiSaveConfiguration,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
@@ -1243,12 +1244,15 @@ async function saveDeviceConfiguration(section) {
     renderDeviceConfigurationModal();
 
     try {
-        const result = await apiSaveConfiguration(
-            state.deviceModal.imei,
-            { [key]: payload },
-            state.deviceModal.supplier,
-            state.deviceModal.model,
-        );
+        const isTransientAction = section.dataset.configInput === "pushMessage";
+        const result = isTransientAction
+            ? await apiRequestCapability(state.deviceModal.imei, "push_message", payload)
+            : await apiSaveConfiguration(
+                state.deviceModal.imei,
+                { [key]: payload },
+                state.deviceModal.supplier,
+                state.deviceModal.model,
+            );
         if (result.error) {
             setConfigUi(key, {
                 phase: "idle",
@@ -1264,8 +1268,10 @@ async function saveDeviceConfiguration(section) {
             return;
         }
 
-        state.deviceModal.configurations =
-            result.configuration || state.deviceModal.configurations;
+        if (!isTransientAction) {
+            state.deviceModal.configurations =
+                result.configuration || state.deviceModal.configurations;
+        }
 
         setConfigUi(key, {
             phase: "sent",

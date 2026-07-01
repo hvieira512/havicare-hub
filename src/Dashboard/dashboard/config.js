@@ -182,6 +182,7 @@ export function renderConfigSection(
 
 function renderConfigActionButton(key, row, uiState, disabled = false) {
     const state = configButtonState(row, uiState);
+    const idleLabel = key === "pushMessage" ? "Enviar mensagem" : "Enviar";
     const icons = {
         idle: "fa-paper-plane",
         submitting: "fa-spinner fa-spin",
@@ -193,7 +194,7 @@ function renderConfigActionButton(key, row, uiState, disabled = false) {
         dropped: "fa-triangle-exclamation",
     };
     const labels = {
-        idle: "Enviar",
+        idle: idleLabel,
         submitting: "A enviar",
         sent: "Enviado",
         queued: "Em fila",
@@ -258,6 +259,9 @@ export function renderConfigInputs(entry, desired) {
     }
     if (input === "text") {
         return textInput(entry, desired);
+    }
+    if (input === "pushMessage") {
+        return pushMessageInput(entry, desired);
     }
     if (input === "intervalToggle") {
         return intervalToggleInput(entry, desired);
@@ -343,6 +347,9 @@ export function readConfigPayload(section) {
                 firstFieldName(section),
             ),
         };
+    }
+    if (input === "pushMessage") {
+        return { message: readText(section, "message") };
     }
     if (input === "intervalToggle") {
         return {
@@ -751,6 +758,15 @@ function textInput(entry, desired) {
         <div>
             <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
             <input class="form-control" type="text" data-config-field="${esc(field)}" value="${esc(String(value))}">
+        </div>`;
+}
+
+function pushMessageInput(_entry, desired) {
+    return `
+        <div>
+            <label class="form-label form-label-sm">Mensagem</label>
+            <input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">
+            <div class="form-text">Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada.</div>
         </div>`;
 }
 

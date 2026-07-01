@@ -146,6 +146,7 @@ final class DeviceConfigurationCatalog
         $fields = match ($key) {
             'sosContacts' => self::stringList($payload['numbers'] ?? [], 3, 'numbers'),
             'phonebook' => self::vivistarPhonebook($payload['contacts'] ?? []),
+            'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
             'workingMode' => self::vivistarWorkingMode($payload),
             'fallDetection' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'fallSensitivity' => [self::rangeInt($payload['sensitivity'] ?? null, 1, 3, 'sensitivity')],
@@ -338,6 +339,7 @@ final class DeviceConfigurationCatalog
         return [
             self::entry('sosContacts', 'BP12', 'Contactos SOS', 'list', ['numbers'], ['AP12'], 'contacts', 10, 3),
             self::entry('phonebook', 'BP14', 'Lista telefónica', 'contacts', ['contacts'], ['AP14'], 'contacts', 20, 10),
+            self::entry('pushMessage', 'BP40', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['AP40'], 'system', 5) + ['transient' => true],
             self::entry('workingMode', 'BP33', 'Modo de trabalho', 'workingMode', ['mode'], ['AP33'], 'system', 10, null, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Normal'],

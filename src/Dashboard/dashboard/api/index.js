@@ -3,6 +3,7 @@ export {
     deleteDevice,
     getDevice,
     getDevices,
+    requestCapability,
     requestFeature,
     saveConfiguration,
     saveDevice,

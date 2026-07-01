@@ -366,6 +366,71 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('intervalSeconds must be at least 30 for mode 8', $response['error']['message'] ?? null);
     }
 
+    public function testPushMessageRequestSendsTransientBp40WithoutPersistingConfiguration(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
+
+        $response = $api->requestFeature('861265061009822', json_encode([
+            'capability' => 'push_message',
+            'value' => ['message' => 'are you ok?'],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('waiting', $response['status'] ?? null);
+        self::assertSame('push_message', $response['capability'] ?? null);
+        self::assertSame('BP40', $response['commands'][0]['nativeType'] ?? null);
+        self::assertSame('push_message', $response['commands'][0]['capability'] ?? null);
+        self::assertSame(['AP40'], $response['commands'][0]['expectedReplyTypes'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('861265061009822', $submitted[0]['imei']);
+        self::assertStringStartsWith('IWBP40,861265061009822,', $submitted[0]['bytes']);
+        self::assertStringEndsWith(',00610072006500200079006F00750020006F006B003F#', $submitted[0]['bytes']);
+        self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
+    }
+
+    public function testPushMessageRequestRejectsDisabledModelCapability(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
+
+        $response = $api->requestFeature('861265061009822', json_encode([
+            'capability' => 'push_message',
+            'value' => ['message' => 'are you ok?'],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('unsupported_feature', $response['error']['code'] ?? null);
+    }
+
+    public function testPushMessageCannotBeSavedAsPersistentConfiguration(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
+
+        $response = $api->saveConfiguration('861265061009822', json_encode([
+            'configs' => [
+                'pushMessage' => ['message' => 'are you ok?'],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
+    }
+
     public function testRecentReturnsTelemetryEventsAndCommands(): void
     {
         [$api, $db, $store] = $this->makeApi();

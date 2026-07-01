@@ -31,6 +31,26 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(3, $config['limit'] ?? null);
     }
 
+    public function testVivistarPushMessageBuildsBp40WithUtf16Hex(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'pushMessage', ['message' => 'are you ok?']);
+
+        self::assertSame('BP40', $payload['command']);
+        self::assertSame('00610072006500200079006f00750020006f006b003f', strtolower($payload['payload']['fields'][0] ?? ''));
+
+        $wire = DeviceCommandCatalog::buildDownlink('vivistar-iw', '861265061009822', $payload['command'], $payload['payload']);
+        self::assertStringStartsWith('IWBP40,861265061009822,', $wire);
+        self::assertStringEndsWith(',' . ($payload['payload']['fields'][0] ?? '') . '#', $wire);
+    }
+
+    public function testVivistarPushMessageRejectsEmptyMessage(): void
+    {
+        self::assertSame(
+            'message is required',
+            DeviceConfigurationCatalog::validate('vivistar-iw', 'pushMessage', ['message' => ''])
+        );
+    }
+
     public function testWonlexLocationIntervalBuildsJsonPayload(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'locationInterval', ['intervalTime' => 300]);

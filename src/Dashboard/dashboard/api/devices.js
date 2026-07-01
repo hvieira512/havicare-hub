@@ -10,6 +10,10 @@ export const requestFeature = (imei, feature) => requestJson(`/api/devices/${enc
     method: 'POST',
     body: JSON.stringify({feature}),
 });
+export const requestCapability = (imei, capability, value) => requestJson(`/api/devices/${encodeURIComponent(imei)}/requests`, {
+    method: 'POST',
+    body: JSON.stringify({capability, value}),
+});
 export const saveDevice = (imei, supplier, model, deviceType = 'watch', licenseId = '0', simNumber = '', deviceId = '', originalImei = '', company = 'null') => requestJson(
     originalImei ? `/api/devices/${encodeURIComponent(originalImei)}` : '/api/devices',
     {
