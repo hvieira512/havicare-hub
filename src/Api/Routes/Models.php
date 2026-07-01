@@ -5,6 +5,7 @@ namespace Hub\Api\Routes;
 use Hub\Api\Support\CollectionResponse;
 use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DeviceProtocol;
+use Hub\Dashboard\DeviceMetadata;
 use Hub\Dashboard\GenericModelCapabilityCatalog;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
