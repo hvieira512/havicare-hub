@@ -1257,6 +1257,7 @@ export {
     renderDeviceFilterControls,
     renderDevicePagination,
     renderDeviceSelector,
+    renderTelemetryList,
     renderSelection,
     requestTelemetryFeature,
     selectDevice,

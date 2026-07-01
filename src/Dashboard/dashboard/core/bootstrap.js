@@ -57,6 +57,7 @@ import {
     normalizeFilterValue,
     openDeviceSelector,
     requestTelemetryFeature,
+    renderTelemetryList,
     renderSelection,
     selectDevice,
     supplierProtocol,
