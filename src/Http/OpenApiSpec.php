@@ -105,13 +105,14 @@ class OpenApiSpec
                                 'properties' => [
                                     'username' => ['type' => 'string'],
                                     'password' => ['type' => 'string'],
+                                    'refresh_token' => ['type' => 'string'],
                                 ],
-                                'required' => ['username', 'password'],
+                                'description' => 'Provide username and password for initial login, or refresh_token to issue a new token pair.',
                             ]]],
                         ],
                         'responses' => [
                             '200' => [
-                                'description' => 'Bearer token issued',
+                                'description' => 'Bearer and refresh tokens issued',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/AuthTokenResponse']]],
                             ],
                             '401' => ['$ref' => '#/components/responses/Error'],
@@ -1123,6 +1124,9 @@ class OpenApiSpec
                                     'license_id' => ['type' => 'integer', 'nullable' => true, 'example' => 1001],
                                     'expires_in' => ['type' => 'integer', 'example' => 3600],
                                     'expires_at' => ['type' => 'string', 'example' => '2026-06-23T12:00:00Z'],
+                                    'refresh_token' => ['type' => 'string'],
+                                    'refresh_expires_in' => ['type' => 'integer', 'example' => 2592000],
+                                    'refresh_expires_at' => ['type' => 'string', 'example' => '2026-07-23T12:00:00Z'],
                                 ],
                             ],
                         ],

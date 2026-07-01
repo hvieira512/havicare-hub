@@ -15,6 +15,7 @@ final class Auth
         private ApiTokenStore $tokens,
         private DashboardDataAccess $db,
         private int $tokenTtlSeconds = 3600,
+        private int $refreshTokenTtlSeconds = 2592000,
     ) {
     }
 
@@ -28,6 +29,11 @@ final class Auth
                 'reason' => 'invalid_json',
             ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
+        }
+
+        $refreshToken = trim((string)($decoded['refresh_token'] ?? ''));
+        if ($refreshToken !== '') {
+            return $this->refresh($refreshToken, $requestId);
         }
 
         $username = trim((string)($decoded['username'] ?? ''));
@@ -62,13 +68,38 @@ final class Auth
 
         return [
             'status' => 'ok',
-            'token' => $this->tokens->issue(
+            'token' => $this->tokens->issueTokenPair(
                 (string)$identity['username'],
                 (string)$identity['role'],
                 $this->tokenTtlSeconds,
+                $this->refreshTokenTtlSeconds,
                 $identity['userId'],
                 $identity['licenseId']
             ),
+        ];
+    }
+
+    private function refresh(string $refreshToken, string $requestId = ''): array
+    {
+        $token = $this->tokens->refreshAccessToken($refreshToken, $this->tokenTtlSeconds, $this->refreshTokenTtlSeconds);
+        if ($token === null) {
+            Logger::channel('api')->warning('API token refresh rejected', [
+                'request_id' => $requestId,
+                'error_code' => 'invalid_refresh_token',
+            ]);
+
+            return ['error' => ['code' => 'invalid_refresh_token', 'message' => 'Invalid refresh token']];
+        }
+
+        Logger::channel('api')->info('API token refreshed', [
+            'request_id' => $requestId,
+            'role' => (string)($token['role'] ?? ''),
+            'license_id' => $token['license_id'] ?? null,
+        ]);
+
+        return [
+            'status' => 'ok',
+            'token' => $token,
         ];
     }
 

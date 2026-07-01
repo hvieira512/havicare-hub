@@ -6,6 +6,9 @@ use Predis\ClientInterface;
 
 final class ApiTokenStore
 {
+    private const TOKEN_TYPE_ACCESS = 'access';
+    private const TOKEN_TYPE_REFRESH = 'refresh';
+
     public function __construct(
         private ClientInterface $redis,
         private string $prefix = 'hub:api-tokens',
@@ -15,20 +18,14 @@ final class ApiTokenStore
 
     public function issue(string $username, string $role, int $ttlSeconds, ?int $userId = null, int|string|null $licenseId = null): array
     {
-        $ttlSeconds = max(1, $ttlSeconds);
-        $issuedAt = time();
-        $expiresAt = $issuedAt + $ttlSeconds;
-        $token = bin2hex(random_bytes(32));
-        $payload = [
-            'userId' => $userId,
-            'username' => $username,
-            'role' => $role,
-            'licenseId' => $licenseId,
-            'issuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $issuedAt),
-            'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $expiresAt),
-        ];
-
-        $this->redis->setex($this->key($token), $ttlSeconds, json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        [$token, $payload] = $this->issueStoredToken(
+            $username,
+            $role,
+            $ttlSeconds,
+            $userId,
+            $licenseId,
+            self::TOKEN_TYPE_ACCESS
+        );
 
         return [
             'access_token' => $token,
@@ -40,7 +37,103 @@ final class ApiTokenStore
         ];
     }
 
+    public function issueTokenPair(
+        string $username,
+        string $role,
+        int $accessTtlSeconds,
+        int $refreshTtlSeconds,
+        ?int $userId = null,
+        int|string|null $licenseId = null
+    ): array {
+        $access = $this->issue($username, $role, $accessTtlSeconds, $userId, $licenseId);
+        [$refreshToken, $refreshPayload] = $this->issueStoredToken(
+            $username,
+            $role,
+            $refreshTtlSeconds,
+            $userId,
+            $licenseId,
+            self::TOKEN_TYPE_REFRESH
+        );
+
+        $access['refresh_token'] = $refreshToken;
+        $access['refresh_expires_in'] = max(1, $refreshTtlSeconds);
+        $access['refresh_expires_at'] = $refreshPayload['expiresAt'];
+
+        return $access;
+    }
+
+    public function refreshAccessToken(string $refreshToken, int $accessTtlSeconds, int $refreshTtlSeconds): ?array
+    {
+        $payload = $this->payload($refreshToken);
+        if (!is_array($payload) || ($payload['tokenType'] ?? null) !== self::TOKEN_TYPE_REFRESH) {
+            return null;
+        }
+
+        $context = $this->contextFromPayload($payload);
+        if (!$context instanceof ApiAuthContext) {
+            return null;
+        }
+
+        $this->redis->del($this->key(trim($refreshToken)));
+
+        return $this->issueTokenPair(
+            $context->username,
+            $context->role,
+            $accessTtlSeconds,
+            $refreshTtlSeconds,
+            $context->userId,
+            $context->licenseId
+        );
+    }
+
     public function context(string $token): ?ApiAuthContext
+    {
+        $payload = $this->payload($token);
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        $tokenType = (string)($payload['tokenType'] ?? self::TOKEN_TYPE_ACCESS);
+        if ($tokenType !== self::TOKEN_TYPE_ACCESS) {
+            return null;
+        }
+
+        return $this->contextFromPayload($payload);
+    }
+
+    public function validate(string $token): bool
+    {
+        return $this->context($token) instanceof ApiAuthContext;
+    }
+
+    private function issueStoredToken(
+        string $username,
+        string $role,
+        int $ttlSeconds,
+        ?int $userId,
+        int|string|null $licenseId,
+        string $tokenType
+    ): array {
+        $ttlSeconds = max(1, $ttlSeconds);
+        $issuedAt = time();
+        $expiresAt = $issuedAt + $ttlSeconds;
+        $token = bin2hex(random_bytes(32));
+        $payload = [
+            'tokenType' => $tokenType,
+            'userId' => $userId,
+            'username' => $username,
+            'role' => $role,
+            'licenseId' => $licenseId,
+            'issuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $issuedAt),
+            'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $expiresAt),
+        ];
+
+        $this->redis->setex($this->key($token), $ttlSeconds, json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        return [$token, $payload];
+    }
+
+    private function payload(string $token): ?array
     {
         $token = trim($token);
         if ($token === '') {
@@ -57,6 +150,11 @@ final class ApiTokenStore
             return null;
         }
 
+        return $payload;
+    }
+
+    private function contextFromPayload(array $payload): ?ApiAuthContext
+    {
         $username = trim((string)($payload['username'] ?? ''));
         $role = trim((string)($payload['role'] ?? ''));
         if ($username === '' || $role === '') {
@@ -69,11 +167,6 @@ final class ApiTokenStore
             : null;
 
         return new ApiAuthContext($userId, $username, $role, $licenseId);
-    }
-
-    public function validate(string $token): bool
-    {
-        return $this->context($token) instanceof ApiAuthContext;
     }
 
     private function key(string $token): string

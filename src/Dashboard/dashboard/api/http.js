@@ -3,6 +3,47 @@ export const authHeaders = () => {
     return token === '' ? {} : {Authorization: `Bearer ${token}`};
 };
 
+let tokenRefreshTimer = null;
+let tokenRefreshInFlight = null;
+const TOKEN_REFRESH_SKEW_MS = 60_000;
+const TOKEN_REFRESH_RETRY_MS = 15_000;
+
+const emitTokenUpdated = () => {
+    window.dispatchEvent(new Event('hub-dashboard-api-token-updated'));
+};
+
+const setDashboardApiToken = token => {
+    window.hubDashboardApiToken = token;
+    emitTokenUpdated();
+    scheduleTokenRefresh();
+};
+
+const scheduleTokenRefresh = (delayOverrideMs = null) => {
+    if (tokenRefreshTimer !== null) {
+        window.clearTimeout(tokenRefreshTimer);
+        tokenRefreshTimer = null;
+    }
+
+    const expiresAt = window.hubDashboardApiToken?.expires_at;
+    const token = window.hubDashboardApiToken?.access_token || '';
+    if (token === '' || typeof expiresAt !== 'string' || expiresAt === '') {
+        return;
+    }
+
+    const expiresAtMs = Date.parse(expiresAt);
+    if (!Number.isFinite(expiresAtMs)) {
+        return;
+    }
+
+    const delayMs = delayOverrideMs === null
+        ? Math.max(0, expiresAtMs - Date.now() - TOKEN_REFRESH_SKEW_MS)
+        : Math.max(0, delayOverrideMs);
+
+    tokenRefreshTimer = window.setTimeout(() => {
+        void refreshAccessToken();
+    }, delayMs);
+};
+
 const networkError = error => ({
     error: {
         code: 'network_error',
@@ -35,19 +76,73 @@ const parseJsonResponse = async response => {
     }
 };
 
-export const requestJson = (url, options = {}) => fetch(
-    url,
-    Object.assign({}, options, {
-        headers: Object.assign({'Content-Type': 'application/json'}, authHeaders(), options.headers || {}),
-    })
-).then(parseJsonResponse).catch(networkError);
+const handleAuthExpiry = response => {
+    return response.status === 401;
+};
 
-export const formRequest = (url, formData, options = {}) => fetch(
-    url,
-    Object.assign({method: 'POST', body: formData}, options, {
-        headers: Object.assign({}, authHeaders(), options.headers || {}),
-    })
-).then(parseJsonResponse).catch(networkError);
+const buildFetchOptions = (options = {}) => Object.assign({}, options, {
+    headers: Object.assign({}, authHeaders(), options.headers || {}),
+});
+
+const requestWithAuthRetry = async (url, options = {}) => {
+    const response = await fetch(url, buildFetchOptions(options));
+
+    if (handleAuthExpiry(response) && await refreshAccessToken()) {
+        return fetch(url, buildFetchOptions(options));
+    }
+
+    return response;
+};
+
+export const refreshAccessToken = async () => {
+    if (tokenRefreshInFlight !== null) {
+        return tokenRefreshInFlight;
+    }
+
+    const refreshToken = window.hubDashboardApiToken?.refresh_token || '';
+    if (refreshToken === '') {
+        return null;
+    }
+
+    tokenRefreshInFlight = (async () => {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({refresh_token: refreshToken}),
+        });
+        const payload = await parseJsonResponse(response);
+        const nextToken = payload?.token?.access_token || '';
+        if (response.ok && nextToken !== '') {
+            setDashboardApiToken(payload.token);
+            return payload.token;
+        }
+
+        const expiresAt = window.hubDashboardApiToken?.expires_at;
+        const expiresAtMs = typeof expiresAt === 'string' ? Date.parse(expiresAt) : Number.NaN;
+        if (Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
+            const retryDelay = Math.min(TOKEN_REFRESH_RETRY_MS, Math.max(1000, expiresAtMs - Date.now() - 5000));
+            scheduleTokenRefresh(retryDelay);
+        }
+
+        return null;
+    })().finally(() => {
+        tokenRefreshInFlight = null;
+    });
+
+    return tokenRefreshInFlight;
+};
+
+export const requestJson = (url, options = {}) => requestWithAuthRetry(url, Object.assign({}, options, {
+    headers: Object.assign({'Content-Type': 'application/json'}, options.headers || {}),
+}))
+    .then(parseJsonResponse)
+    .catch(networkError);
+
+export const formRequest = (url, formData, options = {}) => requestWithAuthRetry(url, Object.assign({method: 'POST', body: formData}, options))
+    .then(parseJsonResponse)
+    .catch(networkError);
+
+scheduleTokenRefresh();
 
 export const withQuery = (url, params = {}) => {
     const query = new URLSearchParams();

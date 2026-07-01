@@ -1,14 +1,21 @@
 let state;
 let onRenderSelection = () => {};
 let eventSource = null;
+let currentImei = '';
 
 export function initDeviceStream(context) {
     state = context.state;
     onRenderSelection = context.renderSelection;
+    window.addEventListener('hub-dashboard-api-token-updated', handleTokenUpdated);
 }
 
 export function connectDeviceStream(imei) {
-    disconnectDeviceStream();
+    currentImei = imei;
+    closeDeviceStream();
+    if (!currentImei) {
+        return;
+    }
+
     const url = new URL(
         `/api/devices/${encodeURIComponent(imei)}/stream`,
         window.location.origin,
@@ -23,16 +30,29 @@ export function connectDeviceStream(imei) {
     eventSource.addEventListener("update", handleStreamUpdate);
     eventSource.onerror = function () {
         if (eventSource?.readyState === EventSource.CLOSED) {
-            disconnectDeviceStream();
+            closeDeviceStream();
         }
     };
 }
 
 export function disconnectDeviceStream() {
+    currentImei = '';
+    closeDeviceStream();
+}
+
+function closeDeviceStream() {
     if (eventSource) {
         eventSource.close();
         eventSource = null;
     }
+}
+
+function handleTokenUpdated() {
+    if (!currentImei) {
+        return;
+    }
+
+    connectDeviceStream(currentImei);
 }
 
 function handleStreamUpdate(event) {

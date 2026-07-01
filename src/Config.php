@@ -38,6 +38,7 @@ class Config
                 'client_password' => getenv('API_CLIENT_PASSWORD') ?: '',
                 'api_auth_required' => $dashboardApiAuthRequired,
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
+                'api_refresh_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS') ?: 2592000),
                 'history_limit' => (int)(getenv('DASHBOARD_HISTORY_LIMIT') ?: 100),
                 'command_timeout_seconds' => (int)(getenv('DASHBOARD_COMMAND_TIMEOUT_SECONDS') ?: 3600),
                 'device_idle_timeout_seconds' => (int)(getenv('DASHBOARD_DEVICE_IDLE_TIMEOUT_SECONDS') ?: 1800),

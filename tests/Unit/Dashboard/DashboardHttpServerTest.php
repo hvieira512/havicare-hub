@@ -121,7 +121,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
         $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
         $token = (string)($payload['token']['access_token'] ?? '');
+        $refreshToken = (string)($payload['token']['refresh_token'] ?? '');
         self::assertNotSame('', $token);
+        self::assertNotSame('', $refreshToken);
 
         $response = $server(new ServerRequest(
             'GET',
@@ -131,6 +133,13 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         self::assertSame(200, $response->getStatusCode());
 
+        $refreshAsBearer = $server(new ServerRequest(
+            'GET',
+            '/api/devices',
+            ['Authorization' => 'Bearer ' . $refreshToken]
+        ));
+        self::assertSame(401, $refreshAsBearer->getStatusCode(), (string)$refreshAsBearer->getBody());
+
         $filters = $server(new ServerRequest(
             'GET',
             '/api/device-types/suppliers',
@@ -138,6 +147,59 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
 
         self::assertSame(200, $filters->getStatusCode(), (string)$filters->getBody());
+    }
+
+    public function testApiRefreshTokenReissuesAccessAfterAccessTokenExpires(): void
+    {
+        $server = $this->makeServer(apiTokenTtlSeconds: 1, apiRefreshTokenTtlSeconds: 60);
+        $login = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'admin', 'password' => 'secret'], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
+        $loginPayload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $expiredAccessToken = (string)($loginPayload['token']['access_token'] ?? '');
+        $refreshToken = (string)($loginPayload['token']['refresh_token'] ?? '');
+
+        self::assertNotSame('', $expiredAccessToken);
+        self::assertNotSame('', $refreshToken);
+        sleep(2);
+
+        $expiredResponse = $server(new ServerRequest(
+            'GET',
+            '/api/devices',
+            ['Authorization' => 'Bearer ' . $expiredAccessToken]
+        ));
+
+        self::assertSame(401, $expiredResponse->getStatusCode(), (string)$expiredResponse->getBody());
+
+        $refresh = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['refresh_token' => $refreshToken], JSON_THROW_ON_ERROR)
+        ));
+
+        self::assertSame(200, $refresh->getStatusCode(), (string)$refresh->getBody());
+        $payload = json_decode((string)$refresh->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $newToken = (string)($payload['token']['access_token'] ?? '');
+        $newRefreshToken = (string)($payload['token']['refresh_token'] ?? '');
+
+        self::assertNotSame('', $newToken);
+        self::assertNotSame('', $newRefreshToken);
+        self::assertNotSame($expiredAccessToken, $newToken);
+        self::assertNotSame($refreshToken, $newRefreshToken);
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices',
+            ['Authorization' => 'Bearer ' . $newToken]
+        ));
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
     }
 
     public function testApiLoginLogsExactRawBodyAndReturnsRequestIdHeader(): void
@@ -204,6 +266,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(['bearerAuth' => ['type' => 'http', 'scheme' => 'bearer', 'bearerFormat' => 'JWT', 'description' => 'Use the bearer token returned by /api/auth/login.']], $spec['components']['securitySchemes'] ?? null);
         self::assertSame([['bearerAuth' => []]], $spec['security'] ?? null);
         self::assertSame([], $spec['paths']['/api/auth/login']['post']['security'] ?? null);
+        self::assertArrayNotHasKey('/api/auth/refresh', $spec['paths']);
         self::assertSame([], $spec['paths']['/api/openapi.json']['get']['security'] ?? null);
         self::assertSame([], $spec['paths']['/api/docs']['get']['security'] ?? null);
     }
@@ -772,15 +835,29 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         return substr($png, 0, $signatureLength) . $chunk . substr($png, $signatureLength);
     }
 
-    private function makeServer(bool $apiAuthRequired = true): DashboardHttpServer
+    private function makeServer(
+        bool $apiAuthRequired = true,
+        int $apiTokenTtlSeconds = 3600,
+        int $apiRefreshTokenTtlSeconds = 2592000
+    ): DashboardHttpServer
     {
-        return $this->makeServerWithDatabase(apiAuthRequired: $apiAuthRequired)[0];
+        return $this->makeServerWithDatabase(
+            apiAuthRequired: $apiAuthRequired,
+            apiTokenTtlSeconds: $apiTokenTtlSeconds,
+            apiRefreshTokenTtlSeconds: $apiRefreshTokenTtlSeconds
+        )[0];
     }
 
     /**
      * @return array{0: DashboardHttpServer, 1: DashboardDataAccess, 2: DashboardStore}
      */
-    private function makeServerWithDatabase(?\Hub\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null, bool $apiAuthRequired = true): array
+    private function makeServerWithDatabase(
+        ?\Hub\DeviceHubServer $hub = null,
+        ?PendingDownlinkQueue $queue = null,
+        bool $apiAuthRequired = true,
+        int $apiTokenTtlSeconds = 3600,
+        int $apiRefreshTokenTtlSeconds = 2592000
+    ): array
     {
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
@@ -812,7 +889,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'tenant',
             'tenant-secret',
             $apiAuthRequired,
-            3600
+            $apiTokenTtlSeconds,
+            $apiRefreshTokenTtlSeconds
         );
 
         return [$server, $db, $store];
@@ -890,6 +968,9 @@ final class InMemoryRedisClientForDashboardHttpServerTest implements ClientInter
 
     /** @var array<string, string> */
     private array $strings = [];
+
+    /** @var array<string, int> */
+    private array $stringExpiresAt = [];
 
     /** @var array<string, array<string, float>> */
     private array $sortedSets = [];
@@ -1110,12 +1191,18 @@ final class InMemoryRedisClientForDashboardHttpServerTest implements ClientInter
     private function setex(string $key, int $seconds, string $value): string
     {
         $this->strings[$key] = $value;
+        $this->stringExpiresAt[$key] = time() + max(1, $seconds);
 
         return 'OK';
     }
 
     private function get(string $key): ?string
     {
+        if (isset($this->stringExpiresAt[$key]) && $this->stringExpiresAt[$key] <= time()) {
+            unset($this->strings[$key], $this->stringExpiresAt[$key]);
+            return null;
+        }
+
         return $this->strings[$key] ?? null;
     }
 
@@ -1131,6 +1218,7 @@ final class InMemoryRedisClientForDashboardHttpServerTest implements ClientInter
                     $deleted++;
                 }
             }
+            unset($this->stringExpiresAt[$key]);
         }
 
         return $deleted;

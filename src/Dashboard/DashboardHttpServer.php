@@ -49,6 +49,7 @@ final class DashboardHttpServer
         private string $clientPassword = '',
         private bool $apiAuthRequired = true,
         private int $apiTokenTtlSeconds = 3600,
+        private int $apiRefreshTokenTtlSeconds = 2592000,
     ) {
         if ($this->apiAuthRequired) {
             $this->apiCredentials = array_values(array_filter([
@@ -237,7 +238,7 @@ final class DashboardHttpServer
         $factory = require __DIR__ . '/../Api/Routes/index.php';
 
         return $factory(
-            new Auth($this->apiCredentials, $this->tokens, $this->db, $this->apiTokenTtlSeconds),
+            new Auth($this->apiCredentials, $this->tokens, $this->db, $this->apiTokenTtlSeconds, $this->apiRefreshTokenTtlSeconds),
             $this->devicesApi,
             $this->modelsApi,
             $this->capabilitiesApi,
@@ -304,7 +305,12 @@ final class DashboardHttpServer
     {
         $dashboardApiToken = null;
         if (isset($this->tokens, $this->username, $this->password) && $this->apiCredentials !== [] && $this->username !== '' && $this->password !== '') {
-            $dashboardApiToken = $this->tokens->issue($this->username, ApiAuthContext::ROLE_HUB_ADMIN, $this->apiTokenTtlSeconds);
+            $dashboardApiToken = $this->tokens->issueTokenPair(
+                $this->username,
+                ApiAuthContext::ROLE_HUB_ADMIN,
+                $this->apiTokenTtlSeconds,
+                $this->apiRefreshTokenTtlSeconds
+            );
         }
 
         ob_start();
