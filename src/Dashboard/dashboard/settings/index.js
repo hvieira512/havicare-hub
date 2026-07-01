@@ -61,6 +61,72 @@ import {
     updateModelProtocolAndPreview,
 } from "./models/index.js";
 
+const SECTION_TRANSLATIONS = {
+    telemetry: "Telemetria",
+    health: "Saúde",
+    contacts: "Contactos",
+    alarms: "Alertas",
+    settings_system: "Sistema",
+};
+
+const CAPABILITY_LABEL_TRANSLATIONS = {
+    location: "Localização",
+    heart_rate: "Frequência cardíaca",
+    blood_pressure: "Pressão arterial",
+    blood_oxygen: "Oxigénio no sangue",
+    temperature: "Temperatura",
+    breath_rate: "Frequência respiratória",
+    sleep: "Sono",
+    ecg: "ECG",
+    hrv: "VFC",
+    ppg: "PPG",
+    rr_interval: "Intervalo RR",
+    auto_vitals_interval: "Vitais automáticos",
+    heart_rate_measurement_interval: "Frequência cardíaca",
+    blood_pressure_measurement_interval: "Pressão arterial",
+    blood_oxygen_measurement_interval: "Oxigénio no sangue",
+    temperature_measurement_interval: "Temperatura",
+    breath_rate_measurement_interval: "Frequência respiratória",
+    ecg_measurement_interval: "ECG",
+    hrv_measurement_interval: "VFC",
+    ppg_measurement_interval: "PPG",
+    rr_interval_measurement_interval: "Intervalo RR",
+    heart_rate_continuous: "Frequência cardíaca contínua",
+    blood_oxygen_continuous: "Oxigénio no sangue contínuo",
+    blood_pressure_trend: "Tendência de pressão arterial",
+    temperature_continuous: "Temperatura contínua",
+    step_goal: "Meta de passos",
+    sleep_monitoring: "Sono",
+    blood_pressure_calibration: "Calibração de pressão arterial",
+    step_reporting_interval: "Passos",
+    pedometer_schedule: "Pedómetro",
+    sos_contacts: "Contactos SOS",
+    phonebook: "Contactos",
+    call_whitelist: "Chamadas permitidas",
+    monitor_number: "Número de monitorização",
+    alarm_clock: "Despertador",
+    medication_reminders: "Medicação",
+    low_battery_alert: "Bateria fraca",
+    fall_detection: "Quedas",
+    fall_sensitivity: "Sensibilidade de queda",
+    sos_sms_alert: "SOS SMS",
+    blood_oxygen_alert: "Oxigénio no sangue",
+    temperature_high_alert: "Temperatura alta",
+    temperature_low_alert: "Temperatura baixa",
+    blood_pressure_alert: "Pressão arterial",
+    heart_rate_high_alert: "Frequência cardíaca alta",
+    heart_rate_low_alert: "Frequência cardíaca baixa",
+    remove_watch_alarm: "Remoção do relógio",
+    remove_watch_sms_alert: "SMS de remoção do relógio",
+    location_reporting_interval: "Localização",
+    working_mode: "Modo de funcionamento",
+    device_binding: "Vincular dispositivo",
+    call_in_restriction: "Chamadas recebidas",
+    device_settings_sync: "Sincronizar definições",
+    device_password: "Palavra-passe",
+    language_timezone: "Idioma e fuso horário",
+};
+
 let els;
 let ui;
 
@@ -771,6 +837,7 @@ function renderCapabilitiesSection() {
         ? modelCommercialName(model)
         : "Capacidades";
     els.capabilitySubtitle.textContent = String(model?.supplier || "");
+
     const sections = catalogSections
         .map(({ section, label, entries }) => {
             const sectionEntries = entries
@@ -779,10 +846,10 @@ function renderCapabilitiesSection() {
             if (sectionEntries.length === 0) {
                 return null;
             }
-
             return { section, label, entries: sectionEntries };
         })
         .filter(Boolean);
+
     const totalCapabilities = sections.reduce(
         (count, item) => count + item.entries.length,
         0,
@@ -797,32 +864,45 @@ function renderCapabilitiesSection() {
         settings_system: { icon: "fa-gear", color: "btn-outline-secondary" },
     };
 
+    let activeSection = state.settingsModal.activeCapabilitySection;
+    if (!activeSection || !sections.some((s) => s.section === activeSection)) {
+        activeSection = sections[0]?.section || "";
+        state.settingsModal.activeCapabilitySection = activeSection;
+    }
+
     els.capabilitySectionNav.innerHTML = sections
         .map(({ section, label }) => {
             const cfg = sectionButtonConfig[section] || {
                 icon: "fa-gear",
                 color: "btn-secondary",
             };
+            const isActive = section === activeSection;
+            const ptLabel = SECTION_TRANSLATIONS[section] || label;
             return `
-        <button type="button" class="btn btn-sm ${cfg.color} w-100 d-flex align-items-center gap-2 text-start" data-action="jumpCapabilitySection" data-section="${esc(section)}">
-            <i class="fa-solid ${cfg.icon}"></i> ${esc(label)}
+        <button type="button" class="btn btn-sm flex-fill ${cfg.color} ${isActive ? "active" : ""} d-flex align-items-center justify-content-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
+            <i class="fa-solid ${cfg.icon}"></i> ${esc(ptLabel)}
         </button>`;
         })
         .join("");
 
-    els.capabilityGroups.innerHTML = sections
-        .map(
-            ({ section, label, entries }) => `
-        <section class="border rounded bg-body-tertiary p-3" id="capability-section-${esc(section)}" data-capability-section="${esc(section)}">
+    const section = sections.find((s) => s.section === activeSection);
+    if (section) {
+        const sectionLabel =
+            SECTION_TRANSLATIONS[section.section] || section.label;
+        els.capabilityGroups.innerHTML = `
+        <section class="border rounded bg-body-tertiary p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h6 mb-0">${esc(label)}</h3>
-                <span class="small text-secondary">${entries.filter((f) => enabled.has(f)).length}/${entries.length} ativos</span>
+                <h3 class="h6 mb-0">${esc(sectionLabel)}</h3>
+                <span class="small text-secondary">${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
             </div>
             <div class="d-flex flex-column gap-2">
-                ${entries
+                ${section.entries
                     .map((feature) => {
-                        const labelText = capabilityLabelByKey(feature);
-                        const sectionState = capabilities[section] || {};
+                        const labelText =
+                            CAPABILITY_LABEL_TRANSLATIONS[feature] ||
+                            capabilityLabelByKey(feature);
+                        const sectionState =
+                            capabilities[section.section] || {};
                         const isInModelPayload =
                             Object.prototype.hasOwnProperty.call(
                                 sectionState,
@@ -836,7 +916,7 @@ function renderCapabilitiesSection() {
                                 ${!isInModelPayload ? '<div class="small text-secondary">Disponível no catálogo do tipo de dispositivo.</div>' : ""}
                             </div>
                             ${
-                                section === "telemetry" &&
+                                section.section === "telemetry" &&
                                 capabilityCatalogEntryByKey(feature)
                                     ?.isRequestable
                                     ? `<span class="badge bg-success bg-opacity-10 text-success px-3 py-2 fw-medium">${esc("Solicitável")}</span>`
@@ -846,9 +926,10 @@ function renderCapabilitiesSection() {
                     })
                     .join("")}
             </div>
-        </section>`,
-        )
-        .join("");
+        </section>`;
+    } else {
+        els.capabilityGroups.innerHTML = "";
+    }
 }
 
 async function saveCapabilities() {

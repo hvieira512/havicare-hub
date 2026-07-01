@@ -81,6 +81,7 @@ import {
     loadSettingsSuppliersSection,
     openModelDetail,
     openNewModelForm,
+    renderCapabilitiesSection,
     resetApiUserForm,
     resetCompanyForm,
     resetLicenseForm,
@@ -1153,12 +1154,8 @@ function jumpCapabilitySection(event) {
     const section = button.dataset.section;
     if (!section) return;
 
-    const target = document.querySelector(
-        `[data-capability-section="${section}"]`,
-    );
-    if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    state.settingsModal.activeCapabilitySection = section;
+    renderCapabilitiesSection();
 }
 
 function handleDeviceListClick(event) {

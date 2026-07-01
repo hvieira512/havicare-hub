@@ -149,24 +149,18 @@ ob_start();
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row g-3">
-                                    <div class="col-lg-3">
-                                        <div id="capabilitySectionNav" class="d-flex flex-column gap-1" role="group" aria-label="Secções de capacidade"></div>
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                    <div>
+                                        <h2 class="h5 mb-1" id="capabilityTitle">Capacidades</h2>
+                                        <div class="small text-secondary" id="capabilitySubtitle"></div>
                                     </div>
-                                    <div class="col-lg-9">
-                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                                            <div>
-                                                <h2 class="h5 mb-1" id="capabilityTitle">Capacidades</h2>
-                                                <div class="small text-secondary" id="capabilitySubtitle"></div>
-                                            </div>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span id="capabilitySummary" class="small text-secondary"></span>
-                                                <button id="saveCapabilitiesBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar capacidades</button>
-                                            </div>
-                                        </div>
-                                        <div id="capabilityGroups" class="vstack gap-3"></div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span id="capabilitySummary" class="small text-secondary"></span>
+                                        <button id="saveCapabilitiesBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar capacidades</button>
                                     </div>
                                 </div>
+                                <div id="capabilitySectionNav" class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Secções de capacidade"></div>
+                                <div id="capabilityGroups"></div>
                             </div>
                         </div>
                     </div>
