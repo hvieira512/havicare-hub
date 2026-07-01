@@ -1230,6 +1230,7 @@ export {
     ensureSuppliersLoaded,
     findModelInfo,
     flattenedCapabilityKeys,
+    allDetailItems,
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
     handleDevicePaginationClick,
