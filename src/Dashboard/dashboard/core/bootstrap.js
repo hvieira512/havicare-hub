@@ -32,6 +32,7 @@ import {
     clearDetailFilters,
     clearSelection,
     allDetailItems,
+    filterDetailItems,
     deriveFourPTouchDeviceId,
     deviceTypeLabel,
     deviceTypeOptions,

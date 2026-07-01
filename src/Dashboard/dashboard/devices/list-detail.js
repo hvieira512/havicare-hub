@@ -1231,6 +1231,7 @@ export {
     findModelInfo,
     flattenedCapabilityKeys,
     allDetailItems,
+    filterDetailItems,
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
     handleDevicePaginationClick,
