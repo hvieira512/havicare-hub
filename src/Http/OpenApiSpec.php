@@ -78,6 +78,9 @@ class OpenApiSpec
                 'description' => 'Dashboard API for managing devices, suppliers and models.',
             ],
             'servers' => [['url' => '/']],
+            'security' => [
+                ['bearerAuth' => []],
+            ],
             'tags' => [
                 ['name' => 'Suppliers'],
                 ['name' => 'Models'],
@@ -94,6 +97,7 @@ class OpenApiSpec
                     'post' => [
                         'tags' => ['System'],
                         'summary' => 'Issue bearer token for API access',
+                        'security' => [],
                         'requestBody' => [
                             'required' => true,
                             'content' => ['application/json' => ['schema' => [
@@ -501,6 +505,7 @@ class OpenApiSpec
                     'get' => [
                         'tags' => ['System'],
                         'summary' => 'OpenAPI specification',
+                        'security' => [],
                         'responses' => ['200' => ['description' => 'OpenAPI document']],
                     ],
                 ],
@@ -726,11 +731,20 @@ class OpenApiSpec
                     'get' => [
                         'tags' => ['System'],
                         'summary' => 'Swagger UI',
+                        'security' => [],
                         'responses' => ['200' => ['description' => 'Swagger UI page']],
                     ],
                 ],
             ],
             'components' => [
+                'securitySchemes' => [
+                    'bearerAuth' => [
+                        'type' => 'http',
+                        'scheme' => 'bearer',
+                        'bearerFormat' => 'JWT',
+                        'description' => 'Use the bearer token returned by /api/auth/login.',
+                    ],
+                ],
                 'responses' => [
                     'Error' => [
                         'description' => 'Error response',

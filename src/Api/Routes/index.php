@@ -182,7 +182,11 @@ return static function (
   <div id="swagger-ui"></div>
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
-    SwaggerUIBundle({url: "/api/openapi.json", dom_id: "#swagger-ui"});
+    SwaggerUIBundle({
+      url: "/api/openapi.json",
+      dom_id: "#swagger-ui",
+      persistAuthorization: true
+    });
   </script>
 </body>
 </html>')),
