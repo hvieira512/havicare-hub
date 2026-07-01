@@ -1,0 +1,119 @@
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-Medium.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-Bold.woff2') format('woff2');
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+.showcase-preview {
+    min-height: 280px;
+}
+
+.showcase-preview img {
+    max-width: 100%;
+    max-height: 260px;
+}
+
+.device-modal-shell {
+    padding: 1rem;
+}
+
+.selected-device-preview {
+    width: 72px;
+    height: 72px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    background: var(--bs-tertiary-bg);
+    flex-shrink: 0;
+}
+
+.selected-device-preview img {
+    max-width: 56px;
+    max-height: 56px;
+}
+
+.selected-device-facts dt {
+    color: var(--bs-secondary-color);
+    font-size: .8rem;
+    font-weight: 600;
+    margin-bottom: .25rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.selected-device-facts dd {
+    margin-bottom: 0;
+    font-size: .95rem;
+}
+
+.navbar-brand img {
+    height: 30px;
+    width: auto;
+    display: block;
+}
+
+#deviceModal .modal-dialog.modal-fullscreen,
+#settingsModal .modal-dialog.modal-fullscreen {
+    margin: 1rem;
+    width: calc(100vw - 2rem);
+    max-width: none;
+    height: calc(100% - 2rem);
+}
+
+#deviceModal .modal-dialog.modal-fullscreen .modal-content,
+#settingsModal .modal-dialog.modal-fullscreen .modal-content {
+    height: 100%;
+}
+
+@media (max-width: 575.98px) {
+    #deviceModal .modal-dialog.modal-fullscreen,
+    #settingsModal .modal-dialog.modal-fullscreen {
+        margin: 0;
+        width: 100vw;
+        height: 100%;
+    }
+
+    .device-modal-shell {
+        padding: 0;
+    }
+
+    .device-modal-shell .nav-pills {
+        width: 100%;
+    }
+
+    .settings-modal-shell .nav-pills {
+        width: 100%;
+    }
+}
