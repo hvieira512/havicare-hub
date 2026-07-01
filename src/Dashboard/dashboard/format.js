@@ -1,147 +1,163 @@
-export const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-}[char]));
+export const esc = (value) =>
+    String(value ?? "").replace(
+        /[&<>"']/g,
+        (char) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;",
+            })[char],
+    );
 
-export const titleize = value => String(value ?? 'desconhecido')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, char => char.toUpperCase());
+export const titleize = (value) =>
+    String(value ?? "desconhecido")
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
 
-export const ago = value => {
-    if (!value) return 'nunca';
-    const seconds = Math.max(0, Math.floor((Date.now() - Date.parse(value)) / 1000));
+export const ago = (value) => {
+    if (!value) return "nunca";
+    const seconds = Math.max(
+        0,
+        Math.floor((Date.now() - Date.parse(value)) / 1000),
+    );
     if (seconds < 60) return `há ${seconds}s`;
     if (seconds < 3600) return `há ${Math.floor(seconds / 60)}m`;
     if (seconds < 86400) return `há ${Math.floor(seconds / 3600)}h`;
     return `há ${Math.floor(seconds / 86400)}d`;
 };
 
-export const when = value => {
-    if (!value) return '';
+export const when = (value) => {
+    if (!value) return "";
     const parsed = Date.parse(value);
     if (Number.isNaN(parsed)) return String(value);
-    return new Date(parsed).toLocaleString('pt-PT');
+    return new Date(parsed).toLocaleString("pt-PT");
 };
 
-export const featureLabel = type => ({
-    heart_rate: 'Frequência cardíaca',
-    blood_pressure: 'Tensão arterial',
-    blood_pressure_systolic: 'Tensão arterial sistólica',
-    blood_pressure_diastolic: 'Tensão arterial diastólica',
-    blood_oxygen: 'Oxigénio no sangue',
-    blood_sugar: 'Glicemia',
-    temperature: 'Temperatura',
-    battery: 'Bateria',
-    activity: 'Atividade',
-    location: 'Localização',
-    alarm: 'Alarme',
-    heartbeat: 'Sinal de rede',
-    sleep: 'Sono',
-    ecg: 'ECG',
-    hrv: 'VFC',
-    weather: 'Meteorologia',
-    breath_rate: 'Frequência respiratória',
-    ppg: 'PPG',
-    rr_interval: 'Intervalo RR',
-    device_config: 'Configuração',
-    'ncs.event': 'Chamada de Enfermeiros',
-}[type] || titleize(type));
+export const featureLabel = (type) =>
+    ({
+        heart_rate: "Frequência cardíaca",
+        blood_pressure: "Tensão arterial",
+        blood_pressure_systolic: "Tensão arterial sistólica",
+        blood_pressure_diastolic: "Tensão arterial diastólica",
+        blood_oxygen: "Oxigénio no sangue",
+        blood_sugar: "Glicemia",
+        temperature: "Temperatura",
+        battery: "Bateria",
+        activity: "Atividade",
+        location: "Localização",
+        alarm: "Alarme",
+        heartbeat: "Sinal de rede",
+        sleep: "Sono",
+        ecg: "ECG",
+        hrv: "VFC",
+        weather: "Meteorologia",
+        breath_rate: "Frequência respiratória",
+        ppg: "PPG",
+        rr_interval: "Intervalo RR",
+        device_config: "Configuração",
+        "ncs.event": "Chamada de Enfermeiros",
+    })[type] || titleize(type);
 
-export const fieldLabel = key => ({
-    distanceMeters: 'Distância',
-    caloriesKcal: 'Calorias',
-    exerciseSeconds: 'Exercício (s)',
-    standMinutes: 'Tempo em pé (min)',
-    source: 'Origem',
-    gpsValid: 'GPS válido',
-    speedKmh: 'Velocidade',
-    accuracyMeters: 'Precisão',
-    code: 'Código',
-    lowBattery: 'Bateria fraca',
-    fall: 'Queda',
-    wearingNotice: 'Aviso de utilização',
-    gsmSignal: 'Sinal GSM',
-    satelliteCount: 'Satélites',
-    steps: 'Passos',
-    bodyCelsius: 'Temperatura',
-    percent: 'Percentagem',
-    chargingState: 'Estado de carga',
-    batteryType: 'Tipo de bateria',
-    batteryPercent: 'Bateria',
-    rollFrequency: 'Frequência de rotação',
-    workMode: 'Modo de trabalho',
-    glucoseMgDl: 'Glicemia',
-    summary: 'Resumo',
-    weatherType: 'Tipo de tempo',
-    reportedAt: 'Reportado em',
-    temperatureCelsius: 'Temperatura',
-    lowCelsius: 'Mínima',
-    highCelsius: 'Máxima',
-    humidityPercent: 'Humidade',
-    ack: 'ACK',
-    settings: 'Definições',
-    intervalSeconds: 'Intervalo (s)',
-    intervalMinutes: 'Intervalo (min)',
-    interval: 'Intervalo (min)',
-    password: 'Palavra-passe',
-    phone: 'Telefone',
-    Battery: 'Bateria (%)',
-    steps: 'Passos',
-    bindStatus: 'Vinculação',
-    switchState: 'Estado',
-    sleepStartTime: 'Início do sono',
-    sleepEndTime: 'Fim do sono',
-    sleepTarget: 'Meta de sono (min)',
-    reminderValue: 'Valor de alerta',
-    RemindValue: 'Valor de alerta',
-    remindValue: 'Limite principal',
-    hpWarn: 'Sistólica máxima',
-    LPWarn: 'Diastólica máxima',
-    exerciseSwitchState: 'Alertas em exercício',
-    exerciseHRMin: 'FC mínima em exercício',
-    exerciseHRMax: 'FC máxima em exercício',
-    exerciseRemindValue: 'Limite em exercício',
-    event: 'Evento',
-    deviceId: 'ID do dispositivo',
-    topicSourceId: 'Origem',
-    messageType: 'Tipo',
-    from: 'Gateway',
-    transparent: 'Transparente',
-    key: 'Tecla',
-}[key] || titleize(key));
+export const fieldLabel = (key) =>
+    ({
+        distanceMeters: "Distância",
+        caloriesKcal: "Calorias",
+        exerciseSeconds: "Exercício (s)",
+        standMinutes: "Tempo em pé (min)",
+        source: "Origem",
+        gpsValid: "GPS válido",
+        speedKmh: "Velocidade",
+        accuracyMeters: "Precisão",
+        code: "Código",
+        lowBattery: "Bateria fraca",
+        fall: "Queda",
+        wearingNotice: "Aviso de utilização",
+        gsmSignal: "Sinal GSM",
+        satelliteCount: "Satélites",
+        steps: "Passos",
+        bodyCelsius: "Temperatura",
+        percent: "Percentagem",
+        chargingState: "Estado de carga",
+        batteryType: "Tipo de bateria",
+        batteryPercent: "Bateria",
+        rollFrequency: "Frequência de rotação",
+        workMode: "Modo de trabalho",
+        glucoseMgDl: "Glicemia",
+        summary: "Resumo",
+        weatherType: "Tipo de tempo",
+        reportedAt: "Reportado em",
+        temperatureCelsius: "Temperatura",
+        lowCelsius: "Mínima",
+        highCelsius: "Máxima",
+        humidityPercent: "Humidade",
+        ack: "ACK",
+        settings: "Definições",
+        intervalSeconds: "Intervalo (s)",
+        intervalMinutes: "Intervalo (min)",
+        interval: "Intervalo (min)",
+        password: "Palavra-passe",
+        phone: "Telefone",
+        Battery: "Bateria (%)",
+        steps: "Passos",
+        bindStatus: "Vinculação",
+        switchState: "Estado",
+        sleepStartTime: "Início do sono",
+        sleepEndTime: "Fim do sono",
+        sleepTarget: "Meta de sono (min)",
+        reminderValue: "Valor de alerta",
+        RemindValue: "Valor de alerta",
+        remindValue: "Limite principal",
+        hpWarn: "Sistólica máxima",
+        LPWarn: "Diastólica máxima",
+        exerciseSwitchState: "Alertas em exercício",
+        exerciseHRMin: "FC mínima em exercício",
+        exerciseHRMax: "FC máxima em exercício",
+        exerciseRemindValue: "Limite em exercício",
+        event: "Evento",
+        deviceId: "ID do dispositivo",
+        topicSourceId: "Origem",
+        messageType: "Tipo",
+        from: "Gateway",
+        transparent: "Transparente",
+        key: "Tecla",
+    })[key] || titleize(key);
 
-export const commandLabel = command => ({
-    'Heart rate': 'Frequência cardíaca',
-    'Blood pressure': 'Tensão arterial',
-    'Systolic blood pressure': 'Tensão arterial sistólica',
-    'Diastolic blood pressure': 'Tensão arterial diastólica',
-    'Blood oxygen': 'Oxigénio no sangue',
-    Temperature: 'Temperatura',
-    'Temperature variant': 'Temperatura',
-    'Breath rate': 'Frequência respiratória',
-    Location: 'Localização',
-    'Sleep data': 'Sono',
-    ECG: 'ECG',
-    HRV: 'VFC',
-    PPG: 'PPG',
-    'RR interval': 'Intervalo RR',
-    Weather: 'Meteorologia',
-    'Heart rate and blood pressure': 'Frequência cardíaca e tensão arterial',
-}[command.label] || command.label || command.command);
+export const commandLabel = (command) =>
+    ({
+        "Heart rate": "Frequência cardíaca",
+        "Blood pressure": "Tensão arterial",
+        "Systolic blood pressure": "Tensão arterial sistólica",
+        "Diastolic blood pressure": "Tensão arterial diastólica",
+        "Blood oxygen": "Oxigénio no sangue",
+        Temperature: "Temperatura",
+        "Temperature variant": "Temperatura",
+        "Breath rate": "Frequência respiratória",
+        Location: "Localização",
+        "Sleep data": "Sono",
+        ECG: "ECG",
+        HRV: "VFC",
+        PPG: "PPG",
+        "RR interval": "Intervalo RR",
+        Weather: "Meteorologia",
+        "Heart rate and blood pressure":
+            "Frequência cardíaca e tensão arterial",
+    })[command.label] ||
+    command.label ||
+    command.command;
 
-export const displayValue = value => {
+export const displayValue = (value) => {
     if (Array.isArray(value)) return String(value.length);
-    if (value && typeof value === 'object') return JSON.stringify(value);
-    if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+    if (value && typeof value === "object") return JSON.stringify(value);
+    if (typeof value === "boolean") return value ? "Sim" : "Não";
     return String(value);
 };
 
-export const eventTime = payload => {
-    const time = Date.parse(payload?.occurredAt || payload?.recordedAt || '');
+export const eventTime = (payload) => {
+    const time = Date.parse(payload?.occurredAt || payload?.recordedAt || "");
     return Number.isNaN(time) ? 0 : time;
 };
 
-export const rowPayload = row => row?.payload && typeof row.payload === 'object' ? row.payload : row;
+export const rowPayload = (row) =>
+    row?.payload && typeof row.payload === "object" ? row.payload : row;
