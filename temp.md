@@ -14,10 +14,9 @@
 
 # Doing
 
-- Adicionar logging à API
+- Refactor frontend para não ter um monolítio `app.js`
 - Verificar integração do PUT `/api/devices/{imei}` se envia em bruto downlinks para o dispositivo
     - Funciona mas o Chavarria dá erro
-- `GET /api/devices/{imei}` deverá refletir a última configuração enviada, independentemente se o relógio já devolveu de volta que a configuração foi aplicada. Temos de remover o conceito de timeout de um pedido de configuração ou apenas exagerar bastante no timeout?
 
 # Done
 
@@ -38,3 +37,5 @@
     - Esconder device ID quando se trata de um relógio, apenas inserir automaticamente quando se trata de um 4PTouch
     - Dispositivos são sempre adicionados sem empresa e sem licença
 - Chave Primária Composta Empresa + IMEI
+- Adicionar logging à API
+- `GET /api/devices/{imei}` deverá refletir a última configuração enviada, independentemente se o relógio já devolveu de volta que a configuração foi aplicada. Temos de remover o conceito de timeout de um pedido de configuração ou apenas exagerar bastante no timeout?

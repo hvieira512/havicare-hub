@@ -49,6 +49,9 @@ ob_start();
                                             <div id="modelsSupplierButtons" class="btn-group flex-wrap w-100" role="group"></div>
                                         </div>
                                     </div>
+                                    <div id="modelsActiveFilters" class="d-flex flex-wrap gap-2 mt-3">
+                                        <span class="small text-secondary">Sem filtros ativos</span>
+                                    </div>
                                 </div>
                                 <div class="d-flex justify-content-end mb-3">
                                     <button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn"><?= icon('fa-plus', 'me-1') ?>Novo modelo</button>
