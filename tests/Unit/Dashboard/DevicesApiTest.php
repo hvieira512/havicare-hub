@@ -8,6 +8,7 @@ use Hub\Dashboard\DashboardStore;
 use Hub\PendingDownlink;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
+use GuzzleHttp\Psr7\ServerRequest;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
 use Tests\Support\MysqlDashboardTestCase;
@@ -99,6 +100,19 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('L08 Pro', $response['data'][0]['model'] ?? null);
     }
 
+    public function testListReturnsAbsoluteModelImageUrl(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $supplier = $db->suppliers->findByName('Vivistar');
+        self::assertIsArray($supplier);
+
+        $db->models->add((int)$supplier['id'], 'L08 Pro', 'L08 Pro', 'watch', '/model-images/example.jpg');
+
+        $response = $api->list('page=1&limit=5', null, new ServerRequest('GET', 'http://localhost:8081/api/devices'));
+
+        self::assertSame('http://localhost:8081/model-images/example.jpg', $response['data'][0]['image'] ?? null);
+    }
+
     public function testShowReturnsSparseCapabilitiesWithStoredConfigurationValues(): void
     {
         [$api, $db] = $this->makeApi();
@@ -180,6 +194,19 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('never_reported', $response['pending']['contacts']['call_whitelist']['status'] ?? null);
         self::assertSame('never_reported', $response['pending']['settings_system']['device_password']['status'] ?? null);
         self::assertSame([], $response['transportPending'] ?? null);
+    }
+
+    public function testShowReturnsAbsoluteModelImageUrl(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $supplier = $db->suppliers->findByName('Vivistar');
+        self::assertIsArray($supplier);
+
+        $db->models->add((int)$supplier['id'], 'L08 Pro', 'L08 Pro', 'watch', '/model-images/example.jpg');
+
+        $response = $api->show('861265061009822', null, new ServerRequest('GET', 'http://localhost:8081/api/devices/861265061009822'));
+
+        self::assertSame('http://localhost:8081/model-images/example.jpg', $response['model']['image'] ?? null);
     }
 
     public function testShowReturnsConfigPendingAndTransportPendingSeparately(): void

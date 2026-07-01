@@ -9,6 +9,7 @@ use Hub\Api\Routes\Company;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Licenses;
 use Hub\Api\Routes\Models;
+use Hub\Api\Routes\Protocols;
 use Hub\Api\Routes\Suppliers;
 use Hub\DeviceHubServer;
 use Hub\Log\Logger;
@@ -32,6 +33,7 @@ final class DashboardHttpServer
     private ApiUsers $apiUsersApi;
     private Company $companyApi;
     private Licenses $licensesApi;
+    private Protocols $protocolsApi;
     private array $apiCredentials = [];
 
     public function __construct(
@@ -85,6 +87,7 @@ final class DashboardHttpServer
         $this->apiUsersApi = new ApiUsers($this->db);
         $this->companyApi = new Company($this->db);
         $this->licensesApi = new Licenses($this->db);
+        $this->protocolsApi = new Protocols();
         $this->apiRouter = new ApiRouter($this->apiRoutes());
     }
 
@@ -242,6 +245,7 @@ final class DashboardHttpServer
             $this->apiUsersApi,
             $this->companyApi,
             $this->licensesApi,
+            $this->protocolsApi,
             fn(array $payload, int $status = 200): Response => $this->json($payload, $status),
             fn(string $body): Response => $this->html($body)
         );

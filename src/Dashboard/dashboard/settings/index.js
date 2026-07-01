@@ -9,6 +9,8 @@ import {
     getCompanies as apiGetCompanies,
     getLicenses as apiGetLicenses,
     getModel as apiGetModel,
+    getModelFilters as apiGetModelFilters,
+    getModelTemplate as apiGetModelTemplate,
     getSuppliers as apiGetSuppliers,
     saveApiUser as apiSaveApiUser,
     saveLicense as apiSaveLicense,
@@ -139,6 +141,7 @@ export function initSettings(context) {
         callbacks: {
             ensureCapabilityCatalog,
             loadSettingsSuppliersSection,
+            refreshNewModelCapabilityTemplate,
             renderSettingsPagination,
         },
     });
@@ -164,8 +167,13 @@ async function loadSettingsModal(
     state.settingsModal.capabilityCatalog = [];
     state.settingsModal.capabilitySupplier = "";
     state.settingsModal.capabilityModelId = null;
+    state.settingsModal.capabilityModelTemplateKeys = [];
     state.settingsModal.capabilityEnabledCapabilities = [];
     state.settingsModal.currentCapabilitiesModel = null;
+    state.modelModal.enabledCapabilities = [];
+    state.modelModal.templateSummary = "";
+    state.modelModal.templateSupplier = "";
+    state.modelModal.templateDeviceType = "watch";
     activateSettingsSection(section);
     ui.settingsModal.show();
     if (section === "suppliers") {
@@ -259,9 +267,67 @@ async function loadSettingsCapabilitiesSection(
     deviceType = state.settingsModal.capabilityDeviceType || "watch",
 ) {
     const normalized = normalizeDeviceType(deviceType);
+    const deviceTypeChanged = state.settingsModal.capabilityDeviceType !== normalized;
     state.settingsModal.capabilityDeviceType = normalized;
+    if (deviceTypeChanged) {
+        state.settingsModal.capabilitySupplier = "";
+        state.settingsModal.capabilityTemplateEnabledKeys = [];
+    }
     await ensureCapabilityCatalog(normalized);
+    await ensureCapabilityModelFilters();
+    resolveCapabilitySuppliersForDeviceType(normalized);
+    if (state.settingsModal.capabilitySupplier) {
+        await loadCapabilityTemplate(state.settingsModal.capabilitySupplier, normalized);
+    }
     state.settingsModal.sectionLoaded.capabilities = true;
+    renderCapabilitiesCatalogSection();
+}
+
+async function ensureCapabilityModelFilters() {
+    if (state.settingsModal.modelFilters.length > 0 || state.settingsModal.sectionLoaded.modelFilters) {
+        return;
+    }
+    const response = await apiGetModelFilters();
+    state.settingsModal.modelFilters = response.data || [];
+    state.settingsModal.sectionLoaded.modelFilters = true;
+}
+
+function resolveCapabilitySuppliersForDeviceType(deviceType) {
+    const group = state.settingsModal.modelFilters.find(
+        g => normalizeDeviceType(g.deviceType || "") === deviceType,
+    );
+    state.settingsModal.capabilitySuppliersForDeviceType = group?.suppliers?.filter(s => s.enabled) || [];
+}
+
+async function loadCapabilityTemplate(supplierId, deviceType) {
+    if (!supplierId || !deviceType) {
+        state.settingsModal.capabilityTemplateEnabledKeys = [];
+        return;
+    }
+    const response = await apiGetModelTemplate({ supplierId, deviceType });
+    if (response.error) {
+        state.settingsModal.capabilityTemplateEnabledKeys = [];
+        return;
+    }
+    state.settingsModal.capabilityTemplateEnabledKeys = Array.isArray(response.enabledCapabilities)
+        ? response.enabledCapabilities.map(String)
+        : [];
+}
+
+function handleCapabilitySupplierClick(event) {
+    const button = event.target.closest('[data-action="selectCapabilitySupplier"]');
+    if (!button) return;
+    selectCapabilitySupplier(button.dataset.value);
+}
+
+async function selectCapabilitySupplier(supplierId) {
+    state.settingsModal.capabilitySupplier = supplierId || "";
+    const deviceType = state.settingsModal.capabilityDeviceType || "watch";
+    if (supplierId) {
+        await loadCapabilityTemplate(supplierId, deviceType);
+    } else {
+        state.settingsModal.capabilityTemplateEnabledKeys = [];
+    }
     renderCapabilitiesCatalogSection();
 }
 
@@ -272,6 +338,14 @@ function renderCapabilitiesCatalogSection() {
         state.settingsModal.capabilityDeviceType || "watch",
         "selectCapabilityDeviceType",
     );
+
+    const supplierId = state.settingsModal.capabilitySupplier;
+    const enabledKeys = state.settingsModal.capabilityTemplateEnabledKeys;
+    const enabledSet = new Set(enabledKeys);
+    const hasSupplierFilter = !!supplierId && enabledKeys.length > 0;
+
+    renderCapabilitySupplierButtons();
+    updateCapabilitySupplierSummary(hasSupplierFilter);
 
     const sections = capabilitiesGroupedBySection(
         state.settingsModal.capabilityCatalog,
@@ -288,17 +362,25 @@ function renderCapabilitiesCatalogSection() {
             <div class="vstack gap-2">
                 ${entries
                     .map(
-                        (entry) => `
-                    <div class="border rounded px-3 py-2 bg-white">
-                        <div class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</div>
-                        <div class="small text-secondary">${esc(entry.key)}</div>
+                        (entry) => {
+                            const supported = hasSupplierFilter ? enabledSet.has(entry.key) : true;
+                            return `
+                    <div class="border rounded px-3 py-2 bg-white ${!supported ? "opacity-50" : ""}">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                                <div class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</div>
+                                <div class="small text-secondary">${esc(entry.key)}</div>
+                            </div>
+                            ${hasSupplierFilter ? `<span class="badge ${supported ? "text-bg-success" : "text-bg-secondary"} mt-1 flex-shrink-0">${supported ? "suportado" : "não suportado"}</span>` : ""}
+                        </div>
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <span class="badge text-bg-${entry.isTelemetry ? "info" : "secondary"}">${entry.isTelemetry ? "telemetria" : "configuração"}</span>
                             <span class="badge text-bg-${entry.isConfigurable ? "primary" : "secondary"}">${entry.isConfigurable ? "configurável" : "não configurável"}</span>
                             <span class="badge text-bg-${entry.isRequestable ? "success" : "secondary"}">${entry.isRequestable ? "solicitável" : "não solicitável"}</span>
                         </div>
                     </div>
-                `,
+                `;
+                        },
                     )
                     .join("")}
             </div>
@@ -306,6 +388,47 @@ function renderCapabilitiesCatalogSection() {
     `,
         )
         .join("");
+}
+
+function renderCapabilitySupplierButtons() {
+    const suppliers = state.settingsModal.capabilitySuppliersForDeviceType;
+    const selected = state.settingsModal.capabilitySupplier;
+
+    if (!suppliers.length) {
+        els.capabilitySupplierButtons.innerHTML = '<div class="small text-secondary">Sem fornecedores para este tipo de dispositivo.</div>';
+        return;
+    }
+
+    const items = [
+        { value: "", label: "Todos" },
+        ...suppliers.map(s => ({ value: String(s.id), label: s.name })),
+    ];
+
+    renderButtonGroup(
+        els.capabilitySupplierButtons,
+        items,
+        selected,
+        "selectCapabilitySupplier",
+    );
+}
+
+function updateCapabilitySupplierSummary(hasFilter) {
+    if (!els.capabilitySupplierClear || !els.capabilitySupplierSummary) return;
+
+    const supplierId = state.settingsModal.capabilitySupplier;
+    const suppliers = state.settingsModal.capabilitySuppliersForDeviceType;
+    const supplier = supplierId ? suppliers.find(s => String(s.id) === String(supplierId)) : null;
+
+    els.capabilitySupplierClear.classList.toggle("d-none", !supplierId);
+
+    if (supplier) {
+        const total = state.settingsModal.capabilityCatalog.length;
+        const supported = state.settingsModal.capabilityTemplateEnabledKeys.length;
+        els.capabilitySupplierSummary.textContent =
+            `A mostrar capacidades suportadas por ${supplier.name}: ${supported} de ${total} capacidades.`;
+    } else {
+        els.capabilitySupplierSummary.textContent = "";
+    }
 }
 
 async function loadSettingsApiUsersSection(page = 1) {
@@ -368,6 +491,12 @@ async function saveModel() {
     body.append("deviceType", deviceType);
     if (els.modelImage.files[0]) {
         body.append("image", els.modelImage.files[0]);
+    }
+    if (!els.modelForm.dataset.modelId) {
+        body.append("capabilitiesConfigured", "1");
+        for (const feature of state.modelModal.enabledCapabilities || []) {
+            body.append("capabilities[]", String(feature));
+        }
     }
 
     const result = await apiSaveModel(
@@ -690,6 +819,16 @@ async function openModelDetail(modelId) {
         model.capabilities || {},
     );
 
+    const supplierId = Number(model.supplier_id || model.supplierId || 0);
+    const deviceType = model.device_type || model.deviceType || "watch";
+    state.settingsModal.capabilityModelTemplateKeys = [];
+    if (supplierId) {
+        const tmpl = await apiGetModelTemplate({ supplierId, deviceType });
+        if (!tmpl.error && Array.isArray(tmpl.enabledCapabilities)) {
+            state.settingsModal.capabilityModelTemplateKeys = tmpl.enabledCapabilities.map(String);
+        }
+    }
+
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
     els.modelsBreadcrumbCurrent.textContent = modelCommercialName(model);
@@ -745,6 +884,7 @@ function backToModelList() {
     state.settingsModal.modelsCarousel.to(0);
 
     state.settingsModal.currentCapabilitiesModel = null;
+    state.settingsModal.capabilityModelTemplateKeys = [];
     state.settingsModal.sectionLoaded.models = false;
     state.settingsModal.sectionLoaded.modelFilters = false;
     void loadSettingsModelsSection();
@@ -762,6 +902,59 @@ function openNewModelForm() {
 
     if (state.settingsModal.modelsCarousel) {
         state.settingsModal.modelsCarousel.to(1);
+    }
+}
+
+async function refreshNewModelCapabilityTemplate() {
+    if (!els?.modelForm || els.modelForm.dataset.modelId) {
+        return;
+    }
+
+    const supplierId = parseInt(els.modelForm.dataset.supplierId || "0", 10);
+    const deviceType = normalizeDeviceType(
+        els.modelForm.dataset.deviceType || "watch",
+    );
+
+    state.modelModal.enabledCapabilities = [];
+    state.modelModal.templateDeviceType = deviceType;
+    state.modelModal.templateSupplier = els.modelForm.dataset.supplier || "";
+
+    if (!supplierId) {
+        state.modelModal.templateSummary =
+            "Selecione um fornecedor para carregar o template de capacidades.";
+        if (els.modelTemplateSummary) {
+            els.modelTemplateSummary.textContent = state.modelModal.templateSummary;
+        }
+        return;
+    }
+
+    if (els.modelTemplateSummary) {
+        els.modelTemplateSummary.textContent =
+            "A carregar template de capacidades do fornecedor.";
+    }
+
+    const response = await apiGetModelTemplate({
+        supplierId,
+        deviceType,
+    });
+    if (response.error) {
+        state.modelModal.templateSummary =
+            response.error.message || response.error.code || "Erro ao carregar template.";
+        if (els.modelTemplateSummary) {
+            els.modelTemplateSummary.textContent = state.modelModal.templateSummary;
+        }
+        return;
+    }
+
+    const enabledCapabilities = Array.isArray(response.enabledCapabilities)
+        ? response.enabledCapabilities.map(String)
+        : [];
+    state.modelModal.enabledCapabilities = enabledCapabilities;
+    state.modelModal.templateSupplier = String(response.supplier || "");
+    state.modelModal.templateDeviceType = String(response.deviceType || deviceType);
+    state.modelModal.templateSummary = `${enabledCapabilities.length} capacidades predefinidas para ${state.modelModal.templateSupplier} (${deviceTypeLabel(deviceType)}).`;
+    if (els.modelTemplateSummary) {
+        els.modelTemplateSummary.textContent = state.modelModal.templateSummary;
     }
 }
 
@@ -836,12 +1029,18 @@ function renderCapabilitiesSection() {
     els.capabilityTitle.textContent = model
         ? modelCommercialName(model)
         : "Capacidades";
-    els.capabilitySubtitle.textContent = String(model?.supplier || "");
+    const templateKeys = state.settingsModal.capabilityModelTemplateKeys || [];
+    const templateSet = new Set(templateKeys);
+    const hasTemplate = templateKeys.length > 0;
+
+    els.capabilitySubtitle.textContent = String(model?.supplier || "")
+        + (hasTemplate ? ` — ${templateKeys.length} capacidades do template` : "");
 
     const sections = catalogSections
         .map(({ section, label, entries }) => {
             const sectionEntries = entries
                 .filter((entry) => entry.isTelemetry || entry.isConfigurable)
+                .filter((entry) => !hasTemplate || templateSet.has(entry.key) || enabled.has(entry.key))
                 .map((entry) => entry.key);
             if (sectionEntries.length === 0) {
                 return null;
@@ -973,6 +1172,7 @@ export {
     editCurrentModel,
     editLicense,
     handleActiveModelsFiltersClick,
+    handleCapabilitySupplierClick,
     handleCompanyListClick,
     handleLicenseListClick,
     handleModelsListLimitChange,
@@ -998,6 +1198,7 @@ export {
     saveCompany,
     saveLicense,
     saveModel,
+    selectCapabilitySupplier,
     selectModelDeviceType,
     selectModelSupplier,
     selectModelsDeviceType,

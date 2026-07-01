@@ -1,5 +1,7 @@
 import { esc, fieldLabel, titleize } from "./format.js";
 import { normalizePhoneControl, renderPhoneControl } from "./phone.js";
+import { requestJson } from "./api/http.js";
+import { state } from "./state.js";
 
 const CATEGORY_LABELS = {
     "vivistar-iw": {
@@ -41,9 +43,19 @@ const CATEGORY_ORDER = {
 
 let uidCounter = 0;
 
-export function catalogForProtocol(protocol) {
-    const catalog = globalThis.dashboardConfigurationCatalog?.[protocol] || [];
-    return Array.isArray(catalog) ? catalog : [];
+export async function catalogForProtocol(protocol) {
+    if (!protocol) {
+        return [];
+    }
+
+    if (state.protocolCatalogs[protocol]) {
+        return state.protocolCatalogs[protocol];
+    }
+
+    const response = await requestJson(`/api/protocols/${encodeURIComponent(protocol)}/config-catalog`);
+    const catalog = Array.isArray(response.data) ? response.data : [];
+    state.protocolCatalogs[protocol] = catalog;
+    return catalog;
 }
 
 export function groupedCatalog(catalog) {

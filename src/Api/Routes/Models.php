@@ -7,6 +7,7 @@ use Hub\Dashboard\DashboardDataAccess;
 use Hub\Dashboard\DeviceProtocol;
 use Hub\Dashboard\DeviceMetadata;
 use Hub\Dashboard\GenericModelCapabilityCatalog;
+use Hub\Dashboard\SupplierCapabilityTemplate;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
@@ -151,6 +152,59 @@ final class Models
         ];
     }
 
+    public function deviceTypeSuppliersModels(ServerRequestInterface $request): array
+    {
+        $groups = [];
+        foreach (GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {
+            $groups[$deviceType] = [
+                'deviceType' => $deviceType,
+                'suppliers' => [],
+            ];
+        }
+
+        $enabledMap = [];
+        foreach ($this->db->supplierDeviceTypes->all() as $row) {
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($row['device_type'] ?? 'watch'));
+            $supplierName = (string)($row['supplier'] ?? '');
+            $enabledMap[$supplierName][$deviceType] = ((int)($row['enabled'] ?? 0)) === 1;
+        }
+
+        $modelsByDeviceTypeAndSupplier = [];
+        $baseUrl = $this->baseUrlFromRequest($request);
+        foreach ($this->db->models->all() as $model) {
+            $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
+            $supplierName = (string)($model['supplier'] ?? '');
+            $modelsByDeviceTypeAndSupplier[$deviceType][$supplierName][] = [
+                'id' => (int)($model['id'] ?? 0),
+                'supplier_id' => (int)($model['supplier_id'] ?? 0),
+                'supplier' => $supplierName,
+                'internalModel' => (string)($model['internal_model'] ?? ''),
+                'commercialName' => (string)($model['commercial_name'] ?? ''),
+                'deviceType' => $deviceType,
+                'protocol' => DeviceProtocol::forSupplier($supplierName),
+                'image' => $this->fullModelImage((string)($model['image'] ?? ''), $baseUrl),
+            ];
+        }
+
+        foreach ($groups as $deviceType => &$group) {
+            $suppliersForDeviceType = $modelsByDeviceTypeAndSupplier[$deviceType] ?? [];
+            foreach ($suppliersForDeviceType as $supplierName => $models) {
+                $firstModel = $models[0] ?? [];
+                $group['suppliers'][] = [
+                    'id' => (int)($firstModel['supplier_id'] ?? 0),
+                    'name' => $supplierName,
+                    'enabled' => $enabledMap[$supplierName][$deviceType] ?? false,
+                    'models' => $models,
+                ];
+            }
+        }
+        unset($group);
+
+        return [
+            'data' => array_values($groups),
+        ];
+    }
+
     public function show(int $id, ServerRequestInterface $request): array
     {
         $entry = $this->db->models->findById($id);
@@ -180,9 +234,42 @@ final class Models
         ];
     }
 
+    public function template(ServerRequestInterface $request): array
+    {
+        $params = $this->queryParams((string)$request->getUri()->getQuery());
+        $supplierId = (int)($params['supplierId'] ?? $params['supplier_id'] ?? 0);
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($params['deviceType'] ?? $params['device_type'] ?? 'watch'));
+        if ($supplierId <= 0) {
+            return ['error' => ['code' => 'invalid_request', 'message' => 'supplierId is required']];
+        }
+
+        $supplier = $this->db->suppliers->findById($supplierId);
+        if ($supplier === null) {
+            return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier does not exist']];
+        }
+
+        $supplierName = (string)($supplier['name'] ?? '');
+        $protocol = DeviceProtocol::forSupplier($supplierName);
+        if ($protocol === '') {
+            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
+        }
+
+        $catalog = $this->db->genericCapabilities->all($deviceType);
+        $enabledKeys = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
+
+        return [
+            'supplier_id' => $supplierId,
+            'supplier' => $supplierName,
+            'deviceType' => $deviceType,
+            'protocol' => $protocol,
+            'enabledCapabilities' => $enabledKeys,
+            'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $enabledKeys),
+        ];
+    }
+
     public function create(ServerRequestInterface $request): array
     {
-        $payload = $this->modelPayload($request);
+        $payload = $this->modelPayload($request, 'create');
         if (isset($payload['error'])) {
             return $payload;
         }
@@ -222,7 +309,7 @@ final class Models
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
         }
 
-        $payload = $this->modelPayload($request);
+        $payload = $this->modelPayload($request, 'update', $id);
         if (isset($payload['error'])) {
             return $payload;
         }
@@ -319,7 +406,7 @@ final class Models
         return self::MODEL_IMAGE_ROUTE . '/' . $filename;
     }
 
-    private function modelPayload(ServerRequestInterface $request): array
+    private function modelPayload(ServerRequestInterface $request, string $mode, ?int $modelId = null): array
     {
         $decoded = $this->modelRequestData($request);
         if (!is_array($decoded)) {
@@ -337,17 +424,15 @@ final class Models
             return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier does not exist']];
         }
 
-        $protocol = DeviceProtocol::forSupplier((string)$supplier['name']);
+        $supplierName = (string)($supplier['name'] ?? '');
+        $protocol = DeviceProtocol::forSupplier($supplierName);
         if ($protocol === '') {
             return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
         }
 
         $availableFeatures = $this->db->genericCapabilities->keysForDeviceType($deviceType);
         $availableFeatureSet = array_flip($availableFeatures);
-        $defaultFeatures = array_values(array_filter(
-            GenericModelCapabilityCatalog::keysForProtocol($protocol),
-            static fn(string $feature): bool => isset($availableFeatureSet[$feature])
-        ));
+        $defaultFeatures = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
         $hasEnabledCapabilitiesSelection = array_key_exists('capabilitiesConfigured', $decoded)
             || array_key_exists('capabilities', $decoded)
             || array_key_exists('capabilities[]', $decoded)
@@ -362,7 +447,16 @@ final class Models
             ?? null
         );
         if (!$hasEnabledCapabilitiesSelection) {
-            $enabledCapabilities = $defaultFeatures;
+            if ($mode === 'update' && $modelId !== null) {
+                $current = $this->db->models->findById($modelId);
+                $sameSupplier = (int)($current['supplier_id'] ?? 0) === $supplierId;
+                $sameDeviceType = DeviceMetadata::normalizeDeviceType((string)($current['device_type'] ?? 'watch')) === $deviceType;
+                $enabledCapabilities = $sameSupplier && $sameDeviceType
+                    ? $this->db->modelCapabilities->enabledFeaturesForModelId($modelId)
+                    : $defaultFeatures;
+            } else {
+                $enabledCapabilities = $defaultFeatures;
+            }
         } else {
             $unsupported = array_values(array_filter($enabledCapabilities, static fn(string $f): bool => !isset($availableFeatureSet[$f])));
             if ($unsupported !== []) {

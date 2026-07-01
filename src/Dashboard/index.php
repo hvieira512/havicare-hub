@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Hub\Command\DeviceConfigurationCatalog;
 
 require_once __DIR__ . '/components/helpers.php';
 require_once __DIR__ . '/components/pagination.php';
@@ -317,11 +316,6 @@ require_once __DIR__ . '/components/modal.php';
 
     <script>
         window.hubDashboardApiToken = <?= json_encode($dashboardApiToken, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
-        window.dashboardConfigurationCatalog = <?= json_encode([
-                                                    'wonlex-json' => DeviceConfigurationCatalog::configsForProtocol('wonlex-json'),
-                                                    'vivistar-iw' => DeviceConfigurationCatalog::configsForProtocol('vivistar-iw'),
-                                                    'four-p-touch' => DeviceConfigurationCatalog::configsForProtocol('four-p-touch'),
-                                                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
     </script>
     <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
     <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>

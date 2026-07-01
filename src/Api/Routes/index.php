@@ -7,6 +7,7 @@ use Hub\Api\Routes\Company;
 use Hub\Api\Routes\Devices;
 use Hub\Api\Routes\Licenses;
 use Hub\Api\Routes\Models;
+use Hub\Api\Routes\Protocols;
 use Hub\Api\Routes\Suppliers;
 use Hub\Dashboard\ApiRoute;
 use Psr\Http\Message\ServerRequestInterface;
@@ -23,6 +24,7 @@ return static function (
     ApiUsers $apiUsers,
     Company $company,
     Licenses $licenses,
+    Protocols $protocols,
     callable $json,
     callable $html
 ): array {
@@ -53,9 +55,9 @@ return static function (
             $result = $auth->login($requestBody($request), $apiRequestId($request));
             return $json($result, isset($result['error']) ? 401 : 200);
         }),
-        new ApiRoute('GET', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->list((string)$request->getUri()->getQuery(), $apiAuthContext($request)))),
+        new ApiRoute('GET', '/api/devices', fn(array $params, ServerRequestInterface $request): Response => $json($devices->list((string)$request->getUri()->getQuery(), $apiAuthContext($request), $request))),
         new ApiRoute('GET', '/api/devices/{imei}', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status): Response {
-            $result = $devices->show($params['imei'], $apiAuthContext($request));
+            $result = $devices->show($params['imei'], $apiAuthContext($request), $request);
             return $json($result, $status($result));
         }),
         new ApiRoute('GET', '/api/devices/{imei}/stream', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext): Response {
@@ -123,11 +125,20 @@ return static function (
         }),
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),
         new ApiRoute('GET', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->list($request))),
-        new ApiRoute('GET', '/api/models/filters', fn(array $params, ServerRequestInterface $request): Response => $json($models->filters($request))),
+        new ApiRoute('GET', '/api/device-types/suppliers', fn(array $params, ServerRequestInterface $request): Response => $json($models->filters($request))),
+        new ApiRoute('GET', '/api/device-types/suppliers/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->deviceTypeSuppliersModels($request))),
+        new ApiRoute('GET', '/api/models/template', function (array $params, ServerRequestInterface $request) use ($models, $json, $status): Response {
+            $result = $models->template($request);
+            return $json($result, $status($result));
+        }),
         new ApiRoute('GET', '/api/models/{id:\d+}', fn(array $params, ServerRequestInterface $request): Response => $json($models->show((int)$params['id'], $request))),
         new ApiRoute('GET', '/api/capabilities', fn(array $params, ServerRequestInterface $request): Response => $json($capabilities->list((string)$request->getUri()->getQuery()))),
         new ApiRoute('GET', '/api/capabilities/{id:\d+}', function (array $params) use ($capabilities, $json, $status): Response {
             $result = $capabilities->show((int)$params['id']);
+            return $json($result, $status($result));
+        }),
+        new ApiRoute('GET', '/api/protocols/{protocol}/config-catalog', function (array $params, ServerRequestInterface $request) use ($protocols, $json, $status): Response {
+            $result = $protocols->configCatalog($request, $params);
             return $json($result, $status($result));
         }),
         new ApiRoute('POST', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->create($request))),

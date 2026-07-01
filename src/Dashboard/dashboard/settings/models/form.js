@@ -57,7 +57,7 @@ function updateModelProtocolAndPreview() {
 }
 
 function resetModelForm(selectedSupplierId = "") {
-    const {els} = getSettingsModelsRuntime();
+    const {els, callbacks} = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelForm.reset();
     delete els.modelForm.dataset.modelId;
@@ -66,6 +66,10 @@ function resetModelForm(selectedSupplierId = "") {
     els.saveModelBtn.innerHTML =
         '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
     els.modelImage.value = "";
+    if (els.modelTemplateSummary) {
+        els.modelTemplateSummary.textContent =
+            "A carregar template de capacidades do fornecedor.";
+    }
 
     renderModelDeviceTypeButtons("watch");
 
@@ -83,6 +87,7 @@ function resetModelForm(selectedSupplierId = "") {
 
     renderModelSupplierButtons(supplierId);
     updateModelProtocolAndPreview();
+    void callbacks.refreshNewModelCapabilityTemplate?.();
 }
 
 function editModel(
@@ -106,6 +111,10 @@ function editModel(
     els.modelImage.value = "";
     els.saveModelBtn.innerHTML =
         '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
+    if (els.modelTemplateSummary) {
+        els.modelTemplateSummary.textContent =
+            "A edição deste formulário não altera as capacidades do modelo.";
+    }
 
     renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
     renderModelSupplierButtons(supplierId);
@@ -113,7 +122,7 @@ function editModel(
 }
 
 function selectModelSupplier(supplierId) {
-    const {els} = getSettingsModelsRuntime();
+    const {els, callbacks} = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelImage.value = "";
     const supplier = state.modelModalSuppliers.find(
@@ -124,12 +133,14 @@ function selectModelSupplier(supplierId) {
     delete els.modelForm.dataset.image;
     renderModelSupplierButtons(supplierId);
     updateModelProtocolAndPreview();
+    void callbacks.refreshNewModelCapabilityTemplate?.();
 }
 
 function selectModelDeviceType(deviceType) {
-    const {els} = getSettingsModelsRuntime();
+    const {els, callbacks} = getSettingsModelsRuntime();
     els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
     renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
+    void callbacks.refreshNewModelCapabilityTemplate?.();
 }
 
 export {

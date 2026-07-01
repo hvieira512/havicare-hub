@@ -1,4 +1,5 @@
 export const state = {
+    companies: [],
     summary: {
         devices: [],
         models: [],
@@ -41,6 +42,7 @@ export const state = {
         protocol: "",
         catalog: [],
         configurations: [],
+        enabledCapabilityKeys: [],
         configUi: {},
         errorMessage: "",
         loading: false,
@@ -49,14 +51,21 @@ export const state = {
     modelModal: {
         capabilities: [],
         enabledCapabilities: [],
+        templateSummary: "",
+        templateSupplier: "",
+        templateDeviceType: "watch",
     },
+    protocolCatalogs: {},
     settingsModal: {
         section: "suppliers",
         capabilityDeviceType: "",
         capabilityCatalog: [],
         capabilityCatalogByType: {},
         capabilitySupplier: "",
+        capabilityTemplateEnabledKeys: [],
+        capabilitySuppliersForDeviceType: [],
         capabilityModelId: null,
+        capabilityModelTemplateKeys: [],
         capabilityEnabledCapabilities: [],
         currentCapabilitiesModel: null,
         modelFilters: [],

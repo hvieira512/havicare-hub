@@ -133,7 +133,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $filters = $server(new ServerRequest(
             'GET',
-            '/api/models/filters',
+            '/api/device-types/suppliers',
             ['Authorization' => 'Bearer ' . $token]
         ));
 

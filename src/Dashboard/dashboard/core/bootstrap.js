@@ -67,6 +67,7 @@ import {
     deleteCurrentModel,
     editCurrentModel,
     handleActiveModelsFiltersClick,
+    handleCapabilitySupplierClick,
     handleCompanyListClick,
     handleLicenseListClick,
     handleModelsListLimitChange,
@@ -92,6 +93,7 @@ import {
     saveCompany,
     saveLicense,
     saveModel,
+    selectCapabilitySupplier,
     selectModelDeviceType,
     selectModelSupplier,
     selectModelsDeviceType,
@@ -114,16 +116,18 @@ const SELECTED_DEVICE_STORAGE_KEY = "hub-dashboard-selected-device";
 
 
 async function populateCompanySelect() {
-    const data = await apiGetCompanies({ limit: 500 });
-    if (data?.error) {
+    if (state.companies.length === 0) {
+        const data = await apiGetCompanies({ limit: 500 });
+        state.companies = data?.error ? [] : data.data || [];
+    }
+    if (state.companies.length === 0) {
         els.deviceCompanySelect.innerHTML =
             '<option value="">Sem empresa</option>';
         return false;
     }
-    const companies = data.data || [];
     els.deviceCompanySelect.innerHTML =
         '<option value="">Sem empresa</option>' +
-        companies
+        state.companies
             .map(
                 (s) =>
                     `<option value="${esc(s.name)}">${esc(s.name)}</option>`,
@@ -140,9 +144,12 @@ async function populateLicenseSelectForCompany(companyName) {
         els.deviceLicenseId.value = "0";
         return;
     }
-    const data = await apiGetCompanies({ limit: 500 });
-    const companyList = data?.error ? [] : data.data || [];
-    const company = companyList.find((s) => s.name === companyName);
+    let company = state.companies.find((s) => s.name === companyName);
+    if (!company) {
+        const fallback = await apiGetCompanies({ limit: 500 });
+        state.companies = fallback?.error ? [] : fallback.data || [];
+        company = state.companies.find((s) => s.name === companyName);
+    }
     if (!company) {
         select.innerHTML = '<option value="0">Nenhuma</option>';
         select.disabled = true;
@@ -222,6 +229,7 @@ async function openAddDevice() {
         protocol: "",
         catalog: [],
         configurations: [],
+        enabledCapabilityKeys: [],
         configUi: {},
         errorMessage: "",
         loading: false,
@@ -265,6 +273,7 @@ async function editDevice(imei, supplier, model) {
         protocol: "",
         catalog: [],
         configurations: [],
+        enabledCapabilityKeys: [],
         configUi: {},
         errorMessage: "",
         loading: true,
@@ -279,8 +288,7 @@ async function editDevice(imei, supplier, model) {
     els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
     els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = "0";
-    renderDeviceSelectors(supplier, model);
-    renderDeviceConfigurationModal();
+    await renderDeviceSelectors(supplier, model);
     renderDeviceSimNumberField("");
     deviceModal.show();
 
@@ -296,7 +304,7 @@ async function editDevice(imei, supplier, model) {
         const licenseId = String(device.licenseId || "0");
         const deviceCompany = String(device.company || "");
         renderDeviceTypeSelector(deviceType);
-        renderDeviceSelectors(
+        await renderDeviceSelectors(
             String(deviceModel?.supplier || supplier),
             String(deviceModel?.internalModel || model),
             deviceType,
@@ -333,18 +341,18 @@ async function editDevice(imei, supplier, model) {
         applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || "");
         state.deviceModal.configurations = detail.configurations || {};
-        await refreshDeviceModalConfigurations(false);
+        state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
     } finally {
         if (!companiesLoaded && state.deviceModal.errorMessage === "") {
             setDeviceFormError("Ligacao ao servidor indisponivel.");
         }
         state.deviceModal.loading = false;
-        syncDeviceModalContext();
+        await syncDeviceModalContext();
         renderDeviceConfigurationModal();
     }
 }
 
-function renderDeviceSelectors(
+async function renderDeviceSelectors(
     selectedSupplier = "",
     selectedModel = "",
     deviceType = "",
@@ -381,7 +389,7 @@ function renderDeviceSelectors(
         "selectDeviceModel",
     );
     updateDevicePreview();
-    syncDeviceModalContext();
+    await syncDeviceModalContext();
     renderDeviceConfigurationModal();
 }
 
@@ -431,14 +439,14 @@ function updateDevicePreview() {
     syncDeviceModalContext();
 }
 
-function syncDeviceModalContext() {
+async function syncDeviceModalContext() {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
     const protocol = supplierProtocol(supplier, state.summary.models);
     state.deviceModal.supplier = supplier;
     state.deviceModal.model = model;
     state.deviceModal.protocol = protocol;
-    state.deviceModal.catalog = catalogForProtocol(protocol);
+    state.deviceModal.catalog = await catalogForProtocol(protocol);
     state.deviceModal.imei = els.deviceImei.value.trim();
     state.deviceModal.deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
@@ -495,9 +503,18 @@ function renderDeviceConfigurationModal() {
         return;
     }
 
+    const enabledCapKeys = state.deviceModal.enabledCapabilityKeys;
+    const filteredCatalog = enabledCapKeys.length
+        ? state.deviceModal.catalog.filter(
+              (entry) =>
+                  !entry.capabilityKey ||
+                  enabledCapKeys.includes(entry.capabilityKey),
+          )
+        : state.deviceModal.catalog;
+
     els.deviceConfigRoot.innerHTML = renderDeviceConfigurationRoot({
         protocol: state.deviceModal.protocol,
-        catalog: state.deviceModal.catalog,
+        catalog: filteredCatalog,
         configurations: state.deviceModal.configurations,
         uiByKey: state.deviceModal.configUi,
         supplier: state.deviceModal.supplier,
@@ -744,6 +761,14 @@ function bindEvents() {
         "click",
         handleCapabilityDeviceTypeClick,
     );
+    els.capabilitySupplierButtons.addEventListener(
+        "click",
+        handleCapabilitySupplierClick,
+    );
+    els.capabilitySupplierClear.addEventListener(
+        "click",
+        () => selectCapabilitySupplier(""),
+    );
     els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
     els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
     els.clearModelsFiltersBtn.addEventListener("click", clearModelsFilters);
@@ -891,8 +916,8 @@ function handleModelImageChange() {
     }
 }
 
-function handleDeviceImeiInput() {
-    syncDeviceModalContext();
+async function handleDeviceImeiInput() {
+    await syncDeviceModalContext();
     renderDeviceConfigurationModal();
 }
 

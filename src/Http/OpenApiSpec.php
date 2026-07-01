@@ -87,6 +87,7 @@ class OpenApiSpec
                 ['name' => 'Devices'],
                 ['name' => 'API Users'],
                 ['name' => 'System'],
+                ['name' => 'Device Types'],
             ],
             'paths' => [
                 '/api/auth/login' => [
@@ -394,15 +395,45 @@ class OpenApiSpec
                         ],
                     ],
                 ],
-                '/api/models/filters' => [
+                '/api/device-types/suppliers' => [
                     'get' => [
-                        'tags' => ['Models'],
-                        'summary' => 'List model filter metadata',
+                        'tags' => ['Device Types'],
+                        'summary' => 'List device types with their suppliers',
                         'responses' => [
                             '200' => [
-                                'description' => 'Device type to supplier associations used by the models filter UI',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelFiltersResponse']]],
+                                'description' => 'Device type groups with their suppliers',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceTypeSuppliersModelsResponse']]],
                             ],
+                        ],
+                    ],
+                ],
+                '/api/device-types/suppliers/models' => [
+                    'get' => [
+                        'tags' => ['Device Types'],
+                        'summary' => 'List device types, suppliers and models hierarchy',
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Full three-level hierarchy: device type → suppliers → models',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceTypeSuppliersModelsHierarchyResponse']]],
+                            ],
+                        ],
+                    ],
+                ],
+                '/api/models/template' => [
+                    'get' => [
+                        'tags' => ['Models'],
+                        'summary' => 'Get supplier capability template for a device type',
+                        'description' => 'Returns the subset of generalized capabilities that a given supplier supports for the given device type, based on the supplier\'s protocol.',
+                        'parameters' => [
+                            ['name' => 'supplierId', 'in' => 'query', 'required' => true, 'schema' => ['type' => 'integer', 'example' => 1]],
+                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'watch', 'example' => 'watch']],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Supplier capability template',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ModelTemplateResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],
@@ -447,6 +478,22 @@ class OpenApiSpec
                                 'description' => 'Model deleted',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/StatusResponse']]],
                             ],
+                        ],
+                    ],
+                ],
+                '/api/protocols/{protocol}/config-catalog' => [
+                    'get' => [
+                        'tags' => ['Device Types'],
+                        'summary' => 'Get config catalog for a device protocol',
+                        'parameters' => [
+                            ['name' => 'protocol', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string', 'enum' => ['wonlex-json', 'vivistar-iw', 'four-p-touch']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Config catalog entries for the protocol',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ProtocolConfigCatalogResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],
@@ -1171,7 +1218,7 @@ class OpenApiSpec
                             'filters' => ['$ref' => '#/components/schemas/CollectionFilters'],
                         ],
                     ],
-                    'ModelFilterSupplierItem' => [
+                    'DeviceTypeSupplierItem' => [
                         'type' => 'object',
                         'properties' => [
                             'id' => ['type' => 'integer', 'example' => 1],
@@ -1179,17 +1226,63 @@ class OpenApiSpec
                             'enabled' => ['type' => 'boolean', 'example' => true],
                         ],
                     ],
-                    'ModelFilterGroupItem' => [
+                    'DeviceTypeSupplierGroup' => [
                         'type' => 'object',
                         'properties' => [
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
-                            'suppliers' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelFilterSupplierItem']],
+                            'suppliers' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceTypeSupplierItem']],
                         ],
                     ],
-                    'ModelFiltersResponse' => [
+                    'ModelTemplateResponse' => [
                         'type' => 'object',
                         'properties' => [
-                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ModelFilterGroupItem']],
+                            'supplier_id' => ['type' => 'integer', 'example' => 1],
+                            'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
+                            'enabledCapabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'ecg', 'hrv']],
+                            'capabilities' => ['$ref' => '#/components/schemas/ModelCapabilitiesMatrix'],
+                        ],
+                    ],
+                    'DeviceTypeSuppliersModelsResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceTypeSupplierGroup']],
+                        ],
+                    ],
+                    'DeviceTypeSupplierModelSummaryItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'supplier_id' => ['type' => 'integer', 'example' => 1],
+                            'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
+                            'internalModel' => ['type' => 'string', 'example' => 'HW20PRO'],
+                            'commercialName' => ['type' => 'string', 'example' => 'Wonlex HW20 Pro'],
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
+                            'image' => ['type' => 'string', 'nullable' => true, 'example' => '/model-images/abc123.jpg'],
+                        ],
+                    ],
+                    'DeviceTypeSupplierWithModelsItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'name' => ['type' => 'string', 'example' => 'Wonlex'],
+                            'enabled' => ['type' => 'boolean', 'example' => true],
+                            'models' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceTypeSupplierModelSummaryItem']],
+                        ],
+                    ],
+                    'DeviceTypeSupplierGroupWithModels' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'suppliers' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceTypeSupplierWithModelsItem']],
+                        ],
+                    ],
+                    'DeviceTypeSuppliersModelsHierarchyResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DeviceTypeSupplierGroupWithModels']],
                         ],
                     ],
                     'ModelWriteRequest' => [
@@ -1294,6 +1387,30 @@ class OpenApiSpec
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'ok'],
                             'id' => ['type' => 'integer', 'example' => 1],
+                        ],
+                    ],
+                    'ProtocolConfigCatalogEntry' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'key' => ['type' => 'string', 'example' => 'fallDetection'],
+                            'command' => ['type' => 'string', 'example' => 'BP76'],
+                            'label' => ['type' => 'string', 'example' => 'Deteção de queda'],
+                            'kind' => ['type' => 'string', 'example' => 'config'],
+                            'risk' => ['type' => 'string', 'example' => 'normal'],
+                            'input' => ['type' => 'string', 'example' => 'toggle'],
+                            'fields' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['enabled']],
+                            'expectedReplyTypes' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['AP76']],
+                            'category' => ['type' => 'string', 'example' => 'alerts'],
+                            'order' => ['type' => 'integer', 'example' => 10],
+                            'limit' => ['type' => 'integer', 'nullable' => true, 'example' => 3],
+                            'options' => ['type' => 'object', 'nullable' => true, 'example' => ['sensitivity' => [['value' => 1, 'label' => 'Baixa']]]],
+                            'capabilityKey' => ['type' => 'string', 'nullable' => true, 'example' => 'fall_detection'],
+                        ],
+                    ],
+                    'ProtocolConfigCatalogResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ProtocolConfigCatalogEntry']],
                         ],
                     ],
                     'ErrorResponse' => [

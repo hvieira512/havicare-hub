@@ -128,6 +128,7 @@ export function cacheElements() {
         resetModelBtn: document.getElementById("resetModelBtn"),
         deleteDeviceBtn: document.getElementById("deleteDeviceBtn"),
         saveModelBtn: document.getElementById("saveModelBtn"),
+        modelTemplateSummary: document.getElementById("modelTemplateSummary"),
         modelsBreadcrumbModels: document.getElementById(
             "modelsBreadcrumbModels",
         ),
@@ -164,6 +165,15 @@ export function cacheElements() {
         ),
         capabilityCatalogViewer: document.getElementById(
             "capabilityCatalogViewer",
+        ),
+        capabilitySupplierButtons: document.getElementById(
+            "capabilitySupplierButtons",
+        ),
+        capabilitySupplierSummary: document.getElementById(
+            "capabilitySupplierSummary",
+        ),
+        capabilitySupplierClear: document.getElementById(
+            "capabilitySupplierClear",
         ),
         apiUserForm: document.getElementById("apiUserForm"),
         apiUserId: document.getElementById("apiUserId"),

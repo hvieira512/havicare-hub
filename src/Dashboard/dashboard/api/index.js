@@ -23,6 +23,7 @@ export {
     deleteModel,
     getModel,
     getModelFilters,
+    getModelTemplate,
     getModels,
     saveModel,
 } from './models.js';

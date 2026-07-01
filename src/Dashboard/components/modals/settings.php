@@ -112,6 +112,7 @@ ob_start();
                                                     <input type="text" class="form-control" id="modelCommercialName" placeholder="Nome visível" required>
                                                 </div>
                                             </div>
+                                            <div id="modelTemplateSummary" class="small text-secondary">A carregar template de capacidades do fornecedor.</div>
                                             <div class="d-flex justify-content-end gap-2 mt-auto">
                                                 <button id="resetModelBtn" type="button" class="btn btn-outline-secondary">Cancelar</button>
                                                 <button id="saveModelBtn" type="button" class="btn btn-primary"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
@@ -169,6 +170,16 @@ ob_start();
                     <div class="border rounded bg-body-tertiary p-3 mb-3">
                         <div class="form-label">Tipo de dispositivo</div>
                         <div id="capabilityDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
+                        <div class="mt-3">
+                            <div class="form-label d-flex align-items-center gap-2">
+                                <span>Fornecedor</span>
+                                <span id="capabilitySupplierClear" class="small d-none">
+                                    <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" data-action="clearCapabilitySupplier">Limpar filtro</button>
+                                </span>
+                            </div>
+                            <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
+                            <div id="capabilitySupplierSummary" class="small text-secondary mt-2"></div>
+                        </div>
                     </div>
                     <div id="capabilityCatalogEmpty" class="text-secondary border rounded bg-body-tertiary p-4 text-center d-none">
                         <?= icon('fa-sliders', 'fs-1 opacity-25') ?>

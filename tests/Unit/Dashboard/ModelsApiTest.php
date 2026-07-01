@@ -34,6 +34,24 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertFalse($response['capabilities']['settings_system']['language_timezone'] ?? true);
     }
 
+    public function testTemplateReturnsDerivedCapabilitiesForSupplierAndDeviceType(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $supplier = $db->suppliers->findByName('Wonlex');
+
+        self::assertIsArray($supplier);
+        $request = new ServerRequest('GET', 'http://localhost/api/models/template?supplierId=' . (int)$supplier['id'] . '&deviceType=watch');
+        $response = $api->template($request);
+
+        self::assertSame('Wonlex', $response['supplier'] ?? null);
+        self::assertSame('watch', $response['deviceType'] ?? null);
+        self::assertContains('ecg', $response['enabledCapabilities'] ?? []);
+        self::assertContains('hrv', $response['enabledCapabilities'] ?? []);
+        self::assertContains('ppg', $response['enabledCapabilities'] ?? []);
+        self::assertContains('rr_interval', $response['enabledCapabilities'] ?? []);
+        self::assertTrue($response['capabilities']['telemetry']['ecg'] ?? false);
+    }
+
     public function testListReturnsGroupedGenericCapabilities(): void
     {
         [$api] = $this->makeApi();
@@ -110,6 +128,77 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($updated['capabilities']['contacts']['phonebook'] ?? false);
         self::assertTrue($updated['capabilities']['settings_system']['working_mode'] ?? false);
         self::assertFalse($updated['capabilities']['telemetry']['blood_pressure'] ?? true);
+    }
+
+    public function testCreateWithoutExplicitCapabilitiesStoresSupplierTemplateDefaults(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $supplier = $db->suppliers->findByName('4P Touch');
+
+        self::assertIsArray($supplier);
+        $request = (new ServerRequest('POST', '/api/models'))
+            ->withParsedBody([
+                'supplier_id' => (int)$supplier['id'],
+                'internalModel' => 'D46-PLUS',
+                'commercialName' => 'D46 Plus',
+                'deviceType' => 'watch',
+            ]);
+
+        $result = $api->create($request);
+
+        self::assertSame('ok', $result['status'] ?? null);
+        $model = $db->models->find('4P Touch', 'D46-PLUS');
+        self::assertIsArray($model);
+        self::assertSame(
+            [
+                'auto_vitals_interval',
+                'blood_pressure',
+                'call_whitelist',
+                'device_password',
+                'fall_detection',
+                'fall_sensitivity',
+                'heart_rate',
+                'language_timezone',
+                'location',
+                'location_reporting_interval',
+                'low_battery_alert',
+                'monitor_number',
+                'pedometer_schedule',
+                'remove_watch_alarm',
+                'remove_watch_sms_alert',
+                'sleep_monitoring',
+                'sos_contacts',
+                'sos_sms_alert',
+                'temperature',
+                'temperature_measurement_interval',
+            ],
+            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
+        );
+    }
+
+    public function testUpdateWithoutExplicitCapabilitiesPreservesExistingCapabilities(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'phonebook']);
+
+        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
+            ->withParsedBody([
+                'supplier_id' => (int)$model['supplier_id'],
+                'internalModel' => (string)$model['internal_model'],
+                'commercialName' => 'Vivistar L08 Pro Renamed',
+                'deviceType' => (string)$model['device_type'],
+            ]);
+
+        $result = $api->update((int)$model['id'], $request);
+
+        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame(
+            ['heart_rate', 'phonebook'],
+            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
+        );
     }
 
     public function testUpdateRejectsCapabilitiesOutsideDeviceTypeCatalog(): void

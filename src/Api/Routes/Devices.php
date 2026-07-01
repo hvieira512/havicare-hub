@@ -15,6 +15,7 @@ use Hub\DeviceHubServer;
 use Hub\Log\Logger;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
+use Psr\Http\Message\ServerRequestInterface;
 
 final class Devices
 {
@@ -31,8 +32,9 @@ final class Devices
     ) {
     }
 
-    public function list(string $query = '', ?ApiAuthContext $auth = null): array
+    public function list(string $query = '', ?ApiAuthContext $auth = null, ?ServerRequestInterface $request = null): array
     {
+        $baseUrl = $this->baseUrlFromRequest($request);
         $params = $this->queryParams($query);
         $page = $this->queryPage($params);
         $limit = $this->queryLimit($params, 5);
@@ -48,7 +50,10 @@ final class Devices
         $result = $this->db->whitelist->listPage($filters, $page, $limit, $licenseScope);
         if ((int)$result['total'] === 0) {
             $devices = $this->scopeDevices($this->store->devices(), $auth);
-            $filtered = $this->filterDevices($devices, $filters);
+            $filtered = array_map(
+                fn (array $device): array => $this->attachDeviceImage($device, $baseUrl),
+                $this->filterDevices($devices, $filters)
+            );
             $available = [
                 'deviceType' => $this->uniqueValues(array_map(
                     static fn (array $device): string => DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch')),
@@ -79,7 +84,13 @@ final class Devices
             static fn (array $device): string => (string)($device['imei'] ?? ''),
             $result['items']
         ));
-        $items = array_map(fn (array $device): array => $this->overlayRuntimeState($device, $runtimeStates), $result['items']);
+        $items = array_map(
+            fn (array $device): array => $this->attachDeviceImage(
+                $this->overlayRuntimeState($device, $runtimeStates),
+                $baseUrl
+            ),
+            $result['items']
+        );
         $totalPages = max(1, (int)ceil(((int)$result['total']) / max(1, $limit)));
 
         return [
@@ -97,7 +108,7 @@ final class Devices
         ];
     }
 
-    public function show(string $imei, ?ApiAuthContext $auth = null): array
+    public function show(string $imei, ?ApiAuthContext $auth = null, ?ServerRequestInterface $request = null): array
     {
         $device = $this->deviceSnapshot($imei);
         if (!$this->canAccessDevice($imei, $auth, $device)) {
@@ -106,6 +117,7 @@ final class Devices
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
         $modelRow = $this->modelForDevice($device);
         $configRows = $this->db->deviceConfigurations->allForImei($imei);
+        $baseUrl = $this->baseUrlFromRequest($request);
 
         $model = null;
         if ($modelRow !== null) {
@@ -114,7 +126,7 @@ final class Devices
                 'internalModel' => (string)($modelRow['internal_model'] ?? ''),
                 'commercialName' => (string)($modelRow['commercial_name'] ?? ''),
                 'deviceType' => (string)($modelRow['device_type'] ?? ''),
-                'image' => ($modelRow['image_path'] ?? '') !== '' ? $modelRow['image_path'] : null,
+                'image' => $this->fullModelImage((string)($modelRow['image_path'] ?? ''), $baseUrl),
             ];
         }
 
@@ -131,6 +143,9 @@ final class Devices
             ],
             'configurations' => $this->configuration($imei),
             'capabilities' => $this->deviceCapabilities($modelRow, $protocol, $configRows),
+            'enabledCapabilityKeys' => $modelRow !== null
+                ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
+                : GenericModelCapabilityCatalog::keysForProtocol($protocol),
             'pending' => $this->pendingConfiguration($modelRow, $protocol, $configRows),
             'transportPending' => $this->transportPending($imei),
         ];
@@ -866,6 +881,42 @@ final class Devices
         return $this->db->models->find($supplier, $model);
     }
 
+    private function baseUrlFromRequest(?ServerRequestInterface $request): string
+    {
+        if ($request === null) {
+            return 'http://localhost:8081';
+        }
+
+        $uri = $request->getUri();
+        $scheme = $uri->getScheme() !== '' ? $uri->getScheme() : 'http';
+        $host = $uri->getHost() !== '' ? $uri->getHost() : 'localhost';
+        $port = $uri->getPort();
+        $base = $scheme . '://' . $host;
+        if ($port !== null && $port !== 80 && $port !== 443) {
+            $base .= ':' . $port;
+        }
+
+        return $base;
+    }
+
+    private function fullModelImage(string $path, string $baseUrl): ?string
+    {
+        return $path !== '' ? $baseUrl . $path : null;
+    }
+
+    private function attachDeviceImage(array $device, string $baseUrl): array
+    {
+        $modelRow = $this->modelForSupplierAndName(
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? '')
+        );
+        $device['image'] = $modelRow !== null
+            ? $this->fullModelImage((string)($modelRow['image_path'] ?? ''), $baseUrl)
+            : null;
+
+        return $device;
+    }
+
     /**
      * @return list<array<string, mixed>>
      */
@@ -1037,6 +1088,7 @@ final class Devices
 
         $meta = [];
         $nativeKeysPerGeneric = [];
+        $nativeKeyForGeneric = [];
 
         foreach ($configRows as $row) {
             $nativeKey = trim((string)($row['config_key'] ?? ''));
@@ -1066,6 +1118,7 @@ final class Devices
                 $normalized
             );
 
+            $nativeKeyForGeneric[$genericKey] = $nativeKey;
             $nativeKeysPerGeneric[$genericKey][$nativeKey] = true;
 
             $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey);
@@ -1101,6 +1154,19 @@ final class Devices
             }
             unset($sectionCaps);
         }
+
+        foreach ($capabilities as $section => &$sectionCaps) {
+            if ($section === 'telemetry') {
+                continue;
+            }
+            foreach ($sectionCaps as $genericKey => &$value) {
+                if (isset($nativeKeyForGeneric[$genericKey])) {
+                    $value['_nativeKey'] = $nativeKeyForGeneric[$genericKey];
+                }
+            }
+            unset($value);
+        }
+        unset($sectionCaps);
 
         return $capabilities;
     }
