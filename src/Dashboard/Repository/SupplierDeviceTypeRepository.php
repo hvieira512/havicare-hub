@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard\Repository;
 
+use Hub\Dashboard\TimestampFormatter;
 use PDO;
 
 final class SupplierDeviceTypeRepository
@@ -15,7 +16,7 @@ final class SupplierDeviceTypeRepository
      */
     public function all(): array
     {
-        return $this->pdo
+        return TimestampFormatter::normalizeRows($this->pdo
             ->query("
                 SELECT
                     sdt.supplier_id,
@@ -28,17 +29,16 @@ final class SupplierDeviceTypeRepository
                 INNER JOIN suppliers s ON s.id = sdt.supplier_id
                 ORDER BY FIELD(sdt.device_type, 'watch', 'ncs', 'radar'), s.name
             ")
-            ->fetchAll();
+            ->fetchAll());
     }
 
     public function upsert(int $supplierId, string $deviceType): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         $stmt = $this->pdo->prepare('
-            INSERT INTO supplier_device_types (supplier_id, device_type, created_at, updated_at)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)
+            INSERT INTO supplier_device_types (supplier_id, device_type)
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP
         ');
-        $stmt->execute([$supplierId, $deviceType, $now, $now]);
+        $stmt->execute([$supplierId, $deviceType]);
     }
 }

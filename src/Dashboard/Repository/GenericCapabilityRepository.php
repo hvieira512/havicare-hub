@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard\Repository;
 
+use Hub\Dashboard\TimestampFormatter;
 use PDO;
 
 final class GenericCapabilityRepository
@@ -13,15 +14,15 @@ final class GenericCapabilityRepository
     public function all(?string $deviceType = null): array
     {
         if ($deviceType === null || trim($deviceType) === '') {
-            return $this->pdo
+            return TimestampFormatter::normalizeRows($this->pdo
                 ->query('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at FROM capabilities ORDER BY FIELD(device_type, \'watch\', \'ncs\', \'radar\'), FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), sort_order, capability_key')
-                ->fetchAll();
+                ->fetchAll());
         }
 
         $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at FROM capabilities WHERE device_type = ? ORDER BY FIELD(section, \'telemetry\', \'health\', \'contacts\', \'alarms\', \'settings_system\'), sort_order, capability_key');
         $stmt->execute([$deviceType]);
 
-        return $stmt->fetchAll();
+        return TimestampFormatter::normalizeRows($stmt->fetchAll());
     }
 
     public function findById(int $id): ?array
@@ -29,7 +30,8 @@ final class GenericCapabilityRepository
         $stmt = $this->pdo->prepare('SELECT id, device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at FROM capabilities WHERE id = ?');
         $stmt->execute([$id]);
 
-        return $stmt->fetch() ?: null;
+        $row = $stmt->fetch();
+        return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
     /**

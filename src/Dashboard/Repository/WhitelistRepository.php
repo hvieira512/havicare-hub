@@ -3,6 +3,7 @@
 namespace Hub\Dashboard\Repository;
 
 use Hub\Dashboard\DeviceMetadata;
+use Hub\Dashboard\TimestampFormatter;
 use PDO;
 
 final class WhitelistRepository
@@ -23,7 +24,8 @@ final class WhitelistRepository
         $stmt = $this->pdo->prepare('SELECT * FROM whitelist WHERE imei = ?');
         $stmt->execute([$imei]);
 
-        return $stmt->fetch() ?: null;
+        $row = $stmt->fetch();
+        return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
     public function getDevice(string $imei): ?array
@@ -86,23 +88,22 @@ final class WhitelistRepository
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
         $company = trim($company);
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         $existing = $this->get($imei);
         if ($existing === null) {
             $stmt = $this->pdo->prepare('
-                INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ');
-            $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $now, $now]);
+            $stmt->execute([$imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             UPDATE whitelist
-            SET supplier = ?, model = ?, device_type = ?, license_id = ?, sim_number = ?, device_id = ?, company = ?, updated_at = ?
+            SET supplier = ?, model = ?, device_type = ?, license_id = ?, sim_number = ?, device_id = ?, company = ?
             WHERE imei = ?
         ');
-        $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $now, $imei]);
+        $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $imei]);
     }
 
     public function unregister(string $imei): void
@@ -115,13 +116,12 @@ final class WhitelistRepository
     {
         $company = trim($company);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         $stmt = $this->pdo->prepare('
             UPDATE whitelist
-            SET company = ?, license_id = ?, updated_at = ?
+            SET company = ?, license_id = ?
             WHERE imei = ?
         ');
-        $stmt->execute([$company, $licenseId, $now, $imei]);
+        $stmt->execute([$company, $licenseId, $imei]);
 
         return $stmt->rowCount() > 0;
     }

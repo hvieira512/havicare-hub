@@ -68,16 +68,15 @@ final class ModelCapabilityRepository
     public function replaceForModelId(int $modelId, array $capabilityIds): void
     {
         $capabilityIds = $this->normalizeCapabilityIds($modelId, $capabilityIds);
-        $now = gmdate('Y-m-d\TH:i:s\Z');
 
         $this->pdo->beginTransaction();
         $delete = $this->pdo->prepare('DELETE FROM model_capabilities WHERE model_id = ?');
         $delete->execute([$modelId]);
 
         if ($capabilityIds !== []) {
-            $insert = $this->pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled, created_at, updated_at) VALUES (?, ?, 1, ?, ?)');
+            $insert = $this->pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
             foreach ($capabilityIds as $capabilityId) {
-                $insert->execute([$modelId, $capabilityId, $now, $now]);
+                $insert->execute([$modelId, $capabilityId]);
             }
         }
 
@@ -94,7 +93,6 @@ final class ModelCapabilityRepository
             return;
         }
 
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         foreach ($capabilityIds as $capabilityId) {
             $exists = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
             $exists->execute([$modelId, $capabilityId]);
@@ -103,10 +101,10 @@ final class ModelCapabilityRepository
             }
 
             $insert = $this->pdo->prepare('
-                INSERT INTO model_capabilities (model_id, capability_id, enabled, created_at, updated_at)
-                VALUES (?, ?, 1, ?, ?)
+                INSERT INTO model_capabilities (model_id, capability_id, enabled)
+                VALUES (?, ?, 1)
             ');
-            $insert->execute([$modelId, $capabilityId, $now, $now]);
+            $insert->execute([$modelId, $capabilityId]);
         }
     }
 

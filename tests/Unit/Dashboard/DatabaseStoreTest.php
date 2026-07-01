@@ -134,6 +134,39 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertNotEmpty($rows);
     }
 
+    public function testTimestampColumnsAreAutoPopulatedAndReturnedAsIso8601(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+        $supplierName = 'AutoTimestamp ' . bin2hex(random_bytes(3));
+
+        $pdo->prepare('INSERT INTO suppliers (name, enabled) VALUES (?, 1)')->execute([$supplierName]);
+        $created = $pdo->prepare('SELECT created_at, updated_at FROM suppliers WHERE name = ?');
+        $created->execute([$supplierName]);
+        $row = $created->fetch();
+
+        self::assertIsArray($row);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string)($row['created_at'] ?? ''));
+        self::assertSame($row['created_at'] ?? null, $row['updated_at'] ?? null);
+
+        sleep(1);
+        $pdo->prepare('UPDATE suppliers SET enabled = 0 WHERE name = ?')->execute([$supplierName]);
+
+        $updated = $pdo->prepare('SELECT created_at, updated_at FROM suppliers WHERE name = ?');
+        $updated->execute([$supplierName]);
+        $rowAfterUpdate = $updated->fetch();
+
+        self::assertIsArray($rowAfterUpdate);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string)($rowAfterUpdate['updated_at'] ?? ''));
+        self::assertNotSame($row['updated_at'] ?? null, $rowAfterUpdate['updated_at'] ?? null);
+
+        $db = DashboardDataAccess::fromDatabase($database);
+        $supplier = $db->suppliers->findByName($supplierName);
+        self::assertIsArray($supplier);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($supplier['created_at'] ?? ''));
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($supplier['updated_at'] ?? ''));
+    }
+
     public function testDeviceConfigurationStoresDesiredAndReportedStateSeparately(): void
     {
         $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());

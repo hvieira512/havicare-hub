@@ -2,8 +2,8 @@ CREATE TABLE IF NOT EXISTS suppliers (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(191) NOT NULL UNIQUE,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS models (
@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS models (
     commercial_name VARCHAR(191) NOT NULL,
     device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
     image_path VARCHAR(255) NOT NULL DEFAULT '',
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_models_supplier_internal_model (supplier_id, internal_model),
     CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS models (
 CREATE TABLE IF NOT EXISTS supplier_device_types (
     supplier_id BIGINT UNSIGNED NOT NULL,
     device_type ENUM('watch', 'ncs', 'radar') NOT NULL,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (supplier_id, device_type),
     KEY idx_supplier_device_types_device_type (device_type, supplier_id),
     CONSTRAINT fk_supplier_device_types_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS capabilities (
     is_configurable TINYINT(1) NOT NULL DEFAULT 0,
     is_requestable TINYINT(1) NOT NULL DEFAULT 0,
     sort_order INT NOT NULL DEFAULT 0,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_capabilities_device_type_key (device_type, capability_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS model_capabilities (
     model_id BIGINT UNSIGNED NOT NULL,
     capability_id BIGINT UNSIGNED NOT NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (model_id, capability_id),
     CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
     CONSTRAINT fk_model_capabilities_capability_v2 FOREIGN KEY (capability_id) REFERENCES capabilities(id) ON DELETE CASCADE
@@ -64,8 +64,8 @@ CREATE TABLE IF NOT EXISTS whitelist (
     sim_number VARCHAR(64) NOT NULL DEFAULT '',
     device_id VARCHAR(191) NOT NULL DEFAULT '',
     company VARCHAR(191) NOT NULL DEFAULT 'null',
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS device_configurations (
@@ -92,15 +92,15 @@ CREATE TABLE IF NOT EXISTS api_users (
     role ENUM('hub_admin', 'license_client') NOT NULL,
     license_id INT UNSIGNED NOT NULL DEFAULT 0,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS companies (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(191) NOT NULL UNIQUE,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS licenses (
@@ -108,8 +108,8 @@ CREATE TABLE IF NOT EXISTS licenses (
     company_id BIGINT UNSIGNED NOT NULL,
     license_id INT UNSIGNED NOT NULL,
     name VARCHAR(191) NOT NULL,
-    created_at VARCHAR(32) NOT NULL,
-    updated_at VARCHAR(32) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_licenses_company_license (company_id, license_id),
     CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

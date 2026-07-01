@@ -2,7 +2,6 @@
 
 namespace Hub\Dashboard;
 
-use Hub\Command\DeviceCommandCatalog;
 use PDO;
 
 final class DashboardDatabase
@@ -60,7 +59,6 @@ final class DashboardDatabase
         $this->seedDefaults();
         $this->seedDefaultSupplierDeviceTypes();
         $this->seedDefaultCapabilities();
-        $this->migrateLegacyModelRequestCapabilities();
         $this->migrateModelCapabilitiesToCapabilityIds();
         $this->seedDefaultModelCapabilities();
     }
@@ -110,15 +108,14 @@ final class DashboardDatabase
 
     private function seedDefaults(): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         foreach (self::DEFAULT_SUPPLIERS as $name) {
             $existing = $this->pdo->prepare('SELECT id FROM suppliers WHERE name = ?');
             $existing->execute([$name]);
             if ($existing->fetchColumn() !== false) {
                 continue;
             }
-            $insertSupplier = $this->pdo->prepare('INSERT INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, 1, ?, ?)');
-            $insertSupplier->execute([$name, $now, $now]);
+            $insertSupplier = $this->pdo->prepare('INSERT INTO suppliers (name, enabled) VALUES (?, 1)');
+            $insertSupplier->execute([$name]);
         }
 
         $nameToId = $this->pdo
@@ -137,10 +134,10 @@ final class DashboardDatabase
             }
 
             $insertModel = $this->pdo->prepare('
-                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
+                VALUES (?, ?, ?, ?, ?)
             ');
-            $insertModel->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $row[4], $now, $now]);
+            $insertModel->execute([$nameToId[$row[0]], $row[1], $row[2], $row[3], $row[4]]);
         }
 
         $this->seedDefaultCompanies();
@@ -148,7 +145,6 @@ final class DashboardDatabase
 
     private function seedDefaultSupplierDeviceTypes(): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         $nameToId = $this->pdo
             ->query("SELECT name, id FROM suppliers WHERE name IN ('" . implode("','", self::DEFAULT_SUPPLIERS) . "')")
             ->fetchAll(PDO::FETCH_KEY_PAIR);
@@ -159,7 +155,7 @@ final class DashboardDatabase
             if ($supplierId <= 0) {
                 continue;
             }
-            $pairs[$supplierId . ':' . $deviceType] = [$supplierId, $deviceType, $now, $now];
+            $pairs[$supplierId . ':' . $deviceType] = [$supplierId, $deviceType];
         }
 
         $modelRows = $this->pdo
@@ -171,7 +167,7 @@ final class DashboardDatabase
             if ($supplierId <= 0 || $deviceType === '') {
                 continue;
             }
-            $pairs[$supplierId . ':' . $deviceType] = [$supplierId, $deviceType, $now, $now];
+            $pairs[$supplierId . ':' . $deviceType] = [$supplierId, $deviceType];
         }
 
         if ($pairs === []) {
@@ -179,26 +175,25 @@ final class DashboardDatabase
         }
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO supplier_device_types (supplier_id, device_type, created_at, updated_at)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)
+            INSERT INTO supplier_device_types (supplier_id, device_type)
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP
         ');
-        foreach ($pairs as [$supplierId, $deviceType, $createdAt, $updatedAt]) {
-            $stmt->execute([$supplierId, $deviceType, $createdAt, $updatedAt]);
+        foreach ($pairs as [$supplierId, $deviceType]) {
+            $stmt->execute([$supplierId, $deviceType]);
         }
     }
 
     private function seedDefaultCompanies(): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         foreach (['hitCare', 'haviCare'] as $name) {
             $existing = $this->pdo->prepare('SELECT id FROM companies WHERE name = ?');
             $existing->execute([$name]);
             if ($existing->fetchColumn() !== false) {
                 continue;
             }
-            $insertCompany = $this->pdo->prepare('INSERT INTO companies (name, created_at, updated_at) VALUES (?, ?, ?)');
-            $insertCompany->execute([$name, $now, $now]);
+            $insertCompany = $this->pdo->prepare('INSERT INTO companies (name) VALUES (?)');
+            $insertCompany->execute([$name]);
         }
 
         $stmt = $this->pdo->prepare("SELECT id FROM companies WHERE name = ?");
@@ -208,23 +203,22 @@ final class DashboardDatabase
             $existing = $this->pdo->prepare('SELECT id FROM licenses WHERE company_id = ? AND license_id = ?');
             $existing->execute([$hitCareId, '1001']);
             if ($existing->fetchColumn() === false) {
-                $licenseStmt = $this->pdo->prepare('INSERT INTO licenses (company_id, license_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
-                $licenseStmt->execute([$hitCareId, '1001', 'gucc.dev', $now, $now]);
+                $licenseStmt = $this->pdo->prepare('INSERT INTO licenses (company_id, license_id, name) VALUES (?, ?, ?)');
+                $licenseStmt->execute([$hitCareId, '1001', 'gucc.dev']);
             }
         }
     }
 
     private function seedDefaultCapabilities(): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         $select = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
         $insert = $this->pdo->prepare('
-            INSERT INTO capabilities (device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO capabilities (device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $update = $this->pdo->prepare('
             UPDATE capabilities
-            SET section = ?, label = ?, is_telemetry = ?, is_configurable = ?, is_requestable = ?, sort_order = ?, updated_at = ?
+            SET section = ?, label = ?, is_telemetry = ?, is_configurable = ?, is_requestable = ?, sort_order = ?
             WHERE device_type = ? AND capability_key = ?
         ');
 
@@ -240,8 +234,6 @@ final class DashboardDatabase
                     (int)$definition['isConfigurable'],
                     (int)$definition['isRequestable'],
                     $definition['sortOrder'],
-                    $now,
-                    $now,
                 ]);
                 continue;
             }
@@ -253,76 +245,9 @@ final class DashboardDatabase
                 (int)$definition['isConfigurable'],
                 (int)$definition['isRequestable'],
                 $definition['sortOrder'],
-                $now,
                 $definition['deviceType'],
                 $definition['key'],
             ]);
-        }
-    }
-
-    private function migrateLegacyModelRequestCapabilities(): void
-    {
-        try {
-            $this->pdo->query('SELECT COUNT(*) FROM model_request_capabilities');
-        } catch (\Exception $e) {
-            return;
-        }
-
-        $count = $this->pdo->query('SELECT COUNT(*) FROM model_capabilities')->fetchColumn();
-        if ($count > 0) {
-            return;
-        }
-
-        $rows = $this->pdo->query('
-            SELECT mrc.model_id, mrc.downlink_command, mrc.enabled, mrc.created_at, mrc.updated_at,
-                   s.name AS supplier_name
-            FROM model_request_capabilities mrc
-            JOIN models m ON m.id = mrc.model_id
-            JOIN suppliers s ON s.id = m.supplier_id
-        ')->fetchAll();
-
-        if (!is_array($rows) || $rows === []) {
-            return;
-        }
-
-        $now = gmdate('Y-m-d\TH:i:s\Z');
-        $insert = $this->pdo->prepare('
-            INSERT INTO model_capabilities (model_id, capability_id, enabled, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)
-        ');
-
-        foreach ($rows as $row) {
-            $modelId = (int)($row['model_id'] ?? 0);
-            $commandId = (string)($row['downlink_command'] ?? '');
-            $protocol = DeviceProtocol::forSupplier((string)($row['supplier_name'] ?? ''));
-            $enabled = (int)($row['enabled'] ?? 0);
-            $createdAt = (string)($row['created_at'] ?? $now);
-
-            if ($modelId <= 0 || $commandId === '' || $protocol === '') {
-                continue;
-            }
-
-            $entry = DeviceCommandCatalog::requestForProtocol($protocol, $commandId);
-            $feature = (string)($entry['feature'] ?? '');
-            if ($feature === '') {
-                continue;
-            }
-
-            $model = $this->pdo->prepare('SELECT device_type FROM models WHERE id = ?');
-            $model->execute([$modelId]);
-            $deviceType = DeviceMetadata::normalizeDeviceType((string)($model->fetchColumn() ?: 'watch'));
-            $capabilityId = $this->capabilityIdForDeviceTypeAndKey($deviceType, $feature);
-            if ($capabilityId === null) {
-                continue;
-            }
-
-            $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
-            $existing->execute([$modelId, $capabilityId]);
-            if ((int)$existing->fetchColumn() > 0) {
-                continue;
-            }
-
-            $insert->execute([$modelId, $capabilityId, $enabled, $createdAt, $now]);
         }
     }
 
@@ -336,17 +261,15 @@ final class DashboardDatabase
             return;
         }
 
-        $now = gmdate('Y-m-d\TH:i:s\Z');
-
         foreach ($models as $model) {
             $modelId = (int)($model['id'] ?? 0);
             $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
-            $protocol = DeviceProtocol::forSupplier((string)($model['supplier_name'] ?? ''));
-            if ($modelId <= 0 || $protocol === '') {
+            $supplierName = (string)($model['supplier_name'] ?? '');
+            if ($modelId <= 0 || $supplierName === '') {
                 continue;
             }
 
-            foreach (GenericModelCapabilityCatalog::keysForProtocol($protocol) as $feature) {
+            foreach (SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType) as $feature) {
                 $capabilityId = $this->capabilityIdForDeviceTypeAndKey($deviceType, $feature);
                 if ($capabilityId === null) {
                     continue;
@@ -358,10 +281,10 @@ final class DashboardDatabase
                     continue;
                 }
                 $insert = $this->pdo->prepare('
-                    INSERT INTO model_capabilities (model_id, capability_id, enabled, created_at, updated_at)
-                    VALUES (?, ?, 1, ?, ?)
+                    INSERT INTO model_capabilities (model_id, capability_id, enabled)
+                    VALUES (?, ?, 1)
                 ');
-                $insert->execute([$modelId, $capabilityId, $now, $now]);
+                $insert->execute([$modelId, $capabilityId]);
             }
         }
     }
@@ -407,8 +330,8 @@ final class DashboardDatabase
                 $modelId,
                 $capabilityId,
                 (int)($row['enabled'] ?? 1),
-                (string)($row['created_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
-                (string)($row['updated_at'] ?? gmdate('Y-m-d\TH:i:s\Z')),
+                TimestampFormatter::toDatabase((string)($row['created_at'] ?? '')),
+                TimestampFormatter::toDatabase((string)($row['updated_at'] ?? '')),
             ]);
         }
         $this->pdo->commit();
@@ -446,13 +369,16 @@ final class DashboardDatabase
                     model_id BIGINT UNSIGNED NOT NULL,
                     capability_id BIGINT UNSIGNED NOT NULL,
                     enabled TINYINT(1) NOT NULL DEFAULT 1,
-                    created_at VARCHAR(32) NOT NULL,
-                    updated_at VARCHAR(32) NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (model_id, capability_id),
                     CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
                     CONSTRAINT fk_model_capabilities_capability_v2 FOREIGN KEY (capability_id) REFERENCES capabilities(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ');
+        }
+        if ($this->tableExists('model_request_capabilities')) {
+            $this->pdo->exec('DROP TABLE model_request_capabilities');
         }
         if ($this->tableExists('capabilities')) {
             if (!$this->columnExists('capabilities', 'device_type')) {
@@ -476,6 +402,8 @@ final class DashboardDatabase
             $this->pdo->exec("UPDATE capabilities SET device_type = 'watch' WHERE device_type NOT IN ('watch', 'ncs', 'radar') OR device_type IS NULL");
         }
 
+        $this->migrateTimestampTables();
+
         $this->pdo->exec("ALTER TABLE models MODIFY COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch'");
         $this->pdo->exec("ALTER TABLE whitelist MODIFY COLUMN device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch'");
         $this->pdo->exec("ALTER TABLE api_users MODIFY COLUMN role ENUM('hub_admin', 'license_client') NOT NULL");
@@ -488,6 +416,41 @@ final class DashboardDatabase
         }
     }
 
+    private function migrateTimestampTables(): void
+    {
+        foreach (['suppliers', 'models', 'supplier_device_types', 'capabilities', 'model_capabilities', 'whitelist', 'api_users', 'companies', 'licenses'] as $table) {
+            if (!$this->tableExists($table)) {
+                continue;
+            }
+
+            $type = strtolower((string)$this->columnType($table, 'created_at'));
+            if ($type !== '' && str_starts_with($type, 'datetime')) {
+                continue;
+            }
+
+            $this->pdo->exec("
+                UPDATE `{$table}`
+                SET
+                    `created_at` = COALESCE(
+                        DATE_FORMAT(STR_TO_DATE(`created_at`, '%Y-%m-%dT%H:%i:%sZ'), '%Y-%m-%d %H:%i:%s'),
+                        DATE_FORMAT(STR_TO_DATE(`created_at`, '%Y-%m-%d %H:%i:%s'), '%Y-%m-%d %H:%i:%s'),
+                        CURRENT_TIMESTAMP
+                    ),
+                    `updated_at` = COALESCE(
+                        DATE_FORMAT(STR_TO_DATE(`updated_at`, '%Y-%m-%dT%H:%i:%sZ'), '%Y-%m-%d %H:%i:%s'),
+                        DATE_FORMAT(STR_TO_DATE(`updated_at`, '%Y-%m-%d %H:%i:%s'), '%Y-%m-%d %H:%i:%s'),
+                        CURRENT_TIMESTAMP
+                    )
+            ");
+
+            $this->pdo->exec("
+                ALTER TABLE `{$table}`
+                    MODIFY COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    MODIFY COLUMN `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ");
+        }
+    }
+
     private function columnExists(string $table, string $column): bool
     {
         if (!$this->tableExists($table)) {
@@ -497,6 +460,19 @@ final class DashboardDatabase
         $stmt->execute([$column]);
 
         return $stmt->fetch() !== false;
+    }
+
+    private function columnType(string $table, string $column): ?string
+    {
+        if (!$this->tableExists($table)) {
+            return null;
+        }
+
+        $stmt = $this->pdo->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
+        $stmt->execute([$column]);
+        $row = $stmt->fetch();
+
+        return is_array($row) ? strtolower((string)($row['Type'] ?? '')) : null;
     }
 
     private function tableExists(string $table): bool

@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard\Repository;
 
+use Hub\Dashboard\TimestampFormatter;
 use PDO;
 
 final class SupplierRepository
@@ -12,9 +13,9 @@ final class SupplierRepository
 
     public function all(): array
     {
-        return $this->pdo
+        return TimestampFormatter::normalizeRows($this->pdo
             ->query("SELECT id, name, enabled, created_at, updated_at, (SELECT COUNT(*) FROM models WHERE supplier_id = suppliers.id) AS model_count FROM suppliers ORDER BY name")
-            ->fetchAll();
+            ->fetchAll());
     }
 
     public function findByName(string $name): ?array
@@ -22,7 +23,8 @@ final class SupplierRepository
         $stmt = $this->pdo->prepare('SELECT * FROM suppliers WHERE name = ?');
         $stmt->execute([$name]);
 
-        return $stmt->fetch() ?: null;
+        $row = $stmt->fetch();
+        return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
     public function findById(int $id): ?array
@@ -30,7 +32,8 @@ final class SupplierRepository
         $stmt = $this->pdo->prepare('SELECT * FROM suppliers WHERE id = ?');
         $stmt->execute([$id]);
 
-        return $stmt->fetch() ?: null;
+        $row = $stmt->fetch();
+        return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
     public function create(string $name, bool $enabled = true): int
@@ -40,22 +43,19 @@ final class SupplierRepository
             return (int)($existing['id'] ?? 0);
         }
 
-        $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('INSERT INTO suppliers (name, enabled, created_at, updated_at) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$name, $enabled ? 1 : 0, $now, $now]);
+        $stmt = $this->pdo->prepare('INSERT INTO suppliers (name, enabled) VALUES (?, ?)');
+        $stmt->execute([$name, $enabled ? 1 : 0]);
         return (int)$this->pdo->lastInsertId();
     }
 
     public function setEnabled(int $id, bool $enabled): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('UPDATE suppliers SET enabled = ?, updated_at = ? WHERE id = ?');
-        $stmt->execute([$enabled ? 1 : 0, $now, $id]);
+        $stmt = $this->pdo->prepare('UPDATE suppliers SET enabled = ? WHERE id = ?');
+        $stmt->execute([$enabled ? 1 : 0, $id]);
     }
 
     public function rename(int $id, string $newName): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         $old = $this->findById($id);
         if ($old === null) {
             return;
@@ -63,8 +63,8 @@ final class SupplierRepository
 
         $oldName = (string)($old['name'] ?? '');
         $this->pdo->beginTransaction();
-        $this->pdo->prepare('UPDATE suppliers SET name = ?, updated_at = ? WHERE id = ?')->execute([$newName, $now, $id]);
-        $this->pdo->prepare('UPDATE whitelist SET supplier = ?, updated_at = ? WHERE supplier = ?')->execute([$newName, $now, $oldName]);
+        $this->pdo->prepare('UPDATE suppliers SET name = ? WHERE id = ?')->execute([$newName, $id]);
+        $this->pdo->prepare('UPDATE whitelist SET supplier = ? WHERE supplier = ?')->execute([$newName, $oldName]);
         $this->pdo->commit();
     }
 

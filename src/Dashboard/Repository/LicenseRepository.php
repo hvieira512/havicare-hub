@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard\Repository;
 
+use Hub\Dashboard\TimestampFormatter;
 use PDO;
 
 final class LicenseRepository
@@ -19,7 +20,7 @@ final class LicenseRepository
             $stmt = $this->pdo->query("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id ORDER BY c.name, l.license_id");
         }
 
-        return $stmt->fetchAll();
+        return TimestampFormatter::normalizeRows($stmt->fetchAll());
     }
 
     public function findById(int $id): ?array
@@ -27,7 +28,8 @@ final class LicenseRepository
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE id = ?');
         $stmt->execute([$id]);
 
-        return $stmt->fetch() ?: null;
+        $row = $stmt->fetch();
+        return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
     public function findByLicenseId(int $licenseId): array
@@ -35,7 +37,7 @@ final class LicenseRepository
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_id = ? ORDER BY company_id');
         $stmt->execute([$licenseId]);
 
-        return $stmt->fetchAll();
+        return TimestampFormatter::normalizeRows($stmt->fetchAll());
     }
 
     public function findByCompanyId(int $companyId): array
@@ -43,7 +45,7 @@ final class LicenseRepository
         $stmt = $this->pdo->prepare("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id");
         $stmt->execute([$companyId]);
 
-        return $stmt->fetchAll();
+        return TimestampFormatter::normalizeRows($stmt->fetchAll());
     }
 
     public function create(int $companyId, int $licenseId, string $name): int
@@ -55,17 +57,15 @@ final class LicenseRepository
             return (int)$existing;
         }
 
-        $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('INSERT INTO licenses (company_id, license_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$companyId, $licenseId, $name, $now, $now]);
+        $stmt = $this->pdo->prepare('INSERT INTO licenses (company_id, license_id, name) VALUES (?, ?, ?)');
+        $stmt->execute([$companyId, $licenseId, $name]);
         return (int)$this->pdo->lastInsertId();
     }
 
     public function update(int $id, int $companyId, int $licenseId, string $name): void
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('UPDATE licenses SET company_id = ?, license_id = ?, name = ?, updated_at = ? WHERE id = ?');
-        $stmt->execute([$companyId, $licenseId, $name, $now, $id]);
+        $stmt = $this->pdo->prepare('UPDATE licenses SET company_id = ?, license_id = ?, name = ? WHERE id = ?');
+        $stmt->execute([$companyId, $licenseId, $name, $id]);
     }
 
     public function delete(int $id): void
