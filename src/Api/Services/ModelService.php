@@ -162,7 +162,7 @@ class ModelService
         ];
     }
 
-    public function deviceTypeSuppliersModels(): array
+    public function deviceTypeSuppliersModels(string $baseUrl = ''): array
     {
         $groups = [];
         foreach (GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {

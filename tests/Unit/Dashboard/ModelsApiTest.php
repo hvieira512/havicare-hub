@@ -31,7 +31,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($response['capabilities']['telemetry']['location'] ?? false);
         self::assertTrue($response['capabilities']['health']['auto_vitals_interval'] ?? false);
         self::assertTrue($response['capabilities']['contacts']['phonebook'] ?? false);
-        self::assertFalse($response['capabilities']['settings_system']['language_timezone'] ?? true);
+        self::assertTrue($response['capabilities']['settings_system']['language_timezone'] ?? false);
     }
 
     public function testTemplateReturnsDerivedCapabilitiesForSupplierAndDeviceType(): void
@@ -72,6 +72,45 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($wonlex['capabilities']['health']['heart_rate_measurement_interval'] ?? false);
         self::assertTrue($wonlex['capabilities']['alarms']['alarm_clock'] ?? false);
         self::assertTrue($wonlex['capabilities']['settings_system']['location_reporting_interval'] ?? false);
+    }
+
+    public function testDeviceTypeSuppliersModelsReturnsAbsoluteImageUrls(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $supplier = $db->suppliers->findByName('Vivistar');
+
+        self::assertIsArray($supplier);
+        $db->models->add((int)$supplier['id'], 'L08 Pro X', 'L08 Pro X', 'watch', '/model-images/example.jpg');
+
+        $response = $api->deviceTypeSuppliersModels('http://localhost:8081');
+        $watchGroup = null;
+        foreach ($response['data'] ?? [] as $group) {
+            if (($group['deviceType'] ?? '') === 'watch') {
+                $watchGroup = $group;
+                break;
+            }
+        }
+
+        self::assertIsArray($watchGroup);
+        $vivistar = null;
+        foreach ($watchGroup['suppliers'] ?? [] as $supplierGroup) {
+            if (($supplierGroup['name'] ?? '') === 'Vivistar') {
+                $vivistar = $supplierGroup;
+                break;
+            }
+        }
+
+        self::assertIsArray($vivistar);
+        $model = null;
+        foreach ($vivistar['models'] ?? [] as $entry) {
+            if (($entry['internalModel'] ?? '') === 'L08 Pro X') {
+                $model = $entry;
+                break;
+            }
+        }
+
+        self::assertIsArray($model);
+        self::assertSame('http://localhost:8081/model-images/example.jpg', $model['image'] ?? null);
     }
 
     public function testFiltersListDeviceTypesAndSuppliersFromAssociationTable(): void

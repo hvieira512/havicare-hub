@@ -31,7 +31,7 @@ final class ModelController
 
     public function deviceTypeSuppliersModels(ServerRequestInterface $request): Response
     {
-        return $this->json->respond($this->service->deviceTypeSuppliersModels());
+        return $this->json->respond($this->service->deviceTypeSuppliersModels(RequestContext::baseUrl($request)));
     }
 
     public function template(ServerRequestInterface $request): Response
