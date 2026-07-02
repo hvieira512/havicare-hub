@@ -1,38 +1,10 @@
 <?php
 
-namespace Hub\Api\Support;
+namespace Hub\Api\Http;
 
-trait CollectionResponse
+final class CollectionResponder
 {
-    private function queryParams(string $query): array
-    {
-        if ($query === '') {
-            return [];
-        }
-
-        parse_str($query, $params);
-
-        return is_array($params) ? $params : [];
-    }
-
-    private function queryPage(array $params): int
-    {
-        return max(1, (int)($params['page'] ?? 1));
-    }
-
-    private function queryLimit(array $params, int $default): int
-    {
-        return max(1, (int)($params['limit'] ?? $default));
-    }
-
-    private function queryFilter(array $params, string $key, ?string $default = null): ?string
-    {
-        $value = trim((string)($params[$key] ?? ''));
-
-        return $value === '' ? $default : $value;
-    }
-
-    private function collectionResponse(array $items, int $page, int $limit, array $appliedFilters, array $availableFilters): array
+    public function respond(array $items, int $page, int $limit, array $appliedFilters, array $availableFilters): array
     {
         $total = count($items);
         $totalPages = max(1, (int)ceil($total / max(1, $limit)));
@@ -54,7 +26,7 @@ trait CollectionResponse
         ];
     }
 
-    private function uniqueValues(array $values): array
+    public function uniqueValues(array $values): array
     {
         $filtered = array_values(array_filter(array_map(
             static fn (mixed $value): string => trim((string)$value),

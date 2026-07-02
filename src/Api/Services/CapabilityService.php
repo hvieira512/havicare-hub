@@ -1,13 +1,13 @@
 <?php
 
-namespace Hub\Api\Routes;
+namespace Hub\Api\Services;
 
-use Hub\Dashboard\DashboardDataAccess;
-use Hub\Dashboard\DeviceMetadata;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\DeviceMetadata;
 
-final class Capabilities
+class CapabilityService
 {
-    public function __construct(private DashboardDataAccess $db)
+    public function __construct(private ApiDataAccess $db)
     {
     }
 

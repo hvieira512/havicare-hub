@@ -5,7 +5,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Bootstrap;
 use Hub\Config;
-use Hub\Dashboard\ApiTokenStore;
+use Hub\Api\Auth\ApiTokenStore;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
 use Hub\DeviceHubServer;
@@ -87,8 +87,8 @@ $connectMqttClient = static function (MqttClient $client, bool $cleanSession = t
 $buildMqttClient = static fn (string $suffix, bool $cleanSession = true, bool $stableClientId = false): MqttClient
     => $connectMqttClient($createMqttClient($suffix, $stableClientId), $cleanSession);
 
-$database = new Hub\Dashboard\DashboardDatabase($databaseConfig);
-$dataAccess = Hub\Dashboard\DashboardDataAccess::fromDatabase($database);
+$database = new Hub\Infrastructure\Persistence\DashboardDatabase($databaseConfig);
+$dataAccess = Hub\Api\Repository\ApiDataAccess::fromDatabase($database);
 $whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
 $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
 $redisParameters = [
@@ -251,7 +251,7 @@ $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
 
 $dashboard = new DashboardHttpServer(
         $dashboardStore,
-        new ApiTokenStore(new RedisClient($redisParameters)),
+        new Hub\Api\Auth\ApiTokenStore(new RedisClient($redisParameters)),
         $whitelist,
         $hubServer,
         $downlinkQueue,

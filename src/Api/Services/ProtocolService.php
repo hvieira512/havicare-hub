@@ -1,16 +1,15 @@
 <?php
 
-namespace Hub\Api\Routes;
+namespace Hub\Api\Services;
 
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Dashboard\GenericModelCapabilityCatalog;
-use Psr\Http\Message\ServerRequestInterface;
+use Hub\Domain\GenericModelCapabilityCatalog;
 
-final class Protocols
+class ProtocolService
 {
     private const SUPPORTED_PROTOCOLS = ['wonlex-json', 'vivistar-iw', 'four-p-touch'];
 
-    public function configCatalog(ServerRequestInterface $request, array $params): array
+    public function configCatalog(array $params): array
     {
         $protocol = (string)($params['protocol'] ?? '');
 

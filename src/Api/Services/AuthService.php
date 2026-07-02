@@ -1,19 +1,19 @@
 <?php
 
-namespace Hub\Api\Routes;
+namespace Hub\Api\Services;
 
-use Hub\Dashboard\ApiAuthContext;
-use Hub\Dashboard\ApiTokenStore;
-use Hub\Dashboard\DashboardDataAccess;
-use Hub\Dashboard\DeviceMetadata;
+use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Auth\ApiTokenStore;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\DeviceMetadata;
 use Hub\Log\Logger;
 
-final class Auth
+class AuthService
 {
     public function __construct(
         private array $credentials,
         private ApiTokenStore $tokens,
-        private DashboardDataAccess $db,
+        private ApiDataAccess $db,
         private int $tokenTtlSeconds = 3600,
         private int $refreshTokenTtlSeconds = 2592000,
     ) {

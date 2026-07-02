@@ -1,28 +1,35 @@
 <?php
 
-namespace Hub\Api\Routes;
+namespace Hub\Api\Services;
 
-use Hub\Api\Support\CollectionResponse;
-use Hub\Dashboard\DashboardDataAccess;
+use Hub\Api\Http\CollectionQuery;
+use Hub\Api\Http\CollectionResponder;
+use Hub\Api\Repository\ApiDataAccess;
 
-final class Company
+class CompanyService
 {
-    use CollectionResponse;
-
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
-    public function __construct(private DashboardDataAccess $db)
-    {
+    private CollectionQuery $query;
+    private CollectionResponder $collection;
+
+    public function __construct(
+        private ApiDataAccess $db,
+        ?CollectionQuery $query = null,
+        ?CollectionResponder $collection = null,
+    ) {
+        $this->query = $query ?? new CollectionQuery();
+        $this->collection = $collection ?? new CollectionResponder();
     }
 
     public function list(string $query = ''): array
     {
-        $params = $this->queryParams($query);
-        $page = $this->queryPage($params);
-        $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
+        $params = $this->query->params($query);
+        $page = $this->query->page($params);
+        $limit = $this->query->limit($params, self::DEFAULT_COLLECTION_LIMIT);
         $items = $this->db->companies->all();
 
-        return $this->collectionResponse($items, $page, $limit, [], []);
+        return $this->collection->respond($items, $page, $limit, [], []);
     }
 
     public function create(string $body): array

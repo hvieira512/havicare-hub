@@ -1,27 +1,34 @@
 <?php
 
-namespace Hub\Api\Routes;
+namespace Hub\Api\Services;
 
-use Hub\Api\Support\CollectionResponse;
-use Hub\Dashboard\DashboardDataAccess;
+use Hub\Api\Http\CollectionQuery;
+use Hub\Api\Http\CollectionResponder;
+use Hub\Api\Repository\ApiDataAccess;
 
-final class Suppliers
+class SupplierService
 {
-    use CollectionResponse;
-
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
-    public function __construct(private DashboardDataAccess $db)
-    {
+    private CollectionQuery $query;
+    private CollectionResponder $collection;
+
+    public function __construct(
+        private ApiDataAccess $db,
+        ?CollectionQuery $query = null,
+        ?CollectionResponder $collection = null,
+    ) {
+        $this->query = $query ?? new CollectionQuery();
+        $this->collection = $collection ?? new CollectionResponder();
     }
 
     public function list(string $query = ''): array
     {
-        $params = $this->queryParams($query);
-        $page = $this->queryPage($params);
-        $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
+        $params = $this->query->params($query);
+        $page = $this->query->page($params);
+        $limit = $this->query->limit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
-            'enabled' => $this->queryFilter($params, 'enabled'),
+            'enabled' => $this->query->filter($params, 'enabled'),
         ];
         $suppliers = array_values(array_filter($this->db->suppliers->all(), static function (array $supplier) use ($filters): bool {
             $enabled = ((int)($supplier['enabled'] ?? 0)) === 1 ? 'true' : 'false';
@@ -32,7 +39,7 @@ final class Suppliers
             'enabled' => ['true', 'false'],
         ];
 
-        return $this->collectionResponse($suppliers, $page, $limit, $filters, $available);
+        return $this->collection->respond($suppliers, $page, $limit, $filters, $available);
     }
 
     public function create(string $body): array

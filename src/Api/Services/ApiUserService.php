@@ -1,30 +1,37 @@
 <?php
 
-namespace Hub\Api\Routes;
+namespace Hub\Api\Services;
 
-use Hub\Api\Support\CollectionResponse;
-use Hub\Dashboard\ApiAuthContext;
-use Hub\Dashboard\DashboardDataAccess;
-use Hub\Dashboard\DeviceMetadata;
+use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Http\CollectionQuery;
+use Hub\Api\Http\CollectionResponder;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\DeviceMetadata;
 
-final class ApiUsers
+class ApiUserService
 {
-    use CollectionResponse;
-
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
-    public function __construct(private DashboardDataAccess $db)
-    {
+    private CollectionQuery $query;
+    private CollectionResponder $collection;
+
+    public function __construct(
+        private ApiDataAccess $db,
+        ?CollectionQuery $query = null,
+        ?CollectionResponder $collection = null,
+    ) {
+        $this->query = $query ?? new CollectionQuery();
+        $this->collection = $collection ?? new CollectionResponder();
     }
 
     public function list(string $query = ''): array
     {
-        $params = $this->queryParams($query);
-        $page = $this->queryPage($params);
-        $limit = $this->queryLimit($params, self::DEFAULT_COLLECTION_LIMIT);
+        $params = $this->query->params($query);
+        $page = $this->query->page($params);
+        $limit = $this->query->limit($params, self::DEFAULT_COLLECTION_LIMIT);
         $filters = [
-            'role' => $this->queryFilter($params, 'role'),
-            'enabled' => $this->queryFilter($params, 'enabled'),
+            'role' => $this->query->filter($params, 'role'),
+            'enabled' => $this->query->filter($params, 'enabled'),
         ];
         $users = array_values(array_filter($this->db->apiUsers->all(), static function (array $user) use ($filters): bool {
             $enabled = ((int)($user['enabled'] ?? 0)) === 1 ? 'true' : 'false';
@@ -34,7 +41,7 @@ final class ApiUsers
                 && (($filters['enabled'] ?? null) === null || $enabled === $filters['enabled']);
         }));
 
-        return $this->collectionResponse($users, $page, $limit, $filters, [
+        return $this->collection->respond($users, $page, $limit, $filters, [
             'role' => ApiAuthContext::roles(),
             'enabled' => ['true', 'false'],
         ]);
@@ -52,13 +59,13 @@ final class ApiUsers
             return ['error' => ['code' => 'user_exists', 'message' => 'Username already exists']];
         }
 
-            $id = $this->db->apiUsers->create(
-                $username,
-                password_hash((string)$payload['password'], PASSWORD_DEFAULT),
-                (string)$payload['role'],
-                (int)$payload['licenseId'],
-                (bool)$payload['enabled']
-            );
+        $id = $this->db->apiUsers->create(
+            $username,
+            password_hash((string)$payload['password'], PASSWORD_DEFAULT),
+            (string)$payload['role'],
+            (int)$payload['licenseId'],
+            (bool)$payload['enabled']
+        );
 
         return ['status' => 'ok', 'id' => $id];
     }

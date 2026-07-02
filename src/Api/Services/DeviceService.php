@@ -1,83 +1,98 @@
 <?php
 
-namespace Hub\Api\Routes;
+namespace Hub\Api\Services;
 
-use Hub\Api\Support\CollectionResponse;
+use Hub\Api\Http\CollectionQuery;
+use Hub\Api\Http\CollectionResponder;
+use Hub\Api\Http\DevicePresentation;
+use Hub\Api\Http\DeviceCollectionFilter;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Dashboard\ApiAuthContext;
-use Hub\Dashboard\DashboardDataAccess;
-use Hub\Dashboard\GenericModelCapabilityCatalog;
-use Hub\Dashboard\DeviceProtocol;
+use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\DeviceProtocol;
 use Hub\Dashboard\DashboardStore;
-use Hub\Dashboard\DeviceMetadata;
+use Hub\Domain\DeviceMetadata;
 use Hub\DeviceHubServer;
 use Hub\Log\Logger;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
-use Psr\Http\Message\ServerRequestInterface;
 
-final class Devices
+class DeviceService
 {
-    use CollectionResponse;
-
     private const DEFAULT_COLLECTION_LIMIT = 20;
+
+    private CollectionQuery $query;
+    private CollectionResponder $collection;
+    private DeviceCollectionFilter $deviceFilter;
+    private DevicePresentation $presentation;
 
     public function __construct(
         private DashboardStore $store,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ?PendingDownlinkQueue $downlinkQueue,
-        private DashboardDataAccess $db,
+        private ApiDataAccess $db,
+        ?CollectionQuery $query = null,
+        ?CollectionResponder $collection = null,
+        ?DeviceCollectionFilter $deviceFilter = null,
+        ?DevicePresentation $presentation = null,
     ) {
+        $this->query = $query ?? new CollectionQuery();
+        $this->collection = $collection ?? new CollectionResponder();
+        $this->deviceFilter = $deviceFilter ?? new DeviceCollectionFilter();
+        $this->presentation = $presentation ?? new DevicePresentation();
     }
 
-    public function list(string $query = '', ?ApiAuthContext $auth = null, ?ServerRequestInterface $request = null): array
+    public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
-        $baseUrl = $this->baseUrlFromRequest($request);
-        $params = $this->queryParams($query);
-        $page = $this->queryPage($params);
-        $limit = $this->queryLimit($params, 5);
+        $params = $this->query->params($query);
+        $page = $this->query->page($params);
+        $limit = $this->query->limit($params, 5);
         $filters = [
-            'deviceType' => $this->queryFilter($params, 'deviceType'),
-            'licenseId' => $this->queryFilter($params, 'licenseId'),
-            'company' => $this->queryFilter($params, 'company'),
-            'supplier' => $this->queryFilter($params, 'supplier'),
-            'model' => $this->queryFilter($params, 'model'),
-            'q' => $this->queryFilter($params, 'q', ''),
+            'deviceType' => $this->query->filter($params, 'deviceType'),
+            'licenseId' => $this->query->filter($params, 'licenseId'),
+            'company' => $this->query->filter($params, 'company'),
+            'supplier' => $this->query->filter($params, 'supplier'),
+            'model' => $this->query->filter($params, 'model'),
+            'q' => $this->query->filter($params, 'q', ''),
         ];
         $licenseScope = $auth !== null && !$auth->isAdmin() ? $auth->licenseId : null;
         $result = $this->db->whitelist->listPage($filters, $page, $limit, $licenseScope);
         if ((int)$result['total'] === 0) {
             $devices = $this->scopeDevices($this->store->devices(), $auth);
             $filtered = array_map(
-                fn (array $device): array => $this->attachDeviceImage($device, $baseUrl),
-                $this->filterDevices($devices, $filters)
+                fn (array $device): array => $this->presentation->attachImage($device, $this->modelForSupplierAndName(
+                    (string)($device['supplier'] ?? ''),
+                    (string)($device['model'] ?? '')
+                ), $baseUrl),
+                $this->deviceFilter->filterDevices($devices, $filters)
             );
             $available = [
-                'deviceType' => $this->uniqueValues(array_map(
+                'deviceType' => $this->collection->uniqueValues(array_map(
                     static fn (array $device): string => DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch')),
-                    $this->filterDevicesForOptions($devices, $filters, 'deviceType')
+                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'deviceType')
                 )),
-                'licenseId' => $this->uniqueValues(array_map(
+                'licenseId' => $this->collection->uniqueValues(array_map(
                     static fn (array $device): string => DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0')),
-                    $this->filterDevicesForOptions($devices, $filters, 'licenseId')
+                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'licenseId')
                 )),
-                'supplier' => $this->uniqueValues(array_map(
+                'supplier' => $this->collection->uniqueValues(array_map(
                     static fn (array $device): string => trim((string)($device['supplier'] ?? '')),
-                    $this->filterDevicesForOptions($devices, $filters, 'supplier')
+                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'supplier')
                 )),
-                'model' => $this->uniqueValues(array_map(
+                'model' => $this->collection->uniqueValues(array_map(
                     static fn (array $device): string => trim((string)($device['model'] ?? '')),
-                    $this->filterDevicesForOptions($devices, $filters, 'model')
+                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'model')
                 )),
-                'company' => $this->uniqueValues(array_map(
+                'company' => $this->collection->uniqueValues(array_map(
                     static fn (array $device): string => trim((string)($device['company'] ?? 'null')),
-                    $this->filterDevicesForOptions($devices, $filters, 'company')
+                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'company')
                 )),
             ];
 
-            return $this->collectionResponse($filtered, $page, $limit, $filters, $available);
+            return $this->collection->respond($filtered, $page, $limit, $filters, $available);
         }
 
         $runtimeStates = $this->store->runtimeStates(array_map(
@@ -85,8 +100,12 @@ final class Devices
             $result['items']
         ));
         $items = array_map(
-            fn (array $device): array => $this->attachDeviceImage(
+            fn (array $device): array => $this->presentation->attachImage(
                 $this->overlayRuntimeState($device, $runtimeStates),
+                $this->modelForSupplierAndName(
+                    (string)($device['supplier'] ?? ''),
+                    (string)($device['model'] ?? '')
+                ),
                 $baseUrl
             ),
             $result['items']
@@ -108,7 +127,7 @@ final class Devices
         ];
     }
 
-    public function show(string $imei, ?ApiAuthContext $auth = null, ?ServerRequestInterface $request = null): array
+    public function show(string $imei, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
         $device = $this->deviceSnapshot($imei);
         if (!$this->canAccessDevice($imei, $auth, $device)) {
@@ -117,8 +136,6 @@ final class Devices
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
         $modelRow = $this->modelForDevice($device);
         $configRows = $this->db->deviceConfigurations->allForImei($imei);
-        $baseUrl = $this->baseUrlFromRequest($request);
-
         $model = null;
         if ($modelRow !== null) {
             $model = [
@@ -126,7 +143,7 @@ final class Devices
                 'internalModel' => (string)($modelRow['internal_model'] ?? ''),
                 'commercialName' => (string)($modelRow['commercial_name'] ?? ''),
                 'deviceType' => (string)($modelRow['device_type'] ?? ''),
-                'image' => $this->fullModelImage((string)($modelRow['image_path'] ?? ''), $baseUrl),
+                'image' => $this->presentation->modelImage($modelRow, $baseUrl),
             ];
         }
 
@@ -1010,42 +1027,6 @@ final class Devices
         return $this->db->models->find($supplier, $model);
     }
 
-    private function baseUrlFromRequest(?ServerRequestInterface $request): string
-    {
-        if ($request === null) {
-            return 'http://localhost:8081';
-        }
-
-        $uri = $request->getUri();
-        $scheme = $uri->getScheme() !== '' ? $uri->getScheme() : 'http';
-        $host = $uri->getHost() !== '' ? $uri->getHost() : 'localhost';
-        $port = $uri->getPort();
-        $base = $scheme . '://' . $host;
-        if ($port !== null && $port !== 80 && $port !== 443) {
-            $base .= ':' . $port;
-        }
-
-        return $base;
-    }
-
-    private function fullModelImage(string $path, string $baseUrl): ?string
-    {
-        return $path !== '' ? $baseUrl . $path : null;
-    }
-
-    private function attachDeviceImage(array $device, string $baseUrl): array
-    {
-        $modelRow = $this->modelForSupplierAndName(
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? '')
-        );
-        $device['image'] = $modelRow !== null
-            ? $this->fullModelImage((string)($modelRow['image_path'] ?? ''), $baseUrl)
-            : null;
-
-        return $device;
-    }
-
     /**
      * @return list<array<string, mixed>>
      */
@@ -1066,78 +1047,6 @@ final class Devices
             $feature = (string)($entry['feature'] ?? '');
             return $feature !== '' && isset($enabled[$feature]);
         }));
-    }
-
-    private function filterDevices(array $devices, array $filters): array
-    {
-        return array_values(array_filter($devices, function (array $device) use ($filters): bool {
-            $deviceType = DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch'));
-            $licenseId = DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0'));
-            $company = trim((string)($device['company'] ?? 'null'));
-            $supplier = trim((string)($device['supplier'] ?? ''));
-            $model = trim((string)($device['model'] ?? ''));
-            $modelFilter = trim((string)($filters['model'] ?? ''));
-            $query = trim((string)($filters['q'] ?? ''));
-
-            return (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType'])
-                && (($filters['licenseId'] ?? null) === null || $licenseId === $filters['licenseId'])
-                && (($filters['company'] ?? null) === null || $company === $filters['company'])
-                && (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
-                && ($modelFilter === '' || str_contains($this->normalizeSearchText($model), $this->normalizeSearchText($modelFilter)))
-                && ($query === '' || $this->matchesDeviceQuery($device, $query));
-        }));
-    }
-
-    private function matchesDeviceQuery(array $device, string $query): bool
-    {
-        $normalizedQuery = $this->normalizeSearchText($query);
-        $tokens = array_values(array_filter(preg_split('/\s+/u', $normalizedQuery) ?: [], static fn (string $token): bool => $token !== ''));
-        if ($tokens === []) {
-            return true;
-        }
-
-        $haystack = $this->normalizeSearchText(implode(' ', [
-            (string)($device['imei'] ?? ''),
-            (string)($device['supplier'] ?? ''),
-            (string)($device['model'] ?? ''),
-            (string)($device['simNumber'] ?? ''),
-            (string)($device['company'] ?? ''),
-        ]));
-
-        foreach ($tokens as $token) {
-            if ($token === '') {
-                continue;
-            }
-            if (str_contains($haystack, $token)) {
-                continue;
-            }
-
-            return false;
-        }
-
-        return true;
-    }
-
-    private function normalizeSearchText(string $value): string
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return '';
-        }
-
-        $lower = function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
-        $normalized = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $lower) ?? $lower;
-        $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? trim($normalized);
-
-        return $normalized;
-    }
-
-    private function filterDevicesForOptions(array $devices, array $filters, string $excludeKey): array
-    {
-        $candidateFilters = $filters;
-        $candidateFilters[$excludeKey] = null;
-
-        return $this->filterDevices($devices, $candidateFilters);
     }
 
     private function canAccessDevice(string $imei, ?ApiAuthContext $auth, ?array $device = null): bool
