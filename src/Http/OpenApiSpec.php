@@ -172,33 +172,11 @@ class OpenApiSpec
                     ],
                     'put' => [
                         'tags' => ['Devices'],
-                        'summary' => 'Update device metadata or submit generic configuration',
+                        'summary' => 'Update device metadata',
                         'parameters' => [$imeiParam],
                         'requestBody' => [
                             'required' => true,
-                            'content' => ['application/json' => ['schema' => [
-                                'oneOf' => [
-                                    ['$ref' => '#/components/schemas/DeviceUpdateRequest'],
-                                    [
-                                        'type' => 'object',
-                                        'properties' => [
-                                            'configs' => ['type' => 'object'],
-                                            'supplier' => ['type' => 'string'],
-                                            'model' => ['type' => 'string'],
-                                        ],
-                                        'required' => ['configs'],
-                                    ],
-                                    [
-                                        'type' => 'object',
-                                        'properties' => [
-                                            'capabilities' => ['type' => 'object'],
-                                            'supplier' => ['type' => 'string'],
-                                            'model' => ['type' => 'string'],
-                                        ],
-                                        'required' => ['capabilities'],
-                                    ],
-                                ],
-                            ]]],
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceUpdateRequest']]],
                         ],
                         'responses' => [
                             '200' => [
@@ -206,6 +184,7 @@ class OpenApiSpec
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceUpdateResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
+                            '403' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                     'delete' => [
@@ -217,6 +196,25 @@ class OpenApiSpec
                                 'description' => 'Device deleted',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceDeleteResponse']]],
                             ],
+                        ],
+                    ],
+                ],
+                '/api/devices/{imei}/configurations' => [
+                    'patch' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Partially update device configurations',
+                        'parameters' => [$imeiParam],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceConfigurationsUpdateRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Device configurations updated',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceConfigurationsUpdateResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '403' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],
@@ -1035,7 +1033,7 @@ class OpenApiSpec
                     ],
                     'DeviceUpdateRequest' => [
                         'type' => 'object',
-                        'required' => ['imei', 'supplier', 'model'],
+                        'required' => ['supplier', 'model'],
                         'properties' => [
                             'imei' => ['type' => 'string', 'example' => '865028000000307'],
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
@@ -1052,6 +1050,35 @@ class OpenApiSpec
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'ok'],
                             'imei' => ['type' => 'string', 'example' => '865028000000307'],
+                        ],
+                    ],
+                    'DeviceConfigurationsUpdateRequest' => [
+                        'type' => 'object',
+                        'required' => ['configurations'],
+                        'properties' => [
+                            'configurations' => [
+                                'type' => 'object',
+                                'description' => 'Map of protocol configuration keys to desired payloads.',
+                                'additionalProperties' => ['type' => 'object'],
+                                'example' => [
+                                    'autoHealthMeasurement' => ['enabled' => true, 'intervalMinutes' => 120],
+                                    'phonebook' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],
+                                    'reminders' => ['masterEnabled' => true, 'items' => [['time' => '08:33', 'days' => '2', 'enabled' => true, 'type' => 2]]],
+                                    'sosContacts' => ['numbers' => ['+351278710140']],
+                                    'workingMode' => ['mode' => 3],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'DeviceConfigurationsUpdateResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'results', 'configurations'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'results' => ['type' => 'array', 'items' => ['type' => 'object']],
+                            'configurations' => ['type' => 'object'],
+                            'pending' => ['type' => 'object'],
+                            'transportPending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
                         ],
                     ],
                     'DeviceAssociation' => [

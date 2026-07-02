@@ -418,7 +418,7 @@ final class Devices
         return $configurations;
     }
 
-    public function saveConfiguration(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    public function updateConfigurations(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->canAccessDevice($imei, $auth)) {
             Logger::channel('api')->warning('API device configuration rejected', [
@@ -440,24 +440,22 @@ final class Devices
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
 
-        if (isset($decoded['capabilities'])) {
-            return $this->saveGenericConfiguration($imei, $decoded, $requestId);
-        }
-
-        if (!isset($decoded['configs']) || !is_array($decoded['configs'])) {
+        if (!isset($decoded['configurations']) || !is_array($decoded['configurations'])) {
             Logger::channel('api')->warning('API device configuration rejected', [
                 'request_id' => $requestId,
                 'imei' => $imei,
                 'error_code' => 'invalid_request',
-                'reason' => 'missing_capabilities_object',
+                'reason' => 'missing_configurations_object',
             ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'capabilities object is required']];
+            return ['error' => ['code' => 'invalid_request', 'message' => 'configurations object is required']];
         }
 
-        $supplier = trim((string)($decoded['supplier'] ?? ''));
-        $model = trim((string)($decoded['model'] ?? ''));
+        $device = $this->deviceSnapshot($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
+        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
         $results = [];
-        foreach ($decoded['configs'] as $key => $payload) {
+        foreach ($decoded['configurations'] as $key => $payload) {
             if (!is_string($key) || !is_array($payload)) {
                 Logger::channel('api')->warning('API device configuration rejected', [
                     'request_id' => $requestId,
@@ -483,12 +481,25 @@ final class Devices
         Logger::channel('api')->info('API device configuration processed', [
             'request_id' => $requestId,
             'imei' => $imei,
-            'mode' => 'configs',
+            'mode' => 'configurations',
             'result_count' => count($results),
-            'config_keys' => array_keys($decoded['configs']),
+            'config_keys' => array_keys($decoded['configurations']),
         ]);
 
-        return ['status' => 'ok', 'results' => $results, 'configuration' => $this->configuration($imei, '', $auth)];
+        $snapshot = $this->show($imei, $auth);
+
+        return [
+            'status' => 'ok',
+            'results' => $results,
+            'configurations' => $this->configuration($imei, '', $auth),
+            'pending' => $snapshot['pending'] ?? [],
+            'transportPending' => $snapshot['transportPending'] ?? [],
+        ];
+    }
+
+    public function saveConfiguration(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    {
+        return $this->updateConfigurations($imei, $body, $auth, $requestId);
     }
 
     public function create(string $body): array
@@ -537,8 +548,19 @@ final class Devices
             ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
-        if (isset($decoded['capabilities']) || isset($decoded['configs'])) {
-            return $this->saveConfiguration($imei, $body, $auth, $requestId);
+
+        if (
+            isset($decoded['configurations'])
+            || isset($decoded['configs'])
+            || isset($decoded['capabilities'])
+        ) {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => 'invalid_request',
+                'reason' => 'configuration_payload_not_allowed_on_metadata_endpoint',
+            ]);
+            return ['error' => ['code' => 'invalid_request', 'message' => 'Use /api/devices/{imei}/configurations for device configurations']];
         }
 
         if ($auth !== null && !$auth->isAdmin()) {

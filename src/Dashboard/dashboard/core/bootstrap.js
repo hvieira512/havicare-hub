@@ -1250,8 +1250,6 @@ async function saveDeviceConfiguration(section) {
             : await apiSaveConfiguration(
                 state.deviceModal.imei,
                 { [key]: payload },
-                state.deviceModal.supplier,
-                state.deviceModal.model,
             );
         if (result.error) {
             setConfigUi(key, {
@@ -1270,7 +1268,7 @@ async function saveDeviceConfiguration(section) {
 
         if (!isTransientAction) {
             state.deviceModal.configurations =
-                result.configuration || state.deviceModal.configurations;
+                result.configurations || state.deviceModal.configurations;
         }
 
         setConfigUi(key, {

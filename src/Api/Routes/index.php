@@ -123,6 +123,10 @@ return static function (
             $result = $devices->update($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
             return $json($result, $status($result));
         }),
+        new ApiRoute('PATCH', '/api/devices/{imei}/configurations', function (array $params, ServerRequestInterface $request) use ($devices, $json, $apiAuthContext, $status, $requestBody, $apiRequestId): Response {
+            $result = $devices->updateConfigurations($params['imei'], $requestBody($request), $apiAuthContext($request), $apiRequestId($request));
+            return $json($result, $status($result));
+        }),
         new ApiRoute('DELETE', '/api/devices/{imei}', fn(array $params): Response => $json($devices->delete($params['imei']))),
         new ApiRoute('GET', '/api/models', fn(array $params, ServerRequestInterface $request): Response => $json($models->list($request))),
         new ApiRoute('GET', '/api/device-types/suppliers', fn(array $params, ServerRequestInterface $request): Response => $json($models->filters($request))),

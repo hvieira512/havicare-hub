@@ -269,6 +269,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('/api/auth/refresh', $spec['paths']);
         self::assertSame([], $spec['paths']['/api/openapi.json']['get']['security'] ?? null);
         self::assertSame([], $spec['paths']['/api/docs']['get']['security'] ?? null);
+        self::assertArrayHasKey('/api/devices/{imei}/configurations', $spec['paths']);
     }
 
     public function testApiCanBeExposedWithoutAuthForDevelopment(): void
@@ -421,21 +422,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     public function testTenantClientCanPutConfigurationButCannotUpdateDeviceMetadata(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-
-        self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
 
         $configResponse = $server(new ServerRequest(
-            'PUT',
-            '/api/devices/861265061009822',
+            'PATCH',
+            '/api/devices/861265061009822/configurations',
             ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
             json_encode([
-                'capabilities' => [
-                    'alarms' => [
-                        'fall_detection' => ['enabled' => true],
-                    ],
+                'configurations' => [
+                    'fallDetection' => ['enabled' => true],
                 ],
             ], JSON_THROW_ON_ERROR)
         ));
@@ -464,22 +459,16 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     public function testConfigurationPutLogsExactRawBody(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-
-        self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
         $body = json_encode([
-            'capabilities' => [
-                'alarms' => [
-                    'fall_detection' => ['enabled' => true],
-                ],
+            'configurations' => [
+                'fallDetection' => ['enabled' => true],
             ],
         ], JSON_THROW_ON_ERROR);
 
         $response = $server(new ServerRequest(
-            'PUT',
-            '/api/devices/861265061009822',
+            'PATCH',
+            '/api/devices/861265061009822/configurations',
             ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json', 'X-Request-Id' => 'req-config-1'],
             $body
         ));
@@ -490,7 +479,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('API device configuration processed', $log);
         self::assertStringContainsString('"request_id":"req-config-1"', $log);
         self::assertStringContainsString('"request_body":' . json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $log);
-        self::assertStringContainsString('"path":"/api/devices/861265061009822"', $log);
+        self::assertStringContainsString('"path":"/api/devices/861265061009822/configurations"', $log);
     }
 
     public function testTenantClientCanAssociateUnassignedDeviceViaPatchEndpoint(): void
@@ -697,14 +686,12 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
 
         $put = $server(new ServerRequest(
-            'PUT',
-            '/api/devices/861265061009822',
+            'PATCH',
+            '/api/devices/861265061009822/configurations',
             ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
             json_encode([
-                'capabilities' => [
-                    'alarms' => [
-                        'fall_detection' => ['enabled' => true],
-                    ],
+                'configurations' => [
+                    'fallDetection' => ['enabled' => true],
                 ],
             ], JSON_THROW_ON_ERROR)
         ));

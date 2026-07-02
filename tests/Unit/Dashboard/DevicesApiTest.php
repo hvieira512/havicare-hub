@@ -253,7 +253,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('cfg:BP76', $response['transportPending'][0]['dedupeKey'] ?? null);
     }
 
-    public function testGenericConfigurationPutSendsOnlyChangedDownlinks(): void
+    public function testConfigurationPutSendsDownlinksForProtocolConfigKeys(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -285,13 +285,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ['contacts' => [['name' => 'Ana', 'phone' => '+351911111111']]]
         );
 
-        $response = $api->saveConfiguration('861265061009822', json_encode([
-            'capabilities' => [
-                'alarms' => [
-                    'fall_detection' => ['enabled' => true],
-                ],
-                'contacts' => [
-                    'phonebook' => [
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'fallDetection' => ['enabled' => true],
+                'phonebook' => [
+                    'contacts' => [
                         ['name' => 'Ana', 'phone' => '+351911111111'],
                     ],
                 ],
@@ -302,62 +300,44 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('861265061009822', $submitted[0]['imei']);
         self::assertStringContainsString('BP76', $submitted[0]['bytes']);
-        self::assertSame(['contacts.phonebook'], $response['unchanged'] ?? null);
-        self::assertSame('fallDetection', $response['changed']['alarms.fall_detection']['key'] ?? null);
-        self::assertSame(['enabled' => true], $response['capabilities']['alarms']['fall_detection'] ?? null);
+        self::assertCount(1, $response['results'] ?? []);
+        self::assertSame('fallDetection', $response['results'][0]['key'] ?? null);
+        self::assertSame(['enabled' => true], $response['configurations']['fallDetection'] ?? null);
         self::assertSame('waiting_device', $response['pending']['alarms']['fall_detection']['status'] ?? null);
     }
 
-    public function testGenericConfigurationPutRejectsTelemetryWrites(): void
-    {
-        [$api, $db] = $this->makeApi();
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-
-        self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
-
-        $response = $api->saveConfiguration('861265061009822', json_encode([
-            'capabilities' => [
-                'telemetry' => [
-                    'heart_rate' => true,
-                ],
-            ],
-        ], JSON_THROW_ON_ERROR));
-
-        self::assertSame('invalid_config', $response['error']['code'] ?? null);
-    }
-
-    public function testGenericConfigurationPutRejectsUnknownSection(): void
+    public function testConfigurationPutRejectsInvalidRequestWithoutConfigurations(): void
     {
         [$api] = $this->makeApi();
 
-        $response = $api->saveConfiguration('861265061009822', json_encode([
-            'capabilities' => [
-                'unknown' => [
-                    'fall_detection' => ['enabled' => true],
-                ],
+        $response = $api->updateConfigurations('861265061009822', json_encode([], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_request', $response['error']['code'] ?? null);
+    }
+
+    public function testConfigurationPutRejectsUnknownConfigKey(): void
+    {
+        [$api] = $this->makeApi();
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'unknownConfig' => ['enabled' => true],
             ],
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
     }
 
-    public function testGenericConfigurationPutRejectsInvalidNormalizedPayload(): void
+    public function testConfigurationPutRejectsInvalidPayload(): void
     {
-        [$api, $db] = $this->makeApi();
-        $model = $db->models->find('Vivistar', 'L08 Pro');
+        [$api] = $this->makeApi();
 
-        self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['working_mode']);
-
-        $response = $api->saveConfiguration('861265061009822', json_encode([
-            'capabilities' => [
-                'settings_system' => [
-                    'working_mode' => [
-                        'mode' => 8,
-                        'intervalSeconds' => 10,
-                        'gpsEnabled' => true,
-                    ],
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'workingMode' => [
+                    'mode' => 8,
+                    'intervalSeconds' => 10,
+                    'gpsEnabled' => true,
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -421,8 +401,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
 
-        $response = $api->saveConfiguration('861265061009822', json_encode([
-            'configs' => [
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
                 'pushMessage' => ['message' => 'are you ok?'],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -499,31 +479,33 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('BPXL', $response['command']['requestId'] ?? null);
     }
 
-    public function testUpdateDispatchesCapabilityPayloadToConfigurationSave(): void
+    public function testUpdateRejectsConfigurationPayloadsOnMetadataEndpoint(): void
     {
-        $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-
-        self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        [$api] = $this->makeApi();
 
         $response = $api->update('861265061009822', json_encode([
+            'configurations' => [
+                'fallDetection' => ['enabled' => true],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_request', $response['error']['code'] ?? null);
+
+        $legacyConfigs = $api->update('861265061009822', json_encode([
+            'configs' => [
+                'fallDetection' => ['enabled' => true],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        self::assertSame('invalid_request', $legacyConfigs['error']['code'] ?? null);
+
+        $legacyCapabilities = $api->update('861265061009822', json_encode([
             'capabilities' => [
                 'alarms' => [
                     'fall_detection' => ['enabled' => true],
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
-
-        self::assertSame('ok', $response['status'] ?? null);
-        self::assertCount(1, $submitted);
-        self::assertStringContainsString('BP76', $submitted[0]['bytes']);
+        self::assertSame('invalid_request', $legacyCapabilities['error']['code'] ?? null);
     }
 
     /**
