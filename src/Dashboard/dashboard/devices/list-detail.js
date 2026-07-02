@@ -575,7 +575,7 @@ function renderAppliedDeviceFilters() {
 }
 
 function handleDeviceListLimitChange() {
-    const nextLimit = parseInt(els.deviceListLimit.value || "5", 10) || 5;
+    const nextLimit = parseInt(els.deviceListLimit.value || "20", 10) || 20;
     if (state.deviceListPageSize === nextLimit) {
         return;
     }

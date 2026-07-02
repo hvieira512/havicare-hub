@@ -3,7 +3,7 @@ export const state = {
     summary: {
         devices: [],
         models: [],
-        devicePagination: { limit: 5, page: 1, total_pages: 1, total: 0 },
+        devicePagination: { limit: 20, page: 1, total_pages: 1, total: 0 },
         deviceFiltersAvailable: {
             deviceType: [],
             licenseId: [],
@@ -12,6 +12,7 @@ export const state = {
             model: [],
         },
     },
+    deviceListPageSize: 20,
     detailFilters: {
         from: "",
         to: "",
@@ -90,7 +91,7 @@ export const state = {
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),
     deviceListPage: 1,
-    deviceListPageSize: 5,
+    deviceListPageSize: 20,
     telemetryPage: 1,
     telemetryPageSize: 10,
 };
