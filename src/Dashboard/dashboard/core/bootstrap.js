@@ -1,4 +1,5 @@
 import {
+    deleteDevice as apiDeleteDevice,
     getCompanies as apiGetCompanies,
     getDevice as apiGetDevice,
     getLicenses as apiGetLicenses,
