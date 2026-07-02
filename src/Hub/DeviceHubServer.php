@@ -6,14 +6,16 @@ use Hub\Log\Logger;
 use Hub\Dashboard\DashboardStore;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Whitelist;
+use Hub\Watch\WatchMessage;
+use Hub\Watch\WatchProtocolRegistry;
+use Hub\Watch\WatchResponse;
 
 class DeviceHubServer
 {
     private ConnectionRegistry $connections;
     private DeviceAuthorizer $authorizer;
     private DeviceIdentityExtractor $identityExtractor;
-    private AdapterRegistry $adapters;
-    private DeviceEventDecoder $eventDecoder;
+    private WatchProtocolRegistry $watchProtocols;
     private HubMqttBridge $mqtt;
     private ?PendingDownlinkQueue $downlinkQueue;
     private ?DashboardStore $dashboardStore;
@@ -33,9 +35,9 @@ class DeviceHubServer
         $this->connections = $connections ?? new ConnectionRegistry();
         $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist);
         $this->mqtt = $mqtt;
-        $this->adapters = new AdapterRegistry();
-        $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($this->adapters);
-        $this->eventDecoder = $eventDecoder ?? new DeviceEventDecoder();
+        $adapters = new AdapterRegistry();
+        $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($adapters);
+        $this->watchProtocols = new WatchProtocolRegistry($adapters, $eventDecoder ?? new DeviceEventDecoder());
         $this->downlinkQueue = $downlinkQueue;
         $this->dashboardStore = $dashboardStore;
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
@@ -60,24 +62,7 @@ class DeviceHubServer
             return;
         }
 
-        try {
-            $this->mqtt->publishRaw(
-                $session->imei,
-                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $raw, 'uplink', (string)$rid),
-                $session->deviceType,
-                $session->licenseId,
-                $session->company,
-            );
-            $this->recordRaw($session, $raw, (string)$rid);
-        } catch (\Throwable $e) {
-            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
-        }
-
-        $this->publishDecodedEvents($session, $raw);
-        $this->sendProtocolAck($from, $session, $raw);
-        $this->sendVivistarUploadAck($from, $session, $raw);
-        $this->sendWonlexUploadAck($from, $session, $raw);
-        $this->sendWonlexHeartbeatReply($from, $session, $raw);
+        $this->handleAuthenticatedMessage($from, $session, $raw, (string)$rid);
     }
 
     public function onClose(ConnectionInterface $conn): void
@@ -111,13 +96,14 @@ class DeviceHubServer
         $conn->send($bytes);
         $session = $this->connections->get($conn);
         try {
+            $command = $this->commandMetadata($bytes, $session?->protocol);
             $this->mqtt->publishEvent($imei, RawPayload::event(
                 $imei,
                 $session?->supplier ?? '',
                 $session?->model ?? '',
                 'device.downlink.sent',
                 null,
-                $this->commandMetadata($bytes, $session?->protocol)
+                $command
             ), $session?->deviceType ?? 'watch', $session?->licenseId ?? '0', $session?->company ?? 'null');
             $this->recordDownlinkEvent(
                 $imei,
@@ -126,7 +112,8 @@ class DeviceHubServer
                 'device.downlink.sent',
                 $bytes,
                 $session?->deviceType ?? 'watch',
-                $session?->licenseId ?? '0'
+                $session?->licenseId ?? '0',
+                $command
             );
             if ($session !== null) {
                 $this->mqtt->publishRaw(
@@ -161,20 +148,21 @@ class DeviceHubServer
         $error = $this->errorPayload($reason);
         $metadata = $this->authorizer->metadataFor($imei);
         try {
+            $command = $bytes !== null ? $this->commandMetadata($bytes) : null;
             $this->mqtt->publishEvent($imei, RawPayload::event(
                 $imei,
                 $metadata['supplier'],
                 $metadata['model'],
                 'device.downlink.dropped',
                 $error,
-                $bytes !== null ? $this->commandMetadata($bytes) : null
+                $command
             ), $metadata['deviceType'], $metadata['licenseId'], $metadata['company']);
             $this->recordEvent(
                 $imei,
                 $metadata['supplier'],
                 $metadata['model'],
                 'device.downlink.dropped',
-                $bytes !== null ? $this->commandMetadata($bytes) : null,
+                $command,
                 $metadata['deviceType'],
                 $metadata['licenseId']
             );
@@ -220,8 +208,8 @@ class DeviceHubServer
     public function expireIdleConnections(int $idleSeconds): void
     {
         foreach ($this->connections->expireIdleConnections($idleSeconds) as $session) {
-        $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $session->licenseId, $session->company);
-        $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $session->licenseId, $session->company);
+            $this->publishStatus($session->imei, $session->supplier, $session->model, 'offline', $session->deviceType, $session->licenseId, $session->company);
+            $this->publishEvent($session->imei, $session->supplier, $session->model, 'device.disconnected', $session->deviceType, $session->licenseId, $session->company);
             $this->dashboardStore?->deviceOffline($session->imei);
             Logger::channel('hub')->warning("Device offline by idle timeout IMEI={$session->imei} idle_seconds={$idleSeconds}");
         }
@@ -265,30 +253,57 @@ class DeviceHubServer
             'lastConnectionId' => (string)$conn->resourceId,
         ]);
 
-        $this->sendLoginAccepted($conn, $identity);
         $this->publishStatus($identity->imei, $session->supplier, $session->model, 'online', $session->deviceType, $session->licenseId, $session->company);
         $this->publishEvent($identity->imei, $session->supplier, $session->model, 'device.connected', $session->deviceType, $session->licenseId, $session->company);
 
+        $this->handleAuthenticatedMessage($conn, $session, $raw, (string)$conn->resourceId);
+        $this->flushPendingDownlinks($session);
+
+        Logger::channel('hub')->info("Device online IMEI={$identity->imei} protocol={$identity->protocol}");
+    }
+
+    private function handleAuthenticatedMessage(ConnectionInterface $conn, DeviceSession $session, string $raw, string $connectionId): void
+    {
         try {
             $this->mqtt->publishRaw(
-                $identity->imei,
-                RawPayload::raw($identity->imei, $session->supplier, $session->model, $session->transport, $identity->protocol, $raw, 'uplink', (string)$conn->resourceId),
+                $session->imei,
+                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $raw, 'uplink', $connectionId),
                 $session->deviceType,
                 $session->licenseId,
                 $session->company,
             );
-            $this->recordRaw($session, $raw, (string)$conn->resourceId);
+            $this->recordRaw($session, $raw, $connectionId);
         } catch (\Throwable $e) {
-            $this->mqtt->logPublishFailure('hub', $identity->imei, $e);
+            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
         }
 
-        $this->publishDecodedEvents($session, $raw);
-        $this->sendProtocolAck($conn, $session, $raw);
-        $this->sendVivistarUploadAck($conn, $session, $raw);
-        $this->sendWonlexUploadAck($conn, $session, $raw);
-        $this->flushPendingDownlinks($session);
+        $protocol = $this->watchProtocols->get($session->protocol);
+        if ($protocol === null) {
+            return;
+        }
 
-        Logger::channel('hub')->info("Device online IMEI={$identity->imei} protocol={$identity->protocol}");
+        $message = $protocol->handleIncoming($session, $raw);
+        if (!($message instanceof WatchMessage)) {
+            return;
+        }
+
+        $this->dashboardStore?->markCommandReply($session->imei, (string)($message->decoded['type'] ?? ''));
+
+        foreach ($message->telemetry as $event) {
+            try {
+                $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $session->licenseId, $session->company);
+                $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
+                    $event,
+                    ['deviceType' => $session->deviceType, 'licenseId' => $session->licenseId]
+                ));
+            } catch (\Throwable $e) {
+                $this->mqtt->logPublishFailure('hub', $session->imei, $e);
+            }
+        }
+
+        foreach ($message->responses as $response) {
+            $this->sendWatchResponse($session, $response, $conn, $connectionId);
+        }
     }
 
     private function reject(ConnectionInterface $conn, DeviceIdentity $identity, string $reason): void
@@ -303,65 +318,6 @@ class DeviceHubServer
 
         Logger::channel('hub')->warning("Device rejected IMEI={$identity->imei} reason=$reason");
         $conn->close();
-    }
-
-    private function sendLoginAccepted(ConnectionInterface $conn, DeviceIdentity $identity): void
-    {
-        $adapter = $this->adapters->get($identity->protocol);
-        if ($adapter === null) {
-            return;
-        }
-
-        $timestamp = (int)round(microtime(true) * 1000);
-        if ($identity->protocol === 'wonlex-json') {
-            $conn->send($adapter->encodeOutgoing([
-                'type' => 'login',
-                'ident' => $identity->ident,
-                'ref' => 's:reply',
-                'imei' => $identity->imei,
-                'data' => [
-                    'type' => 'login',
-                    'imei' => $identity->imei,
-                    'bindStatus' => 1,
-                    'timestamp' => $timestamp,
-                ],
-                'timestamp' => $timestamp,
-            ]));
-            return;
-        }
-
-        if ($identity->protocol === 'vivistar-iw') {
-            $conn->send($adapter->encodeOutgoing(['type' => 'login_ok']));
-        }
-
-    }
-
-    private function publishDecodedEvents(DeviceSession $session, string $raw): void
-    {
-        $adapter = $this->adapters->get($session->protocol);
-        if ($adapter === null) {
-            return;
-        }
-
-        $decoded = $adapter->decodeIncoming($raw, ['session' => $session->identityContext()]);
-        if (!is_array($decoded)) {
-            return;
-        }
-
-        $this->dashboardStore?->markCommandReply($session->imei, (string)($decoded['type'] ?? ''));
-
-        foreach ($this->eventDecoder->decode($session, $decoded) as $event) {
-            try {
-                $payload = DeviceEventPayloadBuilder::decoded($session, $event);
-                $this->mqtt->publishTelemetry($session->imei, $payload, $session->deviceType, $session->licenseId, $session->company);
-                $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
-                    $payload,
-                    ['deviceType' => $session->deviceType, 'licenseId' => $session->licenseId]
-                ));
-            } catch (\Throwable $e) {
-                $this->mqtt->logPublishFailure('hub', $session->imei, $e);
-            }
-        }
     }
 
     private function flushPendingDownlinks(DeviceSession $session): void
@@ -394,181 +350,6 @@ class DeviceHubServer
                 Logger::channel('hub')->error("Failed to flush pending downlink for IMEI={$session->imei}: {$e->getMessage()}");
             }
         }
-    }
-
-    private function sendWonlexHeartbeatReply(ConnectionInterface $conn, DeviceSession $session, string $raw): void
-    {
-        if ($session->protocol !== 'wonlex-json') {
-            return;
-        }
-
-        $adapter = $this->adapters->get($session->protocol);
-        if ($adapter === null) {
-            return;
-        }
-
-        $decoded = $adapter->decodeIncoming($raw);
-        if (!is_array($decoded) || ($decoded['type'] ?? '') !== 'heartbeat') {
-            return;
-        }
-
-        $timestamp = (int)round(microtime(true) * 1000);
-        $ident = (string)($decoded['ident'] ?? '');
-        $conn->send($adapter->encodeOutgoing([
-            'type' => 'heartbeat',
-            'ident' => $ident !== '' ? $ident : random_int(100000, 999999),
-            'ref' => 's:reply',
-            'imei' => $session->imei,
-            'data' => [
-                'type' => 'heartbeat',
-                'imei' => $session->imei,
-                'deviceModel' => $session->model,
-                'timestamp' => $timestamp,
-            ],
-            'timestamp' => $timestamp,
-        ]));
-    }
-
-    private function sendVivistarUploadAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
-    {
-        if ($session->protocol !== 'vivistar-iw') {
-            return;
-        }
-
-        $adapter = $this->adapters->get($session->protocol);
-        if ($adapter === null) {
-            return;
-        }
-
-        $decoded = $adapter->decodeIncoming($raw, ['session' => $session->identityContext()]);
-        if (!is_array($decoded)) {
-            return;
-        }
-
-        $ack = match ((string)($decoded['type'] ?? '')) {
-            'AP01' => 'IWBP01#',
-            'AP02' => 'IWBP02#',
-            'AP03' => 'IWBP03#',
-            'AP10' => 'IWBP10#',
-            'AP49' => 'IWBP49#',
-            'APHT' => 'IWBPHT#',
-            'APHP' => 'IWBPHP#',
-            'AP50' => 'IWBP50#',
-            'APHD' => 'IWBPHD#',
-            default => null,
-        };
-
-        if ($ack === null) {
-            return;
-        }
-
-        $conn->send($ack);
-    }
-
-    private function sendWonlexUploadAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
-    {
-        if ($session->protocol !== 'wonlex-json') {
-            return;
-        }
-
-        $adapter = $this->adapters->get($session->protocol);
-        if ($adapter === null) {
-            return;
-        }
-
-        $decoded = $adapter->decodeIncoming($raw);
-        if (!is_array($decoded) || (string)($decoded['ref'] ?? '') !== 'w:update') {
-            return;
-        }
-
-        $type = (string)($decoded['type'] ?? '');
-        if ($type === '' || in_array($type, ['login', 'heartbeat'], true)) {
-            return;
-        }
-
-        $timestamp = (int)round(microtime(true) * 1000);
-        $ident = is_int($decoded['ident'] ?? null)
-            ? $decoded['ident']
-            : (int)($decoded['ident'] ?? random_int(100000, 999999));
-        if ($ident <= 0) {
-            $ident = random_int(100000, 999999);
-        }
-
-        $bytes = $adapter->encodeOutgoing([
-            'type' => $type,
-            'ident' => $ident,
-            'ref' => 's:reply',
-            'imei' => $session->imei,
-            'data' => [
-                'type' => $type,
-                'imei' => $session->imei,
-                'timestamp' => $timestamp,
-            ],
-            'timestamp' => $timestamp,
-        ]);
-
-        $conn->send($bytes);
-        try {
-            $this->mqtt->publishRaw(
-                $session->imei,
-                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $bytes, 'downlink', (string)$conn->resourceId),
-                $session->deviceType,
-                $session->licenseId,
-                $session->company,
-            );
-        } catch (\Throwable $e) {
-            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
-        }
-    }
-
-    private function sendProtocolAck(ConnectionInterface $conn, DeviceSession $session, string $raw): void
-    {
-        if ($session->protocol !== 'four-p-touch') {
-            return;
-        }
-
-        $adapter = $this->adapters->get($session->protocol);
-        if ($adapter === null) {
-            return;
-        }
-
-        $decoded = $adapter->decodeIncoming($raw);
-        if (!is_array($decoded)) {
-            return;
-        }
-
-        $type = (string)($decoded['type'] ?? '');
-        $ackFields = $this->fourPTouchAckFields($type);
-        if ($ackFields === null) {
-            return;
-        }
-
-        $conn->send($adapter->encodeOutgoing([
-            'type' => $type,
-            'imei' => $session->imei,
-            'deviceId' => $decoded['ident'] ?? $session->imei,
-            'manufacturer' => $decoded['data']['manufacturer'] ?? '3G',
-            'data' => ['fields' => $ackFields],
-        ]));
-    }
-
-    /**
-     * @return array<int, string>|null
-     */
-    private function fourPTouchAckFields(string $type): ?array
-    {
-        if ($type === 'LK' || $type === 'bphrt' || $type === 'btemp2' || $type === 'TKQ' || $type === 'TKQ2') {
-            return [];
-        }
-
-        if (in_array($type, ['AL', 'AL_WCDMA', 'AL_LTE'], true)) {
-            return [];
-        }
-
-        return match ($type) {
-            'CONFIG', 'oxygen', 'WIFIINFOUP', 'TK' => ['1'],
-            default => null,
-        };
     }
 
     private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
@@ -648,51 +429,36 @@ class DeviceHubServer
         string $type,
         string $bytes,
         string $deviceType = 'watch',
-        string $licenseId = '0'
+        string $licenseId = '0',
+        ?array $command = null
     ): void
     {
-        $this->recordEvent($imei, $supplier, $model, $type, $this->commandMetadata($bytes), $deviceType, $licenseId);
+        $this->recordEvent($imei, $supplier, $model, $type, $command ?? $this->commandMetadata($bytes), $deviceType, $licenseId);
     }
 
     private function commandMetadata(string $bytes, ?string $protocol = null): ?array
     {
-        $decoded = null;
-        $resolvedProtocol = $protocol;
-        if ($protocol !== null && $protocol !== '') {
-            $adapter = $this->adapters->get($protocol);
-            $decoded = $adapter?->decodeIncoming($bytes);
-        }
-        if (!is_array($decoded)) {
-            $decoded = $this->adapters->decodeAny($bytes);
-            $resolvedProtocol = is_array($decoded) ? (string)($decoded['_protocol'] ?? $resolvedProtocol) : $resolvedProtocol;
-        }
-        if (!is_array($decoded)) {
-            return $this->outgoingCommandMetadata($bytes, $protocol);
-        }
-
-        $metadata = array_filter([
-            'nativeType' => (string)($decoded['type'] ?? ''),
-            'protocol' => $resolvedProtocol,
-            'ident' => $decoded['ident'] ?? null,
-        ], static fn (mixed $value): bool => $value !== null && $value !== '');
-
-        return $metadata !== [] ? $metadata : null;
+        return $this->watchProtocols->commandMetadata($bytes, $protocol);
     }
 
-    private function outgoingCommandMetadata(string $bytes, ?string $protocol = null): ?array
+    private function sendWatchResponse(DeviceSession $session, WatchResponse $response, ConnectionInterface $conn, string $connectionId): void
     {
-        $message = trim($bytes);
-        if (($protocol === null || $protocol === '' || $protocol === 'vivistar-iw')
-            && preg_match('/^IW(BP[A-Z0-9]{2}),([^,#]+),([^,#]+)/', $message, $matches) === 1
-        ) {
-            return [
-                'nativeType' => $matches[1],
-                'protocol' => 'vivistar-iw',
-                'ident' => $matches[3],
-            ];
+        $conn->send($response->bytes);
+        if ($response->publishRaw !== true) {
+            return;
         }
 
-        return null;
+        try {
+            $this->mqtt->publishRaw(
+                $session->imei,
+                RawPayload::raw($session->imei, $session->supplier, $session->model, $session->transport, $session->protocol, $response->bytes, 'downlink', $connectionId),
+                $session->deviceType,
+                $session->licenseId,
+                $session->company,
+            );
+        } catch (\Throwable $e) {
+            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
+        }
     }
 
     private function errorPayload(string $code): array
