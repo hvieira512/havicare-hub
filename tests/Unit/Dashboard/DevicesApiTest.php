@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Api\Routes\Devices;
-use Hub\Dashboard\DashboardDataAccess;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Services\DeviceService;
 use Hub\Dashboard\DashboardStore;
 use Hub\PendingDownlink;
 use Hub\PendingDownlinkQueue;
@@ -108,7 +108,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $db->models->add((int)$supplier['id'], 'L08 Pro', 'L08 Pro', 'watch', '/model-images/example.jpg');
 
-        $response = $api->list('page=1&limit=5', null, new ServerRequest('GET', 'http://localhost:8081/api/devices'));
+        $response = $api->list('page=1&limit=5', null, 'http://localhost:8081');
 
         self::assertSame('http://localhost:8081/model-images/example.jpg', $response['data'][0]['image'] ?? null);
     }
@@ -204,7 +204,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $db->models->add((int)$supplier['id'], 'L08 Pro', 'L08 Pro', 'watch', '/model-images/example.jpg');
 
-        $response = $api->show('861265061009822', null, new ServerRequest('GET', 'http://localhost:8081/api/devices/861265061009822'));
+        $response = $api->show('861265061009822', null, 'http://localhost:8081');
 
         self::assertSame('http://localhost:8081/model-images/example.jpg', $response['model']['image'] ?? null);
     }
@@ -509,17 +509,17 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * @return array{0: Devices, 1: DashboardDataAccess, 2: DashboardStore}
+     * @return array{0: DeviceService, 1: ApiDataAccess, 2: DashboardStore}
      */
     private function makeApi(?\Hub\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null): array
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $store = new DashboardStore(new InMemoryRedisClientForDevicesApi(), prefix: 'test:dashboard:devices-api');
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
         $whitelist = new Whitelist($this->whitelistPath);
 
-        $api = new Devices(
+        $api = new DeviceService(
             $store,
             $whitelist,
             $hub ?? $this->makeHubServerMock(),

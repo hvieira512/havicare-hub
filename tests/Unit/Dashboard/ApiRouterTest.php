@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Dashboard\ApiRoute;
-use Hub\Dashboard\ApiRouter;
+use Hub\Api\Routing\ApiRoute;
+use Hub\Api\Routing\ApiRouter;
 use PHPUnit\Framework\TestCase;
 
 final class ApiRouterTest extends TestCase

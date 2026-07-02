@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Dashboard\SupplierCapabilityTemplate;
-use Hub\Dashboard\GenericModelCapabilityCatalog;
+use Hub\Domain\SupplierCapabilityTemplate;
+use Hub\Domain\GenericModelCapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
 final class SupplierCapabilityTemplateTest extends TestCase

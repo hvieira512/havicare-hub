@@ -3,8 +3,8 @@
 namespace Tests\Unit\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
-use Hub\Api\Routes\Models;
-use Hub\Dashboard\DashboardDataAccess;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Services\ModelService;
 use Psr\Http\Message\ServerRequestInterface;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -21,7 +21,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $response = $api->show((int)$model['id'], $this->request());
+        $response = $api->show((int)$model['id']);
 
         self::assertArrayNotHasKey('enabledCapabilities', $response);
         self::assertArrayNotHasKey('configurationCatalog', $response);
@@ -41,7 +41,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($supplier);
         $request = new ServerRequest('GET', 'http://localhost/api/models/template?supplierId=' . (int)$supplier['id'] . '&deviceType=watch');
-        $response = $api->template($request);
+        $response = $api->template((string)$request->getUri()->getQuery());
 
         self::assertSame('Wonlex', $response['supplier'] ?? null);
         self::assertSame('watch', $response['deviceType'] ?? null);
@@ -56,7 +56,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->list($this->request());
+        $response = $api->list((string)$this->request()->getUri()->getQuery(), 'http://localhost');
         $wonlex = null;
         foreach ($response['data'] ?? [] as $entry) {
             if (($entry['supplier'] ?? '') === 'Wonlex' && ($entry['internalModel'] ?? '') === 'L08 Pro') {
@@ -78,7 +78,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->filters($this->request());
+        $response = $api->filters();
         $groups = $response['data'] ?? [];
 
         self::assertCount(3, $groups);
@@ -123,7 +123,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
 
-        $updated = $api->show((int)$model['id'], $this->request());
+        $updated = $api->show((int)$model['id']);
         self::assertTrue($updated['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertTrue($updated['capabilities']['contacts']['phonebook'] ?? false);
         self::assertTrue($updated['capabilities']['settings_system']['working_mode'] ?? false);
@@ -223,12 +223,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * @return array{0: Models, 1: DashboardDataAccess}
+     * @return array{0: ModelService, 1: ApiDataAccess}
      */
     private function makeApi(): array
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
 
-        return [new Models($db), $db];
+        return [new ModelService($db), $db];
     }
 }

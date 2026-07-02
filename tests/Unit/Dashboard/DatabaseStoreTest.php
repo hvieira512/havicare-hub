@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Dashboard\DashboardDataAccess;
+use Hub\Api\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DatabaseStoreTest extends MysqlDashboardTestCase
@@ -10,7 +10,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
     public function testSeedsDefaultModelsWhenSuppliersAlreadyExist(): void
     {
         $database = $this->createDashboardDatabase();
-        $db = DashboardDataAccess::fromDatabase($database);
+        $db = ApiDataAccess::fromDatabase($database);
         $catalog = $db->genericCapabilities->all('watch');
         self::assertNotEmpty($catalog);
         self::assertSame('watch', $catalog[0]['device_type'] ?? null);
@@ -39,7 +39,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
 
-        $db = DashboardDataAccess::fromDatabase($database);
+        $db = ApiDataAccess::fromDatabase($database);
         self::assertSame(8, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
@@ -68,7 +68,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
     public function testModelCapabilitiesCanBeReplacedPerModel(): void
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $model = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($model);
 
@@ -82,7 +82,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
     public function testModelImagePathIsStoredAndPreservedWhenNoReplacementIsProvided(): void
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $supplier = $db->suppliers->findByName('Wonlex');
         self::assertIsArray($supplier);
 
@@ -99,7 +99,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
     public function testExistingModelCanBeUpdatedById(): void
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $supplier = $db->suppliers->findByName('Vivistar');
         self::assertIsArray($supplier);
         $model = $db->models->find('Wonlex', 'HW20PRO');
@@ -120,7 +120,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
     public function testModelWritesBackfillSupplierDeviceTypes(): void
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $supplier = $db->suppliers->findByName('Wonlex');
         self::assertIsArray($supplier);
 
@@ -160,7 +160,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string)($rowAfterUpdate['updated_at'] ?? ''));
         self::assertNotSame($row['updated_at'] ?? null, $rowAfterUpdate['updated_at'] ?? null);
 
-        $db = DashboardDataAccess::fromDatabase($database);
+        $db = ApiDataAccess::fromDatabase($database);
         $supplier = $db->suppliers->findByName($supplierName);
         self::assertIsArray($supplier);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($supplier['created_at'] ?? ''));
@@ -169,7 +169,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
     public function testDeviceConfigurationStoresDesiredAndReportedStateSeparately(): void
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
             'fallDetection',
@@ -201,7 +201,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
     public function testWhitelistStoresSimNumber(): void
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', '0', '351912345678901');
 
         $row = $db->whitelist->get('861265061009822');
@@ -213,7 +213,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
 
     public function testWhitelistDefaultsLegacyDeviceTypeAndLicenseId(): void
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
 
         $row = $db->whitelist->get('861265061009822');

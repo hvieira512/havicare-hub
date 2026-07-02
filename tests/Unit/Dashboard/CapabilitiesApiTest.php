@@ -2,8 +2,8 @@
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Api\Routes\Capabilities;
-use Hub\Dashboard\DashboardDataAccess;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Services\CapabilityService;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class CapabilitiesApiTest extends MysqlDashboardTestCase
@@ -36,10 +36,10 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertSame($first['deviceType'], $response['deviceType'] ?? null);
     }
 
-    private function makeApi(): Capabilities
+    private function makeApi(): CapabilityService
     {
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
 
-        return new Capabilities($db);
+        return new CapabilityService($db);
     }
 }

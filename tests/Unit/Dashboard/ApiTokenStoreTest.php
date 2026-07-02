@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Dashboard;
 
-use Hub\Dashboard\ApiAuthContext;
-use Hub\Dashboard\ApiTokenStore;
+use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Auth\ApiTokenStore;
 use PHPUnit\Framework\TestCase;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;

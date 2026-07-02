@@ -5,9 +5,9 @@ namespace Tests\Unit\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use GuzzleHttp\Psr7\Utils;
 use GuzzleHttp\Psr7\UploadedFile;
-use Hub\Api\Routes\Models;
-use Hub\Dashboard\ApiTokenStore;
-use Hub\Dashboard\DashboardDataAccess;
+use Hub\Api\Auth\ApiTokenStore;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Services\ModelService;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
 use Hub\Log\Logger;
@@ -84,8 +84,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $bytes = (string)ob_get_clean();
 
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
-        $api = new Models(DashboardDataAccess::fromDatabase($this->createDashboardDatabase()));
-        $method = new \ReflectionMethod(Models::class, 'storeModelImage');
+        $api = new ModelService(ApiDataAccess::fromDatabase($this->createDashboardDatabase()));
+        $method = new \ReflectionMethod(ModelService::class, 'storeModelImage');
 
         $route = $method->invoke($api, $upload);
         self::assertIsString($route);
@@ -794,8 +794,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $bytes = $this->insertPngChunk((string)ob_get_clean(), 'iCCP', "profile\0\0invalid-profile");
 
         $upload = new UploadedFile(Utils::streamFor($bytes), strlen($bytes), UPLOAD_ERR_OK, 'watch.png', 'image/png');
-        $api = new Models(DashboardDataAccess::fromDatabase($this->createDashboardDatabase()));
-        $method = new \ReflectionMethod(Models::class, 'storeModelImage');
+        $api = new ModelService(ApiDataAccess::fromDatabase($this->createDashboardDatabase()));
+        $method = new \ReflectionMethod(ModelService::class, 'storeModelImage');
 
         $route = $method->invoke($api, $upload);
         self::assertIsString($route);
@@ -836,7 +836,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
-     * @return array{0: DashboardHttpServer, 1: DashboardDataAccess, 2: DashboardStore}
+     * @return array{0: DashboardHttpServer, 1: ApiDataAccess, 2: DashboardStore}
      */
     private function makeServerWithDatabase(
         ?\Hub\DeviceHubServer $hub = null,
@@ -847,7 +847,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     ): array
     {
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
-        $db = DashboardDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
         $hitCareId = $db->companies->create('hitCare');
         $otherCareId = $db->companies->create('otherCare');
