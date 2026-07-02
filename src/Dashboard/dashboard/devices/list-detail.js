@@ -694,7 +694,7 @@ function renderSelection() {
 
 function telemetryRequestCards(telemetryCapabilities = {}) {
     return Object.entries(telemetryCapabilities || {})
-        .filter(([, entry]) => entry?.supported)
+        .filter(([, entry]) => entry?.supported && entry?.requestable !== false)
         .map(([feature, entry]) => ({
             id: feature,
             feature,

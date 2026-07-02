@@ -299,6 +299,10 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const title = card.value || featureLabel(type);
     const requestable = command.requestable !== false;
 
+    if (!requestable) {
+        return "";
+    }
+
     const telemetryTypes = requestTelemetryTypes(type);
     const lastTelemetry = telemetry
         .map(rowPayload)
@@ -324,11 +328,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         </div>
         <div class="d-flex justify-content-between align-items-center">
         <div class="fw-semibold ${lastTelemetry ? tone.text : "text-secondary"}">${esc(lastValue)}</div>
-        ${
-            requestable
-                ? `<button class="btn btn-primary btn-sm" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? "disabled" : ""}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>`
-                : '<span class="badge text-bg-secondary">Leitura apenas</span>'
-        }
+        <button class="btn btn-primary btn-sm" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? "disabled" : ""}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
         </div>
         </div>
         </div>
