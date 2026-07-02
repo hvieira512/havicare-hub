@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Dashboard;
+namespace Hub\Domain;
 
 final class DeviceMetadata
 {

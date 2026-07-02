@@ -2,8 +2,8 @@
 
 namespace Hub\Registry;
 
-use Hub\Dashboard\DeviceMetadata;
-use Hub\Dashboard\Repository\WhitelistRepository;
+use Hub\Domain\DeviceMetadata;
+use Hub\Api\Repository\WhitelistRepository;
 
 class Whitelist
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
-use Hub\Dashboard\DashboardDatabase;
+use Hub\Infrastructure\Persistence\DashboardDatabase;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;

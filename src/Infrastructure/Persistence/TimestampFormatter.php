@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Dashboard;
+namespace Hub\Infrastructure\Persistence;
 
 use DateTimeImmutable;
 use DateTimeZone;

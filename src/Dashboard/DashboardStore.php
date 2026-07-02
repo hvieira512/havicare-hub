@@ -2,25 +2,30 @@
 
 namespace Hub\Dashboard;
 
-use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Api\Repository\ApiDataAccess;
 use Predis\ClientInterface;
 
 final class DashboardStore
 {
-    private ?DashboardDataAccess $db = null;
+    private DeviceRuntimeStore $runtime;
+    private DeviceEventStore $events;
+    private DeviceCommandStore $commands;
+    private DeviceConfigurationProjection $projection;
 
     public function __construct(
-        private ClientInterface $redis,
+        ClientInterface $redis,
         private int $limit = 100,
         private string $prefix = 'hub:dashboard',
     ) {
-        $this->prefix = trim($this->prefix, ':');
-        $this->limit = max(1, $this->limit);
+        $this->runtime = new DeviceRuntimeStore($redis, $this->limit, $this->prefix);
+        $this->projection = new DeviceConfigurationProjection();
+        $this->events = new DeviceEventStore($redis, $this->limit, $this->prefix, $this->projection);
+        $this->commands = new DeviceCommandStore($redis, $this->runtime, $this->limit, $this->prefix, $this->projection);
     }
 
-    public function setDataAccess(?DashboardDataAccess $db): void
+    public function setDataAccess(?ApiDataAccess $db): void
     {
-        $this->db = $db;
+        $this->projection->setDataAccess($db);
     }
 
     public function registerDevice(
@@ -32,192 +37,58 @@ final class DashboardStore
         string $simNumber = '',
         string $deviceId = '',
         string $company = 'null'
-    ): void
-    {
-        $payload = [
-            'imei' => $imei,
-            'supplier' => $supplier,
-            'model' => $model,
-            'deviceType' => DeviceMetadata::normalizeDeviceType($deviceType),
-            'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
-            'simNumber' => $simNumber,
-            'deviceId' => $deviceId,
-            'company' => trim($company),
-        ];
-        $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {
-            $pipe->sadd($this->key('devices'), $imei);
-            $pipe->hmset($this->deviceKey($imei), $payload);
-        });
+    ): void {
+        $this->runtime->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
     }
 
     public function deleteDevice(string $imei): void
     {
-        foreach ($this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1) as $id) {
-            $this->redis->hdel($this->commandIndexKey(), (string)$id);
-        }
-
-        $this->redis->srem($this->key('devices'), $imei);
-        $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
-        $this->redis->del([
-            $this->deviceKey($imei),
-            $this->deviceListKey($imei, 'raw'),
-            $this->deviceListKey($imei, 'telemetry'),
-            $this->deviceListKey($imei, 'events'),
-            $this->deviceListKey($imei, 'commands'),
-            $this->commandHashKey($imei),
-        ]);
+        $this->runtime->deleteDevice($imei);
     }
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void
     {
-        $payload = [
-            'imei' => $imei,
-            'company' => trim($company),
-            'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
-        ];
-        $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {
-            $pipe->sadd($this->key('devices'), $imei);
-            $pipe->hmset($this->deviceKey($imei), $payload);
-        });
+        $this->runtime->updateDeviceAssociation($imei, $company, $licenseId);
     }
 
     public function deviceSeen(string $imei, array $fields): void
     {
-        $now = gmdate('Y-m-d\\TH:i:s\\Z');
-        $payload = array_merge($fields, [
-            'imei' => $imei,
-            'lastSeenAt' => $now,
-        ]);
-        $score = time();
-        $this->redis->pipeline(function ($pipe) use ($imei, $payload, $score): void {
-            $pipe->sadd($this->key('devices'), $imei);
-            $pipe->hmset($this->deviceKey($imei), $payload);
-            $pipe->zadd($this->onlineDeviceSetKey(), [$imei => $score]);
-        });
+        $this->runtime->deviceSeen($imei, $fields);
     }
 
     public function deviceOffline(string $imei): void
     {
-        $this->redis->hmset($this->deviceKey($imei), [
-            'imei' => $imei,
-            'online' => '0',
-            'lastStateAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-        ]);
-        $this->redis->zrem($this->onlineDeviceSetKey(), $imei);
+        $this->runtime->deviceOffline($imei);
     }
 
     public function append(string $imei, string $list, array $payload): void
     {
-        $payload['recordedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-        $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        if ($encoded === false) {
-            return;
-        }
-        $key = $this->deviceListKey($imei, $list);
-        $this->redis->pipeline(function ($pipe) use ($key, $encoded): void {
-            $pipe->lpush($key, [$encoded]);
-            $pipe->ltrim($key, 0, $this->limit - 1);
-        });
-
-        if ($this->db !== null && $list === 'telemetry' && ($payload['type'] ?? '') === 'device_config') {
-            $device = isset($payload['device']) && is_array($payload['device']) ? $payload['device'] : [];
-            $source = isset($payload['source']) && is_array($payload['source']) ? $payload['source'] : [];
-            $nativeType = (string)($source['nativeType'] ?? 'device_config');
-            $protocol = (string)($source['protocol'] ?? '');
-            $key = $nativeType;
-            foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
-                if (in_array($nativeType, $entry['expectedReplyTypes'] ?? [], true)) {
-                    $key = (string)$entry['key'];
-                    break;
-                }
-            }
-            $this->db->deviceConfigurations->saveReported(
-                $imei,
-                $key,
-                $protocol,
-                (string)($device['supplier'] ?? ''),
-                (string)($device['model'] ?? ''),
-                $nativeType,
-                $payload
-            );
-        }
+        $this->events->append($imei, $list, $payload);
     }
 
     public function recordCommand(string $imei, string $id, array $record): void
     {
-        $record['id'] = $id;
-        $record['updatedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-        $encoded = json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        if ($encoded === false) {
-            return;
-        }
-        $this->redis->hset($this->commandHashKey($imei), $id, $encoded);
-        $this->redis->hset($this->commandIndexKey(), $id, $imei);
-        $this->redis->lrem($this->deviceListKey($imei, 'commands'), 0, $id);
-        $this->redis->lpush($this->deviceListKey($imei, 'commands'), [$id]);
-        $this->redis->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+        $this->commands->recordCommand($imei, $id, $record);
     }
 
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
     {
-        foreach ($this->commands($imei) as $command) {
-            if (($command['nativeType'] ?? '') !== $nativeType) {
-                continue;
-            }
-            if (in_array((string)($command['status'] ?? ''), ['acked', 'failed', 'dropped'], true)) {
-                continue;
-            }
-            $this->recordCommand($imei, (string)$command['id'], array_merge($command, $fields));
-            return;
-        }
+        $this->commands->markLatestCommand($imei, $nativeType, $fields);
     }
 
     public function markCommandReply(string $imei, string $replyNativeType): void
     {
-        foreach ($this->commands($imei) as $command) {
-            if (!in_array((string)($command['status'] ?? ''), ['waiting'], true)) {
-                continue;
-            }
-            $expected = $command['expectedReplyTypes'] ?? [];
-            if (!is_array($expected) || !in_array($replyNativeType, $expected, true)) {
-                continue;
-            }
-            $id = (string)$command['id'];
-            $this->recordCommand($imei, $id, array_merge($command, [
-                'status' => 'acked',
-                'ackedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'replyNativeType' => $replyNativeType,
-            ]));
-            if ($this->db !== null && isset($command['configKey'])) {
-                $this->db->deviceConfigurations->markApplyStatus($imei, (string)$command['configKey'], 'acked', $id);
-            }
-            return;
-        }
+        $this->commands->markCommandReply($imei, $replyNativeType);
     }
 
     public function expireWaitingCommands(int $timeoutSeconds): void
     {
-        $cutoff = time() - max(1, $timeoutSeconds);
-        foreach ($this->devices() as $device) {
-            $imei = (string)($device['imei'] ?? '');
-            foreach ($this->commands($imei) as $command) {
-                if (($command['status'] ?? '') !== 'waiting') {
-                    continue;
-                }
-                $sentAt = strtotime((string)($command['sentAt'] ?? '')) ?: 0;
-                if ($sentAt > 0 && $sentAt <= $cutoff) {
-                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, ['status' => 'failed', 'error' => 'response_timeout']));
-                }
-            }
-        }
+        $this->commands->expireWaitingCommands($timeoutSeconds);
     }
 
     public function expireStaleDevices(int $timeoutSeconds): void
     {
-        $cutoff = time() - max(1, $timeoutSeconds);
-        foreach ($this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', (string)$cutoff) as $imei) {
-            $this->deviceOffline((string)$imei);
-        }
+        $this->runtime->expireStaleDevices($timeoutSeconds);
     }
 
     /**
@@ -225,20 +96,12 @@ final class DashboardStore
      */
     public function devices(): array
     {
-        $devices = [];
-        foreach ($this->redis->smembers($this->key('devices')) as $imei) {
-            $data = $this->redis->hgetall($this->deviceKey((string)$imei));
-            if ($data !== []) {
-                $devices[] = $this->normalizeDevice($data);
-            }
-        }
-        usort($devices, static fn (array $a, array $b): int => strcmp((string)($a['imei'] ?? ''), (string)($b['imei'] ?? '')));
-        return $devices;
+        return $this->runtime->devices();
     }
 
     public function device(string $imei): array
     {
-        return $this->normalizeDevice($this->redis->hgetall($this->deviceKey($imei)) ?: ['imei' => $imei]);
+        return $this->runtime->device($imei);
     }
 
     /**
@@ -247,100 +110,21 @@ final class DashboardStore
      */
     public function runtimeStates(array $imeis): array
     {
-        $states = [];
-        foreach (array_values(array_unique(array_filter(array_map('strval', $imeis), static fn (string $imei): bool => $imei !== ''))) as $imei) {
-            $state = $this->redis->hgetall($this->deviceKey($imei));
-            if ($state === []) {
-                continue;
-            }
-            $states[$imei] = $this->normalizeDevice($state);
-        }
-
-        return $states;
+        return $this->runtime->runtimeStates($imeis);
     }
 
     public function recent(string $imei, string $list): array
     {
-        return array_values(array_filter(array_map(
-            static fn (string $raw): ?array => json_decode($raw, true) ?: null,
-            $this->redis->lrange($this->deviceListKey($imei, $list), 0, $this->limit - 1)
-        ), 'is_array'));
+        return $this->events->recent($imei, $list);
     }
 
     public function commands(string $imei): array
     {
-        $commands = [];
-        foreach ($this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1) as $id) {
-            $raw = $this->redis->hget($this->commandHashKey($imei), (string)$id);
-            if (is_string($raw)) {
-                $decoded = json_decode($raw, true);
-                if (is_array($decoded)) {
-                    $commands[] = $decoded;
-                }
-            }
-        }
-        return $commands;
+        return $this->commands->commands($imei);
     }
 
     public function findCommand(string $id): ?array
     {
-        $imei = (string)($this->redis->hget($this->commandIndexKey(), $id) ?? '');
-        if ($imei === '') {
-            return null;
-        }
-
-        $raw = $this->redis->hget($this->commandHashKey($imei), $id);
-        if (!is_string($raw)) {
-            $this->redis->hdel($this->commandIndexKey(), $id);
-            return null;
-        }
-
-        $command = json_decode($raw, true);
-        if (is_array($command)) {
-            return [
-                'device' => $this->device($imei),
-                'command' => $command,
-            ];
-        }
-
-        return null;
-    }
-
-    private function normalizeDevice(array $data): array
-    {
-        $data['online'] = ((string)($data['online'] ?? '0')) === '1';
-        $data['deviceType'] = DeviceMetadata::normalizeDeviceType((string)($data['deviceType'] ?? 'watch'));
-        $data['licenseId'] = DeviceMetadata::normalizeLicenseId((string)($data['licenseId'] ?? '0'));
-        return $data;
-    }
-
-    private function key(string $suffix): string
-    {
-        return "{$this->prefix}:{$suffix}";
-    }
-
-    private function deviceKey(string $imei): string
-    {
-        return $this->key("device:{$imei}");
-    }
-
-    private function deviceListKey(string $imei, string $list): string
-    {
-        return $this->key("device:{$imei}:{$list}");
-    }
-
-    private function commandHashKey(string $imei): string
-    {
-        return $this->key("device:{$imei}:command-records");
-    }
-
-    private function commandIndexKey(): string
-    {
-        return $this->key('command-index');
-    }
-
-    private function onlineDeviceSetKey(): string
-    {
-        return $this->key('online-devices-by-last-seen');
+        return $this->commands->findCommand($id);
     }
 }
