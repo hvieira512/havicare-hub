@@ -175,6 +175,7 @@ final class GenericModelCapabilityCatalog
 
         return match ($key) {
             'alarmClock', 'reminders' => 'alarm_clock',
+            'takePills' => 'medication_reminders',
             'dnMedicationPlan' => 'medication_reminders',
             'wonlexLowPower', 'lowBatterySmsAlerts' => 'low_battery_alert',
             'wonlexFallWarnSwitch', 'fallDetection', 'fallDownAlert' => 'fall_detection',
@@ -262,8 +263,8 @@ final class GenericModelCapabilityCatalog
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Call whitelist', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'monitor_number', 'label' => 'Monitor number', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'SOS contacts', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'medication_reminders', 'label' => 'Medication reminders', 'sortOrder' => 60, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'alarm_clock', 'label' => 'Alarm clock', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'medication_reminders', 'label' => 'Medication reminders', 'sortOrder' => 20, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'low_battery_alert', 'label' => 'Low battery alert', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'fall_detection', 'label' => 'Fall detection', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'fall_sensitivity', 'label' => 'Fall sensitivity', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

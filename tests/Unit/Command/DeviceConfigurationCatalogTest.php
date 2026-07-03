@@ -4,6 +4,7 @@ namespace Tests\Unit\Command;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Domain\GenericModelCapabilityCatalog;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
@@ -216,6 +217,32 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertIsArray($decoded);
         self::assertSame('WHITELIST1', $decoded['type'] ?? null);
         self::assertSame(['111', '222', '333', '444', '555'], $decoded['data']['fields'] ?? null);
+    }
+
+    public function testFourPTouchTakePillsBuildsVoiceReminderFields(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => '11:25-1-2',
+            'number' => 1,
+            'reminderText' => 'meds',
+            'voiceData' => '',
+        ]);
+
+        self::assertSame('TAKEPILLS', $payload['command']);
+        self::assertSame(['fields' => ['11:25-1-2', '1', '006D006500640073', '']], $payload['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,', $wire);
+        self::assertStringEndsWith(',]', $wire);
+    }
+
+    public function testFourPTouchTakePillsMapsToMedicationReminderCapability(): void
+    {
+        $config = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'takePills');
+
+        self::assertIsArray($config);
+        self::assertSame('alerts', $config['category'] ?? null);
+        self::assertSame('medication_reminders', GenericModelCapabilityCatalog::mapConfigurationKey('takePills'));
     }
 
     public function testFourPTouchLanguageTimezoneBuildsNativeFields(): void

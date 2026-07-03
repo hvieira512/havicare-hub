@@ -115,6 +115,7 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
+const takePillsRecordingState = new WeakMap();
 let deviceConfigRefreshPromise = null;
 const FILTERS_STORAGE_KEY = "hub-dashboard-device-filters";
 const SELECTED_DEVICE_STORAGE_KEY = "hub-dashboard-selected-device";
@@ -1044,12 +1045,35 @@ function handleDeviceConfigClick(event) {
 
     if (button.dataset.action === "removeReminderRow") {
         removeConfigRow(button.closest('[data-repeat-row="reminders"]'));
+        return;
+    }
+
+    if (button.dataset.action === "takePillsRecord") {
+        void startTakePillsRecording(section);
+        return;
+    }
+
+    if (button.dataset.action === "takePillsStop") {
+        void stopTakePillsRecording(section);
+        return;
+    }
+
+    if (button.dataset.action === "takePillsClear") {
+        clearTakePillsRecording(section);
     }
 }
 
 function handleDeviceConfigChange(event) {
     if (event.target.matches("[data-phone-country]")) {
         syncPhoneControl(event.target);
+        return;
+    }
+
+    if (event.target.matches('[data-action="takePillsFile"]')) {
+        const section = event.target.closest("[data-config-section]");
+        if (!section) return;
+        const file = event.target.files?.[0] || null;
+        void loadTakePillsAudio(section, file);
         return;
     }
 
@@ -1086,6 +1110,156 @@ function handleDeviceConfigInput(event) {
     if (event.target.matches("[data-phone-local]")) {
         syncPhoneControl(event.target);
     }
+}
+
+async function startTakePillsRecording(section) {
+    const state = takePillsRecordingState.get(section);
+    if (state?.recorder?.state === "recording") {
+        return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+        alert("Este navegador não suporta gravação de áudio.");
+        return;
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+        const mimeType = pickTakePillsMimeType();
+        const recorder = new MediaRecorder(stream, mimeType ? {mimeType} : undefined);
+        const nextState = {
+            stream,
+            recorder,
+            chunks: [],
+            mimeType: recorder.mimeType || mimeType || "audio/webm",
+            cancelled: false,
+        };
+        takePillsRecordingState.set(section, nextState);
+        updateTakePillsRecorderUi(section, "A gravar...", true);
+        recorder.addEventListener("dataavailable", event => {
+            if (event.data && event.data.size > 0) {
+                nextState.chunks.push(event.data);
+            }
+        });
+        recorder.addEventListener("stop", async () => {
+            try {
+                if (nextState.cancelled) {
+                    return;
+                }
+                const blob = new Blob(nextState.chunks, {type: nextState.mimeType});
+                await setTakePillsAudioFromBlob(section, blob, nextState.mimeType);
+            } finally {
+                stopTakePillsStream(nextState.stream);
+                takePillsRecordingState.delete(section);
+                updateTakePillsRecorderUi(
+                    section,
+                    nextState.cancelled ? "Sem áudio" : "Gravação concluída",
+                    false,
+                );
+            }
+        });
+        recorder.start();
+    } catch (error) {
+        stopTakePillsStream(state?.stream || null);
+        takePillsRecordingState.delete(section);
+        alert(error instanceof Error ? error.message : "Não foi possível iniciar a gravação.");
+        updateTakePillsRecorderUi(section, "Sem áudio", false);
+    }
+}
+
+async function stopTakePillsRecording(section) {
+    const state = takePillsRecordingState.get(section);
+    if (state?.recorder?.state === "recording") {
+        state.recorder.stop();
+    }
+}
+
+function clearTakePillsRecording(section) {
+    const state = takePillsRecordingState.get(section);
+    if (state?.recorder?.state === "recording") {
+        state.cancelled = true;
+        state.recorder.stop();
+    }
+    stopTakePillsStream(state?.stream || null);
+    takePillsRecordingState.delete(section);
+    const input = section.querySelector('[data-config-field="voiceData"]');
+    const fileInput = section.querySelector('[data-action="takePillsFile"]');
+    const preview = section.querySelector("[data-takepills-preview]");
+    if (input) input.value = "";
+    if (fileInput) fileInput.value = "";
+    if (preview) preview.removeAttribute("src");
+    preview?.load?.();
+    updateTakePillsRecorderUi(section, "Sem áudio", false);
+}
+
+async function loadTakePillsAudio(section, file) {
+    if (!file) {
+        return;
+    }
+
+    try {
+        await setTakePillsAudioFromBlob(section, file, file.type || "audio/*");
+        const fileInput = section.querySelector('[data-action="takePillsFile"]');
+        if (fileInput) {
+            fileInput.value = "";
+        }
+        updateTakePillsRecorderUi(section, "Áudio carregado", false);
+    } catch (error) {
+        alert(error instanceof Error ? error.message : "Não foi possível carregar o áudio.");
+    }
+}
+
+async function setTakePillsAudioFromBlob(section, blob, mimeType) {
+    const dataUrl = await blobToDataUrl(blob);
+    const input = section.querySelector('[data-config-field="voiceData"]');
+    const preview = section.querySelector("[data-takepills-preview]");
+    if (input) {
+        input.value = dataUrl;
+    }
+    if (preview) {
+        preview.src = dataUrl;
+        preview.type = mimeType || blob.type || "audio/webm";
+    }
+}
+
+function updateTakePillsRecorderUi(section, status, recording) {
+    const recordBtn = section.querySelector('[data-action="takePillsRecord"]');
+    const stopBtn = section.querySelector('[data-action="takePillsStop"]');
+    const statusEl = section.querySelector("[data-takepills-status]");
+    recordBtn?.classList.toggle("d-none", !!recording);
+    stopBtn?.classList.toggle("d-none", !recording);
+    if (statusEl) {
+        statusEl.textContent = status;
+    }
+}
+
+function stopTakePillsStream(stream) {
+    if (!stream) return;
+    for (const track of stream.getTracks()) {
+        track.stop();
+    }
+}
+
+function pickTakePillsMimeType() {
+    if (typeof MediaRecorder === "undefined") {
+        return "";
+    }
+    const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+    ];
+    return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) || "";
+}
+
+function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error || new Error("Failed to read audio"));
+        reader.readAsDataURL(blob);
+    });
 }
 
 function handleConfigFeedbackClosed(event) {

@@ -311,6 +311,9 @@ export function renderConfigInputs(entry, desired) {
     if (input === "reminders") {
         return remindersInput(desired);
     }
+    if (input === "takePills") {
+        return takePillsInput(desired);
+    }
 
     return jsonInput(desired);
 }
@@ -448,6 +451,9 @@ export function readConfigPayload(section) {
     if (input === "reminders") {
         return readReminders(section);
     }
+    if (input === "takePills") {
+        return readTakePills(section);
+    }
 
     return readJson(section);
 }
@@ -495,6 +501,13 @@ export function defaultConfigPayload(entry) {
     if (input === "list") return { numbers: ["", "", ""] };
     if (input === "contacts") return { contacts: [{ name: "", phone: "" }] };
     if (input === "reminders") return { masterEnabled: true, items: [] };
+    if (input === "takePills")
+        return {
+            reminderSettings: "08:00-1-1",
+            number: 1,
+            reminderText: "",
+            voiceData: "",
+        };
     return {};
 }
 
@@ -622,6 +635,15 @@ function readReminders(section) {
             section.querySelector('[data-config-field="masterEnabled"]')
                 ?.checked || false,
         items,
+    };
+}
+
+function readTakePills(section) {
+    return {
+        reminderSettings: readText(section, "reminderSettings"),
+        number: readNumber(section, "number"),
+        reminderText: readText(section, "reminderText"),
+        voiceData: readText(section, "voiceData"),
     };
 }
 
@@ -1192,6 +1214,54 @@ function remindersInput(desired) {
             </div>
             <div class="vstack gap-2" data-reminders-list>
                 ${items.map((item) => reminderRow(item)).join("")}
+            </div>
+        </div>`;
+}
+
+function takePillsInput(desired) {
+    const reminderSettings = String(desired.reminderSettings || "");
+    const reminderNumber = parseInt(String(desired.number ?? 1), 10) || 1;
+    const reminderText = String(desired.reminderText || "");
+    const voiceData = String(desired.voiceData || "");
+    const hasVoiceData = voiceData.trim() !== "";
+
+    return `
+        <div class="vstack gap-3">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label form-label-sm">Configuração do lembrete</label>
+                    <input class="form-control" type="text" data-config-field="reminderSettings" value="${esc(reminderSettings)}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm">Número</label>
+                    <input class="form-control" type="number" min="1" max="3" step="1" data-config-field="number" value="${esc(String(reminderNumber))}">
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label form-label-sm">Texto do lembrete</label>
+                    <input class="form-control" type="text" data-config-field="reminderText" value="${esc(reminderText)}">
+                </div>
+            </div>
+            <div class="vstack gap-2" data-takepills-audio>
+                <input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord">
+                        <i class="fa-solid fa-microphone me-2"></i>Gravar
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop">
+                        <i class="fa-solid fa-stop me-2"></i>Parar
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear">
+                        <i class="fa-solid fa-trash-can me-2"></i>Limpar
+                    </button>
+                    <label class="btn btn-outline-secondary btn-sm mb-0">
+                        <i class="fa-solid fa-file-audio me-2"></i>Carregar
+                        <input type="file" class="d-none" accept="audio/*" data-action="takePillsFile">
+                    </label>
+                    <span class="small text-secondary" data-takepills-status>
+                        ${hasVoiceData ? "Áudio carregado" : "Sem áudio"}
+                    </span>
+                </div>
+                <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(voiceData)}"` : ""}></audio>
             </div>
         </div>`;
 }

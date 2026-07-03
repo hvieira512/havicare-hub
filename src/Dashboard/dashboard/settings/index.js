@@ -107,7 +107,7 @@ const CAPABILITY_LABEL_TRANSLATIONS = {
     call_whitelist: "Chamadas permitidas",
     monitor_number: "Número de monitorização",
     alarm_clock: "Despertador",
-    medication_reminders: "Medicação",
+    medication_reminders: "Lembretes de medicação",
     low_battery_alert: "Bateria fraca",
     fall_detection: "Quedas",
     fall_sensitivity: "Sensibilidade de queda",

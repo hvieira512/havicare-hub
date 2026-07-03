@@ -181,6 +181,7 @@ final class DeviceConfigurationCatalog
             'sosSmsAlerts', 'lowBatterySmsAlerts', 'removeWatchAlarm', 'removeWatchSmsAlerts' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
             ],
+            'takePills' => self::fourPTouchTakePillsPayload($payload),
             'healthAutoMeasurement' => [
                 1,
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
@@ -402,6 +403,7 @@ final class DeviceConfigurationCatalog
             self::entry('removeWatchSmsAlerts', 'REMOVESMS', 'SMS ao retirar relógio', 'toggle', ['enabled'], ['REMOVESMS'], 'alerts', 40),
             self::entry('fallDownAlert', 'FALLDOWN', 'Alerta de queda', 'dualToggle', ['enabled', 'callCenterOnFall'], ['FALLDOWN'], 'alerts', 50),
             self::entry('fallDownSensitivity', 'LSSET', 'Sensibilidade de queda', 'fallSensitivityLevels', ['sensitivityLevel', 'totalLevels'], ['LSSET'], 'alerts', 60),
+            self::entry('takePills', 'TAKEPILLS', 'Lembrete de medicação com voz', 'takePills', ['reminderSettings', 'number', 'reminderText', 'voiceData'], ['TAKEPILLS'], 'alerts', 70),
             self::entry('healthAutoMeasurement', 'HEALTHAUTOSET', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['HEALTHAUTOSET'], 'health', 10),
             self::entry('walkTime', 'WALKTIME', 'Janela de pedómetro', 'timeRanges', ['ranges'], ['WALKTIME'], 'health', 20, 3),
             self::entry('sleepTime', 'SLEEPTIME', 'Deteção de sono e rotação', 'timeRange', ['range'], ['SLEEPTIME'], 'health', 30),
@@ -540,6 +542,18 @@ final class DeviceConfigurationCatalog
                     'LPWarn' => self::nonNegativeInt($payload['LPWarn'] ?? null, 'LPWarn'),
                 ],
             ],
+        ];
+    }
+
+    private static function fourPTouchTakePillsPayload(array $payload): array
+    {
+        $voiceData = array_key_exists('voiceData', $payload) ? trim((string)$payload['voiceData']) : '';
+
+        return [
+            self::requiredString($payload['reminderSettings'] ?? null, 'reminderSettings'),
+            self::rangeInt($payload['number'] ?? null, 1, 3, 'number'),
+            self::utf16Hex(self::requiredString($payload['reminderText'] ?? null, 'reminderText')),
+            $voiceData,
         ];
     }
 

@@ -23,6 +23,20 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertFalse($match[0]['isRequestable'] ?? true);
     }
 
+    public function testWatchCatalogPlacesMedicationRemindersInAlarms(): void
+    {
+        $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('watch');
+        $match = array_values(array_filter(
+            $definitions,
+            static fn(array $definition): bool => ($definition['key'] ?? '') === 'medication_reminders'
+        ));
+
+        self::assertCount(1, $match);
+        self::assertSame('alarms', $match[0]['section'] ?? null);
+        self::assertTrue($match[0]['isConfigurable'] ?? false);
+        self::assertFalse($match[0]['isTelemetry'] ?? true);
+    }
+
     public function testVivistarWatchTemplateMatchesProtocolCapabilities(): void
     {
         $expected = [
@@ -80,6 +94,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
             'low_battery_alert',
             'monitor_number',
             'pedometer_schedule',
+            'medication_reminders',
             'remove_watch_alarm',
             'remove_watch_sms_alert',
             'sleep_monitoring',

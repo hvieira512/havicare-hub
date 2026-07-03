@@ -201,6 +201,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
                 'location',
                 'location_reporting_interval',
                 'low_battery_alert',
+                'medication_reminders',
                 'monitor_number',
                 'pedometer_schedule',
                 'remove_watch_alarm',

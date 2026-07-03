@@ -153,6 +153,11 @@ class FourPTouchAdapter implements DeviceAdapterInterface
             return;
         }
 
+        if ($type === 'TAKEPILLS') {
+            $data['configAck'] = $fields[0] ?? null;
+            return;
+        }
+
         if ($type === 'WIFIINFOUP') {
             $data['wifiNameHex'] = $fields[0] ?? null;
             $data['wifiPasswordHex'] = $fields[1] ?? null;

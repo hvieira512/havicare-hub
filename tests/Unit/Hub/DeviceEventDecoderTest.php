@@ -290,6 +290,26 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(['UPLOAD' => '600', 'LANG' => 'pt'], $events[0]['value']['settings']);
     }
 
+    public function testDecodesFourPTouchTakePillsReplyAsDeviceConfig(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('four-p-touch'),
+            [
+                'type' => 'TAKEPILLS',
+                'data' => [
+                    'configAck' => '1',
+                    'fields' => ['1'],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('device_config', $events[0]['feature']);
+        self::assertSame('TAKEPILLS', $events[0]['nativeType']);
+        self::assertSame('ok', $events[0]['value']['status']);
+        self::assertSame('1', $events[0]['value']['ack']);
+    }
+
     public function testDecodesWonlexWeatherIntoStructuredPayload(): void
     {
         $events = (new DeviceEventDecoder())->decode(

@@ -1411,6 +1411,7 @@ class DeviceService
             'low_battery_alert' => ['lowBatterySmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
             'remove_watch_alarm' => ['removeWatchAlarm' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
             'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
+            'medication_reminders' => ['takePills' => $this->requireObjectValue($value, 'medication_reminders')],
             'fall_detection' => ['fallDownAlert' => $this->requireObjectValue($value, 'fallDownAlert')],
             'fall_sensitivity' => ['fallDownSensitivity' => $this->requireObjectValue($value, 'fallDownSensitivity')],
             'auto_vitals_interval' => ['healthAutoMeasurement' => $this->requireObjectValue($value, 'healthAutoMeasurement')],
@@ -1633,7 +1634,8 @@ class DeviceService
         return match ($genericKey) {
             'sos_contacts' => $this->mergeStringLists($existing, $incoming),
             'call_whitelist' => $this->mergeAssociativeValues($existing, $incoming, ['numbers']),
-            'phonebook', 'alarm_clock', 'medication_reminders' => $this->mergeListValues($existing, $incoming),
+            'phonebook', 'alarm_clock' => $this->mergeListValues($existing, $incoming),
+            'medication_reminders' => $this->mergeAssociativeValues($existing, $incoming),
             default => $this->mergeAssociativeValues($existing, $incoming),
         };
     }
