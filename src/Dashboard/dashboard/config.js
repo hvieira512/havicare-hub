@@ -162,12 +162,18 @@ export function renderConfigSection(
     const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null);
     const meta = capability?._meta || {};
     const help = configHelp(entry);
+    const isStored = row !== null && Object.keys(row).length > 0;
 
     return `
         <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-key="${esc(entry.key)}" data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}">
             <div>
                 <div>
-                    <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
+                    <div class="fw-semibold">
+                        ${esc(entry.label || entry.key)}
+                        ${isStored
+                            ? '<span class="badge text-bg-success ms-2">Configurado</span>'
+                            : '<span class="badge text-bg-warning ms-2">Padrão</span>'}
+                    </div>
                     <div class="small text-secondary">${esc(entry.command)} · ${esc(titleize(entry.input || "json"))}${help ? ` · ${esc(help)}` : ""}</div>
                 </div>
             </div>
