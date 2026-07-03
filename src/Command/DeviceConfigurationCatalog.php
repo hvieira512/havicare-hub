@@ -198,6 +198,12 @@ final class DeviceConfigurationCatalog
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
                 self::rangeInt($payload['intervalHours'] ?? null, 1, 12, 'intervalHours'),
             ],
+            'makeCall' => [self::requiredString($payload['phone'] ?? null, 'phone')],
+            'centerNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
+            'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
+            'resetCommand' => [],
+            'powerOffCommand' => [],
+            'findDeviceCommand' => [],
             default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
 
@@ -414,6 +420,12 @@ final class DeviceConfigurationCatalog
             self::entry('walkTime', 'WALKTIME', 'Janela de pedómetro', 'timeRanges', ['ranges'], ['WALKTIME'], 'health', 20, 3),
             self::entry('sleepTime', 'SLEEPTIME', 'Deteção de sono e rotação', 'timeRange', ['range'], ['SLEEPTIME'], 'health', 30),
             self::entry('bodyTemperatureInterval', 'bodytemp', 'Temperatura periódica', 'intervalHoursToggle', ['enabled', 'intervalHours'], ['bodytemp'], 'health', 40),
+            self::entry('makeCall', 'CALL', 'Fazer chamada', 'makeCall', ['phone'], ['CALL'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
+            self::entry('centerNumber', 'CENTER', 'Número central', 'phone', ['phone'], ['CENTER'], 'contacts', 5),
+            self::entry('pushMessage', 'MESSAGE', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], ['MESSAGE'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
+            self::entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'resetAction', [], ['RESET'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
+            self::entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'resetAction', [], ['POWEROFF'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
+            self::entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'resetAction', [], ['FIND'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
         ];
     }
 

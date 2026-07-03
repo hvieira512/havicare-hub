@@ -196,6 +196,11 @@ final class GenericModelCapabilityCatalog
             'SOSNumber', 'sosContacts', 'sosNumber1', 'sosNumber2', 'sosNumber3' => 'sos_contacts',
             'phonebook' => 'phonebook',
             'pushMessage' => 'push_message',
+            'makeCall' => 'make_call',
+            'centerNumber' => 'center_number',
+            'resetCommand' => 'reset_device',
+            'powerOffCommand' => 'power_off',
+            'findDeviceCommand' => 'find_device',
             'whitelistSwitch', 'whitelistGroup1', 'whitelistGroup2' => 'call_whitelist',
             'monitorNumber' => 'monitor_number',
             'autoHealthMeasurement', 'healthAutoMeasurement' => 'auto_vitals_interval',
@@ -224,6 +229,7 @@ final class GenericModelCapabilityCatalog
             'deviceConfig' => 'device_settings_sync',
             'devicePassword' => 'device_password',
             'languageTimezone' => 'language_timezone',
+            'soundProfile' => 'sound_profile',
             default => null,
         };
     }
@@ -290,6 +296,12 @@ final class GenericModelCapabilityCatalog
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_password', 'label' => 'Device password', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Language and timezone', 'sortOrder' => 70, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'location_reporting_interval', 'label' => 'Location reporting interval', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'sound_profile', 'label' => 'Sound profile', 'sortOrder' => 11, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'make_call', 'label' => 'Make call', 'sortOrder' => 12, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'reset_device', 'label' => 'Reset device', 'sortOrder' => 14, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'power_off', 'label' => 'Power off', 'sortOrder' => 16, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'find_device', 'label' => 'Find device', 'sortOrder' => 18, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'center_number', 'label' => 'Center number', 'sortOrder' => 45, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'step_reporting_interval', 'label' => 'Step interval', 'sortOrder' => 180, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'pedometer_schedule', 'label' => 'Pedometer schedule', 'sortOrder' => 190, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
         ];

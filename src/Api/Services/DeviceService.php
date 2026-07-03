@@ -1418,6 +1418,12 @@ class DeviceService
             'pedometer_schedule' => ['walkTime' => ['ranges' => $this->requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
             'sleep_monitoring' => ['sleepTime' => ['range' => $this->requireStringField($value, 'range')]],
             'temperature_measurement_interval' => ['bodyTemperatureInterval' => $this->requireObjectValue($value, 'bodyTemperatureInterval')],
+            'make_call' => ['makeCall' => ['phone' => $this->requireStringField($value, 'phone')]],
+            'center_number' => ['centerNumber' => ['phone' => $this->requireStringField($value, 'phone')]],
+            'push_message' => ['pushMessage' => ['message' => $this->requireStringField($value, 'message')]],
+            'reset_device' => ['resetCommand' => []],
+            'power_off' => ['powerOffCommand' => []],
+            'find_device' => ['findDeviceCommand' => []],
             default => throw new \InvalidArgumentException("Unsupported four-p-touch capability {$genericKey}"),
         };
     }

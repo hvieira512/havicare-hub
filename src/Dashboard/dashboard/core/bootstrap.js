@@ -1549,9 +1549,10 @@ async function saveDeviceConfiguration(section) {
     renderDeviceConfigurationModal();
 
     try {
-        const isTransientAction = section.dataset.configInput === "pushMessage";
+        const isTransientAction = section.dataset.configTransient === "1";
+        const capabilityKey = section.dataset.capabilityKey || section.dataset.configKey || "";
         const result = isTransientAction
-            ? await apiRequestCapability(state.deviceModal.imei, "push_message", payload)
+            ? await apiRequestCapability(state.deviceModal.imei, capabilityKey, payload)
             : await apiSaveConfiguration(
                 state.deviceModal.imei,
                 { [key]: payload },

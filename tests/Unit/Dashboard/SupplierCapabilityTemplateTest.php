@@ -84,19 +84,25 @@ final class SupplierCapabilityTemplateTest extends TestCase
             'auto_vitals_interval',
             'blood_pressure',
             'call_whitelist',
+            'center_number',
             'device_password',
             'fall_detection',
             'fall_sensitivity',
+            'find_device',
             'heart_rate',
             'language_timezone',
             'location',
             'location_reporting_interval',
             'low_battery_alert',
+            'make_call',
             'monitor_number',
             'pedometer_schedule',
             'medication_reminders',
+            'power_off',
+            'push_message',
             'remove_watch_alarm',
             'remove_watch_sms_alert',
+            'reset_device',
             'sleep_monitoring',
             'sos_contacts',
             'sos_sms_alert',
@@ -108,6 +114,5 @@ final class SupplierCapabilityTemplateTest extends TestCase
         sort($actual);
 
         self::assertSame($expected, $actual);
-        self::assertNotContains('push_message', $actual);
     }
 }

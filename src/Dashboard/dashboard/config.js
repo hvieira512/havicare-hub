@@ -165,7 +165,7 @@ export function renderConfigSection(
     const isStored = row !== null && Object.keys(row).length > 0;
 
     return `
-        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-key="${esc(entry.key)}" data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}">
+        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}
             <div>
                 <div>
                     <div class="fw-semibold">
@@ -273,6 +273,12 @@ export function renderConfigInputs(entry, desired, meta = {}) {
     if (input === "pushMessage") {
         return pushMessageInput(entry, desired);
     }
+    if (input === "makeCall") {
+        return makeCallInput(entry, desired);
+    }
+    if (input === "resetAction") {
+        return resetActionInput(entry, desired);
+    }
     if (input === "intervalToggle") {
         return intervalToggleInput(entry, desired);
     }
@@ -363,6 +369,12 @@ export function readConfigPayload(section) {
     }
     if (input === "pushMessage") {
         return { message: readText(section, "message") };
+    }
+    if (input === "makeCall") {
+        return { phone: readPhone(section, "phone") };
+    }
+    if (input === "resetAction") {
+        return {};
     }
     if (input === "intervalToggle") {
         return {
@@ -753,6 +765,33 @@ function readJson(section) {
     } catch {
         throw new Error("JSON inválido para esta configuração");
     }
+}
+
+function makeCallInput(entry, desired) {
+    return `
+        <div>
+            <label class="form-label form-label-sm">Número de telefone</label>
+            <div class="d-flex gap-2">
+                <div class="flex-grow-1">
+                    ${renderPhoneControl({
+                        value: String(desired.phone || ""),
+                        configField: "phone",
+                        placeholder: "+351912345678",
+                    })}
+                </div>
+            </div>
+            <div class="form-text">Envia um comando para o relógio fazer uma chamada para o número indicado.</div>
+        </div>`;
+}
+
+function resetActionInput(_entry, _desired) {
+    return `
+        <div>
+            <div class="alert alert-warning mb-3 py-2 px-3 small">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                Esta ação é enviada imediatamente para o dispositivo e não pode ser desfeita.
+            </div>
+        </div>`;
 }
 
 function toggleInput(entry, desired) {
