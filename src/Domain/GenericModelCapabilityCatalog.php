@@ -164,7 +164,11 @@ final class GenericModelCapabilityCatalog
             'ecg',
             'hrv',
             'ppg',
-            'rr_interval' => $feature,
+            'rr_interval',
+            'battery',
+            'activity',
+            'heartbeat',
+            'blood_sugar' => $feature,
             default => null,
         };
     }
@@ -230,6 +234,8 @@ final class GenericModelCapabilityCatalog
     private static function watchDefinitions(): array
     {
         return [
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'battery', 'label' => 'Battery', 'sortOrder' => 5, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'activity', 'label' => 'Activity (steps)', 'sortOrder' => 6, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'heart_rate', 'label' => 'Heart rate', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'blood_pressure', 'label' => 'Blood pressure', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'blood_oxygen', 'label' => 'Blood oxygen', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],

@@ -271,19 +271,18 @@ final class DashboardDatabase
 
     private function seedDefaultModelCapabilities(): void
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM models WHERE supplier_id = ? AND internal_model = ?');
+        $modelsStmt = $this->pdo->prepare('SELECT id, device_type FROM models WHERE device_type = ?');
         $capabilitySelect = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
         $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
         $insert = $this->pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
 
-        foreach (self::DEFAULT_MODELS as $row) {
-            $stmt->execute([$this->supplierIdForName($row[0]), $row[1]]);
-            $modelId = (int)($stmt->fetchColumn() ?: 0);
-            if ($modelId <= 0) {
+        foreach (\Hub\Domain\GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {
+            $modelsStmt->execute([$deviceType]);
+            $modelIds = $modelsStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            if ($modelIds === []) {
                 continue;
             }
 
-            $deviceType = (string)$row[3];
             foreach (\Hub\Domain\GenericModelCapabilityCatalog::keysForDeviceType($deviceType) as $key) {
                 $capabilitySelect->execute([$deviceType, $key]);
                 $capabilityId = (int)($capabilitySelect->fetchColumn() ?: 0);
@@ -291,12 +290,14 @@ final class DashboardDatabase
                     continue;
                 }
 
-                $existing->execute([$modelId, $capabilityId]);
-                if ((int)$existing->fetchColumn() > 0) {
-                    continue;
-                }
+                foreach ($modelIds as $modelId) {
+                    $existing->execute([$modelId, $capabilityId]);
+                    if ((int)$existing->fetchColumn() > 0) {
+                        continue;
+                    }
 
-                $insert->execute([$modelId, $capabilityId]);
+                    $insert->execute([$modelId, $capabilityId]);
+                }
             }
         }
     }
