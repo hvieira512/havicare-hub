@@ -261,6 +261,26 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
     }
 
+    public function testFourPTouchTakePillsAllowsOmittingVoiceAudio(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => [
+                'time' => '11:25',
+                'enabled' => true,
+                'frequency' => 2,
+                'custom' => '',
+            ],
+            'number' => 1,
+            'reminderText' => 'meds',
+        ]);
+
+        self::assertSame('TAKEPILLS', $payload['command']);
+        self::assertSame(['11:25-1-2', '1', '006D006500640073', ''], $payload['payload']['fields'] ?? []);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,]', $wire);
+    }
+
     public function testFourPTouchTakePillsMapsToMedicationReminderCapability(): void
     {
         $config = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'takePills');

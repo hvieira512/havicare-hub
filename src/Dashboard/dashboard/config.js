@@ -651,7 +651,10 @@ function readReminders(section) {
 
 function readTakePills(section) {
     const frequency = readNumber(section, "reminderFrequency");
-    return {
+    const voiceEnabled = readCheckbox(section, "voiceEnabled");
+    const voiceData = readText(section, "voiceData");
+    const voiceMimeType = readText(section, "voiceMimeType");
+    const payload = {
         reminderSettings: {
             time: readText(section, "reminderTime"),
             enabled: readCheckbox(section, "reminderEnabled"),
@@ -660,9 +663,16 @@ function readTakePills(section) {
         },
         number: readNumber(section, "number"),
         reminderText: readText(section, "reminderText"),
-        voiceData: readText(section, "voiceData"),
-        voiceMimeType: readText(section, "voiceMimeType"),
     };
+
+    if (voiceEnabled) {
+        payload.voiceData = voiceData;
+        if (voiceMimeType !== "") {
+            payload.voiceMimeType = voiceMimeType;
+        }
+    }
+
+    return payload;
 }
 
 function readNumberFromRow(row, field) {
@@ -1247,6 +1257,7 @@ function takePillsInput(desired, meta = {}) {
     const voiceData = String(desired.voiceData || "");
     const voiceMimeType = String(desired.voiceMimeType || "audio/webm");
     const hasVoiceData = voiceData.trim() !== "";
+    const voiceEnabled = normalizeTakePillsVoiceEnabled(desired, hasVoiceData);
     const previewSrc = takePillsVoicePreviewSrc(voiceData, voiceMimeType);
     const frequencyOptions = takePillsFrequencyOptions(meta);
     const numberLimit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
@@ -1294,6 +1305,11 @@ function takePillsInput(desired, meta = {}) {
                 </div>
             </div>
             <div class="vstack gap-2" data-takepills-audio>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}>
+                    <label class="form-check-label" data-switch-label data-switch-on="Áudio ligado" data-switch-off="Áudio desligado">${voiceEnabled ? "Áudio ligado" : "Áudio desligado"}</label>
+                </div>
+                <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}>
                 <input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}">
                 <input type="hidden" data-config-field="voiceMimeType" value="${esc(voiceMimeType)}">
                 <div class="d-flex flex-wrap align-items-center gap-2">
@@ -1311,12 +1327,23 @@ function takePillsInput(desired, meta = {}) {
                         <input type="file" class="d-none" accept="audio/*" data-action="takePillsFile">
                     </label>
                     <span class="small text-secondary" data-takepills-status>
-                        ${hasVoiceData ? "Áudio carregado" : "Sem áudio"}
+                        ${voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado"}
                     </span>
                 </div>
                 <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(previewSrc)}"` : ""}></audio>
+                </fieldset>
             </div>
         </div>`;
+}
+
+function normalizeTakePillsVoiceEnabled(desired, hasVoiceData) {
+    if (typeof desired?.voiceEnabled === "boolean") {
+        return desired.voiceEnabled;
+    }
+    if (typeof desired?.voiceEnabled === "string") {
+        return boolValue(desired.voiceEnabled, hasVoiceData);
+    }
+    return hasVoiceData;
 }
 
 function normalizeTakePillsReminderSettings(desired) {

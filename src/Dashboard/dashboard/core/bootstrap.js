@@ -1084,6 +1084,10 @@ function handleDeviceConfigChange(event) {
     const section = event.target.closest("[data-config-section]");
     if (!section) return;
 
+    if (event.target.matches('[data-config-field="voiceEnabled"]')) {
+        syncTakePillsVoiceVisibility(section);
+    }
+
     if (event.target.matches('[data-config-field="reminderFrequency"]')) {
         syncTakePillsCustomVisibility(section);
     }
@@ -1199,6 +1203,7 @@ function clearTakePillsRecording(section) {
     if (fileInput) fileInput.value = "";
     if (preview) preview.removeAttribute("src");
     preview?.load?.();
+    syncTakePillsVoiceVisibility(section);
     updateTakePillsRecorderUi(section, "Sem áudio", false);
 }
 
@@ -1213,6 +1218,7 @@ async function loadTakePillsAudio(section, file) {
         if (fileInput) {
             fileInput.value = "";
         }
+        syncTakePillsVoiceVisibility(section);
         updateTakePillsRecorderUi(section, "Áudio carregado", false);
     } catch (error) {
         alert(error instanceof Error ? error.message : "Não foi possível carregar o áudio.");
@@ -1241,10 +1247,15 @@ function updateTakePillsRecorderUi(section, status, recording) {
     const recordBtn = section.querySelector('[data-action="takePillsRecord"]');
     const stopBtn = section.querySelector('[data-action="takePillsStop"]');
     const statusEl = section.querySelector("[data-takepills-status]");
+    const controls = section.querySelector("[data-takepills-audio-controls]");
+    const voiceEnabled = section.querySelector('[data-config-field="voiceEnabled"]')?.checked || false;
     recordBtn?.classList.toggle("d-none", !!recording);
     stopBtn?.classList.toggle("d-none", !recording);
+    if (controls) {
+        controls.toggleAttribute("disabled", !voiceEnabled);
+    }
     if (statusEl) {
-        statusEl.textContent = status;
+        statusEl.textContent = voiceEnabled ? status : "Áudio desligado";
     }
 }
 
@@ -1257,6 +1268,19 @@ function syncTakePillsCustomVisibility(section) {
     const wrapper = section.querySelector("[data-takepills-custom-wrapper]");
     if (wrapper) {
         wrapper.classList.toggle("d-none", frequency !== 3);
+    }
+}
+
+function syncTakePillsVoiceVisibility(section) {
+    const voiceEnabled = section.querySelector('[data-config-field="voiceEnabled"]')?.checked || false;
+    const controls = section.querySelector("[data-takepills-audio-controls]");
+    const status = section.querySelector("[data-takepills-status]");
+    if (controls) {
+        controls.toggleAttribute("disabled", !voiceEnabled);
+    }
+    if (status) {
+        const hasVoiceData = String(section.querySelector('[data-config-field="voiceData"]')?.value || "").trim() !== "";
+        status.textContent = voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado";
     }
 }
 
