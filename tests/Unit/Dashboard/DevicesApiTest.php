@@ -225,10 +225,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(
             [
                 'reminderSettings' => [
-                    'time' => '11:25',
-                    'enabled' => true,
-                    'frequency' => 3,
-                    'custom' => '1010',
+                    [
+                        'time' => '11:25',
+                        'enabled' => true,
+                        'frequency' => 3,
+                        'custom' => '1010',
+                    ],
                 ],
                 'number' => 3,
                 'reminderText' => 'meds',
@@ -246,6 +248,46 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['alarms']['medication_reminders']['_meta']['frequency']['options'] ?? null
         );
         self::assertSame('takePills', $response['capabilities']['alarms']['medication_reminders']['_nativeKey'] ?? null);
+    }
+
+    public function testShowExposesMultipleTakePillsRemindersForFourPTouch(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitCare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'takePills',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'TAKEPILLS',
+            [
+                'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010',
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => 'QUJDRA==',
+            ]
+        );
+
+        $response = $api->show('868017032159118');
+
+        self::assertSame(
+            [
+                'reminderSettings' => [
+                    ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
+                    ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
+                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+                ],
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => 'QUJDRA==',
+            ],
+            $response['capabilities']['alarms']['medication_reminders']['value'] ?? null
+        );
     }
 
     public function testShowReturnsAbsoluteModelImageUrl(): void
@@ -393,6 +435,40 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073,IyFBTVIK', $submitted[0]['bytes']);
+    }
+
+    public function testConfigurationPutSendsFourPTouchTakePillsWithMultipleReminders(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'takePills' => [
+                    'reminderSettings' => [
+                        ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
+                        ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
+                        ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+                    ],
+                    'number' => 3,
+                    'reminderText' => 'meds',
+                    'voiceData' => '',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073]', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPutRejectsInvalidRequestWithoutConfigurations(): void

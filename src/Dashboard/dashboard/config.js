@@ -513,12 +513,11 @@ export function defaultConfigPayload(entry) {
     if (input === "reminders") return { masterEnabled: true, items: [] };
     if (input === "takePills")
         return {
-            reminderSettings: {
-                time: "08:00",
-                enabled: true,
-                frequency: 1,
-                custom: "",
-            },
+            reminderSettings: [
+                { time: "08:00", enabled: true, frequency: 1, custom: "" },
+                { time: "09:00", enabled: true, frequency: 1, custom: "" },
+                { time: "10:00", enabled: true, frequency: 1, custom: "" },
+            ],
             number: 1,
             reminderText: "",
             voiceData: "",
@@ -656,18 +655,48 @@ function readReminders(section) {
 }
 
 function readTakePills(section) {
-    const frequency = readNumber(section, "reminderFrequency");
+    const groups = Array.from(
+        section.querySelectorAll("[data-takepills-reminder-group]"),
+    );
+    const number = readNumber(section, "number");
     const voiceEnabled = readCheckbox(section, "voiceEnabled");
     const voiceData = readText(section, "voiceData");
     const voiceMimeType = readText(section, "voiceMimeType");
+
+    const reminderSettings = groups
+        .slice(0, number)
+        .map((group) => {
+            const frequency =
+                parseInt(
+                    String(
+                        group.querySelector(
+                            '[data-takepills-field="reminderFrequency"]',
+                        )?.value ?? "1",
+                    ),
+                    10,
+                ) || 1;
+            return {
+                time:
+                    group.querySelector(
+                        '[data-takepills-field="reminderTime"]',
+                    )?.value || "",
+                enabled:
+                    group.querySelector(
+                        '[data-takepills-field="reminderEnabled"]',
+                    )?.checked || false,
+                frequency,
+                custom:
+                    frequency === 3
+                        ? group.querySelector(
+                              '[data-takepills-field="reminderCustom"]',
+                          )?.value || ""
+                        : "",
+            };
+        });
+
     const payload = {
-        reminderSettings: {
-            time: readText(section, "reminderTime"),
-            enabled: readCheckbox(section, "reminderEnabled"),
-            frequency,
-            custom: frequency === 3 ? readText(section, "reminderCustom") : "",
-        },
-        number: readNumber(section, "number"),
+        reminderSettings,
+        number,
         reminderText: readText(section, "reminderText"),
     };
 
@@ -1031,17 +1060,52 @@ function fallSensitivityLevelsInput(desired) {
     const sensitivityLevel =
         parseInt(String(desired.sensitivityLevel ?? 5), 10) || 5;
     const totalLevels = parseInt(String(desired.totalLevels ?? 8), 10) || 8;
+
+    const levels = [
+        { label: "Máxima", icon: "fa-bolt", btnClass: "btn-outline-danger" },
+        { label: "Muito Alta", icon: "fa-circle-exclamation", btnClass: "btn-outline-danger" },
+        { label: "Alta", icon: "fa-triangle-exclamation", btnClass: "btn-outline-warning" },
+        { label: "Moderada", icon: "fa-equals", btnClass: "btn-outline-warning" },
+        { label: "Baixa", icon: "fa-arrow-down", btnClass: "btn-outline-primary" },
+        { label: "Muito Baixa", icon: "fa-angles-down", btnClass: "btn-outline-primary" },
+        { label: "Quase Mínima", icon: "fa-feather", btnClass: "btn-outline-secondary" },
+        { label: "Mínima", icon: "fa-snowflake", btnClass: "btn-outline-secondary" },
+    ];
+
     return `
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-12 col-md-9">
                 <label class="form-label form-label-sm">Nível de sensibilidade</label>
-                <input class="form-control" type="number" min="1" max="${esc(String(totalLevels))}" step="1" data-config-field="sensitivityLevel" value="${esc(String(sensitivityLevel))}">
+                <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade">
+                    ${levels
+                        .map(
+                            ({ label, icon, btnClass }, i) => {
+                                const level = i + 1;
+                                return `
+                        <input type="radio" class="btn-check" name="sensitivityLevel"
+                            id="sensLevel${level}" value="${level}"
+                            data-config-field="sensitivityLevel"
+                            ${level === sensitivityLevel ? "checked" : ""}
+                            ${level > totalLevels ? "disabled" : ""}>
+                        <label class="btn ${btnClass} sens-level-btn d-flex flex-column align-items-center justify-content-center ${level > totalLevels ? "d-none" : ""}"
+                            for="sensLevel${level}" style="flex: 1 0 0; min-width: 4rem; min-height: 4rem">
+                            <div class="d-flex align-items-center gap-1 fw-medium">
+                                <i class="fa-solid ${icon}"></i>
+                                <span>${level}</span>
+                            </div>
+                            <div class="small opacity-75">${label}</div>
+                        </label>
+                    `;
+                            },
+                        )
+                        .join("")}
+                </div>
             </div>
-            <div class="col-md-6">
-                <label class="form-label form-label-sm">Níveis totais do firmware</label>
-                <select class="form-select" data-config-field="totalLevels">
-                    <option value="6" ${totalLevels === 6 ? "selected" : ""}>6</option>
-                    <option value="8" ${totalLevels === 8 ? "selected" : ""}>8</option>
+            <div class="col-12 col-md-3">
+                <label class="form-label form-label-sm">Níveis totais</label>
+                <select class="form-select" data-config-field="totalLevels" data-action="fallTotalLevels">
+                    <option value="6" ${totalLevels === 6 ? "selected" : ""}>6 níveis</option>
+                    <option value="8" ${totalLevels === 8 ? "selected" : ""}>8 níveis</option>
                 </select>
             </div>
         </div>`;
@@ -1253,12 +1317,8 @@ function remindersInput(desired) {
 }
 
 function takePillsInput(desired, meta = {}) {
-    const reminderSettings = normalizeTakePillsReminderSettings(desired);
+    const reminderSettingsList = normalizeTakePillsReminderSettings(desired);
     const reminderNumber = parseInt(String(desired.number ?? 1), 10) || 1;
-    const frequencyValue = parseInt(
-        String(reminderSettings.frequency ?? 1),
-        10,
-    ) || 1;
     const reminderText = String(desired.reminderText || "");
     const voiceData = String(desired.voiceData || "");
     const voiceMimeType = String(desired.voiceMimeType || "audio/webm");
@@ -1267,45 +1327,32 @@ function takePillsInput(desired, meta = {}) {
     const previewSrc = takePillsVoicePreviewSrc(voiceData, voiceMimeType);
     const frequencyOptions = takePillsFrequencyOptions(meta);
     const numberLimit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
-    const customVisible = frequencyValue === 3;
+
+    while (reminderSettingsList.length < numberLimit) {
+        reminderSettingsList.push({
+            time: "08:00",
+            enabled: true,
+            frequency: 1,
+            custom: "",
+        });
+    }
 
     return `
         <div class="vstack gap-3">
-            <div class="row g-3" data-takepills-reminder-settings>
-                <div class="col-md-3">
-                    <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-config-field="reminderTime" value="${esc(reminderSettings.time)}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label form-label-sm d-block">Estado</label>
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="reminderEnabled" ${reminderSettings.enabled ? "checked" : ""}>
-                        <label class="form-check-label" data-switch-label data-switch-on="Ligado" data-switch-off="Desligado">${reminderSettings.enabled ? "Ligado" : "Desligado"}</label>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label form-label-sm">Frequência</label>
-                    <select class="form-select" data-config-field="reminderFrequency" data-takepills-frequency>
-                        ${frequencyOptions
-                            .map(
-                                (option) => `
-                            <option value="${esc(String(option.value))}" ${parseInt(String(option.value), 10) === frequencyValue ? "selected" : ""}>${esc(String(option.label))}</option>
-                        `,
-                            )
-                            .join("")}
-                    </select>
-                </div>
-                <div class="col-md-4 ${customVisible ? "" : "d-none"}" data-takepills-custom-wrapper>
-                    <label class="form-label form-label-sm">Custom</label>
-                    <input class="form-control" type="text" data-config-field="reminderCustom" value="${esc(reminderSettings.custom)}">
-                    <div class="form-text">Usado apenas quando a frequência é personalizada.</div>
-                </div>
-                <div class="col-md-12">
-                    <label class="form-label form-label-sm">Número</label>
+            <div class="vstack gap-2" data-takepills-reminders-list>
+                ${reminderSettingsList
+                    .map(
+                        (rs, index) => takePillsReminderGroup(rs, index, frequencyOptions, index >= reminderNumber),
+                    )
+                    .join("")}
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label form-label-sm">N\u00famero</label>
                     <input class="form-control" type="number" min="1" max="${esc(String(numberLimit))}" step="1" data-config-field="number" value="${esc(String(reminderNumber))}">
-                    <div class="form-text">Máximo de ${esc(String(numberLimit))} lembretes.</div>
+                    <div class="form-text">M\u00e1ximo de ${esc(String(numberLimit))} lembretes.</div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <label class="form-label form-label-sm">Texto do lembrete</label>
                     <input class="form-control" type="text" data-config-field="reminderText" value="${esc(reminderText)}">
                 </div>
@@ -1313,7 +1360,7 @@ function takePillsInput(desired, meta = {}) {
             <div class="vstack gap-2" data-takepills-audio>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}>
-                    <label class="form-check-label" data-switch-label data-switch-on="Áudio ligado" data-switch-off="Áudio desligado">${voiceEnabled ? "Áudio ligado" : "Áudio desligado"}</label>
+                    <label class="form-check-label" data-switch-label data-switch-on="\u00c1udio ligado" data-switch-off="\u00c1udio desligado">${voiceEnabled ? "\u00c1udio ligado" : "\u00c1udio desligado"}</label>
                 </div>
                 <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}>
                 <input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}">
@@ -1333,11 +1380,48 @@ function takePillsInput(desired, meta = {}) {
                         <input type="file" class="d-none" accept="audio/*" data-action="takePillsFile">
                     </label>
                     <span class="small text-secondary" data-takepills-status>
-                        ${voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado"}
+                        ${voiceEnabled ? (hasVoiceData ? "\u00c1udio carregado" : "Sem \u00e1udio") : "\u00c1udio desligado"}
                     </span>
                 </div>
                 <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(previewSrc)}"` : ""}></audio>
                 </fieldset>
+            </div>
+        </div>`;
+}
+
+function takePillsReminderGroup(settings, index, frequencyOptions, hidden) {
+    const freqValue = parseInt(String(settings.frequency ?? 1), 10) || 1;
+    const customVisible = freqValue === 3;
+    return `
+        <div class="border rounded p-3 bg-body ${hidden ? "d-none" : ""}" data-takepills-reminder-group="${index}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Hora</label>
+                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${esc(settings.time)}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm d-block">Estado</label>
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}>
+                        <label class="form-check-label" data-switch-label data-switch-on="Ligado" data-switch-off="Desligado">${settings.enabled ? "Ligado" : "Desligado"}</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label form-label-sm">Frequ\u00eancia</label>
+                    <select class="form-select" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency>
+                        ${frequencyOptions
+                            .map(
+                                (option) => `
+                            <option value="${esc(String(option.value))}" ${parseInt(String(option.value), 10) === freqValue ? "selected" : ""}>${esc(String(option.label))}</option>
+                        `,
+                            )
+                            .join("")}
+                    </select>
+                </div>
+                <div class="col-md-4 ${customVisible ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">
+                    <label class="form-label form-label-sm">Custom</label>
+                    <input class="form-control" type="text" data-takepills-field="reminderCustom" data-takepills-index="${index}" value="${esc(settings.custom)}">
+                </div>
             </div>
         </div>`;
 }
@@ -1354,17 +1438,33 @@ function normalizeTakePillsVoiceEnabled(desired, hasVoiceData) {
 
 function normalizeTakePillsReminderSettings(desired) {
     const base = desired?.reminderSettings;
-    if (base && typeof base === "object" && !Array.isArray(base)) {
-        return {
-            time: String(base.time ?? base.reminderTime ?? "08:00"),
-            enabled: boolValue(base.enabled ?? base.switchState, true),
-            frequency: parseInt(String(base.frequency ?? base.frequencies ?? 1), 10) || 1,
-            custom: String(base.custom ?? ""),
-        };
+
+    if (Array.isArray(base)) {
+        return base.map((item) => normalizeSingleTakePillsReminder(item));
     }
 
     if (typeof base === "string" && base.trim() !== "") {
-        const parts = base.split("-");
+        return parseTakePillsReminderString(base);
+    }
+
+    if (base && typeof base === "object" && !Array.isArray(base)) {
+        return [normalizeSingleTakePillsReminder(base)];
+    }
+
+    return [
+        {
+            time: String(desired?.reminderTime ?? "08:00"),
+            enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true),
+            frequency:
+                parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1,
+            custom: String(desired?.reminderCustom ?? desired?.custom ?? ""),
+        },
+    ];
+}
+
+function normalizeSingleTakePillsReminder(item) {
+    if (typeof item === "string") {
+        const parts = item.split("-");
         return {
             time: String(parts[0] ?? "08:00"),
             enabled: boolValue(parts[1] ?? true, true),
@@ -1372,13 +1472,29 @@ function normalizeTakePillsReminderSettings(desired) {
             custom: String(parts.slice(3).join("-") ?? ""),
         };
     }
-
     return {
-        time: String(desired?.reminderTime ?? "08:00"),
-        enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true),
-        frequency: parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1,
-        custom: String(desired?.reminderCustom ?? desired?.custom ?? ""),
+        time: String(item.time ?? item.reminderTime ?? "08:00"),
+        enabled: boolValue(item.enabled ?? item.switchState, true),
+        frequency: parseInt(String(item.frequency ?? item.frequencies ?? 1), 10) || 1,
+        custom: String(item.custom ?? item.reminderCustom ?? ""),
     };
+}
+
+function parseTakePillsReminderString(str) {
+    const parts = str.split("-");
+    const reminders = [];
+    let i = 0;
+    while (i < parts.length) {
+        const time = parts[i++] ?? "08:00";
+        const enabled = boolValue(parts[i++] ?? true, true);
+        const frequency = parseInt(parts[i++] ?? "1", 10) || 1;
+        let custom = "";
+        if (frequency === 3 && i < parts.length) {
+            custom = parts[i++];
+        }
+        reminders.push({ time, enabled, frequency, custom });
+    }
+    return reminders;
 }
 
 function takePillsVoicePreviewSrc(voiceData, voiceMimeType) {

@@ -754,10 +754,12 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(
             [
                 'reminderSettings' => [
-                    'time' => '11:25',
-                    'enabled' => true,
-                    'frequency' => 3,
-                    'custom' => '1010',
+                    [
+                        'time' => '11:25',
+                        'enabled' => true,
+                        'frequency' => 3,
+                        'custom' => '1010',
+                    ],
                 ],
                 'number' => 3,
                 'reminderText' => 'meds',
@@ -774,6 +776,55 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                 ['value' => 3, 'label' => 'Personalizado'],
             ],
             $body['capabilities']['alarms']['medication_reminders']['_meta']['frequency']['options'] ?? null
+        );
+    }
+
+    public function testDeviceDetailExposesMultipleTakePillsRemindersForFourPTouch(): void
+    {
+        [$server, $db, $store] = $this->makeServerWithDatabase();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitCare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'takePills',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'TAKEPILLS',
+            [
+                'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010',
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => '',
+                'voiceMimeType' => '',
+            ]
+        );
+
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/868017032159118',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        self::assertSame(
+            [
+                'reminderSettings' => [
+                    ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
+                    ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
+                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+                ],
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => '',
+                'voiceMimeType' => '',
+            ],
+            $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
         );
     }
 

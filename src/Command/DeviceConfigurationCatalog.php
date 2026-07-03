@@ -553,16 +553,32 @@ final class DeviceConfigurationCatalog
 
     private static function fourPTouchTakePillsPayload(array $payload): array
     {
-        $voiceData = array_key_exists('voiceData', $payload)
-            ? self::fourPTouchTakePillsVoiceData($payload['voiceData'], $payload['voiceMimeType'] ?? null)
-            : '';
+        $settings = $payload['reminderSettings'] ?? [];
 
-        return [
-            self::fourPTouchTakePillsReminderSettings($payload['reminderSettings'] ?? null),
+        if (array_is_list($settings)) {
+            $parts = [];
+            foreach ($settings as $setting) {
+                $parts[] = self::fourPTouchTakePillsReminderSettings($setting);
+            }
+            $reminderSettingsStr = implode('-', $parts);
+        } else {
+            $reminderSettingsStr = self::fourPTouchTakePillsReminderSettings($settings);
+        }
+
+        $fields = [
+            $reminderSettingsStr,
             self::rangeInt($payload['number'] ?? null, 1, 3, 'number'),
             self::utf16Hex(self::requiredString($payload['reminderText'] ?? null, 'reminderText')),
-            $voiceData,
         ];
+
+        if (array_key_exists('voiceData', $payload)) {
+            $voiceData = self::fourPTouchTakePillsVoiceData($payload['voiceData'], $payload['voiceMimeType'] ?? null);
+            if ($voiceData !== '') {
+                $fields[] = $voiceData;
+            }
+        }
+
+        return $fields;
     }
 
     private static function fourPTouchTakePillsReminderSettings(mixed $value): string

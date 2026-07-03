@@ -1628,22 +1628,23 @@ class DeviceService
     private function normalizeTakePillsCapabilityValue(array $desired): array
     {
         $reminderSettings = $desired['reminderSettings'] ?? [];
+
         if (is_string($reminderSettings)) {
             $reminderSettings = $this->parseTakePillsReminderSettings($reminderSettings);
+        } elseif (is_array($reminderSettings) && array_is_list($reminderSettings)) {
+            $reminderSettings = array_map(
+                fn(mixed $item) => $this->normalizeSingleTakePillsReminder($item),
+                $reminderSettings,
+            );
         } elseif (is_array($reminderSettings)) {
-            $reminderSettings = [
-                'time' => (string)($reminderSettings['time'] ?? $reminderSettings['reminderTime'] ?? ''),
-                'enabled' => $this->boolLikeToBool($reminderSettings['enabled'] ?? $reminderSettings['switchState'] ?? true),
-                'frequency' => (int)($reminderSettings['frequency'] ?? $reminderSettings['reminderFrequency'] ?? 1),
-                'custom' => (string)($reminderSettings['custom'] ?? $reminderSettings['reminderCustom'] ?? ''),
-            ];
+            $reminderSettings = [$this->normalizeSingleTakePillsReminder($reminderSettings)];
         } else {
-            $reminderSettings = [
+            $reminderSettings = [[
                 'time' => '',
                 'enabled' => true,
                 'frequency' => 1,
                 'custom' => '',
-            ];
+            ]];
         }
 
         $payload = [
@@ -1660,15 +1661,54 @@ class DeviceService
         return $payload;
     }
 
+    private function normalizeSingleTakePillsReminder(mixed $item): array
+    {
+        if (is_string($item)) {
+            $parts = explode('-', $item, 4);
+            return [
+                'time' => (string)($parts[0] ?? ''),
+                'enabled' => $this->boolLikeToBool($parts[1] ?? 1),
+                'frequency' => (int)($parts[2] ?? 1),
+                'custom' => (string)($parts[3] ?? ''),
+            ];
+        }
+
+        if (!is_array($item)) {
+            return ['time' => '', 'enabled' => true, 'frequency' => 1, 'custom' => ''];
+        }
+
+        return [
+            'time' => (string)($item['time'] ?? $item['reminderTime'] ?? ''),
+            'enabled' => $this->boolLikeToBool($item['enabled'] ?? $item['switchState'] ?? true),
+            'frequency' => (int)($item['frequency'] ?? $item['reminderFrequency'] ?? 1),
+            'custom' => (string)($item['custom'] ?? $item['reminderCustom'] ?? ''),
+        ];
+    }
+
     private function parseTakePillsReminderSettings(string $value): array
     {
-        $parts = explode('-', trim($value), 4);
-        return [
-            'time' => (string)($parts[0] ?? ''),
-            'enabled' => $this->boolLikeToBool($parts[1] ?? 1),
-            'frequency' => (int)($parts[2] ?? 1),
-            'custom' => (string)($parts[3] ?? ''),
-        ];
+        $parts = explode('-', trim($value));
+        $reminders = [];
+        $i = 0;
+        $count = count($parts);
+
+        while ($i < $count) {
+            $time = $parts[$i++] ?? '';
+            $enabled = $this->boolLikeToBool($parts[$i++] ?? 1);
+            $frequency = (int)($parts[$i++] ?? 1);
+            $custom = '';
+            if ($frequency === 3 && $i < $count) {
+                $custom = $parts[$i++];
+            }
+            $reminders[] = [
+                'time' => $time,
+                'enabled' => $enabled,
+                'frequency' => $frequency,
+                'custom' => $custom,
+            ];
+        }
+
+        return $reminders;
     }
 
     private function boolLikeToBool(mixed $value): bool

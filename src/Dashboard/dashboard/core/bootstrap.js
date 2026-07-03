@@ -1092,8 +1092,12 @@ function handleDeviceConfigChange(event) {
         syncTakePillsVoiceVisibility(section);
     }
 
-    if (event.target.matches('[data-config-field="reminderFrequency"]')) {
+    if (event.target.matches('[data-takepills-field="reminderFrequency"]')) {
         syncTakePillsCustomVisibility(section);
+    }
+
+    if (event.target.matches('[data-config-field="number"]') && event.target.closest("[data-config-input=\"takePills\"]")) {
+        syncTakePillsGroupVisibility(section);
     }
 
     if (event.target.matches('[data-config-field="mode"]')) {
@@ -1118,6 +1122,32 @@ function handleDeviceConfigChange(event) {
             label.textContent = event.target.checked
                 ? label.dataset.switchOn || "Ligado"
                 : label.dataset.switchOff || "Desligado";
+        }
+    }
+
+    if (event.target.matches('[data-action="fallTotalLevels"]')) {
+        const section = event.target.closest("[data-config-section]");
+        if (!section) return;
+        const total = parseInt(event.target.value, 10);
+        const btns = section.querySelectorAll(".sens-level-btn");
+        const inputs = section.querySelectorAll(
+            'input[name="sensitivityLevel"]',
+        );
+        btns.forEach((btn, i) => {
+            const visible = i + 1 <= total;
+            btn.classList.toggle("d-none", !visible);
+            inputs[i].disabled = !visible;
+        });
+        const checked = section.querySelector(
+            'input[name="sensitivityLevel"]:checked',
+        );
+        if (checked && parseInt(checked.value, 10) > total) {
+            const lastEnabled = section.querySelector(
+                'input[name="sensitivityLevel"]:not([disabled])',
+            );
+            if (lastEnabled) {
+                lastEnabled.checked = true;
+            }
         }
     }
 }
@@ -1268,15 +1298,36 @@ function updateTakePillsRecorderUi(section, status, recording) {
 }
 
 function syncTakePillsCustomVisibility(section) {
-    const frequency = parseInt(
-        section.querySelector('[data-config-field="reminderFrequency"]')
-            ?.value ?? "1",
-        10,
-    ) || 1;
-    const wrapper = section.querySelector("[data-takepills-custom-wrapper]");
-    if (wrapper) {
-        wrapper.classList.toggle("d-none", frequency !== 3);
-    }
+    const groups = section.querySelectorAll("[data-takepills-reminder-group]");
+    groups.forEach((group) => {
+        const idx = group.dataset.takepillsReminderGroup;
+        const frequency =
+            parseInt(
+                group.querySelector(
+                    '[data-takepills-field="reminderFrequency"]',
+                )?.value ?? "1",
+                10,
+            ) || 1;
+        const wrapper = section.querySelector(
+            `[data-takepills-custom-wrapper="${idx}"]`,
+        );
+        if (wrapper) {
+            wrapper.classList.toggle("d-none", frequency !== 3);
+        }
+    });
+}
+
+function syncTakePillsGroupVisibility(section) {
+    const number =
+        parseInt(
+            section.querySelector('[data-config-field="number"]')?.value ?? "1",
+            10,
+        ) || 1;
+    const groups = section.querySelectorAll("[data-takepills-reminder-group]");
+    groups.forEach((group) => {
+        const idx = parseInt(group.dataset.takepillsReminderGroup, 10);
+        group.classList.toggle("d-none", idx >= number);
+    });
 }
 
 function syncTakePillsVoiceVisibility(section) {

@@ -275,10 +275,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
 
         self::assertSame('TAKEPILLS', $payload['command']);
-        self::assertSame(['11:25-1-2', '1', '006D006500640073', ''], $payload['payload']['fields'] ?? []);
+        self::assertSame(['11:25-1-2', '1', '006D006500640073'], $payload['payload']['fields'] ?? []);
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,]', $wire);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073]', $wire);
     }
 
     public function testFourPTouchTakePillsMapsToMedicationReminderCapability(): void
@@ -349,6 +349,46 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertContains('bphrt', $commands[1]['expectedReplyTypes']);
         self::assertContains('bphrt', $commands[2]['expectedReplyTypes']);
         self::assertContains('btemp2', $commands[3]['expectedReplyTypes']);
+    }
+
+    public function testFourPTouchTakePillsHandlesMultipleReminders(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => [
+                ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
+                ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
+                ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+            ],
+            'number' => 3,
+            'reminderText' => 'meds',
+            'voiceData' => '',
+        ]);
+
+        self::assertSame('TAKEPILLS', $payload['command']);
+        self::assertSame(
+            ['11:25-1-2-14:30-0-1-18:00-1-3-1010', '3', '006D006500640073'],
+            $payload['payload']['fields'] ?? [],
+        );
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073]', $wire);
+    }
+
+    public function testFourPTouchTakePillsHandlesSingleReminderBackwardCompatible(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => [
+                'time' => '11:25',
+                'enabled' => true,
+                'frequency' => 2,
+                'custom' => '',
+            ],
+            'number' => 1,
+            'reminderText' => 'meds',
+        ]);
+
+        self::assertSame('TAKEPILLS', $payload['command']);
+        self::assertSame(['11:25-1-2', '1', '006D006500640073'], $payload['payload']['fields'] ?? []);
     }
 
     private function sampleWavBase64(): string
