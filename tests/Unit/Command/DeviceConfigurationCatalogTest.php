@@ -230,15 +230,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
             ],
             'number' => 1,
             'reminderText' => 'meds',
-            'voiceData' => 'QUJDRA==',
+            'voiceData' => $this->sampleWavBase64(),
+            'voiceMimeType' => 'audio/wav',
         ]);
 
         self::assertSame('TAKEPILLS', $payload['command']);
-        self::assertSame(['fields' => ['11:25-1-2', '1', '006D006500640073', 'QUJDRA==']], $payload['payload']);
+        self::assertSame(['11:25-1-2', '1', '006D006500640073'], array_slice($payload['payload']['fields'] ?? [], 0, 3));
+        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,', $wire);
-        self::assertStringEndsWith(',QUJDRA==]', $wire);
+        self::assertStringContainsString(',' . ($payload['payload']['fields'][3] ?? '') . ']', $wire);
     }
 
     public function testFourPTouchTakePillsStripsLegacyDataUrlsFromVoiceData(): void
@@ -252,10 +254,11 @@ final class DeviceConfigurationCatalogTest extends TestCase
             ],
             'number' => 1,
             'reminderText' => 'meds',
-            'voiceData' => 'data:audio/webm;base64,QUJDRA==',
+            'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+            'voiceMimeType' => 'audio/wav',
         ]);
 
-        self::assertSame(['fields' => ['11:25-1-2', '1', '006D006500640073', 'QUJDRA==']], $payload['payload']);
+        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
     }
 
     public function testFourPTouchTakePillsMapsToMedicationReminderCapability(): void
@@ -326,5 +329,35 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertContains('bphrt', $commands[1]['expectedReplyTypes']);
         self::assertContains('bphrt', $commands[2]['expectedReplyTypes']);
         self::assertContains('btemp2', $commands[3]['expectedReplyTypes']);
+    }
+
+    private function sampleWavBase64(): string
+    {
+        $sampleRate = 8000;
+        $channels = 1;
+        $bitsPerSample = 16;
+        $samples = array_fill(0, 800, 0);
+        $data = '';
+        foreach ($samples as $sample) {
+            $data .= pack('v', $sample);
+        }
+
+        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
+        $blockAlign = (int)($channels * ($bitsPerSample / 8));
+        $header = 'RIFF'
+            . pack('V', 36 + strlen($data))
+            . 'WAVE'
+            . 'fmt '
+            . pack('V', 16)
+            . pack('v', 1)
+            . pack('v', $channels)
+            . pack('V', $sampleRate)
+            . pack('V', $byteRate)
+            . pack('v', $blockAlign)
+            . pack('v', $bitsPerSample)
+            . 'data'
+            . pack('V', strlen($data));
+
+        return base64_encode($header . $data);
     }
 }

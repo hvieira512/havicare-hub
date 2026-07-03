@@ -22,6 +22,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $this->whitelistPath = sys_get_temp_dir() . '/hub-devices-api-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro'],
+            '868017032159118' => ['supplier' => '4P Touch', 'model' => 'D46'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -198,10 +199,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     public function testShowExposesTakePillsStructuredMetaForFourPTouch(): void
     {
-        [$api, $db] = $this->makeApi();
+        [$api, $db, $store] = $this->makeApi();
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitCare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         $db->deviceConfigurations->saveDesired(
             '868017032159118',
@@ -381,7 +383,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                     'number' => 3,
                     'reminderText' => 'meds',
-                    'voiceData' => 'data:audio/webm;base64,QUJDRA==',
+                    'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+                    'voiceMimeType' => 'audio/wav',
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -389,10 +392,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertSame(
-            '[3G*868017032159118*002A*TAKEPILLS,11:25-1-3-1010,3,006D006500640073,QUJDRA==]',
-            $submitted[0]['bytes']
-        );
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073,IyFBTVIK', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPutRejectsInvalidRequestWithoutConfigurations(): void
@@ -625,6 +625,32 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $hub->method('submitDownlink')->willReturn('sent');
 
         return $hub;
+    }
+
+    private function sampleWavBase64(): string
+    {
+        $sampleRate = 8000;
+        $channels = 1;
+        $bitsPerSample = 16;
+        $data = str_repeat(pack('v', 0), 800);
+
+        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
+        $blockAlign = (int)($channels * ($bitsPerSample / 8));
+        $header = 'RIFF'
+            . pack('V', 36 + strlen($data))
+            . 'WAVE'
+            . 'fmt '
+            . pack('V', 16)
+            . pack('v', 1)
+            . pack('v', $channels)
+            . pack('V', $sampleRate)
+            . pack('V', $byteRate)
+            . pack('v', $blockAlign)
+            . pack('v', $bitsPerSample)
+            . 'data'
+            . pack('V', strlen($data));
+
+        return base64_encode($header . $data);
     }
 }
 

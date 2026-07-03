@@ -553,7 +553,9 @@ final class DeviceConfigurationCatalog
 
     private static function fourPTouchTakePillsPayload(array $payload): array
     {
-        $voiceData = array_key_exists('voiceData', $payload) ? self::fourPTouchTakePillsVoiceData($payload['voiceData']) : '';
+        $voiceData = array_key_exists('voiceData', $payload)
+            ? self::fourPTouchTakePillsVoiceData($payload['voiceData'], $payload['voiceMimeType'] ?? null)
+            : '';
 
         return [
             self::fourPTouchTakePillsReminderSettings($payload['reminderSettings'] ?? null),
@@ -592,22 +594,113 @@ final class DeviceConfigurationCatalog
         return implode('-', $parts);
     }
 
-    private static function fourPTouchTakePillsVoiceData(mixed $value): string
+    private static function fourPTouchTakePillsVoiceData(mixed $value, mixed $mimeType = null): string
     {
         $voiceData = trim((string)$value);
         if ($voiceData === '') {
             return '';
         }
 
-        $commaPos = strpos($voiceData, ',');
-        if ($commaPos !== false) {
-            $prefix = substr($voiceData, 0, $commaPos);
-            if (str_starts_with($prefix, 'data:')) {
-                return substr($voiceData, $commaPos + 1) ?: '';
+        $detectedMimeType = trim((string)$mimeType);
+        if (str_starts_with($voiceData, 'data:')) {
+            $commaPos = strpos($voiceData, ',');
+            if ($commaPos !== false) {
+                $meta = substr($voiceData, 5, $commaPos - 5);
+                $voiceData = substr($voiceData, $commaPos + 1) ?: '';
+                $semicolonPos = strpos($meta, ';');
+                if ($semicolonPos !== false) {
+                    $meta = substr($meta, 0, $semicolonPos);
+                }
+                if ($meta !== '') {
+                    $detectedMimeType = $meta;
+                }
             }
         }
 
-        return $voiceData;
+        $binary = base64_decode($voiceData, true);
+        if ($binary === false) {
+            throw new \InvalidArgumentException('voiceData must be base64 audio');
+        }
+
+        return self::transcodeAudioToArmBase64($binary, $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm');
+    }
+
+    private static function transcodeAudioToArmBase64(string $audioBytes, string $mimeType): string
+    {
+        $inputPath = tempnam(sys_get_temp_dir(), 'takepills-audio-in-');
+        $outputPath = tempnam(sys_get_temp_dir(), 'takepills-audio-out-');
+
+        if ($inputPath === false || $outputPath === false) {
+            throw new \RuntimeException('Failed to allocate temporary files for voice conversion');
+        }
+
+        @unlink($outputPath);
+
+        try {
+            if (file_put_contents($inputPath, $audioBytes) === false) {
+                throw new \RuntimeException('Failed to persist voice recording for conversion');
+            }
+
+            $command = [
+                'ffmpeg',
+                '-hide_banner',
+                '-loglevel',
+                'error',
+                '-y',
+                '-i',
+                $inputPath,
+                '-vn',
+                '-acodec',
+                'libopencore_amrnb',
+                '-ar',
+                '8000',
+                '-ac',
+                '1',
+                '-b:a',
+                '12.2k',
+                '-f',
+                'amr',
+                $outputPath,
+            ];
+
+            [$exitCode, $stderr] = self::runProcess($command);
+            if ($exitCode !== 0 || !is_file($outputPath)) {
+                $message = trim($stderr);
+                throw new \RuntimeException(
+                    $message !== ''
+                        ? "Failed to convert voice recording to ARM: {$message}"
+                        : 'Failed to convert voice recording to ARM'
+                );
+            }
+
+            $armBytes = file_get_contents($outputPath);
+            if ($armBytes === false || $armBytes === '') {
+                throw new \RuntimeException('Converted ARM audio is empty');
+            }
+
+            return base64_encode($armBytes);
+        } finally {
+            if (is_file($inputPath)) {
+                @unlink($inputPath);
+            }
+            if (is_file($outputPath)) {
+                @unlink($outputPath);
+            }
+        }
+    }
+
+    /**
+     * @param list<string> $command
+     * @return array{0: int, 1: string}
+     */
+    private static function runProcess(array $command): array
+    {
+        $quoted = array_map('escapeshellarg', $command);
+        $output = [];
+        $exitCode = 0;
+        exec(implode(' ', $quoted) . ' 2>&1', $output, $exitCode);
+
+        return [$exitCode, trim(implode("\n", $output))];
     }
 
     private static function stringList(mixed $value, int $max, string $field): array

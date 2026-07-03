@@ -23,6 +23,7 @@ final class DeviceHubMqttContractTest extends TestCase
         file_put_contents($this->whitelistPath, json_encode([
             '865028000000308' => ['supplier' => 'Vivistar', 'model' => 'VIVISTAR-CARE'],
             '868705080300697' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
+            '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '7597567372'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -288,6 +289,47 @@ final class DeviceHubMqttContractTest extends TestCase
         ], $mqtt->events[1][1]['command']);
     }
 
+    public function testFourPTouchTakePillsOnlineDownlinkPublishesArmConvertedAudioMetadata(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $connection = new ContractFakeConnection(8);
+        $adapter = new \Hub\Protocol\Adapter\FourPTouchAdapter();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');
+
+        $payload = \Hub\Command\DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => [
+                'time' => '11:25',
+                'enabled' => true,
+                'frequency' => 3,
+                'custom' => '1010',
+            ],
+            'number' => 3,
+            'reminderText' => 'meds',
+            'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+            'voiceMimeType' => 'audio/wav',
+        ]);
+        $bytes = \Hub\Command\DeviceCommandCatalog::buildDownlink(
+            'four-p-touch',
+            '7597567372',
+            $payload['command'],
+            $payload['payload'],
+            ['deviceId' => '']
+        );
+
+        self::assertTrue($hub->sendDownlink('637507597567372', $bytes));
+        self::assertSame('device.downlink.sent', $mqtt->events[1][1]['type']);
+        self::assertSame('TAKEPILLS', $mqtt->events[1][1]['command']['nativeType'] ?? null);
+        self::assertSame('four-p-touch', $mqtt->events[1][1]['command']['protocol'] ?? null);
+        self::assertSame('downlink', $mqtt->raw[1][1]['direction'] ?? null);
+        self::assertSame('text', $mqtt->raw[1][1]['debug']['encoding'] ?? null);
+        self::assertStringStartsWith('[3G*7597567372*', $mqtt->raw[1][1]['debug']['payload'] ?? '');
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073,', $mqtt->raw[1][1]['debug']['payload'] ?? '');
+        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
+    }
+
     public function testVivistarTelemetryPacketsReceiveProtocolAck(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
@@ -302,6 +344,32 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertStringStartsWith('IWBP00,', $connection->sent[0]);
         self::assertStringEndsWith('#', $connection->sent[0]);
         self::assertSame('IWBP49#', $connection->sent[1]);
+    }
+
+    private function sampleWavBase64(): string
+    {
+        $sampleRate = 8000;
+        $channels = 1;
+        $bitsPerSample = 16;
+        $data = str_repeat(pack('v', 0), 800);
+
+        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
+        $blockAlign = (int)($channels * ($bitsPerSample / 8));
+        $header = 'RIFF'
+            . pack('V', 36 + strlen($data))
+            . 'WAVE'
+            . 'fmt '
+            . pack('V', 16)
+            . pack('v', 1)
+            . pack('v', $channels)
+            . pack('V', $sampleRate)
+            . pack('V', $byteRate)
+            . pack('v', $blockAlign)
+            . pack('v', $bitsPerSample)
+            . 'data'
+            . pack('V', strlen($data));
+
+        return base64_encode($header . $data);
     }
 }
 

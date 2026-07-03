@@ -40,6 +40,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitCare'],
             '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002', 'company' => 'otherCare'],
             '861265061009844' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '0', 'company' => 'null'],
+            '868017032159118' => ['supplier' => '4P Touch', 'model' => 'D46', 'licenseId' => '1001', 'company' => 'hitCare'],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -719,10 +720,11 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
     public function testDeviceDetailExposesTakePillsMetaForFourPTouch(): void
     {
-        [$server, $db] = $this->makeServerWithDatabase();
+        [$server, $db, $store] = $this->makeServerWithDatabase();
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitCare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         $db->deviceConfigurations->saveDesired(
             '868017032159118',
@@ -735,7 +737,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                 'reminderSettings' => '11:25-1-3-1010',
                 'number' => 3,
                 'reminderText' => 'meds',
-                'voiceData' => 'QUJDRA==',
+                'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+                'voiceMimeType' => 'audio/wav',
             ]
         );
 
@@ -758,7 +761,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                 ],
                 'number' => 3,
                 'reminderText' => 'meds',
-                'voiceData' => 'QUJDRA==',
+                'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+                'voiceMimeType' => 'audio/wav',
             ],
             $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
         );
@@ -938,6 +942,32 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         );
 
         return [$server, $db, $store];
+    }
+
+    private function sampleWavBase64(): string
+    {
+        $sampleRate = 8000;
+        $channels = 1;
+        $bitsPerSample = 16;
+        $data = str_repeat(pack('v', 0), 800);
+
+        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
+        $blockAlign = (int)($channels * ($bitsPerSample / 8));
+        $header = 'RIFF'
+            . pack('V', 36 + strlen($data))
+            . 'WAVE'
+            . 'fmt '
+            . pack('V', 16)
+            . pack('v', 1)
+            . pack('v', $channels)
+            . pack('V', $sampleRate)
+            . pack('V', $byteRate)
+            . pack('v', $blockAlign)
+            . pack('v', $bitsPerSample)
+            . 'data'
+            . pack('V', strlen($data));
+
+        return base64_encode($header . $data);
     }
 
     private function readSseFrame(\Psr\Http\Message\ResponseInterface $response): string
