@@ -222,18 +222,40 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testFourPTouchTakePillsBuildsVoiceReminderFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
-            'reminderSettings' => '11:25-1-2',
+            'reminderSettings' => [
+                'time' => '11:25',
+                'enabled' => true,
+                'frequency' => 2,
+                'custom' => '',
+            ],
             'number' => 1,
             'reminderText' => 'meds',
-            'voiceData' => '',
+            'voiceData' => 'QUJDRA==',
         ]);
 
         self::assertSame('TAKEPILLS', $payload['command']);
-        self::assertSame(['fields' => ['11:25-1-2', '1', '006D006500640073', '']], $payload['payload']);
+        self::assertSame(['fields' => ['11:25-1-2', '1', '006D006500640073', 'QUJDRA==']], $payload['payload']);
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,', $wire);
-        self::assertStringEndsWith(',]', $wire);
+        self::assertStringEndsWith(',QUJDRA==]', $wire);
+    }
+
+    public function testFourPTouchTakePillsStripsLegacyDataUrlsFromVoiceData(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => [
+                'time' => '11:25',
+                'enabled' => true,
+                'frequency' => 2,
+                'custom' => '',
+            ],
+            'number' => 1,
+            'reminderText' => 'meds',
+            'voiceData' => 'data:audio/webm;base64,QUJDRA==',
+        ]);
+
+        self::assertSame(['fields' => ['11:25-1-2', '1', '006D006500640073', 'QUJDRA==']], $payload['payload']);
     }
 
     public function testFourPTouchTakePillsMapsToMedicationReminderCapability(): void
@@ -242,6 +264,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertIsArray($config);
         self::assertSame('alerts', $config['category'] ?? null);
+        self::assertSame(3, $config['limit'] ?? null);
+        self::assertSame([
+            'frequency' => [
+                ['value' => 1, 'label' => 'Uma vez'],
+                ['value' => 2, 'label' => 'Diariamente'],
+                ['value' => 3, 'label' => 'Personalizado'],
+            ],
+        ], $config['options'] ?? null);
         self::assertSame('medication_reminders', GenericModelCapabilityCatalog::mapConfigurationKey('takePills'));
     }
 

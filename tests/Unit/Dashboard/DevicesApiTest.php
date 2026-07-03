@@ -196,6 +196,56 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $response['transportPending'] ?? null);
     }
 
+    public function testShowExposesTakePillsStructuredMetaForFourPTouch(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'takePills',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'TAKEPILLS',
+            [
+                'reminderSettings' => '11:25-1-3-1010',
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => 'QUJDRA==',
+            ]
+        );
+
+        $response = $api->show('868017032159118');
+
+        self::assertSame(
+            [
+                'reminderSettings' => [
+                    'time' => '11:25',
+                    'enabled' => true,
+                    'frequency' => 3,
+                    'custom' => '1010',
+                ],
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => 'QUJDRA==',
+            ],
+            $response['capabilities']['alarms']['medication_reminders']['value'] ?? null
+        );
+        self::assertSame(3, $response['capabilities']['alarms']['medication_reminders']['_meta']['limit'] ?? null);
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Uma vez'],
+                ['value' => 2, 'label' => 'Diariamente'],
+                ['value' => 3, 'label' => 'Personalizado'],
+            ],
+            $response['capabilities']['alarms']['medication_reminders']['_meta']['frequency']['options'] ?? null
+        );
+        self::assertSame('takePills', $response['capabilities']['alarms']['medication_reminders']['_nativeKey'] ?? null);
+    }
+
     public function testShowReturnsAbsoluteModelImageUrl(): void
     {
         [$api, $db] = $this->makeApi();
@@ -304,6 +354,45 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('fallDetection', $response['results'][0]['key'] ?? null);
         self::assertSame(['enabled' => true], $response['configurations']['fallDetection'] ?? null);
         self::assertSame('waiting_device', $response['pending']['alarms']['fall_detection']['status'] ?? null);
+    }
+
+    public function testConfigurationPutSendsFourPTouchTakePillsDownlink(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'takePills' => [
+                    'reminderSettings' => [
+                        'time' => '11:25',
+                        'enabled' => true,
+                        'frequency' => 3,
+                        'custom' => '1010',
+                    ],
+                    'number' => 3,
+                    'reminderText' => 'meds',
+                    'voiceData' => 'data:audio/webm;base64,QUJDRA==',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertSame(
+            '[3G*868017032159118*002A*TAKEPILLS,11:25-1-3-1010,3,006D006500640073,QUJDRA==]',
+            $submitted[0]['bytes']
+        );
     }
 
     public function testConfigurationPutRejectsInvalidRequestWithoutConfigurations(): void

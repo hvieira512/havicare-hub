@@ -79,6 +79,7 @@ export function renderDeviceConfigurationRoot(context) {
         protocol,
         catalog,
         configurations = {},
+        capabilities = {},
         supplier = "",
         model = "",
         disabled = false,
@@ -140,7 +141,7 @@ export function renderDeviceConfigurationRoot(context) {
                     .map(
                         (group) => `
                     <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
-                        ${group.entries.map((entry) => renderConfigSection(protocol, entry, rowsByKey[entry.key] || null, disabled, uiByKey[entry.key] || null)).join("")}
+                        ${group.entries.map((entry) => renderConfigSection(protocol, entry, rowsByKey[entry.key] || null, capabilities, disabled, uiByKey[entry.key] || null)).join("")}
                     </div>
                 `,
                     )
@@ -153,10 +154,13 @@ export function renderConfigSection(
     protocol,
     entry,
     row,
+    capabilities = {},
     disabled = false,
     uiState = null,
 ) {
-    const desired = normalizeDesired(entry, row);
+    const capability = capabilityForEntry(entry, capabilities);
+    const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null);
+    const meta = capability?._meta || {};
     const help = configHelp(entry);
 
     return `
@@ -168,7 +172,7 @@ export function renderConfigSection(
                 </div>
             </div>
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ""}>
-                ${renderConfigInputs(entry, desired)}
+                ${renderConfigInputs(entry, desired, meta)}
                 <div class="d-flex justify-content-end gap-2 mt-3">
                     ${renderConfigActionButton(entry.key, row, uiState, disabled)}
                     <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? "disabled" : ""}>
@@ -243,7 +247,7 @@ function configButtonState(_row, uiState) {
     return "idle";
 }
 
-export function renderConfigInputs(entry, desired) {
+export function renderConfigInputs(entry, desired, meta = {}) {
     const input = entry.input || "json";
     if (input === "toggle") {
         return toggleInput(entry, desired);
@@ -312,7 +316,7 @@ export function renderConfigInputs(entry, desired) {
         return remindersInput(desired);
     }
     if (input === "takePills") {
-        return takePillsInput(desired);
+        return takePillsInput(desired, meta);
     }
 
     return jsonInput(desired);
@@ -503,17 +507,24 @@ export function defaultConfigPayload(entry) {
     if (input === "reminders") return { masterEnabled: true, items: [] };
     if (input === "takePills")
         return {
-            reminderSettings: "08:00-1-1",
+            reminderSettings: {
+                time: "08:00",
+                enabled: true,
+                frequency: 1,
+                custom: "",
+            },
             number: 1,
             reminderText: "",
             voiceData: "",
+            voiceMimeType: "audio/webm",
         };
     return {};
 }
 
-function normalizeDesired(entry, desired) {
-    if (desired && Object.keys(desired).length) {
-        return desired;
+function normalizeDesired(entry, desired, capabilityDesired = null) {
+    const effectiveDesired = capabilityDesired ?? desired;
+    if (effectiveDesired && Object.keys(effectiveDesired).length) {
+        return effectiveDesired;
     }
     return defaultConfigPayload(entry);
 }
@@ -639,11 +650,18 @@ function readReminders(section) {
 }
 
 function readTakePills(section) {
+    const frequency = readNumber(section, "reminderFrequency");
     return {
-        reminderSettings: readText(section, "reminderSettings"),
+        reminderSettings: {
+            time: readText(section, "reminderTime"),
+            enabled: readCheckbox(section, "reminderEnabled"),
+            frequency,
+            custom: frequency === 3 ? readText(section, "reminderCustom") : "",
+        },
         number: readNumber(section, "number"),
         reminderText: readText(section, "reminderText"),
         voiceData: readText(section, "voiceData"),
+        voiceMimeType: readText(section, "voiceMimeType"),
     };
 }
 
@@ -1218,31 +1236,66 @@ function remindersInput(desired) {
         </div>`;
 }
 
-function takePillsInput(desired) {
-    const reminderSettings = String(desired.reminderSettings || "");
+function takePillsInput(desired, meta = {}) {
+    const reminderSettings = normalizeTakePillsReminderSettings(desired);
     const reminderNumber = parseInt(String(desired.number ?? 1), 10) || 1;
+    const frequencyValue = parseInt(
+        String(reminderSettings.frequency ?? 1),
+        10,
+    ) || 1;
     const reminderText = String(desired.reminderText || "");
     const voiceData = String(desired.voiceData || "");
+    const voiceMimeType = String(desired.voiceMimeType || "audio/webm");
     const hasVoiceData = voiceData.trim() !== "";
+    const previewSrc = takePillsVoicePreviewSrc(voiceData, voiceMimeType);
+    const frequencyOptions = takePillsFrequencyOptions(meta);
+    const numberLimit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
+    const customVisible = frequencyValue === 3;
 
     return `
         <div class="vstack gap-3">
-            <div class="row g-3">
-                <div class="col-md-5">
-                    <label class="form-label form-label-sm">Configuração do lembrete</label>
-                    <input class="form-control" type="text" data-config-field="reminderSettings" value="${esc(reminderSettings)}">
+            <div class="row g-3" data-takepills-reminder-settings>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Hora</label>
+                    <input class="form-control" type="time" data-config-field="reminderTime" value="${esc(reminderSettings.time)}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm d-block">Estado</label>
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="reminderEnabled" ${reminderSettings.enabled ? "checked" : ""}>
+                        <label class="form-check-label" data-switch-label data-switch-on="Ligado" data-switch-off="Desligado">${reminderSettings.enabled ? "Ligado" : "Desligado"}</label>
+                    </div>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label form-label-sm">Número</label>
-                    <input class="form-control" type="number" min="1" max="3" step="1" data-config-field="number" value="${esc(String(reminderNumber))}">
+                    <label class="form-label form-label-sm">Frequência</label>
+                    <select class="form-select" data-config-field="reminderFrequency" data-takepills-frequency>
+                        ${frequencyOptions
+                            .map(
+                                (option) => `
+                            <option value="${esc(String(option.value))}" ${parseInt(String(option.value), 10) === frequencyValue ? "selected" : ""}>${esc(String(option.label))}</option>
+                        `,
+                            )
+                            .join("")}
+                    </select>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-4 ${customVisible ? "" : "d-none"}" data-takepills-custom-wrapper>
+                    <label class="form-label form-label-sm">Custom</label>
+                    <input class="form-control" type="text" data-config-field="reminderCustom" value="${esc(reminderSettings.custom)}">
+                    <div class="form-text">Usado apenas quando a frequência é personalizada.</div>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label form-label-sm">Número</label>
+                    <input class="form-control" type="number" min="1" max="${esc(String(numberLimit))}" step="1" data-config-field="number" value="${esc(String(reminderNumber))}">
+                    <div class="form-text">Máximo de ${esc(String(numberLimit))} lembretes.</div>
+                </div>
+                <div class="col-md-12">
                     <label class="form-label form-label-sm">Texto do lembrete</label>
                     <input class="form-control" type="text" data-config-field="reminderText" value="${esc(reminderText)}">
                 </div>
             </div>
             <div class="vstack gap-2" data-takepills-audio>
                 <input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}">
+                <input type="hidden" data-config-field="voiceMimeType" value="${esc(voiceMimeType)}">
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord">
                         <i class="fa-solid fa-microphone me-2"></i>Gravar
@@ -1261,9 +1314,95 @@ function takePillsInput(desired) {
                         ${hasVoiceData ? "Áudio carregado" : "Sem áudio"}
                     </span>
                 </div>
-                <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(voiceData)}"` : ""}></audio>
+                <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(previewSrc)}"` : ""}></audio>
             </div>
         </div>`;
+}
+
+function normalizeTakePillsReminderSettings(desired) {
+    const base = desired?.reminderSettings;
+    if (base && typeof base === "object" && !Array.isArray(base)) {
+        return {
+            time: String(base.time ?? base.reminderTime ?? "08:00"),
+            enabled: boolValue(base.enabled ?? base.switchState, true),
+            frequency: parseInt(String(base.frequency ?? base.frequencies ?? 1), 10) || 1,
+            custom: String(base.custom ?? ""),
+        };
+    }
+
+    if (typeof base === "string" && base.trim() !== "") {
+        const parts = base.split("-");
+        return {
+            time: String(parts[0] ?? "08:00"),
+            enabled: boolValue(parts[1] ?? true, true),
+            frequency: parseInt(String(parts[2] ?? 1), 10) || 1,
+            custom: String(parts.slice(3).join("-") ?? ""),
+        };
+    }
+
+    return {
+        time: String(desired?.reminderTime ?? "08:00"),
+        enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true),
+        frequency: parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1,
+        custom: String(desired?.reminderCustom ?? desired?.custom ?? ""),
+    };
+}
+
+function takePillsVoicePreviewSrc(voiceData, voiceMimeType) {
+    const value = String(voiceData || "").trim();
+    if (value === "") {
+        return "";
+    }
+    if (value.startsWith("data:")) {
+        return value;
+    }
+    const mimeType = String(voiceMimeType || "audio/webm").trim() || "audio/webm";
+    return `data:${mimeType};base64,${value}`;
+}
+
+function takePillsFrequencyOptions(meta) {
+    const options = meta?.frequency?.options;
+    if (Array.isArray(options) && options.length) {
+        return options;
+    }
+
+    return [
+        { value: 1, label: "Uma vez" },
+        { value: 2, label: "Diariamente" },
+        { value: 3, label: "Personalizado" },
+    ];
+}
+
+function capabilityForEntry(entry, capabilities) {
+    const key = entry.capabilityKey || entry.key;
+    if (!key) {
+        return null;
+    }
+
+    const section = capabilities?.[entry.category || ""];
+    if (!section || typeof section !== "object") {
+        return null;
+    }
+
+    const capability = section[key];
+    if (!capability || typeof capability !== "object") {
+        return null;
+    }
+
+    return capability;
+}
+
+function extractCapabilityValue(value) {
+    if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        Object.prototype.hasOwnProperty.call(value, "value")
+    ) {
+        return value.value;
+    }
+
+    return value;
 }
 
 function reminderRow(item = {}) {

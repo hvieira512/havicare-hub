@@ -1620,9 +1620,69 @@ class DeviceService
             'call_whitelist' => $this->normalizeCallWhitelistValue($nativeKey, $desired),
             'monitor_number' => $desired['phone'] ?? $desired,
             'alarm_clock' => $desired['alarmClock'] ?? $desired['items'] ?? $desired,
-            'medication_reminders' => $desired['plans'] ?? $desired['items'] ?? $desired,
+            'medication_reminders' => $this->normalizeTakePillsCapabilityValue($desired),
             default => $desired,
         };
+    }
+
+    private function normalizeTakePillsCapabilityValue(array $desired): array
+    {
+        $reminderSettings = $desired['reminderSettings'] ?? [];
+        if (is_string($reminderSettings)) {
+            $reminderSettings = $this->parseTakePillsReminderSettings($reminderSettings);
+        } elseif (is_array($reminderSettings)) {
+            $reminderSettings = [
+                'time' => (string)($reminderSettings['time'] ?? $reminderSettings['reminderTime'] ?? ''),
+                'enabled' => $this->boolLikeToBool($reminderSettings['enabled'] ?? $reminderSettings['switchState'] ?? true),
+                'frequency' => (int)($reminderSettings['frequency'] ?? $reminderSettings['reminderFrequency'] ?? 1),
+                'custom' => (string)($reminderSettings['custom'] ?? $reminderSettings['reminderCustom'] ?? ''),
+            ];
+        } else {
+            $reminderSettings = [
+                'time' => '',
+                'enabled' => true,
+                'frequency' => 1,
+                'custom' => '',
+            ];
+        }
+
+        $payload = [
+            'reminderSettings' => $reminderSettings,
+            'number' => (int)($desired['number'] ?? 1),
+            'reminderText' => (string)($desired['reminderText'] ?? ''),
+            'voiceData' => (string)($desired['voiceData'] ?? ''),
+        ];
+
+        if (array_key_exists('voiceMimeType', $desired)) {
+            $payload['voiceMimeType'] = (string)$desired['voiceMimeType'];
+        }
+
+        return $payload;
+    }
+
+    private function parseTakePillsReminderSettings(string $value): array
+    {
+        $parts = explode('-', trim($value), 4);
+        return [
+            'time' => (string)($parts[0] ?? ''),
+            'enabled' => $this->boolLikeToBool($parts[1] ?? 1),
+            'frequency' => (int)($parts[2] ?? 1),
+            'custom' => (string)($parts[3] ?? ''),
+        ];
+    }
+
+    private function boolLikeToBool(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value !== 0;
+        }
+
+        $string = strtolower(trim((string)$value));
+        return in_array($string, ['1', 'true', 'yes', 'on'], true);
     }
 
     private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed

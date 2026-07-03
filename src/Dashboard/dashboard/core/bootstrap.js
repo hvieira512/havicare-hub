@@ -235,6 +235,7 @@ async function openAddDevice() {
         protocol: "",
         catalog: [],
         configurations: [],
+        capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
         errorMessage: "",
@@ -279,6 +280,7 @@ async function editDevice(imei, supplier, model) {
         protocol: "",
         catalog: [],
         configurations: [],
+        capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
         errorMessage: "",
@@ -347,6 +349,7 @@ async function editDevice(imei, supplier, model) {
         applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || "");
         state.deviceModal.configurations = detail.configurations || {};
+        state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
     } finally {
         if (!companiesLoaded && state.deviceModal.errorMessage === "") {
@@ -522,6 +525,7 @@ function renderDeviceConfigurationModal() {
         protocol: state.deviceModal.protocol,
         catalog: filteredCatalog,
         configurations: state.deviceModal.configurations,
+        capabilities: state.deviceModal.capabilities,
         uiByKey: state.deviceModal.configUi,
         supplier: state.deviceModal.supplier,
         model: state.deviceModal.model,
@@ -1080,6 +1084,10 @@ function handleDeviceConfigChange(event) {
     const section = event.target.closest("[data-config-section]");
     if (!section) return;
 
+    if (event.target.matches('[data-config-field="reminderFrequency"]')) {
+        syncTakePillsCustomVisibility(section);
+    }
+
     if (event.target.matches('[data-config-field="mode"]')) {
         const extra = section.querySelector("[data-working-mode-extra]");
         if (extra) {
@@ -1183,9 +1191,11 @@ function clearTakePillsRecording(section) {
     stopTakePillsStream(state?.stream || null);
     takePillsRecordingState.delete(section);
     const input = section.querySelector('[data-config-field="voiceData"]');
+    const mimeInput = section.querySelector('[data-config-field="voiceMimeType"]');
     const fileInput = section.querySelector('[data-action="takePillsFile"]');
     const preview = section.querySelector("[data-takepills-preview]");
     if (input) input.value = "";
+    if (mimeInput) mimeInput.value = "";
     if (fileInput) fileInput.value = "";
     if (preview) preview.removeAttribute("src");
     preview?.load?.();
@@ -1210,15 +1220,20 @@ async function loadTakePillsAudio(section, file) {
 }
 
 async function setTakePillsAudioFromBlob(section, blob, mimeType) {
-    const dataUrl = await blobToDataUrl(blob);
+    const base64 = await blobToBase64(blob);
     const input = section.querySelector('[data-config-field="voiceData"]');
+    const mimeInput = section.querySelector('[data-config-field="voiceMimeType"]');
     const preview = section.querySelector("[data-takepills-preview]");
+    const normalizedMimeType = mimeType || blob.type || "audio/webm";
     if (input) {
-        input.value = dataUrl;
+        input.value = base64;
+    }
+    if (mimeInput) {
+        mimeInput.value = normalizedMimeType;
     }
     if (preview) {
-        preview.src = dataUrl;
-        preview.type = mimeType || blob.type || "audio/webm";
+        preview.src = `data:${normalizedMimeType};base64,${base64}`;
+        preview.type = normalizedMimeType;
     }
 }
 
@@ -1230,6 +1245,18 @@ function updateTakePillsRecorderUi(section, status, recording) {
     stopBtn?.classList.toggle("d-none", !recording);
     if (statusEl) {
         statusEl.textContent = status;
+    }
+}
+
+function syncTakePillsCustomVisibility(section) {
+    const frequency = parseInt(
+        section.querySelector('[data-config-field="reminderFrequency"]')
+            ?.value ?? "1",
+        10,
+    ) || 1;
+    const wrapper = section.querySelector("[data-takepills-custom-wrapper]");
+    if (wrapper) {
+        wrapper.classList.toggle("d-none", frequency !== 3);
     }
 }
 
@@ -1253,10 +1280,14 @@ function pickTakePillsMimeType() {
     return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) || "";
 }
 
-function blobToDataUrl(blob) {
+function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onload = () => {
+            const result = String(reader.result || "");
+            const commaIndex = result.indexOf(",");
+            resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+        };
         reader.onerror = () => reject(reader.error || new Error("Failed to read audio"));
         reader.readAsDataURL(blob);
     });

@@ -636,6 +636,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             $body['capabilities']['contacts']['phonebook']['value'] ?? null
         );
         self::assertSame(10, $body['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertSame([], $body['capabilities']['alarms'] ?? null);
         self::assertTrue($body['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
         self::assertSame(
             ['+351922222222'],
@@ -714,6 +715,62 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(['enabled' => true], $detailBody['capabilities']['alarms']['fall_detection'] ?? null);
         self::assertSame('waiting_device', $detailBody['pending']['alarms']['fall_detection']['status'] ?? null);
         self::assertSame('cfg:BP76', $detailBody['transportPending'][0]['dedupeKey'] ?? null);
+    }
+
+    public function testDeviceDetailExposesTakePillsMetaForFourPTouch(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'takePills',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'TAKEPILLS',
+            [
+                'reminderSettings' => '11:25-1-3-1010',
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => 'QUJDRA==',
+            ]
+        );
+
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/868017032159118',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        self::assertSame(
+            [
+                'reminderSettings' => [
+                    'time' => '11:25',
+                    'enabled' => true,
+                    'frequency' => 3,
+                    'custom' => '1010',
+                ],
+                'number' => 3,
+                'reminderText' => 'meds',
+                'voiceData' => 'QUJDRA==',
+            ],
+            $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
+        );
+        self::assertSame(3, $body['capabilities']['alarms']['medication_reminders']['_meta']['limit'] ?? null);
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Uma vez'],
+                ['value' => 2, 'label' => 'Diariamente'],
+                ['value' => 3, 'label' => 'Personalizado'],
+            ],
+            $body['capabilities']['alarms']['medication_reminders']['_meta']['frequency']['options'] ?? null
+        );
     }
 
     public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void

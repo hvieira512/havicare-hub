@@ -43,6 +43,7 @@ export const state = {
         protocol: "",
         catalog: [],
         configurations: [],
+        capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
         errorMessage: "",

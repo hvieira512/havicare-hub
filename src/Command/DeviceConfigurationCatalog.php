@@ -403,7 +403,13 @@ final class DeviceConfigurationCatalog
             self::entry('removeWatchSmsAlerts', 'REMOVESMS', 'SMS ao retirar relógio', 'toggle', ['enabled'], ['REMOVESMS'], 'alerts', 40),
             self::entry('fallDownAlert', 'FALLDOWN', 'Alerta de queda', 'dualToggle', ['enabled', 'callCenterOnFall'], ['FALLDOWN'], 'alerts', 50),
             self::entry('fallDownSensitivity', 'LSSET', 'Sensibilidade de queda', 'fallSensitivityLevels', ['sensitivityLevel', 'totalLevels'], ['LSSET'], 'alerts', 60),
-            self::entry('takePills', 'TAKEPILLS', 'Lembrete de medicação com voz', 'takePills', ['reminderSettings', 'number', 'reminderText', 'voiceData'], ['TAKEPILLS'], 'alerts', 70),
+            self::entry('takePills', 'TAKEPILLS', 'Lembrete de medicação com voz', 'takePills', ['reminderSettings', 'number', 'reminderText', 'voiceData'], ['TAKEPILLS'], 'alerts', 70, 3, [
+                'frequency' => [
+                    ['value' => 1, 'label' => 'Uma vez'],
+                    ['value' => 2, 'label' => 'Diariamente'],
+                    ['value' => 3, 'label' => 'Personalizado'],
+                ],
+            ]),
             self::entry('healthAutoMeasurement', 'HEALTHAUTOSET', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['HEALTHAUTOSET'], 'health', 10),
             self::entry('walkTime', 'WALKTIME', 'Janela de pedómetro', 'timeRanges', ['ranges'], ['WALKTIME'], 'health', 20, 3),
             self::entry('sleepTime', 'SLEEPTIME', 'Deteção de sono e rotação', 'timeRange', ['range'], ['SLEEPTIME'], 'health', 30),
@@ -547,14 +553,61 @@ final class DeviceConfigurationCatalog
 
     private static function fourPTouchTakePillsPayload(array $payload): array
     {
-        $voiceData = array_key_exists('voiceData', $payload) ? trim((string)$payload['voiceData']) : '';
+        $voiceData = array_key_exists('voiceData', $payload) ? self::fourPTouchTakePillsVoiceData($payload['voiceData']) : '';
 
         return [
-            self::requiredString($payload['reminderSettings'] ?? null, 'reminderSettings'),
+            self::fourPTouchTakePillsReminderSettings($payload['reminderSettings'] ?? null),
             self::rangeInt($payload['number'] ?? null, 1, 3, 'number'),
             self::utf16Hex(self::requiredString($payload['reminderText'] ?? null, 'reminderText')),
             $voiceData,
         ];
+    }
+
+    private static function fourPTouchTakePillsReminderSettings(mixed $value): string
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value !== '') {
+                return $value;
+            }
+            throw new \InvalidArgumentException('reminderSettings is required');
+        }
+
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException('reminderSettings must be a string or object');
+        }
+
+        $time = self::requiredString($value['time'] ?? $value['reminderTime'] ?? null, 'reminderSettings.time');
+        $enabled = self::boolInt($value['enabled'] ?? $value['switchState'] ?? null, 'reminderSettings.enabled');
+        $frequency = self::rangeInt($value['frequency'] ?? $value['reminderFrequency'] ?? null, 0, 999, 'reminderSettings.frequency');
+        $custom = array_key_exists('custom', $value)
+            ? trim((string)$value['custom'])
+            : trim((string)($value['reminderCustom'] ?? ''));
+
+        $parts = [$time, (string)$enabled, (string)$frequency, $custom];
+        while (count($parts) > 0 && end($parts) === '') {
+            array_pop($parts);
+        }
+
+        return implode('-', $parts);
+    }
+
+    private static function fourPTouchTakePillsVoiceData(mixed $value): string
+    {
+        $voiceData = trim((string)$value);
+        if ($voiceData === '') {
+            return '';
+        }
+
+        $commaPos = strpos($voiceData, ',');
+        if ($commaPos !== false) {
+            $prefix = substr($voiceData, 0, $commaPos);
+            if (str_starts_with($prefix, 'data:')) {
+                return substr($voiceData, $commaPos + 1) ?: '';
+            }
+        }
+
+        return $voiceData;
     }
 
     private static function stringList(mixed $value, int $max, string $field): array
