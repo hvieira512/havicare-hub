@@ -821,14 +821,39 @@ function populateDetailFilterTypes() {
     const select = els.detailFilterType;
     const currentValue = state.detailFilters.type;
     const sorted = [...types].sort();
-    select.innerHTML = [
-        '<option value="all">Todos</option>',
-        ...sorted.map(
-            (t) =>
-                `<option value="${esc(t)}">${esc(detailTypeLabel(t))}</option>`,
-        ),
-    ].join("");
-    select.value = sorted.includes(currentValue) ? currentValue : "all";
+    const signature = sorted.join("|");
+    if (select.dataset.detailFilterTypesSignature !== signature) {
+        const options = [
+            '<option value="all">Todos</option>',
+            ...sorted.map(
+                (t) =>
+                    `<option value="${esc(t)}">${esc(detailTypeLabel(t))}</option>`,
+            ),
+        ];
+        if (currentValue && currentValue !== "all" && !sorted.includes(currentValue)) {
+            options.push(
+                `<option value="${esc(currentValue)}">${esc(detailTypeLabel(currentValue))}</option>`,
+            );
+        }
+        select.innerHTML = options.join("");
+        select.dataset.detailFilterTypesSignature = signature;
+    }
+
+    if (currentValue && currentValue !== "all") {
+        const hasCurrentValue = Array.from(select.options).some(
+            (option) => option.value === currentValue,
+        );
+        if (!hasCurrentValue) {
+            select.insertAdjacentHTML(
+                "beforeend",
+                `<option value="${esc(currentValue)}">${esc(detailTypeLabel(currentValue))}</option>`,
+            );
+        }
+        select.value = currentValue;
+        return;
+    }
+
+    select.value = "all";
 }
 
 function detailTypeLabel(type) {
