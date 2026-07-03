@@ -236,7 +236,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertSame('TAKEPILLS', $payload['command']);
         self::assertSame(['11:25-1-2', '1', '006D006500640073'], array_slice($payload['payload']['fields'] ?? [], 0, 3));
-        self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
+        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,', $wire);
@@ -258,7 +258,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'voiceMimeType' => 'audio/wav',
         ]);
 
-        self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
+        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
     }
 
     public function testFourPTouchTakePillsAllowsOmittingVoiceAudio(): void
