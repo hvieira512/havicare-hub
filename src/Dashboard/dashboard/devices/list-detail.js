@@ -783,7 +783,7 @@ function filterDetailItems(items) {
     const { from, to, type } = state.detailFilters;
     return items.filter((item) => {
         if (type !== "all" && type !== "") {
-            const itemType = detailItemType(item);
+            const itemType = normalizeTelemetryFilterType(detailItemType(item));
             if (itemType !== type) return false;
         }
         if (from || to) {
@@ -806,33 +806,43 @@ function detailItemType(item) {
     return "outros";
 }
 
+function normalizeTelemetryFilterType(type) {
+    if (type === "blood_pressure_systolic" || type === "blood_pressure_diastolic") {
+        return "blood_pressure";
+    }
+
+    return type;
+}
+
 function itemTime(item) {
     const p = item.payload;
     return Date.parse(p.occurredAt || p.recordedAt || p.requestedAt || "");
 }
 
 function populateDetailFilterTypes() {
-    const items = allDetailItems();
-    const types = new Set();
-    for (const item of items) {
-        const t = detailItemType(item);
-        if (t) types.add(t);
-    }
     const select = els.detailFilterType;
     const currentValue = state.detailFilters.type;
-    const sorted = [...types].sort();
+    const telemetryCapabilities =
+        state.selectedDetail?.capabilities?.telemetry &&
+        typeof state.selectedDetail.capabilities.telemetry === "object"
+            ? state.selectedDetail.capabilities.telemetry
+            : {};
+    const sorted = Object.entries(telemetryCapabilities)
+        .filter(([, entry]) => entry?.supported)
+        .map(([key]) => key)
+        .sort();
     const signature = sorted.join("|");
     if (select.dataset.detailFilterTypesSignature !== signature) {
         const options = [
             '<option value="all">Todos</option>',
             ...sorted.map(
                 (t) =>
-                    `<option value="${esc(t)}">${esc(detailTypeLabel(t))}</option>`,
+                    `<option value="${esc(t)}">${esc(telemetryFilterLabel(t))}</option>`,
             ),
         ];
         if (currentValue && currentValue !== "all" && !sorted.includes(currentValue)) {
             options.push(
-                `<option value="${esc(currentValue)}">${esc(detailTypeLabel(currentValue))}</option>`,
+                `<option value="${esc(currentValue)}">${esc(telemetryFilterLabel(currentValue))}</option>`,
             );
         }
         select.innerHTML = options.join("");
@@ -846,7 +856,7 @@ function populateDetailFilterTypes() {
         if (!hasCurrentValue) {
             select.insertAdjacentHTML(
                 "beforeend",
-                `<option value="${esc(currentValue)}">${esc(detailTypeLabel(currentValue))}</option>`,
+                `<option value="${esc(currentValue)}">${esc(telemetryFilterLabel(currentValue))}</option>`,
             );
         }
         select.value = currentValue;
@@ -856,15 +866,8 @@ function populateDetailFilterTypes() {
     select.value = "all";
 }
 
-function detailTypeLabel(type) {
-    const labels = {
-        help_call: "SOS",
-        reset: "Cancelado",
-        general_alert: "Alerta Geral",
-        "device.connected": "Ligado",
-        "device.disconnected": "Desligado",
-    };
-    return labels[type] || featureLabel(type) || type;
+function telemetryFilterLabel(type) {
+    return featureLabel(type) || type;
 }
 
 function syncDetailFilterControls() {
