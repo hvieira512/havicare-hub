@@ -1268,7 +1268,7 @@ function takePillsInput(desired, meta = {}) {
             <div class="row g-3" data-takepills-reminder-settings>
                 <div class="col-md-3">
                     <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="time" data-config-field="reminderTime" value="${esc(reminderSettings.time)}">
+                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-config-field="reminderTime" value="${esc(reminderSettings.time)}">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label form-label-sm d-block">Estado</label>
@@ -1470,7 +1470,7 @@ function reminderRow(item = {}) {
             <div class="row g-3 align-items-end">
                 <div class="col-sm-6 col-lg-2">
                     <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="time" data-repeat-field="time" value="${esc(formatReminderTime(item.time))}">
+                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-repeat-field="time" value="${esc(formatReminderTime(item.time))}">
                 </div>
                 <div class="col-sm-6 col-lg-2">
                     <div class="form-check form-switch mt-4">

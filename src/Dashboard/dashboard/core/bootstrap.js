@@ -1073,6 +1073,10 @@ function handleDeviceConfigChange(event) {
         return;
     }
 
+    if (event.target.matches('[data-time-format="24h"]')) {
+        normalizeTwentyFourHourTimeInput(event.target);
+    }
+
     if (event.target.matches('[data-action="takePillsFile"]')) {
         const section = event.target.closest("[data-config-section]");
         if (!section) return;
@@ -1121,6 +1125,10 @@ function handleDeviceConfigChange(event) {
 function handleDeviceConfigInput(event) {
     if (event.target.matches("[data-phone-local]")) {
         syncPhoneControl(event.target);
+    }
+
+    if (event.target.matches('[data-time-format="24h"]')) {
+        normalizeTwentyFourHourTimeInput(event.target);
     }
 }
 
@@ -1282,6 +1290,22 @@ function syncTakePillsVoiceVisibility(section) {
         const hasVoiceData = String(section.querySelector('[data-config-field="voiceData"]')?.value || "").trim() !== "";
         status.textContent = voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado";
     }
+}
+
+function normalizeTwentyFourHourTimeInput(input) {
+    if (!(input instanceof HTMLInputElement)) {
+        return;
+    }
+    const digits = String(input.value || "").replace(/[^0-9]/g, "").slice(0, 4);
+    if (digits.length === 0) {
+        input.value = "";
+        return;
+    }
+    if (digits.length <= 2) {
+        input.value = digits;
+        return;
+    }
+    input.value = `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
 function stopTakePillsStream(stream) {
@@ -1775,7 +1799,7 @@ function createReminderRow() {
         <div class="row g-3 align-items-end">
             <div class="col-sm-6 col-lg-2">
                 <label class="form-label form-label-sm">Hora</label>
-                <input class="form-control" type="time" data-repeat-field="time">
+                <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-repeat-field="time">
             </div>
             <div class="col-sm-6 col-lg-2">
                 <div class="form-check form-switch mt-4">
