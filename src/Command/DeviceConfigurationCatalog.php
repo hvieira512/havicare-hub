@@ -622,10 +622,10 @@ final class DeviceConfigurationCatalog
             throw new \InvalidArgumentException('voiceData must be base64 audio');
         }
 
-        return self::transcodeAudioToArmBase64($binary, $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm');
+        return self::transcodeAudioToArmBytes($binary, $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm');
     }
 
-    private static function transcodeAudioToArmBase64(string $audioBytes, string $mimeType): string
+    private static function transcodeAudioToArmBytes(string $audioBytes, string $mimeType): string
     {
         $inputPath = tempnam(sys_get_temp_dir(), 'takepills-audio-in-');
         $outputPath = tempnam(sys_get_temp_dir(), 'takepills-audio-out-');
@@ -678,7 +678,7 @@ final class DeviceConfigurationCatalog
                 throw new \RuntimeException('Converted ARM audio is empty');
             }
 
-            return base64_encode($armBytes);
+            return $armBytes;
         } finally {
             if (is_file($inputPath)) {
                 @unlink($inputPath);
