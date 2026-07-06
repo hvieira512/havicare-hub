@@ -204,6 +204,17 @@ final class DeviceConfigurationCatalog
             'resetCommand' => [],
             'powerOffCommand' => [],
             'findDeviceCommand' => [],
+            'doNotDisturb' => [
+                self::boolInt($payload['enabled'] ?? null, 'enabled'),
+            ],
+            'firmwareVersion' => [],
+            'deviceStatus' => [],
+            'alarmClock' => self::fourPTouchAlarmClockPayload($payload),
+            'phonebook' => self::fourPTouchPhonebook($payload),
+            'soundProfile' => [self::nonNegativeInt($payload['mode'] ?? null, 'mode')],
+            'callInRestriction' => [
+                self::boolInt($payload['enabled'] ?? null, 'enabled'),
+            ],
             default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
 
@@ -426,6 +437,19 @@ final class DeviceConfigurationCatalog
             self::entry('resetCommand', 'RESET', 'Reiniciar dispositivo', 'resetAction', [], ['RESET'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
             self::entry('powerOffCommand', 'POWEROFF', 'Desligar dispositivo', 'resetAction', [], ['POWEROFF'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
             self::entry('findDeviceCommand', 'FIND', 'Localizar dispositivo', 'resetAction', [], ['FIND'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
+            self::entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
+            self::entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'requestAction', [], ['VERNO'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
+            self::entry('deviceStatus', 'TS', 'Estado do dispositivo', 'requestAction', [], ['TS'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
+            self::entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5),
+            self::entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55),
+            self::entry('soundProfile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
+                'mode' => [
+                    ['value' => 0, 'label' => 'Silencioso'],
+                    ['value' => 1, 'label' => 'Vibrar'],
+                    ['value' => 2, 'label' => 'Normal'],
+                ],
+            ]),
+            self::entry('callInRestriction', 'DEVREFUSEPHONESWITCH', 'Restrição de chamadas', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'system', 25),
         ];
     }
 
@@ -835,6 +859,57 @@ final class DeviceConfigurationCatalog
         if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
             throw new \InvalidArgumentException("{$field} must use valid 24h times");
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function fourPTouchAlarmClockPayload(array $payload): array
+    {
+        $alarms = $payload['alarms'] ?? $payload['alarmClock'] ?? null;
+        if (is_array($alarms)) {
+            $first = $alarms[0] ?? $alarms;
+            $time = self::requiredString($first['time'] ?? null, 'time');
+            $days = (string)($first['days'] ?? '1111111');
+            $enabled = self::boolInt($first['enabled'] ?? null, 'enabled');
+
+            return [$time, $days, (string)$enabled];
+        }
+
+        $time = self::requiredString($payload['time'] ?? null, 'time');
+        $days = (string)($payload['days'] ?? '1111111');
+        $enabled = self::boolInt($payload['enabled'] ?? null, 'enabled');
+
+        return [$time, $days, (string)$enabled];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function fourPTouchPhonebook(array $payload): array
+    {
+        $contacts = $payload['contacts'] ?? [];
+        if (!is_array($contacts) || $contacts === []) {
+            throw new \InvalidArgumentException('contacts must be a non-empty array');
+        }
+
+        $fields = [];
+        foreach (array_slice($contacts, 0, 10) as $i => $contact) {
+            if (!is_array($contact)) {
+                throw new \InvalidArgumentException('each contact must be an object');
+            }
+            $phone = trim((string)($contact['phone'] ?? ''));
+            if ($phone === '') {
+                continue;
+            }
+            $fields[] = ($i + 1) . ',' . $phone;
+        }
+
+        if ($fields === []) {
+            throw new \InvalidArgumentException('contacts must contain at least one valid phone number');
+        }
+
+        return $fields;
     }
 
     private static function fallDownSensitivity(array $payload): string

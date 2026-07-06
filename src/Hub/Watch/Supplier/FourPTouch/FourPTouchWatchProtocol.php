@@ -51,7 +51,7 @@ final class FourPTouchWatchProtocol extends AbstractWatchProtocol
         }
 
         return match ($type) {
-            'CONFIG', 'oxygen', 'WIFIINFOUP', 'TK' => ['1'],
+            'CONFIG', 'oxygen', 'WIFIINFOUP', 'TK', 'VERNO', 'TS' => ['1'],
             default => null,
         };
     }

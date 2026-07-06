@@ -19,6 +19,8 @@ final class FeatureNormalizer
             'alarm' => self::alarm($payload),
             'device_config' => self::deviceConfig($payload),
             'weather' => self::weather($payload),
+            'firmware_version' => self::firmwareVersion($payload),
+            'device_status' => self::deviceStatus($payload),
             default => [],
         };
     }
@@ -254,6 +256,20 @@ final class FeatureNormalizer
             'status' => 'ok',
             'ack' => is_scalar($ack) && $ack !== '' ? (string)$ack : null,
             'settings' => $configs !== [] ? $configs : null,
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function firmwareVersion(array $payload): array
+    {
+        return array_filter([
+            'version' => self::stringOrNull($payload['firmware'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function deviceStatus(array $payload): array
+    {
+        return array_filter([
+            'deviceTime' => self::stringOrNull($payload['deviceTime'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
     }
 

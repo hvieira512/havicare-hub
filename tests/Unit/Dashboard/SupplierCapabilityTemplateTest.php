@@ -81,14 +81,19 @@ final class SupplierCapabilityTemplateTest extends TestCase
     public function testFourPTouchWatchTemplateReturnsSupportedSubset(): void
     {
         $expected = [
+            'alarm_clock',
             'auto_vitals_interval',
             'blood_pressure',
+            'call_in_restriction',
             'call_whitelist',
             'center_number',
             'device_password',
+            'device_status',
+            'do_not_disturb',
             'fall_detection',
             'fall_sensitivity',
             'find_device',
+            'firmware_version',
             'heart_rate',
             'language_timezone',
             'location',
@@ -98,6 +103,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
             'monitor_number',
             'pedometer_schedule',
             'medication_reminders',
+            'phonebook',
             'power_off',
             'push_message',
             'remove_watch_alarm',
@@ -106,6 +112,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
             'sleep_monitoring',
             'sos_contacts',
             'sos_sms_alert',
+            'sound_profile',
             'temperature',
             'temperature_measurement_interval',
         ];

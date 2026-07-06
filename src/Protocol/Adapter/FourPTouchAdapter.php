@@ -169,6 +169,17 @@ class FourPTouchAdapter implements DeviceAdapterInterface
 
         if ($type === 'TK') {
             $data['audioData'] = $fields[0] ?? null;
+            return;
+        }
+
+        if ($type === 'VERNO') {
+            $data['firmware'] = $fields[0] ?? null;
+            return;
+        }
+
+        if ($type === 'TS') {
+            $data['deviceTime'] = $fields[0] ?? null;
+            return;
         }
     }
 

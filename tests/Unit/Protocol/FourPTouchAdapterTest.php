@@ -171,6 +171,28 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertSame('[3G*8800000015*0002*LK]', $frame);
     }
 
+    public function testDecodeIncomingParsesFirmwareVersion(): void
+    {
+        $adapter = new FourPTouchAdapter();
+
+        $payload = $adapter->decodeIncoming('[3G*8800000015*000C*VERNO,ABC123]');
+
+        self::assertIsArray($payload);
+        self::assertSame('VERNO', $payload['type']);
+        self::assertSame('ABC123', $payload['data']['firmware']);
+    }
+
+    public function testDecodeIncomingParsesDeviceStatus(): void
+    {
+        $adapter = new FourPTouchAdapter();
+
+        $payload = $adapter->decodeIncoming('[3G*8800000015*0011*TS,20240101120000]');
+
+        self::assertIsArray($payload);
+        self::assertSame('TS', $payload['type']);
+        self::assertSame('20240101120000', $payload['data']['deviceTime']);
+    }
+
     private function frame(FourPTouchAdapter $adapter, string $type, array $fields): string
     {
         return $adapter->encodeOutgoing([

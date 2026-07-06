@@ -184,6 +184,8 @@ final class DeviceEventDecoder
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
             $nativeType === 'CONFIG', $nativeType === 'TAKEPILLS' => [$this->event('device_config', $nativeType, $payload, $payload)],
+            $nativeType === 'VERNO' => [$this->event('firmware_version', $nativeType, $payload, $payload)],
+            $nativeType === 'TS' => [$this->event('device_status', $nativeType, $payload, $payload)],
             default => [],
         };
     }

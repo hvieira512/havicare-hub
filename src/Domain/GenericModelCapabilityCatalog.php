@@ -168,7 +168,9 @@ final class GenericModelCapabilityCatalog
             'battery',
             'activity',
             'heartbeat',
-            'blood_sugar' => $feature,
+            'blood_sugar',
+            'firmware_version',
+            'device_status' => $feature,
             default => null,
         };
     }
@@ -225,11 +227,12 @@ final class GenericModelCapabilityCatalog
             'locationInterval', 'uploadInterval' => 'location_reporting_interval',
             'workingMode' => 'working_mode',
             'dnDevBindStatus' => 'device_binding',
-            'wonlexCallInLimitSwitch' => 'call_in_restriction',
+            'wonlexCallInLimitSwitch', 'callInRestriction' => 'call_in_restriction',
             'deviceConfig' => 'device_settings_sync',
             'devicePassword' => 'device_password',
             'languageTimezone' => 'language_timezone',
             'soundProfile' => 'sound_profile',
+            'doNotDisturb' => 'do_not_disturb',
             default => null,
         };
     }
@@ -253,6 +256,8 @@ final class GenericModelCapabilityCatalog
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'hrv', 'label' => 'HRV', 'sortOrder' => 90, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'sortOrder' => 100, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'RR interval', 'sortOrder' => 110, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'firmware_version', 'label' => 'Firmware version', 'sortOrder' => 120, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Device status', 'sortOrder' => 130, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'auto_vitals_interval', 'label' => 'Auto vitals interval', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'heart_rate_measurement_interval', 'label' => 'Heart rate measurement interval', 'sortOrder' => 20, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'blood_pressure_measurement_interval', 'label' => 'Blood pressure measurement interval', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
@@ -295,6 +300,7 @@ final class GenericModelCapabilityCatalog
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_settings_sync', 'label' => 'Device settings sync', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_password', 'label' => 'Device password', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Language and timezone', 'sortOrder' => 70, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'do_not_disturb', 'label' => 'Do not disturb', 'sortOrder' => 80, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'location_reporting_interval', 'label' => 'Location reporting interval', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'sound_profile', 'label' => 'Sound profile', 'sortOrder' => 11, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'make_call', 'label' => 'Make call', 'sortOrder' => 12, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
