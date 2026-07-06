@@ -692,20 +692,50 @@ function renderSelection() {
     renderConnectionTimeline(connectionEvents);
 }
 
+const TELEMETRY_REQUEST_GROUPS = [
+    {
+        key: "telemetry",
+        label: "Telemetria",
+    },
+    {
+        key: "system",
+        label: "Informação do sistema",
+    },
+];
+
+const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
+    "firmware_version",
+    "device_status",
+]);
+
 function telemetryRequestCards(telemetryCapabilities = {}) {
-    return Object.entries(telemetryCapabilities || {})
+    const cards = Object.entries(telemetryCapabilities || {})
         .filter(([, entry]) => entry?.supported && entry?.requestable !== false)
         .map(([feature, entry]) => ({
             id: feature,
             feature,
             requestable: !!entry?.requestable,
+            group: TELEMETRY_REQUEST_SYSTEM_FEATURES.has(feature)
+                ? "system"
+                : "telemetry",
         }))
-        .sort((a, b) =>
-            String(featureLabel(a.feature || "")).localeCompare(
+        .sort((a, b) => {
+            if (a.group !== b.group) {
+                return a.group === "telemetry" ? -1 : 1;
+            }
+
+            return String(featureLabel(a.feature || "")).localeCompare(
                 String(featureLabel(b.feature || "")),
                 "pt-PT",
-            ),
-        );
+            );
+        });
+
+    return TELEMETRY_REQUEST_GROUPS
+        .map((group) => ({
+            ...group,
+            cards: cards.filter((card) => card.group === group.key),
+        }))
+        .filter((group) => group.cards.length);
 }
 
 function renderSelectedDeviceSummary(device, deviceModel) {
@@ -1022,28 +1052,50 @@ function radarPositionDetails(data) {
     return [countLabel, ...personLines].join("<br>");
 }
 
-function renderRequestCards(commands, telemetry = []) {
-    els.requestCardCount.textContent = commands.length
-        ? `${commands.length} ações`
+function renderRequestCards(groups, telemetry = []) {
+    const totalCards = groups.reduce(
+        (count, group) => count + group.cards.length,
+        0,
+    );
+
+    els.requestCardCount.textContent = totalCards
+        ? `${totalCards} ações`
         : "";
-    els.requestGrid.innerHTML = commands.length
-        ? commands
-              .map((command) =>
-                  renderRequestCardShell(
-                      command,
-                      state.loadingCommands.has(
-                          String(
-                              command.id ||
-                                  command.feature ||
-                                  command.command ||
-                                  "",
-                          ),
-                      ),
-                      telemetry,
-                  ),
-              )
+    els.requestGrid.innerHTML = totalCards
+        ? groups
+              .map((group) => renderRequestCardGroup(group, telemetry))
               .join("")
         : `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
+}
+
+function renderRequestCardGroup(group, telemetry = []) {
+    return `
+        <div class="col-12">
+        <div class="border rounded bg-body-tertiary p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="fw-semibold">${esc(group.label || "Pedidos")}</div>
+        <span class="badge text-bg-secondary">${group.cards.length}</span>
+        </div>
+        <div class="row g-3">
+        ${group.cards
+            .map((command) =>
+                renderRequestCardShell(
+                    command,
+                    state.loadingCommands.has(
+                        String(
+                            command.id ||
+                                command.feature ||
+                                command.command ||
+                                "",
+                        ),
+                    ),
+                    telemetry,
+                ),
+            )
+            .join("")}
+        </div>
+        </div>
+        </div>`;
 }
 
 function renderDownlinkRequests(commands) {
