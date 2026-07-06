@@ -627,6 +627,7 @@ async function loadDevice(imei) {
     disconnectDeviceStream();
     state.selectedDetail = detail;
     state.selectedDetail.recent = null;
+    await ensureModelsLoaded();
     renderSelection();
     connectDeviceStream(imei);
     return true;
