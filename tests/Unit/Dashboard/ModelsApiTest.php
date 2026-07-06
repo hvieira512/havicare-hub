@@ -254,6 +254,31 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testUpdateWithoutExplicitCapabilitiesDropsUnsupportedSupplierFeatures(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'ecg']);
+
+        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
+            ->withParsedBody([
+                'supplier_id' => (int)$model['supplier_id'],
+                'internalModel' => (string)$model['internal_model'],
+                'commercialName' => (string)$model['commercial_name'],
+                'deviceType' => (string)$model['device_type'],
+            ]);
+
+        $result = $api->update((int)$model['id'], $request);
+
+        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame(
+            ['heart_rate'],
+            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
+        );
+    }
+
     public function testUpdateRejectsCapabilitiesOutsideDeviceTypeCatalog(): void
     {
         [$api, $db] = $this->makeApi();
@@ -268,6 +293,27 @@ final class ModelsApiTest extends MysqlDashboardTestCase
                 'deviceType' => (string)$model['device_type'],
                 'capabilitiesConfigured' => '1',
                 'capabilities' => ['heart_rate'],
+            ]);
+
+        $result = $api->update((int)$model['id'], $request);
+
+        self::assertSame('unsupported_capability', $result['error']['code'] ?? null);
+    }
+
+    public function testUpdateRejectsCapabilitiesOutsideSupplierTemplate(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
+            ->withParsedBody([
+                'supplier_id' => (int)$model['supplier_id'],
+                'internalModel' => (string)$model['internal_model'],
+                'commercialName' => (string)$model['commercial_name'],
+                'deviceType' => (string)$model['device_type'],
+                'capabilitiesConfigured' => '1',
+                'capabilities' => ['heart_rate', 'ecg'],
             ]);
 
         $result = $api->update((int)$model['id'], $request);

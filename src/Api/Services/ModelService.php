@@ -438,9 +438,8 @@ class ModelService
             return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
         }
 
-        $availableFeatures = $this->db->genericCapabilities->keysForDeviceType($deviceType);
-        $availableFeatureSet = array_flip($availableFeatures);
         $defaultFeatures = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
+        $defaultFeatureSet = array_flip($defaultFeatures);
         $hasEnabledCapabilitiesSelection = array_key_exists('capabilitiesConfigured', $decoded)
             || array_key_exists('capabilities', $decoded)
             || array_key_exists('capabilities[]', $decoded)
@@ -460,13 +459,16 @@ class ModelService
                 $sameSupplier = (int)($current['supplier_id'] ?? 0) === $supplierId;
                 $sameDeviceType = DeviceMetadata::normalizeDeviceType((string)($current['device_type'] ?? 'watch')) === $deviceType;
                 $enabledCapabilities = $sameSupplier && $sameDeviceType
-                    ? $this->db->modelCapabilities->enabledFeaturesForModelId($modelId)
+                    ? array_values(array_filter(
+                        $this->db->modelCapabilities->enabledFeaturesForModelId($modelId),
+                        static fn(string $feature): bool => isset($defaultFeatureSet[$feature]),
+                    ))
                     : $defaultFeatures;
             } else {
                 $enabledCapabilities = $defaultFeatures;
             }
         } else {
-            $unsupported = array_values(array_filter($enabledCapabilities, static fn(string $f): bool => !isset($availableFeatureSet[$f])));
+            $unsupported = array_values(array_filter($enabledCapabilities, static fn(string $f): bool => !isset($defaultFeatureSet[$f])));
             if ($unsupported !== []) {
                 return ['error' => ['code' => 'unsupported_capability', 'message' => 'One or more capabilities are not allowed for this device type']];
             }

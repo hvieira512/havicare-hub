@@ -828,6 +828,12 @@ async function openModelDetail(modelId) {
             state.settingsModal.capabilityModelTemplateKeys = tmpl.enabledCapabilities.map(String);
         }
     }
+    const templateSet = new Set(state.settingsModal.capabilityModelTemplateKeys || []);
+    state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(
+        model.capabilities || {},
+    ).filter((key) =>
+        templateSet.size === 0 ? true : templateSet.has(key),
+    );
 
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
@@ -1031,16 +1037,19 @@ function renderCapabilitiesSection() {
         : "Capacidades";
     const templateKeys = state.settingsModal.capabilityModelTemplateKeys || [];
     const templateSet = new Set(templateKeys);
-    const hasTemplate = templateKeys.length > 0;
 
     els.capabilitySubtitle.textContent = String(model?.supplier || "")
-        + (hasTemplate ? ` — ${templateKeys.length} capacidades do template` : "");
+        + (templateKeys.length > 0 ? ` — ${templateKeys.length} capacidades do template` : "");
 
     const sections = catalogSections
         .map(({ section, label, entries }) => {
             const sectionEntries = entries
                 .filter((entry) => entry.isTelemetry || entry.isConfigurable)
-                .filter((entry) => !hasTemplate || templateSet.has(entry.key) || enabled.has(entry.key))
+                .filter((entry) =>
+                    templateKeys.length > 0
+                        ? templateSet.has(entry.key)
+                        : enabled.has(entry.key),
+                )
                 .map((entry) => entry.key);
             if (sectionEntries.length === 0) {
                 return null;
