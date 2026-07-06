@@ -44,7 +44,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
             'auto_vitals_interval',
             'blood_oxygen',
             'blood_pressure',
-            'blood_pressure_calibration',
+
             'call_whitelist',
             'fall_detection',
             'fall_sensitivity',

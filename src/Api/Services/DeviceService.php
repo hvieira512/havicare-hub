@@ -1387,7 +1387,6 @@ class DeviceService
             'push_message' => ['pushMessage' => ['message' => $this->requireStringField($value, 'message')]],
             'alarm_clock' => ['reminders' => $this->normalizeReminderCapabilityValue($value)],
             'auto_vitals_interval' => ['autoHealthMeasurement' => $this->requireObjectValue($value, 'autoHealthMeasurement')],
-            'blood_pressure_calibration' => ['bloodPressureCalibration' => $this->requireObjectValue($value, 'bloodPressureCalibration')],
             default => throw new \InvalidArgumentException("Unsupported vivistar-iw capability {$genericKey}"),
         };
     }

@@ -156,7 +156,7 @@ final class DeviceConfigurationCatalog
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
                 self::positiveInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
             ],
-            'bloodPressureCalibration' => self::vivistarBloodPressureCalibration($payload),
+
             default => throw new \InvalidArgumentException("Unsupported Vivistar configuration {$key}"),
         };
 
@@ -295,18 +295,6 @@ final class DeviceConfigurationCatalog
         ];
     }
 
-    private static function vivistarBloodPressureCalibration(array $payload): array
-    {
-        if (isset($payload['values']) && is_array($payload['values'])) {
-            return $payload['values'];
-        }
-
-        return [
-            self::positiveInt($payload['systolic'] ?? null, 'systolic'),
-            self::positiveInt($payload['diastolic'] ?? null, 'diastolic'),
-        ];
-    }
-
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -395,7 +383,7 @@ final class DeviceConfigurationCatalog
                 ],
             ]),
             self::entry('autoHealthMeasurement', 'BP86', 'Medição automática de saúde', 'intervalToggle', ['enabled', 'intervalMinutes'], ['AP86'], 'health', 10),
-            self::entry('bloodPressureCalibration', 'BPJZ', 'Calibração da tensão arterial', 'bloodPressure', ['systolic', 'diastolic'], ['APJZ'], 'health', 20),
+
         ];
     }
 
