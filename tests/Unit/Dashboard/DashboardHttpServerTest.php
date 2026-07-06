@@ -37,7 +37,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         Logger::reset();
         $this->whitelistPath = sys_get_temp_dir() . '/hub-dashboard-http-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitCare'],
+            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitcare'],
             '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002', 'company' => 'otherCare'],
             '861265061009844' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '0', 'company' => 'null'],
         ], JSON_THROW_ON_ERROR));
@@ -363,13 +363,13 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $response = $server(new ServerRequest(
             'GET',
-            '/api/devices?company=hitCare',
+            '/api/devices?company=hitcare',
             ['Authorization' => 'Bearer ' . $token]
         ));
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
-        self::assertSame('hitCare', $body['filters']['applied']['company'] ?? null);
+        self::assertSame('hitcare', $body['filters']['applied']['company'] ?? null);
         self::assertSame(['861265061009822'], array_map(
             static fn(array $device): string => (string)$device['imei'],
             $body['data'] ?? []
@@ -491,12 +491,12 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'PATCH',
             '/api/devices/861265061009844/association',
             ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
-            json_encode(['company' => 'hitCare', 'licenseId' => '1001'], JSON_THROW_ON_ERROR)
+            json_encode(['company' => 'hitcare', 'licenseId' => '1001'], JSON_THROW_ON_ERROR)
         ));
 
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertSame('hitCare', $body['association']['company'] ?? null);
+        self::assertSame('hitcare', $body['association']['company'] ?? null);
         self::assertSame(1001, $body['association']['licenseId'] ?? null);
 
         $deviceResponse = $server(new ServerRequest(
@@ -507,7 +507,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $device = json_decode((string)$deviceResponse->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $deviceResponse->getStatusCode(), (string)$deviceResponse->getBody());
-        self::assertSame('hitCare', $device['device']['company'] ?? null);
+        self::assertSame('hitcare', $device['device']['company'] ?? null);
         self::assertSame(1001, $device['device']['licenseId'] ?? null);
     }
 
@@ -520,7 +520,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'PATCH',
             '/api/devices/861265061009833/association',
             ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
-            json_encode(['company' => 'hitCare', 'licenseId' => '1001'], JSON_THROW_ON_ERROR)
+            json_encode(['company' => 'hitcare', 'licenseId' => '1001'], JSON_THROW_ON_ERROR)
         ));
 
         self::assertSame(400, $response->getStatusCode(), (string)$response->getBody());
@@ -723,7 +723,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitCare');
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         $db->deviceConfigurations->saveDesired(
             '868017032159118',
@@ -784,7 +784,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitCare');
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         $db->deviceConfigurations->saveDesired(
             '868017032159118',
@@ -960,13 +960,13 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
-        $hitCareId = $db->companies->create('hitCare');
+        $hitCareId = $db->companies->create('hitcare');
         $otherCareId = $db->companies->create('otherCare');
         $db->licenses->create($hitCareId, '1001', 'hitcare-license');
         $db->licenses->create($otherCareId, '2002', 'othercare-license');
         $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitCare');
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $store->registerDevice('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
         $store->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 

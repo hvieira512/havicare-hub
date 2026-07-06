@@ -21,7 +21,7 @@ final class BridgeTest extends TestCase
                 'model' => 'RD-V1',
                 'deviceType' => 'radar',
                 'licenseId' => '1001',
-                'company' => 'hitCare',
+                'company' => 'hitcare',
                 'deviceId' => 'radar-topic-uid',
             ],
         ], JSON_THROW_ON_ERROR));

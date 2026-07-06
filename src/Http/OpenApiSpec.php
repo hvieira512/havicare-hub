@@ -777,7 +777,7 @@ class OpenApiSpec
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                             'model' => ['type' => 'string', 'example' => 'HW20PRO'],
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
-                            'company' => ['type' => 'string', 'example' => 'hitCare'],
+                            'company' => ['type' => 'string', 'example' => 'hitcare'],
                             'licenseId' => ['type' => 'integer', 'example' => 0],
                             'protocol' => ['type' => 'string', 'nullable' => true, 'example' => 'wonlex-json'],
                             'online' => ['type' => 'boolean', 'example' => false],
@@ -1017,7 +1017,7 @@ class OpenApiSpec
                             'imei' => ['type' => 'string', 'example' => '865028000000306'],
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                             'model' => ['type' => 'string', 'example' => 'HW20PRO'],
-                            'company' => ['type' => 'string', 'example' => 'hitCare'],
+                            'company' => ['type' => 'string', 'example' => 'hitcare'],
                             'licenseId' => ['type' => 'integer', 'example' => 0],
                             'simNumber' => ['type' => 'string', 'example' => '+351912345678'],
                             'deviceId' => ['type' => 'string', 'example' => '8800000015'],
@@ -1038,7 +1038,7 @@ class OpenApiSpec
                             'imei' => ['type' => 'string', 'example' => '865028000000307'],
                             'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
                             'model' => ['type' => 'string', 'example' => 'L08 Pro'],
-                            'company' => ['type' => 'string', 'example' => 'hitCare'],
+                            'company' => ['type' => 'string', 'example' => 'hitcare'],
                             'licenseId' => ['type' => 'integer', 'example' => 0],
                             'simNumber' => ['type' => 'string', 'example' => '+351912345678'],
                             'deviceId' => ['type' => 'string', 'example' => '8800000015'],
@@ -1085,7 +1085,7 @@ class OpenApiSpec
                         'type' => 'object',
                         'required' => ['company', 'licenseId'],
                         'properties' => [
-                            'company' => ['type' => 'string', 'example' => 'hitCare'],
+                            'company' => ['type' => 'string', 'example' => 'hitcare'],
                             'licenseId' => ['type' => 'integer', 'example' => 1001],
                         ],
                     ],
@@ -1093,7 +1093,7 @@ class OpenApiSpec
                         'type' => 'object',
                         'required' => ['company', 'licenseId'],
                         'properties' => [
-                            'company' => ['type' => 'string', 'example' => 'hitCare'],
+                            'company' => ['type' => 'string', 'example' => 'hitcare'],
                             'licenseId' => ['type' => 'integer', 'example' => 1001],
                         ],
                     ],
@@ -1368,7 +1368,7 @@ class OpenApiSpec
                         'type' => 'object',
                         'properties' => [
                             'id' => ['type' => 'integer', 'example' => 1],
-                            'name' => ['type' => 'string', 'example' => 'hitCare'],
+                            'name' => ['type' => 'string', 'example' => 'hitcare'],
                             'license_count' => ['type' => 'integer', 'example' => 1],
                             'created_at' => ['type' => 'string'],
                             'updated_at' => ['type' => 'string'],
@@ -1386,7 +1386,7 @@ class OpenApiSpec
                         'type' => 'object',
                         'required' => ['name'],
                         'properties' => [
-                            'name' => ['type' => 'string', 'example' => 'hitCare'],
+                            'name' => ['type' => 'string', 'example' => 'hitcare'],
                         ],
                     ],
                     'CompanyCreateResponse' => [
@@ -1402,7 +1402,7 @@ class OpenApiSpec
                         'properties' => [
                             'id' => ['type' => 'integer', 'example' => 1],
                             'company_id' => ['type' => 'integer', 'example' => 1],
-                            'company_name' => ['type' => 'string', 'example' => 'hitCare'],
+                            'company_name' => ['type' => 'string', 'example' => 'hitcare'],
                             'license_id' => ['type' => 'integer', 'example' => 1001],
                             'name' => ['type' => 'string', 'example' => 'gucc.dev'],
                             'created_at' => ['type' => 'string'],

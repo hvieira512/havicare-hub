@@ -89,7 +89,7 @@ final class MessageNormalizerTest extends TestCase
             'model' => 'RD-V1',
             'deviceType' => 'radar',
             'licenseId' => '1001',
-            'company' => 'hitCare',
+            'company' => 'hitcare',
         ];
     }
 }

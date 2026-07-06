@@ -186,7 +186,7 @@ final class DashboardDatabase
 
     private function seedDefaultCompanies(): void
     {
-        foreach (['hitCare', 'haviCare'] as $name) {
+        foreach (['hitcare', 'havicare'] as $name) {
             $existing = $this->pdo->prepare('SELECT id FROM companies WHERE name = ?');
             $existing->execute([$name]);
             if ($existing->fetchColumn() !== false) {
@@ -197,7 +197,7 @@ final class DashboardDatabase
         }
 
         $stmt = $this->pdo->prepare("SELECT id FROM companies WHERE name = ?");
-        $stmt->execute(['hitCare']);
+        $stmt->execute(['hitcare']);
         $hitCareId = (int)($stmt->fetchColumn() ?: 0);
         if ($hitCareId > 0) {
             $existing = $this->pdo->prepare('SELECT id FROM licenses WHERE company_id = ? AND license_id = ?');
