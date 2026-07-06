@@ -20,7 +20,6 @@ import {
 import {
     commandFeature,
     emptyPanel,
-    modelImageHtml,
     renderRequestCardShell,
     statusBadge,
     uplinkCardContent,
@@ -305,7 +304,6 @@ async function loadSummary() {
             model: state.deviceFilters.model,
             q: state.deviceSearchQuery,
         }),
-        ensureModelsLoaded(),
         ensureLicensesLoaded(),
     ]);
     state.summary = {
@@ -397,11 +395,6 @@ function renderDeviceSelector() {
     }
     renderDeviceFilterControls();
 
-    const modelLookup = {};
-    for (const model of state.summary.models) {
-        modelLookup[`${model.supplier}:${modelInternalName(model)}`] = model;
-    }
-
     const tableMarkup = state.summary.devices.length
         ? `
         <div class="table-responsive">
@@ -422,15 +415,14 @@ function renderDeviceSelector() {
                 <tbody>
                     ${state.summary.devices
                         .map((device) => {
-                            const modelInfo =
-                                modelLookup[
-                                    `${device.supplier}:${device.model}`
-                                ];
                             const isSelected =
                                 state.selectedImei === device.imei;
+                            const imageMarkup = device.image
+                                ? `<img src="${esc(device.image)}" class="object-fit-contain" alt="${esc(device.model || device.imei)}" style="width:40px;height:40px;">`
+                                : '<i class="fa-solid fa-microchip fa-xl text-secondary" style="width:40px"></i>';
                             return `
                             <tr${isSelected ? ' class="table-primary"' : ""} data-imei="${esc(device.imei)}" data-action="select" role="button" tabindex="0">
-                                <td style="width:52px">${modelImageHtml(modelInfo)}</td>
+                                <td style="width:52px">${imageMarkup}</td>
                                 <td>
                                     <span class="d-inline-flex align-items-center gap-2 small">
                                         <span class="rounded-circle ${device.online ? "bg-success" : "bg-danger"} d-inline-block flex-shrink-0" style="width:.55rem;height:.55rem;"></span>
@@ -443,7 +435,7 @@ function renderDeviceSelector() {
                                 <td>${esc(licenseDisplayLabel(device.licenseId))}</td>
                                 <td class="text-break">${esc(device.simNumber || "-")}</td>
                                 <td>${esc(device.supplier || "-")}</td>
-                                <td>${esc(modelInfo ? modelCommercialName(modelInfo) : device.model || "-")}</td>
+                                <td>${esc(device.model || "-")}</td>
                             </tr>`;
                         })
                         .join("")}
@@ -627,7 +619,6 @@ async function loadDevice(imei) {
     disconnectDeviceStream();
     state.selectedDetail = detail;
     state.selectedDetail.recent = null;
-    await ensureModelsLoaded();
     renderSelection();
     connectDeviceStream(imei);
     return true;
@@ -742,7 +733,7 @@ function telemetryRequestCards(telemetryCapabilities = {}) {
 function renderSelectedDeviceSummary(device, deviceModel) {
     const supplier = String(deviceModel?.supplier || "");
     const model = String(deviceModel?.internalModel || "");
-    const modelInfo = findModelInfo(supplier, model);
+    const image = String(deviceModel?.image || "");
     const facts = [
         {
             label: "Tipo",
@@ -754,7 +745,10 @@ function renderSelectedDeviceSummary(device, deviceModel) {
         { label: "Fornecedor", value: supplier || "-" },
         {
             label: "Modelo",
-            value: modelInfo ? modelCommercialName(modelInfo) : model || "-",
+            value:
+                String(deviceModel?.commercialName || "").trim() ||
+                model ||
+                "-",
         },
         {
             label: "Última ligação",
@@ -769,7 +763,9 @@ function renderSelectedDeviceSummary(device, deviceModel) {
         facts.push({ label: "Device ID", value: String(device.deviceId) });
     }
 
-    els.selectedDevicePreview.innerHTML = modelImageHtml(modelInfo);
+    els.selectedDevicePreview.innerHTML = image
+        ? `<img src="${esc(image)}" class="object-fit-contain" alt="${esc(model || device.imei)}" style="max-width:56px;max-height:56px;">`
+        : '<i class="fa-solid fa-microchip fa-xl text-secondary"></i>';
     els.selectedDeviceTitle.innerHTML = `<span class="rounded-circle ${device.online ? "bg-success" : "bg-danger"} d-inline-block flex-shrink-0 me-2" style="width:.75rem;height:.75rem;"></span>${esc(device.imei)}`;
     els.selectedDeviceMeta.textContent = `${supplier || "Sem fornecedor"}${model ? ` · ${model}` : ""}`;
     els.selectedDeviceFacts.innerHTML = facts

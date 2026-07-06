@@ -54,6 +54,7 @@ import {
     handleModelsListSearchInput,
     initSettingsModels,
     loadSettingsModelsSection,
+    loadSettingsModelFilters,
     resetModelForm,
     revokeModelPreviewUrl,
     selectModelDeviceType,
@@ -896,8 +897,12 @@ function backToModelList() {
     void loadSettingsModelsSection();
 }
 
-function openNewModelForm() {
+async function openNewModelForm() {
+    if (!state.settingsModal.sectionLoaded.modelFilters) {
+        await loadSettingsModelFilters();
+    }
     resetModelForm();
+    await refreshNewModelCapabilityTemplate();
 
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.textContent = "Novo modelo";
@@ -964,9 +969,12 @@ async function refreshNewModelCapabilityTemplate() {
     }
 }
 
-function editCurrentModel() {
+async function editCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
+    if (!state.settingsModal.sectionLoaded.modelFilters) {
+        await loadSettingsModelFilters();
+    }
 
     editModel(
         Number(model.id),
@@ -1191,6 +1199,7 @@ export {
     loadSettingsCapabilitiesSection,
     loadSettingsCompanySection,
     loadSettingsModal,
+    loadSettingsModelFilters,
     loadSettingsModelsSection,
     loadSettingsSuppliersSection,
     openModelDetail,

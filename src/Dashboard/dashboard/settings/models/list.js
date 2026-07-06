@@ -49,9 +49,6 @@ function renderModelsSection(models) {
 
 async function loadSettingsModelsSection(page = 1) {
     const {els, callbacks} = getSettingsModelsRuntime();
-    if (!state.settingsModal.sectionLoaded.suppliers) {
-        await callbacks.loadSettingsSuppliersSection();
-    }
     if (!state.settingsModal.sectionLoaded.modelFilters) {
         await loadSettingsModelFilters();
     }

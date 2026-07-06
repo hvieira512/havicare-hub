@@ -66,7 +66,7 @@ function renderModelsFilterButtons() {
         const suppliers = Array.isArray(entry?.suppliers)
             ? entry.suppliers
             : [];
-        deviceTypeToSuppliers.set(
+            deviceTypeToSuppliers.set(
             deviceType,
             suppliers
                 .map((supplier) => String(supplier?.name || ""))
@@ -106,9 +106,10 @@ function renderModelsFilterButtons() {
     const supplierNames = state.settingsModal.modelsDeviceType
         ? selectedDeviceTypeSuppliers
         : [...supplierToDeviceTypes.keys()];
-    const supplierOptionsFiltered = (state.modelModalSuppliers || []).filter(
-        (option) => supplierNames.includes(option.name),
-    );
+    const supplierOptionsFiltered = supplierNames.map((name) => ({
+        value: name,
+        label: name,
+    }));
 
     renderButtonGroup(
         els.modelsDeviceTypeButtons,
@@ -121,10 +122,7 @@ function renderModelsFilterButtons() {
     );
     renderButtonGroup(
         els.modelsSupplierButtons,
-        supplierOptionsFiltered.map((option) => ({
-            value: option.name,
-            label: option.name,
-        })),
+        supplierOptionsFiltered,
         state.settingsModal.modelsSupplier,
         "selectModelsSupplier",
     );

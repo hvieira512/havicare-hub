@@ -7,18 +7,36 @@ import {
 } from "../../devices/list-detail.js";
 import {getSettingsModelsRuntime} from "./runtime.js";
 
-function modelSupplierOptions() {
-    return state.modelModalSuppliers.map((supplier) => ({
+function modelSupplierOptions(deviceType = "watch") {
+    return modelSuppliersForDeviceType(deviceType).map((supplier) => ({
         value: String(supplier.id),
         label: supplier.name,
     }));
 }
 
+function modelSuppliersForDeviceType(deviceType = "watch") {
+    const group = (state.settingsModal.modelFilters || []).find(
+        (entry) =>
+            normalizeDeviceType(entry?.deviceType || entry?.device_type || "watch") ===
+            normalizeDeviceType(deviceType),
+    );
+    return (group?.suppliers || []).filter((supplier) => supplier?.enabled);
+}
+
+function modelSupplierEntry(deviceType, supplierId) {
+    return modelSuppliersForDeviceType(deviceType).find(
+        (supplier) => String(supplier.id) === String(supplierId),
+    );
+}
+
 function renderModelSupplierButtons(selectedSupplierId) {
     const {els} = getSettingsModelsRuntime();
+    const deviceType = normalizeDeviceType(
+        els.modelForm?.dataset.deviceType || "watch",
+    );
     renderButtonGroup(
         els.modelSupplierButtons,
-        modelSupplierOptions(),
+        modelSupplierOptions(deviceType),
         String(selectedSupplierId),
         "selectModelSupplier",
     );
@@ -73,21 +91,19 @@ function resetModelForm(selectedSupplierId = "") {
 
     renderModelDeviceTypeButtons("watch");
 
-    const suppliers = modelSupplierOptions();
+    const deviceType = "watch";
+    const suppliers = modelSupplierOptions(deviceType);
     const supplierId = suppliers.some(
         (supplier) => supplier.value === String(selectedSupplierId),
     )
         ? String(selectedSupplierId)
         : suppliers[0]?.value || "";
-    const supplier = state.modelModalSuppliers.find(
-        (entry) => String(entry.id) === supplierId,
-    );
+    const supplier = modelSupplierEntry(deviceType, supplierId);
     els.modelForm.dataset.supplierId = supplierId;
     els.modelForm.dataset.supplier = supplier?.name || "";
 
     renderModelSupplierButtons(supplierId);
     updateModelProtocolAndPreview();
-    void callbacks.refreshNewModelCapabilityTemplate?.();
 }
 
 function editModel(
@@ -125,9 +141,10 @@ function selectModelSupplier(supplierId) {
     const {els, callbacks} = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelImage.value = "";
-    const supplier = state.modelModalSuppliers.find(
-        (entry) => String(entry.id) === String(supplierId),
+    const deviceType = normalizeDeviceType(
+        els.modelForm.dataset.deviceType || "watch",
     );
+    const supplier = modelSupplierEntry(deviceType, supplierId);
     els.modelForm.dataset.supplierId = String(supplierId);
     els.modelForm.dataset.supplier = supplier?.name || "";
     delete els.modelForm.dataset.image;
