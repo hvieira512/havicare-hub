@@ -6,17 +6,17 @@ ob_start();
 ?>
 <div class="border rounded bg-body-tertiary p-3 mb-3">
     <div class="row g-2">
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-2">
             <label for="deviceTypeFilter" class="form-label form-label-sm mb-1 small text-secondary">Tipo</label>
             <select id="deviceTypeFilter" class="form-select form-select-sm"></select>
         </div>
-        <div class="col-12 col-md-3">
-            <label for="deviceLicenseFilter" class="form-label form-label-sm mb-1 small text-secondary">Licença</label>
-            <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
-        </div>
-        <div class="col-12 col-md-3">
+        <div class="col-12 col-md-2">
             <label for="deviceCompanyFilter" class="form-label form-label-sm mb-1 small text-secondary">Empresa</label>
             <select id="deviceCompanyFilter" class="form-select form-select-sm"></select>
+        </div>
+        <div class="col-12 col-md-2">
+            <label for="deviceLicenseFilter" class="form-label form-label-sm mb-1 small text-secondary">Licença</label>
+            <select id="deviceLicenseFilter" class="form-select form-select-sm"></select>
         </div>
         <div class="col-12 col-md-3">
             <label for="deviceSupplierFilter" class="form-label form-label-sm mb-1 small text-secondary">Fornecedor</label>
