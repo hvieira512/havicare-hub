@@ -471,8 +471,18 @@ class DeviceService
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
         $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $currentConfigs = $this->db->deviceConfigurations->allForImei($imei);
+        $currentByKey = [];
+        foreach ($currentConfigs as $row) {
+            $currentByKey[(string)($row['config_key'] ?? '')] = $row;
+        }
         $results = [];
         foreach ($decoded['configurations'] as $key => $payload) {
+            $current = $currentByKey[$key] ?? null;
+            $currentDesired = is_array($current['desired_payload'] ?? null) ? $current['desired_payload'] : null;
+            if ($currentDesired !== null && $this->capabilityValuesEqual($currentDesired, $payload)) {
+                continue;
+            }
             if (!is_string($key) || !is_array($payload)) {
                 Logger::channel('api')->warning('API device configuration rejected', [
                     'request_id' => $requestId,
@@ -1198,7 +1208,7 @@ class DeviceService
                 continue;
             }
             foreach ($sectionCaps as $genericKey => &$value) {
-                if (isset($nativeKeyForGeneric[$genericKey])) {
+                if (isset($nativeKeyForGeneric[$genericKey]) && is_array($value) && array_key_exists('value', $value)) {
                     $value['_nativeKey'] = $nativeKeyForGeneric[$genericKey];
                 }
             }
@@ -1268,7 +1278,7 @@ class DeviceService
 
     private function extractCapabilityValue(mixed $value): mixed
     {
-        if (is_array($value) && array_key_exists('value', $value) && count(array_diff(array_keys($value), ['value', '_meta'])) === 0) {
+        if (is_array($value) && array_key_exists('value', $value) && count(array_diff(array_keys($value), ['value', '_meta', '_nativeKey'])) === 0) {
             return $value['value'];
         }
 

@@ -40,7 +40,6 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitCare'],
             '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002', 'company' => 'otherCare'],
             '861265061009844' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '0', 'company' => 'null'],
-            '868017032159118' => ['supplier' => '4P Touch', 'model' => 'D46', 'licenseId' => '1001', 'company' => 'hitCare'],
         ], JSON_THROW_ON_ERROR));
     }
 

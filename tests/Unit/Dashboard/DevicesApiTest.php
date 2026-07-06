@@ -50,7 +50,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         [$api, $db] = $this->makeApi();
 
         $response = $api->create(json_encode([
-            'imei' => '868017032159118',
+            'imei' => '864293000000111',
             'supplier' => '4P Touch',
             'model' => 'D46',
             'deviceType' => 'watch',
@@ -59,7 +59,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('1703215911', $api->show('868017032159118')['device']['deviceId'] ?? null);
+        self::assertSame('9300000011', $api->show('864293000000111')['device']['deviceId'] ?? null);
     }
 
     public function testCreateRejectsDuplicateImei(): void

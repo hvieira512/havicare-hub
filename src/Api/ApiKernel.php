@@ -63,7 +63,7 @@ final class ApiKernel
     {
         $method = strtoupper($request->getMethod());
         $path = $request->getUri()->getPath();
-        $requestId = RequestContext::requestId($request);
+        $requestId = $request->getHeaderLine('X-Request-Id') ?: RequestContext::requestId($request) ?: bin2hex(random_bytes(16));
         $rawBody = (string)$request->getBody();
         $request = $request
             ->withAttribute(RequestContext::ATTR_REQUEST_ID, $requestId)

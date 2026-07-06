@@ -21,8 +21,8 @@
         "supplier": "Vivistar",
         "model": "L08 Pro",
         "deviceType": "watch",
-        "licenseId": 1001,
-        "company": "hitCare",
+        "licenseId": 0,
+        "company": "null",
         "simNumber": "",
         "deviceId": ""
     },
@@ -98,6 +98,15 @@
         "simNumber": "",
         "deviceId": ""
     },
+    "9D8A3204F853": {
+        "supplier": "Qinglanst",
+        "model": "RD-V1",
+        "deviceType": "radar",
+        "licenseId": 1001,
+        "company": "hitCare",
+        "simNumber": "",
+        "deviceId": "9D8A3204F853"
+    },
     "AD8A613B0493": {
         "supplier": "Qinglanst",
         "model": "RD-V1",
@@ -115,14 +124,5 @@
         "company": "null",
         "simNumber": "",
         "deviceId": "gw-001"
-    },
-    "9D8A3204F853": {
-        "supplier": "Qinglanst",
-        "model": "RD-V1",
-        "deviceType": "radar",
-        "licenseId": 1001,
-        "company": "hitCare",
-        "simNumber": "",
-        "deviceId": "9D8A3204F853"
     }
 }
