@@ -423,9 +423,11 @@ export function readConfigPayload(section) {
         };
     }
     if (input === "languageTimezone") {
+        const value = readText(section, "preset");
+        const [language, timeZone] = value.split("|", 2);
         return {
-            language: readNumber(section, "language"),
-            timeZone: readText(section, "timeZone"),
+            language: parseInt(language, 10),
+            timeZone: String(timeZone || "0"),
         };
     }
     if (input === "dualToggle") {
@@ -513,7 +515,7 @@ export function defaultConfigPayload(entry) {
     if (input === "bloodPressure") return { systolic: 120, diastolic: 80 };
     if (input === "wonlexBloodPressureWarning")
         return { switchState: true, hpWarn: 135, LPWarn: 90 };
-    if (input === "languageTimezone") return { language: 3, timeZone: "0" };
+    if (input === "languageTimezone") return { preset: "0|0" };
     if (input === "dualToggle")
         return { enabled: true, callCenterOnFall: false };
     if (input === "fallSensitivityLevels")
@@ -1178,37 +1180,41 @@ function wonlexBloodPressureWarningInput(desired) {
 }
 
 function languageTimezoneInput(desired) {
-    const parsedLanguage = parseInt(String(desired.language ?? 3), 10);
-    const currentLanguage = Number.isFinite(parsedLanguage) ? parsedLanguage : 3;
-    const options = [
-        { value: 0, label: "English" },
-        { value: 1, label: "中文" },
-        { value: 3, label: "Português" },
-        { value: 4, label: "Español" },
-        { value: 5, label: "Deutsch" },
-        { value: 10, label: "Français" },
-    ];
+    const preset = languageTimezonePresetOptions.find(
+        (option) =>
+            String(desired.language ?? 3) === String(option.language) &&
+            String(desired.timeZone ?? "0") === String(option.timeZone),
+    ) || languageTimezonePresetOptions[0];
 
     return `
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label form-label-sm">Idioma</label>
-                <select class="form-select" data-config-field="language">
-                    ${options
-                        .map(
-                            (option) => `
-                        <option value="${option.value}" ${option.value === currentLanguage ? "selected" : ""}>${esc(option.label)} (${option.value})</option>
+        <div class="vstack gap-2">
+            <label class="form-label form-label-sm">Idioma e fuso horário</label>
+            <select class="form-select" data-config-field="preset">
+                ${languageTimezonePresetOptions
+                    .map(
+                        (option) => `
+                        <option value="${option.language}|${esc(String(option.timeZone))}" ${
+                            option.language === preset.language &&
+                            String(option.timeZone) === String(preset.timeZone)
+                                ? "selected"
+                                : ""
+                        }>${esc(option.label)}</option>
                     `,
-                        )
-                        .join("")}
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label form-label-sm">Fuso horário</label>
-                <input class="form-control" type="text" data-config-field="timeZone" value="${esc(String(desired.timeZone ?? "0"))}" placeholder="Ex.: 0, 1, 8">
-            </div>
+                    )
+                    .join("")}
+            </select>
+            <div class="form-text">Escolha a combinação suportada pelo dispositivo.</div>
         </div>`;
 }
+
+const languageTimezonePresetOptions = [
+    { language: 0, timeZone: "0", label: "English (UTC+0)" },
+    { language: 1, timeZone: "8", label: "简体中文 (UTC+8)" },
+    { language: 3, timeZone: "0", label: "Português (UTC+0)" },
+    { language: 4, timeZone: "1", label: "Español (UTC+1)" },
+    { language: 5, timeZone: "1", label: "Deutsch (UTC+1)" },
+    { language: 10, timeZone: "1", label: "Français (UTC+1)" },
+];
 
 function dualToggleInput(desired) {
     const enabled = boolValue(desired.enabled, true);

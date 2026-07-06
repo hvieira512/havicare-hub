@@ -33,8 +33,15 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('if (input === "soundProfile")', $source);
         self::assertStringContainsString('function requestActionInput(entry)', $source);
         self::assertStringContainsString('function soundProfileInput(desired)', $source);
-        self::assertStringContainsString('const parsedLanguage = parseInt(String(desired.language ?? 3), 10);', $source);
-        self::assertStringContainsString('Number.isFinite(parsedLanguage) ? parsedLanguage : 3', $source);
+        self::assertStringContainsString('function languageTimezoneInput(desired)', $source);
+        self::assertStringContainsString('data-config-field="preset"', $source);
+        self::assertStringContainsString('languageTimezonePresetOptions', $source);
+        self::assertStringContainsString('English (UTC+0)', $source);
+        self::assertStringContainsString('简体中文 (UTC+8)', $source);
+        self::assertStringContainsString('Português (UTC+0)', $source);
+        self::assertStringContainsString('Español (UTC+1)', $source);
+        self::assertStringContainsString('Deutsch (UTC+1)', $source);
+        self::assertStringContainsString('Français (UTC+1)', $source);
         self::assertStringContainsString('name="soundProfile"', $source);
         self::assertStringContainsString('data-config-field="mode"', $source);
         self::assertStringContainsString('role="radiogroup"', $source);
