@@ -174,7 +174,7 @@ export function renderConfigSection(
                             ? '<span class="badge text-bg-success ms-2">Configurado</span>'
                             : '<span class="badge text-bg-warning ms-2">Padrão</span>'}
                     </div>
-                    <div class="small text-secondary">${esc(entry.command)} · ${esc(titleize(entry.input || "json"))}${help ? ` · ${esc(help)}` : ""}</div>
+                    <div class="small text-secondary">${esc(entry.command)} · ${esc(configInputLabel(entry.input || "json"))}${help ? ` · ${esc(help)}` : ""}</div>
                 </div>
             </div>
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ""}>
@@ -279,6 +279,9 @@ export function renderConfigInputs(entry, desired, meta = {}) {
     if (input === "resetAction") {
         return resetActionInput(entry, desired);
     }
+    if (input === "requestAction") {
+        return requestActionInput(entry);
+    }
     if (input === "intervalToggle") {
         return intervalToggleInput(entry, desired);
     }
@@ -333,6 +336,9 @@ export function renderConfigInputs(entry, desired, meta = {}) {
     if (input === "takePills") {
         return takePillsInput(desired, meta);
     }
+    if (input === "soundProfile") {
+        return soundProfileInput(desired);
+    }
 
     return jsonInput(desired);
 }
@@ -377,6 +383,9 @@ export function readConfigPayload(section) {
         return { phone: readPhone(section, "phone") };
     }
     if (input === "resetAction") {
+        return {};
+    }
+    if (input === "requestAction") {
         return {};
     }
     if (input === "intervalToggle") {
@@ -482,6 +491,9 @@ export function readConfigPayload(section) {
     if (input === "takePills") {
         return readTakePills(section);
     }
+    if (input === "soundProfile") {
+        return { mode: readNumber(section, "mode") };
+    }
 
     return readJson(section);
 }
@@ -542,6 +554,7 @@ export function defaultConfigPayload(entry) {
             voiceData: "",
             voiceMimeType: "audio/webm",
         };
+    if (input === "soundProfile") return { mode: 1 };
     return {};
 }
 
@@ -567,10 +580,26 @@ function configHelp(entry) {
     if ((entry.input || "") === "alarms") {
         return "até 3 alarmes";
     }
+    if ((entry.input || "") === "requestAction") {
+        return "sem parâmetros";
+    }
+    if ((entry.input || "") === "soundProfile") {
+        return "4 modos";
+    }
     if ((entry.key || "") === "whitelistSwitch") {
         return "ativa os contactos da lista telefónica do BP14";
     }
     return "";
+}
+
+function configInputLabel(input) {
+    if (input === "requestAction") {
+        return "Ação";
+    }
+    if (input === "soundProfile") {
+        return "Perfil de som";
+    }
+    return titleize(input);
 }
 
 function categoryLabel(protocol, category) {
@@ -828,6 +857,16 @@ function resetActionInput(_entry, _desired) {
         </div>`;
 }
 
+function requestActionInput(entry) {
+    return `
+        <div>
+            <div class="alert alert-info mb-3 py-2 px-3 small">
+                <i class="fa-solid fa-circle-info me-2"></i>
+                ${esc(entry.label || "Ação")} é enviada sem parâmetros adicionais.
+            </div>
+        </div>`;
+}
+
 function toggleInput(entry, desired) {
     const field = entry.fields?.[0] || "enabled";
     const checked = boolValue(desired[field], true);
@@ -835,6 +874,63 @@ function toggleInput(entry, desired) {
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="${esc(field)}" ${checked ? "checked" : ""}>
             <label class="form-check-label" data-switch-label>${checked ? "Ligado" : "Desligado"}</label>
+        </div>`;
+}
+
+function soundProfileInput(desired) {
+    const current = parseInt(String(desired.mode ?? 1), 10) || 1;
+    const options = [
+        {
+            value: 1,
+            label: "Vibração e toque",
+            icon: "fa-volume-high",
+            className: "btn-outline-primary",
+        },
+        {
+            value: 2,
+            label: "Só toque",
+            icon: "fa-bell",
+            className: "btn-outline-secondary",
+        },
+        {
+            value: 3,
+            label: "Só vibração",
+            icon: "fa-mobile-screen-button",
+            className: "btn-outline-warning",
+        },
+        {
+            value: 4,
+            label: "Silêncio",
+            icon: "fa-volume-xmark",
+            className: "btn-outline-danger",
+        },
+    ];
+
+    return `
+        <div class="vstack gap-2">
+            <div class="small text-secondary">Escolha o perfil de som do dispositivo.</div>
+            <div class="row row-cols-2 g-2" role="radiogroup" aria-label="Perfil de som">
+                ${options
+                    .map(
+                        (option) => `
+                    <div class="col">
+                        <input
+                            class="btn-check"
+                            type="radio"
+                            name="soundProfile"
+                            id="soundProfile${option.value}"
+                            data-config-field="mode"
+                            value="${option.value}"
+                            ${option.value === current ? "checked" : ""}>
+                        <label class="btn ${option.className} w-100 h-100 text-start d-flex align-items-center gap-2 py-3 px-3" for="soundProfile${option.value}">
+                            <i class="fa-solid ${option.icon}"></i>
+                            <span class="small fw-semibold">${esc(option.label)}</span>
+                        </label>
+                    </div>
+                `,
+                    )
+                    .join("")}
+            </div>
         </div>`;
 }
 

@@ -678,15 +678,26 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchSoundProfileBuildsNativeFields(): void
     {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 1]);
-        self::assertSame('profile', $payload['command']);
-        self::assertSame(['fields' => ['1']], $payload['payload']);
+        $vibrateAndRing = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 1]);
+        self::assertSame('profile', $vibrateAndRing['command']);
+        self::assertSame(['fields' => ['1']], $vibrateAndRing['payload']);
 
-        $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 0]);
-        self::assertSame(['fields' => ['0']], $silent['payload']);
+        $ringOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 2]);
+        self::assertSame(['fields' => ['2']], $ringOnly['payload']);
 
-        $normal = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 2]);
-        self::assertSame(['fields' => ['2']], $normal['payload']);
+        $vibrateOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 3]);
+        self::assertSame(['fields' => ['3']], $vibrateOnly['payload']);
+
+        $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 4]);
+        self::assertSame(['fields' => ['4']], $silent['payload']);
+    }
+
+    public function testFourPTouchSoundProfileRejectsInvalidMode(): void
+    {
+        self::assertSame(
+            'mode must be between 1 and 4',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'soundProfile', ['mode' => 0])
+        );
     }
 
     public function testFourPTouchCallInRestrictionBuildsNativeFields(): void

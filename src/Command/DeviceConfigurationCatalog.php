@@ -211,7 +211,7 @@ final class DeviceConfigurationCatalog
             'deviceStatus' => [],
             'alarmClock' => self::fourPTouchAlarmClockPayload($payload),
             'phonebook' => self::fourPTouchPhonebook($payload),
-            'soundProfile' => [self::nonNegativeInt($payload['mode'] ?? null, 'mode')],
+            'soundProfile' => [self::soundProfileMode($payload['mode'] ?? null)],
             'callInRestriction' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
             ],
@@ -432,9 +432,10 @@ final class DeviceConfigurationCatalog
             self::entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55),
             self::entry('soundProfile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
-                    ['value' => 0, 'label' => 'Silencioso'],
-                    ['value' => 1, 'label' => 'Vibrar'],
-                    ['value' => 2, 'label' => 'Normal'],
+                    ['value' => 1, 'label' => 'Vibração e toque'],
+                    ['value' => 2, 'label' => 'Só toque'],
+                    ['value' => 3, 'label' => 'Só vibração'],
+                    ['value' => 4, 'label' => 'Silêncio'],
                 ],
             ]),
             self::entry('callInRestriction', 'DEVREFUSEPHONESWITCH', 'Restrição de chamadas', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'system', 25),
@@ -795,6 +796,20 @@ final class DeviceConfigurationCatalog
             throw new \InvalidArgumentException("{$field} must be between {$min} and {$max}");
         }
         return $value;
+    }
+
+    private static function soundProfileMode(mixed $value): int
+    {
+        if (!is_numeric((string)$value)) {
+            throw new \InvalidArgumentException('mode must be an integer');
+        }
+
+        $mode = (int)$value;
+        if ($mode < 1 || $mode > 4) {
+            throw new \InvalidArgumentException('mode must be between 1 and 4');
+        }
+
+        return $mode;
     }
 
     private static function utf16Hex(string $value): string
