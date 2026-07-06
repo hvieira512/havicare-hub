@@ -175,7 +175,7 @@ final class DeviceConfigurationCatalog
             'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
             'devicePassword' => [self::requiredString($payload['password'] ?? null, 'password')],
             'languageTimezone' => [
-                self::rangeInt($payload['language'] ?? null, 0, 36, 'language'),
+                self::zeroBasedRangeInt($payload['language'] ?? null, 0, 36, 'language'),
                 self::requiredString($payload['timeZone'] ?? null, 'timeZone'),
             ],
             'sosSmsAlerts', 'lowBatterySmsAlerts', 'removeWatchAlarm', 'removeWatchSmsAlerts' => [
@@ -810,6 +810,20 @@ final class DeviceConfigurationCatalog
         }
 
         return $mode;
+    }
+
+    private static function zeroBasedRangeInt(mixed $value, int $min, int $max, string $field): int
+    {
+        if (!is_numeric((string)$value)) {
+            throw new \InvalidArgumentException("{$field} must be an integer");
+        }
+
+        $value = (int)$value;
+        if ($value < $min || $value > $max) {
+            throw new \InvalidArgumentException("{$field} must be between {$min} and {$max}");
+        }
+
+        return $value;
     }
 
     private static function utf16Hex(string $value): string

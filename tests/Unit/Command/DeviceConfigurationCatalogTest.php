@@ -309,6 +309,16 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['3', '0']], $payload['payload']);
     }
 
+    public function testFourPTouchLanguageTimezoneAllowsEnglish(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'languageTimezone', [
+            'language' => 0,
+            'timeZone' => '+01:00',
+        ]);
+
+        self::assertSame(['fields' => ['0', '+01:00']], $payload['payload']);
+    }
+
     public function testFourPTouchFallDownSensitivityBuildsFirmwareAwarePayload(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fallDownSensitivity', [

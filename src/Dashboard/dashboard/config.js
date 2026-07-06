@@ -1178,7 +1178,8 @@ function wonlexBloodPressureWarningInput(desired) {
 }
 
 function languageTimezoneInput(desired) {
-    const currentLanguage = parseInt(String(desired.language ?? 3), 10) || 3;
+    const parsedLanguage = parseInt(String(desired.language ?? 3), 10);
+    const currentLanguage = Number.isFinite(parsedLanguage) ? parsedLanguage : 3;
     const options = [
         { value: 0, label: "English" },
         { value: 1, label: "中文" },

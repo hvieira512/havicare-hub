@@ -522,6 +522,34 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('REMIND,08:10-1-1,14:30-0-2,18:00-1-3-0111110', $submitted[0]['bytes']);
     }
 
+    public function testConfigurationPutAllowsFourPTouchLanguageZeroForEnglish(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['language_timezone']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'languageTimezone' => [
+                    'language' => 0,
+                    'timeZone' => '0',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('LZ,0,0', $submitted[0]['bytes']);
+    }
+
     public function testConfigurationPutSendsFourPTouchTakePillsWithMultipleReminders(): void
     {
         $submitted = [];

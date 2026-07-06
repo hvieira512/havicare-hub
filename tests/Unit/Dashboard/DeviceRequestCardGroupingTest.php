@@ -33,6 +33,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('if (input === "soundProfile")', $source);
         self::assertStringContainsString('function requestActionInput(entry)', $source);
         self::assertStringContainsString('function soundProfileInput(desired)', $source);
+        self::assertStringContainsString('const parsedLanguage = parseInt(String(desired.language ?? 3), 10);', $source);
+        self::assertStringContainsString('Number.isFinite(parsedLanguage) ? parsedLanguage : 3', $source);
         self::assertStringContainsString('name="soundProfile"', $source);
         self::assertStringContainsString('data-config-field="mode"', $source);
         self::assertStringContainsString('role="radiogroup"', $source);
