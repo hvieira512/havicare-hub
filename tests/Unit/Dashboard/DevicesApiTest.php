@@ -290,6 +290,59 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testShowExposesFourPTouchAlarmClockStructuredMeta(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'alarmClock',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'REMIND',
+            [
+                'alarms' => [
+                    ['time' => '08:10', 'enabled' => true, 'frequency' => 1],
+                    ['time' => '14:30', 'enabled' => false, 'frequency' => 2],
+                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '0111110'],
+                ],
+            ]
+        );
+
+        $response = $api->show('868017032159118');
+
+        self::assertSame(
+            [
+                [
+                    'time' => '08:10',
+                    'enabled' => true,
+                    'mode' => 1,
+                    'custom' => '',
+                ],
+                [
+                    'time' => '14:30',
+                    'enabled' => false,
+                    'mode' => 2,
+                    'custom' => '',
+                ],
+                [
+                    'time' => '18:00',
+                    'enabled' => true,
+                    'mode' => 3,
+                    'custom' => '0111110',
+                ],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+        );
+        self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
+        self::assertSame('REMIND', $response['capabilities']['alarms']['alarm_clock']['_nativeKey'] ?? null);
+    }
+
     public function testShowReturnsAbsoluteModelImageUrl(): void
     {
         [$api, $db] = $this->makeApi();
@@ -435,6 +488,38 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073,IyFBTVIK', $submitted[0]['bytes']);
+    }
+
+    public function testConfigurationPutSendsFourPTouchAlarmClockDownlink(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'alarmClock' => [
+                    'alarms' => [
+                        ['time' => '08:10', 'enabled' => true, 'frequency' => 1],
+                        ['time' => '14:30', 'enabled' => false, 'frequency' => 2],
+                        ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '0111110'],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertStringContainsString('REMIND,08:10-1-1,14:30-0-2,18:00-1-3-0111110', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPutSendsFourPTouchTakePillsWithMultipleReminders(): void

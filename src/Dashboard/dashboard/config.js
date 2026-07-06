@@ -327,6 +327,9 @@ export function renderConfigInputs(entry, desired, meta = {}) {
     if (input === "reminders") {
         return remindersInput(desired);
     }
+    if (input === "alarms") {
+        return alarmsInput(desired, meta);
+    }
     if (input === "takePills") {
         return takePillsInput(desired, meta);
     }
@@ -473,6 +476,9 @@ export function readConfigPayload(section) {
     if (input === "reminders") {
         return readReminders(section);
     }
+    if (input === "alarms") {
+        return { alarms: readFourPTouchAlarms(section) };
+    }
     if (input === "takePills") {
         return readTakePills(section);
     }
@@ -523,6 +529,7 @@ export function defaultConfigPayload(entry) {
     if (input === "list") return { numbers: ["", "", ""] };
     if (input === "contacts") return { contacts: [{ name: "", phone: "" }] };
     if (input === "reminders") return { masterEnabled: true, items: [] };
+    if (input === "alarms") return { alarms: [] };
     if (input === "takePills")
         return {
             reminderSettings: [
@@ -556,6 +563,9 @@ function configHelp(entry) {
     }
     if ((entry.input || "") === "contacts" && (entry.limit || 0) > 0) {
         return `limite ${entry.limit}`;
+    }
+    if ((entry.input || "") === "alarms") {
+        return "até 3 alarmes";
     }
     if ((entry.key || "") === "whitelistSwitch") {
         return "ativa os contactos da lista telefónica do BP14";
@@ -720,6 +730,30 @@ function readTakePills(section) {
     }
 
     return payload;
+}
+
+function readFourPTouchAlarms(section) {
+    return Array.from(section.querySelectorAll("[data-fourptouch-alarm-row]"))
+        .map((row) => ({
+            time: formatFourPTouchAlarmTime(
+                row.querySelector('[data-fourptouch-field="time"]')?.value || "",
+            ),
+            enabled:
+                row.querySelector('[data-fourptouch-field="enabled"]')?.checked ||
+                false,
+            mode: parseInt(
+                String(row.querySelector('[data-fourptouch-field="mode"]')?.value || "1"),
+                10,
+            ) || 1,
+            custom:
+                parseInt(
+                    String(row.querySelector('[data-fourptouch-field="mode"]')?.value || "1"),
+                    10,
+                ) === 3
+                    ? readFourPTouchAlarmDays(row)
+                    : "",
+        }))
+        .filter((alarm) => alarm.time !== "");
 }
 
 function readNumberFromRow(row, field) {
@@ -1355,6 +1389,33 @@ function remindersInput(desired) {
         </div>`;
 }
 
+function alarmsInput(desired, meta = {}) {
+    const alarms = normalizeFourPTouchAlarms(desired);
+    const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
+
+    while (alarms.length < limit) {
+        alarms.push({
+            time: "",
+            enabled: true,
+            mode: 1,
+            custom: "",
+        });
+    }
+
+    return `
+        <div class="vstack gap-3">
+            <div class="small text-secondary">
+                Até ${esc(String(limit))} alarmes. O modo personalizado usa a ordem Domingo-Sábado.
+            </div>
+            <div class="vstack gap-2">
+                ${alarms
+                    .slice(0, limit)
+                    .map((alarm, index) => fourPTouchAlarmRow(alarm, index))
+                    .join("")}
+            </div>
+        </div>`;
+}
+
 function takePillsInput(desired, meta = {}) {
     const reminderSettingsList = normalizeTakePillsReminderSettings(desired);
     const reminderNumber = parseInt(String(desired.number ?? 1), 10) || 1;
@@ -1426,6 +1487,177 @@ function takePillsInput(desired, meta = {}) {
                 </fieldset>
             </div>
         </div>`;
+}
+
+function fourPTouchAlarmRow(alarm, index) {
+    const mode = parseInt(String(alarm.mode ?? 1), 10) || 1;
+    const customVisible = mode === 3;
+    const rowId = nextUid("fourptouch-alarm");
+    const dayButtons = [
+        { value: "0", label: "Dom" },
+        { value: "1", label: "Seg" },
+        { value: "2", label: "Ter" },
+        { value: "3", label: "Qua" },
+        { value: "4", label: "Qui" },
+        { value: "5", label: "Sex" },
+        { value: "6", label: "Sáb" },
+    ];
+
+    const modeOptions = [
+        { value: 1, label: "Uma vez" },
+        { value: 2, label: "Todos os dias" },
+        { value: 3, label: "Personalizado" },
+    ];
+
+    const customDays = normalizeFourPTouchAlarmDays(alarm.custom || "");
+
+    return `
+        <div class="border rounded p-3 bg-body" data-fourptouch-alarm-row="${index}">
+            <div class="row g-3 align-items-end">
+                <div class="col-sm-6 col-lg-2">
+                    <label class="form-label form-label-sm">Hora</label>
+                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}">
+                </div>
+                <div class="col-sm-6 col-lg-2">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" role="switch" data-fourptouch-field="enabled" ${boolValue(alarm.enabled, true) ? "checked" : ""}>
+                        <label class="form-check-label" data-switch-label>${boolValue(alarm.enabled, true) ? "Ligado" : "Desligado"}</label>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-3">
+                    <label class="form-label form-label-sm">Modo</label>
+                    <select class="form-select" data-fourptouch-field="mode">
+                        ${modeOptions
+                            .map(
+                                (option) => `
+                            <option value="${option.value}" ${option.value === mode ? "selected" : ""}>${esc(option.label)}</option>
+                        `,
+                            )
+                            .join("")}
+                    </select>
+                </div>
+                <div class="col-12 col-lg-5 ${customVisible ? "" : "d-none"}" data-fourptouch-custom-wrapper>
+                    <label class="form-label form-label-sm d-block">Dias personalizados</label>
+                    <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias personalizados">
+                        ${dayButtons
+                            .map(
+                                (day) => `
+                            <input
+                                class="btn-check"
+                                type="checkbox"
+                                id="${rowId}-day-${day.value}"
+                                data-fourptouch-day="customDays"
+                                value="${day.value}"
+                                ${customDays.includes(day.value) ? "checked" : ""}>
+                            <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
+                        `,
+                            )
+                            .join("")}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
+function normalizeFourPTouchAlarms(desired) {
+    const base = desired?.alarms ?? desired?.alarmClock ?? desired?.fields ?? desired;
+
+    if (Array.isArray(base)) {
+        if (base.length && typeof base[0] === "string") {
+            return base.map((item) => normalizeFourPTouchAlarmItem(item));
+        }
+
+        return base.map((item) => normalizeFourPTouchAlarmItem(item));
+    }
+
+    if (typeof base === "string" && base.trim() !== "") {
+        return base.split(",").map((item) => normalizeFourPTouchAlarmItem(item));
+    }
+
+    if (base && typeof base === "object") {
+        return [normalizeFourPTouchAlarmItem(base)];
+    }
+
+    return [];
+}
+
+function normalizeFourPTouchAlarmItem(item) {
+    if (typeof item === "string") {
+        return parseFourPTouchAlarmString(item);
+    }
+
+    if (!item || typeof item !== "object") {
+        return { time: "", enabled: true, mode: 1, custom: "" };
+    }
+
+    const mode = parseInt(
+        String(item.mode ?? item.frequency ?? item.reminderFrequency ?? 1),
+        10,
+    ) || 1;
+
+    return {
+        time: formatFourPTouchAlarmTime(
+            item.time ?? item.alarmTime ?? item.reminderTime ?? "",
+        ),
+        enabled: boolValue(item.enabled ?? item.switchState, true),
+        mode: [1, 2, 3].includes(mode) ? mode : 1,
+        custom:
+            mode === 3
+                ? normalizeFourPTouchAlarmDays(
+                      item.custom ?? item.days ?? item.reminderCustom ?? "",
+                  )
+                : "",
+    };
+}
+
+function parseFourPTouchAlarmString(value) {
+    const parts = String(value || "").trim().split("-");
+    if (parts.length < 3) {
+        return { time: "", enabled: true, mode: 1, custom: "" };
+    }
+
+    const mode = parseInt(String(parts[2] || "1"), 10) || 1;
+
+    return {
+        time: formatFourPTouchAlarmTime(parts[0]),
+        enabled: boolValue(parts[1], true),
+        mode: [1, 2, 3].includes(mode) ? mode : 1,
+        custom:
+            mode === 3
+                ? normalizeFourPTouchAlarmDays(parts.slice(3).join("-"))
+                : "",
+    };
+}
+
+function readFourPTouchAlarmDays(row) {
+    return Array.from(row.querySelectorAll('[data-fourptouch-day="customDays"]:checked'))
+        .map((input) => String(input.value || ""))
+        .join("");
+}
+
+function normalizeFourPTouchAlarmDays(value) {
+    return String(value || "")
+        .replace(/[^01]/g, "")
+        .slice(0, 7);
+}
+
+function formatFourPTouchAlarmTime(value) {
+    const raw = String(value || "").trim();
+    if (raw === "") {
+        return "";
+    }
+
+    const hhmm = raw.replace(/[^0-9]/g, "");
+    if (hhmm.length === 4) {
+        return `${hhmm.slice(0, 2)}:${hhmm.slice(2, 4)}`;
+    }
+
+    if (/^\d{1,2}:\d{2}$/.test(raw)) {
+        const [hour, minute] = raw.split(":");
+        return `${String(parseInt(hour, 10)).padStart(2, "0")}:${String(parseInt(minute, 10)).padStart(2, "0")}`;
+    }
+
+    return raw;
 }
 
 function takePillsReminderGroup(settings, index, frequencyOptions, hidden) {

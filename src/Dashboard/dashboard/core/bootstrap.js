@@ -1108,6 +1108,10 @@ function handleDeviceConfigChange(event) {
                 String(event.target.value) !== "8",
             );
         }
+        const alarmRow = event.target.closest("[data-fourptouch-alarm-row]");
+        if (alarmRow) {
+            syncFourPTouchAlarmCustomVisibility(alarmRow);
+        }
     }
 
     if (
@@ -1340,6 +1344,21 @@ function syncTakePillsVoiceVisibility(section) {
     if (status) {
         const hasVoiceData = String(section.querySelector('[data-config-field="voiceData"]')?.value || "").trim() !== "";
         status.textContent = voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado";
+    }
+}
+
+function syncFourPTouchAlarmCustomVisibility(row) {
+    if (!row) {
+        return;
+    }
+
+    const mode = parseInt(
+        String(row.querySelector('[data-fourptouch-field="mode"]')?.value ?? "1"),
+        10,
+    ) || 1;
+    const custom = row.querySelector("[data-fourptouch-custom-wrapper]");
+    if (custom) {
+        custom.classList.toggle("d-none", mode !== 3);
     }
 }
 

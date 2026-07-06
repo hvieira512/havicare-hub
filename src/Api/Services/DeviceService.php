@@ -1398,7 +1398,7 @@ class DeviceService
     {
         return match ($genericKey) {
             'sos_contacts' => ['SOSNumber' => ['numbers' => $this->requireStringListValue($value, 'numbers')]],
-            'alarm_clock' => ['alarmClock' => ['alarmClock' => $this->requireListValue($value, 'alarmClock')]],
+            'alarm_clock' => ['reminders' => $this->normalizeReminderCapabilityValue($value)],
             'medication_reminders' => ['dnMedicationPlan' => ['plans' => $this->requireListValue($value, 'plans')]],
             default => [$this->resolveWonlexNativeKey($genericKey) => $this->requireObjectValue($value, $genericKey)],
         };
@@ -1420,6 +1420,7 @@ class DeviceService
             'low_battery_alert' => ['lowBatterySmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
             'remove_watch_alarm' => ['removeWatchAlarm' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
             'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
+            'alarm_clock' => ['alarmClock' => ['alarms' => $this->normalizeFourPTouchAlarmClockInput($value)]],
             'medication_reminders' => ['takePills' => $this->requireObjectValue($value, 'medication_reminders')],
             'fall_detection' => ['fallDownAlert' => $this->requireObjectValue($value, 'fallDownAlert')],
             'fall_sensitivity' => ['fallDownSensitivity' => $this->requireObjectValue($value, 'fallDownSensitivity')],
@@ -1634,10 +1635,164 @@ class DeviceService
             'phonebook' => $desired['contacts'] ?? null,
             'call_whitelist' => $this->normalizeCallWhitelistValue($nativeKey, $desired),
             'monitor_number' => $desired['phone'] ?? $desired,
-            'alarm_clock' => $desired['alarmClock'] ?? $desired['items'] ?? $desired,
+            'alarm_clock' => $this->normalizeFourPTouchAlarmClockInput($desired),
             'medication_reminders' => $this->normalizeTakePillsCapabilityValue($desired),
             default => $desired,
         };
+    }
+
+    /**
+     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
+     */
+    private function normalizeFourPTouchAlarmClockInput(mixed $desired): array
+    {
+        if (is_string($desired)) {
+            return $this->normalizeFourPTouchAlarmClockList([$desired]);
+        }
+
+        if (!is_array($desired)) {
+            return [];
+        }
+
+        if (isset($desired['fields']) && is_array($desired['fields'])) {
+            return $this->parseFourPTouchAlarmClockFields($desired['fields']);
+        }
+
+        if (isset($desired['alarms']) && is_array($desired['alarms'])) {
+            return $this->normalizeFourPTouchAlarmClockList($desired['alarms']);
+        }
+
+        if (isset($desired['alarmClock']) && is_array($desired['alarmClock'])) {
+            return $this->normalizeFourPTouchAlarmClockList($desired['alarmClock']);
+        }
+
+        if (isset($desired['items']) && is_array($desired['items'])) {
+            return $this->normalizeFourPTouchAlarmClockList($desired['items']);
+        }
+
+        if (array_is_list($desired)) {
+            return $this->normalizeFourPTouchAlarmClockList($desired);
+        }
+
+        return $this->normalizeFourPTouchAlarmClockList([$desired]);
+    }
+
+    /**
+     * @param list<mixed> $alarms
+     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
+     */
+    private function normalizeFourPTouchAlarmClockList(array $alarms): array
+    {
+        $normalized = [];
+        foreach (array_slice($alarms, 0, 3) as $alarm) {
+            $normalized[] = $this->normalizeFourPTouchAlarmClockItem($alarm);
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return array{time: string, enabled: bool, mode: int, custom: string}
+     */
+    private function normalizeFourPTouchAlarmClockItem(mixed $alarm): array
+    {
+        if (is_string($alarm)) {
+            return $this->parseFourPTouchAlarmClockString($alarm);
+        }
+
+        if (!is_array($alarm)) {
+            return ['time' => '', 'enabled' => true, 'mode' => 1, 'custom' => ''];
+        }
+
+        $mode = (int)($alarm['mode'] ?? $alarm['frequency'] ?? $alarm['reminderFrequency'] ?? 1);
+        $custom = trim((string)($alarm['custom'] ?? $alarm['days'] ?? $alarm['reminderCustom'] ?? ''));
+
+        return [
+            'time' => $this->normalizeFourPTouchAlarmClockTime((string)($alarm['time'] ?? $alarm['alarmTime'] ?? $alarm['reminderTime'] ?? '')),
+            'enabled' => $this->boolLikeToBool($alarm['enabled'] ?? $alarm['switchState'] ?? true),
+            'mode' => in_array($mode, [1, 2, 3], true) ? $mode : 1,
+            'custom' => $mode === 3 ? $this->normalizeFourPTouchAlarmClockDays($custom) : '',
+        ];
+    }
+
+    /**
+     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
+     */
+    private function parseFourPTouchAlarmClockFields(array $fields): array
+    {
+        $alarms = [];
+        foreach ($fields as $field) {
+            if (trim((string)$field) === '') {
+                continue;
+            }
+            $alarms[] = $this->parseFourPTouchAlarmClockString((string)$field);
+        }
+
+        return $alarms;
+    }
+
+    /**
+     * @return array{time: string, enabled: bool, mode: int, custom: string}
+     */
+    private function parseFourPTouchAlarmClockString(string $value): array
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return ['time' => '', 'enabled' => true, 'mode' => 1, 'custom' => ''];
+        }
+
+        if (preg_match('/^(\d{1,2}:\d{2}|\d{4})-(0|1)-(1|2|3)(?:-([01]{7}))?$/', $value, $matches) !== 1) {
+            throw new \InvalidArgumentException('alarm entry must use HH:MM-switch-frequency[-days]');
+        }
+
+        $mode = (int)$matches[3];
+
+        return [
+            'time' => $this->normalizeFourPTouchAlarmClockTime($matches[1]),
+            'enabled' => $matches[2] === '1',
+            'mode' => $mode,
+            'custom' => $mode === 3 ? $this->normalizeFourPTouchAlarmClockDays($matches[4] ?? '') : '',
+        ];
+    }
+
+    private function normalizeFourPTouchAlarmClockTime(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches) === 1) {
+            $hour = (int)$matches[1];
+            $minute = (int)$matches[2];
+            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+                throw new \InvalidArgumentException('alarm time must use valid 24h times');
+            }
+
+            return sprintf('%02d:%02d', $hour, $minute);
+        }
+
+        if (preg_match('/^(\d{2})(\d{2})$/', $value, $matches) === 1) {
+            $hour = (int)$matches[1];
+            $minute = (int)$matches[2];
+            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+                throw new \InvalidArgumentException('alarm time must use valid 24h times');
+            }
+
+            return sprintf('%02d:%02d', $hour, $minute);
+        }
+
+        throw new \InvalidArgumentException('alarm time must use HH:MM or HHmm');
+    }
+
+    private function normalizeFourPTouchAlarmClockDays(string $value): string
+    {
+        $days = trim($value);
+        if (preg_match('/^[01]{7}$/', $days) !== 1) {
+            throw new \InvalidArgumentException('alarm custom days must be a 7-digit 0/1 mask');
+        }
+
+        return $days;
     }
 
     private function normalizeTakePillsCapabilityValue(array $desired): array

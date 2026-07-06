@@ -428,7 +428,7 @@ final class DeviceConfigurationCatalog
             self::entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
             self::entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'requestAction', [], ['VERNO'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
             self::entry('deviceStatus', 'TS', 'Estado do dispositivo', 'requestAction', [], ['TS'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
-            self::entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5),
+            self::entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5, 3),
             self::entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55),
             self::entry('soundProfile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
@@ -855,20 +855,121 @@ final class DeviceConfigurationCatalog
     private static function fourPTouchAlarmClockPayload(array $payload): array
     {
         $alarms = $payload['alarms'] ?? $payload['alarmClock'] ?? null;
-        if (is_array($alarms)) {
-            $first = $alarms[0] ?? $alarms;
-            $time = self::requiredString($first['time'] ?? null, 'time');
-            $days = (string)($first['days'] ?? '1111111');
-            $enabled = self::boolInt($first['enabled'] ?? null, 'enabled');
-
-            return [$time, $days, (string)$enabled];
+        if (is_string($alarms) && trim($alarms) !== '') {
+            $alarms = self::fourPTouchAlarmClockListFromString($alarms);
         }
 
-        $time = self::requiredString($payload['time'] ?? null, 'time');
-        $days = (string)($payload['days'] ?? '1111111');
-        $enabled = self::boolInt($payload['enabled'] ?? null, 'enabled');
+        if (!is_array($alarms)) {
+            $alarms = [$payload];
+        } elseif (!array_is_list($alarms)) {
+            $alarms = [$alarms];
+        }
 
-        return [$time, $days, (string)$enabled];
+        $alarms = array_values(array_filter($alarms, static fn(mixed $item): bool => $item !== null));
+        if ($alarms === []) {
+            throw new \InvalidArgumentException('alarms must contain at least one alarm');
+        }
+
+        if (count($alarms) > 3) {
+            throw new \InvalidArgumentException('alarms must not contain more than 3 items');
+        }
+
+        return array_map([self::class, 'fourPTouchAlarmClockEntry'], $alarms);
+    }
+
+    private static function fourPTouchAlarmClockListFromString(string $value): array
+    {
+        $value = trim($value);
+        if ($value === '') {
+            throw new \InvalidArgumentException('alarms must contain at least one alarm');
+        }
+
+        $parts = explode(',', $value);
+        if (count($parts) > 1) {
+            return array_values(array_filter(array_map('trim', $parts), static fn(string $part): bool => $part !== ''));
+        }
+
+        return [$value];
+    }
+
+    private static function fourPTouchAlarmClockEntry(mixed $value): string
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value === '') {
+                throw new \InvalidArgumentException('alarm entry must not be empty');
+            }
+
+            if (preg_match('/^(\d{1,2}:\d{2}|\d{4})-(0|1)-(1|2|3)(?:-([01]{7}))?$/', $value, $matches) === 1) {
+                $time = self::fourPTouchAlarmClockTime($matches[1]);
+                $enabled = $matches[2];
+                $frequency = $matches[3];
+                $custom = $matches[4] ?? '';
+
+                return $frequency === '3'
+                    ? "{$time}-{$enabled}-{$frequency}-" . self::fourPTouchAlarmClockDays($custom, 'custom')
+                    : "{$time}-{$enabled}-{$frequency}";
+            }
+
+            throw new \InvalidArgumentException('alarm entry must use HH:MM-switch-frequency[-days]');
+        }
+
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException('each alarm item must be an object or string');
+        }
+
+        $time = self::fourPTouchAlarmClockTime(
+            self::requiredString($value['time'] ?? $value['alarmTime'] ?? null, 'alarm time'),
+        );
+        $enabled = self::boolInt($value['enabled'] ?? $value['switchState'] ?? null, 'alarm enabled');
+        $frequency = self::rangeInt($value['frequency'] ?? $value['mode'] ?? $value['reminderFrequency'] ?? null, 1, 3, 'alarm frequency');
+
+        if ($frequency === 3) {
+            $custom = self::fourPTouchAlarmClockDays(
+                $value['custom'] ?? $value['days'] ?? $value['reminderCustom'] ?? null,
+                'alarm custom days',
+            );
+
+            return "{$time}-{$enabled}-{$frequency}-{$custom}";
+        }
+
+        return "{$time}-{$enabled}-{$frequency}";
+    }
+
+    private static function fourPTouchAlarmClockTime(string $value): string
+    {
+        $value = trim($value);
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches) === 1) {
+            $hour = (int)$matches[1];
+            $minute = (int)$matches[2];
+            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+                throw new \InvalidArgumentException('alarm time must use valid 24h times');
+            }
+
+            return sprintf('%02d:%02d', $hour, $minute);
+        }
+
+        if (preg_match('/^(\d{2})(\d{2})$/', $value, $matches) === 1) {
+            $hour = (int)$matches[1];
+            $minute = (int)$matches[2];
+            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+                throw new \InvalidArgumentException('alarm time must use valid 24h times');
+            }
+
+            return sprintf('%02d:%02d', $hour, $minute);
+        }
+
+        throw new \InvalidArgumentException('alarm time must use HH:MM or HHmm');
+    }
+
+    private static function fourPTouchAlarmClockDays(mixed $value, string $field): string
+    {
+        $days = trim((string)$value);
+        if (preg_match('/^[01]{7}$/', $days) !== 1) {
+            throw new \InvalidArgumentException("{$field} must be a 7-digit 0/1 mask");
+        }
+
+        return $days;
     }
 
     /**

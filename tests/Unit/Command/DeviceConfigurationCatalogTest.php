@@ -610,18 +610,53 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchAlarmClockBuildsNativeFields(): void
     {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'alarmClock', ['time' => '0730', 'enabled' => true]);
-        self::assertSame('REMIND', $payload['command']);
-        self::assertSame(['fields' => ['0730', '1111111', '1']], $payload['payload']);
-    }
-
-    public function testFourPTouchAlarmClockWithAlarmsArrayBuildsNativeFields(): void
-    {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'alarmClock', [
-            'alarms' => [['time' => '2200', 'days' => '0000011', 'enabled' => false]],
+            'alarms' => [
+                ['time' => '0730', 'enabled' => true, 'frequency' => 1],
+            ],
         ]);
         self::assertSame('REMIND', $payload['command']);
-        self::assertSame(['fields' => ['2200', '0000011', '0']], $payload['payload']);
+        self::assertSame(['fields' => ['07:30-1-1']], $payload['payload']);
+    }
+
+    public function testFourPTouchAlarmClockWithMultipleAlarmsBuildsNativeFields(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'alarmClock', [
+            'alarms' => [
+                ['time' => '08:10', 'enabled' => true, 'frequency' => 1],
+                ['time' => '14:30', 'enabled' => false, 'frequency' => 2],
+                ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '0111110'],
+            ],
+        ]);
+        self::assertSame('REMIND', $payload['command']);
+        self::assertSame(['fields' => ['08:10-1-1', '14:30-0-2', '18:00-1-3-0111110']], $payload['payload']);
+    }
+
+    public function testFourPTouchAlarmClockRejectsInvalidCustomMask(): void
+    {
+        self::assertSame(
+            'alarm custom days must be a 7-digit 0/1 mask',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'alarmClock', [
+                'alarms' => [
+                    ['time' => '08:10', 'enabled' => true, 'frequency' => 3, 'custom' => '111110'],
+                ],
+            ])
+        );
+    }
+
+    public function testFourPTouchAlarmClockRejectsMoreThanThreeAlarms(): void
+    {
+        self::assertSame(
+            'alarms must not contain more than 3 items',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'alarmClock', [
+                'alarms' => [
+                    ['time' => '08:10', 'enabled' => true, 'frequency' => 1],
+                    ['time' => '14:30', 'enabled' => false, 'frequency' => 2],
+                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '0111110'],
+                    ['time' => '20:00', 'enabled' => true, 'frequency' => 1],
+                ],
+            ])
+        );
     }
 
     public function testFourPTouchPhonebookBuildsNativeFields(): void
