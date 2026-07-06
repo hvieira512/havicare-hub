@@ -1526,7 +1526,7 @@ function fourPTouchAlarmRow(alarm, index) {
                 </div>
                 <div class="col-12 col-lg-3">
                     <label class="form-label form-label-sm">Modo</label>
-                    <select class="form-select" data-fourptouch-field="mode">
+                    <select class="form-select" data-config-field="mode" data-fourptouch-field="mode">
                         ${modeOptions
                             .map(
                                 (option) => `
