@@ -4,7 +4,7 @@ import {renderButtonGroup} from "../../renderers.js";
 import {
     deviceTypeOptions,
     normalizeDeviceType,
-} from "../../devices/list-detail.js";
+} from "../../domain.js";
 import {getSettingsModelsRuntime} from "./runtime.js";
 
 function modelSupplierOptions(deviceType = "watch") {

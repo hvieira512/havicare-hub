@@ -10,7 +10,7 @@ import {
     modelCommercialName,
     modelDeviceType,
     modelInternalName,
-} from "../../devices/list-detail.js";
+} from "../../domain.js";
 import {renderModelsFilterButtons} from "./filters.js";
 import {resetModelForm} from "./form.js";
 import {
@@ -69,7 +69,6 @@ async function loadSettingsModelsSection(page = 1) {
     const models = response.data || [];
     state.settingsModal.modelsPage = page;
     state.settingsModal.modelsPagination = response.pagination || null;
-    state.summary.models = models;
     state.settingsModal.sectionLoaded.models = true;
     renderModelsSection(models);
     renderModelsFilterButtons();

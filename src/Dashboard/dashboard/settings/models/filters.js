@@ -5,7 +5,7 @@ import {
     deviceTypeLabel,
     deviceTypeOptions,
     normalizeDeviceType,
-} from "../../devices/list-detail.js";
+} from "../../domain.js";
 import {loadSettingsModelsSection} from "./list.js";
 import {getSettingsModelsRuntime} from "./runtime.js";
 
@@ -66,7 +66,7 @@ function renderModelsFilterButtons() {
         const suppliers = Array.isArray(entry?.suppliers)
             ? entry.suppliers
             : [];
-            deviceTypeToSuppliers.set(
+        deviceTypeToSuppliers.set(
             deviceType,
             suppliers
                 .map((supplier) => String(supplier?.name || ""))
