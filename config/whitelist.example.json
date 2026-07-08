@@ -4,25 +4,24 @@
         "model": "RD-V1",
         "deviceType": "radar",
         "licenseId": 1001,
-        "company": "hitcare",
+        "company": "hitCare",
         "simNumber": "",
         "deviceId": "594B3CF100A7"
     },
     "637507597567372": {
         "supplier": "4P Touch",
-        "model": "4P-TOUCH",
+        "model": "D46",
         "deviceType": "watch",
         "licenseId": 0,
         "company": "null",
-        "simNumber": "",
-        "deviceId": "7597567372"
+        "simNumber": ""
     },
     "861265061009822": {
         "supplier": "Vivistar",
         "model": "L08 Pro",
         "deviceType": "watch",
-        "licenseId": 0,
-        "company": "null",
+        "licenseId": 1001,
+        "company": "hitcare",
         "simNumber": "",
         "deviceId": ""
     },
@@ -76,7 +75,7 @@
         "model": "HW20PRO",
         "deviceType": "watch",
         "licenseId": 2002,
-        "company": "havicare",
+        "company": "haviCare",
         "simNumber": "",
         "deviceId": ""
     },
@@ -94,7 +93,7 @@
         "model": "VIVISTAR-CARE",
         "deviceType": "watch",
         "licenseId": 0,
-        "company": "hitcare",
+        "company": "hitCare",
         "simNumber": "",
         "deviceId": ""
     },
@@ -103,7 +102,7 @@
         "model": "RD-V1",
         "deviceType": "radar",
         "licenseId": 1001,
-        "company": "hitcare",
+        "company": "hitCare",
         "simNumber": "",
         "deviceId": "9D8A3204F853"
     },
@@ -112,7 +111,7 @@
         "model": "RD-V1",
         "deviceType": "radar",
         "licenseId": 1001,
-        "company": "hitcare",
+        "company": "hitCare",
         "simNumber": "",
         "deviceId": "AD8A613B0493"
     },
