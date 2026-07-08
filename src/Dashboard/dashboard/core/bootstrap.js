@@ -381,6 +381,10 @@ async function renderDeviceSelectors(
         supplier,
         currentDeviceType,
         models,
+    ).filter(
+        (entry) =>
+            modelInternalName(entry) !== "4P-TOUCH" &&
+            modelCommercialName(entry) !== "4P-TOUCH",
     );
     const availableModelNames = availableModels.map((model) =>
         modelInternalName(model),
@@ -570,7 +574,9 @@ async function saveDevice() {
         state.deviceTypeSuppliersModels,
     )
         ? deriveFourPTouchDeviceId(imei)
-        : els.deviceDeviceId.value.trim();
+        : deviceType === "watch"
+            ? ""
+            : els.deviceDeviceId.value.trim();
 
     if (deviceType === "ncs" || deviceType === "radar") {
         if (!deviceId || !supplier || !model) {
@@ -592,17 +598,6 @@ async function saveDevice() {
         }
         if (!imei || !supplier || !model) {
             alert("IMEI, fornecedor e modelo são obrigatórios");
-            return;
-        }
-        if (
-            isFourPTouchSelection(
-                supplier,
-                model,
-                state.deviceTypeSuppliersModels,
-            ) &&
-            !deviceId
-        ) {
-            alert("IMEI 4P Touch inválido");
             return;
         }
     }

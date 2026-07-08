@@ -556,7 +556,7 @@ class DeviceService
         if ($licenseId === 0 && $deviceType !== 'watch') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
-        $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceId);
+        $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
         $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
 
@@ -644,7 +644,7 @@ class DeviceService
             ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
         }
-        $deviceId = $this->normalizeDeviceId($newImei, $supplier, $model, $deviceId);
+        $deviceId = $this->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
@@ -1013,9 +1013,14 @@ class DeviceService
         return DeviceProtocol::forSupplier($supplier);
     }
 
-    private function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceId): string
+    private function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceType, string $deviceId): string
     {
+        $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         if ($this->protocolForModel($supplier, $model) !== 'four-p-touch') {
+            return $deviceType === 'watch' ? '' : $deviceId;
+        }
+
+        if ($deviceType !== 'watch') {
             return $deviceId;
         }
 

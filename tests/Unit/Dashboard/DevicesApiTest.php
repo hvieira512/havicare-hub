@@ -340,7 +340,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
         );
         self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
-        self::assertSame('REMIND', $response['capabilities']['alarms']['alarm_clock']['_nativeKey'] ?? null);
+        self::assertSame('alarmClock', $response['capabilities']['alarms']['alarm_clock']['_nativeKey'] ?? null);
     }
 
     public function testShowReturnsAbsoluteModelImageUrl(): void

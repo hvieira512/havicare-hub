@@ -18,7 +18,16 @@ export const saveDevice = (imei, supplier, model, deviceType = 'watch', licenseI
     originalImei ? `/api/devices/${encodeURIComponent(originalImei)}` : '/api/devices',
     {
         method: originalImei ? 'PUT' : 'POST',
-        body: JSON.stringify({imei, supplier, model, deviceType, licenseId, simNumber, deviceId, company}),
+        body: JSON.stringify({
+            imei,
+            supplier,
+            model,
+            deviceType,
+            licenseId,
+            simNumber,
+            ...(deviceType === 'watch' ? {} : {deviceId}),
+            company,
+        }),
     }
 );
 export const deleteDevice = imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`, {method: 'DELETE'});
