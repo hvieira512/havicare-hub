@@ -43,6 +43,7 @@ export const state = {
         model: "",
         protocol: "",
         catalog: [],
+        catalogLoading: false,
         configurations: [],
         capabilities: {},
         enabledCapabilityKeys: [],

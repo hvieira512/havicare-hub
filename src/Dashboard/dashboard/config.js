@@ -42,6 +42,7 @@ const CATEGORY_ORDER = {
 };
 
 let uidCounter = 0;
+const protocolCatalogRequests = {};
 
 export async function catalogForProtocol(protocol) {
     if (!protocol) {
@@ -52,10 +53,22 @@ export async function catalogForProtocol(protocol) {
         return state.protocolCatalogs[protocol];
     }
 
-    const response = await requestJson(`/api/protocols/${encodeURIComponent(protocol)}/config-catalog`);
-    const catalog = Array.isArray(response.data) ? response.data : [];
-    state.protocolCatalogs[protocol] = catalog;
-    return catalog;
+    if (protocolCatalogRequests[protocol]) {
+        return protocolCatalogRequests[protocol];
+    }
+
+    protocolCatalogRequests[protocol] = (async () => {
+        const response = await requestJson(
+            `/api/protocols/${encodeURIComponent(protocol)}/config-catalog`,
+        );
+        const catalog = Array.isArray(response.data) ? response.data : [];
+        state.protocolCatalogs[protocol] = catalog;
+        return catalog;
+    })().finally(() => {
+        delete protocolCatalogRequests[protocol];
+    });
+
+    return protocolCatalogRequests[protocol];
 }
 
 export function groupedCatalog(catalog) {

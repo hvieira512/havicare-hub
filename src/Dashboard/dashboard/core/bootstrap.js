@@ -45,6 +45,7 @@ import {
     licenseDisplayLabel,
     loadDevice,
     loadSummary,
+    modelCommercialName,
     modelDisplayLabel,
     modelDisplayName,
     modelInternalName,
@@ -237,6 +238,7 @@ async function openAddDevice() {
         model: "",
         protocol: "",
         catalog: [],
+        catalogLoading: false,
         configurations: [],
         capabilities: {},
         enabledCapabilityKeys: [],
@@ -282,6 +284,7 @@ async function editDevice(imei, supplier, model) {
         model,
         protocol: "",
         catalog: [],
+        catalogLoading: false,
         configurations: [],
         capabilities: {},
         enabledCapabilityKeys: [],
@@ -463,17 +466,20 @@ function updateDevicePreview() {
         model || "Selecione um modelo",
     );
     applyFourPTouchDeviceIdUi();
-    syncDeviceModalContext();
 }
 
-async function syncDeviceModalContext() {
+async function syncDeviceModalContext(loadCatalog = false) {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
     const protocol = supplierProtocol(supplier, state.deviceTypeSuppliersModels);
     state.deviceModal.supplier = supplier;
     state.deviceModal.model = model;
     state.deviceModal.protocol = protocol;
-    state.deviceModal.catalog = await catalogForProtocol(protocol);
+    if (loadCatalog || state.deviceModal.activeTab === "config") {
+        state.deviceModal.catalog = await catalogForProtocol(protocol);
+    } else {
+        state.deviceModal.catalog = state.protocolCatalogs[protocol] || [];
+    }
     state.deviceModal.imei = els.deviceImei.value.trim();
     state.deviceModal.deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
@@ -489,6 +495,22 @@ async function syncDeviceModalContext() {
     ) {
         state.deviceModal.activeCategory =
             state.deviceModal.catalog[0]?.category || "";
+    }
+}
+
+async function ensureDeviceConfigurationCatalogLoaded() {
+    const protocol = state.deviceModal.protocol;
+    if (!protocol || state.protocolCatalogs[protocol]) {
+        await syncDeviceModalContext(false);
+        return;
+    }
+
+    state.deviceModal.catalogLoading = true;
+    renderDeviceConfigurationModal();
+    try {
+        await syncDeviceModalContext(true);
+    } finally {
+        state.deviceModal.catalogLoading = false;
     }
 }
 
@@ -521,6 +543,13 @@ function renderDeviceConfigurationModal() {
     }
 
     if (state.deviceModal.loading) {
+        els.deviceConfigRoot.innerHTML = emptyPanel(
+            "A carregar configurações...",
+        );
+        return;
+    }
+
+    if (state.deviceModal.catalogLoading) {
         els.deviceConfigRoot.innerHTML = emptyPanel(
             "A carregar configurações...",
         );
@@ -858,6 +887,16 @@ function bindEvents() {
             void loadSettingsCompanySection();
         }
     });
+    els.deviceGeneralTabBtn.addEventListener("shown.bs.tab", () => {
+        state.deviceModal.activeTab = "general";
+    });
+    els.deviceConfigTabBtn.addEventListener("shown.bs.tab", () => {
+        state.deviceModal.activeTab = "config";
+        void (async () => {
+            await ensureDeviceConfigurationCatalogLoaded();
+            renderDeviceConfigurationModal();
+        })();
+    });
     els.saveCompanyBtn.addEventListener("click", () => {
         void saveCompany();
     });
@@ -959,7 +998,7 @@ function handleDeviceFormInput(event) {
     setDeviceFormError("");
     if (event.target.matches("[data-phone-local]")) {
         syncPhoneControl(event.target);
-        syncDeviceModalContext();
+        void syncDeviceModalContext();
     }
 }
 
@@ -967,7 +1006,7 @@ function handleDeviceFormChange(event) {
     setDeviceFormError("");
     if (event.target.matches("[data-phone-country]")) {
         syncPhoneControl(event.target);
-        syncDeviceModalContext();
+        void syncDeviceModalContext();
     }
 }
 
