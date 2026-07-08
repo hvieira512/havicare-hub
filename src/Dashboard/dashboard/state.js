@@ -13,6 +13,7 @@ export const state = {
         },
     },
     deviceListPageSize: 20,
+    deviceTypeSuppliersModels: [],
     detailFilters: {
         from: "",
         to: "",

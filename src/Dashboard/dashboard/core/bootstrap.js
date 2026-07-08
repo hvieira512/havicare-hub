@@ -30,16 +30,11 @@ import {
     saveTextStorage,
 } from "./storage.js";
 import {
-    applyDetailFilters,
-    clearDetailFilters,
     clearSelection,
-    allDetailItems,
-    filterDetailItems,
     deriveFourPTouchDeviceId,
     deviceTypeLabel,
     deviceTypeOptions,
-    ensureModelsLoaded,
-    ensureSuppliersLoaded,
+    ensureDeviceTypeSuppliersModelsLoaded,
     findModelInfo,
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
@@ -58,21 +53,23 @@ import {
     normalizeDeviceType,
     normalizeFilterValue,
     openDeviceSelector,
-    requestTelemetryFeature,
-    renderTelemetryList,
-    renderSelection,
     selectDevice,
     supplierProtocol,
     suppliersForDeviceType,
 } from "../devices/list-detail.js";
+import {
+    allDetailItems,
+    applyDetailFilters,
+    clearDetailFilters,
+    filterDetailItems,
+    requestTelemetryFeature,
+    renderTelemetryList,
+    renderSelection,
+} from "../devices/detail-view.js";
 import {disconnectDeviceStream, initDeviceStream} from "../devices/stream.js";
 import {
-    backToModelList,
     clearModelsFilters,
-    deleteCurrentModel,
-    editCurrentModel,
     handleActiveModelsFiltersClick,
-    handleCapabilitySupplierClick,
     handleCompanyListClick,
     handleLicenseListClick,
     handleModelsListLimitChange,
@@ -80,25 +77,18 @@ import {
     handleSettingsPaginationClick,
     initSettings,
     loadSettingsApiUsersSection,
-    loadSettingsCapabilitiesSection,
     loadSettingsCompanySection,
     loadSettingsModal,
     loadSettingsModelsSection,
     loadSettingsSuppliersSection,
-    openModelDetail,
-    openNewModelForm,
-    renderCapabilitiesSection,
     resetApiUserForm,
     resetCompanyForm,
     resetLicenseForm,
     resetModelForm,
-    revokeModelPreviewUrl,
     saveApiUser,
-    saveCapabilities,
     saveCompany,
     saveLicense,
     saveModel,
-    selectCapabilitySupplier,
     selectModelDeviceType,
     selectModelSupplier,
     selectModelsDeviceType,
@@ -108,6 +98,19 @@ import {
     toggleSupplier,
     updateModelProtocolAndPreview,
 } from "../settings/index.js";
+import {
+    backToModelList,
+    deleteCurrentModel,
+    editCurrentModel,
+    handleCapabilitySupplierClick,
+    loadSettingsCapabilitiesSection,
+    openModelDetail,
+    openNewModelForm,
+    renderCapabilitiesSection,
+    revokeModelPreviewUrl,
+    saveCapabilities,
+    selectCapabilitySupplier,
+} from "../settings/capabilities.js";
 
 let els = {};
 let deviceModal = null;
@@ -215,7 +218,7 @@ function setDeviceFormError(message = "") {
 }
 
 async function openAddDevice() {
-    await Promise.all([ensureModelsLoaded(), ensureSuppliersLoaded()]);
+    await ensureDeviceTypeSuppliersModelsLoaded();
     els.deviceModalLabel.textContent = "Adicionar dispositivo";
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
@@ -255,12 +258,12 @@ async function openAddDevice() {
     els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = "0";
     els.deviceDeviceId.value = "";
-    renderDeviceSelectors();
+    await renderDeviceSelectors();
     deviceModal.show();
 }
 
 async function editDevice(imei, supplier, model) {
-    await Promise.all([ensureModelsLoaded(), ensureSuppliersLoaded()]);
+    await ensureDeviceTypeSuppliersModelsLoaded();
     els.deviceModalLabel.textContent = "Editar dispositivo";
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
@@ -369,12 +372,19 @@ async function renderDeviceSelectors(
     const currentDeviceType = normalizeDeviceType(
         deviceType || els.deviceForm.dataset.deviceType || "watch",
     );
-    const suppliers = suppliersForDeviceType(currentDeviceType);
+    const models = state.deviceTypeSuppliersModels || [];
+    const suppliers = suppliersForDeviceType(currentDeviceType, models);
     const supplier = suppliers.includes(selectedSupplier)
         ? selectedSupplier
         : suppliers[0] || "";
-    const models = modelsForSupplierAndType(supplier, currentDeviceType);
-    const availableModelNames = models.map((model) => modelInternalName(model));
+    const availableModels = modelsForSupplierAndType(
+        supplier,
+        currentDeviceType,
+        models,
+    );
+    const availableModelNames = availableModels.map((model) =>
+        modelInternalName(model),
+    );
     const model = availableModelNames.includes(selectedModel)
         ? selectedModel
         : availableModelNames[0] || "";
@@ -390,7 +400,7 @@ async function renderDeviceSelectors(
     );
     renderButtonGroup(
         els.deviceModelButtons,
-        models.map((entry) => ({
+        availableModels.map((entry) => ({
             value: modelInternalName(entry),
             label: modelDisplayLabel(entry),
         })),
@@ -439,7 +449,11 @@ function renderDeviceTypeSelector(selectedType = "watch") {
 function updateDevicePreview() {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
-    const modelInfo = findModelInfo(supplier, model);
+    const modelInfo = findModelInfo(
+        supplier,
+        model,
+        state.deviceTypeSuppliersModels,
+    );
     els.devicePreview.innerHTML = modelPreviewHtml(
         modelInfo,
         model || "Selecione um modelo",
@@ -451,7 +465,7 @@ function updateDevicePreview() {
 async function syncDeviceModalContext() {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
-    const protocol = supplierProtocol(supplier, state.summary.models);
+    const protocol = supplierProtocol(supplier, state.deviceTypeSuppliersModels);
     state.deviceModal.supplier = supplier;
     state.deviceModal.model = model;
     state.deviceModal.protocol = protocol;
@@ -479,7 +493,11 @@ function applyFourPTouchDeviceIdUi() {
         return;
     }
 
-    const isFourPTouch = isFourPTouchSelection();
+    const isFourPTouch = isFourPTouchSelection(
+        els.deviceForm.dataset.supplier || "",
+        els.deviceForm.dataset.model || "",
+        state.deviceTypeSuppliersModels,
+    );
     if (isFourPTouch) {
         const derived = deriveFourPTouchDeviceId(els.deviceImei.value.trim());
         els.deviceDeviceId.value = derived;
@@ -546,7 +564,11 @@ async function saveDevice() {
     const licenseId = els.deviceLicenseId.value.trim();
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
-    const deviceId = isFourPTouchSelection(supplier, model)
+    const deviceId = isFourPTouchSelection(
+        supplier,
+        model,
+        state.deviceTypeSuppliersModels,
+    )
         ? deriveFourPTouchDeviceId(imei)
         : els.deviceDeviceId.value.trim();
 
@@ -572,7 +594,14 @@ async function saveDevice() {
             alert("IMEI, fornecedor e modelo são obrigatórios");
             return;
         }
-        if (isFourPTouchSelection(supplier, model) && !deviceId) {
+        if (
+            isFourPTouchSelection(
+                supplier,
+                model,
+                state.deviceTypeSuppliersModels,
+            ) &&
+            !deviceId
+        ) {
             alert("IMEI 4P Touch inválido");
             return;
         }
