@@ -8,19 +8,25 @@ final class DeviceListImageSourceTest extends TestCase
 {
     public function testDeviceListRendersFromDeviceImageWithoutModelCatalogLookup(): void
     {
-        $source = file_get_contents(
+        $listSource = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/list-detail.js'
         );
+        $detailSource = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
+        );
 
-        self::assertIsString($source);
-        self::assertStringContainsString('device.image', $source);
-        self::assertStringContainsString('device.model || "-"', $source);
-        self::assertStringNotContainsString('ensureModelsLoaded(),', $source);
-        self::assertStringNotContainsString('modelLookup', $source);
-        self::assertStringContainsString('renderSelectedDeviceSummary(device, deviceModel)', $source);
-        self::assertStringContainsString('deviceModel?.image', $source);
-        self::assertStringContainsString('deviceModel?.commercialName', $source);
-        self::assertStringNotContainsString('findModelInfo(supplier, model)', $source);
-        self::assertStringNotContainsString('modelImageHtml(modelInfo)', $source);
+        self::assertIsString($listSource);
+        self::assertIsString($detailSource);
+
+        self::assertStringContainsString('device.image', $listSource);
+        self::assertStringContainsString('device.model || "-"', $listSource);
+        self::assertStringNotContainsString('ensureModelsLoaded(),', $listSource);
+        self::assertStringNotContainsString('modelLookup', $listSource);
+        self::assertStringNotContainsString('findModelInfo(supplier, model)', $listSource);
+        self::assertStringNotContainsString('modelImageHtml(modelInfo)', $listSource);
+
+        self::assertStringContainsString('renderSelectedDeviceSummary(device, deviceModel)', $detailSource);
+        self::assertStringContainsString('deviceModel?.image', $detailSource);
+        self::assertStringContainsString('deviceModel?.commercialName', $detailSource);
     }
 }

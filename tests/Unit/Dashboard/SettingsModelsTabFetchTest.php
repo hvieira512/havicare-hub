@@ -11,20 +11,16 @@ final class SettingsModelsTabFetchTest extends TestCase
         $listSource = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/models/list.js'
         );
-        $filtersSource = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/models/filters.js'
-        );
         $formSource = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/models/form.js'
         );
-        $settingsSource = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/index.js'
+        $capabilitiesSource = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/capabilities.js'
         );
 
         self::assertIsString($listSource);
-        self::assertIsString($filtersSource);
         self::assertIsString($formSource);
-        self::assertIsString($settingsSource);
+        self::assertIsString($capabilitiesSource);
 
         self::assertStringNotContainsString(
             'await callbacks.loadSettingsSuppliersSection();',
@@ -32,15 +28,19 @@ final class SettingsModelsTabFetchTest extends TestCase
         );
         self::assertStringNotContainsString(
             'state.modelModalSuppliers',
-            $filtersSource,
+            $formSource,
+        );
+        self::assertStringContainsString(
+            'void callbacks.refreshNewModelCapabilityTemplate?.();',
+            $formSource,
         );
         self::assertStringContainsString(
             'await refreshNewModelCapabilityTemplate();',
-            $settingsSource,
+            $capabilitiesSource,
         );
         self::assertStringContainsString(
             'await loadSettingsModelFilters();',
-            $settingsSource,
+            $capabilitiesSource,
         );
     }
 }

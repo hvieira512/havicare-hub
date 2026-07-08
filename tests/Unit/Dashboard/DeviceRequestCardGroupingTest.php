@@ -9,7 +9,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
     public function testDeviceRequestCardsAreGroupedIntoTelemetryAndSystemSections(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/list-detail.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
         );
 
         self::assertIsString($source);
