@@ -23,7 +23,13 @@ final class DeviceHubMqttContractTest extends TestCase
         file_put_contents($this->whitelistPath, json_encode([
             '865028000000308' => ['supplier' => 'Vivistar', 'model' => 'VIVISTAR-CARE'],
             '868705080300697' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
-            '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '7597567372'],
+            '637507597567372' => [
+                'supplier' => '4P Touch',
+                'model' => '4P-TOUCH',
+                'deviceId' => '7597567372',
+                'licenseId' => '1001',
+                'company' => 'hitcare',
+            ],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -157,6 +163,39 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('HW20PRO', $mqtt->statuses[0][1]['device']['model']);
         self::assertSame('Wonlex', $mqtt->events[0][1]['device']['supplier']);
         self::assertSame('HW20PRO', $mqtt->raw[0][1]['device']['model']);
+    }
+
+    public function testFourPTouchAssociationUpdateChangesMqttTopicPrefixOnNextMessage(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $whitelist = new Whitelist($this->whitelistPath);
+        $hub = new DeviceHubServer($whitelist, $mqtt);
+        $connection = new ContractFakeConnection(9);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');
+
+        self::assertContains(
+            'hitcare/1001/watch/637507597567372/raw',
+            $mqtt->rawTopics,
+        );
+        self::assertContains(
+            'hitcare/1001/watch/637507597567372/status',
+            $mqtt->statusTopics,
+        );
+
+        $whitelist->updateAssociation('637507597567372', 'havicare', '1');
+
+        $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');
+
+        self::assertContains(
+            'havicare/1/watch/637507597567372/raw',
+            $mqtt->rawTopics,
+        );
+        self::assertSame(
+            'havicare/1/watch/637507597567372/raw',
+            $mqtt->rawTopics[array_key_last($mqtt->rawTopics)],
+        );
     }
 
     public function testPendingDownlinksFlushAfterDeviceLogin(): void
@@ -379,6 +418,10 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     public array $statuses = [];
     public array $events = [];
     public array $telemetry = [];
+    public array $rawTopics = [];
+    public array $statusTopics = [];
+    public array $eventTopics = [];
+    public array $telemetryTopics = [];
 
     public function __construct()
     {
@@ -387,21 +430,25 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
     {
         $this->raw[] = [$imei, $payload];
+        $this->rawTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw');
     }
 
     public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
     {
         $this->statuses[] = [$imei, $payload, $retain];
+        $this->statusTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status');
     }
 
     public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
     {
         $this->events[] = [$imei, $payload];
+        $this->eventTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events');
     }
 
     public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
     {
         $this->telemetry[] = [$imei, $payload];
+        $this->telemetryTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry');
     }
 }
 
