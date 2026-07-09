@@ -91,6 +91,7 @@ class OpenApiSpec
                 ['name' => 'API Users'],
                 ['name' => 'System'],
                 ['name' => 'Device Types'],
+                ['name' => 'Discovery'],
             ],
             'paths' => [
                 '/api/auth/login' => [
@@ -596,6 +597,84 @@ class OpenApiSpec
                             '200' => [
                                 'description' => 'Capability detail',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CapabilityItem']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/capability-discovery' => [
+                    'get' => [
+                        'tags' => ['Discovery'],
+                        'summary' => 'List capability discovery runs',
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Discovery run list',
+                                'content' => ['application/json' => ['schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'data' => ['type' => 'array', 'items' => ['type' => 'object']],
+                                    ],
+                                ]]],
+                            ],
+                        ],
+                    ],
+                    'post' => [
+                        'tags' => ['Discovery'],
+                        'summary' => 'Generate a capability discovery draft',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => [
+                                'type' => 'object',
+                                'required' => ['imei', 'modelId'],
+                                'properties' => [
+                                    'imei' => ['type' => 'string'],
+                                    'modelId' => ['type' => 'integer'],
+                                ],
+                            ]]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Discovery draft',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/capability-discovery/{id}' => [
+                    'get' => [
+                        'tags' => ['Discovery'],
+                        'summary' => 'Get a discovery run',
+                        'parameters' => [[
+                            'name' => 'id',
+                            'in' => 'path',
+                            'required' => true,
+                            'schema' => ['type' => 'string'],
+                        ]],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Discovery run',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/capability-discovery/{id}/apply' => [
+                    'post' => [
+                        'tags' => ['Discovery'],
+                        'summary' => 'Apply a discovery draft to the model',
+                        'parameters' => [[
+                            'name' => 'id',
+                            'in' => 'path',
+                            'required' => true,
+                            'schema' => ['type' => 'string'],
+                        ]],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Applied discovery run',
+                                'content' => ['application/json' => ['schema' => ['type' => 'object']]],
                             ],
                             '404' => ['$ref' => '#/components/responses/Error'],
                         ],

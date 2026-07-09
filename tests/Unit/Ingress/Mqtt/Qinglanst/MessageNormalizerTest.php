@@ -25,6 +25,7 @@ final class MessageNormalizerTest extends TestCase
 
         self::assertSame('vitals', $result['telemetry']['type']);
         self::assertSame('radar-topic-uid', $result['telemetry']['device']['id']);
+        self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['device']['commercialName']);
         self::assertSame('heartbreath', $result['telemetry']['source']['nativeType']);
     }
 
@@ -87,6 +88,7 @@ final class MessageNormalizerTest extends TestCase
             'imei' => 'canonical-radar-id',
             'supplier' => 'Qinglanst',
             'model' => 'RD-V1',
+            'commercialName' => 'Qinglanst RD-V1 Pro',
             'deviceType' => 'radar',
             'licenseId' => '1001',
             'company' => 'hitcare',

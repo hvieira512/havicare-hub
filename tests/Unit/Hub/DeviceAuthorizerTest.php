@@ -32,18 +32,25 @@ final class DeviceAuthorizerTest extends TestCase
 
     public function testAllowsAuthorizedDeviceAndReturnsExpectedModel(): void
     {
-        $authorizer = new DeviceAuthorizer(new Whitelist($this->whitelistPath));
+        $authorizer = new DeviceAuthorizer(
+            new Whitelist($this->whitelistPath),
+            $this->commercialResolver()
+        );
 
         $result = $authorizer->authorize(new DeviceIdentity('865028000000306', 'wonlex-json'));
 
         self::assertTrue($result->allowed);
         self::assertSame('Wonlex', $result->supplier);
         self::assertSame('HW20PRO', $result->model);
+        self::assertSame('Wonlex HW20 Pro', $result->commercialName);
     }
 
     public function testRejectsUnknownDevice(): void
     {
-        $authorizer = new DeviceAuthorizer(new Whitelist($this->whitelistPath));
+        $authorizer = new DeviceAuthorizer(
+            new Whitelist($this->whitelistPath),
+            $this->commercialResolver()
+        );
 
         self::assertSame(
             'device_not_authorized',
@@ -53,7 +60,10 @@ final class DeviceAuthorizerTest extends TestCase
 
     public function testIgnoresDeviceClaimedModelAndReturnsWhitelistMetadata(): void
     {
-        $authorizer = new DeviceAuthorizer(new Whitelist($this->whitelistPath));
+        $authorizer = new DeviceAuthorizer(
+            new Whitelist($this->whitelistPath),
+            $this->commercialResolver()
+        );
 
         $result = $authorizer->authorize(new DeviceIdentity('865028000000306', 'wonlex-json', 'DEVICE-CLAIMED-MODEL'));
 
@@ -64,7 +74,10 @@ final class DeviceAuthorizerTest extends TestCase
 
     public function testResolvesFourPTouchProtocolIdToCanonicalImei(): void
     {
-        $authorizer = new DeviceAuthorizer(new Whitelist($this->whitelistPath));
+        $authorizer = new DeviceAuthorizer(
+            new Whitelist($this->whitelistPath),
+            $this->commercialResolver()
+        );
 
         $result = $authorizer->authorize(new DeviceIdentity('7597567372', 'four-p-touch', ident: '7597567372'));
 
@@ -72,5 +85,30 @@ final class DeviceAuthorizerTest extends TestCase
         self::assertSame('637507597567372', $result->imei);
         self::assertSame('4P Touch', $result->supplier);
         self::assertSame('4P-TOUCH', $result->model);
+        self::assertSame('4P Touch D46', $result->commercialName);
+    }
+
+    private function commercialResolver(): \Hub\CommercialModelResolver
+    {
+        return new class extends \Hub\CommercialModelResolver {
+            public function __construct()
+            {
+            }
+
+            public function resolveCommercialName(string $supplier, string $model): string
+            {
+                if ($supplier === 'Wonlex' && $model === 'HW20PRO') {
+                    return 'Wonlex HW20 Pro';
+                }
+                if ($supplier === 'Wonlex' && $model === 'WONLEX-HEALTH') {
+                    return 'Wonlex Health';
+                }
+                if ($supplier === '4P Touch' && $model === '4P-TOUCH') {
+                    return '4P Touch D46';
+                }
+
+                return '';
+            }
+        };
     }
 }

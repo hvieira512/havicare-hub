@@ -7,6 +7,7 @@ use Hub\Log\Logger;
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
     private readonly ?MessageNormalizer $normalizer;
+    private readonly ?\Hub\CommercialModelResolver $commercialModelResolver;
 
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
@@ -16,6 +17,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ?callable $reconnectSubscriber = null,
         ?\Hub\Dashboard\DashboardStore $dashboardStore = null,
         ?MessageNormalizer $normalizer = null,
+        ?\Hub\CommercialModelResolver $commercialModelResolver = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -27,6 +29,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             dashboardStore: $dashboardStore,
         );
         $this->normalizer = $normalizer;
+        $this->commercialModelResolver = $commercialModelResolver;
     }
 
     protected function handleMessage(string $topic, string $payload): void
@@ -64,6 +67,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             Logger::channel('hub')->warning("Ignoring unregistered NCS source from={$from}");
             return;
         }
+
+        $device = $this->enrichDevice($device);
 
         try {
             $normalized = ($this->normalizer ?? new MessageNormalizer())->normalize($parsedTopic, $message, $device);
@@ -116,5 +121,27 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 'licenseId' => $licenseId,
             ]));
         }
+    }
+
+    /**
+     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string, commercialName?: string} $device
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string, commercialName?: string}
+     */
+    private function enrichDevice(array $device): array
+    {
+        if (($device['commercialName'] ?? '') !== '') {
+            return $device;
+        }
+
+        $commercialName = $this->commercialModelResolver?->resolveCommercialName(
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? '')
+        ) ?? '';
+
+        if ($commercialName !== '') {
+            $device['commercialName'] = $commercialName;
+        }
+
+        return $device;
     }
 }

@@ -86,6 +86,11 @@ async function loadSettingsModal(
     state.settingsModal.capabilityModelTemplateKeys = [];
     state.settingsModal.capabilityEnabledCapabilities = [];
     state.settingsModal.currentCapabilitiesModel = null;
+    state.settingsModal.discoveryDeviceImei = "";
+    state.settingsModal.discoveryDeviceOptions = [];
+    state.settingsModal.discoveryRun = null;
+    state.settingsModal.discoveryLoading = false;
+    state.settingsModal.discoveryError = "";
     state.modelModal.enabledCapabilities = [];
     state.modelModal.templateSummary = "";
     state.modelModal.templateSupplier = "";

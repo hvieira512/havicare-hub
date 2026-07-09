@@ -175,6 +175,15 @@ export function cacheElements() {
         capabilitySupplierClear: document.getElementById(
             "capabilitySupplierClear",
         ),
+        discoveryModelSummary: document.getElementById("discoveryModelSummary"),
+        discoveryDeviceSelect: document.getElementById("discoveryDeviceSelect"),
+        discoveryRefreshDevicesBtn: document.getElementById(
+            "discoveryRefreshDevicesBtn",
+        ),
+        discoveryGenerateBtn: document.getElementById("discoveryGenerateBtn"),
+        discoveryApplyBtn: document.getElementById("discoveryApplyBtn"),
+        discoveryStatus: document.getElementById("discoveryStatus"),
+        discoveryEvidence: document.getElementById("discoveryEvidence"),
         apiUserForm: document.getElementById("apiUserForm"),
         apiUserId: document.getElementById("apiUserId"),
         apiUsername: document.getElementById("apiUsername"),

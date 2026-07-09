@@ -43,3 +43,9 @@ export {
     getCapabilities,
     getCapability,
 } from './capabilities.js';
+export {
+    applyCapabilityDiscoveryRun,
+    getCapabilityDiscoveryRun,
+    listCapabilityDiscoveryRuns,
+    previewCapabilityDiscovery,
+} from './capability-discovery.js';

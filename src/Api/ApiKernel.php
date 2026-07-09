@@ -5,6 +5,7 @@ namespace Hub\Api;
 use Hub\Api\Controllers\ApiUserController;
 use Hub\Api\Controllers\AuthController;
 use Hub\Api\Controllers\CapabilityController;
+use Hub\Api\Controllers\CapabilityDiscoveryController;
 use Hub\Api\Controllers\CompanyController;
 use Hub\Api\Controllers\DeviceController;
 use Hub\Api\Controllers\LicenseController;
@@ -24,6 +25,7 @@ use Hub\Api\Routing\ApiRouter;
 use Hub\Api\Services\ApiUserService;
 use Hub\Api\Services\AuthService;
 use Hub\Api\Services\CapabilityService;
+use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Services\LicenseService;
@@ -44,6 +46,7 @@ final class ApiKernel
         private DeviceService $devices,
         private ModelService $models,
         private CapabilityService $capabilities,
+        private CapabilityDiscoveryService $capabilityDiscovery,
         private SupplierService $suppliers,
         private ApiUserService $apiUsers,
         private CompanyService $company,
@@ -118,6 +121,7 @@ final class ApiKernel
         $devices = new DeviceController($this->devices, $this->json, $this->statusMapper);
         $models = new ModelController($this->models, $this->json, $this->statusMapper);
         $capabilities = new CapabilityController($this->capabilities, $this->json, $this->statusMapper);
+        $capabilityDiscovery = new CapabilityDiscoveryController($this->capabilityDiscovery, $this->json, $this->statusMapper);
         $suppliers = new SupplierController($this->suppliers, $this->json, $this->statusMapper);
         $apiUsers = new ApiUserController($this->apiUsers, $this->json, $this->statusMapper);
         $company = new CompanyController($this->company, $this->json, $this->statusMapper);
@@ -131,6 +135,7 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/DeviceRoutes.php')($devices)),
             ...((require __DIR__ . '/Routes/ModelRoutes.php')($models)),
             ...((require __DIR__ . '/Routes/CapabilityRoutes.php')($capabilities)),
+            ...((require __DIR__ . '/Routes/CapabilityDiscoveryRoutes.php')($capabilityDiscovery)),
             ...((require __DIR__ . '/Routes/SupplierRoutes.php')($suppliers)),
             ...((require __DIR__ . '/Routes/ApiUserRoutes.php')($apiUsers)),
             ...((require __DIR__ . '/Routes/CompanyRoutes.php')($company)),

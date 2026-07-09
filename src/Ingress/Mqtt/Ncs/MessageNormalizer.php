@@ -8,7 +8,7 @@ use Hub\RawPayload;
 final class MessageNormalizer
 {
     /**
-     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string} $device
+     * @param array{imei: string, supplier: string, model: string, commercialName?: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string} $device
      * @return array{raw: array<string, mixed>, status?: array<string, mixed>, event?: array<string, mixed>, telemetry?: array<string, mixed>}
      */
     public function normalize(Topic $topic, array $message, array $device): array
@@ -44,7 +44,9 @@ final class MessageNormalizer
             (string)$device['imei'],
             (string)$device['supplier'],
             (string)$device['model'],
-            $online ? 'online' : 'offline'
+            $online ? 'online' : 'offline',
+            null,
+            (string)($device['commercialName'] ?? '')
         );
         $statusPayload['source'] = $this->source($topic);
         $statusPayload['data'] = ['online' => $online];
@@ -141,11 +143,12 @@ final class MessageNormalizer
             'schemaVersion' => 1,
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => [
+            'device' => array_filter([
                 'id' => (string)$device['imei'],
                 'supplier' => (string)$device['supplier'],
                 'model' => (string)$device['model'],
-            ],
+                'commercialName' => (string)($device['commercialName'] ?? ''),
+            ], static fn (mixed $value): bool => $value !== ''),
             'debug' => array_filter([
                 'protocol' => 'voerka-ncs',
                 'transport' => 'mqtt',
@@ -170,6 +173,9 @@ final class MessageNormalizer
         }
         if ((string)($device['model'] ?? '') !== '') {
             $payload['model'] = (string)$device['model'];
+        }
+        if ((string)($device['commercialName'] ?? '') !== '') {
+            $payload['commercialName'] = (string)$device['commercialName'];
         }
 
         return $payload;

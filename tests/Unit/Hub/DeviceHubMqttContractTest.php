@@ -241,7 +241,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testAuthenticatedMeasurementPublishesDecodedEventWithoutDebugFields(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt, $this->commercialResolver());
         $connection = new ContractFakeConnection(3);
         $adapter = new WonlexAdapter();
 
@@ -263,14 +263,18 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertCount(1, $mqtt->events);
         self::assertCount(1, $mqtt->telemetry);
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
+        self::assertSame('Wonlex HW20 Pro', $mqtt->events[0][1]['device']['commercialName']);
         self::assertSame('heart_rate', $mqtt->telemetry[0][1]['type']);
         self::assertSame(2, $mqtt->telemetry[0][1]['schemaVersion']);
         self::assertSame(['bpm' => 72], $mqtt->telemetry[0][1]['data']);
         self::assertSame('wonlex-json', $mqtt->telemetry[0][1]['source']['protocol']);
         self::assertSame('upHeartRate', $mqtt->telemetry[0][1]['source']['nativeType']);
+        self::assertSame('Wonlex HW20 Pro', $mqtt->telemetry[0][1]['device']['commercialName']);
         self::assertArrayNotHasKey('debug', $mqtt->telemetry[0][1]);
 
+        self::assertSame('Wonlex HW20 Pro', $mqtt->raw[0][1]['device']['commercialName']);
         self::assertSame('downlink', $mqtt->raw[2][1]['direction']);
+        self::assertSame('Wonlex HW20 Pro', $mqtt->raw[2][1]['device']['commercialName']);
         $ack = $adapter->decodeIncoming(base64_decode($mqtt->raw[2][1]['debug']['payload'], true));
         self::assertIsArray($ack);
         self::assertSame('upHeartRate', $ack['type']);
@@ -409,6 +413,30 @@ final class DeviceHubMqttContractTest extends TestCase
             . pack('V', strlen($data));
 
         return base64_encode($header . $data);
+    }
+
+    private function commercialResolver(): \Hub\CommercialModelResolver
+    {
+        return new class extends \Hub\CommercialModelResolver {
+            public function __construct()
+            {
+            }
+
+            public function resolveCommercialName(string $supplier, string $model): string
+            {
+                if ($supplier === 'Wonlex' && $model === 'HW20PRO') {
+                    return 'Wonlex HW20 Pro';
+                }
+                if ($supplier === 'Vivistar' && $model === 'VIVISTAR-CARE') {
+                    return 'Vivistar L08 Pro';
+                }
+                if ($supplier === '4P Touch' && $model === '4P-TOUCH') {
+                    return '4P Touch D46';
+                }
+
+                return '';
+            }
+        };
     }
 }
 

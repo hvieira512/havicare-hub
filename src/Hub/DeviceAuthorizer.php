@@ -7,10 +7,12 @@ use Hub\Registry\Whitelist;
 class DeviceAuthorizer
 {
     private Whitelist $whitelist;
+    private ?CommercialModelResolver $commercialModelResolver;
 
-    public function __construct(Whitelist $whitelist)
+    public function __construct(Whitelist $whitelist, ?CommercialModelResolver $commercialModelResolver = null)
     {
         $this->whitelist = $whitelist;
+        $this->commercialModelResolver = $commercialModelResolver;
     }
 
     public function authorize(DeviceIdentity $identity): AuthorizationResult
@@ -20,10 +22,13 @@ class DeviceAuthorizer
             return AuthorizationResult::deny('device_not_authorized');
         }
 
+        $commercialName = $this->commercialNameFor((string)$resolved['supplier'], (string)$resolved['model']);
+
         return AuthorizationResult::allow(
             imei: (string)$resolved['imei'],
             supplier: (string)$resolved['supplier'],
             model: (string)$resolved['model'],
+            commercialName: $commercialName,
             deviceType: (string)($resolved['deviceType'] ?? 'watch'),
             licenseId: (string)($resolved['licenseId'] ?? '0'),
             company: (string)($resolved['company'] ?? 'null'),
@@ -31,18 +36,26 @@ class DeviceAuthorizer
     }
 
     /**
-     * @return array{supplier: string, model: string, deviceType: string, licenseId: string, company: string}
+     * @return array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: string, company: string}
      */
     public function metadataFor(string $imei): array
     {
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $supplier = (string)($metadata['supplier'] ?? '');
+        $model = (string)($metadata['model'] ?? '');
 
         return [
-            'supplier' => (string)($metadata['supplier'] ?? ''),
-            'model' => (string)($metadata['model'] ?? ''),
+            'supplier' => $supplier,
+            'model' => $model,
+            'commercialName' => $this->commercialNameFor($supplier, $model),
             'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
             'licenseId' => (string)($metadata['licenseId'] ?? '0'),
             'company' => (string)($metadata['company'] ?? 'null'),
         ];
+    }
+
+    private function commercialNameFor(string $supplier, string $model): string
+    {
+        return $this->commercialModelResolver?->resolveCommercialName($supplier, $model) ?? '';
     }
 }

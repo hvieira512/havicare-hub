@@ -33,6 +33,16 @@ final class BridgeTest extends TestCase
             $mqttBridge,
             decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
             normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
+            commercialModelResolver: new class extends \Hub\CommercialModelResolver {
+                public function __construct()
+                {
+                }
+
+                public function resolveCommercialName(string $supplier, string $model): string
+                {
+                    return $supplier === 'Qinglanst' && $model === 'RD-V1' ? 'Qinglanst RD-V1 Pro' : '';
+                }
+            },
         );
 
         $bridge->handleReceivedMessage(
@@ -49,6 +59,7 @@ final class BridgeTest extends TestCase
 
         self::assertSame('radar-topic-uid', $mqttBridge->telemetryDeviceKey);
         self::assertSame('minute_stats', $mqttBridge->telemetryPayload['type'] ?? null);
+        self::assertSame('Qinglanst RD-V1 Pro', $mqttBridge->telemetryPayload['device']['commercialName'] ?? null);
 
         @unlink($whitelistPath);
     }

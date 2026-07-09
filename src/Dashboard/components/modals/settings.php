@@ -181,6 +181,29 @@ ob_start();
                             <div id="capabilitySupplierSummary" class="small text-secondary mt-2"></div>
                         </div>
                     </div>
+                    <div class="border rounded bg-body-tertiary p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                            <div>
+                                <div class="form-label mb-1">Descoberta guiada</div>
+                                <div id="discoveryModelSummary" class="small text-secondary">Selecione um modelo para gerar uma proposta a partir de um dispositivo online.</div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="discoveryRefreshDevicesBtn">Atualizar dispositivos</button>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label for="discoveryDeviceSelect" class="form-label small">Dispositivo online</label>
+                                <select id="discoveryDeviceSelect" class="form-select form-select-sm">
+                                    <option value="">Sem dispositivos disponíveis</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end justify-content-md-end gap-2">
+                                <button type="button" class="btn btn-primary btn-sm" id="discoveryGenerateBtn">Gerar proposta</button>
+                                <button type="button" class="btn btn-success btn-sm" id="discoveryApplyBtn" disabled>Aplicar</button>
+                            </div>
+                        </div>
+                        <div id="discoveryStatus" class="small text-secondary mt-3"></div>
+                        <div id="discoveryEvidence" class="vstack gap-2 mt-3"></div>
+                    </div>
                     <div id="capabilityCatalogEmpty" class="text-secondary border rounded bg-body-tertiary p-4 text-center d-none">
                         <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
                         <div class="mt-2">Sem capacidades generalizadas definidas para este tipo de dispositivo.</div>

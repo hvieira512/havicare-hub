@@ -285,7 +285,8 @@ They share one envelope across all suppliers, models, and supported device types
   "device": {
     "id": "637507597567372",
     "supplier": "4P Touch",
-    "model": "D46"
+    "model": "4P-TOUCH",
+    "commercialName": "4P Touch D46"
   },
   "data": {},
   "source": {
@@ -302,7 +303,9 @@ Field meaning:
 - `type`: normalized feature name such as `location`, `heart_rate`, `battery`, `activity`, `alarm`, `blood_pressure`, `blood_oxygen`, `temperature`, `heartbeat`, `device_config`, or `weather`.
 - `occurredAt`: server-side publish timestamp in UTC.
 - `device.id`: canonical device identity used by the hub and MQTT topics.
-- `device.supplier` and `device.model`: whitelist/model metadata resolved by the hub.
+- `device.supplier`: whitelist supplier metadata resolved by the hub.
+- `device.model`: internal whitelist model metadata resolved by the hub.
+- `device.commercialName`: commercial/display model name resolved from the model catalog when available.
 - `data`: normalized shared shape for the feature.
 - `source.protocol`: protocol adapter that decoded the message, for example `vivistar-iw`, `wonlex-json`, or `four-p-touch`.
 - `source.nativeType`: native supplier message type, for example `AP01`, `upLocation`, `UD_LTE`, `LK`, or `bphrt`.

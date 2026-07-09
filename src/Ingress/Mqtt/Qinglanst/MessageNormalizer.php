@@ -380,8 +380,8 @@ final class MessageNormalizer
     }
 
     /**
-     * @param array{supplier?: string, model?: string, ...} $device
-     * @return array{id: string, supplier?: string, model?: string}
+     * @param array{supplier?: string, model?: string, commercialName?: string, ...} $device
+     * @return array{id: string, supplier?: string, model?: string, commercialName?: string}
      */
     private function deviceInfo(Topic $topic, array $device): array
     {
@@ -391,6 +391,9 @@ final class MessageNormalizer
         }
         if ((string)($device['model'] ?? '') !== '') {
             $info['model'] = (string)$device['model'];
+        }
+        if ((string)($device['commercialName'] ?? '') !== '') {
+            $info['commercialName'] = (string)$device['commercialName'];
         }
         return $info;
     }

@@ -15,6 +15,9 @@ final class DeviceEventPayloadBuilder
         if ($session->model !== '') {
             $device['model'] = $session->model;
         }
+        if ($session->commercialName !== '') {
+            $device['commercialName'] = $session->commercialName;
+        }
 
         $payload = [
             'schemaVersion' => 2,

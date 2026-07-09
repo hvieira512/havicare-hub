@@ -13,6 +13,7 @@ class RawPayload
         string $raw,
         string $direction,
         ?string $connectionId = null,
+        string $commercialName = '',
     ): array {
         $encoding = self::isText($raw) ? 'text' : 'base64';
 
@@ -20,7 +21,7 @@ class RawPayload
             'schemaVersion' => 1,
             'direction' => $direction,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'device' => self::device($imei, $supplier, $model),
+            'device' => self::device($imei, $supplier, $model, $commercialName),
             'debug' => [
                 'protocol' => $protocol,
                 'transport' => $transport,
@@ -37,13 +38,13 @@ class RawPayload
         return $payload;
     }
 
-    public static function status(string $imei, string $supplier, string $model, string $state, ?array $error = null): array
+    public static function status(string $imei, string $supplier, string $model, string $state, ?array $error = null, string $commercialName = ''): array
     {
         $payload = [
             'schemaVersion' => 1,
             'state' => $state,
             'updatedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'device' => self::device($imei, $supplier, $model),
+            'device' => self::device($imei, $supplier, $model, $commercialName),
         ];
 
         if ($error !== null) {
@@ -60,12 +61,13 @@ class RawPayload
         string $type,
         ?array $error = null,
         ?array $command = null,
+        string $commercialName = '',
     ): array {
         $payload = [
             'schemaVersion' => 1,
             'type' => $type,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'device' => self::device($imei, $supplier, $model),
+            'device' => self::device($imei, $supplier, $model, $commercialName),
         ];
 
         if ($error !== null) {
@@ -119,7 +121,7 @@ class RawPayload
         return preg_match('/[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]/', $raw) !== 1;
     }
 
-    private static function device(string $imei, string $supplier, string $model): array
+    private static function device(string $imei, string $supplier, string $model, string $commercialName = ''): array
     {
         $device = ['id' => $imei];
         if ($supplier !== '') {
@@ -127,6 +129,9 @@ class RawPayload
         }
         if ($model !== '') {
             $device['model'] = $model;
+        }
+        if ($commercialName !== '') {
+            $device['commercialName'] = $commercialName;
         }
 
         return $device;

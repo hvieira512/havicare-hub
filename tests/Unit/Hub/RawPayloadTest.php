@@ -11,13 +11,14 @@ final class RawPayloadTest extends TestCase
 {
     public function testRawPayloadKeepsTextDebugDataUnderDebugKey(): void
     {
-        $payload = RawPayload::raw('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1');
+        $payload = RawPayload::raw('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1', 'Vivistar L08 Pro');
 
         self::assertSame(1, $payload['schemaVersion']);
         self::assertSame('uplink', $payload['direction']);
         self::assertSame('865028000000308', $payload['device']['id']);
         self::assertSame('Vivistar', $payload['device']['supplier']);
         self::assertSame('VIVISTAR-CARE', $payload['device']['model']);
+        self::assertSame('Vivistar L08 Pro', $payload['device']['commercialName']);
         self::assertSame('text', $payload['debug']['encoding']);
         self::assertSame('IWAP49,72#', $payload['debug']['payload']);
         self::assertSame('1', $payload['debug']['connectionId']);
@@ -36,7 +37,7 @@ final class RawPayloadTest extends TestCase
 
     public function testStatusPayloadDoesNotExposeDebugFields(): void
     {
-        $payload = RawPayload::status('868705080300697', 'Wonlex', 'HW20PRO', 'online');
+        $payload = RawPayload::status('868705080300697', 'Wonlex', 'HW20PRO', 'online', null, 'Wonlex HW20 Pro');
 
         self::assertSame([
             'schemaVersion' => 1,
@@ -46,13 +47,14 @@ final class RawPayloadTest extends TestCase
                 'id' => '868705080300697',
                 'supplier' => 'Wonlex',
                 'model' => 'HW20PRO',
+                'commercialName' => 'Wonlex HW20 Pro',
             ],
         ], $payload);
     }
 
     public function testEventPayloadDoesNotExposeDebugFields(): void
     {
-        $payload = RawPayload::event('868705080300697', 'Wonlex', 'HW20PRO', 'device.connected');
+        $payload = RawPayload::event('868705080300697', 'Wonlex', 'HW20PRO', 'device.connected', null, null, 'Wonlex HW20 Pro');
 
         self::assertSame([
             'schemaVersion' => 1,
@@ -62,6 +64,7 @@ final class RawPayloadTest extends TestCase
                 'id' => '868705080300697',
                 'supplier' => 'Wonlex',
                 'model' => 'HW20PRO',
+                'commercialName' => 'Wonlex HW20 Pro',
             ],
         ], $payload);
     }

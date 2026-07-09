@@ -101,10 +101,14 @@ import {
 } from "../settings/index.js";
 import {
     backToModelList,
+    applyDiscoveryPreview,
     deleteCurrentModel,
     editCurrentModel,
     handleCapabilitySupplierClick,
+    handleDiscoveryDeviceChange,
+    generateDiscoveryPreview,
     loadSettingsCapabilitiesSection,
+    loadDiscoveryDevices,
     openModelDetail,
     openNewModelForm,
     renderCapabilitiesSection,
@@ -832,6 +836,19 @@ function bindEvents() {
         "click",
         () => selectCapabilitySupplier(""),
     );
+    els.discoveryDeviceSelect?.addEventListener(
+        "change",
+        handleDiscoveryDeviceChange,
+    );
+    els.discoveryRefreshDevicesBtn?.addEventListener("click", () => {
+        void loadDiscoveryDevices();
+    });
+    els.discoveryGenerateBtn?.addEventListener("click", () => {
+        void generateDiscoveryPreview();
+    });
+    els.discoveryApplyBtn?.addEventListener("click", () => {
+        void applyDiscoveryPreview();
+    });
     els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
     els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
     els.clearModelsFiltersBtn.addEventListener("click", clearModelsFilters);

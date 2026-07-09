@@ -102,6 +102,7 @@ if ($redisPassword !== '') {
 $downlinkQueue = new RedisPendingDownlinkQueue(new RedisClient($redisParameters));
 $dashboardStore = new DashboardStore(new RedisClient($redisParameters), (int)($dashboardConfig['history_limit'] ?? 100));
 $dashboardStore->setDataAccess($dataAccess);
+$commercialModelResolver = new Hub\CommercialModelResolver($dataAccess->models);
 $mqttBridge = new HubMqttBridge(
     $buildMqttClient('pub'),
     $topicPrefix,
@@ -110,6 +111,7 @@ $mqttBridge = new HubMqttBridge(
 $hubServer = new DeviceHubServer(
     $whitelist,
     $mqttBridge,
+    $commercialModelResolver,
     downlinkQueue: $downlinkQueue,
     dashboardStore: $dashboardStore,
     downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds
@@ -174,7 +176,8 @@ if ((bool)($ncsConfig['enabled'] ?? true)) {
 
             return $connectMqttClient($createMqttClient('ncs-sub', true, $repository), false);
         },
-        $dashboardStore
+        $dashboardStore,
+        commercialModelResolver: $commercialModelResolver
     );
     $connectMqttClient($ncsSubscriber, false);
 }
@@ -236,6 +239,7 @@ if ((bool)($qinglanstConfig['enabled'] ?? true)) {
             },
             $dashboardStore,
             dashboardWritePolicy: $qinglanstDashboardWritePolicy,
+            commercialModelResolver: $commercialModelResolver,
         );
         $connectQinglanstClient($qinglanstSubscriber, false);
     }

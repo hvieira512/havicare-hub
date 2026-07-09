@@ -8,6 +8,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
     private readonly ?PayloadDecoder $decoder;
     private readonly ?MessageNormalizer $normalizer;
+    private readonly ?\Hub\CommercialModelResolver $commercialModelResolver;
     private readonly IngestStats $stats;
     private readonly DashboardWritePolicy $dashboardWritePolicy;
     private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
@@ -23,6 +24,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ?MessageNormalizer $normalizer = null,
         ?IngestStats $stats = null,
         ?DashboardWritePolicy $dashboardWritePolicy = null,
+        ?\Hub\CommercialModelResolver $commercialModelResolver = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -35,6 +37,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         );
         $this->decoder = $decoder;
         $this->normalizer = $normalizer;
+        $this->commercialModelResolver = $commercialModelResolver;
         $this->stats = $stats ?? new IngestStats($topicFilter);
         $this->dashboardWritePolicy = $dashboardWritePolicy ?? new DashboardWritePolicy();
     }
@@ -62,6 +65,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             ]);
             return;
         }
+
+        $device = $this->enrichDevice($device);
 
         $jsonStart = hrtime(true);
         $upstreamPayload = $this->extractUpstreamPayload($payload);
@@ -216,6 +221,28 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         Logger::channel('hub')->warning("Ignoring unregistered Qinglanst device uid={$deviceUid}");
         return null;
+    }
+
+    /**
+     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string, commercialName?: string} $device
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string, commercialName?: string}
+     */
+    private function enrichDevice(array $device): array
+    {
+        if (($device['commercialName'] ?? '') !== '') {
+            return $device;
+        }
+
+        $commercialName = $this->commercialModelResolver?->resolveCommercialName(
+            (string)($device['supplier'] ?? ''),
+            (string)($device['model'] ?? '')
+        ) ?? '';
+
+        if ($commercialName !== '') {
+            $device['commercialName'] = $commercialName;
+        }
+
+        return $device;
     }
 
     private function extractUpstreamPayload(string $payload): ?array

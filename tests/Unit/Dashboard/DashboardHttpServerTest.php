@@ -70,6 +70,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('type="module" src="main.js"', $first);
         self::assertStringContainsString('id="deviceSelectorModal"', $first);
         self::assertStringContainsString('id="deviceSelectionEmptyState"', $first);
+        self::assertStringContainsString('id="discoveryDeviceSelect"', $first);
+        self::assertStringContainsString('id="discoveryGenerateBtn"', $first);
         self::assertSame($first, $second);
     }
 
