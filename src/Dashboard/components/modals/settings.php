@@ -16,8 +16,8 @@ ob_start();
             </div>
         </div>
         <div class="col-lg-9 d-flex flex-column h-100">
-            <div class="tab-content flex-grow-1 overflow-auto">
-                <div class="tab-pane fade show active h-100 overflow-auto" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
+            <div class="tab-content flex-grow-1">
+                <div class="tab-pane fade show active h-100" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
                     <div class="small text-secondary mb-3 p-3 border rounded bg-body-tertiary">Os fornecedores são definidos em código. Não é possível adicionar ou remover fornecedores através do painel.</div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
@@ -27,7 +27,7 @@ ob_start();
                     </div>
                     <?= pagination_component('settingsSuppliers') ?>
                 </div>
-                <div class="tab-pane fade h-100 overflow-auto" id="settingsModelsPane" role="tabpanel" aria-labelledby="settingsModelsTabBtn">
+                <div class="tab-pane fade h-100" id="settingsModelsPane" role="tabpanel" aria-labelledby="settingsModelsTabBtn">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-3">
                             <li class="breadcrumb-item" id="modelsBreadcrumbModels">Modelos</li>
@@ -166,7 +166,7 @@ ob_start();
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade h-100 overflow-auto" id="settingsCapabilitiesPane" role="tabpanel" aria-labelledby="settingsCapabilitiesTabBtn">
+                <div class="tab-pane fade h-100" id="settingsCapabilitiesPane" role="tabpanel" aria-labelledby="settingsCapabilitiesTabBtn">
                     <div class="border rounded bg-body-tertiary p-3 mb-3">
                         <div class="form-label">Tipo de dispositivo</div>
                         <div id="capabilityDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
@@ -210,7 +210,7 @@ ob_start();
                     </div>
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
-                <div class="tab-pane fade h-100 overflow-auto" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
+                <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
                     <form id="companyForm" class="row g-2 mb-3 p-3 border rounded bg-body-tertiary">
                         <input type="hidden" id="companyId">
                         <div class="col-md-6">
@@ -255,7 +255,7 @@ ob_start();
                     </div>
                     <?= pagination_component('settingsLicenses') ?>
                 </div>
-                <div class="tab-pane fade h-100 overflow-auto" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
+                <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
                     <form id="apiUserForm" class="row g-3 mb-4 p-3 border rounded bg-body-tertiary">
                         <input type="hidden" id="apiUserId">
                         <div class="col-md-4">

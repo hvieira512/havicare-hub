@@ -1112,6 +1112,11 @@ function handleDeviceConfigClick(event) {
         return;
     }
 
+    if (button.dataset.action === "selectConfigChoice") {
+        updateConfigChoice(section, button);
+        return;
+    }
+
     if (button.dataset.action === "addContactRow") {
         appendContactRow(section);
         return;
@@ -1145,6 +1150,31 @@ function handleDeviceConfigClick(event) {
     if (button.dataset.action === "takePillsClear") {
         clearTakePillsRecording(section);
     }
+}
+
+function updateConfigChoice(section, button) {
+    const field = String(button.dataset.configField || "");
+    if (!field) return;
+
+    const value = String(button.dataset.configValue || "");
+    const input = section.querySelector(`[data-config-field="${field}"]`);
+    if (!input) return;
+
+    input.value = value;
+
+    const group = button.closest("[data-config-choice-group]");
+    if (!group) return;
+
+    const buttons = group.querySelectorAll(
+        '[data-action="selectConfigChoice"]',
+    );
+    buttons.forEach((choice) => {
+        const selected =
+            String(choice.dataset.configField || "") === field &&
+            String(choice.dataset.configValue || "") === value;
+        choice.classList.toggle("active", selected);
+        choice.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
 }
 
 function handleDeviceConfigChange(event) {
@@ -1213,24 +1243,34 @@ function handleDeviceConfigChange(event) {
         const section = event.target.closest("[data-config-section]");
         if (!section) return;
         const total = parseInt(event.target.value, 10);
-        const btns = section.querySelectorAll(".sens-level-btn");
-        const inputs = section.querySelectorAll(
-            'input[name="sensitivityLevel"]',
+        const btns = section.querySelectorAll(
+            '[data-config-choice-group="sensitivityLevel"] .sens-level-btn',
+        );
+        const currentInput = section.querySelector(
+            '[data-config-field="sensitivityLevel"]',
         );
         btns.forEach((btn, i) => {
             const visible = i + 1 <= total;
             btn.classList.toggle("d-none", !visible);
-            inputs[i].disabled = !visible;
+            btn.disabled = !visible;
         });
-        const checked = section.querySelector(
-            'input[name="sensitivityLevel"]:checked',
-        );
-        if (checked && parseInt(checked.value, 10) > total) {
-            const lastEnabled = section.querySelector(
-                'input[name="sensitivityLevel"]:not([disabled])',
+        if (currentInput && parseInt(currentInput.value, 10) > total) {
+            const lastEnabled = Array.from(btns).find(
+                (btn) => !btn.classList.contains("d-none") && !btn.disabled,
             );
             if (lastEnabled) {
-                lastEnabled.checked = true;
+                currentInput.value = String(
+                    parseInt(lastEnabled.dataset.configValue || "1", 10) || 1,
+                );
+                btns.forEach((btn) => {
+                    const selected =
+                        btn.dataset.configValue === currentInput.value;
+                    btn.classList.toggle("active", selected);
+                    btn.setAttribute(
+                        "aria-pressed",
+                        selected ? "true" : "false",
+                    );
+                });
             }
         }
     }

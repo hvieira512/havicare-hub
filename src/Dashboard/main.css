@@ -97,6 +97,20 @@ body {
     height: 100%;
 }
 
+#deviceModal .modal-body,
+#settingsModal .modal-body {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    min-height: 0;
+    padding: 0;
+}
+
+#deviceModal .modal-body > .device-modal-shell,
+#settingsModal .modal-body > .settings-modal-shell {
+    min-height: 100%;
+}
+
 @media (max-width: 575.98px) {
     #deviceModal .modal-dialog.modal-fullscreen,
     #settingsModal .modal-dialog.modal-fullscreen {

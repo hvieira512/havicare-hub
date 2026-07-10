@@ -975,21 +975,20 @@ function fallSensitivityInput(desired) {
     return `
         <div>
             <label class="form-label form-label-sm">Sensibilidade</label>
-            <div class="btn-group w-100" role="group" aria-label="Sensibilidade de queda">
+            <input type="hidden" data-config-field="sensitivity" value="${esc(String(current))}">
+            <div class="btn-group w-100" role="group" aria-label="Sensibilidade de queda" data-config-choice-group="sensitivity">
                 ${options
                     .map(
                         (option) => `
-                    <input
-                        class="btn-check"
-                        type="radio"
-                        name="fallSensitivity"
-                        id="fallSensitivity${option.value}"
+                    <button
+                        type="button"
+                        class="btn ${option.className} ${option.value === current ? "active" : ""}"
+                        data-action="selectConfigChoice"
                         data-config-field="sensitivity"
-                        value="${option.value}"
-                        ${option.value === current ? "checked" : ""}>
-                    <label class="btn ${option.className}" for="fallSensitivity${option.value}">
+                        data-config-value="${option.value}"
+                        aria-pressed="${option.value === current ? "true" : "false"}">
                         <i class="fa-solid ${option.icon} me-2"></i>${option.label}
-                    </label>
+                    </button>
                 `,
                     )
                     .join("")}
@@ -1265,25 +1264,28 @@ function fallSensitivityLevelsInput(desired) {
         <div class="row g-3">
             <div class="col-12 col-md-9">
                 <label class="form-label form-label-sm">Nível de sensibilidade</label>
-                <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade">
+                <input type="hidden" data-config-field="sensitivityLevel" value="${esc(String(sensitivityLevel))}">
+                <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivityLevel">
                     ${levels
                         .map(
                             ({ label, icon, btnClass }, i) => {
                                 const level = i + 1;
                                 return `
-                        <input type="radio" class="btn-check" name="sensitivityLevel"
-                            id="sensLevel${level}" value="${level}"
+                        <button
+                            type="button"
+                            class="btn ${btnClass} sens-level-btn d-flex flex-column align-items-center justify-content-center ${level === sensitivityLevel ? "active" : ""} ${level > totalLevels ? "d-none" : ""}"
+                            style="flex: 1 0 0; min-width: 4rem; min-height: 4rem"
+                            data-action="selectConfigChoice"
                             data-config-field="sensitivityLevel"
-                            ${level === sensitivityLevel ? "checked" : ""}
+                            data-config-value="${level}"
+                            aria-pressed="${level === sensitivityLevel ? "true" : "false"}"
                             ${level > totalLevels ? "disabled" : ""}>
-                        <label class="btn ${btnClass} sens-level-btn d-flex flex-column align-items-center justify-content-center ${level > totalLevels ? "d-none" : ""}"
-                            for="sensLevel${level}" style="flex: 1 0 0; min-width: 4rem; min-height: 4rem">
                             <div class="d-flex align-items-center gap-1 fw-medium">
                                 <i class="fa-solid ${icon}"></i>
                                 <span>${level}</span>
                             </div>
                             <div class="small opacity-75">${label}</div>
-                        </label>
+                        </button>
                     `;
                             },
                         )

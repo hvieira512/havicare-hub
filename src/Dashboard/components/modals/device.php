@@ -17,8 +17,8 @@ ob_start();
             </div>
         </div>
         <div class="col-lg-9 d-flex flex-column h-100">
-            <div class="tab-content flex-grow-1 overflow-auto">
-                <div class="tab-pane fade show active h-100 overflow-auto" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
+            <div class="tab-content flex-grow-1">
+                <div class="tab-pane fade show active h-100" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4 align-items-stretch">
                         <div class="col-lg-5">
                             <?= showcase_preview('devicePreview') ?>
@@ -78,7 +78,7 @@ ob_start();
                         </div>
                     </form>
                 </div>
-                <div class="tab-pane fade h-100 overflow-auto" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
+                <div class="tab-pane fade h-100" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
                     <div id="deviceConfigRoot"></div>
                 </div>
             </div>
