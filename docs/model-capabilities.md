@@ -29,9 +29,6 @@ Estas são as áreas configuráveis com maior valor do ponto de vista comercial:
 
 - `Contactos`
   - `phonebook`
-  - `call_whitelist`
-  - `monitor_number`
-  - `center_number`
 - `SOS`
   - `sos_contacts`
   - `sos_sms_alert`
@@ -48,16 +45,16 @@ Estas são as áreas configuráveis com maior valor do ponto de vista comercial:
 
 ## Modelo
 
-| Modelo | Bateria | Atividade | Frequência cardíaca | Tensão arterial | Oxigénio no sangue | Temperatura | Localização | Sono | ECG | Variabilidade da frequência cardíaca | PPG | Intervalo RR | Frequência respiratória | Deteção de queda | Mensagem personalizada | Contactos SOS | Alerta SOS por SMS | Lista telefónica | Lista branca de chamadas | Número de monitorização | Número central | Despertador | Lembretes de medicação | Intervalo automático de sinais vitais | Meta de passos | Monitorização do sono |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 4P Touch D41 | ✅ | ✅ |  |  | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  |  |  |  |  |  |  | ❌ |  |
-| 4P Touch Y6S | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  |  |  |  |  |  |  | ❌ |  |
-| 4P Touch D46 | ✅ | ✅ |  |  | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  |  |  |  |  |  |  | ❌ |  |
-| 4P Touch D44S | ✅ | ✅ |  |  | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  |  |  |  |  |  |  | ❌ |  |
-| Vivistar VL17 | ✅ | ✅ |  |  |  |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  | ❌ |  |  | ❌ | ❌ |  |  |  | ❌ | ❌ |
-| Vivistar VL16P | ✅ | ✅ |  |  |  |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  | ❌ |  |  | ❌ | ❌ |  |  |  | ❌ | ❌ |
-| Vivistar L08 Pro | ✅ | ✅ |  |  |  |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  | ❌ |  |  | ❌ | ❌ |  |  |  | ❌ | ❌ |
-| Wonlex HW20PRO | ✅ | ✅ |  |  |  |  |  |  |  |  |  |  |  |  | ❌ |  |  | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  |
+| Modelo | Bateria | Atividade | Freq. cardíaca | Tensão arterial | Oxigénio no sangue | Temperatura | Localização | Sono | ECG | HRV | PPG | Intervalo RR | Frequência respiratória | Deteção de queda | Mensagem personalizada | SOS | Lista telefónica | Despertador | Lembretes de medicação | Intervalo automático de sinais vitais | Monitorização do sono |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 4P Touch D41 | ✅ | ✅ |  |  | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  | ❌ |  |  |
+| 4P Touch Y6S | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  | ❌ |  |  |
+| 4P Touch D46 | ✅ | ✅ |  |  | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  | ❌ |  |  |
+| 4P Touch D44S | ✅ | ✅ |  |  | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  |  |  |  | ❌ |  |  |
+| Vivistar VL17 | ✅ | ✅ |  |  |  |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ |  |
+| Vivistar VL16P | ✅ | ✅ |  |  |  |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ |  |
+| Vivistar L08 Pro | ✅ | ✅ |  |  |  |  |  | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |  |  | ❌ | ❌ | ❌ | ❌ | ❌ |  |
+| Wonlex HW20PRO | ✅ | ✅ |  |  |  |  |  |  |  |  |  |  |  |  | ❌ | ❌ |  |  |  |  |  |
 
 ## Notas
 
