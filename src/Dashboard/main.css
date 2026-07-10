@@ -47,6 +47,10 @@ body {
     padding: 1rem;
 }
 
+.settings-modal-shell {
+    padding: 1rem;
+}
+
 .selected-device-preview {
     width: 72px;
     height: 72px;
@@ -120,6 +124,10 @@ body {
     }
 
     .device-modal-shell {
+        padding: 0;
+    }
+
+    .settings-modal-shell {
         padding: 0;
     }
 
