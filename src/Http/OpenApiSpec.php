@@ -1049,6 +1049,7 @@ class OpenApiSpec
                         'type' => 'object',
                         'properties' => [
                             'value' => ['type' => 'object'],
+                            '_type' => ['type' => 'string', 'example' => 'alarm_clock'],
                             '_meta' => [
                                 'type' => 'object',
                                 'properties' => [
@@ -1058,10 +1059,59 @@ class OpenApiSpec
                             ],
                         ],
                     ],
+                    'AlarmClockRecurrence' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'kind' => ['type' => 'string', 'enum' => ['once', 'daily', 'custom']],
+                            'days' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 7],
+                            ],
+                        ],
+                        'required' => ['kind'],
+                    ],
+                    'AlarmClockItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'time' => ['type' => 'string', 'example' => '12:10'],
+                            'enabled' => ['type' => 'boolean'],
+                            'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1],
+                            'recurrence' => ['$ref' => '#/components/schemas/AlarmClockRecurrence'],
+                        ],
+                        'required' => ['time', 'enabled'],
+                    ],
+                    'AlarmClockCapability' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'items' => [
+                                'type' => 'array',
+                                'items' => ['$ref' => '#/components/schemas/AlarmClockItem'],
+                            ],
+                            '_meta' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'limit' => ['type' => 'integer'],
+                                ],
+                                'additionalProperties' => ['$ref' => '#/components/schemas/CapabilityMetaField'],
+                            ],
+                        ],
+                        'required' => ['items'],
+                    ],
                     'DeviceConfiguredCapabilitiesSection' => [
                         'type' => 'object',
                         'additionalProperties' => true,
                         'example' => [
+                            'alarm_clock' => [
+                                'items' => [
+                                    [
+                                        'time' => '12:10',
+                                        'enabled' => true,
+                                        'type' => 1,
+                                        'recurrence' => ['kind' => 'custom', 'days' => [1, 2, 4, 6]],
+                                    ],
+                                ],
+                                '_meta' => ['limit' => 3],
+                            ],
                             'phonebook' => [
                                 'value' => [['name' => 'Ana', 'phone' => '+351911111111']],
                                 '_meta' => ['limit' => 10],
@@ -1137,12 +1187,13 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of protocol configuration keys to desired payloads.',
+                                'description' => 'Map of generic capability keys to desired payloads.',
                                 'additionalProperties' => ['type' => 'object'],
                                 'example' => [
                                     'autoHealthMeasurement' => ['enabled' => true, 'intervalMinutes' => 120],
                                     'phonebook' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],
-                                    'reminders' => ['masterEnabled' => true, 'items' => [['time' => '08:33', 'days' => '2', 'enabled' => true, 'type' => 2]]],
+                                    'alarm_clock' => ['items' => [['time' => '08:33', 'enabled' => true, 'type' => 2, 'recurrence' => ['kind' => 'daily']]],
+                                    ],
                                     'sosContacts' => ['numbers' => ['+351278710140']],
                                     'workingMode' => ['mode' => 3],
                                 ],

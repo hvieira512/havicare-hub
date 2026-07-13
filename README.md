@@ -173,6 +173,18 @@ Example:
 }
 ```
 
+Writable capability entries may also include helper metadata:
+
+- `_meta`: generic options and seller-facing labels for client UI rendering
+- legacy wrapped capabilities may still expose `_type`, but `alarm_clock` does not
+
+For alarm reminders, the generic capability is `alarm_clock`:
+
+- Vivistar maps `alarm_clock` to native `reminders`
+- 4P Touch maps `alarm_clock` to native `REMIND`
+
+The API accepts the generic alias on `PUT /api/devices/{imei}` and `PUT /api/devices/{imei}/configurations` when the model supports it.
+
 `PUT /api/devices/{imei}` supports two modes:
 
 - Device metadata update when the body contains standard device fields like `imei`, `supplier`, `model`, `licenseId`, and related metadata.
@@ -186,6 +198,21 @@ Example:
 ```json
 {
   "capabilities": {
+    "alarms": {
+      "alarm_clock": {
+        "items": [
+          {
+            "time": "08:10",
+            "enabled": true,
+            "type": 2,
+            "recurrence": {
+              "kind": "custom",
+              "days": [1, 3, 5]
+            }
+          }
+        ]
+      }
+    },
     "settings_system": {
       "working_mode": {
         "value": {

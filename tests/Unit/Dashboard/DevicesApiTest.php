@@ -290,6 +290,87 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testShowExposesVivistarAlarmClockStructuredMeta(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'reminders',
+            'vivistar-iw',
+            'Vivistar',
+            'L08 Pro',
+            'BP85',
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'days' => '135',
+                        'enabled' => true,
+                        'type' => 2,
+                    ],
+                ],
+            ]
+        );
+
+        $response = $api->show('861265061009822');
+
+        self::assertSame(
+            [
+                [
+                    'time' => '08:10',
+                    'enabled' => true,
+                    'type' => 2,
+                    'recurrence' => [
+                        'kind' => 'custom',
+                        'days' => [1, 3, 5],
+                    ],
+                ],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
+        );
+        self::assertSame(
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'enabled' => true,
+                        'type' => 2,
+                        'recurrence' => [
+                            'kind' => 'custom',
+                            'days' => [1, 3, 5],
+                        ],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock'] ?? null
+        );
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Seg'],
+                ['value' => 2, 'label' => 'Ter'],
+                ['value' => 3, 'label' => 'Qua'],
+                ['value' => 4, 'label' => 'Qui'],
+                ['value' => 5, 'label' => 'Sex'],
+                ['value' => 6, 'label' => 'Sab'],
+                ['value' => 7, 'label' => 'Dom'],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
+        );
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Medicação'],
+                ['value' => 2, 'label' => 'Água'],
+                ['value' => 3, 'label' => 'Sedentarismo'],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['type']['options'] ?? null
+        );
+    }
+
     public function testShowExposesFourPTouchAlarmClockStructuredMeta(): void
     {
         [$api, $db, $store] = $this->makeApi();
@@ -321,26 +402,120 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 [
                     'time' => '08:10',
                     'enabled' => true,
-                    'mode' => 1,
-                    'custom' => '',
+                    'recurrence' => ['kind' => 'once'],
                 ],
                 [
                     'time' => '14:30',
                     'enabled' => false,
-                    'mode' => 2,
-                    'custom' => '',
+                    'recurrence' => ['kind' => 'daily'],
                 ],
                 [
                     'time' => '18:00',
                     'enabled' => true,
-                    'mode' => 3,
-                    'custom' => '0111110',
+                    'recurrence' => [
+                        'kind' => 'custom',
+                        'days' => [1, 2, 3, 4, 5],
+                    ],
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
         );
         self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
-        self::assertSame('alarmClock', $response['capabilities']['alarms']['alarm_clock']['_nativeKey'] ?? null);
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Uma vez'],
+                ['value' => 2, 'label' => 'Todos os dias'],
+                ['value' => 3, 'label' => 'Personalizado'],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['recurrence']['options'] ?? null
+        );
+        self::assertSame(
+            [
+                ['value' => 0, 'label' => 'Dom'],
+                ['value' => 1, 'label' => 'Seg'],
+                ['value' => 2, 'label' => 'Ter'],
+                ['value' => 3, 'label' => 'Qua'],
+                ['value' => 4, 'label' => 'Qui'],
+                ['value' => 5, 'label' => 'Sex'],
+                ['value' => 6, 'label' => 'Sab'],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
+        );
+        self::assertArrayNotHasKey('type', $response['capabilities']['alarms']['alarm_clock']['_meta'] ?? []);
+        self::assertSame(
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'enabled' => true,
+                        'recurrence' => ['kind' => 'once'],
+                    ],
+                    [
+                        'time' => '14:30',
+                        'enabled' => false,
+                        'recurrence' => ['kind' => 'daily'],
+                    ],
+                    [
+                        'time' => '18:00',
+                        'enabled' => true,
+                        'recurrence' => [
+                            'kind' => 'custom',
+                            'days' => [1, 2, 3, 4, 5],
+                        ],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock'] ?? null
+        );
+    }
+
+    public function testConfigurationPutAcceptsGenericAlarmClockAliasForVivistar(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'alarm_clock' => [
+                    'items' => [
+                        [
+                            'time' => '08:10',
+                            'enabled' => true,
+                            'type' => 2,
+                            'recurrence' => ['kind' => 'custom', 'days' => [1, 3, 5]],
+                        ],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('reminders', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('861265061009822', $submitted[0]['imei']);
+        self::assertStringContainsString('BP85', $submitted[0]['bytes']);
+        self::assertSame(
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'enabled' => true,
+                        'type' => 2,
+                        'recurrence' => ['kind' => 'custom', 'days' => [1, 3, 5]],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock'] ?? null
+        );
     }
 
     public function testShowReturnsAbsoluteModelImageUrl(): void
@@ -520,6 +695,55 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('REMIND,08:10-1-1,14:30-0-2,18:00-1-3-0111110', $submitted[0]['bytes']);
+    }
+
+    public function testConfigurationPutAcceptsGenericAlarmClockAliasForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'alarm_clock' => [
+                    'items' => [
+                        [
+                            'time' => '08:10',
+                            'enabled' => true,
+                            'type' => 1,
+                            'recurrence' => ['kind' => 'once'],
+                        ],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('alarmClock', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertStringContainsString('REMIND,08:10-1-1', $submitted[0]['bytes']);
+        self::assertSame(
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'enabled' => true,
+                        'type' => 1,
+                        'recurrence' => ['kind' => 'once'],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock'] ?? null
+        );
     }
 
     public function testConfigurationPutAllowsFourPTouchLanguageZeroForEnglish(): void

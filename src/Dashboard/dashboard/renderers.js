@@ -320,14 +320,14 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         <div class="col-12 col-md-6">
         <div class="card h-100 border-${tone.border}">
         <div class="card-body">
-        <div class="d-flex align-items-center gap-2 mb-2">
+        <div class="d-flex align-items-center gap-2 mb-2 min-w-0">
         <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
-        <div class="fw-bold ${tone.text}">${esc(title)}</div>
+        <div class="fw-bold ${tone.text} text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
         </div>
-        <div class="d-flex justify-content-between align-items-center">
-        <div class="fw-semibold ${lastTelemetry ? tone.text : "text-secondary"}">${esc(lastValue)}</div>
+        <div class="d-flex justify-content-between align-items-center gap-2 min-w-0">
+        <div class="fw-semibold ${lastTelemetry ? tone.text : "text-secondary"} text-truncate flex-grow-1 min-w-0" title="${esc(lastValue)}">${esc(lastValue)}</div>
         <button class="btn btn-primary btn-sm" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? "disabled" : ""}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
         </div>
         </div>

@@ -154,7 +154,11 @@ export function renderDeviceConfigurationRoot(context) {
                     .map(
                         (group) => `
                     <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
-                        ${group.entries.map((entry) => renderConfigSection(protocol, entry, rowsByKey[entry.key] || null, capabilities, disabled, uiByKey[entry.key] || null)).join("")}
+                        ${group.entries.map((entry) => {
+                            const row = rowsByKey[entry.key] || rowsByKey[entry.capabilityKey || ""] || null;
+                            const uiState = uiByKey[entry.key] || uiByKey[entry.capabilityKey || ""] || null;
+                            return renderConfigSection(protocol, entry, row, capabilities, disabled, uiState);
+                        }).join("")}
                     </div>
                 `,
                     )
@@ -555,7 +559,7 @@ export function defaultConfigPayload(entry) {
         };
     if (input === "list") return { numbers: ["", "", ""] };
     if (input === "contacts") return { contacts: [{ name: "", phone: "" }] };
-    if (input === "reminders") return { masterEnabled: true, items: [] };
+    if (input === "reminders") return { items: [] };
     if (input === "alarms") return { alarms: [] };
     if (input === "takePills")
         return {
@@ -712,12 +716,7 @@ function readReminders(section) {
         }))
         .filter((item) => item.time !== "" || item.days !== "");
 
-    return {
-        masterEnabled:
-            section.querySelector('[data-config-field="masterEnabled"]')
-                ?.checked || false,
-        items,
-    };
+    return { items };
 }
 
 function readTakePills(section) {
@@ -1486,20 +1485,15 @@ function contactsInput(entry, desired) {
 }
 
 function remindersInput(desired) {
-    const masterEnabled = boolValue(desired.masterEnabled, true);
     const items =
         Array.isArray(desired.items) && desired.items.length
             ? desired.items
             : [{}];
     return `
         <div class="vstack gap-3">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="masterEnabled" ${masterEnabled ? "checked" : ""}>
-                <label class="form-check-label" data-switch-label data-switch-on="Alertas ligados" data-switch-off="Alertas desligados">Alertas ${masterEnabled ? "ligados" : "desligados"}</label>
-            </div>
-            <div class="small text-secondary">Cada alarme suporta hora, dias da semana, estado e tipo: medicação, água ou sedentarismo.</div>
+            <div class="small text-secondary">Cada item suporta hora, estado, tipo e recorrência. O backend converte para o comando correto do fornecedor.</div>
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addReminderRow">Adicionar lembrete</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addReminderRow">Adicionar item</button>
             </div>
             <div class="vstack gap-2" data-reminders-list>
                 ${items.map((item) => reminderRow(item)).join("")}
@@ -1523,7 +1517,7 @@ function alarmsInput(desired, meta = {}) {
     return `
         <div class="vstack gap-3">
             <div class="small text-secondary">
-                Até ${esc(String(limit))} alarmes. O modo personalizado usa a ordem Domingo-Sábado.
+                Até ${esc(String(limit))} alarmes. A recorrência personalizada usa uma máscara de 7 dias, de Segunda a Domingo.
             </div>
             <div class="vstack gap-2">
                 ${alarms
@@ -1666,7 +1660,7 @@ function fourPTouchAlarmRow(alarm, index) {
                                 id="${rowId}-day-${day.value}"
                                 data-fourptouch-day="customDays"
                                 value="${day.value}"
-                                ${customDays.includes(day.value) ? "checked" : ""}>
+                                ${isFourPTouchAlarmDaySelected(customDays, day.value) ? "checked" : ""}>
                             <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
                         `,
                             )
@@ -1678,7 +1672,7 @@ function fourPTouchAlarmRow(alarm, index) {
 }
 
 function normalizeFourPTouchAlarms(desired) {
-    const base = desired?.alarms ?? desired?.alarmClock ?? desired?.fields ?? desired;
+    const base = desired?.items ?? desired?.alarms ?? desired?.alarmClock ?? desired?.fields ?? desired;
 
     if (Array.isArray(base)) {
         if (base.length && typeof base[0] === "string") {
@@ -1708,10 +1702,13 @@ function normalizeFourPTouchAlarmItem(item) {
         return { time: "", enabled: true, mode: 1, custom: "" };
     }
 
-    const mode = parseInt(
-        String(item.mode ?? item.frequency ?? item.reminderFrequency ?? 1),
-        10,
-    ) || 1;
+    const recurrenceKind = String(item.recurrence?.kind ?? item.kind ?? "").trim().toLowerCase();
+    const mode = recurrenceKind
+        ? ({ once: 1, daily: 2, custom: 3 }[recurrenceKind] || 1)
+        : (parseInt(
+            String(item.mode ?? item.frequency ?? item.reminderFrequency ?? 1),
+            10,
+        ) || 1);
 
     return {
         time: formatFourPTouchAlarmTime(
@@ -1722,7 +1719,7 @@ function normalizeFourPTouchAlarmItem(item) {
         custom:
             mode === 3
                 ? normalizeFourPTouchAlarmDays(
-                      item.custom ?? item.days ?? item.reminderCustom ?? "",
+                      item.recurrence?.days ?? item.custom ?? item.days ?? item.reminderCustom ?? "",
                   )
                 : "",
     };
@@ -1748,15 +1745,45 @@ function parseFourPTouchAlarmString(value) {
 }
 
 function readFourPTouchAlarmDays(row) {
-    return Array.from(row.querySelectorAll('[data-fourptouch-day="customDays"]:checked'))
-        .map((input) => String(input.value || ""))
+    const selected = new Set(
+        Array.from(row.querySelectorAll('[data-fourptouch-day="customDays"]:checked'))
+            .map((input) => String(input.value || ""))
+            .filter(Boolean),
+    );
+
+    return ["0", "1", "2", "3", "4", "5", "6"]
+        .map((day) => (selected.has(day) ? "1" : "0"))
         .join("");
 }
 
 function normalizeFourPTouchAlarmDays(value) {
-    return String(value || "")
-        .replace(/[^01]/g, "")
-        .slice(0, 7);
+    const raw = String(value || "").trim();
+    if (raw === "") {
+        return "";
+    }
+
+    if (/^[01]{7}$/.test(raw)) {
+        return raw;
+    }
+
+    const selected = new Set(raw.replace(/[^0-6]/g, "").split(""));
+    return ["0", "1", "2", "3", "4", "5", "6"]
+        .map((day) => (selected.has(day) ? "1" : "0"))
+        .join("");
+}
+
+function isFourPTouchAlarmDaySelected(mask, day) {
+    const normalizedMask = String(mask || "").trim();
+    const index = parseInt(String(day || ""), 10);
+    if (!Number.isFinite(index) || index < 0 || index > 6) {
+        return false;
+    }
+
+    if (/^[01]{7}$/.test(normalizedMask)) {
+        return normalizedMask.charAt(index) === "1";
+    }
+
+    return false;
 }
 
 function formatFourPTouchAlarmTime(value) {
@@ -1944,7 +1971,9 @@ function extractCapabilityValue(value) {
 }
 
 function reminderRow(item = {}) {
-    const normalizedDays = String(item.days || "").replace(/[^1-7]/g, "");
+    const normalizedDays = Array.isArray(item.recurrence?.days)
+        ? item.recurrence.days.map((day) => String(day || "")).join("")
+        : String(item.days || "").replace(/[^1-7]/g, "");
     const reminderType = parseInt(String(item.type ?? 1), 10) || 1;
     const rowId = nextUid("reminder");
     const dayButtons = [

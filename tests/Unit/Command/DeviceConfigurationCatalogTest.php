@@ -645,7 +645,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testFourPTouchAlarmClockRejectsInvalidCustomMask(): void
     {
         self::assertSame(
-            'alarm custom days must be a 7-digit 0/1 mask',
+            'alarm_clock recurrence days must be a 7-digit 0/1 mask',
             DeviceConfigurationCatalog::validate('four-p-touch', 'alarmClock', [
                 'alarms' => [
                     ['time' => '08:10', 'enabled' => true, 'frequency' => 3, 'custom' => '111110'],

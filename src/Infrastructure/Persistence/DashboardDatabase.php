@@ -61,6 +61,7 @@ final class DashboardDatabase
         $this->seedDefaultCapabilities();
         $this->migrateModelCapabilitiesToCapabilityIds();
         $this->seedDefaultModelCapabilities();
+        $this->normalizePersistedModelCapabilities();
     }
 
     public function pdo(): PDO
@@ -271,26 +272,43 @@ final class DashboardDatabase
 
     private function seedDefaultModelCapabilities(): void
     {
-        $modelsStmt = $this->pdo->prepare('SELECT id, device_type FROM models WHERE device_type = ?');
+        $modelsStmt = $this->pdo->prepare('
+            SELECT m.id, m.device_type, s.name AS supplier_name
+            FROM models m
+            JOIN suppliers s ON s.id = m.supplier_id
+            WHERE m.device_type = ?
+        ');
+        $modelCapabilityCount = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ?');
         $capabilitySelect = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
         $existing = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
         $insert = $this->pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
 
         foreach (\Hub\Domain\GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {
             $modelsStmt->execute([$deviceType]);
-            $modelIds = $modelsStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
-            if ($modelIds === []) {
+            $models = $modelsStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            if ($models === []) {
                 continue;
             }
 
-            foreach (\Hub\Domain\GenericModelCapabilityCatalog::keysForDeviceType($deviceType) as $key) {
-                $capabilitySelect->execute([$deviceType, $key]);
-                $capabilityId = (int)($capabilitySelect->fetchColumn() ?: 0);
-                if ($capabilityId <= 0) {
+            foreach ($models as $model) {
+                $modelId = (int)($model['id'] ?? 0);
+                $supplierName = (string)($model['supplier_name'] ?? '');
+                if ($modelId <= 0 || $supplierName === '') {
                     continue;
                 }
 
-                foreach ($modelIds as $modelId) {
+                $modelCapabilityCount->execute([$modelId]);
+                if ((int)($modelCapabilityCount->fetchColumn() ?: 0) > 0) {
+                    continue;
+                }
+
+                foreach (\Hub\Domain\SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType) as $key) {
+                    $capabilitySelect->execute([$deviceType, $key]);
+                    $capabilityId = (int)($capabilitySelect->fetchColumn() ?: 0);
+                    if ($capabilityId <= 0) {
+                        continue;
+                    }
+
                     $existing->execute([$modelId, $capabilityId]);
                     if ((int)$existing->fetchColumn() > 0) {
                         continue;
@@ -298,6 +316,60 @@ final class DashboardDatabase
 
                     $insert->execute([$modelId, $capabilityId]);
                 }
+            }
+        }
+    }
+
+    private function normalizePersistedModelCapabilities(): void
+    {
+        $modelsStmt = $this->pdo->query('
+            SELECT m.id, m.device_type, s.name AS supplier_name
+            FROM models m
+            JOIN suppliers s ON s.id = m.supplier_id
+        ');
+        if (!$modelsStmt) {
+            return;
+        }
+
+        $currentStmt = $this->pdo->prepare('
+            SELECT mc.capability_id, c.capability_key
+            FROM model_capabilities mc
+            JOIN capabilities c ON c.id = mc.capability_id
+            WHERE mc.model_id = ? AND mc.enabled = 1
+        ');
+        $delete = $this->pdo->prepare('DELETE FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
+        $allowedCache = [];
+
+        while ($model = $modelsStmt->fetch(PDO::FETCH_ASSOC)) {
+            $modelId = (int)($model['id'] ?? 0);
+            $supplierName = trim((string)($model['supplier_name'] ?? ''));
+            $deviceType = (string)($model['device_type'] ?? 'watch');
+            if ($modelId <= 0 || $supplierName === '') {
+                continue;
+            }
+
+            $cacheKey = $supplierName . ':' . $deviceType;
+            if (!array_key_exists($cacheKey, $allowedCache)) {
+                $allowedCache[$cacheKey] = array_flip(
+                    \Hub\Domain\SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType)
+                );
+            }
+
+            $allowed = $allowedCache[$cacheKey];
+            if ($allowed === []) {
+                continue;
+            }
+
+            $currentStmt->execute([$modelId]);
+            $rows = $currentStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as $row) {
+                $capabilityId = (int)($row['capability_id'] ?? 0);
+                $capabilityKey = (string)($row['capability_key'] ?? '');
+                if ($capabilityId <= 0 || isset($allowed[$capabilityKey])) {
+                    continue;
+                }
+
+                $delete->execute([$modelId, $capabilityId]);
             }
         }
     }

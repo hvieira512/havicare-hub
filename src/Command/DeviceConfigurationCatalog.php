@@ -428,7 +428,22 @@ final class DeviceConfigurationCatalog
             self::entry('doNotDisturb', 'SILENCETIME', 'Não perturbar', 'toggle', ['enabled'], ['SILENCETIME'], 'system', 60),
             self::entry('firmwareVersion', 'VERNO', 'Versão de firmware', 'requestAction', [], ['VERNO'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
             self::entry('deviceStatus', 'TS', 'Estado do dispositivo', 'requestAction', [], ['TS'], 'system', 5) + ['transient' => true, 'kind' => 'request'],
-            self::entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5, 3),
+            self::entry('alarmClock', 'REMIND', 'Alarmes', 'alarms', ['alarms'], ['REMIND'], 'alerts', 5, 3, [
+                'mode' => [
+                    ['value' => 1, 'label' => 'Uma vez'],
+                    ['value' => 2, 'label' => 'Todos os dias'],
+                    ['value' => 3, 'label' => 'Personalizado'],
+                ],
+                'days' => [
+                    ['value' => 0, 'label' => 'Dom'],
+                    ['value' => 1, 'label' => 'Seg'],
+                    ['value' => 2, 'label' => 'Ter'],
+                    ['value' => 3, 'label' => 'Qua'],
+                    ['value' => 4, 'label' => 'Qui'],
+                    ['value' => 5, 'label' => 'Sex'],
+                    ['value' => 6, 'label' => 'Sab'],
+                ],
+            ]),
             self::entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55),
             self::entry('soundProfile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
@@ -995,7 +1010,7 @@ final class DeviceConfigurationCatalog
     {
         $days = trim((string)$value);
         if (preg_match('/^[01]{7}$/', $days) !== 1) {
-            throw new \InvalidArgumentException("{$field} must be a 7-digit 0/1 mask");
+        throw new \InvalidArgumentException("{$field} must be a 7-digit 0/1 mask");
         }
 
         return $days;

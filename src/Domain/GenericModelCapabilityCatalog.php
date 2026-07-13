@@ -81,6 +81,10 @@ final class GenericModelCapabilityCatalog
     public static function keysForProtocol(string $protocol): array
     {
         $keys = [];
+        foreach (self::telemetryKeysForProtocol($protocol) as $telemetryKey) {
+            $keys[$telemetryKey] = true;
+        }
+
         foreach (DeviceCommandCatalog::featuresForProtocol($protocol) as $feature) {
             $generic = self::mapTelemetryFeature($feature);
             if ($generic !== null) {
@@ -96,6 +100,51 @@ final class GenericModelCapabilityCatalog
         }
 
         return array_keys($keys);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function telemetryKeysForProtocol(string $protocol): array
+    {
+        return match ($protocol) {
+            'wonlex-json' => [
+                'battery',
+                'activity',
+                'heart_rate',
+                'blood_pressure',
+                'blood_oxygen',
+                'temperature',
+                'breath_rate',
+                'location',
+                'sleep',
+                'ecg',
+                'hrv',
+                'ppg',
+                'rr_interval',
+                'blood_sugar',
+            ],
+            'vivistar-iw' => [
+                'battery',
+                'activity',
+                'heart_rate',
+                'blood_pressure',
+                'blood_oxygen',
+                'temperature',
+                'location',
+                'blood_sugar',
+            ],
+            'four-p-touch' => [
+                'battery',
+                'activity',
+                'heart_rate',
+                'blood_pressure',
+                'blood_oxygen',
+                'temperature',
+                'location',
+            ],
+            default => [],
+        };
     }
 
     /**
@@ -251,6 +300,7 @@ final class GenericModelCapabilityCatalog
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Body temperature', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Breath rate', 'sortOrder' => 50, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'location', 'label' => 'Location', 'sortOrder' => 60, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
+            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'blood_sugar', 'label' => 'Blood sugar', 'sortOrder' => 65, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sleep', 'sortOrder' => 70, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'ecg', 'label' => 'ECG', 'sortOrder' => 80, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'hrv', 'label' => 'HRV', 'sortOrder' => 90, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],

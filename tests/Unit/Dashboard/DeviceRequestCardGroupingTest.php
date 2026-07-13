@@ -33,6 +33,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('if (input === "soundProfile")', $source);
         self::assertStringContainsString('function requestActionInput(entry)', $source);
         self::assertStringContainsString('function soundProfileInput(desired)', $source);
+        self::assertStringContainsString('function isFourPTouchAlarmDaySelected(mask, day)', $source);
+        self::assertStringContainsString('return ["0", "1", "2", "3", "4", "5", "6"]', $source);
         self::assertStringContainsString('function languageTimezoneInput(desired)', $source);
         self::assertStringContainsString('data-config-field="preset"', $source);
         self::assertStringContainsString('languageTimezonePresetOptions', $source);

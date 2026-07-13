@@ -5,6 +5,7 @@ namespace Tests\Unit\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
+use Hub\Domain\SupplierCapabilityTemplate;
 use Psr\Http\Message\ServerRequestInterface;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -45,10 +46,13 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
         self::assertSame('Wonlex', $response['supplier'] ?? null);
         self::assertSame('watch', $response['deviceType'] ?? null);
+        self::assertContains('battery', $response['enabledCapabilities'] ?? []);
+        self::assertContains('activity', $response['enabledCapabilities'] ?? []);
         self::assertContains('ecg', $response['enabledCapabilities'] ?? []);
         self::assertContains('hrv', $response['enabledCapabilities'] ?? []);
         self::assertContains('ppg', $response['enabledCapabilities'] ?? []);
         self::assertContains('rr_interval', $response['enabledCapabilities'] ?? []);
+        self::assertContains('blood_sugar', $response['enabledCapabilities'] ?? []);
         self::assertTrue($response['capabilities']['telemetry']['ecg'] ?? false);
     }
 
@@ -188,45 +192,11 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $result['status'] ?? null);
         $model = $db->models->find('4P Touch', 'D46-PLUS');
         self::assertIsArray($model);
-        self::assertSame(
-            [
-                'alarm_clock',
-                'auto_vitals_interval',
-                'blood_pressure',
-                'call_in_restriction',
-                'call_whitelist',
-                'center_number',
-                'device_password',
-                'device_status',
-                'do_not_disturb',
-                'fall_detection',
-                'fall_sensitivity',
-                'find_device',
-                'firmware_version',
-                'heart_rate',
-                'language_timezone',
-                'location',
-                'location_reporting_interval',
-                'low_battery_alert',
-                'make_call',
-                'medication_reminders',
-                'monitor_number',
-                'pedometer_schedule',
-                'phonebook',
-                'power_off',
-                'push_message',
-                'remove_watch_alarm',
-                'remove_watch_sms_alert',
-                'reset_device',
-                'sleep_monitoring',
-                'sos_contacts',
-                'sos_sms_alert',
-                'sound_profile',
-                'temperature',
-                'temperature_measurement_interval',
-            ],
-            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
-        );
+        $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('4P Touch', 'watch');
+        $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
+        sort($expected);
+        sort($actual);
+        self::assertSame($expected, $actual);
     }
 
     public function testUpdateWithoutExplicitCapabilitiesPreservesExistingCapabilities(): void

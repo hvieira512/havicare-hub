@@ -78,7 +78,7 @@ const CAPABILITY_LABEL_TRANSLATIONS = {
     phonebook: "Contactos",
     call_whitelist: "Chamadas permitidas",
     monitor_number: "Número de monitorização",
-    alarm_clock: "Despertador",
+    alarm_clock: "Alarmes",
     medication_reminders: "Lembretes de medicação",
     low_battery_alert: "Bateria fraca",
     fall_detection: "Quedas",

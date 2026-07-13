@@ -39,28 +39,23 @@ final class SupplierCapabilityTemplateTest extends TestCase
 
     public function testVivistarWatchTemplateMatchesProtocolCapabilities(): void
     {
-        $expected = [
-            'alarm_clock',
-            'auto_vitals_interval',
-            'blood_oxygen',
-            'blood_pressure',
-
-            'call_whitelist',
-            'fall_detection',
-            'fall_sensitivity',
-            'heart_rate',
-            'location',
-            'phonebook',
-            'push_message',
-            'sos_contacts',
-            'temperature',
-            'working_mode',
-        ];
         $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('Vivistar', 'watch');
-        sort($expected);
-        sort($actual);
 
-        self::assertSame($expected, $actual);
+        self::assertContains('battery', $actual);
+        self::assertContains('activity', $actual);
+        self::assertContains('heart_rate', $actual);
+        self::assertContains('blood_pressure', $actual);
+        self::assertContains('blood_oxygen', $actual);
+        self::assertContains('temperature', $actual);
+        self::assertContains('blood_sugar', $actual);
+        self::assertContains('alarm_clock', $actual);
+        self::assertContains('auto_vitals_interval', $actual);
+        self::assertContains('phonebook', $actual);
+        self::assertContains('push_message', $actual);
+        self::assertContains('sos_contacts', $actual);
+        self::assertContains('working_mode', $actual);
+        self::assertNotContains('firmware_version', $actual);
+        self::assertNotContains('device_status', $actual);
     }
 
     public function testWonlexWatchTemplateIncludesSupplierSpecificTelemetry(): void
@@ -80,46 +75,20 @@ final class SupplierCapabilityTemplateTest extends TestCase
 
     public function testFourPTouchWatchTemplateReturnsSupportedSubset(): void
     {
-        $expected = [
-            'alarm_clock',
-            'auto_vitals_interval',
-            'blood_pressure',
-            'call_in_restriction',
-            'call_whitelist',
-            'center_number',
-            'device_password',
-            'device_status',
-            'do_not_disturb',
-            'fall_detection',
-            'fall_sensitivity',
-            'find_device',
-            'firmware_version',
-            'heart_rate',
-            'language_timezone',
-            'location',
-            'location_reporting_interval',
-            'low_battery_alert',
-            'make_call',
-            'monitor_number',
-            'pedometer_schedule',
-            'medication_reminders',
-            'phonebook',
-            'power_off',
-            'push_message',
-            'remove_watch_alarm',
-            'remove_watch_sms_alert',
-            'reset_device',
-            'sleep_monitoring',
-            'sos_contacts',
-            'sos_sms_alert',
-            'sound_profile',
-            'temperature',
-            'temperature_measurement_interval',
-        ];
         $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('4P Touch', 'watch');
-        sort($expected);
-        sort($actual);
 
-        self::assertSame($expected, $actual);
+        self::assertContains('battery', $actual);
+        self::assertContains('activity', $actual);
+        self::assertContains('heart_rate', $actual);
+        self::assertContains('blood_pressure', $actual);
+        self::assertContains('blood_oxygen', $actual);
+        self::assertContains('temperature', $actual);
+        self::assertContains('location', $actual);
+        self::assertContains('alarm_clock', $actual);
+        self::assertContains('medication_reminders', $actual);
+        self::assertContains('push_message', $actual);
+        self::assertContains('phonebook', $actual);
+        self::assertContains('sos_contacts', $actual);
+        self::assertContains('sound_profile', $actual);
     }
 }

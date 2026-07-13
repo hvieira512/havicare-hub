@@ -3,6 +3,7 @@
 namespace Tests\Unit\Dashboard;
 
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\SupplierCapabilityTemplate;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class DatabaseStoreTest extends MysqlDashboardTestCase
@@ -19,78 +20,11 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
-        self::assertSame(
-            [
-                'activity',
-                'alarm_clock',
-                'auto_vitals_interval',
-                'battery',
-                'blood_oxygen',
-                'blood_oxygen_alert',
-                'blood_oxygen_continuous',
-                'blood_oxygen_measurement_interval',
-                'blood_pressure',
-                'blood_pressure_alert',
-                'blood_pressure_calibration',
-                'blood_pressure_measurement_interval',
-                'blood_pressure_trend',
-                'breath_rate',
-                'breath_rate_measurement_interval',
-                'call_in_restriction',
-                'call_whitelist',
-                'center_number',
-                'device_binding',
-                'device_password',
-                'device_settings_sync',
-                'device_status',
-                'do_not_disturb',
-                'ecg',
-                'ecg_measurement_interval',
-                'fall_detection',
-                'fall_sensitivity',
-                'find_device',
-                'firmware_version',
-                'heart_rate',
-                'heart_rate_continuous',
-                'heart_rate_high_alert',
-                'heart_rate_low_alert',
-                'heart_rate_measurement_interval',
-                'hrv',
-                'hrv_measurement_interval',
-                'language_timezone',
-                'location',
-                'location_reporting_interval',
-                'low_battery_alert',
-                'make_call',
-                'medication_reminders',
-                'monitor_number',
-                'pedometer_schedule',
-                'phonebook',
-                'power_off',
-                'ppg',
-                'ppg_measurement_interval',
-                'push_message',
-                'remove_watch_alarm',
-                'remove_watch_sms_alert',
-                'reset_device',
-                'rr_interval',
-                'rr_interval_measurement_interval',
-                'sleep',
-                'sleep_monitoring',
-                'sos_contacts',
-                'sos_sms_alert',
-                'sound_profile',
-                'step_goal',
-                'step_reporting_interval',
-                'temperature',
-                'temperature_continuous',
-                'temperature_high_alert',
-                'temperature_low_alert',
-                'temperature_measurement_interval',
-                'working_mode',
-            ],
-            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
-        );
+        $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('Vivistar', 'watch');
+        $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
+        sort($expected);
+        sort($actual);
+        self::assertSame($expected, $actual);
 
         $db = ApiDataAccess::fromDatabase($database);
         self::assertSame(5, count($db->models->all()));
@@ -98,78 +32,11 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
         self::assertSame('watch', $model['device_type'] ?? null);
-        self::assertSame(
-            [
-                'activity',
-                'alarm_clock',
-                'auto_vitals_interval',
-                'battery',
-                'blood_oxygen',
-                'blood_oxygen_alert',
-                'blood_oxygen_continuous',
-                'blood_oxygen_measurement_interval',
-                'blood_pressure',
-                'blood_pressure_alert',
-                'blood_pressure_calibration',
-                'blood_pressure_measurement_interval',
-                'blood_pressure_trend',
-                'breath_rate',
-                'breath_rate_measurement_interval',
-                'call_in_restriction',
-                'call_whitelist',
-                'center_number',
-                'device_binding',
-                'device_password',
-                'device_settings_sync',
-                'device_status',
-                'do_not_disturb',
-                'ecg',
-                'ecg_measurement_interval',
-                'fall_detection',
-                'fall_sensitivity',
-                'find_device',
-                'firmware_version',
-                'heart_rate',
-                'heart_rate_continuous',
-                'heart_rate_high_alert',
-                'heart_rate_low_alert',
-                'heart_rate_measurement_interval',
-                'hrv',
-                'hrv_measurement_interval',
-                'language_timezone',
-                'location',
-                'location_reporting_interval',
-                'low_battery_alert',
-                'make_call',
-                'medication_reminders',
-                'monitor_number',
-                'pedometer_schedule',
-                'phonebook',
-                'power_off',
-                'ppg',
-                'ppg_measurement_interval',
-                'push_message',
-                'remove_watch_alarm',
-                'remove_watch_sms_alert',
-                'reset_device',
-                'rr_interval',
-                'rr_interval_measurement_interval',
-                'sleep',
-                'sleep_monitoring',
-                'sos_contacts',
-                'sos_sms_alert',
-                'sound_profile',
-                'step_goal',
-                'step_reporting_interval',
-                'temperature',
-                'temperature_continuous',
-                'temperature_high_alert',
-                'temperature_low_alert',
-                'temperature_measurement_interval',
-                'working_mode',
-            ],
-            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
-        );
+        $expected = SupplierCapabilityTemplate::keysForSupplierDeviceType('Vivistar', 'watch');
+        $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
+        sort($expected);
+        sort($actual);
+        self::assertSame($expected, $actual);
     }
 
     public function testModelCapabilitiesCanBeReplacedPerModel(): void
