@@ -27,6 +27,12 @@ import {
 } from "../renderers.js";
 import {clearStorageKey, saveTextStorage} from "../core/storage.js";
 
+const DETAIL_ITEM_TYPES = {
+    "ncs.event": (payload) => payload.data?.event || "general_alert",
+    "device.connected": () => "device.connected",
+    "device.disconnected": () => "device.disconnected",
+};
+
 let els;
 let loadDeviceFn = async () => false;
 let connectionChartRoot = null;
@@ -205,7 +211,7 @@ function filterDetailItems(items) {
     const { from, to, type } = state.detailFilters;
     return items.filter((item) => {
         if (type !== "all" && type !== "") {
-            const itemType = normalizeTelemetryFilterType(detailItemType(item));
+            const itemType = detailItemType(item);
             if (itemType !== type) return false;
         }
         if (from || to) {
@@ -220,20 +226,11 @@ function filterDetailItems(items) {
 
 function detailItemType(item) {
     const p = item.payload;
-    if (p.type === "ncs.event") return p.data?.event || "general_alert";
-    if (p.type === "device.connected") return "device.connected";
-    if (p.type === "device.disconnected") return "device.disconnected";
+    const mapped = DETAIL_ITEM_TYPES[p.type];
+    if (mapped) return mapped(p);
     if (p.nativeType) return p.nativeType;
     if (p.type && p.type !== "telemetry") return p.type;
     return "outros";
-}
-
-function normalizeTelemetryFilterType(type) {
-    if (type === "blood_pressure_systolic" || type === "blood_pressure_diastolic") {
-        return "blood_pressure";
-    }
-
-    return type;
 }
 
 function itemTime(item) {

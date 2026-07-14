@@ -9,28 +9,46 @@ import {
 import {loadSettingsModelsSection} from "./list.js";
 import {getSettingsModelsRuntime} from "./runtime.js";
 
+const ACTIVE_MODEL_FILTERS = [
+    {
+        key: "deviceType",
+        label: (value) => `Tipo: ${deviceTypeLabel(value)}`,
+        stateKey: "modelsDeviceType",
+    },
+    {
+        key: "supplier",
+        label: (value) => `Fornecedor: ${value}`,
+        stateKey: "modelsSupplier",
+    },
+    {
+        key: "search",
+        label: (value) => `Pesquisa: ${value}`,
+        stateKey: "modelsSearchQuery",
+    },
+];
+
+const ACTIVE_MODEL_FILTER_CLEARERS = {
+    deviceType: () => {
+        state.settingsModal.modelsDeviceType = "";
+    },
+    supplier: () => {
+        state.settingsModal.modelsSupplier = "";
+    },
+    search: (els) => {
+        state.settingsModal.modelsSearchQuery = "";
+        if (els.modelsListSearch) {
+            els.modelsListSearch.value = "";
+        }
+    },
+};
+
 function renderAppliedModelsFilters() {
     const {els} = getSettingsModelsRuntime();
-    const labels = [];
-
-    if (state.settingsModal.modelsDeviceType) {
-        labels.push({
-            key: "deviceType",
-            label: `Tipo: ${deviceTypeLabel(state.settingsModal.modelsDeviceType)}`,
-        });
-    }
-    if (state.settingsModal.modelsSupplier) {
-        labels.push({
-            key: "supplier",
-            label: `Fornecedor: ${state.settingsModal.modelsSupplier}`,
-        });
-    }
-    if (state.settingsModal.modelsSearchQuery) {
-        labels.push({
-            key: "search",
-            label: `Pesquisa: ${state.settingsModal.modelsSearchQuery}`,
-        });
-    }
+    const labels = ACTIVE_MODEL_FILTERS.flatMap((filter) => {
+        const value = state.settingsModal[filter.stateKey];
+        if (!value) return [];
+        return [{key: filter.key, label: filter.label(value)}];
+    });
 
     els.modelsActiveFilters.innerHTML = labels.length
         ? labels
@@ -203,18 +221,11 @@ function handleActiveModelsFiltersClick(event) {
     const key = button.dataset.filterKey;
     if (!key) return;
 
-    if (key === "deviceType") {
-        state.settingsModal.modelsDeviceType = "";
-    } else if (key === "supplier") {
-        state.settingsModal.modelsSupplier = "";
-    } else if (key === "search") {
-        state.settingsModal.modelsSearchQuery = "";
-        if (els.modelsListSearch) {
-            els.modelsListSearch.value = "";
-        }
-    } else {
+    const clearFilter = ACTIVE_MODEL_FILTER_CLEARERS[key];
+    if (!clearFilter) {
         return;
     }
+    clearFilter(els);
 
     state.settingsModal.modelsPage = 1;
     renderModelsFilterButtons();

@@ -44,6 +44,237 @@ const CATEGORY_ORDER = {
 let uidCounter = 0;
 const protocolCatalogRequests = {};
 
+const CONFIG_ACTION_BUTTON_META = {
+    idle: {
+        icon: "fa-paper-plane",
+        label: "Enviar",
+        className: "btn-primary",
+    },
+    submitting: {
+        icon: "fa-spinner fa-spin",
+        label: "A enviar",
+        className: "btn-primary",
+    },
+    sent: {icon: "fa-check", label: "Enviado", className: "btn-info"},
+    queued: {icon: "fa-list-check", label: "Em fila", className: "btn-secondary"},
+    waiting: {icon: "fa-hourglass-half", label: "À espera", className: "btn-warning"},
+    acked: {icon: "fa-circle-check", label: "Confirmado", className: "btn-success"},
+    failed: {
+        icon: "fa-triangle-exclamation",
+        label: "Falhou",
+        className: "btn-danger",
+    },
+    dropped: {
+        icon: "fa-triangle-exclamation",
+        label: "Falhou",
+        className: "btn-danger",
+    },
+};
+
+const CONFIG_INPUT_RENDERERS = {
+    toggle: (entry, desired) => toggleInput(entry, desired),
+    fallSensitivity: (_entry, desired) => fallSensitivityInput(desired),
+    number: (entry, desired) => numberInput(entry, desired),
+    phone: (entry, desired) => phoneInput(entry, desired),
+    text: (entry, desired) => textInput(entry, desired),
+    pushMessage: (_entry, desired) => pushMessageInput(_entry, desired),
+    makeCall: (entry, desired) => makeCallInput(entry, desired),
+    resetAction: (entry, desired) => resetActionInput(entry, desired),
+    requestAction: (entry) => requestActionInput(entry),
+    intervalToggle: (entry, desired) => intervalToggleInput(entry, desired),
+    intervalHoursToggle: (_entry, desired) => intervalHoursToggleInput(desired),
+    workingMode: (_entry, desired) => workingModeInput(desired),
+    bloodPressure: (_entry, desired) => bloodPressureInput(desired),
+    wonlexBloodPressureWarning: (_entry, desired) =>
+        wonlexBloodPressureWarningInput(desired),
+    languageTimezone: (_entry, desired) => languageTimezoneInput(desired),
+    dualToggle: (_entry, desired) => dualToggleInput(desired),
+    fallSensitivityLevels: (_entry, desired) => fallSensitivityLevelsInput(desired),
+    timeRanges: (entry, desired) => timeRangesInput(entry, desired),
+    timeRange: (_entry, desired) => timeRangeInput(desired),
+    wonlexSleepSettings: (_entry, desired) => wonlexSleepSettingsInput(desired),
+    wonlexReminderThreshold: (entry, desired) =>
+        wonlexReminderThresholdInput(entry, desired),
+    wonlexHeartRateRange: (_entry, desired) => wonlexHeartRateRangeInput(desired),
+    list: (entry, desired) => listInput(entry, desired, "numbers", "Números SOS"),
+    contacts: (entry, desired) => contactsInput(entry, desired),
+    reminders: (_entry, desired) => remindersInput(desired),
+    alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
+    takePills: (_entry, desired, meta) => takePillsInput(desired, meta),
+    soundProfile: (_entry, desired) => soundProfileInput(desired),
+};
+
+const CONFIG_INPUT_READERS = {
+    toggle: (section) => {
+        const field = firstFieldName(section);
+        return { [field]: readCheckbox(section, field) };
+    },
+    fallSensitivity: (section) => ({sensitivity: readNumber(section, "sensitivity")}),
+    number: (section) => {
+        const field = firstFieldName(section);
+        return { [field]: readNumber(section, field) };
+    },
+    phone: (section) => {
+        const field = firstFieldName(section);
+        return { [field]: readPhone(section, field) };
+    },
+    text: (section) => {
+        const field = firstFieldName(section);
+        return { [field]: readText(section, field) };
+    },
+    pushMessage: (section) => ({message: readText(section, "message")}),
+    makeCall: (section) => ({phone: readPhone(section, "phone")}),
+    resetAction: () => ({}),
+    requestAction: () => ({}),
+    intervalToggle: (section) => ({
+        enabled: readCheckbox(section, "enabled"),
+        intervalMinutes: readNumber(section, "intervalMinutes"),
+    }),
+    intervalHoursToggle: (section) => ({
+        enabled: readCheckbox(section, "enabled"),
+        intervalHours: readNumber(section, "intervalHours"),
+    }),
+    workingMode: (section) => {
+        const mode = readNumber(section, "mode");
+        const payload = {mode};
+        if (mode === 8) {
+            payload.intervalSeconds = readNumber(section, "intervalSeconds");
+            payload.gpsEnabled = readCheckbox(section, "gpsEnabled");
+        }
+        return payload;
+    },
+    bloodPressure: (section) => ({
+        systolic: readNumber(section, "systolic"),
+        diastolic: readNumber(section, "diastolic"),
+    }),
+    wonlexBloodPressureWarning: (section) => {
+        const valueField = section.querySelector(
+            '[data-config-field="RemindValue"]',
+        )
+            ? "RemindValue"
+            : "reminderValue";
+        return {
+            switchState: readCheckbox(section, "switchState"),
+            [valueField]: readNumber(section, valueField),
+        };
+    },
+    languageTimezone: (section) => {
+        const value = readText(section, "preset");
+        const [language, timeZone] = value.split("|", 2);
+        return {
+            language: parseInt(language, 10),
+            timeZone: String(timeZone || "0"),
+        };
+    },
+    dualToggle: (section) => ({
+        enabled: readCheckbox(section, "enabled"),
+        callCenterOnFall: readCheckbox(section, "callCenterOnFall"),
+    }),
+    fallSensitivityLevels: (section) => ({
+        sensitivityLevel: readNumber(section, "sensitivityLevel"),
+        totalLevels: readNumber(section, "totalLevels"),
+    }),
+    timeRanges: (section) => ({ranges: readTextArray(section, "ranges")}),
+    timeRange: (section) => ({range: readText(section, "range")}),
+    wonlexSleepSettings: (section) => ({
+        switchState: readCheckbox(section, "switchState"),
+        sleepStartTime: readText(section, "sleepStartTime"),
+        sleepEndTime: readText(section, "sleepEndTime"),
+        sleepTarget: readNumber(section, "sleepTarget"),
+    }),
+    wonlexReminderThreshold: (section) => {
+        const valueField = section.querySelector(
+            '[data-config-field="RemindValue"]',
+        )
+            ? "RemindValue"
+            : "reminderValue";
+        return {
+            switchState: readCheckbox(section, "switchState"),
+            [valueField]: readNumber(section, valueField),
+        };
+    },
+    wonlexHeartRateRange: (section) => ({
+        switchState: readCheckbox(section, "switchState"),
+        remindValue: readNumber(section, "remindValue"),
+        exerciseSwitchState: readCheckbox(section, "exerciseSwitchState"),
+        exerciseHRMin: readNumber(section, "exerciseHRMin"),
+        exerciseHRMax: readNumber(section, "exerciseHRMax"),
+        exerciseRemindValue: readNumber(section, "exerciseRemindValue"),
+    }),
+    list: (section) => {
+        const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
+        return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
+    },
+    contacts: (section) => ({contacts: readContacts(section)}),
+    reminders: (section) => readReminders(section),
+    alarms: (section) => ({alarms: readFourPTouchAlarms(section)}),
+    takePills: (section) => readTakePills(section),
+    soundProfile: (section) => ({mode: readNumber(section, "mode")}),
+};
+
+const CONFIG_INPUT_DEFAULTS = {
+    toggle: (entry) => ({[entry.fields?.[0] || "value"]: true}),
+    fallSensitivity: () => ({sensitivity: 2}),
+    number: (entry) => ({[entry.fields?.[0] || "value"]: 0}),
+    phone: (entry) => ({[entry.fields?.[0] || "value"]: ""}),
+    text: (entry) => ({[entry.fields?.[0] || "value"]: ""}),
+    intervalToggle: () => ({enabled: true, intervalMinutes: 60}),
+    intervalHoursToggle: () => ({enabled: true, intervalHours: 2}),
+    workingMode: () => ({mode: 1}),
+    bloodPressure: () => ({systolic: 120, diastolic: 80}),
+    wonlexBloodPressureWarning: () => ({switchState: true, hpWarn: 135, LPWarn: 90}),
+    languageTimezone: () => ({preset: "0|0"}),
+    dualToggle: () => ({enabled: true, callCenterOnFall: false}),
+    fallSensitivityLevels: () => ({sensitivityLevel: 5, totalLevels: 8}),
+    timeRanges: () => ({ranges: ["08:10-09:30"]}),
+    timeRange: () => ({range: "21:10-07:30"}),
+    wonlexSleepSettings: () => ({
+        switchState: true,
+        sleepStartTime: "220000",
+        sleepEndTime: "100000",
+        sleepTarget: 480,
+    }),
+    wonlexReminderThreshold: () => ({switchState: true, reminderValue: 90}),
+    wonlexHeartRateRange: () => ({
+        switchState: true,
+        remindValue: 120,
+        exerciseSwitchState: true,
+        exerciseHRMin: 100,
+        exerciseHRMax: 140,
+        exerciseRemindValue: 140,
+    }),
+    list: () => ({numbers: ["", "", ""]}),
+    contacts: () => ({contacts: [{name: "", phone: ""}]}),
+    reminders: () => ({items: []}),
+    alarms: () => ({alarms: []}),
+    takePills: () => ({
+        reminderSettings: [
+            {time: "08:00", enabled: true, frequency: 1, custom: ""},
+            {time: "09:00", enabled: true, frequency: 1, custom: ""},
+            {time: "10:00", enabled: true, frequency: 1, custom: ""},
+        ],
+        number: 1,
+        reminderText: "",
+        voiceData: "",
+        voiceMimeType: "audio/webm",
+    }),
+    soundProfile: () => ({mode: 1}),
+};
+
+const CONFIG_INPUT_HELP = {
+    list: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
+    contacts: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
+    alarms: () => "até 3 alarmes",
+    requestAction: () => "sem parâmetros",
+    soundProfile: () => "4 modos",
+    whitelistSwitch: () => "ativa os contactos da lista telefónica do BP14",
+};
+
+const CONFIG_INPUT_LABEL = {
+    requestAction: "Ação",
+    soundProfile: "Perfil de som",
+};
+
 export async function catalogForProtocol(protocol) {
     if (!protocol) {
         return [];
@@ -210,42 +441,13 @@ export function renderConfigSection(
 function renderConfigActionButton(key, row, uiState, disabled = false) {
     const state = configButtonState(row, uiState);
     const idleLabel = key === "pushMessage" ? "Enviar mensagem" : "Enviar";
-    const icons = {
-        idle: "fa-paper-plane",
-        submitting: "fa-spinner fa-spin",
-        sent: "fa-check",
-        queued: "fa-list-check",
-        waiting: "fa-hourglass-half",
-        acked: "fa-circle-check",
-        failed: "fa-triangle-exclamation",
-        dropped: "fa-triangle-exclamation",
-    };
-    const labels = {
-        idle: idleLabel,
-        submitting: "A enviar",
-        sent: "Enviado",
-        queued: "Em fila",
-        waiting: "À espera",
-        acked: "Confirmado",
-        failed: "Falhou",
-        dropped: "Falhou",
-    };
-    const classes = {
-        idle: "btn-primary",
-        submitting: "btn-primary",
-        sent: "btn-info",
-        queued: "btn-secondary",
-        waiting: "btn-warning",
-        acked: "btn-success",
-        failed: "btn-danger",
-        dropped: "btn-danger",
-    };
     const isDisabled =
         disabled || ["submitting", "sent", "queued", "waiting"].includes(state);
+    const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;
 
     return `
-        <button type="button" class="btn ${classes[state] || "btn-primary"} btn-sm" data-action="saveConfig" data-config-key="${esc(key)}" ${isDisabled ? "disabled" : ""}>
-            <i class="fa-solid ${icons[state] || "fa-paper-plane"} me-2"></i>${labels[state] || "Enviar"}
+        <button type="button" class="btn ${meta.className} btn-sm" data-action="saveConfig" data-config-key="${esc(key)}" ${isDisabled ? "disabled" : ""}>
+            <i class="fa-solid ${meta.icon} me-2"></i>${state === "idle" ? esc(idleLabel) : esc(meta.label)}
         </button>`;
 }
 
@@ -272,309 +474,17 @@ function configButtonState(_row, uiState) {
 
 export function renderConfigInputs(entry, desired, meta = {}) {
     const input = entry.input || "json";
-    if (input === "toggle") {
-        return toggleInput(entry, desired);
-    }
-    if (input === "fallSensitivity") {
-        return fallSensitivityInput(desired);
-    }
-    if (input === "number") {
-        return numberInput(entry, desired);
-    }
-    if (input === "phone") {
-        return phoneInput(entry, desired);
-    }
-    if (input === "text") {
-        return textInput(entry, desired);
-    }
-    if (input === "pushMessage") {
-        return pushMessageInput(entry, desired);
-    }
-    if (input === "makeCall") {
-        return makeCallInput(entry, desired);
-    }
-    if (input === "resetAction") {
-        return resetActionInput(entry, desired);
-    }
-    if (input === "requestAction") {
-        return requestActionInput(entry);
-    }
-    if (input === "intervalToggle") {
-        return intervalToggleInput(entry, desired);
-    }
-    if (input === "intervalHoursToggle") {
-        return intervalHoursToggleInput(desired);
-    }
-    if (input === "workingMode") {
-        return workingModeInput(desired);
-    }
-    if (input === "bloodPressure") {
-        return bloodPressureInput(desired);
-    }
-    if (input === "wonlexBloodPressureWarning") {
-        return wonlexBloodPressureWarningInput(desired);
-    }
-    if (input === "languageTimezone") {
-        return languageTimezoneInput(desired);
-    }
-    if (input === "dualToggle") {
-        return dualToggleInput(desired);
-    }
-    if (input === "fallSensitivityLevels") {
-        return fallSensitivityLevelsInput(desired);
-    }
-    if (input === "timeRanges") {
-        return timeRangesInput(entry, desired);
-    }
-    if (input === "timeRange") {
-        return timeRangeInput(desired);
-    }
-    if (input === "wonlexSleepSettings") {
-        return wonlexSleepSettingsInput(desired);
-    }
-    if (input === "wonlexReminderThreshold") {
-        return wonlexReminderThresholdInput(entry, desired);
-    }
-    if (input === "wonlexHeartRateRange") {
-        return wonlexHeartRateRangeInput(desired);
-    }
-    if (input === "list") {
-        return listInput(entry, desired, "numbers", "Números SOS");
-    }
-    if (input === "contacts") {
-        return contactsInput(entry, desired);
-    }
-    if (input === "reminders") {
-        return remindersInput(desired);
-    }
-    if (input === "alarms") {
-        return alarmsInput(desired, meta);
-    }
-    if (input === "takePills") {
-        return takePillsInput(desired, meta);
-    }
-    if (input === "soundProfile") {
-        return soundProfileInput(desired);
-    }
-
-    return jsonInput(desired);
+    return CONFIG_INPUT_RENDERERS[input]?.(entry, desired, meta) || jsonInput(desired);
 }
 
 export function readConfigPayload(section) {
     const input = section.dataset.configInput || "json";
-    if (input === "toggle") {
-        const field = firstFieldName(section);
-        return { [field]: readCheckbox(section, field) };
-    }
-    if (input === "fallSensitivity") {
-        return { sensitivity: readNumber(section, "sensitivity") };
-    }
-    if (input === "number") {
-        return {
-            [firstFieldName(section)]: readNumber(
-                section,
-                firstFieldName(section),
-            ),
-        };
-    }
-    if (input === "phone") {
-        return {
-            [firstFieldName(section)]: readPhone(
-                section,
-                firstFieldName(section),
-            ),
-        };
-    }
-    if (input === "text") {
-        return {
-            [firstFieldName(section)]: readText(
-                section,
-                firstFieldName(section),
-            ),
-        };
-    }
-    if (input === "pushMessage") {
-        return { message: readText(section, "message") };
-    }
-    if (input === "makeCall") {
-        return { phone: readPhone(section, "phone") };
-    }
-    if (input === "resetAction") {
-        return {};
-    }
-    if (input === "requestAction") {
-        return {};
-    }
-    if (input === "intervalToggle") {
-        return {
-            enabled: readCheckbox(section, "enabled"),
-            intervalMinutes: readNumber(section, "intervalMinutes"),
-        };
-    }
-    if (input === "intervalHoursToggle") {
-        return {
-            enabled: readCheckbox(section, "enabled"),
-            intervalHours: readNumber(section, "intervalHours"),
-        };
-    }
-    if (input === "workingMode") {
-        const mode = readNumber(section, "mode");
-        const payload = { mode };
-        if (mode === 8) {
-            payload.intervalSeconds = readNumber(section, "intervalSeconds");
-            payload.gpsEnabled = readCheckbox(section, "gpsEnabled");
-        }
-        return payload;
-    }
-    if (input === "bloodPressure") {
-        return {
-            systolic: readNumber(section, "systolic"),
-            diastolic: readNumber(section, "diastolic"),
-        };
-    }
-    if (input === "wonlexBloodPressureWarning") {
-        return {
-            switchState: readCheckbox(section, "switchState"),
-            hpWarn: readNumber(section, "hpWarn"),
-            LPWarn: readNumber(section, "LPWarn"),
-        };
-    }
-    if (input === "languageTimezone") {
-        const value = readText(section, "preset");
-        const [language, timeZone] = value.split("|", 2);
-        return {
-            language: parseInt(language, 10),
-            timeZone: String(timeZone || "0"),
-        };
-    }
-    if (input === "dualToggle") {
-        return {
-            enabled: readCheckbox(section, "enabled"),
-            callCenterOnFall: readCheckbox(section, "callCenterOnFall"),
-        };
-    }
-    if (input === "fallSensitivityLevels") {
-        return {
-            sensitivityLevel: readNumber(section, "sensitivityLevel"),
-            totalLevels: readNumber(section, "totalLevels"),
-        };
-    }
-    if (input === "timeRanges") {
-        return { ranges: readTextArray(section, "ranges") };
-    }
-    if (input === "timeRange") {
-        return { range: readText(section, "range") };
-    }
-    if (input === "wonlexSleepSettings") {
-        return {
-            switchState: readCheckbox(section, "switchState"),
-            sleepStartTime: readText(section, "sleepStartTime"),
-            sleepEndTime: readText(section, "sleepEndTime"),
-            sleepTarget: readNumber(section, "sleepTarget"),
-        };
-    }
-    if (input === "wonlexReminderThreshold") {
-        const valueField = section.querySelector(
-            '[data-config-field="RemindValue"]',
-        )
-            ? "RemindValue"
-            : "reminderValue";
-        return {
-            switchState: readCheckbox(section, "switchState"),
-            [valueField]: readNumber(section, valueField),
-        };
-    }
-    if (input === "wonlexHeartRateRange") {
-        return {
-            switchState: readCheckbox(section, "switchState"),
-            remindValue: readNumber(section, "remindValue"),
-            exerciseSwitchState: readCheckbox(section, "exerciseSwitchState"),
-            exerciseHRMin: readNumber(section, "exerciseHRMin"),
-            exerciseHRMax: readNumber(section, "exerciseHRMax"),
-            exerciseRemindValue: readNumber(section, "exerciseRemindValue"),
-        };
-    }
-    if (input === "list") {
-        const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-        return { numbers: readPhoneArray(section, "numbers").slice(0, limit) };
-    }
-    if (input === "contacts") {
-        return { contacts: readContacts(section) };
-    }
-    if (input === "reminders") {
-        return readReminders(section);
-    }
-    if (input === "alarms") {
-        return { alarms: readFourPTouchAlarms(section) };
-    }
-    if (input === "takePills") {
-        return readTakePills(section);
-    }
-    if (input === "soundProfile") {
-        return { mode: readNumber(section, "mode") };
-    }
-
-    return readJson(section);
+    return CONFIG_INPUT_READERS[input]?.(section) || readJson(section);
 }
 
 export function defaultConfigPayload(entry) {
     const input = entry.input || "json";
-    const field = entry.fields?.[0] || "value";
-    if (input === "toggle") return { [field]: true };
-    if (input === "fallSensitivity") return { sensitivity: 2 };
-    if (input === "number") return { [field]: 0 };
-    if (input === "phone" || input === "text") return { [field]: "" };
-    if (input === "intervalToggle")
-        return { enabled: true, intervalMinutes: 60 };
-    if (input === "intervalHoursToggle")
-        return { enabled: true, intervalHours: 2 };
-    if (input === "workingMode") return { mode: 1 };
-    if (input === "bloodPressure") return { systolic: 120, diastolic: 80 };
-    if (input === "wonlexBloodPressureWarning")
-        return { switchState: true, hpWarn: 135, LPWarn: 90 };
-    if (input === "languageTimezone") return { preset: "0|0" };
-    if (input === "dualToggle")
-        return { enabled: true, callCenterOnFall: false };
-    if (input === "fallSensitivityLevels")
-        return { sensitivityLevel: 5, totalLevels: 8 };
-    if (input === "timeRanges") return { ranges: ["08:10-09:30"] };
-    if (input === "timeRange") return { range: "21:10-07:30" };
-    if (input === "wonlexSleepSettings")
-        return {
-            switchState: true,
-            sleepStartTime: "220000",
-            sleepEndTime: "100000",
-            sleepTarget: 480,
-        };
-    if (input === "wonlexReminderThreshold")
-        return { switchState: true, reminderValue: 90 };
-    if (input === "wonlexHeartRateRange")
-        return {
-            switchState: true,
-            remindValue: 120,
-            exerciseSwitchState: true,
-            exerciseHRMin: 100,
-            exerciseHRMax: 140,
-            exerciseRemindValue: 140,
-        };
-    if (input === "list") return { numbers: ["", "", ""] };
-    if (input === "contacts") return { contacts: [{ name: "", phone: "" }] };
-    if (input === "reminders") return { items: [] };
-    if (input === "alarms") return { alarms: [] };
-    if (input === "takePills")
-        return {
-            reminderSettings: [
-                { time: "08:00", enabled: true, frequency: 1, custom: "" },
-                { time: "09:00", enabled: true, frequency: 1, custom: "" },
-                { time: "10:00", enabled: true, frequency: 1, custom: "" },
-            ],
-            number: 1,
-            reminderText: "",
-            voiceData: "",
-            voiceMimeType: "audio/webm",
-        };
-    if (input === "soundProfile") return { mode: 1 };
-    return {};
+    return CONFIG_INPUT_DEFAULTS[input]?.(entry) || {};
 }
 
 function normalizeDesired(entry, desired, capabilityDesired = null) {
@@ -590,35 +500,16 @@ function emptyConfigurationState(text) {
 }
 
 function configHelp(entry) {
-    if ((entry.input || "") === "list" && (entry.limit || 0) > 0) {
-        return `limite ${entry.limit}`;
+    const input = entry.input || "json";
+    const key = entry.key || "";
+    if (CONFIG_INPUT_HELP[input]) {
+        return CONFIG_INPUT_HELP[input](entry);
     }
-    if ((entry.input || "") === "contacts" && (entry.limit || 0) > 0) {
-        return `limite ${entry.limit}`;
-    }
-    if ((entry.input || "") === "alarms") {
-        return "até 3 alarmes";
-    }
-    if ((entry.input || "") === "requestAction") {
-        return "sem parâmetros";
-    }
-    if ((entry.input || "") === "soundProfile") {
-        return "4 modos";
-    }
-    if ((entry.key || "") === "whitelistSwitch") {
-        return "ativa os contactos da lista telefónica do BP14";
-    }
-    return "";
+    return CONFIG_INPUT_HELP[key]?.(entry) || "";
 }
 
 function configInputLabel(input) {
-    if (input === "requestAction") {
-        return "Ação";
-    }
-    if (input === "soundProfile") {
-        return "Perfil de som";
-    }
-    return titleize(input);
+    return CONFIG_INPUT_LABEL[input] || titleize(input);
 }
 
 function categoryLabel(protocol, category) {

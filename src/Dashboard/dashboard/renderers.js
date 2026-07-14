@@ -8,6 +8,193 @@ import {
     titleize,
 } from "./format.js";
 
+const COMMAND_FEATURE_RULES = [
+    ["heart", "heart_rate"],
+    ["blood pressure", "blood_pressure"],
+    ["oxygen", "blood_oxygen"],
+    ["bo", "blood_oxygen"],
+    ["temp", "temperature"],
+    ["location", "location"],
+    ["sleep", "sleep"],
+    ["ecg", "ecg"],
+    ["hrv", "hrv"],
+    ["weather", "weather"],
+    ["breath", "breath_rate"],
+    ["ppg", "ppg"],
+    ["rr", "rr_interval"],
+];
+
+const ALERT_CARD_TYPES = new Set([
+    "heart_rate",
+    "blood_pressure",
+    "ecg",
+    "hrv",
+]);
+
+const CARD_TONE_BY_TYPE = {
+    blood_oxygen: {border: "info", bg: "bg-info", text: "text-info"},
+    blood_sugar: {border: "warning", bg: "bg-warning", text: "text-warning"},
+    temperature: {border: "warning", bg: "bg-warning", text: "text-warning"},
+    battery: {border: "success", bg: "bg-success", text: "text-success"},
+    activity: {border: "primary", bg: "bg-primary", text: "text-primary"},
+    location: {border: "success", bg: "bg-success", text: "text-success"},
+    heartbeat: {border: "info", bg: "bg-info", text: "text-info"},
+    breath_rate: {border: "info", bg: "bg-info", text: "text-info"},
+    rr_interval: {border: "info", bg: "bg-info", text: "text-info"},
+    sleep: {border: "primary", bg: "bg-primary", text: "text-primary"},
+    weather: {
+        border: "secondary",
+        bg: "bg-secondary",
+        text: "text-secondary",
+    },
+    "ncs.event": {border: "danger", bg: "bg-danger", text: "text-danger"},
+};
+
+const ALERT_CARD_TONE = {border: "danger", bg: "bg-danger", text: "text-danger"};
+
+const REQUEST_CARD_CONTENT_BY_TYPE = {
+    heart_rate: {icon: "fa-heart-pulse", value: "Frequência cardíaca"},
+    blood_pressure: {icon: "fa-stethoscope", value: "Tensão arterial"},
+    blood_oxygen: {icon: "fa-droplet", value: "Oxigénio no sangue"},
+    blood_sugar: {icon: "fa-vial", value: "Glicemia"},
+    temperature: {icon: "fa-temperature-half", value: "Temperatura"},
+    battery: {icon: "fa-battery-three-quarters", value: "Bateria"},
+    activity: {icon: "fa-person-walking", value: "Atividade"},
+    location: {icon: "fa-location-dot", value: "Localização"},
+    sleep: {icon: "fa-bed", value: "Sono"},
+    ecg: {icon: "fa-wave-square", value: "ECG"},
+    hrv: {icon: "fa-chart-line", value: "VFC"},
+    weather: {icon: "fa-cloud-sun", value: "Meteorologia"},
+    breath_rate: {icon: "fa-lungs", value: "Frequência respiratória"},
+    ppg: {icon: "fa-circle-nodes", value: "PPG"},
+    rr_interval: {icon: "fa-stopwatch", value: "Intervalo RR"},
+};
+
+const UPLINK_CARD_RENDERERS = {
+    heart_rate: (data) => ({icon: "fa-heart-pulse", value: `${data.bpm ?? "-"} bpm`}),
+    blood_pressure: (data) => ({
+        icon: "fa-stethoscope",
+        value: `${data.systolicMmHg ?? "-"} / ${data.diastolicMmHg ?? "-"} mmHg`,
+    }),
+    blood_oxygen: (data) => ({
+        icon: "fa-droplet",
+        value: `${data.spo2Percent ?? "-"}% SpO2`,
+    }),
+    blood_sugar: (data) => ({icon: "fa-vial", value: `${data.glucoseMgDl ?? "-"} mg/dL`} ),
+    temperature: (data) => ({
+        icon: "fa-temperature-half",
+        value: `${data.bodyCelsius ?? "-"} °C`,
+    }),
+    battery: (data) => ({
+        icon: "fa-battery-three-quarters",
+        value: `${data.percent ?? "-"}%`,
+        details: batteryDetails(data),
+    }),
+    activity: (data) => ({
+        icon: "fa-person-walking",
+        value: `${data.steps ?? 0} passos`,
+        details: compactDetails(data, [
+            "distanceMeters",
+            "caloriesKcal",
+            "exerciseSeconds",
+            "standMinutes",
+        ]),
+    }),
+    location: (data) => ({
+        icon: "fa-location-dot",
+        value:
+        data.lat && data.lon ? `${data.lat}, ${data.lon}` : "Atualização de localização",
+        details: compactDetails(data, [
+            "source",
+            "gpsValid",
+            "speedKmh",
+            "accuracyMeters",
+        ]),
+    }),
+    alarm: (data) => ({
+        icon: "fa-triangle-exclamation",
+        value: alarmValue(data),
+        details: compactDetails(data, ["code", "lowBattery", "fall", "wearingNotice"]),
+    }),
+    heartbeat: (data) => ({
+        icon: "fa-signal",
+        value: "Sinal de vida",
+        details: compactDetails(data, [
+            "batteryPercent",
+            "gsmSignal",
+            "satelliteCount",
+            "steps",
+            "workMode",
+        ]),
+    }),
+    sleep: () => ({icon: "fa-bed", value: "Dados de sono"}),
+    ecg: () => ({icon: "fa-wave-square", value: "Dados de ECG"}),
+    hrv: () => ({icon: "fa-chart-line", value: "Dados de VFC"}),
+    breath_rate: () => ({
+        icon: "fa-lungs",
+        value: "Dados de frequência respiratória",
+    }),
+    ppg: () => ({icon: "fa-circle-nodes", value: "Dados de PPG"}),
+    rr_interval: (data) => ({
+        icon: "fa-stopwatch",
+        value: "Intervalo RR",
+        details: compactDetails(data, ["intervalMs"]),
+    }),
+    weather: (data) => ({
+        icon: "fa-cloud-sun",
+        value: data.summary || "Dados meteorológicos",
+        details: compactDetails(data, [
+            "temperatureCelsius",
+            "lowCelsius",
+            "highCelsius",
+            "humidityPercent",
+            "reportedAt",
+        ]),
+    }),
+    "ncs.event": (data) => ncsEventContent(data),
+};
+
+const STATUS_BADGE_CLASS = {
+    queued: "text-bg-secondary",
+    sent: "text-bg-primary",
+    waiting: "text-bg-warning",
+    acked: "text-bg-success",
+    failed: "text-bg-danger",
+    dropped: "text-bg-danger",
+};
+
+const STATUS_BADGE_LABEL = {
+    queued: "em fila",
+    sent: "enviado",
+    waiting: "à espera",
+    acked: "confirmado",
+    failed: "falhou",
+    dropped: "descartado",
+    unknown: "desconhecido",
+};
+
+const NCS_EVENT_VALUE = {
+    help_call: "SOS",
+    reset: "Cancelado",
+    general_alert: "Alerta Geral",
+};
+
+const NCS_EVENT_ICON = {
+    reset: "fa-bell-slash",
+    help_call: "fa-triangle-exclamation",
+};
+
+const BATTERY_CHARGING_STATE_LABEL = {
+    1: "A carregar",
+    0: "Não está a carregar",
+};
+
+const ALARM_VALUE_BY_PRIORITY = [
+    ["sos", "SOS"],
+    ["fall", "Queda detetada"],
+    ["lowBattery", "Bateria fraca"],
+];
+
 export function modelImageHtml(modelInfo) {
     const label =
         modelInfo?.commercial_name ||
@@ -44,12 +231,12 @@ export function renderButtonGroup(
 ) {
     container.innerHTML = items.length
         ? items
-              .map((item) => {
-                  const value = String(item[valueKey] ?? "");
-                  const label = String(item[labelKey] ?? value);
-                  return `<button type="button" class="btn btn-sm ${value === selected ? "btn-primary" : "btn-outline-primary"}" data-action="${esc(action)}" data-value="${esc(value)}">${esc(label)}</button>`;
-              })
-              .join("")
+        .map((item) => {
+            const value = String(item[valueKey] ?? "");
+            const label = String(item[labelKey] ?? value);
+            return `<button type="button" class="btn btn-sm ${value === selected ? "btn-primary" : "btn-outline-primary"}" data-action="${esc(action)}" data-value="${esc(value)}">${esc(label)}</button>`;
+        })
+        .join("")
         : '<div class="text-secondary border rounded bg-body-tertiary px-3 py-2 small">Sem opções disponíveis</div>';
 }
 
@@ -61,239 +248,51 @@ export function commandFeature(command) {
     if (command.feature) return command.feature;
     const haystack =
         `${command.command || ""} ${command.label || ""}`.toLowerCase();
-    if (haystack.includes("heart")) return "heart_rate";
-    if (haystack.includes("blood pressure")) return "blood_pressure";
-    if (haystack.includes("oxygen") || haystack.includes("bo"))
-        return "blood_oxygen";
-    if (haystack.includes("temp")) return "temperature";
-    if (haystack.includes("location")) return "location";
-    if (haystack.includes("sleep")) return "sleep";
-    if (haystack.includes("ecg")) return "ecg";
-    if (haystack.includes("hrv")) return "hrv";
-    if (haystack.includes("weather")) return "weather";
-    if (haystack.includes("breath")) return "breath_rate";
-    if (haystack.includes("ppg")) return "ppg";
-    if (haystack.includes("rr")) return "rr_interval";
+    for (const [needle, feature] of COMMAND_FEATURE_RULES) {
+        if (haystack.includes(needle)) return feature;
+    }
     return "device_config";
 }
 
 export function cardTone(type, command = {}) {
     const key = type || commandFeature(command);
-    if (
-        [
-            "heart_rate",
-            "blood_pressure",
-            "blood_pressure_systolic",
-            "blood_pressure_diastolic",
-            "ecg",
-            "hrv",
-        ].includes(key)
-    )
-        return { border: "danger", bg: "bg-danger", text: "text-danger" };
-    if (key === "blood_oxygen")
-        return { border: "info", bg: "bg-info", text: "text-info" };
-    if (key === "blood_sugar")
-        return { border: "warning", bg: "bg-warning", text: "text-warning" };
-    if (key === "temperature")
-        return { border: "warning", bg: "bg-warning", text: "text-warning" };
-    if (key === "battery")
-        return { border: "success", bg: "bg-success", text: "text-success" };
-    if (key === "activity")
-        return { border: "primary", bg: "bg-primary", text: "text-primary" };
-    if (key === "location")
-        return { border: "success", bg: "bg-success", text: "text-success" };
-    if (key === "heartbeat")
-        return { border: "info", bg: "bg-info", text: "text-info" };
-    if (key === "breath_rate")
-        return { border: "info", bg: "bg-info", text: "text-info" };
-    if (key === "rr_interval")
-        return { border: "info", bg: "bg-info", text: "text-info" };
-    if (key === "sleep")
-        return { border: "primary", bg: "bg-primary", text: "text-primary" };
-    if (key === "weather")
-        return {
-            border: "secondary",
-            bg: "bg-secondary",
-            text: "text-secondary",
-        };
-    if (key === "ncs.event")
-        return { border: "danger", bg: "bg-danger", text: "text-danger" };
-    return { border: "secondary", bg: "bg-secondary", text: "text-secondary" };
-}
-
-export function requestCardContent(type) {
-    if (type === "heart_rate")
-        return { icon: "fa-heart-pulse", value: "Frequência cardíaca" };
-    if (type === "blood_pressure")
-        return { icon: "fa-stethoscope", value: "Tensão arterial" };
-    if (type === "blood_pressure_systolic")
-        return { icon: "fa-heart-circle-bolt", value: "Tensão sistólica" };
-    if (type === "blood_pressure_diastolic")
-        return { icon: "fa-stethoscope", value: "Tensão diastólica" };
-    if (type === "blood_oxygen")
-        return { icon: "fa-droplet", value: "Oxigénio no sangue" };
-    if (type === "blood_sugar")
-        return { icon: "fa-vial", value: "Glicemia" };
-    if (type === "temperature")
-        return { icon: "fa-temperature-half", value: "Temperatura" };
-    if (type === "battery")
-        return { icon: "fa-battery-three-quarters", value: "Bateria" };
-    if (type === "activity")
-        return { icon: "fa-person-walking", value: "Atividade" };
-    if (type === "location")
-        return { icon: "fa-location-dot", value: "Localização" };
-    if (type === "sleep") return { icon: "fa-bed", value: "Sono" };
-    if (type === "ecg") return { icon: "fa-wave-square", value: "ECG" };
-    if (type === "hrv") return { icon: "fa-chart-line", value: "VFC" };
-    if (type === "weather")
-        return { icon: "fa-cloud-sun", value: "Meteorologia" };
-    if (type === "breath_rate")
-        return { icon: "fa-lungs", value: "Frequência respiratória" };
-    if (type === "ppg") return { icon: "fa-circle-nodes", value: "PPG" };
-    if (type === "rr_interval")
-        return { icon: "fa-stopwatch", value: "Intervalo RR" };
-    return { icon: "fa-circle-info", value: featureLabel(type) };
-}
-
-export function uplinkCardContent(type, data) {
-    if (type === "heart_rate")
-        return { icon: "fa-heart-pulse", value: `${data.bpm ?? "-"} bpm` };
-    if (type === "blood_pressure")
-        return {
-            icon: "fa-stethoscope",
-            value: `${data.systolicMmHg ?? "-"} / ${data.diastolicMmHg ?? "-"} mmHg`,
-        };
-    if (type === "blood_pressure_systolic")
-        return {
-            icon: "fa-heart-circle-bolt",
-            value: `${data.systolicMmHg ?? "-"} mmHg`,
-        };
-    if (type === "blood_pressure_diastolic")
-        return {
-            icon: "fa-stethoscope",
-            value: `${data.diastolicMmHg ?? "-"} mmHg`,
-        };
-    if (type === "blood_oxygen")
-        return {
-            icon: "fa-droplet",
-            value: `${data.spo2Percent ?? "-"}% SpO2`,
-        };
-    if (type === "blood_sugar")
-        return { icon: "fa-vial", value: `${data.glucoseMgDl ?? "-"} mg/dL` };
-    if (type === "temperature")
-        return {
-            icon: "fa-temperature-half",
-            value: `${data.bodyCelsius ?? "-"} °C`,
-        };
-    if (type === "battery")
-        return {
-            icon: "fa-battery-three-quarters",
-            value: `${data.percent ?? "-"}%`,
-            details: batteryDetails(data),
-        };
-    if (type === "activity")
-        return {
-            icon: "fa-person-walking",
-            value: `${data.steps ?? 0} passos`,
-            details: compactDetails(data, [
-                "distanceMeters",
-                "caloriesKcal",
-                "exerciseSeconds",
-                "standMinutes",
-            ]),
-        };
-    if (type === "location")
-        return {
-            icon: "fa-location-dot",
-            value:
-                data.lat && data.lon
-                    ? `${data.lat}, ${data.lon}`
-                    : "Atualização de localização",
-            details: compactDetails(data, [
-                "source",
-                "gpsValid",
-                "speedKmh",
-                "accuracyMeters",
-            ]),
-        };
-    if (type === "alarm")
-        return {
-            icon: "fa-triangle-exclamation",
-            value: alarmValue(data),
-            details: compactDetails(data, [
-                "code",
-                "lowBattery",
-                "fall",
-                "wearingNotice",
-            ]),
-        };
-    if (type === "heartbeat")
-        return {
-            icon: "fa-signal",
-            value: "Sinal de vida",
-            details: compactDetails(data, [
-                "batteryPercent",
-                "gsmSignal",
-                "satelliteCount",
-                "steps",
-                "workMode",
-            ]),
-        };
-    if (type === "sleep") return { icon: "fa-bed", value: "Dados de sono" };
-    if (type === "ecg")
-        return { icon: "fa-wave-square", value: "Dados de ECG" };
-    if (type === "hrv") return { icon: "fa-chart-line", value: "Dados de VFC" };
-    if (type === "breath_rate")
-        return { icon: "fa-lungs", value: "Dados de frequência respiratória" };
-    if (type === "ppg")
-        return { icon: "fa-circle-nodes", value: "Dados de PPG" };
-    if (type === "rr_interval")
-        return {
-            icon: "fa-stopwatch",
-            value: "Intervalo RR",
-            details: compactDetails(data, ["intervalMs"]),
-        };
-    if (type === "weather")
-        return {
-            icon: "fa-cloud-sun",
-            value: data.summary || "Dados meteorológicos",
-            details: compactDetails(data, [
-                "temperatureCelsius",
-                "lowCelsius",
-                "highCelsius",
-                "humidityPercent",
-                "reportedAt",
-            ]),
-        };
-    if (type === "ncs.event") return ncsEventContent(data);
-    return {
-        icon: "fa-circle-info",
-        value: featureLabel(type),
-        details: compactDetails(data, Object.keys(data).slice(0, 4)),
+    if (ALERT_CARD_TYPES.has(key)) {
+        return ALERT_CARD_TONE;
+    }
+    return CARD_TONE_BY_TYPE[key] || {
+        border: "secondary",
+        bg: "bg-secondary",
+        text: "text-secondary",
     };
 }
 
+export function requestCardContent(type) {
+    return REQUEST_CARD_CONTENT_BY_TYPE[type] || {
+        icon: "fa-circle-info",
+        value: featureLabel(type),
+    };
+}
+
+export function uplinkCardContent(type, data) {
+    return (
+        UPLINK_CARD_RENDERERS[type]?.(data) || {
+            icon: "fa-circle-info",
+            value: featureLabel(type),
+            details: compactDetails(data, Object.keys(data).slice(0, 4)),
+        }
+    );
+}
+
 function ncsEventContent(data) {
-    const value =
-        data.event === "help_call"
-            ? "SOS"
-            : data.event === "reset"
-              ? "Cancelado"
-              : data.event === "general_alert"
-                ? "Alerta Geral"
-                : featureLabel(data.event);
-    const icon =
-        data.event === "reset"
-            ? "fa-bell-slash"
-            : data.event === "help_call"
-              ? "fa-triangle-exclamation"
-              : "fa-bell";
+    const value = NCS_EVENT_VALUE[data.event] || featureLabel(data.event);
+    const icon = NCS_EVENT_ICON[data.event] || "fa-bell";
     return { icon, value };
 }
 
 function batteryDetails(data) {
-    if (data.chargingState === 1) return "A carregar";
-    if (data.chargingState === 0) return "Não está a carregar";
+    if (BATTERY_CHARGING_STATE_LABEL[data.chargingState]) {
+        return BATTERY_CHARGING_STATE_LABEL[data.chargingState];
+    }
     return compactDetails(data, ["batteryType"]);
 }
 
@@ -313,7 +312,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         .map(rowPayload)
         .filter(
             (payload) =>
-                payload && telemetryTypes.includes(String(payload.type || "")),
+            payload && telemetryTypes.includes(String(payload.type || "")),
         )
         .sort((a, b) => eventTime(b) - eventTime(a))[0];
 
@@ -347,43 +346,19 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
 }
 
 function requestTelemetryTypes(type) {
-    if (
-        type === "blood_pressure_systolic" ||
-        type === "blood_pressure_diastolic"
-    ) {
-        return ["blood_pressure"];
-    }
-
     return [type];
 }
 
 export function statusBadge(status) {
-    const cls =
-        {
-            queued: "text-bg-secondary",
-            sent: "text-bg-primary",
-            waiting: "text-bg-warning",
-            acked: "text-bg-success",
-            failed: "text-bg-danger",
-            dropped: "text-bg-danger",
-        }[status] || "text-bg-light";
-    const label =
-        {
-            queued: "em fila",
-            sent: "enviado",
-            waiting: "à espera",
-            acked: "confirmado",
-            failed: "falhou",
-            dropped: "descartado",
-            unknown: "desconhecido",
-        }[status] || titleize(status).toLowerCase();
+    const cls = STATUS_BADGE_CLASS[status] || "text-bg-light";
+    const label = STATUS_BADGE_LABEL[status] || titleize(status).toLowerCase();
     return `<span class="badge ${cls}">${esc(label)}</span>`;
 }
 
 function alarmValue(data) {
-    if (data.sos) return "SOS";
-    if (data.fall) return "Queda detetada";
-    if (data.lowBattery) return "Bateria fraca";
+    for (const [key, label] of ALARM_VALUE_BY_PRIORITY) {
+        if (data[key]) return label;
+    }
     return "Alarme";
 }
 
@@ -391,9 +366,9 @@ function compactDetails(data, keys) {
     return keys
         .filter(
             (key) =>
-                data[key] !== undefined &&
-                data[key] !== null &&
-                data[key] !== "",
+            data[key] !== undefined &&
+            data[key] !== null &&
+            data[key] !== "",
         )
         .map((key) => `${esc(fieldLabel(key))}: ${esc(data[key])}`)
         .join(" · ");

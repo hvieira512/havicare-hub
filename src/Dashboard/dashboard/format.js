@@ -39,8 +39,6 @@ export const featureLabel = (type) =>
     ({
         heart_rate: "Frequência cardíaca",
         blood_pressure: "Tensão arterial",
-        blood_pressure_systolic: "Tensão arterial sistólica",
-        blood_pressure_diastolic: "Tensão arterial diastólica",
         blood_oxygen: "Oxigénio no sangue",
         blood_sugar: "Glicemia",
         temperature: "Temperatura",
