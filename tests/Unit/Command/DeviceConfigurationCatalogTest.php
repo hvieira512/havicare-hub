@@ -52,6 +52,82 @@ final class DeviceConfigurationCatalogTest extends TestCase
         );
     }
 
+    public function testVivistarAlarmClockAcceptsPublicRecurrencePayload(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'alarm_clock', [
+            'items' => [
+                [
+                    'time' => '09:00',
+                    'enabled' => true,
+                    'type' => 2,
+                    'recurrence' => ['kind' => 'custom', 'days' => [2]],
+                ],
+            ],
+        ]);
+
+        self::assertSame('BP85', $payload['command']);
+        self::assertSame(['1', '1', '0900,2,1,2'], $payload['payload']['fields'] ?? []);
+    }
+
+    public function testVivistarAlarmClockRejectsMissingType(): void
+    {
+        self::assertSame(
+            'type is required',
+            DeviceConfigurationCatalog::validate('vivistar-iw', 'alarm_clock', [
+                'items' => [
+                    [
+                        'time' => '09:00',
+                        'enabled' => true,
+                        'recurrence' => ['kind' => 'custom', 'days' => [1]],
+                    ],
+                ],
+            ])
+        );
+    }
+
+    public function testVivistarAlarmClockOnceDoesNotRequireDays(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'alarm_clock', [
+            'items' => [
+                [
+                    'time' => '09:00',
+                    'enabled' => true,
+                    'type' => 1,
+                    'recurrence' => ['kind' => 'once'],
+                ],
+            ],
+        ]);
+
+        self::assertSame('BP85', $payload['command']);
+        self::assertSame(['1', '1', '0900,,1,1'], $payload['payload']['fields'] ?? []);
+    }
+
+    public function testFourPTouchAlarmClockRejectsType(): void
+    {
+        self::assertSame(
+            'type is not supported for four-p-touch alarm_clock',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'alarm_clock', [
+                'items' => [
+                    [
+                        'time' => '09:00',
+                        'enabled' => true,
+                        'type' => 1,
+                        'recurrence' => ['kind' => 'once'],
+                    ],
+                ],
+            ])
+        );
+    }
+
+    public function testPublicAlarmClockAliasMapsToGenericCapability(): void
+    {
+        self::assertSame('alarm_clock', GenericModelCapabilityCatalog::mapConfigurationKey('alarm_clock'));
+
+        $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'reminders');
+        self::assertIsArray($config);
+        self::assertSame('reminders', $config['key'] ?? null);
+    }
+
     public function testWonlexLocationIntervalBuildsJsonPayload(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'locationInterval', ['intervalTime' => 300]);
@@ -645,7 +721,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testFourPTouchAlarmClockRejectsInvalidCustomMask(): void
     {
         self::assertSame(
-            'alarm_clock recurrence days must be a 7-digit 0/1 mask',
+            'alarm custom days must be a 7-digit 0/1 mask',
             DeviceConfigurationCatalog::validate('four-p-touch', 'alarmClock', [
                 'alarms' => [
                     ['time' => '08:10', 'enabled' => true, 'frequency' => 3, 'custom' => '111110'],

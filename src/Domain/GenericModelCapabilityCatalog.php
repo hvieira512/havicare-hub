@@ -241,6 +241,7 @@ final class GenericModelCapabilityCatalog
         $key = trim($key);
 
         return match ($key) {
+            'alarm_clock' => 'alarm_clock',
             'alarmClock', 'reminders' => 'alarm_clock',
             'takePills' => 'medication_reminders',
             'dnMedicationPlan' => 'medication_reminders',

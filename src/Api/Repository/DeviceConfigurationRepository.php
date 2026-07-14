@@ -12,7 +12,12 @@ final class DeviceConfigurationRepository
 
     public function allForImei(string $imei): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM device_configurations WHERE imei = ? ORDER BY config_key');
+        $stmt = $this->pdo->prepare('
+            SELECT *
+            FROM device_configurations
+            WHERE imei = ?
+            ORDER BY desired_updated_at ASC, reported_at ASC, config_key ASC
+        ');
         $stmt->execute([$imei]);
 
         return array_map([$this, 'normalizeRow'], $stmt->fetchAll());

@@ -1127,13 +1127,13 @@ function handleDeviceConfigClick(event) {
         return;
     }
 
-    if (button.dataset.action === "addReminderRow") {
-        appendReminderRow(section);
+    if (button.dataset.action === "addAlarmClockRow") {
+        appendAlarmClockRow(section);
         return;
     }
 
-    if (button.dataset.action === "removeReminderRow") {
-        removeConfigRow(button.closest('[data-repeat-row="reminders"]'));
+    if (button.dataset.action === "removeAlarmClockRow") {
+        removeConfigRow(button.closest('[data-repeat-row="alarm_clock"]'));
         return;
     }
 
@@ -1221,6 +1221,13 @@ function handleDeviceConfigChange(event) {
         const alarmRow = event.target.closest("[data-fourptouch-alarm-row]");
         if (alarmRow) {
             syncFourPTouchAlarmCustomVisibility(alarmRow);
+        }
+    }
+
+    if (event.target.matches('[data-alarm-clock-field="recurrenceKind"]')) {
+        const row = event.target.closest('[data-repeat-row="alarm_clock"]');
+        if (row) {
+            syncAlarmClockCustomVisibility(row);
         }
     }
 
@@ -1933,11 +1940,45 @@ function appendContactRow(section) {
     list.appendChild(clone);
 }
 
-function appendReminderRow(section) {
-    const list = section.querySelector("[data-reminders-list]");
+function appendAlarmClockRow(section) {
+    const list = section.querySelector("[data-alarm-clock-list]");
     if (!list) return;
 
-    const clone = createReminderRow();
+    const template = list.querySelector('[data-repeat-row="alarm_clock"]');
+    if (!template) return;
+
+    const clone = template.cloneNode(true);
+    clone.querySelectorAll("input, select").forEach((input) => {
+        if (input.matches('[data-alarm-clock-field="enabled"]')) {
+            input.checked = true;
+            return;
+        }
+
+        if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
+            input.checked = String(input.value || "").trim().toLowerCase() === "once";
+            return;
+        }
+
+        if (input.matches('[data-alarm-clock-field="type"]')) {
+            input.checked = input.value === "1";
+            return;
+        }
+
+        if (input.type === "checkbox") {
+            input.checked = false;
+            return;
+        }
+
+        input.value = "";
+    });
+
+    syncAlarmClockCustomVisibility(clone);
+    const switchLabel = clone.querySelector('[data-alarm-clock-field="enabled"]')
+        ?.parentElement?.querySelector("[data-switch-label]");
+    if (switchLabel) {
+        switchLabel.textContent = "Ligado";
+    }
+
     list.appendChild(clone);
 }
 
@@ -1947,6 +1988,18 @@ function removeConfigRow(row) {
     if (!parent) return;
     if (parent.children.length <= 1) {
         row.querySelectorAll("input, select").forEach((input) => {
+            if (input.matches('[data-alarm-clock-field="enabled"]')) {
+                input.checked = true;
+                return;
+            }
+            if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
+                input.checked = String(input.value || "").trim().toLowerCase() === "once";
+                return;
+            }
+            if (input.matches('[data-alarm-clock-field="type"]')) {
+                input.checked = input.value === "1";
+                return;
+            }
             if (input.type === "checkbox") {
                 input.checked = false;
             } else if (input.matches("[data-phone-country]")) {
@@ -1955,10 +2008,22 @@ function removeConfigRow(row) {
                 input.value = "";
             }
         });
+        syncAlarmClockCustomVisibility(row);
         resetPhoneControls(row);
         return;
     }
     row.remove();
+}
+
+function syncAlarmClockCustomVisibility(row) {
+    const customWrapper = row?.querySelector("[data-alarm-clock-custom-wrapper]");
+    if (!customWrapper) return;
+
+    const recurrence = row.querySelector('[data-alarm-clock-field="recurrenceKind"]:checked');
+    customWrapper.classList.toggle(
+        "d-none",
+        String(recurrence?.value || "").trim().toLowerCase() !== "custom",
+    );
 }
 
 function createContactRow() {
@@ -1978,68 +2043,6 @@ function createContactRow() {
             </div>
         </div>`;
     resetPhoneControls(wrapper);
-    return wrapper;
-}
-
-function createReminderRow() {
-    const uid = `reminder-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
-    const wrapper = document.createElement("div");
-    wrapper.className = "border rounded p-3 bg-body";
-    wrapper.dataset.repeatRow = "reminders";
-    wrapper.innerHTML = `
-        <div class="row g-3 align-items-end">
-            <div class="col-sm-6 col-lg-2">
-                <label class="form-label form-label-sm">Hora</label>
-                <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-repeat-field="time">
-            </div>
-            <div class="col-sm-6 col-lg-2">
-                <div class="form-check form-switch mt-4">
-                    <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" checked>
-                    <label class="form-check-label" data-switch-label>Ligado</label>
-                </div>
-            </div>
-            <div class="col-12 col-lg-4">
-                <label class="form-label form-label-sm d-block">Dias</label>
-                <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias da semana">
-                    <input class="btn-check" type="checkbox" id="${uid}-day-1" data-repeat-field="days" value="1">
-                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-1">Seg</label>
-                    <input class="btn-check" type="checkbox" id="${uid}-day-2" data-repeat-field="days" value="2">
-                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-2">Ter</label>
-                    <input class="btn-check" type="checkbox" id="${uid}-day-3" data-repeat-field="days" value="3">
-                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-3">Qua</label>
-                    <input class="btn-check" type="checkbox" id="${uid}-day-4" data-repeat-field="days" value="4">
-                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-4">Qui</label>
-                    <input class="btn-check" type="checkbox" id="${uid}-day-5" data-repeat-field="days" value="5">
-                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-5">Sex</label>
-                    <input class="btn-check" type="checkbox" id="${uid}-day-6" data-repeat-field="days" value="6">
-                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-6">Sab</label>
-                    <input class="btn-check" type="checkbox" id="${uid}-day-7" data-repeat-field="days" value="7">
-                    <label class="btn btn-outline-secondary btn-sm" for="${uid}-day-7">Dom</label>
-                </div>
-            </div>
-            <div class="col-12 col-lg-3">
-                <label class="form-label form-label-sm d-block">Tipo</label>
-                <div class="row g-2" role="group" aria-label="Tipo de lembrete">
-                    <div class="col-12">
-                        <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-1" data-repeat-field="type" value="1" checked>
-                        <label class="btn btn-outline-primary btn-sm w-100 text-start" for="${uid}-type-1"><i class="fa-solid fa-pills me-1"></i>Medicação</label>
-                    </div>
-                    <div class="col-12">
-                        <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-2" data-repeat-field="type" value="2">
-                        <label class="btn btn-outline-info btn-sm w-100 text-start" for="${uid}-type-2"><i class="fa-solid fa-glass-water me-1"></i>Água</label>
-                    </div>
-                    <div class="col-12">
-                        <input class="btn-check" type="radio" name="${uid}-type" id="${uid}-type-3" data-repeat-field="type" value="3">
-                        <label class="btn btn-outline-warning btn-sm w-100 text-start" for="${uid}-type-3"><i class="fa-solid fa-person-walking me-1"></i>Sedentarismo</label>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-lg-1 d-flex justify-content-lg-end">
-                <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeReminderRow" title="Remover" aria-label="Remover">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </div>
-        </div>`;
     return wrapper;
 }
 

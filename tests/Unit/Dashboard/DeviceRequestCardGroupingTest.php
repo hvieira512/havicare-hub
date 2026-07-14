@@ -34,14 +34,11 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('const title = isSystemRequestCard', $renderersSource);
         self::assertStringContainsString('btn btn-primary btn-sm w-100', $renderersSource);
         self::assertStringContainsString('const buttonRowHtml = buttonHtml', $renderersSource);
-        self::assertStringContainsString('mt-2 d-grid gap-2 min-w-0', $renderersSource);
+        self::assertStringContainsString('mt-3 d-grid gap-2 min-w-0', $renderersSource);
         self::assertStringNotContainsString('mb-2 min-w-0', $renderersSource);
-        self::assertStringContainsString('if (type === "battery")', $renderersSource);
-        self::assertStringContainsString('icon: "fa-battery-three-quarters"', $renderersSource);
-        self::assertStringContainsString('if (type === "activity")', $renderersSource);
-        self::assertStringContainsString('icon: "fa-person-walking"', $renderersSource);
-        self::assertStringContainsString('if (type === "blood_sugar")', $renderersSource);
-        self::assertStringContainsString('icon: "fa-vial"', $renderersSource);
+        self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);
+        self::assertStringContainsString('activity: {icon: "fa-person-walking"', $renderersSource);
+        self::assertStringContainsString('blood_sugar: {icon: "fa-vial"', $renderersSource);
     }
 
     public function testFourPTouchSettingsModalUsesNativeEditors(): void
@@ -51,8 +48,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
         );
 
         self::assertIsString($source);
-        self::assertStringContainsString('if (input === "requestAction")', $source);
-        self::assertStringContainsString('if (input === "soundProfile")', $source);
+        self::assertStringContainsString('requestAction: (entry) => requestActionInput(entry),', $source);
+        self::assertStringContainsString('soundProfile: (_entry, desired) => soundProfileInput(desired),', $source);
         self::assertStringContainsString('function requestActionInput(entry)', $source);
         self::assertStringContainsString('function soundProfileInput(desired)', $source);
         self::assertStringContainsString('function isFourPTouchAlarmDaySelected(mask, day)', $source);
@@ -75,5 +72,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('Silêncio', $source);
         self::assertStringContainsString('sem parâmetros', $source);
         self::assertStringContainsString('4 modos', $source);
+        self::assertStringContainsString('alarm_clock', $source);
+        self::assertStringContainsString('data-alarm-clock-list', $source);
+        self::assertStringContainsString('data-alarm-clock-field="recurrenceKind"', $source);
+        self::assertStringContainsString('data-action="addAlarmClockRow"', $source);
+        self::assertStringNotContainsString('data-reminders-list', $source);
+        self::assertStringNotContainsString('addReminderRow', $source);
+        self::assertStringNotContainsString('removeReminderRow', $source);
     }
 }

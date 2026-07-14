@@ -37,6 +37,7 @@ final class DeviceConfigurationCatalog
 
     public static function configForProtocol(string $protocol, string $key): ?array
     {
+        $key = self::resolvePublicKeyAlias($protocol, $key);
         foreach (self::configsForProtocol($protocol) as $entry) {
             if (($entry['key'] ?? '') === $key) {
                 return $entry;
@@ -62,6 +63,7 @@ final class DeviceConfigurationCatalog
      */
     public static function commandPayload(string $protocol, string $key, array $payload): array
     {
+        $key = self::resolvePublicKeyAlias($protocol, $key);
         $entry = self::configForProtocol($protocol, $key);
         if ($entry === null) {
             throw new \InvalidArgumentException("Unsupported {$protocol} configuration {$key}");
@@ -80,6 +82,7 @@ final class DeviceConfigurationCatalog
 
     public static function validate(string $protocol, string $key, array $payload): ?string
     {
+        $key = self::resolvePublicKeyAlias($protocol, $key);
         if (self::configForProtocol($protocol, $key) === null) {
             return "Unsupported {$protocol} configuration {$key}";
         }
@@ -91,6 +94,20 @@ final class DeviceConfigurationCatalog
         }
 
         return null;
+    }
+
+    private static function resolvePublicKeyAlias(string $protocol, string $key): string
+    {
+        $key = trim($key);
+        if ($key === 'alarm_clock') {
+            return match ($protocol) {
+                'vivistar-iw' => 'reminders',
+                'four-p-touch' => 'alarmClock',
+                default => $key,
+            };
+        }
+
+        return $key;
     }
 
     private static function wonlexPayload(string $key, array $payload): array
@@ -279,20 +296,76 @@ final class DeviceConfigurationCatalog
             if (!is_string($time) || strlen($time) !== 4) {
                 throw new \InvalidArgumentException('reminder time must be HH:mm or HHmm');
             }
-            $days = preg_replace('/[^0-9]/', '', (string)($item['days'] ?? ''));
-            if ($days === '') {
+            $enabled = self::boolInt($item['enabled'] ?? true, 'enabled');
+            if (!array_key_exists('type', $item) || trim((string)($item['type'] ?? '')) === '') {
+                throw new \InvalidArgumentException('type is required');
+            }
+            $type = self::rangeInt($item['type'], 1, 3, 'type');
+            $days = self::vivistarReminderDays($item);
+            if (($item['recurrence']['kind'] ?? null) === 'custom' && $days === '') {
                 throw new \InvalidArgumentException('reminder days is required');
             }
-            $enabled = self::boolInt($item['enabled'] ?? true, 'enabled');
-            $type = self::rangeInt($item['type'] ?? null, 1, 3, 'type');
             $entries[] = "{$time},{$days},{$enabled},{$type}";
         }
 
         return [
-            self::boolInt($payload['masterEnabled'] ?? null, 'masterEnabled'),
+            self::boolInt($payload['masterEnabled'] ?? true, 'masterEnabled'),
             count($entries),
             implode('@', $entries),
         ];
+    }
+
+    private static function vivistarReminderDays(array $item): string
+    {
+        $recurrence = is_array($item['recurrence'] ?? null) ? $item['recurrence'] : [];
+        $kind = strtolower(trim((string)($recurrence['kind'] ?? '')));
+
+        if ($kind === 'daily') {
+            return '1234567';
+        }
+
+        if ($kind === 'custom') {
+            $daysValue = $recurrence['days'] ?? $item['days'] ?? $item['custom'] ?? '';
+            if (is_array($daysValue)) {
+                return self::formatAlarmClockDayList($daysValue);
+            }
+
+            $days = preg_replace('/[^0-9]/', '', (string)$daysValue);
+            if ($days !== '') {
+                return $days;
+            }
+        }
+
+        if ($kind === 'once') {
+            return '';
+        }
+
+        $days = preg_replace('/[^0-9]/', '', (string)($item['days'] ?? ''));
+        if ($days !== '') {
+            return $days;
+        }
+
+        return '';
+    }
+
+    /**
+     * @param list<mixed> $days
+     */
+    private static function formatAlarmClockDayList(array $days): string
+    {
+        $normalized = [];
+        foreach ($days as $day) {
+            $value = (int)$day;
+            if ($value < 1 || $value > 7) {
+                continue;
+            }
+            $normalized[$value] = true;
+        }
+
+        $ordered = array_keys($normalized);
+        sort($ordered, SORT_NUMERIC);
+
+        return implode('', array_map('strval', $ordered));
     }
 
     /**
@@ -898,7 +971,7 @@ final class DeviceConfigurationCatalog
      */
     private static function fourPTouchAlarmClockPayload(array $payload): array
     {
-        $alarms = $payload['alarms'] ?? $payload['alarmClock'] ?? null;
+        $alarms = $payload['items'] ?? $payload['alarms'] ?? $payload['alarmClock'] ?? null;
         if (is_string($alarms) && trim($alarms) !== '') {
             $alarms = self::fourPTouchAlarmClockListFromString($alarms);
         }
@@ -962,15 +1035,29 @@ final class DeviceConfigurationCatalog
             throw new \InvalidArgumentException('each alarm item must be an object or string');
         }
 
+        if (array_key_exists('type', $value) && trim((string)($value['type'] ?? '')) !== '') {
+            throw new \InvalidArgumentException('type is not supported for four-p-touch alarm_clock');
+        }
+
         $time = self::fourPTouchAlarmClockTime(
             self::requiredString($value['time'] ?? $value['alarmTime'] ?? null, 'alarm time'),
         );
         $enabled = self::boolInt($value['enabled'] ?? $value['switchState'] ?? null, 'alarm enabled');
-        $frequency = self::rangeInt($value['frequency'] ?? $value['mode'] ?? $value['reminderFrequency'] ?? null, 1, 3, 'alarm frequency');
+        $recurrence = is_array($value['recurrence'] ?? null) ? $value['recurrence'] : [];
+        $kind = strtolower(trim((string)($recurrence['kind'] ?? '')));
+        if ($kind === 'daily') {
+            $frequency = 2;
+        } elseif ($kind === 'custom') {
+            $frequency = 3;
+        } elseif ($kind === 'once') {
+            $frequency = 1;
+        } else {
+            $frequency = self::rangeInt($value['frequency'] ?? $value['mode'] ?? $value['reminderFrequency'] ?? null, 1, 3, 'alarm frequency');
+        }
 
         if ($frequency === 3) {
             $custom = self::fourPTouchAlarmClockDays(
-                $value['custom'] ?? $value['days'] ?? $value['reminderCustom'] ?? null,
+                $recurrence['days'] ?? $value['custom'] ?? $value['days'] ?? $value['reminderCustom'] ?? null,
                 'alarm custom days',
             );
 
@@ -1008,12 +1095,42 @@ final class DeviceConfigurationCatalog
 
     private static function fourPTouchAlarmClockDays(mixed $value, string $field): string
     {
+        if (is_array($value)) {
+            $days = self::fourPTouchAlarmClockDayMaskFromList($value);
+            if ($days !== '') {
+                return $days;
+            }
+        }
+
         $days = trim((string)$value);
         if (preg_match('/^[01]{7}$/', $days) !== 1) {
+            if (preg_match('/^[1-7]+$/', $days) === 1) {
+                return self::fourPTouchAlarmClockDayMaskFromList(str_split($days));
+            }
         throw new \InvalidArgumentException("{$field} must be a 7-digit 0/1 mask");
         }
 
         return $days;
+    }
+
+    /**
+     * @param list<mixed> $days
+     */
+    private static function fourPTouchAlarmClockDayMaskFromList(array $days): string
+    {
+        $mask = array_fill(0, 7, '0');
+        foreach ($days as $day) {
+            $value = (int)$day;
+            if ($value === 7) {
+                $mask[0] = '1';
+                continue;
+            }
+            if ($value >= 1 && $value <= 6) {
+                $mask[$value] = '1';
+            }
+        }
+
+        return implode('', $mask);
     }
 
     /**

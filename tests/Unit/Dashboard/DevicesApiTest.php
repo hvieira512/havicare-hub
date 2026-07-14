@@ -423,9 +423,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
         self::assertSame(
             [
-                ['value' => 1, 'label' => 'Uma vez'],
-                ['value' => 2, 'label' => 'Todos os dias'],
-                ['value' => 3, 'label' => 'Personalizado'],
+                ['value' => 'once', 'label' => 'Uma vez'],
+                ['value' => 'daily', 'label' => 'Todos os dias'],
+                ['value' => 'custom', 'label' => 'Personalizado'],
             ],
             $response['capabilities']['alarms']['alarm_clock']['_meta']['recurrence']['options'] ?? null
         );
@@ -516,6 +516,122 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ],
             $response['configurations']['alarm_clock'] ?? null
         );
+    }
+
+    public function testConfigurationPutAcceptsVivistarAlarmClockOnceWithoutDays(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'alarm_clock' => [
+                    'items' => [
+                        [
+                            'time' => '09:00',
+                            'enabled' => true,
+                            'type' => 1,
+                            'recurrence' => ['kind' => 'once'],
+                        ],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('reminders', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('0900,,1,1', $submitted[0]['bytes']);
+        self::assertSame(
+            [
+                'items' => [
+                    [
+                        'time' => '09:00',
+                        'enabled' => true,
+                        'type' => 1,
+                        'recurrence' => ['kind' => 'once'],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock'] ?? null
+        );
+    }
+
+    public function testShowMapsVivistarEmptyDaysToOnceRecurrence(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'reminders',
+            'vivistar-iw',
+            'Vivistar',
+            'L08 Pro',
+            'BP85',
+            [
+                'items' => [
+                    [
+                        'time' => '09:00',
+                        'enabled' => true,
+                        'type' => 1,
+                        'days' => '',
+                    ],
+                ],
+            ]
+        );
+
+        $response = $api->show('861265061009822');
+
+        self::assertSame(
+            [
+                [
+                    'time' => '09:00',
+                    'enabled' => true,
+                    'type' => 1,
+                    'recurrence' => ['kind' => 'once'],
+                ],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
+        );
+    }
+
+    public function testConfigurationPutRejectsVivistarAlarmClockWithoutType(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'alarm_clock' => [
+                    'items' => [
+                        [
+                            'time' => '08:10',
+                            'enabled' => true,
+                            'recurrence' => ['kind' => 'custom', 'days' => [1, 3, 5]],
+                        ],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame('type is required', $response['error']['message'] ?? null);
     }
 
     public function testShowReturnsAbsoluteModelImageUrl(): void
@@ -697,6 +813,138 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('REMIND,08:10-1-1,14:30-0-2,18:00-1-3-0111110', $submitted[0]['bytes']);
     }
 
+    public function testShowPrefersLatestVivistarAlarmClockRowOverLegacyAlias(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'alarm_clock',
+            'vivistar-iw',
+            'Vivistar',
+            'L08 Pro',
+            'BP85',
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'days' => '1',
+                        'enabled' => true,
+                        'type' => 1,
+                    ],
+                ],
+            ],
+            'queued',
+            'legacy-1'
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'reminders',
+            'vivistar-iw',
+            'Vivistar',
+            'L08 Pro',
+            'BP85',
+            [
+                'items' => [
+                    [
+                        'time' => '09:30',
+                        'days' => '24',
+                        'enabled' => true,
+                        'type' => 2,
+                    ],
+                ],
+            ],
+            'queued',
+            'native-1'
+        );
+
+        $response = $api->show('861265061009822');
+
+        self::assertSame(
+            [
+                [
+                    'time' => '09:30',
+                    'enabled' => true,
+                    'type' => 2,
+                    'recurrence' => [
+                        'kind' => 'custom',
+                        'days' => [2, 4],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock']['items'] ?? null
+        );
+    }
+
+    public function testShowPrefersLatestFourPTouchAlarmClockRowOverLegacyAlias(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'alarm_clock',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'REMIND',
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'enabled' => true,
+                        'recurrence' => ['kind' => 'once'],
+                    ],
+                ],
+            ],
+            'queued',
+            'legacy-1'
+        );
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'alarmClock',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'REMIND',
+            [
+                'alarms' => [
+                    [
+                        'time' => '10:45',
+                        'enabled' => false,
+                        'frequency' => 3,
+                        'custom' => '0111110',
+                    ],
+                ],
+            ],
+            'queued',
+            'native-1'
+        );
+
+        $response = $api->show('868017032159118');
+
+        self::assertSame(
+            [
+                [
+                    'time' => '10:45',
+                    'enabled' => false,
+                    'recurrence' => [
+                        'kind' => 'custom',
+                        'days' => [1, 2, 3, 4, 5],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock']['items'] ?? null
+        );
+    }
+
     public function testConfigurationPutAcceptsGenericAlarmClockAliasForFourPTouch(): void
     {
         $submitted = [];
@@ -706,6 +954,47 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             return 'sent';
         });
         [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                    'alarm_clock' => [
+                        'items' => [
+                            [
+                                'time' => '08:10',
+                                'enabled' => true,
+                                'recurrence' => ['kind' => 'once'],
+                            ],
+                        ],
+                    ],
+                ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('alarmClock', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertStringContainsString('REMIND,08:10-1-1', $submitted[0]['bytes']);
+        self::assertSame(
+            [
+                'items' => [
+                    [
+                        'time' => '08:10',
+                        'enabled' => true,
+                        'recurrence' => ['kind' => 'once'],
+                    ],
+                ],
+            ],
+            $response['configurations']['alarm_clock'] ?? null
+        );
+    }
+
+    public function testConfigurationPutRejectsFourPTouchAlarmClockType(): void
+    {
+        [$api, $db] = $this->makeApi();
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -726,24 +1015,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ],
         ], JSON_THROW_ON_ERROR));
 
-        self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('alarmClock', $response['results'][0]['key'] ?? null);
-        self::assertCount(1, $submitted);
-        self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertStringContainsString('REMIND,08:10-1-1', $submitted[0]['bytes']);
-        self::assertSame(
-            [
-                'items' => [
-                    [
-                        'time' => '08:10',
-                        'enabled' => true,
-                        'type' => 1,
-                        'recurrence' => ['kind' => 'once'],
-                    ],
-                ],
-            ],
-            $response['configurations']['alarm_clock'] ?? null
-        );
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame('type is not supported for four-p-touch alarm_clock', $response['error']['message'] ?? null);
     }
 
     public function testConfigurationPutAllowsFourPTouchLanguageZeroForEnglish(): void

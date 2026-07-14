@@ -1024,7 +1024,7 @@ class OpenApiSpec
                     'CapabilityOption' => [
                         'type' => 'object',
                         'properties' => [
-                            'value' => ['type' => 'integer'],
+                            'value' => ['oneOf' => [['type' => 'integer'], ['type' => 'string']]],
                             'label' => ['type' => 'string'],
                             'fields' => [
                                 'type' => 'object',
@@ -1075,24 +1075,64 @@ class OpenApiSpec
                         'properties' => [
                             'time' => ['type' => 'string', 'example' => '12:10'],
                             'enabled' => ['type' => 'boolean'],
-                            'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1],
+                            'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1, 'description' => 'Required for Vivistar alarm_clock. Not supported by 4P Touch alarmClock.'],
                             'recurrence' => ['$ref' => '#/components/schemas/AlarmClockRecurrence'],
                         ],
                         'required' => ['time', 'enabled'],
                     ],
+                    'AlarmClockMeta' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'limit' => ['type' => 'integer', 'example' => 3],
+                            'recurrence' => [
+                                'type' => 'object',
+                                'description' => 'Public recurrence options for alarm_clock: once, daily and custom.',
+                                'properties' => [
+                                    'options' => [
+                                        'type' => 'array',
+                                        'items' => ['$ref' => '#/components/schemas/CapabilityOption'],
+                                    ],
+                                ],
+                            ],
+                            'days' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'options' => [
+                                        'type' => 'array',
+                                        'items' => ['$ref' => '#/components/schemas/CapabilityOption'],
+                                    ],
+                                ],
+                            ],
+                            'type' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'options' => [
+                                        'type' => 'array',
+                                        'items' => ['$ref' => '#/components/schemas/CapabilityOption'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
                     'AlarmClockCapability' => [
                         'type' => 'object',
+                        'description' => 'Public generic watch alarm clock capability exposed by GET /api/devices/{imei}. Vivistar exposes type metadata and requires type on PATCH; 4P Touch does not.',
                         'properties' => [
                             'items' => [
                                 'type' => 'array',
                                 'items' => ['$ref' => '#/components/schemas/AlarmClockItem'],
                             ],
-                            '_meta' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'limit' => ['type' => 'integer'],
-                                ],
-                                'additionalProperties' => ['$ref' => '#/components/schemas/CapabilityMetaField'],
+                            '_meta' => ['$ref' => '#/components/schemas/AlarmClockMeta'],
+                        ],
+                        'required' => ['items'],
+                    ],
+                    'AlarmClockConfiguration' => [
+                        'type' => 'object',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Include type only for Vivistar.',
+                        'properties' => [
+                            'items' => [
+                                'type' => 'array',
+                                'items' => ['$ref' => '#/components/schemas/AlarmClockItem'],
                             ],
                         ],
                         'required' => ['items'],
@@ -1187,12 +1227,23 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads.',
+                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom.',
+                                'properties' => [
+                                    'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
+                                ],
                                 'additionalProperties' => ['type' => 'object'],
                                 'example' => [
                                     'autoHealthMeasurement' => ['enabled' => true, 'intervalMinutes' => 120],
                                     'phonebook' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],
-                                    'alarm_clock' => ['items' => [['time' => '08:33', 'enabled' => true, 'type' => 2, 'recurrence' => ['kind' => 'daily']]],
+                                    'alarm_clock' => [
+                                        'items' => [
+                                            [
+                                                'time' => '08:33',
+                                                'enabled' => true,
+                                                'type' => 2,
+                                                'recurrence' => ['kind' => 'daily'],
+                                            ],
+                                        ],
                                     ],
                                     'sosContacts' => ['numbers' => ['+351278710140']],
                                     'workingMode' => ['mode' => 3],

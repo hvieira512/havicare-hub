@@ -62,6 +62,7 @@ final class DashboardDatabase
         $this->migrateModelCapabilitiesToCapabilityIds();
         $this->seedDefaultModelCapabilities();
         $this->normalizePersistedModelCapabilities();
+        $this->normalizePersistedDeviceConfigurations();
     }
 
     public function pdo(): PDO
@@ -372,6 +373,96 @@ final class DashboardDatabase
                 $delete->execute([$modelId, $capabilityId]);
             }
         }
+    }
+
+    private function normalizePersistedDeviceConfigurations(): void
+    {
+        $stmt = $this->pdo->query("
+            SELECT *
+            FROM device_configurations
+            WHERE config_key = 'alarm_clock'
+            ORDER BY desired_updated_at ASC, reported_at ASC, imei ASC
+        ");
+        if (!$stmt) {
+            return;
+        }
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if ($rows === []) {
+            return;
+        }
+
+        $selectTarget = $this->pdo->prepare('SELECT * FROM device_configurations WHERE imei = ? AND config_key = ?');
+        $updateTarget = $this->pdo->prepare('
+            UPDATE device_configurations
+            SET protocol = ?, supplier = ?, model = ?, command = ?, desired_payload = ?, reported_payload = ?,
+                last_status = ?, last_command_id = ?, desired_updated_at = ?, reported_at = ?, applied_at = ?
+            WHERE imei = ? AND config_key = ?
+        ');
+        $renameLegacy = $this->pdo->prepare('UPDATE device_configurations SET config_key = ? WHERE imei = ? AND config_key = ?');
+        $deleteLegacy = $this->pdo->prepare('DELETE FROM device_configurations WHERE imei = ? AND config_key = ?');
+
+        foreach ($rows as $row) {
+            $imei = (string)($row['imei'] ?? '');
+            $protocol = (string)($row['protocol'] ?? '');
+            $targetKey = match ($protocol) {
+                'vivistar-iw' => 'reminders',
+                'four-p-touch' => 'alarmClock',
+                default => '',
+            };
+            if ($imei === '' || $targetKey === '') {
+                continue;
+            }
+
+            $selectTarget->execute([$imei, $targetKey]);
+            $target = $selectTarget->fetch(PDO::FETCH_ASSOC) ?: null;
+            if ($target === null) {
+                $renameLegacy->execute([$targetKey, $imei, 'alarm_clock']);
+                continue;
+            }
+
+            $legacyStamp = $this->deviceConfigurationTimestamp($row);
+            $targetStamp = $this->deviceConfigurationTimestamp($target);
+            if ($legacyStamp >= $targetStamp) {
+                $updateTarget->execute([
+                    (string)($row['protocol'] ?? ''),
+                    (string)($row['supplier'] ?? ''),
+                    (string)($row['model'] ?? ''),
+                    (string)($row['command'] ?? ''),
+                    (string)($row['desired_payload'] ?? '{}'),
+                    (string)($row['reported_payload'] ?? '{}'),
+                    (string)($row['last_status'] ?? ''),
+                    (string)($row['last_command_id'] ?? ''),
+                    (string)($row['desired_updated_at'] ?? ''),
+                    (string)($row['reported_at'] ?? ''),
+                    (string)($row['applied_at'] ?? ''),
+                    $imei,
+                    $targetKey,
+                ]);
+            }
+
+            $deleteLegacy->execute([$imei, 'alarm_clock']);
+        }
+    }
+
+    private function deviceConfigurationTimestamp(array $row): string
+    {
+        $desired = trim((string)($row['desired_updated_at'] ?? ''));
+        if ($desired !== '') {
+            return $desired;
+        }
+
+        $reported = trim((string)($row['reported_at'] ?? ''));
+        if ($reported !== '') {
+            return $reported;
+        }
+
+        $applied = trim((string)($row['applied_at'] ?? ''));
+        if ($applied !== '') {
+            return $applied;
+        }
+
+        return '';
     }
 
     private function supplierIdForName(string $name): int

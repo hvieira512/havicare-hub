@@ -98,7 +98,7 @@ const CONFIG_INPUT_RENDERERS = {
     wonlexHeartRateRange: (_entry, desired) => wonlexHeartRateRangeInput(desired),
     list: (entry, desired) => listInput(entry, desired, "numbers", "Números SOS"),
     contacts: (entry, desired) => contactsInput(entry, desired),
-    reminders: (_entry, desired) => remindersInput(desired),
+    alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
     alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
     takePills: (_entry, desired, meta) => takePillsInput(desired, meta),
     soundProfile: (_entry, desired) => soundProfileInput(desired),
@@ -206,7 +206,7 @@ const CONFIG_INPUT_READERS = {
         return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
     },
     contacts: (section) => ({contacts: readContacts(section)}),
-    reminders: (section) => readReminders(section),
+    alarm_clock: (section) => readAlarmClock(section),
     alarms: (section) => ({alarms: readFourPTouchAlarms(section)}),
     takePills: (section) => readTakePills(section),
     soundProfile: (section) => ({mode: readNumber(section, "mode")}),
@@ -245,7 +245,7 @@ const CONFIG_INPUT_DEFAULTS = {
     }),
     list: () => ({numbers: ["", "", ""]}),
     contacts: () => ({contacts: [{name: "", phone: ""}]}),
-    reminders: () => ({items: []}),
+    alarm_clock: () => ({items: []}),
     alarms: () => ({alarms: []}),
     takePills: () => ({
         reminderSettings: [
@@ -264,6 +264,7 @@ const CONFIG_INPUT_DEFAULTS = {
 const CONFIG_INPUT_HELP = {
     list: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
     contacts: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
+    alarm_clock: () => "Até 3 alarmes com recorrência e tipo, quando suportado.",
     alarms: () => "até 3 alarmes",
     requestAction: () => "sem parâmetros",
     soundProfile: () => "4 modos",
@@ -273,6 +274,7 @@ const CONFIG_INPUT_HELP = {
 const CONFIG_INPUT_LABEL = {
     requestAction: "Ação",
     soundProfile: "Perfil de som",
+    alarm_clock: "Alarmes",
 };
 
 export async function catalogForProtocol(protocol) {
@@ -386,9 +388,10 @@ export function renderDeviceConfigurationRoot(context) {
                         (group) => `
                     <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
                         ${group.entries.map((entry) => {
-                            const row = rowsByKey[entry.key] || rowsByKey[entry.capabilityKey || ""] || null;
-                            const uiState = uiByKey[entry.key] || uiByKey[entry.capabilityKey || ""] || null;
-                            return renderConfigSection(protocol, entry, row, capabilities, disabled, uiState);
+                            const normalizedEntry = normalizeConfigEntry(entry);
+                            const row = rowsByKey[normalizedEntry.key] || null;
+                            const uiState = uiByKey[normalizedEntry.key] || null;
+                            return renderConfigSection(protocol, normalizedEntry, row, capabilities, disabled, uiState);
                         }).join("")}
                     </div>
                 `,
@@ -488,11 +491,30 @@ export function defaultConfigPayload(entry) {
 }
 
 function normalizeDesired(entry, desired, capabilityDesired = null) {
-    const effectiveDesired = capabilityDesired ?? desired;
+    const effectiveDesired = desired ?? capabilityDesired;
     if (effectiveDesired && Object.keys(effectiveDesired).length) {
         return effectiveDesired;
     }
     return defaultConfigPayload(entry);
+}
+
+function normalizeConfigEntry(entry) {
+    const capabilityKey = String(entry.capabilityKey || "");
+    const key = capabilityKey || String(entry.key || "");
+    const input = capabilityKey === "alarm_clock"
+        ? "alarm_clock"
+        : String(entry.input || "json");
+    const label = capabilityKey === "alarm_clock"
+        ? "Alarmes"
+        : String(entry.label || key || "");
+
+    return {
+        ...entry,
+        key,
+        input,
+        label,
+        capabilityKey: capabilityKey || key,
+    };
 }
 
 function emptyConfigurationState(text) {
@@ -591,23 +613,47 @@ function readContacts(section) {
         .filter((contact) => contact.name !== "" || contact.phone !== "");
 }
 
-function readReminders(section) {
+function readAlarmClock(section) {
     const items = Array.from(
-        section.querySelectorAll('[data-repeat-row="reminders"]'),
+        section.querySelectorAll('[data-repeat-row="alarm_clock"]'),
     )
-        .map((row) => ({
-            time: String(
-                row.querySelector('[data-repeat-field="time"]')?.value || "",
-            ).trim(),
-            days: readReminderDays(row),
-            enabled:
-                row.querySelector('[data-repeat-field="enabled"]')?.checked ||
-                false,
-            type: readCheckedNumberFromRow(row, "type", 1),
-        }))
-        .filter((item) => item.time !== "" || item.days !== "");
+        .map((row) => {
+            const recurrenceKind = normalizeAlarmClockRecurrenceKind(
+                row.querySelector('[data-alarm-clock-field="recurrenceKind"]:checked')?.value || "once",
+            );
+            const item = {
+                time: String(
+                    row.querySelector('[data-alarm-clock-field="time"]')?.value || "",
+                ).trim(),
+                enabled:
+                    row.querySelector('[data-alarm-clock-field="enabled"]')?.checked ||
+                    false,
+                recurrence: {kind: recurrenceKind},
+            };
 
-    return { items };
+            const typeField = row.querySelector('[data-alarm-clock-field="type"]:checked');
+            if (typeField) {
+                const type = parseInt(String(typeField.value || "1"), 10);
+                if (Number.isFinite(type)) {
+                    item.type = type;
+                }
+            }
+
+            if (item.recurrence.kind === "custom") {
+                const days = readAlarmClockDays(row);
+                item.recurrence.days = days;
+                item.days = days;
+                item.custom = days.map((day) => String(day)).join("");
+                if (!Array.isArray(days) || days.length === 0) {
+                    throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
+                }
+            }
+
+            return item;
+        })
+        .filter((item) => item.time !== "");
+
+    return {items};
 }
 
 function readTakePills(section) {
@@ -668,50 +714,29 @@ function readTakePills(section) {
 
 function readFourPTouchAlarms(section) {
     return Array.from(section.querySelectorAll("[data-fourptouch-alarm-row]"))
-        .map((row) => ({
-            time: formatFourPTouchAlarmTime(
-                row.querySelector('[data-fourptouch-field="time"]')?.value || "",
-            ),
-            enabled:
-                row.querySelector('[data-fourptouch-field="enabled"]')?.checked ||
-                false,
-            mode: parseInt(
+        .map((row) => {
+            const mode = parseInt(
                 String(row.querySelector('[data-fourptouch-field="mode"]')?.value || "1"),
                 10,
-            ) || 1,
-            custom:
-                parseInt(
-                    String(row.querySelector('[data-fourptouch-field="mode"]')?.value || "1"),
-                    10,
-                ) === 3
-                    ? readFourPTouchAlarmDays(row)
-                    : "",
-        }))
+            ) || 1;
+            const alarm = {
+                time: formatFourPTouchAlarmTime(
+                    row.querySelector('[data-fourptouch-field="time"]')?.value || "",
+                ),
+                enabled:
+                    row.querySelector('[data-fourptouch-field="enabled"]')?.checked ||
+                    false,
+                mode,
+                custom: mode === 3 ? readFourPTouchAlarmDays(row) : "",
+            };
+
+            if (mode === 3 && alarm.custom === "0000000") {
+                throw new Error("Selecione pelo menos um dia para o alarme personalizado");
+            }
+
+            return alarm;
+        })
         .filter((alarm) => alarm.time !== "");
-}
-
-function readNumberFromRow(row, field) {
-    const value =
-        row.querySelector(`[data-repeat-field="${CSS.escape(field)}"]`)
-            ?.value ?? "";
-    const parsed = parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function readCheckedNumberFromRow(row, field, fallback = 0) {
-    const value =
-        row.querySelector(`[data-repeat-field="${CSS.escape(field)}"]:checked`)
-            ?.value ?? "";
-    const parsed = parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function readReminderDays(row) {
-    return Array.from(
-        row.querySelectorAll('[data-repeat-field="days"]:checked'),
-    )
-        .map((input) => String(input.value || ""))
-        .join("");
 }
 
 function jsonInput(desired) {
@@ -1375,19 +1400,29 @@ function contactsInput(entry, desired) {
         </div>`;
 }
 
-function remindersInput(desired) {
-    const items =
-        Array.isArray(desired.items) && desired.items.length
-            ? desired.items
-            : [{}];
+function alarmClockInput(desired, meta = {}) {
+    const items = normalizeAlarmClockItems(desired);
+    const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
+    const typeOptions = Array.isArray(meta.type?.options) ? meta.type.options : [];
+    const recurrenceOptions = Array.isArray(meta.recurrence?.options) && meta.recurrence.options.length
+        ? meta.recurrence.options
+        : [
+              { value: "once", label: "Uma vez" },
+              { value: "daily", label: "Todos os dias" },
+              { value: "custom", label: "Personalizado" },
+          ];
+    if (items.length === 0) {
+        items.push(defaultAlarmClockItem(typeOptions.length > 0));
+    }
+
     return `
         <div class="vstack gap-3">
-            <div class="small text-secondary">Cada item suporta hora, estado, tipo e recorrência. O backend converte para o comando correto do fornecedor.</div>
+            <div class="small text-secondary">Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.</div>
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addReminderRow">Adicionar item</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addAlarmClockRow">Adicionar item</button>
             </div>
-            <div class="vstack gap-2" data-reminders-list>
-                ${items.map((item) => reminderRow(item)).join("")}
+            <div class="vstack gap-2" data-alarm-clock-list>
+                ${items.slice(0, limit).map((item) => alarmClockRow(item, typeOptions, recurrenceOptions)).join("")}
             </div>
         </div>`;
 }
@@ -1395,8 +1430,7 @@ function remindersInput(desired) {
 function alarmsInput(desired, meta = {}) {
     const alarms = normalizeFourPTouchAlarms(desired);
     const limit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
-
-    while (alarms.length < limit) {
+    if (alarms.length === 0) {
         alarms.push({
             time: "",
             enabled: true,
@@ -1835,7 +1869,8 @@ function capabilityForEntry(entry, capabilities) {
         return null;
     }
 
-    const section = capabilities?.[entry.category || ""];
+    const sectionKey = entry.category === "alerts" ? "alarms" : (entry.category || "");
+    const section = capabilities?.[sectionKey];
     if (!section || typeof section !== "object") {
         return null;
     }
@@ -1861,57 +1896,98 @@ function extractCapabilityValue(value) {
     return value;
 }
 
-function reminderRow(item = {}) {
-    const normalizedDays = Array.isArray(item.recurrence?.days)
-        ? item.recurrence.days.map((day) => String(day || "")).join("")
-        : String(item.days || "").replace(/[^1-7]/g, "");
-    const reminderType = parseInt(String(item.type ?? 1), 10) || 1;
-    const rowId = nextUid("reminder");
+function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = []) {
+    const rowId = nextUid("alarm-clock");
+    const recurrenceKind = normalizeAlarmClockRecurrenceKind(
+        item.recurrence?.kind ?? item.kind ?? "once",
+    );
+    const recurrenceValue = recurrenceKind;
+    const dayMask = normalizeAlarmClockDaySelection(
+        item.recurrence?.days ?? item.days ?? item.custom ?? "",
+    );
+    const hasTypeSelector = Array.isArray(typeOptions) && typeOptions.length > 0;
+    const typeValue = hasTypeSelector
+        ? parseInt(String(item.type ?? typeOptions[0]?.value ?? 1), 10) || 1
+        : 0;
+    const customVisible = recurrenceKind === "custom";
+    const recurrenceButtonOptions = Array.isArray(recurrenceOptions) && recurrenceOptions.length
+        ? recurrenceOptions
+        : [
+              { value: "once", label: "Uma vez" },
+              { value: "daily", label: "Todos os dias" },
+              { value: "custom", label: "Personalizado" },
+          ];
     const dayButtons = [
         { value: "1", label: "Seg" },
         { value: "2", label: "Ter" },
         { value: "3", label: "Qua" },
         { value: "4", label: "Qui" },
         { value: "5", label: "Sex" },
-        { value: "6", label: "Sab" },
+        { value: "6", label: "Sáb" },
         { value: "7", label: "Dom" },
     ];
-    const typeButtons = [
-        {
-            value: 1,
-            label: "Medicação",
-            icon: "fa-pills",
-            className: "btn-outline-primary",
-        },
-        {
-            value: 2,
-            label: "Água",
-            icon: "fa-glass-water",
-            className: "btn-outline-info",
-        },
-        {
-            value: 3,
-            label: "Sedentarismo",
-            icon: "fa-person-walking",
-            className: "btn-outline-warning",
-        },
-    ];
+
     return `
-        <div class="border rounded p-3 bg-body" data-repeat-row="reminders">
+        <div class="border rounded p-3 bg-body" data-repeat-row="alarm_clock">
             <div class="row g-3 align-items-end">
-                <div class="col-sm-6 col-lg-2">
+                <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
                     <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-repeat-field="time" value="${esc(formatReminderTime(item.time))}">
+                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}">
                 </div>
-                <div class="col-sm-6 col-lg-2">
+                <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
                     <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" role="switch" data-repeat-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
+                        <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
                         <label class="form-check-label" data-switch-label>${boolValue(item.enabled, true) ? "Ligado" : "Desligado"}</label>
                     </div>
                 </div>
-                <div class="col-12 col-lg-4">
-                    <label class="form-label form-label-sm d-block">Dias</label>
-                    <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias da semana">
+                ${hasTypeSelector
+                    ? `
+                <div class="col-12 col-lg-3">
+                    <label class="form-label form-label-sm">Tipo</label>
+                    <div class="btn-group w-100" role="group" aria-label="Tipo de alarme">
+                        ${typeOptions.map((option) => {
+                            const optionValue = parseInt(String(option.value), 10) || 1;
+                            const inputId = `${rowId}-type-${optionValue}`;
+                            return `
+                            <input
+                                class="btn-check"
+                                type="radio"
+                                name="${rowId}-type"
+                                id="${inputId}"
+                                value="${esc(String(optionValue))}"
+                                data-alarm-clock-field="type"
+                                ${optionValue === typeValue ? "checked" : ""}>
+                            <label class="btn btn-outline-primary btn-sm" for="${inputId}">${esc(String(option.label || option.value))}</label>
+                        `;
+                        }).join("")}
+                    </div>
+                </div>`
+                    : ""}
+                <div class="col-12 col-lg-${hasTypeSelector ? "3" : "4"}">
+                    <label class="form-label form-label-sm">Recorrência</label>
+                    <div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
+                        ${recurrenceButtonOptions
+                            .map((option) => {
+                                const optionValue = normalizeAlarmClockRecurrenceKind(option.value);
+                                const inputId = `${rowId}-recurrence-${optionValue}`;
+                                return `
+                            <input
+                                class="btn-check"
+                                type="radio"
+                                name="${rowId}-recurrence"
+                                id="${inputId}"
+                                value="${esc(optionValue)}"
+                                data-alarm-clock-field="recurrenceKind"
+                                ${optionValue === recurrenceValue ? "checked" : ""}>
+                            <label class="btn btn-outline-secondary btn-sm" for="${inputId}">${esc(String(option.label))}</label>
+                        `;
+                            })
+                            .join("")}
+                    </div>
+                </div>
+                <div class="col-12 col-lg-3 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
+                    <label class="form-label form-label-sm d-block">Dias personalizados</label>
+                    <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias personalizados">
                         ${dayButtons
                             .map(
                                 (day) => `
@@ -1919,46 +1995,120 @@ function reminderRow(item = {}) {
                                 class="btn-check"
                                 type="checkbox"
                                 id="${rowId}-day-${day.value}"
-                                data-repeat-field="days"
+                                data-alarm-clock-day="customDays"
                                 value="${day.value}"
-                                ${normalizedDays.includes(day.value) ? "checked" : ""}>
+                                ${dayMask.includes(day.value) ? "checked" : ""}>
                             <label class="btn btn-outline-secondary btn-sm" for="${rowId}-day-${day.value}">${day.label}</label>
                         `,
                             )
                             .join("")}
                     </div>
                 </div>
-                <div class="col-12 col-lg-3">
-                    <label class="form-label form-label-sm d-block">Tipo</label>
-                    <div class="row g-2" role="group" aria-label="Tipo de lembrete">
-                        ${typeButtons
-                            .map(
-                                (option) => `
-                            <div class="col-12">
-                                <input
-                                    class="btn-check"
-                                    type="radio"
-                                    name="${rowId}-type"
-                                    id="${rowId}-type-${option.value}"
-                                    data-repeat-field="type"
-                                    value="${option.value}"
-                                    ${reminderType === option.value ? "checked" : ""}>
-                                <label class="btn ${option.className} btn-sm w-100 text-start" for="${rowId}-type-${option.value}">
-                                    <i class="fa-solid ${option.icon} me-1"></i>${option.label}
-                                </label>
-                            </div>
-                        `,
-                            )
-                            .join("")}
-                    </div>
-                </div>
                 <div class="col-12 col-lg-1 d-flex justify-content-lg-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeReminderRow" title="Remover" aria-label="Remover">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeAlarmClockRow" title="Remover" aria-label="Remover">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
             </div>
         </div>`;
+}
+
+function normalizeAlarmClockItems(desired) {
+    const base = desired?.items ?? desired?.alarmClock ?? desired?.alarms ?? [];
+    const items = Array.isArray(base) ? base : [base];
+    return items
+        .filter((item) => item && typeof item === "object")
+        .map((item) => normalizeAlarmClockItem(item));
+}
+
+function normalizeAlarmClockItem(item) {
+    const recurrenceKind = normalizeAlarmClockRecurrenceKind(
+        item.recurrence?.kind ?? item.kind ?? "once",
+    );
+
+    return {
+        time: String(item.time ?? item.alarmTime ?? item.reminderTime ?? ""),
+        enabled: boolValue(item.enabled ?? item.switchState, true),
+        type: item.type === undefined || item.type === null
+            ? undefined
+            : (parseInt(String(item.type), 10) || 1),
+        recurrence: recurrenceKind === "custom"
+            ? {
+                  kind: "custom",
+                  days: normalizeAlarmClockDaySelection(item.recurrence?.days ?? item.days ?? item.custom ?? ""),
+              }
+            : { kind: recurrenceKind },
+    };
+}
+
+function defaultAlarmClockItem(withType = false) {
+    return withType
+        ? {
+              time: "",
+              enabled: true,
+              type: 1,
+              recurrence: {kind: "once"},
+          }
+        : {
+              time: "",
+              enabled: true,
+              recurrence: {kind: "once"},
+          };
+}
+
+function normalizeAlarmClockRecurrenceKind(value) {
+    const raw = String(value || "").trim().toLowerCase();
+    if (raw === "daily" || raw === "2") {
+        return "daily";
+    }
+    if (raw === "custom" || raw === "3") {
+        return "custom";
+    }
+    if (raw === "once" || raw === "1" || raw === "") {
+        return "once";
+    }
+    return "once";
+}
+
+function normalizeAlarmClockDaySelection(value) {
+    if (Array.isArray(value)) {
+        return value
+            .map((day) => parseInt(String(day), 10))
+            .filter((day) => Number.isFinite(day) && day >= 1 && day <= 7)
+            .map((day) => String(day));
+    }
+
+    const raw = String(value || "").trim();
+    if (raw === "") {
+        return [];
+    }
+
+    if (/^[1-7]+$/.test(raw)) {
+        return raw.split("").filter(Boolean);
+    }
+
+    if (/^[01]{7}$/.test(raw)) {
+        const days = [];
+        raw.split("").forEach((bit, index) => {
+            if (bit === "1") {
+                days.push(String(index === 0 ? 7 : index));
+            }
+        });
+        return days;
+    }
+
+    return raw
+        .replace(/[^1-7]/g, "")
+        .split("")
+        .filter(Boolean);
+}
+
+function readAlarmClockDays(row) {
+    return Array.from(
+        row.querySelectorAll('[data-alarm-clock-day="customDays"]:checked'),
+    )
+        .map((input) => parseInt(String(input.value || ""), 10))
+        .filter((day) => Number.isFinite(day) && day >= 1 && day <= 7);
 }
 
 function boolValue(value, fallback = false) {
