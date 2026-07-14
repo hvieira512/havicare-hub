@@ -11,7 +11,7 @@ final class DeviceProtocol
             'Vivistar' => 'vivistar-iw',
             '4P Touch' => 'four-p-touch',
             'Voerka' => 'voerka-ncs',
-            'Qinglanst' => 'qinglanst',
+            'Qinglanst' => 'qinglanst-radar',
             default => '',
         };
     }

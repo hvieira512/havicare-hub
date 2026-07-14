@@ -962,9 +962,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
-        $hitCareId = $db->companies->create('hitcare');
+        $hitcareId = $db->companies->create('hitcare');
         $otherCareId = $db->companies->create('otherCare');
-        $db->licenses->create($hitCareId, '1001', 'hitcare-license');
+        $db->licenses->create($hitcareId, '1001', 'hitcare-license');
         $db->licenses->create($otherCareId, '2002', 'othercare-license');
         $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);

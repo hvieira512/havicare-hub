@@ -37,7 +37,7 @@ final class GenericModelCapabilityCatalog
         return array_merge(
             self::watchDefinitions(),
             self::deviceTypePlaceholderDefinitions('ncs'),
-            self::deviceTypePlaceholderDefinitions('radar'),
+            self::radarDefinitions(),
         );
     }
 
@@ -143,6 +143,12 @@ final class GenericModelCapabilityCatalog
                 'temperature',
                 'location',
             ],
+            'qinglanst-radar' => [
+                'positions',
+                'vitals',
+                'position_minute_stats',
+                'vitals_minute_stats',
+            ],
             default => [],
         };
     }
@@ -179,7 +185,13 @@ final class GenericModelCapabilityCatalog
             return null;
         }
 
-        $catalog = array_flip(self::keys());
+        $catalog = [];
+        foreach (self::definitions() as $definition) {
+            $definitionKey = trim((string)($definition['key'] ?? ''));
+            if ($definitionKey !== '') {
+                $catalog[$definitionKey] = true;
+            }
+        }
         if (isset($catalog[$key])) {
             return $key;
         }
@@ -369,6 +381,19 @@ final class GenericModelCapabilityCatalog
     private static function deviceTypePlaceholderDefinitions(string $deviceType): array
     {
         return [];
+    }
+
+    /**
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     */
+    private static function radarDefinitions(): array
+    {
+        return [
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'positions', 'label' => 'Positions', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals', 'label' => 'Vitals', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'position_minute_stats', 'label' => 'Position minute stats', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals_minute_stats', 'label' => 'Vitals minute stats', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+        ];
     }
 
     /**

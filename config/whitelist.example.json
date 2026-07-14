@@ -4,7 +4,7 @@
         "model": "RD-V1",
         "deviceType": "radar",
         "licenseId": 1001,
-        "company": "hitCare",
+        "company": "hitcare",
         "simNumber": "",
         "deviceId": "594B3CF100A7"
     },
@@ -94,7 +94,7 @@
         "model": "VIVISTAR-CARE",
         "deviceType": "watch",
         "licenseId": 0,
-        "company": "hitCare",
+        "company": "hitcare",
         "simNumber": "",
         "deviceId": ""
     },
@@ -103,7 +103,7 @@
         "model": "RD-V1",
         "deviceType": "radar",
         "licenseId": 1001,
-        "company": "hitCare",
+        "company": "hitcare",
         "simNumber": "",
         "deviceId": "9D8A3204F853"
     },
@@ -112,7 +112,7 @@
         "model": "RD-V1",
         "deviceType": "radar",
         "licenseId": 1001,
-        "company": "hitCare",
+        "company": "hitcare",
         "simNumber": "",
         "deviceId": "AD8A613B0493"
     },

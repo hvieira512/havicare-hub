@@ -44,6 +44,10 @@ const SECTION_TRANSLATIONS = {
 };
 
 const CAPABILITY_LABEL_TRANSLATIONS = {
+    positions: "Posições",
+    vitals: "Sinais vitais",
+    position_minute_stats: "Estatísticas de posições por minuto",
+    vitals_minute_stats: "Estatísticas de sinais vitais por minuto",
     location: "Localização",
     heart_rate: "Frequência cardíaca",
     blood_pressure: "Pressão arterial",

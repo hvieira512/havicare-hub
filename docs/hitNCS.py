@@ -19,7 +19,7 @@ logging.basicConfig(
 
 def mapear_alarme_meeyi(key_value):
     """
-    Mapeia o código da tecla ('key') recebido do firmware W812 para a severidade da HAVIcare.
+    Mapeia o código da tecla ('key') recebido do firmware W812 para a severidade da havicare.
     Nota: Ajuste os números das chaves conforme os testes físicos (ex: Verde/Reset vs Chamada).
     """
     # Exemplo baseado no log real onde "8" foi o acionamento do SOS
@@ -61,7 +61,7 @@ def on_message(client, userdata, msg):
             
             logging.info(f"🚨 [NCS] {ui_payload['evento']} | Gateway: {gateway_sn} | Botão: {ui_payload['device_id']} | Key: {key_value}")
             
-            # Despacha para o main.py (hitCARE)
+            # Despacha para o main.py (hitcare)
             try:
                 requests.post(TARGET_URL, json=ui_payload, timeout=2)
             except requests.exceptions.RequestException:

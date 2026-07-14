@@ -15,7 +15,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $catalog = $db->genericCapabilities->all('watch');
         self::assertNotEmpty($catalog);
         self::assertSame('watch', $catalog[0]['device_type'] ?? null);
-        self::assertSame(4, count($db->models->all()));
+        self::assertSame(5, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -27,7 +27,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
 
         $db = ApiDataAccess::fromDatabase($database);
-        self::assertSame(4, count($db->models->all()));
+        self::assertSame(5, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -37,6 +37,15 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         sort($expected);
         sort($actual);
         self::assertSame($expected, $actual);
+
+        $qinglanst = $db->models->find('Qinglanst', 'RD-V1');
+        self::assertIsArray($qinglanst);
+        self::assertSame('radar', $qinglanst['device_type'] ?? null);
+        $expectedRadar = ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'];
+        $actualRadar = $db->modelCapabilities->enabledFeaturesForModelId((int)$qinglanst['id']);
+        sort($expectedRadar);
+        sort($actualRadar);
+        self::assertSame($expectedRadar, $actualRadar);
     }
 
     public function testModelCapabilitiesCanBeReplacedPerModel(): void
@@ -139,36 +148,17 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertContains('heart_rate', $after);
     }
 
-    public function testBootstrapRemovesLegacyQinglanstRadarData(): void
+    public function testBootstrapBackfillsRadarDefaultsWhenMissing(): void
     {
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
 
-        $pdo->prepare('INSERT INTO suppliers (name, enabled) VALUES (?, 1)')
-            ->execute(['Qinglanst']);
-        $supplierId = (int)$pdo->lastInsertId();
-        self::assertGreaterThan(0, $supplierId);
-
-        $pdo->prepare('INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path) VALUES (?, ?, ?, ?, ?)')
-            ->execute([$supplierId, 'RD-V1', 'RD-V1', 'radar', '']);
-        $modelId = (int)$pdo->lastInsertId();
-        self::assertGreaterThan(0, $modelId);
-
-        $pdo->prepare('INSERT INTO supplier_device_types (supplier_id, device_type) VALUES (?, ?)')
-            ->execute([$supplierId, 'radar']);
-        $pdo->prepare('INSERT INTO capabilities (device_type, section, capability_key, label, is_telemetry, is_configurable, is_requestable, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-            ->execute(['radar', 'telemetry', 'legacy_radar_heartbeat', 'Legacy radar heartbeat', 1, 0, 0, 1]);
-        $capabilityId = (int)$pdo->lastInsertId();
-        self::assertGreaterThan(0, $capabilityId);
-        $pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)')
-            ->execute([$modelId, $capabilityId]);
-        $pdo->prepare('INSERT INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-            ->execute(['123456789012345', 'Qinglanst', 'RD-V1', 'radar', 0, '', '', 'hitcare']);
-
-        self::assertNotNull($pdo->query("SELECT id FROM suppliers WHERE name = 'Qinglanst'")->fetchColumn());
-        self::assertNotNull($pdo->query("SELECT id FROM models WHERE device_type = 'radar'")->fetchColumn());
-        self::assertNotNull($pdo->query("SELECT id FROM capabilities WHERE device_type = 'radar'")->fetchColumn());
-        self::assertNotNull($pdo->query("SELECT imei FROM whitelist WHERE supplier = 'Qinglanst'")->fetchColumn());
+        $pdo->exec("DELETE FROM model_capabilities WHERE model_id IN (SELECT id FROM models WHERE device_type = 'radar')");
+        $pdo->exec("DELETE FROM whitelist WHERE supplier = 'Qinglanst' OR device_type = 'radar'");
+        $pdo->exec("DELETE FROM supplier_device_types WHERE device_type = 'radar'");
+        $pdo->exec("DELETE FROM capabilities WHERE device_type = 'radar'");
+        $pdo->exec("DELETE FROM models WHERE device_type = 'radar'");
+        $pdo->exec("DELETE FROM suppliers WHERE name = 'Qinglanst'");
 
         $databaseNameRow = $pdo->query('SELECT DATABASE() AS db_name')->fetch();
         self::assertIsArray($databaseNameRow);
@@ -186,16 +176,23 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         ]);
         $normalizedDb = ApiDataAccess::fromDatabase($normalizedDatabase);
 
-        self::assertNull($normalizedDb->suppliers->findByName('Qinglanst'));
-        self::assertNull($normalizedDb->models->find('Qinglanst', 'RD-V1'));
-        self::assertSame([], $normalizedDb->genericCapabilities->all('radar'));
-        self::assertSame([], array_values(array_filter(
+        self::assertNotNull($normalizedDb->suppliers->findByName('Qinglanst'));
+        $model = $normalizedDb->models->find('Qinglanst', 'RD-V1');
+        self::assertIsArray($model);
+        self::assertSame('radar', $model['device_type'] ?? null);
+        $expectedRadar = ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'];
+        $actualRadar = $normalizedDb->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
+        sort($expectedRadar);
+        sort($actualRadar);
+        self::assertSame($expectedRadar, $actualRadar);
+        $expectedCatalog = ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'];
+        $actualCatalog = $normalizedDb->genericCapabilities->keysForDeviceType('radar');
+        sort($expectedCatalog);
+        sort($actualCatalog);
+        self::assertSame($expectedCatalog, $actualCatalog);
+        self::assertNotEmpty(array_values(array_filter(
             $normalizedDb->supplierDeviceTypes->all(),
-            static fn (array $row): bool => ($row['device_type'] ?? '') === 'radar'
-        )));
-        self::assertSame([], array_values(array_filter(
-            $normalizedDb->whitelist->all(),
-            static fn (array $row): bool => ($row['supplier'] ?? '') === 'Qinglanst' || ($row['device_type'] ?? '') === 'radar'
+            static fn (array $row): bool => ($row['device_type'] ?? '') === 'radar' && ($row['supplier'] ?? '') === 'Qinglanst'
         )));
     }
 

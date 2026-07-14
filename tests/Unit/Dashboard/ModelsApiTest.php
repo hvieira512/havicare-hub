@@ -124,9 +124,10 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $response = $api->filters();
         $groups = $response['data'] ?? [];
 
-        self::assertCount(2, $groups);
+        self::assertCount(3, $groups);
         self::assertSame('watch', $groups[0]['deviceType'] ?? null);
         self::assertSame('ncs', $groups[1]['deviceType'] ?? null);
+        self::assertSame('radar', $groups[2]['deviceType'] ?? null);
         self::assertSame(['4P Touch', 'Vivistar', 'Wonlex'], array_values(array_map(
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[0]['suppliers'] ?? []
@@ -135,7 +136,10 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[1]['suppliers'] ?? []
         )));
-        self::assertArrayNotHasKey(2, $groups);
+        self::assertSame(['Qinglanst'], array_values(array_map(
+            static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
+            $groups[2]['suppliers'] ?? []
+        )));
     }
 
     public function testUpdateAcceptsGenericCapabilityKeys(): void

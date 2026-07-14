@@ -232,7 +232,7 @@ class Whitelist
             return null;
         }
 
-        if ($protocol === 'qinglanst') {
+        if ($protocol === 'qinglanst-radar' || $protocol === 'qinglanst') {
             foreach ($this->devices as $canonicalImei => $metadata) {
                 if (($metadata['deviceType'] ?? '') !== 'radar') {
                     continue;

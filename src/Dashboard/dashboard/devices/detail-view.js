@@ -418,10 +418,10 @@ function telemetryDetails(data, payload) {
 function radarPositionDetails(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
     if (!people.length) {
-        return "People: 0";
+        return "Pessoas: 0";
     }
 
-    const countLabel = `People: ${people.length}`;
+    const countLabel = `Pessoas: ${people.length}`;
     const personLines = people.map((person, index) => {
         const personIndex = person?.person_index ?? index + 1;
         const x = displayValue(person?.x_position_dm);
@@ -430,11 +430,11 @@ function radarPositionDetails(data) {
         const posture = displayValue(person?.posture_state);
 
         return [
-            `Person ${esc(personIndex)}`,
+            `Pessoa ${esc(personIndex)}`,
             `x: ${esc(x)} dm`,
             `y: ${esc(y)} dm`,
             `z: ${esc(z)} cm`,
-            `posture: ${esc(posture)}`,
+            `postura: ${esc(posture)}`,
         ].join(" · ");
     });
 

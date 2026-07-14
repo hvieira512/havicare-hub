@@ -91,4 +91,14 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertContains('sos_contacts', $actual);
         self::assertContains('sound_profile', $actual);
     }
+
+    public function testQinglanstRadarTemplateReturnsRadarTelemetry(): void
+    {
+        $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('Qinglanst', 'radar');
+
+        self::assertSame(
+            ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'],
+            $actual
+        );
+    }
 }

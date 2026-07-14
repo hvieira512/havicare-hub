@@ -31,7 +31,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $whitelist,
             $mqttBridge,
             $topicFilter,
-            sourceName: 'qinglanst',
+            sourceName: 'qinglanst-radar',
             reconnectSubscriber: $reconnectSubscriber,
             dashboardStore: $dashboardStore,
         );
@@ -209,12 +209,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $deviceUid = $topic->deviceUid;
         $licenseId = $topic->licenseId;
 
-        $resolved = $this->whitelist->resolve($deviceUid, 'qinglanst');
+        $resolved = $this->whitelist->resolve($deviceUid, 'qinglanst-radar');
         if ($resolved !== null) {
             return $resolved;
         }
 
-        $resolved = $this->whitelist->resolve($deviceUid, 'qinglanst', $deviceUid);
+        $resolved = $this->whitelist->resolve($deviceUid, 'qinglanst-radar', $deviceUid);
         if ($resolved !== null) {
             return $resolved;
         }

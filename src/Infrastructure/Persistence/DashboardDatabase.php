@@ -13,6 +13,7 @@ final class DashboardDatabase
         'Vivistar',
         '4P Touch',
         'Voerka',
+        'Qinglanst',
     ];
 
     private const DEFAULT_MODELS = [
@@ -20,6 +21,7 @@ final class DashboardDatabase
         ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['4P Touch', 'D46', 'D46', 'watch', ''],
+        ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
     ];
 
     /**
@@ -30,6 +32,7 @@ final class DashboardDatabase
         ['Vivistar', 'watch'],
         ['4P Touch', 'watch'],
         ['Voerka', 'ncs'],
+        ['Qinglanst', 'radar'],
     ];
 
     public function __construct(array $config)
@@ -53,7 +56,6 @@ final class DashboardDatabase
         ]);
 
         $this->bootstrapSchema();
-        $this->cleanupLegacyRadarDefaults();
         $this->seedDefaults();
         $this->seedDefaultSupplierDeviceTypes();
         $this->seedDefaultCapabilities();
@@ -142,24 +144,6 @@ final class DashboardDatabase
         $this->seedDefaultCompanies();
     }
 
-    private function cleanupLegacyRadarDefaults(): void
-    {
-        $supplierIdStmt = $this->pdo->prepare('SELECT id FROM suppliers WHERE name = ?');
-        $supplierIdStmt->execute(['Qinglanst']);
-        $qinglanstId = (int)($supplierIdStmt->fetchColumn() ?: 0);
-
-        $this->pdo->exec("DELETE FROM whitelist WHERE device_type = 'radar' OR supplier = 'Qinglanst'");
-        $this->pdo->exec("DELETE FROM model_capabilities WHERE capability_id IN (SELECT id FROM capabilities WHERE device_type = 'radar')");
-        $this->pdo->exec("DELETE FROM capabilities WHERE device_type = 'radar'");
-        $this->pdo->exec("DELETE FROM models WHERE device_type = 'radar'");
-        $this->pdo->exec("DELETE FROM supplier_device_types WHERE device_type = 'radar'");
-
-        if ($qinglanstId > 0) {
-            $deleteSupplier = $this->pdo->prepare('DELETE FROM suppliers WHERE id = ?');
-            $deleteSupplier->execute([$qinglanstId]);
-        }
-    }
-
     private function seedDefaultSupplierDeviceTypes(): void
     {
         $nameToId = $this->pdo
@@ -215,13 +199,13 @@ final class DashboardDatabase
 
         $stmt = $this->pdo->prepare("SELECT id FROM companies WHERE name = ?");
         $stmt->execute(['hitcare']);
-        $hitCareId = (int)($stmt->fetchColumn() ?: 0);
-        if ($hitCareId > 0) {
+        $hitcareId = (int)($stmt->fetchColumn() ?: 0);
+        if ($hitcareId > 0) {
             $existing = $this->pdo->prepare('SELECT id FROM licenses WHERE company_id = ? AND license_id = ?');
-            $existing->execute([$hitCareId, '1001']);
+            $existing->execute([$hitcareId, '1001']);
             if ($existing->fetchColumn() === false) {
                 $licenseStmt = $this->pdo->prepare('INSERT INTO licenses (company_id, license_id, name) VALUES (?, ?, ?)');
-                $licenseStmt->execute([$hitCareId, '1001', 'gucc.dev']);
+                $licenseStmt->execute([$hitcareId, '1001', 'gucc.dev']);
             }
         }
     }

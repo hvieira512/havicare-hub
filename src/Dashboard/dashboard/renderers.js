@@ -32,6 +32,10 @@ const ALERT_CARD_TYPES = new Set([
 ]);
 
 const CARD_TONE_BY_TYPE = {
+    positions: {border: "info", bg: "bg-info", text: "text-info"},
+    vitals: {border: "success", bg: "bg-success", text: "text-success"},
+    position_minute_stats: {border: "secondary", bg: "bg-secondary", text: "text-secondary"},
+    vitals_minute_stats: {border: "secondary", bg: "bg-secondary", text: "text-secondary"},
     blood_oxygen: {border: "info", bg: "bg-info", text: "text-info"},
     blood_sugar: {border: "warning", bg: "bg-warning", text: "text-warning"},
     temperature: {border: "warning", bg: "bg-warning", text: "text-warning"},
@@ -53,6 +57,16 @@ const CARD_TONE_BY_TYPE = {
 const ALERT_CARD_TONE = {border: "danger", bg: "bg-danger", text: "text-danger"};
 
 const REQUEST_CARD_CONTENT_BY_TYPE = {
+    positions: {icon: "fa-location-crosshairs", value: "Posições"},
+    vitals: {icon: "fa-heart-pulse", value: "Sinais vitais"},
+    position_minute_stats: {
+        icon: "fa-chart-column",
+        value: "Estatísticas de posições por minuto",
+    },
+    vitals_minute_stats: {
+        icon: "fa-chart-line",
+        value: "Estatísticas de sinais vitais por minuto",
+    },
     heart_rate: {icon: "fa-heart-pulse", value: "Frequência cardíaca"},
     blood_pressure: {icon: "fa-stethoscope", value: "Tensão arterial"},
     blood_oxygen: {icon: "fa-droplet", value: "Oxigénio no sangue"},
@@ -71,6 +85,46 @@ const REQUEST_CARD_CONTENT_BY_TYPE = {
 };
 
 const UPLINK_CARD_RENDERERS = {
+    positions: (data) => ({
+        icon: "fa-location-crosshairs",
+        value: radarPositionsValue(data),
+        details: radarPositionsDetails(data),
+    }),
+    position: (data) => ({
+        icon: "fa-location-crosshairs",
+        value: radarPositionsValue(data),
+        details: radarPositionsDetails(data),
+    }),
+    vitals: (data) => ({
+        icon: "fa-heart-pulse",
+        value: radarVitalsValue(data),
+        details: radarVitalsDetails(data),
+    }),
+    heartbreath: (data) => ({
+        icon: "fa-heart-pulse",
+        value: radarVitalsValue(data),
+        details: radarVitalsDetails(data),
+    }),
+    position_minute_stats: (data) => ({
+        icon: "fa-chart-column",
+        value: radarPositionMinuteStatsValue(data),
+        details: radarPositionMinuteStatsDetails(data),
+    }),
+    minute_stats: (data) => ({
+        icon: "fa-chart-column",
+        value: radarPositionMinuteStatsValue(data),
+        details: radarPositionMinuteStatsDetails(data),
+    }),
+    vitals_minute_stats: (data) => ({
+        icon: "fa-chart-line",
+        value: radarVitalsMinuteStatsValue(data),
+        details: radarVitalsMinuteStatsDetails(data),
+    }),
+    hbstatics: (data) => ({
+        icon: "fa-chart-line",
+        value: radarVitalsMinuteStatsValue(data),
+        details: radarVitalsMinuteStatsDetails(data),
+    }),
     heart_rate: (data) => ({icon: "fa-heart-pulse", value: `${data.bpm ?? "-"} bpm`}),
     blood_pressure: (data) => ({
         icon: "fa-stethoscope",
@@ -296,6 +350,96 @@ function batteryDetails(data) {
     return compactDetails(data, ["batteryType"]);
 }
 
+function radarPositionsValue(data) {
+    const people = Array.isArray(data?.people) ? data.people : [];
+    if (!people.length) {
+        return "Sem posições";
+    }
+
+    return `${people.length} pessoa${people.length === 1 ? "" : "s"}`;
+}
+
+function radarPositionsDetails(data) {
+    const people = Array.isArray(data?.people) ? data.people : [];
+    if (!people.length) {
+        return "";
+    }
+
+    return people
+        .slice(0, 3)
+        .map((person, index) => {
+            const personIndex = displayPersonIndex(
+                person?.person_index ?? index + 1,
+            );
+            const x = dataPointValue(person?.x_position_dm);
+            const y = dataPointValue(person?.y_position_dm);
+            const z = dataPointValue(person?.z_position_cm);
+            return `Pessoa ${esc(personIndex)} · x ${esc(x)} dm · y ${esc(y)} dm · z ${esc(z)} cm`;
+        })
+        .join("<br>");
+}
+
+function radarVitalsValue(data) {
+    const heartRate = dataPointValue(data?.heart_rate);
+    const breathing = dataPointValue(data?.breathing);
+    if (heartRate === "-" && breathing === "-") {
+        return "Sem leituras";
+    }
+
+    return `${heartRate !== "-" ? `${heartRate} bpm` : "-"} · ${breathing !== "-" ? `${breathing} rpm` : "-"}`;
+}
+
+function radarVitalsDetails(data) {
+    return compactDetails(data, ["sleep_state"]);
+}
+
+function radarPositionMinuteStatsValue(data) {
+    const people = dataPointValue(data?.people);
+    const distance = dataPointValue(data?.walking_distance);
+    if (people === "-" && distance === "-") {
+        return "Sem leituras";
+    }
+
+    return `${people !== "-" ? `${people} pessoas` : "-"} · ${distance !== "-" ? `${distance} m` : "-"}`;
+}
+
+function radarPositionMinuteStatsDetails(data) {
+    return compactDetails(data, [
+        "walking_time",
+        "meditation_time",
+        "in_bed_time",
+        "standing_time",
+        "multiplayer_time",
+        "breathing_active",
+    ]);
+}
+
+function radarVitalsMinuteStatsValue(data) {
+    const heartRate = dataPointValue(data?.avg_heart_rate_per_minute);
+    const breathing = dataPointValue(data?.avg_breathing_per_minute);
+    if (heartRate === "-" && breathing === "-") {
+        return "Sem leituras";
+    }
+
+    return `${heartRate !== "-" ? `${heartRate} bpm` : "-"} · ${breathing !== "-" ? `${breathing} rpm` : "-"}`;
+}
+
+function radarVitalsMinuteStatsDetails(data) {
+    return compactDetails(data, [
+        "breathing_status_per_minute",
+        "heart_rate_status_per_minute",
+        "vital_signs_status",
+    ]);
+}
+
+function dataPointValue(value) {
+    return value === undefined || value === null || value === "" ? "-" : String(value);
+}
+
+function displayPersonIndex(value) {
+    return value === undefined || value === null || value === "" ? "-" : String(value);
+}
+
 export function renderRequestCardShell(command, loading, telemetry = []) {
     const type = commandFeature(command);
     const card = requestCardContent(type);
@@ -346,6 +490,18 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
 }
 
 function requestTelemetryTypes(type) {
+    if (type === "positions") {
+        return ["position"];
+    }
+    if (type === "vitals") {
+        return ["vitals"];
+    }
+    if (type === "position_minute_stats") {
+        return ["minute_stats"];
+    }
+    if (type === "vitals_minute_stats") {
+        return ["hbstatics"];
+    }
     return [type];
 }
 
