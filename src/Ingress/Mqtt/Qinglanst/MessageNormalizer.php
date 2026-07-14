@@ -45,6 +45,7 @@ final class MessageNormalizer
      */
     private function normalizePosition(array $decoded, Topic $topic, array $device): array
     {
+        $people = $this->occupiedPeople($decoded['people']);
         $telemetry = [
             'schemaVersion' => 2,
             'type' => 'position',
@@ -63,18 +64,29 @@ final class MessageNormalizer
                         'last_event' => $person['last_event'],
                         'region_id' => $person['region_id'],
                     ];
-                }, $decoded['people']),
+                }, $people),
             ],
         ];
 
         $result = ['telemetry' => $telemetry];
 
-        $event = $this->detectPositionEvent($topic, $device, $decoded['people']);
+        $event = $this->detectPositionEvent($topic, $device, $people);
         if ($event !== null) {
             $result['event'] = $event;
         }
 
         return $result;
+    }
+
+    /**
+     * @param array<int, array> $people
+     * @return array<int, array>
+     */
+    private function occupiedPeople(array $people): array
+    {
+        return array_values(array_filter($people, static function (array $person): bool {
+            return (int)($person['person_index'] ?? 0) !== 88;
+        }));
     }
 
     /**

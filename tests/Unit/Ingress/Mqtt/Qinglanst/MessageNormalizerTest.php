@@ -79,6 +79,69 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame('fall_confirmed', $result['event']['data']['detectionType']);
     }
 
+    public function testPositionNormalizationDropsSentinelPersonIndex88(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [[
+                'person_index' => 88,
+                'x_position_dm' => 0,
+                'y_position_dm' => 0,
+                'z_position_cm' => 0,
+                'time_left_s' => 0,
+                'posture_state' => 'Unknown',
+                'last_event' => 'No Event',
+                'region_id' => 0,
+            ]],
+        ], $topic, $this->device());
+
+        self::assertSame([], $result['telemetry']['data']['people']);
+        self::assertArrayNotHasKey('event', $result);
+    }
+
+    public function testPositionNormalizationKeepsRealPeopleWhenSentinelIsPresent(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [
+                [
+                    'person_index' => 88,
+                    'x_position_dm' => 0,
+                    'y_position_dm' => 0,
+                    'z_position_cm' => 0,
+                    'time_left_s' => 0,
+                    'posture_state' => 'Unknown',
+                    'last_event' => 'No Event',
+                    'region_id' => 0,
+                ],
+                [
+                    'person_index' => 2,
+                    'x_position_dm' => 4,
+                    'y_position_dm' => 5,
+                    'z_position_cm' => 6,
+                    'time_left_s' => 7,
+                    'posture_state' => 'Fall Confirmation',
+                    'last_event' => 'Leave Room',
+                    'region_id' => 8,
+                ],
+            ],
+        ], $topic, $this->device());
+
+        self::assertCount(1, $result['telemetry']['data']['people']);
+        self::assertSame(2, $result['telemetry']['data']['people'][0]['person_index']);
+        self::assertSame('detection', $result['event']['type']);
+        self::assertSame('fall_confirmed', $result['event']['data']['detectionType']);
+        self::assertSame(2, $result['event']['data']['details']['person_index']);
+    }
+
     /**
      * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company: string}
      */
