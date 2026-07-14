@@ -132,7 +132,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     blood_oxygen: (data) => ({
         icon: "fa-droplet",
-        value: `${data.spo2Percent ?? "-"}% SpO2`,
+        value: `${data.spo2Percent ?? "-"}%`,
     }),
     blood_sugar: (data) => ({icon: "fa-vial", value: `${data.glucoseMgDl ?? "-"} mg/dL`} ),
     temperature: (data) => ({
