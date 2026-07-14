@@ -3,6 +3,7 @@ import {
 } from "../api/index.js";
 import {clearSelection, setTelemetryPage, state} from "../state.js";
 import {
+    companyLabel,
     deviceTypeLabel,
     deviceTypeOptions,
     licenseLabel,
@@ -109,7 +110,7 @@ const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
 
 function telemetryRequestCards(telemetryCapabilities = {}) {
     const cards = Object.entries(telemetryCapabilities || {})
-        .filter(([, entry]) => entry?.supported && entry?.requestable !== false)
+        .filter(([, entry]) => entry?.supported)
         .map(([feature, entry]) => ({
             id: feature,
             feature,
@@ -141,22 +142,12 @@ function renderSelectedDeviceSummary(device, deviceModel) {
     const supplier = String(deviceModel?.supplier || "");
     const model = String(deviceModel?.internalModel || "");
     const image = String(deviceModel?.image || "");
+    const typeLabel = deviceTypeLabel(
+        normalizeDeviceType(deviceModel?.deviceType || "watch"),
+    );
     const facts = [
-        {
-            label: "Tipo",
-            value: deviceTypeLabel(
-                normalizeDeviceType(deviceModel?.deviceType || "watch"),
-            ),
-        },
         { label: "Licença", value: licenseLabel(device.licenseId) },
-        { label: "Fornecedor", value: supplier || "-" },
-        {
-            label: "Modelo",
-            value:
-                String(deviceModel?.commercialName || "").trim() ||
-                model ||
-                "-",
-        },
+        { label: "Empresa", value: companyLabel(device.company) },
         {
             label: "Última ligação",
             value: when(device.lastSeenAt) || "Sem registo",
@@ -166,15 +157,12 @@ function renderSelectedDeviceSummary(device, deviceModel) {
     if (device.simNumber) {
         facts.push({ label: "SIM", value: String(device.simNumber) });
     }
-    if (device.deviceId && String(device.deviceId) !== String(device.imei)) {
-        facts.push({ label: "Device ID", value: String(device.deviceId) });
-    }
 
     els.selectedDevicePreview.innerHTML = image
         ? `<img src="${esc(image)}" class="object-fit-contain" alt="${esc(model || device.imei)}" style="max-width:56px;max-height:56px;">`
         : '<i class="fa-solid fa-microchip fa-xl text-secondary"></i>';
     els.selectedDeviceTitle.innerHTML = `<span class="rounded-circle ${device.online ? "bg-success" : "bg-danger"} d-inline-block flex-shrink-0 me-2" style="width:.75rem;height:.75rem;"></span>${esc(device.imei)}`;
-    els.selectedDeviceMeta.textContent = `${supplier || "Sem fornecedor"}${model ? ` · ${model}` : ""}`;
+    els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
     els.selectedDeviceFacts.innerHTML = facts
         .map(
             (item) => `

@@ -132,8 +132,14 @@ export function requestCardContent(type) {
         return { icon: "fa-stethoscope", value: "Tensão diastólica" };
     if (type === "blood_oxygen")
         return { icon: "fa-droplet", value: "Oxigénio no sangue" };
+    if (type === "blood_sugar")
+        return { icon: "fa-vial", value: "Glicemia" };
     if (type === "temperature")
         return { icon: "fa-temperature-half", value: "Temperatura" };
+    if (type === "battery")
+        return { icon: "fa-battery-three-quarters", value: "Bateria" };
+    if (type === "activity")
+        return { icon: "fa-person-walking", value: "Atividade" };
     if (type === "location")
         return { icon: "fa-location-dot", value: "Localização" };
     if (type === "sleep") return { icon: "fa-bed", value: "Sono" };
@@ -296,12 +302,11 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const card = requestCardContent(type);
     const tone = cardTone(type, command);
     const icon = command.icon || card.icon;
-    const title = card.value || featureLabel(type);
     const requestable = command.requestable !== false;
-
-    if (!requestable) {
-        return "";
-    }
+    const isSystemRequestCard = [
+        "firmware_version",
+        "device_status",
+    ].includes(type);
 
     const telemetryTypes = requestTelemetryTypes(type);
     const lastTelemetry = telemetry
@@ -315,21 +320,27 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const lastValue = lastTelemetry
         ? uplinkCardContent(type, lastTelemetry.data).value
         : card.value;
+    const title = isSystemRequestCard
+        ? card.value || featureLabel(type)
+        : lastValue || card.value || featureLabel(type);
+    const buttonHtml = requestable
+        ? `<button class="btn btn-primary btn-sm w-100" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? "disabled" : ""}>${loading ? '<span class="spinner-border spinner-border-sm me-2"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-2"></i>Pedir'}</button>`
+        : "";
+    const buttonRowHtml = buttonHtml
+        ? `<div class="mt-3 d-grid gap-2 min-w-0">${buttonHtml}</div>`
+        : "";
 
     return `
         <div class="col-12 col-md-6">
         <div class="card h-100 border-${tone.border}">
         <div class="card-body">
-        <div class="d-flex align-items-center gap-2 mb-2 min-w-0">
+        <div class="d-flex align-items-center gap-3 min-w-0">
         <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
         <div class="fw-bold ${tone.text} text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
         </div>
-        <div class="d-flex justify-content-between align-items-center gap-2 min-w-0">
-        <div class="fw-semibold ${lastTelemetry ? tone.text : "text-secondary"} text-truncate flex-grow-1 min-w-0" title="${esc(lastValue)}">${esc(lastValue)}</div>
-        <button class="btn btn-primary btn-sm" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? "disabled" : ""}>${loading ? '<span class="spinner-border spinner-border-sm me-3"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-3"></i>Pedir'}</button>
-        </div>
+        ${buttonRowHtml}
         </div>
         </div>
         </div>`;

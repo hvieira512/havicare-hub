@@ -25,8 +25,21 @@ final class DeviceListImageSourceTest extends TestCase
         self::assertStringNotContainsString('findModelInfo(supplier, model)', $listSource);
         self::assertStringNotContainsString('modelImageHtml(modelInfo)', $listSource);
 
+        preg_match(
+            '/function renderSelectedDeviceSummary\\(device, deviceModel\\) \\{.*?^\\}/sm',
+            $detailSource,
+            $summaryMatch,
+        );
+        self::assertNotEmpty($summaryMatch, 'renderSelectedDeviceSummary body not found');
+        $summarySource = $summaryMatch[0];
+
         self::assertStringContainsString('renderSelectedDeviceSummary(device, deviceModel)', $detailSource);
         self::assertStringContainsString('deviceModel?.image', $detailSource);
-        self::assertStringContainsString('deviceModel?.commercialName', $detailSource);
+        self::assertStringContainsString('companyLabel(device.company)', $summarySource);
+        self::assertStringContainsString('deviceTypeLabel(', $summarySource);
+        self::assertStringContainsString('selectedDeviceMeta.textContent = `${typeLabel} ·', $summarySource);
+        self::assertStringNotContainsString('label: "Fornecedor"', $summarySource);
+        self::assertStringNotContainsString('label: "Modelo"', $summarySource);
+        self::assertStringNotContainsString('label: "Device ID"', $summarySource);
     }
 }

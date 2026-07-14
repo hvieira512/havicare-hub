@@ -124,10 +124,9 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $response = $api->filters();
         $groups = $response['data'] ?? [];
 
-        self::assertCount(3, $groups);
+        self::assertCount(2, $groups);
         self::assertSame('watch', $groups[0]['deviceType'] ?? null);
         self::assertSame('ncs', $groups[1]['deviceType'] ?? null);
-        self::assertSame('radar', $groups[2]['deviceType'] ?? null);
         self::assertSame(['4P Touch', 'Vivistar', 'Wonlex'], array_values(array_map(
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[0]['suppliers'] ?? []
@@ -136,10 +135,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[1]['suppliers'] ?? []
         )));
-        self::assertSame(['Qinglanst'], array_values(array_map(
-            static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
-            $groups[2]['suppliers'] ?? []
-        )));
+        self::assertArrayNotHasKey(2, $groups);
     }
 
     public function testUpdateAcceptsGenericCapabilityKeys(): void
@@ -252,9 +248,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     public function testUpdateRejectsCapabilitiesOutsideDeviceTypeCatalog(): void
     {
         [$api, $db] = $this->makeApi();
-        $model = $db->models->find('Qinglanst', 'RD-V1');
-
+        $supplier = $db->suppliers->findByName('Vivistar');
+        self::assertIsArray($supplier);
+        $db->models->add((int)$supplier['id'], 'RADAR-TEMP', 'Radar Temp', 'radar');
+        $model = $db->models->find('Vivistar', 'RADAR-TEMP');
         self::assertIsArray($model);
+
         $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
             ->withParsedBody([
                 'supplier_id' => (int)$model['supplier_id'],

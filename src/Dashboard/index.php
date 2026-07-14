@@ -55,7 +55,7 @@ require_once __DIR__ . '/components/modal.php';
                         <div id="selectedDevicePanel" class="d-none">
                             <div class="d-flex align-items-start gap-3 mb-4">
                                 <div id="selectedDevicePreview" class="selected-device-preview"></div>
-                                <div class="min-width-0 flex-grow-1">
+                                <div class="min-width-0 flex-grow-1 lh-1">
                                     <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
                                         <h1 class="h4 mb-0 text-break" id="selectedDeviceTitle"></h1>
                                         <span id="selectedDeviceBadge" class="badge"></span>

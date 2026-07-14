@@ -18,8 +18,30 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('label: "Informação do sistema"', $source);
         self::assertStringContainsString('"firmware_version"', $source);
         self::assertStringContainsString('"device_status"', $source);
+        self::assertStringContainsString('filter(([, entry]) => entry?.supported)', $source);
         self::assertStringContainsString('renderRequestCardGroup(group, telemetry)', $source);
         self::assertStringContainsString('group.cards.length', $source);
+
+        $renderersSource = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/renderers.js'
+        );
+        self::assertIsString($renderersSource);
+        self::assertStringContainsString('const buttonHtml = requestable', $renderersSource);
+        self::assertStringNotContainsString('if (!requestable) {', $renderersSource);
+        self::assertStringContainsString('const isSystemRequestCard = [', $renderersSource);
+        self::assertStringContainsString('firmware_version', $renderersSource);
+        self::assertStringContainsString('device_status', $renderersSource);
+        self::assertStringContainsString('const title = isSystemRequestCard', $renderersSource);
+        self::assertStringContainsString('btn btn-primary btn-sm w-100', $renderersSource);
+        self::assertStringContainsString('const buttonRowHtml = buttonHtml', $renderersSource);
+        self::assertStringContainsString('mt-2 d-grid gap-2 min-w-0', $renderersSource);
+        self::assertStringNotContainsString('mb-2 min-w-0', $renderersSource);
+        self::assertStringContainsString('if (type === "battery")', $renderersSource);
+        self::assertStringContainsString('icon: "fa-battery-three-quarters"', $renderersSource);
+        self::assertStringContainsString('if (type === "activity")', $renderersSource);
+        self::assertStringContainsString('icon: "fa-person-walking"', $renderersSource);
+        self::assertStringContainsString('if (type === "blood_sugar")', $renderersSource);
+        self::assertStringContainsString('icon: "fa-vial"', $renderersSource);
     }
 
     public function testFourPTouchSettingsModalUsesNativeEditors(): void
