@@ -445,6 +445,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const card = requestCardContent(type);
     const tone = cardTone(type, command);
     const icon = command.icon || card.icon;
+    const tooltip = featureLabel(type) || card.value || type;
     const requestable = command.requestable !== false;
     const isSystemRequestCard = [
         "firmware_version",
@@ -478,7 +479,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         <div class="card h-100 border-${tone.border}">
         <div class="card-body">
         <div class="d-flex align-items-center gap-3 min-w-0">
-        <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;">
+        <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(tooltip)}" aria-label="${esc(tooltip)}" tabindex="0">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
         <div class="fw-bold ${tone.text} text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>

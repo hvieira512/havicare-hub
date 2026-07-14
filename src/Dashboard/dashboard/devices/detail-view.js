@@ -450,11 +450,13 @@ function renderRequestCards(groups, telemetry = []) {
     els.requestCardCount.textContent = totalCards
         ? `${totalCards} ações`
         : "";
+    disposeRequestGridTooltips();
     els.requestGrid.innerHTML = totalCards
         ? groups
               .map((group) => renderRequestCardGroup(group, telemetry))
               .join("")
         : `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
+    refreshRequestGridTooltips();
 }
 
 function renderRequestCardGroup(group, telemetry = []) {
@@ -630,6 +632,32 @@ function renderConnectionTimeline(rows) {
             xAxis: dateAxis,
         }),
     );
+}
+
+function refreshRequestGridTooltips() {
+    const bootstrap = window.bootstrap;
+    if (!bootstrap?.Tooltip || !els.requestGrid) {
+        return;
+    }
+
+    els.requestGrid
+        .querySelectorAll('[data-bs-toggle="tooltip"]')
+        .forEach((element) => {
+            bootstrap.Tooltip.getOrCreateInstance(element);
+        });
+}
+
+function disposeRequestGridTooltips() {
+    const bootstrap = window.bootstrap;
+    if (!bootstrap?.Tooltip || !els.requestGrid) {
+        return;
+    }
+
+    els.requestGrid
+        .querySelectorAll('[data-bs-toggle="tooltip"]')
+        .forEach((element) => {
+            bootstrap.Tooltip.getInstance(element)?.dispose();
+        });
 }
 
 function connectionTimelineData(events) {
