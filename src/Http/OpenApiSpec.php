@@ -1077,6 +1077,17 @@ class OpenApiSpec
                             'enabled' => ['type' => 'boolean'],
                             'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1, 'description' => 'Required for Vivistar alarm_clock. Not supported by 4P Touch alarmClock.'],
                             'recurrence' => ['$ref' => '#/components/schemas/AlarmClockRecurrence'],
+                            'days' => [
+                                'type' => 'array',
+                                'nullable' => true,
+                                'items' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 7],
+                                'description' => 'Legacy Vivistar compatibility field mirrored in GET responses.',
+                            ],
+                            'custom' => [
+                                'type' => 'string',
+                                'nullable' => true,
+                                'description' => 'Legacy recurrence mask/string compatibility field mirrored in GET responses.',
+                            ],
                         ],
                         'required' => ['time', 'enabled'],
                     ],
@@ -1128,7 +1139,7 @@ class OpenApiSpec
                     ],
                     'AlarmClockConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Include type only for Vivistar.',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Include type only for Vivistar, and omit it for 4P Touch.',
                         'properties' => [
                             'items' => [
                                 'type' => 'array',
@@ -1227,7 +1238,7 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom.',
+                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
                                 ],
