@@ -36,6 +36,31 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertSame($first['deviceType'], $response['deviceType'] ?? null);
     }
 
+    public function testListReturnsVoerkaNcsPagerCallCapability(): void
+    {
+        $api = $this->makeApi();
+
+        $response = $api->list('deviceType=ncs');
+        $keys = array_column($response['data'] ?? [], 'key');
+
+        self::assertContains('pager_call', $keys);
+        $pagerCall = null;
+        foreach ($response['data'] ?? [] as $entry) {
+            if (($entry['key'] ?? '') === 'pager_call') {
+                $pagerCall = $entry;
+                break;
+            }
+        }
+
+        self::assertIsArray($pagerCall);
+        self::assertSame('ncs', $pagerCall['deviceType'] ?? null);
+        self::assertSame('alarms', $pagerCall['section'] ?? null);
+        self::assertSame('Chamada de enfermagem', $pagerCall['label'] ?? null);
+        self::assertTrue($pagerCall['isEvent'] ?? false);
+        self::assertFalse($pagerCall['isConfigurable'] ?? true);
+        self::assertFalse($pagerCall['isRequestable'] ?? true);
+    }
+
     private function makeApi(): CapabilityService
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());

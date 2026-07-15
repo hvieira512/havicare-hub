@@ -101,4 +101,27 @@ final class SupplierCapabilityTemplateTest extends TestCase
             $actual
         );
     }
+
+    public function testVoerkaNcsTemplateReturnsPagerCall(): void
+    {
+        $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('Voerka', 'ncs');
+
+        self::assertSame(['pager_call'], $actual);
+    }
+
+    public function testNcsCatalogPlacesPagerCallInAlarms(): void
+    {
+        $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('ncs');
+        $match = array_values(array_filter(
+            $definitions,
+            static fn(array $definition): bool => ($definition['key'] ?? '') === 'pager_call'
+        ));
+
+        self::assertCount(1, $match);
+        self::assertSame('alarms', $match[0]['section'] ?? null);
+        self::assertSame('Chamada de enfermagem', $match[0]['label'] ?? null);
+        self::assertFalse($match[0]['isConfigurable'] ?? true);
+        self::assertFalse($match[0]['isTelemetry'] ?? true);
+        self::assertTrue($match[0]['isEvent'] ?? false);
+    }
 }

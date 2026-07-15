@@ -12,10 +12,10 @@ final class DatabaseWhitelistRepositorySourceTest extends MysqlDashboardTestCase
     public function testWhitelistStoresNcsAliasInDeviceId(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->whitelist->register('ncs-gateway-01', 'Voerka', 'W812', 'ncs', 1001, '', 'gw-001');
+        $db->whitelist->register('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 0, '', 'bea6c3dd8e02');
 
-        $row = $db->whitelist->get('ncs-gateway-01');
+        $row = $db->whitelist->get('bea6c3dd8e02');
         self::assertIsArray($row);
-        self::assertSame('gw-001', $row['device_id'] ?? null);
+        self::assertSame('bea6c3dd8e02', $row['device_id'] ?? null);
     }
 }

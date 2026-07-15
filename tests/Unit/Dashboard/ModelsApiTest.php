@@ -32,7 +32,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($response['capabilities']['telemetry']['location'] ?? false);
         self::assertTrue($response['capabilities']['health']['auto_vitals_interval'] ?? false);
         self::assertTrue($response['capabilities']['contacts']['phonebook'] ?? false);
-        self::assertTrue($response['capabilities']['settings_system']['language_timezone'] ?? false);
+        self::assertFalse($response['capabilities']['settings_system']['language_timezone'] ?? false);
     }
 
     public function testTemplateReturnsDerivedCapabilitiesForSupplierAndDeviceType(): void
@@ -140,6 +140,30 @@ final class ModelsApiTest extends MysqlDashboardTestCase
             static fn (array $supplier): string => (string)($supplier['name'] ?? ''),
             $groups[2]['suppliers'] ?? []
         )));
+    }
+
+    public function testBootstrapSeedsVoerkaW812AsNcsModel(): void
+    {
+        [, $db] = $this->makeApi();
+        $model = $db->models->find('Voerka', 'W812');
+
+        self::assertIsArray($model);
+        self::assertSame('Voerka', $model['supplier_name'] ?? null);
+        self::assertSame('W812', $model['internal_model'] ?? null);
+        self::assertSame('W812', $model['commercial_name'] ?? null);
+        self::assertSame('ncs', $model['device_type'] ?? null);
+    }
+
+    public function testBootstrapSeedsVoerkaW812PagerCallCapability(): void
+    {
+        [, $db] = $this->makeApi();
+        $model = $db->models->find('Voerka', 'W812');
+
+        self::assertIsArray($model);
+        self::assertSame(
+            ['pager_call'],
+            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
+        );
     }
 
     public function testUpdateAcceptsGenericCapabilityKeys(): void

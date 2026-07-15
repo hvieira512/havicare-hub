@@ -1264,6 +1264,24 @@ class DeviceService
         }
         unset($sectionCaps);
 
+        if ($deviceType === 'ncs') {
+            foreach ($matrix as $section => $sectionMatrix) {
+                if ($section === 'telemetry') {
+                    continue;
+                }
+
+                foreach ($sectionMatrix as $genericKey => $supported) {
+                    if (!$supported || array_key_exists($genericKey, $capabilities[$section] ?? [])) {
+                        continue;
+                    }
+
+                    $capabilities[$section][$genericKey] = [
+                        'supported' => true,
+                    ];
+                }
+            }
+        }
+
         return $capabilities;
     }
 
@@ -1317,6 +1335,9 @@ class DeviceService
                 continue;
             }
             foreach ($entries as $key => $value) {
+                if (is_array($value) && array_key_exists('supported', $value) && !array_key_exists('value', $value)) {
+                    continue;
+                }
                 $flattened["{$section}.{$key}"] = $this->extractCapabilityValue($value);
             }
         }

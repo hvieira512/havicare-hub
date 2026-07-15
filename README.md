@@ -258,6 +258,110 @@ The hub maps the generic feature to the correct protocol-specific downlink inter
 
 The dashboard derives requestable telemetry actions directly from `GET /api/devices/{imei}` by reading `capabilities.telemetry.{feature}.requestable`.
 
+## NCS MQTT Contract
+
+Voerka W812 NCS gateways are handled as a separate ingress family. They do not publish telemetry in the current implementation. The hub normalizes only two upstream message kinds:
+
+- `status/online`
+- `events`
+
+### Upstream topics
+
+The hub listens to:
+
+```text
+/voerka/#
+```
+
+The firmware currently emits, at minimum:
+
+- `/voerka/<scope>/devices/<gatewayId>/status/online`
+- `/voerka/<scope>/devices/<gatewayId>/events`
+
+### Normalized MQTT topics
+
+The hub republishes NCS messages to:
+
+- `havicare-hub-dev/{licenseId}/ncs/{deviceId}/raw`
+- `havicare-hub-dev/{licenseId}/ncs/{deviceId}/status`
+- `havicare-hub-dev/{licenseId}/ncs/{deviceId}/events`
+
+There is no NCS telemetry topic today.
+
+### Status payload
+
+`status/online` is normalized into a status message with this shape:
+
+```json
+{
+  "schemaVersion": 1,
+  "state": "online",
+  "updatedAt": "2026-07-15T11:30:00Z",
+  "device": {
+    "id": "bea6c3dd8e02",
+    "supplier": "Voerka",
+    "model": "W812"
+  }
+}
+```
+
+The normalized status payload does not use a `data` object.
+
+The hub also emits a lifecycle event alongside status:
+
+- `device.connected` when the device reports `online: true`
+- `device.disconnected` when the device reports `online: false`
+
+### Event payload
+
+Button presses are normalized into flat event types:
+
+- `help_call`
+- `reset`
+
+The normalized event payload shape is:
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "help_call",
+  "occurredAt": "2026-07-15T11:30:00Z",
+  "device": {
+    "id": "bea6c3dd8e02",
+    "supplier": "Voerka",
+    "model": "W812"
+  },
+  "data": {
+    "pagerId": "482929"
+  }
+}
+```
+
+For `reset`, the same structure is used with `type: "reset"`.
+
+Mapping details:
+
+- firmware key `8` becomes `help_call`
+- firmware keys `0`, `1`, and `2` become `reset`
+
+If a firmware key cannot be mapped, the hub discards the normalized event.
+
+### Raw payload
+
+The hub always preserves the original upstream message in the `raw` stream for audit/debug purposes.
+
+The raw payload keeps:
+
+- the original upstream topic
+- the source scope and message kind
+- the decoded upstream payload
+
+### NCS notes
+
+- `location` may appear in the upstream firmware payload, but the hub does not normalize it into telemetry.
+- The topic namespace already identifies the NCS family, so normalized `type` values stay flat and do not use dotted prefixes like `ncs.pager.help_call`.
+- The generic capability exposed for this family is `pager_call` in `alarms`, with the display label `Chamada de enfermagem`.
+
 ## MQTT Topics
 
 Uplink from device to MQTT:

@@ -30,7 +30,7 @@ final class GenericModelCapabilityCatalog
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function definitions(): array
     {
@@ -63,7 +63,7 @@ final class GenericModelCapabilityCatalog
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     public static function definitionsForDeviceType(string $deviceType): array
     {
@@ -81,6 +81,9 @@ final class GenericModelCapabilityCatalog
     public static function keysForProtocol(string $protocol): array
     {
         $keys = [];
+        foreach (self::protocolSpecificKeys($protocol) as $protocolKey) {
+            $keys[$protocolKey] = true;
+        }
         foreach (self::telemetryKeysForProtocol($protocol) as $telemetryKey) {
             $keys[$telemetryKey] = true;
         }
@@ -100,6 +103,17 @@ final class GenericModelCapabilityCatalog
         }
 
         return array_keys($keys);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function protocolSpecificKeys(string $protocol): array
+    {
+        return match ($protocol) {
+            'voerka-ncs' => ['pager_call'],
+            default => [],
+        };
     }
 
     /**
@@ -300,7 +314,7 @@ final class GenericModelCapabilityCatalog
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     private static function watchDefinitions(): array
     {
@@ -381,11 +395,17 @@ final class GenericModelCapabilityCatalog
      */
     private static function deviceTypePlaceholderDefinitions(string $deviceType): array
     {
-        return [];
+        if ($deviceType !== 'ncs') {
+            return [];
+        }
+
+        return [
+            ['deviceType' => 'ncs', 'section' => 'alarms', 'key' => 'pager_call', 'label' => 'Chamada de enfermagem', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+        ];
     }
 
     /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
+     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */
     private static function radarDefinitions(): array
     {

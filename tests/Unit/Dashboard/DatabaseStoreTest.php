@@ -15,7 +15,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $catalog = $db->genericCapabilities->all('watch');
         self::assertNotEmpty($catalog);
         self::assertSame('watch', $catalog[0]['device_type'] ?? null);
-        self::assertSame(5, count($db->models->all()));
+        self::assertSame(6, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -27,7 +27,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
 
         $db = ApiDataAccess::fromDatabase($database);
-        self::assertSame(5, count($db->models->all()));
+        self::assertSame(6, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -46,6 +46,31 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         sort($expectedRadar);
         sort($actualRadar);
         self::assertSame($expectedRadar, $actualRadar);
+    }
+
+    public function testBootstrapDropsLegacyGenericCapabilitiesTable(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+        $pdo->exec('CREATE TABLE generic_capabilities (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB');
+
+        $databaseNameRow = $pdo->query('SELECT DATABASE() AS db_name')->fetch();
+        self::assertIsArray($databaseNameRow);
+        $databaseName = (string)($databaseNameRow['db_name'] ?? '');
+        self::assertNotSame('', $databaseName);
+
+        $normalizedDatabase = new \Hub\Infrastructure\Persistence\DashboardDatabase([
+            'driver' => 'mysql',
+            'host' => (string)(getenv('TEST_DB_HOST') ?: getenv('DB_HOST') ?: '127.0.0.1'),
+            'port' => (int)(getenv('TEST_DB_PORT') ?: getenv('DB_PORT') ?: 3306),
+            'name' => $databaseName,
+            'username' => (string)(getenv('TEST_DB_ADMIN_USER') ?: getenv('DB_ROOT_USER') ?: 'root'),
+            'password' => (string)(getenv('TEST_DB_ADMIN_PASSWORD') ?: getenv('DB_ROOT_PASSWORD') ?: 'root_pass'),
+            'charset' => (string)(getenv('TEST_DB_CHARSET') ?: getenv('DB_CHARSET') ?: 'utf8mb4'),
+        ]);
+
+        $check = $normalizedDatabase->pdo()->query("SHOW TABLES LIKE 'generic_capabilities'");
+        self::assertFalse((bool)$check->fetchColumn());
     }
 
     public function testModelCapabilitiesCanBeReplacedPerModel(): void

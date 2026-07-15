@@ -427,7 +427,7 @@ class OpenApiSpec
                     'get' => [
                         'tags' => ['Models'],
                         'summary' => 'Get supplier capability template for a device type',
-                        'description' => 'Returns the subset of generalized capabilities that a given supplier supports for the given device type, based on the supplier\'s protocol.',
+                        'description' => 'Returns the subset of device-type capabilities that a given supplier supports for the given device type, based on the supplier\'s protocol.',
                         'parameters' => [
                             ['name' => 'supplierId', 'in' => 'query', 'required' => true, 'schema' => ['type' => 'integer', 'example' => 1]],
                             ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'default' => 'watch', 'example' => 'watch']],
@@ -576,7 +576,7 @@ class OpenApiSpec
                 '/api/capabilities' => [
                     'get' => [
                         'tags' => ['Capabilities'],
-                        'summary' => 'List generalized capabilities',
+                        'summary' => 'List device-type capability catalog',
                         'parameters' => [
                             ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['watch', 'ncs', 'radar']]],
                         ],
@@ -591,7 +591,7 @@ class OpenApiSpec
                 '/api/capabilities/{id}' => [
                     'get' => [
                         'tags' => ['Capabilities'],
-                        'summary' => 'Get generalized capability detail',
+                        'summary' => 'Get capability detail',
                         'parameters' => [$capabilityIdParam],
                         'responses' => [
                             '200' => [
@@ -1548,6 +1548,7 @@ class OpenApiSpec
                             'isTelemetry' => ['type' => 'boolean', 'example' => true],
                             'isConfigurable' => ['type' => 'boolean', 'example' => false],
                             'isRequestable' => ['type' => 'boolean', 'example' => true],
+                            'isEvent' => ['type' => 'boolean', 'example' => false],
                         ],
                     ],
                     'CapabilityListResponse' => [

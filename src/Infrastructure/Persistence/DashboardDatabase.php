@@ -21,6 +21,7 @@ final class DashboardDatabase
         ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['4P Touch', 'D46', 'D46', 'watch', ''],
+        ['Voerka', 'W812', 'W812', 'ncs', ''],
         ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
     ];
 
@@ -59,8 +60,10 @@ final class DashboardDatabase
         $this->seedDefaults();
         $this->seedDefaultSupplierDeviceTypes();
         $this->seedDefaultCapabilities();
+        $this->normalizePersistedCapabilities();
         $this->migrateModelCapabilitiesToCapabilityIds();
         $this->seedDefaultModelCapabilities();
+        $this->ensureVoerkaW812PagerCallCapability();
         $this->normalizePersistedModelCapabilities();
         $this->normalizePersistedDeviceConfigurations();
     }
@@ -249,6 +252,40 @@ final class DashboardDatabase
         }
     }
 
+    private function normalizePersistedCapabilities(): void
+    {
+        $allowed = [];
+        foreach (\Hub\Domain\GenericModelCapabilityCatalog::definitions() as $definition) {
+            $deviceType = trim((string)($definition['deviceType'] ?? ''));
+            $key = trim((string)($definition['key'] ?? ''));
+            if ($deviceType === '' || $key === '') {
+                continue;
+            }
+            $allowed[$deviceType . ':' . $key] = true;
+        }
+
+        $stmt = $this->pdo->query('SELECT id, device_type, capability_key FROM capabilities');
+        if (!$stmt) {
+            return;
+        }
+
+        $delete = $this->pdo->prepare('DELETE FROM capabilities WHERE id = ?');
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $id = (int)($row['id'] ?? 0);
+            $deviceType = trim((string)($row['device_type'] ?? ''));
+            $key = trim((string)($row['capability_key'] ?? ''));
+            if ($id <= 0 || $deviceType === '' || $key === '') {
+                continue;
+            }
+
+            if (isset($allowed[$deviceType . ':' . $key])) {
+                continue;
+            }
+
+            $delete->execute([$id]);
+        }
+    }
+
     private function migrateModelCapabilitiesToCapabilityIds(): void
     {
         $columnCheck = $this->pdo->query("SHOW COLUMNS FROM model_capabilities LIKE 'capability_key'");
@@ -319,6 +356,38 @@ final class DashboardDatabase
                 }
             }
         }
+    }
+
+    private function ensureVoerkaW812PagerCallCapability(): void
+    {
+        $modelStmt = $this->pdo->prepare('
+            SELECT m.id
+            FROM models m
+            JOIN suppliers s ON s.id = m.supplier_id
+            WHERE s.name = ? AND m.internal_model = ? AND m.device_type = ?
+            LIMIT 1
+        ');
+        $modelStmt->execute(['Voerka', 'W812', 'ncs']);
+        $modelId = (int)($modelStmt->fetchColumn() ?: 0);
+        if ($modelId <= 0) {
+            return;
+        }
+
+        $capabilityStmt = $this->pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
+        $capabilityStmt->execute(['ncs', 'pager_call']);
+        $capabilityId = (int)($capabilityStmt->fetchColumn() ?: 0);
+        if ($capabilityId <= 0) {
+            return;
+        }
+
+        $exists = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
+        $exists->execute([$modelId, $capabilityId]);
+        if ((int)$exists->fetchColumn() > 0) {
+            return;
+        }
+
+        $insert = $this->pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
+        $insert->execute([$modelId, $capabilityId]);
     }
 
     private function normalizePersistedModelCapabilities(): void
@@ -475,6 +544,7 @@ final class DashboardDatabase
 
     private function migrateSchema(): void
     {
+        $this->pdo->exec('DROP TABLE IF EXISTS generic_capabilities');
         $this->ensureColumn('models', 'image_path', 'VARCHAR(255) NOT NULL DEFAULT \'\' AFTER device_type');
         $this->ensureColumn('supplier_device_types', 'enabled', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER supplier_id');
         $this->ensureColumn('supplier_device_types', 'created_at', 'DATETIME NULL DEFAULT NULL AFTER device_type');

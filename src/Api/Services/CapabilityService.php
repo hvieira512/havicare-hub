@@ -49,6 +49,7 @@ class CapabilityService
             'isTelemetry' => (bool)($row['is_telemetry'] ?? false),
             'isConfigurable' => (bool)($row['is_configurable'] ?? false),
             'isRequestable' => (bool)($row['is_requestable'] ?? false),
+            'isEvent' => (bool)($row['is_event'] ?? false),
         ];
     }
 }

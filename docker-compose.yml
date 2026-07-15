@@ -60,11 +60,12 @@ services:
     volumes:
       - .:/app
     environment:
-      MQTT_HOST: mosquitto
+      MQTT_HOST: ${MQTT_HOST:-mosquitto}
       MQTT_PORT: ${MQTT_PORT:-1883}
-      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX-}
-      MQTT_USERNAME: ${MQTT_PUBLISHER_USERNAME:-hub_publisher}
-      MQTT_PASSWORD: ${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-}
+      MQTT_CLIENT_ID_PREFIX: ${MQTT_CLIENT_ID_PREFIX:-havicare-hub-dev}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}

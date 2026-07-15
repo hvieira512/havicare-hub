@@ -116,13 +116,11 @@
         "simNumber": "",
         "deviceId": "AD8A613B0493"
     },
-    "ncs-gateway-01": {
+    "bea6c3dd8e02": {
         "supplier": "Voerka",
         "model": "W812",
         "deviceType": "ncs",
-        "licenseId": 1001,
-        "company": "null",
         "simNumber": "",
-        "deviceId": "gw-001"
+        "deviceId": "bea6c3dd8e02"
     }
 }
