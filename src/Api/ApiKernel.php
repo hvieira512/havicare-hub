@@ -253,7 +253,37 @@ final class ApiKernel
             'role' => $authContext?->role,
             'license_id' => $authContext?->licenseId,
             'request_body' => (string)$request->getAttribute(RequestContext::ATTR_RAW_BODY, ''),
+            'response_content_type' => $response->getHeaderLine('Content-Type'),
+            'response_body' => $this->responseBodyPreview($response),
         ]);
+    }
+
+    private function responseBodyPreview(Response $response, int $limit = 4096): ?string
+    {
+        $body = $response->getBody();
+        try {
+            if ($body->isSeekable()) {
+                $position = $body->tell();
+                $body->rewind();
+                $contents = $body->getContents();
+                $body->seek($position);
+            } else {
+                $contents = (string)$body;
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $contents = trim($contents);
+        if ($contents === '') {
+            return null;
+        }
+
+        if (strlen($contents) > $limit) {
+            $contents = substr($contents, 0, $limit) . '...';
+        }
+
+        return $contents;
     }
 
     private function safeLogApiRequest(

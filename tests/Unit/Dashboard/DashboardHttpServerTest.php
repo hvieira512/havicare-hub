@@ -225,6 +225,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('API request completed', $log);
         self::assertStringContainsString('"request_id":"' . $requestId . '"', $log);
         self::assertStringContainsString('"request_body":' . json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $log);
+        self::assertStringContainsString('"response_content_type":"application/json"', $log);
+        self::assertStringContainsString('"response_body":"{\"status\":\"ok\",\"token\":', $log);
     }
 
     public function testUnauthorizedApiRequestIsStillLogged(): void
@@ -243,6 +245,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('API request completed', $log);
         self::assertStringContainsString('"status":401', $log);
         self::assertStringContainsString('"auth_state":"missing"', $log);
+        self::assertStringContainsString('"response_content_type":"application/json"', $log);
+        self::assertStringContainsString('"response_body":"{\"error\":{\"code\":\"unauthorized\"', $log);
     }
 
     public function testApiDocsAndOpenApiJsonArePublicWhileDevicesRemainProtected(): void
@@ -482,6 +486,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('"request_id":"req-config-1"', $log);
         self::assertStringContainsString('"request_body":' . json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $log);
         self::assertStringContainsString('"path":"/api/devices/861265061009822/configurations"', $log);
+        self::assertStringContainsString('"response_content_type":"application/json"', $log);
+        self::assertStringContainsString('"response_body":"{\"status\":\"ok\",\"results\":', $log);
     }
 
     public function testTenantClientCanAssociateUnassignedDeviceViaPatchEndpoint(): void
