@@ -72,6 +72,13 @@ require_once __DIR__ . '/components/modal.php';
                                 </div>
                                 <div class="row g-3" id="requestGrid"></div>
                             </div>
+                            <div id="ncsEventSection" class="border-top pt-4 mt-4 d-none">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="fw-semibold"><?= icon('fa-bell', 'me-2') ?>Eventos NCS recentes</span>
+                                    <span id="ncsEventCardCount" class="small text-secondary"></span>
+                                </div>
+                                <div class="row g-3" id="ncsEventGrid"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

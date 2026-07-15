@@ -62,8 +62,13 @@ export const featureLabel = (type) =>
         breath_rate: "Frequência respiratória",
         ppg: "PPG",
         rr_interval: "Intervalo RR",
+        "device.connected": "Ligado",
+        "device.disconnected": "Desligado",
+        pager_call: "Chamada de enfermagem",
+        help_call: "Chamada de enfermagem",
+        reset: "Cancelada",
+        unknown: "Desconhecida",
         device_config: "Configuração",
-        "ncs.event": "Chamada de Enfermeiros",
     })[type] || titleize(type);
 
 export const fieldLabel = (key) =>
@@ -77,6 +82,9 @@ export const fieldLabel = (key) =>
         speedKmh: "Velocidade",
         accuracyMeters: "Precisão",
         code: "Código",
+        pagerId: "Pager",
+        buttonId: "Botão",
+        gatewayId: "Gateway",
         lowBattery: "Bateria fraca",
         fall: "Queda",
         wearingNotice: "Aviso de utilização",
@@ -137,6 +145,8 @@ export const fieldLabel = (key) =>
         exerciseHRMax: "FC máxima em exercício",
         exerciseRemindValue: "Limite em exercício",
         event: "Evento",
+        help_call: "Chamada de enfermagem",
+        reset: "Tecla acionada",
         deviceId: "ID do dispositivo",
         topicSourceId: "Origem",
         messageType: "Tipo",

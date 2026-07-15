@@ -257,8 +257,8 @@ function renderCapabilitiesCatalogSection() {
                             ${hasSupplierFilter ? `<span class="badge ${supported ? "text-bg-success" : "text-bg-secondary"} mt-1 flex-shrink-0">${supported ? "suportado" : "não suportado"}</span>` : ""}
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-2">
-                            <span class="badge text-bg-${entry.isTelemetry ? "info" : "secondary"}">${entry.isTelemetry ? "telemetria" : "configuração"}</span>
-                            <span class="badge text-bg-${entry.isConfigurable ? "primary" : "secondary"}">${entry.isConfigurable ? "configurável" : "não configurável"}</span>
+                            <span class="badge text-bg-${entry.isTelemetry ? "info" : (entry.isEvent ? "warning" : "secondary")}">${entry.isTelemetry ? "telemetria" : (entry.isEvent ? "evento" : "configuração")}</span>
+                            ${entry.isConfigurable ? `<span class="badge text-bg-primary">configurável</span>` : ""}
                             <span class="badge text-bg-${entry.isRequestable ? "success" : "secondary"}">${entry.isRequestable ? "solicitável" : "não solicitável"}</span>
                         </div>
                     </div>
@@ -779,7 +779,12 @@ function renderCapabilitiesSection() {
     const sections = catalogSections
         .map(({ section, label, entries }) => {
             const sectionEntries = entries
-                .filter((entry) => entry.isTelemetry || entry.isConfigurable)
+                .filter(
+                    (entry) =>
+                        entry.isTelemetry ||
+                        entry.isConfigurable ||
+                        entry.isEvent,
+                )
                 .filter((entry) =>
                     templateKeys.length > 0
                         ? templateSet.has(entry.key)

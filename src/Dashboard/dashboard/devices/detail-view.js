@@ -21,6 +21,7 @@ import {
 } from "../format.js";
 import {
     emptyPanel,
+    cardTone,
     renderRequestCardShell,
     statusBadge,
     uplinkCardContent,
@@ -28,10 +29,11 @@ import {
 import {clearStorageKey, saveTextStorage} from "../core/storage.js";
 
 const DETAIL_ITEM_TYPES = {
-    "ncs.event": (payload) => payload.data?.event || "general_alert",
     "device.connected": () => "device.connected",
     "device.disconnected": () => "device.disconnected",
 };
+
+const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];
 
 let els;
 let loadDeviceFn = async () => false;
@@ -53,6 +55,9 @@ function renderSelection() {
     if (!state.selectedDetail) {
         els.requestCardCount.textContent = "";
         els.requestGrid.innerHTML = "";
+        els.ncsEventCardCount.textContent = "";
+        els.ncsEventGrid.innerHTML = "";
+        els.ncsEventSection.classList.add("d-none");
         return;
     }
 
@@ -71,10 +76,13 @@ function renderSelection() {
 
     const allItems = allDetailItems();
     const filtered = filterDetailItems(allItems);
+    const deviceType = normalizeDeviceType(deviceModel?.deviceType || "watch");
     const ncsEvents = filtered
         .filter(
-            (item) =>
-                item._source === "event" && item.payload?.type === "ncs.event",
+        (item) =>
+            item._source === "event" &&
+            (item.payload?.type === "help_call" ||
+                item.payload?.type === "reset"),
         )
         .map((item) => item.raw);
     const telemetry = filtered
@@ -94,6 +102,13 @@ function renderSelection() {
         ),
         telemetry,
     );
+    if (deviceType === "ncs") {
+        renderNcsEventCards(ncsEvents);
+    } else {
+        els.ncsEventCardCount.textContent = "";
+        els.ncsEventGrid.innerHTML = "";
+        els.ncsEventSection.classList.add("d-none");
+    }
     renderDownlinkRequests(commands);
     renderConnectionTimeline(connectionEvents);
 }
@@ -192,7 +207,10 @@ function allDetailItems() {
     for (const row of recent.events || []) {
         const payload = rowPayload(row);
         if (!payload) continue;
-        if (payload.type === "ncs.event")
+        if (
+            payload.type === "help_call" ||
+            payload.type === "reset"
+        )
             items.push({ _source: "event", raw: row, payload });
         if (
             payload.type === "device.connected" ||
@@ -390,7 +408,10 @@ function telemetryDetails(data, payload) {
 
     const details = [];
     const skipKeys =
-        payload?.type === "ncs.event" ? new Set(["event", "alarm"]) : new Set();
+        payload?.type === "help_call" ||
+        payload?.type === "reset"
+            ? new Set(["event", "alarm"])
+            : new Set();
     if (data && typeof data === "object") {
         for (const [key, value] of Object.entries(data)) {
             if (value === undefined || value === null || value === "") continue;
@@ -484,6 +505,52 @@ function renderRequestCardGroup(group, telemetry = []) {
                 ),
             )
             .join("")}
+        </div>
+        </div>
+        </div>`;
+}
+
+function renderNcsEventCards(rows = []) {
+    const cards = NCS_EVENT_CARD_TYPES.map((type) => {
+        const latest = rows
+            .map(rowPayload)
+            .filter((payload) => payload && payload.type === type)
+            .sort((a, b) => eventTime(b) - eventTime(a))[0];
+        return latest ? { type, latest } : null;
+    })
+        .filter(Boolean)
+        .sort((left, right) => eventTime(right.latest) - eventTime(left.latest));
+
+    els.ncsEventSection.classList.toggle("d-none", cards.length === 0);
+    els.ncsEventCardCount.textContent = cards.length
+        ? `${cards.length} eventos`
+        : "";
+    els.ncsEventGrid.innerHTML = cards.length
+        ? cards.map(renderNcsEventCard).join("")
+        : `<div class="col-12">${emptyPanel("Ainda não há eventos NCS recebidos.")}</div>`;
+}
+
+function renderNcsEventCard({type, latest}) {
+    const content = uplinkCardContent(type, latest.data || {});
+    const tone = cardTone(type);
+    const timestamp = when(latest.occurredAt || latest.recordedAt) || "hora desconhecida";
+    const pagerId =
+        latest.data && typeof latest.data === "object"
+            ? String(latest.data.pagerId || "")
+            : "";
+
+    return `
+        <div class="col-12 col-md-6">
+        <div class="card h-100 border-${tone.border}">
+        <div class="card-body">
+        <div class="d-flex align-items-center gap-3 min-w-0">
+        <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;">
+        <i class="fa-solid ${esc(content.icon)}"></i>
+        </div>
+        <div class="fw-bold ${tone.text} text-truncate flex-grow-1 min-w-0" title="${esc(content.value)}">${esc(content.value)}</div>
+        </div>
+        <div class="small text-secondary mt-2">Último evento: ${esc(timestamp)}</div>
+        ${pagerId ? `<div class="small text-secondary">Pager: ${esc(pagerId)}</div>` : ""}
         </div>
         </div>
         </div>`;

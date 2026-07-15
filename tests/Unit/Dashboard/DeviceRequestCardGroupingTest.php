@@ -39,6 +39,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);
         self::assertStringContainsString('activity: {icon: "fa-person-walking"', $renderersSource);
         self::assertStringContainsString('blood_sugar: {icon: "fa-vial"', $renderersSource);
+
+        self::assertStringContainsString('const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];', $source);
+        self::assertStringContainsString('renderTelemetryList([...telemetry, ...ncsEvents]);', $source);
+        self::assertStringContainsString('renderNcsEventCards(ncsEvents);', $source);
+        self::assertStringContainsString('renderNcsEventCard({type, latest})', $source);
+        self::assertStringContainsString('Eventos NCS recentes', file_get_contents(dirname(__DIR__, 3) . '/src/Dashboard/index.php'));
     }
 
     public function testFourPTouchSettingsModalUsesNativeEditors(): void

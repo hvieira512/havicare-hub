@@ -51,7 +51,11 @@ const CARD_TONE_BY_TYPE = {
         bg: "bg-secondary",
         text: "text-secondary",
     },
-    "ncs.event": {border: "danger", bg: "bg-danger", text: "text-danger"},
+    help_call: {border: "danger", bg: "bg-danger", text: "text-danger"},
+    reset: {border: "warning", bg: "bg-warning", text: "text-warning"},
+    unknown: {border: "secondary", bg: "bg-secondary", text: "text-secondary"},
+    "device.connected": {border: "success", bg: "bg-success", text: "text-success"},
+    "device.disconnected": {border: "danger", bg: "bg-danger", text: "text-danger"},
 };
 
 const ALERT_CARD_TONE = {border: "danger", bg: "bg-danger", text: "text-danger"};
@@ -82,6 +86,11 @@ const REQUEST_CARD_CONTENT_BY_TYPE = {
     breath_rate: {icon: "fa-lungs", value: "Frequência respiratória"},
     ppg: {icon: "fa-circle-nodes", value: "PPG"},
     rr_interval: {icon: "fa-stopwatch", value: "Intervalo RR"},
+    "device.connected": {icon: "fa-plug-circle-check", value: "Ligado"},
+    "device.disconnected": {icon: "fa-plug-circle-xmark", value: "Desligado"},
+    help_call: {icon: "fa-triangle-exclamation", value: "Chamada de enfermagem"},
+    reset: {icon: "fa-bell-slash", value: "Cancelado"},
+    unknown: {icon: "fa-bell", value: "Desconhecido"},
 };
 
 const UPLINK_CARD_RENDERERS = {
@@ -205,7 +214,10 @@ const UPLINK_CARD_RENDERERS = {
             "reportedAt",
         ]),
     }),
-    "ncs.event": (data) => ncsEventContent(data),
+    help_call: () => ncsPagerContent("help_call"),
+    reset: () => ncsPagerContent("reset"),
+    "device.connected": () => ({icon: "fa-plug-circle-check", value: "Ligado"}),
+    "device.disconnected": () => ({icon: "fa-plug-circle-xmark", value: "Desligado"}),
 };
 
 const STATUS_BADGE_CLASS = {
@@ -227,15 +239,14 @@ const STATUS_BADGE_LABEL = {
     unknown: "desconhecido",
 };
 
-const NCS_EVENT_VALUE = {
-    help_call: "SOS",
+const NCS_PAGER_EVENT_VALUE = {
+    help_call: "Chamada de enfermagem",
     reset: "Cancelado",
-    general_alert: "Alerta Geral",
 };
 
-const NCS_EVENT_ICON = {
-    reset: "fa-bell-slash",
+const NCS_PAGER_EVENT_ICON = {
     help_call: "fa-triangle-exclamation",
+    reset: "fa-bell-slash",
 };
 
 const BATTERY_CHARGING_STATE_LABEL = {
@@ -337,9 +348,9 @@ export function uplinkCardContent(type, data) {
     );
 }
 
-function ncsEventContent(data) {
-    const value = NCS_EVENT_VALUE[data.event] || featureLabel(data.event);
-    const icon = NCS_EVENT_ICON[data.event] || "fa-bell";
+function ncsPagerContent(type) {
+    const value = NCS_PAGER_EVENT_VALUE[type] || featureLabel(type);
+    const icon = NCS_PAGER_EVENT_ICON[type] || "fa-bell";
     return { icon, value };
 }
 
