@@ -197,6 +197,23 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $response['transportPending'] ?? null);
     }
 
+    public function testShowReturnsVoerkaPagerCallCapabilitySupportWithoutStoredConfiguration(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $db->whitelist->register('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 0, '', 'bea6c3dd8e02');
+        $store->registerDevice('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 1001, '', '', 'hitcare');
+
+        $response = $api->show('bea6c3dd8e02');
+
+        self::assertSame('Voerka', $response['model']['supplier'] ?? null);
+        self::assertSame('W812', $response['model']['commercialName'] ?? null);
+        self::assertSame('ncs', $response['model']['deviceType'] ?? null);
+        self::assertSame(
+            ['pager_call' => ['supported' => true]],
+            $response['capabilities']['alarms'] ?? []
+        );
+    }
+
     public function testShowExposesTakePillsStructuredMetaForFourPTouch(): void
     {
         [$api, $db, $store] = $this->makeApi();
@@ -324,11 +341,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 [
                     'time' => '08:10',
                     'enabled' => true,
-                    'type' => 2,
                     'recurrence' => [
                         'kind' => 'custom',
                         'days' => [1, 3, 5],
                     ],
+                    'type' => 2,
                 ],
             ],
             $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
@@ -339,11 +356,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     [
                         'time' => '08:10',
                         'enabled' => true,
-                        'type' => 2,
                         'recurrence' => [
                             'kind' => 'custom',
                             'days' => [1, 3, 5],
                         ],
+                        'type' => 2,
                     ],
                 ],
             ],
@@ -600,8 +617,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 [
                     'time' => '09:00',
                     'enabled' => true,
-                    'type' => 1,
                     'recurrence' => ['kind' => 'once'],
+                    'type' => 1,
                 ],
             ],
             $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
@@ -869,11 +886,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 [
                     'time' => '09:30',
                     'enabled' => true,
-                    'type' => 2,
                     'recurrence' => [
                         'kind' => 'custom',
                         'days' => [2, 4],
                     ],
+                    'type' => 2,
                 ],
             ],
             $response['configurations']['alarm_clock']['items'] ?? null
