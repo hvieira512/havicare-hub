@@ -1167,6 +1167,22 @@ class DeviceService
 
         $capabilities['telemetry'] = $this->telemetryCapabilities($model, $protocol, $matrix);
 
+        foreach ($matrix as $section => $sectionMatrix) {
+            if ($section === 'telemetry') {
+                continue;
+            }
+
+            foreach ($sectionMatrix as $genericKey => $supported) {
+                if (!$supported) {
+                    continue;
+                }
+
+                if (!array_key_exists($genericKey, $capabilities[$section])) {
+                    $capabilities[$section][$genericKey] = $this->defaultCapabilityEntry($protocol, $genericKey);
+                }
+            }
+        }
+
         $meta = [];
         $nativeKeysPerGeneric = [];
         $nativeKeyForGeneric = [];
@@ -1283,6 +1299,157 @@ class DeviceService
         }
 
         return $capabilities;
+    }
+
+    private function defaultCapabilityEntry(string $protocol, string $genericKey): array
+    {
+        $entry = $this->configurationEntryForGenericKey($protocol, $genericKey);
+        if ($entry === null) {
+            return [];
+        }
+
+        $nativeKey = (string)($entry['key'] ?? '');
+        if ($nativeKey === '') {
+            return [];
+        }
+
+        $desired = $this->defaultDesiredPayloadForConfigEntry($entry, $protocol, $genericKey);
+        $value = $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
+        $meta = $this->defaultCapabilityMetaForEntry($genericKey, $protocol, $entry);
+
+        if ($genericKey === 'alarm_clock') {
+            return [
+                'items' => is_array($value) ? $value : [],
+                '_meta' => $meta,
+            ];
+        }
+
+        $capability = [
+            'value' => $value,
+            '_meta' => $meta,
+            '_type' => $genericKey,
+        ];
+        if ($protocol === 'four-p-touch' && in_array($genericKey, ['make_call', 'reset_device', 'power_off', 'find_device', 'device_password', 'sound_profile', 'call_in_restriction'], true)) {
+            $capability['_nativeKey'] = $nativeKey;
+        }
+
+        return $capability;
+    }
+
+    private function configurationEntryForGenericKey(string $protocol, string $genericKey): ?array
+    {
+        foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
+            if (GenericModelCapabilityCatalog::mapConfigurationKey((string)($entry['key'] ?? '')) === $genericKey) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function defaultDesiredPayloadForConfigEntry(array $entry, string $protocol, string $genericKey): array
+    {
+        $input = (string)($entry['input'] ?? 'json');
+        $field = static fn(int $index = 0): string => (string)($entry['fields'][$index] ?? '');
+
+        return match ($input) {
+            'toggle' => [($field(0) ?: 'enabled') => true],
+            'number' => [($field(0) ?: 'value') => 0],
+            'phone' => [($field(0) ?: 'phone') => ''],
+            'text' => [($field(0) ?: 'value') => ''],
+            'pushMessage' => ['message' => ''],
+            'makeCall' => ['phone' => ''],
+            'resetAction', 'requestAction' => [],
+            'intervalToggle' => ['enabled' => true, 'intervalMinutes' => 60],
+            'intervalHoursToggle' => ['enabled' => true, 'intervalHours' => 2],
+            'workingMode' => ['mode' => 1],
+            'bloodPressure' => ['systolic' => 120, 'diastolic' => 80],
+            'wonlexBloodPressureWarning' => ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
+            'languageTimezone' => ['language' => 0, 'timeZone' => '0'],
+            'dualToggle' => ['enabled' => true, 'callCenterOnFall' => false],
+            'fallSensitivityLevels' => ['sensitivityLevel' => 5, 'totalLevels' => 8],
+            'timeRanges' => ['ranges' => ['08:10-09:30']],
+            'timeRange' => ['range' => '21:10-07:30'],
+            'wonlexSleepSettings' => [
+                'switchState' => true,
+                'sleepStartTime' => '220000',
+                'sleepEndTime' => '100000',
+                'sleepTarget' => 480,
+            ],
+            'wonlexReminderThreshold' => ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
+            'wonlexHeartRateRange' => [
+                'switchState' => true,
+                'remindValue' => 120,
+                'exerciseSwitchState' => true,
+                'exerciseHRMin' => 100,
+                'exerciseHRMax' => 140,
+                'exerciseRemindValue' => 140,
+            ],
+            'list' => ['numbers' => array_fill(0, max(1, (int)($entry['limit'] ?? 3)), '')],
+            'contacts' => ['contacts' => [['name' => '', 'phone' => '']]],
+            'alarm_clock' => $this->defaultAlarmClockDesiredPayload($protocol, $genericKey),
+            'takePills' => [
+                'reminderSettings' => [
+                    ['time' => '08:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
+                    ['time' => '09:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
+                    ['time' => '10:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
+                ],
+                'number' => 1,
+                'reminderText' => '',
+                'voiceData' => '',
+                'voiceMimeType' => 'audio/webm',
+            ],
+            'soundProfile' => ['mode' => 1],
+            default => [],
+        };
+    }
+
+    private function defaultAlarmClockDesiredPayload(string $protocol, string $genericKey): array
+    {
+        return match ($protocol) {
+            'vivistar-iw' => [
+                'items' => [
+                    [
+                        'time' => '',
+                        'enabled' => true,
+                        'type' => 1,
+                        'recurrence' => ['kind' => 'once'],
+                    ],
+                ],
+            ],
+            'four-p-touch' => [
+                'alarms' => [
+                    [
+                        'time' => '',
+                        'enabled' => true,
+                        'frequency' => 1,
+                    ],
+                ],
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $entry
+     * @return array<string, mixed>
+     */
+    private function defaultCapabilityMetaForEntry(string $genericKey, string $protocol, array $entry): array
+    {
+        $meta = [];
+        if (isset($entry['options']) && is_array($entry['options'])) {
+            foreach ($entry['options'] as $field => $options) {
+                $meta[(string)$field] = ['options' => $options];
+            }
+        }
+        if (isset($entry['limit'])) {
+            $meta['limit'] = (int)$entry['limit'];
+        }
+
+        return $this->enrichCapabilityMeta($genericKey, $protocol, $meta);
     }
 
     /**

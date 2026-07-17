@@ -208,9 +208,49 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('Voerka', $response['model']['supplier'] ?? null);
         self::assertSame('W812', $response['model']['commercialName'] ?? null);
         self::assertSame('ncs', $response['model']['deviceType'] ?? null);
+        self::assertArrayHasKey('pager_call', $response['capabilities']['alarms'] ?? []);
+        self::assertSame([], $response['capabilities']['alarms']['pager_call'] ?? null);
+    }
+
+    public function testShowExposesModelSupportedCapabilitiesWithoutStoredConfigurationRows(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('864293000000222', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock', 'phonebook']);
+
+        $response = $api->show('864293000000222');
+
+        self::assertSame([], $response['configurations'] ?? []);
+        self::assertArrayHasKey('alarm_clock', $response['capabilities']['alarms'] ?? []);
+        self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
         self::assertSame(
-            ['pager_call' => ['supported' => true]],
-            $response['capabilities']['alarms'] ?? []
+            [
+                ['value' => 'once', 'label' => 'Uma vez'],
+                ['value' => 'daily', 'label' => 'Todos os dias'],
+                ['value' => 'custom', 'label' => 'Personalizado'],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['recurrence']['options'] ?? null
+        );
+        self::assertSame(
+            [
+                [
+                    'time' => '',
+                    'enabled' => true,
+                    'recurrence' => ['kind' => 'once'],
+                ],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
+        );
+        self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
+        self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertSame(
+            [
+                ['name' => '', 'phone' => ''],
+            ],
+            $response['capabilities']['contacts']['phonebook']['value'] ?? null
         );
     }
 

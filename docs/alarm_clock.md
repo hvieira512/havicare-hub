@@ -2,7 +2,7 @@
 
 The API uses two layers:
 
-- `capabilities` describes what the UI can render for a model.
+- `capabilities` describes what the model supports, whether or not the device has saved configuration rows.
 - `configurations` describes what is currently stored for a specific device.
 
 For `alarm_clock`, the public contract is generic. The client should not care whether the backend maps it to `reminders`, `alarmClock`, `BP85`, or `REMIND`.
@@ -12,8 +12,8 @@ For `alarm_clock`, the public contract is generic. The client should not care wh
 Use the device detail response to build the UI:
 
 - `device` and `model` identify the selected device.
-- `capabilities` tell you which sections and fields are supported.
-- `configurations` pre-fill the form with the saved values.
+- `capabilities` tell you which sections and fields the model supports.
+- `configurations` pre-fill the form with the saved values when present.
 
 Relevant sections for watches:
 
@@ -112,6 +112,8 @@ Relevant sections for watches:
   - current saved values for the form
 
 `_meta` is read-only metadata. The client uses it to build the editor, but does not send it back.
+
+If a capability is supported by the model, it should appear in `capabilities` even when `configurations` is empty.
 
 ## `alarm_clock` UI rules
 

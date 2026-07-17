@@ -131,13 +131,13 @@ The legacy `GET/PUT /api/devices/{imei}/configuration` endpoints were removed.
 - `model`: supplier/model metadata.
 - `configuration`: summary counters for supported vs stored native configuration entries.
 - `configurations`: raw native desired configuration rows currently stored for the device.
-- `capabilities`: normalized device capabilities grouped by section. This is the main generic configuration shape for clients.
+- `capabilities`: normalized device capabilities grouped by section. This is the main generic configuration shape for clients, and it reflects model support even when no configuration rows are stored yet.
 - `pending`: normalized configuration entries whose desired state still differs from the last reported state from the device.
 - `transportPending`: raw queued transport downlinks still waiting in Redis because the device was offline.
 
 Important semantics:
 
-- `capabilities` always reflects the last configuration accepted by the API, not only the last configuration acknowledged by the device.
+- `capabilities` always reflects what the model supports and what the API can accept, not only what is currently stored or acknowledged by the device.
 - `pending` exists to show which normalized configuration values are still waiting for device confirmation or have diverged from the last reported state.
 - `transportPending` is lower-level transport state. It does not replace `pending`.
 
