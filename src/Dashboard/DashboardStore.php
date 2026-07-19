@@ -5,7 +5,7 @@ namespace Hub\Dashboard;
 use Hub\Api\Repository\ApiDataAccess;
 use Predis\ClientInterface;
 
-final class DashboardStore
+final class DashboardStore implements DashboardStoreContract
 {
     private DeviceRuntimeStore $runtime;
     private DeviceEventStore $events;

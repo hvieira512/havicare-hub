@@ -1,7 +1,7 @@
 <?php
 
 use Hub\Api\Routing\ApiRoute;
-use Hub\Http\OpenApiSpec;
+use Hub\Api\OpenApiSpec;
 use React\Http\Message\Response;
 
 return static function (

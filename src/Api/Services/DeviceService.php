@@ -10,9 +10,10 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\GenericModelCapabilityCatalog;
 use Hub\Domain\DeviceProtocol;
-use Hub\Dashboard\DashboardStore;
+use Hub\Dashboard\DashboardStoreContract;
 use Hub\Domain\DeviceMetadata;
 use Hub\DeviceHubServer;
 use Hub\Log\Logger;
@@ -27,9 +28,10 @@ class DeviceService
     private CollectionResponder $collection;
     private DeviceCollectionFilter $deviceFilter;
     private DevicePresentation $presentation;
+    private CapabilityRegistry $capabilityRegistry;
 
     public function __construct(
-        private DashboardStore $store,
+        private DashboardStoreContract $store,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ?PendingDownlinkQueue $downlinkQueue,
@@ -38,11 +40,13 @@ class DeviceService
         ?CollectionResponder $collection = null,
         ?DeviceCollectionFilter $deviceFilter = null,
         ?DevicePresentation $presentation = null,
+        ?CapabilityRegistry $capabilityRegistry = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
         $this->deviceFilter = $deviceFilter ?? new DeviceCollectionFilter();
         $this->presentation = $presentation ?? new DevicePresentation();
+        $this->capabilityRegistry = $capabilityRegistry ?? new CapabilityRegistry();
     }
 
     public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
@@ -435,9 +439,12 @@ class DeviceService
                 $genericKey = GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey);
 
                 if ($genericKey === 'alarm_clock') {
-                    $publicValue = $this->publicAlarmClockConfigurationValue($nativeKey, $desired);
-                    if ($publicValue !== []) {
-                        $configurations['alarm_clock'] = $publicValue;
+                    $contract = $this->capabilityRegistry->get('alarm_clock');
+                    if ($contract !== null) {
+                        $items = $contract->fromNative($nativeKey, $desired);
+                        if (is_array($items) && $items !== []) {
+                            $configurations['alarm_clock'] = ['items' => $items];
+                        }
                     }
                     continue;
                 }
@@ -808,8 +815,8 @@ class DeviceService
 
     private function pendingConfiguration(?array $model, string $protocol, array $configRows): array
     {
-        $desiredCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload');
-        $reportedCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'reported_payload');
+        $desiredCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload', false);
+        $reportedCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'reported_payload', false);
         $desiredValues = $this->flattenWritableCapabilities($desiredCapabilities);
         $reportedValues = $this->flattenWritableCapabilities($reportedCapabilities);
         $rowMeta = $this->genericCapabilityRowMeta($configRows);
@@ -1151,7 +1158,13 @@ class DeviceService
      * @param list<array<string, mixed>> $configRows
      * @return array<string, array<string, mixed>>
      */
-    private function deviceCapabilitiesFromPayloadKey(?array $model, string $protocol, array $configRows, string $payloadKey): array
+    private function deviceCapabilitiesFromPayloadKey(
+        ?array $model,
+        string $protocol,
+        array $configRows,
+        string $payloadKey,
+        bool $includeDefaults = true,
+    ): array
     {
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
         $catalog = $this->db->genericCapabilities->all($deviceType);
@@ -1167,18 +1180,20 @@ class DeviceService
 
         $capabilities['telemetry'] = $this->telemetryCapabilities($model, $protocol, $matrix);
 
-        foreach ($matrix as $section => $sectionMatrix) {
-            if ($section === 'telemetry') {
-                continue;
-            }
-
-            foreach ($sectionMatrix as $genericKey => $supported) {
-                if (!$supported) {
+        if ($includeDefaults) {
+            foreach ($matrix as $section => $sectionMatrix) {
+                if ($section === 'telemetry') {
                     continue;
                 }
 
-                if (!array_key_exists($genericKey, $capabilities[$section])) {
-                    $capabilities[$section][$genericKey] = $this->defaultCapabilityEntry($protocol, $genericKey);
+                foreach ($sectionMatrix as $genericKey => $supported) {
+                    if (!$supported) {
+                        continue;
+                    }
+
+                    if (!array_key_exists($genericKey, $capabilities[$section])) {
+                        $capabilities[$section][$genericKey] = $this->defaultCapabilityEntry($protocol, $genericKey);
+                    }
                 }
             }
         }
@@ -1186,6 +1201,7 @@ class DeviceService
         $meta = [];
         $nativeKeysPerGeneric = [];
         $nativeKeyForGeneric = [];
+        $storedGenericKeys = [];
 
         foreach ($configRows as $row) {
             $nativeKey = trim((string)($row['config_key'] ?? ''));
@@ -1209,16 +1225,19 @@ class DeviceService
                 continue;
             }
 
-            if ($genericKey === 'alarm_clock') {
+            if ($this->capabilityRegistry->has($genericKey) && $this->capabilityRegistry->get($genericKey)?->isList()) {
                 $capabilities[$section][$genericKey] = $normalized;
             } else {
                 $capabilities[$section][$genericKey] = $this->mergeCapabilityValue(
                     $genericKey,
-                    $capabilities[$section][$genericKey] ?? null,
+                    isset($storedGenericKeys[$genericKey])
+                        ? ($capabilities[$section][$genericKey] ?? null)
+                        : null,
                     $normalized
                 );
             }
 
+            $storedGenericKeys[$genericKey] = true;
             $nativeKeyForGeneric[$genericKey] = $nativeKey;
             $nativeKeysPerGeneric[$genericKey][$nativeKey] = true;
 
@@ -1240,17 +1259,23 @@ class DeviceService
         }
 
         foreach ($meta as $genericKey => $metaData) {
-            if ($genericKey !== 'alarm_clock' && count($nativeKeysPerGeneric[$genericKey] ?? []) > 1) {
+            $hasContract = $this->capabilityRegistry->has($genericKey);
+            $isList = $hasContract && $this->capabilityRegistry->get($genericKey)?->isList();
+
+            if (!$isList && count($nativeKeysPerGeneric[$genericKey] ?? []) > 1) {
                 continue;
             }
 
             foreach ($capabilities as $section => &$sectionCaps) {
                 if (array_key_exists($genericKey, $sectionCaps)) {
-                    if ($genericKey === 'alarm_clock') {
-                        $sectionCaps[$genericKey] = [
-                            'items' => $this->publicAlarmClockItemsFromNative($nativeKeyForGeneric[$genericKey] ?? '', $sectionCaps[$genericKey]),
-                            '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $metaData),
-                        ];
+                    if ($hasContract) {
+                        $sectionCaps[$genericKey] = $this->capabilityRegistry->responseEntry(
+                            $protocol,
+                            $genericKey,
+                            (string)($nativeKeyForGeneric[$genericKey] ?? ''),
+                            $sectionCaps[$genericKey],
+                            $metaData,
+                        );
                     } else {
                         $sectionCaps[$genericKey] = [
                             'value' => $sectionCaps[$genericKey],
@@ -1269,9 +1294,6 @@ class DeviceService
                 continue;
             }
             foreach ($sectionCaps as $genericKey => &$value) {
-                if ($genericKey === 'alarm_clock') {
-                    continue;
-                }
                 if (isset($nativeKeyForGeneric[$genericKey]) && is_array($value) && array_key_exists('value', $value)) {
                     $value['_nativeKey'] = $nativeKeyForGeneric[$genericKey];
                 }
@@ -1313,15 +1335,18 @@ class DeviceService
             return [];
         }
 
-        $desired = $this->defaultDesiredPayloadForConfigEntry($entry, $protocol, $genericKey);
-        $value = $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
+        $desired = $this->capabilityRegistry->defaultValue($protocol, $genericKey);
+        if ($desired === [] && !$this->capabilityRegistry->has($genericKey)) {
+            $desired = $this->defaultDesiredPayloadForConfigEntry($entry, $protocol, $genericKey);
+        }
+
+        $value = $this->capabilityRegistry->has($genericKey)
+            ? $desired
+            : $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
         $meta = $this->defaultCapabilityMetaForEntry($genericKey, $protocol, $entry);
 
-        if ($genericKey === 'alarm_clock') {
-            return [
-                'items' => is_array($value) ? $value : [],
-                '_meta' => $meta,
-            ];
+        if ($this->capabilityRegistry->has($genericKey)) {
+            return $this->capabilityRegistry->responseEntry($protocol, $genericKey, $nativeKey, $value, $meta);
         }
 
         $capability = [
@@ -1407,32 +1432,6 @@ class DeviceService
         };
     }
 
-    private function defaultAlarmClockDesiredPayload(string $protocol, string $genericKey): array
-    {
-        return match ($protocol) {
-            'vivistar-iw' => [
-                'items' => [
-                    [
-                        'time' => '',
-                        'enabled' => true,
-                        'type' => 1,
-                        'recurrence' => ['kind' => 'once'],
-                    ],
-                ],
-            ],
-            'four-p-touch' => [
-                'alarms' => [
-                    [
-                        'time' => '',
-                        'enabled' => true,
-                        'frequency' => 1,
-                    ],
-                ],
-            ],
-            default => [],
-        };
-    }
-
     /**
      * @param array<string, mixed> $entry
      * @return array<string, mixed>
@@ -1514,8 +1513,11 @@ class DeviceService
 
     private function extractCapabilityValue(mixed $value): mixed
     {
-        if (is_array($value) && array_key_exists('value', $value) && count(array_diff(array_keys($value), ['value', '_meta', '_nativeKey'])) === 0) {
+        if (is_array($value) && array_key_exists('value', $value)) {
             return $value['value'];
+        }
+        if (is_array($value) && array_key_exists('items', $value) && array_key_exists('_meta', $value)) {
+            return $value['items'];
         }
 
         return $value;
@@ -1600,298 +1602,10 @@ class DeviceService
      */
     private function genericCapabilityToNativeUpdates(string $protocol, string $genericKey, mixed $value): array
     {
-        return match ($protocol) {
-            'vivistar-iw' => $this->vivistarGenericCapabilityUpdates($genericKey, $value),
-            'wonlex-json' => $this->wonlexGenericCapabilityUpdates($genericKey, $value),
-            'four-p-touch' => $this->fourPTouchGenericCapabilityUpdates($genericKey, $value),
-            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
-        };
+        return $this->capabilityRegistry->toNative($protocol, $genericKey, $value);
     }
 
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function vivistarGenericCapabilityUpdates(string $genericKey, mixed $value): array
-    {
-        return match ($genericKey) {
-            'sos_contacts' => ['sosContacts' => ['numbers' => $this->requireStringListValue($value, 'numbers')]],
-            'phonebook' => ['phonebook' => ['contacts' => $this->requireListValue($value, 'contacts')]],
-            'working_mode' => ['workingMode' => $this->requireObjectValue($value, 'workingMode')],
-            'fall_detection' => ['fallDetection' => ['enabled' => $this->requireBoolLikeField($value, 'enabled')]],
-            'fall_sensitivity' => ['fallSensitivity' => ['sensitivity' => $this->requireIntField($value, 'sensitivity')]],
-            'call_whitelist' => ['whitelistSwitch' => ['enabled' => $this->requireBoolLikeField($value, 'enabled')]],
-            'push_message' => ['pushMessage' => ['message' => $this->requireStringField($value, 'message')]],
-            'alarm_clock' => ['reminders' => $this->normalizeReminderCapabilityValue($value)],
-            'auto_vitals_interval' => ['autoHealthMeasurement' => $this->requireObjectValue($value, 'autoHealthMeasurement')],
-            default => throw new \InvalidArgumentException("Unsupported vivistar-iw capability {$genericKey}"),
-        };
-    }
 
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function wonlexGenericCapabilityUpdates(string $genericKey, mixed $value): array
-    {
-        return match ($genericKey) {
-            'sos_contacts' => ['SOSNumber' => ['numbers' => $this->requireStringListValue($value, 'numbers')]],
-            'alarm_clock' => ['reminders' => $this->normalizeReminderCapabilityValue($value)],
-            'medication_reminders' => ['dnMedicationPlan' => ['plans' => $this->requireListValue($value, 'plans')]],
-            default => [$this->resolveWonlexNativeKey($genericKey) => $this->requireObjectValue($value, $genericKey)],
-        };
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function fourPTouchGenericCapabilityUpdates(string $genericKey, mixed $value): array
-    {
-        return match ($genericKey) {
-            'location_reporting_interval' => ['uploadInterval' => $this->requireObjectValue($value, 'uploadInterval')],
-            'sos_contacts' => $this->fourPTouchSosUpdates($value),
-            'call_whitelist' => $this->fourPTouchWhitelistUpdates($value),
-            'monitor_number' => ['monitorNumber' => ['phone' => $this->requireStringValue($value, 'phone')]],
-            'device_password' => ['devicePassword' => $this->requireObjectValue($value, 'devicePassword')],
-            'language_timezone' => ['languageTimezone' => $this->requireObjectValue($value, 'languageTimezone')],
-            'sos_sms_alert' => ['sosSmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
-            'low_battery_alert' => ['lowBatterySmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
-            'remove_watch_alarm' => ['removeWatchAlarm' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
-            'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => $this->requireBoolLikeValue($value, 'enabled')]],
-            'alarm_clock' => ['alarmClock' => ['alarms' => $this->normalizeFourPTouchAlarmClockInput($value)]],
-            'medication_reminders' => ['takePills' => $this->requireObjectValue($value, 'medication_reminders')],
-            'fall_detection' => ['fallDownAlert' => $this->requireObjectValue($value, 'fallDownAlert')],
-            'fall_sensitivity' => ['fallDownSensitivity' => $this->requireObjectValue($value, 'fallDownSensitivity')],
-            'auto_vitals_interval' => ['healthAutoMeasurement' => $this->requireObjectValue($value, 'healthAutoMeasurement')],
-            'pedometer_schedule' => ['walkTime' => ['ranges' => $this->requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
-            'sleep_monitoring' => ['sleepTime' => ['range' => $this->requireStringField($value, 'range')]],
-            'temperature_measurement_interval' => ['bodyTemperatureInterval' => $this->requireObjectValue($value, 'bodyTemperatureInterval')],
-            'make_call' => ['makeCall' => ['phone' => $this->requireStringField($value, 'phone')]],
-            'center_number' => ['centerNumber' => ['phone' => $this->requireStringField($value, 'phone')]],
-            'push_message' => ['pushMessage' => ['message' => $this->requireStringField($value, 'message')]],
-            'reset_device' => ['resetCommand' => []],
-            'power_off' => ['powerOffCommand' => []],
-            'find_device' => ['findDeviceCommand' => []],
-            default => throw new \InvalidArgumentException("Unsupported four-p-touch capability {$genericKey}"),
-        };
-    }
-
-    private function resolveWonlexNativeKey(string $genericKey): string
-    {
-        foreach (DeviceConfigurationCatalog::configsForProtocol('wonlex-json') as $entry) {
-            $nativeKey = trim((string)($entry['key'] ?? ''));
-            if (GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey) === $genericKey) {
-                return $nativeKey;
-            }
-        }
-
-        throw new \InvalidArgumentException("Unsupported wonlex-json capability {$genericKey}");
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function fourPTouchSosUpdates(mixed $value): array
-    {
-        $numbers = $this->requireStringListValue($value, 'numbers');
-        $updates = [];
-        foreach (array_slice($numbers, 0, 3) as $index => $phone) {
-            if (trim($phone) === '') {
-                continue;
-            }
-            $updates['sosNumber' . ($index + 1)] = ['phone' => $phone];
-        }
-
-        return $updates;
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function fourPTouchWhitelistUpdates(mixed $value): array
-    {
-        $numbers = [];
-        if (is_array($value) && array_key_exists('numbers', $value)) {
-            $numbers = $this->requireStringListValue($value['numbers'], 'numbers');
-        } else {
-            throw new \InvalidArgumentException('numbers must be an array');
-        }
-
-        return [
-            'whitelistGroup1' => ['numbers' => array_slice($numbers, 0, 5)],
-            'whitelistGroup2' => ['numbers' => array_slice($numbers, 5, 5)],
-        ];
-    }
-
-    private function normalizeReminderCapabilityValue(mixed $value): array
-    {
-        if (is_array($value) && array_is_list($value)) {
-            return [
-                'masterEnabled' => true,
-                'items' => array_map(
-                    fn(mixed $item): array => $this->normalizeVivistarAlarmClockItemForNative($item),
-                    $value,
-                ),
-            ];
-        }
-
-        $payload = $this->requireObjectValue($value, 'reminders');
-        $payload['masterEnabled'] = $payload['masterEnabled'] ?? true;
-
-        $items = $this->requireListValue($payload['items'] ?? [], 'items');
-        $payload['items'] = array_map(
-            fn(mixed $item): array => $this->normalizeVivistarAlarmClockItemForNative($item),
-            $items,
-        );
-
-        return $payload;
-    }
-
-    private function normalizeVivistarAlarmClockItemForNative(mixed $item): array
-    {
-        if (!is_array($item)) {
-            return [
-                'time' => '',
-                'days' => '',
-                'enabled' => true,
-                'type' => 1,
-            ];
-        }
-
-        $days = '';
-        $recurrence = is_array($item['recurrence'] ?? null) ? $item['recurrence'] : [];
-        $kind = strtolower(trim((string)($recurrence['kind'] ?? '')));
-        if ($kind === 'daily') {
-            $days = '1234567';
-        } elseif ($kind === 'custom') {
-            $daysValue = $recurrence['days'] ?? $item['days'] ?? $item['custom'] ?? '';
-            $days = is_array($daysValue)
-                ? $this->formatAlarmClockDayList($daysValue)
-                : $this->normalizeVivistarAlarmClockDays((string)$daysValue);
-        } elseif ($kind === 'once') {
-            $daysValue = $recurrence['days'] ?? $item['days'] ?? '';
-            if (is_array($daysValue)) {
-                $days = $this->formatAlarmClockDayList($daysValue);
-            } else {
-                $days = $this->normalizeVivistarAlarmClockDays((string)$daysValue);
-            }
-        } else {
-            $daysValue = $item['days'] ?? $item['custom'] ?? '';
-            $days = is_array($daysValue)
-                ? $this->formatAlarmClockDayList($daysValue)
-                : $this->normalizeVivistarAlarmClockDays((string)$daysValue);
-        }
-
-        if (!array_key_exists('type', $item) || $item['type'] === null || trim((string)$item['type']) === '') {
-            throw new \InvalidArgumentException('type is required');
-        }
-
-        $type = $this->rangeInt($item['type'], 1, 3, 'type');
-
-        return [
-            'time' => (string)($item['time'] ?? ''),
-            'days' => $days,
-            'enabled' => $this->boolLikeToBool($item['enabled'] ?? true),
-            'type' => $type,
-        ];
-    }
-
-    private function publicAlarmClockConfigurationValue(string $nativeKey, mixed $desired): array
-    {
-        $items = $this->publicAlarmClockItemsFromNative($nativeKey, is_array($desired) ? $desired : []);
-
-        return $items === [] ? [] : ['items' => $items];
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function requireStringListValue(mixed $value, string $field): array
-    {
-        if (!is_array($value)) {
-            throw new \InvalidArgumentException("{$field} must be an array");
-        }
-
-        return $this->stringList($value);
-    }
-
-    /**
-     * @return list<mixed>
-     */
-    private function requireListValue(mixed $value, string $field): array
-    {
-        if (!is_array($value) || !array_is_list($value)) {
-            throw new \InvalidArgumentException("{$field} must be an array");
-        }
-
-        return array_values($value);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function requireObjectValue(mixed $value, string $field): array
-    {
-        if (!is_array($value)) {
-            throw new \InvalidArgumentException("{$field} must be an object");
-        }
-
-        return $value;
-    }
-
-    private function requireStringValue(mixed $value, string $field): string
-    {
-        if (is_array($value)) {
-            if (!array_key_exists($field, $value)) {
-                throw new \InvalidArgumentException("{$field} is required");
-            }
-            $value = $value[$field];
-        }
-
-        $string = trim((string)$value);
-        if ($string === '') {
-            throw new \InvalidArgumentException("{$field} is required");
-        }
-
-        return $string;
-    }
-
-    private function requireStringField(mixed $value, string $field): string
-    {
-        if (!is_array($value)) {
-            throw new \InvalidArgumentException("{$field} is required");
-        }
-
-        return $this->requireStringValue($value[$field] ?? null, $field);
-    }
-
-    private function requireIntField(mixed $value, string $field): int
-    {
-        if (!is_array($value) || !is_numeric((string)($value[$field] ?? null))) {
-            throw new \InvalidArgumentException("{$field} must be an integer");
-        }
-
-        return (int)$value[$field];
-    }
-
-    private function requireBoolLikeField(mixed $value, string $field): bool|int|string
-    {
-        if (!is_array($value) || !array_key_exists($field, $value)) {
-            throw new \InvalidArgumentException("{$field} is required");
-        }
-
-        return $value[$field];
-    }
-
-    private function requireBoolLikeValue(mixed $value, string $field): bool|int|string
-    {
-        if (is_array($value)) {
-            return $this->requireBoolLikeField($value, $field);
-        }
-        if (is_bool($value) || $value === 0 || $value === 1 || $value === '0' || $value === '1') {
-            return $value;
-        }
-
-        throw new \InvalidArgumentException("{$field} must be boolean or 0/1");
-    }
 
     /**
      * @param list<array<string, mixed>> $configRows
@@ -1930,15 +1644,7 @@ class DeviceService
 
     private function normalizeCapabilityValue(string $genericKey, string $nativeKey, array $desired): mixed
     {
-        return match ($genericKey) {
-            'sos_contacts' => $this->normalizeSosContactsValue($nativeKey, $desired),
-            'phonebook' => $desired['contacts'] ?? null,
-            'call_whitelist' => $this->normalizeCallWhitelistValue($nativeKey, $desired),
-            'monitor_number' => $desired['phone'] ?? $desired,
-            'alarm_clock' => $this->publicAlarmClockItemsFromNative($nativeKey, $desired),
-            'medication_reminders' => $this->normalizeTakePillsCapabilityValue($desired),
-            default => $desired,
-        };
+        return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired);
     }
 
     /**
@@ -1947,675 +1653,17 @@ class DeviceService
      */
     private function enrichCapabilityMeta(string $genericKey, string $protocol, array $metaData): array
     {
-        if ($genericKey !== 'alarm_clock') {
-            return $metaData;
-        }
-
-        $recurrenceOptions = $metaData['mode']['options'] ?? null;
-        if (!is_array($recurrenceOptions) || $recurrenceOptions === []) {
-            $recurrenceOptions = [
-                ['value' => 'once', 'label' => 'Uma vez'],
-                ['value' => 'daily', 'label' => 'Todos os dias'],
-                ['value' => 'custom', 'label' => 'Personalizado'],
-            ];
-        } else {
-            $recurrenceOptions = array_map(static function (array $option): array {
-                $value = strtolower(trim((string)($option['value'] ?? '')));
-                if ($value === '1') {
-                    $value = 'once';
-                } elseif ($value === '2') {
-                    $value = 'daily';
-                } elseif ($value === '3') {
-                    $value = 'custom';
-                }
-
-                return [
-                    'value' => $value !== '' ? $value : 'once',
-                    'label' => (string)($option['label'] ?? ''),
-                ];
-            }, $recurrenceOptions);
-        }
-        $metaData['recurrence'] = ['options' => $recurrenceOptions];
-
-        return $metaData;
+        return $this->capabilityRegistry->get($genericKey)?->meta($protocol, $metaData) ?? $metaData;
     }
 
     private function resolveConfigurationKeyForProtocol(string $protocol, string $key): ?string
     {
-        $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $key);
-        if ($entry === null) {
-            return null;
-        }
-
-        if ($key === 'alarm_clock') {
-            return trim((string)($entry['key'] ?? '')) !== ''
-                ? (string)$entry['key']
-                : null;
-        }
-
-        return $key;
-    }
-
-    /**
-     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
-     */
-    private function normalizeFourPTouchAlarmClockInput(mixed $desired): array
-    {
-        if (is_string($desired)) {
-            return $this->normalizeFourPTouchAlarmClockList([$desired]);
-        }
-
-        if (!is_array($desired)) {
-            return [];
-        }
-
-        if (isset($desired['fields']) && is_array($desired['fields'])) {
-            return $this->parseFourPTouchAlarmClockFields($desired['fields']);
-        }
-
-        if (isset($desired['alarms']) && is_array($desired['alarms'])) {
-            return $this->normalizeFourPTouchAlarmClockList($desired['alarms']);
-        }
-
-        if (isset($desired['alarmClock']) && is_array($desired['alarmClock'])) {
-            return $this->normalizeFourPTouchAlarmClockList($desired['alarmClock']);
-        }
-
-        if (isset($desired['items']) && is_array($desired['items'])) {
-            return $this->normalizeFourPTouchAlarmClockList($desired['items']);
-        }
-
-        if (array_is_list($desired)) {
-            return $this->normalizeFourPTouchAlarmClockList($desired);
-        }
-
-        return $this->normalizeFourPTouchAlarmClockList([$desired]);
-    }
-
-    /**
-     * @param list<mixed> $alarms
-     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
-     */
-    private function normalizeFourPTouchAlarmClockList(array $alarms): array
-    {
-        $normalized = [];
-        foreach (array_slice($alarms, 0, 3) as $alarm) {
-            $normalized[] = $this->normalizeFourPTouchAlarmClockItem($alarm);
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @return array{time: string, enabled: bool, mode: int, custom: string}
-     */
-    private function normalizeFourPTouchAlarmClockItem(mixed $alarm): array
-    {
-        if (is_string($alarm)) {
-            return $this->parseFourPTouchAlarmClockString($alarm);
-        }
-
-        if (!is_array($alarm)) {
-            return ['time' => '', 'enabled' => true, 'mode' => 1, 'custom' => ''];
-        }
-
-        $recurrence = is_array($alarm['recurrence'] ?? null) ? $alarm['recurrence'] : null;
-        if (is_array($recurrence)) {
-            $kind = strtolower(trim((string)($recurrence['kind'] ?? 'once')));
-            $mode = match ($kind) {
-                'daily' => 2,
-                'custom' => 3,
-                default => 1,
-            };
-            $custom = '';
-            if ($kind === 'custom') {
-                $daysValue = $recurrence['days'] ?? $alarm['days'] ?? $alarm['custom'] ?? $alarm['reminderCustom'] ?? '';
-                $custom = is_array($daysValue)
-                    ? $this->formatAlarmClockDayMask($daysValue)
-                    : $this->normalizeFourPTouchAlarmClockDays((string)$daysValue);
-            }
-        } else {
-            $mode = (int)($alarm['mode'] ?? $alarm['frequency'] ?? $alarm['reminderFrequency'] ?? 1);
-            $custom = trim((string)($alarm['custom'] ?? $alarm['days'] ?? $alarm['reminderCustom'] ?? ''));
-        }
-
-        return [
-            'time' => $this->normalizeFourPTouchAlarmClockTime((string)($alarm['time'] ?? $alarm['alarmTime'] ?? $alarm['reminderTime'] ?? '')),
-            'enabled' => $this->boolLikeToBool($alarm['enabled'] ?? $alarm['switchState'] ?? true),
-            'mode' => in_array($mode, [1, 2, 3], true) ? $mode : 1,
-            'custom' => $mode === 3 ? $this->normalizeFourPTouchAlarmClockDays($custom) : '',
-        ];
-    }
-
-    /**
-     * @return list<array{time: string, enabled: bool, mode: int, custom: string}>
-     */
-    private function parseFourPTouchAlarmClockFields(array $fields): array
-    {
-        $alarms = [];
-        foreach ($fields as $field) {
-            if (trim((string)$field) === '') {
-                continue;
-            }
-            $alarms[] = $this->parseFourPTouchAlarmClockString((string)$field);
-        }
-
-        return $alarms;
-    }
-
-    /**
-     * @return array{time: string, enabled: bool, mode: int, custom: string}
-     */
-    private function parseFourPTouchAlarmClockString(string $value): array
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return ['time' => '', 'enabled' => true, 'mode' => 1, 'custom' => ''];
-        }
-
-        if (preg_match('/^(\d{1,2}:\d{2}|\d{4})-(0|1)-(1|2|3)(?:-([01]{7}))?$/', $value, $matches) !== 1) {
-            throw new \InvalidArgumentException('alarm entry must use HH:MM-switch-frequency[-days]');
-        }
-
-        $mode = (int)$matches[3];
-
-        return [
-            'time' => $this->normalizeFourPTouchAlarmClockTime($matches[1]),
-            'enabled' => $matches[2] === '1',
-            'mode' => $mode,
-            'custom' => $mode === 3 ? $this->normalizeFourPTouchAlarmClockDays($matches[4] ?? '') : '',
-        ];
-    }
-
-    private function normalizeFourPTouchAlarmClockTime(string $value): string
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return '';
-        }
-
-        if (preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches) === 1) {
-            $hour = (int)$matches[1];
-            $minute = (int)$matches[2];
-            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
-                throw new \InvalidArgumentException('alarm time must use valid 24h times');
-            }
-
-            return sprintf('%02d:%02d', $hour, $minute);
-        }
-
-        if (preg_match('/^(\d{2})(\d{2})$/', $value, $matches) === 1) {
-            $hour = (int)$matches[1];
-            $minute = (int)$matches[2];
-            if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
-                throw new \InvalidArgumentException('alarm time must use valid 24h times');
-            }
-
-            return sprintf('%02d:%02d', $hour, $minute);
-        }
-
-        throw new \InvalidArgumentException('alarm time must use HH:MM or HHmm');
-    }
-
-    private function normalizeFourPTouchAlarmClockDays(string $value): string
-    {
-        $days = trim($value);
-        if (preg_match('/^[01]{7}$/', $days) !== 1) {
-            throw new \InvalidArgumentException('alarm_clock recurrence days must be a 7-digit 0/1 mask');
-        }
-
-        return $days;
-    }
-
-    /**
-     * @return list<int>
-     */
-    private function parseAlarmClockDayList(string $days): array
-    {
-        $values = [];
-        foreach (str_split($days) as $char) {
-            if (!ctype_digit($char)) {
-                continue;
-            }
-            $day = (int)$char;
-            if ($day < 1 || $day > 7) {
-                continue;
-            }
-            $values[$day] = true;
-        }
-
-        $days = array_map('intval', array_keys($values));
-        sort($days, SORT_NUMERIC);
-
-        return $days;
-    }
-
-    /**
-     * @return list<int>
-     */
-    private function parseAlarmClockDayMaskToList(string $mask): array
-    {
-        $mask = trim($mask);
-        if (!preg_match('/^[01]{7}$/', $mask)) {
-            return $this->parseAlarmClockDayList($mask);
-        }
-
-        $days = [];
-        foreach (str_split($mask) as $index => $bit) {
-            if ($bit !== '1') {
-                continue;
-            }
-            $days[] = $index === 0 ? 7 : $index;
-        }
-
-        return $days;
-    }
-
-    /**
-     * @param list<mixed> $days
-     */
-    private function formatAlarmClockDayList(array $days): string
-    {
-        $normalized = [];
-        foreach ($days as $day) {
-            $value = (int)$day;
-            if ($value < 1 || $value > 7) {
-                continue;
-            }
-            $normalized[$value] = true;
-        }
-
-        $ordered = array_keys($normalized);
-        sort($ordered, SORT_NUMERIC);
-
-        return implode('', array_map('strval', $ordered));
-    }
-
-    /**
-     * @param list<mixed> $days
-     */
-    private function formatAlarmClockDayMask(array $days): string
-    {
-        $mask = array_fill(0, 7, '0');
-        foreach ($days as $day) {
-            $value = (int)$day;
-            if ($value === 7) {
-                $mask[0] = '1';
-                continue;
-            }
-            if ($value >= 1 && $value <= 6) {
-                $mask[$value] = '1';
-            }
-        }
-
-        return implode('', $mask);
-    }
-
-    private function normalizeVivistarAlarmClockDays(string $value): string
-    {
-        $days = trim($value);
-        if ($days === '') {
-            return '';
-        }
-
-        if (preg_match('/^[1-7]+$/', $days) !== 1) {
-            return $this->formatAlarmClockDayList($this->parseAlarmClockDayList($days));
-        }
-
-        return $this->formatAlarmClockDayList($this->parseAlarmClockDayList($days));
-    }
-
-    private function normalizeTakePillsCapabilityValue(array $desired): array
-    {
-        $reminderSettings = $desired['reminderSettings'] ?? [];
-
-        if (is_string($reminderSettings)) {
-            $reminderSettings = $this->parseTakePillsReminderSettings($reminderSettings);
-        } elseif (is_array($reminderSettings) && array_is_list($reminderSettings)) {
-            $reminderSettings = array_map(
-                fn(mixed $item) => $this->normalizeSingleTakePillsReminder($item),
-                $reminderSettings,
-            );
-        } elseif (is_array($reminderSettings)) {
-            $reminderSettings = [$this->normalizeSingleTakePillsReminder($reminderSettings)];
-        } else {
-            $reminderSettings = [[
-                'time' => '',
-                'enabled' => true,
-                'frequency' => 1,
-                'custom' => '',
-            ]];
-        }
-
-        $payload = [
-            'reminderSettings' => $reminderSettings,
-            'number' => (int)($desired['number'] ?? 1),
-            'reminderText' => (string)($desired['reminderText'] ?? ''),
-            'voiceData' => (string)($desired['voiceData'] ?? ''),
-        ];
-
-        if (array_key_exists('voiceMimeType', $desired)) {
-            $payload['voiceMimeType'] = (string)$desired['voiceMimeType'];
-        }
-
-        return $payload;
-    }
-
-    private function normalizeSingleTakePillsReminder(mixed $item): array
-    {
-        if (is_string($item)) {
-            $parts = explode('-', $item, 4);
-            return [
-                'time' => (string)($parts[0] ?? ''),
-                'enabled' => $this->boolLikeToBool($parts[1] ?? 1),
-                'frequency' => (int)($parts[2] ?? 1),
-                'custom' => (string)($parts[3] ?? ''),
-            ];
-        }
-
-        if (!is_array($item)) {
-            return ['time' => '', 'enabled' => true, 'frequency' => 1, 'custom' => ''];
-        }
-
-        return [
-            'time' => (string)($item['time'] ?? $item['reminderTime'] ?? ''),
-            'enabled' => $this->boolLikeToBool($item['enabled'] ?? $item['switchState'] ?? true),
-            'frequency' => (int)($item['frequency'] ?? $item['reminderFrequency'] ?? 1),
-            'custom' => (string)($item['custom'] ?? $item['reminderCustom'] ?? ''),
-        ];
-    }
-
-    private function parseTakePillsReminderSettings(string $value): array
-    {
-        $parts = explode('-', trim($value));
-        $reminders = [];
-        $i = 0;
-        $count = count($parts);
-
-        while ($i < $count) {
-            $time = $parts[$i++] ?? '';
-            $enabled = $this->boolLikeToBool($parts[$i++] ?? 1);
-            $frequency = (int)($parts[$i++] ?? 1);
-            $custom = '';
-            if ($frequency === 3 && $i < $count) {
-                $custom = $parts[$i++];
-            }
-            $reminders[] = [
-                'time' => $time,
-                'enabled' => $enabled,
-                'frequency' => $frequency,
-                'custom' => $custom,
-            ];
-        }
-
-        return $reminders;
-    }
-
-    private function boolLikeToBool(mixed $value): bool
-    {
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value)) {
-            return $value !== 0;
-        }
-
-        $string = strtolower(trim((string)$value));
-        return in_array($string, ['1', 'true', 'yes', 'on'], true);
+        return $this->capabilityRegistry->resolveConfigKey($protocol, $key);
     }
 
     private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed
     {
-        if ($existing === null) {
-            return $incoming;
-        }
-
-        return match ($genericKey) {
-            'sos_contacts' => $this->mergeStringLists($existing, $incoming),
-            'call_whitelist' => $this->mergeAssociativeValues($existing, $incoming, ['numbers']),
-            'phonebook', 'alarm_clock' => $this->mergeListValues($existing, $incoming),
-            'medication_reminders' => $this->mergeAssociativeValues($existing, $incoming),
-            default => $this->mergeAssociativeValues($existing, $incoming),
-        };
-    }
-
-    private function mergeAlarmClockConfigurationValue(mixed $existing, array $incoming): array
-    {
-        $existingItems = [];
-        if (is_array($existing) && isset($existing['items']) && is_array($existing['items'])) {
-            $existingItems = $existing['items'];
-        }
-
-        $incomingItems = isset($incoming['items']) && is_array($incoming['items']) ? $incoming['items'] : [];
-
-        return ['items' => $this->mergeListValues($existingItems, $incomingItems)];
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function publicAlarmClockItemsFromNative(string $nativeKey, mixed $desired): array
-    {
-        if (!is_array($desired)) {
-            return [];
-        }
-
-        if ($nativeKey === 'alarm_clock') {
-            $items = $desired['items'] ?? $desired['alarms'] ?? $desired['alarmClock'] ?? $desired;
-            if (!is_array($items)) {
-                return [];
-            }
-
-            if (!array_is_list($items)) {
-                $items = [$items];
-            }
-
-            if ($items !== [] && is_array($items[0] ?? null) && array_key_exists('recurrence', $items[0])) {
-                return array_values($items);
-            }
-
-            return array_values(array_filter(
-                array_map(fn(mixed $item): array => $this->publicAlarmClockItemsFromNative('alarmClock', $item), $items),
-                static fn(array $item): bool => $item !== []
-            ));
-        }
-
-        if (array_is_list($desired) && $desired !== [] && is_array($desired[0] ?? null) && array_key_exists('recurrence', $desired[0])) {
-            return array_values($desired);
-        }
-
-        if ($nativeKey === 'reminders') {
-            $items = $desired['items'] ?? $desired['alarms'] ?? $desired;
-            if (!is_array($items)) {
-                return [];
-            }
-
-            if (!array_is_list($items)) {
-                $items = [$items];
-            }
-
-            if ($items !== [] && is_array($items[0] ?? null) && array_key_exists('recurrence', $items[0])) {
-                return array_values($items);
-            }
-
-            return array_values(array_filter(
-                array_map(fn(mixed $item): array => $this->publicVivistarAlarmClockItem($item), $items),
-                static fn(array $item): bool => $item !== []
-            ));
-        }
-
-        if ($nativeKey === 'alarmClock') {
-            $items = $desired['alarms'] ?? $desired['items'] ?? $desired;
-            if (!is_array($items)) {
-                return [];
-            }
-
-            if (!array_is_list($items)) {
-                $items = [$items];
-            }
-
-            if ($items !== [] && is_array($items[0] ?? null) && array_key_exists('recurrence', $items[0])) {
-                return array_values($items);
-            }
-
-            return array_values(array_filter(
-                array_map(fn(mixed $item): array => $this->publicFourPTouchAlarmClockItem($item), $items),
-                static fn(array $item): bool => $item !== []
-            ));
-        }
-
-        if (array_is_list($desired)) {
-            return array_values($desired);
-        }
-
-        return [];
-    }
-
-    /**
-     * @return array{time: string, enabled: bool, type?: int, recurrence: array{kind: string, days?: list<int>}}
-     */
-    private function publicVivistarAlarmClockItem(mixed $item): array
-    {
-        if (!is_array($item)) {
-            return [];
-        }
-
-        $days = $this->parseAlarmClockDayList((string)($item['days'] ?? ''));
-        $kind = $days === []
-            ? 'once'
-            : ($days === [1, 2, 3, 4, 5, 6, 7] ? 'daily' : 'custom');
-
-        $payload = [
-            'time' => (string)($item['time'] ?? ''),
-            'enabled' => $this->boolLikeToBool($item['enabled'] ?? true),
-            'recurrence' => ['kind' => $kind],
-        ];
-
-        if (isset($item['type']) && is_numeric((string)$item['type'])) {
-            $payload['type'] = (int)$item['type'];
-        }
-
-        if ($days !== []) {
-            $payload['recurrence']['days'] = $days;
-        }
-
-        return $payload;
-    }
-
-    /**
-     * @return array{time: string, enabled: bool, type?: int, recurrence: array{kind: string, days?: list<int>}}
-     */
-    private function publicFourPTouchAlarmClockItem(mixed $item): array
-    {
-        if (!is_array($item)) {
-            return [];
-        }
-
-        $mode = (int)($item['mode'] ?? $item['frequency'] ?? $item['reminderFrequency'] ?? 1);
-        $kind = match ($mode) {
-            2 => 'daily',
-            3 => 'custom',
-            default => 'once',
-        };
-
-        $payload = [
-            'time' => $this->normalizeFourPTouchAlarmClockTime((string)($item['time'] ?? $item['alarmTime'] ?? $item['reminderTime'] ?? '')),
-            'enabled' => $this->boolLikeToBool($item['enabled'] ?? $item['switchState'] ?? true),
-            'recurrence' => ['kind' => $kind],
-        ];
-
-        if ($kind === 'custom') {
-            $days = $this->parseAlarmClockDayMaskToList((string)($item['custom'] ?? $item['days'] ?? $item['reminderCustom'] ?? ''));
-            if ($days !== []) {
-                $payload['recurrence']['days'] = $days;
-            }
-        }
-
-        return $payload;
-    }
-
-    private function normalizeSosContactsValue(string $nativeKey, array $desired): array
-    {
-        if (isset($desired['numbers']) && is_array($desired['numbers'])) {
-            return $this->stringList($desired['numbers']);
-        }
-        if (isset($desired['phone'])) {
-            return $this->stringList([$desired['phone']]);
-        }
-        if ($nativeKey === 'SOSNumber' && isset($desired['SOSNumber']) && is_array($desired['SOSNumber'])) {
-            return $this->stringList($desired['SOSNumber']);
-        }
-
-        return [];
-    }
-
-    private function normalizeCallWhitelistValue(string $nativeKey, array $desired): array
-    {
-        if ($nativeKey === 'whitelistSwitch') {
-            return ['enabled' => (bool)($desired['enabled'] ?? false)];
-        }
-
-        return ['numbers' => $this->stringList($desired['numbers'] ?? [])];
-    }
-
-    private function mergeStringLists(mixed $existing, mixed $incoming): array
-    {
-        return $this->stringList(array_merge(
-            is_array($existing) ? $existing : [],
-            is_array($incoming) ? $incoming : []
-        ));
-    }
-
-    private function mergeListValues(mixed $existing, mixed $incoming): array
-    {
-        $existingList = is_array($existing) ? array_values($existing) : [];
-        $incomingList = is_array($incoming) ? array_values($incoming) : [];
-
-        return array_values(array_merge($existingList, $incomingList));
-    }
-
-    /**
-     * @param list<string> $listKeys
-     */
-    private function mergeAssociativeValues(mixed $existing, mixed $incoming, array $listKeys = []): mixed
-    {
-        if (!is_array($existing) || !is_array($incoming)) {
-            return $incoming;
-        }
-
-        $merged = $existing;
-        foreach ($incoming as $key => $value) {
-            if (in_array((string)$key, $listKeys, true)) {
-                $merged[$key] = $this->stringList(array_merge(
-                    is_array($existing[$key] ?? null) ? $existing[$key] : [],
-                    is_array($value) ? $value : []
-                ));
-                continue;
-            }
-
-            $merged[$key] = $value;
-        }
-
-        return $merged;
-    }
-
-    /**
-     * @param list<mixed> $values
-     * @return list<string>
-     */
-    private function stringList(array $values): array
-    {
-        $normalized = [];
-        foreach ($values as $value) {
-            $item = trim((string)$value);
-            if ($item === '') {
-                continue;
-            }
-            $normalized[$item] = true;
-        }
-
-        return array_keys($normalized);
+        return $this->capabilityRegistry->merge($genericKey, $existing, $incoming);
     }
 
     private function licenseForAssociation(string $company, string $licenseId): ?array

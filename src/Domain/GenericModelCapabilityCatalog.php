@@ -4,6 +4,9 @@ namespace Hub\Domain;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\WatchCapabilityDefinitions;
 
 final class GenericModelCapabilityCatalog
 {
@@ -35,9 +38,9 @@ final class GenericModelCapabilityCatalog
     public static function definitions(): array
     {
         return array_merge(
-            self::watchDefinitions(),
-            self::deviceTypePlaceholderDefinitions('ncs'),
-            self::radarDefinitions(),
+            WatchCapabilityDefinitions::all(),
+            NcsCapabilityDefinitions::all(),
+            RadarCapabilityDefinitions::all(),
         );
     }
 
@@ -311,110 +314,6 @@ final class GenericModelCapabilityCatalog
             'doNotDisturb' => 'do_not_disturb',
             default => null,
         };
-    }
-
-    /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
-     */
-    private static function watchDefinitions(): array
-    {
-        return [
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'battery', 'label' => 'Battery', 'sortOrder' => 5, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'activity', 'label' => 'Activity (steps)', 'sortOrder' => 6, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'heart_rate', 'label' => 'Heart rate', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'blood_pressure', 'label' => 'Blood pressure', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'blood_oxygen', 'label' => 'Blood oxygen', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'temperature', 'label' => 'Body temperature', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Breath rate', 'sortOrder' => 50, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'location', 'label' => 'Location', 'sortOrder' => 60, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'blood_sugar', 'label' => 'Blood sugar', 'sortOrder' => 65, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'sleep', 'label' => 'Sleep', 'sortOrder' => 70, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'ecg', 'label' => 'ECG', 'sortOrder' => 80, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'hrv', 'label' => 'HRV', 'sortOrder' => 90, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'ppg', 'label' => 'PPG', 'sortOrder' => 100, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'rr_interval', 'label' => 'RR interval', 'sortOrder' => 110, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'firmware_version', 'label' => 'Firmware version', 'sortOrder' => 120, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'telemetry', 'key' => 'device_status', 'label' => 'Device status', 'sortOrder' => 130, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'auto_vitals_interval', 'label' => 'Auto vitals interval', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'heart_rate_measurement_interval', 'label' => 'Heart rate measurement interval', 'sortOrder' => 20, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'blood_pressure_measurement_interval', 'label' => 'Blood pressure measurement interval', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'blood_oxygen_measurement_interval', 'label' => 'Blood oxygen measurement interval', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'temperature_measurement_interval', 'label' => 'Temperature measurement interval', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'breath_rate_measurement_interval', 'label' => 'Breath rate measurement interval', 'sortOrder' => 60, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'ecg_measurement_interval', 'label' => 'ECG measurement interval', 'sortOrder' => 70, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'hrv_measurement_interval', 'label' => 'HRV measurement interval', 'sortOrder' => 80, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'ppg_measurement_interval', 'label' => 'PPG measurement interval', 'sortOrder' => 90, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'rr_interval_measurement_interval', 'label' => 'RR interval measurement interval', 'sortOrder' => 100, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'heart_rate_continuous', 'label' => 'Continuous heart rate', 'sortOrder' => 110, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'blood_oxygen_continuous', 'label' => 'Continuous blood oxygen', 'sortOrder' => 120, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'blood_pressure_trend', 'label' => 'Blood pressure trend', 'sortOrder' => 130, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'temperature_continuous', 'label' => 'Continuous temperature', 'sortOrder' => 140, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'step_goal', 'label' => 'Step goal', 'sortOrder' => 150, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'sleep_monitoring', 'label' => 'Sleep monitoring', 'sortOrder' => 160, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'blood_pressure_calibration', 'label' => 'Blood pressure calibration', 'sortOrder' => 170, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'phonebook', 'label' => 'Phonebook', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'push_message', 'label' => 'Push message to watch', 'sortOrder' => 5, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Call whitelist', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'monitor_number', 'label' => 'Monitor number', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'SOS contacts', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'alarm_clock', 'label' => 'Alarm clock', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'medication_reminders', 'label' => 'Medication reminders', 'sortOrder' => 20, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'low_battery_alert', 'label' => 'Low battery alert', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'fall_detection', 'label' => 'Fall detection', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'fall_sensitivity', 'label' => 'Fall sensitivity', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'sos_sms_alert', 'label' => 'SOS SMS alert', 'sortOrder' => 60, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'blood_oxygen_alert', 'label' => 'Blood oxygen alert', 'sortOrder' => 70, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'temperature_high_alert', 'label' => 'High temperature alert', 'sortOrder' => 80, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'temperature_low_alert', 'label' => 'Low temperature alert', 'sortOrder' => 90, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'blood_pressure_alert', 'label' => 'Blood pressure alert', 'sortOrder' => 100, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'heart_rate_high_alert', 'label' => 'High heart rate alert', 'sortOrder' => 110, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'heart_rate_low_alert', 'label' => 'Low heart rate alert', 'sortOrder' => 120, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'remove_watch_alarm', 'label' => 'Remove watch alarm', 'sortOrder' => 130, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'remove_watch_sms_alert', 'label' => 'Remove watch SMS alert', 'sortOrder' => 140, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'working_mode', 'label' => 'Working mode', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_binding', 'label' => 'Device binding', 'sortOrder' => 20, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'call_in_restriction', 'label' => 'Call restriction', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_settings_sync', 'label' => 'Device settings sync', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'device_password', 'label' => 'Device password', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'language_timezone', 'label' => 'Language and timezone', 'sortOrder' => 70, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'do_not_disturb', 'label' => 'Do not disturb', 'sortOrder' => 80, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'location_reporting_interval', 'label' => 'Location reporting interval', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'sound_profile', 'label' => 'Sound profile', 'sortOrder' => 11, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'make_call', 'label' => 'Make call', 'sortOrder' => 12, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'reset_device', 'label' => 'Reset device', 'sortOrder' => 14, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'power_off', 'label' => 'Power off', 'sortOrder' => 16, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'find_device', 'label' => 'Find device', 'sortOrder' => 18, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'center_number', 'label' => 'Center number', 'sortOrder' => 45, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'step_reporting_interval', 'label' => 'Step interval', 'sortOrder' => 180, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-            ['deviceType' => 'watch', 'section' => 'health', 'key' => 'pedometer_schedule', 'label' => 'Pedometer schedule', 'sortOrder' => 190, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
-        ];
-    }
-
-    /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool}>
-     */
-    private static function deviceTypePlaceholderDefinitions(string $deviceType): array
-    {
-        if ($deviceType !== 'ncs') {
-            return [];
-        }
-
-        return [
-            ['deviceType' => 'ncs', 'section' => 'alarms', 'key' => 'pager_call', 'label' => 'Chamada de enfermagem', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
-        ];
-    }
-
-    /**
-     * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
-     */
-    private static function radarDefinitions(): array
-    {
-        return [
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'positions', 'label' => 'Positions', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals', 'label' => 'Vitals', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'position_minute_stats', 'label' => 'Position minute stats', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals_minute_stats', 'label' => 'Vitals minute stats', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-        ];
     }
 
     /**

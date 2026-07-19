@@ -1,6 +1,6 @@
 <?php
 
-namespace Hub\Http;
+namespace Hub\Api;
 
 class OpenApiSpec
 {

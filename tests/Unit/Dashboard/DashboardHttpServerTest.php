@@ -267,7 +267,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
     public function testOpenApiSpecAdvertisesBearerAuth(): void
     {
-        $spec = \Hub\Http\OpenApiSpec::get();
+        $spec = \Hub\Api\OpenApiSpec::get();
 
         self::assertSame(['bearerAuth' => ['type' => 'http', 'scheme' => 'bearer', 'bearerFormat' => 'JWT', 'description' => 'Use the bearer token returned by /api/auth/login.']], $spec['components']['securitySchemes'] ?? null);
         self::assertSame([['bearerAuth' => []]], $spec['security'] ?? null);
