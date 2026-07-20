@@ -281,6 +281,38 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testShowNormalizesStoredFourPTouchFallSensitivityToNewKeys(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('864293000000333', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_sensitivity']);
+        $db->deviceConfigurations->saveDesired(
+            '864293000000333',
+            'fallDownSensitivity',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'LSSET',
+            [
+                'sensitivityLevel' => 4,
+                'totalLevels' => 6,
+            ]
+        );
+
+        $response = $api->show('864293000000333');
+
+        self::assertSame(
+            [
+                'sensitivity' => 4,
+                'levels' => 6,
+            ],
+            $response['capabilities']['alarms']['fall_sensitivity']['value'] ?? null
+        );
+    }
+
     public function testShowExposesTakePillsStructuredMetaForFourPTouch(): void
     {
         [$api, $db, $store] = $this->makeApi();

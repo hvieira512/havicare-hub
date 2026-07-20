@@ -76,6 +76,13 @@ final class CapabilityRegistry
             return $this->contracts[$genericKey]->fromNative($nativeKey, $desired);
         }
 
+        if ($genericKey === 'fall_sensitivity' && $nativeKey === 'fallDownSensitivity') {
+            return [
+                'sensitivity' => (int)($desired['sensitivity'] ?? $desired['sensitivityLevel'] ?? 5),
+                'levels' => (int)($desired['levels'] ?? $desired['totalLevels'] ?? 8),
+            ];
+        }
+
         return $desired;
     }
 
