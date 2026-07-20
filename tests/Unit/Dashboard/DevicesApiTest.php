@@ -281,6 +281,45 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testShowExposesFourPTouchSosContactsAsNumbersObject(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'sosNumber1',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'SOS1',
+            ['phone' => '+351938854803']
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'sosNumber2',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'SOS2',
+            ['phone' => '+351938854807']
+        );
+
+        $response = $api->show('861728087060467');
+
+        self::assertSame(
+            ['numbers' => ['+351938854803', '+351938854807']],
+            $response['capabilities']['contacts']['sos_contacts']['value'] ?? null
+        );
+        self::assertSame(
+            ['numbers' => ['+351938854803', '+351938854807']],
+            $response['configurations']['sos_contacts'] ?? null
+        );
+    }
+
     public function testShowNormalizesStoredFourPTouchFallSensitivityToNewKeys(): void
     {
         [$api, $db, $store] = $this->makeApi();

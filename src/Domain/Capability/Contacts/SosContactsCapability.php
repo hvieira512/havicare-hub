@@ -51,16 +51,16 @@ final class SosContactsCapability implements CapabilityContract
     public function fromNative(string $nativeKey, array $desired): mixed
     {
         if (isset($desired['numbers']) && is_array($desired['numbers'])) {
-            return self::stringList($desired['numbers']);
+            return ['numbers' => self::stringList($desired['numbers'])];
         }
         if (isset($desired['phone'])) {
-            return self::stringList([$desired['phone']]);
+            return ['numbers' => self::stringList([$desired['phone']])];
         }
         if ($nativeKey === 'SOSNumber' && isset($desired['SOSNumber']) && is_array($desired['SOSNumber'])) {
-            return self::stringList($desired['SOSNumber']);
+            return ['numbers' => self::stringList($desired['SOSNumber'])];
         }
 
-        return [];
+        return ['numbers' => []];
     }
 
     public function defaultValue(string $protocol): mixed
@@ -78,7 +78,7 @@ final class SosContactsCapability implements CapabilityContract
 
     public function merge(mixed $existing, mixed $incoming): mixed
     {
-        return self::mergeStringLists($existing, $incoming);
+        return self::mergeAssociativeValues($existing, $incoming, ['numbers']);
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array

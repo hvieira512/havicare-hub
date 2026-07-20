@@ -449,6 +449,19 @@ class DeviceService
                     continue;
                 }
 
+                if ($genericKey === 'sos_contacts') {
+                    $contract = $this->capabilityRegistry->get('sos_contacts');
+                    if ($contract !== null) {
+                        $value = $contract->fromNative($nativeKey, $desired);
+                        if (is_array($value) && $value !== []) {
+                            $configurations['sos_contacts'] = isset($configurations['sos_contacts'])
+                                ? $contract->merge($configurations['sos_contacts'], $value)
+                                : $value;
+                        }
+                    }
+                    continue;
+                }
+
                 $configurations[$nativeKey] = $desired;
             }
         }
