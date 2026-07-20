@@ -12,6 +12,9 @@ trait CapabilityHelpers
     {
         $normalized = [];
         foreach ($values as $value) {
+            if (is_array($value)) {
+                throw new \InvalidArgumentException('list items must be strings');
+            }
             $item = trim((string)$value);
             if ($item !== '') {
                 $normalized[$item] = true;

@@ -19,11 +19,20 @@ abstract class ConfigurationPayloadBuilder
             throw new \InvalidArgumentException("{$field} must be an array");
         }
 
-        return array_pad(array_map(static fn(mixed $item): string => trim((string)$item), array_slice($value, 0, $max)), $max, '');
+        return array_pad(array_map(static function (mixed $item) use ($field): string {
+            if (is_array($item)) {
+                throw new \InvalidArgumentException("{$field} items must be strings");
+            }
+
+            return trim((string)$item);
+        }, array_slice($value, 0, $max)), $max, '');
     }
 
     protected static function requiredString(mixed $value, string $field): string
     {
+        if (is_array($value)) {
+            throw new \InvalidArgumentException("{$field} must be a string");
+        }
         $value = trim((string)$value);
         if ($value === '') {
             throw new \InvalidArgumentException("{$field} is required");

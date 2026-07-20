@@ -565,6 +565,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertStringContainsString('SOS1,123456789', $wire);
     }
 
+    public function testFourPTouchSosNumber1RejectsArrayPhone(): void
+    {
+        self::assertSame(
+            'phone must be a string',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'sosNumber1', ['phone' => ['123456789']])
+        );
+    }
+
     public function testFourPTouchSosNumber2BuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sosNumber2', ['phone' => '987654321']);
