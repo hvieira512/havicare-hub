@@ -897,6 +897,35 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073,IyFBTVIK', $submitted[0]['bytes']);
     }
 
+    public function testConfigurationPutAcceptsLocationReportingIntervalAliasForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['location_reporting_interval']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'location_reporting_interval' => [
+                    'intervalSeconds' => 3600,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertSame('uploadInterval', $response['results'][0]['key'] ?? null);
+        self::assertStringContainsString('UPLOAD,3600', $submitted[0]['bytes']);
+    }
+
     public function testConfigurationPutSendsFourPTouchAlarmClockDownlink(): void
     {
         $submitted = [];

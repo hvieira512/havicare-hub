@@ -120,6 +120,12 @@ final class DeviceConfigurationCatalog
                 default => $key,
             };
         }
+        if ($key === 'location_reporting_interval') {
+            return match ($protocol) {
+                'four-p-touch' => 'uploadInterval',
+                default => $key,
+            };
+        }
 
         return $key;
     }
