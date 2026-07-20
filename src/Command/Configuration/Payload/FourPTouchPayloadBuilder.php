@@ -401,13 +401,13 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function fallDownSensitivity(array $payload): string
     {
-        $level = self::positiveInt($payload['sensitivityLevel'] ?? null, 'sensitivityLevel');
-        $totalLevels = self::rangeInt($payload['totalLevels'] ?? null, 6, 8, 'totalLevels');
+        $level = self::positiveInt($payload['sensitivity'] ?? $payload['sensitivityLevel'] ?? null, 'sensitivity');
+        $totalLevels = self::rangeInt($payload['levels'] ?? $payload['totalLevels'] ?? null, 6, 8, 'levels');
         if (!in_array($totalLevels, [6, 8], true)) {
-            throw new \InvalidArgumentException('totalLevels must be 6 or 8');
+            throw new \InvalidArgumentException('levels must be 6 or 8');
         }
         if ($level > $totalLevels) {
-            throw new \InvalidArgumentException('sensitivityLevel must not exceed totalLevels');
+            throw new \InvalidArgumentException('sensitivity must not exceed levels');
         }
 
         return "{$level}+{$totalLevels}";

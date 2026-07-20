@@ -425,8 +425,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testFourPTouchFallDownSensitivityBuildsFirmwareAwarePayload(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fallDownSensitivity', [
-            'sensitivityLevel' => 5,
-            'totalLevels' => 8,
+            'sensitivity' => 5,
+            'levels' => 8,
         ]);
 
         self::assertSame('LSSET', $payload['command']);
@@ -436,8 +436,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testFourPTouchFallSensitivityPublicAliasBuildsFirmwareAwarePayload(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fall_sensitivity', [
-            'sensitivityLevel' => 4,
-            'totalLevels' => 6,
+            'sensitivity' => 4,
+            'levels' => 6,
         ]);
 
         self::assertSame('LSSET', $payload['command']);

@@ -171,8 +171,8 @@ const CONFIG_INPUT_READERS = {
         callCenterOnFall: readCheckbox(section, "callCenterOnFall"),
     }),
     fallSensitivityLevels: (section) => ({
-        sensitivityLevel: readNumber(section, "sensitivityLevel"),
-        totalLevels: readNumber(section, "totalLevels"),
+        sensitivity: readNumber(section, "sensitivity"),
+        levels: readNumber(section, "levels"),
     }),
     timeRanges: (section) => ({ranges: readTextArray(section, "ranges")}),
     timeRange: (section) => ({range: readText(section, "range")}),
@@ -225,7 +225,7 @@ const CONFIG_INPUT_DEFAULTS = {
     wonlexBloodPressureWarning: () => ({switchState: true, hpWarn: 135, LPWarn: 90}),
     languageTimezone: () => ({preset: "0|0"}),
     dualToggle: () => ({enabled: true, callCenterOnFall: false}),
-    fallSensitivityLevels: () => ({sensitivityLevel: 5, totalLevels: 8}),
+    fallSensitivityLevels: () => ({sensitivity: 5, levels: 8}),
     timeRanges: () => ({ranges: ["08:10-09:30"]}),
     timeRange: () => ({range: "21:10-07:30"}),
     wonlexSleepSettings: () => ({
@@ -1161,8 +1161,8 @@ function dualToggleInput(desired) {
 
 function fallSensitivityLevelsInput(desired) {
     const sensitivityLevel =
-        parseInt(String(desired.sensitivityLevel ?? 5), 10) || 5;
-    const totalLevels = parseInt(String(desired.totalLevels ?? 8), 10) || 8;
+        parseInt(String(desired.sensitivity ?? 5), 10) || 5;
+    const totalLevels = parseInt(String(desired.levels ?? 8), 10) || 8;
 
     const levels = [
         { label: "Máxima", icon: "fa-bolt", btnClass: "btn-outline-danger" },
@@ -1179,8 +1179,8 @@ function fallSensitivityLevelsInput(desired) {
         <div class="row g-3">
             <div class="col-12 col-md-9">
                 <label class="form-label form-label-sm">Nível de sensibilidade</label>
-                <input type="hidden" data-config-field="sensitivityLevel" value="${esc(String(sensitivityLevel))}">
-                <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivityLevel">
+                <input type="hidden" data-config-field="sensitivity" value="${esc(String(sensitivityLevel))}">
+                <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivity">
                     ${levels
                         .map(
                             ({ label, icon, btnClass }, i) => {
@@ -1191,7 +1191,7 @@ function fallSensitivityLevelsInput(desired) {
                             class="btn ${btnClass} sens-level-btn d-flex flex-column align-items-center justify-content-center ${level === sensitivityLevel ? "active" : ""} ${level > totalLevels ? "d-none" : ""}"
                             style="flex: 1 0 0; min-width: 4rem; min-height: 4rem"
                             data-action="selectConfigChoice"
-                            data-config-field="sensitivityLevel"
+                            data-config-field="sensitivity"
                             data-config-value="${level}"
                             aria-pressed="${level === sensitivityLevel ? "true" : "false"}"
                             ${level > totalLevels ? "disabled" : ""}>
@@ -1209,7 +1209,7 @@ function fallSensitivityLevelsInput(desired) {
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label form-label-sm">Níveis totais</label>
-                <select class="form-select" data-config-field="totalLevels" data-action="fallTotalLevels">
+                <select class="form-select" data-config-field="levels" data-action="fallTotalLevels">
                     <option value="6" ${totalLevels === 6 ? "selected" : ""}>6 níveis</option>
                     <option value="8" ${totalLevels === 8 ? "selected" : ""}>8 níveis</option>
                 </select>

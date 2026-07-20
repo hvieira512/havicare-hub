@@ -266,8 +266,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertSame(
             [
-                'sensitivityLevel' => 5,
-                'totalLevels' => 8,
+                'sensitivity' => 5,
+                'levels' => 8,
             ],
             $response['capabilities']['alarms']['fall_sensitivity']['value'] ?? null
         );
@@ -1093,8 +1093,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->updateConfigurations('868017032159118', json_encode([
             'configurations' => [
                 'fall_sensitivity' => [
-                    'sensitivityLevel' => 4,
-                    'totalLevels' => 6,
+                    'sensitivity' => 4,
+                    'levels' => 6,
                 ],
             ],
         ], JSON_THROW_ON_ERROR));

@@ -1251,10 +1251,10 @@ function handleDeviceConfigChange(event) {
         if (!section) return;
         const total = parseInt(event.target.value, 10);
         const btns = section.querySelectorAll(
-            '[data-config-choice-group="sensitivityLevel"] .sens-level-btn',
+            '[data-config-choice-group="sensitivity"] .sens-level-btn',
         );
         const currentInput = section.querySelector(
-            '[data-config-field="sensitivityLevel"]',
+            '[data-config-field="sensitivity"]',
         );
         btns.forEach((btn, i) => {
             const visible = i + 1 <= total;

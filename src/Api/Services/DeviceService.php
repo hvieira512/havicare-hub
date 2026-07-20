@@ -1400,7 +1400,7 @@ class DeviceService
             'wonlexBloodPressureWarning' => ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
             'languageTimezone' => ['language' => 0, 'timeZone' => '0'],
             'dualToggle' => ['enabled' => true, 'callCenterOnFall' => false],
-            'fallSensitivityLevels' => ['sensitivityLevel' => 5, 'totalLevels' => 8],
+            'fallSensitivityLevels' => ['sensitivity' => 5, 'levels' => 8],
             'timeRanges' => ['ranges' => ['08:10-09:30']],
             'timeRange' => ['range' => '21:10-07:30'],
             'wonlexSleepSettings' => [
