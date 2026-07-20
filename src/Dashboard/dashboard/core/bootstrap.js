@@ -1127,6 +1127,26 @@ function handleDeviceConfigClick(event) {
         return;
     }
 
+    if (button.dataset.action === "addSosContactRow") {
+        appendPhoneListRow(section, "sos_contacts");
+        return;
+    }
+
+    if (button.dataset.action === "removeSosContactRow") {
+        removeConfigRow(button.closest('[data-repeat-row="sos_contacts"]'));
+        return;
+    }
+
+    if (button.dataset.action === "addWhitelistRow") {
+        appendPhoneListRow(section, "call_whitelist");
+        return;
+    }
+
+    if (button.dataset.action === "removeWhitelistRow") {
+        removeConfigRow(button.closest('[data-repeat-row="call_whitelist"]'));
+        return;
+    }
+
     if (button.dataset.action === "addAlarmClockRow") {
         appendAlarmClockRow(section);
         return;
@@ -1697,11 +1717,20 @@ async function saveDeviceConfiguration(section) {
     try {
         const isTransientAction = section.dataset.configTransient === "1";
         const capabilityKey = section.dataset.capabilityKey || section.dataset.configKey || "";
+        const configKind = section.dataset.configKind || "configuration";
         const result = isTransientAction
             ? await apiRequestCapability(state.deviceModal.imei, capabilityKey, payload)
             : await apiSaveConfiguration(
                 state.deviceModal.imei,
-                { [key]: payload },
+                configKind === "capability"
+                    ? {
+                        capabilities: {
+                            [section.dataset.configSectionName || "contacts"]: {
+                                [capabilityKey]: payload,
+                            },
+                        },
+                    }
+                    : { configurations: { [key]: payload } },
             );
         if (result.error) {
             setConfigUi(key, {
@@ -1721,6 +1750,8 @@ async function saveDeviceConfiguration(section) {
         if (!isTransientAction) {
             state.deviceModal.configurations =
                 result.configurations || state.deviceModal.configurations;
+            state.deviceModal.capabilities =
+                result.capabilities || state.deviceModal.capabilities;
         }
 
         setConfigUi(key, {
@@ -1924,6 +1955,33 @@ function appendContactRow(section) {
     if (rows.length >= limit) return;
 
     const template = rows[rows.length - 1] || createContactRow();
+    const clone = template.cloneNode(true);
+    clone.querySelectorAll("input").forEach((input) => {
+        if (input.matches("[data-phone-local]")) {
+            input.value = "";
+            return;
+        }
+        input.value = "";
+    });
+    const countrySelect = clone.querySelector("[data-phone-country]");
+    if (countrySelect) {
+        countrySelect.value = "PT";
+    }
+    resetPhoneControls(clone);
+    list.appendChild(clone);
+}
+
+function appendPhoneListRow(section, rowType) {
+    const list = section.querySelector(`[data-repeat-kind="${rowType}"]`);
+    if (!list) return;
+
+    const limit = parseInt(list.dataset.repeatLimit || "10", 10);
+    const rows = list.querySelectorAll(`[data-repeat-row="${rowType}"]`);
+    if (rows.length >= limit) return;
+
+    const template = rows[rows.length - 1] || null;
+    if (!template) return;
+
     const clone = template.cloneNode(true);
     clone.querySelectorAll("input").forEach((input) => {
         if (input.matches("[data-phone-local]")) {

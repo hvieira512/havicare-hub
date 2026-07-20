@@ -1390,6 +1390,101 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
     }
 
+    public function testFourPTouchCallWhitelistCapabilitySaveFansOutToNativeCommands(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
+        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 0, '', '7597567372', 'hitcare');
+
+        $response = $api->updateConfigurations('637507597567372', json_encode([
+            'capabilities' => [
+                'contacts' => [
+                    'call_whitelist' => [
+                        'numbers' => [
+                            '111',
+                            '222',
+                            '333',
+                            '444',
+                            '555',
+                            '666',
+                        ],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(2, $response['changed']['contacts.call_whitelist']['operations'] ?? []);
+        self::assertCount(2, $submitted);
+        self::assertStringContainsString('WHITELIST1', $submitted[0]['bytes']);
+        self::assertStringContainsString('WHITELIST2', $submitted[1]['bytes']);
+        self::assertSame(
+            [
+                'numbers' => ['111', '222', '333', '444', '555', '666'],
+            ],
+            $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
+        );
+        $savedRows = $db->deviceConfigurations->allForImei('637507597567372');
+        self::assertCount(2, $savedRows);
+        self::assertSame(['numbers' => ['111', '222', '333', '444', '555']], $savedRows[0]['desired_payload'] ?? null);
+        self::assertSame(['numbers' => ['666', '', '', '', '']], $savedRows[1]['desired_payload'] ?? null);
+    }
+
+    public function testFourPTouchAlarmClockCapabilitySaveFansOutToNativeCommand(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'capabilities' => [
+                'alarms' => [
+                    'alarm_clock' => [
+                        'items' => [
+                            [
+                                'time' => '08:10',
+                                'enabled' => true,
+                                'recurrence' => ['kind' => 'daily'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('REMIND', $submitted[0]['bytes']);
+        self::assertSame(
+            [
+                [
+                    'time' => '08:10',
+                    'enabled' => true,
+                    'recurrence' => ['kind' => 'daily'],
+                ],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+        );
+    }
+
     public function testRecentReturnsTelemetryEventsAndCommands(): void
     {
         [$api, $db, $store] = $this->makeApi();

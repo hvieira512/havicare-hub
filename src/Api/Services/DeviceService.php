@@ -478,6 +478,10 @@ class DeviceService
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
 
+        if (isset($decoded['capabilities']) && is_array($decoded['capabilities'])) {
+            return $this->saveGenericConfiguration($imei, $decoded, $requestId);
+        }
+
         if (!isset($decoded['configurations']) || !is_array($decoded['configurations'])) {
             Logger::channel('api')->warning('API device configuration rejected', [
                 'request_id' => $requestId,

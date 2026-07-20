@@ -2,9 +2,9 @@ import {requestJson, withQuery} from './http.js';
 
 export const getDevices = (params = {}) => requestJson(withQuery('/api/devices', params));
 export const getDevice = imei => requestJson(`/api/devices/${encodeURIComponent(imei)}`);
-export const saveConfiguration = (imei, configurations) => requestJson(`/api/devices/${encodeURIComponent(imei)}/configurations`, {
+export const saveConfiguration = (imei, payload) => requestJson(`/api/devices/${encodeURIComponent(imei)}/configurations`, {
     method: 'PATCH',
-    body: JSON.stringify({configurations}),
+    body: JSON.stringify(payload),
 });
 export const requestFeature = (imei, feature) => requestJson(`/api/devices/${encodeURIComponent(imei)}/requests`, {
     method: 'POST',

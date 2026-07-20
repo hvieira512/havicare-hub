@@ -96,12 +96,25 @@ const CONFIG_INPUT_RENDERERS = {
     wonlexReminderThreshold: (entry, desired) =>
         wonlexReminderThresholdInput(entry, desired),
     wonlexHeartRateRange: (_entry, desired) => wonlexHeartRateRangeInput(desired),
-    list: (entry, desired) => listInput(entry, desired, "numbers", "Números SOS"),
+    list: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
+    sos_contacts: (entry, desired) => sosContactsInput(entry, desired),
+    call_whitelist: (entry, desired) => callWhitelistInput(entry, desired),
     contacts: (entry, desired) => contactsInput(entry, desired),
     alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
     alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
     takePills: (_entry, desired, meta) => takePillsInput(desired, meta),
     soundProfile: (_entry, desired) => soundProfileInput(desired),
+};
+
+const FOUR_P_TOUCH_GROUPED_CAPABILITIES = {
+    sos_contacts: {
+        label: "Contactos SOS",
+        limit: 3,
+    },
+    call_whitelist: {
+        label: "Chamadas permitidas",
+        limit: 10,
+    },
 };
 
 const CONFIG_INPUT_READERS = {
@@ -205,6 +218,14 @@ const CONFIG_INPUT_READERS = {
         const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
         return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
     },
+    sos_contacts: (section) => {
+        const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
+        return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
+    },
+    call_whitelist: (section) => {
+        const limit = parseInt(section.dataset.configLimit || "10", 10) || 10;
+        return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
+    },
     contacts: (section) => ({contacts: readContacts(section)}),
     alarm_clock: (section) => readAlarmClock(section),
     alarms: (section) => ({alarms: readFourPTouchAlarms(section)}),
@@ -244,6 +265,8 @@ const CONFIG_INPUT_DEFAULTS = {
         exerciseRemindValue: 140,
     }),
     list: () => ({numbers: ["", "", ""]}),
+    sos_contacts: () => ({numbers: ["", "", ""]}),
+    call_whitelist: () => ({numbers: ["", "", "", "", "", "", "", "", "", ""]}),
     contacts: () => ({contacts: [{name: "", phone: ""}]}),
     alarm_clock: () => ({items: []}),
     alarms: () => ({alarms: []}),
@@ -269,12 +292,16 @@ const CONFIG_INPUT_HELP = {
     requestAction: () => "sem parâmetros",
     soundProfile: () => "4 modos",
     whitelistSwitch: () => "ativa os contactos da lista telefónica do BP14",
+    sos_contacts: () => "",
+    call_whitelist: () => "",
 };
 
 const CONFIG_INPUT_LABEL = {
     requestAction: "Ação",
     soundProfile: "Perfil de som",
     alarm_clock: "Alarmes",
+    sos_contacts: "Contactos SOS",
+    call_whitelist: "Lista branca",
 };
 
 export async function catalogForProtocol(protocol) {
@@ -320,6 +347,51 @@ export function groupedCatalog(catalog) {
     return groups;
 }
 
+function normalizedCatalogForProtocol(protocol, catalog) {
+    if (protocol !== "four-p-touch") {
+        return catalog.map((entry) => normalizeConfigEntry(entry));
+    }
+
+    const grouped = new Map();
+    const normalized = [];
+
+    for (const entry of catalog) {
+        const nativeKey = String(entry.key || "");
+        const normalizedEntry = normalizeConfigEntry(entry);
+        const capabilityKey = normalizedEntry.capabilityKey || "";
+        const groupedCapability = FOUR_P_TOUCH_GROUPED_CAPABILITIES[capabilityKey] || null;
+        const label = groupedCapability?.label || "";
+
+        if (label === "") {
+            normalized.push(normalizedEntry);
+            continue;
+        }
+
+        if (!grouped.has(capabilityKey)) {
+            grouped.set(capabilityKey, {
+                ...normalizedEntry,
+                key: capabilityKey,
+                capabilityKey,
+                label,
+                input: capabilityKey,
+                category: normalizedEntry.category || "contacts",
+                limit: groupedCapability?.limit || 0,
+                transient: false,
+                configKind: "capability",
+                configSection: "contacts",
+                configKeys: [],
+            });
+            normalized.push(grouped.get(capabilityKey));
+        }
+
+        const groupedEntry = grouped.get(capabilityKey);
+        groupedEntry.configKeys.push(nativeKey);
+        groupedEntry.command = groupedEntry.configKeys.join(" · ");
+    }
+
+    return normalized;
+}
+
 export function renderDeviceConfigurationRoot(context) {
     const {
         protocol,
@@ -345,7 +417,8 @@ export function renderDeviceConfigurationRoot(context) {
     }
 
     const rowsByKey = configurations;
-    const groups = groupedCatalog(catalog);
+    const normalizedCatalog = normalizedCatalogForProtocol(protocol, catalog);
+    const groups = groupedCatalog(normalizedCatalog);
     const order = CATEGORY_ORDER[protocol] || [];
     groups.sort((a, b) => {
         const ai = order.indexOf(a.key);
@@ -388,10 +461,10 @@ export function renderDeviceConfigurationRoot(context) {
                         (group) => `
                     <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
                         ${group.entries.map((entry) => {
-                            const normalizedEntry = normalizeConfigEntry(entry);
-                            const row = rowsByKey[normalizedEntry.key] || null;
-                            const uiState = uiByKey[normalizedEntry.key] || null;
-                            return renderConfigSection(protocol, normalizedEntry, row, capabilities, disabled, uiState);
+                            const row = resolveConfigRow(entry, rowsByKey);
+                            const stored = resolveConfigStored(entry, rowsByKey);
+                            const uiState = uiByKey[entry.key] || null;
+                            return renderConfigSection(protocol, entry, row, capabilities, disabled, uiState, stored);
                         }).join("")}
                     </div>
                 `,
@@ -408,15 +481,22 @@ export function renderConfigSection(
     capabilities = {},
     disabled = false,
     uiState = null,
+    stored = null,
 ) {
     const capability = capabilityForEntry(entry, capabilities);
     const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null);
     const meta = capability?._meta || {};
     const help = configHelp(entry);
-    const isStored = row !== null && Object.keys(row).length > 0;
+    const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
+    const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
+    const details = [
+        hideNativeCommand ? "" : (entry.command || ""),
+        hideNativeCommand ? "" : configInputLabel(entry.input || "json"),
+        help || "",
+    ].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}" data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
+        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${entry.configSection ? ` data-config-section-name="${esc(entry.configSection)}"` : ""} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
             <div>
                 <div>
                     <div class="fw-semibold">
@@ -425,7 +505,7 @@ export function renderConfigSection(
                             ? '<span class="badge text-bg-success ms-2">Configurado</span>'
                             : '<span class="badge text-bg-warning ms-2">Padrão</span>'}
                     </div>
-                    <div class="small text-secondary">${esc(entry.command)} · ${esc(configInputLabel(entry.input || "json"))}${help ? ` · ${esc(help)}` : ""}</div>
+                    ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                 </div>
             </div>
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ""}>
@@ -507,6 +587,9 @@ function normalizeConfigEntry(entry) {
     const label = capabilityKey === "alarm_clock"
         ? "Alarmes"
         : String(entry.label || key || "");
+    const configKind = capabilityKey === "alarm_clock"
+        ? "capability"
+        : String(entry.configKind || "configuration");
 
     return {
         ...entry,
@@ -514,7 +597,25 @@ function normalizeConfigEntry(entry) {
         input,
         label,
         capabilityKey: capabilityKey || key,
+        configKind,
+        configSectionName: capabilityKey === "alarm_clock" ? "alarms" : entry.configSectionName,
     };
+}
+
+function resolveConfigRow(entry, rowsByKey) {
+    if (Array.isArray(entry.configKeys) && entry.configKeys.length > 0) {
+        return null;
+    }
+
+    return rowsByKey[entry.key] || null;
+}
+
+function resolveConfigStored(entry, rowsByKey) {
+    if (Array.isArray(entry.configKeys) && entry.configKeys.length > 0) {
+        return entry.configKeys.some((key) => Object.keys(rowsByKey[key] || {}).length > 0);
+    }
+
+    return Object.keys(rowsByKey[entry.key] || {}).length > 0;
 }
 
 function emptyConfigurationState(text) {
@@ -1361,6 +1462,32 @@ function listInput(entry, desired, field, label) {
         </div>`;
 }
 
+function sosContactsInput(entry, desired) {
+    return phoneRepeaterInput(entry, desired, {
+        kind: "sos_contacts",
+        limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
+        label: "Contactos SOS",
+        addAction: "addSosContactRow",
+        removeAction: "removeSosContactRow",
+        emptyLabel: "Adicionar contacto SOS",
+        placeholderPrefix: "SOS",
+        helpText: "Até 3 números. A ordem define a posição nos comandos SOS do dispositivo.",
+    });
+}
+
+function callWhitelistInput(entry, desired) {
+    return phoneRepeaterInput(entry, desired, {
+        kind: "call_whitelist",
+        limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
+        label: "Lista branca",
+        addAction: "addWhitelistRow",
+        removeAction: "removeWhitelistRow",
+        emptyLabel: "Adicionar número",
+        placeholderPrefix: "Número",
+        helpText: "Até 10 números permitidos.",
+    });
+}
+
 function contactsInput(entry, desired) {
     const limit = Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10);
     const contacts = Array.isArray(desired.contacts) ? desired.contacts : [];
@@ -1391,6 +1518,48 @@ function contactsInput(entry, desired) {
                                 </div>
                                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
                             </div>
+                        </div>
+                    </div>
+                `,
+                    )
+                    .join("")}
+            </div>
+        </div>`;
+}
+
+function phoneRepeaterInput(entry, desired, options) {
+    const limit = Math.max(1, parseInt(String(options.limit ?? entry.limit ?? 3), 10) || 3);
+    const values = Array.isArray(desired.numbers) ? desired.numbers : [];
+    const rows = values.length ? values.slice(0, limit) : [""];
+    const kind = String(options.kind || "numbers");
+    const addAction = String(options.addAction || "addPhoneRow");
+    const removeAction = String(options.removeAction || "removePhoneRow");
+    const label = String(options.label || entry.label || "Lista");
+    const helpText = String(options.helpText || "");
+    const emptyLabel = String(options.emptyLabel || "Adicionar");
+    const placeholderPrefix = String(options.placeholderPrefix || label);
+
+    return `
+        <div class="vstack gap-3">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+                <label class="form-label form-label-sm mb-0">${esc(label)}</label>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(addAction)}">${esc(emptyLabel)}</button>
+            </div>
+            ${helpText !== "" ? `<div class="small text-secondary">${esc(helpText)}</div>` : ""}
+            <div class="vstack gap-2" data-repeat-limit="${limit}" data-repeat-kind="${esc(kind)}">
+                ${rows
+                    .map(
+                        (value, index) => `
+                    <div class="row g-2 align-items-end" data-repeat-row="${esc(kind)}">
+                        <div class="col">
+                            ${renderPhoneControl({
+                                value: String(value || ""),
+                                configField: "numbers",
+                                placeholder: `${placeholderPrefix} ${index + 1}`,
+                            })}
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-action="${esc(removeAction)}">-</button>
                         </div>
                     </div>
                 `,

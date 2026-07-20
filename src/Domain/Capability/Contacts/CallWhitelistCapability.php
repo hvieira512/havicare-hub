@@ -60,7 +60,7 @@ final class CallWhitelistCapability implements CapabilityContract
     {
         return match ($protocol) {
             'vivistar-iw' => ['enabled' => true],
-            'four-p-touch' => ['numbers' => ['', '', '', '', '']],
+            'four-p-touch' => ['numbers' => ['', '', '', '', '', '', '', '', '', '']],
             default => ['enabled' => true],
         };
     }
