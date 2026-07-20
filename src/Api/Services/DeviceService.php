@@ -1310,6 +1310,19 @@ class DeviceService
             unset($sectionCaps);
         }
 
+        foreach ($capabilities as $section => $sectionCaps) {
+            foreach ($sectionCaps as $genericKey => $value) {
+                if (isset($meta[$genericKey]) || !is_array($value) || !$this->capabilityRegistry->has($genericKey)) {
+                    continue;
+                }
+
+                $fallbackMeta = $this->capabilityRegistry->get($genericKey)?->meta($protocol, []);
+                if ($fallbackMeta !== []) {
+                    $meta[$genericKey] = $fallbackMeta;
+                }
+            }
+        }
+
         foreach ($capabilities as $section => &$sectionCaps) {
             if ($section === 'telemetry') {
                 continue;
