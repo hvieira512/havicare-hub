@@ -119,6 +119,33 @@ final class DeviceConfigurationCatalogTest extends TestCase
         );
     }
 
+    public function testFourPTouchFallSensitivityMetadataIncludesNativeLevelOptions(): void
+    {
+        $config = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'fallDownSensitivity');
+        self::assertIsArray($config);
+        self::assertSame('fallSensitivityLevels', $config['input'] ?? null);
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Máxima'],
+                ['value' => 2, 'label' => 'Muito Alta'],
+                ['value' => 3, 'label' => 'Alta'],
+                ['value' => 4, 'label' => 'Moderada'],
+                ['value' => 5, 'label' => 'Baixa'],
+                ['value' => 6, 'label' => 'Muito Baixa'],
+                ['value' => 7, 'label' => 'Quase Mínima'],
+                ['value' => 8, 'label' => 'Mínima'],
+            ],
+            $config['options']['sensitivityLevel'] ?? null
+        );
+        self::assertSame(
+            [
+                ['value' => 6, 'label' => '6 níveis'],
+                ['value' => 8, 'label' => '8 níveis'],
+            ],
+            $config['options']['totalLevels'] ?? null
+        );
+    }
+
     public function testPublicAlarmClockAliasMapsToGenericCapability(): void
     {
         self::assertSame('alarm_clock', GenericModelCapabilityCatalog::mapConfigurationKey('alarm_clock'));

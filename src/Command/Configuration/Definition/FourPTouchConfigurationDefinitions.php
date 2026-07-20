@@ -23,7 +23,22 @@ final class FourPTouchConfigurationDefinitions
             $entry('removeWatchAlarm', 'REMOVE', 'Alarme ao retirar relógio', 'toggle', ['enabled'], ['REMOVE'], 'alerts', 30),
             $entry('removeWatchSmsAlerts', 'REMOVESMS', 'SMS ao retirar relógio', 'toggle', ['enabled'], ['REMOVESMS'], 'alerts', 40),
             $entry('fallDownAlert', 'FALLDOWN', 'Alerta de queda', 'dualToggle', ['enabled', 'callCenterOnFall'], ['FALLDOWN'], 'alerts', 50),
-            $entry('fallDownSensitivity', 'LSSET', 'Sensibilidade de queda', 'fallSensitivityLevels', ['sensitivityLevel', 'totalLevels'], ['LSSET'], 'alerts', 60),
+            $entry('fallDownSensitivity', 'LSSET', 'Sensibilidade de queda', 'fallSensitivityLevels', ['sensitivityLevel', 'totalLevels'], ['LSSET'], 'alerts', 60, null, [
+                'sensitivityLevel' => [
+                    ['value' => 1, 'label' => 'Máxima'],
+                    ['value' => 2, 'label' => 'Muito Alta'],
+                    ['value' => 3, 'label' => 'Alta'],
+                    ['value' => 4, 'label' => 'Moderada'],
+                    ['value' => 5, 'label' => 'Baixa'],
+                    ['value' => 6, 'label' => 'Muito Baixa'],
+                    ['value' => 7, 'label' => 'Quase Mínima'],
+                    ['value' => 8, 'label' => 'Mínima'],
+                ],
+                'totalLevels' => [
+                    ['value' => 6, 'label' => '6 níveis'],
+                    ['value' => 8, 'label' => '8 níveis'],
+                ],
+            ]),
             $entry('takePills', 'TAKEPILLS', 'Lembrete de medicação com voz', 'takePills', ['reminderSettings', 'number', 'reminderText', 'voiceData'], ['TAKEPILLS'], 'alerts', 70, 3, [
                 'frequency' => [
                     ['value' => 1, 'label' => 'Uma vez'],

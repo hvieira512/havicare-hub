@@ -244,6 +244,33 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ],
             $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
         );
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Máxima'],
+                ['value' => 2, 'label' => 'Muito Alta'],
+                ['value' => 3, 'label' => 'Alta'],
+                ['value' => 4, 'label' => 'Moderada'],
+                ['value' => 5, 'label' => 'Baixa'],
+                ['value' => 6, 'label' => 'Muito Baixa'],
+                ['value' => 7, 'label' => 'Quase Mínima'],
+                ['value' => 8, 'label' => 'Mínima'],
+            ],
+            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['sensitivityLevel']['options'] ?? null
+        );
+        self::assertSame(
+            [
+                ['value' => 6, 'label' => '6 níveis'],
+                ['value' => 8, 'label' => '8 níveis'],
+            ],
+            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['totalLevels']['options'] ?? null
+        );
+        self::assertSame(
+            [
+                'sensitivityLevel' => 5,
+                'totalLevels' => 8,
+            ],
+            $response['capabilities']['alarms']['fall_sensitivity']['value'] ?? null
+        );
         self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
         self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
         self::assertSame(
