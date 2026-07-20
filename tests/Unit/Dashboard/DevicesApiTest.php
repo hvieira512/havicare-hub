@@ -926,6 +926,35 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('UPLOAD,3600', $submitted[0]['bytes']);
     }
 
+    public function testConfigurationPutAcceptsCenterNumberAliasForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['center_number']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'center_number' => [
+                    'phone' => '351911111111',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertSame('centerNumber', $response['results'][0]['key'] ?? null);
+        self::assertStringContainsString('CENTER,351911111111', $submitted[0]['bytes']);
+    }
+
     public function testConfigurationPutSendsFourPTouchAlarmClockDownlink(): void
     {
         $submitted = [];

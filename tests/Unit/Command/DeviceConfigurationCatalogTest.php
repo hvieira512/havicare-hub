@@ -444,6 +444,49 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['4+6']], $payload['payload']);
     }
 
+    /**
+     * @return iterable<string, array{0: string, 1: string}>
+     */
+    public static function fourPTouchConfigAliasProvider(): iterable
+    {
+        yield 'location reporting interval' => ['location_reporting_interval', 'uploadInterval'];
+        yield 'monitor number' => ['monitor_number', 'monitorNumber'];
+        yield 'center number' => ['center_number', 'centerNumber'];
+        yield 'sos sms alert' => ['sos_sms_alert', 'sosSmsAlerts'];
+        yield 'low battery alert' => ['low_battery_alert', 'lowBatterySmsAlerts'];
+        yield 'remove watch alarm' => ['remove_watch_alarm', 'removeWatchAlarm'];
+        yield 'remove watch sms alert' => ['remove_watch_sms_alert', 'removeWatchSmsAlerts'];
+        yield 'fall detection' => ['fall_detection', 'fallDownAlert'];
+        yield 'fall sensitivity' => ['fall_sensitivity', 'fallDownSensitivity'];
+        yield 'medication reminders' => ['medication_reminders', 'takePills'];
+        yield 'auto vitals interval' => ['auto_vitals_interval', 'healthAutoMeasurement'];
+        yield 'pedometer schedule' => ['pedometer_schedule', 'walkTime'];
+        yield 'sleep monitoring' => ['sleep_monitoring', 'sleepTime'];
+        yield 'temperature measurement interval' => ['temperature_measurement_interval', 'bodyTemperatureInterval'];
+        yield 'power off' => ['power_off', 'powerOffCommand'];
+        yield 'push message' => ['push_message', 'pushMessage'];
+        yield 'make call' => ['make_call', 'makeCall'];
+        yield 'reset device' => ['reset_device', 'resetCommand'];
+        yield 'firmware version' => ['firmwareVersion', 'firmwareVersion'];
+        yield 'device status' => ['deviceStatus', 'deviceStatus'];
+        yield 'device password' => ['device_password', 'devicePassword'];
+        yield 'language timezone' => ['language_timezone', 'languageTimezone'];
+        yield 'call in restriction' => ['call_in_restriction', 'callInRestriction'];
+        yield 'sound profile' => ['sound_profile', 'soundProfile'];
+        yield 'do not disturb' => ['do_not_disturb', 'doNotDisturb'];
+    }
+
+    /**
+     * @dataProvider fourPTouchConfigAliasProvider
+     */
+    public function testFourPTouchPublicAliasesResolveToNativeConfigKeys(string $publicKey, string $nativeKey): void
+    {
+        $config = DeviceConfigurationCatalog::configForProtocol('four-p-touch', $publicKey);
+
+        self::assertIsArray($config);
+        self::assertSame($nativeKey, $config['key'] ?? null);
+    }
+
     public function testFourPTouchWalkTimeAndTemperatureIntervalBuildNativeFields(): void
     {
         $walkTime = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'walkTime', [
