@@ -41,7 +41,7 @@ final class CallWhitelistCapability implements CapabilityContract
         return match ($protocol) {
             'vivistar-iw' => ['whitelistSwitch' => ['enabled' => self::requireBoolLikeField($value, 'enabled')]],
             'four-p-touch' => $this->fourPTouchSplit(
-                self::requireStringListValue($value['numbers'] ?? [], 'numbers'),
+                self::requireUniqueStringListValue($value['numbers'] ?? [], 'numbers'),
             ),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist"),
         };

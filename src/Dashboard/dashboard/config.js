@@ -220,11 +220,11 @@ const CONFIG_INPUT_READERS = {
     },
     sos_contacts: (section) => {
         const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-        return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
+        return {numbers: readUniquePhoneArray(section, "numbers", "Contactos SOS").slice(0, limit)};
     },
     call_whitelist: (section) => {
         const limit = parseInt(section.dataset.configLimit || "10", 10) || 10;
-        return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
+        return {numbers: readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit)};
     },
     contacts: (section) => ({contacts: readContacts(section)}),
     alarm_clock: (section) => readAlarmClock(section),
@@ -692,6 +692,16 @@ function readPhoneArray(section, field) {
         .filter(Boolean);
 }
 
+function readUniquePhoneArray(section, field, label) {
+    const values = readPhoneArray(section, field);
+    const duplicates = findDuplicateValues(values);
+    if (duplicates.length > 0) {
+        throw new Error(`${label}: números repetidos não são permitidos`);
+    }
+
+    return values;
+}
+
 function readPhone(section, field) {
     const control = section.querySelector(
         `[data-phone-control][data-config-field="${CSS.escape(field)}"]`,
@@ -728,6 +738,20 @@ function readContacts(section) {
     }
 
     return contacts;
+}
+
+function findDuplicateValues(values) {
+    const seen = new Set();
+    const duplicates = new Set();
+    for (const value of values) {
+        if (seen.has(value)) {
+            duplicates.add(value);
+            continue;
+        }
+        seen.add(value);
+    }
+
+    return [...duplicates];
 }
 
 function readContactName(row, isFourPTouchPhonebook) {

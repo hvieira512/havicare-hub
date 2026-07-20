@@ -34,6 +34,33 @@ trait CapabilityHelpers
         return self::stringList($value);
     }
 
+    /**
+     * @return list<string>
+     */
+    public static function requireUniqueStringListValue(mixed $value, string $field): array
+    {
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException("{$field} must be an array");
+        }
+
+        $normalized = [];
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                throw new \InvalidArgumentException("{$field} items must be strings");
+            }
+            $string = trim((string)$item);
+            if ($string === '') {
+                continue;
+            }
+            if (in_array($string, $normalized, true)) {
+                throw new \InvalidArgumentException("{$field} must not contain repeated values");
+            }
+            $normalized[] = $string;
+        }
+
+        return $normalized;
+    }
+
     /** @return list<mixed> */
     public static function requireListValue(mixed $value, string $field): array
     {

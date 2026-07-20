@@ -758,6 +758,48 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testFourPTouchSosContactsRejectsRepeatedNumbers(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
+
+        $response = $api->updateConfigurations('861728087060467', json_encode([
+            'capabilities' => [
+                'contacts' => [
+                    'sos_contacts' => [
+                        'numbers' => ['+351938854803', '+351938854803'],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame('numbers must not contain repeated values', $response['error']['message'] ?? null);
+    }
+
+    public function testFourPTouchCallWhitelistRejectsRepeatedNumbers(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
+
+        $response = $api->updateConfigurations('861728087060467', json_encode([
+            'capabilities' => [
+                'contacts' => [
+                    'call_whitelist' => [
+                        'numbers' => ['+351922222222', '+351922222222'],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame('numbers must not contain repeated values', $response['error']['message'] ?? null);
+    }
+
     public function testConfigurationPutRejectsVivistarAlarmClockWithoutType(): void
     {
         [$api, $db] = $this->makeApi();
