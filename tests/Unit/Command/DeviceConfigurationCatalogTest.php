@@ -153,6 +153,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'reminders');
         self::assertIsArray($config);
         self::assertSame('reminders', $config['key'] ?? null);
+
+        $fourPTouch = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'alarmClock');
+        self::assertIsArray($fourPTouch);
+        self::assertSame('alarmClock', $fourPTouch['key'] ?? null);
     }
 
     public function testWonlexLocationIntervalBuildsJsonPayload(): void

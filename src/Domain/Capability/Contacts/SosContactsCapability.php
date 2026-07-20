@@ -17,6 +17,13 @@ final class SosContactsCapability implements CapabilityContract
 {
     use CapabilityHelpers;
 
+    private FourPTouchSosContactsHandler $fourPTouch;
+
+    public function __construct(?FourPTouchSosContactsHandler $fourPTouch = null)
+    {
+        $this->fourPTouch = $fourPTouch ?? new FourPTouchSosContactsHandler();
+    }
+
     public function key(): string
     {
         return 'sos_contacts';
@@ -32,6 +39,11 @@ final class SosContactsCapability implements CapabilityContract
         return false;
     }
 
+    public function supportsMultipleNativeKeys(): bool
+    {
+        return true;
+    }
+
     public function supportedProtocols(): array
     {
         return ['vivistar-iw', 'wonlex-json', 'four-p-touch'];
@@ -43,7 +55,7 @@ final class SosContactsCapability implements CapabilityContract
         return match ($protocol) {
             'vivistar-iw' => ['sosContacts' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
             'wonlex-json' => ['SOSNumber' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
-            'four-p-touch' => $this->fourPTouchSplit(self::requireUniqueStringListValue($numbers, 'numbers')),
+            'four-p-touch' => $this->fourPTouch->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for sos_contacts"),
         };
     }
@@ -59,6 +71,9 @@ final class SosContactsCapability implements CapabilityContract
         if ($nativeKey === 'SOSNumber' && isset($desired['SOSNumber']) && is_array($desired['SOSNumber'])) {
             return ['numbers' => self::stringList($desired['SOSNumber'])];
         }
+        if ($nativeKey === 'sosNumber1' || $nativeKey === 'sosNumber2' || $nativeKey === 'sosNumber3') {
+            return $this->fourPTouch->fromNative($desired);
+        }
 
         return ['numbers' => []];
     }
@@ -66,37 +81,37 @@ final class SosContactsCapability implements CapabilityContract
     public function defaultValue(string $protocol): mixed
     {
         return match ($protocol) {
-            'four-p-touch' => ['numbers' => ['', '', '']],
+            'four-p-touch' => $this->fourPTouch->defaultValue(),
             default => ['numbers' => ['', '', '']],
         };
     }
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
-        if ($protocol === 'four-p-touch') {
-            $accumulatedMeta['limit'] = max((int)($accumulatedMeta['limit'] ?? 0), 3);
-        }
-
-        return $accumulatedMeta;
+        return $protocol === 'four-p-touch'
+            ? $this->fourPTouch->meta($accumulatedMeta)
+            : $accumulatedMeta;
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed
     {
-        return self::mergeAssociativeValues($existing, $incoming, ['numbers']);
+        return is_array($existing) && is_array($incoming) && array_key_exists('numbers', $incoming)
+            ? $this->fourPTouch->merge($existing, $incoming)
+            : self::mergeAssociativeValues($existing, $incoming, ['numbers']);
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
+        if ($protocol === 'four-p-touch') {
+            return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
+        }
+
         $normalizedValue = $value;
         if (is_array($value) && array_key_exists('numbers', $value)) {
             $normalizedValue = self::stringList(is_array($value['numbers']) ? $value['numbers'] : []);
         }
 
-        return [
-            'value' => $normalizedValue,
-            '_meta' => $meta,
-            '_type' => $this->key(),
-        ];
+        return ['value' => $normalizedValue, '_meta' => $meta, '_type' => $this->key()];
     }
 
     public function nativeKeyForProtocol(string $protocol): ?string
@@ -114,20 +129,4 @@ final class SosContactsCapability implements CapabilityContract
         return $key;
     }
 
-    // ------------------------------------------------------------------
-    // 4P Touch splitting
-    // ------------------------------------------------------------------
-
-    /** @param list<string> $numbers */
-    private function fourPTouchSplit(array $numbers): array
-    {
-        $updates = [];
-        foreach (array_slice($numbers, 0, 3) as $index => $phone) {
-            if (trim($phone) !== '') {
-                $updates['sosNumber' . ($index + 1)] = ['phone' => $phone];
-            }
-        }
-
-        return $updates;
-    }
 }

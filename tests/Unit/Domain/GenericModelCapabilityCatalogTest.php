@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Domain;
 
+use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\GenericModelCapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
@@ -46,5 +47,14 @@ final class GenericModelCapabilityCatalogTest extends TestCase
                 self::assertIsBool($definition['isRequestable']);
             }
         }
+    }
+
+    public function testFourPTouchAliasesAreResolvedByTheDedicatedHelper(): void
+    {
+        self::assertSame('sos_contacts', FourPTouchGenericHandler::nativeKeyToGenericKey('sosNumber1'));
+        self::assertSame('call_whitelist', FourPTouchGenericHandler::nativeKeyToGenericKey('whitelistGroup1'));
+        self::assertSame('alarm_clock', FourPTouchGenericHandler::nativeKeyToGenericKey('alarmClock'));
+        self::assertSame('alarmClock', FourPTouchGenericHandler::publicKeyToNativeKey('alarm_clock'));
+        self::assertSame('uploadInterval', FourPTouchGenericHandler::publicKeyToNativeKey('location_reporting_interval'));
     }
 }

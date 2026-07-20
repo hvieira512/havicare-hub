@@ -4,6 +4,7 @@ namespace Hub\Domain;
 
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\WatchCapabilityDefinitions;
@@ -257,38 +258,29 @@ final class GenericModelCapabilityCatalog
     {
         $key = trim($key);
 
+        $fourPTouch = FourPTouchGenericHandler::nativeKeyToGenericKey($key);
+        if ($fourPTouch !== null) {
+            return $fourPTouch;
+        }
+
         return match ($key) {
             'alarm_clock' => 'alarm_clock',
-            'alarmClock', 'reminders' => 'alarm_clock',
-            'takePills' => 'medication_reminders',
             'dnMedicationPlan' => 'medication_reminders',
-            'wonlexLowPower', 'lowBatterySmsAlerts' => 'low_battery_alert',
-            'wonlexFallWarnSwitch', 'fallDetection', 'fallDownAlert' => 'fall_detection',
-            'fallSensitivity', 'fallDownSensitivity' => 'fall_sensitivity',
-            'wonlexSOSSwitch', 'sosSmsAlerts' => 'sos_sms_alert',
+            'wonlexLowPower' => 'low_battery_alert',
+            'wonlexFallWarnSwitch', 'fallDetection' => 'fall_detection',
+            'wonlexSOSSwitch' => 'sos_sms_alert',
             'wonlexBloodOxygenWarn' => 'blood_oxygen_alert',
             'wonlexTemperatureExceedRemind' => 'temperature_high_alert',
             'wonlexTemperatureBelowRemind' => 'temperature_low_alert',
             'wonlexBPEarlyWarning' => 'blood_pressure_alert',
             'wonlexHeartRateHighRemind' => 'heart_rate_high_alert',
             'wonlexHeartRateLowRemind' => 'heart_rate_low_alert',
-            'removeWatchAlarm' => 'remove_watch_alarm',
-            'removeWatchSmsAlerts' => 'remove_watch_sms_alert',
-            'SOSNumber', 'sosContacts', 'sosNumber1', 'sosNumber2', 'sosNumber3' => 'sos_contacts',
             'phonebook' => 'phonebook',
-            'pushMessage' => 'push_message',
-            'makeCall' => 'make_call',
-            'centerNumber' => 'center_number',
-            'resetCommand' => 'reset_device',
-            'powerOffCommand' => 'power_off',
-            'findDeviceCommand' => 'find_device',
-            'whitelistSwitch', 'whitelistGroup1', 'whitelistGroup2' => 'call_whitelist',
-            'monitorNumber' => 'monitor_number',
-            'autoHealthMeasurement', 'healthAutoMeasurement' => 'auto_vitals_interval',
+            'autoHealthMeasurement' => 'auto_vitals_interval',
             'wonlexHeartRateInterval' => 'heart_rate_measurement_interval',
             'wonlexBPInterval' => 'blood_pressure_measurement_interval',
             'wonlexBOInterval' => 'blood_oxygen_measurement_interval',
-            'wonlexBodyTemperatureInterval', 'bodyTemperatureInterval' => 'temperature_measurement_interval',
+            'wonlexBodyTemperatureInterval' => 'temperature_measurement_interval',
             'wonlexBreatheInterval' => 'breath_rate_measurement_interval',
             'wonlexECGInterval' => 'ecg_measurement_interval',
             'wonlexHRVInterval' => 'hrv_measurement_interval',
@@ -299,19 +291,14 @@ final class GenericModelCapabilityCatalog
             'wonlexPPGBPTrend' => 'blood_pressure_trend',
             'wonlexContinuousTempSwitch' => 'temperature_continuous',
             'wonlexStepTarget' => 'step_goal',
-            'wonlexSleepIntervalOrSwitch', 'sleepTime' => 'sleep_monitoring',
+            'wonlexSleepIntervalOrSwitch' => 'sleep_monitoring',
             'bloodPressureCalibration' => 'blood_pressure_calibration',
             'wonlexStepInterval' => 'step_reporting_interval',
-            'walkTime' => 'pedometer_schedule',
-            'locationInterval', 'uploadInterval' => 'location_reporting_interval',
+            'locationInterval' => 'location_reporting_interval',
             'workingMode' => 'working_mode',
             'dnDevBindStatus' => 'device_binding',
-            'wonlexCallInLimitSwitch', 'callInRestriction' => 'call_in_restriction',
+            'wonlexCallInLimitSwitch' => 'call_in_restriction',
             'deviceConfig' => 'device_settings_sync',
-            'devicePassword' => 'device_password',
-            'languageTimezone' => 'language_timezone',
-            'soundProfile' => 'sound_profile',
-            'doNotDisturb' => 'do_not_disturb',
             default => null,
         };
     }

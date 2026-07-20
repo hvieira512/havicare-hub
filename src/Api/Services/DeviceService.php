@@ -432,39 +432,66 @@ class DeviceService
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ($metadata['supplier'] ?? '')), (string)($device['model'] ?? ($metadata['model'] ?? ''))));
         $configurations = [];
+        $meta = [];
+        $nativeKeyForGeneric = [];
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
             $desired = $row['desired_payload'];
             if (is_array($desired) && $desired !== []) {
                 $nativeKey = trim((string)($row['config_key'] ?? ''));
                 $genericKey = GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey);
-
-                if ($genericKey === 'alarm_clock') {
-                    $contract = $this->capabilityRegistry->get('alarm_clock');
-                    if ($contract !== null) {
-                        $items = $contract->fromNative($nativeKey, $desired);
-                        if (is_array($items) && $items !== []) {
-                            $configurations['alarm_clock'] = ['items' => $items];
-                        }
-                    }
+                if ($genericKey === null) {
                     continue;
                 }
 
-                if ($genericKey === 'sos_contacts') {
-                    $contract = $this->capabilityRegistry->get('sos_contacts');
-                    if ($contract !== null) {
-                        $value = $contract->fromNative($nativeKey, $desired);
-                        if (is_array($value) && $value !== []) {
-                            $configurations['sos_contacts'] = isset($configurations['sos_contacts'])
-                                ? $contract->merge($configurations['sos_contacts'], $value)
-                                : $value;
-                        }
-                    }
+                $section = GenericModelCapabilityCatalog::sectionForCapabilityKey($genericKey);
+                if ($section === null || $section === 'telemetry') {
                     continue;
                 }
 
-                $configurations[$nativeKey] = $desired;
+                $normalized = $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
+                if ($normalized === null) {
+                    continue;
+                }
+
+                if (!array_key_exists($genericKey, $configurations)) {
+                    $configurations[$genericKey] = $normalized;
+                } else {
+                    $configurations[$genericKey] = $this->mergeCapabilityValue(
+                        $genericKey,
+                        $configurations[$genericKey],
+                        $normalized
+                    );
+                }
+
+                $nativeKeyForGeneric[$genericKey] = $nativeKey;
+
+                $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey);
+                if ($entry === null) {
+                    continue;
+                }
+                if (isset($entry['options'])) {
+                    foreach ($entry['options'] as $field => $options) {
+                        $meta[$genericKey][$field] = ['options' => $options];
+                    }
+                }
+                if (isset($entry['limit'])) {
+                    $existing = $meta[$genericKey]['limit'] ?? 0;
+                    $meta[$genericKey]['limit'] = max($existing, (int)$entry['limit']);
+                }
             }
         }
+
+        foreach ($configurations as $genericKey => &$value) {
+            $nativeKey = (string)($nativeKeyForGeneric[$genericKey] ?? '');
+            $value = $this->capabilityRegistry->responseEntry(
+                $protocol,
+                $genericKey,
+                $nativeKey,
+                $value,
+                $meta[$genericKey] ?? [],
+            );
+        }
+        unset($value);
 
         return $configurations;
     }
@@ -1277,12 +1304,11 @@ class DeviceService
 
         foreach ($meta as $genericKey => $metaData) {
             $hasContract = $this->capabilityRegistry->has($genericKey);
-            $isList = $hasContract && $this->capabilityRegistry->get($genericKey)?->isList();
+            $supportsMultiple = $hasContract && $this->capabilityRegistry->get($genericKey)?->supportsMultipleNativeKeys();
 
             if (
-                !$isList
+                !$supportsMultiple
                 && count($nativeKeysPerGeneric[$genericKey] ?? []) > 1
-                && !in_array($genericKey, ['sos_contacts', 'call_whitelist'], true)
             ) {
                 continue;
             }
@@ -1328,15 +1354,14 @@ class DeviceService
                 continue;
             }
             foreach ($sectionCaps as $genericKey => &$value) {
+                $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
                 if (
-                    $genericKey !== 'alarm_clock'
-                    && $genericKey !== 'sos_contacts'
-                    && $genericKey !== 'call_whitelist'
-                    && isset($nativeKeyForGeneric[$genericKey])
+                    !$this->capabilityRegistry->has($genericKey)
+                    && $responseNativeKey !== null
                     && is_array($value)
                     && array_key_exists('value', $value)
                 ) {
-                    $value['_nativeKey'] = $nativeKeyForGeneric[$genericKey];
+                    $value['_nativeKey'] = $responseNativeKey;
                 }
             }
             unset($value);
@@ -1395,8 +1420,9 @@ class DeviceService
             '_meta' => $meta,
             '_type' => $genericKey,
         ];
-        if ($protocol === 'four-p-touch' && in_array($genericKey, ['make_call', 'reset_device', 'power_off', 'find_device', 'device_password', 'sound_profile', 'call_in_restriction'], true)) {
-            $capability['_nativeKey'] = $nativeKey;
+        $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
+        if ($responseNativeKey !== null) {
+            $capability['_nativeKey'] = $responseNativeKey;
         }
 
         return $capability;
@@ -1456,7 +1482,6 @@ class DeviceService
             ],
             'list' => ['numbers' => array_fill(0, max(1, (int)($entry['limit'] ?? 3)), '')],
             'contacts' => ['contacts' => [['name' => '', 'phone' => '']]],
-            'alarm_clock' => $this->defaultAlarmClockDesiredPayload($protocol, $genericKey),
             'takePills' => [
                 'reminderSettings' => [
                     ['time' => '08:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],

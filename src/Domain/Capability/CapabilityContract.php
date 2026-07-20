@@ -28,6 +28,12 @@ interface CapabilityContract
     public function isList(): bool;
 
     /**
+     * Whether multiple native configuration rows may roll up into the same
+     * public capability entry.
+     */
+    public function supportsMultipleNativeKeys(): bool;
+
+    /**
      * Protocols that this capability supports.
      *
      * @return list<string>

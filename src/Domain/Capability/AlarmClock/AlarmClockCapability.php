@@ -48,6 +48,11 @@ final class AlarmClockCapability implements CapabilityContract
         return true;
     }
 
+    public function supportsMultipleNativeKeys(): bool
+    {
+        return false;
+    }
+
     public function supportedProtocols(): array
     {
         return array_keys($this->handlers);

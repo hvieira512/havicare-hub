@@ -2,10 +2,12 @@
 
 namespace Hub\Domain\Capability\AlarmClock;
 
+use Hub\Domain\Capability\CapabilityProtocolHandler;
+
 /**
  * Per-supplier handler for alarm_clock native ↔ public conversion.
  */
-interface AlarmClockHandler
+interface AlarmClockHandler extends CapabilityProtocolHandler
 {
     /** The native key this handler processes (e.g. 'reminders', 'alarmClock'). */
     public function nativeKey(): string;

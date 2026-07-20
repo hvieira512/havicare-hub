@@ -62,6 +62,27 @@ final class FourPTouch implements AlarmClockHandler
         ];
     }
 
+    public function meta(array $accumulatedMeta = []): array
+    {
+        return $accumulatedMeta;
+    }
+
+    public function merge(mixed $existing, mixed $incoming): mixed
+    {
+        $existingList = is_array($existing) ? array_values($existing) : [];
+        $incomingList = is_array($incoming) ? array_values($incoming) : [];
+
+        return array_values(array_merge($existingList, $incomingList));
+    }
+
+    public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
+    {
+        return [
+            'value' => $this->fromNative(is_array($value) ? $value : []),
+            '_meta' => $this->meta($meta),
+        ];
+    }
+
     // ------------------------------------------------------------------
     // Native input normalization
     // ------------------------------------------------------------------

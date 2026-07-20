@@ -16,6 +16,13 @@ final class CallWhitelistCapability implements CapabilityContract
 {
     use CapabilityHelpers;
 
+    private FourPTouchCallWhitelistHandler $fourPTouch;
+
+    public function __construct(?FourPTouchCallWhitelistHandler $fourPTouch = null)
+    {
+        $this->fourPTouch = $fourPTouch ?? new FourPTouchCallWhitelistHandler();
+    }
+
     public function key(): string
     {
         return 'call_whitelist';
@@ -31,6 +38,11 @@ final class CallWhitelistCapability implements CapabilityContract
         return false;
     }
 
+    public function supportsMultipleNativeKeys(): bool
+    {
+        return true;
+    }
+
     public function supportedProtocols(): array
     {
         return ['vivistar-iw', 'four-p-touch'];
@@ -40,9 +52,7 @@ final class CallWhitelistCapability implements CapabilityContract
     {
         return match ($protocol) {
             'vivistar-iw' => ['whitelistSwitch' => ['enabled' => self::requireBoolLikeField($value, 'enabled')]],
-            'four-p-touch' => $this->fourPTouchSplit(
-                self::requireUniqueStringListValue($value['numbers'] ?? [], 'numbers'),
-            ),
+            'four-p-touch' => $this->fourPTouch->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist"),
         };
     }
@@ -53,6 +63,10 @@ final class CallWhitelistCapability implements CapabilityContract
             return ['enabled' => (bool)($desired['enabled'] ?? false)];
         }
 
+        if ($nativeKey === 'whitelistGroup1' || $nativeKey === 'whitelistGroup2') {
+            return $this->fourPTouch->fromNative($desired);
+        }
+
         return ['numbers' => self::stringList($desired['numbers'] ?? [])];
     }
 
@@ -60,32 +74,32 @@ final class CallWhitelistCapability implements CapabilityContract
     {
         return match ($protocol) {
             'vivistar-iw' => ['enabled' => true],
-            'four-p-touch' => ['numbers' => ['', '', '', '', '', '', '', '', '', '']],
+            'four-p-touch' => $this->fourPTouch->defaultValue(),
             default => ['enabled' => true],
         };
     }
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
-        if ($protocol === 'four-p-touch') {
-            $accumulatedMeta['limit'] = max((int)($accumulatedMeta['limit'] ?? 0), 10);
-        }
-
-        return $accumulatedMeta;
+        return $protocol === 'four-p-touch'
+            ? $this->fourPTouch->meta($accumulatedMeta)
+            : $accumulatedMeta;
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed
     {
-        return self::mergeAssociativeValues($existing, $incoming, ['numbers']);
+        return is_array($existing) && is_array($incoming) && array_key_exists('numbers', $incoming)
+            ? $this->fourPTouch->merge($existing, $incoming)
+            : self::mergeAssociativeValues($existing, $incoming, ['numbers']);
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
-        return [
-            'value' => $value,
-            '_meta' => $meta,
-            '_type' => $this->key(),
-        ];
+        if ($protocol === 'four-p-touch') {
+            return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
+        }
+
+        return ['value' => $value, '_meta' => $meta, '_type' => $this->key()];
     }
 
     public function nativeKeyForProtocol(string $protocol): ?string
@@ -102,16 +116,4 @@ final class CallWhitelistCapability implements CapabilityContract
         return $key;
     }
 
-    // ------------------------------------------------------------------
-    // 4P Touch splitting
-    // ------------------------------------------------------------------
-
-    /** @param list<string> $numbers */
-    private function fourPTouchSplit(array $numbers): array
-    {
-        return [
-            'whitelistGroup1' => ['numbers' => array_slice($numbers, 0, 5)],
-            'whitelistGroup2' => ['numbers' => array_slice($numbers, 5, 5)],
-        ];
-    }
 }

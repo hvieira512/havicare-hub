@@ -32,6 +32,11 @@ final class PhonebookCapability implements CapabilityContract
         return false;
     }
 
+    public function supportsMultipleNativeKeys(): bool
+    {
+        return false;
+    }
+
     public function supportedProtocols(): array
     {
         return ['vivistar-iw', 'wonlex-json', 'four-p-touch'];

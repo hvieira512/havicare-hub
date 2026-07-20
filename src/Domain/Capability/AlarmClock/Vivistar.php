@@ -81,6 +81,40 @@ final class Vivistar implements AlarmClockHandler
         ];
     }
 
+    public function meta(array $accumulatedMeta = []): array
+    {
+        $meta = $accumulatedMeta;
+
+        $recurrenceOptions = $meta['mode']['options'] ?? null;
+        if (!is_array($recurrenceOptions) || $recurrenceOptions === []) {
+            $recurrenceOptions = [
+                ['value' => 'once', 'label' => 'Uma vez'],
+                ['value' => 'daily', 'label' => 'Todos os dias'],
+                ['value' => 'custom', 'label' => 'Personalizado'],
+            ];
+        }
+
+        $meta['recurrence'] = ['options' => $recurrenceOptions];
+
+        return $meta;
+    }
+
+    public function merge(mixed $existing, mixed $incoming): mixed
+    {
+        $existingList = is_array($existing) ? array_values($existing) : [];
+        $incomingList = is_array($incoming) ? array_values($incoming) : [];
+
+        return array_values(array_merge($existingList, $incomingList));
+    }
+
+    public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
+    {
+        return [
+            'value' => $this->fromNative(is_array($value) ? $value : []),
+            '_meta' => $this->meta($meta),
+        ];
+    }
+
     // ------------------------------------------------------------------
     // Normalization
     // ------------------------------------------------------------------

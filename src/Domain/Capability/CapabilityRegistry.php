@@ -9,6 +9,7 @@ use Hub\Domain\Capability\AlarmClock\Vivistar as VivistarAlarmClock;
 use Hub\Domain\Capability\Contacts\CallWhitelistCapability;
 use Hub\Domain\Capability\Contacts\PhonebookCapability;
 use Hub\Domain\Capability\Contacts\SosContactsCapability;
+use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 use Hub\Domain\GenericModelCapabilityCatalog;
 
@@ -26,9 +27,11 @@ final class CapabilityRegistry
 
     /** @var array<string, CapabilityContract> */
     private array $contracts = [];
+    private FourPTouchGenericHandler $fourPTouchGeneric;
 
     public function __construct()
     {
+        $this->fourPTouchGeneric = new FourPTouchGenericHandler();
         $vivistar = new VivistarAlarmClock();
         $fourPTouch = new FourPTouchAlarmClock();
         $this->register(new AlarmClockCapability([
@@ -132,6 +135,19 @@ final class CapabilityRegistry
         return $entry !== null ? $key : null;
     }
 
+    public function responseNativeKey(string $protocol, string $genericKey): ?string
+    {
+        if (isset($this->contracts[$genericKey])) {
+            return null;
+        }
+
+        if ($protocol !== 'four-p-touch') {
+            return null;
+        }
+
+        return $this->fourPTouchGeneric->nativeKeyForResponse($genericKey);
+    }
+
     // ------------------------------------------------------------------
     // Generic fallback for capabilities without a contract
     // ------------------------------------------------------------------
@@ -144,7 +160,7 @@ final class CapabilityRegistry
         return match ($protocol) {
             'vivistar-iw' => $this->vivistarGenericToNative($genericKey, $value),
             'wonlex-json' => $this->wonlexGenericToNative($genericKey, $value),
-            'four-p-touch' => $this->fourPTouchGenericToNative($genericKey, $value),
+            'four-p-touch' => $this->fourPTouchGeneric->toNative($genericKey, $value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
         };
     }
@@ -181,36 +197,6 @@ final class CapabilityRegistry
     {
         return match ($genericKey) {
             default => [$this->resolveWonlexNativeKey($genericKey) => self::requireObjectValue($value, $genericKey)],
-        };
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function fourPTouchGenericToNative(string $genericKey, mixed $value): array
-    {
-        return match ($genericKey) {
-            'location_reporting_interval' => ['uploadInterval' => self::requireObjectValue($value, 'uploadInterval')],
-            'monitor_number' => ['monitorNumber' => ['phone' => self::requireStringValue($value, 'phone')]],
-            'device_password' => ['devicePassword' => self::requireObjectValue($value, 'devicePassword')],
-            'language_timezone' => ['languageTimezone' => self::requireObjectValue($value, 'languageTimezone')],
-            'sos_sms_alert' => ['sosSmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'low_battery_alert' => ['lowBatterySmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'remove_watch_alarm' => ['removeWatchAlarm' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
-            'fall_detection' => ['fallDownAlert' => self::requireObjectValue($value, 'fallDownAlert')],
-            'fall_sensitivity' => ['fallDownSensitivity' => self::requireObjectValue($value, 'fallDownSensitivity')],
-            'auto_vitals_interval' => ['healthAutoMeasurement' => self::requireObjectValue($value, 'healthAutoMeasurement')],
-            'pedometer_schedule' => ['walkTime' => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
-            'sleep_monitoring' => ['sleepTime' => ['range' => self::requireStringField($value, 'range')]],
-            'temperature_measurement_interval' => ['bodyTemperatureInterval' => self::requireObjectValue($value, 'bodyTemperatureInterval')],
-            'make_call' => ['makeCall' => ['phone' => self::requireStringField($value, 'phone')]],
-            'center_number' => ['centerNumber' => ['phone' => self::requireStringField($value, 'phone')]],
-            'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            'reset_device' => ['resetCommand' => []],
-            'power_off' => ['powerOffCommand' => []],
-            'find_device' => ['findDeviceCommand' => []],
-            default => throw new \InvalidArgumentException("Unsupported four-p-touch capability {$genericKey}"),
         };
     }
 
