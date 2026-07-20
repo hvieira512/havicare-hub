@@ -829,10 +829,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testFourPTouchPhonebookBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'phonebook', [
-            'contacts' => [['phone' => '123456789']],
+            'contacts' => [['phone' => '123456789', 'name' => 'Ana']],
         ]);
         self::assertSame('PHB', $payload['command']);
-        self::assertSame(['fields' => ['1,123456789']], $payload['payload']);
+        self::assertSame(['fields' => ['123456789', '0041006E0061']], $payload['payload']);
     }
 
     public function testFourPTouchPhonebookRejectsEmptyContacts(): void
@@ -840,6 +840,59 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(
             'contacts must be a non-empty array',
             DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', ['contacts' => []])
+        );
+    }
+
+    public function testFourPTouchPhonebookRejectsMoreThanFiveContacts(): void
+    {
+        self::assertSame(
+            'contacts must not contain more than 5 items',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
+                'contacts' => [
+                    ['phone' => '1', 'name' => 'A'],
+                    ['phone' => '2', 'name' => 'B'],
+                    ['phone' => '3', 'name' => 'C'],
+                    ['phone' => '4', 'name' => 'D'],
+                    ['phone' => '5', 'name' => 'E'],
+                    ['phone' => '6', 'name' => 'F'],
+                ],
+            ])
+        );
+    }
+
+    public function testFourPTouchPhonebookRejectsLongAsciiPhone(): void
+    {
+        self::assertSame(
+            'phone must not exceed 20 ASCII characters',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
+                'contacts' => [
+                    ['phone' => '123456789012345678901', 'name' => 'Ana'],
+                ],
+            ])
+        );
+    }
+
+    public function testFourPTouchPhonebookRejectsNonAsciiPhone(): void
+    {
+        self::assertSame(
+            'phone must contain ASCII characters only',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
+                'contacts' => [
+                    ['phone' => '+3519☃', 'name' => 'Ana'],
+                ],
+            ])
+        );
+    }
+
+    public function testFourPTouchPhonebookRejectsLongName(): void
+    {
+        self::assertSame(
+            'name must not exceed 10 Unicode characters',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
+                'contacts' => [
+                    ['phone' => '123456789', 'name' => 'ABCDEFGHIJK'],
+                ],
+            ])
         );
     }
 

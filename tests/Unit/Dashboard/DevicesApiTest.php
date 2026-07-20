@@ -179,7 +179,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             [['name' => 'Ana', 'phone' => '+351911111111']],
             $response['capabilities']['contacts']['phonebook']['value'] ?? null
         );
-        self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertSame(5, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
         self::assertTrue($response['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
         self::assertSame(
             ['+351922222222', '+351933333333'],
@@ -272,7 +272,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['alarms']['fall_sensitivity']['value'] ?? null
         );
         self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
-        self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertSame(5, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
         self::assertSame(
             [
                 ['name' => '', 'phone' => ''],

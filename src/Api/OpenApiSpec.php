@@ -1148,6 +1148,33 @@ class OpenApiSpec
                         ],
                         'required' => ['items'],
                     ],
+                    'PhonebookConfiguration' => [
+                        'type' => 'object',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook for 4P Touch. Each contact carries a raw phone string and a Unicode name.',
+                        'properties' => [
+                            'contacts' => [
+                                'type' => 'array',
+                                'maxItems' => 5,
+                                'items' => [
+                                    'type' => 'object',
+                                    'required' => ['phone', 'name'],
+                                    'properties' => [
+                                        'phone' => [
+                                            'type' => 'string',
+                                            'maxLength' => 20,
+                                            'description' => 'ASCII only.',
+                                        ],
+                                        'name' => [
+                                            'type' => 'string',
+                                            'maxLength' => 10,
+                                            'description' => 'Unicode string with a maximum of 10 characters.',
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'required' => ['contacts'],
+                    ],
                     'DeviceConfiguredCapabilitiesSection' => [
                         'type' => 'object',
                         'additionalProperties' => true,
@@ -1166,7 +1193,7 @@ class OpenApiSpec
                             ],
                             'phonebook' => [
                                 'value' => [['name' => 'Ana', 'phone' => '+351911111111']],
-                                '_meta' => ['limit' => 10],
+                                '_meta' => ['limit' => 5],
                             ],
                             'call_whitelist' => ['enabled' => true],
                             'fall_sensitivity' => [
@@ -1239,9 +1266,10 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch.',
+                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For 4P Touch phonebook, send contacts as raw name/phone pairs.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
+                                    'phonebook' => ['$ref' => '#/components/schemas/PhonebookConfiguration'],
                                 ],
                                 'additionalProperties' => ['type' => 'object'],
                                 'example' => [

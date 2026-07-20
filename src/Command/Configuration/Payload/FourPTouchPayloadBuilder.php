@@ -383,20 +383,58 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('contacts must be a non-empty array');
         }
         $fields = [];
-        foreach (array_slice($contacts, 0, 10) as $i => $contact) {
+        if (count($contacts) > 5) {
+            throw new \InvalidArgumentException('contacts must not contain more than 5 items');
+        }
+        foreach ($contacts as $contact) {
             if (!is_array($contact)) {
                 throw new \InvalidArgumentException('each contact must be an object');
             }
-            $phone = trim((string)($contact['phone'] ?? ''));
-            if ($phone !== '') {
-                $fields[] = ($i + 1) . ',' . $phone;
-            }
-        }
-        if ($fields === []) {
-            throw new \InvalidArgumentException('contacts must contain at least one valid phone number');
+            $phone = self::phonebookPhone($contact['phone'] ?? null);
+            $name = self::phonebookName($contact['name'] ?? null);
+            $fields[] = $phone;
+            $fields[] = self::utf16Hex($name);
         }
 
         return $fields;
+    }
+
+    private static function phonebookPhone(mixed $value): string
+    {
+        $phone = self::requiredString($value, 'phone');
+        if (strlen($phone) > 20) {
+            throw new \InvalidArgumentException('phone must not exceed 20 ASCII characters');
+        }
+        if (!preg_match('/^[\x00-\x7F]+$/', $phone)) {
+            throw new \InvalidArgumentException('phone must contain ASCII characters only');
+        }
+
+        return $phone;
+    }
+
+    private static function phonebookName(mixed $value): string
+    {
+        $name = self::requiredString($value, 'name');
+        if (self::unicodeLength($name) > 10) {
+            throw new \InvalidArgumentException('name must not exceed 10 Unicode characters');
+        }
+
+        return $name;
+    }
+
+    private static function unicodeLength(string $value): int
+    {
+        if ($value === '') {
+            return 0;
+        }
+
+        $matches = [];
+        $count = preg_match_all('/./us', $value, $matches);
+        if ($count === false) {
+            throw new \InvalidArgumentException('value must be valid UTF-8');
+        }
+
+        return $count;
     }
 
     private static function fallDownSensitivity(array $payload): string

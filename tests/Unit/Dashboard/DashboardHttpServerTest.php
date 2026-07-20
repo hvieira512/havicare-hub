@@ -643,7 +643,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             [['name' => 'Ana', 'phone' => '+351911111111']],
             $body['capabilities']['contacts']['phonebook']['value'] ?? null
         );
-        self::assertSame(10, $body['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertSame(5, $body['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
         self::assertSame([], $body['capabilities']['alarms'] ?? null);
         self::assertTrue($body['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
         self::assertSame(
