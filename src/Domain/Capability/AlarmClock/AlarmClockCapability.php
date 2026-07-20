@@ -138,10 +138,8 @@ final class AlarmClockCapability implements CapabilityContract
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
-        $items = $this->fromNative($nativeKey, is_array($value) ? $value : []);
-
         return [
-            'items' => $items,
+            'value' => $this->fromNative($nativeKey, is_array($value) ? $value : []),
             '_meta' => $this->meta($protocol, $meta),
         ];
     }

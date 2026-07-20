@@ -175,6 +175,7 @@ Example:
 
 Writable capability entries may also include helper metadata:
 
+- `value`: the current public capability payload
 - `_meta`: generic options and seller-facing labels for client UI rendering
 - legacy wrapped capabilities may still expose `_type`, but `alarm_clock` does not
 

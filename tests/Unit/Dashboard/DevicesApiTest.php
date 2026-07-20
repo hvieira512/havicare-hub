@@ -242,7 +242,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'recurrence' => ['kind' => 'once'],
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
+            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
         );
         self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
         self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
@@ -388,7 +388,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'type' => 2,
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
+            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
         );
         self::assertSame(
             [
@@ -475,7 +475,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
+            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
         );
         self::assertSame(3, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
         self::assertSame(
@@ -661,7 +661,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'type' => 1,
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['items'] ?? null
+            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
         );
     }
 

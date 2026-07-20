@@ -43,7 +43,7 @@ Relevant sections for watches:
     },
     "alarms": {
       "alarm_clock": {
-        "items": [
+        "value": [
           {
             "time": "08:10",
             "enabled": true,
@@ -102,7 +102,7 @@ Relevant sections for watches:
   - show the `Pedir` button
 - `capabilities.telemetry.*.requestable === false`
   - show the telemetry card, but no button
-- `capabilities.alarms.alarm_clock.items`
+- `capabilities.alarms.alarm_clock.value`
   - use this shape to render the editor
 - `capabilities.alarms.alarm_clock._meta.limit`
   - maximum number of alarms
@@ -145,7 +145,7 @@ Vivistar exposes the richer contract:
 
 But the public shape is simpler:
 
-- `items` exists
+- `value` exists
 - `type` is not part of the public shape
 - recurrence is the important part
 - `PATCH` must not include `type`

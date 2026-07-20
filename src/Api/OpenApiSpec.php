@@ -1129,13 +1129,13 @@ class OpenApiSpec
                         'type' => 'object',
                         'description' => 'Public generic watch alarm clock capability exposed by GET /api/devices/{imei}. It is present whenever the model supports alarm_clock, even if no saved configuration exists yet. Vivistar exposes type metadata and requires type on PATCH; 4P Touch does not.',
                         'properties' => [
-                            'items' => [
+                            'value' => [
                                 'type' => 'array',
                                 'items' => ['$ref' => '#/components/schemas/AlarmClockItem'],
                             ],
                             '_meta' => ['$ref' => '#/components/schemas/AlarmClockMeta'],
                         ],
-                        'required' => ['items'],
+                        'required' => ['value'],
                     ],
                     'AlarmClockConfiguration' => [
                         'type' => 'object',
@@ -1154,7 +1154,7 @@ class OpenApiSpec
                         'description' => 'Normalized writable capabilities for a section. Supported capabilities are present even when the device has no stored configuration rows yet; saved values, if any, are embedded in the section entry.',
                         'example' => [
                             'alarm_clock' => [
-                                'items' => [
+                                'value' => [
                                     [
                                         'time' => '12:10',
                                         'enabled' => true,

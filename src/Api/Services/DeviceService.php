@@ -1294,7 +1294,12 @@ class DeviceService
                 continue;
             }
             foreach ($sectionCaps as $genericKey => &$value) {
-                if (isset($nativeKeyForGeneric[$genericKey]) && is_array($value) && array_key_exists('value', $value)) {
+                if (
+                    $genericKey !== 'alarm_clock'
+                    && isset($nativeKeyForGeneric[$genericKey])
+                    && is_array($value)
+                    && array_key_exists('value', $value)
+                ) {
                     $value['_nativeKey'] = $nativeKeyForGeneric[$genericKey];
                 }
             }
