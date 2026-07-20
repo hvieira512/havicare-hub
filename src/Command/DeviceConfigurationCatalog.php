@@ -113,6 +113,13 @@ final class DeviceConfigurationCatalog
                 default => $key,
             };
         }
+        if ($key === 'fall_sensitivity') {
+            return match ($protocol) {
+                'vivistar-iw' => 'fallSensitivity',
+                'four-p-touch' => 'fallDownSensitivity',
+                default => $key,
+            };
+        }
 
         return $key;
     }

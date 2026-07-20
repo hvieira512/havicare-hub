@@ -1076,6 +1076,36 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testConfigurationPutAcceptsGenericFallSensitivityAliasForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_sensitivity']);
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'fall_sensitivity' => [
+                    'sensitivityLevel' => 4,
+                    'totalLevels' => 6,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('fallDownSensitivity', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertStringContainsString('LSSET,4+6', $submitted[0]['bytes']);
+    }
+
     public function testConfigurationPutRejectsFourPTouchAlarmClockType(): void
     {
         [$api, $db] = $this->makeApi();

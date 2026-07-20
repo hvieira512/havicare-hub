@@ -433,6 +433,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['5+8']], $payload['payload']);
     }
 
+    public function testFourPTouchFallSensitivityPublicAliasBuildsFirmwareAwarePayload(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fall_sensitivity', [
+            'sensitivityLevel' => 4,
+            'totalLevels' => 6,
+        ]);
+
+        self::assertSame('LSSET', $payload['command']);
+        self::assertSame(['fields' => ['4+6']], $payload['payload']);
+    }
+
     public function testFourPTouchWalkTimeAndTemperatureIntervalBuildNativeFields(): void
     {
         $walkTime = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'walkTime', [
