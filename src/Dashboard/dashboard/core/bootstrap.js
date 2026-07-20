@@ -1954,7 +1954,8 @@ function appendContactRow(section) {
     const rows = list.querySelectorAll('[data-repeat-row="contacts"]');
     if (rows.length >= limit) return;
 
-    const template = rows[rows.length - 1] || createContactRow();
+    const isFourPTouchPhonebook = isFourPTouchPhonebookSection(section);
+    const template = rows[rows.length - 1] || createContactRow(isFourPTouchPhonebook);
     const clone = template.cloneNode(true);
     clone.querySelectorAll("input").forEach((input) => {
         if (input.matches("[data-phone-local]")) {
@@ -2084,11 +2085,32 @@ function syncAlarmClockCustomVisibility(row) {
     );
 }
 
-function createContactRow() {
+function isFourPTouchPhonebookSection(section) {
+    return String(section?.dataset?.configProtocol || "") === "four-p-touch"
+        && String(section?.dataset?.configKey || "") === "phonebook";
+}
+
+function createContactRow(isFourPTouchPhonebook = false) {
     const wrapper = document.createElement("div");
     wrapper.className = "row g-2 align-items-end";
     wrapper.dataset.repeatRow = "contacts";
-    wrapper.innerHTML = `
+    wrapper.innerHTML = isFourPTouchPhonebook
+        ? `
+        <div class="col-md-6">
+            <input class="form-control" type="text" placeholder="Nome" maxlength="10" data-repeat-field="name">
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex gap-2">
+                <div class="flex-grow-1">
+                    <div class="vstack gap-1" data-fourptouch-phonebook-control>
+                        <input class="form-control" type="text" inputmode="text" autocomplete="off" maxlength="20" data-repeat-field="phone" data-fourptouch-phonebook-phone placeholder="Telefone">
+                        <div class="invalid-feedback d-none" data-fourptouch-phonebook-feedback></div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
+            </div>
+        </div>`
+        : `
         <div class="col-md-6">
             <input class="form-control" type="text" placeholder="Nome" data-repeat-field="name">
         </div>
