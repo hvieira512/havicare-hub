@@ -1279,7 +1279,11 @@ class DeviceService
             $hasContract = $this->capabilityRegistry->has($genericKey);
             $isList = $hasContract && $this->capabilityRegistry->get($genericKey)?->isList();
 
-            if (!$isList && count($nativeKeysPerGeneric[$genericKey] ?? []) > 1) {
+            if (
+                !$isList
+                && count($nativeKeysPerGeneric[$genericKey] ?? []) > 1
+                && !in_array($genericKey, ['sos_contacts', 'call_whitelist'], true)
+            ) {
                 continue;
             }
 
@@ -1313,6 +1317,8 @@ class DeviceService
             foreach ($sectionCaps as $genericKey => &$value) {
                 if (
                     $genericKey !== 'alarm_clock'
+                    && $genericKey !== 'sos_contacts'
+                    && $genericKey !== 'call_whitelist'
                     && isset($nativeKeyForGeneric[$genericKey])
                     && is_array($value)
                     && array_key_exists('value', $value)

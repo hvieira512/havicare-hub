@@ -311,12 +311,55 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->show('861728087060467');
 
         self::assertSame(
-            ['numbers' => ['+351938854803', '+351938854807']],
+            ['+351938854803', '+351938854807'],
             $response['capabilities']['contacts']['sos_contacts']['value'] ?? null
         );
         self::assertSame(
             ['numbers' => ['+351938854803', '+351938854807']],
             $response['configurations']['sos_contacts'] ?? null
+        );
+        self::assertSame(
+            3,
+            $response['capabilities']['contacts']['sos_contacts']['_meta']['limit'] ?? null
+        );
+    }
+
+    public function testShowExposesFourPTouchCallWhitelistAsNumbersObject(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
+        $db->deviceConfigurations->saveDesired(
+            '637507597567372',
+            'whitelistGroup1',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'WHITELIST1',
+            ['numbers' => ['111', '222', '333', '444', '555']]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '637507597567372',
+            'whitelistGroup2',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'WHITELIST2',
+            ['numbers' => ['666', '777', '', '', '']]
+        );
+
+        $response = $api->show('637507597567372');
+
+        self::assertSame(
+            ['numbers' => ['111', '222', '333', '444', '555', '666', '777']],
+            $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
+        );
+        self::assertSame(
+            10,
+            $response['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null
         );
     }
 

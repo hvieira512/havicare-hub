@@ -83,8 +83,13 @@ final class SosContactsCapability implements CapabilityContract
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
+        $normalizedValue = $value;
+        if (is_array($value) && array_key_exists('numbers', $value)) {
+            $normalizedValue = self::stringList(is_array($value['numbers']) ? $value['numbers'] : []);
+        }
+
         return [
-            'value' => $value,
+            'value' => $normalizedValue,
             '_meta' => $meta,
             '_type' => $this->key(),
         ];

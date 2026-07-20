@@ -67,6 +67,10 @@ final class CallWhitelistCapability implements CapabilityContract
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
+        if ($protocol === 'four-p-touch') {
+            $accumulatedMeta['limit'] = max((int)($accumulatedMeta['limit'] ?? 0), 10);
+        }
+
         return $accumulatedMeta;
     }
 
