@@ -255,14 +255,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 7, 'label' => 'Quase Mínima'],
                 ['value' => 8, 'label' => 'Mínima'],
             ],
-            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['sensitivityLevel']['options'] ?? null
+            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['sensitivity']['options'] ?? null
         );
         self::assertSame(
             [
                 ['value' => 6, 'label' => '6 níveis'],
                 ['value' => 8, 'label' => '8 níveis'],
             ],
-            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['totalLevels']['options'] ?? null
+            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['levels']['options'] ?? null
         );
         self::assertSame(
             [

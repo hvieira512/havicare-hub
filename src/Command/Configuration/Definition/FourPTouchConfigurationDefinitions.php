@@ -24,7 +24,7 @@ final class FourPTouchConfigurationDefinitions
             $entry('removeWatchSmsAlerts', 'REMOVESMS', 'SMS ao retirar relógio', 'toggle', ['enabled'], ['REMOVESMS'], 'alerts', 40),
             $entry('fallDownAlert', 'FALLDOWN', 'Alerta de queda', 'dualToggle', ['enabled', 'callCenterOnFall'], ['FALLDOWN'], 'alerts', 50),
             $entry('fallDownSensitivity', 'LSSET', 'Sensibilidade de queda', 'fallSensitivityLevels', ['sensitivityLevel', 'totalLevels'], ['LSSET'], 'alerts', 60, null, [
-                'sensitivityLevel' => [
+                'sensitivity' => [
                     ['value' => 1, 'label' => 'Máxima'],
                     ['value' => 2, 'label' => 'Muito Alta'],
                     ['value' => 3, 'label' => 'Alta'],
@@ -34,7 +34,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 7, 'label' => 'Quase Mínima'],
                     ['value' => 8, 'label' => 'Mínima'],
                 ],
-                'totalLevels' => [
+                'levels' => [
                     ['value' => 6, 'label' => '6 níveis'],
                     ['value' => 8, 'label' => '8 níveis'],
                 ],

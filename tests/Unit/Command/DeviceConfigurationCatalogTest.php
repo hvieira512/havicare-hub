@@ -135,14 +135,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
                 ['value' => 7, 'label' => 'Quase Mínima'],
                 ['value' => 8, 'label' => 'Mínima'],
             ],
-            $config['options']['sensitivityLevel'] ?? null
+            $config['options']['sensitivity'] ?? null
         );
         self::assertSame(
             [
                 ['value' => 6, 'label' => '6 níveis'],
                 ['value' => 8, 'label' => '8 níveis'],
             ],
-            $config['options']['totalLevels'] ?? null
+            $config['options']['levels'] ?? null
         );
     }
 
