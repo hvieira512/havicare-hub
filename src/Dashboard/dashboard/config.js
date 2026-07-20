@@ -703,16 +703,31 @@ function readContacts(section) {
     const isFourPTouchPhonebook =
         String(section.dataset.configProtocol || "") === "four-p-touch" &&
         String(section.dataset.configKey || "") === "phonebook";
-    return Array.from(section.querySelectorAll('[data-repeat-row="contacts"]'))
-        .map((row) => {
-            const name = readContactName(row, isFourPTouchPhonebook);
-            const phone = readContactPhone(row, isFourPTouchPhonebook);
-            if (isFourPTouchPhonebook && ((name === "") !== (phone === ""))) {
+    const contacts = [];
+    let sawIncompleteRow = false;
+
+    for (const row of section.querySelectorAll('[data-repeat-row="contacts"]')) {
+        const name = readContactName(row, isFourPTouchPhonebook);
+        const phone = readContactPhone(row, isFourPTouchPhonebook);
+        if (name === "" && phone === "") {
+            continue;
+        }
+        if (name === "" || phone === "") {
+            sawIncompleteRow = true;
+            if (!isFourPTouchPhonebook) {
                 throw new Error("Nome e telefone são obrigatórios");
             }
-            return {name, phone};
-        })
-        .filter((contact) => contact.name !== "" || contact.phone !== "");
+            continue;
+        }
+
+        contacts.push({name, phone});
+    }
+
+    if (isFourPTouchPhonebook && contacts.length === 0 && sawIncompleteRow) {
+        throw new Error("Nome e telefone são obrigatórios");
+    }
+
+    return contacts;
 }
 
 function readContactName(row, isFourPTouchPhonebook) {
