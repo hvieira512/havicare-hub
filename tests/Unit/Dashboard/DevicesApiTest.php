@@ -724,6 +724,40 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testFourPTouchSosContactsCapabilitySavesNativeSplitWithoutArrayCoercion(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
+
+        $response = $api->updateConfigurations('861728087060467', json_encode([
+            'capabilities' => [
+                'contacts' => [
+                    'sos_contacts' => [
+                        'numbers' => ['+351938854803'],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('861728087060467', $submitted[0]['imei']);
+        self::assertStringContainsString('SOS1,+351938854803', $submitted[0]['bytes']);
+        self::assertSame(
+            ['phone' => '+351938854803'],
+            $db->deviceConfigurations->allForImei('861728087060467')[0]['desired_payload'] ?? null
+        );
+    }
+
     public function testConfigurationPutRejectsVivistarAlarmClockWithoutType(): void
     {
         [$api, $db] = $this->makeApi();

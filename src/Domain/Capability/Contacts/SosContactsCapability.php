@@ -39,10 +39,11 @@ final class SosContactsCapability implements CapabilityContract
 
     public function toNative(string $protocol, mixed $value): array
     {
+        $numbers = is_array($value) ? ($value['numbers'] ?? []) : [];
         return match ($protocol) {
-            'vivistar-iw' => ['sosContacts' => ['numbers' => self::requireStringListValue($value, 'numbers')]],
-            'wonlex-json' => ['SOSNumber' => ['numbers' => self::requireStringListValue($value, 'numbers')]],
-            'four-p-touch' => $this->fourPTouchSplit(self::requireStringListValue($value, 'numbers')),
+            'vivistar-iw' => ['sosContacts' => ['numbers' => self::requireStringListValue($numbers, 'numbers')]],
+            'wonlex-json' => ['SOSNumber' => ['numbers' => self::requireStringListValue($numbers, 'numbers')]],
+            'four-p-touch' => $this->fourPTouchSplit(self::requireStringListValue($numbers, 'numbers')),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for sos_contacts"),
         };
     }
