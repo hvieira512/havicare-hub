@@ -6,7 +6,7 @@ ob_start();
 ?>
 <div class="device-modal-shell d-flex flex-column h-100">
     <div class="row g-4 h-100 align-items-lg-center">
-        <div class="col-lg-3 d-flex align-items-lg-center justify-content-center justify-content-lg-center h-100">
+        <div class="col-lg-2 d-flex align-items-lg-center justify-content-center justify-content-lg-center h-100">
             <div class="nav nav-pills flex-row flex-lg-column justify-content-center justify-content-lg-start gap-2 w-100" id="deviceModalNav" role="tablist">
                 <button class="nav-link active text-start" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
                     Geral
@@ -16,7 +16,7 @@ ob_start();
                 </button>
             </div>
         </div>
-        <div class="col-lg-9 d-flex flex-column h-100">
+        <div class="col-lg-10 d-flex flex-column h-100">
             <div class="tab-content flex-grow-1">
                 <div class="tab-pane fade show active h-100" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4 align-items-stretch">

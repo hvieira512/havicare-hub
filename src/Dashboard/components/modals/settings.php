@@ -6,7 +6,7 @@ ob_start();
 ?>
 <div class="settings-modal-shell d-flex flex-column h-100">
     <div class="row g-4 h-100 align-items-lg-center">
-        <div class="col-lg-3 d-flex align-items-lg-center justify-content-center justify-content-lg-center h-100">
+        <div class="col-lg-2 d-flex align-items-lg-center justify-content-center justify-content-lg-center h-100">
             <div class="nav nav-pills flex-row flex-lg-column justify-content-center justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
                 <button class="nav-link active text-start" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores</button>
                 <button class="nav-link text-start" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos</button>
@@ -15,13 +15,20 @@ ob_start();
                 <button class="nav-link text-start" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API</button>
             </div>
         </div>
-        <div class="col-lg-9 d-flex flex-column h-100">
+        <div class="col-lg-10 d-flex flex-column h-100">
             <div class="tab-content flex-grow-1">
                 <div class="tab-pane fade show active h-100" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
                     <div class="small text-secondary mb-3 p-3 border rounded bg-body-tertiary">Os fornecedores são definidos em código. Não é possível adicionar ou remover fornecedores através do painel.</div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
-                            <thead><tr><th>Nome</th><th>Modelos</th><th>Estado</th><th></th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Modelos</th>
+                                    <th>Estado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
                             <tbody id="supplierListBody"></tbody>
                         </table>
                     </div>
@@ -75,7 +82,15 @@ ob_start();
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle table-hover">
-                                        <thead><tr><th>Imagem</th><th>Fornecedor</th><th>Nome comercial</th><th>Modelo interno</th><th>Tipo</th></tr></thead>
+                                        <thead>
+                                            <tr>
+                                                <th>Imagem</th>
+                                                <th>Fornecedor</th>
+                                                <th>Nome comercial</th>
+                                                <th>Modelo interno</th>
+                                                <th>Tipo</th>
+                                            </tr>
+                                        </thead>
                                         <tbody id="modelListBody"></tbody>
                                     </table>
                                 </div>
@@ -223,7 +238,13 @@ ob_start();
                     </form>
                     <div class="table-responsive mb-4">
                         <table class="table table-sm align-middle">
-                            <thead><tr><th>Nome</th><th>Licenças</th><th></th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Licenças</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
                             <tbody id="companyListBody"></tbody>
                         </table>
                     </div>
@@ -249,7 +270,14 @@ ob_start();
                     </form>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
-                            <thead><tr><th>Empresa</th><th>ID</th><th>Nome</th><th></th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Empresa</th>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
                             <tbody id="licenseListBody"></tbody>
                         </table>
                     </div>
@@ -290,7 +318,15 @@ ob_start();
                     </form>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
-                            <thead><tr><th>Utilizador</th><th>Perfil</th><th>Licença</th><th>Estado</th><th></th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Utilizador</th>
+                                    <th>Perfil</th>
+                                    <th>Licença</th>
+                                    <th>Estado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
                             <tbody id="apiUserListBody"></tbody>
                         </table>
                     </div>
