@@ -20,9 +20,6 @@ final class FourPTouch implements AlarmClockHandler
     public function toNative(mixed $value): array
     {
         $alarms = $this->normalizeInput($value);
-        if ($alarms === []) {
-            throw new \InvalidArgumentException('alarms must contain at least one alarm');
-        }
         if (count($alarms) > 3) {
             throw new \InvalidArgumentException('alarms must not contain more than 3 items');
         }
@@ -94,6 +91,10 @@ final class FourPTouch implements AlarmClockHandler
         }
 
         if (!is_array($desired)) {
+            return [];
+        }
+
+        if ($desired === []) {
             return [];
         }
 

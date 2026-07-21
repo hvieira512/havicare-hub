@@ -12,7 +12,8 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
         $fields = match ($key) {
             'uploadInterval' => [self::rangeInt($payload['intervalSeconds'] ?? null, 60, 65535, 'intervalSeconds')],
-            'sosNumber1', 'sosNumber2', 'sosNumber3', 'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
+            'sosNumber1', 'sosNumber2', 'sosNumber3' => self::sosPhoneFields($payload['phone'] ?? null),
+            'monitorNumber' => [self::requiredString($payload['phone'] ?? null, 'phone')],
             'whitelistGroup1', 'whitelistGroup2' => self::stringList($payload['numbers'] ?? [], 5, 'numbers'),
             'devicePassword' => [self::requiredString($payload['password'] ?? null, 'password')],
             'languageTimezone' => [
@@ -28,7 +29,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
                 self::positiveInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
             ],
-            'walkTime' => self::timeRanges($payload['ranges'] ?? [], 3, 'ranges'),
+            'walkTime' => self::timeRanges($payload, 3, 'ranges'),
             'sleepTime' => [self::timeRange($payload['range'] ?? null, 'range')],
             'fallDownAlert' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
@@ -203,8 +204,12 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $mode;
     }
 
-    private static function timeRanges(mixed $value, int $max, string $field): array
+    private static function timeRanges(array $payload, int $max, string $field): array
     {
+        if (!array_key_exists('ranges', $payload)) {
+            throw new \InvalidArgumentException("{$field} must be an array");
+        }
+        $value = $payload['ranges'];
         if (!is_array($value)) {
             throw new \InvalidArgumentException("{$field} must be an array");
         }
@@ -215,7 +220,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             }
         }
         if ($ranges === []) {
-            throw new \InvalidArgumentException("{$field} must contain at least one time range");
+            return [];
         }
 
         return $ranges;
@@ -245,6 +250,9 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     private static function alarmClock(array $payload): array
     {
         $alarms = $payload['items'] ?? $payload['alarms'] ?? $payload['alarmClock'] ?? null;
+        if ($payload === []) {
+            return [];
+        }
         if (is_string($alarms) && trim($alarms) !== '') {
             $alarms = self::alarmClockListFromString($alarms);
         }
@@ -255,7 +263,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         }
         $alarms = array_values(array_filter($alarms, static fn(mixed $item): bool => $item !== null));
         if ($alarms === []) {
-            throw new \InvalidArgumentException('alarms must contain at least one alarm');
+            return [];
         }
         if (count($alarms) > 3) {
             throw new \InvalidArgumentException('alarms must not contain more than 3 items');
@@ -268,7 +276,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     {
         $value = trim($value);
         if ($value === '') {
-            throw new \InvalidArgumentException('alarms must contain at least one alarm');
+            return [];
         }
         $parts = explode(',', $value);
 
@@ -378,9 +386,12 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function phonebook(array $payload): array
     {
-        $contacts = $payload['contacts'] ?? [];
-        if (!is_array($contacts) || $contacts === []) {
-            throw new \InvalidArgumentException('contacts must be a non-empty array');
+        if (!array_key_exists('contacts', $payload) || !is_array($payload['contacts'])) {
+            throw new \InvalidArgumentException('contacts must be an array');
+        }
+        $contacts = $payload['contacts'];
+        if ($contacts === []) {
+            return [];
         }
         $fields = [];
         if (count($contacts) > 5) {
@@ -420,6 +431,29 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         return $name;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function sosPhoneFields(mixed $value): array
+    {
+        if (is_array($value)) {
+            $value = $value['phone'] ?? null;
+        }
+
+        $phone = trim((string)$value);
+        if ($phone === '') {
+            return [];
+        }
+        if (strlen($phone) > 20) {
+            throw new \InvalidArgumentException('phone must not exceed 20 ASCII characters');
+        }
+        if (!preg_match('/^[\x00-\x7F]+$/', $phone)) {
+            throw new \InvalidArgumentException('phone must contain ASCII characters only');
+        }
+
+        return [$phone];
     }
 
     private static function unicodeLength(string $value): int

@@ -8,8 +8,9 @@ use Hub\Command\DeviceConfigurationCatalog;
 /**
  * Capability contract for alarm_clock.
  *
- * Defines the generic shape (items, meta, merge) and delegates
- * per-supplier conversion to AlarmClockHandler implementations.
+ * Defines the generic shape (items, meta, merge). An empty items array
+ * is valid and clears the saved alarms. Per-supplier conversion is delegated
+ * to AlarmClockHandler implementations.
  */
 final class AlarmClockCapability implements CapabilityContract
 {

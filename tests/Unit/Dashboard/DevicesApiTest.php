@@ -1436,6 +1436,109 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testConfigurationPutAcceptsEmptyPhonebookContactsForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'phonebook' => [
+                    'contacts' => [],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('phonebook', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertStringContainsString('PHB', $submitted[0]['bytes']);
+        self::assertSame(
+            ['contacts' => []],
+            $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
+        );
+    }
+
+    public function testConfigurationPutAcceptsEmptyAlarmClockItemsForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'alarm_clock' => [
+                    'items' => [],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('alarmClock', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertStringContainsString('REMIND', $submitted[0]['bytes'] ?? '');
+        self::assertSame(
+            ['items' => []],
+            $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
+        );
+    }
+
+    public function testConfigurationPutAcceptsEmptySosContactsForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'sos_contacts' => [
+                    'numbers' => [],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('sos_contacts', $response['results'][0]['key'] ?? null);
+        self::assertCount(3, $submitted);
+        self::assertStringContainsString('SOS1', $submitted[0]['bytes']);
+        self::assertStringContainsString('SOS2', $submitted[1]['bytes']);
+        self::assertStringContainsString('SOS3', $submitted[2]['bytes']);
+        self::assertSame(
+            ['numbers' => []],
+            $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
+        );
+    }
+
     public function testConfigurationPutRejectsFourPTouchAlarmClockType(): void
     {
         [$api, $db] = $this->makeApi();

@@ -11,6 +11,7 @@ use Hub\Domain\Capability\CapabilityHelpers;
  * Public API shape:
  * - GET /api/devices/{imei}: value is a list of contacts, with optional _meta.limit
  * - PATCH /api/devices/{imei}/configurations: send { contacts: [...] }
+ *   An empty array is valid and clears the saved phonebook.
  *
  * The hub translates that generic contract to each protocol's native command(s).
  */

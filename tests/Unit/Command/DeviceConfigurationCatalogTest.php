@@ -507,6 +507,19 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['1', '2']], $temperature['payload']);
     }
 
+    public function testFourPTouchWalkTimeAllowsEmptyRanges(): void
+    {
+        $walkTime = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'walkTime', [
+            'ranges' => [],
+        ]);
+
+        self::assertSame('WALKTIME', $walkTime['command']);
+        self::assertSame(['fields' => []], $walkTime['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $walkTime['command'], $walkTime['payload']);
+        self::assertSame('[3G*8800000015*0008*WALKTIME]', $wire);
+    }
+
     public function testFourPTouchCommandsExposeSplitHealthRequests(): void
     {
         $commands = DeviceCommandCatalog::commandsForProtocol('four-p-touch');
@@ -567,6 +580,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('SOS1,123456789', $wire);
+    }
+
+    public function testFourPTouchSosNumber1AllowsEmptyPhoneToClearSlot(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sosNumber1', ['phone' => '']);
+
+        self::assertSame('SOS1', $payload['command']);
+        self::assertSame(['fields' => []], $payload['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertSame('[3G*8800000015*0004*SOS1]', $wire);
     }
 
     public function testFourPTouchSosNumber1RejectsArrayPhone(): void
@@ -818,6 +842,19 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['07:30-1-1']], $payload['payload']);
     }
 
+    public function testFourPTouchAlarmClockAllowsEmptyAlarms(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'alarmClock', [
+            'alarms' => [],
+        ]);
+
+        self::assertSame('REMIND', $payload['command']);
+        self::assertSame(['fields' => []], $payload['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertSame('[3G*8800000015*0006*REMIND]', $wire);
+    }
+
     public function testFourPTouchAlarmClockWithMultipleAlarmsBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'alarmClock', [
@@ -867,12 +904,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['123456789', '0041006E0061']], $payload['payload']);
     }
 
-    public function testFourPTouchPhonebookRejectsEmptyContacts(): void
+    public function testFourPTouchPhonebookAllowsEmptyContacts(): void
     {
-        self::assertSame(
-            'contacts must be a non-empty array',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', ['contacts' => []])
-        );
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'phonebook', [
+            'contacts' => [],
+        ]);
+
+        self::assertSame('PHB', $payload['command']);
+        self::assertSame(['fields' => []], $payload['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertSame('[3G*8800000015*0003*PHB]', $wire);
     }
 
     public function testFourPTouchPhonebookRejectsMoreThanFiveContacts(): void

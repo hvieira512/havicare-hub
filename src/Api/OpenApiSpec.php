@@ -1139,7 +1139,7 @@ class OpenApiSpec
                     ],
                     'AlarmClockConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Include type only for Vivistar, and omit it for 4P Touch.',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Send items as an array of alarms; an empty array is valid and clears the saved alarms. Include type only for Vivistar, and omit it for 4P Touch.',
                         'properties' => [
                             'items' => [
                                 'type' => 'array',
@@ -1150,7 +1150,7 @@ class OpenApiSpec
                     ],
                     'PhonebookConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook. Send contacts as an object with a contacts array; the hub translates that list to the device-specific native commands.',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook. Send contacts as an array; an empty array is valid and clears the phonebook. The hub translates that list to the device-specific native commands.',
                         'properties' => [
                             'contacts' => [
                                 'type' => 'array',
@@ -1181,26 +1181,19 @@ class OpenApiSpec
                         'description' => 'Normalized writable capabilities for a section. Supported capabilities are present even when the device has no stored configuration rows yet; saved values, if any, are embedded in the section entry.',
                         'example' => [
                             'alarm_clock' => [
-                                'value' => [
-                                    [
-                                        'time' => '12:10',
-                                        'enabled' => true,
-                                        'type' => 1,
-                                        'recurrence' => ['kind' => 'custom', 'days' => [1, 2, 4, 6]],
-                                    ],
-                                ],
+                                'value' => [],
                                 '_meta' => ['limit' => 3],
                             ],
                             'phonebook' => [
-                                'value' => [['name' => 'Ana', 'phone' => '+351911111111']],
+                                'value' => [],
                                 '_meta' => ['limit' => 5],
                             ],
                             'sos_contacts' => [
-                                'value' => ['+351911111111', '+351922222222'],
+                                'value' => [],
                                 '_meta' => ['limit' => 3],
                             ],
                             'call_whitelist' => [
-                                'value' => ['+351933333333', '+351944444444'],
+                                'value' => [],
                                 '_meta' => ['limit' => 10],
                             ],
                             'fall_sensitivity' => [
@@ -1273,7 +1266,7 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For phonebook, send {contacts:[{name,phone}]} and let the hub fan out to native commands.',
+                                'description' => 'Map of generic capability keys to desired payloads. For list-shaped capabilities, an empty array is valid and clears the saved value. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For phonebook, send {contacts:[{name,phone}]} and let the hub fan out to native commands.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
                                     'phonebook' => ['$ref' => '#/components/schemas/PhonebookConfiguration'],

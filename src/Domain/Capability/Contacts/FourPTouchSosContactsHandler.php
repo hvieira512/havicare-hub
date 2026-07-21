@@ -72,6 +72,14 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
      */
     private function split(array $numbers): array
     {
+        if ($numbers === []) {
+            return [
+                'sosNumber1' => ['phone' => ''],
+                'sosNumber2' => ['phone' => ''],
+                'sosNumber3' => ['phone' => ''],
+            ];
+        }
+
         $updates = [];
         foreach (array_slice($numbers, 0, 3) as $index => $phone) {
             if (trim($phone) !== '') {
