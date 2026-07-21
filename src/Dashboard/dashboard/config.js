@@ -2296,7 +2296,9 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = []) {
 }
 
 function normalizeAlarmClockItems(desired) {
-    const base = desired?.items ?? desired?.alarmClock ?? desired?.alarms ?? [];
+    const base = Array.isArray(desired)
+        ? desired
+        : desired?.items ?? desired?.alarmClock ?? desired?.alarms ?? [];
     const items = Array.isArray(base) ? base : [base];
     return items
         .filter((item) => item && typeof item === "object")
