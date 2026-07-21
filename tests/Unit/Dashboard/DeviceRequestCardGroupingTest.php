@@ -85,5 +85,9 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('data-reminders-list', $source);
         self::assertStringNotContainsString('addReminderRow', $source);
         self::assertStringNotContainsString('removeReminderRow', $source);
+        self::assertStringContainsString('function capabilitySectionCandidates(entry)', $source);
+        self::assertStringContainsString('alerts: "alarms"', $source);
+        self::assertStringContainsString('system: "settings_system"', $source);
+        self::assertStringContainsString('intervals: "settings_system"', $source);
     }
 }

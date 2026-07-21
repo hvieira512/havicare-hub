@@ -2172,18 +2172,58 @@ function capabilityForEntry(entry, capabilities) {
         return null;
     }
 
-    const sectionKey = entry.category === "alerts" ? "alarms" : (entry.category || "");
-    const section = capabilities?.[sectionKey];
-    if (!section || typeof section !== "object") {
-        return null;
+    const sectionKeys = capabilitySectionCandidates(entry);
+    for (const sectionKey of sectionKeys) {
+        const section = capabilities?.[sectionKey];
+        if (!section || typeof section !== "object") {
+            continue;
+        }
+
+        const capability = section[key];
+        if (capability && typeof capability === "object") {
+            return capability;
+        }
     }
 
-    const capability = section[key];
-    if (!capability || typeof capability !== "object") {
-        return null;
+    for (const sectionKey of ["telemetry", "health", "contacts", "alarms", "settings_system"]) {
+        if (sectionKeys.includes(sectionKey)) {
+            continue;
+        }
+        const section = capabilities?.[sectionKey];
+        if (!section || typeof section !== "object") {
+            continue;
+        }
+
+        const capability = section[key];
+        if (capability && typeof capability === "object") {
+            return capability;
+        }
     }
 
-    return capability;
+    return null;
+}
+
+function capabilitySectionCandidates(entry) {
+    const category = String(entry.category || "");
+    const configSection = String(entry.configSectionName || entry.configSection || "");
+    const sections = [];
+
+    if (configSection !== "") {
+        sections.push(configSection);
+    }
+
+    const categoryToSection = {
+        alerts: "alarms",
+        system: "settings_system",
+        intervals: "settings_system",
+    };
+    if (categoryToSection[category]) {
+        sections.push(categoryToSection[category]);
+    } else if (category !== "") {
+        sections.push(category);
+    }
+
+    return [...new Set(sections)];
 }
 
 function extractCapabilityValue(value) {
