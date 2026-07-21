@@ -680,6 +680,16 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['1', '0']], $payload['payload']);
     }
 
+    public function testFourPTouchFallDownSensitivityDefaultsToEightLevelsWhenMissing(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fallDownSensitivity', [
+            'sensitivity' => 5,
+        ]);
+
+        self::assertSame('LSSET', $payload['command']);
+        self::assertSame(['fields' => ['5+8']], $payload['payload']);
+    }
+
     public function testFourPTouchHealthAutoMeasurementBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'healthAutoMeasurement', [
