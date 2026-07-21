@@ -7,8 +7,8 @@ namespace Hub\Domain\Capability;
  *
  * A generic capability contract can delegate protocol-specific encoding,
  * decoding, defaulting, metadata and response shaping to one or more
- * handlers. This keeps the public capability stable while allowing
- * supplier/protocol fan-out to vary.
+ * handlers. The generic API contract stays stable while supplier/protocol
+ * fan-out and native key names vary underneath it.
  */
 interface CapabilityProtocolHandler
 {

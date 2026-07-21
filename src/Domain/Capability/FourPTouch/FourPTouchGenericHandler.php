@@ -13,8 +13,8 @@ final class FourPTouchGenericHandler
     use CapabilityHelpers;
 
     /**
-     * Generic keys that should preserve a different native key in GET /api/devices/{imei}
-     * responses when running on 4P Touch.
+     * Generic keys that should preserve a different native key only for
+     * internal/native response tracking on 4P Touch.
      *
      * @var array<string, string>
      */

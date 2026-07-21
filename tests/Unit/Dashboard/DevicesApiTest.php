@@ -318,7 +318,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['contacts']['sos_contacts']['value'] ?? null
         );
         self::assertSame(
-            ['numbers' => ['+351938854803', '+351938854807']],
+            ['+351938854803', '+351938854807'],
             $response['configurations']['sos_contacts'] ?? null
         );
         self::assertSame(
@@ -1342,7 +1342,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'type' => 2,
                 ],
             ],
-            $response['configurations']['alarm_clock']['items'] ?? null
+            $response['configurations']['alarm_clock'] ?? null
         );
     }
 
@@ -1407,7 +1407,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-            $response['configurations']['alarm_clock']['items'] ?? null
+            $response['configurations']['alarm_clock'] ?? null
         );
     }
 
@@ -1446,12 +1446,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('REMIND,08:10-1-1', $submitted[0]['bytes']);
         self::assertSame(
             [
-                'items' => [
-                    [
-                        'time' => '08:10',
-                        'enabled' => true,
-                        'recurrence' => ['kind' => 'once'],
-                    ],
+                [
+                    'time' => '08:10',
+                    'enabled' => true,
+                    'recurrence' => ['kind' => 'once'],
                 ],
             ],
             $response['configurations']['alarm_clock'] ?? null

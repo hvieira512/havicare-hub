@@ -83,8 +83,11 @@ interface CapabilityContract
     public function nativeKeyForProtocol(string $protocol): ?string;
 
     /**
-     * Resolve the public key alias used in API configurations.
-     * For alarm_clock: generic 'alarm_clock' → native 'reminders' or 'alarmClock'.
+     * Resolve the protocol-specific configuration key used by the native
+     * persistence/transport layer.
+     *
+     * This is not the public API key; the public key remains the generic
+     * capability name.
      */
     public function resolveConfigKey(string $protocol, string $key): ?string;
 }

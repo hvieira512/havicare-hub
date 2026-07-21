@@ -983,7 +983,10 @@ class OpenApiSpec
                             'device' => ['$ref' => '#/components/schemas/DeviceDetail'],
                             'model' => ['$ref' => '#/components/schemas/ModelDetail'],
                             'configuration' => ['$ref' => '#/components/schemas/DeviceConfigurationSummary'],
-                            'configurations' => ['type' => 'object'],
+                            'configurations' => [
+                                'type' => 'object',
+                                'description' => 'Raw generic configuration values keyed by capability name. Metadata for the UI lives in capabilities.',
+                            ],
                             'capabilities' => ['$ref' => '#/components/schemas/DeviceCapabilitiesMatrix'],
                             'pending' => ['type' => 'object'],
                             'transportPending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
@@ -1192,7 +1195,7 @@ class OpenApiSpec
                     'DeviceConfiguredCapabilitiesSection' => [
                         'type' => 'object',
                         'additionalProperties' => true,
-                        'description' => 'Normalized writable capabilities for a section. Supported capabilities are present even when the device has no stored configuration rows yet; saved values, if any, are embedded in the section entry.',
+                        'description' => 'Normalized writable capabilities for a section. Supported capabilities are present even when the device has no stored configuration rows yet; saved values, if any, are embedded in the section entry and metadata remains here.',
                         'example' => [
                             'alarm_clock' => [
                                 'value' => [],
@@ -1287,7 +1290,7 @@ class OpenApiSpec
                                 ],
                                 'additionalProperties' => ['type' => 'object'],
                                 'example' => [
-                                    'autoHealthMeasurement' => ['enabled' => true, 'intervalMinutes' => 120],
+                                    'auto_vitals_interval' => ['enabled' => true, 'intervalMinutes' => 120],
                                     'phonebook' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],
                                     'alarm_clock' => [
                                         'items' => [
@@ -1311,7 +1314,10 @@ class OpenApiSpec
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'ok'],
                             'results' => ['type' => 'array', 'items' => ['type' => 'object']],
-                            'configurations' => ['type' => 'object'],
+                            'configurations' => [
+                                'type' => 'object',
+                                'description' => 'Raw generic configuration values keyed by capability name after the update is applied.',
+                            ],
                             'pending' => ['type' => 'object'],
                             'transportPending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
                         ],
@@ -1695,7 +1701,6 @@ class OpenApiSpec
                         'properties' => [
                             'protocol' => ['type' => 'string', 'example' => 'four-p-touch'],
                             'label' => ['type' => 'string', 'example' => '4P Touch'],
-                            'supplier' => ['type' => 'string', 'example' => '4P Touch'],
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'supportsConfigCatalog' => ['type' => 'boolean'],
                             'dashboard' => ['type' => 'object'],

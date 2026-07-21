@@ -433,8 +433,6 @@ class DeviceService
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ($metadata['supplier'] ?? '')), (string)($device['model'] ?? ($metadata['model'] ?? ''))));
         $configurations = [];
-        $meta = [];
-        $nativeKeyForGeneric = [];
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
             $desired = $row['desired_payload'];
             if (is_array($desired) && $desired !== []) {
@@ -463,36 +461,8 @@ class DeviceService
                         $normalized
                     );
                 }
-
-                $nativeKeyForGeneric[$genericKey] = $nativeKey;
-
-                $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey);
-                if ($entry === null) {
-                    continue;
-                }
-                if (isset($entry['options'])) {
-                    foreach ($entry['options'] as $field => $options) {
-                        $meta[$genericKey][$field] = ['options' => $options];
-                    }
-                }
-                if (isset($entry['limit'])) {
-                    $existing = $meta[$genericKey]['limit'] ?? 0;
-                    $meta[$genericKey]['limit'] = max($existing, (int)$entry['limit']);
-                }
             }
         }
-
-        foreach ($configurations as $genericKey => &$value) {
-            $nativeKey = (string)($nativeKeyForGeneric[$genericKey] ?? '');
-            $value = $this->capabilityRegistry->responseEntry(
-                $protocol,
-                $genericKey,
-                $nativeKey,
-                $value,
-                $meta[$genericKey] ?? [],
-            );
-        }
-        unset($value);
 
         return $configurations;
     }
@@ -572,8 +542,8 @@ class DeviceService
 
                 $pathResults = [];
                 foreach ($nativeUpdates as $nativeKey => $nativePayload) {
-                    $existingPayload = is_array($currentRowsByKey[$nativeKey]['desired_payload'] ?? null)
-                        ? $currentRowsByKey[$nativeKey]['desired_payload']
+                    $existingPayload = is_array($currentByKey[$nativeKey]['desired_payload'] ?? null)
+                        ? $currentByKey[$nativeKey]['desired_payload']
                         : null;
                     if ($existingPayload !== null && $this->capabilityValuesEqual($existingPayload, $nativePayload)) {
                         continue;
@@ -590,9 +560,9 @@ class DeviceService
                         return $result;
                     }
 
-                    $currentRowsByKey[$nativeKey] = [
+                    $currentByKey[$nativeKey] = [
                         'desired_payload' => $nativePayload,
-                    ] + ($currentRowsByKey[$nativeKey] ?? []);
+                    ] + ($currentByKey[$nativeKey] ?? []);
 
                     $pathResults[] = [
                         'key' => $nativeKey,
