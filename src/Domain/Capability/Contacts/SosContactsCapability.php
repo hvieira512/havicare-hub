@@ -6,12 +6,13 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Capability for SOS contacts.
+ * Generic SOS contacts capability.
  *
- * Maps to different native shapes per protocol:
- * - vivistar-iw: { sosContacts: { numbers: [...] } }
- * - wonlex-json: { SOSNumber: { numbers: [...] } }
- * - four-p-touch: { sosNumber1: { phone: ... }, sosNumber2: ..., sosNumber3: ... }
+ * Public API shape:
+ * - GET /api/devices/{imei}: value is a list of phone numbers, with optional _meta.limit
+ * - PATCH /api/devices/{imei}/configurations: send { numbers: [...] }
+ *
+ * The hub translates that generic contract to each protocol's native command(s).
  */
 final class SosContactsCapability implements CapabilityContract
 {

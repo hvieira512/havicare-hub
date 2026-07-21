@@ -1400,6 +1400,42 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testConfigurationPutAcceptsPhonebookContactsWrapperForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'phonebook' => [
+                    'contacts' => [
+                        ['name' => 'Ana', 'phone' => '123456789'],
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('phonebook', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('868017032159118', $submitted[0]['imei']);
+        self::assertStringContainsString('PHB,123456789,Ana', $submitted[0]['bytes']);
+        self::assertSame(
+            ['contacts' => [['name' => 'Ana', 'phone' => '123456789']]],
+            $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
+        );
+    }
+
     public function testConfigurationPutRejectsFourPTouchAlarmClockType(): void
     {
         [$api, $db] = $this->makeApi();

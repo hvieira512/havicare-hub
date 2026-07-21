@@ -6,12 +6,13 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Capability for phonebook contacts.
+ * Generic phonebook capability.
  *
- * All protocols store contacts as a list, but with different shapes:
- * - vivistar-iw: { phonebook: { contacts: [...] } }
- * - wonlex-json: { phonebook: { contacts: [...] } }
- * - four-p-touch: { phonebook: { contacts: [...] } }
+ * Public API shape:
+ * - GET /api/devices/{imei}: value is a list of contacts, with optional _meta.limit
+ * - PATCH /api/devices/{imei}/configurations: send { contacts: [...] }
+ *
+ * The hub translates that generic contract to each protocol's native command(s).
  */
 final class PhonebookCapability implements CapabilityContract
 {
@@ -44,9 +45,11 @@ final class PhonebookCapability implements CapabilityContract
 
     public function toNative(string $protocol, mixed $value): array
     {
+        $contacts = is_array($value) && array_key_exists('contacts', $value) ? $value['contacts'] : $value;
+
         return match ($protocol) {
             'vivistar-iw', 'wonlex-json', 'four-p-touch' => [
-                'phonebook' => ['contacts' => self::requireListValue($value, 'contacts')],
+                'phonebook' => ['contacts' => self::requireListValue($contacts, 'contacts')],
             ],
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for phonebook"),
         };
@@ -54,7 +57,15 @@ final class PhonebookCapability implements CapabilityContract
 
     public function fromNative(string $nativeKey, array $desired): mixed
     {
-        return $desired['contacts'] ?? null;
+        if (array_key_exists('contacts', $desired) && is_array($desired['contacts'])) {
+            return self::requireListValue($desired['contacts'], 'contacts');
+        }
+
+        if (array_is_list($desired)) {
+            return self::requireListValue($desired, 'contacts');
+        }
+
+        return null;
     }
 
     public function defaultValue(string $protocol): mixed

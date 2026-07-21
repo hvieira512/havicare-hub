@@ -1150,7 +1150,7 @@ class OpenApiSpec
                     ],
                     'PhonebookConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook for 4P Touch. Each contact carries a raw phone string and a Unicode name.',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook. Send contacts as an object with a contacts array; the hub translates that list to the device-specific native commands.',
                         'properties' => [
                             'contacts' => [
                                 'type' => 'array',
@@ -1195,7 +1195,14 @@ class OpenApiSpec
                                 'value' => [['name' => 'Ana', 'phone' => '+351911111111']],
                                 '_meta' => ['limit' => 5],
                             ],
-                            'call_whitelist' => ['enabled' => true],
+                            'sos_contacts' => [
+                                'value' => ['+351911111111', '+351922222222'],
+                                '_meta' => ['limit' => 3],
+                            ],
+                            'call_whitelist' => [
+                                'value' => ['+351933333333', '+351944444444'],
+                                '_meta' => ['limit' => 10],
+                            ],
                             'fall_sensitivity' => [
                                 'value' => ['sensitivity' => 2],
                                 '_meta' => [
@@ -1266,7 +1273,7 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For 4P Touch phonebook, send contacts as raw name/phone pairs.',
+                                'description' => 'Map of generic capability keys to desired payloads. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For phonebook, send {contacts:[{name,phone}]} and let the hub fan out to native commands.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
                                     'phonebook' => ['$ref' => '#/components/schemas/PhonebookConfiguration'],
@@ -1285,7 +1292,7 @@ class OpenApiSpec
                                             ],
                                         ],
                                     ],
-                                    'sosContacts' => ['numbers' => ['+351278710140']],
+                                    'sos_contacts' => ['numbers' => ['+351278710140']],
                                     'workingMode' => ['mode' => 3],
                                 ],
                             ],
