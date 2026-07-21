@@ -1956,7 +1956,11 @@ function appendContactRow(section) {
     if (rows.length >= limit) return;
 
     const isFourPTouchPhonebook = isFourPTouchPhonebookSection(section);
-    const template = rows[rows.length - 1] || createContactRow({ phonebook: isFourPTouchPhonebook });
+    const template = rows[rows.length - 1] || createContactRow({
+        phonebook: isFourPTouchPhonebook,
+        nameMaxLength: parseInt(section.dataset.phonebookNameMaxLength || (isFourPTouchPhonebook ? "10" : "0"), 10) || 0,
+        phoneMaxLength: parseInt(section.dataset.phonebookPhoneMaxLength || (isFourPTouchPhonebook ? "20" : "0"), 10) || 0,
+    });
     const clone = template.cloneNode(true);
     clone.querySelectorAll("input").forEach((input) => {
         if (input.matches("[data-phone-local]")) {
@@ -2091,18 +2095,18 @@ function isFourPTouchPhonebookSection(section) {
         && String(section?.dataset?.configKey || "") === "phonebook";
 }
 
-function createContactRow({ phonebook = false } = {}) {
+function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength = 0 } = {}) {
     const wrapper = document.createElement("div");
     wrapper.className = "row g-2 align-items-end";
     wrapper.dataset.repeatRow = "contacts";
     wrapper.innerHTML = `
         <div class="col-md-6">
-            <input class="form-control" type="text" placeholder="Nome"${phonebook ? ' maxlength="10"' : ""} data-repeat-field="name">
+            <input class="form-control" type="text" placeholder="Nome"${phonebook && nameMaxLength > 0 ? ` maxlength="${nameMaxLength}"` : ""} data-repeat-field="name">
         </div>
         <div class="col-md-6">
             <div class="d-flex gap-2">
                 <div class="flex-grow-1">
-                    ${renderPhoneControl({ repeatField: "phone", placeholder: "Telefone" })}
+                    ${renderPhoneControl({ repeatField: "phone", placeholder: "Telefone", maxLength: phoneMaxLength })}
                 </div>
                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
             </div>

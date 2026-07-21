@@ -273,6 +273,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
         self::assertSame(5, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['name']['maxLength'] ?? null);
+        self::assertSame(20, $response['capabilities']['contacts']['phonebook']['_meta']['phone']['maxLength'] ?? null);
+        self::assertTrue($response['capabilities']['contacts']['phonebook']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertSame(
             [
                 ['name' => '', 'phone' => ''],
@@ -322,6 +325,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             3,
             $response['capabilities']['contacts']['sos_contacts']['_meta']['limit'] ?? null
         );
+        self::assertSame(
+            20,
+            $response['capabilities']['contacts']['sos_contacts']['_meta']['phone']['maxLength'] ?? null
+        );
+        self::assertTrue($response['capabilities']['contacts']['sos_contacts']['_meta']['phone']['asciiOnly'] ?? false);
     }
 
     public function testShowExposesFourPTouchCallWhitelistAsNumbersObject(): void

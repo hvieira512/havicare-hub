@@ -97,7 +97,7 @@ const CONFIG_INPUT_RENDERERS = {
         wonlexReminderThresholdInput(entry, desired),
     wonlexHeartRateRange: (_entry, desired) => wonlexHeartRateRangeInput(desired),
     list: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
-    sos_contacts: (entry, desired) => sosContactsInput(entry, desired),
+    sos_contacts: (entry, desired, meta) => sosContactsInput(entry, desired, meta),
     call_whitelist: (entry, desired) => callWhitelistInput(entry, desired),
     contacts: (entry, desired, meta) => contactsInput(entry, desired, meta),
     alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
@@ -490,6 +490,15 @@ export function renderConfigSection(
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
     const configSectionName = entry.configSectionName || entry.configSection || "";
+    const phonebookNameMaxLength = String(entry.key || "") === "phonebook"
+        ? parseInt(String(meta.name?.maxLength ?? 0), 10) || (String(protocol || "") === "four-p-touch" ? 10 : 0)
+        : 0;
+    const phonebookPhoneMaxLength = String(entry.key || "") === "phonebook"
+        ? parseInt(String(meta.phone?.maxLength ?? 0), 10) || (String(protocol || "") === "four-p-touch" ? 20 : 0)
+        : 0;
+    const phonebookMetaAttrs = String(entry.key || "") === "phonebook"
+        ? `${phonebookNameMaxLength > 0 ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"` : ""}${phonebookPhoneMaxLength > 0 ? ` data-phonebook-phone-max-length="${esc(String(phonebookPhoneMaxLength))}"` : ""}`
+        : "";
     const details = [
         hideNativeCommand ? "" : (entry.command || ""),
         hideNativeCommand ? "" : configInputLabel(entry.input || "json"),
@@ -497,7 +506,7 @@ export function renderConfigSection(
     ].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
+        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
             <div>
                 <div>
                     <div class="fw-semibold">
@@ -714,11 +723,15 @@ function readContacts(section) {
     const isFourPTouchPhonebook =
         String(section.dataset.configProtocol || "") === "four-p-touch" &&
         String(section.dataset.configKey || "") === "phonebook";
+    const nameMaxLength = parseInt(
+        String(section.dataset.phonebookNameMaxLength || (isFourPTouchPhonebook ? "10" : "0")),
+        10,
+    ) || 0;
     const contacts = [];
     let sawIncompleteRow = false;
 
     for (const row of section.querySelectorAll('[data-repeat-row="contacts"]')) {
-        const name = readContactName(row, isFourPTouchPhonebook);
+        const name = readContactName(row, nameMaxLength);
         const phone = readContactPhone(row);
         if (name === "" && phone === "") {
             continue;
@@ -755,11 +768,11 @@ function findDuplicateValues(values) {
     return [...duplicates];
 }
 
-function readContactName(row, isFourPTouchPhonebook) {
+function readContactName(row, maxLength) {
     const input = row.querySelector('[data-repeat-field="name"]');
     const value = String(input?.value || "").trim();
-    if (isFourPTouchPhonebook && unicodeLength(value) > 10) {
-        throw new Error("O nome deve ter no máximo 10 caracteres");
+    if (maxLength > 0 && unicodeLength(value) > maxLength) {
+        throw new Error(`O nome deve ter no máximo ${maxLength} caracteres`);
     }
 
     return value;
@@ -1523,7 +1536,11 @@ function listInput(entry, desired, field, label) {
         </div>`;
 }
 
-function sosContactsInput(entry, desired) {
+function sosContactsInput(entry, desired, meta = {}) {
+    const phoneMaxLength = Math.max(
+        0,
+        parseInt(String(meta.phone?.maxLength ?? (String(meta.protocol || "") === "four-p-touch" ? 20 : 0)), 10) || 0,
+    );
     return phoneRepeaterInput(entry, desired, {
         kind: "sos_contacts",
         limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
@@ -1533,6 +1550,7 @@ function sosContactsInput(entry, desired) {
         emptyLabel: "Adicionar contacto SOS",
         placeholderPrefix: "SOS",
         helpText: "Até 3 números. A ordem define a posição nos comandos SOS do dispositivo.",
+        phoneMaxLength,
     });
 }
 
@@ -1550,7 +1568,7 @@ function callWhitelistInput(entry, desired) {
 }
 
 function contactsInput(entry, desired, meta = {}) {
-    const limit = Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10);
+    const limit = Math.max(1, parseInt(String(meta.limit ?? entry.limit ?? 10), 10) || 10);
     const contacts = Array.isArray(desired)
         ? desired
         : Array.isArray(desired.contacts)
@@ -1560,7 +1578,15 @@ function contactsInput(entry, desired, meta = {}) {
     const isFourPTouchPhonebook =
         String(meta.protocol || "") === "four-p-touch" &&
         String(entry.key || "") === "phonebook";
-    const nameMaxLength = isFourPTouchPhonebook ? ' maxlength="10"' : "";
+    const nameMaxLengthValue = Math.max(
+        0,
+        parseInt(String(meta.name?.maxLength ?? (isFourPTouchPhonebook ? 10 : 0)), 10) || 0,
+    );
+    const phoneMaxLengthValue = Math.max(
+        0,
+        parseInt(String(meta.phone?.maxLength ?? (isFourPTouchPhonebook ? 20 : 0)), 10) || 0,
+    );
+    const nameMaxLength = nameMaxLengthValue > 0 ? ` maxlength="${esc(String(nameMaxLengthValue))}"` : "";
     return `
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1568,7 +1594,7 @@ function contactsInput(entry, desired, meta = {}) {
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addContactRow">Adicionar</button>
             </div>
             <div class="small text-secondary mb-2">${limit} contactos máximos</div>
-            <div class="vstack gap-2" data-repeat-limit="${limit}">
+            <div class="vstack gap-2" data-repeat-limit="${limit}"${nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
                 ${rows
                     .map(
                         (contact, index) => `
@@ -1583,6 +1609,7 @@ function contactsInput(entry, desired, meta = {}) {
                                         value: String(contact.phone || ""),
                                         repeatField: "phone",
                                         placeholder: `Telefone ${index + 1}`,
+                                        maxLength: phoneMaxLengthValue,
                                     })}
                                 </div>
                                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
@@ -1611,6 +1638,7 @@ function phoneRepeaterInput(entry, desired, options) {
     const helpText = String(options.helpText || "");
     const emptyLabel = String(options.emptyLabel || "Adicionar");
     const placeholderPrefix = String(options.placeholderPrefix || label);
+    const phoneMaxLength = Math.max(0, parseInt(String(options.phoneMaxLength ?? 0), 10) || 0);
 
     return `
         <div class="vstack gap-3">
@@ -1629,6 +1657,7 @@ function phoneRepeaterInput(entry, desired, options) {
                                 value: String(value || ""),
                                 configField: "numbers",
                                 placeholder: `${placeholderPrefix} ${index + 1}`,
+                                maxLength: phoneMaxLength,
                             })}
                         </div>
                         <div class="col-auto">

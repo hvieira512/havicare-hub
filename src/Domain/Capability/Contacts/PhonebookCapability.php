@@ -76,7 +76,22 @@ final class PhonebookCapability implements CapabilityContract
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
-        return $accumulatedMeta;
+        if ($protocol !== 'four-p-touch') {
+            return $accumulatedMeta;
+        }
+
+        $meta = $accumulatedMeta;
+        $meta['limit'] = max((int)($meta['limit'] ?? 0), 5);
+        $meta['name'] = array_merge(
+            ['maxLength' => 10],
+            is_array($meta['name'] ?? null) ? $meta['name'] : []
+        );
+        $meta['phone'] = array_merge(
+            ['maxLength' => 20, 'asciiOnly' => true],
+            is_array($meta['phone'] ?? null) ? $meta['phone'] : []
+        );
+
+        return $meta;
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed
@@ -88,7 +103,7 @@ final class PhonebookCapability implements CapabilityContract
     {
         return [
             'value' => $value,
-            '_meta' => $meta,
+            '_meta' => $this->meta($protocol, $meta),
             '_type' => $this->key(),
         ];
     }

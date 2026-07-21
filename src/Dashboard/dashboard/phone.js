@@ -70,6 +70,7 @@ export function renderPhoneControl({
     configField = "",
     repeatField = "",
     placeholder = "Número",
+    maxLength = 0,
 } = {}) {
     const parsed = parseStoredPhone(value);
     const country = phoneCountry(parsed.countryCode);
@@ -77,9 +78,13 @@ export function renderPhoneControl({
         configField !== "" ? ` data-config-field="${esc(configField)}"` : "";
     const repeatAttr =
         repeatField !== "" ? ` data-repeat-field="${esc(repeatField)}"` : "";
+    const normalizedMaxLength = parseInt(String(maxLength), 10) || 0;
+    const maxLengthAttr = normalizedMaxLength > 0
+        ? ` data-phone-max-length="${esc(String(normalizedMaxLength))}"`
+        : "";
 
     return `
-        <div class="vstack gap-1" data-phone-control${fieldAttr}${repeatAttr}>
+        <div class="vstack gap-1" data-phone-control${fieldAttr}${repeatAttr}${maxLengthAttr}>
             <div class="input-group">
                 <select class="form-select" data-phone-country aria-label="País" style="max-width: 16rem;">
                     ${PHONE_COUNTRIES.map(
@@ -95,6 +100,7 @@ export function renderPhoneControl({
                     type="tel"
                     inputmode="tel"
                     autocomplete="tel-national"
+                    ${normalizedMaxLength > 0 ? `maxlength="${esc(String(normalizedMaxLength))}"` : ""}
                     data-phone-local
                     placeholder="${esc(placeholderForCountry(country.code, placeholder))}"
                     value="${esc(formatLocalNumber(country.code, parsed.localDigits))}">
@@ -124,7 +130,15 @@ export function normalizePhoneControl(control) {
         throw new Error(validation.message);
     }
 
-    return `+${validation.country.dialCode}${localDigits}`;
+    const normalized = `+${validation.country.dialCode}${localDigits}`;
+    const maxLength = parseInt(control.dataset.phoneMaxLength || "0", 10) || 0;
+    if (maxLength > 0 && normalized.length > maxLength) {
+        const message = `Número deve ter no máximo ${maxLength} caracteres.`;
+        setPhoneControlError(control, message);
+        throw new Error(message);
+    }
+
+    return normalized;
 }
 
 export function syncPhoneControl(target) {

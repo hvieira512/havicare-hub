@@ -43,6 +43,10 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
     public function meta(array $accumulatedMeta = []): array
     {
         $accumulatedMeta['limit'] = max((int)($accumulatedMeta['limit'] ?? 0), 3);
+        $accumulatedMeta['phone'] = array_merge(
+            ['maxLength' => 20, 'asciiOnly' => true],
+            is_array($accumulatedMeta['phone'] ?? null) ? $accumulatedMeta['phone'] : []
+        );
 
         return $accumulatedMeta;
     }
