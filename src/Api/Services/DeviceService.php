@@ -554,6 +554,67 @@ class DeviceService
                 return ['error' => ['code' => 'invalid_config', 'message' => 'Each config entry must be an object']];
             }
 
+            $contract = $this->capabilityRegistry->get($key);
+            if ($contract !== null) {
+                try {
+                    $nativeUpdates = $this->genericCapabilityToNativeUpdates($protocol, $key, $payload);
+                } catch (\InvalidArgumentException $e) {
+                    Logger::channel('api')->warning('API device configuration rejected', [
+                        'request_id' => $requestId,
+                        'imei' => $imei,
+                        'config_key' => $key,
+                        'error_code' => 'invalid_config',
+                        'message' => $e->getMessage(),
+                    ]);
+                    return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
+                }
+
+                $pathResults = [];
+                foreach ($nativeUpdates as $nativeKey => $nativePayload) {
+                    $existingPayload = is_array($currentRowsByKey[$nativeKey]['desired_payload'] ?? null)
+                        ? $currentRowsByKey[$nativeKey]['desired_payload']
+                        : null;
+                    if ($existingPayload !== null && $this->capabilityValuesEqual($existingPayload, $nativePayload)) {
+                        continue;
+                    }
+
+                    $result = $this->persistAndApplyConfiguration($imei, $nativeKey, $nativePayload, $supplier, $model);
+                    if (isset($result['error'])) {
+                        Logger::channel('api')->warning('API device configuration rejected', [
+                            'request_id' => $requestId,
+                            'imei' => $imei,
+                            'config_key' => $nativeKey,
+                            'error_code' => $result['error']['code'] ?? 'invalid_config',
+                        ]);
+                        return $result;
+                    }
+
+                    $currentRowsByKey[$nativeKey] = [
+                        'desired_payload' => $nativePayload,
+                    ] + ($currentRowsByKey[$nativeKey] ?? []);
+
+                    $pathResults[] = [
+                        'key' => $nativeKey,
+                        'command' => $result['command'],
+                        'deliveryStatus' => $result['status'],
+                        'lastCommandId' => $result['id'],
+                    ];
+                }
+
+                if ($pathResults === []) {
+                    continue;
+                }
+
+                $results[] = count($pathResults) === 1
+                    ? $pathResults[0]
+                    : [
+                        'key' => $key,
+                        'operations' => $pathResults,
+                    ];
+
+                continue;
+            }
+
             $nativeKey = $this->resolveConfigurationKeyForProtocol($protocol, $key);
             if ($nativeKey === null) {
                 Logger::channel('api')->warning('API device configuration rejected', [

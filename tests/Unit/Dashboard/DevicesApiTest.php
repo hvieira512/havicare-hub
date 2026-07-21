@@ -1354,6 +1354,52 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('LSSET,4+6', $submitted[0]['bytes']);
     }
 
+    public function testConfigurationPutAcceptsGenericCallWhitelistAliasForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
+        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 0, '', '7597567372', 'hitcare');
+
+        $response = $api->updateConfigurations('637507597567372', json_encode([
+            'configurations' => [
+                'call_whitelist' => [
+                    'numbers' => [
+                        '+351911111111',
+                        '+351922222222',
+                        '+351933333333',
+                        '+351944444444',
+                        '+351955555555',
+                        '+351966666666',
+                    ],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('call_whitelist', $response['results'][0]['key'] ?? null);
+        self::assertCount(2, $response['results'][0]['operations'] ?? []);
+        self::assertCount(2, $submitted);
+        self::assertStringContainsString('WHITELIST1', $submitted[0]['bytes']);
+        self::assertStringContainsString('WHITELIST2', $submitted[1]['bytes']);
+        self::assertSame(
+            ['numbers' => ['+351911111111', '+351922222222', '+351933333333', '+351944444444', '+351955555555']],
+            $db->deviceConfigurations->allForImei('637507597567372')[0]['desired_payload'] ?? null
+        );
+        self::assertSame(
+            ['numbers' => ['+351966666666']],
+            $db->deviceConfigurations->allForImei('637507597567372')[1]['desired_payload'] ?? null
+        );
+    }
+
     public function testConfigurationPutRejectsFourPTouchAlarmClockType(): void
     {
         [$api, $db] = $this->makeApi();
