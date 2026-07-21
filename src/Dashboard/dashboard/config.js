@@ -573,7 +573,7 @@ export function defaultConfigPayload(entry) {
 function normalizeDesired(entry, desired, capabilityDesired = null) {
     const effectiveDesired = desired ?? capabilityDesired;
     if (effectiveDesired && Object.keys(effectiveDesired).length) {
-        return effectiveDesired;
+        return extractCapabilityValue(effectiveDesired);
     }
     return defaultConfigPayload(entry);
 }
