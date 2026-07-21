@@ -32,6 +32,94 @@ final class DeviceCommandStore
         $this->redis->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
     }
 
+    /**
+     * @param callable(string, string, array): string $dispatch
+     */
+    public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void
+    {
+        $retryAfterSeconds = max(1, $retryAfterSeconds);
+        $timeoutSeconds = max($retryAfterSeconds, $timeoutSeconds);
+        $maxAttempts = max(1, $maxAttempts);
+        $now = time();
+
+        foreach ($this->runtime->devices() as $device) {
+            $imei = (string)($device['imei'] ?? '');
+            if ($imei === '') {
+                continue;
+            }
+
+            foreach ($this->commands($imei) as $command) {
+                if (($command['status'] ?? '') !== 'waiting') {
+                    continue;
+                }
+                if (!($command['retryable'] ?? false)) {
+                    continue;
+                }
+
+                $bytes = (string)($command['bytes'] ?? '');
+                if ($bytes === '') {
+                    continue;
+                }
+
+                $attempts = max(1, (int)($command['attempts'] ?? 1));
+                $commandMaxAttempts = max(1, (int)($command['maxAttempts'] ?? $maxAttempts));
+                $commandRetryAfterSeconds = max(1, (int)($command['retryDelaySeconds'] ?? $retryAfterSeconds));
+                $sentAt = strtotime((string)($command['sentAt'] ?? '')) ?: 0;
+                $nextRetryAt = strtotime((string)($command['nextRetryAt'] ?? '')) ?: 0;
+
+                if ($sentAt > 0 && ($now - $sentAt) >= $timeoutSeconds) {
+                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+                        'status' => 'failed',
+                        'error' => 'response_timeout',
+                        'lastError' => 'response_timeout',
+                    ]));
+                    continue;
+                }
+
+                if ($nextRetryAt > 0 && $nextRetryAt > $now) {
+                    continue;
+                }
+
+                if ($attempts >= $commandMaxAttempts) {
+                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+                        'status' => 'failed',
+                        'error' => 'retry_exhausted',
+                        'lastError' => 'retry_exhausted',
+                    ]));
+                    continue;
+                }
+
+                $status = (string)$dispatch($imei, $bytes, $command);
+                $updated = array_merge($command, [
+                    'attempts' => $attempts + 1,
+                    'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                    'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', $now + $commandRetryAfterSeconds),
+                ]);
+
+                if ($status === 'sent') {
+                    $updated['status'] = 'waiting';
+                    $updated['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+                    unset($updated['error'], $updated['lastError']);
+                    $this->recordCommand($imei, (string)$command['id'], $updated);
+                    continue;
+                }
+
+                if ($status === 'queued') {
+                    $updated['status'] = 'queued';
+                    $updated['error'] = '';
+                    $updated['lastError'] = '';
+                    $this->recordCommand($imei, (string)$command['id'], $updated);
+                    continue;
+                }
+
+                $updated['status'] = 'failed';
+                $updated['error'] = 'delivery_failed';
+                $updated['lastError'] = 'delivery_failed';
+                $this->recordCommand($imei, (string)$command['id'], $updated);
+            }
+        }
+    }
+
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
     {
         foreach ($this->commands($imei) as $command) {

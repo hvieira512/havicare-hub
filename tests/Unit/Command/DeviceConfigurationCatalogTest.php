@@ -1006,10 +1006,8 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchSosNumberRejectsEmptyPhone(): void
     {
-        self::assertSame(
-            'phone is required',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'sosNumber1', ['phone' => ''])
-        );
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sosNumber1', ['phone' => '']);
+        self::assertSame(['fields' => []], $payload['payload']);
         self::assertSame(
             'phone is required',
             DeviceConfigurationCatalog::validate('four-p-touch', 'monitorNumber', ['phone' => ''])

@@ -71,6 +71,11 @@ final class DashboardStore implements DashboardStoreContract
         $this->commands->recordCommand($imei, $id, $record);
     }
 
+    public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void
+    {
+        $this->commands->retryWaitingCommands($retryAfterSeconds, $timeoutSeconds, $maxAttempts, $dispatch);
+    }
+
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
     {
         $this->commands->markLatestCommand($imei, $nativeType, $fields);

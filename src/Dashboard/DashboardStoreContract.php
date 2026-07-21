@@ -21,6 +21,18 @@ interface DashboardStoreContract
 
     public function recordCommand(string $imei, string $id, array $record): void;
 
+    /**
+     * Retry waiting configuration commands that have not been acknowledged yet.
+     *
+     * @param callable(string, string, array): string $dispatch
+     */
+    public function retryWaitingCommands(
+        int $retryAfterSeconds,
+        int $timeoutSeconds,
+        int $maxAttempts,
+        callable $dispatch
+    ): void;
+
     public function devices(): array;
 
     public function device(string $imei): array;

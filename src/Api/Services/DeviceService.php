@@ -339,6 +339,7 @@ class DeviceService
                 'nativeType' => $command,
                 'label' => (string)($entry['label'] ?? $nativeKey),
                 'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                'retryable' => false,
                 'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             ];
             if ($status === 'sent') {
@@ -996,6 +997,13 @@ class DeviceService
             'label' => (string)(DeviceConfigurationCatalog::configForProtocol($protocol, $key)['label'] ?? $key),
             'configKey' => $key,
             'expectedReplyTypes' => DeviceConfigurationCatalog::configForProtocol($protocol, $key)['expectedReplyTypes'] ?? [],
+            'retryable' => true,
+            'bytes' => $bytes,
+            'attempts' => 1,
+            'maxAttempts' => 3,
+            'retryDelaySeconds' => 60,
+            'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 60),
             'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
         ];
         if ($status === 'sent') {

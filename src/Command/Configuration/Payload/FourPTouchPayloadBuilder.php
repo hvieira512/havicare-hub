@@ -439,7 +439,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     private static function sosPhoneFields(mixed $value): array
     {
         if (is_array($value)) {
-            $value = $value['phone'] ?? null;
+            throw new \InvalidArgumentException('phone must be a string');
         }
 
         $phone = trim((string)$value);

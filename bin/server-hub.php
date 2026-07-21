@@ -331,7 +331,13 @@ if ($qinglanstIngress !== null) {
     });
 }
 
-$loop->addPeriodicTimer(10, function () use ($dashboardStore, $dashboardConfig): void {
+$loop->addPeriodicTimer(10, function () use ($dashboardStore, $dashboardConfig, $hubServer): void {
+    $dashboardStore->retryWaitingCommands(
+        60,
+        (int)($dashboardConfig['command_timeout_seconds'] ?? 3600),
+        3,
+        static fn(string $imei, string $bytes, array $command): string => $hubServer->submitDownlink($imei, $bytes)
+    );
     $dashboardStore->expireWaitingCommands((int)($dashboardConfig['command_timeout_seconds'] ?? 3600));
     $dashboardStore->expireStaleDevices((int)($dashboardConfig['device_idle_timeout_seconds'] ?? 1800));
 });
