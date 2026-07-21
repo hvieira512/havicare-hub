@@ -836,7 +836,7 @@ class DeviceService
             }
         }
 
-        $license = $this->licenseForAssociation($company, $licenseId);
+        $license = $this->licenseForAssociation($company, $licenseId, true);
         if ($license === null) {
             return ['error' => ['code' => 'invalid_association', 'message' => 'company and licenseId do not match a registered license']];
         }
@@ -1838,7 +1838,7 @@ class DeviceService
         return $this->capabilityRegistry->merge($genericKey, $existing, $incoming);
     }
 
-    private function licenseForAssociation(string $company, string $licenseId): ?array
+    private function licenseForAssociation(string $company, string $licenseId, bool $createIfMissing = false): ?array
     {
         $companyRow = $this->db->companies->findByName($company);
         if ($companyRow === null) {
@@ -1851,7 +1851,12 @@ class DeviceService
             }
         }
 
-        return null;
+        if (!$createIfMissing) {
+            return null;
+        }
+
+        $createdId = $this->db->licenses->create((int)($companyRow['id'] ?? 0), (int)$licenseId, '');
+        return $this->db->licenses->findById($createdId);
     }
 
     private function deviceSnapshot(string $imei): array

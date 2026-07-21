@@ -248,7 +248,7 @@ class OpenApiSpec
                         ],
                         'responses' => [
                             '200' => [
-                                'description' => 'Device association updated',
+                                'description' => 'Device association updated. If the company exists but the requested license does not, the license is created automatically for that company.',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceAssociationResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
@@ -1313,6 +1313,7 @@ class OpenApiSpec
                     'DeviceAssociationRequest' => [
                         'type' => 'object',
                         'required' => ['company', 'licenseId'],
+                        'description' => 'Associates the device to an existing company and license. If the company exists but the license row does not, the hub creates the license automatically using the requested licenseId.',
                         'properties' => [
                             'company' => ['type' => 'string', 'example' => 'hitcare'],
                             'licenseId' => ['type' => 'integer', 'example' => 1001],
@@ -1321,6 +1322,7 @@ class OpenApiSpec
                     'DeviceAssociationResponse' => [
                         'type' => 'object',
                         'required' => ['status', 'imei', 'association'],
+                        'description' => 'Returns the updated association after the device is linked to the company and license.',
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'ok'],
                             'imei' => ['type' => 'string', 'example' => '865028000000306'],

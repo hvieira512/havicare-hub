@@ -148,6 +148,44 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         self::assertSame('FIND', $result['commands'][0]['nativeType']);
     }
 
+    public function testPatchAssociationCreatesMissingLicenseForExistingCompany(): void
+    {
+        $imei = '861265061009844';
+        $company = 'hitcare';
+        $licenseId = 9999;
+
+        $companyRow = $this->db->companies->findByName($company);
+        if ($companyRow === null) {
+            $companyId = $this->db->companies->create($company);
+            $companyRow = $this->db->companies->findById($companyId);
+        }
+        self::assertIsArray($companyRow);
+
+        $before = $this->db->licenses->findByCompanyId((int)$companyRow['id']);
+        self::assertSame(
+            0,
+            count(array_filter($before, static fn(array $row): bool => (int)($row['license_id'] ?? 0) === $licenseId))
+        );
+
+        $this->mockDeviceAccess($imei, 'vivistar-iw', 'Vivistar', 'L08 Pro');
+
+        $result = $this->service->patchAssociation($imei, json_encode([
+            'company' => $company,
+            'licenseId' => (string)$licenseId,
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame($company, $result['association']['company'] ?? null);
+        self::assertSame($licenseId, $result['association']['licenseId'] ?? null);
+
+        $created = $this->db->licenses->findByLicenseId($licenseId);
+        self::assertNotEmpty($created);
+        self::assertNotSame(
+            0,
+            count(array_filter($created, static fn(array $row): bool => (int)($row['company_id'] ?? 0) === (int)$companyRow['id']))
+        );
+    }
+
     private function mockDeviceAccess(string $imei, string $protocol, string $supplier, string $model): void
     {
         $this->whitelist->method('getMetadata')->with($imei)->willReturn([
