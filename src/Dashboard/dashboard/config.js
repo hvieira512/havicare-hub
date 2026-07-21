@@ -718,7 +718,7 @@ function readContacts(section) {
 
     for (const row of section.querySelectorAll('[data-repeat-row="contacts"]')) {
         const name = readContactName(row, isFourPTouchPhonebook);
-        const phone = readContactPhone(row, isFourPTouchPhonebook);
+        const phone = readContactPhone(row);
         if (name === "" && phone === "") {
             continue;
         }
@@ -764,74 +764,10 @@ function readContactName(row, isFourPTouchPhonebook) {
     return value;
 }
 
-function readContactPhone(row, isFourPTouchPhonebook) {
-    if (!isFourPTouchPhonebook) {
-        return normalizePhoneControl(
-            row.querySelector('[data-phone-control][data-repeat-field="phone"]'),
-        );
-    }
-
-    const control = row.querySelector('[data-fourptouch-phonebook-control]');
-    const input = control?.querySelector('[data-fourptouch-phonebook-phone]');
-    const value = String(input?.value || "").trim();
-    clearFourPTouchPhonebookError(control);
-    if (value === "") {
-        return "";
-    }
-    if (value.length > 20) {
-        setFourPTouchPhonebookError(
-            control,
-            "O telefone deve ter no máximo 20 caracteres ASCII",
-        );
-        throw new Error("O telefone deve ter no máximo 20 caracteres ASCII");
-    }
-    if (!/^[\x00-\x7F]+$/.test(value)) {
-        setFourPTouchPhonebookError(
-            control,
-            "O telefone deve conter apenas caracteres ASCII",
-        );
-        throw new Error("O telefone deve conter apenas caracteres ASCII");
-    }
-
-    return value;
-}
-
-function renderFourPTouchPhonebookPhoneControl({value = "", placeholder = "Telefone"} = {}) {
-    return `
-        <div class="vstack gap-1" data-fourptouch-phonebook-control>
-            <input class="form-control" type="text" inputmode="text" autocomplete="off" maxlength="20" data-repeat-field="phone" data-fourptouch-phonebook-phone placeholder="${esc(placeholder)}" value="${esc(value)}">
-            <div class="invalid-feedback d-none" data-fourptouch-phonebook-feedback></div>
-        </div>`;
-}
-
-function setFourPTouchPhonebookError(control, message) {
-    if (!control) {
-        return;
-    }
-    const input = control.querySelector("[data-fourptouch-phonebook-phone]");
-    const feedback = control.querySelector("[data-fourptouch-phonebook-feedback]");
-    if (input) {
-        input.classList.add("is-invalid");
-    }
-    if (feedback) {
-        feedback.textContent = message;
-        feedback.classList.remove("d-none");
-    }
-}
-
-function clearFourPTouchPhonebookError(control) {
-    if (!control) {
-        return;
-    }
-    const input = control.querySelector("[data-fourptouch-phonebook-phone]");
-    const feedback = control.querySelector("[data-fourptouch-phonebook-feedback]");
-    if (input) {
-        input.classList.remove("is-invalid");
-    }
-    if (feedback) {
-        feedback.textContent = "";
-        feedback.classList.add("d-none");
-    }
+function readContactPhone(row) {
+    return normalizePhoneControl(
+        row.querySelector('[data-phone-control][data-repeat-field="phone"]'),
+    );
 }
 
 function unicodeLength(value) {
@@ -1642,16 +1578,11 @@ function contactsInput(entry, desired, meta = {}) {
                         <div class="col-md-6">
                             <div class="d-flex gap-2">
                                 <div class="flex-grow-1">
-                                    ${isFourPTouchPhonebook
-                                        ? renderFourPTouchPhonebookPhoneControl({
-                                            value: String(contact.phone || ""),
-                                            placeholder: `Telefone ${index + 1}`,
-                                        })
-                                        : renderPhoneControl({
-                                            value: String(contact.phone || ""),
-                                            repeatField: "phone",
-                                            placeholder: `Telefone ${index + 1}`,
-                                        })}
+                                    ${renderPhoneControl({
+                                        value: String(contact.phone || ""),
+                                        repeatField: "phone",
+                                        placeholder: `Telefone ${index + 1}`,
+                                    })}
                                 </div>
                                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
                             </div>
@@ -1661,7 +1592,6 @@ function contactsInput(entry, desired, meta = {}) {
                     )
                     .join("")}
             </div>
-            ${isFourPTouchPhonebook ? '<div class="small text-secondary mt-2">4P Touch: até 5 contactos. Nome até 10 caracteres e telefone ASCII até 20 caracteres.</div>' : ""}
         </div>`;
 }
 
