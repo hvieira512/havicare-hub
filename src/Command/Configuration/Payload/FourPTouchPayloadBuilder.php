@@ -32,7 +32,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'sleepTime' => [self::timeRange($payload['range'] ?? null, 'range')],
             'fallDownAlert' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
-                self::boolInt($payload['callCenterOnFall'] ?? null, 'callCenterOnFall'),
+                self::boolInt($payload['callCenterOnFall'] ?? false, 'callCenterOnFall'),
             ],
             'fallDownSensitivity' => [self::fallDownSensitivity($payload)],
             'bodyTemperatureInterval' => [

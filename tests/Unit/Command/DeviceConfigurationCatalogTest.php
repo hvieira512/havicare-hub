@@ -670,6 +670,16 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertStringContainsString('FALLDOWN,1,0', $wire);
     }
 
+    public function testFourPTouchFallDownAlertDefaultsCallCenterOffWhenMissing(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fallDownAlert', [
+            'enabled' => true,
+        ]);
+
+        self::assertSame('FALLDOWN', $payload['command']);
+        self::assertSame(['fields' => ['1', '0']], $payload['payload']);
+    }
+
     public function testFourPTouchHealthAutoMeasurementBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'healthAutoMeasurement', [

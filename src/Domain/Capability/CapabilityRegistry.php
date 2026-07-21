@@ -185,7 +185,7 @@ final class CapabilityRegistry
             'fall_detection' => ['fallDetection' => ['enabled' => self::requireBoolLikeField($value, 'enabled')]],
             'fall_sensitivity' => ['fallSensitivity' => ['sensitivity' => self::requireIntField($value, 'sensitivity')]],
             'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            'auto_vitals_interval' => ['autoHealthMeasurement' => self::requireObjectValue($value, 'autoHealthMeasurement')],
+            'auto_vitals_interval' => ['healthAutoMeasurement' => self::requireObjectValue($value, 'healthAutoMeasurement')],
             default => throw new \InvalidArgumentException("Unsupported vivistar-iw capability {$genericKey}"),
         };
     }
