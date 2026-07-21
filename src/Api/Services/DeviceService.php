@@ -447,7 +447,10 @@ class DeviceService
                     continue;
                 }
 
-                $normalized = $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
+                $normalized = $this->publicConfigurationValueForGenericKey(
+                    $genericKey,
+                    $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired)
+                );
                 if ($normalized === null) {
                     continue;
                 }
@@ -1646,7 +1649,10 @@ class DeviceService
                 if (is_array($value) && array_key_exists('supported', $value) && !array_key_exists('value', $value)) {
                     continue;
                 }
-                $flattened["{$section}.{$key}"] = $this->extractCapabilityValue($value);
+                $flattened["{$section}.{$key}"] = $this->publicConfigurationValueForGenericKey(
+                    $key,
+                    $this->extractCapabilityValue($value)
+                );
             }
         }
 
@@ -1787,6 +1793,21 @@ class DeviceService
     private function normalizeCapabilityValue(string $genericKey, string $nativeKey, array $desired): mixed
     {
         return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired);
+    }
+
+    private function publicConfigurationValueForGenericKey(string $genericKey, mixed $value): mixed
+    {
+        return match ($genericKey) {
+            'sos_contacts' => is_array($value)
+                ? (array_key_exists('numbers', $value) ? array_values($value['numbers']) : array_values($value))
+                : [],
+            'call_whitelist' => is_array($value)
+                ? (array_key_exists('numbers', $value)
+                    ? array_values($value['numbers'])
+                    : (array_is_list($value) ? array_values($value) : $value))
+                : $value,
+            default => $value,
+        };
     }
 
     /**

@@ -81,6 +81,7 @@ const CAPABILITY_LABEL_TRANSLATIONS = {
     sos_contacts: "Contactos SOS",
     phonebook: "Contactos",
     call_whitelist: "Chamadas permitidas",
+    whitelist_enabled: "Lista branca ativa",
     monitor_number: "Número de monitorização",
     alarm_clock: "Alarmes",
     medication_reminders: "Lembretes de medicação",

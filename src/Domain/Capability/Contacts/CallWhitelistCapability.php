@@ -9,11 +9,12 @@ use Hub\Domain\Capability\CapabilityHelpers;
  * Generic call whitelist capability.
  *
  * Public API shape:
- * - GET /api/devices/{imei}: value is a list of phone numbers, with optional _meta.limit
- * - PATCH /api/devices/{imei}/configurations: send { numbers: [...] }
- *   An empty array is valid and clears the whitelist entries.
+ * - GET /api/devices/{imei}: Vivistar returns contacts as [{name, phone}], 4P Touch returns a list of phone numbers.
+ * - PATCH /api/devices/{imei}/configurations:
+ *   - Vivistar accepts {contacts:[{name, phone}]}
+ *   - 4P Touch accepts a flat list of phone numbers
  *
- * The hub translates that generic contract to each protocol's native command(s).
+ * The enable/disable switch is exposed separately as whitelist_enabled.
  */
 final class CallWhitelistCapability implements CapabilityContract
 {
@@ -54,7 +55,7 @@ final class CallWhitelistCapability implements CapabilityContract
     public function toNative(string $protocol, mixed $value): array
     {
         return match ($protocol) {
-            'vivistar-iw' => ['whitelistSwitch' => ['enabled' => self::requireBoolLikeField($value, 'enabled')]],
+            'vivistar-iw' => ['call_whitelist' => self::encodeVivistarContacts($value)],
             'four-p-touch' => $this->fourPTouch->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist"),
         };
@@ -62,38 +63,77 @@ final class CallWhitelistCapability implements CapabilityContract
 
     public function fromNative(string $nativeKey, array $desired): mixed
     {
-        if ($nativeKey === 'whitelistSwitch') {
-            return ['enabled' => (bool)($desired['enabled'] ?? false)];
+        if ($nativeKey === 'call_whitelist') {
+            if (isset($desired['fields']) && is_array($desired['fields'])) {
+                $contacts = [];
+                foreach ($desired['fields'] as $field) {
+                    $field = trim((string)$field);
+                    if ($field === '') {
+                        continue;
+                    }
+                    $separator = strpos($field, '|');
+                    $name = $separator !== false ? substr($field, 0, $separator) : '';
+                    $phone = $separator !== false ? substr($field, $separator + 1) : $field;
+                    $name = trim((string)$name);
+                    $phone = trim((string)$phone);
+                    if ($phone !== '') {
+                        $contacts[] = [
+                            'name' => $name,
+                            'phone' => $phone,
+                        ];
+                    }
+                }
+
+                return self::normalizeContactsList($contacts);
+            }
+
+            if (isset($desired['contacts']) && is_array($desired['contacts'])) {
+                return self::normalizeContactsList($desired['contacts']);
+            }
+
+            if (isset($desired['numbers']) && is_array($desired['numbers'])) {
+                return self::normalizeContactsList(array_map(
+                    static fn(mixed $phone): array => ['name' => '', 'phone' => $phone],
+                    $desired['numbers']
+                ));
+            }
+
+            if (array_is_list($desired)) {
+                return self::normalizeContactsList($desired);
+            }
         }
 
         if ($nativeKey === 'whitelistGroup1' || $nativeKey === 'whitelistGroup2') {
             return $this->fourPTouch->fromNative($desired);
         }
 
-        return ['numbers' => self::stringList($desired['numbers'] ?? [])];
+        return [];
     }
 
     public function defaultValue(string $protocol): mixed
     {
         return match ($protocol) {
-            'vivistar-iw' => ['enabled' => true],
+            'vivistar-iw' => [['name' => '', 'phone' => '']],
             'four-p-touch' => $this->fourPTouch->defaultValue(),
-            default => ['enabled' => true],
+            default => [],
         };
     }
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
-        return $protocol === 'four-p-touch'
-            ? $this->fourPTouch->meta($accumulatedMeta)
-            : $accumulatedMeta;
+        if ($protocol === 'four-p-touch') {
+            return $this->fourPTouch->meta($accumulatedMeta);
+        }
+
+        return array_replace_recursive(
+            ['limit' => 10, 'name' => ['maxLength' => 10], 'phone' => ['maxLength' => 20, 'asciiOnly' => true]],
+            $accumulatedMeta,
+        );
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed
     {
-        return is_array($existing) && is_array($incoming) && array_key_exists('numbers', $incoming)
-            ? $this->fourPTouch->merge($existing, $incoming)
-            : self::mergeAssociativeValues($existing, $incoming, ['numbers']);
+        return self::mergeListValues($existing, $incoming);
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
@@ -102,13 +142,13 @@ final class CallWhitelistCapability implements CapabilityContract
             return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
         }
 
-        return ['value' => $value, '_meta' => $meta, '_type' => $this->key()];
+        return ['value' => self::normalizeContactsList($value), '_meta' => $this->meta($protocol, $meta), '_type' => $this->key()];
     }
 
     public function nativeKeyForProtocol(string $protocol): ?string
     {
         return match ($protocol) {
-            'vivistar-iw' => 'whitelistSwitch',
+            'vivistar-iw' => 'call_whitelist',
             'four-p-touch' => null, // splits into whitelistGroup1/2
             default => null,
         };
@@ -117,6 +157,91 @@ final class CallWhitelistCapability implements CapabilityContract
     public function resolveConfigKey(string $protocol, string $key): ?string
     {
         return $key;
+    }
+
+    /**
+     * @return list<array{name: string, phone: string}>
+     */
+    private static function normalizeContactsList(mixed $value): array
+    {
+        $items = [];
+        if (is_array($value)) {
+            if (isset($value['contacts']) && is_array($value['contacts'])) {
+                $items = $value['contacts'];
+            } elseif (isset($value['numbers']) && is_array($value['numbers'])) {
+                $items = $value['numbers'];
+            } elseif (array_is_list($value)) {
+                $items = $value;
+            }
+        }
+
+        $contacts = [];
+        $seenPhones = [];
+        foreach ($items as $item) {
+            $contact = self::normalizeContactItem($item);
+            if ($contact === null) {
+                continue;
+            }
+            if (in_array($contact['phone'], $seenPhones, true)) {
+                throw new \InvalidArgumentException('contacts must not contain repeated phone values');
+            }
+            $seenPhones[] = $contact['phone'];
+            $contacts[] = $contact;
+        }
+
+        return $contacts;
+    }
+
+    /**
+     * @return array{name: string, phone: string}|null
+     */
+    private static function normalizeContactItem(mixed $item): ?array
+    {
+        if (is_array($item)) {
+            $name = trim((string)($item['name'] ?? ''));
+            $phone = trim((string)($item['phone'] ?? ''));
+            if ($name === '' && $phone === '') {
+                return null;
+            }
+            if ($phone === '') {
+                throw new \InvalidArgumentException('phone is required');
+            }
+
+            return ['name' => $name, 'phone' => $phone];
+        }
+
+        $field = trim((string)$item);
+        if ($field === '') {
+            return null;
+        }
+
+        $separator = strpos($field, '|');
+        $name = $separator !== false ? trim((string)substr($field, 0, $separator)) : '';
+        $phone = $separator !== false ? trim((string)substr($field, $separator + 1)) : $field;
+        if ($phone === '') {
+            return null;
+        }
+
+        return ['name' => $name, 'phone' => $phone];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function encodeVivistarContacts(mixed $value): array
+    {
+        $contacts = self::normalizeContactsList($value);
+        $fields = [];
+        foreach (array_slice($contacts, 0, 10) as $contact) {
+            $name = trim((string)($contact['name'] ?? ''));
+            $phone = trim((string)($contact['phone'] ?? ''));
+            if ($phone === '') {
+                continue;
+            }
+            $fields[] = $name !== '' ? "{$name}|{$phone}" : "|{$phone}";
+        }
+
+        return array_pad($fields, 10, '');
     }
 
 }

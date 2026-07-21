@@ -11,7 +11,7 @@ final class GenericModelCapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [68, 'daba3719369c7f43083e3dc3c92028a763a9e07298ff712a4a63301f22549ae8'],
+            'watch' => [69, 'c23e2717477b9ccaca5790fbfbe58cafb9c9d6475c1b59b7de8eb7584397edcb'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
         ];
@@ -53,6 +53,7 @@ final class GenericModelCapabilityCatalogTest extends TestCase
     {
         self::assertSame('sos_contacts', FourPTouchGenericHandler::nativeKeyToGenericKey('sosNumber1'));
         self::assertSame('call_whitelist', FourPTouchGenericHandler::nativeKeyToGenericKey('whitelistGroup1'));
+        self::assertSame('whitelist_enabled', FourPTouchGenericHandler::nativeKeyToGenericKey('whitelistSwitch'));
         self::assertSame('alarm_clock', FourPTouchGenericHandler::nativeKeyToGenericKey('alarmClock'));
         self::assertSame('alarmClock', FourPTouchGenericHandler::publicKeyToNativeKey('alarm_clock'));
         self::assertSame('uploadInterval', FourPTouchGenericHandler::publicKeyToNativeKey('location_reporting_interval'));

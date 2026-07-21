@@ -20,7 +20,9 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
 
     public function toNative(mixed $value): array
     {
-        $numbers = is_array($value) ? ($value['numbers'] ?? []) : [];
+        $numbers = is_array($value) && array_key_exists('numbers', $value)
+            ? $value['numbers']
+            : $value;
         return $this->split(self::requireUniqueStringListValue($numbers, 'numbers'));
     }
 
@@ -28,15 +30,15 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
     {
         $numbers = self::normalizeNumbersValue($desired);
         if ($numbers !== []) {
-            return ['numbers' => $numbers];
+            return $numbers;
         }
 
-        return ['numbers' => []];
+        return [];
     }
 
     public function defaultValue(): mixed
     {
-        return ['numbers' => ['', '', '']];
+        return ['', '', ''];
     }
 
     public function meta(array $accumulatedMeta = []): array

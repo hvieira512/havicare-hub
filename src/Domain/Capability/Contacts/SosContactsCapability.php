@@ -10,7 +10,7 @@ use Hub\Domain\Capability\CapabilityHelpers;
  *
  * Public API shape:
  * - GET /api/devices/{imei}: value is a list of phone numbers, with optional _meta.limit
- * - PATCH /api/devices/{imei}/configurations: send { numbers: [...] }
+ * - PATCH /api/devices/{imei}/configurations: send a flat list of phone numbers.
  *   An empty array is valid and clears all saved SOS contacts.
  *
  * The hub translates that generic contract to each protocol's native command(s).
@@ -53,7 +53,9 @@ final class SosContactsCapability implements CapabilityContract
 
     public function toNative(string $protocol, mixed $value): array
     {
-        $numbers = is_array($value) ? ($value['numbers'] ?? []) : [];
+        $numbers = is_array($value) && array_key_exists('numbers', $value)
+            ? $value['numbers']
+            : $value;
         return match ($protocol) {
             'vivistar-iw' => ['sosContacts' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
             'wonlex-json' => ['SOSNumber' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
@@ -65,26 +67,26 @@ final class SosContactsCapability implements CapabilityContract
     public function fromNative(string $nativeKey, array $desired): mixed
     {
         if (isset($desired['numbers']) && is_array($desired['numbers'])) {
-            return ['numbers' => self::stringList($desired['numbers'])];
+            return self::stringList($desired['numbers']);
         }
         if (isset($desired['phone'])) {
-            return ['numbers' => self::stringList([$desired['phone']])];
+            return self::stringList([$desired['phone']]);
         }
         if ($nativeKey === 'SOSNumber' && isset($desired['SOSNumber']) && is_array($desired['SOSNumber'])) {
-            return ['numbers' => self::stringList($desired['SOSNumber'])];
+            return self::stringList($desired['SOSNumber']);
         }
         if ($nativeKey === 'sosNumber1' || $nativeKey === 'sosNumber2' || $nativeKey === 'sosNumber3') {
             return $this->fourPTouch->fromNative($desired);
         }
 
-        return ['numbers' => []];
+        return [];
     }
 
     public function defaultValue(string $protocol): mixed
     {
         return match ($protocol) {
             'four-p-touch' => $this->fourPTouch->defaultValue(),
-            default => ['numbers' => ['', '', '']],
+            default => ['', '', ''],
         };
     }
 
@@ -97,9 +99,7 @@ final class SosContactsCapability implements CapabilityContract
 
     public function merge(mixed $existing, mixed $incoming): mixed
     {
-        return is_array($existing) && is_array($incoming) && array_key_exists('numbers', $incoming)
-            ? $this->fourPTouch->merge($existing, $incoming)
-            : self::mergeAssociativeValues($existing, $incoming, ['numbers']);
+        return self::mergeListValues($existing, $incoming);
     }
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
@@ -108,12 +108,7 @@ final class SosContactsCapability implements CapabilityContract
             return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
         }
 
-        $normalizedValue = $value;
-        if (is_array($value) && array_key_exists('numbers', $value)) {
-            $normalizedValue = self::stringList(is_array($value['numbers']) ? $value['numbers'] : []);
-        }
-
-        return ['value' => $normalizedValue, '_meta' => $meta, '_type' => $this->key()];
+        return ['value' => is_array($value) ? self::stringList($value) : [], '_meta' => $meta, '_type' => $this->key()];
     }
 
     public function nativeKeyForProtocol(string $protocol): ?string

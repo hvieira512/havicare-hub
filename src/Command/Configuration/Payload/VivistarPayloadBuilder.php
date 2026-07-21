@@ -12,12 +12,12 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
 
         $fields = match ($key) {
             'sosContacts' => self::stringList($payload['numbers'] ?? [], 3, 'numbers'),
-            'phonebook' => self::phonebook($payload['contacts'] ?? []),
+            'call_whitelist' => self::callWhitelist($payload),
             'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
             'workingMode' => self::workingMode($payload),
             'fallDetection' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'fallSensitivity' => [self::rangeInt($payload['sensitivity'] ?? null, 1, 3, 'sensitivity')],
-            'whitelistSwitch' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
+            'whitelist_enabled' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'reminders' => self::reminders($payload),
             'autoHealthMeasurement' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
@@ -48,25 +48,30 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
         return [8, $interval, self::boolInt($payload['gpsEnabled'] ?? null, 'gpsEnabled')];
     }
 
-    private static function phonebook(mixed $contacts): array
+    private static function callWhitelist(array $payload): array
     {
+        $contacts = $payload['contacts'] ?? $payload['numbers'] ?? $payload;
         if (!is_array($contacts)) {
             throw new \InvalidArgumentException('contacts must be an array');
         }
 
         $fields = [];
         foreach (array_slice($contacts, 0, 10) as $contact) {
-            if (!is_array($contact)) {
-                throw new \InvalidArgumentException('each contact must be an object');
+            if (is_array($contact)) {
+                $name = trim((string)($contact['name'] ?? ''));
+                $phone = trim((string)($contact['phone'] ?? ''));
+                if ($phone === '') {
+                    throw new \InvalidArgumentException('phone is required');
+                }
+                $fields[] = $name !== '' ? "{$name}|{$phone}" : "|{$phone}";
+                continue;
             }
-            $phone = trim((string)($contact['phone'] ?? ''));
+            $phone = trim((string)$contact);
             if ($phone === '') {
                 $fields[] = '';
                 continue;
             }
-            $name = (string)($contact['name'] ?? '');
-            $encodedName = trim((string)($contact['encodedName'] ?? ''));
-            $fields[] = ($encodedName !== '' ? $encodedName : self::utf16Hex($name)) . '|' . $phone;
+            $fields[] = '|' . $phone;
         }
 
         return array_pad($fields, 10, '');

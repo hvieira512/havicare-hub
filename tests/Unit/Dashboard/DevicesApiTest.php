@@ -123,36 +123,27 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [
             'heart_rate',
             'location',
-            'phonebook',
             'call_whitelist',
+            'whitelist_enabled',
             'device_password',
         ]);
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
-            'phonebook',
+            'call_whitelist',
             'vivistar',
             'Vivistar',
             'L08 Pro',
-            'PB',
-            ['contacts' => [['name' => 'Ana', 'phone' => '+351911111111']]]
+            'CALL_WHITELIST',
+            ['fields' => ['|+351922222222', '|+351933333333']]
         );
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
-            'whitelistSwitch',
+            'whitelist_enabled',
             'vivistar',
             'Vivistar',
             'L08 Pro',
-            'WHITELIST_SWITCH',
+            'WHITELIST_ENABLED',
             ['enabled' => true]
-        );
-        $db->deviceConfigurations->saveDesired(
-            '861265061009822',
-            'whitelistGroup1',
-            'vivistar',
-            'Vivistar',
-            'L08 Pro',
-            'WHITELIST_GROUP_1',
-            ['numbers' => ['+351922222222', '+351933333333']]
         );
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
@@ -176,23 +167,25 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertArrayNotHasKey('blood_pressure', $response['capabilities']['telemetry'] ?? []);
         self::assertSame(
-            [['name' => 'Ana', 'phone' => '+351911111111']],
-            $response['capabilities']['contacts']['phonebook']['value'] ?? null
+            [
+                ['name' => '', 'phone' => '+351922222222'],
+                ['name' => '', 'phone' => '+351933333333'],
+            ],
+            $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
-        self::assertSame(5, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
-        self::assertTrue($response['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
-        self::assertSame(
-            ['+351922222222', '+351933333333'],
-            $response['capabilities']['contacts']['call_whitelist']['numbers'] ?? null
-        );
+        self::assertSame(10, $response['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null);
+        self::assertSame(10, $response['capabilities']['contacts']['call_whitelist']['_meta']['name']['maxLength'] ?? null);
+        self::assertSame(20, $response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
+        self::assertTrue($response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
+        self::assertTrue($response['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
         self::assertSame(
             ['password' => '2468'],
             $response['capabilities']['settings_system']['device_password'] ?? null
         );
         self::assertSame([], $response['capabilities']['health'] ?? null);
         self::assertSame([], $response['capabilities']['alarms'] ?? null);
-        self::assertSame('never_reported', $response['pending']['contacts']['phonebook']['status'] ?? null);
         self::assertSame('never_reported', $response['pending']['contacts']['call_whitelist']['status'] ?? null);
+        self::assertSame('never_reported', $response['pending']['contacts']['whitelist_enabled']['status'] ?? null);
         self::assertSame('never_reported', $response['pending']['settings_system']['device_password']['status'] ?? null);
         self::assertSame([], $response['transportPending'] ?? null);
     }
@@ -362,7 +355,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->show('637507597567372');
 
         self::assertSame(
-            ['numbers' => ['111', '222', '333', '444', '555', '666', '777']],
+            ['111', '222', '333', '444', '555', '666', '777'],
             $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
         self::assertSame(
@@ -958,7 +951,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'capabilities' => [
                 'contacts' => [
                     'sos_contacts' => [
-                        'numbers' => ['+351938854803'],
+                        '+351938854803',
                     ],
                 ],
             ],
@@ -985,7 +978,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'capabilities' => [
                 'contacts' => [
                     'sos_contacts' => [
-                        'numbers' => ['+351938854803', '+351938854803'],
+                        '+351938854803',
+                        '+351938854803',
                     ],
                 ],
             ],
@@ -1006,7 +1000,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'capabilities' => [
                 'contacts' => [
                     'call_whitelist' => [
-                        'numbers' => ['+351922222222', '+351922222222'],
+                        '+351922222222',
+                        '+351922222222',
                     ],
                 ],
             ],
@@ -1504,14 +1499,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->updateConfigurations('637507597567372', json_encode([
             'configurations' => [
                 'call_whitelist' => [
-                    'numbers' => [
-                        '+351911111111',
-                        '+351922222222',
-                        '+351933333333',
-                        '+351944444444',
-                        '+351955555555',
-                        '+351966666666',
-                    ],
+                    '+351911111111',
+                    '+351922222222',
+                    '+351933333333',
+                    '+351944444444',
+                    '+351955555555',
+                    '+351966666666',
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -1653,9 +1646,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
             'configurations' => [
-                'sos_contacts' => [
-                    'numbers' => [],
-                ],
+                'sos_contacts' => [],
             ],
         ], JSON_THROW_ON_ERROR));
 
@@ -1884,14 +1875,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'capabilities' => [
                 'contacts' => [
                     'call_whitelist' => [
-                        'numbers' => [
-                            '111',
-                            '222',
-                            '333',
-                            '444',
-                            '555',
-                            '666',
-                        ],
+                        '111',
+                        '222',
+                        '333',
+                        '444',
+                        '555',
+                        '666',
                     ],
                 ],
             ],
@@ -1903,9 +1892,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('WHITELIST1', $submitted[0]['bytes']);
         self::assertStringContainsString('WHITELIST2', $submitted[1]['bytes']);
         self::assertSame(
-            [
-                'numbers' => ['111', '222', '333', '444', '555', '666'],
-            ],
+            ['111', '222', '333', '444', '555', '666'],
             $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
         $savedRows = $db->deviceConfigurations->allForImei('637507597567372');

@@ -60,7 +60,8 @@ const CONFIG_INPUT_RENDERERS = {
     wonlexHeartRateRange: (_entry, desired) => wonlexHeartRateRangeInput(desired),
     list: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
     sos_contacts: (entry, desired, meta) => sosContactsInput(entry, desired, meta),
-    call_whitelist: (entry, desired) => callWhitelistInput(entry, desired),
+    call_whitelist: (entry, desired, meta) => callWhitelistInput(entry, desired, meta),
+    whitelist_enabled: (entry, desired) => toggleInput(entry, desired),
     contacts: (entry, desired, meta) => contactsInput(entry, desired, meta),
     alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
     alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
@@ -171,11 +172,14 @@ const CONFIG_INPUT_READERS = {
     },
     sos_contacts: (section) => {
         const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-        return {numbers: readUniquePhoneArray(section, "numbers", "Contactos SOS").slice(0, limit)};
+        return readUniquePhoneArray(section, "numbers", "Contactos SOS").slice(0, limit);
     },
     call_whitelist: (section) => {
         const limit = parseInt(section.dataset.configLimit || "10", 10) || 10;
-        return {numbers: readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit)};
+        if ((section.dataset.configProtocol || "") === "vivistar-iw") {
+            return {contacts: readContacts(section).slice(0, limit)};
+        }
+        return readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit);
     },
     contacts: (section) => ({contacts: readContacts(section)}),
     alarm_clock: (section) => readAlarmClock(section),
@@ -216,8 +220,11 @@ const CONFIG_INPUT_DEFAULTS = {
         exerciseRemindValue: 140,
     }),
     list: () => ({numbers: ["", "", ""]}),
-    sos_contacts: () => ({numbers: ["", "", ""]}),
-    call_whitelist: () => ({numbers: ["", "", "", "", "", "", "", "", "", ""]}),
+    sos_contacts: () => ["", "", ""],
+    call_whitelist: (entry, protocol) => protocol === "vivistar-iw"
+        ? {contacts: [{name: "", phone: ""}]}
+        : ["", "", "", "", "", "", "", "", "", ""],
+    whitelist_enabled: () => ({enabled: true}),
     contacts: () => ({contacts: [{name: "", phone: ""}]}),
     alarm_clock: () => ({items: []}),
     alarms: () => ({alarms: []}),
@@ -242,7 +249,7 @@ const CONFIG_INPUT_HELP = {
     alarms: () => "até 3 alarmes",
     requestAction: () => "sem parâmetros",
     soundProfile: () => "4 modos",
-    whitelistSwitch: () => "ativa os contactos da lista telefónica do BP14",
+    whitelist_enabled: () => "ativa ou desativa a lista branca",
     sos_contacts: () => "",
     call_whitelist: () => "",
 };
@@ -253,6 +260,7 @@ const CONFIG_INPUT_LABEL = {
     alarm_clock: "Alarmes",
     sos_contacts: "Contactos SOS",
     call_whitelist: "Lista branca",
+    whitelist_enabled: "Lista branca ativa",
 };
 
 export async function catalogForProtocol(protocol) {
@@ -441,20 +449,21 @@ export function renderConfigSection(
     stored = null,
 ) {
     const capability = capabilityForEntry(entry, capabilities);
-    const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null);
+    const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null, protocol);
     const meta = capability?._meta || {};
     const help = configHelp(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
     const configSectionName = entry.configSectionName || entry.configSection || "";
     const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
-    const phonebookNameMaxLength = String(entry.key || "") === "phonebook"
+    const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
+    const phonebookNameMaxLength = isPhonebookLike
         ? parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0
         : 0;
-    const phonebookPhoneMaxLength = String(entry.key || "") === "phonebook"
+    const phonebookPhoneMaxLength = isPhonebookLike
         ? parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0
         : 0;
-    const phonebookMetaAttrs = String(entry.key || "") === "phonebook"
+    const phonebookMetaAttrs = isPhonebookLike
         ? `${phonebookNameMaxLength > 0 ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"` : ""}${phonebookPhoneMaxLength > 0 ? ` data-phonebook-phone-max-length="${esc(String(phonebookPhoneMaxLength))}"` : ""}`
         : "";
     const details = [
@@ -533,17 +542,17 @@ export function readConfigPayload(section) {
     return CONFIG_INPUT_READERS[input]?.(section) || readJson(section);
 }
 
-export function defaultConfigPayload(entry) {
+export function defaultConfigPayload(entry, protocol = "") {
     const input = entry.input || "json";
-    return CONFIG_INPUT_DEFAULTS[input]?.(entry) || {};
+    return CONFIG_INPUT_DEFAULTS[input]?.(entry, protocol) || {};
 }
 
-function normalizeDesired(entry, desired, capabilityDesired = null) {
+function normalizeDesired(entry, desired, capabilityDesired = null, protocol = "") {
     const effectiveDesired = desired ?? capabilityDesired;
     if (effectiveDesired && Object.keys(effectiveDesired).length) {
         return extractCapabilityValue(effectiveDesired);
     }
-    return defaultConfigPayload(entry);
+    return defaultConfigPayload(entry, protocol);
 }
 
 function normalizeConfigEntry(entry) {
@@ -1547,7 +1556,11 @@ function sosContactsInput(entry, desired, meta = {}) {
     });
 }
 
-function callWhitelistInput(entry, desired) {
+function callWhitelistInput(entry, desired, meta = {}) {
+    if ((meta.protocol || "") === "vivistar-iw") {
+        return contactsInput(entry, desired, meta);
+    }
+
     return phoneRepeaterInput(entry, desired, {
         kind: "call_whitelist",
         limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
@@ -1569,6 +1582,7 @@ function contactsInput(entry, desired, meta = {}) {
             : [];
     const rows = contacts.length ? contacts.slice(0, limit) : [{}];
     const phonebookConstraints = protocolPhonebookConstraints(meta.protocol || "");
+    const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
     const nameMaxLengthValue = Math.max(
         0,
         parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0,
@@ -1585,7 +1599,7 @@ function contactsInput(entry, desired, meta = {}) {
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addContactRow">Adicionar</button>
             </div>
             <div class="small text-secondary mb-2">${limit} contactos máximos</div>
-            <div class="vstack gap-2" data-repeat-limit="${limit}"${nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
+            <div class="vstack gap-2" data-repeat-limit="${limit}"${isPhonebookLike && nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${isPhonebookLike && phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
                 ${rows
                     .map(
                         (contact, index) => `

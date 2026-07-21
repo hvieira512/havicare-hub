@@ -32,6 +32,32 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(3, $config['limit'] ?? null);
     }
 
+    public function testVivistarCallWhitelistAndSwitchAreSeparated(): void
+    {
+        $callWhitelist = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'call_whitelist');
+        self::assertIsArray($callWhitelist);
+        self::assertSame('call_whitelist', $callWhitelist['key'] ?? null);
+        self::assertSame('contacts', $callWhitelist['input'] ?? null);
+        self::assertSame(10, $callWhitelist['limit'] ?? null);
+
+        $switch = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'whitelist_enabled');
+        self::assertIsArray($switch);
+        self::assertSame('whitelist_enabled', $switch['key'] ?? null);
+        self::assertSame('toggle', $switch['input'] ?? null);
+    }
+
+    public function testVivistarCallWhitelistBuildsNamePhonePayload(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'call_whitelist', [
+            'contacts' => [
+                ['name' => 'HAVICARE', 'phone' => '+351278710140'],
+            ],
+        ]);
+
+        self::assertSame('BP14', $payload['command']);
+        self::assertSame(['HAVICARE|+351278710140', '', '', '', '', '', '', '', '', ''], $payload['payload']['fields'] ?? []);
+    }
+
     public function testVivistarPushMessageBuildsBp40WithUtf16Hex(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'pushMessage', ['message' => 'are you ok?']);
@@ -150,9 +176,16 @@ final class DeviceConfigurationCatalogTest extends TestCase
     {
         self::assertSame('alarm_clock', GenericModelCapabilityCatalog::mapConfigurationKey('alarm_clock'));
 
-        $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'reminders');
+        self::assertSame('call_whitelist', GenericModelCapabilityCatalog::mapConfigurationKey('call_whitelist'));
+        self::assertSame('whitelist_enabled', GenericModelCapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
+
+        $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'call_whitelist');
         self::assertIsArray($config);
-        self::assertSame('reminders', $config['key'] ?? null);
+        self::assertSame('call_whitelist', $config['key'] ?? null);
+
+        $switch = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'whitelist_enabled');
+        self::assertIsArray($switch);
+        self::assertSame('whitelist_enabled', $switch['key'] ?? null);
 
         $fourPTouch = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'alarmClock');
         self::assertIsArray($fourPTouch);

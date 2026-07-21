@@ -276,6 +276,7 @@ final class GenericModelCapabilityCatalog
             'wonlexHeartRateHighRemind' => 'heart_rate_high_alert',
             'wonlexHeartRateLowRemind' => 'heart_rate_low_alert',
             'phonebook' => 'phonebook',
+            'call_whitelist' => 'call_whitelist',
             'autoHealthMeasurement' => 'auto_vitals_interval',
             'wonlexHeartRateInterval' => 'heart_rate_measurement_interval',
             'wonlexBPInterval' => 'blood_pressure_measurement_interval',
@@ -298,6 +299,7 @@ final class GenericModelCapabilityCatalog
             'workingMode' => 'working_mode',
             'dnDevBindStatus' => 'device_binding',
             'wonlexCallInLimitSwitch' => 'call_in_restriction',
+            'whitelistSwitch' => 'whitelist_enabled',
             'deviceConfig' => 'device_settings_sync',
             default => null,
         };

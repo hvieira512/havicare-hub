@@ -20,17 +20,21 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
 
     public function toNative(mixed $value): array
     {
-        return $this->split(self::requireUniqueStringListValue(is_array($value) ? ($value['numbers'] ?? []) : [], 'numbers'));
+        $numbers = is_array($value) && array_key_exists('numbers', $value)
+            ? $value['numbers']
+            : $value;
+
+        return $this->split(self::requireUniqueStringListValue($numbers, 'numbers'));
     }
 
     public function fromNative(array $desired): mixed
     {
-        return ['numbers' => self::normalizeNumbersValue($desired)];
+        return self::normalizeNumbersValue($desired);
     }
 
     public function defaultValue(): mixed
     {
-        return ['numbers' => ['', '', '', '', '', '', '', '', '', '']];
+        return [];
     }
 
     public function meta(array $accumulatedMeta = []): array
@@ -45,8 +49,13 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
+        $normalizedValue = $value;
+        if (is_array($value) && array_key_exists('numbers', $value)) {
+            $normalizedValue = self::stringList(is_array($value['numbers']) ? $value['numbers'] : []);
+        }
+
         return [
-            'value' => $value,
+            'value' => $normalizedValue,
             '_meta' => $this->meta($meta),
             '_type' => 'call_whitelist',
         ];

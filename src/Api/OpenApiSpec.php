@@ -1213,6 +1213,10 @@ class OpenApiSpec
                                 'value' => [],
                                 '_meta' => ['limit' => 10],
                             ],
+                            'whitelist_enabled' => [
+                                'value' => ['enabled' => true],
+                                '_meta' => [],
+                            ],
                             'fall_sensitivity' => [
                                 'value' => ['sensitivity' => 2],
                                 '_meta' => [
@@ -1283,7 +1287,7 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. For list-shaped capabilities, an empty array is valid and clears the saved value. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For phonebook, send {contacts:[{name,phone}]} and let the hub fan out to native commands.',
+                                'description' => 'Map of generic capability keys to desired payloads. For list-shaped capabilities, an empty array is valid and clears the saved value. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For phonebook, send {contacts:[{name,phone}]} and let the hub fan out to native commands. For sos_contacts, send flat arrays of phone numbers. For Vivistar call_whitelist, send {contacts:[{name,phone}]} because BP14 is a whitelist phonebook; for 4P Touch call_whitelist, send flat arrays of phone numbers. Use whitelist_enabled as the separate on/off switch for whitelist transport.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
                                     'phonebook' => ['$ref' => '#/components/schemas/PhonebookConfiguration'],
@@ -1302,7 +1306,9 @@ class OpenApiSpec
                                             ],
                                         ],
                                     ],
-                                    'sos_contacts' => ['numbers' => ['+351278710140']],
+                                    'sos_contacts' => ['+351278710140'],
+                                    'call_whitelist' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],
+                                    'whitelist_enabled' => ['enabled' => true],
                                     'workingMode' => ['mode' => 3],
                                 ],
                             ],

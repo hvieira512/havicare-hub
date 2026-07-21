@@ -75,6 +75,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 6, 'label' => 'Sab'],
                 ],
             ]),
+            $entry('whitelistSwitch', 'WHITELISTSWITCH', 'Lista branca ativa', 'toggle', ['enabled'], ['WHITELISTSWITCH'], 'contacts', 35),
             $entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55, 5),
             $entry('soundProfile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [

@@ -9,6 +9,7 @@ use Hub\Domain\Capability\AlarmClock\Vivistar as VivistarAlarmClock;
 use Hub\Domain\Capability\Contacts\CallWhitelistCapability;
 use Hub\Domain\Capability\Contacts\PhonebookCapability;
 use Hub\Domain\Capability\Contacts\SosContactsCapability;
+use Hub\Domain\Capability\Contacts\WhitelistEnabledCapability;
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 use Hub\Domain\GenericModelCapabilityCatalog;
@@ -42,6 +43,7 @@ final class CapabilityRegistry
 
         $this->register(new SosContactsCapability());
         $this->register(new CallWhitelistCapability());
+        $this->register(new WhitelistEnabledCapability());
         $this->register(new PhonebookCapability());
         $this->register(new MedicationRemindersCapability());
     }

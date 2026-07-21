@@ -46,6 +46,7 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'phonebook', 'label' => 'Phonebook', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'push_message', 'label' => 'Push message to watch', 'sortOrder' => 5, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'call_whitelist', 'label' => 'Call whitelist', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'whitelist_enabled', 'label' => 'Whitelist enabled', 'sortOrder' => 35, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'monitor_number', 'label' => 'Monitor number', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'SOS contacts', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'alarm_clock', 'label' => 'Alarm clock', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

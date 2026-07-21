@@ -41,7 +41,7 @@ final class PhonebookCapability implements CapabilityContract
 
     public function supportedProtocols(): array
     {
-        return ['vivistar-iw', 'wonlex-json', 'four-p-touch'];
+        return ['wonlex-json', 'four-p-touch'];
     }
 
     public function toNative(string $protocol, mixed $value): array

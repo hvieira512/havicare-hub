@@ -581,36 +581,27 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [
             'heart_rate',
             'location',
-            'phonebook',
             'call_whitelist',
+            'whitelist_enabled',
             'device_password',
         ]);
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
-            'phonebook',
+            'call_whitelist',
             'vivistar',
             'Vivistar',
             'L08 Pro',
-            'PB',
-            ['contacts' => [['name' => 'Ana', 'phone' => '+351911111111']]]
+            'CALL_WHITELIST',
+            ['fields' => ['|+351922222222']]
         );
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
-            'whitelistSwitch',
+            'whitelist_enabled',
             'vivistar',
             'Vivistar',
             'L08 Pro',
-            'WHITELIST_SWITCH',
+            'WHITELIST_ENABLED',
             ['enabled' => true]
-        );
-        $db->deviceConfigurations->saveDesired(
-            '861265061009822',
-            'whitelistGroup1',
-            'vivistar',
-            'Vivistar',
-            'L08 Pro',
-            'WHITELIST_GROUP_1',
-            ['numbers' => ['+351922222222']]
         );
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
@@ -639,25 +630,26 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ['supported' => true, 'requestable' => true],
             $body['capabilities']['telemetry']['location'] ?? null
         );
-        self::assertSame(
-            [['name' => 'Ana', 'phone' => '+351911111111']],
-            $body['capabilities']['contacts']['phonebook']['value'] ?? null
-        );
-        self::assertSame(5, $body['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
         self::assertSame([], $body['capabilities']['alarms'] ?? null);
-        self::assertTrue($body['capabilities']['contacts']['call_whitelist']['enabled'] ?? false);
         self::assertSame(
-            ['+351922222222'],
-            $body['capabilities']['contacts']['call_whitelist']['numbers'] ?? null
+            [
+                ['name' => '', 'phone' => '+351922222222'],
+            ],
+            $body['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
+        self::assertSame(10, $body['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null);
+        self::assertSame(10, $body['capabilities']['contacts']['call_whitelist']['_meta']['name']['maxLength'] ?? null);
+        self::assertSame(20, $body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
+        self::assertTrue($body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
+        self::assertTrue($body['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
         self::assertSame(
             ['password' => '2468'],
             $body['capabilities']['settings_system']['device_password'] ?? null
         );
         self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
-        self::assertSame('never_reported', $body['pending']['contacts']['phonebook']['status'] ?? null);
         self::assertSame('never_reported', $body['pending']['contacts']['call_whitelist']['status'] ?? null);
+        self::assertSame('never_reported', $body['pending']['contacts']['whitelist_enabled']['status'] ?? null);
         self::assertSame('never_reported', $body['pending']['settings_system']['device_password']['status'] ?? null);
         self::assertSame([], $body['transportPending'] ?? null);
     }

@@ -13,7 +13,7 @@ final class FourPTouchContactHandlersTest extends TestCase
         $handler = new FourPTouchSosContactsHandler();
 
         self::assertSame(
-            ['numbers' => [111111111, 222222222]],
+            [111111111, 222222222],
             $handler->fromNative(['numbers' => ['111111111', '222222222']]),
         );
 
@@ -35,13 +35,13 @@ final class FourPTouchContactHandlersTest extends TestCase
         $handler = new FourPTouchCallWhitelistHandler();
 
         self::assertSame(
-            ['numbers' => [111111111, 222222222]],
+            [111111111, 222222222],
             $handler->fromNative(['numbers' => ['111111111', '222222222']]),
         );
 
         self::assertSame(
             [
-                'value' => ['numbers' => ['111111111', '222222222']],
+                'value' => [111111111, 222222222],
                 '_meta' => ['limit' => 10],
                 '_type' => 'call_whitelist',
             ],
