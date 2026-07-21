@@ -1718,6 +1718,7 @@ async function saveDeviceConfiguration(section) {
         const isTransientAction = section.dataset.configTransient === "1";
         const capabilityKey = section.dataset.capabilityKey || section.dataset.configKey || "";
         const configKind = section.dataset.configKind || "configuration";
+        const capabilitySection = section.dataset.configSectionName || "";
         const result = isTransientAction
             ? await apiRequestCapability(state.deviceModal.imei, capabilityKey, payload)
             : await apiSaveConfiguration(
@@ -1725,7 +1726,7 @@ async function saveDeviceConfiguration(section) {
                 configKind === "capability"
                     ? {
                         capabilities: {
-                            [section.dataset.configSectionName || "contacts"]: {
+                            [capabilitySection || "contacts"]: {
                                 [capabilityKey]: payload,
                             },
                         },

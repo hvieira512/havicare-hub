@@ -378,7 +378,7 @@ function normalizedCatalogForProtocol(protocol, catalog) {
                 limit: groupedCapability?.limit || 0,
                 transient: false,
                 configKind: "capability",
-                configSection: "contacts",
+                configSectionName: "contacts",
                 configKeys: [],
             });
             normalized.push(grouped.get(capabilityKey));
@@ -489,6 +489,7 @@ export function renderConfigSection(
     const help = configHelp(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
+    const configSectionName = entry.configSectionName || entry.configSection || "";
     const details = [
         hideNativeCommand ? "" : (entry.command || ""),
         hideNativeCommand ? "" : configInputLabel(entry.input || "json"),
@@ -496,7 +497,7 @@ export function renderConfigSection(
     ].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${entry.configSection ? ` data-config-section-name="${esc(entry.configSection)}"` : ""} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
+        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
             <div>
                 <div>
                     <div class="fw-semibold">
