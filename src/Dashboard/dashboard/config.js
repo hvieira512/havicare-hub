@@ -1614,7 +1614,11 @@ function callWhitelistInput(entry, desired) {
 
 function contactsInput(entry, desired, meta = {}) {
     const limit = Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10);
-    const contacts = Array.isArray(desired.contacts) ? desired.contacts : [];
+    const contacts = Array.isArray(desired)
+        ? desired
+        : Array.isArray(desired.contacts)
+            ? desired.contacts
+            : [];
     const rows = contacts.length ? contacts.slice(0, limit) : [{}];
     const isFourPTouchPhonebook =
         String(meta.protocol || "") === "four-p-touch" &&
@@ -1663,7 +1667,11 @@ function contactsInput(entry, desired, meta = {}) {
 
 function phoneRepeaterInput(entry, desired, options) {
     const limit = Math.max(1, parseInt(String(options.limit ?? entry.limit ?? 3), 10) || 3);
-    const values = Array.isArray(desired.numbers) ? desired.numbers : [];
+    const values = Array.isArray(desired)
+        ? desired
+        : Array.isArray(desired.numbers)
+            ? desired.numbers
+            : [];
     const rows = values.length ? values.slice(0, limit) : [""];
     const kind = String(options.kind || "numbers");
     const addAction = String(options.addAction || "addPhoneRow");
