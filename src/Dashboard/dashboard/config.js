@@ -3,44 +3,6 @@ import { normalizePhoneControl, renderPhoneControl } from "./phone.js";
 import { requestJson } from "./api/http.js";
 import { state } from "./state.js";
 
-const CATEGORY_LABELS = {
-    "vivistar-iw": {
-        contacts: "Contactos",
-        alerts: "Alertas",
-        health: "Saúde",
-        system: "Sistema",
-        intervals: "Intervalos",
-    },
-    "wonlex-json": {
-        contacts: "Contactos",
-        alerts: "Alarmes",
-        health: "Saúde",
-        measurements: "Medições",
-        system: "Sistema",
-        intervals: "Intervalos",
-    },
-    "four-p-touch": {
-        contacts: "Contactos",
-        alerts: "Alertas",
-        health: "Saúde",
-        system: "Sistema",
-        intervals: "Intervalos",
-    },
-};
-
-const CATEGORY_ORDER = {
-    "vivistar-iw": ["contacts", "alerts", "health", "system", "intervals"],
-    "wonlex-json": [
-        "intervals",
-        "contacts",
-        "measurements",
-        "alerts",
-        "health",
-        "system",
-    ],
-    "four-p-touch": ["intervals", "contacts", "alerts", "health", "system"],
-};
-
 let uidCounter = 0;
 const protocolCatalogRequests = {};
 
@@ -104,17 +66,6 @@ const CONFIG_INPUT_RENDERERS = {
     alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
     takePills: (_entry, desired, meta) => takePillsInput(desired, meta),
     soundProfile: (_entry, desired) => soundProfileInput(desired),
-};
-
-const FOUR_P_TOUCH_GROUPED_CAPABILITIES = {
-    sos_contacts: {
-        label: "Contactos SOS",
-        limit: 3,
-    },
-    call_whitelist: {
-        label: "Chamadas permitidas",
-        limit: 10,
-    },
 };
 
 const CONFIG_INPUT_READERS = {
@@ -309,6 +260,11 @@ export async function catalogForProtocol(protocol) {
         return [];
     }
 
+    const protocolMeta = protocolDefinition(protocol);
+    if (protocolMeta && protocolMeta.supportsConfigCatalog === false) {
+        return [];
+    }
+
     if (state.protocolCatalogs[protocol]) {
         return state.protocolCatalogs[protocol];
     }
@@ -348,7 +304,8 @@ export function groupedCatalog(catalog) {
 }
 
 function normalizedCatalogForProtocol(protocol, catalog) {
-    if (protocol !== "four-p-touch") {
+    const groupedCapabilities = protocolGroupedCapabilities(protocol);
+    if (Object.keys(groupedCapabilities).length === 0) {
         return catalog.map((entry) => normalizeConfigEntry(entry));
     }
 
@@ -359,7 +316,7 @@ function normalizedCatalogForProtocol(protocol, catalog) {
         const nativeKey = String(entry.key || "");
         const normalizedEntry = normalizeConfigEntry(entry);
         const capabilityKey = normalizedEntry.capabilityKey || "";
-        const groupedCapability = FOUR_P_TOUCH_GROUPED_CAPABILITIES[capabilityKey] || null;
+        const groupedCapability = groupedCapabilities[capabilityKey] || null;
         const label = groupedCapability?.label || "";
 
         if (label === "") {
@@ -419,7 +376,7 @@ export function renderDeviceConfigurationRoot(context) {
     const rowsByKey = configurations;
     const normalizedCatalog = normalizedCatalogForProtocol(protocol, catalog);
     const groups = groupedCatalog(normalizedCatalog);
-    const order = CATEGORY_ORDER[protocol] || [];
+    const order = protocolCategoryOrder(protocol);
     groups.sort((a, b) => {
         const ai = order.indexOf(a.key);
         const bi = order.indexOf(b.key);
@@ -490,11 +447,12 @@ export function renderConfigSection(
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
     const configSectionName = entry.configSectionName || entry.configSection || "";
+    const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
     const phonebookNameMaxLength = String(entry.key || "") === "phonebook"
-        ? parseInt(String(meta.name?.maxLength ?? 0), 10) || (String(protocol || "") === "four-p-touch" ? 10 : 0)
+        ? parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0
         : 0;
     const phonebookPhoneMaxLength = String(entry.key || "") === "phonebook"
-        ? parseInt(String(meta.phone?.maxLength ?? 0), 10) || (String(protocol || "") === "four-p-touch" ? 20 : 0)
+        ? parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0
         : 0;
     const phonebookMetaAttrs = String(entry.key || "") === "phonebook"
         ? `${phonebookNameMaxLength > 0 ? ` data-phonebook-name-max-length="${esc(String(phonebookNameMaxLength))}"` : ""}${phonebookPhoneMaxLength > 0 ? ` data-phonebook-phone-max-length="${esc(String(phonebookPhoneMaxLength))}"` : ""}`
@@ -646,8 +604,46 @@ function configInputLabel(input) {
 }
 
 function categoryLabel(protocol, category) {
-    const labels = CATEGORY_LABELS[protocol] || {};
+    const labels = protocolCategoryLabels(protocol);
     return labels[category] || titleize(category);
+}
+
+function protocolDefinition(protocol) {
+    return (state.protocols || []).find((entry) => entry.protocol === protocol) || null;
+}
+
+function protocolDashboardMeta(protocol) {
+    const meta = protocolDefinition(protocol)?.dashboard || {};
+    return {
+        categoryLabels: isPlainObject(meta.categoryLabels) ? meta.categoryLabels : null,
+        categoryOrder: Array.isArray(meta.categoryOrder) ? meta.categoryOrder : null,
+        groupedCapabilities: isPlainObject(meta.groupedCapabilities) ? meta.groupedCapabilities : null,
+        fieldConstraints: isPlainObject(meta.fieldConstraints) ? meta.fieldConstraints : null,
+    };
+}
+
+function protocolCategoryLabels(protocol) {
+    return protocolDashboardMeta(protocol).categoryLabels || {};
+}
+
+function protocolCategoryOrder(protocol) {
+    return protocolDashboardMeta(protocol).categoryOrder || [];
+}
+
+function protocolGroupedCapabilities(protocol) {
+    return protocolDashboardMeta(protocol).groupedCapabilities || {};
+}
+
+function protocolFieldConstraints(protocol) {
+    return protocolDashboardMeta(protocol).fieldConstraints || {};
+}
+
+function protocolPhonebookConstraints(protocol) {
+    return protocolFieldConstraints(protocol).phonebook || {};
+}
+
+function isPlainObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function firstFieldName(section) {
@@ -720,11 +716,11 @@ function readPhone(section, field) {
 }
 
 function readContacts(section) {
-    const isFourPTouchPhonebook =
-        String(section.dataset.configProtocol || "") === "four-p-touch" &&
-        String(section.dataset.configKey || "") === "phonebook";
+    const phonebookConstraints = protocolPhonebookConstraints(
+        String(section.dataset.configProtocol || ""),
+    );
     const nameMaxLength = parseInt(
-        String(section.dataset.phonebookNameMaxLength || (isFourPTouchPhonebook ? "10" : "0")),
+        String(section.dataset.phonebookNameMaxLength || phonebookConstraints.name?.maxLength || "0"),
         10,
     ) || 0;
     const contacts = [];
@@ -738,7 +734,7 @@ function readContacts(section) {
         }
         if (name === "" || phone === "") {
             sawIncompleteRow = true;
-            if (!isFourPTouchPhonebook) {
+            if (!phonebookConstraints.allowPartialRows) {
                 throw new Error("Nome e telefone são obrigatórios");
             }
             continue;
@@ -747,7 +743,7 @@ function readContacts(section) {
         contacts.push({name, phone});
     }
 
-    if (isFourPTouchPhonebook && contacts.length === 0 && sawIncompleteRow) {
+    if (phonebookConstraints.allowPartialRows && contacts.length === 0 && sawIncompleteRow) {
         throw new Error("Nome e telefone são obrigatórios");
     }
 
@@ -1537,10 +1533,7 @@ function listInput(entry, desired, field, label) {
 }
 
 function sosContactsInput(entry, desired, meta = {}) {
-    const phoneMaxLength = Math.max(
-        0,
-        parseInt(String(meta.phone?.maxLength ?? (String(meta.protocol || "") === "four-p-touch" ? 20 : 0)), 10) || 0,
-    );
+    const phoneMaxLength = Math.max(0, parseInt(String(meta.phone?.maxLength ?? 0), 10) || 0);
     return phoneRepeaterInput(entry, desired, {
         kind: "sos_contacts",
         limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
@@ -1575,16 +1568,14 @@ function contactsInput(entry, desired, meta = {}) {
             ? desired.contacts
             : [];
     const rows = contacts.length ? contacts.slice(0, limit) : [{}];
-    const isFourPTouchPhonebook =
-        String(meta.protocol || "") === "four-p-touch" &&
-        String(entry.key || "") === "phonebook";
+    const phonebookConstraints = protocolPhonebookConstraints(meta.protocol || "");
     const nameMaxLengthValue = Math.max(
         0,
-        parseInt(String(meta.name?.maxLength ?? (isFourPTouchPhonebook ? 10 : 0)), 10) || 0,
+        parseInt(String(meta.name?.maxLength ?? phonebookConstraints.name?.maxLength ?? 0), 10) || 0,
     );
     const phoneMaxLengthValue = Math.max(
         0,
-        parseInt(String(meta.phone?.maxLength ?? (isFourPTouchPhonebook ? 20 : 0)), 10) || 0,
+        parseInt(String(meta.phone?.maxLength ?? phonebookConstraints.phone?.maxLength ?? 0), 10) || 0,
     );
     const nameMaxLength = nameMaxLengthValue > 0 ? ` maxlength="${esc(String(nameMaxLengthValue))}"` : "";
     return `

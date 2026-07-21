@@ -8,6 +8,7 @@ export {
     saveConfiguration,
     saveDevice,
 } from './devices.js';
+export {getProtocols} from './protocols.js';
 export {
     createCompany,
     deleteCompany,

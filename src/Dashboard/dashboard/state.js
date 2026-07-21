@@ -14,6 +14,7 @@ export const state = {
     },
     deviceListPageSize: 20,
     deviceTypeSuppliersModels: [],
+    protocols: [],
     detailFilters: {
         from: "",
         to: "",

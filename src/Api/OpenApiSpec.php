@@ -2,6 +2,8 @@
 
 namespace Hub\Api;
 
+use Hub\Domain\ProtocolRegistry;
+
 class OpenApiSpec
 {
     public static function get(): array
@@ -490,7 +492,7 @@ class OpenApiSpec
                         'tags' => ['Device Types'],
                         'summary' => 'Get config catalog for a device protocol',
                         'parameters' => [
-                            ['name' => 'protocol', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string', 'enum' => ['wonlex-json', 'vivistar-iw', 'four-p-touch']]],
+                            ['name' => 'protocol', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string', 'enum' => ProtocolRegistry::protocolsWithConfigCatalog()]],
                         ],
                         'responses' => [
                             '200' => [
@@ -498,6 +500,18 @@ class OpenApiSpec
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ProtocolConfigCatalogResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/protocols' => [
+                    'get' => [
+                        'tags' => ['Device Types'],
+                        'summary' => 'List known device protocols',
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Protocol registry entries',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ProtocolListResponse']]],
+                            ],
                         ],
                     ],
                 ],
@@ -1676,10 +1690,27 @@ class OpenApiSpec
                             'capabilityKey' => ['type' => 'string', 'nullable' => true, 'example' => 'fall_detection'],
                         ],
                     ],
+                    'ProtocolItem' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'protocol' => ['type' => 'string', 'example' => 'four-p-touch'],
+                            'label' => ['type' => 'string', 'example' => '4P Touch'],
+                            'supplier' => ['type' => 'string', 'example' => '4P Touch'],
+                            'deviceType' => ['type' => 'string', 'example' => 'watch'],
+                            'supportsConfigCatalog' => ['type' => 'boolean'],
+                            'dashboard' => ['type' => 'object'],
+                        ],
+                    ],
                     'ProtocolConfigCatalogResponse' => [
                         'type' => 'object',
                         'properties' => [
                             'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ProtocolConfigCatalogEntry']],
+                        ],
+                    ],
+                    'ProtocolListResponse' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/ProtocolItem']],
                         ],
                     ],
                     'ErrorResponse' => [

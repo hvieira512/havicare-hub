@@ -57,4 +57,17 @@ final class GenericModelCapabilityCatalogTest extends TestCase
         self::assertSame('alarmClock', FourPTouchGenericHandler::publicKeyToNativeKey('alarm_clock'));
         self::assertSame('uploadInterval', FourPTouchGenericHandler::publicKeyToNativeKey('location_reporting_interval'));
     }
+
+    public function testFourPTouchFallbackCanRehydrateFallSensitivity(): void
+    {
+        $handler = new FourPTouchGenericHandler();
+
+        self::assertSame(
+            ['sensitivity' => 6, 'levels' => 8],
+            $handler->fromNative('fall_sensitivity', 'fallDownSensitivity', [
+                'sensitivityLevel' => 6,
+                'totalLevels' => 8,
+            ]),
+        );
+    }
 }

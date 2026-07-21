@@ -11,6 +11,7 @@ use Hub\Domain\Capability\CapabilityProtocolHandler;
 final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
 {
     use CapabilityHelpers;
+    use FourPTouchContactSupport;
 
     public function nativeKey(): string
     {
@@ -25,11 +26,9 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
 
     public function fromNative(array $desired): mixed
     {
-        if (isset($desired['numbers']) && is_array($desired['numbers'])) {
-            return ['numbers' => self::stringList($desired['numbers'])];
-        }
-        if (isset($desired['phone'])) {
-            return ['numbers' => self::stringList([$desired['phone']])];
+        $numbers = self::normalizeNumbersValue($desired);
+        if ($numbers !== []) {
+            return ['numbers' => $numbers];
         }
 
         return ['numbers' => []];
@@ -42,13 +41,9 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
 
     public function meta(array $accumulatedMeta = []): array
     {
-        $accumulatedMeta['limit'] = max((int)($accumulatedMeta['limit'] ?? 0), 3);
-        $accumulatedMeta['phone'] = array_merge(
-            ['maxLength' => 20, 'asciiOnly' => true],
-            is_array($accumulatedMeta['phone'] ?? null) ? $accumulatedMeta['phone'] : []
-        );
-
-        return $accumulatedMeta;
+        return self::mergeFourPTouchMeta($accumulatedMeta, 3, [
+            'phone' => ['maxLength' => 20, 'asciiOnly' => true],
+        ]);
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed
@@ -77,11 +72,7 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
     private function split(array $numbers): array
     {
         if ($numbers === []) {
-            return [
-                'sosNumber1' => ['phone' => ''],
-                'sosNumber2' => ['phone' => ''],
-                'sosNumber3' => ['phone' => ''],
-            ];
+            return $this->emptySplit();
         }
 
         $updates = [];
@@ -92,5 +83,17 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
         }
 
         return $updates;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function emptySplit(): array
+    {
+        return [
+            'sosNumber1' => ['phone' => ''],
+            'sosNumber2' => ['phone' => ''],
+            'sosNumber3' => ['phone' => ''],
+        ];
     }
 }

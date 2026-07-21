@@ -12,6 +12,22 @@ final class FourPTouchGenericHandler
 {
     use CapabilityHelpers;
 
+    /**
+     * Generic keys that should preserve a different native key in GET /api/devices/{imei}
+     * responses when running on 4P Touch.
+     *
+     * @var array<string, string>
+     */
+    private const RESPONSE_NATIVE_KEYS = [
+        'make_call' => 'makeCall',
+        'reset_device' => 'resetCommand',
+        'power_off' => 'powerOffCommand',
+        'find_device' => 'findDeviceCommand',
+        'device_password' => 'devicePassword',
+        'sound_profile' => 'soundProfile',
+        'call_in_restriction' => 'callInRestriction',
+    ];
+
     public static function publicKeyToNativeKey(string $key): ?string
     {
         return match (trim($key)) {
@@ -78,6 +94,18 @@ final class FourPTouchGenericHandler
         };
     }
 
+    public function fromNative(string $genericKey, string $nativeKey, array $desired): mixed
+    {
+        if ($genericKey === 'fall_sensitivity' && $nativeKey === 'fallDownSensitivity') {
+            return [
+                'sensitivity' => (int)($desired['sensitivity'] ?? $desired['sensitivityLevel'] ?? 5),
+                'levels' => (int)($desired['levels'] ?? $desired['totalLevels'] ?? 8),
+            ];
+        }
+
+        return $desired;
+    }
+
     /**
      * Convert a generic capability payload to the native 4P Touch payload.
      *
@@ -115,15 +143,7 @@ final class FourPTouchGenericHandler
      */
     public function nativeKeyAliases(): array
     {
-        return [
-            'make_call',
-            'reset_device',
-            'power_off',
-            'find_device',
-            'device_password',
-            'sound_profile',
-            'call_in_restriction',
-        ];
+        return array_keys(self::RESPONSE_NATIVE_KEYS);
     }
 
     public function nativeKeyForResponse(string $genericKey): ?string
@@ -135,15 +155,6 @@ final class FourPTouchGenericHandler
 
     private function responseNativeKey(string $genericKey): ?string
     {
-        return match ($genericKey) {
-            'make_call' => 'makeCall',
-            'reset_device' => 'resetCommand',
-            'power_off' => 'powerOffCommand',
-            'find_device' => 'findDeviceCommand',
-            'device_password' => 'devicePassword',
-            'sound_profile' => 'soundProfile',
-            'call_in_restriction' => 'callInRestriction',
-            default => null,
-        };
+        return self::RESPONSE_NATIVE_KEYS[$genericKey] ?? null;
     }
 }

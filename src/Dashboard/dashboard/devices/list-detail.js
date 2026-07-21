@@ -3,6 +3,7 @@ import {
     getDevices as apiGetDevices,
     getLicenses as apiGetLicenses,
     getModels as apiGetModels,
+    getProtocols as apiGetProtocols,
     getSuppliers as apiGetSuppliers,
     requestFeature as apiRequestFeature,
 } from "../api/index.js";
@@ -200,6 +201,16 @@ async function ensureSuppliersLoaded(force = false) {
     const suppliersResponse = await apiGetSuppliers({ limit: 500 });
     state.modelModalSuppliers = suppliersResponse.data || [];
     return state.modelModalSuppliers;
+}
+
+async function ensureProtocolsLoaded(force = false) {
+    if (!force && Array.isArray(state.protocols) && state.protocols.length > 0) {
+        return state.protocols;
+    }
+
+    const protocolsResponse = await apiGetProtocols();
+    state.protocols = protocolsResponse?.error ? [] : protocolsResponse.data || [];
+    return state.protocols;
 }
 
 async function openDeviceSelector() {
@@ -465,6 +476,7 @@ export {
     ensureLicensesLoaded,
     ensureDeviceTypeSuppliersModelsLoaded,
     ensureModelsLoaded,
+    ensureProtocolsLoaded,
     ensureSuppliersLoaded,
     findModelInfo,
     flattenedCapabilityKeys,

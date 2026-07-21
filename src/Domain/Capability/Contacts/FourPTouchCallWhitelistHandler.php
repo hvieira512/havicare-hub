@@ -11,6 +11,7 @@ use Hub\Domain\Capability\CapabilityProtocolHandler;
 final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
 {
     use CapabilityHelpers;
+    use FourPTouchContactSupport;
 
     public function nativeKey(): string
     {
@@ -24,7 +25,7 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
 
     public function fromNative(array $desired): mixed
     {
-        return ['numbers' => self::stringList($desired['numbers'] ?? [])];
+        return ['numbers' => self::normalizeNumbersValue($desired)];
     }
 
     public function defaultValue(): mixed
@@ -34,9 +35,7 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
 
     public function meta(array $accumulatedMeta = []): array
     {
-        $accumulatedMeta['limit'] = max((int)($accumulatedMeta['limit'] ?? 0), 10);
-
-        return $accumulatedMeta;
+        return self::mergeFourPTouchMeta($accumulatedMeta, 10);
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed

@@ -17,6 +17,11 @@ final class ProtocolController
     ) {
     }
 
+    public function list(ServerRequestInterface $request): Response
+    {
+        return $this->json->respond($this->service->list());
+    }
+
     public function configCatalog(array $params): Response
     {
         $result = $this->service->configCatalog($params);

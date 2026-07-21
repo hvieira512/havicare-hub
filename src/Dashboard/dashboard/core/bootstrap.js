@@ -45,6 +45,7 @@ import {
     licenseDisplayLabel,
     loadDevice,
     loadSummary,
+    ensureProtocolsLoaded,
     modelCommercialName,
     modelDisplayLabel,
     modelDisplayName,
@@ -2115,7 +2116,7 @@ function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength
     return wrapper;
 }
 
-export function startDashboard() {
+export async function startDashboard() {
     els = cacheElements();
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceSelectorModal = new bootstrap.Modal(
@@ -2138,6 +2139,7 @@ export function startDashboard() {
         renderSelection,
     });
     bindEvents();
+    await ensureProtocolsLoaded();
 
     const stored = loadJsonStorage(FILTERS_STORAGE_KEY);
     if (stored && typeof stored === "object") {

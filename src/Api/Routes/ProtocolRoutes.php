@@ -7,6 +7,7 @@ return static function (
     ProtocolController $protocols,
 ): array {
     return [
+        new ApiRoute('GET', '/api/protocols', [$protocols, 'list']),
         new ApiRoute('GET', '/api/protocols/{protocol}/config-catalog', [$protocols, 'configCatalog']),
     ];
 };
