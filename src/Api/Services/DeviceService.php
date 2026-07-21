@@ -1422,6 +1422,43 @@ class DeviceService
             if ($section === 'telemetry') {
                 continue;
             }
+
+            foreach ($sectionCaps as $genericKey => &$value) {
+                if (
+                    !is_array($value)
+                    || (array_key_exists('value', $value) && array_key_exists('_meta', $value))
+                ) {
+                    continue;
+                }
+
+                $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
+                if ($this->capabilityRegistry->has($genericKey)) {
+                    $value = $this->capabilityRegistry->responseEntry(
+                        $protocol,
+                        $genericKey,
+                        (string)($nativeKeyForGeneric[$genericKey] ?? ''),
+                        $value,
+                        $meta[$genericKey] ?? [],
+                    );
+                } else {
+                    $value = [
+                        'value' => $value,
+                        '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $meta[$genericKey] ?? []),
+                        '_type' => $genericKey,
+                    ];
+                    if ($responseNativeKey !== null) {
+                        $value['_nativeKey'] = $responseNativeKey;
+                    }
+                }
+            }
+            unset($value);
+        }
+        unset($sectionCaps);
+
+        foreach ($capabilities as $section => &$sectionCaps) {
+            if ($section === 'telemetry') {
+                continue;
+            }
             foreach ($sectionCaps as $genericKey => &$value) {
                 $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
                 if (

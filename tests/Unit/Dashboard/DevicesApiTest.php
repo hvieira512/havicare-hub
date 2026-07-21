@@ -363,6 +363,132 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testShowWrapsFourPTouchGenericCapabilitiesWithValueAndMetaShape(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], [
+            'location_reporting_interval',
+            'sos_sms_alert',
+            'low_battery_alert',
+            'fall_detection',
+            'auto_vitals_interval',
+            'sleep_monitoring',
+            'temperature_measurement_interval',
+            'language_timezone',
+        ]);
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'uploadInterval',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'UPLOAD',
+            ['intervalSeconds' => 300]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'sosSmsAlerts',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'SOSSMS',
+            ['enabled' => false]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'lowBatterySmsAlerts',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'LOWBAT',
+            ['enabled' => false]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'fallDownAlert',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'FALLDOWN',
+            ['enabled' => true, 'callCenterOnFall' => false]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'healthAutoMeasurement',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'HEALTHAUTOSET',
+            ['enabled' => true, 'intervalMinutes' => 10]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'sleepTime',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'SLEEPTIME',
+            ['range' => '21:10-07:30']
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'bodyTemperatureInterval',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'bodytemp',
+            ['enabled' => true, 'intervalHours' => 2]
+        );
+        $db->deviceConfigurations->saveDesired(
+            '861728087060467',
+            'languageTimezone',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'LZ',
+            ['language' => 3, 'timeZone' => '0']
+        );
+
+        $response = $api->show('861728087060467');
+
+        self::assertSame(
+            ['value' => ['intervalSeconds' => 300], '_meta' => [], '_type' => 'location_reporting_interval'],
+            $response['capabilities']['settings_system']['location_reporting_interval'] ?? null
+        );
+        self::assertSame(
+            ['value' => ['enabled' => false], '_meta' => [], '_type' => 'sos_sms_alert'],
+            $response['capabilities']['alarms']['sos_sms_alert'] ?? null
+        );
+        self::assertSame(
+            ['value' => ['enabled' => false], '_meta' => [], '_type' => 'low_battery_alert'],
+            $response['capabilities']['alarms']['low_battery_alert'] ?? null
+        );
+        self::assertSame(
+            ['value' => ['enabled' => true, 'callCenterOnFall' => false], '_meta' => [], '_type' => 'fall_detection'],
+            $response['capabilities']['alarms']['fall_detection'] ?? null
+        );
+        self::assertSame(
+            ['value' => ['enabled' => true, 'intervalMinutes' => 10], '_meta' => [], '_type' => 'auto_vitals_interval'],
+            $response['capabilities']['health']['auto_vitals_interval'] ?? null
+        );
+        self::assertSame(
+            ['value' => ['range' => '21:10-07:30'], '_meta' => [], '_type' => 'sleep_monitoring'],
+            $response['capabilities']['health']['sleep_monitoring'] ?? null
+        );
+        self::assertSame(
+            ['value' => ['enabled' => true, 'intervalHours' => 2], '_meta' => [], '_type' => 'temperature_measurement_interval'],
+            $response['capabilities']['health']['temperature_measurement_interval'] ?? null
+        );
+        self::assertSame(
+            ['value' => ['language' => 3, 'timeZone' => '0'], '_meta' => [], '_type' => 'language_timezone'],
+            $response['capabilities']['settings_system']['language_timezone'] ?? null
+        );
+    }
+
     public function testShowNormalizesStoredFourPTouchFallSensitivityToNewKeys(): void
     {
         [$api, $db, $store] = $this->makeApi();

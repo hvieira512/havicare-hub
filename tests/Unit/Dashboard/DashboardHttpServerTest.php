@@ -720,7 +720,10 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $detailBody = json_decode((string)$detail->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
         self::assertSame(200, $detail->getStatusCode(), (string)$detail->getBody());
-        self::assertSame(['enabled' => true], $detailBody['capabilities']['alarms']['fall_detection'] ?? null);
+        self::assertSame(
+            ['value' => ['enabled' => true], '_meta' => [], '_type' => 'fall_detection'],
+            $detailBody['capabilities']['alarms']['fall_detection'] ?? null
+        );
         self::assertSame('waiting_device', $detailBody['pending']['alarms']['fall_detection']['status'] ?? null);
         self::assertSame('cfg:BP76', $detailBody['transportPending'][0]['dedupeKey'] ?? null);
     }
