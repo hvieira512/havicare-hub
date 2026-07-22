@@ -47,7 +47,7 @@ final class WhitelistEnabledCapability implements CapabilityContract
     {
         return match ($protocol) {
             'vivistar-iw' => [
-                'BP84' => [
+                'whitelist_enabled' => [
                     'enabled' => self::requireBoolLikeField($value, 'enabled'),
                 ],
             ],
