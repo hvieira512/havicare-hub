@@ -258,7 +258,7 @@ final class ApiKernel
         ]);
     }
 
-    private function responseBodyPreview(Response $response, int $limit = 4096): ?string
+    private function responseBodyPreview(Response $response): ?string
     {
         $body = $response->getBody();
         try {
@@ -277,10 +277,6 @@ final class ApiKernel
         $contents = trim($contents);
         if ($contents === '') {
             return null;
-        }
-
-        if (strlen($contents) > $limit) {
-            $contents = substr($contents, 0, $limit) . '...';
         }
 
         return $contents;

@@ -229,6 +229,26 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('"response_body":"{\"status\":\"ok\",\"token\":', $log);
     }
 
+    public function testApiResponseBodyPreviewKeepsFullBodiesWithoutEllipsis(): void
+    {
+        $kernel = (new \ReflectionClass(\Hub\Api\ApiKernel::class))->newInstanceWithoutConstructor();
+        $method = new \ReflectionMethod(\Hub\Api\ApiKernel::class, 'responseBodyPreview');
+        $method->setAccessible(true);
+
+        $largeBody = json_encode(['payload' => str_repeat('abc123', 800)], JSON_THROW_ON_ERROR);
+        $response = new \React\Http\Message\Response(
+            200,
+            ['Content-Type' => 'application/json'],
+            $largeBody
+        );
+
+        $preview = $method->invoke($kernel, $response);
+
+        self::assertSame(trim($largeBody), $preview);
+        self::assertStringNotContainsString('...', $preview);
+        self::assertGreaterThan(4096, strlen($preview));
+    }
+
     public function testUnauthorizedApiRequestIsStillLogged(): void
     {
         $server = $this->makeServer();
