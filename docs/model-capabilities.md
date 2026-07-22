@@ -1,6 +1,6 @@
 # Matriz de Capacidades dos Modelos
 
-| Modelo | Bateria | Atividade | Freq. cardíaca | Tensão arterial | Oxigénio no sangue | Glicemia | Temperatura | Localização | Sono | ECG | HRV | PPG | Intervalo RR | Frequência respiratória | Deteção de queda | Mensagem personalizada | SOS | Lista telefónica | Despertador | Lembretes de medicação | Intervalo automático de sinais vitais |
+| Modelo | Bateria | Atividade | Freq. cardíaca | Tensão arterial | Oxigénio no sangue | Glicemia | Temperatura | Localização | Sono | ECG | HRV | PPG | Intervalo RR | Frequência respiratória | Deteção de queda | Mensagem personalizada | SOS | Lista telefónica (4P Touch) | Despertador | Lembretes de medicação | Intervalo automático de sinais vitais |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 4P Touch D41 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 4P Touch Y6S | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |

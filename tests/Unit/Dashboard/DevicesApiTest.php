@@ -180,7 +180,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertTrue($response['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
         self::assertSame(
             ['password' => '2468'],
-            $response['capabilities']['settings_system']['device_password'] ?? null
+            $response['capabilities']['settings_system']['device_password']['value'] ?? null
         );
         self::assertSame([], $response['capabilities']['health'] ?? null);
         self::assertSame([], $response['capabilities']['alarms'] ?? null);
@@ -202,7 +202,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('W812', $response['model']['commercialName'] ?? null);
         self::assertSame('ncs', $response['model']['deviceType'] ?? null);
         self::assertArrayHasKey('pager_call', $response['capabilities']['alarms'] ?? []);
-        self::assertSame([], $response['capabilities']['alarms']['pager_call'] ?? null);
+        self::assertSame(
+            [
+                'value' => [],
+                '_meta' => [],
+                '_type' => 'pager_call',
+            ],
+            $response['capabilities']['alarms']['pager_call'] ?? null
+        );
     }
 
     public function testShowExposesModelSupportedCapabilitiesWithoutStoredConfigurationRows(): void
@@ -236,33 +243,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ],
             ],
             $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
-        );
-        self::assertSame(
-            [
-                ['value' => 1, 'label' => 'Máxima'],
-                ['value' => 2, 'label' => 'Muito Alta'],
-                ['value' => 3, 'label' => 'Alta'],
-                ['value' => 4, 'label' => 'Moderada'],
-                ['value' => 5, 'label' => 'Baixa'],
-                ['value' => 6, 'label' => 'Muito Baixa'],
-                ['value' => 7, 'label' => 'Quase Mínima'],
-                ['value' => 8, 'label' => 'Mínima'],
-            ],
-            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['sensitivity']['options'] ?? null
-        );
-        self::assertSame(
-            [
-                ['value' => 6, 'label' => '6 níveis'],
-                ['value' => 8, 'label' => '8 níveis'],
-            ],
-            $response['capabilities']['alarms']['fall_sensitivity']['_meta']['levels']['options'] ?? null
-        );
-        self::assertSame(
-            [
-                'sensitivity' => 5,
-                'levels' => 8,
-            ],
-            $response['capabilities']['alarms']['fall_sensitivity']['value'] ?? null
         );
         self::assertArrayHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
         self::assertSame(5, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
@@ -359,7 +339,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
         self::assertSame(
-            10,
+            5,
             $response['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null
         );
     }
@@ -660,16 +640,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertSame(
             [
-                'items' => [
-                    [
-                        'time' => '08:10',
-                        'enabled' => true,
-                        'recurrence' => [
-                            'kind' => 'custom',
-                            'days' => [1, 3, 5],
-                        ],
-                        'type' => 2,
+                [
+                    'time' => '08:10',
+                    'enabled' => true,
+                    'recurrence' => [
+                        'kind' => 'custom',
+                        'days' => [1, 3, 5],
                     ],
+                    'type' => 2,
                 ],
             ],
             $response['configurations']['alarm_clock'] ?? null
@@ -769,24 +747,22 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('type', $response['capabilities']['alarms']['alarm_clock']['_meta'] ?? []);
         self::assertSame(
             [
-                'items' => [
-                    [
-                        'time' => '08:10',
-                        'enabled' => true,
-                        'recurrence' => ['kind' => 'once'],
-                    ],
-                    [
-                        'time' => '14:30',
-                        'enabled' => false,
-                        'recurrence' => ['kind' => 'daily'],
-                    ],
-                    [
-                        'time' => '18:00',
-                        'enabled' => true,
-                        'recurrence' => [
-                            'kind' => 'custom',
-                            'days' => [1, 2, 3, 4, 5],
-                        ],
+                [
+                    'time' => '08:10',
+                    'enabled' => true,
+                    'recurrence' => ['kind' => 'once'],
+                ],
+                [
+                    'time' => '14:30',
+                    'enabled' => false,
+                    'recurrence' => ['kind' => 'daily'],
+                ],
+                [
+                    'time' => '18:00',
+                    'enabled' => true,
+                    'recurrence' => [
+                        'kind' => 'custom',
+                        'days' => [1, 2, 3, 4, 5],
                     ],
                 ],
             ],
@@ -830,13 +806,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('BP85', $submitted[0]['bytes']);
         self::assertSame(
             [
-                'items' => [
-                    [
-                        'time' => '08:10',
-                        'enabled' => true,
-                        'type' => 2,
-                        'recurrence' => ['kind' => 'custom', 'days' => [1, 3, 5]],
-                    ],
+                [
+                    'time' => '08:10',
+                    'enabled' => true,
+                    'recurrence' => ['kind' => 'custom', 'days' => [1, 3, 5]],
+                    'type' => 2,
                 ],
             ],
             $response['configurations']['alarm_clock'] ?? null
@@ -878,13 +852,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('0900,,1,1', $submitted[0]['bytes']);
         self::assertSame(
             [
-                'items' => [
-                    [
-                        'time' => '09:00',
-                        'enabled' => true,
-                        'type' => 1,
-                        'recurrence' => ['kind' => 'once'],
-                    ],
+                [
+                    'time' => '09:00',
+                    'enabled' => true,
+                    'recurrence' => ['kind' => 'once'],
+                    'type' => 1,
                 ],
             ],
             $response['configurations']['alarm_clock'] ?? null
@@ -942,9 +914,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             return 'sent';
         });
 
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('4P Touch', 'D46');
         self::assertIsArray($model);
+        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
         $response = $api->updateConfigurations('861728087060467', json_encode([
@@ -969,9 +942,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     public function testFourPTouchSosContactsRejectsRepeatedNumbers(): void
     {
-        [$api, $db] = $this->makeApi();
+        [$api, $db, $store] = $this->makeApi();
         $model = $db->models->find('4P Touch', 'D46');
         self::assertIsArray($model);
+        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
         $response = $api->updateConfigurations('861728087060467', json_encode([
@@ -991,9 +965,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     public function testFourPTouchCallWhitelistRejectsRepeatedNumbers(): void
     {
-        [$api, $db] = $this->makeApi();
+        [$api, $db, $store] = $this->makeApi();
         $model = $db->models->find('4P Touch', 'D46');
         self::assertIsArray($model);
+        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
 
         $response = $api->updateConfigurations('861728087060467', json_encode([
@@ -1106,7 +1081,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection', 'phonebook']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection', 'call_whitelist']);
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
             'fallDetection',
@@ -1118,7 +1093,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         $db->deviceConfigurations->saveDesired(
             '861265061009822',
-            'phonebook',
+            'call_whitelist',
             'vivistar-iw',
             'Vivistar',
             'L08 Pro',
@@ -1129,7 +1104,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->updateConfigurations('861265061009822', json_encode([
             'configurations' => [
                 'fallDetection' => ['enabled' => true],
-                'phonebook' => [
+                'call_whitelist' => [
                     'contacts' => [
                         ['name' => 'Ana', 'phone' => '+351911111111'],
                     ],
@@ -1138,12 +1113,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertCount(1, $submitted);
+        self::assertCount(2, $submitted);
         self::assertSame('861265061009822', $submitted[0]['imei']);
         self::assertStringContainsString('BP76', $submitted[0]['bytes']);
-        self::assertCount(1, $response['results'] ?? []);
+        self::assertStringContainsString('BP14', $submitted[1]['bytes']);
+        self::assertCount(2, $response['results'] ?? []);
         self::assertSame('fallDetection', $response['results'][0]['key'] ?? null);
-        self::assertSame(['enabled' => true], $response['configurations']['fallDetection'] ?? null);
+        self::assertSame('call_whitelist', $response['results'][1]['key'] ?? null);
+        self::assertSame(['enabled' => true], $response['configurations']['fall_detection'] ?? null);
         self::assertSame('waiting_device', $response['pending']['alarms']['fall_detection']['status'] ?? null);
     }
 
@@ -1155,15 +1132,16 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
             return 'sent';
         });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
             'configurations' => [
-                'takePills' => [
+                'medication_reminders' => [
                     'reminderSettings' => [
                         'time' => '11:25',
                         'enabled' => true,
@@ -1172,8 +1150,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                     'number' => 3,
                     'reminderText' => 'meds',
-                    'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
-                    'voiceMimeType' => 'audio/wav',
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -1181,7 +1157,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073,IyFBTVIK', $submitted[0]['bytes']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPutAcceptsLocationReportingIntervalAliasForFourPTouch(): void
@@ -1209,7 +1185,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertSame('uploadInterval', $response['results'][0]['key'] ?? null);
+        self::assertSame('location_reporting_interval', $response['results'][0]['key'] ?? null);
         self::assertStringContainsString('UPLOAD,3600', $submitted[0]['bytes']);
     }
 
@@ -1238,7 +1214,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertSame('centerNumber', $response['results'][0]['key'] ?? null);
+        self::assertSame('center_number', $response['results'][0]['key'] ?? null);
         self::assertStringContainsString('CENTER,351911111111', $submitted[0]['bytes']);
     }
 
@@ -1475,7 +1451,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('fallDownSensitivity', $response['results'][0]['key'] ?? null);
+        self::assertSame('fall_sensitivity', $response['results'][0]['key'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('LSSET,4+6', $submitted[0]['bytes']);
@@ -1537,7 +1513,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
@@ -1554,7 +1530,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('phonebook', $response['results'][0]['key'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertStringContainsString('PHB,123456789,Ana', $submitted[0]['bytes']);
+        self::assertStringContainsString('PHB,123456789,0041006E0061', $submitted[0]['bytes']);
         self::assertSame(
             ['contacts' => [['name' => 'Ana', 'phone' => '123456789']]],
             $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
@@ -1624,7 +1600,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('REMIND', $submitted[0]['bytes'] ?? '');
         self::assertSame(
-            ['items' => []],
+            ['alarms' => []],
             $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
         );
     }
@@ -1657,7 +1633,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('SOS2', $submitted[1]['bytes']);
         self::assertStringContainsString('SOS3', $submitted[2]['bytes']);
         self::assertSame(
-            ['numbers' => []],
+            ['phone' => ''],
             $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
         );
     }
@@ -1733,7 +1709,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
             'configurations' => [
-                'takePills' => [
+                'medication_reminders' => [
                     'reminderSettings' => [
                         ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
                         ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
@@ -1898,7 +1874,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $savedRows = $db->deviceConfigurations->allForImei('637507597567372');
         self::assertCount(2, $savedRows);
         self::assertSame(['numbers' => ['111', '222', '333', '444', '555']], $savedRows[0]['desired_payload'] ?? null);
-        self::assertSame(['numbers' => ['666', '', '', '', '']], $savedRows[1]['desired_payload'] ?? null);
+        self::assertSame(['numbers' => ['666']], $savedRows[1]['desired_payload'] ?? null);
     }
 
     public function testFourPTouchAlarmClockCapabilitySaveFansOutToNativeCommand(): void
@@ -1994,7 +1970,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
 
         $response = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
 

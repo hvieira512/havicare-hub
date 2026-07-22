@@ -17,8 +17,8 @@ use Hub\Domain\GenericModelCapabilityCatalog;
 /**
  * Central registry for capability contracts.
  *
- * Complex capabilities (alarm_clock, sos_contacts, etc.) implement
- * CapabilityContract and are registered here. Simple capabilities
+ * Complex capabilities (alarm_clock, sos_contacts, call_whitelist, etc.)
+ * implement CapabilityContract and are registered here. Simple capabilities
  * (toggles, numbers, phones) are handled generically via
  * DeviceConfigurationCatalog metadata.
  */
@@ -137,7 +137,7 @@ final class CapabilityRegistry
     public function responseNativeKey(string $protocol, string $genericKey): ?string
     {
         if (isset($this->contracts[$genericKey])) {
-            return null;
+            return $this->contracts[$genericKey]->nativeKeyForProtocol($protocol);
         }
 
         if ($protocol !== 'four-p-touch') {

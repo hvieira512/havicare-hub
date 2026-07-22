@@ -140,7 +140,7 @@ export const fieldLabel = (key) =>
         remindValue: "Limite principal",
         hpWarn: "Sistólica máxima",
         LPWarn: "Diastólica máxima",
-        exerciseSwitchState: "Alertas em exercício",
+        exerciseSwitchState: "Alarmes em exercício",
         exerciseHRMin: "FC mínima em exercício",
         exerciseHRMax: "FC máxima em exercício",
         exerciseRemindValue: "Limite em exercício",

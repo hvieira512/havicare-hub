@@ -10,6 +10,7 @@ use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\GenericModelCapabilityCatalog;
 use Hub\Domain\DeviceProtocol;
@@ -22,6 +23,8 @@ use Hub\Registry\Whitelist;
 
 class DeviceService
 {
+    use CapabilityHelpers;
+
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
     private CollectionQuery $query;
@@ -455,7 +458,10 @@ class DeviceService
                     continue;
                 }
 
-                if (!array_key_exists($genericKey, $configurations)) {
+                $supportsMultipleNativeKeys = $this->capabilityRegistry->has($genericKey)
+                    && $this->capabilityRegistry->get($genericKey)?->supportsMultipleNativeKeys();
+
+                if (!array_key_exists($genericKey, $configurations) || !$supportsMultipleNativeKeys) {
                     $configurations[$genericKey] = $normalized;
                 } else {
                     $configurations[$genericKey] = $this->mergeCapabilityValue(
@@ -1365,6 +1371,10 @@ class DeviceService
                             $sectionCaps[$genericKey],
                             $metaData,
                         );
+                        $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
+                        if ($responseNativeKey !== null && is_array($sectionCaps[$genericKey])) {
+                            $sectionCaps[$genericKey]['_nativeKey'] ??= $responseNativeKey;
+                        }
                     } else {
                         $sectionCaps[$genericKey] = [
                             'value' => $sectionCaps[$genericKey],
@@ -1413,6 +1423,10 @@ class DeviceService
                         $value,
                         $meta[$genericKey] ?? [],
                     );
+                    $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
+                    if ($responseNativeKey !== null && is_array($value)) {
+                        $value['_nativeKey'] ??= $responseNativeKey;
+                    }
                 } else {
                     $value = [
                         'value' => $value,
@@ -1799,15 +1813,55 @@ class DeviceService
     {
         return match ($genericKey) {
             'sos_contacts' => is_array($value)
-                ? (array_key_exists('numbers', $value) ? array_values($value['numbers']) : array_values($value))
+                ? $this->stringifyPhoneList($value)
                 : [],
             'call_whitelist' => is_array($value)
-                ? (array_key_exists('numbers', $value)
-                    ? array_values($value['numbers'])
-                    : (array_is_list($value) ? array_values($value) : $value))
+                ? $this->stringifyCallWhitelistValue($value)
                 : $value,
             default => $value,
         };
+    }
+
+    /**
+     * @param array<string|int, mixed> $value
+     * @return mixed
+     */
+    private function stringifyPhoneList(array $value): mixed
+    {
+        if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
+            return self::stringList($value['numbers']);
+        }
+
+        if (!array_is_list($value)) {
+            return $value;
+        }
+
+        return self::stringList($value);
+    }
+
+    /**
+     * @param array<string|int, mixed> $value
+     * @return mixed
+     */
+    private function stringifyCallWhitelistValue(array $value): mixed
+    {
+        if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
+            return array_values($value['contacts']);
+        }
+
+        if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
+            return self::stringList($value['numbers']);
+        }
+
+        if (!array_is_list($value)) {
+            return $value;
+        }
+
+        if ($value !== [] && is_array($value[0] ?? null)) {
+            return array_values($value);
+        }
+
+        return self::stringList($value);
     }
 
     /**

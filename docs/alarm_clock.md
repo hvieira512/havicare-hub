@@ -278,7 +278,8 @@ Example:
 The client should always speak generic capability names:
 
 - `alarm_clock`
-- `phonebook`
+- `phonebook` for 4P Touch only
+- `call_whitelist`
 - `sos_contacts`
 - `battery`
 - `heart_rate`

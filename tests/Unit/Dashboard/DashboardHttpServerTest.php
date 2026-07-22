@@ -644,7 +644,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertTrue($body['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
         self::assertSame(
             ['password' => '2468'],
-            $body['capabilities']['settings_system']['device_password'] ?? null
+            $body['capabilities']['settings_system']['device_password']['value'] ?? null
         );
         self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
@@ -770,6 +770,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ],
             $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
         );
+        self::assertSame('takePills', $body['capabilities']['alarms']['medication_reminders']['_nativeKey'] ?? null);
         self::assertSame(3, $body['capabilities']['alarms']['medication_reminders']['_meta']['limit'] ?? null);
         self::assertSame(
             [
@@ -828,6 +829,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ],
             $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
         );
+        self::assertSame('takePills', $body['capabilities']['alarms']['medication_reminders']['_nativeKey'] ?? null);
     }
 
     public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void

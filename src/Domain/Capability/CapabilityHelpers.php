@@ -11,17 +11,21 @@ trait CapabilityHelpers
     public static function stringList(array $values): array
     {
         $normalized = [];
+        $seen = [];
         foreach ($values as $value) {
             if (is_array($value)) {
                 throw new \InvalidArgumentException('list items must be strings');
             }
             $item = trim((string)$value);
             if ($item !== '') {
-                $normalized[$item] = true;
+                if (!isset($seen[$item])) {
+                    $seen[$item] = true;
+                    $normalized[] = $item;
+                }
             }
         }
 
-        return array_keys($normalized);
+        return $normalized;
     }
 
     /** @return list<string> */
@@ -44,6 +48,7 @@ trait CapabilityHelpers
         }
 
         $normalized = [];
+        $seen = [];
         foreach ($value as $item) {
             if (is_array($item)) {
                 throw new \InvalidArgumentException("{$field} items must be strings");
@@ -52,9 +57,10 @@ trait CapabilityHelpers
             if ($string === '') {
                 continue;
             }
-            if (in_array($string, $normalized, true)) {
+            if (isset($seen[$string])) {
                 throw new \InvalidArgumentException("{$field} must not contain repeated values");
             }
+            $seen[$string] = true;
             $normalized[] = $string;
         }
 

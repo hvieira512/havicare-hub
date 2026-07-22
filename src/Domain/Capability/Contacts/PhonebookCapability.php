@@ -6,14 +6,14 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Generic phonebook capability.
+ * 4P Touch phonebook capability.
  *
  * Public API shape:
  * - GET /api/devices/{imei}: value is a list of contacts, with optional _meta.limit
  * - PATCH /api/devices/{imei}/configurations: send { contacts: [...] }
  *   An empty array is valid and clears the saved phonebook.
  *
- * The hub translates that generic contract to each protocol's native command(s).
+ * The hub translates that contract to the 4P Touch native command(s).
  */
 final class PhonebookCapability implements CapabilityContract
 {
@@ -49,7 +49,7 @@ final class PhonebookCapability implements CapabilityContract
         $contacts = is_array($value) && array_key_exists('contacts', $value) ? $value['contacts'] : $value;
 
         return match ($protocol) {
-            'vivistar-iw', 'wonlex-json', 'four-p-touch' => [
+            'wonlex-json', 'four-p-touch' => [
                 'phonebook' => ['contacts' => self::requireListValue($contacts, 'contacts')],
             ],
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for phonebook"),

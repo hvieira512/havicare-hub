@@ -300,6 +300,7 @@ final class GenericModelCapabilityCatalog
             'dnDevBindStatus' => 'device_binding',
             'wonlexCallInLimitSwitch' => 'call_in_restriction',
             'whitelistSwitch' => 'whitelist_enabled',
+            'whitelist_enabled' => 'whitelist_enabled',
             'deviceConfig' => 'device_settings_sync',
             default => null,
         };

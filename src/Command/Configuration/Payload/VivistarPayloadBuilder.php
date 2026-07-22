@@ -12,6 +12,7 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
 
         $fields = match ($key) {
             'sosContacts' => self::stringList($payload['numbers'] ?? [], 3, 'numbers'),
+            'phonebook' => self::phonebook($payload),
             'call_whitelist' => self::callWhitelist($payload),
             'pushMessage' => [self::utf16Hex(self::requiredString($payload['message'] ?? null, 'message'))],
             'workingMode' => self::workingMode($payload),
@@ -49,6 +50,11 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     private static function callWhitelist(array $payload): array
+    {
+        return self::phonebook($payload);
+    }
+
+    private static function phonebook(array $payload): array
     {
         $contacts = $payload['contacts'] ?? $payload['numbers'] ?? $payload;
         if (!is_array($contacts)) {

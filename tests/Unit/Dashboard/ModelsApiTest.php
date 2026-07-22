@@ -31,7 +31,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
         self::assertTrue($response['capabilities']['telemetry']['location'] ?? false);
         self::assertTrue($response['capabilities']['health']['auto_vitals_interval'] ?? false);
-        self::assertTrue($response['capabilities']['contacts']['phonebook'] ?? false);
+        self::assertTrue($response['capabilities']['contacts']['call_whitelist'] ?? false);
         self::assertFalse($response['capabilities']['settings_system']['language_timezone'] ?? false);
     }
 
@@ -179,20 +179,19 @@ final class ModelsApiTest extends MysqlDashboardTestCase
                 'commercialName' => (string)$model['commercial_name'],
                 'deviceType' => (string)$model['device_type'],
                 'capabilitiesConfigured' => '1',
-                'capabilities' => ['heart_rate', 'phonebook', 'working_mode'],
+                'capabilities' => ['heart_rate', 'call_whitelist', 'working_mode'],
             ]);
 
         $result = $api->update((int)$model['id'], $request);
 
         self::assertSame('ok', $result['status'] ?? null);
-        self::assertSame(
-            ['heart_rate', 'phonebook', 'working_mode'],
-            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
-        );
+        $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
+        sort($actual);
+        self::assertSame(['call_whitelist', 'heart_rate', 'working_mode'], $actual);
 
         $updated = $api->show((int)$model['id']);
         self::assertTrue($updated['capabilities']['telemetry']['heart_rate'] ?? false);
-        self::assertTrue($updated['capabilities']['contacts']['phonebook'] ?? false);
+        self::assertTrue($updated['capabilities']['contacts']['call_whitelist'] ?? false);
         self::assertTrue($updated['capabilities']['settings_system']['working_mode'] ?? false);
         self::assertFalse($updated['capabilities']['telemetry']['blood_pressure'] ?? true);
     }
@@ -229,7 +228,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'phonebook']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'call_whitelist']);
 
         $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
             ->withParsedBody([
@@ -242,10 +241,9 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $result = $api->update((int)$model['id'], $request);
 
         self::assertSame('ok', $result['status'] ?? null);
-        self::assertSame(
-            ['heart_rate', 'phonebook'],
-            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
-        );
+        $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
+        sort($actual);
+        self::assertSame(['call_whitelist', 'heart_rate'], $actual);
     }
 
     public function testUpdateWithoutExplicitCapabilitiesDropsUnsupportedSupplierFeatures(): void

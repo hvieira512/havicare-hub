@@ -39,7 +39,7 @@ const SECTION_TRANSLATIONS = {
     telemetry: "Telemetria",
     health: "Saúde",
     contacts: "Contactos",
-    alarms: "Alertas",
+    alarms: "Alarmes",
     settings_system: "Sistema",
 };
 
@@ -79,8 +79,8 @@ const CAPABILITY_LABEL_TRANSLATIONS = {
     step_reporting_interval: "Passos",
     pedometer_schedule: "Pedómetro",
     sos_contacts: "Contactos SOS",
-    phonebook: "Contactos",
-    call_whitelist: "Chamadas permitidas",
+    phonebook: "Lista telefónica (4P Touch)",
+    call_whitelist: "Lista branca",
     whitelist_enabled: "Lista branca ativa",
     monitor_number: "Número de monitorização",
     alarm_clock: "Alarmes",

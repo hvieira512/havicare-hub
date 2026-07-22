@@ -63,7 +63,7 @@ final class ProtocolRegistry
                             'limit' => 3,
                         ],
                         'call_whitelist' => [
-                            'label' => 'Chamadas permitidas',
+                            'label' => 'Lista branca',
                             'limit' => 10,
                         ],
                     ],

@@ -50,10 +50,11 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertContains('blood_sugar', $actual);
         self::assertContains('alarm_clock', $actual);
         self::assertContains('auto_vitals_interval', $actual);
-        self::assertContains('phonebook', $actual);
+        self::assertContains('call_whitelist', $actual);
         self::assertContains('push_message', $actual);
         self::assertContains('sos_contacts', $actual);
         self::assertContains('working_mode', $actual);
+        self::assertNotContains('phonebook', $actual);
         self::assertNotContains('firmware_version', $actual);
         self::assertNotContains('device_status', $actual);
     }

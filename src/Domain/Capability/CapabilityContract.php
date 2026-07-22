@@ -5,7 +5,7 @@ namespace Hub\Domain\Capability;
 /**
  * Defines the contract for a generic capability.
  *
- * Every capability (alarm_clock, phonebook, fall_detection, etc.) implements
+ * Every capability (alarm_clock, call_whitelist, fall_detection, etc.) implements
  * this interface so that DeviceService and DeviceConfigurationCatalog can
  * delegate to a single object instead of scattering logic across match arms.
  */

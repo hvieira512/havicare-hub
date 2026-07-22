@@ -1167,7 +1167,7 @@ class OpenApiSpec
                     ],
                     'PhonebookConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook. Send contacts as an array; an empty array is valid and clears the phonebook. The hub translates that list to the device-specific native commands.',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook for 4P Touch devices. Send contacts as an array; an empty array is valid and clears the phonebook. The hub translates that list to the device-specific native commands.',
                         'properties' => [
                             'contacts' => [
                                 'type' => 'array',
@@ -1287,7 +1287,7 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. For list-shaped capabilities, an empty array is valid and clears the saved value. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. For phonebook, send {contacts:[{name,phone}]} and let the hub fan out to native commands. For sos_contacts, send flat arrays of phone numbers. For Vivistar call_whitelist, send {contacts:[{name,phone}]} because BP14 is a whitelist phonebook; for 4P Touch call_whitelist, send flat arrays of phone numbers. Use whitelist_enabled as the separate on/off switch for whitelist transport.',
+                                'description' => 'Map of generic capability keys to desired payloads. For list-shaped capabilities, an empty array is valid and clears the saved value. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. Use configurations.phonebook only for 4P Touch contact lists. Use configurations.call_whitelist for whitelist lists: Vivistar accepts {contacts:[{name,phone}]} through BP14, while 4P Touch accepts flat arrays of phone numbers. For sos_contacts, send flat arrays of phone numbers. Use whitelist_enabled as the separate on/off switch for whitelist transport.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
                                     'phonebook' => ['$ref' => '#/components/schemas/PhonebookConfiguration'],
