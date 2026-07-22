@@ -1322,6 +1322,13 @@ class DeviceService
                 continue;
             }
 
+            if (
+                $this->capabilityRegistry->has($genericKey)
+                && !$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)
+            ) {
+                continue;
+            }
+
             $normalized = $this->normalizeCapabilityValue($genericKey, $nativeKey, $payload);
             if ($normalized === null) {
                 continue;
