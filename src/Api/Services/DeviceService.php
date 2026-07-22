@@ -439,8 +439,8 @@ class DeviceService
         foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
             $desired = $row['desired_payload'];
             if (is_array($desired) && $desired !== []) {
-                $nativeKey = trim((string)($row['config_key'] ?? ''));
-                $genericKey = GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey);
+                $nativeKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+                $genericKey = $nativeKey !== null ? GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($nativeKey) : null;
                 if ($genericKey === null) {
                     continue;
                 }
@@ -520,7 +520,10 @@ class DeviceService
         $currentConfigs = $this->db->deviceConfigurations->allForImei($imei);
         $currentByKey = [];
         foreach ($currentConfigs as $row) {
-            $currentByKey[(string)($row['config_key'] ?? '')] = $row;
+            $normalizedKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+            if ($normalizedKey !== null) {
+                $currentByKey[$normalizedKey] = $row;
+            }
         }
         $results = [];
         foreach ($decoded['configurations'] as $key => $payload) {
@@ -551,8 +554,9 @@ class DeviceService
 
                 $pathResults = [];
                 foreach ($nativeUpdates as $nativeKey => $nativePayload) {
-                    $existingPayload = is_array($currentByKey[$nativeKey]['desired_payload'] ?? null)
-                        ? $currentByKey[$nativeKey]['desired_payload']
+                    $normalizedNativeKey = $this->normalizedStoredConfigurationKey($nativeKey) ?? $nativeKey;
+                    $existingPayload = is_array($currentByKey[$normalizedNativeKey]['desired_payload'] ?? null)
+                        ? $currentByKey[$normalizedNativeKey]['desired_payload']
                         : null;
                     if ($existingPayload !== null && $this->capabilityValuesEqual($existingPayload, $nativePayload)) {
                         continue;
@@ -569,9 +573,9 @@ class DeviceService
                         return $result;
                     }
 
-                    $currentByKey[$nativeKey] = [
+                    $currentByKey[$normalizedNativeKey] = [
                         'desired_payload' => $nativePayload,
-                    ] + ($currentByKey[$nativeKey] ?? []);
+                    ] + ($currentByKey[$normalizedNativeKey] ?? []);
 
                     $pathResults[] = [
                         'key' => $nativeKey,
@@ -607,7 +611,8 @@ class DeviceService
                 return ['error' => ['code' => 'invalid_config', 'message' => "Unsupported configuration {$key}"]];
             }
 
-            $current = $currentByKey[$nativeKey] ?? null;
+            $normalizedNativeKey = $this->normalizedStoredConfigurationKey($nativeKey) ?? $nativeKey;
+            $current = $currentByKey[$normalizedNativeKey] ?? null;
             $currentDesired = is_array($current['desired_payload'] ?? null) ? $current['desired_payload'] : null;
             if ($currentDesired !== null && $this->capabilityValuesEqual($currentDesired, $payload)) {
                 continue;
@@ -1038,7 +1043,10 @@ class DeviceService
         $currentValues = $this->flattenWritableCapabilities($this->deviceCapabilities($modelRow, $protocol, $configRows));
         $currentRowsByKey = [];
         foreach ($configRows as $row) {
-            $currentRowsByKey[(string)($row['config_key'] ?? '')] = $row;
+            $normalizedKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+            if ($normalizedKey !== null) {
+                $currentRowsByKey[$normalizedKey] = $row;
+            }
         }
 
         try {
@@ -1078,8 +1086,9 @@ class DeviceService
 
             $pathResults = [];
             foreach ($nativeUpdates as $nativeKey => $payload) {
-                $existingPayload = is_array($currentRowsByKey[$nativeKey]['desired_payload'] ?? null)
-                    ? $currentRowsByKey[$nativeKey]['desired_payload']
+                $normalizedNativeKey = $this->normalizedStoredConfigurationKey($nativeKey) ?? $nativeKey;
+                $existingPayload = is_array($currentRowsByKey[$normalizedNativeKey]['desired_payload'] ?? null)
+                    ? $currentRowsByKey[$normalizedNativeKey]['desired_payload']
                     : null;
                 if ($existingPayload !== null && $this->capabilityValuesEqual($existingPayload, $payload)) {
                     continue;
@@ -1306,13 +1315,13 @@ class DeviceService
         $storedGenericKeys = [];
 
         foreach ($configRows as $row) {
-            $nativeKey = trim((string)($row['config_key'] ?? ''));
+            $nativeKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
             $payload = is_array($row[$payloadKey] ?? null) ? $row[$payloadKey] : [];
-            if ($nativeKey === '' || $payload === []) {
+            if ($nativeKey === null || $payload === []) {
                 continue;
             }
 
-            $genericKey = GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey);
+            $genericKey = GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($nativeKey);
             if ($genericKey === null) {
                 continue;
             }
@@ -1803,8 +1812,11 @@ class DeviceService
     {
         $meta = [];
         foreach ($configRows as $row) {
-            $nativeKey = trim((string)($row['config_key'] ?? ''));
-            $genericKey = GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey);
+            $nativeKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+            if ($nativeKey === null) {
+                continue;
+            }
+            $genericKey = GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($nativeKey);
             if ($genericKey === null) {
                 continue;
             }
@@ -1902,6 +1914,16 @@ class DeviceService
     private function resolveConfigurationKeyForProtocol(string $protocol, string $key): ?string
     {
         return $this->capabilityRegistry->resolveConfigKey($protocol, $key);
+    }
+
+    private function normalizedStoredConfigurationKey(string $key): ?string
+    {
+        $key = trim($key);
+        if ($key === '') {
+            return null;
+        }
+
+        return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key);
     }
 
     private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed

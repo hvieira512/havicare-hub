@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Repository;
 
+use Hub\Domain\GenericModelCapabilityCatalog;
 use PDO;
 
 final class DeviceConfigurationRepository
@@ -34,6 +35,7 @@ final class DeviceConfigurationRepository
         string $status = '',
         string $commandId = ''
     ): void {
+        $key = $this->normalizeConfigKey($key);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
         if ($this->exists($imei, $key)) {
@@ -58,6 +60,7 @@ final class DeviceConfigurationRepository
 
     public function markApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
     {
+        $key = $this->normalizeConfigKey($key);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $stmt = $this->pdo->prepare('UPDATE device_configurations SET last_status = ?, last_command_id = ?, applied_at = ? WHERE imei = ? AND config_key = ?');
         $stmt->execute([$status, $commandId, $now, $imei, $key]);
@@ -72,6 +75,7 @@ final class DeviceConfigurationRepository
         string $command,
         array $payload
     ): void {
+        $key = $this->normalizeConfigKey($key);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
         if ($this->exists($imei, $key)) {
@@ -95,10 +99,21 @@ final class DeviceConfigurationRepository
 
     private function exists(string $imei, string $key): bool
     {
+        $key = $this->normalizeConfigKey($key);
         $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM device_configurations WHERE imei = ? AND config_key = ?');
         $stmt->execute([$imei, $key]);
 
         return (int)$stmt->fetchColumn() > 0;
+    }
+
+    private function normalizeConfigKey(string $key): string
+    {
+        $key = trim($key);
+        if ($key === '') {
+            return $key;
+        }
+
+        return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
     }
 
     private function normalizeRow(array $row): array

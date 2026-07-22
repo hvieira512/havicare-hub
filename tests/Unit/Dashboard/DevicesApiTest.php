@@ -887,6 +887,17 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'fallDetection',
+            'vivistar-iw',
+            'Vivistar',
+            'L08 Pro',
+            'BP76',
+            ['enabled' => true],
+            'waiting',
+            'cmd-0'
+        );
 
         $response = $api->updateConfigurations('861265061009822', json_encode([
             'configurations' => [
@@ -905,6 +916,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(
             ['enabled' => false],
             $response['configurations']['fall_detection'] ?? null
+        );
+
+        $showResponse = $api->show('861265061009822');
+        self::assertSame(
+            ['enabled' => false],
+            $showResponse['configurations']['fall_detection'] ?? null
         );
     }
 
