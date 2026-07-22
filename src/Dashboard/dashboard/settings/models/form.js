@@ -81,6 +81,7 @@ function resetModelForm(selectedSupplierId = "") {
     delete els.modelForm.dataset.modelId;
     delete els.modelForm.dataset.image;
     els.modelForm.dataset.deviceType = "watch";
+    state.modelModal.enabledCapabilities = [];
     els.saveModelBtn.innerHTML =
         '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
     els.modelImage.value = "";
@@ -147,6 +148,7 @@ function selectModelSupplier(supplierId) {
     const supplier = modelSupplierEntry(deviceType, supplierId);
     els.modelForm.dataset.supplierId = String(supplierId);
     els.modelForm.dataset.supplier = supplier?.name || "";
+    state.modelModal.enabledCapabilities = [];
     delete els.modelForm.dataset.image;
     renderModelSupplierButtons(supplierId);
     updateModelProtocolAndPreview();
@@ -156,6 +158,7 @@ function selectModelSupplier(supplierId) {
 function selectModelDeviceType(deviceType) {
     const {els, callbacks} = getSettingsModelsRuntime();
     els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
+    state.modelModal.enabledCapabilities = [];
     renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
     void callbacks.refreshNewModelCapabilityTemplate?.();
 }

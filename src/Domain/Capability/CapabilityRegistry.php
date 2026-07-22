@@ -63,6 +63,16 @@ final class CapabilityRegistry
         return isset($this->contracts[$genericKey]);
     }
 
+    public function supportsProtocol(string $genericKey, string $protocol): bool
+    {
+        $contract = $this->contracts[$genericKey] ?? null;
+        if ($contract === null) {
+            return true;
+        }
+
+        return in_array($protocol, $contract->supportedProtocols(), true);
+    }
+
     /**
      * @return array<string, array<string, mixed>>
      */

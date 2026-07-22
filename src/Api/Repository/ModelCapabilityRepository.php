@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Repository;
 
+use Hub\Domain\SupplierCapabilityTemplate;
 use PDO;
 
 final class ModelCapabilityRepository
@@ -16,15 +17,32 @@ final class ModelCapabilityRepository
     public function enabledFeaturesForModelId(int $modelId): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT c.capability_key
+            SELECT c.capability_key, m.device_type, s.name AS supplier_name
             FROM model_capabilities mc
             JOIN capabilities c ON c.id = mc.capability_id
+            JOIN models m ON m.id = mc.model_id
+            JOIN suppliers s ON s.id = m.supplier_id
             WHERE mc.model_id = ? AND mc.enabled = 1
             ORDER BY c.capability_key
         ');
         $stmt->execute([$modelId]);
 
-        return array_values(array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if ($rows === []) {
+            return [];
+        }
+
+        $allowed = $this->allowedFeaturesForModelRow($rows[0]);
+        $enabled = [];
+        foreach ($rows as $row) {
+            $key = trim((string)($row['capability_key'] ?? ''));
+            if ($key === '' || !isset($allowed[$key])) {
+                continue;
+            }
+            $enabled[$key] = true;
+        }
+
+        return array_keys($enabled);
     }
 
     /**
@@ -40,9 +58,11 @@ final class ModelCapabilityRepository
 
         $placeholders = implode(',', array_fill(0, count($modelIds), '?'));
         $stmt = $this->pdo->prepare("
-            SELECT mc.model_id, c.capability_key
+            SELECT mc.model_id, c.capability_key, m.device_type, s.name AS supplier_name
             FROM model_capabilities mc
             JOIN capabilities c ON c.id = mc.capability_id
+            JOIN models m ON m.id = mc.model_id
+            JOIN suppliers s ON s.id = m.supplier_id
             WHERE mc.enabled = 1 AND mc.model_id IN ($placeholders)
             ORDER BY mc.model_id, c.capability_key
         ");
@@ -50,13 +70,22 @@ final class ModelCapabilityRepository
 
         $rows = $stmt->fetchAll();
         $result = [];
+        $allowedCache = [];
         foreach ($rows as $row) {
             $modelId = (int)($row['model_id'] ?? 0);
             if ($modelId <= 0) {
                 continue;
             }
+            $cacheKey = trim((string)($row['supplier_name'] ?? '')) . ':' . trim((string)($row['device_type'] ?? ''));
+            if (!array_key_exists($cacheKey, $allowedCache)) {
+                $allowedCache[$cacheKey] = $this->allowedFeaturesForModelRow($row);
+            }
+            $key = trim((string)($row['capability_key'] ?? ''));
+            if ($key === '' || !isset($allowedCache[$cacheKey][$key])) {
+                continue;
+            }
             $result[$modelId] ??= [];
-            $result[$modelId][] = (string)($row['capability_key'] ?? '');
+            $result[$modelId][] = $key;
         }
 
         return $result;
@@ -114,20 +143,21 @@ final class ModelCapabilityRepository
      */
     private function normalizeCapabilityIds(int $modelId, array $capabilityIds): array
     {
-        $deviceType = $this->deviceTypeForModelId($modelId);
+        $allowed = $this->allowedCapabilityIdsForModelId($modelId);
         $normalized = [];
         foreach ($capabilityIds as $capabilityId) {
             if (is_string($capabilityId) && !ctype_digit($capabilityId)) {
-                $value = $this->capabilityIdForDeviceTypeAndKey($deviceType, trim($capabilityId));
-                if ($value === null) {
+                $key = trim($capabilityId);
+                if ($key === '' || !isset($allowed['keys'][$key])) {
                     continue;
                 }
+                $value = $allowed['keys'][$key];
                 $normalized[$value] = $value;
                 continue;
             }
 
             $value = (int)$capabilityId;
-            if ($value <= 0) {
+            if ($value <= 0 || !isset($allowed['ids'][$value])) {
                 continue;
             }
             $normalized[$value] = $value;
@@ -136,13 +166,63 @@ final class ModelCapabilityRepository
         return array_values($normalized);
     }
 
-    private function deviceTypeForModelId(int $modelId): string
+    /**
+     * @return array{device_type: string, supplier_name: string}
+     */
+    private function modelContextForModelId(int $modelId): array
     {
-        $stmt = $this->pdo->prepare('SELECT device_type FROM models WHERE id = ?');
+        $stmt = $this->pdo->prepare('
+            SELECT m.device_type, s.name AS supplier_name
+            FROM models m
+            JOIN suppliers s ON s.id = m.supplier_id
+            WHERE m.id = ?
+        ');
         $stmt->execute([$modelId]);
-        $deviceType = $stmt->fetchColumn();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        return is_string($deviceType) && $deviceType !== '' ? $deviceType : 'watch';
+        return [
+            'device_type' => is_string($row['device_type'] ?? null) && $row['device_type'] !== '' ? (string)$row['device_type'] : 'watch',
+            'supplier_name' => is_string($row['supplier_name'] ?? null) ? (string)$row['supplier_name'] : '',
+        ];
+    }
+
+    /**
+     * @return array{ids: array<int, int>, keys: array<string, int>}
+     */
+    private function allowedCapabilityIdsForModelId(int $modelId): array
+    {
+        $context = $this->modelContextForModelId($modelId);
+        $allowedKeys = SupplierCapabilityTemplate::keysForSupplierDeviceType(
+            $context['supplier_name'],
+            $context['device_type']
+        );
+
+        $ids = [];
+        $keys = [];
+        foreach ($allowedKeys as $key) {
+            $capabilityId = $this->capabilityIdForDeviceTypeAndKey($context['device_type'], $key);
+            if ($capabilityId === null) {
+                continue;
+            }
+            $ids[$capabilityId] = $capabilityId;
+            $keys[$key] = $capabilityId;
+        }
+
+        return ['ids' => $ids, 'keys' => $keys];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, true>
+     */
+    private function allowedFeaturesForModelRow(array $row): array
+    {
+        $allowed = SupplierCapabilityTemplate::keysForSupplierDeviceType(
+            (string)($row['supplier_name'] ?? ''),
+            (string)($row['device_type'] ?? 'watch')
+        );
+
+        return array_fill_keys($allowed, true);
     }
 
     private function capabilityIdForDeviceTypeAndKey(string $deviceType, string $key): ?int

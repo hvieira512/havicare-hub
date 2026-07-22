@@ -14,7 +14,7 @@ final class SettingsModelCapabilityTemplateTest extends TestCase
 
         self::assertIsString($source);
         self::assertStringContainsString(
-            'state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(',
+            'const visibleSections = sections',
             $source,
         );
         self::assertStringContainsString('const templateSet = new Set(', $source);
@@ -23,7 +23,11 @@ final class SettingsModelCapabilityTemplateTest extends TestCase
             $source,
         );
         self::assertStringContainsString(
-            '.filter((key) => (templateSet.size === 0 ? true : templateSet.has(key)));',
+            'visibleEntries.length === 0',
+            $source,
+        );
+        self::assertStringNotContainsString(
+            'bg-white ${!supported ? "opacity-50" : ""}',
             $source,
         );
         self::assertStringContainsString(

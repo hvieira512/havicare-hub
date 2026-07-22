@@ -190,6 +190,16 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $response['transportPending'] ?? null);
     }
 
+    public function testShowDoesNotExposePhonebookForVivistarDevices(): void
+    {
+        [$api] = $this->makeApi();
+
+        $response = $api->show('861265061009822');
+
+        self::assertArrayNotHasKey('phonebook', $response['capabilities']['contacts'] ?? []);
+        self::assertArrayHasKey('call_whitelist', $response['capabilities']['contacts'] ?? []);
+    }
+
     public function testShowReturnsVoerkaPagerCallCapabilitySupportWithoutStoredConfiguration(): void
     {
         [$api, $db, $store] = $this->makeApi();

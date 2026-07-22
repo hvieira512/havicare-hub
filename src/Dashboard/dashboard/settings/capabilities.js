@@ -233,8 +233,32 @@ function renderCapabilitiesCatalogSection() {
     const sections = capabilitiesGroupedBySection(
         state.settingsModal.capabilityCatalog,
     );
-    els.capabilityCatalogEmpty.classList.toggle("d-none", sections.length > 0);
-    els.capabilityCatalogViewer.innerHTML = sections
+    const visibleSections = sections
+        .map(({ section, label, entries }) => {
+            const visibleEntries = entries
+                .filter(
+                    (entry) =>
+                        entry.isTelemetry ||
+                        entry.isConfigurable ||
+                        entry.isEvent,
+                )
+                .filter((entry) =>
+                    hasSupplierFilter
+                        ? enabledSet.has(entry.key)
+                        : true,
+                );
+            if (visibleEntries.length === 0) {
+                return null;
+            }
+            return { section, label, entries: visibleEntries };
+        })
+        .filter(Boolean);
+
+    els.capabilityCatalogEmpty.classList.toggle(
+        "d-none",
+        visibleSections.length > 0,
+    );
+    els.capabilityCatalogViewer.innerHTML = visibleSections
         .map(
             ({ section, label, entries }) => `
         <section class="border rounded bg-body-tertiary p-3">
@@ -249,7 +273,7 @@ function renderCapabilitiesCatalogSection() {
                             ? enabledSet.has(entry.key)
                             : true;
                         return `
-                    <div class="border rounded px-3 py-2 bg-white ${!supported ? "opacity-50" : ""}">
+                    <div class="border rounded px-3 py-2 bg-white">
                         <div class="d-flex justify-content-between align-items-start gap-2">
                             <div>
                                 <div class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</div>

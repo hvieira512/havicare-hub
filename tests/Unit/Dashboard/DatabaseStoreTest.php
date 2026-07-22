@@ -87,6 +87,31 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testVivistarModelCapabilitiesIgnoreWatchOnlyPhonebookRows(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+        $db = ApiDataAccess::fromDatabase($database);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($model);
+
+        $capabilityStmt = $pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
+        $capabilityStmt->execute(['watch', 'phonebook']);
+        $phonebookCapabilityId = (int)($capabilityStmt->fetchColumn() ?: 0);
+        self::assertGreaterThan(0, $phonebookCapabilityId);
+
+        $insert = $pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
+        $insert->execute([(int)$model['id'], $phonebookCapabilityId]);
+
+        self::assertNotContains(
+            'phonebook',
+            $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
+        );
+
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
+        self::assertSame([], $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']));
+    }
+
     public function testBootstrapNormalizesPersistedModelCapabilitiesByRemovingInvalidEntries(): void
     {
         $database = $this->createDashboardDatabase();

@@ -35,6 +35,10 @@ final class SettingsModelsTabFetchTest extends TestCase
             $formSource,
         );
         self::assertStringContainsString(
+            'state.modelModal.enabledCapabilities = [];',
+            $formSource,
+        );
+        self::assertStringContainsString(
             'await refreshNewModelCapabilityTemplate();',
             $capabilitiesSource,
         );

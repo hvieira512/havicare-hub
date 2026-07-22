@@ -1282,9 +1282,19 @@ class DeviceService
                     if (!$supported) {
                         continue;
                     }
+                    if (
+                        $this->capabilityRegistry->has($genericKey)
+                        && !$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)
+                    ) {
+                        continue;
+                    }
 
                     if (!array_key_exists($genericKey, $capabilities[$section])) {
-                        $capabilities[$section][$genericKey] = $this->defaultCapabilityEntry($protocol, $genericKey);
+                        $entry = $this->defaultCapabilityEntry($protocol, $genericKey);
+                        if ($entry === []) {
+                            continue;
+                        }
+                        $capabilities[$section][$genericKey] = $entry;
                     }
                 }
             }
@@ -1352,6 +1362,9 @@ class DeviceService
 
         foreach ($meta as $genericKey => $metaData) {
             $hasContract = $this->capabilityRegistry->has($genericKey);
+            if ($hasContract && !$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)) {
+                continue;
+            }
             $supportsMultiple = $hasContract && $this->capabilityRegistry->get($genericKey)?->supportsMultipleNativeKeys();
 
             if (
@@ -1416,6 +1429,9 @@ class DeviceService
 
                 $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
                 if ($this->capabilityRegistry->has($genericKey)) {
+                    if (!$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)) {
+                        continue;
+                    }
                     $value = $this->capabilityRegistry->responseEntry(
                         $protocol,
                         $genericKey,
@@ -1505,6 +1521,9 @@ class DeviceService
         $meta = $this->defaultCapabilityMetaForEntry($genericKey, $protocol, $entry);
 
         if ($this->capabilityRegistry->has($genericKey)) {
+            if (!$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)) {
+                return [];
+            }
             return $this->capabilityRegistry->responseEntry($protocol, $genericKey, $nativeKey, $value, $meta);
         }
 
