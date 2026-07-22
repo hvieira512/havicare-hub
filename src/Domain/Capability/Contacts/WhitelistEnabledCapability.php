@@ -46,7 +46,12 @@ final class WhitelistEnabledCapability implements CapabilityContract
     public function toNative(string $protocol, mixed $value): array
     {
         return match ($protocol) {
-            'vivistar-iw', 'four-p-touch' => [
+            'vivistar-iw' => [
+                'BP84' => [
+                    'enabled' => self::requireBoolLikeField($value, 'enabled'),
+                ],
+            ],
+            'four-p-touch' => [
                 'whitelistSwitch' => [
                     'enabled' => self::requireBoolLikeField($value, 'enabled'),
                 ],
@@ -83,7 +88,8 @@ final class WhitelistEnabledCapability implements CapabilityContract
     public function nativeKeyForProtocol(string $protocol): ?string
     {
         return match ($protocol) {
-            'vivistar-iw', 'four-p-touch' => 'whitelistSwitch',
+            'vivistar-iw' => 'BP84',
+            'four-p-touch' => 'whitelistSwitch',
             default => null,
         };
     }

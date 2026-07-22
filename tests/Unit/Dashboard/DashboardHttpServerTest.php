@@ -662,6 +662,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(20, $body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
         self::assertTrue($body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertTrue($body['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
+        self::assertSame('BP84', $body['capabilities']['contacts']['whitelist_enabled']['_nativeKey'] ?? null);
         self::assertSame(
             ['password' => '2468'],
             $body['capabilities']['settings_system']['device_password']['value'] ?? null

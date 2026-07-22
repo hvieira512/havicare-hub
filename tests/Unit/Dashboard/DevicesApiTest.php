@@ -178,6 +178,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(20, $response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
         self::assertTrue($response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertTrue($response['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
+        self::assertSame('BP84', $response['capabilities']['contacts']['whitelist_enabled']['_nativeKey'] ?? null);
         self::assertSame(
             ['password' => '2468'],
             $response['capabilities']['settings_system']['device_password']['value'] ?? null
@@ -870,6 +871,40 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ],
             ],
             $response['configurations']['alarm_clock'] ?? null
+        );
+    }
+
+    public function testConfigurationPutAcceptsVivistarWhitelistEnabledToggleAsBp84(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['whitelist_enabled']);
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'whitelist_enabled' => [
+                    'enabled' => false,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('whitelist_enabled', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('861265061009822', $submitted[0]['imei']);
+        self::assertStringContainsString('BP84', $submitted[0]['bytes']);
+        self::assertStringContainsString(',0#', $submitted[0]['bytes']);
+        self::assertSame(
+            ['enabled' => false],
+            $response['configurations']['whitelist_enabled'] ?? null
         );
     }
 
