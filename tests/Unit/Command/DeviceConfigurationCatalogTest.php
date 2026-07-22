@@ -24,6 +24,18 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertNotNull((new VivistarAdapter())->decodeIncoming(str_replace('BP76', 'AP76', preg_replace('/^IWBP76,\d{15},/', 'IWAP76,', $wire))));
     }
 
+    public function testVivistarFallDetectionPublicKeyIsResolvedToNativeDefinition(): void
+    {
+        $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'fall_detection');
+        self::assertIsArray($config);
+        self::assertSame('fallDetection', $config['key'] ?? null);
+        self::assertSame('BP76', $config['command'] ?? null);
+
+        $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'fall_detection', ['enabled' => false]);
+        self::assertSame('BP76', $payload['command']);
+        self::assertSame(['fields' => ['0']], $payload['payload']);
+    }
+
     public function testVivistarSOSContactsMetadataIncludesCategoryAndLimit(): void
     {
         $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'sosContacts');

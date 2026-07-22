@@ -113,6 +113,9 @@ final class DeviceConfigurationCatalog
         if ($key === 'alarm_clock') {
             return $protocol === 'vivistar-iw' ? 'reminders' : $key;
         }
+        if ($key === 'fall_detection') {
+            return $protocol === 'vivistar-iw' ? 'fallDetection' : $key;
+        }
         if ($key === 'fall_sensitivity') {
             return $protocol === 'vivistar-iw' ? 'fallSensitivity' : $key;
         }

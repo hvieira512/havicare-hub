@@ -874,6 +874,40 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testConfigurationPutAcceptsVivistarFallDetectionUsingPublicKey(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'fall_detection' => [
+                    'enabled' => false,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('fallDetection', $response['results'][0]['key'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertSame('861265061009822', $submitted[0]['imei']);
+        self::assertStringContainsString('BP76', $submitted[0]['bytes']);
+        self::assertStringContainsString(',0#', $submitted[0]['bytes']);
+        self::assertSame(
+            ['enabled' => false],
+            $response['configurations']['fall_detection'] ?? null
+        );
+    }
+
     public function testConfigurationPutAcceptsVivistarWhitelistEnabledToggleAsBp84(): void
     {
         $submitted = [];
