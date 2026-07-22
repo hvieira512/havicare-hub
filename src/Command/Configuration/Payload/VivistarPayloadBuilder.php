@@ -22,7 +22,7 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
             'reminders' => self::reminders($payload),
             'autoHealthMeasurement' => [
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
-                self::positiveInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
+                self::nonNegativeInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
             ],
             default => throw new \InvalidArgumentException("Unsupported Vivistar configuration {$key}"),
         };

@@ -27,7 +27,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'healthAutoMeasurement' => [
                 1,
                 self::boolInt($payload['enabled'] ?? null, 'enabled'),
-                self::positiveInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
+                self::nonNegativeInt($payload['intervalMinutes'] ?? null, 'intervalMinutes'),
             ],
             'walkTime' => self::timeRanges($payload, 3, 'ranges'),
             'sleepTime' => [self::timeRange($payload['range'] ?? null, 'range')],

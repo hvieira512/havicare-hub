@@ -1145,7 +1145,7 @@ function intervalToggleInput(entry, desired) {
             </div>
             <div class="col-md-8">
                 <label class="form-label form-label-sm">Intervalo (minutos)</label>
-                <input class="form-control" type="number" min="1" step="1" data-config-field="intervalMinutes" value="${esc(String(desired.intervalMinutes ?? 60))}">
+                <input class="form-control" type="number" min="0" step="1" data-config-field="intervalMinutes" value="${esc(String(desired.intervalMinutes ?? 60))}">
             </div>
         </div>`;
 }

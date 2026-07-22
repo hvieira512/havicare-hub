@@ -58,6 +58,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['HAVICARE|+351278710140', '', '', '', '', '', '', '', '', ''], $payload['payload']['fields'] ?? []);
     }
 
+    public function testVivistarAutoHealthMeasurementAcceptsZeroMinutesWhenDisabled(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'autoHealthMeasurement', [
+            'enabled' => false,
+            'intervalMinutes' => 0,
+        ]);
+
+        self::assertSame('BP86', $payload['command']);
+        self::assertSame(['0', '0'], $payload['payload']['fields'] ?? []);
+    }
+
     public function testVivistarPushMessageBuildsBp40WithUtf16Hex(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'pushMessage', ['message' => 'are you ok?']);
@@ -758,6 +769,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('HEALTHAUTOSET,1,1,5', $wire);
+    }
+
+    public function testFourPTouchHealthAutoMeasurementAcceptsZeroMinutesWhenDisabled(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'healthAutoMeasurement', [
+            'enabled' => false,
+            'intervalMinutes' => 0,
+        ]);
+
+        self::assertSame('HEALTHAUTOSET', $payload['command']);
+        self::assertSame(['fields' => ['1', '0', '0']], $payload['payload']);
     }
 
     public function testFourPTouchSleepTimeBuildsNativeFields(): void
