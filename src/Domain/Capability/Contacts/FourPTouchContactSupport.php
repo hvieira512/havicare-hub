@@ -19,8 +19,8 @@ trait FourPTouchContactSupport
     protected static function mergeFourPTouchMeta(array $accumulatedMeta, int $limit, array $defaults = []): array
     {
         return array_replace_recursive(
-            array_merge(['limit' => $limit], $defaults),
             $accumulatedMeta,
+            array_merge(['limit' => $limit], $defaults),
         );
     }
 

@@ -1091,19 +1091,8 @@ class OpenApiSpec
                         'properties' => [
                             'time' => ['type' => 'string', 'example' => '12:10'],
                             'enabled' => ['type' => 'boolean'],
-                            'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1, 'description' => 'Required for Vivistar alarm_clock. Not supported by 4P Touch alarmClock.'],
+                            'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1, 'description' => 'Required for Vivistar alarm_clock and omitted for 4P Touch.'],
                             'recurrence' => ['$ref' => '#/components/schemas/AlarmClockRecurrence'],
-                            'days' => [
-                                'type' => 'array',
-                                'nullable' => true,
-                                'items' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 7],
-                                'description' => 'Legacy Vivistar compatibility field mirrored in GET responses.',
-                            ],
-                            'custom' => [
-                                'type' => 'string',
-                                'nullable' => true,
-                                'description' => 'Legacy recurrence mask/string compatibility field mirrored in GET responses.',
-                            ],
                         ],
                         'required' => ['time', 'enabled'],
                     ],
@@ -1308,7 +1297,7 @@ class OpenApiSpec
                                     'sos_contacts' => ['+351278710140'],
                                     'call_whitelist' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],
                                     'whitelist_enabled' => ['enabled' => true],
-                                    'workingMode' => ['mode' => 3],
+                                    'working_mode' => ['mode' => 3],
                                 ],
                             ],
                         ],
@@ -1318,13 +1307,46 @@ class OpenApiSpec
                         'required' => ['status', 'results', 'configurations'],
                         'properties' => [
                             'status' => ['type' => 'string', 'example' => 'ok'],
-                            'results' => ['type' => 'array', 'items' => ['type' => 'object']],
+                            'results' => [
+                                'type' => 'array',
+                                'description' => 'Changed generic capabilities and their protocol-native delivery operations.',
+                                'items' => ['$ref' => '#/components/schemas/DeviceConfigurationMutationResult'],
+                            ],
                             'configurations' => [
                                 'type' => 'object',
                                 'description' => 'Raw generic configuration values keyed by capability name after the update is applied.',
                             ],
                             'pending' => ['type' => 'object'],
                             'transportPending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
+                        ],
+                    ],
+                    'DeviceConfigurationMutationResult' => [
+                        'type' => 'object',
+                        'required' => ['key', 'operations'],
+                        'properties' => [
+                            'key' => [
+                                'type' => 'string',
+                                'description' => 'Public generic capability key.',
+                                'example' => 'alarm_clock',
+                            ],
+                            'operations' => [
+                                'type' => 'array',
+                                'items' => ['$ref' => '#/components/schemas/DeviceConfigurationNativeOperation'],
+                            ],
+                        ],
+                    ],
+                    'DeviceConfigurationNativeOperation' => [
+                        'type' => 'object',
+                        'required' => ['nativeKey', 'command', 'deliveryStatus', 'lastCommandId'],
+                        'properties' => [
+                            'nativeKey' => [
+                                'type' => 'string',
+                                'description' => 'Protocol-native configuration identity used internally for this operation.',
+                                'example' => 'reminders',
+                            ],
+                            'command' => ['type' => 'string', 'example' => 'BP85'],
+                            'deliveryStatus' => ['type' => 'string', 'example' => 'waiting'],
+                            'lastCommandId' => ['type' => 'string', 'example' => 'f0c8771964d6175a'],
                         ],
                     ],
                     'DeviceAssociation' => [

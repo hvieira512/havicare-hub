@@ -246,24 +246,29 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('"refresh_token":"********"', $log);
     }
 
-    public function testApiResponseBodyLoggingKeepsFullBodiesWithoutEllipsis(): void
+    public function testApiLoggingKeepsFullBodiesWithoutEllipsis(): void
     {
-        $kernel = (new \ReflectionClass(\Hub\Api\ApiKernel::class))->newInstanceWithoutConstructor();
-        $method = new \ReflectionMethod(\Hub\Api\ApiKernel::class, 'responseBodyForLog');
-        $method->setAccessible(true);
+        $payload = str_repeat('abc123', 800);
+        Logger::channel('api')->info('large body', ['response_body' => ['payload' => $payload]]);
 
-        $largeBody = json_encode(['payload' => str_repeat('abc123', 800)], JSON_THROW_ON_ERROR);
-        $response = new \React\Http\Message\Response(
-            200,
-            ['Content-Type' => 'application/json'],
-            $largeBody
-        );
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('"payload":"' . $payload . '"', $log);
+        self::assertStringNotContainsString('...', $log);
+        self::assertGreaterThan(4096, strlen($log));
+    }
 
-        $preview = $method->invoke($kernel, $response);
+    public function testLoggerDoesNotTruncateDeepStructuredContext(): void
+    {
+        $value = ['leaf' => 'complete'];
+        for ($depth = 0; $depth < 20; $depth++) {
+            $value = ['nested' => $value];
+        }
 
-        self::assertSame(json_decode($largeBody, true, 512, JSON_THROW_ON_ERROR), $preview);
-        self::assertStringNotContainsString('...', json_encode($preview, JSON_THROW_ON_ERROR));
-        self::assertGreaterThan(4096, strlen(json_encode($preview, JSON_THROW_ON_ERROR)));
+        Logger::channel('api')->info('deep context', ['body' => $value]);
+
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('"leaf":"complete"', $log);
+        self::assertStringNotContainsString('aborting normalization', $log);
     }
 
     public function testUnauthorizedApiRequestIsStillLogged(): void
@@ -473,7 +478,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
             json_encode([
                 'configurations' => [
-                    'fallDetection' => ['enabled' => true],
+                    'fall_detection' => ['enabled' => true],
                 ],
             ], JSON_THROW_ON_ERROR)
         ));
@@ -505,7 +510,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
         $body = json_encode([
             'configurations' => [
-                'fallDetection' => ['enabled' => true],
+                'fall_detection' => ['enabled' => true],
             ],
         ], JSON_THROW_ON_ERROR);
 
@@ -679,7 +684,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(20, $body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
         self::assertTrue($body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertTrue($body['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
-        self::assertSame('BP84', $body['capabilities']['contacts']['whitelist_enabled']['_nativeKey'] ?? null);
+        self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['contacts']['whitelist_enabled']);
         self::assertSame(
             ['password' => '2468'],
             $body['capabilities']['settings_system']['device_password']['value'] ?? null
@@ -730,7 +735,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
             json_encode([
                 'configurations' => [
-                    'fallDetection' => ['enabled' => true],
+                    'fall_detection' => ['enabled' => true],
                 ],
             ], JSON_THROW_ON_ERROR)
         ));
@@ -808,7 +813,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ],
             $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
         );
-        self::assertSame('takePills', $body['capabilities']['alarms']['medication_reminders']['_nativeKey'] ?? null);
+        self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['alarms']['medication_reminders']);
         self::assertSame(3, $body['capabilities']['alarms']['medication_reminders']['_meta']['limit'] ?? null);
         self::assertSame(
             [
@@ -867,7 +872,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ],
             $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
         );
-        self::assertSame('takePills', $body['capabilities']['alarms']['medication_reminders']['_nativeKey'] ?? null);
+        self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['alarms']['medication_reminders']);
     }
 
     public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void
@@ -923,6 +928,10 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             '/api/devices/861265061009833/stream?access_token=' . rawurlencode($token)
         ));
         self::assertSame(404, $otherStream->getStatusCode(), (string)$otherStream->getBody());
+
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('"query":"access_token=********"', $log);
+        self::assertStringNotContainsString('"query":"access_token=' . $token . '"', $log);
     }
 
     public function testApiRejectsBasicAuthWhileDashboardIsPublic(): void
@@ -1027,8 +1036,6 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             $db,
             'admin',
             'secret',
-            'tenant',
-            'tenant-secret',
             $apiAuthRequired,
             $apiTokenTtlSeconds,
             $apiRefreshTokenTtlSeconds

@@ -3,21 +3,21 @@
 namespace Tests\Unit\Domain;
 
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use PHPUnit\Framework\TestCase;
 
-final class GenericModelCapabilityCatalogTest extends TestCase
+final class CapabilityCatalogTest extends TestCase
 {
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [69, 'c23e2717477b9ccaca5790fbfbe58cafb9c9d6475c1b59b7de8eb7584397edcb'],
+            'watch' => [69, '5dd05d5c3f2c4ce2297cb4d01ba66ebe4f190ed4214eb8ac1044b6cbfc0efdf9'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
         ];
 
         foreach ($expected as $deviceType => [$count, $hash]) {
-            $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType($deviceType);
+            $definitions = CapabilityCatalog::definitionsForDeviceType($deviceType);
 
             self::assertCount($count, $definitions, $deviceType);
             self::assertSame(
@@ -30,15 +30,15 @@ final class GenericModelCapabilityCatalogTest extends TestCase
 
     public function testDefinitionsHaveUniqueKeysAndRequiredMetadata(): void
     {
-        foreach (GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {
-            $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType($deviceType);
+        foreach (CapabilityCatalog::deviceTypes() as $deviceType) {
+            $definitions = CapabilityCatalog::definitionsForDeviceType($deviceType);
             $keys = array_column($definitions, 'key');
 
             self::assertSame($keys, array_values(array_unique($keys)), $deviceType);
 
             foreach ($definitions as $definition) {
                 self::assertSame($deviceType, $definition['deviceType']);
-                self::assertArrayHasKey($definition['section'], GenericModelCapabilityCatalog::sections());
+                self::assertArrayHasKey($definition['section'], CapabilityCatalog::sections());
                 self::assertNotSame('', trim($definition['key']));
                 self::assertNotSame('', trim($definition['label']));
                 self::assertIsInt($definition['sortOrder']);

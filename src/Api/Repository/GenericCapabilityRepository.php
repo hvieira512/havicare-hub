@@ -2,7 +2,7 @@
 
 namespace Hub\Api\Repository;
 
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
 
@@ -41,7 +41,7 @@ final class GenericCapabilityRepository
      */
     public function keysForDeviceType(string $deviceType): array
     {
-        return GenericModelCapabilityCatalog::keysForDeviceType($deviceType);
+        return CapabilityCatalog::keysForDeviceType($deviceType);
     }
 
     public function findIdByDeviceTypeAndKey(string $deviceType, string $key): ?int
@@ -60,8 +60,8 @@ final class GenericCapabilityRepository
     private function appendMissingDefinitions(array $rows, ?string $deviceType = null): array
     {
         $definitions = $deviceType !== null && trim($deviceType) !== ''
-            ? GenericModelCapabilityCatalog::definitionsForDeviceType($deviceType)
-            : GenericModelCapabilityCatalog::definitions();
+            ? CapabilityCatalog::definitionsForDeviceType($deviceType)
+            : CapabilityCatalog::definitions();
         $allowed = [];
         foreach ($definitions as $definition) {
             $definitionDeviceType = trim((string)($definition['deviceType'] ?? ''));
@@ -157,7 +157,7 @@ final class GenericCapabilityRepository
         $key = trim((string)($row['capability_key'] ?? ''));
         $definition = null;
         if ($deviceType !== '' && $key !== '') {
-            foreach (GenericModelCapabilityCatalog::definitionsForDeviceType($deviceType) as $candidate) {
+            foreach (CapabilityCatalog::definitionsForDeviceType($deviceType) as $candidate) {
                 if ((string)($candidate['key'] ?? '') === $key) {
                     $definition = $candidate;
                     break;

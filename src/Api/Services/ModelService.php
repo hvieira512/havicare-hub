@@ -8,7 +8,7 @@ use Hub\Api\Http\ModelImageUrl;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Domain\DeviceProtocol;
 use Hub\Domain\DeviceMetadata;
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
@@ -127,7 +127,7 @@ class ModelService
                 'deviceType' => $deviceType,
                 'protocol' => $protocol,
                 'image' => $this->imageUrl->resolve((string)($model['image'] ?? ''), $baseUrl),
-                'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix($catalogByType[$deviceType], $enabledByModel[$modelId] ?? []),
+                'capabilities' => CapabilityCatalog::buildCapabilityMatrix($catalogByType[$deviceType], $enabledByModel[$modelId] ?? []),
             ];
         }, $models);
 
@@ -137,7 +137,7 @@ class ModelService
     public function filters(): array
     {
         $groups = [];
-        foreach (GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {
+        foreach (CapabilityCatalog::deviceTypes() as $deviceType) {
             $groups[$deviceType] = [
                 'deviceType' => $deviceType,
                 'suppliers' => [],
@@ -165,7 +165,7 @@ class ModelService
     public function deviceTypeSuppliersModels(string $baseUrl = ''): array
     {
         $groups = [];
-        foreach (GenericModelCapabilityCatalog::deviceTypes() as $deviceType) {
+        foreach (CapabilityCatalog::deviceTypes() as $deviceType) {
             $groups[$deviceType] = [
                 'deviceType' => $deviceType,
                 'suppliers' => [],
@@ -235,7 +235,7 @@ class ModelService
             'deviceType' => $deviceType,
             'protocol' => $protocol,
             'image' => $this->imageUrl->resolve($imagePath, $baseUrl),
-            'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix(
+            'capabilities' => CapabilityCatalog::buildCapabilityMatrix(
                 $catalog,
                 $this->db->modelCapabilities->enabledFeaturesForModelId($id)
             ),
@@ -271,7 +271,7 @@ class ModelService
             'deviceType' => $deviceType,
             'protocol' => $protocol,
             'enabledCapabilities' => $enabledKeys,
-            'capabilities' => GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $enabledKeys),
+            'capabilities' => CapabilityCatalog::buildCapabilityMatrix($catalog, $enabledKeys),
         ];
     }
 

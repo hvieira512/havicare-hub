@@ -12,7 +12,6 @@ use Hub\Domain\Capability\Contacts\SosContactsCapability;
 use Hub\Domain\Capability\Contacts\WhitelistEnabledCapability;
 use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
-use Hub\Domain\GenericModelCapabilityCatalog;
 
 /**
  * Central registry for capability contracts.
@@ -275,7 +274,7 @@ final class CapabilityRegistry
     private function findConfigEntryForGenericKey(string $protocol, string $genericKey): ?array
     {
         foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
-            if (GenericModelCapabilityCatalog::mapConfigurationKey((string)($entry['key'] ?? '')) === $genericKey) {
+            if (CapabilityCatalog::mapConfigurationKey((string)($entry['key'] ?? '')) === $genericKey) {
                 return $entry;
             }
         }
@@ -287,7 +286,7 @@ final class CapabilityRegistry
     {
         foreach (DeviceConfigurationCatalog::configsForProtocol('wonlex-json') as $entry) {
             $nativeKey = trim((string)($entry['key'] ?? ''));
-            if (GenericModelCapabilityCatalog::mapConfigurationKey($nativeKey) === $genericKey) {
+            if (CapabilityCatalog::mapConfigurationKey($nativeKey) === $genericKey) {
                 return $nativeKey;
             }
         }

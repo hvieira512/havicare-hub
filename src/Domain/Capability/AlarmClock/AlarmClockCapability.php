@@ -80,10 +80,6 @@ final class AlarmClockCapability implements CapabilityContract
             return $handler->fromNative($desired);
         }
 
-        if ($nativeKey === 'alarm_clock') {
-            return $this->fromNativeGeneric($desired);
-        }
-
         return [];
     }
 
@@ -163,32 +159,4 @@ final class AlarmClockCapability implements CapabilityContract
             : null;
     }
 
-    // ------------------------------------------------------------------
-    // Generic nativeKey dispatch (for 'alarm_clock' nativeKey)
-    // ------------------------------------------------------------------
-
-    private function fromNativeGeneric(array $desired): array
-    {
-        $items = $desired['items'] ?? $desired['alarms'] ?? $desired['alarmClock'] ?? $desired;
-        if (!is_array($items)) {
-            return [];
-        }
-        if (!array_is_list($items)) {
-            $items = [$items];
-        }
-        if ($items !== [] && is_array($items[0] ?? null) && array_key_exists('recurrence', $items[0])) {
-            return array_values($items);
-        }
-
-        // Delegate to 4P Touch handler for alarmClock-shaped data
-        $fourPTouch = $this->handlersByNativeKey['alarmClock'] ?? null;
-        if ($fourPTouch !== null) {
-            return array_values(array_filter(
-                array_map(static fn(mixed $item): array => FourPTouch::publicItem($item), $items),
-                static fn(array $item): bool => $item !== [],
-            ));
-        }
-
-        return array_values($items);
-    }
 }

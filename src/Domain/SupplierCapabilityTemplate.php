@@ -2,6 +2,8 @@
 
 namespace Hub\Domain;
 
+use Hub\Domain\Capability\CapabilityCatalog;
+
 final class SupplierCapabilityTemplate
 {
     /**
@@ -14,9 +16,9 @@ final class SupplierCapabilityTemplate
             return [];
         }
 
-        $available = array_flip(GenericModelCapabilityCatalog::keysForDeviceType($deviceType));
+        $available = array_flip(CapabilityCatalog::keysForDeviceType($deviceType));
         $supported = [];
-        foreach (GenericModelCapabilityCatalog::keysForProtocol($protocol) as $key) {
+        foreach (CapabilityCatalog::keysForProtocol($protocol) as $key) {
             if (!isset($available[$key])) {
                 continue;
             }

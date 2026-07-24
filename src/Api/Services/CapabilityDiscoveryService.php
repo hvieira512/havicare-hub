@@ -5,7 +5,7 @@ namespace Hub\Api\Services;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Repository\CapabilityDiscoveryRepository;
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 
 final class CapabilityDiscoveryService
@@ -64,11 +64,11 @@ final class CapabilityDiscoveryService
         $modelEnabled = $this->db->modelCapabilities->enabledFeaturesForModelId($modelId);
         $deviceEnabled = array_values(array_unique(array_map('strval', $device['enabledCapabilityKeys'] ?? [])));
         $suggestedEnabled = $deviceEnabled !== [] ? $deviceEnabled : $modelEnabled;
-        $matrix = GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $suggestedEnabled);
-        $modelCapabilities = GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $modelEnabled);
+        $matrix = CapabilityCatalog::buildCapabilityMatrix($catalog, $suggestedEnabled);
+        $modelCapabilities = CapabilityCatalog::buildCapabilityMatrix($catalog, $modelEnabled);
         $evidence = [];
 
-        foreach (GenericModelCapabilityCatalog::definitionsForDeviceType($deviceType) as $definition) {
+        foreach (CapabilityCatalog::definitionsForDeviceType($deviceType) as $definition) {
             $key = (string)($definition['key'] ?? '');
             $section = (string)($definition['section'] ?? '');
             $evidence[] = [

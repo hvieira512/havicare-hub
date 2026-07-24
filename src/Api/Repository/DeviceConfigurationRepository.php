@@ -2,7 +2,7 @@
 
 namespace Hub\Api\Repository;
 
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use PDO;
 
 final class DeviceConfigurationRepository
@@ -17,7 +17,7 @@ final class DeviceConfigurationRepository
             SELECT *
             FROM device_configurations
             WHERE imei = ?
-            ORDER BY desired_updated_at ASC, reported_at ASC, config_key ASC
+            ORDER BY desired_updated_at ASC, reported_at ASC, config_key ASC, native_key ASC
         ');
         $stmt->execute([$imei]);
 
@@ -35,35 +35,41 @@ final class DeviceConfigurationRepository
         string $status = '',
         string $commandId = ''
     ): void {
-        $key = $this->normalizeConfigKey($key);
+        $nativeKey = $this->normalizeNativeKey(trim($protocol), trim($key));
+        $key = $this->normalizeConfigKey($nativeKey);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
-        if ($this->exists($imei, $key)) {
+        if ($this->exists($imei, $key, $nativeKey)) {
             $stmt = $this->pdo->prepare('
                 UPDATE device_configurations
                 SET protocol = ?, supplier = ?, model = ?, command = ?, desired_payload = ?, last_status = ?, last_command_id = ?, desired_updated_at = ?, applied_at = ?
-                WHERE imei = ? AND config_key = ?
+                WHERE imei = ? AND config_key = ? AND native_key = ?
             ');
-            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $now, $imei, $key]);
+            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $now, $imei, $key, $nativeKey]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, protocol, supplier, model, command, desired_payload, reported_payload,
+                imei, config_key, native_key, protocol, supplier, model, command, desired_payload, reported_payload,
                 last_status, last_command_id, desired_updated_at, applied_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, $encoded, '{}', $status, $commandId, $now, $now]);
+        $stmt->execute([$imei, $key, $nativeKey, $protocol, $supplier, $model, $command, $encoded, '{}', $status, $commandId, $now, $now]);
     }
 
     public function markApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
     {
-        $key = $this->normalizeConfigKey($key);
+        $nativeKey = trim($key);
+        $key = $this->normalizeConfigKey($nativeKey);
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('UPDATE device_configurations SET last_status = ?, last_command_id = ?, applied_at = ? WHERE imei = ? AND config_key = ?');
-        $stmt->execute([$status, $commandId, $now, $imei, $key]);
+        $stmt = $this->pdo->prepare('
+            UPDATE device_configurations
+            SET last_status = ?, last_command_id = ?, applied_at = ?
+            WHERE imei = ? AND config_key = ? AND native_key = ?
+        ');
+        $stmt->execute([$status, $commandId, $now, $imei, $key, $nativeKey]);
     }
 
     public function saveReported(
@@ -75,33 +81,37 @@ final class DeviceConfigurationRepository
         string $command,
         array $payload
     ): void {
-        $key = $this->normalizeConfigKey($key);
+        $nativeKey = $this->normalizeNativeKey(trim($protocol), trim($key));
+        $key = $this->normalizeConfigKey($nativeKey);
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
-        if ($this->exists($imei, $key)) {
+        if ($this->exists($imei, $key, $nativeKey)) {
             $stmt = $this->pdo->prepare('
                 UPDATE device_configurations
                 SET protocol = ?, supplier = ?, model = ?, command = ?, reported_payload = ?, reported_at = ?
-                WHERE imei = ? AND config_key = ?
+                WHERE imei = ? AND config_key = ? AND native_key = ?
             ');
-            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $now, $imei, $key]);
+            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $now, $imei, $key, $nativeKey]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
-                imei, config_key, protocol, supplier, model, command, desired_payload, reported_payload, reported_at
+                imei, config_key, native_key, protocol, supplier, model, command, desired_payload, reported_payload, reported_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$imei, $key, $protocol, $supplier, $model, $command, '{}', $encoded, $now]);
+        $stmt->execute([$imei, $key, $nativeKey, $protocol, $supplier, $model, $command, '{}', $encoded, $now]);
     }
 
-    private function exists(string $imei, string $key): bool
+    private function exists(string $imei, string $key, string $nativeKey): bool
     {
-        $key = $this->normalizeConfigKey($key);
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM device_configurations WHERE imei = ? AND config_key = ?');
-        $stmt->execute([$imei, $key]);
+        $stmt = $this->pdo->prepare('
+            SELECT COUNT(*)
+            FROM device_configurations
+            WHERE imei = ? AND config_key = ? AND native_key = ?
+        ');
+        $stmt->execute([$imei, $key, $nativeKey]);
 
         return (int)$stmt->fetchColumn() > 0;
     }
@@ -117,7 +127,20 @@ final class DeviceConfigurationRepository
             return $key;
         }
 
-        return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
+        return CapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
+    }
+
+    private function normalizeNativeKey(string $protocol, string $key): string
+    {
+        if ($key !== 'alarm_clock') {
+            return $key;
+        }
+
+        return match ($protocol) {
+            'vivistar-iw' => 'reminders',
+            'four-p-touch' => 'alarmClock',
+            default => $key,
+        };
     }
 
     private function normalizeRow(array $row): array

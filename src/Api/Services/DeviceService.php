@@ -11,8 +11,8 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Domain\Capability\CapabilityHelpers;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
-use Hub\Domain\GenericModelCapabilityCatalog;
 use Hub\Domain\DeviceProtocol;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Domain\DeviceMetadata;
@@ -32,6 +32,8 @@ class DeviceService
     private DeviceCollectionFilter $deviceFilter;
     private DevicePresentation $presentation;
     private CapabilityRegistry $capabilityRegistry;
+    private DeviceConfigurationUpdateService $configurationUpdates;
+    private DeviceConfigurationQueryService $configurationQueries;
 
     public function __construct(
         private DashboardStoreContract $store,
@@ -44,12 +46,24 @@ class DeviceService
         ?DeviceCollectionFilter $deviceFilter = null,
         ?DevicePresentation $presentation = null,
         ?CapabilityRegistry $capabilityRegistry = null,
+        ?DeviceConfigurationUpdateService $configurationUpdates = null,
+        ?DeviceConfigurationQueryService $configurationQueries = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
         $this->deviceFilter = $deviceFilter ?? new DeviceCollectionFilter();
         $this->presentation = $presentation ?? new DevicePresentation();
         $this->capabilityRegistry = $capabilityRegistry ?? new CapabilityRegistry();
+        $this->configurationUpdates = $configurationUpdates ?? new DeviceConfigurationUpdateService(
+            $this->store,
+            $this->hub,
+            $this->db,
+            $this->capabilityRegistry,
+        );
+        $this->configurationQueries = $configurationQueries ?? new DeviceConfigurationQueryService(
+            $this->db,
+            $this->capabilityRegistry,
+        );
     }
 
     public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
@@ -169,7 +183,7 @@ class DeviceService
             'capabilities' => $this->deviceCapabilities($modelRow, $protocol, $configRows),
             'enabledCapabilityKeys' => $modelRow !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
-                : GenericModelCapabilityCatalog::keysForProtocol($protocol),
+                : CapabilityCatalog::keysForProtocol($protocol),
             'pending' => $this->pendingConfiguration($modelRow, $protocol, $configRows),
             'transportPending' => $this->transportPending($imei),
         ];
@@ -294,7 +308,7 @@ class DeviceService
         $modelRow = $this->modelForSupplierAndName($supplier, $model);
         $enabled = array_flip($modelRow !== null
             ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
-            : GenericModelCapabilityCatalog::keysForProtocol($protocol));
+            : CapabilityCatalog::keysForProtocol($protocol));
 
         if (!isset($enabled[$capability])) {
             Logger::channel('api')->warning('API capability request rejected', [
@@ -307,7 +321,7 @@ class DeviceService
         }
 
         try {
-            $nativeUpdates = $this->genericCapabilityToNativeUpdates($protocol, $capability, $decoded['value'] ?? null);
+            $nativeUpdates = $this->capabilityRegistry->toNative($protocol, $capability, $decoded['value'] ?? null);
         } catch (\InvalidArgumentException $e) {
             Logger::channel('api')->warning('API capability request rejected', [
                 'request_id' => $requestId,
@@ -435,46 +449,7 @@ class DeviceService
         $device = $this->deviceSnapshot($imei);
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ($metadata['supplier'] ?? '')), (string)($device['model'] ?? ($metadata['model'] ?? ''))));
-        $configurations = [];
-        foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
-            $desired = $row['desired_payload'];
-            if (is_array($desired) && $desired !== []) {
-                $nativeKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
-                $genericKey = $nativeKey !== null ? GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($nativeKey) : null;
-                if ($genericKey === null) {
-                    continue;
-                }
-
-                $section = GenericModelCapabilityCatalog::sectionForCapabilityKey($genericKey);
-                if ($section === null || $section === 'telemetry') {
-                    continue;
-                }
-
-                $normalized = $this->publicConfigurationValueForGenericKey(
-                    $protocol,
-                    $genericKey,
-                    $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired)
-                );
-                if ($normalized === null) {
-                    continue;
-                }
-
-                $supportsMultipleNativeKeys = $this->capabilityRegistry->has($genericKey)
-                    && $this->capabilityRegistry->get($genericKey)?->supportsMultipleNativeKeys();
-
-                if (!array_key_exists($genericKey, $configurations) || !$supportsMultipleNativeKeys) {
-                    $configurations[$genericKey] = $normalized;
-                } else {
-                    $configurations[$genericKey] = $this->mergeCapabilityValue(
-                        $genericKey,
-                        $configurations[$genericKey],
-                        $normalized
-                    );
-                }
-            }
-        }
-
-        return $configurations;
+        return $this->configurationQueries->current($imei, $protocol);
     }
 
     public function updateConfigurations(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
@@ -499,10 +474,6 @@ class DeviceService
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
 
-        if (isset($decoded['capabilities']) && is_array($decoded['capabilities'])) {
-            return $this->saveGenericConfiguration($imei, $decoded, $requestId);
-        }
-
         if (!isset($decoded['configurations']) || !is_array($decoded['configurations'])) {
             Logger::channel('api')->warning('API device configuration rejected', [
                 'request_id' => $requestId,
@@ -518,118 +489,22 @@ class DeviceService
         $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
         $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
         $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
-        $currentConfigs = $this->db->deviceConfigurations->allForImei($imei);
-        $currentByKey = [];
-        foreach ($currentConfigs as $row) {
-            $normalizedKey = $this->comparisonStoredConfigurationKey((string)($row['config_key'] ?? ''));
-            if ($normalizedKey !== null) {
-                $currentByKey[$normalizedKey] = $row;
-            }
+        $modelRow = $this->modelForSupplierAndName($supplier, $model);
+        $update = $this->configurationUpdates->update(
+            $imei,
+            $decoded['configurations'],
+            $supplier,
+            $model,
+            $protocol,
+            $modelRow,
+            $metadata,
+            $device,
+            $requestId,
+        );
+        if (isset($update['error'])) {
+            return $update;
         }
-        $results = [];
-        foreach ($decoded['configurations'] as $key => $payload) {
-            if (!is_string($key) || !is_array($payload)) {
-                Logger::channel('api')->warning('API device configuration rejected', [
-                    'request_id' => $requestId,
-                    'imei' => $imei,
-                    'error_code' => 'invalid_config',
-                    'reason' => 'invalid_config_entry',
-                ]);
-                return ['error' => ['code' => 'invalid_config', 'message' => 'Each config entry must be an object']];
-            }
-
-            $contract = $this->capabilityRegistry->get($key);
-            if ($contract !== null) {
-                try {
-                    $nativeUpdates = $this->genericCapabilityToNativeUpdates($protocol, $key, $payload);
-                } catch (\InvalidArgumentException $e) {
-                    Logger::channel('api')->warning('API device configuration rejected', [
-                        'request_id' => $requestId,
-                        'imei' => $imei,
-                        'config_key' => $key,
-                        'error_code' => 'invalid_config',
-                        'message' => $e->getMessage(),
-                    ]);
-                    return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
-                }
-
-                $pathResults = [];
-                foreach ($nativeUpdates as $nativeKey => $nativePayload) {
-                    $normalizedNativeKey = $this->comparisonStoredConfigurationKey($nativeKey) ?? $nativeKey;
-                    $existingPayload = is_array($currentByKey[$normalizedNativeKey]['desired_payload'] ?? null)
-                        ? $currentByKey[$normalizedNativeKey]['desired_payload']
-                        : null;
-                    if ($existingPayload !== null && $this->capabilityValuesEqual($existingPayload, $nativePayload)) {
-                        continue;
-                    }
-
-                    $result = $this->persistAndApplyConfiguration($imei, $nativeKey, $nativePayload, $supplier, $model);
-                    if (isset($result['error'])) {
-                        Logger::channel('api')->warning('API device configuration rejected', [
-                            'request_id' => $requestId,
-                            'imei' => $imei,
-                            'config_key' => $nativeKey,
-                            'error_code' => $result['error']['code'] ?? 'invalid_config',
-                        ]);
-                        return $result;
-                    }
-
-                    $currentByKey[$normalizedNativeKey] = [
-                        'desired_payload' => $nativePayload,
-                    ] + ($currentByKey[$normalizedNativeKey] ?? []);
-
-                    $pathResults[] = [
-                        'key' => $nativeKey,
-                        'command' => $result['command'],
-                        'deliveryStatus' => $result['status'],
-                        'lastCommandId' => $result['id'],
-                    ];
-                }
-
-                if ($pathResults === []) {
-                    continue;
-                }
-
-                $results[] = count($pathResults) === 1
-                    ? $pathResults[0]
-                    : [
-                        'key' => $key,
-                        'operations' => $pathResults,
-                    ];
-
-                continue;
-            }
-
-            $nativeKey = $this->resolveConfigurationKeyForProtocol($protocol, $key);
-            if ($nativeKey === null) {
-                Logger::channel('api')->warning('API device configuration rejected', [
-                    'request_id' => $requestId,
-                    'imei' => $imei,
-                    'config_key' => $key,
-                    'error_code' => 'invalid_config',
-                    'reason' => 'unsupported_configuration_key',
-                ]);
-                return ['error' => ['code' => 'invalid_config', 'message' => "Unsupported configuration {$key}"]];
-            }
-
-            $normalizedNativeKey = $this->normalizedStoredConfigurationKey($nativeKey) ?? $nativeKey;
-            $current = $currentByKey[$normalizedNativeKey] ?? null;
-            $currentDesired = is_array($current['desired_payload'] ?? null) ? $current['desired_payload'] : null;
-            if ($currentDesired !== null && $this->capabilityValuesEqual($currentDesired, $payload)) {
-                continue;
-            }
-            $result = $this->persistAndApplyConfiguration($imei, $nativeKey, $payload, $supplier, $model);
-            if (isset($result['error'])) {
-                Logger::channel('api')->warning('API device configuration rejected', [
-                    'request_id' => $requestId,
-                    'imei' => $imei,
-                    'config_key' => $nativeKey,
-                    'error_code' => $result['error']['code'] ?? 'invalid_config',
-                ]);
-                return $result;
-            }
-            $results[] = $result;
-        }
+        $results = $update['results'] ?? [];
 
         Logger::channel('api')->info('API device configuration processed', [
             'request_id' => $requestId,
@@ -934,217 +809,6 @@ class DeviceService
         return $pending;
     }
 
-    private function persistAndApplyConfiguration(
-        string $imei,
-        string $key,
-        array $payload,
-        string $supplierOverride = '',
-        string $modelOverride = ''
-    ): array {
-        $device = $this->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = trim($supplierOverride) !== ''
-            ? trim($supplierOverride)
-            : (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = trim($modelOverride) !== ''
-            ? trim($modelOverride)
-            : (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = $this->protocolForModel($supplier, $model);
-        if ($protocol === '') {
-            $protocol = (string)($device['protocol'] ?? '');
-        }
-        if ($protocol === '') {
-            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
-        }
-
-        $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $key);
-        if (($entry['transient'] ?? false) === true) {
-            return ['error' => ['code' => 'invalid_config', 'message' => "{$key} is a transient action and must be requested via /requests"]];
-        }
-
-        $error = DeviceConfigurationCatalog::validate($protocol, $key, $payload);
-        if ($error !== null) {
-            return ['error' => ['code' => 'invalid_config', 'message' => $error]];
-        }
-
-        $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $key, $payload);
-        $command = $commandPayload['command'];
-        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
-            'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
-        ]);
-        $id = bin2hex(random_bytes(8));
-        $status = $this->hub->submitDownlink($imei, $bytes);
-        $record = [
-            'status' => $status === 'sent' ? 'waiting' : $status,
-            'imei' => $imei,
-            'protocol' => $protocol,
-            'nativeType' => $command,
-            'label' => (string)(DeviceConfigurationCatalog::configForProtocol($protocol, $key)['label'] ?? $key),
-            'configKey' => $key,
-            'expectedReplyTypes' => DeviceConfigurationCatalog::configForProtocol($protocol, $key)['expectedReplyTypes'] ?? [],
-            'retryable' => true,
-            'bytes' => $bytes,
-            'attempts' => 1,
-            'maxAttempts' => 3,
-            'retryDelaySeconds' => 60,
-            'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 60),
-            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-        ];
-        if ($status === 'sent') {
-            $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-        }
-        if ($status === 'dropped') {
-            $record['error'] = 'delivery_failed';
-        }
-        $this->store->recordCommand($imei, $id, $record);
-        $this->db->deviceConfigurations->saveDesired($imei, $key, $protocol, $supplier, $model, $command, $payload, (string)$record['status'], $id);
-
-        return ['status' => $record['status'], 'key' => $key, 'command' => $command, 'id' => $id];
-    }
-
-    private function saveGenericConfiguration(string $imei, array $decoded, string $requestId = ''): array
-    {
-        if (!is_array($decoded['capabilities'] ?? null)) {
-            Logger::channel('api')->warning('API device configuration rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'missing_capabilities_object',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'capabilities object is required']];
-        }
-
-        $device = $this->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = trim((string)($decoded['supplier'] ?? '')) !== ''
-            ? trim((string)$decoded['supplier'])
-            : (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $modelName = trim((string)($decoded['model'] ?? '')) !== ''
-            ? trim((string)$decoded['model'])
-            : (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = $this->protocolForModel($supplier, $modelName);
-        if ($protocol === '') {
-            $protocol = (string)($device['protocol'] ?? '');
-        }
-        if ($protocol === '') {
-            Logger::channel('api')->warning('API device configuration rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'unknown_protocol',
-            ]);
-            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
-        }
-
-        $modelRow = $this->modelForSupplierAndName($supplier, $modelName);
-        $enabled = array_flip($modelRow !== null
-            ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
-            : GenericModelCapabilityCatalog::keysForProtocol($protocol));
-        $configRows = $this->db->deviceConfigurations->allForImei($imei);
-        $currentValues = $this->flattenWritableCapabilities($protocol, $this->deviceCapabilities($modelRow, $protocol, $configRows));
-        $currentRowsByKey = [];
-        foreach ($configRows as $row) {
-            $normalizedKey = $this->comparisonStoredConfigurationKey((string)($row['config_key'] ?? ''));
-            if ($normalizedKey !== null) {
-                $currentRowsByKey[$normalizedKey] = $row;
-            }
-        }
-
-        try {
-            $requested = $this->parseWritableCapabilitiesInput($decoded['capabilities'], $enabled);
-        } catch (\InvalidArgumentException $e) {
-            Logger::channel('api')->warning('API device configuration rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_config',
-                'message' => $e->getMessage(),
-            ]);
-            return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
-        }
-
-        $changed = [];
-        $unchanged = [];
-        foreach ($requested as $path => $value) {
-            $currentValue = $currentValues[$path] ?? null;
-            if (array_key_exists($path, $currentValues) && $this->capabilityValuesEqual($currentValue, $value)) {
-                $unchanged[] = $path;
-                continue;
-            }
-
-            [, $genericKey] = explode('.', $path, 2);
-            try {
-                $nativeUpdates = $this->genericCapabilityToNativeUpdates($protocol, $genericKey, $value);
-            } catch (\InvalidArgumentException $e) {
-                Logger::channel('api')->warning('API device configuration rejected', [
-                    'request_id' => $requestId,
-                    'imei' => $imei,
-                    'capability_path' => $path,
-                    'error_code' => 'invalid_config',
-                    'message' => $e->getMessage(),
-                ]);
-                return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
-            }
-
-            $pathResults = [];
-            foreach ($nativeUpdates as $nativeKey => $payload) {
-                $normalizedNativeKey = $this->normalizedStoredConfigurationKey($nativeKey) ?? $nativeKey;
-                $existingPayload = is_array($currentRowsByKey[$normalizedNativeKey]['desired_payload'] ?? null)
-                    ? $currentRowsByKey[$normalizedNativeKey]['desired_payload']
-                    : null;
-                if ($existingPayload !== null && $this->capabilityValuesEqual($existingPayload, $payload)) {
-                    continue;
-                }
-
-                $result = $this->persistAndApplyConfiguration($imei, $nativeKey, $payload, $supplier, $modelName);
-                if (isset($result['error'])) {
-                    Logger::channel('api')->warning('API device configuration rejected', [
-                        'request_id' => $requestId,
-                        'imei' => $imei,
-                        'capability_path' => $path,
-                        'config_key' => $nativeKey,
-                        'error_code' => $result['error']['code'] ?? 'invalid_config',
-                    ]);
-                    return $result;
-                }
-                $pathResults[] = [
-                    'key' => $nativeKey,
-                    'command' => $result['command'],
-                    'deliveryStatus' => $result['status'],
-                    'lastCommandId' => $result['id'],
-                ];
-            }
-
-            if ($pathResults === []) {
-                $unchanged[] = $path;
-                continue;
-            }
-
-            $changed[$path] = count($pathResults) === 1
-                ? $pathResults[0]
-                : ['operations' => $pathResults];
-        }
-
-        $snapshot = $this->show($imei);
-
-        Logger::channel('api')->info('API device configuration processed', [
-            'request_id' => $requestId,
-            'imei' => $imei,
-            'mode' => 'capabilities',
-            'changed_paths' => array_keys($changed),
-            'unchanged_paths' => array_values($unchanged),
-        ]);
-
-        return [
-            'status' => 'ok',
-            'changed' => $changed,
-            'unchanged' => $unchanged,
-            'configuration' => $snapshot['configuration'] ?? [],
-            'capabilities' => $snapshot['capabilities'] ?? [],
-            'pending' => $snapshot['pending'] ?? [],
-            'transportPending' => $snapshot['transportPending'] ?? [],
-        ];
-    }
-
     private function protocolForModel(string $supplier, string $model): string
     {
         return DeviceProtocol::forSupplier($supplier);
@@ -1272,11 +936,11 @@ class DeviceService
         $catalog = $this->db->genericCapabilities->all($deviceType);
         $supportedKeys = $model !== null
             ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
-            : GenericModelCapabilityCatalog::keysForProtocol($protocol);
-        $matrix = GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
+            : CapabilityCatalog::keysForProtocol($protocol);
+        $matrix = CapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
         $capabilities = [];
 
-        foreach (GenericModelCapabilityCatalog::sections() as $section => $_label) {
+        foreach (CapabilityCatalog::sections() as $section => $_label) {
             $capabilities[$section] = [];
         }
 
@@ -1316,18 +980,20 @@ class DeviceService
         $storedGenericKeys = [];
 
         foreach ($configRows as $row) {
-            $nativeKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+            $nativeKey = $this->storedNativeConfigurationKey($row);
             $payload = is_array($row[$payloadKey] ?? null) ? $row[$payloadKey] : [];
             if ($nativeKey === null || $payload === []) {
                 continue;
             }
 
-            $genericKey = GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($nativeKey);
+            $genericKey = CapabilityCatalog::normalizeStoredCapabilityKey(
+                (string)($row['config_key'] ?? $nativeKey)
+            );
             if ($genericKey === null) {
                 continue;
             }
 
-            $section = GenericModelCapabilityCatalog::sectionForCapabilityKey($genericKey);
+            $section = CapabilityCatalog::sectionForCapabilityKey($genericKey);
             if ($section === null || $section === 'telemetry') {
                 continue;
             }
@@ -1401,10 +1067,6 @@ class DeviceService
                             $sectionCaps[$genericKey],
                             $metaData,
                         );
-                        $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
-                        if ($responseNativeKey !== null && is_array($sectionCaps[$genericKey])) {
-                            $sectionCaps[$genericKey]['_nativeKey'] ??= $responseNativeKey;
-                        }
                     } else {
                         $sectionCaps[$genericKey] = [
                             'value' => $sectionCaps[$genericKey],
@@ -1443,7 +1105,6 @@ class DeviceService
                     continue;
                 }
 
-                $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
                 if ($this->capabilityRegistry->has($genericKey)) {
                     if (!$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)) {
                         continue;
@@ -1455,37 +1116,11 @@ class DeviceService
                         $value,
                         $meta[$genericKey] ?? [],
                     );
-                    $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
-                    if ($responseNativeKey !== null && is_array($value)) {
-                        $value['_nativeKey'] ??= $responseNativeKey;
-                    }
                 } else {
                     $value = [
                         'value' => $value,
                         '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $meta[$genericKey] ?? []),
                     ];
-                    if ($responseNativeKey !== null) {
-                        $value['_nativeKey'] = $responseNativeKey;
-                    }
-                }
-            }
-            unset($value);
-        }
-        unset($sectionCaps);
-
-        foreach ($capabilities as $section => &$sectionCaps) {
-            if ($section === 'telemetry') {
-                continue;
-            }
-            foreach ($sectionCaps as $genericKey => &$value) {
-                $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
-                if (
-                    !$this->capabilityRegistry->has($genericKey)
-                    && $responseNativeKey !== null
-                    && is_array($value)
-                    && array_key_exists('value', $value)
-                ) {
-                    $value['_nativeKey'] = $responseNativeKey;
                 }
             }
             unset($value);
@@ -1546,18 +1181,13 @@ class DeviceService
             'value' => $value,
             '_meta' => $meta,
         ];
-        $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
-        if ($responseNativeKey !== null) {
-            $capability['_nativeKey'] = $responseNativeKey;
-        }
-
         return $capability;
     }
 
     private function configurationEntryForGenericKey(string $protocol, string $genericKey): ?array
     {
         foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
-            if (GenericModelCapabilityCatalog::mapConfigurationKey((string)($entry['key'] ?? '')) === $genericKey) {
+            if (CapabilityCatalog::mapConfigurationKey((string)($entry['key'] ?? '')) === $genericKey) {
                 return $entry;
             }
         }
@@ -1654,8 +1284,8 @@ class DeviceService
             $catalog = $this->db->genericCapabilities->all($deviceType);
             $supportedKeys = $model !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
-                : GenericModelCapabilityCatalog::keysForProtocol($protocol);
-            $matrix = GenericModelCapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
+                : CapabilityCatalog::keysForProtocol($protocol);
+            $matrix = CapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
         }
 
         $requestable = [];
@@ -1744,66 +1374,6 @@ class DeviceService
     }
 
     /**
-     * @param array<string, bool> $enabled
-     * @return array<string, mixed>
-     */
-    private function parseWritableCapabilitiesInput(array $capabilities, array $enabled): array
-    {
-        $requested = [];
-        foreach ($capabilities as $section => $entries) {
-            if (!is_string($section) || !is_array($entries)) {
-                throw new \InvalidArgumentException('Each capabilities section must be an object');
-            }
-            if ($section === 'telemetry') {
-                throw new \InvalidArgumentException('Telemetry capabilities are read-only');
-            }
-            if (!array_key_exists($section, GenericModelCapabilityCatalog::sections())) {
-                throw new \InvalidArgumentException("Unknown capability section {$section}");
-            }
-
-            foreach ($entries as $key => $rawValue) {
-                if (!is_string($key)) {
-                    throw new \InvalidArgumentException('Capability keys must be strings');
-                }
-                $expectedSection = GenericModelCapabilityCatalog::sectionForCapabilityKey($key);
-                if ($expectedSection === null || $expectedSection !== $section) {
-                    throw new \InvalidArgumentException("Unsupported capability {$section}.{$key}");
-                }
-                if (!isset($enabled[$key])) {
-                    throw new \InvalidArgumentException("Capability {$key} is not enabled for this model");
-                }
-
-                $value = $this->sanitizeWritableCapabilityValue($rawValue);
-                $requested["{$section}.{$key}"] = $value;
-            }
-        }
-
-        return $requested;
-    }
-
-    private function sanitizeWritableCapabilityValue(mixed $rawValue): mixed
-    {
-        if (is_array($rawValue) && array_key_exists('value', $rawValue)) {
-            return $rawValue['value'];
-        }
-        if (is_array($rawValue) && array_key_exists('_meta', $rawValue) && !array_key_exists('value', $rawValue)) {
-            throw new \InvalidArgumentException('Capability value is required');
-        }
-
-        return $rawValue;
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function genericCapabilityToNativeUpdates(string $protocol, string $genericKey, mixed $value): array
-    {
-        return $this->capabilityRegistry->toNative($protocol, $genericKey, $value);
-    }
-
-
-
-    /**
      * @param list<array<string, mixed>> $configRows
      * @return array<string, array{updated_at: string, last_status: string, last_command_id: string}>
      */
@@ -1811,11 +1381,13 @@ class DeviceService
     {
         $meta = [];
         foreach ($configRows as $row) {
-            $nativeKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+            $nativeKey = $this->storedNativeConfigurationKey($row);
             if ($nativeKey === null) {
                 continue;
             }
-            $genericKey = GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($nativeKey);
+            $genericKey = CapabilityCatalog::normalizeStoredCapabilityKey(
+                (string)($row['config_key'] ?? $nativeKey)
+            );
             if ($genericKey === null) {
                 continue;
             }
@@ -1991,33 +1563,13 @@ class DeviceService
         return $this->capabilityRegistry->get($genericKey)?->meta($protocol, $metaData) ?? $metaData;
     }
 
-    private function resolveConfigurationKeyForProtocol(string $protocol, string $key): ?string
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function storedNativeConfigurationKey(array $row): ?string
     {
-        return $this->capabilityRegistry->resolveConfigKey($protocol, $key);
-    }
-
-    private function normalizedStoredConfigurationKey(string $key): ?string
-    {
-        $key = trim($key);
-        if ($key === '') {
-            return null;
-        }
-
-        return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key);
-    }
-
-    private function comparisonStoredConfigurationKey(string $key): ?string
-    {
-        $key = trim($key);
-        if ($key === '') {
-            return null;
-        }
-
-        if (in_array($key, ['whitelistGroup1', 'whitelistGroup2', 'sosNumber1', 'sosNumber2', 'sosNumber3'], true)) {
-            return $key;
-        }
-
-        return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
+        $key = trim((string)($row['native_key'] ?? $row['config_key'] ?? ''));
+        return $key !== '' ? $key : null;
     }
 
     private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed

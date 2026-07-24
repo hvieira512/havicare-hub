@@ -178,7 +178,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(20, $response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
         self::assertTrue($response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertTrue($response['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
-        self::assertSame('BP84', $response['capabilities']['contacts']['whitelist_enabled']['_nativeKey'] ?? null);
+        self::assertArrayNotHasKey('_nativeKey', $response['capabilities']['contacts']['whitelist_enabled']);
         self::assertSame(
             ['password' => '2468'],
             $response['capabilities']['settings_system']['device_password']['value'] ?? null
@@ -599,7 +599,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ],
             $response['capabilities']['alarms']['medication_reminders']['_meta']['frequency']['options'] ?? null
         );
-        self::assertSame('takePills', $response['capabilities']['alarms']['medication_reminders']['_nativeKey'] ?? null);
+        self::assertArrayNotHasKey('_nativeKey', $response['capabilities']['alarms']['medication_reminders']);
     }
 
     public function testShowExposesMultipleTakePillsRemindersForFourPTouch(): void
@@ -817,7 +817,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsGenericAlarmClockAliasForVivistar(): void
+    public function testConfigurationPatchAcceptsGenericAlarmClockForVivistar(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -847,7 +847,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('reminders', $response['results'][0]['key'] ?? null);
+        self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
+        self::assertSame('reminders', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('861265061009822', $submitted[0]['imei']);
         self::assertStringContainsString('BP85', $submitted[0]['bytes']);
@@ -864,7 +865,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsVivistarAlarmClockOnceWithoutDays(): void
+    public function testConfigurationPatchAcceptsVivistarAlarmClockOnceWithoutDays(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -894,7 +895,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('reminders', $response['results'][0]['key'] ?? null);
+        self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
+        self::assertSame('reminders', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertCount(1, $submitted);
         self::assertStringContainsString('0900,,1,1', $submitted[0]['bytes']);
         self::assertSame(
@@ -910,7 +912,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsVivistarFallDetectionUsingPublicKey(): void
+    public function testConfigurationPatchAcceptsVivistarFallDetectionUsingPublicKey(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -944,7 +946,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('fallDetection', $response['results'][0]['key'] ?? null);
+        self::assertSame('fall_detection', $response['results'][0]['key'] ?? null);
+        self::assertSame('fallDetection', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('861265061009822', $submitted[0]['imei']);
         self::assertStringContainsString('BP76', $submitted[0]['bytes']);
@@ -961,7 +964,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsVivistarWhitelistEnabledToggleAsBp84(): void
+    public function testConfigurationPatchAcceptsVivistarWhitelistEnabledToggleAsBp84(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1053,11 +1056,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
         $response = $api->updateConfigurations('861728087060467', json_encode([
-            'capabilities' => [
-                'contacts' => [
-                    'sos_contacts' => [
-                        '+351938854803',
-                    ],
+            'configurations' => [
+                'sos_contacts' => [
+                    '+351938854803',
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -1081,12 +1082,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
         $response = $api->updateConfigurations('861728087060467', json_encode([
-            'capabilities' => [
-                'contacts' => [
-                    'sos_contacts' => [
-                        '+351938854803',
-                        '+351938854803',
-                    ],
+            'configurations' => [
+                'sos_contacts' => [
+                    '+351938854803',
+                    '+351938854803',
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -1104,12 +1103,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
 
         $response = $api->updateConfigurations('861728087060467', json_encode([
-            'capabilities' => [
-                'contacts' => [
-                    'call_whitelist' => [
-                        '+351922222222',
-                        '+351922222222',
-                    ],
+            'configurations' => [
+                'call_whitelist' => [
+                    '+351922222222',
+                    '+351922222222',
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
@@ -1118,7 +1115,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('numbers must not contain repeated values', $response['error']['message'] ?? null);
     }
 
-    public function testConfigurationPutRejectsVivistarAlarmClockWithoutType(): void
+    public function testConfigurationPatchRejectsVivistarAlarmClockWithoutType(): void
     {
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
@@ -1201,7 +1198,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('cfg:BP76', $response['transportPending'][0]['dedupeKey'] ?? null);
     }
 
-    public function testConfigurationPutSendsDownlinksForProtocolConfigKeys(): void
+    public function testConfigurationPatchSendsDownlinksForGenericKeys(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1235,7 +1232,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->updateConfigurations('861265061009822', json_encode([
             'configurations' => [
-                'fallDetection' => ['enabled' => true],
+                'fall_detection' => ['enabled' => true],
                 'call_whitelist' => [
                     'contacts' => [
                         ['name' => 'Ana', 'phone' => '+351911111111'],
@@ -1250,13 +1247,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('BP76', $submitted[0]['bytes']);
         self::assertStringContainsString('BP14', $submitted[1]['bytes']);
         self::assertCount(2, $response['results'] ?? []);
-        self::assertSame('fallDetection', $response['results'][0]['key'] ?? null);
+        self::assertSame('fall_detection', $response['results'][0]['key'] ?? null);
+        self::assertSame('fallDetection', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertSame('call_whitelist', $response['results'][1]['key'] ?? null);
         self::assertSame(['enabled' => true], $response['configurations']['fall_detection'] ?? null);
         self::assertSame('waiting_device', $response['pending']['alarms']['fall_detection']['status'] ?? null);
     }
 
-    public function testConfigurationPutSendsFourPTouchTakePillsDownlink(): void
+    public function testConfigurationPatchSendsFourPTouchTakePillsDownlink(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1292,7 +1290,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073', $submitted[0]['bytes']);
     }
 
-    public function testConfigurationPutAcceptsLocationReportingIntervalAliasForFourPTouch(): void
+    public function testConfigurationPatchAcceptsLocationReportingIntervalForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1318,10 +1316,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertSame('location_reporting_interval', $response['results'][0]['key'] ?? null);
+        self::assertSame('uploadInterval', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertStringContainsString('UPLOAD,3600', $submitted[0]['bytes']);
     }
 
-    public function testConfigurationPutAcceptsCenterNumberAliasForFourPTouch(): void
+    public function testConfigurationPatchAcceptsCenterNumberForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1347,10 +1346,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertSame('center_number', $response['results'][0]['key'] ?? null);
+        self::assertSame('centerNumber', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertStringContainsString('CENTER,351911111111', $submitted[0]['bytes']);
     }
 
-    public function testConfigurationPutSendsFourPTouchAlarmClockDownlink(): void
+    public function testConfigurationPatchSendsFourPTouchAlarmClockDownlink(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1366,11 +1366,15 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
             'configurations' => [
-                'alarmClock' => [
-                    'alarms' => [
-                        ['time' => '08:10', 'enabled' => true, 'frequency' => 1],
-                        ['time' => '14:30', 'enabled' => false, 'frequency' => 2],
-                        ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '0111110'],
+                'alarm_clock' => [
+                    'items' => [
+                        ['time' => '08:10', 'enabled' => true, 'recurrence' => ['kind' => 'once']],
+                        ['time' => '14:30', 'enabled' => false, 'recurrence' => ['kind' => 'daily']],
+                        [
+                            'time' => '18:00',
+                            'enabled' => true,
+                            'recurrence' => ['kind' => 'custom', 'days' => [1, 2, 3, 4, 5]],
+                        ],
                     ],
                 ],
             ],
@@ -1382,139 +1386,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('REMIND,08:10-1-1,14:30-0-2,18:00-1-3-0111110', $submitted[0]['bytes']);
     }
 
-    public function testShowPrefersLatestVivistarAlarmClockRowOverLegacyAlias(): void
-    {
-        [$api, $db, $store] = $this->makeApi();
-        $model = $db->models->find('Vivistar', 'L08 Pro');
-
-        self::assertIsArray($model);
-        $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
-        $db->deviceConfigurations->saveDesired(
-            '861265061009822',
-            'alarm_clock',
-            'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
-            'BP85',
-            [
-                'items' => [
-                    [
-                        'time' => '08:10',
-                        'days' => '1',
-                        'enabled' => true,
-                        'type' => 1,
-                    ],
-                ],
-            ],
-            'queued',
-            'legacy-1'
-        );
-        $db->deviceConfigurations->saveDesired(
-            '861265061009822',
-            'reminders',
-            'vivistar-iw',
-            'Vivistar',
-            'L08 Pro',
-            'BP85',
-            [
-                'items' => [
-                    [
-                        'time' => '09:30',
-                        'days' => '24',
-                        'enabled' => true,
-                        'type' => 2,
-                    ],
-                ],
-            ],
-            'queued',
-            'native-1'
-        );
-
-        $response = $api->show('861265061009822');
-
-        self::assertSame(
-            [
-                [
-                    'time' => '09:30',
-                    'enabled' => true,
-                    'recurrence' => [
-                        'kind' => 'custom',
-                        'days' => [2, 4],
-                    ],
-                    'type' => 2,
-                ],
-            ],
-            $response['configurations']['alarm_clock'] ?? null
-        );
-    }
-
-    public function testShowPrefersLatestFourPTouchAlarmClockRowOverLegacyAlias(): void
-    {
-        [$api, $db, $store] = $this->makeApi();
-        $model = $db->models->find('4P Touch', 'D46');
-
-        self::assertIsArray($model);
-        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
-        $db->deviceConfigurations->saveDesired(
-            '868017032159118',
-            'alarm_clock',
-            'four-p-touch',
-            '4P Touch',
-            'D46',
-            'REMIND',
-            [
-                'items' => [
-                    [
-                        'time' => '08:10',
-                        'enabled' => true,
-                        'recurrence' => ['kind' => 'once'],
-                    ],
-                ],
-            ],
-            'queued',
-            'legacy-1'
-        );
-        $db->deviceConfigurations->saveDesired(
-            '868017032159118',
-            'alarmClock',
-            'four-p-touch',
-            '4P Touch',
-            'D46',
-            'REMIND',
-            [
-                'alarms' => [
-                    [
-                        'time' => '10:45',
-                        'enabled' => false,
-                        'frequency' => 3,
-                        'custom' => '0111110',
-                    ],
-                ],
-            ],
-            'queued',
-            'native-1'
-        );
-
-        $response = $api->show('868017032159118');
-
-        self::assertSame(
-            [
-                [
-                    'time' => '10:45',
-                    'enabled' => false,
-                    'recurrence' => [
-                        'kind' => 'custom',
-                        'days' => [1, 2, 3, 4, 5],
-                    ],
-                ],
-            ],
-            $response['configurations']['alarm_clock'] ?? null
-        );
-    }
-
-    public function testConfigurationPutAcceptsGenericAlarmClockAliasForFourPTouch(): void
+    public function testConfigurationPatchAcceptsGenericAlarmClockForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1543,7 +1415,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('alarmClock', $response['results'][0]['key'] ?? null);
+        self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
+        self::assertSame('alarmClock', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('REMIND,08:10-1-1', $submitted[0]['bytes']);
@@ -1559,7 +1432,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsGenericFallSensitivityAliasForFourPTouch(): void
+    public function testConfigurationPatchAcceptsGenericFallSensitivityForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1584,12 +1457,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('fall_sensitivity', $response['results'][0]['key'] ?? null);
+        self::assertSame('fallDownSensitivity', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('LSSET,4+6', $submitted[0]['bytes']);
     }
 
-    public function testConfigurationPutAcceptsGenericCallWhitelistAliasForFourPTouch(): void
+    public function testConfigurationPatchAcceptsGenericCallWhitelistForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1633,7 +1507,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsPhonebookContactsWrapperForFourPTouch(): void
+    public function testConfigurationPatchAcceptsPhonebookContactsWrapperForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1645,7 +1519,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
@@ -1669,7 +1543,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsEmptyPhonebookContactsForFourPTouch(): void
+    public function testConfigurationPatchAcceptsEmptyPhonebookContactsForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1703,7 +1577,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsEmptyAlarmClockItemsForFourPTouch(): void
+    public function testConfigurationPatchAcceptsEmptyAlarmClockItemsForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1727,7 +1601,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertSame('alarmClock', $response['results'][0]['key'] ?? null);
+        self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
+        self::assertSame('alarmClock', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('REMIND', $submitted[0]['bytes'] ?? '');
@@ -1737,7 +1612,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutAcceptsEmptySosContactsForFourPTouch(): void
+    public function testConfigurationPatchAcceptsEmptySosContactsForFourPTouch(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1770,7 +1645,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testConfigurationPutRejectsFourPTouchAlarmClockType(): void
+    public function testConfigurationPatchRejectsFourPTouchAlarmClockType(): void
     {
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('4P Touch', 'D46');
@@ -1797,7 +1672,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('type is not supported for four-p-touch alarm_clock', $response['error']['message'] ?? null);
     }
 
-    public function testConfigurationPutAllowsFourPTouchLanguageZeroForEnglish(): void
+    public function testConfigurationPatchAllowsFourPTouchLanguageZeroForEnglish(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1813,7 +1688,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
             'configurations' => [
-                'languageTimezone' => [
+                'language_timezone' => [
                     'language' => 0,
                     'timeZone' => '0',
                 ],
@@ -1825,7 +1700,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('LZ,0,0', $submitted[0]['bytes']);
     }
 
-    public function testConfigurationPutSendsFourPTouchTakePillsWithMultipleReminders(): void
+    public function testConfigurationPatchSendsFourPTouchTakePillsWithMultipleReminders(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1859,7 +1734,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073]', $submitted[0]['bytes']);
     }
 
-    public function testConfigurationPutRejectsInvalidRequestWithoutConfigurations(): void
+    public function testConfigurationPatchRejectsInvalidRequestWithoutConfigurations(): void
     {
         [$api] = $this->makeApi();
 
@@ -1868,7 +1743,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('invalid_request', $response['error']['code'] ?? null);
     }
 
-    public function testConfigurationPutRejectsUnknownConfigKey(): void
+    public function testConfigurationPatchRejectsUnknownConfigKey(): void
     {
         [$api] = $this->makeApi();
 
@@ -1881,13 +1756,52 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
     }
 
-    public function testConfigurationPutRejectsInvalidPayload(): void
+    public function testConfigurationPatchRejectsSupplierNativeKey(): void
     {
         [$api] = $this->makeApi();
 
         $response = $api->updateConfigurations('861265061009822', json_encode([
             'configurations' => [
-                'workingMode' => [
+                'fallDetection' => ['enabled' => true],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame(
+            'Unsupported configuration fallDetection',
+            $response['error']['message'] ?? null
+        );
+    }
+
+    public function testConfigurationPatchRejectsGenericCapabilityDisabledForModel(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'working_mode' => ['mode' => 1],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame(
+            'Capability working_mode is not enabled for this model',
+            $response['error']['message'] ?? null
+        );
+        self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
+    }
+
+    public function testConfigurationPatchRejectsInvalidPayload(): void
+    {
+        [$api] = $this->makeApi();
+
+        $response = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'working_mode' => [
                     'mode' => 8,
                     'intervalSeconds' => 10,
                     'gpsEnabled' => true,
@@ -1964,7 +1878,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
     }
 
-    public function testFourPTouchCallWhitelistCapabilitySaveFansOutToNativeCommands(): void
+    public function testFourPTouchCallWhitelistConfigurationFansOutToNativeCommands(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -1980,28 +1894,26 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 0, '', '7597567372', 'hitcare');
 
         $response = $api->updateConfigurations('637507597567372', json_encode([
-            'capabilities' => [
-                'contacts' => [
-                    'call_whitelist' => [
-                        '111',
-                        '222',
-                        '333',
-                        '444',
-                        '555',
-                        '666',
-                    ],
+            'configurations' => [
+                'call_whitelist' => [
+                    '111',
+                    '222',
+                    '333',
+                    '444',
+                    '555',
+                    '666',
                 ],
             ],
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertCount(2, $response['changed']['contacts.call_whitelist']['operations'] ?? []);
+        self::assertCount(2, $response['results'][0]['operations'] ?? []);
         self::assertCount(2, $submitted);
         self::assertStringContainsString('WHITELIST1', $submitted[0]['bytes']);
         self::assertStringContainsString('WHITELIST2', $submitted[1]['bytes']);
         self::assertSame(
             ['111', '222', '333', '444', '555', '666'],
-            $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
+            $response['configurations']['call_whitelist'] ?? null
         );
         $savedRows = $db->deviceConfigurations->allForImei('637507597567372');
         self::assertCount(2, $savedRows);
@@ -2009,7 +1921,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(['numbers' => ['666']], $savedRows[1]['desired_payload'] ?? null);
     }
 
-    public function testFourPTouchAlarmClockCapabilitySaveFansOutToNativeCommand(): void
+    public function testFourPTouchAlarmClockConfigurationMapsToNativeCommand(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -2025,15 +1937,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
         $response = $api->updateConfigurations('868017032159118', json_encode([
-            'capabilities' => [
-                'alarms' => [
-                    'alarm_clock' => [
-                        'items' => [
-                            [
-                                'time' => '08:10',
-                                'enabled' => true,
-                                'recurrence' => ['kind' => 'daily'],
-                            ],
+            'configurations' => [
+                'alarm_clock' => [
+                    'items' => [
+                        [
+                            'time' => '08:10',
+                            'enabled' => true,
+                            'recurrence' => ['kind' => 'daily'],
                         ],
                     ],
                 ],
@@ -2051,7 +1961,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'recurrence' => ['kind' => 'daily'],
                 ],
             ],
-            $response['capabilities']['alarms']['alarm_clock']['value'] ?? null
+            $response['configurations']['alarm_clock'] ?? null
         );
     }
 

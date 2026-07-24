@@ -3,7 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Command\DeviceConfigurationCatalog;
-use Hub\Domain\GenericModelCapabilityCatalog;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
 
 class ProtocolService
@@ -27,7 +27,7 @@ class ProtocolService
         }
 
         $catalog = array_map(
-            fn(array $entry): array => $entry + ['capabilityKey' => GenericModelCapabilityCatalog::mapConfigurationKey($entry['key'] ?? '')],
+            fn(array $entry): array => $entry + ['capabilityKey' => CapabilityCatalog::mapConfigurationKey($entry['key'] ?? '')],
             DeviceConfigurationCatalog::configsForProtocol($protocol)
         );
 
