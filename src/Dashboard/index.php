@@ -47,13 +47,15 @@ require_once __DIR__ . '/components/modal.php';
                                 <label for="dashboardLoginPassword" class="form-label">Palavra-passe</label>
                                 <input id="dashboardLoginPassword" name="password" class="form-control" type="password" autocomplete="current-password" required>
                             </div>
-                            <button id="dashboardLoginSubmit" class="btn btn-primary w-100 dashboard-login-submit" type="submit">
-                                <span class="dashboard-login-submit-label">Entrar</span>
-                                <span class="dashboard-login-submit-loading d-none">
-                                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                                    <span>A entrar…</span>
-                                </span>
-                            </button>
+                            <div class="d-flex justify-content-end">
+                                <button id="dashboardLoginSubmit" class="btn btn-primary btn-lg dashboard-login-submit" type="submit">
+                                    <span class="dashboard-login-submit-label">Entrar</span>
+                                    <span class="dashboard-login-submit-loading d-none">
+                                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                        <span>A entrar…</span>
+                                    </span>
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -90,7 +92,9 @@ require_once __DIR__ . '/components/modal.php';
                             <li>
                                 <button id="manageSettingsBtn" class="dropdown-item" type="button"><?= icon('fa-sliders', 'me-2') ?>Definições</button>
                             </li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <button id="dashboardLogoutBtn" class="dropdown-item text-danger<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>" type="button"><?= icon('fa-arrow-right-from-bracket', 'me-2') ?>Sair</button>
                             </li>
