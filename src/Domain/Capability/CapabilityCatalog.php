@@ -286,6 +286,7 @@ final class CapabilityCatalog
             'phonebook' => 'phonebook',
             'call_whitelist' => 'call_whitelist',
             'autoHealthMeasurement' => 'auto_vitals_interval',
+            'fallSensitivity' => 'fall_sensitivity',
             'wonlexHeartRateInterval' => 'heart_rate_measurement_interval',
             'wonlexBPInterval' => 'blood_pressure_measurement_interval',
             'wonlexBOInterval' => 'blood_oxygen_measurement_interval',

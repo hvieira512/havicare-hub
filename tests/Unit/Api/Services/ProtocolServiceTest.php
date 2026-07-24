@@ -46,4 +46,21 @@ final class ProtocolServiceTest extends TestCase
         self::assertNotEmpty($response['data']);
         self::assertContains('phonebook', array_column($response['data'], 'key'));
     }
+
+    public function testConfigCatalogMapsVivistarFallSensitivityToThePublicCapabilityKey(): void
+    {
+        $service = new ProtocolService();
+        $response = $service->configCatalog(['protocol' => 'vivistar-iw']);
+
+        $fallSensitivity = null;
+        foreach (($response['data'] ?? []) as $entry) {
+            if (($entry['key'] ?? '') === 'fallSensitivity') {
+                $fallSensitivity = $entry;
+                break;
+            }
+        }
+
+        self::assertIsArray($fallSensitivity);
+        self::assertSame('fall_sensitivity', $fallSensitivity['capabilityKey'] ?? null);
+    }
 }
