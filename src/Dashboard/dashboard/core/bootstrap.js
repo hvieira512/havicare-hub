@@ -1718,22 +1718,13 @@ async function saveDeviceConfiguration(section) {
     try {
         const isTransientAction = section.dataset.configTransient === "1";
         const capabilityKey = section.dataset.capabilityKey || section.dataset.configKey || "";
-        const configKind = section.dataset.configKind || "configuration";
-        const capabilitySection = section.dataset.configSectionName || "";
         const result = isTransientAction
             ? await apiRequestCapability(state.deviceModal.imei, capabilityKey, payload)
-            : await apiSaveConfiguration(
-                state.deviceModal.imei,
-                configKind === "capability"
-                    ? {
-                        capabilities: {
-                            [capabilitySection || "contacts"]: {
-                                [capabilityKey]: payload,
-                            },
-                        },
-                    }
-                    : { configurations: { [key]: payload } },
-            );
+            : await apiSaveConfiguration(state.deviceModal.imei, {
+                configurations: {
+                    [key]: payload,
+                },
+            });
         if (result.error) {
             setConfigUi(key, {
                 phase: "idle",
