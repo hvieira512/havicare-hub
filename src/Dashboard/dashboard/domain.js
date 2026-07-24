@@ -177,14 +177,12 @@ export function capabilitiesForSupplier(supplier, models = []) {
 }
 
 export function suppliersForDeviceType(deviceType, models = []) {
+    const normalizedDeviceType = normalizeDeviceType(deviceType);
     const allSuppliers = suppliersFromModels(models);
-    if (!deviceType || deviceType === "watch") {
-        return allSuppliers;
-    }
     const deviceTypeSuppliers = (models || [])
         .filter(
             (model) =>
-                modelDeviceType(model) === normalizeDeviceType(deviceType),
+                modelDeviceType(model) === normalizedDeviceType,
         )
         .map((model) => model.supplier)
         .filter(Boolean);

@@ -103,4 +103,15 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('select.dataset.detailFilterTypesSignature', $source);
         self::assertStringContainsString('insertAdjacentHTML(', $source);
     }
+
+    public function testDeviceSuppliersAreFilteredByDeviceTypeInTheSharedHelper(): void
+    {
+        $source = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/domain.js'
+        );
+
+        self::assertIsString($source);
+        self::assertStringContainsString('const normalizedDeviceType = normalizeDeviceType(deviceType);', $source);
+        self::assertStringNotContainsString('deviceType === "watch"', $source);
+    }
 }
