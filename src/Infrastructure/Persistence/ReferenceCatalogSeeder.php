@@ -14,7 +14,6 @@ final class ReferenceCatalogSeeder
 
     private const MODELS = [
         ['Wonlex', 'HW20PRO', 'HW20PRO', 'watch', ''],
-        ['Wonlex', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['Vivistar', 'L08 Pro', 'L08 Pro', 'watch', ''],
         ['4P Touch', 'D46', 'D46', 'watch', ''],
         ['Voerka', 'W812', 'W812', 'ncs', ''],
