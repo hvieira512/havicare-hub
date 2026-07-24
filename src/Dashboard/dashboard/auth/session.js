@@ -124,6 +124,7 @@ const showToast = (type, message) => {
         icon: type === "danger" ? "error" : type,
         title: message,
         showConfirmButton: false,
+        showCloseButton: true,
         timer: 4000,
         timerProgressBar: true,
     });
