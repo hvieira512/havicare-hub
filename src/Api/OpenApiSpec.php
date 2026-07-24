@@ -1066,7 +1066,6 @@ class OpenApiSpec
                         'type' => 'object',
                         'properties' => [
                             'value' => ['type' => 'object'],
-                            '_type' => ['type' => 'string', 'example' => 'alarm_clock'],
                             '_meta' => [
                                 'type' => 'object',
                                 'properties' => [

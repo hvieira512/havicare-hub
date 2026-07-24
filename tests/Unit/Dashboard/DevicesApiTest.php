@@ -215,9 +215,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('pager_call', $response['capabilities']['alarms'] ?? []);
         self::assertSame(
             [
-                'value' => [],
-                '_meta' => [],
-                '_type' => 'pager_call',
+                'supported' => true,
             ],
             $response['capabilities']['alarms']['pager_call'] ?? null
         );
@@ -486,35 +484,35 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $response = $api->show('861728087060467');
 
         self::assertSame(
-            ['value' => ['intervalSeconds' => 300], '_meta' => [], '_type' => 'location_reporting_interval'],
+            ['value' => ['intervalSeconds' => 300], '_meta' => []],
             $response['capabilities']['settings_system']['location_reporting_interval'] ?? null
         );
         self::assertSame(
-            ['value' => ['enabled' => false], '_meta' => [], '_type' => 'sos_sms_alert'],
+            ['value' => ['enabled' => false], '_meta' => []],
             $response['capabilities']['alarms']['sos_sms_alert'] ?? null
         );
         self::assertSame(
-            ['value' => ['enabled' => false], '_meta' => [], '_type' => 'low_battery_alert'],
+            ['value' => ['enabled' => false], '_meta' => []],
             $response['capabilities']['alarms']['low_battery_alert'] ?? null
         );
         self::assertSame(
-            ['value' => ['enabled' => true, 'callCenterOnFall' => false], '_meta' => [], '_type' => 'fall_detection'],
+            ['value' => ['enabled' => true, 'callCenterOnFall' => false], '_meta' => []],
             $response['capabilities']['alarms']['fall_detection'] ?? null
         );
         self::assertSame(
-            ['value' => ['enabled' => true, 'intervalMinutes' => 10], '_meta' => [], '_type' => 'auto_vitals_interval'],
+            ['value' => ['enabled' => true, 'intervalMinutes' => 10], '_meta' => []],
             $response['capabilities']['health']['auto_vitals_interval'] ?? null
         );
         self::assertSame(
-            ['value' => ['range' => '21:10-07:30'], '_meta' => [], '_type' => 'sleep_monitoring'],
+            ['value' => ['range' => '21:10-07:30'], '_meta' => []],
             $response['capabilities']['health']['sleep_monitoring'] ?? null
         );
         self::assertSame(
-            ['value' => ['enabled' => true, 'intervalHours' => 2], '_meta' => [], '_type' => 'temperature_measurement_interval'],
+            ['value' => ['enabled' => true, 'intervalHours' => 2], '_meta' => []],
             $response['capabilities']['health']['temperature_measurement_interval'] ?? null
         );
         self::assertSame(
-            ['value' => ['language' => 3, 'timeZone' => '0'], '_meta' => [], '_type' => 'language_timezone'],
+            ['value' => ['language' => 3, 'timeZone' => '0'], '_meta' => []],
             $response['capabilities']['settings_system']['language_timezone'] ?? null
         );
     }

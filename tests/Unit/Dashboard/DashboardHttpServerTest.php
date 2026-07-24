@@ -734,7 +734,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         self::assertSame(200, $detail->getStatusCode(), (string)$detail->getBody());
         self::assertSame(
-            ['value' => ['enabled' => true], '_meta' => [], '_type' => 'fall_detection'],
+            ['value' => ['enabled' => true], '_meta' => []],
             $detailBody['capabilities']['alarms']['fall_detection'] ?? null
         );
         self::assertSame('waiting_device', $detailBody['pending']['alarms']['fall_detection']['status'] ?? null);

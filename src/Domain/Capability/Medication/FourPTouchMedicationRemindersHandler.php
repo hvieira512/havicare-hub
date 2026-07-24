@@ -73,7 +73,6 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
         return [
             'value' => $value,
             '_meta' => $meta,
-            '_type' => 'medication_reminders',
         ];
     }
 

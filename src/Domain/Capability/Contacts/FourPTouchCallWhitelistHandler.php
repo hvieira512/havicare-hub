@@ -54,7 +54,6 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
         return [
             'value' => $normalizedValue,
             '_meta' => $this->meta($meta),
-            '_type' => 'call_whitelist',
         ];
     }
 

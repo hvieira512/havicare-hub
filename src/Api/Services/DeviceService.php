@@ -1409,7 +1409,6 @@ class DeviceService
                         $sectionCaps[$genericKey] = [
                             'value' => $sectionCaps[$genericKey],
                             '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $metaData),
-                            '_type' => $genericKey,
                         ];
                     }
                     break;
@@ -1464,7 +1463,6 @@ class DeviceService
                     $value = [
                         'value' => $value,
                         '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $meta[$genericKey] ?? []),
-                        '_type' => $genericKey,
                     ];
                     if ($responseNativeKey !== null) {
                         $value['_nativeKey'] = $responseNativeKey;
@@ -1547,7 +1545,6 @@ class DeviceService
         $capability = [
             'value' => $value,
             '_meta' => $meta,
-            '_type' => $genericKey,
         ];
         $responseNativeKey = $this->capabilityRegistry->responseNativeKey($protocol, $genericKey);
         if ($responseNativeKey !== null) {

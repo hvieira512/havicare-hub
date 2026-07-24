@@ -142,7 +142,7 @@ final class CallWhitelistCapability implements CapabilityContract
             return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
         }
 
-        return ['value' => self::normalizeContactsList($value), '_meta' => $this->meta($protocol, $meta), '_type' => $this->key()];
+        return ['value' => self::normalizeContactsList($value), '_meta' => $this->meta($protocol, $meta)];
     }
 
     public function nativeKeyForProtocol(string $protocol): ?string

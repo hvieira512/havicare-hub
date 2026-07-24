@@ -108,7 +108,7 @@ final class SosContactsCapability implements CapabilityContract
             return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
         }
 
-        return ['value' => is_array($value) ? self::stringList($value) : [], '_meta' => $meta, '_type' => $this->key()];
+        return ['value' => is_array($value) ? self::stringList($value) : [], '_meta' => $meta];
     }
 
     public function nativeKeyForProtocol(string $protocol): ?string

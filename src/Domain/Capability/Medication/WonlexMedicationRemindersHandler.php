@@ -63,7 +63,6 @@ final class WonlexMedicationRemindersHandler implements MedicationRemindersHandl
         return [
             'value' => $value,
             '_meta' => $meta,
-            '_type' => 'medication_reminders',
         ];
     }
 

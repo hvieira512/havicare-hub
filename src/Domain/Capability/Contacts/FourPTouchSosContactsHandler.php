@@ -63,7 +63,6 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
         return [
             'value' => $normalizedValue,
             '_meta' => $this->meta($meta),
-            '_type' => 'sos_contacts',
         ];
     }
 

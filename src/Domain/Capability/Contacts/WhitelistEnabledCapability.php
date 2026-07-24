@@ -82,7 +82,7 @@ final class WhitelistEnabledCapability implements CapabilityContract
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
-        return ['value' => $value, '_meta' => $meta, '_type' => $this->key()];
+        return ['value' => $value, '_meta' => $meta];
     }
 
     public function nativeKeyForProtocol(string $protocol): ?string

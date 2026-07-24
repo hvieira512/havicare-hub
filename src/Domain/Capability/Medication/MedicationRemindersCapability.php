@@ -98,7 +98,7 @@ final class MedicationRemindersCapability implements CapabilityContract
         return match ($protocol) {
             'wonlex-json' => $this->wonlex->responseEntry($protocol, $nativeKey, $value, $meta),
             'four-p-touch' => $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta),
-            default => ['value' => $value, '_meta' => $meta, '_type' => $this->key()],
+            default => ['value' => $value, '_meta' => $meta],
         };
     }
 

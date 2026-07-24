@@ -104,7 +104,6 @@ final class PhonebookCapability implements CapabilityContract
         return [
             'value' => $value,
             '_meta' => $this->meta($protocol, $meta),
-            '_type' => $this->key(),
         ];
     }
 

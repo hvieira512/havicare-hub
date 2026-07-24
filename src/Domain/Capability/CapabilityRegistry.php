@@ -107,7 +107,6 @@ final class CapabilityRegistry
         return [
             'value' => $value,
             '_meta' => $meta,
-            '_type' => $genericKey,
         ];
     }
 
