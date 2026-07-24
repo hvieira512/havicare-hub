@@ -48,29 +48,16 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($expectedRadar, $actualRadar);
     }
 
-    public function testBootstrapDropsLegacyGenericCapabilitiesTable(): void
+    public function testCompletedMigrationsDoNotRerunOnRestart(): void
     {
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
         $pdo->exec('CREATE TABLE generic_capabilities (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB');
 
-        $databaseNameRow = $pdo->query('SELECT DATABASE() AS db_name')->fetch();
-        self::assertIsArray($databaseNameRow);
-        $databaseName = (string)($databaseNameRow['db_name'] ?? '');
-        self::assertNotSame('', $databaseName);
-
-        $normalizedDatabase = new \Hub\Infrastructure\Persistence\DashboardDatabase([
-            'driver' => 'mysql',
-            'host' => (string)(getenv('TEST_DB_HOST') ?: getenv('DB_HOST') ?: '127.0.0.1'),
-            'port' => (int)(getenv('TEST_DB_PORT') ?: getenv('DB_PORT') ?: 3306),
-            'name' => $databaseName,
-            'username' => (string)(getenv('TEST_DB_ADMIN_USER') ?: getenv('DB_ROOT_USER') ?: 'root'),
-            'password' => (string)(getenv('TEST_DB_ADMIN_PASSWORD') ?: getenv('DB_ROOT_PASSWORD') ?: 'root_pass'),
-            'charset' => (string)(getenv('TEST_DB_CHARSET') ?: getenv('DB_CHARSET') ?: 'utf8mb4'),
-        ]);
+        $normalizedDatabase = $this->reopenDashboardDatabase($this->databaseName($pdo));
 
         $check = $normalizedDatabase->pdo()->query("SHOW TABLES LIKE 'generic_capabilities'");
-        self::assertFalse((bool)$check->fetchColumn());
+        self::assertSame('generic_capabilities', $check->fetchColumn());
     }
 
     public function testModelCapabilitiesCanBeReplacedPerModel(): void
@@ -85,6 +72,21 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
             ['blood_pressure', 'heart_rate'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
+    }
+
+    public function testEmptyModelCapabilitySelectionSurvivesRestart(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $db = ApiDataAccess::fromDatabase($database);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($model);
+
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], []);
+        $reopened = ApiDataAccess::fromDatabase(
+            $this->reopenDashboardDatabase($this->databaseName($database->pdo()))
+        );
+
+        self::assertSame([], $reopened->modelCapabilities->enabledFeaturesForModelId((int)$model['id']));
     }
 
     public function testVivistarModelCapabilitiesIgnoreWatchOnlyPhonebookRows(): void
@@ -112,7 +114,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame([], $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']));
     }
 
-    public function testBootstrapNormalizesPersistedModelCapabilitiesByRemovingInvalidEntries(): void
+    public function testRestartPreservesCustomizedModelCapabilities(): void
     {
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
@@ -128,34 +130,23 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $insert = $pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
         $insert->execute([(int)$model['id'], $invalidCapabilityId]);
 
-        $before = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
-        self::assertContains('ecg', $before);
-        self::assertContains('heart_rate', $before);
+        $stored = $pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
+        $stored->execute([(int)$model['id'], $invalidCapabilityId]);
+        self::assertSame(1, (int)$stored->fetchColumn());
 
-        $databaseNameRow = $pdo->query('SELECT DATABASE() AS db_name')->fetch();
-        self::assertIsArray($databaseNameRow);
-        $databaseName = (string)($databaseNameRow['db_name'] ?? '');
-        self::assertNotSame('', $databaseName);
-
-        $normalizedDatabase = new \Hub\Infrastructure\Persistence\DashboardDatabase([
-            'driver' => 'mysql',
-            'host' => (string)(getenv('TEST_DB_HOST') ?: getenv('DB_HOST') ?: '127.0.0.1'),
-            'port' => (int)(getenv('TEST_DB_PORT') ?: getenv('DB_PORT') ?: 3306),
-            'name' => $databaseName,
-            'username' => (string)(getenv('TEST_DB_ADMIN_USER') ?: getenv('DB_ROOT_USER') ?: 'root'),
-            'password' => (string)(getenv('TEST_DB_ADMIN_PASSWORD') ?: getenv('DB_ROOT_PASSWORD') ?: 'root_pass'),
-            'charset' => (string)(getenv('TEST_DB_CHARSET') ?: getenv('DB_CHARSET') ?: 'utf8mb4'),
-        ]);
+        $normalizedDatabase = $this->reopenDashboardDatabase($this->databaseName($pdo));
         $normalizedDb = ApiDataAccess::fromDatabase($normalizedDatabase);
         $normalizedModel = $normalizedDb->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($normalizedModel);
 
-        $after = $normalizedDb->modelCapabilities->enabledFeaturesForModelId((int)$normalizedModel['id']);
-        self::assertNotContains('ecg', $after);
-        self::assertContains('heart_rate', $after);
+        $stored = $normalizedDatabase->pdo()->prepare(
+            'SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?'
+        );
+        $stored->execute([(int)$normalizedModel['id'], $invalidCapabilityId]);
+        self::assertSame(1, (int)$stored->fetchColumn());
     }
 
-    public function testBootstrapNormalizesPersistedFourPTouchModelCapabilitiesByRemovingInvalidEntries(): void
+    public function testRestartPreservesCustomizedFourPTouchModelCapabilities(): void
     {
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
@@ -171,34 +162,23 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $insert = $pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
         $insert->execute([(int)$model['id'], $invalidCapabilityId]);
 
-        $before = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
-        self::assertContains('ecg', $before);
-        self::assertContains('heart_rate', $before);
+        $stored = $pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
+        $stored->execute([(int)$model['id'], $invalidCapabilityId]);
+        self::assertSame(1, (int)$stored->fetchColumn());
 
-        $databaseNameRow = $pdo->query('SELECT DATABASE() AS db_name')->fetch();
-        self::assertIsArray($databaseNameRow);
-        $databaseName = (string)($databaseNameRow['db_name'] ?? '');
-        self::assertNotSame('', $databaseName);
-
-        $normalizedDatabase = new \Hub\Infrastructure\Persistence\DashboardDatabase([
-            'driver' => 'mysql',
-            'host' => (string)(getenv('TEST_DB_HOST') ?: getenv('DB_HOST') ?: '127.0.0.1'),
-            'port' => (int)(getenv('TEST_DB_PORT') ?: getenv('DB_PORT') ?: 3306),
-            'name' => $databaseName,
-            'username' => (string)(getenv('TEST_DB_ADMIN_USER') ?: getenv('DB_ROOT_USER') ?: 'root'),
-            'password' => (string)(getenv('TEST_DB_ADMIN_PASSWORD') ?: getenv('DB_ROOT_PASSWORD') ?: 'root_pass'),
-            'charset' => (string)(getenv('TEST_DB_CHARSET') ?: getenv('DB_CHARSET') ?: 'utf8mb4'),
-        ]);
+        $normalizedDatabase = $this->reopenDashboardDatabase($this->databaseName($pdo));
         $normalizedDb = ApiDataAccess::fromDatabase($normalizedDatabase);
         $normalizedModel = $normalizedDb->models->find('4P Touch', 'D46');
         self::assertIsArray($normalizedModel);
 
-        $after = $normalizedDb->modelCapabilities->enabledFeaturesForModelId((int)$normalizedModel['id']);
-        self::assertNotContains('ecg', $after);
-        self::assertContains('heart_rate', $after);
+        $stored = $normalizedDatabase->pdo()->prepare(
+            'SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?'
+        );
+        $stored->execute([(int)$normalizedModel['id'], $invalidCapabilityId]);
+        self::assertSame(1, (int)$stored->fetchColumn());
     }
 
-    public function testBootstrapBackfillsRadarDefaultsWhenMissing(): void
+    public function testRestartDoesNotRecreateDeletedReferenceData(): void
     {
         $database = $this->createDashboardDatabase();
         $pdo = $database->pdo();
@@ -210,40 +190,11 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $pdo->exec("DELETE FROM models WHERE device_type = 'radar'");
         $pdo->exec("DELETE FROM suppliers WHERE name = 'Qinglanst'");
 
-        $databaseNameRow = $pdo->query('SELECT DATABASE() AS db_name')->fetch();
-        self::assertIsArray($databaseNameRow);
-        $databaseName = (string)($databaseNameRow['db_name'] ?? '');
-        self::assertNotSame('', $databaseName);
-
-        $normalizedDatabase = new \Hub\Infrastructure\Persistence\DashboardDatabase([
-            'driver' => 'mysql',
-            'host' => (string)(getenv('TEST_DB_HOST') ?: getenv('DB_HOST') ?: '127.0.0.1'),
-            'port' => (int)(getenv('TEST_DB_PORT') ?: getenv('DB_PORT') ?: 3306),
-            'name' => $databaseName,
-            'username' => (string)(getenv('TEST_DB_ADMIN_USER') ?: getenv('DB_ROOT_USER') ?: 'root'),
-            'password' => (string)(getenv('TEST_DB_ADMIN_PASSWORD') ?: getenv('DB_ROOT_PASSWORD') ?: 'root_pass'),
-            'charset' => (string)(getenv('TEST_DB_CHARSET') ?: getenv('DB_CHARSET') ?: 'utf8mb4'),
-        ]);
+        $normalizedDatabase = $this->reopenDashboardDatabase($this->databaseName($pdo));
         $normalizedDb = ApiDataAccess::fromDatabase($normalizedDatabase);
 
-        self::assertNotNull($normalizedDb->suppliers->findByName('Qinglanst'));
-        $model = $normalizedDb->models->find('Qinglanst', 'RD-V1');
-        self::assertIsArray($model);
-        self::assertSame('radar', $model['device_type'] ?? null);
-        $expectedRadar = ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'];
-        $actualRadar = $normalizedDb->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
-        sort($expectedRadar);
-        sort($actualRadar);
-        self::assertSame($expectedRadar, $actualRadar);
-        $expectedCatalog = ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'];
-        $actualCatalog = $normalizedDb->genericCapabilities->keysForDeviceType('radar');
-        sort($expectedCatalog);
-        sort($actualCatalog);
-        self::assertSame($expectedCatalog, $actualCatalog);
-        self::assertNotEmpty(array_values(array_filter(
-            $normalizedDb->supplierDeviceTypes->all(),
-            static fn (array $row): bool => ($row['device_type'] ?? '') === 'radar' && ($row['supplier'] ?? '') === 'Qinglanst'
-        )));
+        self::assertNull($normalizedDb->suppliers->findByName('Qinglanst'));
+        self::assertNull($normalizedDb->models->find('Qinglanst', 'RD-V1'));
     }
 
     public function testModelImagePathIsStoredAndPreservedWhenNoReplacementIsProvided(): void

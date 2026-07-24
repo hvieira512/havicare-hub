@@ -1,3 +1,8 @@
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version VARCHAR(191) NOT NULL PRIMARY KEY,
+    applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS suppliers (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(191) NOT NULL UNIQUE,
@@ -71,6 +76,7 @@ CREATE TABLE IF NOT EXISTS whitelist (
 CREATE TABLE IF NOT EXISTS device_configurations (
     imei VARCHAR(64) NOT NULL,
     config_key VARCHAR(191) NOT NULL,
+    native_key VARCHAR(191) NOT NULL,
     protocol VARCHAR(64) NOT NULL,
     supplier VARCHAR(191) NOT NULL DEFAULT '',
     model VARCHAR(191) NOT NULL DEFAULT '',
@@ -82,7 +88,7 @@ CREATE TABLE IF NOT EXISTS device_configurations (
     desired_updated_at VARCHAR(32) NOT NULL DEFAULT '',
     reported_at VARCHAR(32) NOT NULL DEFAULT '',
     applied_at VARCHAR(32) NOT NULL DEFAULT '',
-    PRIMARY KEY (imei, config_key)
+    PRIMARY KEY (imei, config_key, native_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS api_users (

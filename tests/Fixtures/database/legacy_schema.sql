@@ -1,0 +1,82 @@
+CREATE TABLE suppliers (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(191) NOT NULL UNIQUE,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    created_at VARCHAR(32) NOT NULL DEFAULT '',
+    updated_at VARCHAR(32) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE models (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    supplier_id BIGINT UNSIGNED NOT NULL,
+    internal_model VARCHAR(191) NOT NULL,
+    commercial_name VARCHAR(191) NOT NULL,
+    device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
+    created_at VARCHAR(32) NOT NULL DEFAULT '',
+    updated_at VARCHAR(32) NOT NULL DEFAULT '',
+    UNIQUE KEY uq_models_supplier_internal_model (supplier_id, internal_model),
+    CONSTRAINT fk_models_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE model_capabilities (
+    model_id BIGINT UNSIGNED NOT NULL,
+    feature VARCHAR(191) NOT NULL,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    created_at VARCHAR(32) NOT NULL DEFAULT '',
+    updated_at VARCHAR(32) NOT NULL DEFAULT '',
+    PRIMARY KEY (model_id, feature)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE generic_capabilities (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    section VARCHAR(64) NOT NULL,
+    capability_key VARCHAR(191) NOT NULL UNIQUE,
+    label VARCHAR(191) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at VARCHAR(32) NOT NULL DEFAULT '',
+    updated_at VARCHAR(32) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE whitelist (
+    imei VARCHAR(64) NOT NULL PRIMARY KEY,
+    supplier VARCHAR(191) NOT NULL,
+    model VARCHAR(191) NOT NULL,
+    created_at VARCHAR(32) NOT NULL DEFAULT '',
+    updated_at VARCHAR(32) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE device_configurations (
+    imei VARCHAR(64) NOT NULL,
+    config_key VARCHAR(191) NOT NULL,
+    protocol VARCHAR(64) NOT NULL,
+    supplier VARCHAR(191) NOT NULL DEFAULT '',
+    model VARCHAR(191) NOT NULL DEFAULT '',
+    command VARCHAR(191) NOT NULL DEFAULT '',
+    desired_payload LONGTEXT NOT NULL,
+    reported_payload LONGTEXT NOT NULL,
+    last_status ENUM('', 'queued', 'waiting', 'acked', 'failed', 'dropped', 'sent') NOT NULL DEFAULT '',
+    last_command_id VARCHAR(64) NOT NULL DEFAULT '',
+    desired_updated_at VARCHAR(32) NOT NULL DEFAULT '',
+    reported_at VARCHAR(32) NOT NULL DEFAULT '',
+    applied_at VARCHAR(32) NOT NULL DEFAULT '',
+    PRIMARY KEY (imei, config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE api_users (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(191) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE companies (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(191) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE licenses (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    company_id BIGINT UNSIGNED NOT NULL,
+    license_id VARCHAR(64) NOT NULL,
+    UNIQUE KEY uq_licenses_company_license (company_id, license_id),
+    CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

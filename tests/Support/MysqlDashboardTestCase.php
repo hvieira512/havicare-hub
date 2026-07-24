@@ -21,6 +21,17 @@ abstract class MysqlDashboardTestCase extends TestCase
 
     protected function createDashboardDatabase(): DashboardDatabase
     {
+        $databaseName = $this->createEmptyDatabase();
+        return new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+    }
+
+    protected function reopenDashboardDatabase(string $databaseName): DashboardDatabase
+    {
+        return new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+    }
+
+    protected function createEmptyDatabase(): string
+    {
         $config = $this->mysqlAdminConfig();
         $databaseName = 'hub_test_' . bin2hex(random_bytes(6));
         $this->adminPdo()->exec(sprintf(
@@ -30,8 +41,21 @@ abstract class MysqlDashboardTestCase extends TestCase
             $config['charset'] . '_unicode_ci'
         ));
         $this->temporaryDatabaseNames[] = $databaseName;
+        return $databaseName;
+    }
 
-        return new DashboardDatabase([
+    protected function databaseName(PDO $pdo): string
+    {
+        return (string)($pdo->query('SELECT DATABASE()')->fetchColumn() ?: '');
+    }
+
+    /**
+     * @return array{driver: string, host: string, port: int, name: string, username: string, password: string, charset: string}
+     */
+    protected function dashboardDatabaseConfig(string $databaseName): array
+    {
+        $config = $this->mysqlAdminConfig();
+        return [
             'driver' => 'mysql',
             'host' => $config['host'],
             'port' => $config['port'],
@@ -39,7 +63,27 @@ abstract class MysqlDashboardTestCase extends TestCase
             'username' => $config['username'],
             'password' => $config['password'],
             'charset' => $config['charset'],
-        ]);
+        ];
+    }
+
+    protected function pdoForDatabase(string $databaseName): PDO
+    {
+        $config = $this->dashboardDatabaseConfig($databaseName);
+        return new PDO(
+            sprintf(
+                'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+                $config['host'],
+                $config['port'],
+                $config['name'],
+                $config['charset']
+            ),
+            $config['username'],
+            $config['password'],
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]
+        );
     }
 
     protected function tearDown(): void
