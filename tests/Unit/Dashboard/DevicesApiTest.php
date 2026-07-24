@@ -350,8 +350,46 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
         self::assertSame(
-            5,
+            10,
             $response['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null
+        );
+    }
+
+    public function testShowNormalizesStaleFourPTouchCallWhitelistContactsToNumbers(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
+        $db->deviceConfigurations->saveDesired(
+            '637507597567372',
+            'call_whitelist',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'WHITELIST1',
+            [
+                'contacts' => [
+                    ['name' => '', 'phone' => '+351938854803'],
+                ],
+            ]
+        );
+
+        $response = $api->show('637507597567372');
+
+        self::assertSame(
+            ['+351938854803'],
+            $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
+        );
+        self::assertSame(
+            10,
+            $response['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null
+        );
+        self::assertSame(
+            ['+351938854803'],
+            $response['configurations']['call_whitelist'] ?? null
         );
     }
 

@@ -451,6 +451,7 @@ class DeviceService
                 }
 
                 $normalized = $this->publicConfigurationValueForGenericKey(
+                    $protocol,
                     $genericKey,
                     $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired)
                 );
@@ -520,7 +521,7 @@ class DeviceService
         $currentConfigs = $this->db->deviceConfigurations->allForImei($imei);
         $currentByKey = [];
         foreach ($currentConfigs as $row) {
-            $normalizedKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+            $normalizedKey = $this->comparisonStoredConfigurationKey((string)($row['config_key'] ?? ''));
             if ($normalizedKey !== null) {
                 $currentByKey[$normalizedKey] = $row;
             }
@@ -554,7 +555,7 @@ class DeviceService
 
                 $pathResults = [];
                 foreach ($nativeUpdates as $nativeKey => $nativePayload) {
-                    $normalizedNativeKey = $this->normalizedStoredConfigurationKey($nativeKey) ?? $nativeKey;
+                    $normalizedNativeKey = $this->comparisonStoredConfigurationKey($nativeKey) ?? $nativeKey;
                     $existingPayload = is_array($currentByKey[$normalizedNativeKey]['desired_payload'] ?? null)
                         ? $currentByKey[$normalizedNativeKey]['desired_payload']
                         : null;
@@ -907,8 +908,8 @@ class DeviceService
     {
         $desiredCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload', false);
         $reportedCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'reported_payload', false);
-        $desiredValues = $this->flattenWritableCapabilities($desiredCapabilities);
-        $reportedValues = $this->flattenWritableCapabilities($reportedCapabilities);
+        $desiredValues = $this->flattenWritableCapabilities($protocol, $desiredCapabilities);
+        $reportedValues = $this->flattenWritableCapabilities($protocol, $reportedCapabilities);
         $rowMeta = $this->genericCapabilityRowMeta($configRows);
         $pending = [];
 
@@ -1040,10 +1041,10 @@ class DeviceService
             ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
             : GenericModelCapabilityCatalog::keysForProtocol($protocol));
         $configRows = $this->db->deviceConfigurations->allForImei($imei);
-        $currentValues = $this->flattenWritableCapabilities($this->deviceCapabilities($modelRow, $protocol, $configRows));
+        $currentValues = $this->flattenWritableCapabilities($protocol, $this->deviceCapabilities($modelRow, $protocol, $configRows));
         $currentRowsByKey = [];
         foreach ($configRows as $row) {
-            $normalizedKey = $this->normalizedStoredConfigurationKey((string)($row['config_key'] ?? ''));
+            $normalizedKey = $this->comparisonStoredConfigurationKey((string)($row['config_key'] ?? ''));
             if ($normalizedKey !== null) {
                 $currentRowsByKey[$normalizedKey] = $row;
             }
@@ -1687,7 +1688,7 @@ class DeviceService
      * @param array<string, mixed> $capabilities
      * @return array<string, mixed>
      */
-    private function flattenWritableCapabilities(array $capabilities): array
+    private function flattenWritableCapabilities(string $protocol, array $capabilities): array
     {
         $flattened = [];
         foreach ($capabilities as $section => $entries) {
@@ -1699,6 +1700,7 @@ class DeviceService
                     continue;
                 }
                 $flattened["{$section}.{$key}"] = $this->publicConfigurationValueForGenericKey(
+                    $protocol,
                     $key,
                     $this->extractCapabilityValue($value)
                 );
@@ -1847,14 +1849,14 @@ class DeviceService
         return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired);
     }
 
-    private function publicConfigurationValueForGenericKey(string $genericKey, mixed $value): mixed
+    private function publicConfigurationValueForGenericKey(string $protocol, string $genericKey, mixed $value): mixed
     {
         return match ($genericKey) {
             'sos_contacts' => is_array($value)
                 ? $this->stringifyPhoneList($value)
                 : [],
             'call_whitelist' => is_array($value)
-                ? $this->stringifyCallWhitelistValue($value)
+                ? $this->stringifyCallWhitelistValue($protocol, $value)
                 : $value,
             default => $value,
         };
@@ -1881,25 +1883,106 @@ class DeviceService
      * @param array<string|int, mixed> $value
      * @return mixed
      */
-    private function stringifyCallWhitelistValue(array $value): mixed
+    private function stringifyCallWhitelistValue(string $protocol, array $value): mixed
     {
-        if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
-            return array_values($value['contacts']);
+        if ($protocol === 'vivistar-iw') {
+            if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
+                return array_values(array_filter(array_map(
+                    static fn(mixed $contact): ?array => self::normalizePublicContactItem($contact),
+                    $value['contacts']
+                )));
+            }
+
+            if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
+                return array_values(array_filter(array_map(
+                    static fn(mixed $phone): ?array => self::normalizePublicContactItem(['phone' => $phone]),
+                    $value['numbers']
+                )));
+            }
+
+            if (array_is_list($value)) {
+                if ($value !== [] && is_array($value[0] ?? null)) {
+                    return array_values(array_filter(array_map(
+                        static fn(mixed $contact): ?array => self::normalizePublicContactItem($contact),
+                        $value
+                    )));
+                }
+
+                return array_values(array_filter(array_map(
+                    static fn(mixed $phone): ?array => self::normalizePublicContactItem(['phone' => $phone]),
+                    $value
+                )));
+            }
+
+            return $value;
         }
 
         if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
             return self::stringList($value['numbers']);
         }
 
+        if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
+            return self::stringList(array_map(
+                static fn(mixed $contact): string => self::normalizePublicContactPhone($contact),
+                $value['contacts']
+            ));
+        }
+
         if (!array_is_list($value)) {
+            if (array_key_exists('phone', $value)) {
+                return self::stringList([(string)$value['phone']]);
+            }
+
             return $value;
         }
 
         if ($value !== [] && is_array($value[0] ?? null)) {
-            return array_values($value);
+            return self::stringList(array_map(
+                static fn(mixed $contact): string => self::normalizePublicContactPhone($contact),
+                $value
+            ));
         }
 
         return self::stringList($value);
+    }
+
+    /**
+     * @param mixed $item
+     * @return array{name: string, phone: string}|null
+     */
+    private static function normalizePublicContactItem(mixed $item): ?array
+    {
+        if (!is_array($item)) {
+            $phone = trim((string)$item);
+            if ($phone === '') {
+                return null;
+            }
+
+            return ['name' => '', 'phone' => $phone];
+        }
+
+        $name = trim((string)($item['name'] ?? ''));
+        $phone = trim((string)($item['phone'] ?? ''));
+        if ($name === '' && $phone === '') {
+            return null;
+        }
+        if ($phone === '') {
+            return null;
+        }
+
+        return ['name' => $name, 'phone' => $phone];
+    }
+
+    /**
+     * @param mixed $item
+     */
+    private static function normalizePublicContactPhone(mixed $item): string
+    {
+        if (is_array($item)) {
+            return trim((string)($item['phone'] ?? ''));
+        }
+
+        return trim((string)$item);
     }
 
     /**
@@ -1924,6 +2007,20 @@ class DeviceService
         }
 
         return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key);
+    }
+
+    private function comparisonStoredConfigurationKey(string $key): ?string
+    {
+        $key = trim($key);
+        if ($key === '') {
+            return null;
+        }
+
+        if (in_array($key, ['whitelistGroup1', 'whitelistGroup2', 'sosNumber1', 'sosNumber2', 'sosNumber3'], true)) {
+            return $key;
+        }
+
+        return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
     }
 
     private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed

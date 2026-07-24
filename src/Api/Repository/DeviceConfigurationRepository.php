@@ -113,6 +113,10 @@ final class DeviceConfigurationRepository
             return $key;
         }
 
+        if (in_array($key, ['whitelistGroup1', 'whitelistGroup2', 'sosNumber1', 'sosNumber2', 'sosNumber3'], true)) {
+            return $key;
+        }
+
         return GenericModelCapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
     }
 

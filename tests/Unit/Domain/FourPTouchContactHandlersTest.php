@@ -48,4 +48,26 @@ final class FourPTouchContactHandlersTest extends TestCase
             $handler->responseEntry('four-p-touch', 'whitelistGroup1', ['numbers' => ['111111111', '222222222']], []),
         );
     }
+
+    public function testCallWhitelistHandlerConvertsContactObjectsToNumbersInResponses(): void
+    {
+        $handler = new FourPTouchCallWhitelistHandler();
+
+        self::assertSame(
+            [
+                'value' => ['111111111', '222222222'],
+                '_meta' => ['limit' => 10],
+                '_type' => 'call_whitelist',
+            ],
+            $handler->responseEntry(
+                'four-p-touch',
+                'call_whitelist',
+                ['contacts' => [
+                    ['name' => 'A', 'phone' => '111111111'],
+                    ['name' => 'B', 'phone' => '222222222'],
+                ]],
+                []
+            ),
+        );
+    }
 }

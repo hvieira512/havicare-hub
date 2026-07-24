@@ -49,10 +49,7 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
-        $normalizedValue = $value;
-        if (is_array($value) && array_key_exists('numbers', $value)) {
-            $normalizedValue = self::stringList(is_array($value['numbers']) ? $value['numbers'] : []);
-        }
+        $normalizedValue = $this->normalizeValueForResponse($value);
 
         return [
             'value' => $normalizedValue,
@@ -71,5 +68,42 @@ final class FourPTouchCallWhitelistHandler implements CapabilityProtocolHandler
             'whitelistGroup1' => ['numbers' => array_slice($numbers, 0, 5)],
             'whitelistGroup2' => ['numbers' => array_slice($numbers, 5, 5)],
         ];
+    }
+
+    /**
+     * @param mixed $value
+     * @return list<string>
+     */
+    private function normalizeValueForResponse(mixed $value): array
+    {
+        if (is_array($value) && array_key_exists('numbers', $value)) {
+            return self::stringList(is_array($value['numbers']) ? $value['numbers'] : []);
+        }
+
+        if (is_array($value) && array_key_exists('contacts', $value) && is_array($value['contacts'])) {
+            return self::stringList(array_map(
+                static fn(mixed $contact): string => is_array($contact)
+                    ? trim((string)($contact['phone'] ?? ''))
+                    : trim((string)$contact),
+                $value['contacts']
+            ));
+        }
+
+        if (is_array($value) && array_is_list($value)) {
+            if ($value !== [] && is_array($value[0] ?? null)) {
+                return self::stringList(array_map(
+                    static fn(mixed $contact): string => trim((string)($contact['phone'] ?? '')),
+                    $value
+                ));
+            }
+
+            return self::stringList($value);
+        }
+
+        if (is_array($value) && array_key_exists('phone', $value)) {
+            return self::stringList([(string)$value['phone']]);
+        }
+
+        return [];
     }
 }
