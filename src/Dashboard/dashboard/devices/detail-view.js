@@ -278,7 +278,9 @@ function itemTime(item) {
 function populateDetailFilterTypes() {
     const select = els.detailFilterType;
     const currentValue = state.detailFiltersDraft?.type || state.detailFilters.type;
-    const observedTypes = detailFilterTypesFromItems(allDetailItems());
+    const observedTypes = detailFilterTypesFromItems(
+        allDetailItems().filter((item) => item._source !== "command"),
+    );
     const signature = observedTypes.join("|");
     const hasCurrentValue = Array.from(select.options || []).some(
         (option) => option.value === currentValue,

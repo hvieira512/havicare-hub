@@ -98,7 +98,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
         );
 
         self::assertIsString($source);
-        self::assertStringContainsString('detailFilterTypesFromItems(allDetailItems())', $source);
+        self::assertStringContainsString('detailFilterTypesFromItems(', $source);
+        self::assertStringContainsString('.filter((item) => item._source !== "command")', $source);
         self::assertStringContainsString('select.dataset.detailFilterTypesSignature', $source);
         self::assertStringContainsString('insertAdjacentHTML(', $source);
     }
