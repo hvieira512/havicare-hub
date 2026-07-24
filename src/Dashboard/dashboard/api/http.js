@@ -12,10 +12,23 @@ const emitTokenUpdated = () => {
     window.dispatchEvent(new Event('hub-dashboard-api-token-updated'));
 };
 
-const setDashboardApiToken = token => {
+const emitAuthRequired = () => {
+    window.dispatchEvent(new Event('hub-dashboard-auth-required'));
+};
+
+export const setDashboardApiToken = token => {
     window.hubDashboardApiToken = token;
     emitTokenUpdated();
     scheduleTokenRefresh();
+};
+
+export const clearDashboardApiToken = () => {
+    if (tokenRefreshTimer !== null) {
+        window.clearTimeout(tokenRefreshTimer);
+        tokenRefreshTimer = null;
+    }
+    window.hubDashboardApiToken = null;
+    emitTokenUpdated();
 };
 
 const scheduleTokenRefresh = (delayOverrideMs = null) => {
@@ -87,8 +100,11 @@ const buildFetchOptions = (options = {}) => Object.assign({}, options, {
 const requestWithAuthRetry = async (url, options = {}) => {
     const response = await fetch(url, buildFetchOptions(options));
 
-    if (handleAuthExpiry(response) && await refreshAccessToken()) {
-        return fetch(url, buildFetchOptions(options));
+    if (handleAuthExpiry(response)) {
+        if (await refreshAccessToken()) {
+            return fetch(url, buildFetchOptions(options));
+        }
+        emitAuthRequired();
     }
 
     return response;
@@ -105,16 +121,20 @@ export const refreshAccessToken = async () => {
     }
 
     tokenRefreshInFlight = (async () => {
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({refresh_token: refreshToken}),
-        });
-        const payload = await parseJsonResponse(response);
-        const nextToken = payload?.token?.access_token || '';
-        if (response.ok && nextToken !== '') {
-            setDashboardApiToken(payload.token);
-            return payload.token;
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({refresh_token: refreshToken}),
+            });
+            const payload = await parseJsonResponse(response);
+            const nextToken = payload?.token?.access_token || '';
+            if (response.ok && nextToken !== '') {
+                setDashboardApiToken(payload.token);
+                return payload.token;
+            }
+        } catch {
+            // Retry below while the current access token remains valid.
         }
 
         const expiresAt = window.hubDashboardApiToken?.expires_at;
@@ -122,6 +142,8 @@ export const refreshAccessToken = async () => {
         if (Number.isFinite(expiresAtMs) && expiresAtMs > Date.now()) {
             const retryDelay = Math.min(TOKEN_REFRESH_RETRY_MS, Math.max(1000, expiresAtMs - Date.now() - 5000));
             scheduleTokenRefresh(retryDelay);
+        } else {
+            emitAuthRequired();
         }
 
         return null;

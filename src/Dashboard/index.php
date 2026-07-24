@@ -23,135 +23,187 @@ require_once __DIR__ . '/components/modal.php';
     <link href="main.css" rel="stylesheet">
 </head>
 
-<body class="bg-body-tertiary">
-    <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
-        <div class="container-fluid">
-            <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
-            <div class="d-flex align-items-center gap-2">
-                <button id="manageSettingsBtn" class="btn btn-sm btn-outline-light"><?= icon('fa-sliders', 'me-1') ?>Definições</button>
+<body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>">
+    <section id="dashboardLogin" class="dashboard-login min-vh-100<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>">
+        <div class="dashboard-login-panel">
+            <div class="dashboard-login-brand">
+                <img src="/assets/logo.svg" alt="hitHUB">
+                <span>Device operations</span>
             </div>
-        </div>
-    </nav>
-    <main class="container-fluid py-3">
-        <div class="row g-3">
-            <aside id="deviceColumn" class="col-12 col-lg-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                            <span><?= icon('fa-microchip', 'me-2') ?>Dispositivo selecionado</span>
-                            <div class="d-flex align-items-center gap-2">
-                                <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher</button>
-                                <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div id="deviceSelectionEmptyState" class="text-center text-secondary py-5">
-                            <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
-                            <h1 class="h5 mt-3">Selecione um dispositivo</h1>
-                            <p class="small mb-3">Escolha um dispositivo para ver o resumo operacional, pedir dados e analisar a atividade recente.</p>
-                            <button id="emptyStateSelectDeviceBtn" class="btn btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher dispositivo</button>
-                        </div>
-                        <div id="selectedDevicePanel" class="d-none">
-                            <div class="d-flex align-items-start gap-3 mb-4">
-                                <div id="selectedDevicePreview" class="selected-device-preview"></div>
-                                <div class="min-width-0 flex-grow-1 lh-1">
-                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-                                        <h1 class="h4 mb-0 text-break" id="selectedDeviceTitle"></h1>
-                                        <span id="selectedDeviceBadge" class="badge"></span>
-                                        <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
-                                    </div>
-                                    <div id="selectedDeviceMeta" class="text-secondary small"></div>
-                                </div>
-                            </div>
-                            <dl id="selectedDeviceFacts" class="selected-device-facts row g-3 mb-0"></dl>
-                            <div class="border-top pt-4 mt-4">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="fw-semibold"><?= icon('fa-paper-plane', 'me-2') ?>Pedir dados ao dispositivo</span>
-                                    <span id="requestCardCount" class="small text-secondary"></span>
-                                </div>
-                                <div class="row g-3" id="requestGrid"></div>
-                            </div>
-                            <div id="ncsEventSection" class="border-top pt-4 mt-4 d-none">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="fw-semibold"><?= icon('fa-bell', 'me-2') ?>Eventos NCS recentes</span>
-                                    <span id="ncsEventCardCount" class="small text-secondary"></span>
-                                </div>
-                                <div class="row g-3" id="ncsEventGrid"></div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="dashboard-login-copy">
+                <span class="dashboard-login-kicker">Acesso administrativo</span>
+                <h1>Controle operacional, sem ruído.</h1>
+                <p>Entre com uma conta de administrador do Hub para gerir dispositivos, fornecedores e configurações.</p>
+            </div>
+            <form id="dashboardLoginForm" class="dashboard-login-form" novalidate>
+                <div>
+                    <label for="dashboardLoginUsername" class="form-label">Utilizador</label>
+                    <input id="dashboardLoginUsername" name="username" class="form-control" type="text" autocomplete="username" required autofocus>
                 </div>
-            </aside>
-            <section id="detailColumn" class="col-12 col-lg-8">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div id="detailEmptyState" class="text-center text-secondary py-5">
-                            <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
-                            <h1 class="h5 mt-3">Selecione um dispositivo</h1>
-                        </div>
-                        <div id="deviceDetail" class="d-none">
-                            <div id="detailFiltersPanel" class="border rounded bg-body-tertiary p-2 mb-3">
-                                <div class="row g-2 align-items-end">
-                                    <div class="col-auto">
-                                        <label for="detailFilterFrom" class="form-label form-label-sm small text-secondary mb-1">De</label>
-                                        <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
-                                    </div>
-                                    <div class="col-auto">
-                                        <label for="detailFilterTo" class="form-label form-label-sm small text-secondary mb-1">Até</label>
-                                        <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
-                                    </div>
-                                    <div class="col-auto">
-                                        <label for="detailFilterType" class="form-label form-label-sm small text-secondary mb-1">Tipo</label>
-                                        <select id="detailFilterType" class="form-select form-select-sm">
-                                            <option value="all">Todos</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-auto d-flex gap-1">
-                                        <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check') ?></button>
-                                        <button id="clearDetailFiltersBtn" class="btn btn-sm btn-outline-secondary"><?= icon('fa-xmark') ?></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="vstack gap-4">
-                                <div class="row g-3">
-                                    <div class="col-12 col-lg-6 d-flex flex-column">
-                                        <section class="flex-grow-1 d-flex flex-column">
-                                            <?= section_header('Eventos recebidos', 'telemetryCount') ?>
-                                            <div id="telemetryList" class="overflow-auto" style="max-height:50vh;"></div>
-                                            <?= pagination_component('telemetry') ?>
-                                        </section>
-                                    </div>
-                                    <div class="col-12 col-lg-6 d-flex flex-column">
-                                        <section class="flex-grow-1 d-flex flex-column">
-                                            <?= section_header('Pedidos ao dispositivo') ?>
-                                            <div id="downlinkRequests" class="overflow-auto" style="max-height:50vh;"></div>
-                                        </section>
-                                    </div>
-                                </div>
-                                <section>
-                                    <?= section_header('Ligações ao servidor') ?>
-                                    <div id="connectionTimeline" style="height:180px;width:100%;"></div>
-                                </section>
-                            </div>
-                        </div>
-                    </div>
+                <div>
+                    <label for="dashboardLoginPassword" class="form-label">Palavra-passe</label>
+                    <input id="dashboardLoginPassword" name="password" class="form-control" type="password" autocomplete="current-password" required>
                 </div>
-            </section>
+                <button id="dashboardLoginSubmit" class="btn btn-primary w-100 dashboard-login-submit" type="submit">
+                    <span class="dashboard-login-submit-label">Entrar</span>
+                    <span class="dashboard-login-submit-loading d-none">
+                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                        <span>A entrar…</span>
+                    </span>
+                </button>
+            </form>
         </div>
-    </main>
+        <div class="dashboard-login-atmosphere" aria-hidden="true">
+            <div class="dashboard-login-orbit"></div>
+            <div class="dashboard-login-signal dashboard-login-signal-one"></div>
+            <div class="dashboard-login-signal dashboard-login-signal-two"></div>
+            <span>HUB / OPERATIONS</span>
+        </div>
+    </section>
 
-    <?php require __DIR__ . '/components/modals/device.php'; ?>
-    <?php require __DIR__ . '/components/modals/settings.php'; ?>
-    <?php require __DIR__ . '/components/modals/device-selector.php'; ?>
+    <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>">
+        <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
+            <div class="container-fluid">
+                <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
+                <div class="dropdown">
+                    <button class="btn btn-sm navbar-account dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <?= icon('fa-circle-user', 'fs-5') ?>
+                        <span id="dashboardAuthenticatedUsername">Administrador</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li>
+                            <button id="manageSettingsBtn" class="dropdown-item" type="button"><?= icon('fa-sliders', 'me-2') ?>Definições</button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button id="dashboardLogoutBtn" class="dropdown-item text-danger<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>" type="button"><?= icon('fa-arrow-right-from-bracket', 'me-2') ?>Sair</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <main class="container-fluid py-3">
+            <div class="row g-3">
+                <aside id="deviceColumn" class="col-12 col-lg-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                <span><?= icon('fa-microchip', 'me-2') ?>Dispositivo selecionado</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher</button>
+                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="deviceSelectionEmptyState" class="text-center text-secondary py-5">
+                                <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
+                                <h1 class="h5 mt-3">Selecione um dispositivo</h1>
+                                <p class="small mb-3">Escolha um dispositivo para ver o resumo operacional, pedir dados e analisar a atividade recente.</p>
+                                <button id="emptyStateSelectDeviceBtn" class="btn btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher dispositivo</button>
+                            </div>
+                            <div id="selectedDevicePanel" class="d-none">
+                                <div class="d-flex align-items-start gap-3 mb-4">
+                                    <div id="selectedDevicePreview" class="selected-device-preview"></div>
+                                    <div class="min-width-0 flex-grow-1 lh-1">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                            <h1 class="h4 mb-0 text-break" id="selectedDeviceTitle"></h1>
+                                            <span id="selectedDeviceBadge" class="badge"></span>
+                                            <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
+                                        </div>
+                                        <div id="selectedDeviceMeta" class="text-secondary small"></div>
+                                    </div>
+                                </div>
+                                <dl id="selectedDeviceFacts" class="selected-device-facts row g-3 mb-0"></dl>
+                                <div class="border-top pt-4 mt-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="fw-semibold"><?= icon('fa-paper-plane', 'me-2') ?>Pedir dados ao dispositivo</span>
+                                        <span id="requestCardCount" class="small text-secondary"></span>
+                                    </div>
+                                    <div class="row g-3" id="requestGrid"></div>
+                                </div>
+                                <div id="ncsEventSection" class="border-top pt-4 mt-4 d-none">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="fw-semibold"><?= icon('fa-bell', 'me-2') ?>Eventos NCS recentes</span>
+                                        <span id="ncsEventCardCount" class="small text-secondary"></span>
+                                    </div>
+                                    <div class="row g-3" id="ncsEventGrid"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+                <section id="detailColumn" class="col-12 col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div id="detailEmptyState" class="text-center text-secondary py-5">
+                                <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
+                                <h1 class="h5 mt-3">Selecione um dispositivo</h1>
+                            </div>
+                            <div id="deviceDetail" class="d-none">
+                                <div id="detailFiltersPanel" class="border rounded bg-body-tertiary p-2 mb-3">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-auto">
+                                            <label for="detailFilterFrom" class="form-label form-label-sm small text-secondary mb-1">De</label>
+                                            <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                        </div>
+                                        <div class="col-auto">
+                                            <label for="detailFilterTo" class="form-label form-label-sm small text-secondary mb-1">Até</label>
+                                            <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
+                                        </div>
+                                        <div class="col-auto">
+                                            <label for="detailFilterType" class="form-label form-label-sm small text-secondary mb-1">Tipo</label>
+                                            <select id="detailFilterType" class="form-select form-select-sm">
+                                                <option value="all">Todos</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-auto d-flex gap-1">
+                                            <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check') ?></button>
+                                            <button id="clearDetailFiltersBtn" class="btn btn-sm btn-outline-secondary"><?= icon('fa-xmark') ?></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="vstack gap-4">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-lg-6 d-flex flex-column">
+                                            <section class="flex-grow-1 d-flex flex-column">
+                                                <?= section_header('Eventos recebidos', 'telemetryCount') ?>
+                                                <div id="telemetryList" class="overflow-auto" style="max-height:50vh;"></div>
+                                                <?= pagination_component('telemetry') ?>
+                                            </section>
+                                        </div>
+                                        <div class="col-12 col-lg-6 d-flex flex-column">
+                                            <section class="flex-grow-1 d-flex flex-column">
+                                                <?= section_header('Pedidos ao dispositivo') ?>
+                                                <div id="downlinkRequests" class="overflow-auto" style="max-height:50vh;"></div>
+                                            </section>
+                                        </div>
+                                    </div>
+                                    <section>
+                                        <?= section_header('Ligações ao servidor') ?>
+                                        <div id="connectionTimeline" style="height:180px;width:100%;"></div>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <?php require __DIR__ . '/components/modals/device.php'; ?>
+        <?php require __DIR__ . '/components/modals/settings.php'; ?>
+        <?php require __DIR__ . '/components/modals/device-selector.php'; ?>
+    </div>
 
     <script>
-        window.hubDashboardApiToken = <?= json_encode($dashboardApiToken, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+        window.hubDashboardApiToken = null;
     </script>
     <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
     <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
     <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="module" src="main.js"></script>
 </body>
 

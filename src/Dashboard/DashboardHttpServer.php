@@ -145,15 +145,7 @@ final class DashboardHttpServer
 
     private function page(): string
     {
-        $dashboardApiToken = null;
-        if (isset($this->tokens, $this->username, $this->password) && $this->apiCredentials !== [] && $this->username !== '' && $this->password !== '') {
-            $dashboardApiToken = $this->tokens->issueTokenPair(
-                $this->username,
-                ApiAuthContext::ROLE_HUB_ADMIN,
-                $this->apiTokenTtlSeconds,
-                $this->apiRefreshTokenTtlSeconds
-            );
-        }
+        $dashboardApiAuthRequired = isset($this->apiAuthRequired) ? $this->apiAuthRequired : true;
 
         ob_start();
         require __DIR__ . '/index.php';

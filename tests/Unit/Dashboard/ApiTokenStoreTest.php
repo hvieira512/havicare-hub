@@ -17,6 +17,7 @@ final class ApiTokenStoreTest extends TestCase
         $store = new ApiTokenStore(new ExpiringRedisClientForApiTokenStoreTest(), 'test:api-tokens');
         $pair = $store->issueTokenPair('admin', ApiAuthContext::ROLE_HUB_ADMIN, 1, 60);
 
+        self::assertSame('admin', $pair['username']);
         self::assertInstanceOf(ApiAuthContext::class, $store->context($pair['access_token']));
         self::assertNull($store->context($pair['refresh_token']));
 
@@ -27,6 +28,7 @@ final class ApiTokenStoreTest extends TestCase
         $newPair = $store->refreshAccessToken($pair['refresh_token'], 60, 60);
 
         self::assertIsArray($newPair);
+        self::assertSame('admin', $newPair['username']);
         self::assertNotSame($pair['access_token'], $newPair['access_token']);
         self::assertNotSame($pair['refresh_token'], $newPair['refresh_token']);
         self::assertInstanceOf(ApiAuthContext::class, $store->context($newPair['access_token']));

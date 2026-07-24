@@ -51,6 +51,13 @@ function handleTokenUpdated() {
     if (!currentImei) {
         return;
     }
+    if (
+        document.body.dataset.dashboardAuthRequired === "true"
+        && !window.hubDashboardApiToken?.access_token
+    ) {
+        closeDeviceStream();
+        return;
+    }
 
     connectDeviceStream(currentImei);
 }

@@ -72,6 +72,11 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('id="deviceSelectionEmptyState"', $first);
         self::assertStringContainsString('id="discoveryDeviceSelect"', $first);
         self::assertStringContainsString('id="discoveryGenerateBtn"', $first);
+        self::assertStringContainsString('id="dashboardLoginForm"', $first);
+        self::assertStringContainsString('id="dashboardLoginSubmit"', $first);
+        self::assertStringContainsString('sweetalert2@11', $first);
+        self::assertStringContainsString('data-dashboard-auth-required="true"', $first);
+        self::assertStringContainsString('window.hubDashboardApiToken = null;', $first);
         self::assertSame($first, $second);
     }
 
@@ -124,6 +129,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
         $token = (string)($payload['token']['access_token'] ?? '');
         $refreshToken = (string)($payload['token']['refresh_token'] ?? '');
+        self::assertSame('admin', $payload['token']['username'] ?? null);
         self::assertNotSame('', $token);
         self::assertNotSame('', $refreshToken);
 

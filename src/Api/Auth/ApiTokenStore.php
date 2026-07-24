@@ -30,6 +30,7 @@ final class ApiTokenStore
         return [
             'access_token' => $token,
             'token_type' => 'Bearer',
+            'username' => $username,
             'role' => $role,
             'license_id' => $licenseId,
             'expires_in' => $ttlSeconds,

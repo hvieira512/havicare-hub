@@ -1417,6 +1417,7 @@ class OpenApiSpec
                                 'properties' => [
                                     'access_token' => ['type' => 'string'],
                                     'token_type' => ['type' => 'string', 'example' => 'Bearer'],
+                                    'username' => ['type' => 'string', 'example' => 'admin'],
                                     'role' => ['type' => 'string', 'enum' => ['hub_admin', 'license_client'], 'example' => 'license_client'],
                                     'license_id' => ['type' => 'integer', 'nullable' => true, 'example' => 1001],
                                     'expires_in' => ['type' => 'integer', 'example' => 3600],

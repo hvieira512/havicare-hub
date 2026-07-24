@@ -2155,6 +2155,12 @@ export async function startDashboard() {
     }
 
     setInterval(() => {
+        if (
+            document.body.dataset.dashboardAuthRequired === "true"
+            && !window.hubDashboardApiToken?.access_token
+        ) {
+            return;
+        }
         if (state.selectedImei) {
             apiGetDevice(state.selectedImei).then((detail) => {
                 if (detail?.error) return;

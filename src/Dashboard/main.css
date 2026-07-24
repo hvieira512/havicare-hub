@@ -34,6 +34,191 @@ body {
     font-family: 'Poppins', sans-serif;
 }
 
+.dashboard-login {
+    display: grid;
+    grid-template-columns: minmax(320px, 540px) 1fr;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(13, 110, 253, .12), transparent 32rem),
+        #f4f5f7;
+}
+
+.dashboard-login-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: clamp(3rem, 7vw, 6rem);
+    padding-inline: clamp(3.5rem, 6vw, 5.5rem);
+    background: rgba(255, 255, 255, .92);
+    box-shadow: 1.5rem 0 4rem rgba(18, 28, 45, .08);
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-login-brand {
+    position: absolute;
+    top: clamp(2rem, 5vw, 4rem);
+    left: clamp(2rem, 7vw, 6rem);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--bs-secondary-color);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.dashboard-login-brand img {
+    width: 110px;
+}
+
+.dashboard-login-copy {
+    margin-bottom: 2rem;
+}
+
+.dashboard-login-kicker {
+    color: var(--bs-primary);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.dashboard-login-copy h1 {
+    max-width: 10ch;
+    margin: .75rem 0 1rem;
+    font-size: clamp(2rem, 3.4vw, 3.3rem);
+    font-weight: 700;
+    letter-spacing: -.045em;
+    line-height: 1.02;
+}
+
+.dashboard-login-copy p {
+    max-width: 44ch;
+    color: var(--bs-secondary-color);
+}
+
+.dashboard-login-form {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 420px;
+}
+
+.dashboard-login-submit {
+    min-height: 2.75rem;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.dashboard-login-submit-loading {
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+}
+
+.dashboard-login-submit-loading:not(.d-none) {
+    display: inline-flex;
+}
+
+.dashboard-login-atmosphere {
+    position: relative;
+    overflow: hidden;
+    min-height: 100%;
+    background:
+        linear-gradient(145deg, rgba(9, 18, 33, .95), rgba(15, 53, 85, .92)),
+        repeating-linear-gradient(90deg, transparent 0 79px, rgba(255, 255, 255, .04) 80px);
+}
+
+.dashboard-login-atmosphere::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+    background-size: 80px 80px;
+}
+
+.dashboard-login-atmosphere > span {
+    position: absolute;
+    right: 3rem;
+    bottom: 2.5rem;
+    color: rgba(255, 255, 255, .45);
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .22em;
+}
+
+.dashboard-login-orbit {
+    position: absolute;
+    width: min(46vw, 660px);
+    aspect-ratio: 1;
+    top: 50%;
+    left: 50%;
+    border: 1px solid rgba(116, 192, 252, .34);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.dashboard-login-orbit::before,
+.dashboard-login-orbit::after {
+    content: "";
+    position: absolute;
+    border: 1px solid rgba(116, 192, 252, .2);
+    border-radius: 50%;
+}
+
+.dashboard-login-orbit::before {
+    inset: 16%;
+}
+
+.dashboard-login-orbit::after {
+    inset: 34%;
+    background: radial-gradient(circle, rgba(13, 202, 240, .3), transparent 68%);
+}
+
+.dashboard-login-signal {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #74c0fc;
+    box-shadow: 0 0 0 10px rgba(116, 192, 252, .08), 0 0 2rem #0dcaf0;
+    animation: signal-pulse 2.4s ease-in-out infinite;
+}
+
+.dashboard-login-signal-one {
+    top: 27%;
+    left: 39%;
+}
+
+.dashboard-login-signal-two {
+    right: 28%;
+    bottom: 31%;
+    animation-delay: -1.2s;
+}
+
+@keyframes signal-pulse {
+    50% {
+        transform: scale(1.25);
+        opacity: .65;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-login {
+        display: block;
+    }
+
+    .dashboard-login-panel {
+        min-height: 100vh;
+    }
+
+    .dashboard-login-atmosphere {
+        display: none;
+    }
+}
+
 .showcase-preview {
     min-height: 280px;
 }
@@ -88,6 +273,18 @@ body {
     display: block;
 }
 
+.navbar-account {
+    color: rgba(255, 255, 255, .9);
+    font-size: .825rem;
+}
+
+.navbar-account:hover,
+.navbar-account:focus,
+.navbar-account.show {
+    color: #fff;
+    background: rgba(255, 255, 255, .1);
+}
+
 #deviceModal .modal-dialog.modal-fullscreen,
 #settingsModal .modal-dialog.modal-fullscreen {
     margin: 1rem;
@@ -116,6 +313,15 @@ body {
 }
 
 @media (max-width: 575.98px) {
+    .dashboard-login-panel {
+        padding: 7rem 2rem 2rem;
+    }
+
+    .dashboard-login-brand {
+        top: 2rem;
+        left: 2rem;
+    }
+
     #deviceModal .modal-dialog.modal-fullscreen,
     #settingsModal .modal-dialog.modal-fullscreen {
         margin: 0;
