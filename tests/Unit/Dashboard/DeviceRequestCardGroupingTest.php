@@ -90,4 +90,16 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('system: "settings_system"', $source);
         self::assertStringContainsString('intervals: "settings_system"', $source);
     }
+
+    public function testDeviceDetailFilterTypesAreDerivedFromObservedItems(): void
+    {
+        $source = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
+        );
+
+        self::assertIsString($source);
+        self::assertStringContainsString('detailFilterTypesFromItems(allDetailItems())', $source);
+        self::assertStringContainsString('select.dataset.detailFilterTypesSignature', $source);
+        self::assertStringContainsString('insertAdjacentHTML(', $source);
+    }
 }

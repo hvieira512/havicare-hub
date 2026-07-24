@@ -242,6 +242,21 @@ function filterDetailItems(items) {
     });
 }
 
+function detailFilterTypesFromItems(items) {
+    return Array.from(
+        new Set(
+            items
+                .map((item) => detailItemType(item))
+                .filter((type) => type && type !== "outros"),
+        ),
+    ).sort((left, right) =>
+        String(telemetryFilterLabel(left)).localeCompare(
+            String(telemetryFilterLabel(right)),
+            "pt-PT",
+        ),
+    );
+}
+
 function detailItemType(item) {
     const p = item.payload;
     const mapped = DETAIL_ITEM_TYPES[p.type];
@@ -259,37 +274,41 @@ function itemTime(item) {
 function populateDetailFilterTypes() {
     const select = els.detailFilterType;
     const currentValue = state.detailFilters.type;
-    const telemetryCapabilities =
-        state.selectedDetail?.capabilities?.telemetry &&
-        typeof state.selectedDetail.capabilities.telemetry === "object"
-            ? state.selectedDetail.capabilities.telemetry
-            : {};
-    const sorted = Object.entries(telemetryCapabilities)
-        .filter(([, entry]) => entry?.supported)
-        .map(([key]) => key)
-        .sort();
-    const signature = sorted.join("|");
+    const observedTypes = detailFilterTypesFromItems(allDetailItems());
+    const signature = observedTypes.join("|");
+    const hasCurrentValue = Array.from(select.options || []).some(
+        (option) => option.value === currentValue,
+    );
+
     if (select.dataset.detailFilterTypesSignature !== signature) {
-        const options = [
-            '<option value="all">Todos</option>',
-            ...sorted.map(
-                (t) =>
-                    `<option value="${esc(t)}">${esc(telemetryFilterLabel(t))}</option>`,
-            ),
-        ];
-        if (currentValue && currentValue !== "all" && !sorted.includes(currentValue)) {
-            options.push(
-                `<option value="${esc(currentValue)}">${esc(telemetryFilterLabel(currentValue))}</option>`,
-            );
+        const existingTypes = new Set(
+            Array.from(select.options || [])
+                .map((option) => option.value)
+                .filter((value) => value && value !== "all"),
+        );
+        const missingTypes = observedTypes.filter((type) => !existingTypes.has(type));
+
+        if (select.dataset.detailFilterTypesSignature) {
+            for (const type of missingTypes) {
+                select.insertAdjacentHTML(
+                    "beforeend",
+                    `<option value="${esc(type)}">${esc(telemetryFilterLabel(type))}</option>`,
+                );
+            }
+        } else {
+            select.innerHTML = [
+                '<option value="all">Todos</option>',
+                ...observedTypes.map(
+                    (type) =>
+                        `<option value="${esc(type)}">${esc(telemetryFilterLabel(type))}</option>`,
+                ),
+            ].join("");
         }
-        select.innerHTML = options.join("");
+
         select.dataset.detailFilterTypesSignature = signature;
     }
 
     if (currentValue && currentValue !== "all") {
-        const hasCurrentValue = Array.from(select.options).some(
-            (option) => option.value === currentValue,
-        );
         if (!hasCurrentValue) {
             select.insertAdjacentHTML(
                 "beforeend",
