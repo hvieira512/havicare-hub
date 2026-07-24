@@ -82,7 +82,7 @@ body {
     background-size: 80px 80px;
 }
 
-.dashboard-login-atmosphere > span {
+.dashboard-login-atmosphere>span {
     position: absolute;
     right: 3rem;
     bottom: 2.5rem;
@@ -232,12 +232,13 @@ body {
     padding: 0;
 }
 
-#deviceModal .modal-body > .device-modal-shell,
-#settingsModal .modal-body > .settings-modal-shell {
+#deviceModal .modal-body>.device-modal-shell,
+#settingsModal .modal-body>.settings-modal-shell {
     min-height: 100%;
 }
 
 @media (max-width: 575.98px) {
+
     #deviceModal .modal-dialog.modal-fullscreen,
     #settingsModal .modal-dialog.modal-fullscreen {
         margin: 0;
@@ -260,4 +261,8 @@ body {
     .settings-modal-shell .nav-pills {
         width: 100%;
     }
+}
+
+.navbar-brand img {
+    filter: invert(100%);
 }
