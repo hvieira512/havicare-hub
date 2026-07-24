@@ -21,10 +21,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072403_rebuild_model_capabilities',
             '2026072404_seed_model_capabilities',
             '2026072405_normalize_configuration_keys',
+            '2026072406_add_dashboard_notifications',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(5, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(6, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
     }
 
     public function testLegacyModelCapabilityFeaturesMigrateToCapabilityIds(): void

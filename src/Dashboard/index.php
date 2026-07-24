@@ -24,40 +24,40 @@ require_once __DIR__ . '/components/modal.php';
 </head>
 
 <body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>">
-    <section id="dashboardLogin" class="dashboard-login min-vh-100<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>">
-        <div class="dashboard-login-panel">
-            <div class="dashboard-login-brand">
-                <img src="/assets/logo.svg" alt="hitHUB">
-                <span>Device operations</span>
-            </div>
-            <div class="dashboard-login-copy">
-                <span class="dashboard-login-kicker">Acesso administrativo</span>
-                <h1>Controle operacional, sem ruído.</h1>
-                <p>Entre com uma conta de administrador do Hub para gerir dispositivos, fornecedores e configurações.</p>
-            </div>
-            <form id="dashboardLoginForm" class="dashboard-login-form" novalidate>
-                <div>
-                    <label for="dashboardLoginUsername" class="form-label">Utilizador</label>
-                    <input id="dashboardLoginUsername" name="username" class="form-control" type="text" autocomplete="username" required autofocus>
-                </div>
-                <div>
-                    <label for="dashboardLoginPassword" class="form-label">Palavra-passe</label>
-                    <input id="dashboardLoginPassword" name="password" class="form-control" type="password" autocomplete="current-password" required>
-                </div>
-                <button id="dashboardLoginSubmit" class="btn btn-primary w-100 dashboard-login-submit" type="submit">
-                    <span class="dashboard-login-submit-label">Entrar</span>
-                    <span class="dashboard-login-submit-loading d-none">
-                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                        <span>A entrar…</span>
-                    </span>
-                </button>
-            </form>
-        </div>
-        <div class="dashboard-login-atmosphere" aria-hidden="true">
+    <section id="dashboardLogin" class="dashboard-login row g-0 min-vh-100<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>">
+        <div class="dashboard-login-atmosphere col-md-4 d-none d-md-block min-vh-100 position-relative overflow-hidden" aria-hidden="true">
             <div class="dashboard-login-orbit"></div>
             <div class="dashboard-login-signal dashboard-login-signal-one"></div>
             <div class="dashboard-login-signal dashboard-login-signal-two"></div>
             <span>HUB / OPERATIONS</span>
+        </div>
+        <div class="dashboard-login-panel col-12 col-md-8 min-vh-100 d-flex flex-column justify-content-center position-relative px-4 px-lg-5 py-5">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-lg-8 col-xl-7 col-xxl-5">
+                        <div class="dashboard-login-brand d-flex justify-content-center mb-5">
+                            <img src="/assets/logo.svg" alt="hitHUB">
+                        </div>
+                        <form id="dashboardLoginForm" class="dashboard-login-form d-grid gap-3" novalidate>
+                            <div>
+                                <label for="dashboardLoginUsername" class="form-label">Utilizador</label>
+                                <input id="dashboardLoginUsername" name="username" class="form-control" type="text" autocomplete="username" required autofocus>
+                            </div>
+                            <div>
+                                <label for="dashboardLoginPassword" class="form-label">Palavra-passe</label>
+                                <input id="dashboardLoginPassword" name="password" class="form-control" type="password" autocomplete="current-password" required>
+                            </div>
+                            <button id="dashboardLoginSubmit" class="btn btn-primary w-100 dashboard-login-submit" type="submit">
+                                <span class="dashboard-login-submit-label">Entrar</span>
+                                <span class="dashboard-login-submit-loading d-none">
+                                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                    <span>A entrar…</span>
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -65,20 +65,37 @@ require_once __DIR__ . '/components/modal.php';
         <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
             <div class="container-fluid">
                 <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
-                <div class="dropdown">
-                    <button class="btn btn-sm navbar-account dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <?= icon('fa-circle-user', 'fs-5') ?>
-                        <span id="dashboardAuthenticatedUsername">Administrador</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow">
-                        <li>
-                            <button id="manageSettingsBtn" class="dropdown-item" type="button"><?= icon('fa-sliders', 'me-2') ?>Definições</button>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <button id="dashboardLogoutBtn" class="dropdown-item text-danger<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>" type="button"><?= icon('fa-arrow-right-from-bracket', 'me-2') ?>Sair</button>
-                        </li>
-                    </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <div id="dashboardNotificationsDropdown" class="dropdown">
+                        <button id="dashboardNotificationsBtn" class="btn btn-sm btn-dark position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notificações" title="Notificações">
+                            <?= icon('fa-bell', 'fs-5') ?>
+                            <span id="dashboardNotificationsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger d-none">0</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow dashboard-notifications-menu p-0">
+                            <div class="d-flex align-items-center justify-content-between border-bottom px-3 py-2">
+                                <span class="fw-semibold">Notificações</span>
+                                <span id="dashboardNotificationsSummary" class="small text-secondary"></span>
+                            </div>
+                            <div id="dashboardNotificationsList" class="dashboard-notifications-list list-group list-group-flush overflow-auto">
+                                <div class="list-group-item text-center text-secondary small p-4">A carregar...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-dark dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <?= icon('fa-circle-user', 'fs-5') ?>
+                            <span id="dashboardAuthenticatedUsername">Administrador</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li>
+                                <button id="manageSettingsBtn" class="dropdown-item" type="button"><?= icon('fa-sliders', 'me-2') ?>Definições</button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button id="dashboardLogoutBtn" class="dropdown-item text-danger<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>" type="button"><?= icon('fa-arrow-right-from-bracket', 'me-2') ?>Sair</button>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </nav>

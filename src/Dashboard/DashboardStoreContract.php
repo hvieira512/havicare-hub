@@ -19,7 +19,29 @@ interface DashboardStoreContract
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void;
 
+    public function recordRejectedDevice(
+        string $imei,
+        string $protocol,
+        string $model,
+        string $ident,
+        string $reason
+    ): void;
+
+    public function deviceSeen(string $imei, array $fields): void;
+
+    public function deviceOffline(string $imei): void;
+
+    public function append(string $imei, string $list, array $payload): void;
+
     public function recordCommand(string $imei, string $id, array $record): void;
+
+    public function markLatestCommand(string $imei, string $nativeType, array $fields): void;
+
+    public function markCommandReply(string $imei, string $replyNativeType): void;
+
+    public function expireWaitingCommands(int $timeoutSeconds): void;
+
+    public function expireStaleDevices(int $timeoutSeconds): void;
 
     /**
      * Retry waiting configuration commands that have not been acknowledged yet.

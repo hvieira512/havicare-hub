@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
 use Hub\HubMqttBridge;
+use Hub\Dashboard\DashboardStoreContract;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
@@ -12,6 +13,32 @@ use PHPUnit\Framework\TestCase;
 
 final class BridgeTest extends TestCase
 {
+    public function testUnregisteredRadarCreatesDashboardNotification(): void
+    {
+        $whitelistPath = tempnam(sys_get_temp_dir(), 'qinglanst-whitelist-');
+        file_put_contents($whitelistPath, '{}');
+        $dashboardStore = $this->createMock(DashboardStoreContract::class);
+        $dashboardStore->expects(self::once())
+            ->method('recordRejectedDevice')
+            ->with(
+                '9D8A3204F853',
+                'qinglanst-radar',
+                '',
+                '9D8A3204F853',
+                'device_not_authorized'
+            );
+        $bridge = new Bridge(
+            new FakeSubscriber(),
+            new Whitelist($whitelistPath),
+            new RecordingHubMqttBridge(),
+            dashboardStore: $dashboardStore,
+        );
+
+        $bridge->handleReceivedMessage('radar/1001/9D8A3204F853', '{}');
+
+        @unlink($whitelistPath);
+    }
+
     public function testPublishesUsingUpstreamRadarUidInsteadOfCanonicalWhitelistKey(): void
     {
         $whitelistPath = tempnam(sys_get_temp_dir(), 'qinglanst-whitelist-');

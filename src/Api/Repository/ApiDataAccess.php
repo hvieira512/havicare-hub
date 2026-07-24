@@ -17,6 +17,7 @@ final class ApiDataAccess
         public readonly ApiUserRepository $apiUsers,
         public readonly CompanyRepository $companies,
         public readonly LicenseRepository $licenses,
+        public readonly DashboardNotificationRepository $dashboardNotifications,
     ) {
     }
 
@@ -35,6 +36,7 @@ final class ApiDataAccess
             new ApiUserRepository($pdo),
             new CompanyRepository($pdo),
             new LicenseRepository($pdo),
+            new DashboardNotificationRepository($pdo),
         );
     }
 }

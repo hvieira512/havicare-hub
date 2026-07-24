@@ -91,6 +91,7 @@ class OpenApiSpec
                 ['name' => 'Licenses'],
                 ['name' => 'Devices'],
                 ['name' => 'API Users'],
+                ['name' => 'Notifications'],
                 ['name' => 'System'],
                 ['name' => 'Device Types'],
                 ['name' => 'Discovery'],
@@ -521,6 +522,54 @@ class OpenApiSpec
                         'summary' => 'OpenAPI specification',
                         'security' => [],
                         'responses' => ['200' => ['description' => 'OpenAPI document']],
+                    ],
+                ],
+                '/api/notifications' => [
+                    'get' => [
+                        'tags' => ['Notifications'],
+                        'summary' => 'List dashboard notifications',
+                        'parameters' => [
+                            ['name' => 'limit', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'integer', 'default' => 20, 'maximum' => 100]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Latest dashboard notifications and global unread count',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DashboardNotificationListResponse']]],
+                            ],
+                        ],
+                    ],
+                ],
+                '/api/notifications/read' => [
+                    'patch' => [
+                        'tags' => ['Notifications'],
+                        'summary' => 'Mark dashboard notifications as globally read',
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DashboardNotificationReadRequest']]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Notifications marked read',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DashboardNotificationReadResponse']]],
+                            ],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/notifications/{id}' => [
+                    'delete' => [
+                        'tags' => ['Notifications'],
+                        'summary' => 'Delete a dashboard notification',
+                        'parameters' => [
+                            ['name' => 'id', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'integer', 'minimum' => 1]],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Notification deleted',
+                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DashboardNotificationReadResponse']]],
+                            ],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
                     ],
                 ],
                 '/api/users' => [
@@ -1427,6 +1476,46 @@ class OpenApiSpec
                                     'refresh_expires_at' => ['type' => 'string', 'example' => '2026-07-23T12:00:00Z'],
                                 ],
                             ],
+                        ],
+                    ],
+                    'DashboardNotificationItem' => [
+                        'type' => 'object',
+                        'required' => ['id', 'type', 'imei', 'protocol', 'occurrenceCount', 'firstSeenAt', 'lastSeenAt'],
+                        'properties' => [
+                            'id' => ['type' => 'integer', 'example' => 1],
+                            'type' => ['type' => 'string', 'example' => 'device_not_authorized'],
+                            'imei' => ['type' => 'string', 'example' => '861265062544868'],
+                            'protocol' => ['type' => 'string', 'example' => 'vivistar-iw'],
+                            'model' => ['type' => 'string', 'example' => 'VL16P'],
+                            'ident' => ['type' => 'string', 'example' => ''],
+                            'reason' => ['type' => 'string', 'example' => 'device_not_authorized'],
+                            'occurrenceCount' => ['type' => 'integer', 'example' => 2],
+                            'firstSeenAt' => ['type' => 'string', 'format' => 'date-time'],
+                            'lastSeenAt' => ['type' => 'string', 'format' => 'date-time'],
+                            'readAt' => ['type' => ['string', 'null'], 'format' => 'date-time'],
+                        ],
+                    ],
+                    'DashboardNotificationListResponse' => [
+                        'type' => 'object',
+                        'required' => ['data', 'unreadCount'],
+                        'properties' => [
+                            'data' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/DashboardNotificationItem']],
+                            'unreadCount' => ['type' => 'integer', 'example' => 1],
+                        ],
+                    ],
+                    'DashboardNotificationReadRequest' => [
+                        'type' => 'object',
+                        'required' => ['ids'],
+                        'properties' => [
+                            'ids' => ['type' => 'array', 'items' => ['type' => 'integer'], 'example' => [1, 2]],
+                        ],
+                    ],
+                    'DashboardNotificationReadResponse' => [
+                        'type' => 'object',
+                        'required' => ['status', 'unreadCount'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'example' => 'ok'],
+                            'unreadCount' => ['type' => 'integer', 'example' => 0],
                         ],
                     ],
                     'ApiUserItem' => [

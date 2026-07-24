@@ -43,6 +43,18 @@ export function cacheElements() {
         applyDetailFiltersBtn: document.getElementById("applyDetailFiltersBtn"),
         clearDetailFiltersBtn: document.getElementById("clearDetailFiltersBtn"),
         addDeviceBtn: document.getElementById("addDeviceBtn"),
+        dashboardNotificationsDropdown: document.getElementById(
+            "dashboardNotificationsDropdown",
+        ),
+        dashboardNotificationsBadge: document.getElementById(
+            "dashboardNotificationsBadge",
+        ),
+        dashboardNotificationsSummary: document.getElementById(
+            "dashboardNotificationsSummary",
+        ),
+        dashboardNotificationsList: document.getElementById(
+            "dashboardNotificationsList",
+        ),
         openDeviceSelectorBtn: document.getElementById("openDeviceSelectorBtn"),
         emptyStateSelectDeviceBtn: document.getElementById(
             "emptyStateSelectDeviceBtn",

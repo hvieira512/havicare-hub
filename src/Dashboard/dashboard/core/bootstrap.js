@@ -70,6 +70,7 @@ import {
     renderSelection,
 } from "../devices/detail-view.js";
 import {disconnectDeviceStream, initDeviceStream} from "../devices/stream.js";
+import {initNotifications} from "../notifications.js";
 import {
     clearModelsFilters,
     handleActiveModelsFiltersClick,
@@ -224,8 +225,28 @@ function setDeviceFormError(message = "") {
     );
 }
 
-async function openAddDevice() {
+async function openAddDevice(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
+    const notification = source && typeof source === "object" ? source : null;
+    const identity = String(notification?.imei || source || "").trim();
+    const protocol = String(notification?.protocol || "").trim();
+    const reportedModel = String(notification?.model || "").trim();
+    const protocolModels = (state.deviceTypeSuppliersModels || []).filter(
+        (model) => String(model.protocol || "") === protocol,
+    );
+    const detectedModel = protocolModels.find(
+        (model) =>
+            modelInternalName(model) === reportedModel
+            || modelCommercialName(model) === reportedModel,
+    ) || protocolModels[0] || null;
+    const detectedDeviceType = detectedModel
+        ? modelDeviceType(detectedModel)
+        : "watch";
+    const detectedSupplier = String(detectedModel?.supplier || "");
+    const detectedModelName = reportedModel === ""
+        ? ""
+        : modelInternalName(detectedModel);
+
     els.deviceModalLabel.textContent = "Adicionar dispositivo";
     els.deviceForm.reset();
     delete els.deviceImei.dataset.originalImei;
@@ -259,15 +280,29 @@ async function openAddDevice() {
     els.deviceGeneralPane?.classList.add("show", "active");
     els.deleteDeviceBtn.classList.add("d-none");
     renderDeviceSimNumberField("");
-    renderDeviceTypeSelector("watch");
+    renderDeviceTypeSelector(detectedDeviceType);
     await populateCompanySelect();
     els.deviceCompany.value = "";
     els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
     els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = "0";
-    els.deviceDeviceId.value = "";
-    await renderDeviceSelectors();
+    els.deviceDeviceId.value = detectedDeviceType === "watch"
+        ? ""
+        : String(notification?.ident || identity).trim();
+    await renderDeviceSelectors(
+        detectedSupplier,
+        detectedModelName,
+        detectedDeviceType,
+    );
+    els.deviceImei.value = detectedDeviceType === "watch" ? identity : "";
+    const identityInput = detectedDeviceType === "watch"
+        ? els.deviceImei
+        : els.deviceDeviceId;
+    identityInput.dispatchEvent(new Event("input", {bubbles: true}));
     deviceModal.show();
+    if (identityInput.value !== "") {
+        identityInput.focus();
+    }
 }
 
 async function editDevice(imei, supplier, model) {
@@ -2132,6 +2167,10 @@ export async function startDashboard() {
     initDeviceStream({
         state,
         renderSelection,
+    });
+    initNotifications({
+        els,
+        openAddDevice,
     });
     bindEvents();
     await ensureProtocolsLoaded();

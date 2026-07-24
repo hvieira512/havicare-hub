@@ -76,7 +76,7 @@
         "model": "HW20PRO",
         "deviceType": "watch",
         "licenseId": 2002,
-        "company": "havicare",
+        "company": "haviCare",
         "simNumber": "",
         "deviceId": ""
     },
@@ -94,18 +94,9 @@
         "model": "VIVISTAR-CARE",
         "deviceType": "watch",
         "licenseId": 0,
-        "company": "hitcare",
+        "company": "hitCare",
         "simNumber": "",
         "deviceId": ""
-    },
-    "9D8A3204F853": {
-        "supplier": "Qinglanst",
-        "model": "RD-V1",
-        "deviceType": "radar",
-        "licenseId": 1001,
-        "company": "hitcare",
-        "simNumber": "",
-        "deviceId": "9D8A3204F853"
     },
     "AD8A613B0493": {
         "supplier": "Qinglanst",
@@ -120,7 +111,18 @@
         "supplier": "Voerka",
         "model": "W812",
         "deviceType": "ncs",
+        "licenseId": 1001,
+        "company": "hitcare",
         "simNumber": "",
         "deviceId": "bea6c3dd8e02"
+    },
+    "9D8A3204F853": {
+        "supplier": "Qinglanst",
+        "model": "RD-V1",
+        "deviceType": "radar",
+        "licenseId": 1001,
+        "company": "hitcare",
+        "simNumber": "",
+        "deviceId": "9D8A3204F853"
     }
 }

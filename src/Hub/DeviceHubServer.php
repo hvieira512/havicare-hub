@@ -3,7 +3,7 @@
 namespace Hub;
 
 use Hub\Log\Logger;
-use Hub\Dashboard\DashboardStore;
+use Hub\Dashboard\DashboardStoreContract;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Whitelist;
 use Hub\Watch\WatchMessage;
@@ -18,7 +18,7 @@ class DeviceHubServer
     private WatchProtocolRegistry $watchProtocols;
     private HubMqttBridge $mqtt;
     private ?PendingDownlinkQueue $downlinkQueue;
-    private ?DashboardStore $dashboardStore;
+    private ?DashboardStoreContract $dashboardStore;
     private int $downlinkQueueTtlSeconds;
 
     public function __construct(
@@ -30,7 +30,7 @@ class DeviceHubServer
         ?ConnectionRegistry $connections = null,
         ?DeviceEventDecoder $eventDecoder = null,
         ?PendingDownlinkQueue $downlinkQueue = null,
-        ?DashboardStore $dashboardStore = null,
+        ?DashboardStoreContract $dashboardStore = null,
         int $downlinkQueueTtlSeconds = 300,
     ) {
         $this->connections = $connections ?? new ConnectionRegistry();
@@ -332,6 +332,22 @@ class DeviceHubServer
 
     private function reject(ConnectionInterface $conn, DeviceIdentity $identity, string $reason): void
     {
+        if ($reason === 'device_not_authorized') {
+            try {
+                $this->dashboardStore?->recordRejectedDevice(
+                    $identity->imei,
+                    $identity->protocol,
+                    $identity->model,
+                    $identity->ident,
+                    $reason
+                );
+            } catch (\Throwable $e) {
+                Logger::channel('hub')->error(
+                    "Failed to record rejected device IMEI={$identity->imei}: {$e->getMessage()}"
+                );
+            }
+        }
+
         $error = $this->errorPayload($reason);
         try {
             $this->mqtt->publishStatus($identity->imei, RawPayload::status($identity->imei, '', '', 'error', $error));

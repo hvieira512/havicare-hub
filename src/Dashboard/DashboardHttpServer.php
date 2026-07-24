@@ -12,6 +12,7 @@ use Hub\Api\Repository\CapabilityDiscoveryRepository;
 use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DeviceService;
+use Hub\Api\Services\DashboardNotificationService;
 use Hub\Api\Services\LicenseService;
 use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
@@ -83,6 +84,7 @@ final class DashboardHttpServer
             new CompanyService($this->db),
             new LicenseService($this->db),
             new ProtocolService(),
+            new DashboardNotificationService($this->db),
             new \Hub\Api\Http\JsonResponder(),
             new \Hub\Api\Http\HtmlResponder(),
             new \Hub\Api\Http\CorsPolicy(),

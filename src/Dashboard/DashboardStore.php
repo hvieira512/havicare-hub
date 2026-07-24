@@ -7,6 +7,7 @@ use Predis\ClientInterface;
 
 final class DashboardStore implements DashboardStoreContract
 {
+    private ?ApiDataAccess $db = null;
     private DeviceRuntimeStore $runtime;
     private DeviceEventStore $events;
     private DeviceCommandStore $commands;
@@ -25,7 +26,25 @@ final class DashboardStore implements DashboardStoreContract
 
     public function setDataAccess(?ApiDataAccess $db): void
     {
+        $this->db = $db;
         $this->projection->setDataAccess($db);
+    }
+
+    public function recordRejectedDevice(
+        string $imei,
+        string $protocol,
+        string $model,
+        string $ident,
+        string $reason
+    ): void {
+        $this->db?->dashboardNotifications->record(
+            'device_not_authorized',
+            $imei,
+            $protocol,
+            $model,
+            $ident,
+            $reason
+        );
     }
 
     public function registerDevice(

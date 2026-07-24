@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt;
 
-use Hub\Dashboard\DashboardStore;
+use Hub\Dashboard\DashboardStoreContract;
 use Hub\HubMqttBridge;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -24,7 +24,7 @@ abstract class Bridge implements MqttIngress
         protected readonly string $topicFilter,
         protected readonly ?string $sourceName = null,
         ?callable $reconnectSubscriber = null,
-        protected readonly ?DashboardStore $dashboardStore = null,
+        protected readonly ?DashboardStoreContract $dashboardStore = null,
     ) {
         $this->subscriber = $subscriber;
         $this->reconnectSubscriber = $reconnectSubscriber;
@@ -49,6 +49,27 @@ abstract class Bridge implements MqttIngress
     public function handleReceivedMessage(string $topic, string $payload): void
     {
         $this->handleMessage($topic, $payload);
+    }
+
+    protected function recordUnauthorizedDevice(
+        string $identity,
+        string $protocol,
+        string $model = '',
+        string $ident = '',
+    ): void {
+        try {
+            $this->dashboardStore?->recordRejectedDevice(
+                $identity,
+                $protocol,
+                $model,
+                $ident,
+                'device_not_authorized'
+            );
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error(
+                "Failed to record rejected device identity={$identity}: {$e->getMessage()}"
+            );
+        }
     }
 
     private function subscribe(): void

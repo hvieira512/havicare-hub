@@ -11,6 +11,7 @@ use Hub\PendingDownlinkQueue;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Whitelist;
 use Hub\ConnectionInterface;
+use Hub\Dashboard\DashboardStoreContract;
 use PHPUnit\Framework\TestCase;
 
 final class DeviceHubMqttContractTest extends TestCase
@@ -43,7 +44,21 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testRejectedDevicePublishesErrorStatusAndRejectedEvent(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $store = $this->createMock(DashboardStoreContract::class);
+        $store->expects(self::once())
+            ->method('recordRejectedDevice')
+            ->with(
+                '865028000000999',
+                'vivistar-iw',
+                '',
+                '',
+                'device_not_authorized'
+            );
+        $hub = new DeviceHubServer(
+            new Whitelist($this->whitelistPath),
+            $mqtt,
+            dashboardStore: $store
+        );
         $connection = new ContractFakeConnection(1);
 
         $hub->onOpen($connection);
@@ -59,6 +74,27 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('device_not_authorized', $mqtt->statuses[0][1]['error']['code']);
         self::assertSame('device.rejected', $mqtt->events[0][1]['type']);
         self::assertSame('device_not_authorized', $mqtt->events[0][1]['error']['code']);
+    }
+
+    public function testNotificationPersistenceFailureDoesNotInterruptDeviceRejection(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $store = $this->createStub(DashboardStoreContract::class);
+        $store->method('recordRejectedDevice')
+            ->willThrowException(new \RuntimeException('Database unavailable'));
+        $hub = new DeviceHubServer(
+            new Whitelist($this->whitelistPath),
+            $mqtt,
+            dashboardStore: $store
+        );
+        $connection = new ContractFakeConnection(11);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000999#');
+
+        self::assertTrue($connection->closed);
+        self::assertCount(1, $mqtt->statuses);
+        self::assertCount(1, $mqtt->events);
     }
 
     public function testOfflineDownlinkPublishesDroppedEvent(): void

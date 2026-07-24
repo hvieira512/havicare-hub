@@ -35,73 +35,19 @@ body {
 }
 
 .dashboard-login {
-    display: grid;
-    grid-template-columns: minmax(320px, 540px) 1fr;
     background:
         radial-gradient(circle at 15% 15%, rgba(13, 110, 253, .12), transparent 32rem),
         #f4f5f7;
 }
 
 .dashboard-login-panel {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-block: clamp(3rem, 7vw, 6rem);
-    padding-inline: clamp(3.5rem, 6vw, 5.5rem);
     background: rgba(255, 255, 255, .92);
-    box-shadow: 1.5rem 0 4rem rgba(18, 28, 45, .08);
-    position: relative;
+    box-shadow: -1.5rem 0 4rem rgba(18, 28, 45, .08);
     z-index: 1;
 }
 
-.dashboard-login-brand {
-    position: absolute;
-    top: clamp(2rem, 5vw, 4rem);
-    left: clamp(2rem, 7vw, 6rem);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: var(--bs-secondary-color);
-    font-size: .72rem;
-    font-weight: 600;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-}
-
 .dashboard-login-brand img {
-    width: 110px;
-}
-
-.dashboard-login-copy {
-    margin-bottom: 2rem;
-}
-
-.dashboard-login-kicker {
-    color: var(--bs-primary);
-    font-size: .75rem;
-    font-weight: 700;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-}
-
-.dashboard-login-copy h1 {
-    max-width: 10ch;
-    margin: .75rem 0 1rem;
-    font-size: clamp(2rem, 3.4vw, 3.3rem);
-    font-weight: 700;
-    letter-spacing: -.045em;
-    line-height: 1.02;
-}
-
-.dashboard-login-copy p {
-    max-width: 44ch;
-    color: var(--bs-secondary-color);
-}
-
-.dashboard-login-form {
-    display: grid;
-    gap: 1.25rem;
-    max-width: 420px;
+    width: 180px;
 }
 
 .dashboard-login-submit {
@@ -121,9 +67,6 @@ body {
 }
 
 .dashboard-login-atmosphere {
-    position: relative;
-    overflow: hidden;
-    min-height: 100%;
     background:
         linear-gradient(145deg, rgba(9, 18, 33, .95), rgba(15, 53, 85, .92)),
         repeating-linear-gradient(90deg, transparent 0 79px, rgba(255, 255, 255, .04) 80px);
@@ -205,20 +148,6 @@ body {
     }
 }
 
-@media (max-width: 767.98px) {
-    .dashboard-login {
-        display: block;
-    }
-
-    .dashboard-login-panel {
-        min-height: 100vh;
-    }
-
-    .dashboard-login-atmosphere {
-        display: none;
-    }
-}
-
 .showcase-preview {
     min-height: 280px;
 }
@@ -273,16 +202,12 @@ body {
     display: block;
 }
 
-.navbar-account {
-    color: rgba(255, 255, 255, .9);
-    font-size: .825rem;
+.dashboard-notifications-menu {
+    width: min(24rem, calc(100vw - 2rem));
 }
 
-.navbar-account:hover,
-.navbar-account:focus,
-.navbar-account.show {
-    color: #fff;
-    background: rgba(255, 255, 255, .1);
+.dashboard-notifications-list {
+    max-height: min(28rem, calc(100vh - 8rem));
 }
 
 #deviceModal .modal-dialog.modal-fullscreen,
@@ -313,15 +238,6 @@ body {
 }
 
 @media (max-width: 575.98px) {
-    .dashboard-login-panel {
-        padding: 7rem 2rem 2rem;
-    }
-
-    .dashboard-login-brand {
-        top: 2rem;
-        left: 2rem;
-    }
-
     #deviceModal .modal-dialog.modal-fullscreen,
     #settingsModal .modal-dialog.modal-fullscreen {
         margin: 0;

@@ -15,7 +15,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         \Hub\HubMqttBridge $mqttBridge,
         string $topicFilter = '/voerka/#',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\Dashboard\DashboardStore $dashboardStore = null,
+        ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
         ?MessageNormalizer $normalizer = null,
         ?\Hub\CommercialModelResolver $commercialModelResolver = null,
     ) {
@@ -64,6 +64,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         $device = $this->whitelist->resolve($from, 'ncs');
         if ($device === null || trim((string)($device['licenseId'] ?? '')) === '') {
+            $this->recordUnauthorizedDevice(
+                $from,
+                'voerka-ncs',
+                ident: $from
+            );
             Logger::channel('hub')->warning("Ignoring unregistered NCS source from={$from}");
             return;
         }

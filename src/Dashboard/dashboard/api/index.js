@@ -10,6 +10,11 @@ export {
 } from './devices.js';
 export {getProtocols} from './protocols.js';
 export {
+    deleteNotification,
+    getNotifications,
+    markNotificationsRead,
+} from './notifications.js';
+export {
     createCompany,
     deleteCompany,
     getCompanies,

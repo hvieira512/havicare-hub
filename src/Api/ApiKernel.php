@@ -8,6 +8,7 @@ use Hub\Api\Controllers\CapabilityController;
 use Hub\Api\Controllers\CapabilityDiscoveryController;
 use Hub\Api\Controllers\CompanyController;
 use Hub\Api\Controllers\DeviceController;
+use Hub\Api\Controllers\DashboardNotificationController;
 use Hub\Api\Controllers\LicenseController;
 use Hub\Api\Controllers\ModelController;
 use Hub\Api\Controllers\ProtocolController;
@@ -28,6 +29,7 @@ use Hub\Api\Services\CapabilityService;
 use Hub\Api\Services\CapabilityDiscoveryService;
 use Hub\Api\Services\CompanyService;
 use Hub\Api\Services\DeviceService;
+use Hub\Api\Services\DashboardNotificationService;
 use Hub\Api\Services\LicenseService;
 use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
@@ -54,6 +56,7 @@ final class ApiKernel
         private CompanyService $company,
         private LicenseService $licenses,
         private ProtocolService $protocols,
+        private DashboardNotificationService $notifications,
         private JsonResponder $json,
         private HtmlResponder $html,
         private CorsPolicy $cors,
@@ -129,6 +132,7 @@ final class ApiKernel
         $company = new CompanyController($this->company, $this->json, $this->statusMapper);
         $licenses = new LicenseController($this->licenses, $this->json, $this->statusMapper);
         $protocols = new ProtocolController($this->protocols, $this->json, $this->statusMapper);
+        $notifications = new DashboardNotificationController($this->notifications, $this->json, $this->statusMapper);
         $json = fn(array $payload, int $status = 200): Response => $this->json->respond($payload, $status);
         $html = fn(string $body): Response => $this->html->respond($body);
 
@@ -143,6 +147,7 @@ final class ApiKernel
             ...((require __DIR__ . '/Routes/CompanyRoutes.php')($company)),
             ...((require __DIR__ . '/Routes/LicenseRoutes.php')($licenses)),
             ...((require __DIR__ . '/Routes/ProtocolRoutes.php')($protocols)),
+            ...((require __DIR__ . '/Routes/DashboardNotificationRoutes.php')($notifications)),
             ...((require __DIR__ . '/Routes/SystemRoutes.php')($json, $html)),
         ];
     }

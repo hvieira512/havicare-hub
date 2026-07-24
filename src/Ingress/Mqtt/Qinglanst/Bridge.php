@@ -19,7 +19,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         \Hub\HubMqttBridge $mqttBridge,
         string $topicFilter = 'radar/1001/#',
         ?callable $reconnectSubscriber = null,
-        ?\Hub\Dashboard\DashboardStore $dashboardStore = null,
+        ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
         ?PayloadDecoder $decoder = null,
         ?MessageNormalizer $normalizer = null,
         ?IngestStats $stats = null,
@@ -219,6 +219,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return $resolved;
         }
 
+        $this->recordUnauthorizedDevice(
+            $deviceUid,
+            'qinglanst-radar',
+            ident: $deviceUid
+        );
         Logger::channel('hub')->warning("Ignoring unregistered Qinglanst device uid={$deviceUid}");
         return null;
     }

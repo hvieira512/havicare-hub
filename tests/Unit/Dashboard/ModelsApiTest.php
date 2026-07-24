@@ -63,7 +63,7 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $response = $api->list((string)$this->request()->getUri()->getQuery(), 'http://localhost');
         $wonlex = null;
         foreach ($response['data'] ?? [] as $entry) {
-            if (($entry['supplier'] ?? '') === 'Wonlex' && ($entry['internalModel'] ?? '') === 'L08 Pro') {
+            if (($entry['supplier'] ?? '') === 'Wonlex' && ($entry['internalModel'] ?? '') === 'HW20PRO') {
                 $wonlex = $entry;
                 break;
             }
