@@ -13,7 +13,7 @@ use Hub\Domain\Capability\CapabilityHelpers;
  * - PATCH /api/devices/{imei}/configurations: send { contacts: [...] }
  *   An empty array is valid and clears the saved phonebook.
  *
- * The hub translates that contract to the 4P Touch native command(s).
+ * The hub translates that contract to the 4P Touch wire command(s).
  */
 final class PhonebookCapability implements CapabilityContract
 {
@@ -105,11 +105,6 @@ final class PhonebookCapability implements CapabilityContract
             'value' => $value,
             '_meta' => $this->meta($protocol, $meta),
         ];
-    }
-
-    public function nativeKeyForProtocol(string $protocol): ?string
-    {
-        return 'phonebook';
     }
 
     public function resolveConfigKey(string $protocol, string $key): ?string

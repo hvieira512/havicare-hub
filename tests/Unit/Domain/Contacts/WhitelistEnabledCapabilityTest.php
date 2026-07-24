@@ -15,7 +15,6 @@ final class WhitelistEnabledCapabilityTest extends TestCase
             ['whitelist_enabled' => ['enabled' => false]],
             $capability->toNative('vivistar-iw', ['enabled' => false])
         );
-        self::assertSame('BP84', $capability->nativeKeyForProtocol('vivistar-iw'));
     }
 
     public function testFourPTouchKeepsWhitelistSwitchAsNativeKey(): void
@@ -26,6 +25,5 @@ final class WhitelistEnabledCapabilityTest extends TestCase
             ['whitelistSwitch' => ['enabled' => true]],
             $capability->toNative('four-p-touch', ['enabled' => true])
         );
-        self::assertSame('whitelistSwitch', $capability->nativeKeyForProtocol('four-p-touch'));
     }
 }

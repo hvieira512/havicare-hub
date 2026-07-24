@@ -145,15 +145,6 @@ final class CallWhitelistCapability implements CapabilityContract
         return ['value' => self::normalizeContactsList($value), '_meta' => $this->meta($protocol, $meta)];
     }
 
-    public function nativeKeyForProtocol(string $protocol): ?string
-    {
-        return match ($protocol) {
-            'vivistar-iw' => 'call_whitelist',
-            'four-p-touch' => null, // splits into whitelistGroup1/2
-            default => null,
-        };
-    }
-
     public function resolveConfigKey(string $protocol, string $key): ?string
     {
         return $key;

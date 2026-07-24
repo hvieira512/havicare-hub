@@ -13,7 +13,7 @@ use Hub\Domain\Capability\CapabilityHelpers;
  * - PATCH /api/devices/{imei}/configurations: send a flat list of phone numbers.
  *   An empty array is valid and clears all saved SOS contacts.
  *
- * The hub translates that generic contract to each protocol's native command(s).
+ * The hub translates that generic contract to each protocol's wire command(s).
  */
 final class SosContactsCapability implements CapabilityContract
 {
@@ -109,16 +109,6 @@ final class SosContactsCapability implements CapabilityContract
         }
 
         return ['value' => is_array($value) ? self::stringList($value) : [], '_meta' => $meta];
-    }
-
-    public function nativeKeyForProtocol(string $protocol): ?string
-    {
-        return match ($protocol) {
-            'vivistar-iw' => 'sosContacts',
-            'wonlex-json' => 'SOSNumber',
-            'four-p-touch' => null, // splits into sosNumber1/2/3
-            default => null,
-        };
     }
 
     public function resolveConfigKey(string $protocol, string $key): ?string

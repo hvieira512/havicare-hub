@@ -12,22 +12,6 @@ final class FourPTouchGenericHandler
 {
     use CapabilityHelpers;
 
-    /**
-     * Generic keys that should preserve a different native key only for
-     * internal/native response tracking on 4P Touch.
-     *
-     * @var array<string, string>
-     */
-    private const RESPONSE_NATIVE_KEYS = [
-        'make_call' => 'makeCall',
-        'reset_device' => 'resetCommand',
-        'power_off' => 'powerOffCommand',
-        'find_device' => 'findDeviceCommand',
-        'device_password' => 'devicePassword',
-        'sound_profile' => 'soundProfile',
-        'call_in_restriction' => 'callInRestriction',
-    ];
-
     public static function publicKeyToNativeKey(string $key): ?string
     {
         return match (trim($key)) {
@@ -143,23 +127,4 @@ final class FourPTouchGenericHandler
         };
     }
 
-    /**
-     * @return list<string>
-     */
-    public function nativeKeyAliases(): array
-    {
-        return array_keys(self::RESPONSE_NATIVE_KEYS);
-    }
-
-    public function nativeKeyForResponse(string $genericKey): ?string
-    {
-        return in_array($genericKey, $this->nativeKeyAliases(), true)
-            ? $this->responseNativeKey($genericKey)
-            : null;
-    }
-
-    private function responseNativeKey(string $genericKey): ?string
-    {
-        return self::RESPONSE_NATIVE_KEYS[$genericKey] ?? null;
-    }
 }

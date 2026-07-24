@@ -142,19 +142,6 @@ final class CapabilityRegistry
         return $entry !== null ? $key : null;
     }
 
-    public function responseNativeKey(string $protocol, string $genericKey): ?string
-    {
-        if (isset($this->contracts[$genericKey])) {
-            return $this->contracts[$genericKey]->nativeKeyForProtocol($protocol);
-        }
-
-        if ($protocol !== 'four-p-touch') {
-            return null;
-        }
-
-        return $this->fourPTouchGeneric->nativeKeyForResponse($genericKey);
-    }
-
     // ------------------------------------------------------------------
     // Generic fallback for capabilities without a contract
     // ------------------------------------------------------------------

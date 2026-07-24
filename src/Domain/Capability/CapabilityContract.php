@@ -28,7 +28,7 @@ interface CapabilityContract
     public function isList(): bool;
 
     /**
-     * Whether multiple native configuration rows may roll up into the same
+     * Whether multiple protocol configuration rows may roll up into the same
      * public capability entry.
      */
     public function supportsMultipleNativeKeys(): bool;
@@ -41,7 +41,7 @@ interface CapabilityContract
     public function supportedProtocols(): array;
 
     /**
-     * Convert a generic API input value to the native key => payload map
+     * Convert a generic API input value to the protocol key => payload map
      * that DeviceConfigurationCatalog can consume.
      *
      * @return array<string, array<string, mixed>>
@@ -49,7 +49,7 @@ interface CapabilityContract
     public function toNative(string $protocol, mixed $value): array;
 
     /**
-     * Convert a native desired payload stored in device_configurations
+     * Convert a protocol desired payload stored in device_configurations
      * back to the public generic form for the API response.
      */
     public function fromNative(string $nativeKey, array $desired): mixed;
@@ -67,7 +67,7 @@ interface CapabilityContract
     public function meta(string $protocol, array $accumulatedMeta = []): array;
 
     /**
-     * Merge existing and incoming values when multiple native keys map
+     * Merge existing and incoming values when multiple protocol keys map
      * to the same generic key.
      */
     public function merge(mixed $existing, mixed $incoming): mixed;
@@ -78,12 +78,7 @@ interface CapabilityContract
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array;
 
     /**
-     * Resolve the native key for a given protocol.
-     */
-    public function nativeKeyForProtocol(string $protocol): ?string;
-
-    /**
-     * Resolve the protocol-specific configuration key used by the native
+     * Resolve the protocol-specific configuration key used by the transport
      * persistence/transport layer.
      *
      * This is not the public API key; the public key remains the generic

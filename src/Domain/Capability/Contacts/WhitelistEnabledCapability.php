@@ -85,15 +85,6 @@ final class WhitelistEnabledCapability implements CapabilityContract
         return ['value' => $value, '_meta' => $meta];
     }
 
-    public function nativeKeyForProtocol(string $protocol): ?string
-    {
-        return match ($protocol) {
-            'vivistar-iw' => 'BP84',
-            'four-p-touch' => 'whitelistSwitch',
-            default => null,
-        };
-    }
-
     public function resolveConfigKey(string $protocol, string $key): ?string
     {
         return $key;

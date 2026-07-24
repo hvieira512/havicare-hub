@@ -19,7 +19,7 @@ final class AlarmClockCapability implements CapabilityContract
     /** @var array<string, AlarmClockHandler> protocol → handler */
     private array $handlers;
 
-    /** @var array<string, AlarmClockHandler> nativeKey → handler */
+    /** @var array<string, AlarmClockHandler> protocol key → handler */
     private array $handlersByNativeKey;
 
     /**
@@ -86,11 +86,6 @@ final class AlarmClockCapability implements CapabilityContract
     public function defaultValue(string $protocol): mixed
     {
         return $this->handlers[$protocol]?->defaultValue() ?? [];
-    }
-
-    public function nativeKeyForProtocol(string $protocol): ?string
-    {
-        return $this->handlers[$protocol]?->nativeKey();
     }
 
     // ------------------------------------------------------------------

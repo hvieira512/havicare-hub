@@ -102,15 +102,6 @@ final class MedicationRemindersCapability implements CapabilityContract
         };
     }
 
-    public function nativeKeyForProtocol(string $protocol): ?string
-    {
-        return match ($protocol) {
-            'wonlex-json' => $this->wonlex->nativeKey(),
-            'four-p-touch' => $this->fourPTouch->nativeKey(),
-            default => null,
-        };
-    }
-
     public function resolveConfigKey(string $protocol, string $key): ?string
     {
         return $key;
