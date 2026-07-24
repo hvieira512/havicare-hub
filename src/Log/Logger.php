@@ -25,6 +25,8 @@ class Logger
             "[%datetime%] %channel%.%level_name%: %message% %context%\n",
             'Y-m-d H:i:s'
         );
+        $formatter->setMaxNormalizeDepth(512);
+        $formatter->setMaxNormalizeItemCount(PHP_INT_MAX);
 
         $handler = new StreamHandler('php://stdout', $level);
         $handler->setFormatter($formatter);

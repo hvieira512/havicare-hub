@@ -262,8 +262,6 @@ $dashboard = new DashboardHttpServer(
         $dataAccess,
         (string)($dashboardConfig['username'] ?? ''),
         (string)($dashboardConfig['password'] ?? ''),
-        (string)($dashboardConfig['client_username'] ?? ''),
-        (string)($dashboardConfig['client_password'] ?? ''),
         (bool)($dashboardConfig['api_auth_required'] ?? true),
         (int)($dashboardConfig['api_token_ttl_seconds'] ?? 3600),
         (int)($dashboardConfig['api_refresh_token_ttl_seconds'] ?? 2592000)

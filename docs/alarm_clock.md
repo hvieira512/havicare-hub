@@ -51,9 +51,7 @@ Relevant sections for watches:
             "recurrence": {
               "kind": "custom",
               "days": [1, 3, 5]
-            },
-            "days": [1, 3, 5],
-            "custom": "135"
+            }
           }
         ],
         "_meta": {
@@ -77,19 +75,17 @@ Relevant sections for watches:
     }
   },
   "configurations": {
-    "alarm_clock": {
-      "items": [
-        {
-          "time": "08:10",
-          "enabled": true,
-          "type": 2,
-          "recurrence": {
-            "kind": "custom",
-            "days": [1, 3, 5]
-          }
+    "alarm_clock": [
+      {
+        "time": "08:10",
+        "enabled": true,
+        "type": 2,
+        "recurrence": {
+          "kind": "custom",
+          "days": [1, 3, 5]
         }
-      ]
-    }
+      }
+    ]
   }
 }
 ```
@@ -108,7 +104,7 @@ Relevant sections for watches:
   - maximum number of alarms
 - `capabilities.alarms.alarm_clock._meta.*.options`
   - render selectors for recurrence and type
-- `configurations.alarm_clock.items`
+- `configurations.alarm_clock`
   - current saved values for the form
 
 `_meta` is read-only metadata. The client uses it to build the editor, but does not send it back.
@@ -124,7 +120,6 @@ For watches, each alarm item can render:
 - `type` when present in the model response
 - `recurrence.kind`
 - `recurrence.days` when `kind === "custom"`
-- `days` and `custom` may also appear for Vivistar compatibility
 
 ### Vivistar
 
@@ -220,35 +215,31 @@ Example:
     }
   ],
   "configurations": {
-    "alarm_clock": {
-      "items": [
-        {
-          "time": "11:11",
-          "enabled": true,
-          "type": 2,
-          "recurrence": {
-            "kind": "once"
-          }
+    "alarm_clock": [
+      {
+        "time": "11:11",
+        "enabled": true,
+        "type": 2,
+        "recurrence": {
+          "kind": "once"
         }
-      ]
-    }
+      }
+    ]
   },
   "pending": {
     "alarms": {
       "alarm_clock": {
         "status": "waiting_device",
-        "desired": {
-          "items": [
-            {
-              "time": "11:11",
-              "enabled": true,
-              "type": 2,
-              "recurrence": {
-                "kind": "once"
-              }
+        "desired": [
+          {
+            "time": "11:11",
+            "enabled": true,
+            "type": 2,
+            "recurrence": {
+              "kind": "once"
             }
-          ]
-        }
+          }
+        ]
       }
     }
   },
@@ -269,7 +260,7 @@ Example:
 2. Render the device header from `device` and `model`
 3. Render telemetry cards from `capabilities.telemetry`
 4. Render configuration forms from `capabilities.alarms`, `capabilities.contacts`, `capabilities.health`, and `capabilities.settings_system`
-5. Pre-fill the alarm editor from `configurations.alarm_clock.items`
+5. Pre-fill the alarm editor from `configurations.alarm_clock`
 6. If the user changes alarms, send `PATCH /api/devices/{imei}/configurations`
 7. Refresh the device detail and use `pending` to show whether the update is still waiting on the device
 

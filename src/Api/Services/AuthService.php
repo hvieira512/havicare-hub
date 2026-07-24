@@ -63,7 +63,7 @@ class AuthService
             'username' => (string)$identity['username'],
             'role' => (string)$identity['role'],
             'license_id' => $identity['licenseId'],
-            'auth_source' => $identity['userId'] !== null ? 'db_user' : 'fallback_credential',
+            'auth_source' => $identity['userId'] !== null ? 'db_user' : 'bootstrap_admin',
         ]);
 
         return [
@@ -124,10 +124,10 @@ class AuthService
             }
         }
 
-        return $this->fallbackIdentityForCredentials($username, $password);
+        return $this->bootstrapIdentityForCredentials($username, $password);
     }
 
-    private function fallbackIdentityForCredentials(string $username, string $password): ?array
+    private function bootstrapIdentityForCredentials(string $username, string $password): ?array
     {
         foreach ($this->credentials as $credential) {
             if (!is_array($credential)) {

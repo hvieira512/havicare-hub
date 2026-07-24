@@ -40,7 +40,9 @@ Database schemas:
 database/schema.sql
 ```
 
-Runtime initialization applies the driver-appropriate schema directly in [src/Dashboard/DashboardDatabase.php](/Users/hugo/dev/hitecosystem-devices-hub/src/Dashboard/DashboardDatabase.php).
+Runtime initialization is MySQL-only. [DashboardDatabase.php](/Users/hugo/dev/hitecosystem-devices-hub/src/Infrastructure/Persistence/DashboardDatabase.php) applies the idempotent base schema and then runs versioned migrations from `src/Infrastructure/Persistence/Migration/`. Applied versions are recorded in `schema_migrations` under a MySQL advisory lock.
+
+Reference suppliers, models, capabilities, and initial model capability selections are seeded by one-time migrations. Restarting the hub does not recreate deleted catalog rows or overwrite administrator-managed model capability selections.
 
 Docker:
 
@@ -82,7 +84,7 @@ API user roles:
 - `hub_admin`: unrestricted hub administration.
 - `license_client`: tied to exactly one `license_id`; can list/read devices in that license, request telemetry/configuration downlinks, inspect those command statuses, and update configuration for those devices. Devices with license `0` are admin-only.
 
-`API_CLIENT_USERNAME` and `API_CLIENT_PASSWORD` remain available as a legacy restricted login fallback, but DB-backed `license_client` users should be used for real tenants because they carry the license scope in the token.
+License clients must be created in MySQL through the dashboard settings or `/api/users`. Environment-backed tenant credentials are not supported because they cannot carry a durable license association.
 
 ### API Logging
 
@@ -101,7 +103,8 @@ Each API log entry includes:
 - `username`
 - `role`
 - `license_id`
-- exact raw `request_body`
+- structured `request_body`
+- structured `response_body`
 
 If the client sends `X-Request-Id`, the hub reuses it and returns it in the response header.
 Otherwise the hub generates one.
@@ -111,27 +114,26 @@ This logging is intentionally request-complete:
 - successful requests are logged
 - validation failures are logged
 - unauthorized and forbidden requests are logged
-- the exact raw request body is logged as received by the API
+- JSON request and response bodies are logged as structured objects
 
 Operational note:
 
-- `POST /api/auth/login` bodies are logged exactly as sent, including credentials
-- API logs therefore need to be treated as sensitive production data
+- Passwords, access tokens, refresh tokens, and token query parameters are replaced with `********` before logging
+- API logs can still contain device and patient-related operational data and must use production retention controls
 
 Logs go to stdout and, when `LOG_FILE` is set, also to that file.
 
 ## Device Configuration API
 
-Generic device configuration now lives directly on `GET /api/devices/{imei}` and `PUT /api/devices/{imei}`.
-The legacy `GET/PUT /api/devices/{imei}/configuration` endpoints were removed.
+Generic device configuration is read through `GET /api/devices/{imei}` and updated through `PATCH /api/devices/{imei}/configurations`.
 
 `GET /api/devices/{imei}` returns:
 
 - `device`: registered device metadata plus runtime status.
 - `model`: supplier/model metadata.
-- `configuration`: summary counters for supported vs stored native configuration entries.
-- `configurations`: raw native desired configuration rows currently stored for the device.
-- `capabilities`: normalized device capabilities grouped by section. This is the main generic configuration shape for clients, and it reflects model support even when no configuration rows are stored yet.
+- `configuration`: summary counters for supported versus stored configuration entries.
+- `configurations`: current generic desired values keyed by capability name. These entries contain values only.
+- `capabilities`: supported capabilities grouped by section. Writable entries contain the current example/value and all UI metadata in `_meta`.
 - `pending`: normalized configuration entries whose desired state still differs from the last reported state from the device.
 - `transportPending`: raw queued transport downlinks still waiting in Redis because the device was offline.
 
@@ -140,8 +142,9 @@ Important semantics:
 - `capabilities` always reflects what the model supports and what the API can accept, not only what is currently stored or acknowledged by the device.
 - `pending` exists to show which normalized configuration values are still waiting for device confirmation or have diverged from the last reported state.
 - `transportPending` is lower-level transport state. It does not replace `pending`.
+- Public capability entries never expose protocol-native identity. Generic identity, section, and protocol support come from `CapabilityCatalog`; supplier command catalogs are transport-only.
 
-Writable sections inside `capabilities` are currently:
+Writable capability sections are:
 
 - `health`
 - `contacts`
@@ -183,44 +186,30 @@ For alarm reminders, the generic capability is `alarm_clock`:
 - Vivistar maps `alarm_clock` to native `reminders`
 - 4P Touch maps `alarm_clock` to native `REMIND`
 
-The API accepts the generic alias on `PUT /api/devices/{imei}` and `PUT /api/devices/{imei}/configurations` when the model supports it.
-
-`PUT /api/devices/{imei}` supports two modes:
-
-- Device metadata update when the body contains standard device fields like `imei`, `supplier`, `model`, `licenseId`, and related metadata.
-- Generic configuration update when the body contains `capabilities`.
-
-For generic configuration updates, the client should send the same normalized `capabilities` structure returned by `GET`, but only writable entries and without helper metadata like `_meta`.
-The backend validates the payload against the model capability catalog, compares it against the current desired state, persists only real changes, and sends downlinks only for the native configuration entries that actually changed.
+Clients must send generic keys under `configurations` to `PATCH /api/devices/{imei}/configurations`. Supplier-native keys and the old `configs` or writable `capabilities` payloads are rejected. The backend maps each generic value to one or more supplier-native operations.
 
 Example:
 
 ```json
 {
-  "capabilities": {
-    "alarms": {
-      "alarm_clock": {
-        "items": [
-          {
-            "time": "08:10",
-            "enabled": true,
-            "type": 2,
-            "recurrence": {
-              "kind": "custom",
-              "days": [1, 3, 5]
-            }
+  "configurations": {
+    "alarm_clock": {
+      "items": [
+        {
+          "time": "08:10",
+          "enabled": true,
+          "type": 2,
+          "recurrence": {
+            "kind": "custom",
+            "days": [1, 3, 5]
           }
-        ]
-      }
-    },
-    "settings_system": {
-      "working_mode": {
-        "value": {
-          "mode": 8,
-          "intervalSeconds": 60,
-          "gpsEnabled": true
         }
-      }
+      ]
+    },
+    "working_mode": {
+      "mode": 8,
+      "intervalSeconds": 60,
+      "gpsEnabled": true
     }
   }
 }
@@ -228,14 +217,12 @@ Example:
 
 Successful configuration updates return:
 
-- `changed`: normalized capability paths that produced one or more native downlinks.
-- `unchanged`: normalized capability paths ignored because the desired state already matched.
-- `configuration`
-- `capabilities`
+- `status`
+- `results`: changed generic capability keys, each with `operations[]`
+- `results[].operations[].nativeKey`: explicit protocol-native identity used for that delivery operation
+- `configurations`: complete current generic values
 - `pending`
 - `transportPending`
-
-The current implementation still accepts the older native payload form with `configs` on `PUT /api/devices/{imei}` for compatibility, but new clients should use the generic `capabilities` form.
 
 ## Telemetry Requests
 
@@ -663,3 +650,5 @@ composer test
 ```
 
 The scenario smoke test starts Mosquitto and the hub, connects a simulated Vivistar TCP device, verifies raw MQTT uplink, publishes MQTT downlink, and verifies the device receives it.
+
+Scenario runs retain the newest 20 artifact directories by default. Override that with `ARTIFACT_RUNS_TO_KEEP`, or run `make clean-test-artifacts` to apply the retention policy manually.

@@ -13,6 +13,11 @@ SCENARIOS=(
 )
 PER_SCENARIO_TIMEOUT_SECONDS="${PER_SCENARIO_TIMEOUT_SECONDS:-240}"
 
+cleanup_artifacts() {
+  tests/scenarios/cleanup-artifacts.sh
+}
+trap cleanup_artifacts EXIT
+
 resolve_timeout_bin() {
   if command -v timeout >/dev/null 2>&1; then
     echo "timeout"

@@ -34,8 +34,6 @@ class Config
                 'port' => (int)(getenv('DASHBOARD_PORT') ?: 8081),
                 'username' => getenv('DASHBOARD_USERNAME') ?: 'admin',
                 'password' => getenv('DASHBOARD_PASSWORD') ?: 'secret',
-                'client_username' => getenv('API_CLIENT_USERNAME') ?: '',
-                'client_password' => getenv('API_CLIENT_PASSWORD') ?: '',
                 'api_auth_required' => $dashboardApiAuthRequired,
                 'api_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_TOKEN_TTL_SECONDS') ?: 3600),
                 'api_refresh_token_ttl_seconds' => (int)(getenv('DASHBOARD_API_REFRESH_TOKEN_TTL_SECONDS') ?: 2592000),

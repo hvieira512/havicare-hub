@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub test-unit test-scenarios test-all ssl-setup ps dev-hub dev prod-update prod-restart prod-status prod-logs
+.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub test-unit test-scenarios test-all clean-test-artifacts ssl-setup ps dev-hub dev prod-update prod-restart prod-status prod-logs
 
 HEALTH_HUB_SERVICE ?= health-hub
 
@@ -58,6 +58,9 @@ test-scenarios:
 	tests/scenarios/run-all.sh
 
 test-all: test-unit test-scenarios
+
+clean-test-artifacts:
+	tests/scenarios/cleanup-artifacts.sh
 
 ssl-setup:
 	mkdir -p config/ssl && openssl req -x509 -nodes -days 365 -newkey rsa:2048 \

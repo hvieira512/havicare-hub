@@ -822,8 +822,6 @@ function readAlarmClock(section) {
             if (item.recurrence.kind === "custom") {
                 const days = readAlarmClockDays(row);
                 item.recurrence.days = days;
-                item.days = days;
-                item.custom = days.map((day) => String(day)).join("");
                 if (!Array.isArray(days) || days.length === 0) {
                     throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
                 }
@@ -2219,7 +2217,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = []) {
     );
     const recurrenceValue = recurrenceKind;
     const dayMask = normalizeAlarmClockDaySelection(
-        item.recurrence?.days ?? item.days ?? item.custom ?? "",
+        item.recurrence?.days ?? "",
     );
     const hasTypeSelector = Array.isArray(typeOptions) && typeOptions.length > 0;
     const typeValue = hasTypeSelector
@@ -2330,9 +2328,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = []) {
 }
 
 function normalizeAlarmClockItems(desired) {
-    const base = Array.isArray(desired)
-        ? desired
-        : desired?.items ?? desired?.alarmClock ?? desired?.alarms ?? [];
+    const base = Array.isArray(desired) ? desired : desired?.items ?? [];
     const items = Array.isArray(base) ? base : [base];
     return items
         .filter((item) => item && typeof item === "object")
@@ -2353,7 +2349,7 @@ function normalizeAlarmClockItem(item) {
         recurrence: recurrenceKind === "custom"
             ? {
                   kind: "custom",
-                  days: normalizeAlarmClockDaySelection(item.recurrence?.days ?? item.days ?? item.custom ?? ""),
+                  days: normalizeAlarmClockDaySelection(item.recurrence?.days ?? ""),
               }
             : { kind: recurrenceKind },
     };

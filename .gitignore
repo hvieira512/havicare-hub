@@ -17,9 +17,6 @@
 /config/mosquitto.acl
 
 # Local databases and dumps
-*.db
-*.sqlite
-*.sqlite3
 *.sql.gz
 *.dump
 

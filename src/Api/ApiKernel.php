@@ -235,7 +235,7 @@ final class ApiKernel
         ?ApiAuthContext $authContext,
         string $authState
     ): void {
-        $query = $request->getUri()->getQuery();
+        $query = $this->sanitizeLogQuery($request->getUri()->getQuery());
         $serverParams = $request->getServerParams();
         $status = $response->getStatusCode();
         $level = $status >= 500 ? 'error' : ($status >= 400 ? 'warning' : 'info');
@@ -315,6 +315,25 @@ final class ApiKernel
         }
 
         return $sanitized;
+    }
+
+    private function sanitizeLogQuery(string $query): string
+    {
+        if ($query === '') {
+            return '';
+        }
+
+        $parts = [];
+        foreach (explode('&', $query) as $part) {
+            [$rawKey, $rawValue] = array_pad(explode('=', $part, 2), 2, '');
+            $key = rawurldecode($rawKey);
+            $value = rawurldecode($rawValue);
+            $parts[] = $this->isSensitiveLogField($key, $value)
+                ? $rawKey . '=' . self::LOG_REDACTION
+                : $part;
+        }
+
+        return implode('&', $parts);
     }
 
     private function isSensitiveLogField(string $key, mixed $value): bool

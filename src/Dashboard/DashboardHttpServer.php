@@ -39,25 +39,16 @@ final class DashboardHttpServer
         private ApiDataAccess $db,
         private string $username,
         private string $password,
-        private string $clientUsername = '',
-        private string $clientPassword = '',
         private bool $apiAuthRequired = true,
         private int $apiTokenTtlSeconds = 3600,
         private int $apiRefreshTokenTtlSeconds = 2592000,
     ) {
         if ($this->apiAuthRequired) {
-            $this->apiCredentials = array_values(array_filter([
-                [
-                    'username' => $this->username,
-                    'password' => $this->password,
-                    'role' => ApiAuthContext::ROLE_HUB_ADMIN,
-                ],
-                [
-                    'username' => $this->clientUsername,
-                    'password' => $this->clientPassword,
-                    'role' => ApiAuthContext::ROLE_LICENSE_CLIENT,
-                ],
-            ], static fn (array $credential): bool => trim((string)$credential['username']) !== '' && (string)$credential['password'] !== ''));
+            $this->apiCredentials = array_values(array_filter([[
+                'username' => $this->username,
+                'password' => $this->password,
+                'role' => ApiAuthContext::ROLE_HUB_ADMIN,
+            ]], static fn (array $credential): bool => trim((string)$credential['username']) !== '' && (string)$credential['password'] !== ''));
         } else {
             $this->apiCredentials = [];
         }
