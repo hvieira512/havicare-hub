@@ -19,4 +19,16 @@ final class CapabilityRegistryTest extends TestCase
             ])
         );
     }
+
+    public function testFourPTouchSoundProfileMapsToTheNativeSoundProfilePayload(): void
+    {
+        $registry = new CapabilityRegistry();
+
+        self::assertSame(
+            ['profile' => ['mode' => 1]],
+            $registry->toNative('four-p-touch', 'sound_profile', [
+                'mode' => 1,
+            ])
+        );
+    }
 }

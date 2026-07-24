@@ -532,7 +532,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'device password' => ['device_password', 'devicePassword'];
         yield 'language timezone' => ['language_timezone', 'languageTimezone'];
         yield 'call in restriction' => ['call_in_restriction', 'callInRestriction'];
-        yield 'sound profile' => ['sound_profile', 'soundProfile'];
+        yield 'sound profile' => ['sound_profile', 'profile'];
         yield 'do not disturb' => ['do_not_disturb', 'doNotDisturb'];
     }
 
@@ -1039,17 +1039,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchSoundProfileBuildsNativeFields(): void
     {
-        $vibrateAndRing = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 1]);
+        $vibrateAndRing = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 1]);
         self::assertSame('profile', $vibrateAndRing['command']);
         self::assertSame(['fields' => ['1']], $vibrateAndRing['payload']);
 
-        $ringOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 2]);
+        $ringOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 2]);
         self::assertSame(['fields' => ['2']], $ringOnly['payload']);
 
-        $vibrateOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 3]);
+        $vibrateOnly = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 3]);
         self::assertSame(['fields' => ['3']], $vibrateOnly['payload']);
 
-        $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'soundProfile', ['mode' => 4]);
+        $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 4]);
         self::assertSame(['fields' => ['4']], $silent['payload']);
     }
 
@@ -1057,7 +1057,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
     {
         self::assertSame(
             'mode must be between 1 and 4',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'soundProfile', ['mode' => 0])
+            DeviceConfigurationCatalog::validate('four-p-touch', 'sound_profile', ['mode' => 0])
         );
     }
 

@@ -77,7 +77,7 @@ final class FourPTouchConfigurationDefinitions
             ]),
             $entry('whitelistSwitch', 'WHITELISTSWITCH', 'Lista branca ativa', 'toggle', ['enabled'], ['WHITELISTSWITCH'], 'contacts', 35),
             $entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55, 5),
-            $entry('soundProfile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
+            $entry('profile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
                     ['value' => 1, 'label' => 'Vibração e toque'],
                     ['value' => 2, 'label' => 'Só toque'],

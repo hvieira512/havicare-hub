@@ -47,6 +47,22 @@ final class ProtocolServiceTest extends TestCase
         self::assertContains('phonebook', array_column($response['data'], 'key'));
     }
 
+    public function testConfigCatalogMapsFourPTouchRemoveWatchAndSoundProfileKeys(): void
+    {
+        $service = new ProtocolService();
+        $response = $service->configCatalog(['protocol' => 'four-p-touch']);
+
+        $entries = $response['data'] ?? [];
+        $byKey = [];
+        foreach ($entries as $entry) {
+            $byKey[$entry['key'] ?? ''] = $entry;
+        }
+
+        self::assertSame('remove_watch_alarm', $byKey['removeWatchAlarm']['capabilityKey'] ?? null);
+        self::assertSame('remove_watch_sms_alert', $byKey['removeWatchSmsAlerts']['capabilityKey'] ?? null);
+        self::assertSame('sound_profile', $byKey['profile']['capabilityKey'] ?? null);
+    }
+
     public function testConfigCatalogMapsVivistarFallSensitivityToThePublicCapabilityKey(): void
     {
         $service = new ProtocolService();

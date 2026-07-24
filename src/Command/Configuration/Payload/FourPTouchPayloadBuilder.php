@@ -46,7 +46,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             'doNotDisturb', 'callInRestriction' => [self::boolInt($payload['enabled'] ?? null, 'enabled')],
             'alarmClock' => self::alarmClock($payload),
             'phonebook' => self::phonebook($payload),
-            'soundProfile' => [self::soundProfileMode($payload['mode'] ?? null)],
+            'profile' => [self::soundProfileMode($payload['mode'] ?? null)],
             default => throw new \InvalidArgumentException("Unsupported 4P Touch configuration {$key}"),
         };
 
