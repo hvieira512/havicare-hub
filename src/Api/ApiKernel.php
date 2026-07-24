@@ -38,6 +38,8 @@ use React\Http\Message\Response;
 
 final class ApiKernel
 {
+    private const LOG_REDACTION = '********';
+
     private ApiRouter $router;
 
     public function __construct(
@@ -237,11 +239,13 @@ final class ApiKernel
         $serverParams = $request->getServerParams();
         $status = $response->getStatusCode();
         $level = $status >= 500 ? 'error' : ($status >= 400 ? 'warning' : 'info');
+        $path = $request->getUri()->getPath();
+        $isAuthPath = str_starts_with($path, '/api/auth/');
 
         Logger::channel('api')->log($level, 'API request completed', [
             'request_id' => (string)$request->getAttribute(RequestContext::ATTR_REQUEST_ID, ''),
             'method' => strtoupper($request->getMethod()),
-            'path' => $request->getUri()->getPath(),
+            'path' => $path,
             'query' => $query,
             'route' => $routePattern,
             'status' => $status,
@@ -253,14 +257,15 @@ final class ApiKernel
             'role' => $authContext?->role,
             'license_id' => $authContext?->licenseId,
             'request_body' => $this->structuredLogBody(
-                (string)$request->getAttribute(RequestContext::ATTR_RAW_BODY, '')
+                (string)$request->getAttribute(RequestContext::ATTR_RAW_BODY, ''),
+                $isAuthPath
             ),
             'response_content_type' => $response->getHeaderLine('Content-Type'),
-            'response_body' => $this->responseBodyForLog($response),
+            'response_body' => $this->responseBodyForLog($response, $isAuthPath),
         ]);
     }
 
-    private function responseBodyForLog(Response $response): mixed
+    private function responseBodyForLog(Response $response, bool $redactUnstructured = false): mixed
     {
         $body = $response->getBody();
         try {
@@ -276,10 +281,10 @@ final class ApiKernel
             return null;
         }
 
-        return $this->structuredLogBody($contents);
+        return $this->structuredLogBody($contents, $redactUnstructured);
     }
 
-    private function structuredLogBody(string $body): mixed
+    private function structuredLogBody(string $body, bool $redactUnstructured = false): mixed
     {
         $body = trim($body);
         if ($body === '') {
@@ -287,10 +292,49 @@ final class ApiKernel
         }
 
         try {
-            return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+            return $this->sanitizeLogValue(json_decode($body, true, 512, JSON_THROW_ON_ERROR));
         } catch (\JsonException) {
-            return $body;
+            return $redactUnstructured ? self::LOG_REDACTION : $body;
         }
+    }
+
+    private function sanitizeLogValue(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        $sanitized = [];
+        foreach ($value as $key => $item) {
+            if (is_string($key) && $this->isSensitiveLogField($key, $item)) {
+                $sanitized[$key] = self::LOG_REDACTION;
+                continue;
+            }
+
+            $sanitized[$key] = $this->sanitizeLogValue($item);
+        }
+
+        return $sanitized;
+    }
+
+    private function isSensitiveLogField(string $key, mixed $value): bool
+    {
+        $normalized = preg_replace('/(?<!^)[A-Z]/', '_$0', $key) ?? $key;
+        $normalized = strtolower(str_replace(['-', ' '], '_', $normalized));
+
+        if (
+            $normalized === 'password'
+            || str_ends_with($normalized, '_password')
+            || $normalized === 'secret'
+            || str_ends_with($normalized, '_secret')
+            || $normalized === 'authorization'
+            || $normalized === 'api_key'
+        ) {
+            return true;
+        }
+
+        return !is_array($value)
+            && ($normalized === 'token' || str_ends_with($normalized, '_token'));
     }
 
     private function safeLogApiRequest(

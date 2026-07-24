@@ -195,6 +195,13 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertNotSame($expiredAccessToken, $newToken);
         self::assertNotSame($refreshToken, $newRefreshToken);
 
+        $log = $this->apiLogContents();
+        self::assertStringNotContainsString($expiredAccessToken, $log);
+        self::assertStringNotContainsString($refreshToken, $log);
+        self::assertStringNotContainsString($newToken, $log);
+        self::assertStringNotContainsString($newRefreshToken, $log);
+        self::assertStringContainsString('"refresh_token":"********"', $log);
+
         $response = $server(new ServerRequest(
             'GET',
             '/api/devices',
@@ -224,9 +231,19 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('API login accepted', $log);
         self::assertStringContainsString('API request completed', $log);
         self::assertStringContainsString('"request_id":"' . $requestId . '"', $log);
-        self::assertStringContainsString('"request_body":' . $body, $log);
+        self::assertStringContainsString(
+            '"request_body":{"username":"admin","password":"********"}',
+            $log
+        );
+        self::assertStringNotContainsString('"password":"secret"', $log);
         self::assertStringContainsString('"response_content_type":"application/json"', $log);
         self::assertStringContainsString('"response_body":{"status":"ok","token":', $log);
+
+        $responsePayload = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertStringNotContainsString((string)$responsePayload['token']['access_token'], $log);
+        self::assertStringNotContainsString((string)$responsePayload['token']['refresh_token'], $log);
+        self::assertStringContainsString('"access_token":"********"', $log);
+        self::assertStringContainsString('"refresh_token":"********"', $log);
     }
 
     public function testApiResponseBodyLoggingKeepsFullBodiesWithoutEllipsis(): void
