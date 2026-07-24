@@ -204,7 +204,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
     }
 
-    public function testApiLoginLogsExactRawBodyAndReturnsRequestIdHeader(): void
+    public function testApiLoginLogsStructuredBodyAndReturnsRequestIdHeader(): void
     {
         $server = $this->makeServer();
         $body = json_encode(['username' => 'admin', 'password' => 'secret'], JSON_THROW_ON_ERROR);
@@ -224,15 +224,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('API login accepted', $log);
         self::assertStringContainsString('API request completed', $log);
         self::assertStringContainsString('"request_id":"' . $requestId . '"', $log);
-        self::assertStringContainsString('"request_body":' . json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $log);
+        self::assertStringContainsString('"request_body":' . $body, $log);
         self::assertStringContainsString('"response_content_type":"application/json"', $log);
-        self::assertStringContainsString('"response_body":"{\"status\":\"ok\",\"token\":', $log);
+        self::assertStringContainsString('"response_body":{"status":"ok","token":', $log);
     }
 
-    public function testApiResponseBodyPreviewKeepsFullBodiesWithoutEllipsis(): void
+    public function testApiResponseBodyLoggingKeepsFullBodiesWithoutEllipsis(): void
     {
         $kernel = (new \ReflectionClass(\Hub\Api\ApiKernel::class))->newInstanceWithoutConstructor();
-        $method = new \ReflectionMethod(\Hub\Api\ApiKernel::class, 'responseBodyPreview');
+        $method = new \ReflectionMethod(\Hub\Api\ApiKernel::class, 'responseBodyForLog');
         $method->setAccessible(true);
 
         $largeBody = json_encode(['payload' => str_repeat('abc123', 800)], JSON_THROW_ON_ERROR);
@@ -244,9 +244,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $preview = $method->invoke($kernel, $response);
 
-        self::assertSame(trim($largeBody), $preview);
-        self::assertStringNotContainsString('...', $preview);
-        self::assertGreaterThan(4096, strlen($preview));
+        self::assertSame(json_decode($largeBody, true, 512, JSON_THROW_ON_ERROR), $preview);
+        self::assertStringNotContainsString('...', json_encode($preview, JSON_THROW_ON_ERROR));
+        self::assertGreaterThan(4096, strlen(json_encode($preview, JSON_THROW_ON_ERROR)));
     }
 
     public function testUnauthorizedApiRequestIsStillLogged(): void
@@ -266,7 +266,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('"status":401', $log);
         self::assertStringContainsString('"auth_state":"missing"', $log);
         self::assertStringContainsString('"response_content_type":"application/json"', $log);
-        self::assertStringContainsString('"response_body":"{\"error\":{\"code\":\"unauthorized\"', $log);
+        self::assertStringContainsString('"response_body":{"error":{"code":"unauthorized"', $log);
     }
 
     public function testApiDocsAndOpenApiJsonArePublicWhileDevicesRemainProtected(): void
@@ -482,7 +482,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame('forbidden', $metadataBody['error']['code'] ?? null);
     }
 
-    public function testConfigurationPutLogsExactRawBody(): void
+    public function testConfigurationPatchLogsStructuredBodies(): void
     {
         [$server, $db] = $this->makeServerWithDatabase();
         $token = $this->loginToken($server, 'tenant', 'tenant-secret');
@@ -504,10 +504,10 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $log = $this->apiLogContents();
         self::assertStringContainsString('API device configuration processed', $log);
         self::assertStringContainsString('"request_id":"req-config-1"', $log);
-        self::assertStringContainsString('"request_body":' . json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $log);
+        self::assertStringContainsString('"request_body":' . $body, $log);
         self::assertStringContainsString('"path":"/api/devices/861265061009822/configurations"', $log);
         self::assertStringContainsString('"response_content_type":"application/json"', $log);
-        self::assertStringContainsString('"response_body":"{\"status\":\"ok\",\"results\":', $log);
+        self::assertStringContainsString('"response_body":{"status":"ok","results":', $log);
     }
 
     public function testTenantClientCanAssociateUnassignedDeviceViaPatchEndpoint(): void

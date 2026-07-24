@@ -252,13 +252,15 @@ final class ApiKernel
             'username' => $authContext?->username,
             'role' => $authContext?->role,
             'license_id' => $authContext?->licenseId,
-            'request_body' => (string)$request->getAttribute(RequestContext::ATTR_RAW_BODY, ''),
+            'request_body' => $this->structuredLogBody(
+                (string)$request->getAttribute(RequestContext::ATTR_RAW_BODY, '')
+            ),
             'response_content_type' => $response->getHeaderLine('Content-Type'),
-            'response_body' => $this->responseBodyPreview($response),
+            'response_body' => $this->responseBodyForLog($response),
         ]);
     }
 
-    private function responseBodyPreview(Response $response): ?string
+    private function responseBodyForLog(Response $response): mixed
     {
         $body = $response->getBody();
         try {
@@ -274,12 +276,21 @@ final class ApiKernel
             return null;
         }
 
-        $contents = trim($contents);
-        if ($contents === '') {
+        return $this->structuredLogBody($contents);
+    }
+
+    private function structuredLogBody(string $body): mixed
+    {
+        $body = trim($body);
+        if ($body === '') {
             return null;
         }
 
-        return $contents;
+        try {
+            return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return $body;
+        }
     }
 
     private function safeLogApiRequest(
