@@ -64,6 +64,7 @@ import {
     applyDetailFilters,
     clearDetailFilters,
     filterDetailItems,
+    updateDetailFilterDraft,
     requestTelemetryFeature,
     renderTelemetryList,
     renderSelection,
@@ -805,6 +806,9 @@ function bindEvents() {
     els.telemetryPager.addEventListener("click", handleTelemetryPagerClick);
     els.applyDetailFiltersBtn.addEventListener("click", applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener("click", clearDetailFilters);
+    els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);
+    els.detailFilterTo.addEventListener("change", updateDetailFilterDraft);
+    els.detailFilterType.addEventListener("change", updateDetailFilterDraft);
     els.deleteDeviceBtn.addEventListener("click", handleDeleteDeviceBtnClick);
     els.deviceSupplierButtons.addEventListener(
         "click",

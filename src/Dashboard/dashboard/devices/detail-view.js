@@ -61,6 +61,10 @@ function renderSelection() {
         return;
     }
 
+    if (!state.detailFiltersDraft || typeof state.detailFiltersDraft !== "object") {
+        state.detailFiltersDraft = { ...state.detailFilters };
+    }
+
     const device = state.selectedDetail.device;
     const deviceModel = state.selectedDetail.model;
     renderSelectedDeviceSummary(device, deviceModel);
@@ -273,7 +277,7 @@ function itemTime(item) {
 
 function populateDetailFilterTypes() {
     const select = els.detailFilterType;
-    const currentValue = state.detailFilters.type;
+    const currentValue = state.detailFiltersDraft?.type || state.detailFilters.type;
     const observedTypes = detailFilterTypesFromItems(allDetailItems());
     const signature = observedTypes.join("|");
     const hasCurrentValue = Array.from(select.options || []).some(
@@ -327,23 +331,35 @@ function telemetryFilterLabel(type) {
 }
 
 function syncDetailFilterControls() {
-    els.detailFilterFrom.value = state.detailFilters.from;
-    els.detailFilterTo.value = state.detailFilters.to;
-    els.detailFilterType.value = state.detailFilters.type;
+    els.detailFilterFrom.value = state.detailFiltersDraft?.from || state.detailFilters.from;
+    els.detailFilterTo.value = state.detailFiltersDraft?.to || state.detailFilters.to;
+    els.detailFilterType.value = state.detailFiltersDraft?.type || state.detailFilters.type;
 }
 
 function applyDetailFilters() {
-    state.detailFilters.from = els.detailFilterFrom.value;
-    state.detailFilters.to = els.detailFilterTo.value;
-    state.detailFilters.type = els.detailFilterType.value;
+    state.detailFilters = {
+        from: els.detailFilterFrom.value,
+        to: els.detailFilterTo.value,
+        type: els.detailFilterType.value,
+    };
+    state.detailFiltersDraft = { ...state.detailFilters };
     state.telemetryPage = 1;
     renderSelection();
 }
 
 function clearDetailFilters() {
     state.detailFilters = { from: "", to: "", type: "all" };
+    state.detailFiltersDraft = { ...state.detailFilters };
     state.telemetryPage = 1;
     renderSelection();
+}
+
+function updateDetailFilterDraft() {
+    state.detailFiltersDraft = {
+        from: els.detailFilterFrom.value,
+        to: els.detailFilterTo.value,
+        type: els.detailFilterType.value,
+    };
 }
 
 function renderTelemetryList(telemetryRows) {
@@ -808,4 +824,5 @@ export {
     saveSelectedDeviceToStorage,
     requestTelemetryFeature,
     telemetryRequestCards,
+    updateDetailFilterDraft,
 };

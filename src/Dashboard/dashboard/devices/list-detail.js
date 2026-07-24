@@ -456,6 +456,7 @@ async function loadDevice(imei) {
     disconnectDeviceStream();
     state.selectedDetail = detail;
     state.selectedDetail.recent = null;
+    state.detailFiltersDraft = { ...state.detailFilters };
     renderSelectionDetail();
     connectDeviceStream(imei);
     return true;
