@@ -129,7 +129,7 @@ const dismissNotification = async (id, button) => {
             position: "top-end",
             showConfirmButton: false,
             showCloseButton: true,
-            timer: 5000,
+            timer: 1800,
             timerProgressBar: true,
         });
         return;

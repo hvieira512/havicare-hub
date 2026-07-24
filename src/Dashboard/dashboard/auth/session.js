@@ -125,7 +125,7 @@ const showToast = (type, message) => {
         title: message,
         showConfirmButton: false,
         showCloseButton: true,
-        timer: 4000,
+        timer: 1800,
         timerProgressBar: true,
     });
 };
