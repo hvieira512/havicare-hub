@@ -602,6 +602,45 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('_nativeKey', $response['capabilities']['alarms']['medication_reminders']);
     }
 
+    public function testShowCompactsOversizedTakePillsVoiceData(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+        $voiceData = base64_encode(str_repeat('audio', 20000));
+
+        self::assertIsArray($model);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'takePills',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'TAKEPILLS',
+            [
+                'reminderSettings' => '11:25-1-3-1010',
+                'number' => 1,
+                'reminderText' => 'meds',
+                'voiceData' => $voiceData,
+                'voiceMimeType' => 'audio/mpeg',
+            ]
+        );
+
+        $response = $api->show('868017032159118');
+
+        foreach ([
+            $response['configurations']['medication_reminders'] ?? [],
+            $response['capabilities']['alarms']['medication_reminders']['value'] ?? [],
+            $response['pending']['alarms']['medication_reminders']['desired'] ?? [],
+        ] as $value) {
+            self::assertArrayNotHasKey('voiceData', $value);
+            self::assertTrue($value['voiceDataAvailable'] ?? false);
+            self::assertSame(100000, $value['voiceDataBytes'] ?? null);
+        }
+        self::assertLessThan(20000, strlen(json_encode($response, JSON_THROW_ON_ERROR)));
+    }
+
     public function testShowExposesMultipleTakePillsRemindersForFourPTouch(): void
     {
         [$api, $db, $store] = $this->makeApi();
@@ -1288,6 +1327,56 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073', $submitted[0]['bytes']);
+    }
+
+    public function testConfigurationPatchPreservesStoredTakePillsVoiceWhenOmitted(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->deviceConfigurations->saveDesired(
+            '868017032159118',
+            'takePills',
+            'four-p-touch',
+            '4P Touch',
+            'D46',
+            'TAKEPILLS',
+            [
+                'reminderSettings' => '11:25-1-3-1010',
+                'number' => 1,
+                'reminderText' => 'old',
+                'voiceData' => 'QUJDRA==',
+                'voiceMimeType' => 'audio/mpeg',
+            ]
+        );
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'medication_reminders' => [
+                    'reminderSettings' => [
+                        'time' => '11:25',
+                        'enabled' => true,
+                        'frequency' => 3,
+                        'custom' => '1010',
+                    ],
+                    'number' => 1,
+                    'reminderText' => 'updated',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString(',QUJDRA==]', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchAcceptsLocationReportingIntervalForFourPTouch(): void

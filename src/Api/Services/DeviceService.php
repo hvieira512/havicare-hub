@@ -6,6 +6,7 @@ use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\DeviceCollectionFilter;
+use Hub\Api\Http\DeviceResponseCompactor;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
@@ -31,6 +32,7 @@ class DeviceService
     private CollectionResponder $collection;
     private DeviceCollectionFilter $deviceFilter;
     private DevicePresentation $presentation;
+    private DeviceResponseCompactor $responseCompactor;
     private CapabilityRegistry $capabilityRegistry;
     private DeviceConfigurationUpdateService $configurationUpdates;
     private DeviceConfigurationQueryService $configurationQueries;
@@ -48,11 +50,13 @@ class DeviceService
         ?CapabilityRegistry $capabilityRegistry = null,
         ?DeviceConfigurationUpdateService $configurationUpdates = null,
         ?DeviceConfigurationQueryService $configurationQueries = null,
+        ?DeviceResponseCompactor $responseCompactor = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
         $this->deviceFilter = $deviceFilter ?? new DeviceCollectionFilter();
         $this->presentation = $presentation ?? new DevicePresentation();
+        $this->responseCompactor = $responseCompactor ?? new DeviceResponseCompactor();
         $this->capabilityRegistry = $capabilityRegistry ?? new CapabilityRegistry();
         $this->configurationUpdates = $configurationUpdates ?? new DeviceConfigurationUpdateService(
             $this->store,
@@ -172,7 +176,7 @@ class DeviceService
             'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
         ]));
 
-        return [
+        return $this->responseCompactor->compact([
             'device' => $device,
             'model' => $model,
             'configuration' => [
@@ -186,7 +190,7 @@ class DeviceService
                 : CapabilityCatalog::keysForProtocol($protocol),
             'pending' => $this->pendingConfiguration($modelRow, $protocol, $configRows),
             'transportPending' => $this->transportPending($imei),
-        ];
+        ]);
     }
 
     public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array

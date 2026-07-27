@@ -79,6 +79,16 @@ final class DeviceConfigurationUpdateService
                 );
             }
 
+            if ($genericKey === 'medication_reminders' && !array_key_exists('voiceData', $payload)) {
+                $existing = $currentByKey[$genericKey]['desired_payload'] ?? null;
+                if (is_array($existing) && array_key_exists('voiceData', $existing)) {
+                    $payload['voiceData'] = $existing['voiceData'];
+                    if (!array_key_exists('voiceMimeType', $payload) && array_key_exists('voiceMimeType', $existing)) {
+                        $payload['voiceMimeType'] = $existing['voiceMimeType'];
+                    }
+                }
+            }
+
             try {
                 $nativeUpdates = $this->capabilities->toNative($protocol, $genericKey, $payload);
             } catch (\InvalidArgumentException $e) {

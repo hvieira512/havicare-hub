@@ -880,11 +880,13 @@ function readTakePills(section) {
         reminderText: readText(section, "reminderText"),
     };
 
-    if (voiceEnabled) {
+    if (voiceEnabled && voiceData !== "") {
         payload.voiceData = voiceData;
         if (voiceMimeType !== "") {
             payload.voiceMimeType = voiceMimeType;
         }
+    } else if (!voiceEnabled) {
+        payload.voiceData = "";
     }
 
     return payload;
@@ -1733,7 +1735,7 @@ function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
     const voiceData = String(desired.voiceData || "");
     const voiceMimeType = String(desired.voiceMimeType || "audio/webm");
-    const hasVoiceData = voiceData.trim() !== "";
+    const hasVoiceData = voiceData.trim() !== "" || desired.voiceDataAvailable === true;
     const voiceEnabled = normalizeTakePillsVoiceEnabled(desired, hasVoiceData);
     const previewSrc = takePillsVoicePreviewSrc(voiceData, voiceMimeType);
     const frequencyOptions = takePillsFrequencyOptions(meta);
