@@ -225,6 +225,13 @@ function setDeviceFormError(message = "") {
     );
 }
 
+function activeDeviceModalTab() {
+    return els.deviceConfigTabBtn?.classList.contains("active")
+        || els.deviceConfigPane?.classList.contains("active")
+        ? "config"
+        : "general";
+}
+
 async function openAddDevice(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
     const notification = source && typeof source === "object" ? source : null;
@@ -275,8 +282,11 @@ async function openAddDevice(source = "") {
     };
     setDeviceFormError("");
     els.deviceConfigTabBtn?.classList.add("d-none");
+    els.deviceConfigTabBtn?.classList.remove("active");
+    els.deviceConfigTabBtn?.setAttribute("aria-selected", "false");
     els.deviceConfigPane?.classList.remove("show", "active");
     els.deviceGeneralTabBtn?.classList.add("active");
+    els.deviceGeneralTabBtn?.setAttribute("aria-selected", "true");
     els.deviceGeneralPane?.classList.add("show", "active");
     els.deleteDeviceBtn.classList.add("d-none");
     renderDeviceSimNumberField("");
@@ -307,13 +317,14 @@ async function openAddDevice(source = "") {
 
 async function editDevice(imei, supplier, model) {
     await ensureDeviceTypeSuppliersModelsLoaded();
+    const activeTab = activeDeviceModalTab();
     els.deviceModalLabel.textContent = "Editar dispositivo";
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
     resetConfigUiState();
     state.deviceModal = {
         mode: "edit",
-        activeTab: "general",
+        activeTab,
         activeCategory: "",
         imei,
         originalImei: imei,
