@@ -2004,6 +2004,51 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('heart_rate', $response['feature'] ?? null);
         self::assertCount(1, $submitted);
         self::assertStringContainsString('BPXL', $submitted[0]['bytes']);
+        self::assertTrue($response['commands'][0]['retryable'] ?? false);
+        self::assertSame($submitted[0]['bytes'], $response['commands'][0]['bytes'] ?? null);
+        self::assertSame(1, $response['commands'][0]['attempts'] ?? null);
+        self::assertSame(3, $response['commands'][0]['maxAttempts'] ?? null);
+        self::assertSame(60, $response['commands'][0]['retryDelaySeconds'] ?? null);
+        self::assertNotEmpty($response['commands'][0]['nextRetryAt'] ?? null);
+    }
+
+    public function testQueuedTelemetryRequestIsRedispatchedWhenDeliveryBecomesAvailable(): void
+    {
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturn('queued');
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
+
+        $response = $api->requestFeature(
+            '861265061009822',
+            json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR)
+        );
+
+        self::assertSame('queued', $response['status'] ?? null);
+        $command = $response['commands'][0] ?? [];
+        $id = (string)($command['id'] ?? '');
+        self::assertNotSame('', $id);
+        self::assertTrue($command['retryable'] ?? false);
+        self::assertNotEmpty($command['bytes'] ?? null);
+
+        $store->recordCommand('861265061009822', $id, array_merge($command, [
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
+        ]));
+
+        $dispatched = [];
+        $store->retryWaitingCommands(60, 3600, 3, static function (string $imei, string $bytes) use (&$dispatched): string {
+            $dispatched[] = [$imei, $bytes];
+            return 'sent';
+        });
+
+        self::assertSame([['861265061009822', (string)$command['bytes']]], $dispatched);
+        $stored = $store->findCommand($id)['command'] ?? [];
+        self::assertSame('waiting', $stored['status'] ?? null);
+        self::assertSame(1, $stored['attempts'] ?? null);
+        self::assertNotEmpty($stored['sentAt'] ?? null);
     }
 
     public function testRequestFeatureRejectsNonRequestableTelemetry(): void

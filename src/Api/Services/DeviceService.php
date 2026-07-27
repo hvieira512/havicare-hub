@@ -400,6 +400,7 @@ class DeviceService
             ]);
             $id = bin2hex(random_bytes(8));
             $status = $this->hub->submitDownlink($imei, $bytes);
+            $requestedAt = time();
             $record = [
                 'status' => $status,
                 'imei' => $imei,
@@ -409,11 +410,18 @@ class DeviceService
                 'nativeType' => $nativeCommand,
                 'label' => (string)($entry['label'] ?? $nativeCommand),
                 'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
-                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                'retryable' => true,
+                'bytes' => $bytes,
+                'attempts' => 1,
+                'maxAttempts' => 3,
+                'retryDelaySeconds' => 60,
+                'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt),
+                'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt + 60),
+                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt),
             ];
             if ($status === 'sent') {
                 $record['status'] = 'waiting';
-                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt);
             }
             if ($status === 'dropped') {
                 $record['error'] = 'delivery_failed';
