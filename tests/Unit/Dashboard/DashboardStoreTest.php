@@ -93,6 +93,89 @@ final class DashboardStoreTest extends TestCase
         self::assertNotEmpty($command['lastAttemptAt'] ?? null);
         self::assertNotEmpty($command['nextRetryAt'] ?? null);
     }
+
+    public function testRetryWaitingCommandsDispatchesQueuedRetryableCommands(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('861728087743062', '4P Touch', 'D41');
+        $store->recordCommand('861728087743062', 'cmd-queued', [
+            'status' => 'queued',
+            'retryable' => true,
+            'bytes' => '[3G*2808774306*0008*LSSET,3]',
+            'attempts' => 1,
+            'maxAttempts' => 3,
+            'retryDelaySeconds' => 60,
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
+        ]);
+
+        $calls = [];
+        $store->retryWaitingCommands(60, 3600, 3, function (string $imei, string $bytes, array $command) use (&$calls): string {
+            $calls[] = [$imei, $bytes, $command['id'] ?? null];
+            return 'sent';
+        });
+
+        self::assertSame([
+            ['861728087743062', '[3G*2808774306*0008*LSSET,3]', 'cmd-queued'],
+        ], $calls);
+
+        $command = $store->commands('861728087743062')[0] ?? [];
+        self::assertSame('waiting', $command['status'] ?? null);
+        self::assertSame(1, $command['attempts'] ?? null);
+        self::assertNotEmpty($command['sentAt'] ?? null);
+        self::assertGreaterThan(time(), strtotime((string)($command['nextRetryAt'] ?? '')));
+    }
+
+    public function testQueuedRedispatchDoesNotConsumeAttemptsWhileDeviceRemainsOffline(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('861728087743062', '4P Touch', 'D41');
+        $store->recordCommand('861728087743062', 'cmd-queued', [
+            'status' => 'queued',
+            'retryable' => true,
+            'bytes' => '[3G*2808774306*0008*LSSET,3]',
+            'attempts' => 1,
+            'maxAttempts' => 3,
+            'retryDelaySeconds' => 60,
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
+        ]);
+
+        $store->retryWaitingCommands(60, 3600, 3, static fn(): string => 'queued');
+
+        $command = $store->commands('861728087743062')[0] ?? [];
+        self::assertSame('queued', $command['status'] ?? null);
+        self::assertSame(1, $command['attempts'] ?? null);
+        self::assertNotEmpty($command['lastAttemptAt'] ?? null);
+        self::assertGreaterThan(time(), strtotime((string)($command['nextRetryAt'] ?? '')));
+    }
+
+    public function testQueuedRedispatchIgnoresSentAttemptLimitUntilFirstDelivery(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('861728087743062', '4P Touch', 'D41');
+        $store->recordCommand('861728087743062', 'cmd-queued', [
+            'status' => 'queued',
+            'retryable' => true,
+            'bytes' => '[3G*2808774306*0008*LSSET,3]',
+            'attempts' => 3,
+            'maxAttempts' => 3,
+            'retryDelaySeconds' => 60,
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
+        ]);
+
+        $calls = 0;
+        $store->retryWaitingCommands(60, 3600, 3, static function () use (&$calls): string {
+            $calls++;
+            return 'sent';
+        });
+
+        self::assertSame(1, $calls);
+        $command = $store->commands('861728087743062')[0] ?? [];
+        self::assertSame('waiting', $command['status'] ?? null);
+        self::assertSame(3, $command['attempts'] ?? null);
+    }
 }
 
 final class InMemoryRedisClient implements ClientInterface

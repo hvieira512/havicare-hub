@@ -44,7 +44,8 @@ interface DashboardStoreContract
     public function expireStaleDevices(int $timeoutSeconds): void;
 
     /**
-     * Retry waiting configuration commands that have not been acknowledged yet.
+     * Redispatch queued configuration commands and retry sent commands that have
+     * not been acknowledged yet.
      *
      * @param callable(string, string, array): string $dispatch
      */

@@ -49,7 +49,8 @@ final class DeviceCommandStore
             }
 
             foreach ($this->commands($imei) as $command) {
-                if (($command['status'] ?? '') !== 'waiting') {
+                $commandStatus = (string)($command['status'] ?? '');
+                if (!in_array($commandStatus, ['queued', 'waiting'], true)) {
                     continue;
                 }
                 if (!($command['retryable'] ?? false)) {
@@ -67,7 +68,7 @@ final class DeviceCommandStore
                 $sentAt = strtotime((string)($command['sentAt'] ?? '')) ?: 0;
                 $nextRetryAt = strtotime((string)($command['nextRetryAt'] ?? '')) ?: 0;
 
-                if ($sentAt > 0 && ($now - $sentAt) >= $timeoutSeconds) {
+                if ($commandStatus === 'waiting' && $sentAt > 0 && ($now - $sentAt) >= $timeoutSeconds) {
                     $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
                         'status' => 'failed',
                         'error' => 'response_timeout',
@@ -80,7 +81,7 @@ final class DeviceCommandStore
                     continue;
                 }
 
-                if ($attempts >= $commandMaxAttempts) {
+                if ($commandStatus === 'waiting' && $attempts >= $commandMaxAttempts) {
                     $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
                         'status' => 'failed',
                         'error' => 'retry_exhausted',
@@ -90,8 +91,12 @@ final class DeviceCommandStore
                 }
 
                 $status = (string)$dispatch($imei, $bytes, $command);
+                $updatedAttempts = $attempts;
+                if ($status === 'sent' && $commandStatus === 'waiting') {
+                    $updatedAttempts++;
+                }
                 $updated = array_merge($command, [
-                    'attempts' => $attempts + 1,
+                    'attempts' => $updatedAttempts,
                     'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
                     'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', $now + $commandRetryAfterSeconds),
                 ]);
