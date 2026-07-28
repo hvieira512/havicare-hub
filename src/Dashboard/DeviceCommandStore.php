@@ -21,6 +21,7 @@ final class DeviceCommandStore
     {
         $record['id'] = $id;
         $record['updatedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+        $record = DeviceCommandRecord::makeJsonSafe($record);
         $encoded = json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($encoded === false) {
             return;
@@ -57,7 +58,7 @@ final class DeviceCommandStore
                     continue;
                 }
 
-                $bytes = (string)($command['bytes'] ?? '');
+                $bytes = DeviceCommandRecord::wireBytes($command);
                 if ($bytes === '') {
                     continue;
                 }

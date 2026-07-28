@@ -16,6 +16,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\DeviceProtocol;
 use Hub\Dashboard\DashboardStoreContract;
+use Hub\Dashboard\DeviceCommandRecord;
 use Hub\Domain\DeviceMetadata;
 use Hub\DeviceHubServer;
 use Hub\Log\Logger;
@@ -371,7 +372,7 @@ class DeviceService
                 $record['error'] = 'delivery_failed';
             }
             $this->store->recordCommand($imei, $id, $record);
-            $commands[] = array_merge($record, ['id' => $id]);
+            $commands[] = DeviceCommandRecord::makeJsonSafe(array_merge($record, ['id' => $id]));
         }
 
         $statuses = array_values(array_unique(array_map(
@@ -431,7 +432,7 @@ class DeviceService
                 $record['error'] = 'delivery_failed';
             }
             $this->store->recordCommand($imei, $id, $record);
-            $commands[] = array_merge($record, ['id' => $id]);
+            $commands[] = DeviceCommandRecord::makeJsonSafe(array_merge($record, ['id' => $id]));
         }
 
         return ['status' => 'sent', 'commands' => $commands];

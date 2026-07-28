@@ -94,6 +94,37 @@ final class DashboardStoreTest extends TestCase
         self::assertNotEmpty($command['nextRetryAt'] ?? null);
     }
 
+    public function testBinaryCommandBytesAreStoredAsBase64AndDecodedForRetry(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('868705080304962', 'Wonlex', 'HW20PRO');
+        $wireBytes = "\xfc\xaf\x00\x05hello";
+        $store->recordCommand('868705080304962', 'cmd-wonlex', [
+            'status' => 'waiting',
+            'retryable' => true,
+            'bytes' => $wireBytes,
+            'attempts' => 1,
+            'maxAttempts' => 3,
+            'retryDelaySeconds' => 60,
+            'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
+        ]);
+
+        $command = $store->commands('868705080304962')[0] ?? [];
+        self::assertSame(base64_encode($wireBytes), $command['bytes'] ?? null);
+        self::assertSame('base64', $command['bytesEncoding'] ?? null);
+        self::assertIsString(json_encode($command));
+
+        $calls = [];
+        $store->retryWaitingCommands(60, 3600, 3, static function (string $imei, string $bytes) use (&$calls): string {
+            $calls[] = [$imei, $bytes];
+            return 'sent';
+        });
+
+        self::assertSame([['868705080304962', $wireBytes]], $calls);
+    }
+
     public function testRetryWaitingCommandsDispatchesQueuedRetryableCommands(): void
     {
         $redis = new InMemoryRedisClient();
