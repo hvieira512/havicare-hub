@@ -311,7 +311,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('Wonlex HW20 Pro', $mqtt->raw[0][1]['device']['commercialName']);
         self::assertSame('downlink', $mqtt->raw[2][1]['direction']);
         self::assertSame('Wonlex HW20 Pro', $mqtt->raw[2][1]['device']['commercialName']);
-        $ack = $adapter->decodeIncoming(base64_decode($mqtt->raw[2][1]['debug']['payload'], true));
+        $ack = $adapter->decodeIncoming(base64_decode($mqtt->raw[2][1]['debug']['encoded'], true));
         self::assertIsArray($ack);
         self::assertSame('upHeartRate', $ack['type']);
         self::assertSame(274611, $ack['ident']);

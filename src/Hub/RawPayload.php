@@ -16,6 +16,7 @@ class RawPayload
         string $commercialName = '',
     ): array {
         $encoding = self::isText($raw) ? 'text' : 'base64';
+        $decoded = self::decodedPayload($protocol, $raw);
 
         $payload = [
             'schemaVersion' => 1,
@@ -26,14 +27,13 @@ class RawPayload
                 'protocol' => $protocol,
                 'transport' => $transport,
                 'encoding' => $encoding,
-                'payload' => $encoding === 'text' ? $raw : base64_encode($raw),
+                'payload' => $decoded ?? ($encoding === 'text' ? $raw : base64_encode($raw)),
                 'size' => strlen($raw),
             ],
         ];
 
-        $decoded = self::decodedPayload($protocol, $raw);
         if ($decoded !== null) {
-            $payload['debug']['decoded'] = $decoded;
+            $payload['debug']['encoded'] = base64_encode($raw);
         }
 
         if ($connectionId !== null && $connectionId !== '') {
