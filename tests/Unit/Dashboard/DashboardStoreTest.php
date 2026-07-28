@@ -3,6 +3,7 @@
 namespace Tests\Unit\Dashboard;
 
 use Hub\Dashboard\DashboardStore;
+use Hub\Command\DeviceCommandCatalog;
 use PHPUnit\Framework\TestCase;
 use Predis\ClientInterface;
 use Predis\Command\CommandInterface;
@@ -123,6 +124,32 @@ final class DashboardStoreTest extends TestCase
         });
 
         self::assertSame([['868705080304962', $wireBytes]], $calls);
+    }
+
+    public function testWonlexRepliesAreCorrelatedByIdentAndRef(): void
+    {
+        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
+        $imei = '868705080304962';
+        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+
+        $first = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnHeartRate', [], ['ident' => 111111]);
+        $second = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnHeartRate', [], ['ident' => 222222]);
+        foreach ([['one', $first], ['two', $second]] as [$id, $bytes]) {
+            $store->recordCommand($imei, $id, [
+                'status' => 'waiting',
+                'protocol' => 'wonlex-json',
+                'nativeType' => 'dnHeartRate',
+                'expectedReplyTypes' => ['upHeartRate', 'upBatch'],
+                'bytes' => $bytes,
+            ]);
+        }
+
+        $store->markCommandReply($imei, 'upHeartRate', 222222, 'w:update');
+        $commands = array_column($store->commands($imei), null, 'id');
+
+        self::assertSame('waiting', $commands['one']['status']);
+        self::assertSame('acked', $commands['two']['status']);
+        self::assertSame(222222, $commands['two']['replyIdent']);
     }
 
     public function testRetryWaitingCommandsDispatchesQueuedRetryableCommands(): void

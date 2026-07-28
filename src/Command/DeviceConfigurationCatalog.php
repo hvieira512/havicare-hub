@@ -71,21 +71,51 @@ final class DeviceConfigurationCatalog
      */
     public static function commandPayload(string $protocol, string $key, array $payload): array
     {
+        $commands = self::commandPayloads($protocol, $key, $payload);
+        if (count($commands) !== 1) {
+            throw new \InvalidArgumentException("{$key} produces multiple device commands");
+        }
+
+        return $commands[0];
+    }
+
+    /**
+     * Some public configurations expand to several protocol commands. Wonlex
+     * medication plans are one such case: the watch accepts one plan per frame.
+     *
+     * @return list<array{command: string, payload: array<string, mixed>}>
+     */
+    public static function commandPayloads(string $protocol, string $key, array $payload): array
+    {
         $key = self::resolvePublicKeyAlias($protocol, $key);
         $entry = self::configForProtocol($protocol, $key);
         if ($entry === null) {
             throw new \InvalidArgumentException("Unsupported {$protocol} configuration {$key}");
         }
 
-        return [
+        $payloads = [$payload];
+        if ($protocol === 'wonlex-json' && $key === 'dnMedicationPlan' && isset($payload['plans'])) {
+            if (!is_array($payload['plans']) || $payload['plans'] === []) {
+                throw new \InvalidArgumentException('plans must contain at least one medication plan');
+            }
+            $payloads = array_map(static function (mixed $plan): array {
+                if (!is_array($plan)) {
+                    throw new \InvalidArgumentException('plans items must be objects');
+                }
+
+                return ['plan' => $plan];
+            }, array_values($payload['plans']));
+        }
+
+        return array_map(static fn(array $item): array => [
             'command' => (string)$entry['command'],
             'payload' => match ($protocol) {
-                'wonlex-json' => WonlexPayloadBuilder::build($key, $payload),
-                'vivistar-iw' => VivistarPayloadBuilder::build($key, $payload),
-                'four-p-touch' => FourPTouchPayloadBuilder::build($key, $payload),
+                'wonlex-json' => WonlexPayloadBuilder::build($key, $item),
+                'vivistar-iw' => VivistarPayloadBuilder::build($key, $item),
+                'four-p-touch' => FourPTouchPayloadBuilder::build($key, $item),
                 default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
             },
-        ];
+        ], $payloads);
     }
 
     public static function validate(string $protocol, string $key, array $payload): ?string
@@ -96,7 +126,7 @@ final class DeviceConfigurationCatalog
         }
 
         try {
-            self::commandPayload($protocol, $key, $payload);
+            self::commandPayloads($protocol, $key, $payload);
         } catch (\Throwable $e) {
             return $e->getMessage();
         }
@@ -111,7 +141,11 @@ final class DeviceConfigurationCatalog
             return FourPTouchGenericHandler::publicKeyToNativeKey($key) ?? $key;
         }
         if ($key === 'alarm_clock') {
-            return $protocol === 'vivistar-iw' ? 'reminders' : $key;
+            return match ($protocol) {
+                'vivistar-iw' => 'reminders',
+                'wonlex-json' => 'alarmClock',
+                default => $key,
+            };
         }
         if ($key === 'fall_detection') {
             return $protocol === 'vivistar-iw' ? 'fallDetection' : $key;

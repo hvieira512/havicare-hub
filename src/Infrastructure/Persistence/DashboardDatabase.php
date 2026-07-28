@@ -9,6 +9,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026072403RebuildModelCapabi
 use Hub\Infrastructure\Persistence\Migration\Version2026072404SeedModelCapabilities;
 use Hub\Infrastructure\Persistence\Migration\Version2026072405NormalizeConfigurationKeys;
 use Hub\Infrastructure\Persistence\Migration\Version2026072406AddDashboardNotifications;
+use Hub\Infrastructure\Persistence\Migration\Version2026072801SyncWonlexAdultHealthCapabilities;
 use PDO;
 
 final class DashboardDatabase
@@ -59,6 +60,7 @@ final class DashboardDatabase
             new Version2026072404SeedModelCapabilities(),
             new Version2026072405NormalizeConfigurationKeys(),
             new Version2026072406AddDashboardNotifications(),
+            new Version2026072801SyncWonlexAdultHealthCapabilities(),
         ]))->run();
     }
 }

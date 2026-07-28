@@ -13,6 +13,7 @@ import {
     catalogForProtocol,
     readConfigPayload,
     renderDeviceConfigurationRoot,
+    wonlexMedicationPlanRow,
 } from "../config.js";
 import {
     normalizePhoneControl,
@@ -1208,6 +1209,18 @@ function handleDeviceConfigClick(event) {
         return;
     }
 
+    if (button.dataset.action === "addWonlexMedicationPlan") {
+        appendWonlexMedicationPlan(section);
+        return;
+    }
+
+    if (button.dataset.action === "removeWonlexMedicationPlan") {
+        removeWonlexMedicationPlan(
+            button.closest('[data-repeat-row="wonlexMedicationPlan"]'),
+        );
+        return;
+    }
+
     if (button.dataset.action === "takePillsRecord") {
         void startTakePillsRecording(section);
         return;
@@ -1275,6 +1288,21 @@ function handleDeviceConfigChange(event) {
 
     if (event.target.matches('[data-takepills-field="reminderFrequency"]')) {
         syncTakePillsCustomVisibility(section);
+    }
+
+    if (event.target.matches("[data-medication-period]")) {
+        const row = event.target.closest(
+            '[data-repeat-row="wonlexMedicationPlan"]',
+        );
+        const periodTime = row?.querySelector(
+            `[data-medication-period-time="${event.target.value}"]`,
+        );
+        if (periodTime) {
+            periodTime.disabled = !event.target.checked;
+            if (event.target.checked && String(periodTime.value || "") === "") {
+                periodTime.value = "08:00";
+            }
+        }
     }
 
     if (event.target.matches('[data-config-field="number"]') && event.target.closest("[data-config-input=\"takePills\"]")) {
@@ -2086,6 +2114,46 @@ function appendAlarmClockRow(section) {
     }
 
     list.appendChild(clone);
+}
+
+function appendWonlexMedicationPlan(section) {
+    const list = section.querySelector("[data-wonlex-medication-list]");
+    if (!list) return;
+
+    const index = list.querySelectorAll(
+        '[data-repeat-row="wonlexMedicationPlan"]',
+    ).length;
+    list.insertAdjacentHTML(
+        "beforeend",
+        wonlexMedicationPlanRow({}, index),
+    );
+    renumberWonlexMedicationPlans(list);
+}
+
+function removeWonlexMedicationPlan(row) {
+    const list = row?.closest("[data-wonlex-medication-list]");
+    if (!row || !list) return;
+
+    const rows = list.querySelectorAll(
+        '[data-repeat-row="wonlexMedicationPlan"]',
+    );
+    if (rows.length <= 1) {
+        return;
+    }
+
+    row.remove();
+    renumberWonlexMedicationPlans(list);
+}
+
+function renumberWonlexMedicationPlans(list) {
+    list.querySelectorAll(
+        '[data-repeat-row="wonlexMedicationPlan"]',
+    ).forEach((row, index) => {
+        const number = row.querySelector("[data-medication-plan-number]");
+        if (number) {
+            number.textContent = String(index + 1);
+        }
+    });
 }
 
 function removeConfigRow(row) {

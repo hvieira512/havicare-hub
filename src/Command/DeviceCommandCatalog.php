@@ -102,7 +102,7 @@ final class DeviceCommandCatalog
         }
 
         return match ($protocol) {
-            'wonlex-json' => self::buildWonlex($imei, $command, $payload),
+            'wonlex-json' => self::buildWonlex($imei, $command, $payload, $context),
             'vivistar-iw' => self::buildVivistar($imei, $command, $entry, $payload),
             'four-p-touch' => self::buildFourPTouch($imei, $command, $entry, $payload, $context),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
@@ -121,12 +121,12 @@ final class DeviceCommandCatalog
             ['id' => 'dnTemperature', 'command' => 'dnTemperature', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['upBodyTemperature']],
             ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'feature' => 'breath_rate', 'expectedReplyTypes' => ['upBreathe']],
             ['id' => 'dnLocation', 'command' => 'dnLocation', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['upLocation']],
-            ['id' => 'dnUpSleep', 'command' => 'dnUpSleep', 'label' => 'Sleep data', 'icon' => 'fa-bed', 'kind' => 'request', 'feature' => 'sleep', 'expectedReplyTypes' => ['upSleep']],
+            ['id' => 'dnUpSleep', 'command' => 'dnUpSleep', 'label' => 'Sleep data', 'icon' => 'fa-bed', 'kind' => 'data', 'feature' => 'sleep', 'expectedReplyTypes' => ['dnUpSleep']],
             ['id' => 'dnECG', 'command' => 'dnECG', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['upECG']],
             ['id' => 'dnHRV', 'command' => 'dnHRV', 'label' => 'HRV', 'icon' => 'fa-chart-line', 'kind' => 'request', 'feature' => 'hrv', 'expectedReplyTypes' => ['upHRV']],
             ['id' => 'dnPPG', 'command' => 'dnPPG', 'label' => 'PPG', 'icon' => 'fa-circle-nodes', 'kind' => 'request', 'feature' => 'ppg', 'expectedReplyTypes' => ['upPPG']],
             ['id' => 'dnRR', 'command' => 'dnRR', 'label' => 'RR interval', 'icon' => 'fa-stopwatch', 'kind' => 'request', 'feature' => 'rr_interval', 'expectedReplyTypes' => ['upRR']],
-            ['id' => 'dnWeather', 'command' => 'dnWeather', 'label' => 'Weather', 'icon' => 'fa-cloud-sun', 'kind' => 'data', 'feature' => 'weather', 'expectedReplyTypes' => ['upWeather']],
+            ['id' => 'dnWeather', 'command' => 'dnWeather', 'label' => 'Weather', 'icon' => 'fa-cloud-sun', 'kind' => 'data', 'feature' => 'weather', 'expectedReplyTypes' => ['dnWeather']],
         ];
     }
 
@@ -160,7 +160,7 @@ final class DeviceCommandCatalog
         ];
     }
 
-    private static function buildWonlex(string $imei, string $command, array $payload = []): string
+    private static function buildWonlex(string $imei, string $command, array $payload = [], array $context = []): string
     {
         $timestamp = (int)round(microtime(true) * 1000);
         $data = array_replace([
@@ -171,13 +171,25 @@ final class DeviceCommandCatalog
         if (in_array($command, ['dnECG', 'dnHRV', 'dnPPG', 'dnRR'], true)) {
             $data += ['frequency' => '200', 'oneTime' => 300, 'collectionLogo' => (string)random_int(10000000, 99999999)];
         }
+        if ($command === 'dnUpSleep' && (!isset($data['upDayStr']) || !isset($data['value']))) {
+            throw new \InvalidArgumentException('dnUpSleep requires upDayStr and value');
+        }
         if ($command === 'dnWeather') {
-            $data += ['weather' => 'Cloudy', 'weatherType' => 1, 'reporttime' => gmdate('Y-m-d H:i:s')];
+            foreach (['weather', 'weatherType', 'province', 'city', 'adcode', 'temperature', 'winddirection', 'windpower', 'humidity', 'daytemp', 'nighttemp', 'reporttime'] as $required) {
+                if (!array_key_exists($required, $data)) {
+                    throw new \InvalidArgumentException("dnWeather requires {$required}");
+                }
+            }
+        }
+
+        $ident = $context['ident'] ?? random_int(100000, 999999);
+        if (!is_int($ident) && !(is_string($ident) && ctype_digit($ident))) {
+            throw new \InvalidArgumentException('Wonlex ident must be numeric');
         }
 
         return (new WonlexAdapter())->encodeOutgoing([
             'type' => $command,
-            'ident' => random_int(100000, 999999),
+            'ident' => (int)$ident,
             'ref' => 's:down',
             'imei' => $imei,
             'data' => $data,

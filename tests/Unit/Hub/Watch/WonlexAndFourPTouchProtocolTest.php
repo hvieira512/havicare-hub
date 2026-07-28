@@ -28,6 +28,88 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertSame('heartbeat', (new WonlexAdapter())->decodeIncoming($heartbeat->responses[0]->bytes)['type']);
     }
 
+    public function testWonlexLoginUsesActualBindingState(): void
+    {
+        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
+        $unbound = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
+        $bound = new DeviceSession(
+            new WatchFakeConnection(),
+            'tcp',
+            true,
+            '868705080300697',
+            'wonlex-json',
+            'Wonlex',
+            'HW20PRO',
+            '',
+            'watch',
+            '1001',
+            'hitcare'
+        );
+
+        $unboundReply = $protocol->handleIncoming($unbound, $this->wonlexFrame(['type' => 'login', 'ident' => 100001]));
+        $boundReply = $protocol->handleIncoming($bound, $this->wonlexFrame(['type' => 'login', 'ident' => 100002]));
+        $adapter = new WonlexAdapter();
+
+        self::assertSame(0, $adapter->decodeIncoming($unboundReply->responses[0]->bytes)['data']['bindStatus']);
+        self::assertSame(1, $adapter->decodeIncoming($boundReply->responses[0]->bytes)['data']['bindStatus']);
+    }
+
+    public function testWonlexDeviceRequestsReceiveSpecificDownlinksWithSameIdent(): void
+    {
+        $protocol = new WonlexWatchProtocol(
+            new WonlexAdapter(),
+            new DeviceEventDecoder(),
+            static fn(): array => [
+                'bindStatus' => 1,
+                'configurations' => [
+                    ['command' => 'locationInterval', 'payload' => ['intervalTime' => 300]],
+                    ['command' => 'deviceMeasuringFrequency', 'payload' => ['configs' => ['upHeartRate' => ['interval' => '60']]]],
+                    ['command' => 'deviceConfig', 'payload' => ['configs' => ['StepTarget' => ['steps' => 6000]]]],
+                ],
+                'sleep' => [
+                    'segments' => [
+                        ['type' => 'deepSleep', 'durationMinutes' => 48],
+                        ['type' => 'lightSleep', 'durationMinutes' => 152],
+                    ],
+                ],
+                'weather' => [
+                    'weather' => 'Cloudy', 'weatherType' => 1, 'province' => 'Lisbon',
+                    'city' => 'Lisbon', 'adcode' => '110101', 'temperature' => '26',
+                    'winddirection' => 'SW', 'windpower' => '2', 'humidity' => '56',
+                    'daytemp' => '32', 'nighttemp' => '25', 'reporttime' => '2026-07-28 12:00:00',
+                ],
+            ]
+        );
+        $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
+        $adapter = new WonlexAdapter();
+
+        $binding = $protocol->handleIncoming($session, $this->wonlexFrame([
+            'type' => 'upGetDevBindStatus', 'ident' => 123456, 'ref' => 'w:update',
+        ]));
+        self::assertSame('dnDevBindStatus', $adapter->decodeIncoming($binding->responses[0]->bytes)['type']);
+        self::assertSame(123456, $adapter->decodeIncoming($binding->responses[0]->bytes)['ident']);
+
+        $config = $protocol->handleIncoming($session, $this->wonlexFrame([
+            'type' => 'upGetDevConfig', 'ident' => 234567, 'ref' => 'w:update',
+        ]));
+        self::assertSame(
+            ['locationInterval', 'deviceMeasuringFrequency', 'deviceConfig'],
+            array_map(static fn($response): string => $adapter->decodeIncoming($response->bytes)['type'], $config->responses)
+        );
+        self::assertSame(300, $adapter->decodeIncoming($config->responses[0]->bytes)['data']['intervalTime']);
+
+        $sleep = $protocol->handleIncoming($session, $this->wonlexFrame([
+            'type' => 'upSleepFind', 'ident' => 345678, 'ref' => 'w:update', 'data' => ['upDayStr' => '2026-07-27'],
+        ]));
+        self::assertSame('200/48/152/0', $adapter->decodeIncoming($sleep->responses[0]->bytes)['data']['value']);
+
+        $weather = $protocol->handleIncoming($session, $this->wonlexFrame([
+            'type' => 'upWeather', 'ident' => 456789, 'ref' => 'w:update',
+        ]));
+        self::assertSame('dnWeather', $adapter->decodeIncoming($weather->responses[0]->bytes)['type']);
+        self::assertSame('Lisbon', $adapter->decodeIncoming($weather->responses[0]->bytes)['data']['city']);
+    }
+
     public function testFourPTouchProducesProtocolAck(): void
     {
         $protocol = new FourPTouchWatchProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());

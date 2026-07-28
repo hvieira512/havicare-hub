@@ -6,6 +6,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\AlarmClock\AlarmClockCapability;
 use Hub\Domain\Capability\AlarmClock\FourPTouch as FourPTouchAlarmClock;
 use Hub\Domain\Capability\AlarmClock\Vivistar as VivistarAlarmClock;
+use Hub\Domain\Capability\AlarmClock\Wonlex as WonlexAlarmClock;
 use Hub\Domain\Capability\Contacts\CallWhitelistCapability;
 use Hub\Domain\Capability\Contacts\PhonebookCapability;
 use Hub\Domain\Capability\Contacts\SosContactsCapability;
@@ -36,7 +37,7 @@ final class CapabilityRegistry
         $fourPTouch = new FourPTouchAlarmClock();
         $this->register(new AlarmClockCapability([
             'vivistar-iw' => $vivistar,
-            'wonlex-json' => $vivistar,
+            'wonlex-json' => new WonlexAlarmClock(),
             'four-p-touch' => $fourPTouch,
         ]));
 
@@ -84,9 +85,12 @@ final class CapabilityRegistry
         return $this->genericToNative($protocol, $genericKey, $value);
     }
 
-    public function fromNative(string $genericKey, string $nativeKey, array $desired): mixed
+    public function fromNative(string $genericKey, string $nativeKey, array $desired, string $protocol = ''): mixed
     {
         if (isset($this->contracts[$genericKey])) {
+            if ($protocol !== '' && $this->contracts[$genericKey] instanceof AlarmClockCapability) {
+                return $this->contracts[$genericKey]->fromNativeForProtocol($protocol, $nativeKey, $desired);
+            }
             return $this->contracts[$genericKey]->fromNative($nativeKey, $desired);
         }
 
@@ -190,6 +194,11 @@ final class CapabilityRegistry
     private function wonlexGenericToNative(string $genericKey, mixed $value): array
     {
         return match ($genericKey) {
+            'reset_device' => ['resetCommand' => []],
+            'restart_device' => ['restartCommand' => []],
+            'power_off' => ['powerOffCommand' => []],
+            'find_device' => ['findDeviceCommand' => []],
+            'weather_data' => ['weatherData' => self::requireObjectValue($value, 'weatherData')],
             default => [$this->resolveWonlexNativeKey($genericKey) => self::requireObjectValue($value, $genericKey)],
         };
     }

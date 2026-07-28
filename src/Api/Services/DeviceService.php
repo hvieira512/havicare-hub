@@ -362,6 +362,7 @@ class DeviceService
                 'label' => (string)($entry['label'] ?? $nativeKey),
                 'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
                 'retryable' => false,
+                'bytes' => $bytes,
                 'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             ];
             if ($status === 'sent') {
@@ -1018,7 +1019,7 @@ class DeviceService
                 continue;
             }
 
-            $normalized = $this->normalizeCapabilityValue($genericKey, $nativeKey, $payload);
+            $normalized = $this->normalizeCapabilityValue($protocol, $genericKey, $nativeKey, $payload);
             if ($normalized === null) {
                 continue;
             }
@@ -1180,7 +1181,7 @@ class DeviceService
 
         $value = $this->capabilityRegistry->has($genericKey)
             ? $desired
-            : $this->normalizeCapabilityValue($genericKey, $nativeKey, $desired);
+            : $this->normalizeCapabilityValue($protocol, $genericKey, $nativeKey, $desired);
         $meta = $this->defaultCapabilityMetaForEntry($genericKey, $protocol, $entry);
 
         if ($this->capabilityRegistry->has($genericKey)) {
@@ -1426,9 +1427,14 @@ class DeviceService
         return 'diverged';
     }
 
-    private function normalizeCapabilityValue(string $genericKey, string $nativeKey, array $desired): mixed
+    private function normalizeCapabilityValue(
+        string $protocol,
+        string $genericKey,
+        string $nativeKey,
+        array $desired
+    ): mixed
     {
-        return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired);
+        return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired, $protocol);
     }
 
     private function publicConfigurationValueForGenericKey(string $protocol, string $genericKey, mixed $value): mixed
@@ -1467,17 +1473,20 @@ class DeviceService
      */
     private function stringifyCallWhitelistValue(string $protocol, array $value): mixed
     {
-        if ($protocol === 'vivistar-iw') {
+        if (in_array($protocol, ['vivistar-iw', 'wonlex-json'], true)) {
+            $normalize = static fn(mixed $contact): ?array => $protocol === 'wonlex-json'
+                ? self::normalizePublicWonlexContactItem($contact)
+                : self::normalizePublicContactItem($contact);
             if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
                 return array_values(array_filter(array_map(
-                    static fn(mixed $contact): ?array => self::normalizePublicContactItem($contact),
+                    $normalize,
                     $value['contacts']
                 )));
             }
 
             if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
                 return array_values(array_filter(array_map(
-                    static fn(mixed $phone): ?array => self::normalizePublicContactItem(['phone' => $phone]),
+                    static fn(mixed $phone): ?array => $normalize(['phone' => $phone]),
                     $value['numbers']
                 )));
             }
@@ -1485,13 +1494,13 @@ class DeviceService
             if (array_is_list($value)) {
                 if ($value !== [] && is_array($value[0] ?? null)) {
                     return array_values(array_filter(array_map(
-                        static fn(mixed $contact): ?array => self::normalizePublicContactItem($contact),
+                        $normalize,
                         $value
                     )));
                 }
 
                 return array_values(array_filter(array_map(
-                    static fn(mixed $phone): ?array => self::normalizePublicContactItem(['phone' => $phone]),
+                    static fn(mixed $phone): ?array => $normalize(['phone' => $phone]),
                     $value
                 )));
             }
@@ -1553,6 +1562,25 @@ class DeviceService
         }
 
         return ['name' => $name, 'phone' => $phone];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private static function normalizePublicWonlexContactItem(mixed $item): ?array
+    {
+        $contact = self::normalizePublicContactItem($item);
+        if ($contact === null || !is_array($item)) {
+            return $contact;
+        }
+
+        return array_filter([
+            'familyNumberId' => trim((string)($item['familyNumberId'] ?? '')),
+            'name' => $contact['name'],
+            'phone' => $contact['phone'],
+            'sosSwitch' => isset($item['sosSwitch']) ? (bool)$item['sosSwitch'] : false,
+            'areaCode' => trim((string)($item['areaCode'] ?? '')),
+        ], static fn(mixed $field, string $key): bool => $key === 'sosSwitch' || $field !== '', ARRAY_FILTER_USE_BOTH);
     }
 
     /**

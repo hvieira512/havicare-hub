@@ -36,11 +36,15 @@ class DeviceHubServer
         $this->connections = $connections ?? new ConnectionRegistry();
         $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist, $commercialModelResolver);
         $this->mqtt = $mqtt;
+        $this->dashboardStore = $dashboardStore;
         $adapters = new AdapterRegistry();
         $this->identityExtractor = $identityExtractor ?? new DeviceIdentityExtractor($adapters);
-        $this->watchProtocols = new WatchProtocolRegistry($adapters, $eventDecoder ?? new DeviceEventDecoder());
+        $this->watchProtocols = new WatchProtocolRegistry(
+            $adapters,
+            $eventDecoder ?? new DeviceEventDecoder(),
+            fn (DeviceSession $session): array => $this->wonlexState($session)
+        );
         $this->downlinkQueue = $downlinkQueue;
-        $this->dashboardStore = $dashboardStore;
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
     }
 
@@ -309,7 +313,12 @@ class DeviceHubServer
             return;
         }
 
-        $this->dashboardStore?->markCommandReply($session->imei, (string)($message->decoded['type'] ?? ''));
+        $this->dashboardStore?->markCommandReply(
+            $session->imei,
+            (string)($message->decoded['type'] ?? ''),
+            $message->decoded['ident'] ?? null,
+            (string)($message->decoded['ref'] ?? '')
+        );
 
         foreach ($message->telemetry as $event) {
             try {
@@ -502,6 +511,35 @@ class DeviceHubServer
         $metadata = $this->authorizer->metadataFor($imei);
         $commercialName = (string)($metadata['commercialName'] ?? '');
         return $commercialName !== '' ? $commercialName : $fallback;
+    }
+
+    private function wonlexState(DeviceSession $session): array
+    {
+        $configurations = $this->dashboardStore?->desiredConfigurations($session->imei) ?? [];
+        $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
+        $company = $this->currentCompany($session->imei, $session->company);
+        $state = [
+            'bindStatus' => $licenseId !== '0' && strtolower($company) !== 'null' ? 1 : 0,
+            'configurations' => $configurations,
+        ];
+        foreach ($configurations as $configuration) {
+            if (($configuration['command'] ?? '') === 'dnWeather' && is_array($configuration['payload'] ?? null)) {
+                $state['weather'] = $configuration['payload'];
+                break;
+            }
+        }
+
+        foreach ($this->dashboardStore?->recent($session->imei, 'telemetry') ?? [] as $event) {
+            $type = (string)($event['type'] ?? '');
+            if ($type === 'sleep' && !isset($state['sleep']) && is_array($event['data'] ?? null)) {
+                $state['sleep'] = $event['data'];
+            }
+            if ($type === 'weather' && !isset($state['weather']) && is_array($event['data'] ?? null)) {
+                $state['weather'] = $event['data'];
+            }
+        }
+
+        return $state;
     }
 
     private function commandMetadata(string $bytes, ?string $protocol = null): ?array

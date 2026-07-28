@@ -229,6 +229,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('alarm_clock', GenericModelCapabilityCatalog::mapConfigurationKey('alarm_clock'));
 
         self::assertSame('call_whitelist', GenericModelCapabilityCatalog::mapConfigurationKey('call_whitelist'));
+        self::assertSame('sos_contacts', GenericModelCapabilityCatalog::mapConfigurationKey('SOSNumber'));
         self::assertSame('whitelist_enabled', GenericModelCapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
 
         $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'call_whitelist');
@@ -242,6 +243,9 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $fourPTouch = DeviceConfigurationCatalog::configForProtocol('four-p-touch', 'alarmClock');
         self::assertIsArray($fourPTouch);
         self::assertSame('alarmClock', $fourPTouch['key'] ?? null);
+
+        $wonlexAlarm = DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'alarmClock');
+        self::assertSame(10, $wonlexAlarm['limit'] ?? null);
     }
 
     public function testWonlexLocationIntervalBuildsJsonPayload(): void
@@ -268,6 +272,31 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['configs' => ['upRR' => ['interval' => '15']]], $rr['payload']);
     }
 
+    public function testWonlexConfigurationReplyMetadataUsesSameTypeAcknowledgements(): void
+    {
+        foreach (DeviceConfigurationCatalog::configsForProtocol('wonlex-json') as $entry) {
+            $command = (string)($entry['command'] ?? '');
+            self::assertSame(
+                [$command],
+                $entry['expectedReplyTypes'] ?? [],
+                (string)($entry['key'] ?? $command)
+            );
+        }
+    }
+
+    public function testWonlexComplexDashboardConfigurationsUseStructuredEditors(): void
+    {
+        $medication = DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'dnMedicationPlan');
+        $weather = DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'weatherData');
+
+        self::assertIsArray($medication);
+        self::assertIsArray($weather);
+        self::assertSame('wonlexMedicationPlans', $medication['input'] ?? null);
+        self::assertSame('wonlexWeather', $weather['input'] ?? null);
+        self::assertStringNotContainsString('JSON', (string)($medication['label'] ?? ''));
+        self::assertStringNotContainsString('JSON', (string)($weather['label'] ?? ''));
+    }
+
     public function testWonlexStructuredDeviceConfigBuildsNestedPayloads(): void
     {
         $toggle = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGBPTrend', ['switchState' => true]);
@@ -277,6 +306,81 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $steps = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexStepTarget', ['steps' => 7500]);
         self::assertSame('deviceConfig', $steps['command']);
         self::assertSame(['configs' => ['StepTarget' => ['steps' => 7500]]], $steps['payload']);
+    }
+
+    public function testWonlexAdultHealthPayloadsUseDocumentedWireKeys(): void
+    {
+        $binding = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'dnDevBindStatus', ['enabled' => true]);
+        self::assertSame(['status' => 1], $binding['payload']);
+
+        $alarm = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
+            'items' => [['label' => 'Medicine', 'time' => '08:00', 'week' => '1111100', 'enabled' => true]],
+        ]);
+        self::assertArrayHasKey('alarmClockList', $alarm['payload']);
+        self::assertSame('08:00', $alarm['payload']['alarmClockList'][0]['startTime']);
+
+        $dailyAlarm = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
+            'items' => [[
+                'label' => 'Daily medicine',
+                'time' => '20:00',
+                'enabled' => true,
+                'recurrence' => ['kind' => 'daily'],
+            ]],
+        ]);
+        self::assertSame('1111111', $dailyAlarm['payload']['alarmClockList'][0]['week']);
+
+        $family = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'familyNumber', [
+            'contacts' => [['name' => 'Care', 'phone' => '+351210000000', 'areaCode' => '351']],
+        ]);
+        self::assertSame('+351210000000', $family['payload']['familyNumbers'][0]['phone']);
+
+        $sos = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'SOSNumber', [
+            'numbers' => ['+351210000000'],
+        ]);
+        self::assertArrayHasKey('sosNumbers', $sos['payload']);
+        self::assertSame('+351210000000', $sos['payload']['sosNumbers'][0]['phone']);
+
+        $medication = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'dnMedicationPlan', [
+            'plans' => [[
+                'drugType' => 0,
+                'drugName' => 'Medicine',
+                'drugDose' => 1.5,
+                'drugUnit' => '0',
+                'drugStartTime' => '2026-07-28',
+                'drugEndTime' => '2026-08-28',
+                'drugInterval' => 1,
+                'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
+            ]],
+        ]);
+        self::assertArrayNotHasKey('plans', $medication['payload']);
+        self::assertSame('Medicine', $medication['payload']['drugName']);
+        self::assertSame(1.5, $medication['payload']['drugDose']);
+    }
+
+    public function testWonlexMedicationPlansExpandToOneWireCommandPerPlan(): void
+    {
+        $base = [
+            'drugType' => 0,
+            'drugDose' => 1,
+            'drugUnit' => '0',
+            'drugStartTime' => '2026-07-28',
+            'drugEndTime' => '2026-08-28',
+            'drugInterval' => 1,
+            'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
+        ];
+
+        $commands = DeviceConfigurationCatalog::commandPayloads('wonlex-json', 'dnMedicationPlan', [
+            'plans' => [
+                $base + ['drugName' => 'Morning medicine'],
+                $base + ['drugName' => 'Evening medicine'],
+            ],
+        ]);
+
+        self::assertCount(2, $commands);
+        self::assertSame(['dnMedicationPlan', 'dnMedicationPlan'], array_column($commands, 'command'));
+        self::assertSame('Morning medicine', $commands[0]['payload']['drugName']);
+        self::assertSame('Evening medicine', $commands[1]['payload']['drugName']);
+        self::assertArrayNotHasKey('plans', $commands[0]['payload']);
     }
 
     public function testWonlexSleepAndThresholdConfigsBuildStructuredPayloads(): void

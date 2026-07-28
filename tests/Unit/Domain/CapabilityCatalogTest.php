@@ -11,7 +11,7 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [69, '5dd05d5c3f2c4ce2297cb4d01ba66ebe4f190ed4214eb8ac1044b6cbfc0efdf9'],
+            'watch' => [75, '2eeb995af41ce25cc61bc30db5161792aa1ffdea422ec0cd52dbd8c54174ffea'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
         ];
@@ -47,6 +47,21 @@ final class CapabilityCatalogTest extends TestCase
                 self::assertIsBool($definition['isRequestable']);
             }
         }
+    }
+
+    public function testWonlexControlsAreRequestableActionsAndWeatherIsPersistentConfiguration(): void
+    {
+        $definitions = [];
+        foreach (CapabilityCatalog::definitionsForDeviceType('watch') as $definition) {
+            $definitions[$definition['key']] = $definition;
+        }
+
+        foreach (['reset_device', 'restart_device', 'power_off', 'find_device'] as $key) {
+            self::assertFalse($definitions[$key]['isConfigurable']);
+            self::assertTrue($definitions[$key]['isRequestable']);
+        }
+        self::assertTrue($definitions['weather_data']['isConfigurable']);
+        self::assertFalse($definitions['weather_data']['isRequestable']);
     }
 
     public function testFourPTouchAliasesAreResolvedByTheDedicatedHelper(): void

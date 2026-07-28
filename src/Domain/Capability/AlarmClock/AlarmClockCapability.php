@@ -83,6 +83,16 @@ final class AlarmClockCapability implements CapabilityContract
         return [];
     }
 
+    public function fromNativeForProtocol(string $protocol, string $nativeKey, array $desired): mixed
+    {
+        $handler = $this->handlers[$protocol] ?? null;
+        if ($handler !== null && $handler->nativeKey() === $nativeKey) {
+            return $handler->fromNative($desired);
+        }
+
+        return $this->fromNative($nativeKey, $desired);
+    }
+
     public function defaultValue(string $protocol): mixed
     {
         return $this->handlers[$protocol]?->defaultValue() ?? [];
@@ -136,7 +146,7 @@ final class AlarmClockCapability implements CapabilityContract
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         return [
-            'value' => $this->fromNative($nativeKey, is_array($value) ? $value : []),
+            'value' => $this->fromNativeForProtocol($protocol, $nativeKey, is_array($value) ? $value : []),
             '_meta' => $this->meta($protocol, $meta),
         ];
     }

@@ -129,12 +129,9 @@ final class DeviceConfigurationUpdateService
                 $currentByKey[$normalizedNativeKey] = [
                     'desired_payload' => $nativePayload,
                 ] + ($currentByKey[$normalizedNativeKey] ?? []);
-                $operations[] = [
-                    'nativeKey' => $nativeKey,
-                    'command' => $result['command'],
-                    'deliveryStatus' => $result['status'],
-                    'lastCommandId' => $result['id'],
-                ];
+                foreach ($result['operations'] as $operation) {
+                    $operations[] = ['nativeKey' => $nativeKey] + $operation;
+                }
             }
 
             if ($operations !== []) {
@@ -178,51 +175,65 @@ final class DeviceConfigurationUpdateService
             return ['error' => ['code' => 'invalid_config', 'message' => $error]];
         }
 
-        $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
-        $command = $commandPayload['command'];
-        $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
-            'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
-        ]);
-        $id = bin2hex(random_bytes(8));
-        $status = $this->hub->submitDownlink($imei, $bytes);
-        $record = [
-            'status' => $status === 'sent' ? 'waiting' : $status,
-            'imei' => $imei,
-            'protocol' => $protocol,
-            'nativeType' => $command,
-            'label' => (string)($entry['label'] ?? $nativeKey),
-            'configKey' => $nativeKey,
-            'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
-            'retryable' => true,
-            'bytes' => $bytes,
-            'attempts' => 1,
-            'maxAttempts' => 3,
-            'retryDelaySeconds' => 60,
-            'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 60),
-            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-        ];
-        if ($status === 'sent') {
-            $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-        }
-        if ($status === 'dropped') {
-            $record['error'] = 'delivery_failed';
+        $operations = [];
+        $lastId = '';
+        $lastStatus = 'dropped';
+        $lastCommand = '';
+        foreach (DeviceConfigurationCatalog::commandPayloads($protocol, $nativeKey, $payload) as $commandPayload) {
+            $command = $commandPayload['command'];
+            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
+                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+            ]);
+            $id = bin2hex(random_bytes(8));
+            $status = $this->hub->submitDownlink($imei, $bytes);
+            $record = [
+                'status' => $status === 'sent' ? 'waiting' : $status,
+                'imei' => $imei,
+                'protocol' => $protocol,
+                'nativeType' => $command,
+                'label' => (string)($entry['label'] ?? $nativeKey),
+                'configKey' => $nativeKey,
+                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                'retryable' => true,
+                'bytes' => $bytes,
+                'attempts' => 1,
+                'maxAttempts' => 3,
+                'retryDelaySeconds' => 60,
+                'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 60),
+                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            ];
+            if ($status === 'sent') {
+                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
+            }
+            if ($status === 'dropped') {
+                $record['error'] = 'delivery_failed';
+            }
+
+            $this->store->recordCommand($imei, $id, $record);
+            $lastId = $id;
+            $lastStatus = (string)$record['status'];
+            $lastCommand = $command;
+            $operations[] = [
+                'command' => $command,
+                'deliveryStatus' => $record['status'],
+                'lastCommandId' => $id,
+            ];
         }
 
-        $this->store->recordCommand($imei, $id, $record);
         $this->db->deviceConfigurations->saveDesired(
             $imei,
             $nativeKey,
             $protocol,
             $supplier,
             $model,
-            $command,
+            $lastCommand,
             $payload,
-            (string)$record['status'],
-            $id
+            $lastStatus,
+            $lastId
         );
 
-        return ['status' => $record['status'], 'command' => $command, 'id' => $id];
+        return ['operations' => $operations];
     }
 
     /**

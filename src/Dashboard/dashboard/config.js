@@ -66,6 +66,8 @@ const CONFIG_INPUT_RENDERERS = {
     alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
     alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
     takePills: (_entry, desired, meta) => takePillsInput(desired, meta),
+    wonlexMedicationPlans: (_entry, desired) => wonlexMedicationPlansInput(desired),
+    wonlexWeather: (_entry, desired) => wonlexWeatherInput(desired),
     soundProfile: (_entry, desired) => soundProfileInput(desired),
 };
 
@@ -185,6 +187,8 @@ const CONFIG_INPUT_READERS = {
     alarm_clock: (section) => readAlarmClock(section),
     alarms: (section) => ({alarms: readFourPTouchAlarms(section)}),
     takePills: (section) => readTakePills(section),
+    wonlexMedicationPlans: (section) => readWonlexMedicationPlans(section),
+    wonlexWeather: (section) => readWonlexWeather(section),
     soundProfile: (section) => ({mode: readNumber(section, "mode")}),
 };
 
@@ -239,6 +243,8 @@ const CONFIG_INPUT_DEFAULTS = {
         voiceData: "",
         voiceMimeType: "audio/webm",
     }),
+    wonlexMedicationPlans: () => ({plans: [defaultWonlexMedicationPlan()]}),
+    wonlexWeather: () => defaultWonlexWeather(),
     soundProfile: () => ({mode: 1}),
 };
 
@@ -252,6 +258,8 @@ const CONFIG_INPUT_HELP = {
     whitelist_enabled: () => "ativa ou desativa a lista branca",
     sos_contacts: () => "",
     call_whitelist: () => "",
+    wonlexMedicationPlans: () => "Formulário guiado para medicamento, dose, período e horários.",
+    wonlexWeather: () => "Condições meteorológicas apresentadas no relógio.",
 };
 
 const CONFIG_INPUT_LABEL = {
@@ -261,6 +269,8 @@ const CONFIG_INPUT_LABEL = {
     sos_contacts: "Contactos SOS",
     call_whitelist: "Lista branca",
     whitelist_enabled: "Lista branca ativa",
+    wonlexMedicationPlans: "Plano de medicação",
+    wonlexWeather: "Dados meteorológicos",
 };
 
 export async function catalogForProtocol(protocol) {
@@ -312,6 +322,14 @@ export function groupedCatalog(catalog) {
 }
 
 function normalizedCatalogForProtocol(protocol, catalog) {
+    if (protocol === "wonlex-json") {
+        catalog = catalog.filter(
+            (entry) => !["deviceMeasuringFrequency", "deviceConfig"].includes(
+                String(entry.key || ""),
+            ),
+        );
+    }
+
     const groupedCapabilities = protocolGroupedCapabilities(protocol);
     if (Object.keys(groupedCapabilities).length === 0) {
         return catalog.map((entry) => normalizeConfigEntry(entry));
@@ -407,7 +425,7 @@ export function renderDeviceConfigurationRoot(context) {
                     <div class="fw-semibold">Configurações do dispositivo</div>
                     <div class="small text-secondary">${supplier || model ? `${esc(supplier)} ${esc(model)}` : ""}</div>
                 </div>
-                <span class="badge text-bg-secondary">${catalog.length} opções</span>
+                <span class="badge text-bg-secondary">${normalizedCatalog.length} opções</span>
             </div>
             <div class="nav nav-tabs nav-fill flex-wrap gap-1" role="tablist">
                 ${groups
@@ -1093,11 +1111,17 @@ function fallSensitivityInput(desired) {
 
 function numberInput(entry, desired) {
     const field = entry.fields?.[0] || "value";
-    const value = desired[field] ?? 0;
+    const isWonlexMeasurementInterval =
+        entry.command === "deviceMeasuringFrequency" && field === "interval";
+    const configuredValue = desired[field] ?? 0;
+    const value = isWonlexMeasurementInterval && numericValue(configuredValue, 0) <= 0
+        ? 60
+        : configuredValue;
     return `
         <div>
             <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
-            <input class="form-control" type="number" min="0" step="1" data-config-field="${esc(field)}" value="${esc(String(value))}">
+            <input class="form-control" type="number" min="${isWonlexMeasurementInterval ? "1" : "0"}" step="1" data-config-field="${esc(field)}" value="${esc(String(value))}">
+            ${isWonlexMeasurementInterval ? '<div class="form-text">Periodicidade de envio desta medição, em minutos.</div>' : ""}
         </div>`;
 }
 
@@ -1800,6 +1824,433 @@ function takePillsInput(desired, meta = {}) {
                 </fieldset>
             </div>
         </div>`;
+}
+
+const WONLEX_MEDICATION_PERIODS = [
+    {index: 0, key: "Morning", label: "Manhã", defaultTime: "08:00"},
+    {index: 1, key: "Midday", label: "Meio-dia", defaultTime: "12:00"},
+    {index: 2, key: "Night", label: "Noite", defaultTime: "19:00"},
+    {index: 3, key: "Before sleep", label: "Antes de dormir", defaultTime: "22:00"},
+];
+
+function wonlexMedicationPlansInput(desired) {
+    const plans = normalizeWonlexMedicationPlans(desired);
+    if (plans.length === 0) {
+        plans.push(defaultWonlexMedicationPlan());
+    }
+
+    return `
+        <div class="vstack gap-3">
+            <div class="small text-secondary">
+                Cada plano é enviado separadamente ao relógio. Selecione pelo menos um período e indique a respetiva hora.
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addWonlexMedicationPlan">
+                    <i class="fa-solid fa-plus me-2"></i>Adicionar medicamento
+                </button>
+            </div>
+            <div class="vstack gap-3" data-wonlex-medication-list>
+                ${plans.map((plan, index) => wonlexMedicationPlanRow(plan, index)).join("")}
+            </div>
+        </div>`;
+}
+
+export function wonlexMedicationPlanRow(plan = {}, index = 0) {
+    const normalized = normalizeWonlexMedicationPlan(plan);
+    const rowId = nextUid("wonlex-medication");
+
+    return `
+        <div class="border rounded p-3 bg-body" data-repeat-row="wonlexMedicationPlan">
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                <div class="fw-semibold">Medicamento <span data-medication-plan-number>${index + 1}</span></div>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeWonlexMedicationPlan" title="Remover medicamento" aria-label="Remover medicamento">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Tipo</label>
+                    <select class="form-select" data-medication-field="drugType">
+                        ${[
+                            [0, "Hipertensão"],
+                            [1, "Diabetes"],
+                            [2, "Colesterol / lípidos"],
+                            [3, "Ácido úrico elevado"],
+                        ].map(([value, label]) => `
+                            <option value="${value}" ${normalized.drugType === value ? "selected" : ""}>${esc(label)}</option>
+                        `).join("")}
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label form-label-sm">Nome do medicamento</label>
+                    <input class="form-control" type="text" data-medication-field="drugName" value="${esc(normalized.drugName)}" placeholder="Ex.: Losartan" required>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label form-label-sm">Dose</label>
+                    <input class="form-control" type="number" min="0" step="0.1" data-medication-field="drugDose" value="${esc(String(normalized.drugDose))}">
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label form-label-sm">Unidade</label>
+                    <select class="form-select" data-medication-field="drugUnit">
+                        ${[
+                            ["0", "Comprimido / unidade"],
+                            ["1", "Ampola"],
+                            ["2", "ml"],
+                            ["3", "mg"],
+                            ["4", "UI"],
+                            ["5", "Outra"],
+                        ].map(([value, label]) => `
+                            <option value="${value}" ${normalized.drugUnit === value ? "selected" : ""}>${esc(label)}</option>
+                        `).join("")}
+                    </select>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label form-label-sm">Data inicial</label>
+                    <input class="form-control" type="date" data-medication-field="drugStartTime" value="${esc(normalized.drugStartTime)}" required>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <label class="form-label form-label-sm">Data final</label>
+                    <input class="form-control" type="date" data-medication-field="drugEndTime" value="${esc(normalized.drugEndTime)}" required>
+                </div>
+                <div class="col-sm-6 col-md-4">
+                    <label class="form-label form-label-sm">Intervalo</label>
+                    <div class="input-group">
+                        <input class="form-control" type="number" min="0" step="0.5" data-medication-field="drugInterval" value="${esc(String(normalized.drugInterval))}" required>
+                        <span class="input-group-text">dias</span>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-8">
+                    <label class="form-label form-label-sm d-block">Tomar</label>
+                    <div class="btn-group" role="group" aria-label="Relação com a refeição">
+                        ${[
+                            [0, "Antes da refeição"],
+                            [1, "Depois da refeição"],
+                        ].map(([value, label]) => {
+                            const id = `${rowId}-meal-${value}`;
+                            return `
+                                <input class="btn-check" type="radio" name="${rowId}-meal" id="${id}" value="${value}" data-medication-field="mealTiming" ${normalized.mealTiming === value ? "checked" : ""}>
+                                <label class="btn btn-outline-secondary" for="${id}">${esc(label)}</label>
+                            `;
+                        }).join("")}
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <label class="form-label form-label-sm">Períodos e horários</label>
+                <div class="row g-2">
+                    ${WONLEX_MEDICATION_PERIODS.map((period) => {
+                        const selected = normalized.periods.includes(period.index);
+                        const inputId = `${rowId}-period-${period.index}`;
+                        return `
+                            <div class="col-sm-6 col-xl-3">
+                                <div class="border rounded p-2 h-100">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="${inputId}" value="${period.index}" data-medication-period ${selected ? "checked" : ""}>
+                                        <label class="form-check-label" for="${inputId}">${esc(period.label)}</label>
+                                    </div>
+                                    <input class="form-control form-control-sm" type="time" data-medication-period-time="${period.index}" value="${esc(normalized.alarmClock[period.key] || period.defaultTime)}" ${selected ? "" : "disabled"}>
+                                </div>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            </div>
+        </div>`;
+}
+
+function normalizeWonlexMedicationPlans(desired) {
+    const source = desired?.plans ?? desired?.plan ?? desired;
+    if (Array.isArray(source)) {
+        return source
+            .filter((plan) => plan && typeof plan === "object")
+            .map((plan) => normalizeWonlexMedicationPlan(plan));
+    }
+    return source && typeof source === "object" && Object.keys(source).length > 0
+        ? [normalizeWonlexMedicationPlan(source)]
+        : [];
+}
+
+function normalizeWonlexMedicationPlan(plan = {}) {
+    const drugTime = plan.drugTime && typeof plan.drugTime === "object"
+        ? plan.drugTime
+        : {};
+    const alarmClock = drugTime.alarmClock && typeof drugTime.alarmClock === "object"
+        ? drugTime.alarmClock
+        : {};
+    let periods = Array.isArray(drugTime.checkboxes)
+        ? drugTime.checkboxes
+            .map((value) => parseInt(String(value), 10))
+            .filter((value) => Number.isFinite(value) && value >= 0 && value <= 3)
+        : [];
+    if (periods.length === 0) {
+        periods = WONLEX_MEDICATION_PERIODS
+            .filter((period) => String(alarmClock[period.key] || "").trim() !== "")
+            .map((period) => period.index);
+    }
+
+    return {
+        drugType: parseInt(String(plan.drugType ?? 0), 10) || 0,
+        drugName: String(plan.drugName || ""),
+        drugDose: numericValue(plan.drugDose, 0),
+        drugUnit: String(plan.drugUnit ?? "0"),
+        drugStartTime: String(plan.drugStartTime || ""),
+        drugEndTime: String(plan.drugEndTime || ""),
+        drugInterval: numericValue(plan.drugInterval, 1),
+        alarmClock,
+        periods: periods.length > 0 ? periods : [0],
+        mealTiming: parseInt(String(drugTime.radio ?? 0), 10) === 1 ? 1 : 0,
+    };
+}
+
+function defaultWonlexMedicationPlan() {
+    return normalizeWonlexMedicationPlan({
+        drugType: 0,
+        drugName: "",
+        drugDose: 1,
+        drugUnit: "0",
+        drugStartTime: "",
+        drugEndTime: "",
+        drugInterval: 1,
+        drugTime: {
+            alarmClock: {Morning: "08:00"},
+            checkboxes: [0],
+            radio: 0,
+        },
+    });
+}
+
+function readWonlexMedicationPlans(section) {
+    const plans = Array.from(
+        section.querySelectorAll('[data-repeat-row="wonlexMedicationPlan"]'),
+    ).map((row, index) => {
+        const value = (field) => String(
+            row.querySelector(`[data-medication-field="${field}"]`)?.value || "",
+        ).trim();
+        const drugName = value("drugName");
+        const start = value("drugStartTime");
+        const end = value("drugEndTime");
+        if (drugName === "") {
+            throw new Error(`Medicamento ${index + 1}: indique o nome`);
+        }
+        if (start === "" || end === "") {
+            throw new Error(`Medicamento ${index + 1}: indique as datas inicial e final`);
+        }
+        if (end < start) {
+            throw new Error(`Medicamento ${index + 1}: a data final não pode ser anterior à inicial`);
+        }
+
+        const selected = Array.from(
+            row.querySelectorAll("[data-medication-period]:checked"),
+        ).map((input) => parseInt(String(input.value), 10));
+        if (selected.length === 0) {
+            throw new Error(`Medicamento ${index + 1}: selecione pelo menos um período`);
+        }
+
+        const alarmClock = {};
+        for (const periodIndex of selected) {
+            const period = WONLEX_MEDICATION_PERIODS.find(
+                (candidate) => candidate.index === periodIndex,
+            );
+            const time = String(
+                row.querySelector(`[data-medication-period-time="${periodIndex}"]`)?.value || "",
+            ).trim();
+            if (!period || time === "") {
+                throw new Error(`Medicamento ${index + 1}: indique a hora de cada período selecionado`);
+            }
+            alarmClock[period.key] = time;
+        }
+
+        const dose = numericValue(value("drugDose"), 0);
+        const interval = numericValue(value("drugInterval"), -1);
+        if (dose < 0 || interval < 0) {
+            throw new Error(`Medicamento ${index + 1}: dose e intervalo não podem ser negativos`);
+        }
+
+        return {
+            drugType: parseInt(value("drugType"), 10) || 0,
+            drugName,
+            drugDose: dose,
+            drugUnit: value("drugUnit") || "5",
+            drugStartTime: start,
+            drugEndTime: end,
+            drugInterval: interval,
+            drugTime: {
+                alarmClock,
+                checkboxes: selected,
+                radio: parseInt(String(
+                    row.querySelector('[data-medication-field="mealTiming"]:checked')?.value || "0",
+                ), 10) === 1 ? 1 : 0,
+            },
+        };
+    });
+
+    if (plans.length === 0) {
+        throw new Error("Adicione pelo menos um medicamento");
+    }
+
+    return {plans};
+}
+
+function wonlexWeatherInput(desired) {
+    const weather = normalizeWonlexWeather(desired);
+    return `
+        <div class="vstack gap-3">
+            <div class="small text-secondary">Os dados são enviados para o mostrador meteorológico do relógio.</div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Condição</label>
+                    <input class="form-control" type="text" data-weather-field="weather" value="${esc(weather.weather)}" placeholder="Ex.: Nublado" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Tipo de tempo</label>
+                    <select class="form-select" data-weather-field="weatherType">
+                        ${[
+                            [0, "Sol"],
+                            [1, "Nublado"],
+                            [2, "Vento"],
+                            [3, "Chuva"],
+                            [4, "Neve"],
+                            [5, "Muitas nuvens"],
+                            [6, "Nevoeiro"],
+                            [7, "Outro"],
+                        ].map(([value, label]) => `
+                            <option value="${value}" ${weather.weatherType === value ? "selected" : ""}>${esc(label)}</option>
+                        `).join("")}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Data da previsão</label>
+                    <input class="form-control" type="datetime-local" step="1" data-weather-field="reporttime" value="${esc(weatherDateTimeLocal(weather.reporttime))}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Distrito / província</label>
+                    <input class="form-control" type="text" data-weather-field="province" value="${esc(weather.province)}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Cidade</label>
+                    <input class="form-control" type="text" data-weather-field="city" value="${esc(weather.city)}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Código da região</label>
+                    <input class="form-control" type="text" data-weather-field="adcode" value="${esc(weather.adcode)}" placeholder="Ex.: 1106" required>
+                </div>
+                ${[
+                    ["temperature", "Temperatura atual", "°C"],
+                    ["daytemp", "Máxima diurna", "°C"],
+                    ["nighttemp", "Mínima noturna", "°C"],
+                    ["humidity", "Humidade", "%"],
+                ].map(([field, label, suffix]) => `
+                    <div class="col-sm-6 col-md-3">
+                        <label class="form-label form-label-sm">${esc(label)}</label>
+                        <div class="input-group">
+                            <input class="form-control" type="number" step="0.1" data-weather-field="${field}" value="${esc(weather[field])}" required>
+                            <span class="input-group-text">${esc(suffix)}</span>
+                        </div>
+                    </div>
+                `).join("")}
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Direção do vento</label>
+                    <input class="form-control" type="text" data-weather-field="winddirection" value="${esc(weather.winddirection)}" placeholder="Ex.: Noroeste" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label form-label-sm">Força do vento</label>
+                    <input class="form-control" type="text" data-weather-field="windpower" value="${esc(weather.windpower)}" placeholder="Ex.: 3" required>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch" data-weather-field="iIsCDMA" ${weather.iIsCDMA === "1" ? "checked" : ""}>
+                        <label class="form-check-label" data-switch-label data-switch-on="Rede CDMA" data-switch-off="Rede não CDMA">${weather.iIsCDMA === "1" ? "Rede CDMA" : "Rede não CDMA"}</label>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
+function normalizeWonlexWeather(desired) {
+    const source = desired?.weather && typeof desired.weather === "object"
+        ? desired.weather
+        : desired || {};
+    const fallback = defaultWonlexWeather();
+    return {
+        ...fallback,
+        ...Object.fromEntries(
+            Object.entries(source).map(([key, value]) => [key, String(value ?? "")]),
+        ),
+        weatherType: parseInt(String(source.weatherType ?? fallback.weatherType), 10) || 0,
+        iIsCDMA: String(source.iIsCDMA ?? fallback.iIsCDMA) === "1" ? "1" : "0",
+    };
+}
+
+function defaultWonlexWeather() {
+    return {
+        iIsCDMA: "0",
+        weather: "",
+        weatherType: 0,
+        province: "",
+        city: "",
+        adcode: "",
+        temperature: "",
+        winddirection: "",
+        windpower: "",
+        humidity: "",
+        daytemp: "",
+        nighttemp: "",
+        reporttime: "",
+    };
+}
+
+function readWonlexWeather(section) {
+    const value = (field) => String(
+        section.querySelector(`[data-weather-field="${field}"]`)?.value || "",
+    ).trim();
+    const required = [
+        ["weather", "condição"],
+        ["province", "distrito / província"],
+        ["city", "cidade"],
+        ["adcode", "código da região"],
+        ["temperature", "temperatura atual"],
+        ["winddirection", "direção do vento"],
+        ["windpower", "força do vento"],
+        ["humidity", "humidade"],
+        ["daytemp", "temperatura máxima"],
+        ["nighttemp", "temperatura mínima"],
+        ["reporttime", "data da previsão"],
+    ];
+    for (const [field, label] of required) {
+        if (value(field) === "") {
+            throw new Error(`Dados meteorológicos: indique ${label}`);
+        }
+    }
+
+    return {
+        iIsCDMA: section.querySelector('[data-weather-field="iIsCDMA"]')?.checked ? "1" : "0",
+        weather: value("weather"),
+        weatherType: parseInt(value("weatherType"), 10) || 0,
+        province: value("province"),
+        city: value("city"),
+        adcode: value("adcode"),
+        temperature: value("temperature"),
+        winddirection: value("winddirection"),
+        windpower: value("windpower"),
+        humidity: value("humidity"),
+        daytemp: value("daytemp"),
+        nighttemp: value("nighttemp"),
+        reporttime: weatherWireDateTime(value("reporttime")),
+    };
+}
+
+function weatherDateTimeLocal(value) {
+    return String(value || "").trim().replace(" ", "T").slice(0, 19);
+}
+
+function weatherWireDateTime(value) {
+    const normalized = String(value || "").trim().replace("T", " ");
+    return normalized.length === 16 ? `${normalized}:00` : normalized;
+}
+
+function numericValue(value, fallback = 0) {
+    const parsed = parseFloat(String(value ?? ""));
+    return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function fourPTouchAlarmRow(alarm, index) {

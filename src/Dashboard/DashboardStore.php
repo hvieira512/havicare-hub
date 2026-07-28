@@ -3,6 +3,8 @@
 namespace Hub\Dashboard;
 
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Command\DeviceConfigurationCatalog;
+use Hub\Protocol\Adapter\WonlexAdapter;
 use Predis\ClientInterface;
 
 final class DashboardStore implements DashboardStoreContract
@@ -87,6 +89,16 @@ final class DashboardStore implements DashboardStoreContract
 
     public function recordCommand(string $imei, string $id, array $record): void
     {
+        if (($record['protocol'] ?? '') === 'wonlex-json' && !isset($record['ident'])) {
+            $bytes = DeviceCommandRecord::wireBytes($record);
+            if ($bytes !== '') {
+                $decoded = (new WonlexAdapter())->decodeIncoming($bytes);
+                if (is_array($decoded) && isset($decoded['ident'])) {
+                    $record['ident'] = $decoded['ident'];
+                    $record['ref'] = (string)($decoded['ref'] ?? '');
+                }
+            }
+        }
         $this->commands->recordCommand($imei, $id, $record);
     }
 
@@ -100,9 +112,14 @@ final class DashboardStore implements DashboardStoreContract
         $this->commands->markLatestCommand($imei, $nativeType, $fields);
     }
 
-    public function markCommandReply(string $imei, string $replyNativeType): void
+    public function markCommandReply(
+        string $imei,
+        string $replyNativeType,
+        string|int|null $ident = null,
+        string $ref = ''
+    ): void
     {
-        $this->commands->markCommandReply($imei, $replyNativeType);
+        $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref);
     }
 
     public function expireWaitingCommands(int $timeoutSeconds): void
@@ -150,5 +167,29 @@ final class DashboardStore implements DashboardStoreContract
     public function findCommand(string $id): ?array
     {
         return $this->commands->findCommand($id);
+    }
+
+    public function desiredConfigurations(string $imei): array
+    {
+        if ($this->db === null) {
+            return [];
+        }
+
+        $configurations = [];
+        foreach ($this->db->deviceConfigurations->allForImei($imei) as $row) {
+            $key = trim((string)($row['native_key'] ?? $row['config_key'] ?? ''));
+            $payload = $row['desired_payload'] ?? null;
+            if ($key !== '' && is_array($payload) && $payload !== []) {
+                try {
+                    foreach (DeviceConfigurationCatalog::commandPayloads('wonlex-json', $key, $payload) as $built) {
+                        $configurations[] = $built;
+                    }
+                } catch (\Throwable) {
+                    continue;
+                }
+            }
+        }
+
+        return $configurations;
     }
 }

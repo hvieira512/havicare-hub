@@ -49,13 +49,16 @@ final class CallWhitelistCapability implements CapabilityContract
 
     public function supportedProtocols(): array
     {
-        return ['vivistar-iw', 'four-p-touch'];
+        return ['vivistar-iw', 'wonlex-json', 'four-p-touch'];
     }
 
     public function toNative(string $protocol, mixed $value): array
     {
         return match ($protocol) {
             'vivistar-iw' => ['call_whitelist' => self::encodeVivistarContacts($value)],
+            'wonlex-json' => ['familyNumber' => ['contacts' => self::normalizeWonlexContactsList(
+                is_array($value) ? ($value['contacts'] ?? $value) : []
+            )]],
             'four-p-touch' => $this->fourPTouch->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist"),
         };
@@ -103,6 +106,10 @@ final class CallWhitelistCapability implements CapabilityContract
             }
         }
 
+        if ($nativeKey === 'familyNumber') {
+            return self::normalizeWonlexContactsList($desired['contacts'] ?? $desired['familyNumbers'] ?? $desired);
+        }
+
         if ($nativeKey === 'whitelistGroup1' || $nativeKey === 'whitelistGroup2') {
             return $this->fourPTouch->fromNative($desired);
         }
@@ -114,6 +121,7 @@ final class CallWhitelistCapability implements CapabilityContract
     {
         return match ($protocol) {
             'vivistar-iw' => [['name' => '', 'phone' => '']],
+            'wonlex-json' => [['name' => '', 'phone' => '', 'areaCode' => '', 'sosSwitch' => false]],
             'four-p-touch' => $this->fourPTouch->defaultValue(),
             default => [],
         };
@@ -142,7 +150,12 @@ final class CallWhitelistCapability implements CapabilityContract
             return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
         }
 
-        return ['value' => self::normalizeContactsList($value), '_meta' => $this->meta($protocol, $meta)];
+        return [
+            'value' => $protocol === 'wonlex-json'
+                ? self::normalizeWonlexContactsList($value)
+                : self::normalizeContactsList($value),
+            '_meta' => $this->meta($protocol, $meta),
+        ];
     }
 
     public function resolveConfigKey(string $protocol, string $key): ?string
@@ -178,6 +191,54 @@ final class CallWhitelistCapability implements CapabilityContract
             }
             $seenPhones[] = $contact['phone'];
             $contacts[] = $contact;
+        }
+
+        return $contacts;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeWonlexContactsList(mixed $value): array
+    {
+        $items = is_array($value) && isset($value['contacts']) && is_array($value['contacts'])
+            ? $value['contacts']
+            : $value;
+        if (!is_array($items) || !array_is_list($items)) {
+            return [];
+        }
+
+        $contacts = [];
+        $seenPhones = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                $item = ['phone' => $item];
+            }
+            $phone = trim((string)($item['phone'] ?? ''));
+            if ($phone === '') {
+                $hasValue = false;
+                foreach ($item as $field) {
+                    if (is_scalar($field) && trim((string)$field) !== '') {
+                        $hasValue = true;
+                        break;
+                    }
+                }
+                if (!$hasValue) {
+                    continue;
+                }
+                throw new \InvalidArgumentException('phone is required');
+            }
+            if (in_array($phone, $seenPhones, true)) {
+                throw new \InvalidArgumentException('contacts must not contain repeated phone values');
+            }
+            $seenPhones[] = $phone;
+            $contacts[] = array_filter([
+                'familyNumberId' => trim((string)($item['familyNumberId'] ?? '')),
+                'name' => trim((string)($item['name'] ?? '')),
+                'phone' => $phone,
+                'sosSwitch' => isset($item['sosSwitch']) ? (bool)$item['sosSwitch'] : false,
+                'areaCode' => trim((string)($item['areaCode'] ?? '')),
+            ], static fn(mixed $field, string $key): bool => $key === 'sosSwitch' || $field !== '', ARRAY_FILTER_USE_BOTH);
         }
 
         return $contacts;

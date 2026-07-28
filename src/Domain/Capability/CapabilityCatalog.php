@@ -149,6 +149,10 @@ final class CapabilityCatalog
                 'ppg',
                 'rr_interval',
                 'blood_sugar',
+                'call_log',
+                'sms',
+                'device_state',
+                'ecg_analysis',
             ],
             'vivistar-iw' => [
                 'battery',
@@ -258,6 +262,10 @@ final class CapabilityCatalog
             'blood_sugar',
             'firmware_version',
             'device_status' => $feature,
+            'call_log',
+            'sms',
+            'device_state',
+            'ecg_analysis' => $feature,
             default => null,
         };
     }
@@ -273,6 +281,8 @@ final class CapabilityCatalog
 
         return match ($key) {
             'alarm_clock' => 'alarm_clock',
+            'familyNumber' => 'call_whitelist',
+            'SOSNumber' => 'sos_contacts',
             'dnMedicationPlan' => 'medication_reminders',
             'wonlexLowPower' => 'low_battery_alert',
             'wonlexFallWarnSwitch', 'fallDetection' => 'fall_detection',
@@ -311,6 +321,11 @@ final class CapabilityCatalog
             'whitelistSwitch' => 'whitelist_enabled',
             'whitelist_enabled' => 'whitelist_enabled',
             'deviceConfig' => 'device_settings_sync',
+            'resetCommand' => 'reset_device',
+            'restartCommand' => 'restart_device',
+            'powerOffCommand' => 'power_off',
+            'findDeviceCommand' => 'find_device',
+            'weatherData' => 'weather_data',
             default => null,
         };
     }

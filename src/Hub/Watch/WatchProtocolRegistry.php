@@ -21,11 +21,16 @@ final class WatchProtocolRegistry
     public function __construct(
         ?AdapterRegistry $adapters = null,
         ?DeviceEventDecoder $eventDecoder = null,
+        ?callable $wonlexStateProvider = null,
     ) {
         $adapters ??= new AdapterRegistry();
         $eventDecoder ??= new DeviceEventDecoder();
 
-        $this->register(new WonlexWatchProtocol($adapters->get('wonlex-json') ?? new WonlexAdapter(), $eventDecoder));
+        $this->register(new WonlexWatchProtocol(
+            $adapters->get('wonlex-json') ?? new WonlexAdapter(),
+            $eventDecoder,
+            $wonlexStateProvider
+        ));
         $this->register(new VivistarWatchProtocol($adapters->get('vivistar-iw') ?? new VivistarAdapter(), $eventDecoder));
         $this->register(new FourPTouchWatchProtocol($adapters->get('four-p-touch') ?? new FourPTouchAdapter(), $eventDecoder));
     }

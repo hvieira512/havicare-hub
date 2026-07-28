@@ -37,7 +37,12 @@ interface DashboardStoreContract
 
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void;
 
-    public function markCommandReply(string $imei, string $replyNativeType): void;
+    public function markCommandReply(
+        string $imei,
+        string $replyNativeType,
+        string|int|null $ident = null,
+        string $ref = ''
+    ): void;
 
     public function expireWaitingCommands(int $timeoutSeconds): void;
 
@@ -67,4 +72,9 @@ interface DashboardStoreContract
     public function commands(string $imei): array;
 
     public function findCommand(string $id): ?array;
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function desiredConfigurations(string $imei): array;
 }

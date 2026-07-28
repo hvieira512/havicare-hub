@@ -140,14 +140,27 @@ final class DeviceCommandStore
         }
     }
 
-    public function markCommandReply(string $imei, string $replyNativeType): void
+    public function markCommandReply(
+        string $imei,
+        string $replyNativeType,
+        string|int|null $ident = null,
+        string $ref = ''
+    ): void
     {
         foreach ($this->commands($imei) as $command) {
             if (!in_array((string)($command['status'] ?? ''), ['waiting'], true)) {
                 continue;
             }
             $expected = $command['expectedReplyTypes'] ?? [];
-            if (!is_array($expected) || !in_array($replyNativeType, $expected, true)) {
+            $sameTypeAck = $ref === 'w:reply' && (string)($command['nativeType'] ?? '') === $replyNativeType;
+            if (!$sameTypeAck && (!is_array($expected) || !in_array($replyNativeType, $expected, true))) {
+                continue;
+            }
+            $commandIdent = $command['ident'] ?? null;
+            if ($commandIdent !== null && $ident !== null && (string)$commandIdent !== (string)$ident) {
+                continue;
+            }
+            if (($command['protocol'] ?? '') === 'wonlex-json' && $commandIdent !== null && $ident === null) {
                 continue;
             }
             $id = (string)$command['id'];
@@ -155,6 +168,8 @@ final class DeviceCommandStore
                 'status' => 'acked',
                 'ackedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
                 'replyNativeType' => $replyNativeType,
+                'replyIdent' => $ident,
+                'replyRef' => $ref,
             ]));
             if ($this->projection !== null && isset($command['configKey'])) {
                 $this->projection->markApplyStatus($imei, (string)$command['configKey'], 'acked', $id);

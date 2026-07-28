@@ -91,6 +91,39 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('intervals: "settings_system"', $source);
     }
 
+    public function testWonlexComplexSettingsUseGuidedFormsInsteadOfJson(): void
+    {
+        $source = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config.js'
+        );
+        $bootstrap = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'
+        );
+
+        self::assertIsString($source);
+        self::assertIsString($bootstrap);
+        self::assertStringContainsString(
+            '!["deviceMeasuringFrequency", "deviceConfig"].includes(',
+            $source
+        );
+        self::assertStringContainsString(
+            'wonlexMedicationPlans: (_entry, desired) => wonlexMedicationPlansInput(desired),',
+            $source
+        );
+        self::assertStringContainsString(
+            'wonlexWeather: (_entry, desired) => wonlexWeatherInput(desired),',
+            $source
+        );
+        self::assertStringContainsString('data-medication-field="drugName"', $source);
+        self::assertStringContainsString('data-medication-period', $source);
+        self::assertStringContainsString('data-weather-field="weatherType"', $source);
+        self::assertStringContainsString('data-weather-field="reporttime"', $source);
+        self::assertStringContainsString('function readWonlexMedicationPlans(section)', $source);
+        self::assertStringContainsString('function readWonlexWeather(section)', $source);
+        self::assertStringContainsString('appendWonlexMedicationPlan(section)', $bootstrap);
+        self::assertStringContainsString('[data-medication-period-time=', $bootstrap);
+    }
+
     public function testDeviceDetailFilterTypesAreDerivedFromObservedItems(): void
     {
         $source = file_get_contents(

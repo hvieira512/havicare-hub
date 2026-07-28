@@ -11,9 +11,19 @@ final class FeatureNormalizer
             'blood_pressure' => self::bloodPressure($payload),
             'blood_oxygen' => self::bloodOxygen($payload),
             'blood_sugar' => self::bloodSugar($payload),
+            'breath_rate' => self::scalar($payload, 'breathsPerMinute', ['breathRate', 'breathe', 'respiratoryRate', 'value', 'data', 'date']),
             'temperature' => self::temperature($payload),
             'battery' => self::battery($payload),
             'activity' => self::activity($payload),
+            'sleep' => self::sleep($payload),
+            'ecg' => self::waveform($payload, 'samples'),
+            'ecg_analysis' => self::ecgAnalysis($payload),
+            'hrv' => self::scalar($payload, 'milliseconds', ['hrv', 'value', 'data', 'date']),
+            'ppg' => self::waveform($payload, 'samples'),
+            'rr_interval' => self::rrIntervals($payload),
+            'call_log' => self::callLog($payload),
+            'sms' => self::sms($payload),
+            'device_state' => self::deviceState($payload),
             'heartbeat' => self::heartbeat($payload),
             'location' => self::location($payload),
             'alarm' => self::alarm($payload),
@@ -56,7 +66,11 @@ final class FeatureNormalizer
     private static function bloodSugar(array $payload): array
     {
         $value = self::first($payload, ['bloodSugar', 'blood_sugar', 'glucoseMgDl', 'bs', 'value', 'data', 'date']);
-        return $value === null ? [] : ['glucoseMgDl' => (int)$value];
+        if ($value === null || !is_numeric((string)$value)) {
+            return [];
+        }
+
+        return ['glucoseMgDl' => str_contains((string)$value, '.') ? (float)$value : (int)$value];
     }
 
     private static function scalar(array $payload, string $field, array $keys): array
@@ -72,7 +86,19 @@ final class FeatureNormalizer
     private static function temperature(array $payload): array
     {
         $value = self::first($payload, ['bodyTemperature', 'temperature', 'bodyCelsius', 'temp', 'value', 'data', 'date']);
-        return $value === null ? [] : ['bodyCelsius' => (float)$value];
+        if ($value === null) {
+            return [];
+        }
+        if (is_string($value) && str_contains($value, '/')) {
+            $parts = explode('/', $value);
+            return array_filter([
+                'bodyCelsius' => self::float($parts[0] ?? null),
+                'surfaceCelsius' => self::float($parts[1] ?? null),
+                'environmentCelsius' => self::float($parts[2] ?? null),
+            ], static fn (mixed $field): bool => $field !== null);
+        }
+
+        return is_numeric((string)$value) ? ['bodyCelsius' => (float)$value] : [];
     }
 
     private static function battery(array $payload): array
@@ -90,9 +116,121 @@ final class FeatureNormalizer
         return array_filter([
             'steps' => self::int($payload['steps'] ?? $payload['step'] ?? null),
             'distanceMeters' => self::float($payload['distanceMeters'] ?? $payload['distance'] ?? null),
-            'caloriesKcal' => self::float($payload['caloriesKcal'] ?? $payload['kcal'] ?? $payload['calories'] ?? null),
+            'distanceKm' => self::float($payload['mileage'] ?? null),
+            'caloriesKcal' => self::float($payload['caloriesKcal'] ?? $payload['kcal'] ?? $payload['calories'] ?? $payload['consumed'] ?? null),
             'exerciseSeconds' => self::int($payload['exerciseSeconds'] ?? $payload['exerciseTime'] ?? null),
             'standMinutes' => self::int($payload['standMinutes'] ?? $payload['standTime'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function sleep(array $payload): array
+    {
+        $segments = [];
+        $rawSegments = $payload['dateTime'] ?? $payload['segments'] ?? [];
+        if (is_array($rawSegments)) {
+            foreach ($rawSegments as $segment) {
+                if (!is_array($segment)) {
+                    continue;
+                }
+                $normalized = array_filter([
+                    'startTime' => self::int($segment['startTime'] ?? null),
+                    'endTime' => self::int($segment['endTime'] ?? $segment['end time'] ?? null),
+                    'durationMinutes' => self::int($segment['duration'] ?? null),
+                    'type' => self::stringOrNull($segment['sleepType'] ?? $segment['sleeptype'] ?? null),
+                ], static fn (mixed $value): bool => $value !== null);
+                if ($normalized !== []) {
+                    $segments[] = $normalized;
+                }
+            }
+        }
+
+        return array_filter([
+            'startTime' => self::int($payload['startTime'] ?? null),
+            'endTime' => self::int($payload['endTime'] ?? null),
+            'isAccumulative' => isset($payload['IsAccumulative']) ? (bool)$payload['IsAccumulative'] : null,
+            'segments' => $segments !== [] ? $segments : null,
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function waveform(array $payload, string $field): array
+    {
+        $raw = self::first($payload, ['data', 'date']);
+        $samples = [];
+        if (is_string($raw)) {
+            foreach (preg_split('/\s*,\s*/', trim($raw)) ?: [] as $sample) {
+                if (is_numeric($sample)) {
+                    $samples[] = str_contains($sample, '.') ? (float)$sample : (int)$sample;
+                }
+            }
+        }
+
+        return array_filter([
+            $field => $samples !== [] ? $samples : null,
+            'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
+            'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
+            'startedAt' => self::int($payload['dataStartTime'] ?? $payload['Data start time'] ?? null),
+            'packetStatus' => self::int($payload['dataStatus'] ?? $payload['Data Status'] ?? null),
+            'block' => self::int($payload['block'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function ecgAnalysis(array $payload): array
+    {
+        return array_filter([
+            'deviceType' => self::stringOrNull($payload['devType'] ?? null),
+            'mealStatus' => self::int($payload['mealstatus'] ?? $payload['mealStatus'] ?? null),
+            'medicationStatus' => self::int($payload['medicationstatus'] ?? $payload['medicationStatus'] ?? null),
+            'fileBase64' => self::stringOrNull($payload['fileBase64'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function rrIntervals(array $payload): array
+    {
+        $raw = (string)($payload['data'] ?? $payload['date'] ?? '');
+        $intervals = [];
+        foreach (explode(';', $raw) as $entry) {
+            $parts = array_map('trim', explode(',', $entry));
+            if (count($parts) < 2 || !is_numeric($parts[0]) || !is_numeric($parts[1])) {
+                continue;
+            }
+            $intervals[] = ['timestamp' => (int)$parts[0], 'milliseconds' => (int)$parts[1]];
+        }
+
+        return array_filter([
+            'intervals' => $intervals !== [] ? $intervals : null,
+            'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
+            'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function callLog(array $payload): array
+    {
+        return array_filter([
+            'name' => self::stringOrNull($payload['name'] ?? null),
+            'phone' => self::stringOrNull($payload['phone'] ?? null),
+            'beginTime' => self::int($payload['beginTime'] ?? null),
+            'endTime' => self::int($payload['endTime'] ?? null),
+            'durationSeconds' => self::int($payload['duration'] ?? null),
+            'waitDurationSeconds' => self::int($payload['waitDuration'] ?? null),
+            'direction' => isset($payload['callType']) ? ((int)$payload['callType'] === 1 ? 'outgoing' : 'incoming') : null,
+            'connected' => isset($payload['isSwitchOn']) ? (bool)$payload['isSwitchOn'] : null,
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function sms(array $payload): array
+    {
+        return array_filter([
+            'sender' => self::stringOrNull($payload['sender'] ?? null),
+            'content' => self::stringOrNull($payload['msgContent'] ?? $payload['content'] ?? null),
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function deviceState(array $payload): array
+    {
+        return array_filter([
+            'state' => self::stringOrNull($payload['state'] ?? null),
+            'resetStatus' => self::int($payload['status'] ?? null),
+            'reason' => self::stringOrNull($payload['reason'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
     }
 
@@ -124,7 +262,11 @@ final class FeatureNormalizer
         $wifiAccessPoints = self::normalizeWifiAccessPoints(
             isset($payload['wifiAccessPoints']) && is_array($payload['wifiAccessPoints'])
                 ? $payload['wifiAccessPoints']
-                : (isset($payload['wifi']) && is_array($payload['wifi']) ? $payload['wifi'] : [])
+                : (
+                    isset($payload['wifi']) && is_array($payload['wifi'])
+                        ? $payload['wifi']
+                        : (isset($payload['Wifi']) && is_array($payload['Wifi']) ? $payload['Wifi'] : [])
+                )
         );
         $firstBaseStation = $baseStations[0] ?? [];
         $lat = self::float($payload['lat'] ?? $payload['latitude'] ?? $gps['lat'] ?? $gps['latitude'] ?? null);
@@ -286,7 +428,7 @@ final class FeatureNormalizer
             'humidityPercent' => self::int($payload['humidityPercent'] ?? $payload['humidity'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
 
-        return count($weather) > 1 ? $weather : ['status' => 'ok'];
+        return count($weather) > 1 ? $weather : [];
     }
 
     private static function first(array $payload, array $keys): mixed

@@ -37,6 +37,12 @@ final class DeviceEventDecoder
             ])),
             'upBS' => [$this->event('blood_sugar', $nativeType, $payload)],
             'upBodyTemperature' => [$this->event('temperature', $nativeType, $payload)],
+            'upBreathe' => [$this->event('breath_rate', $nativeType, $payload)],
+            'upECG' => [$this->event('ecg', $nativeType, $payload, $payload)],
+            'upECGAnalysis' => [$this->event('ecg_analysis', $nativeType, $payload, $payload)],
+            'upHRV' => [$this->event('hrv', $nativeType, $payload, $payload)],
+            'upPPG' => [$this->event('ppg', $nativeType, $payload, $payload)],
+            'upRR' => [$this->event('rr_interval', $nativeType, $payload, $payload)],
             'upBattery' => [$this->event('battery', $nativeType, $payload)],
             'heartbeat' => array_values(array_filter([
                 $this->event('heartbeat', $nativeType, $payload, $payload),
@@ -44,8 +50,13 @@ final class DeviceEventDecoder
             ])),
             'upLocation' => [$this->event('location', $nativeType, $payload, $payload)],
             'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload, $payload)],
-            'upGetDevConfig', 'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],
+            'upSleep' => [$this->event('sleep', $nativeType, $payload, $payload)],
+            'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],
             'upWeather' => [$this->event('weather', $nativeType, $payload, $payload)],
+            'upCallLog' => [$this->event('call_log', $nativeType, $payload, $payload)],
+            'upSMS' => [$this->event('sms', $nativeType, $payload, $payload)],
+            'upShutdown' => [$this->event('device_state', $nativeType, ['state' => 'shutdown'] + $payload, $payload)],
+            'upReset' => [$this->event('device_state', $nativeType, ['state' => 'factory_reset'] + $payload, $payload)],
             'upBatch' => $this->decodeWonlexBatch($nativeType, $payload),
             default => [],
         };
@@ -53,25 +64,58 @@ final class DeviceEventDecoder
 
     private function decodeWonlexBatch(string $nativeType, array $payload): array
     {
-        $events = [];
-        if (isset($payload['heartRate'])) {
-            $events[] = $this->event('heart_rate', $nativeType, $payload);
+        $dataType = trim((string)($payload['dataType'] ?? ''));
+        $data = trim((string)($payload['data'] ?? ''));
+        if ($dataType === '' && (isset($payload['heartRate']) || isset($payload['bp']) || isset($payload['bo']))) {
+            $events = [];
+            if (isset($payload['heartRate'])) {
+                $events[] = $this->event('heart_rate', $nativeType, $payload);
+            }
+            if (isset($payload['bp']) && is_string($payload['bp'])) {
+                $events[] = $this->event('blood_pressure', $nativeType, ['data' => $payload['bp']], $payload);
+                $events[] = $this->heartRateFromBloodPressure($nativeType, ['data' => $payload['bp']]);
+            }
+            if (isset($payload['bo'])) {
+                $events[] = $this->event('blood_oxygen', $nativeType, ['spo2' => $payload['bo']], $payload);
+            }
+            return array_values(array_filter($events, 'is_array'));
         }
-        if (isset($payload['bp']) && is_string($payload['bp'])) {
-            $parts = preg_split('/[\\/,-]+/', $payload['bp']) ?: [];
-            $events[] = $this->event('blood_pressure', $nativeType, [
-                'systolic' => $parts[0] ?? null,
-                'diastolic' => $parts[1] ?? null,
-            ], $payload);
-            $events[] = $this->heartRateFromBloodPressure($nativeType, [
-                'pulse' => $parts[2] ?? null,
-            ]);
-        }
-        if (isset($payload['bo'])) {
-            $events[] = $this->event('blood_oxygen', $nativeType, ['spo2' => $payload['bo']], $payload);
+        $times = array_map('trim', explode(',', (string)($payload['dataTime'] ?? '')));
+        if ($dataType === '' || $data === '') {
+            return [];
         }
 
-        return array_values(array_filter($events));
+        if ($dataType === 'upBP') {
+            $measurements = str_contains($data, ';') ? explode(';', $data) : [$data];
+        } else {
+            $measurements = array_map('trim', explode(',', $data));
+        }
+
+        $events = [];
+        foreach ($measurements as $index => $measurement) {
+            $sample = array_filter([
+                'data' => trim((string)$measurement),
+                'measuredAt' => isset($times[$index]) && is_numeric($times[$index]) ? (int)$times[$index] : null,
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+            $extra = $payload;
+            if (isset($sample['measuredAt'])) {
+                $extra['measuredAt'] = $sample['measuredAt'];
+            }
+            if ($dataType === 'upHeartRate') {
+                $events[] = $this->event('heart_rate', $nativeType, $sample, $extra);
+            } elseif ($dataType === 'upBP') {
+                $events[] = $this->event('blood_pressure', $nativeType, $sample, $extra);
+                $events[] = $this->heartRateFromBloodPressure($nativeType, $sample);
+            } elseif ($dataType === 'upBO') {
+                $events[] = $this->event('blood_oxygen', $nativeType, $sample, $extra);
+            } elseif ($dataType === 'upBodyTemperature') {
+                $events[] = $this->event('temperature', $nativeType, $sample, $extra);
+            } elseif ($dataType === 'upBreathe') {
+                $events[] = $this->event('breath_rate', $nativeType, $sample, $extra);
+            }
+        }
+
+        return array_values(array_filter($events, 'is_array'));
     }
 
     private function decodeVivistar(string $nativeType, array $payload): array

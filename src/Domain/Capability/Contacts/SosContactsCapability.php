@@ -75,6 +75,12 @@ final class SosContactsCapability implements CapabilityContract
         if ($nativeKey === 'SOSNumber' && isset($desired['SOSNumber']) && is_array($desired['SOSNumber'])) {
             return self::stringList($desired['SOSNumber']);
         }
+        if ($nativeKey === 'SOSNumber' && isset($desired['sosNumbers']) && is_array($desired['sosNumbers'])) {
+            return self::stringList(array_map(
+                static fn(mixed $item): string => trim((string)(is_array($item) ? ($item['phone'] ?? '') : $item)),
+                $desired['sosNumbers']
+            ));
+        }
         if ($nativeKey === 'sosNumber1' || $nativeKey === 'sosNumber2' || $nativeKey === 'sosNumber3') {
             return $this->fourPTouch->fromNative($desired);
         }

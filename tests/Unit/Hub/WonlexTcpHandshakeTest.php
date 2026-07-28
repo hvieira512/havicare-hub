@@ -22,7 +22,12 @@ final class WonlexTcpHandshakeTest extends TestCase
     {
         $this->whitelistPath = sys_get_temp_dir() . '/hub-wonlex-whitelist-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($this->whitelistPath, json_encode([
-            '868705080300697' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
+            '868705080300697' => [
+                'supplier' => 'Wonlex',
+                'model' => 'HW20PRO',
+                'licenseId' => '1001',
+                'company' => 'hitcare',
+            ],
         ]));
     }
 

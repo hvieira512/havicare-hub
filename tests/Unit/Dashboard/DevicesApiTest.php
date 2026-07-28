@@ -391,6 +391,68 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testShowPreservesWonlexFamilyContactFieldsAndAlarmLimit(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $imei = '868705080300697';
+        $created = $api->create(json_encode([
+            'imei' => $imei,
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR));
+        self::assertSame('ok', $created['status'] ?? null);
+
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], [
+            'alarm_clock',
+            'call_whitelist',
+            'sos_contacts',
+        ]);
+        $contacts = [[
+            'familyNumberId' => '8c67b51b',
+            'name' => 'Care',
+            'phone' => '210000000',
+            'sosSwitch' => true,
+            'areaCode' => '351',
+        ]];
+        $db->deviceConfigurations->saveDesired(
+            $imei,
+            'familyNumber',
+            'wonlex-json',
+            'Wonlex',
+            'HW20PRO',
+            'familyNumber',
+            ['contacts' => $contacts]
+        );
+        $db->deviceConfigurations->saveDesired(
+            $imei,
+            'alarmClock',
+            'wonlex-json',
+            'Wonlex',
+            'HW20PRO',
+            'alarmClock',
+            ['items' => [[
+                'label' => 'Medicine',
+                'time' => '08:00',
+                'week' => '1111111',
+                'enabled' => true,
+            ]]]
+        );
+
+        $response = $api->show($imei);
+
+        self::assertSame($contacts, $response['configurations']['call_whitelist'] ?? null);
+        self::assertSame($contacts, $response['capabilities']['contacts']['call_whitelist']['value'] ?? null);
+        self::assertSame($contacts, $response['pending']['contacts']['call_whitelist']['desired'] ?? null);
+        self::assertSame('Medicine', $response['configurations']['alarm_clock'][0]['label'] ?? null);
+        self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
+        self::assertSame(10, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
+        self::assertArrayHasKey('sos_contacts', $response['capabilities']['contacts'] ?? []);
+    }
+
     public function testShowWrapsFourPTouchGenericCapabilitiesWithValueAndMetaShape(): void
     {
         [$api, $db, $store] = $this->makeApi();
@@ -1402,7 +1464,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
-        self::assertStringContainsString(',QUJDRA==]', $submitted[0]['bytes']);
+        self::assertSame(4, substr_count($submitted[0]['bytes'], ','));
+        self::assertMatchesRegularExpression('/,[A-Za-z0-9+\\/=]+\\]$/', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchAcceptsLocationReportingIntervalForFourPTouch(): void
@@ -2034,6 +2097,112 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(2, $savedRows);
         self::assertSame(['numbers' => ['111', '222', '333', '444', '555']], $savedRows[0]['desired_payload'] ?? null);
         self::assertSame(['numbers' => ['666']], $savedRows[1]['desired_payload'] ?? null);
+    }
+
+    public function testWonlexGenericConfigurationsEmitDocumentedFramesAndRoundTrip(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $imei = '868705080300698';
+        self::assertSame('ok', $api->create(json_encode([
+            'imei' => $imei,
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], [
+            'alarm_clock',
+            'call_whitelist',
+            'sos_contacts',
+            'medication_reminders',
+            'weather_data',
+            'heart_rate_measurement_interval',
+        ]);
+        $plan = [
+            'drugType' => 0,
+            'drugDose' => 1,
+            'drugUnit' => '0',
+            'drugStartTime' => '2026-07-28',
+            'drugEndTime' => '2026-08-28',
+            'drugInterval' => 1,
+            'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
+        ];
+        $weather = [
+            'weather' => 'Cloudy',
+            'weatherType' => 2,
+            'province' => 'Lisbon',
+            'city' => 'Lisbon',
+            'adcode' => '1106',
+            'temperature' => '22',
+            'winddirection' => 'NW',
+            'windpower' => '3',
+            'humidity' => '65',
+            'daytemp' => '24',
+            'nighttemp' => '17',
+            'reporttime' => '2026-07-28 15:15:00',
+        ];
+
+        $response = $api->updateConfigurations($imei, json_encode([
+            'configurations' => [
+                'heart_rate_measurement_interval' => ['interval' => 15],
+                'alarm_clock' => ['items' => [[
+                    'label' => 'Medicine',
+                    'time' => '08:00',
+                    'enabled' => true,
+                    'recurrence' => ['kind' => 'daily'],
+                ]]],
+                'call_whitelist' => ['contacts' => [[
+                    'familyNumberId' => 'care0001',
+                    'name' => 'Care',
+                    'phone' => '210000000',
+                    'areaCode' => '351',
+                    'sosSwitch' => true,
+                ]]],
+                'sos_contacts' => ['numbers' => ['210000000']],
+                'medication_reminders' => ['plans' => [
+                    $plan + ['drugName' => 'Morning medicine'],
+                    $plan + ['drugName' => 'Evening medicine'],
+                ]],
+                'weather_data' => $weather,
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(7, $submitted);
+        $adapter = new \Hub\Protocol\Adapter\WonlexAdapter();
+        $frames = array_map(
+            static fn(array $item): array => $adapter->decodeIncoming($item['bytes']) ?? [],
+            $submitted
+        );
+        self::assertSame([
+            'deviceMeasuringFrequency',
+            'alarmClock',
+            'familyNumber',
+            'SOSNumber',
+            'dnMedicationPlan',
+            'dnMedicationPlan',
+            'dnWeather',
+        ], array_column($frames, 'type'));
+        self::assertSame('15', $frames[0]['data']['configs']['upHeartRate']['interval'] ?? null);
+        self::assertSame('1111111', $frames[1]['data']['alarmClockList'][0]['week'] ?? null);
+        self::assertSame('351', $frames[2]['data']['familyNumbers'][0]['areaCode'] ?? null);
+        self::assertSame('210000000', $frames[3]['data']['sosNumbers'][0]['phone'] ?? null);
+        self::assertSame('Morning medicine', $frames[4]['data']['drugName'] ?? null);
+        self::assertSame('Evening medicine', $frames[5]['data']['drugName'] ?? null);
+        self::assertSame('Lisbon', $frames[6]['data']['city'] ?? null);
+        self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
+        self::assertSame('351', $response['configurations']['call_whitelist'][0]['areaCode'] ?? null);
+        self::assertSame(['210000000'], $response['configurations']['sos_contacts'] ?? null);
+        self::assertCount(2, $response['configurations']['medication_reminders']['plans'] ?? []);
     }
 
     public function testFourPTouchAlarmClockConfigurationMapsToNativeCommand(): void

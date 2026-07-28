@@ -15,6 +15,7 @@ final class ConfigurationDefinition
         int $order = 0,
         ?int $limit = null,
         ?array $options = null,
+        bool $transient = false,
     ): array {
         $entry = [
             'key' => $key,
@@ -34,6 +35,9 @@ final class ConfigurationDefinition
         }
         if ($options !== null) {
             $entry['options'] = $options;
+        }
+        if ($transient) {
+            $entry['transient'] = true;
         }
 
         return $entry;

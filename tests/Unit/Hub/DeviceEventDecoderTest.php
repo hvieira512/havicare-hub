@@ -32,6 +32,63 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(98, $events[3]['value']['spo2Percent']);
     }
 
+    public function testDecodesDocumentedWonlexBatchShapeAndMeasurementTimes(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upBatch',
+                'data' => [
+                    'dataType' => 'upHeartRate',
+                    'data' => '100,98,97',
+                    'dataTime' => '1648111390075,1648111390073,1648111390074',
+                ],
+            ]
+        );
+
+        self::assertSame([100, 98, 97], array_column(array_column($events, 'value'), 'bpm'));
+        self::assertSame(1648111390075, $events[0]['extra']['measuredAt']);
+    }
+
+    public function testDecodesWonlexBreathingTemperatureSleepCallsSmsAndDeviceState(): void
+    {
+        $decoder = new DeviceEventDecoder();
+        $session = $this->session('wonlex-json');
+
+        $breathing = $decoder->decode($session, ['type' => 'upBreathe', 'data' => ['date' => '20']]);
+        $temperature = $decoder->decode($session, ['type' => 'upBodyTemperature', 'data' => ['date' => '36.8/31.6/28.2']]);
+        $sleep = $decoder->decode($session, ['type' => 'upSleep', 'data' => [
+            'startTime' => 1653228000000,
+            'endTime' => 1653271200000,
+            'dateTime' => [
+                ['startTime' => 1653228000000, 'endTime' => 1653229800000, 'duration' => 30, 'sleepType' => 'deepSleep'],
+                ['startTime' => 1653229800000, 'endTime' => 1653233400000, 'duration' => 60, 'sleeptype' => 'lightSleep'],
+            ],
+        ]]);
+        $call = $decoder->decode($session, ['type' => 'upCallLog', 'data' => [
+            'phone' => '+351210000000', 'duration' => 60, 'callType' => 1, 'isSwitchOn' => 1,
+        ]]);
+        $sms = $decoder->decode($session, ['type' => 'upSMS', 'data' => [
+            'sender' => 'operator', 'msgContent' => 'Balance: 10 EUR',
+        ]]);
+        $analysis = $decoder->decode($session, ['type' => 'upECGAnalysis', 'data' => [
+            'devType' => 'ECG', 'mealstatus' => '-1', 'medicationstatus' => '1', 'fileBase64' => 'YWJj',
+        ]]);
+        $shutdown = $decoder->decode($session, ['type' => 'upShutdown', 'data' => []]);
+
+        self::assertSame(20, $breathing[0]['value']['breathsPerMinute']);
+        self::assertSame(31.6, $temperature[0]['value']['surfaceCelsius']);
+        self::assertSame(28.2, $temperature[0]['value']['environmentCelsius']);
+        self::assertSame('deepSleep', $sleep[0]['value']['segments'][0]['type']);
+        self::assertSame('outgoing', $call[0]['value']['direction']);
+        self::assertTrue($call[0]['value']['connected']);
+        self::assertSame('Balance: 10 EUR', $sms[0]['value']['content']);
+        self::assertSame('ecg_analysis', $analysis[0]['feature']);
+        self::assertSame(-1, $analysis[0]['value']['mealStatus']);
+        self::assertSame('YWJj', $analysis[0]['value']['fileBase64']);
+        self::assertSame('shutdown', $shutdown[0]['value']['state']);
+    }
+
     public function testDecodesWonlexLocationWithBaseStationsAndWifi(): void
     {
         $events = (new DeviceEventDecoder())->decode(
@@ -102,6 +159,25 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertArrayNotHasKey('gpsValid', $events[0]['value']);
     }
 
+    public function testDecodesWonlexPdfUppercaseWifiLocationField(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upLocation',
+                'data' => [
+                    'Wifi' => [
+                        ['mac' => 'AA:BB:CC:DD:EE:FF', 'ssid' => 'CLINIC', 'signal' => '-61'],
+                    ],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('wifi', $events[0]['value']['source']);
+        self::assertSame('CLINIC', $events[0]['value']['wifiAccessPoints'][0]['ssid']);
+    }
+
     public function testDecodesWonlexActivityAndDeviceConfigPackets(): void
     {
         $activity = (new DeviceEventDecoder())->decode(
@@ -130,8 +206,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(0, $activity[0]['value']['steps']);
         self::assertSame(6, $activity[0]['value']['standMinutes']);
         self::assertSame(1800, $activity[0]['value']['exerciseSeconds']);
-        self::assertSame(['device_config'], array_column($config, 'feature'));
-        self::assertSame('ok', $config[0]['value']['status']);
+        self::assertSame([], $config);
     }
 
     public function testDecodesWonlexBloodPressureWithStringData(): void

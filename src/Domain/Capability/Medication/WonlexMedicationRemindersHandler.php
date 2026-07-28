@@ -18,34 +18,38 @@ final class WonlexMedicationRemindersHandler implements MedicationRemindersHandl
 
     public function toNative(mixed $value): array
     {
-        return ['dnMedicationPlan' => ['plans' => self::requireListValue(is_array($value) ? ($value['plans'] ?? []) : [], 'plans')]];
+        if (!is_array($value)) {
+            throw new \InvalidArgumentException('medication plan must be an object');
+        }
+        $plans = $value['plans'] ?? null;
+        if ($plans !== null) {
+            $plans = self::requireListValue($plans, 'plans');
+            if ($plans === []) {
+                throw new \InvalidArgumentException('plans must contain at least one medication plan');
+            }
+            foreach ($plans as $plan) {
+                if (!is_array($plan)) {
+                    throw new \InvalidArgumentException('plans items must be objects');
+                }
+            }
+            return ['dnMedicationPlan' => ['plans' => array_values($plans)]];
+        }
+
+        return ['dnMedicationPlan' => ['plan' => $value['plan'] ?? $value]];
     }
 
     public function fromNative(array $desired): mixed
     {
-        $settings = $desired['reminderSettings'] ?? [];
-        if (is_string($settings) && trim($settings) !== '') {
-            $settings = [];
-        } elseif (is_array($settings) && !array_is_list($settings)) {
-            $settings = [$settings];
+        if (isset($desired['plans']) && is_array($desired['plans'])) {
+            return ['plans' => array_values(array_filter($desired['plans'], 'is_array'))];
         }
-
-        $value = [
-            'reminderSettings' => $settings,
-            'number' => $desired['number'] ?? 1,
-            'reminderText' => $desired['reminderText'] ?? '',
-            'voiceData' => $desired['voiceData'] ?? '',
-        ];
-        if (array_key_exists('voiceMimeType', $desired)) {
-            $value['voiceMimeType'] = $desired['voiceMimeType'];
-        }
-
-        return $value;
+        $plan = $desired['plan'] ?? $desired;
+        return is_array($plan) ? ['plans' => [$plan]] : ['plans' => []];
     }
 
     public function defaultValue(): mixed
     {
-        return [];
+        return ['plans' => []];
     }
 
     public function meta(array $accumulatedMeta = []): array

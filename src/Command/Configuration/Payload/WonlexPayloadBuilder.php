@@ -39,10 +39,13 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'wonlexHeartRateHighRemind' => self::heartRateRange('HROvertopRemind', $payload),
             'wonlexHeartRateLowRemind' => self::heartRateRange('HeartRateBelowRemind', $payload),
             'wonlexBPEarlyWarning' => self::bloodPressureWarning($payload),
-            'alarmClock' => ['alarmClock' => self::arrayField($payload['alarmClock'] ?? $payload['alarms'] ?? null, 'alarmClock')],
-            'SOSNumber' => ['SOSNumber' => self::stringList($payload['numbers'] ?? [], 3, 'numbers')],
-            'dnMedicationPlan' => ['plans' => self::arrayField($payload['plans'] ?? $payload['medicationPlan'] ?? null, 'plans')],
-            'dnDevBindStatus' => ['bindStatus' => self::boolInt($payload['bindStatus'] ?? $payload['enabled'] ?? null, 'bindStatus')],
+            'alarmClock' => ['alarmClockList' => self::alarmClockList($payload)],
+            'familyNumber' => ['familyNumbers' => self::familyNumbers($payload['contacts'] ?? $payload['familyNumbers'] ?? null)],
+            'SOSNumber' => ['sosNumbers' => self::sosNumbers($payload['contacts'] ?? $payload['numbers'] ?? $payload['sosNumbers'] ?? [])],
+            'dnMedicationPlan' => self::medicationPlan($payload),
+            'dnDevBindStatus' => ['status' => self::boolInt($payload['status'] ?? $payload['bindStatus'] ?? $payload['enabled'] ?? null, 'status')],
+            'resetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
+            'weatherData' => self::weatherData($payload),
             default => throw new \InvalidArgumentException("Unsupported Wonlex configuration {$key}"),
         };
     }
@@ -78,7 +81,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 
         return ['configs' => [$configName => [
             'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
-            $valueKey => self::nonNegativeInt($payload[$valueKey] ?? null, $valueKey),
+            $valueKey => self::nonNegativeFloat($payload[$valueKey] ?? null, $valueKey),
         ]]];
     }
 
@@ -101,5 +104,136 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'hpWarn' => self::nonNegativeInt($payload['hpWarn'] ?? null, 'hpWarn'),
             'LPWarn' => self::nonNegativeInt($payload['LPWarn'] ?? null, 'LPWarn'),
         ]]];
+    }
+
+    private static function alarmClockList(array $payload): array
+    {
+        $items = $payload['alarmClockList'] ?? $payload['alarmClock'] ?? $payload['alarms'] ?? $payload['items'] ?? null;
+        if (!is_array($items)) {
+            throw new \InvalidArgumentException('alarmClockList must be an array');
+        }
+
+        return array_values(array_map(static function (mixed $item): array {
+            if (!is_array($item)) {
+                throw new \InvalidArgumentException('alarmClockList items must be objects');
+            }
+            $time = trim((string)($item['startTime'] ?? $item['time'] ?? ''));
+            if ($time === '') {
+                throw new \InvalidArgumentException('alarm startTime is required');
+            }
+            $week = $item['week'] ?? null;
+            if ($week === null && is_array($item['recurrence'] ?? null)) {
+                $kind = strtolower(trim((string)($item['recurrence']['kind'] ?? '')));
+                if ($kind === 'daily') {
+                    $week = '1111111';
+                } elseif ($kind === 'once') {
+                    $week = '0000000';
+                } elseif (is_array($item['recurrence']['days'] ?? null)) {
+                    $enabledDays = array_flip(array_map('intval', $item['recurrence']['days']));
+                    $week = implode('', array_map(
+                        static fn(int $day): string => isset($enabledDays[$day]) ? '1' : '0',
+                        range(1, 7)
+                    ));
+                }
+            }
+
+            return array_filter([
+                'label' => trim((string)($item['label'] ?? '')),
+                'startTime' => $time,
+                'week' => trim((string)($week ?? '0000000')),
+                'status' => (string)self::boolInt($item['status'] ?? $item['enabled'] ?? true, 'status'),
+                'url' => trim((string)($item['url'] ?? '')),
+            ], static fn (mixed $value): bool => $value !== '');
+        }, array_values($items)));
+    }
+
+    private static function familyNumbers(mixed $contacts): array
+    {
+        if (!is_array($contacts) || !array_is_list($contacts)) {
+            throw new \InvalidArgumentException('contacts must be an array');
+        }
+        if (count($contacts) > 10) {
+            throw new \InvalidArgumentException('contacts must contain at most 10 values');
+        }
+
+        return array_values(array_map(static function (mixed $contact): array {
+            if (!is_array($contact)) {
+                throw new \InvalidArgumentException('contacts items must be objects');
+            }
+            $phone = self::requiredString($contact['phone'] ?? null, 'phone');
+            return [
+                'familyNumberId' => trim((string)($contact['familyNumberId'] ?? substr(sha1($phone), 0, 8))),
+                'name' => trim((string)($contact['name'] ?? '')),
+                'phone' => $phone,
+                'sosSwitch' => self::boolInt($contact['sosSwitch'] ?? false, 'sosSwitch'),
+                'areaCode' => trim((string)($contact['areaCode'] ?? '')),
+            ];
+        }, $contacts));
+    }
+
+    private static function sosNumbers(mixed $contacts): array
+    {
+        if (!is_array($contacts) || !array_is_list($contacts)) {
+            throw new \InvalidArgumentException('numbers must be an array');
+        }
+        if (count($contacts) > 10) {
+            throw new \InvalidArgumentException('numbers must contain at most 10 values');
+        }
+
+        return array_values(array_map(static function (mixed $contact): array {
+            $contact = is_array($contact) ? $contact : ['phone' => $contact];
+            $phone = self::requiredString($contact['phone'] ?? null, 'phone');
+            return [
+                'sosNumberId' => trim((string)($contact['sosNumberId'] ?? $contact['familyNumberId'] ?? substr(sha1($phone), 0, 8))),
+                'name' => trim((string)($contact['name'] ?? '')),
+                'phone' => $phone,
+            ];
+        }, $contacts));
+    }
+
+    private static function medicationPlan(array $payload): array
+    {
+        $plan = $payload['plan'] ?? $payload['medicationPlan'] ?? null;
+        if ($plan === null && isset($payload['plans'])) {
+            if (!is_array($payload['plans']) || count($payload['plans']) !== 1 || !is_array($payload['plans'][0])) {
+                throw new \InvalidArgumentException('Wonlex sends one medication plan per command');
+            }
+            $plan = $payload['plans'][0];
+        }
+        if ($plan === null) {
+            $plan = $payload;
+        }
+        if (!is_array($plan)) {
+            throw new \InvalidArgumentException('plan must be an object');
+        }
+
+        foreach (['drugType', 'drugName', 'drugStartTime', 'drugEndTime', 'drugInterval', 'drugTime'] as $field) {
+            if (!array_key_exists($field, $plan)) {
+                throw new \InvalidArgumentException("{$field} is required");
+            }
+        }
+
+        return [
+            'drugType' => self::nonNegativeInt($plan['drugType'], 'drugType'),
+            'drugName' => self::requiredString($plan['drugName'], 'drugName'),
+            'drugDose' => self::nonNegativeFloat($plan['drugDose'] ?? 0, 'drugDose'),
+            'drugUnit' => (string)($plan['drugUnit'] ?? '5'),
+            'drugStartTime' => self::requiredString($plan['drugStartTime'], 'drugStartTime'),
+            'drugEndTime' => self::requiredString($plan['drugEndTime'], 'drugEndTime'),
+            'drugInterval' => self::nonNegativeFloat($plan['drugInterval'], 'drugInterval'),
+            'drugTime' => self::arrayField($plan['drugTime'], 'drugTime'),
+        ];
+    }
+
+    private static function weatherData(array $payload): array
+    {
+        $weather = is_array($payload['weather'] ?? null) ? $payload['weather'] : $payload;
+        foreach (['weather', 'weatherType', 'province', 'city', 'adcode', 'temperature', 'winddirection', 'windpower', 'humidity', 'daytemp', 'nighttemp', 'reporttime'] as $field) {
+            if (!array_key_exists($field, $weather)) {
+                throw new \InvalidArgumentException("{$field} is required");
+            }
+        }
+
+        return ['iIsCDMA' => (string)($weather['iIsCDMA'] ?? '0')] + $weather;
     }
 }

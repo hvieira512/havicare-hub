@@ -65,6 +65,15 @@ abstract class ConfigurationPayloadBuilder
         return (int)$value;
     }
 
+    protected static function nonNegativeFloat(mixed $value, string $field): int|float
+    {
+        if (!is_numeric((string)$value) || (float)$value < 0) {
+            throw new \InvalidArgumentException("{$field} must be a non-negative number");
+        }
+
+        return str_contains((string)$value, '.') ? (float)$value : (int)$value;
+    }
+
     protected static function positiveInt(mixed $value, string $field): int
     {
         if (!is_numeric((string)$value) || (int)$value <= 0) {

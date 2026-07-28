@@ -45,7 +45,7 @@ final class DeviceConfigurationQueryService
             $normalized = $this->publicValue(
                 $protocol,
                 $genericKey,
-                $this->capabilities->fromNative($genericKey, $nativeKey, $desired)
+                $this->capabilities->fromNative($genericKey, $nativeKey, $desired, $protocol)
             );
             if ($normalized === null) {
                 continue;
@@ -97,14 +97,16 @@ final class DeviceConfigurationQueryService
      */
     private function stringifyCallWhitelist(string $protocol, array $value): mixed
     {
-        if ($protocol === 'vivistar-iw') {
+        if (in_array($protocol, ['vivistar-iw', 'wonlex-json'], true)) {
             $items = $value['contacts'] ?? $value['numbers'] ?? $value;
             if (!is_array($items) || !array_is_list($items)) {
                 return $value;
             }
 
             return array_values(array_filter(array_map(
-                static fn(mixed $item): ?array => self::normalizeContact($item),
+                static fn(mixed $item): ?array => $protocol === 'wonlex-json'
+                    ? self::normalizeWonlexContact($item)
+                    : self::normalizeContact($item),
                 $items
             )));
         }
@@ -146,6 +148,25 @@ final class DeviceConfigurationQueryService
         $name = trim((string)($item['name'] ?? ''));
         $phone = trim((string)($item['phone'] ?? ''));
         return $phone === '' ? null : ['name' => $name, 'phone' => $phone];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private static function normalizeWonlexContact(mixed $item): ?array
+    {
+        $contact = self::normalizeContact($item);
+        if ($contact === null || !is_array($item)) {
+            return $contact;
+        }
+
+        return array_filter([
+            'familyNumberId' => trim((string)($item['familyNumberId'] ?? '')),
+            'name' => $contact['name'],
+            'phone' => $contact['phone'],
+            'sosSwitch' => isset($item['sosSwitch']) ? (bool)$item['sosSwitch'] : false,
+            'areaCode' => trim((string)($item['areaCode'] ?? '')),
+        ], static fn(mixed $field, string $key): bool => $key === 'sosSwitch' || $field !== '', ARRAY_FILTER_USE_BOTH);
     }
 
     private static function contactPhone(mixed $item): string
