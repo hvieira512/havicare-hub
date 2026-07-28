@@ -26,13 +26,33 @@ final class RawPayloadTest extends TestCase
 
     public function testRawPayloadKeepsBinaryDebugDataAsBase64(): void
     {
-        $raw = "\xFC\xAF\x00\x02{}";
+        $json = json_encode([
+            'type' => 'upBO',
+            'imei' => '865028000000306',
+            'data' => ['data' => '96'],
+        ], JSON_THROW_ON_ERROR);
+        $raw = pack('nn', 0xFCAF, strlen($json)) . $json;
 
         $payload = RawPayload::raw('865028000000306', 'Wonlex', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
 
         self::assertSame(base64_encode($raw), $payload['debug']['payload']);
         self::assertSame('base64', $payload['debug']['encoding']);
+        self::assertSame([
+            'type' => 'upBO',
+            'imei' => '865028000000306',
+            'data' => ['data' => '96'],
+        ], $payload['debug']['decoded']);
         self::assertArrayNotHasKey('text', $payload);
+    }
+
+    public function testRawPayloadDoesNotAddDecodedDataForMalformedWonlexFrame(): void
+    {
+        $raw = pack('nn', 0xFCAF, 10) . '{}';
+
+        $payload = RawPayload::raw('865028000000306', 'Wonlex', 'HW20PRO', 'tcp', 'wonlex-json', $raw, 'uplink');
+
+        self::assertSame('base64', $payload['debug']['encoding']);
+        self::assertArrayNotHasKey('decoded', $payload['debug']);
     }
 
     public function testStatusPayloadDoesNotExposeDebugFields(): void

@@ -595,6 +595,9 @@ Raw messages preserve the device or upstream payload on:
 ```
 
 `debug.payload` is the canonical raw body. For non-text bytes the hub emits base64 and sets `debug.encoding` to `base64`.
+Wonlex TCP frames retain that lossless base64 body and also expose their parsed JSON body as
+`debug.decoded`, making the native `type`, `imei`, `data`, and other supplier fields directly readable
+on the raw topic.
 
 Downlink accepts either a raw MQTT payload string or JSON:
 

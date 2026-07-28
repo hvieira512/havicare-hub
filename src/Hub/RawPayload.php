@@ -31,6 +31,11 @@ class RawPayload
             ],
         ];
 
+        $decoded = self::decodedPayload($protocol, $raw);
+        if ($decoded !== null) {
+            $payload['debug']['decoded'] = $decoded;
+        }
+
         if ($connectionId !== null && $connectionId !== '') {
             $payload['debug']['connectionId'] = $connectionId;
         }
@@ -119,6 +124,26 @@ class RawPayload
         }
 
         return preg_match('/[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]/', $raw) !== 1;
+    }
+
+    private static function decodedPayload(string $protocol, string $raw): ?array
+    {
+        if ($protocol !== 'wonlex-json' || strlen($raw) < 4) {
+            return null;
+        }
+
+        $header = @unpack('nstart/nlength', substr($raw, 0, 4));
+        if (($header['start'] ?? null) !== 0xFCAF) {
+            return null;
+        }
+
+        $length = (int)($header['length'] ?? 0);
+        if ($length < 1 || strlen($raw) !== 4 + $length) {
+            return null;
+        }
+
+        $decoded = json_decode(substr($raw, 4, $length), true);
+        return is_array($decoded) && isset($decoded['type']) ? $decoded : null;
     }
 
     private static function device(string $imei, string $supplier, string $model, string $commercialName = ''): array
