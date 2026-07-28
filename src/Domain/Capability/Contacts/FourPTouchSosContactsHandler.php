@@ -13,6 +13,8 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
     use CapabilityHelpers;
     use FourPTouchContactSupport;
 
+    private const LIMIT = 3;
+
     public function nativeKey(): string
     {
         return 'sosNumber1';
@@ -23,7 +25,15 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
         $numbers = is_array($value) && array_key_exists('numbers', $value)
             ? $value['numbers']
             : $value;
-        return $this->split(self::requireUniqueStringListValue($numbers, 'numbers'));
+        $numbers = self::requireUniqueStringListValue($numbers, 'numbers');
+        if (count($numbers) > self::LIMIT) {
+            throw new \InvalidArgumentException(sprintf(
+                'numbers must contain at most %d values',
+                self::LIMIT
+            ));
+        }
+
+        return $this->split($numbers);
     }
 
     public function fromNative(array $desired): mixed
@@ -43,7 +53,7 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
 
     public function meta(array $accumulatedMeta = []): array
     {
-        return self::mergeFourPTouchMeta($accumulatedMeta, 3, [
+        return self::mergeFourPTouchMeta($accumulatedMeta, self::LIMIT, [
             'phone' => ['maxLength' => 20, 'asciiOnly' => true],
         ]);
     }
@@ -77,7 +87,7 @@ final class FourPTouchSosContactsHandler implements CapabilityProtocolHandler
         }
 
         $updates = [];
-        foreach (array_slice($numbers, 0, 3) as $index => $phone) {
+        foreach (array_slice($numbers, 0, self::LIMIT) as $index => $phone) {
             if (trim($phone) !== '') {
                 $updates['sosNumber' . ($index + 1)] = ['phone' => $phone];
             }

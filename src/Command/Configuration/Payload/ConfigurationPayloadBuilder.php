@@ -18,6 +18,9 @@ abstract class ConfigurationPayloadBuilder
         if (!is_array($value)) {
             throw new \InvalidArgumentException("{$field} must be an array");
         }
+        if (count($value) > $max) {
+            throw new \InvalidArgumentException("{$field} must contain at most {$max} values");
+        }
 
         return array_pad(array_map(static function (mixed $item) use ($field): string {
             if (is_array($item)) {

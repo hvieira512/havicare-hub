@@ -44,6 +44,35 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(3, $config['limit'] ?? null);
     }
 
+    public function testSupplierSosPayloadsRejectMoreThanTheirDeclaredLimit(): void
+    {
+        foreach ([
+            ['protocol' => 'vivistar-iw', 'key' => 'sosContacts'],
+            ['protocol' => 'wonlex-json', 'key' => 'SOSNumber'],
+        ] as $supplierConfig) {
+            $config = DeviceConfigurationCatalog::configForProtocol(
+                $supplierConfig['protocol'],
+                $supplierConfig['key']
+            );
+            self::assertIsArray($config);
+            $limit = (int)($config['limit'] ?? 0);
+            self::assertGreaterThan(0, $limit);
+
+            $numbers = array_map(
+                static fn(int $index): string => '+35190000000' . $index,
+                range(1, $limit + 1)
+            );
+            self::assertSame(
+                "numbers must contain at most {$limit} values",
+                DeviceConfigurationCatalog::validate(
+                    $supplierConfig['protocol'],
+                    $supplierConfig['key'],
+                    ['numbers' => $numbers]
+                )
+            );
+        }
+    }
+
     public function testVivistarCallWhitelistAndSwitchAreSeparated(): void
     {
         $callWhitelist = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'call_whitelist');

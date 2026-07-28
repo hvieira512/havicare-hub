@@ -1133,6 +1133,32 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('numbers must not contain repeated values', $response['error']['message'] ?? null);
     }
 
+    public function testFourPTouchSosContactsRejectsMoreThanThreeNumbers(): void
+    {
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->expects(self::never())->method('submitDownlink');
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+        self::assertIsArray($model);
+        $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
+
+        $response = $api->updateConfigurations('861728087060467', json_encode([
+            'configurations' => [
+                'sos_contacts' => [
+                    '+351938854803',
+                    '+351938854804',
+                    '+351938854805',
+                    '+351938854806',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('invalid_config', $response['error']['code'] ?? null);
+        self::assertSame('numbers must contain at most 3 values', $response['error']['message'] ?? null);
+        self::assertSame([], $db->deviceConfigurations->allForImei('861728087060467'));
+    }
+
     public function testFourPTouchCallWhitelistRejectsRepeatedNumbers(): void
     {
         [$api, $db, $store] = $this->makeApi();
