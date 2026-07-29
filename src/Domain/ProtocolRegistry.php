@@ -25,8 +25,27 @@ final class ProtocolRegistry
                 'deviceType' => 'watch',
                 'supportsConfigCatalog' => true,
                 'dashboard' => [
-                    'groupedCapabilities' => [],
-                    'fieldConstraints' => [],
+                    'groupedCapabilities' => [
+                        'phonebook' => [
+                            'label' => 'Lista telefónica',
+                            'limit' => 10,
+                        ],
+                        'sos_contacts' => [
+                            'label' => 'Contactos SOS',
+                            'limit' => 10,
+                        ],
+                        'whitelist_enabled' => [
+                            'label' => 'Restringir chamadas recebidas',
+                            'limit' => 0,
+                        ],
+                    ],
+                    'fieldConstraints' => [
+                        'phonebook' => [
+                            'name' => ['maxLength' => 10],
+                            'phone' => ['maxLength' => 20, 'asciiOnly' => true],
+                            'allowPartialRows' => true,
+                        ],
+                    ],
                 ],
             ],
             'vivistar-iw' => [
@@ -51,6 +70,10 @@ final class ProtocolRegistry
                         'call_whitelist' => [
                             'label' => 'Lista branca',
                             'limit' => 10,
+                        ],
+                        'whitelist_enabled' => [
+                            'label' => 'Lista branca ativa',
+                            'limit' => 0,
                         ],
                     ],
                     'fieldConstraints' => [

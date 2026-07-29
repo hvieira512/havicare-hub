@@ -1520,10 +1520,8 @@ class DeviceService
      */
     private function stringifyCallWhitelistValue(string $protocol, array $value): mixed
     {
-        if (in_array($protocol, ['vivistar-iw', 'wonlex-json'], true)) {
-            $normalize = static fn(mixed $contact): ?array => $protocol === 'wonlex-json'
-                ? self::normalizePublicWonlexContactItem($contact)
-                : self::normalizePublicContactItem($contact);
+        if ($protocol === 'vivistar-iw') {
+            $normalize = self::normalizePublicContactItem(...);
             if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
                 return array_values(array_filter(array_map(
                     $normalize,
@@ -1609,25 +1607,6 @@ class DeviceService
         }
 
         return ['name' => $name, 'phone' => $phone];
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private static function normalizePublicWonlexContactItem(mixed $item): ?array
-    {
-        $contact = self::normalizePublicContactItem($item);
-        if ($contact === null || !is_array($item)) {
-            return $contact;
-        }
-
-        return array_filter([
-            'familyNumberId' => trim((string)($item['familyNumberId'] ?? '')),
-            'name' => $contact['name'],
-            'phone' => $contact['phone'],
-            'sosSwitch' => isset($item['sosSwitch']) ? (bool)$item['sosSwitch'] : false,
-            'areaCode' => trim((string)($item['areaCode'] ?? '')),
-        ], static fn(mixed $field, string $key): bool => $key === 'sosSwitch' || $field !== '', ARRAY_FILTER_USE_BOTH);
     }
 
     /**

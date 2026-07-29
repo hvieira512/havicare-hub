@@ -11,7 +11,7 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [70, '366c51de6cc10e11c6fd7e1c2e0f57ff323371dc88fa4820710f5fd0777581be'],
+            'watch' => [69, '1282959d916330a134742489379668904666339eed3f578a7277e5385c1ba795'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
         ];
@@ -99,7 +99,8 @@ final class CapabilityCatalogTest extends TestCase
 
         self::assertArrayNotHasKey('device_binding', $definitions);
         self::assertArrayNotHasKey('device_settings_sync', $definitions);
-        self::assertSame('contacts', $definitions['call_in_restriction']['section']);
+        self::assertArrayNotHasKey('call_in_restriction', $definitions);
+        self::assertSame('contacts', $definitions['whitelist_enabled']['section']);
         self::assertSame('Wrist removal alert', $definitions['remove_watch_alarm']['label']);
         self::assertSame('Wrist removal SMS alert', $definitions['remove_watch_sms_alert']['label']);
 

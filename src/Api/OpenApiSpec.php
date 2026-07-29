@@ -1204,11 +1204,11 @@ class OpenApiSpec
                     ],
                     'PhonebookConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.phonebook for 4P Touch devices. Send contacts as an array; an empty array is valid and clears the phonebook. The hub translates that list to the device-specific native commands.',
+                        'description' => 'Payload accepted under configurations.phonebook for Wonlex and 4P Touch. Send only generic name and international phone fields; native IDs, area codes and SOS flags are managed by the hub. Wonlex accepts up to 10 contacts and 4P Touch up to 5. An empty array clears the phonebook.',
                         'properties' => [
                             'contacts' => [
                                 'type' => 'array',
-                                'maxItems' => 5,
+                                'maxItems' => 10,
                                 'items' => [
                                     'type' => 'object',
                                     'required' => ['phone', 'name'],
@@ -1324,12 +1324,12 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. For list-shaped capabilities, an empty array is valid and clears the saved value. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]} and keep recurrence.kind as once, daily or custom. type is required for Vivistar and rejected for 4P Touch. Use configurations.phonebook only for 4P Touch contact lists. Use configurations.call_whitelist for whitelist lists: Vivistar accepts {contacts:[{name,phone}]} through BP14, while 4P Touch accepts flat arrays of phone numbers. For sos_contacts, send flat arrays of phone numbers. Use whitelist_enabled as the separate on/off switch for whitelist transport.',
+                                'description' => 'Map of generic capability keys to desired payloads. Empty arrays clear list values. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]}. For Wonlex, phonebook is {contacts:[{name,phone}]}, sos_contacts is a flat subset of phone numbers already present in phonebook, whitelist_enabled controls CallInLimitSwitch, and sos_sms_alert controls SOSSwitch. call_whitelist is reserved for Vivistar and 4P Touch.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
                                     'phonebook' => ['$ref' => '#/components/schemas/PhonebookConfiguration'],
                                 ],
-                                'additionalProperties' => ['type' => 'object'],
+                                'additionalProperties' => true,
                                 'example' => [
                                     'auto_vitals_interval' => ['enabled' => true, 'intervalMinutes' => 120],
                                     'phonebook' => ['contacts' => [['name' => 'HAVICARE SUPORTE', 'phone' => '+351278710140']]],

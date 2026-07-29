@@ -35,12 +35,12 @@ final class WhitelistEnabledCapability implements CapabilityContract
 
     public function supportsMultipleNativeKeys(): bool
     {
-        return false;
+        return true;
     }
 
     public function supportedProtocols(): array
     {
-        return ['vivistar-iw', 'four-p-touch'];
+        return ['vivistar-iw', 'wonlex-json', 'four-p-touch'];
     }
 
     public function toNative(string $protocol, mixed $value): array
@@ -51,8 +51,16 @@ final class WhitelistEnabledCapability implements CapabilityContract
                     'enabled' => self::requireBoolLikeField($value, 'enabled'),
                 ],
             ],
+            'wonlex-json' => [
+                'wonlexCallInLimitSwitch' => [
+                    'switchState' => self::requireBoolLikeField($value, 'enabled'),
+                ],
+            ],
             'four-p-touch' => [
                 'whitelistSwitch' => [
+                    'enabled' => self::requireBoolLikeField($value, 'enabled'),
+                ],
+                'callInRestriction' => [
                     'enabled' => self::requireBoolLikeField($value, 'enabled'),
                 ],
             ],
@@ -62,7 +70,7 @@ final class WhitelistEnabledCapability implements CapabilityContract
 
     public function fromNative(string $nativeKey, array $desired): mixed
     {
-        return ['enabled' => (bool)($desired['enabled'] ?? false)];
+        return ['enabled' => (bool)($desired['enabled'] ?? $desired['switchState'] ?? false)];
     }
 
     public function defaultValue(string $protocol): mixed
@@ -72,6 +80,12 @@ final class WhitelistEnabledCapability implements CapabilityContract
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
+        if ($protocol === 'wonlex-json') {
+            return array_replace_recursive([
+                'allowedContactSources' => ['phonebook', 'sos_contacts'],
+            ], $accumulatedMeta);
+        }
+
         return $accumulatedMeta;
     }
 
@@ -82,7 +96,7 @@ final class WhitelistEnabledCapability implements CapabilityContract
 
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
-        return ['value' => $value, '_meta' => $meta];
+        return ['value' => $value, '_meta' => $this->meta($protocol, $meta)];
     }
 
     public function resolveConfigKey(string $protocol, string $key): ?string

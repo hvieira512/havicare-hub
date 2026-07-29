@@ -9,6 +9,7 @@ use Hub\Dashboard\DashboardStoreContract;
 use Hub\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Domain\Capability\Contacts\WonlexContactCodec;
 use Hub\Log\Logger;
 
 final class DeviceConfigurationUpdateService
@@ -51,6 +52,11 @@ final class DeviceConfigurationUpdateService
                 $currentByKey[$normalizedKey] = $row;
             }
         }
+        if ($protocol === 'wonlex-json' && array_key_exists('phonebook', $configurations)) {
+            $phonebook = ['phonebook' => $configurations['phonebook']];
+            unset($configurations['phonebook']);
+            $configurations = $phonebook + $configurations;
+        }
 
         $results = [];
         foreach ($configurations as $genericKey => $payload) {
@@ -87,6 +93,18 @@ final class DeviceConfigurationUpdateService
                         $payload['voiceMimeType'] = $existing['voiceMimeType'];
                     }
                 }
+            }
+            if ($protocol === 'wonlex-json' && $genericKey === 'phonebook') {
+                $sosValue = $configurations['sos_contacts']
+                    ?? ($currentByKey['sos_contacts']['desired_payload'] ?? null)
+                    ?? $this->wonlexSelectedFamilyNumbers($currentByKey);
+                $payload['sosNumbers'] = $this->wonlexSosNumbers($sosValue);
+            }
+            if ($protocol === 'wonlex-json' && $genericKey === 'sos_contacts') {
+                $payload = [
+                    'selectedNumbers' => $this->wonlexSosNumbers($payload),
+                    'phonebookContacts' => $this->wonlexPhonebookContacts($currentByKey),
+                ];
             }
 
             try {
@@ -292,5 +310,66 @@ final class DeviceConfigurationUpdateService
         ksort($normalized);
 
         return $normalized;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $currentByKey
+     * @return list<array<string, mixed>>
+     */
+    private function wonlexPhonebookContacts(array $currentByKey): array
+    {
+        $payload = $currentByKey['phonebook']['desired_payload'] ?? [];
+        if (!is_array($payload)) {
+            return [];
+        }
+        $contacts = $payload['contacts'] ?? $payload['familyNumbers'] ?? $payload;
+
+        return is_array($contacts) && array_is_list($contacts) ? array_values($contacts) : [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function wonlexSosNumbers(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+        $items = $value['selectedNumbers']
+            ?? $value['numbers']
+            ?? $value['contacts']
+            ?? $value['sosNumbers']
+            ?? $value;
+        if (!is_array($items) || !array_is_list($items)) {
+            return [];
+        }
+
+        $numbers = [];
+        foreach ($items as $item) {
+            $phone = is_array($item)
+                ? WonlexContactCodec::publicPhone($item)
+                : WonlexContactCodec::normalizePhone((string)$item);
+            if ($phone !== '' && !in_array($phone, $numbers, true)) {
+                $numbers[] = $phone;
+            }
+        }
+
+        return $numbers;
+    }
+
+    /**
+     * Preserve legacy familyNumber.sosSwitch selections when no SOSNumber row exists yet.
+     *
+     * @param array<string, array<string, mixed>> $currentByKey
+     * @return list<string>
+     */
+    private function wonlexSelectedFamilyNumbers(array $currentByKey): array
+    {
+        return array_values(array_filter(array_map(
+            static fn(array $contact): string => ($contact['sosSwitch'] ?? false)
+                ? WonlexContactCodec::publicPhone($contact)
+                : '',
+            $this->wonlexPhonebookContacts($currentByKey)
+        )));
     }
 }

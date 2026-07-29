@@ -274,7 +274,7 @@ final class CapabilityCatalog
 
         return match ($key) {
             'alarm_clock' => 'alarm_clock',
-            'familyNumber' => 'call_whitelist',
+            'familyNumber' => 'phonebook',
             'SOSNumber' => 'sos_contacts',
             'dnMedicationPlan' => 'medication_reminders',
             'wonlexLowPower' => 'low_battery_alert',
@@ -309,7 +309,7 @@ final class CapabilityCatalog
             'wonlexStepInterval' => 'step_reporting_interval',
             'locationInterval' => 'location_reporting_interval',
             'workingMode' => 'working_mode',
-            'wonlexCallInLimitSwitch' => 'call_in_restriction',
+            'wonlexCallInLimitSwitch' => 'whitelist_enabled',
             'whitelistSwitch' => 'whitelist_enabled',
             'whitelist_enabled' => 'whitelist_enabled',
             'resetCommand' => 'reset_device',

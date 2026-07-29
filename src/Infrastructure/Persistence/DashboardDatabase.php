@@ -14,6 +14,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026072901CleanWatchCapabili
 use Hub\Infrastructure\Persistence\Migration\Version2026072902EnumCapabilitySections;
 use Hub\Infrastructure\Persistence\Migration\Version2026072903RestrictHw20ProHealthRequests;
 use Hub\Infrastructure\Persistence\Migration\Version2026072904RemoveUnsupportedWonlexReports;
+use Hub\Infrastructure\Persistence\Migration\Version2026072905NormalizeContactCapabilities;
 use PDO;
 
 final class DashboardDatabase
@@ -69,6 +70,7 @@ final class DashboardDatabase
             new Version2026072902EnumCapabilitySections(),
             new Version2026072903RestrictHw20ProHealthRequests(),
             new Version2026072904RemoveUnsupportedWonlexReports(),
+            new Version2026072905NormalizeContactCapabilities(),
         ]))->run();
     }
 }

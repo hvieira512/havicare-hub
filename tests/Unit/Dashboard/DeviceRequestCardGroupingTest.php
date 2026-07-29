@@ -146,6 +146,10 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('O último valor está guardado no Hub, mas não foi aplicado pelo dispositivo.', $source);
         self::assertStringContainsString('resolveConfigDelivery(entry, pending)', $source);
         self::assertStringContainsString('renderConfigurationDeliveryNotice(deliveryMeta, delivery)', $source);
+        self::assertStringContainsString('phonebook: (entry, desired, meta) => contactsInput(entry, desired, meta),', $source);
+        self::assertStringContainsString('data-sos-contact-phone', $source);
+        self::assertStringContainsString('phonebookContacts: relatedConfigurations.phonebook || []', $source);
+        self::assertStringContainsString('Apenas contactos existentes na lista telefónica podem ser usados como SOS.', $source);
         self::assertStringContainsString(
             'Selecione a escala de sensibilidade suportada pelo firmware (6 ou 8 níveis).',
             $source

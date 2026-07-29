@@ -70,7 +70,7 @@ const CAPABILITY_LABEL_TRANSLATIONS = {
     step_reporting_interval: "Passos",
     pedometer_schedule: "Pedómetro",
     sos_contacts: "Contactos SOS",
-    phonebook: "Lista telefónica (4P Touch)",
+    phonebook: "Lista telefónica",
     call_whitelist: "Lista branca",
     whitelist_enabled: "Lista branca ativa",
     monitor_number: "Número de monitorização",
@@ -90,7 +90,6 @@ const CAPABILITY_LABEL_TRANSLATIONS = {
     remove_watch_sms_alert: "SMS de remoção do relógio",
     location_reporting_interval: "Localização",
     working_mode: "Modo de funcionamento",
-    call_in_restriction: "Chamadas recebidas",
     device_password: "Palavra-passe",
     language_timezone: "Idioma e fuso horário",
 };

@@ -58,7 +58,7 @@ final class SosContactsCapability implements CapabilityContract
             : $value;
         return match ($protocol) {
             'vivistar-iw' => ['sosContacts' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
-            'wonlex-json' => ['SOSNumber' => ['numbers' => self::requireUniqueStringListValue($numbers, 'numbers')]],
+            'wonlex-json' => $this->wonlexNative($value),
             'four-p-touch' => $this->fourPTouch->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for sos_contacts"),
         };
@@ -77,8 +77,18 @@ final class SosContactsCapability implements CapabilityContract
         }
         if ($nativeKey === 'SOSNumber' && isset($desired['sosNumbers']) && is_array($desired['sosNumbers'])) {
             return self::stringList(array_map(
-                static fn(mixed $item): string => trim((string)(is_array($item) ? ($item['phone'] ?? '') : $item)),
+                static fn(mixed $item): string => is_array($item)
+                    ? WonlexContactCodec::publicPhone($item)
+                    : trim((string)$item),
                 $desired['sosNumbers']
+            ));
+        }
+        if ($nativeKey === 'SOSNumber' && isset($desired['contacts']) && is_array($desired['contacts'])) {
+            return self::stringList(array_map(
+                static fn(mixed $item): string => is_array($item)
+                    ? WonlexContactCodec::publicPhone($item)
+                    : trim((string)$item),
+                $desired['contacts']
             ));
         }
         if ($nativeKey === 'sosNumber1' || $nativeKey === 'sosNumber2' || $nativeKey === 'sosNumber3') {
@@ -92,15 +102,24 @@ final class SosContactsCapability implements CapabilityContract
     {
         return match ($protocol) {
             'four-p-touch' => $this->fourPTouch->defaultValue(),
-            default => ['', '', ''],
+            default => [],
         };
     }
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
-        return $protocol === 'four-p-touch'
-            ? $this->fourPTouch->meta($accumulatedMeta)
-            : $accumulatedMeta;
+        if ($protocol === 'four-p-touch') {
+            return $this->fourPTouch->meta($accumulatedMeta);
+        }
+        if ($protocol === 'wonlex-json') {
+            return array_replace_recursive([
+                'limit' => 10,
+                'sourceCapability' => 'phonebook',
+                'selectionMode' => 'subset',
+            ], $accumulatedMeta);
+        }
+
+        return $accumulatedMeta;
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed
@@ -114,7 +133,10 @@ final class SosContactsCapability implements CapabilityContract
             return $this->fourPTouch->responseEntry($protocol, $nativeKey, $value, $meta);
         }
 
-        return ['value' => is_array($value) ? self::stringList($value) : [], '_meta' => $meta];
+        return [
+            'value' => is_array($value) ? self::stringList($value) : [],
+            '_meta' => $this->meta($protocol, $meta),
+        ];
     }
 
     public function resolveConfigKey(string $protocol, string $key): ?string
@@ -122,4 +144,50 @@ final class SosContactsCapability implements CapabilityContract
         return $key;
     }
 
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function wonlexNative(mixed $value): array
+    {
+        $phonebook = is_array($value) ? ($value['phonebookContacts'] ?? null) : null;
+        $selected = is_array($value)
+            ? ($value['selectedNumbers'] ?? $value['numbers'] ?? null)
+            : $value;
+        $numbers = self::requireUniqueStringListValue($selected, 'numbers');
+        if (!is_array($phonebook) || !array_is_list($phonebook)) {
+            throw new \InvalidArgumentException('Wonlex SOS contacts must be selected from the phonebook');
+        }
+
+        $selectedSet = array_fill_keys(array_map(
+            static fn(string $phone): string => WonlexContactCodec::normalizePhone($phone),
+            $numbers
+        ), true);
+        $familyContacts = [];
+        $sosContacts = [];
+        foreach ($phonebook as $contact) {
+            if (!is_array($contact)) {
+                continue;
+            }
+            $phone = WonlexContactCodec::publicPhone($contact);
+            if ($phone === '') {
+                continue;
+            }
+            $isSelected = isset($selectedSet[WonlexContactCodec::normalizePhone($phone)]);
+            $family = WonlexContactCodec::familyContact($contact, $isSelected);
+            $familyContacts[] = $family;
+            if ($isSelected) {
+                $sosContacts[] = WonlexContactCodec::sosContact($family);
+                unset($selectedSet[WonlexContactCodec::normalizePhone($phone)]);
+            }
+        }
+
+        if ($selectedSet !== []) {
+            throw new \InvalidArgumentException('Wonlex SOS contacts must exist in the phonebook');
+        }
+
+        return [
+            'familyNumber' => ['contacts' => $familyContacts],
+            'SOSNumber' => ['contacts' => $sosContacts],
+        ];
+    }
 }

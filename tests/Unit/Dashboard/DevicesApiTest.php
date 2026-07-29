@@ -258,12 +258,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['name']['maxLength'] ?? null);
         self::assertSame(20, $response['capabilities']['contacts']['phonebook']['_meta']['phone']['maxLength'] ?? null);
         self::assertTrue($response['capabilities']['contacts']['phonebook']['_meta']['phone']['asciiOnly'] ?? false);
-        self::assertSame(
-            [
-                ['name' => '', 'phone' => ''],
-            ],
-            $response['capabilities']['contacts']['phonebook']['value'] ?? null
-        );
+        self::assertSame([], $response['capabilities']['contacts']['phonebook']['value'] ?? null);
     }
 
     public function testShowExposesFourPTouchSosContactsAsNumbersObject(): void
@@ -391,7 +386,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testShowPreservesWonlexFamilyContactFieldsAndAlarmLimit(): void
+    public function testShowNormalizesWonlexFamilyContactsAndExposesContactMetadata(): void
     {
         [$api, $db] = $this->makeApi();
         $imei = '868705080300697';
@@ -408,8 +403,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [
             'alarm_clock',
-            'call_whitelist',
+            'phonebook',
             'sos_contacts',
+            'whitelist_enabled',
         ]);
         $contacts = [[
             'familyNumberId' => '8c67b51b',
@@ -441,12 +437,47 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 'enabled' => true,
             ]]]
         );
+        $db->deviceConfigurations->saveDesired(
+            $imei,
+            'SOSNumber',
+            'wonlex-json',
+            'Wonlex',
+            'HW20PRO',
+            'SOSNumber',
+            ['contacts' => [[
+                'sosNumberId' => '8c67b51b',
+                'name' => 'Care',
+                'phone' => '210000000',
+                'publicPhone' => '+351210000000',
+            ]]]
+        );
+        $db->deviceConfigurations->saveDesired(
+            $imei,
+            'wonlexCallInLimitSwitch',
+            'wonlex-json',
+            'Wonlex',
+            'HW20PRO',
+            'deviceConfig',
+            ['switchState' => true]
+        );
 
         $response = $api->show($imei);
 
-        self::assertSame($contacts, $response['configurations']['call_whitelist'] ?? null);
-        self::assertSame($contacts, $response['capabilities']['contacts']['call_whitelist']['value'] ?? null);
-        self::assertSame($contacts, $response['pending']['contacts']['call_whitelist']['desired'] ?? null);
+        $publicContacts = [['name' => 'Care', 'phone' => '+351210000000']];
+        self::assertSame($publicContacts, $response['configurations']['phonebook'] ?? null);
+        self::assertSame($publicContacts, $response['capabilities']['contacts']['phonebook']['value'] ?? null);
+        self::assertSame($publicContacts, $response['pending']['contacts']['phonebook']['desired'] ?? null);
+        self::assertSame(['+351210000000'], $response['configurations']['sos_contacts'] ?? null);
+        self::assertTrue($response['configurations']['whitelist_enabled']['enabled'] ?? false);
+        self::assertArrayNotHasKey('call_whitelist', $response['capabilities']['contacts'] ?? []);
+        self::assertArrayNotHasKey('call_in_restriction', $response['capabilities']['contacts'] ?? []);
+        self::assertSame(10, $response['capabilities']['contacts']['phonebook']['_meta']['limit'] ?? null);
+        self::assertSame('phonebook', $response['capabilities']['contacts']['sos_contacts']['_meta']['sourceCapability'] ?? null);
+        self::assertSame('subset', $response['capabilities']['contacts']['sos_contacts']['_meta']['selectionMode'] ?? null);
+        self::assertSame(
+            ['phonebook', 'sos_contacts'],
+            $response['capabilities']['contacts']['whitelist_enabled']['_meta']['allowedContactSources'] ?? null
+        );
         self::assertSame('Medicine', $response['configurations']['alarm_clock'][0]['label'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(10, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
@@ -2156,8 +2187,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], [
             'alarm_clock',
-            'call_whitelist',
+            'phonebook',
             'sos_contacts',
+            'whitelist_enabled',
+            'sos_sms_alert',
             'medication_reminders',
             'weather_data',
             'heart_rate_measurement_interval',
@@ -2195,14 +2228,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'enabled' => true,
                     'recurrence' => ['kind' => 'daily'],
                 ]]],
-                'call_whitelist' => ['contacts' => [[
-                    'familyNumberId' => 'care0001',
+                'phonebook' => ['contacts' => [[
                     'name' => 'Care',
-                    'phone' => '210000000',
-                    'areaCode' => '351',
-                    'sosSwitch' => true,
+                    'phone' => '+351210000000',
                 ]]],
-                'sos_contacts' => ['numbers' => ['210000000']],
+                'sos_contacts' => ['+351210000000'],
+                'whitelist_enabled' => ['enabled' => true],
+                'sos_sms_alert' => ['enabled' => true],
                 'medication_reminders' => ['plans' => [
                     $plan + ['drugName' => 'Morning medicine'],
                     $plan + ['drugName' => 'Evening medicine'],
@@ -2212,31 +2244,40 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertCount(7, $submitted);
+        self::assertCount(9, $submitted);
         $adapter = new \Hub\Protocol\Adapter\WonlexAdapter();
         $frames = array_map(
             static fn(array $item): array => $adapter->decodeIncoming($item['bytes']) ?? [],
             $submitted
         );
         self::assertSame([
+            'familyNumber',
             'deviceMeasuringFrequency',
             'alarmClock',
-            'familyNumber',
             'SOSNumber',
+            'deviceConfig',
+            'deviceConfig',
             'dnMedicationPlan',
             'dnMedicationPlan',
             'dnWeather',
         ], array_column($frames, 'type'));
-        self::assertSame('15', $frames[0]['data']['configs']['upHeartRate']['interval'] ?? null);
-        self::assertSame('1111111', $frames[1]['data']['alarmClockList'][0]['week'] ?? null);
-        self::assertSame('351', $frames[2]['data']['familyNumbers'][0]['areaCode'] ?? null);
+        self::assertSame('351', $frames[0]['data']['familyNumbers'][0]['areaCode'] ?? null);
+        self::assertSame('15', $frames[1]['data']['configs']['upHeartRate']['interval'] ?? null);
+        self::assertSame('1111111', $frames[2]['data']['alarmClockList'][0]['week'] ?? null);
         self::assertSame('210000000', $frames[3]['data']['sosNumbers'][0]['phone'] ?? null);
-        self::assertSame('Morning medicine', $frames[4]['data']['drugName'] ?? null);
-        self::assertSame('Evening medicine', $frames[5]['data']['drugName'] ?? null);
-        self::assertSame('Lisbon', $frames[6]['data']['city'] ?? null);
+        self::assertSame(1, $frames[4]['data']['configs']['CallInLimitSwitch']['switchState'] ?? null);
+        self::assertSame(1, $frames[5]['data']['configs']['SOSSwitch']['switchState'] ?? null);
+        self::assertSame('Morning medicine', $frames[6]['data']['drugName'] ?? null);
+        self::assertSame('Evening medicine', $frames[7]['data']['drugName'] ?? null);
+        self::assertSame('Lisbon', $frames[8]['data']['city'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
-        self::assertSame('351', $response['configurations']['call_whitelist'][0]['areaCode'] ?? null);
-        self::assertSame(['210000000'], $response['configurations']['sos_contacts'] ?? null);
+        self::assertSame(
+            [['name' => 'Care', 'phone' => '+351210000000']],
+            $response['configurations']['phonebook'] ?? null
+        );
+        self::assertSame(['+351210000000'], $response['configurations']['sos_contacts'] ?? null);
+        self::assertTrue($response['configurations']['whitelist_enabled']['enabled'] ?? false);
+        self::assertTrue($response['configurations']['sos_sms_alert']['enabled'] ?? false);
         self::assertCount(2, $response['configurations']['medication_reminders']['plans'] ?? []);
     }
 

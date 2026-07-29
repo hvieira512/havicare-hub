@@ -742,7 +742,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'device status' => ['deviceStatus', 'deviceStatus'];
         yield 'device password' => ['device_password', 'devicePassword'];
         yield 'language timezone' => ['language_timezone', 'languageTimezone'];
-        yield 'call in restriction' => ['call_in_restriction', 'callInRestriction'];
+        yield 'whitelist enabled' => ['whitelist_enabled', 'whitelistSwitch'];
         yield 'sound profile' => ['sound_profile', 'profile'];
         yield 'do not disturb' => ['do_not_disturb', 'doNotDisturb'];
     }

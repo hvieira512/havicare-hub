@@ -110,6 +110,7 @@ const CONFIG_INPUT_RENDERERS = {
     sos_contacts: (entry, desired, meta) => sosContactsInput(entry, desired, meta),
     call_whitelist: (entry, desired, meta) => callWhitelistInput(entry, desired, meta),
     whitelist_enabled: (entry, desired) => toggleInput(entry, desired),
+    phonebook: (entry, desired, meta) => contactsInput(entry, desired, meta),
     contacts: (entry, desired, meta) => contactsInput(entry, desired, meta),
     alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
     alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
@@ -227,6 +228,13 @@ const CONFIG_INPUT_READERS = {
         return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
     },
     sos_contacts: (section) => {
+        const selector = section.querySelectorAll("[data-sos-contact-phone]");
+        if (selector.length > 0) {
+            return Array.from(selector)
+                .filter((input) => input.checked)
+                .map((input) => String(input.value || "").trim())
+                .filter(Boolean);
+        }
         const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
         return readUniquePhoneArray(section, "numbers", "Contactos SOS").slice(0, limit);
     },
@@ -237,6 +245,7 @@ const CONFIG_INPUT_READERS = {
         }
         return readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit);
     },
+    phonebook: (section) => ({contacts: readContacts(section)}),
     contacts: (section) => ({contacts: readContacts(section)}),
     alarm_clock: (section) => readAlarmClock(section),
     alarms: (section) => ({alarms: readFourPTouchAlarms(section)}),
@@ -278,11 +287,12 @@ const CONFIG_INPUT_DEFAULTS = {
         exerciseRemindValue: 140,
     }),
     list: () => ({numbers: ["", "", ""]}),
-    sos_contacts: () => ["", "", ""],
+    sos_contacts: () => [],
     call_whitelist: (entry, protocol) => protocol === "vivistar-iw"
         ? {contacts: [{name: "", phone: ""}]}
         : ["", "", "", "", "", "", "", "", "", ""],
     whitelist_enabled: () => ({enabled: true}),
+    phonebook: () => ({contacts: []}),
     contacts: () => ({contacts: [{name: "", phone: ""}]}),
     alarm_clock: () => ({items: []}),
     alarms: () => ({alarms: []}),
@@ -310,6 +320,7 @@ const CONFIG_INPUT_HELP = {
     requestAction: () => "sem parâmetros",
     soundProfile: () => "4 modos",
     whitelist_enabled: () => "ativa ou desativa a lista branca",
+    phonebook: (entry) => (entry.limit || 0) > 0 ? `limite ${entry.limit}` : "",
     sos_contacts: () => "",
     call_whitelist: () => "",
     wonlexMedicationPlans: () => "Formulário guiado para medicamento, dose, período e horários.",
@@ -323,6 +334,7 @@ const CONFIG_INPUT_LABEL = {
     sos_contacts: "Contactos SOS",
     call_whitelist: "Lista branca",
     whitelist_enabled: "Lista branca ativa",
+    phonebook: "Lista telefónica",
     wonlexMedicationPlans: "Plano de medicação",
     wonlexWeather: "Dados meteorológicos",
 };
@@ -545,7 +557,17 @@ export function renderDeviceConfigurationRoot(context) {
                                 ? null
                                 : resolveConfigDelivery(entry, pending);
                             const uiState = uiByKey[entry.key] || null;
-                            return renderConfigSection(protocol, entry, row, capabilities, disabled, uiState, stored, delivery);
+                            return renderConfigSection(
+                                protocol,
+                                entry,
+                                row,
+                                capabilities,
+                                disabled,
+                                uiState,
+                                stored,
+                                delivery,
+                                rowsByKey,
+                            );
                         }).join("")}
                     </div>
                 `,
@@ -564,10 +586,15 @@ export function renderConfigSection(
     uiState = null,
     stored = null,
     delivery = null,
+    relatedConfigurations = {},
 ) {
     const capability = capabilityForEntry(entry, capabilities);
     const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null, protocol);
-    const meta = capability?._meta || {};
+    const meta = {
+        ...(capability?._meta || {}),
+        protocol,
+        phonebookContacts: relatedConfigurations.phonebook || [],
+    };
     const help = configHelp(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const showConfigurationBadge = !entry.requestOnly;
@@ -678,8 +705,15 @@ function normalizeDesired(entry, desired, capabilityDesired = null, protocol = "
 function normalizeConfigEntry(entry) {
     const capabilityKey = String(entry.capabilityKey || "");
     const key = capabilityKey || String(entry.key || "");
-    const input = capabilityKey === "alarm_clock"
-        ? "alarm_clock"
+    const genericInputs = new Set([
+        "alarm_clock",
+        "phonebook",
+        "sos_contacts",
+        "call_whitelist",
+        "whitelist_enabled",
+    ]);
+    const input = genericInputs.has(capabilityKey)
+        ? capabilityKey
         : String(entry.input || "json");
     const label = capabilityKey === "alarm_clock"
         ? "Alarmes"
@@ -700,14 +734,13 @@ function normalizeConfigEntry(entry) {
 }
 
 function resolveConfigRow(entry, rowsByKey) {
-    if (Array.isArray(entry.configKeys) && entry.configKeys.length > 0) {
-        return null;
-    }
-
     return rowsByKey[entry.key] || null;
 }
 
 function resolveConfigStored(entry, rowsByKey) {
+    if (Object.keys(rowsByKey[entry.key] || {}).length > 0) {
+        return true;
+    }
     if (Array.isArray(entry.configKeys) && entry.configKeys.length > 0) {
         return entry.configKeys.some((key) => Object.keys(rowsByKey[key] || {}).length > 0);
     }
@@ -1704,6 +1737,46 @@ function listInput(entry, desired, field, label) {
 }
 
 function sosContactsInput(entry, desired, meta = {}) {
+    if (meta.sourceCapability === "phonebook") {
+        const selected = new Set(Array.isArray(desired) ? desired.map(String) : []);
+        const contacts = Array.isArray(meta.phonebookContacts)
+            ? meta.phonebookContacts.filter((contact) => contact?.phone)
+            : [];
+        if (contacts.length === 0) {
+            return `
+                <div class="alert alert-warning small mb-0">
+                    Adicione primeiro os contactos à Lista telefónica. Os contactos SOS do Wonlex são selecionados dessa lista.
+                </div>`;
+        }
+
+        return `
+            <div>
+                <div class="form-label form-label-sm">Selecionar da lista telefónica</div>
+                <div class="vstack gap-2">
+                    ${contacts.map((contact, index) => {
+                        const phone = String(contact.phone || "");
+                        const name = String(contact.name || "").trim();
+                        const id = `sos-phonebook-${++uidCounter}-${index}`;
+                        return `
+                            <label class="border rounded bg-body p-3 d-flex align-items-center gap-3" for="${esc(id)}">
+                                <input
+                                    id="${esc(id)}"
+                                    class="form-check-input mt-0"
+                                    type="checkbox"
+                                    data-sos-contact-phone
+                                    value="${esc(phone)}"
+                                    ${selected.has(phone) ? "checked" : ""}>
+                                <span>
+                                    <span class="d-block fw-semibold">${esc(name || phone)}</span>
+                                    ${name ? `<span class="small text-secondary">${esc(phone)}</span>` : ""}
+                                </span>
+                            </label>`;
+                    }).join("")}
+                </div>
+                <div class="form-text">Apenas contactos existentes na lista telefónica podem ser usados como SOS.</div>
+            </div>`;
+    }
+
     const phoneMaxLength = Math.max(0, parseInt(String(meta.phone?.maxLength ?? 0), 10) || 0);
     return phoneRepeaterInput(entry, desired, {
         kind: "sos_contacts",

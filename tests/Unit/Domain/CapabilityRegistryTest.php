@@ -32,24 +32,23 @@ final class CapabilityRegistryTest extends TestCase
         );
     }
 
-    public function testWonlexFamilyContactsPreserveInternationalAndSosFields(): void
+    public function testWonlexPhonebookEncodesNativeFieldsButReturnsGenericContacts(): void
     {
         $registry = new CapabilityRegistry();
-        $native = $registry->toNative('wonlex-json', 'call_whitelist', [
+        $native = $registry->toNative('wonlex-json', 'phonebook', [
             'contacts' => [[
                 'familyNumberId' => '8c67b51b',
                 'name' => 'Care',
-                'phone' => '210000000',
-                'areaCode' => '351',
-                'sosSwitch' => true,
+                'phone' => '+351210000000',
             ]],
+            'sosNumbers' => ['+351210000000'],
         ]);
 
         self::assertSame('351', $native['familyNumber']['contacts'][0]['areaCode']);
         self::assertTrue($native['familyNumber']['contacts'][0]['sosSwitch']);
         self::assertSame(
-            $native['familyNumber']['contacts'],
-            $registry->fromNative('call_whitelist', 'familyNumber', $native['familyNumber'])
+            [['name' => 'Care', 'phone' => '+351210000000']],
+            $registry->fromNative('phonebook', 'familyNumber', $native['familyNumber'])
         );
     }
 

@@ -71,6 +71,11 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertContains('hrv_measurement_interval', $keys);
         self::assertContains('ppg_measurement_interval', $keys);
         self::assertContains('rr_interval_measurement_interval', $keys);
+        self::assertContains('phonebook', $keys);
+        self::assertContains('sos_contacts', $keys);
+        self::assertContains('whitelist_enabled', $keys);
+        self::assertNotContains('call_whitelist', $keys);
+        self::assertNotContains('call_in_restriction', $keys);
         self::assertNotContains('push_message', $keys);
     }
 

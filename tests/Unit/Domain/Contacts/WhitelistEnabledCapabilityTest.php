@@ -22,8 +22,29 @@ final class WhitelistEnabledCapabilityTest extends TestCase
         $capability = new WhitelistEnabledCapability();
 
         self::assertSame(
-            ['whitelistSwitch' => ['enabled' => true]],
+            [
+                'whitelistSwitch' => ['enabled' => true],
+                'callInRestriction' => ['enabled' => true],
+            ],
             $capability->toNative('four-p-touch', ['enabled' => true])
+        );
+    }
+
+    public function testWonlexUsesCallInLimitSwitchInsideDeviceConfig(): void
+    {
+        $capability = new WhitelistEnabledCapability();
+
+        self::assertSame(
+            ['wonlexCallInLimitSwitch' => ['switchState' => true]],
+            $capability->toNative('wonlex-json', ['enabled' => true])
+        );
+        self::assertSame(
+            ['enabled' => true],
+            $capability->fromNative('wonlexCallInLimitSwitch', ['switchState' => 1])
+        );
+        self::assertSame(
+            ['phonebook', 'sos_contacts'],
+            $capability->meta('wonlex-json')['allowedContactSources'] ?? null
         );
     }
 }

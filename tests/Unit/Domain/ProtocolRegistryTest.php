@@ -32,6 +32,17 @@ final class ProtocolRegistryTest extends TestCase
         }
     }
 
+    public function testWonlexContactMetadataUsesTheGenericContactContract(): void
+    {
+        $dashboard = ProtocolRegistry::describe('wonlex-json')['dashboard'];
+
+        self::assertSame(10, $dashboard['groupedCapabilities']['phonebook']['limit'] ?? null);
+        self::assertSame(10, $dashboard['groupedCapabilities']['sos_contacts']['limit'] ?? null);
+        self::assertArrayHasKey('whitelist_enabled', $dashboard['groupedCapabilities']);
+        self::assertArrayNotHasKey('call_whitelist', $dashboard['groupedCapabilities']);
+        self::assertSame(10, $dashboard['fieldConstraints']['phonebook']['name']['maxLength'] ?? null);
+    }
+
     public function testOnlyProtocolsWithConfigCatalogAreReturnedInTheHelper(): void
     {
         self::assertContains('four-p-touch', ProtocolRegistry::protocolsWithConfigCatalog());
