@@ -52,7 +52,7 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function measurementInterval(string $metric, array $payload): array
     {
-        return ['configs' => [$metric => ['interval' => (string)self::positiveInt($payload['interval'] ?? null, 'interval')]]];
+        return ['configs' => [$metric => ['interval' => (string)self::nonNegativeInt($payload['interval'] ?? null, 'interval')]]];
     }
 
     private static function deviceToggle(string $configName, array $payload): array

@@ -174,6 +174,11 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('data-medication-period', $source);
         self::assertStringContainsString('data-weather-field="weatherType"', $source);
         self::assertStringContainsString('data-weather-field="reporttime"', $source);
+        self::assertStringContainsString('Use 0 para desativar.', $source);
+        self::assertStringNotContainsString(
+            'numericValue(configuredValue, 0) <= 0',
+            $source
+        );
         self::assertStringContainsString('function readWonlexMedicationPlans(section)', $source);
         self::assertStringContainsString('function readWonlexWeather(section)', $source);
         self::assertStringContainsString('appendWonlexMedicationPlan(section)', $bootstrap);

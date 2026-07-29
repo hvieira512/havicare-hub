@@ -324,6 +324,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
         $rr = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexRRInterval', ['interval' => 15]);
         self::assertSame('deviceMeasuringFrequency', $rr['command']);
         self::assertSame(['configs' => ['upRR' => ['interval' => '15']]], $rr['payload']);
+
+        $bloodPressure = DeviceConfigurationCatalog::commandPayload(
+            'wonlex-json',
+            'wonlexBPInterval',
+            ['interval' => 0]
+        );
+        self::assertSame('deviceMeasuringFrequency', $bloodPressure['command']);
+        self::assertSame(['configs' => ['upBP' => ['interval' => '0']]], $bloodPressure['payload']);
     }
 
     public function testWonlexConfigurationReplyMetadataUsesSameTypeAcknowledgements(): void

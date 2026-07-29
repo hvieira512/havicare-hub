@@ -1249,15 +1249,12 @@ function numberInput(entry, desired) {
     const field = entry.fields?.[0] || "value";
     const isWonlexMeasurementInterval =
         entry.command === "deviceMeasuringFrequency" && field === "interval";
-    const configuredValue = desired[field] ?? 0;
-    const value = isWonlexMeasurementInterval && numericValue(configuredValue, 0) <= 0
-        ? 60
-        : configuredValue;
+    const value = desired[field] ?? (isWonlexMeasurementInterval ? 60 : 0);
     return `
         <div>
             <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
-            <input class="form-control" type="number" min="${isWonlexMeasurementInterval ? "1" : "0"}" step="1" data-config-field="${esc(field)}" value="${esc(String(value))}">
-            ${isWonlexMeasurementInterval ? '<div class="form-text">Periodicidade de envio desta medição, em minutos.</div>' : ""}
+            <input class="form-control" type="number" min="0" step="1" data-config-field="${esc(field)}" value="${esc(String(value))}">
+            ${isWonlexMeasurementInterval ? '<div class="form-text">Periodicidade de envio desta medição, em minutos. Use 0 para desativar.</div>' : ""}
         </div>`;
 }
 
