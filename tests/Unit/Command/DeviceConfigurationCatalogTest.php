@@ -624,6 +624,22 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertSame('LSSET', $payload['command']);
         self::assertSame(['fields' => ['5+8']], $payload['payload']);
+        self::assertSame(
+            '[3G*4504816144*0009*LSSET,5+8]',
+            DeviceCommandCatalog::buildDownlink(
+                'four-p-touch',
+                '4504816144',
+                $payload['command'],
+                $payload['payload']
+            )
+        );
+
+        $reply = (new FourPTouchAdapter())->decodeIncoming(
+            '[3G*4504816144*0007*LSSET,5]'
+        );
+        self::assertIsArray($reply);
+        self::assertSame('LSSET', $reply['type'] ?? null);
+        self::assertSame(['5'], $reply['data']['fields'] ?? null);
     }
 
     public function testFourPTouchFallSensitivityPublicAliasBuildsFirmwareAwarePayload(): void
@@ -893,14 +909,14 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['1', '0']], $payload['payload']);
     }
 
-    public function testFourPTouchFallDownSensitivityDefaultsToEightLevelsWhenMissing(): void
+    public function testFourPTouchFallDownSensitivityRequiresFirmwareScale(): void
     {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fallDownSensitivity', [
-            'sensitivity' => 5,
-        ]);
-
-        self::assertSame('LSSET', $payload['command']);
-        self::assertSame(['fields' => ['5+8']], $payload['payload']);
+        self::assertSame(
+            'levels is required and must match the firmware scale (6 or 8)',
+            DeviceConfigurationCatalog::validate('four-p-touch', 'fallDownSensitivity', [
+                'sensitivity' => 5,
+            ])
+        );
     }
 
     public function testFourPTouchHealthAutoMeasurementBuildsNativeFields(): void

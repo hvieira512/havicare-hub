@@ -111,4 +111,16 @@ final class CapabilityCatalogTest extends TestCase
             ]),
         );
     }
+
+    public function testFourPTouchFallbackDoesNotInventFirmwareScale(): void
+    {
+        $handler = new FourPTouchGenericHandler();
+
+        self::assertSame(
+            ['sensitivity' => 6],
+            $handler->fromNative('fall_sensitivity', 'fallDownSensitivity', [
+                'sensitivityLevel' => 6,
+            ]),
+        );
+    }
 }

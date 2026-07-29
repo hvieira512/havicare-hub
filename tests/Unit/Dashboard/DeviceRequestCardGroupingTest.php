@@ -138,6 +138,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('O último valor está guardado no Hub, mas não foi aplicado pelo dispositivo.', $source);
         self::assertStringContainsString('resolveConfigDelivery(entry, pending)', $source);
         self::assertStringContainsString('renderConfigurationDeliveryNotice(deliveryMeta, delivery)', $source);
+        self::assertStringContainsString(
+            'Selecione a escala de sensibilidade suportada pelo firmware (6 ou 8 níveis).',
+            $source
+        );
+        self::assertStringContainsString('fallSensitivityLevels: () => ({sensitivity: 5})', $source);
+        self::assertStringContainsString('<option value="" ${totalLevels === null ? "selected" : ""} disabled>Selecione…</option>', $source);
         self::assertStringContainsString('capabilityCatalog: state.deviceModal.capabilityCatalog', $bootstrap);
         self::assertStringContainsString('getCapabilities as apiGetCapabilities', $bootstrap);
         self::assertStringContainsString('entry.capabilityKey', $bootstrap);

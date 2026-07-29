@@ -185,10 +185,16 @@ const CONFIG_INPUT_READERS = {
         enabled: readCheckbox(section, "enabled"),
         callCenterOnFall: readCheckbox(section, "callCenterOnFall"),
     }),
-    fallSensitivityLevels: (section) => ({
-        sensitivity: readNumber(section, "sensitivity"),
-        levels: readNumber(section, "levels"),
-    }),
+    fallSensitivityLevels: (section) => {
+        const levels = readNumber(section, "levels");
+        if (![6, 8].includes(levels)) {
+            throw new Error("Selecione a escala de sensibilidade suportada pelo firmware (6 ou 8 níveis).");
+        }
+        return {
+            sensitivity: readNumber(section, "sensitivity"),
+            levels,
+        };
+    },
     timeRanges: (section) => ({ranges: readTextArray(section, "ranges")}),
     timeRange: (section) => ({range: readText(section, "range")}),
     wonlexSleepSettings: (section) => ({
@@ -253,7 +259,7 @@ const CONFIG_INPUT_DEFAULTS = {
     wonlexBloodPressureWarning: () => ({switchState: true, hpWarn: 135, LPWarn: 90}),
     languageTimezone: () => ({preset: "0|0"}),
     dualToggle: () => ({enabled: true, callCenterOnFall: false}),
-    fallSensitivityLevels: () => ({sensitivity: 5, levels: 8}),
+    fallSensitivityLevels: () => ({sensitivity: 5}),
     timeRanges: () => ({ranges: ["08:10-09:30"]}),
     timeRange: () => ({range: "21:10-07:30"}),
     wonlexSleepSettings: () => ({
@@ -1496,7 +1502,10 @@ function dualToggleInput(desired) {
 function fallSensitivityLevelsInput(desired) {
     const sensitivityLevel =
         parseInt(String(desired.sensitivity ?? 5), 10) || 5;
-    const totalLevels = parseInt(String(desired.levels ?? 8), 10) || 8;
+    const parsedTotalLevels = parseInt(String(desired.levels ?? ""), 10);
+    const totalLevels = [6, 8].includes(parsedTotalLevels)
+        ? parsedTotalLevels
+        : null;
 
     const levels = [
         { label: "Máxima", icon: "fa-bolt", btnClass: "btn-outline-danger" },
@@ -1542,11 +1551,13 @@ function fallSensitivityLevelsInput(desired) {
                 </div>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label form-label-sm">Níveis totais</label>
-                <select class="form-select" data-config-field="levels" data-action="fallTotalLevels">
+                <label class="form-label form-label-sm">Escala do firmware</label>
+                <select class="form-select" data-config-field="levels" data-action="fallTotalLevels" required>
+                    <option value="" ${totalLevels === null ? "selected" : ""} disabled>Selecione…</option>
                     <option value="6" ${totalLevels === 6 ? "selected" : ""}>6 níveis</option>
                     <option value="8" ${totalLevels === 8 ? "selected" : ""}>8 níveis</option>
                 </select>
+                <div class="form-text">Escolha a escala indicada para o firmware deste dispositivo.</div>
             </div>
         </div>`;
 }

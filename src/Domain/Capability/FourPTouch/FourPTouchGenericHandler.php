@@ -87,10 +87,15 @@ final class FourPTouchGenericHandler
     public function fromNative(string $genericKey, string $nativeKey, array $desired): mixed
     {
         if ($genericKey === 'fall_sensitivity' && $nativeKey === 'fallDownSensitivity') {
-            return [
+            $result = [
                 'sensitivity' => (int)($desired['sensitivity'] ?? $desired['sensitivityLevel'] ?? 5),
-                'levels' => (int)($desired['levels'] ?? $desired['totalLevels'] ?? 8),
             ];
+            $totalLevels = $desired['levels'] ?? $desired['totalLevels'] ?? null;
+            if ($totalLevels !== null && $totalLevels !== '') {
+                $result['levels'] = (int)$totalLevels;
+            }
+
+            return $result;
         }
 
         return $desired;

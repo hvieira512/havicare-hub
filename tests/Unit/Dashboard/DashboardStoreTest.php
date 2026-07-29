@@ -152,6 +152,27 @@ final class DashboardStoreTest extends TestCase
         self::assertSame(222222, $commands['two']['replyIdent']);
     }
 
+    public function testFourPTouchLssetReplyAcknowledgesSensitivityCommand(): void
+    {
+        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
+        $imei = '864504816144000';
+        $store->registerDevice($imei, '4P Touch', 'D46', deviceId: '4504816144');
+        $store->recordCommand($imei, 'lsset-command', [
+            'status' => 'waiting',
+            'protocol' => 'four-p-touch',
+            'nativeType' => 'LSSET',
+            'expectedReplyTypes' => ['LSSET'],
+            'bytes' => '[3G*4504816144*0009*LSSET,5+6]',
+        ]);
+
+        $store->markCommandReply($imei, 'LSSET', '4504816144', 'w:update');
+        $command = $store->commands($imei)[0] ?? [];
+
+        self::assertSame('acked', $command['status'] ?? null);
+        self::assertSame('LSSET', $command['replyNativeType'] ?? null);
+        self::assertSame('4504816144', $command['replyIdent'] ?? null);
+    }
+
     public function testRetryWaitingCommandsDispatchesQueuedRetryableCommands(): void
     {
         $redis = new InMemoryRedisClient();
@@ -160,7 +181,7 @@ final class DashboardStoreTest extends TestCase
         $store->recordCommand('861728087743062', 'cmd-queued', [
             'status' => 'queued',
             'retryable' => true,
-            'bytes' => '[3G*2808774306*0008*LSSET,3]',
+            'bytes' => '[3G*2808774306*0009*LSSET,3+6]',
             'attempts' => 1,
             'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
@@ -174,7 +195,7 @@ final class DashboardStoreTest extends TestCase
         });
 
         self::assertSame([
-            ['861728087743062', '[3G*2808774306*0008*LSSET,3]', 'cmd-queued'],
+            ['861728087743062', '[3G*2808774306*0009*LSSET,3+6]', 'cmd-queued'],
         ], $calls);
 
         $command = $store->commands('861728087743062')[0] ?? [];
@@ -192,7 +213,7 @@ final class DashboardStoreTest extends TestCase
         $store->recordCommand('861728087743062', 'cmd-queued', [
             'status' => 'queued',
             'retryable' => true,
-            'bytes' => '[3G*2808774306*0008*LSSET,3]',
+            'bytes' => '[3G*2808774306*0009*LSSET,3+6]',
             'attempts' => 1,
             'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
@@ -216,7 +237,7 @@ final class DashboardStoreTest extends TestCase
         $store->recordCommand('861728087743062', 'cmd-queued', [
             'status' => 'queued',
             'retryable' => true,
-            'bytes' => '[3G*2808774306*0008*LSSET,3]',
+            'bytes' => '[3G*2808774306*0009*LSSET,3+6]',
             'attempts' => 3,
             'maxAttempts' => 3,
             'retryDelaySeconds' => 60,
