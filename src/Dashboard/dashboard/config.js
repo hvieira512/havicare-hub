@@ -404,6 +404,9 @@ function assignCapabilitySection(entry, capabilityCatalog) {
         ...entry,
         category: section,
         configSectionName: section,
+        requestOnly:
+            Boolean(definition.isRequestable)
+            && !Boolean(definition.isConfigurable),
     };
 }
 
@@ -490,8 +493,12 @@ export function renderDeviceConfigurationRoot(context) {
                         (group) => `
                     <div class="tab-pane fade ${group.key === currentCategory ? "show active" : ""}" data-config-category-pane="${esc(group.key)}">
                         ${group.entries.map((entry) => {
-                            const row = resolveConfigRow(entry, rowsByKey);
-                            const stored = resolveConfigStored(entry, rowsByKey);
+                            const row = entry.requestOnly
+                                ? null
+                                : resolveConfigRow(entry, rowsByKey);
+                            const stored = entry.requestOnly
+                                ? null
+                                : resolveConfigStored(entry, rowsByKey);
                             const uiState = uiByKey[entry.key] || null;
                             return renderConfigSection(protocol, entry, row, capabilities, disabled, uiState, stored);
                         }).join("")}
@@ -517,6 +524,7 @@ export function renderConfigSection(
     const meta = capability?._meta || {};
     const help = configHelp(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
+    const showConfigurationBadge = !entry.requestOnly;
     const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
     const configSectionName = entry.configSectionName || entry.configSection || "";
     const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
@@ -542,9 +550,11 @@ export function renderConfigSection(
                 <div>
                     <div class="fw-semibold">
                         ${esc(entry.label || entry.key)}
-                        ${isStored
-                            ? '<span class="badge text-bg-success ms-2">Configurado</span>'
-                            : '<span class="badge text-bg-warning ms-2">Padrão</span>'}
+                        ${showConfigurationBadge
+                            ? (isStored
+                                ? '<span class="badge text-bg-success ms-2">Configurado</span>'
+                                : '<span class="badge text-bg-warning ms-2">Padrão</span>')
+                            : ""}
                     </div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                 </div>

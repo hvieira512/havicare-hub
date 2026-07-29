@@ -110,6 +110,18 @@ final class DeviceRequestCardGroupingTest extends TestCase
             '!definition?.isConfigurable && !definition?.isRequestable',
             $source
         );
+        self::assertStringContainsString(
+            'requestOnly:',
+            $source
+        );
+        self::assertStringContainsString(
+            'const showConfigurationBadge = !entry.requestOnly;',
+            $source
+        );
+        self::assertStringContainsString(
+            'const row = entry.requestOnly',
+            $source
+        );
         self::assertStringContainsString('capabilityCatalog: state.deviceModal.capabilityCatalog', $bootstrap);
         self::assertStringContainsString('getCapabilities as apiGetCapabilities', $bootstrap);
         self::assertStringContainsString('entry.capabilityKey', $bootstrap);

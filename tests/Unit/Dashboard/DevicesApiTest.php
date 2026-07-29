@@ -2048,7 +2048,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->updateConfigurations('861265061009822', json_encode([
             'configurations' => [
-                'pushMessage' => ['message' => 'are you ok?'],
+                'push_message' => ['message' => 'are you ok?'],
             ],
         ], JSON_THROW_ON_ERROR));
 
