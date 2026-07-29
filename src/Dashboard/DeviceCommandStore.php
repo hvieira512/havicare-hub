@@ -166,8 +166,7 @@ final class DeviceCommandStore
                 continue;
             }
             $expected = $command['expectedReplyTypes'] ?? [];
-            $sameTypeAck = $ref === 'w:reply' && (string)($command['nativeType'] ?? '') === $replyNativeType;
-            if (!$sameTypeAck && (!is_array($expected) || !in_array($replyNativeType, $expected, true))) {
+            if (!is_array($expected) || !in_array($replyNativeType, $expected, true)) {
                 continue;
             }
             $commandIdent = $command['ident'] ?? null;

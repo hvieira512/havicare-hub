@@ -178,7 +178,7 @@ final class DashboardStoreTest extends TestCase
         self::assertSame('w:update', $command['replyRef'] ?? null);
     }
 
-    public function testWonlexSameTypeReplyFallsBackWhenFirmwareChangesIdent(): void
+    public function testWonlexSameTypeReceiptDoesNotCompleteMeasurementRequest(): void
     {
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
         $imei = '868705080304962';
@@ -196,10 +196,16 @@ final class DashboardStoreTest extends TestCase
         $store->markCommandReply($imei, 'dnBO', 642787, 'w:reply');
         $command = $store->commands($imei)[0] ?? [];
 
+        self::assertSame('waiting', $command['status'] ?? null);
+        self::assertArrayNotHasKey('replyNativeType', $command);
+
+        $store->markCommandReply($imei, 'upBO', 747418, 'w:update');
+        $command = $store->commands($imei)[0] ?? [];
+
         self::assertSame('acked', $command['status'] ?? null);
-        self::assertSame('dnBO', $command['replyNativeType'] ?? null);
-        self::assertSame(642787, $command['replyIdent'] ?? null);
-        self::assertSame('w:reply', $command['replyRef'] ?? null);
+        self::assertSame('upBO', $command['replyNativeType'] ?? null);
+        self::assertSame(747418, $command['replyIdent'] ?? null);
+        self::assertSame('w:update', $command['replyRef'] ?? null);
     }
 
     public function testFourPTouchLssetReplyAcknowledgesSensitivityCommand(): void
