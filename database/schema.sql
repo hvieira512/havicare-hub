@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS supplier_device_types (
 CREATE TABLE IF NOT EXISTS capabilities (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
-    section VARCHAR(64) NOT NULL,
+    section ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL,
     capability_key VARCHAR(191) NOT NULL,
     label VARCHAR(191) NOT NULL,
     is_telemetry TINYINT(1) NOT NULL DEFAULT 0,

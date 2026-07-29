@@ -40,13 +40,6 @@ const CONFIG_SECTION_ORDER = [
     "settings_system",
 ];
 
-const CONFIG_SECTION_LABELS = {
-    health: "Monitorização de saúde",
-    contacts: "Contactos e regras de chamadas",
-    alarms: "Alertas e lembretes",
-    settings_system: "Definições e ações do dispositivo",
-};
-
 const CONFIG_INPUT_RENDERERS = {
     toggle: (entry, desired) => toggleInput(entry, desired),
     fallSensitivity: (_entry, desired) => fallSensitivityInput(desired),
@@ -404,6 +397,7 @@ function assignCapabilitySection(entry, capabilityCatalog) {
         ...entry,
         category: section,
         configSectionName: section,
+        sectionLabel: String(definition.sectionLabel || section),
         requestOnly:
             Boolean(definition.isRequestable)
             && !Boolean(definition.isConfigurable),
@@ -464,7 +458,7 @@ export function renderDeviceConfigurationRoot(context) {
         ? activeCategory
         : groups[0]?.key || "";
     for (const group of groups) {
-        group.label = CONFIG_SECTION_LABELS[group.key] || titleize(group.key);
+        group.label = group.entries[0]?.sectionLabel || titleize(group.key);
     }
 
     return `

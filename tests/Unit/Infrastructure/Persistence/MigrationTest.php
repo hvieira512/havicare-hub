@@ -24,10 +24,22 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072406_add_dashboard_notifications',
             '2026072801_sync_wonlex_adult_health_capabilities',
             '2026072901_clean_watch_capability_taxonomy',
+            '2026072902_enum_capability_sections',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(8, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(9, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        $sectionType = $pdo->query("
+            SELECT COLUMN_TYPE
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'capabilities'
+              AND COLUMN_NAME = 'section'
+        ")->fetchColumn();
+        self::assertSame(
+            "enum('telemetry','health','contacts','alarms','settings_system')",
+            strtolower((string)$sectionType)
+        );
     }
 
     public function testWatchCapabilityTaxonomyMigrationMovesActionsAndRemovesInternalSyncEntries(): void

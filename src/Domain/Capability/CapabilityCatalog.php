@@ -33,11 +33,11 @@ final class CapabilityCatalog
     public static function sections(): array
     {
         return [
-            'telemetry' => 'Reports and measurements',
-            'health' => 'Health monitoring',
-            'contacts' => 'Contacts and call rules',
-            'alarms' => 'Alerts and reminders',
-            'settings_system' => 'Device settings and actions',
+            'telemetry' => 'Telemetria',
+            'health' => 'Saúde',
+            'contacts' => 'Contactos',
+            'alarms' => 'Alarmes',
+            'settings_system' => 'Sistema',
         ];
     }
 

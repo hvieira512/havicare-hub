@@ -30,6 +30,14 @@ final class CapabilityCatalogTest extends TestCase
 
     public function testDefinitionsHaveUniqueKeysAndRequiredMetadata(): void
     {
+        self::assertSame([
+            'telemetry' => 'Telemetria',
+            'health' => 'Saúde',
+            'contacts' => 'Contactos',
+            'alarms' => 'Alarmes',
+            'settings_system' => 'Sistema',
+        ], CapabilityCatalog::sections());
+
         foreach (CapabilityCatalog::deviceTypes() as $deviceType) {
             $definitions = CapabilityCatalog::definitionsForDeviceType($deviceType);
             $keys = array_column($definitions, 'key');

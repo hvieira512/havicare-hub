@@ -18,6 +18,10 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertNotEmpty($response['data']);
         self::assertContainsOnly('array', $response['data']);
         self::assertSame('watch', $response['data'][0]['deviceType'] ?? null);
+        self::assertContains(
+            $response['data'][0]['sectionLabel'] ?? null,
+            ['Telemetria', 'Saúde', 'Contactos', 'Alarmes', 'Sistema']
+        );
         self::assertContains('heart_rate', array_column($response['data'], 'key'));
     }
 

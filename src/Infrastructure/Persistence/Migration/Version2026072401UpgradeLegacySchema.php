@@ -44,7 +44,11 @@ final class Version2026072401UpgradeLegacySchema implements Migration
         $schema->addColumn('companies', 'updated_at', 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
 
         $schema->addColumn('capabilities', 'device_type', "ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch' AFTER id");
-        $schema->addColumn('capabilities', 'section', "VARCHAR(64) NOT NULL DEFAULT 'telemetry' AFTER device_type");
+        $schema->addColumn(
+            'capabilities',
+            'section',
+            "ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL DEFAULT 'telemetry' AFTER device_type"
+        );
         $schema->addColumn('capabilities', 'capability_key', "VARCHAR(191) NOT NULL DEFAULT '' AFTER section");
         $schema->addColumn('capabilities', 'label', "VARCHAR(191) NOT NULL DEFAULT '' AFTER capability_key");
         $schema->addColumn('capabilities', 'is_telemetry', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER label');

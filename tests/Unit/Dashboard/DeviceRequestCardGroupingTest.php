@@ -122,6 +122,17 @@ final class DeviceRequestCardGroupingTest extends TestCase
             'const row = entry.requestOnly',
             $source
         );
+        self::assertStringContainsString(
+            'sectionLabel: String(definition.sectionLabel || section)',
+            $source
+        );
+        self::assertStringContainsString(
+            'group.entries[0]?.sectionLabel',
+            $source
+        );
+        self::assertStringNotContainsString('CONFIG_SECTION_LABELS', $source);
+        self::assertStringNotContainsString('Monitorização de saúde', $source);
+        self::assertStringNotContainsString('Contactos e regras de chamadas', $source);
         self::assertStringContainsString('capabilityCatalog: state.deviceModal.capabilityCatalog', $bootstrap);
         self::assertStringContainsString('getCapabilities as apiGetCapabilities', $bootstrap);
         self::assertStringContainsString('entry.capabilityKey', $bootstrap);

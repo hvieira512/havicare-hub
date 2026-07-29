@@ -11,6 +11,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026072405NormalizeConfigura
 use Hub\Infrastructure\Persistence\Migration\Version2026072406AddDashboardNotifications;
 use Hub\Infrastructure\Persistence\Migration\Version2026072801SyncWonlexAdultHealthCapabilities;
 use Hub\Infrastructure\Persistence\Migration\Version2026072901CleanWatchCapabilityTaxonomy;
+use Hub\Infrastructure\Persistence\Migration\Version2026072902EnumCapabilitySections;
 use PDO;
 
 final class DashboardDatabase
@@ -63,6 +64,7 @@ final class DashboardDatabase
             new Version2026072406AddDashboardNotifications(),
             new Version2026072801SyncWonlexAdultHealthCapabilities(),
             new Version2026072901CleanWatchCapabilityTaxonomy(),
+            new Version2026072902EnumCapabilitySections(),
         ]))->run();
     }
 }

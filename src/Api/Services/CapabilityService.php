@@ -3,6 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 
 class CapabilityService
@@ -39,10 +40,13 @@ class CapabilityService
 
     private function serializeCapability(array $row): array
     {
+        $section = (string)($row['section'] ?? '');
+
         return [
             'id' => (int)($row['id'] ?? 0),
             'deviceType' => (string)($row['device_type'] ?? 'watch'),
-            'section' => (string)($row['section'] ?? ''),
+            'section' => $section,
+            'sectionLabel' => CapabilityCatalog::sections()[$section] ?? $section,
             'key' => (string)($row['capability_key'] ?? ''),
             'label' => (string)($row['label'] ?? ''),
             'sortOrder' => (int)($row['sort_order'] ?? 0),

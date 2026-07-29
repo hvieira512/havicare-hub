@@ -35,14 +35,6 @@ import {
 
 let els;
 
-const SECTION_TRANSLATIONS = {
-    telemetry: "Telemetria",
-    health: "Saúde",
-    contacts: "Contactos",
-    alarms: "Alarmes",
-    settings_system: "Sistema",
-};
-
 const CAPABILITY_LABEL_TRANSLATIONS = {
     positions: "Posições",
     vitals: "Sinais vitais",
@@ -848,21 +840,19 @@ function renderCapabilitiesSection() {
                 color: "btn-secondary",
             };
             const isActive = section === activeSection;
-            const ptLabel = SECTION_TRANSLATIONS[section] || label;
             return `
         <button type="button" class="btn btn-sm flex-fill ${cfg.color} ${isActive ? "active" : ""} d-flex align-items-center justify-content-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
-            <i class="fa-solid ${cfg.icon}"></i> ${esc(ptLabel)}
+            <i class="fa-solid ${cfg.icon}"></i> ${esc(label)}
         </button>`;
         })
         .join("");
 
     const section = sections.find((s) => s.section === activeSection);
     if (section) {
-        const sectionLabel = SECTION_TRANSLATIONS[section.section] || section.label;
         els.capabilityGroups.innerHTML = `
         <section class="border rounded bg-body-tertiary p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h6 mb-0">${esc(sectionLabel)}</h3>
+                <h3 class="h6 mb-0">${esc(section.label)}</h3>
                 <span class="small text-secondary">${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
             </div>
             <div class="d-flex flex-column gap-2">
