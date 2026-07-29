@@ -19,6 +19,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('"firmware_version"', $source);
         self::assertStringContainsString('"device_status"', $source);
         self::assertStringContainsString('"call_log"', $source);
+        self::assertStringContainsString('"sms"', $source);
         self::assertStringContainsString('"device_state"', $source);
         self::assertStringContainsString('"ecg_analysis"', $source);
         self::assertStringContainsString('filter(([, entry]) => entry?.supported)', $source);
@@ -35,6 +36,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('firmware_version', $renderersSource);
         self::assertStringContainsString('device_status', $renderersSource);
         self::assertStringContainsString('call_log', $renderersSource);
+        self::assertStringContainsString('sms', $renderersSource);
         self::assertStringContainsString('device_state', $renderersSource);
         self::assertStringContainsString('ecg_analysis', $renderersSource);
         self::assertStringContainsString('const title = isSystemRequestCard', $renderersSource);

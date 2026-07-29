@@ -132,6 +132,7 @@ const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
     "firmware_version",
     "device_status",
     "call_log",
+    "sms",
     "device_state",
     "ecg_analysis",
 ]);
