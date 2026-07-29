@@ -47,7 +47,7 @@ final class DashboardSessionFrontendTest extends TestCase
 
         $showLoginStart = strpos($source, 'const showLogin = message => {');
         $closeOverlays = strpos($source, 'closeDashboardOverlays();', $showLoginStart ?: 0);
-        $hideApp = strpos($source, 'app?.classList.add("d-none")', $showLoginStart ?: 0);
+        $hideApp = strpos($source, 'app.classList.add("d-none")', $showLoginStart ?: 0);
 
         self::assertIsInt($showLoginStart);
         self::assertIsInt($closeOverlays);
