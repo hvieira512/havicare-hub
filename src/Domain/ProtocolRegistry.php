@@ -4,15 +4,6 @@ namespace Hub\Domain;
 
 final class ProtocolRegistry
 {
-    private const DEFAULT_CATEGORY_LABELS = [
-        'contacts' => 'Contactos',
-        'alerts' => 'Alarmes',
-        'health' => 'Saúde',
-        'measurements' => 'Medições',
-        'system' => 'Sistema',
-        'intervals' => 'Intervalos',
-    ];
-
     /**
      * Canonical protocol metadata used by backend services and the dashboard.
      *
@@ -21,8 +12,6 @@ final class ProtocolRegistry
      *     deviceType: string,
      *     supportsConfigCatalog: bool,
      *     dashboard: array{
-     *         categoryLabels: array<string, string>,
-     *         categoryOrder: list<string>,
      *         groupedCapabilities: array<string, array{label: string, limit: int}>,
      *         fieldConstraints: array<string, array<string, mixed>>
      *     }
@@ -36,7 +25,6 @@ final class ProtocolRegistry
                 'deviceType' => 'watch',
                 'supportsConfigCatalog' => true,
                 'dashboard' => [
-                    'categoryOrder' => ['intervals', 'contacts', 'measurements', 'alerts', 'health', 'system'],
                     'groupedCapabilities' => [],
                     'fieldConstraints' => [],
                 ],
@@ -46,7 +34,6 @@ final class ProtocolRegistry
                 'deviceType' => 'watch',
                 'supportsConfigCatalog' => true,
                 'dashboard' => [
-                    'categoryOrder' => ['contacts', 'alerts', 'health', 'system', 'intervals'],
                     'groupedCapabilities' => [],
                     'fieldConstraints' => [],
                 ],
@@ -56,7 +43,6 @@ final class ProtocolRegistry
                 'deviceType' => 'watch',
                 'supportsConfigCatalog' => true,
                 'dashboard' => [
-                    'categoryOrder' => ['intervals', 'contacts', 'alerts', 'health', 'system'],
                     'groupedCapabilities' => [
                         'sos_contacts' => [
                             'label' => 'Contactos SOS',
@@ -81,7 +67,6 @@ final class ProtocolRegistry
                 'deviceType' => 'ncs',
                 'supportsConfigCatalog' => false,
                 'dashboard' => [
-                    'categoryOrder' => [],
                     'groupedCapabilities' => [],
                     'fieldConstraints' => [],
                 ],
@@ -91,7 +76,6 @@ final class ProtocolRegistry
                 'deviceType' => 'radar',
                 'supportsConfigCatalog' => false,
                 'dashboard' => [
-                    'categoryOrder' => [],
                     'groupedCapabilities' => [],
                     'fieldConstraints' => [],
                 ],
@@ -140,8 +124,6 @@ final class ProtocolRegistry
 
     /**
      * @return array{
-     *     categoryLabels: array<string, string>,
-     *     categoryOrder: list<string>,
      *     groupedCapabilities: array<string, array{label: string, limit: int}>,
      *     fieldConstraints: array<string, array<string, mixed>>
      * }
@@ -149,18 +131,15 @@ final class ProtocolRegistry
     public static function dashboardMeta(string $protocol): array
     {
         $meta = self::all()[trim($protocol)]['dashboard'] ?? [];
-        $categoryLabels = is_array($meta['categoryLabels'] ?? null) ? $meta['categoryLabels'] : [];
 
         return [
-            'categoryLabels' => $categoryLabels + self::DEFAULT_CATEGORY_LABELS,
-            'categoryOrder' => array_values(is_array($meta['categoryOrder'] ?? null) ? $meta['categoryOrder'] : []),
             'groupedCapabilities' => is_array($meta['groupedCapabilities'] ?? null) ? $meta['groupedCapabilities'] : [],
             'fieldConstraints' => is_array($meta['fieldConstraints'] ?? null) ? $meta['fieldConstraints'] : [],
         ];
     }
 
     /**
-     * @return array{protocol: string, label: string, deviceType: string, supportsConfigCatalog: bool, dashboard: array{categoryLabels: array<string, string>, categoryOrder: list<string>, groupedCapabilities: array<string, array{label: string, limit: int}>, fieldConstraints: array<string, array<string, mixed>>}}
+     * @return array{protocol: string, label: string, deviceType: string, supportsConfigCatalog: bool, dashboard: array{groupedCapabilities: array<string, array{label: string, limit: int}>, fieldConstraints: array<string, array<string, mixed>>}}
      */
     public static function describe(string $protocol): array
     {
@@ -170,8 +149,6 @@ final class ProtocolRegistry
             'deviceType' => 'watch',
             'supportsConfigCatalog' => false,
             'dashboard' => [
-                'categoryLabels' => self::DEFAULT_CATEGORY_LABELS,
-                'categoryOrder' => [],
                 'groupedCapabilities' => [],
                 'fieldConstraints' => [],
             ],

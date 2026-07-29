@@ -33,11 +33,11 @@ final class CapabilityCatalog
     public static function sections(): array
     {
         return [
-            'telemetry' => 'Telemetry',
-            'health' => 'Health',
-            'contacts' => 'Contacts',
-            'alarms' => 'Alarms',
-            'settings_system' => 'Settings / System',
+            'telemetry' => 'Reports and measurements',
+            'health' => 'Health monitoring',
+            'contacts' => 'Contacts and call rules',
+            'alarms' => 'Alerts and reminders',
+            'settings_system' => 'Device settings and actions',
         ];
     }
 
@@ -316,11 +316,9 @@ final class CapabilityCatalog
             'wonlexStepInterval' => 'step_reporting_interval',
             'locationInterval' => 'location_reporting_interval',
             'workingMode' => 'working_mode',
-            'dnDevBindStatus' => 'device_binding',
             'wonlexCallInLimitSwitch' => 'call_in_restriction',
             'whitelistSwitch' => 'whitelist_enabled',
             'whitelist_enabled' => 'whitelist_enabled',
-            'deviceConfig' => 'device_settings_sync',
             'resetCommand' => 'reset_device',
             'restartCommand' => 'restart_device',
             'powerOffCommand' => 'power_off',

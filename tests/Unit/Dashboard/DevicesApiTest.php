@@ -1442,8 +1442,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 'reminderSettings' => '11:25-1-3-1010',
                 'number' => 1,
                 'reminderText' => 'old',
-                'voiceData' => 'QUJDRA==',
-                'voiceMimeType' => 'audio/mpeg',
+                'voiceData' => 'UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+                'voiceMimeType' => 'audio/wav',
             ]
         );
 

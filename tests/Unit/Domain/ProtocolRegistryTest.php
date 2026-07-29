@@ -15,19 +15,20 @@ final class ProtocolRegistryTest extends TestCase
         self::assertSame('4P Touch', $protocol['label']);
         self::assertSame('watch', $protocol['deviceType']);
         self::assertTrue($protocol['supportsConfigCatalog']);
-        self::assertSame(['intervals', 'contacts', 'alerts', 'health', 'system'], $protocol['dashboard']['categoryOrder']);
-        self::assertSame('Contactos', $protocol['dashboard']['categoryLabels']['contacts']);
-        self::assertSame('Alarmes', $protocol['dashboard']['categoryLabels']['alerts']);
+        self::assertArrayNotHasKey('categoryOrder', $protocol['dashboard']);
+        self::assertArrayNotHasKey('categoryLabels', $protocol['dashboard']);
         self::assertSame('Contactos SOS', $protocol['dashboard']['groupedCapabilities']['sos_contacts']['label']);
         self::assertSame(10, $protocol['dashboard']['groupedCapabilities']['call_whitelist']['limit']);
         self::assertSame(10, $protocol['dashboard']['fieldConstraints']['phonebook']['name']['maxLength']);
         self::assertSame(20, $protocol['dashboard']['fieldConstraints']['phonebook']['phone']['maxLength']);
     }
 
-    public function testAllKnownProtocolsShareTheSameAlertsLabel(): void
+    public function testProtocolDashboardMetadataDoesNotDefineASecondCapabilityTaxonomy(): void
     {
         foreach (['wonlex-json', 'vivistar-iw', 'four-p-touch'] as $protocolKey) {
-            self::assertSame('Alarmes', ProtocolRegistry::describe($protocolKey)['dashboard']['categoryLabels']['alerts']);
+            $dashboard = ProtocolRegistry::describe($protocolKey)['dashboard'];
+            self::assertArrayNotHasKey('categoryLabels', $dashboard);
+            self::assertArrayNotHasKey('categoryOrder', $dashboard);
         }
     }
 

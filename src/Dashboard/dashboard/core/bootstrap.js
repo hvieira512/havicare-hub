@@ -1,5 +1,6 @@
 import {
     deleteDevice as apiDeleteDevice,
+    getCapabilities as apiGetCapabilities,
     getCompanies as apiGetCompanies,
     getDevice as apiGetDevice,
     getLicenses as apiGetLicenses,
@@ -273,6 +274,7 @@ async function openAddDevice(source = "") {
         model: "",
         protocol: "",
         catalog: [],
+        capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
         capabilities: {},
@@ -337,6 +339,7 @@ async function editDevice(imei, supplier, model) {
         model,
         protocol: "",
         catalog: [],
+        capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
         capabilities: {},
@@ -537,18 +540,24 @@ async function syncDeviceModalContext(loadCatalog = false) {
     state.deviceModal.deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
     );
+    const cachedCapabilityCatalog =
+        state.settingsModal.capabilityCatalogByType?.[state.deviceModal.deviceType];
+    if (cachedCapabilityCatalog) {
+        state.deviceModal.capabilityCatalog = cachedCapabilityCatalog;
+    } else {
+        const response = await apiGetCapabilities({
+            deviceType: state.deviceModal.deviceType,
+        });
+        const capabilityCatalog = response?.error ? [] : response.data || [];
+        state.settingsModal.capabilityCatalogByType = {
+            ...(state.settingsModal.capabilityCatalogByType || {}),
+            [state.deviceModal.deviceType]: capabilityCatalog,
+        };
+        state.deviceModal.capabilityCatalog = capabilityCatalog;
+    }
     state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || "0";
     state.deviceModal.simNumber = getDeviceSimNumberValue(false);
     state.deviceModal.deviceId = els.deviceDeviceId?.value.trim() || "";
-    if (
-        !state.deviceModal.activeCategory ||
-        !state.deviceModal.catalog.some(
-            (entry) => entry.category === state.deviceModal.activeCategory,
-        )
-    ) {
-        state.deviceModal.activeCategory =
-            state.deviceModal.catalog[0]?.category || "";
-    }
 }
 
 async function ensureDeviceConfigurationCatalogLoaded() {
@@ -620,14 +629,15 @@ function renderDeviceConfigurationModal() {
     const filteredCatalog = enabledCapKeys.length
         ? state.deviceModal.catalog.filter(
               (entry) =>
-                  !entry.capabilityKey ||
-                  enabledCapKeys.includes(entry.capabilityKey),
+                  entry.capabilityKey
+                  && enabledCapKeys.includes(entry.capabilityKey),
           )
-        : state.deviceModal.catalog;
+        : state.deviceModal.catalog.filter((entry) => entry.capabilityKey);
 
     els.deviceConfigRoot.innerHTML = renderDeviceConfigurationRoot({
         protocol: state.deviceModal.protocol,
         catalog: filteredCatalog,
+        capabilityCatalog: state.deviceModal.capabilityCatalog,
         configurations: state.deviceModal.configurations,
         capabilities: state.deviceModal.capabilities,
         uiByKey: state.deviceModal.configUi,

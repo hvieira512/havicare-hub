@@ -26,7 +26,8 @@ final class ProtocolServiceTest extends TestCase
 
         self::assertIsArray($fourPTouch);
         self::assertSame('4P Touch', $fourPTouch['label'] ?? null);
-        self::assertSame(['intervals', 'contacts', 'alerts', 'health', 'system'], $fourPTouch['dashboard']['categoryOrder'] ?? null);
+        self::assertArrayNotHasKey('categoryOrder', $fourPTouch['dashboard'] ?? []);
+        self::assertArrayNotHasKey('categoryLabels', $fourPTouch['dashboard'] ?? []);
     }
 
     public function testConfigCatalogRejectsUnsupportedProtocols(): void

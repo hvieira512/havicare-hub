@@ -11,7 +11,7 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [75, '2eeb995af41ce25cc61bc30db5161792aa1ffdea422ec0cd52dbd8c54174ffea'],
+            'watch' => [73, '5a6f646d1fe4d824a251a42bd4c9f05b96b83353f7932c4e071c5b4c204245df'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
         ];
@@ -56,12 +56,29 @@ final class CapabilityCatalogTest extends TestCase
             $definitions[$definition['key']] = $definition;
         }
 
-        foreach (['reset_device', 'restart_device', 'power_off', 'find_device'] as $key) {
+        foreach (['reset_device', 'restart_device', 'power_off', 'find_device', 'push_message', 'make_call'] as $key) {
             self::assertFalse($definitions[$key]['isConfigurable']);
             self::assertTrue($definitions[$key]['isRequestable']);
         }
         self::assertTrue($definitions['weather_data']['isConfigurable']);
         self::assertFalse($definitions['weather_data']['isRequestable']);
+    }
+
+    public function testWatchTaxonomyExcludesInternalSynchronizationAndGroupsCallRulesWithContacts(): void
+    {
+        $definitions = [];
+        foreach (CapabilityCatalog::definitionsForDeviceType('watch') as $definition) {
+            $definitions[$definition['key']] = $definition;
+        }
+
+        self::assertArrayNotHasKey('device_binding', $definitions);
+        self::assertArrayNotHasKey('device_settings_sync', $definitions);
+        self::assertSame('contacts', $definitions['call_in_restriction']['section']);
+        self::assertSame('Wrist removal alert', $definitions['remove_watch_alarm']['label']);
+        self::assertSame('Wrist removal SMS alert', $definitions['remove_watch_sms_alert']['label']);
+
+        self::assertNull(CapabilityCatalog::mapConfigurationKey('wonlex-json', 'dnDevBindStatus'));
+        self::assertNull(CapabilityCatalog::mapConfigurationKey('wonlex-json', 'deviceConfig'));
     }
 
     public function testFourPTouchAliasesAreResolvedByTheDedicatedHelper(): void

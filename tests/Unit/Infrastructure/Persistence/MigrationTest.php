@@ -23,10 +23,31 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072405_normalize_configuration_keys',
             '2026072406_add_dashboard_notifications',
             '2026072801_sync_wonlex_adult_health_capabilities',
+            '2026072901_clean_watch_capability_taxonomy',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(7, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(8, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+    }
+
+    public function testWatchCapabilityTaxonomyMigrationMovesActionsAndRemovesInternalSyncEntries(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+        $rows = $pdo->query("
+            SELECT capability_key, section, label, is_configurable, is_requestable
+            FROM capabilities
+            WHERE device_type = 'watch'
+        ")->fetchAll(\PDO::FETCH_UNIQUE | \PDO::FETCH_ASSOC);
+
+        self::assertArrayNotHasKey('device_binding', $rows);
+        self::assertArrayNotHasKey('device_settings_sync', $rows);
+        self::assertSame('contacts', $rows['call_in_restriction']['section'] ?? null);
+        self::assertSame('Wrist removal alert', $rows['remove_watch_alarm']['label'] ?? null);
+        self::assertSame(0, (int)($rows['push_message']['is_configurable'] ?? -1));
+        self::assertSame(1, (int)($rows['push_message']['is_requestable'] ?? -1));
+        self::assertSame(0, (int)($rows['make_call']['is_configurable'] ?? -1));
+        self::assertSame(1, (int)($rows['make_call']['is_requestable'] ?? -1));
     }
 
     public function testLegacyModelCapabilityFeaturesMigrateToCapabilityIds(): void

@@ -18,9 +18,9 @@ final class SupplierCapabilityTemplateTest extends TestCase
 
         self::assertCount(1, $match);
         self::assertSame('settings_system', $match[0]['section'] ?? null);
-        self::assertTrue($match[0]['isConfigurable'] ?? false);
+        self::assertFalse($match[0]['isConfigurable'] ?? true);
         self::assertFalse($match[0]['isTelemetry'] ?? true);
-        self::assertFalse($match[0]['isRequestable'] ?? true);
+        self::assertTrue($match[0]['isRequestable'] ?? false);
     }
 
     public function testWatchCatalogPlacesMedicationRemindersInAlarms(): void

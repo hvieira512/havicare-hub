@@ -86,9 +86,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('addReminderRow', $source);
         self::assertStringNotContainsString('removeReminderRow', $source);
         self::assertStringContainsString('function capabilitySectionCandidates(entry)', $source);
-        self::assertStringContainsString('alerts: "alarms"', $source);
-        self::assertStringContainsString('system: "settings_system"', $source);
-        self::assertStringContainsString('intervals: "settings_system"', $source);
+        self::assertStringContainsString('const CONFIG_SECTION_ORDER = [', $source);
+        self::assertStringContainsString('"health"', $source);
+        self::assertStringContainsString('"settings_system"', $source);
+        self::assertStringContainsString('assignCapabilitySection(entry, capabilityCatalog)', $source);
+        self::assertStringNotContainsString('alerts: "alarms"', $source);
+        self::assertStringNotContainsString('intervals: "settings_system"', $source);
     }
 
     public function testWonlexComplexSettingsUseGuidedFormsInsteadOfJson(): void
@@ -102,10 +105,15 @@ final class DeviceRequestCardGroupingTest extends TestCase
 
         self::assertIsString($source);
         self::assertIsString($bootstrap);
+        self::assertStringContainsString('function capabilityDefinitionForKey(capabilityCatalog, capabilityKey)', $source);
         self::assertStringContainsString(
-            '!["deviceMeasuringFrequency", "deviceConfig"].includes(',
+            '!definition?.isConfigurable && !definition?.isRequestable',
             $source
         );
+        self::assertStringContainsString('capabilityCatalog: state.deviceModal.capabilityCatalog', $bootstrap);
+        self::assertStringContainsString('getCapabilities as apiGetCapabilities', $bootstrap);
+        self::assertStringContainsString('entry.capabilityKey', $bootstrap);
+        self::assertStringContainsString('enabledCapKeys.includes(entry.capabilityKey)', $bootstrap);
         self::assertStringContainsString(
             'wonlexMedicationPlans: (_entry, desired) => wonlexMedicationPlansInput(desired),',
             $source

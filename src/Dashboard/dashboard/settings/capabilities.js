@@ -99,9 +99,7 @@ const CAPABILITY_LABEL_TRANSLATIONS = {
     remove_watch_sms_alert: "SMS de remoção do relógio",
     location_reporting_interval: "Localização",
     working_mode: "Modo de funcionamento",
-    device_binding: "Vincular dispositivo",
     call_in_restriction: "Chamadas recebidas",
-    device_settings_sync: "Sincronizar definições",
     device_password: "Palavra-passe",
     language_timezone: "Idioma e fuso horário",
 };

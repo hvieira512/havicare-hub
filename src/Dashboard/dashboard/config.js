@@ -33,6 +33,20 @@ const CONFIG_ACTION_BUTTON_META = {
     },
 };
 
+const CONFIG_SECTION_ORDER = [
+    "health",
+    "contacts",
+    "alarms",
+    "settings_system",
+];
+
+const CONFIG_SECTION_LABELS = {
+    health: "Monitorização de saúde",
+    contacts: "Contactos e regras de chamadas",
+    alarms: "Alertas e lembretes",
+    settings_system: "Definições e ações do dispositivo",
+};
+
 const CONFIG_INPUT_RENDERERS = {
     toggle: (entry, desired) => toggleInput(entry, desired),
     fallSensitivity: (_entry, desired) => fallSensitivityInput(desired),
@@ -321,18 +335,13 @@ export function groupedCatalog(catalog) {
     return groups;
 }
 
-function normalizedCatalogForProtocol(protocol, catalog) {
-    if (protocol === "wonlex-json") {
-        catalog = catalog.filter(
-            (entry) => !["deviceMeasuringFrequency", "deviceConfig"].includes(
-                String(entry.key || ""),
-            ),
-        );
-    }
-
+function normalizedCatalogForProtocol(protocol, catalog, capabilityCatalog) {
     const groupedCapabilities = protocolGroupedCapabilities(protocol);
     if (Object.keys(groupedCapabilities).length === 0) {
-        return catalog.map((entry) => normalizeConfigEntry(entry));
+        return catalog
+            .map((entry) => normalizeConfigEntry(entry))
+            .map((entry) => assignCapabilitySection(entry, capabilityCatalog))
+            .filter(Boolean);
     }
 
     const grouped = new Map();
@@ -372,7 +381,40 @@ function normalizedCatalogForProtocol(protocol, catalog) {
         groupedEntry.command = groupedEntry.configKeys.join(" · ");
     }
 
-    return normalized;
+    return normalized
+        .map((entry) => assignCapabilitySection(entry, capabilityCatalog))
+        .filter(Boolean);
+}
+
+function assignCapabilitySection(entry, capabilityCatalog) {
+    const capabilityKey = String(entry.capabilityKey || entry.key || "");
+    const definition = capabilityDefinitionForKey(
+        capabilityCatalog,
+        capabilityKey,
+    );
+    const section = String(definition?.section || "");
+    if (
+        (!definition?.isConfigurable && !definition?.isRequestable)
+        || !CONFIG_SECTION_ORDER.includes(section)
+    ) {
+        return null;
+    }
+
+    return {
+        ...entry,
+        category: section,
+        configSectionName: section,
+    };
+}
+
+function capabilityDefinitionForKey(capabilityCatalog, capabilityKey) {
+    if (capabilityKey === "") {
+        return null;
+    }
+
+    return (capabilityCatalog || []).find(
+        (definition) => String(definition?.key || "") === capabilityKey,
+    ) || null;
 }
 
 export function renderDeviceConfigurationRoot(context) {
@@ -381,6 +423,7 @@ export function renderDeviceConfigurationRoot(context) {
         catalog,
         configurations = {},
         capabilities = {},
+        capabilityCatalog = [],
         supplier = "",
         model = "",
         disabled = false,
@@ -400,12 +443,15 @@ export function renderDeviceConfigurationRoot(context) {
     }
 
     const rowsByKey = configurations;
-    const normalizedCatalog = normalizedCatalogForProtocol(protocol, catalog);
+    const normalizedCatalog = normalizedCatalogForProtocol(
+        protocol,
+        catalog,
+        capabilityCatalog,
+    );
     const groups = groupedCatalog(normalizedCatalog);
-    const order = protocolCategoryOrder(protocol);
     groups.sort((a, b) => {
-        const ai = order.indexOf(a.key);
-        const bi = order.indexOf(b.key);
+        const ai = CONFIG_SECTION_ORDER.indexOf(a.key);
+        const bi = CONFIG_SECTION_ORDER.indexOf(b.key);
         if (ai !== bi) {
             return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
         }
@@ -415,7 +461,7 @@ export function renderDeviceConfigurationRoot(context) {
         ? activeCategory
         : groups[0]?.key || "";
     for (const group of groups) {
-        group.label = categoryLabel(protocol, group.key);
+        group.label = CONFIG_SECTION_LABELS[group.key] || titleize(group.key);
     }
 
     return `
@@ -630,11 +676,6 @@ function configInputLabel(input) {
     return CONFIG_INPUT_LABEL[input] || titleize(input);
 }
 
-function categoryLabel(protocol, category) {
-    const labels = protocolCategoryLabels(protocol);
-    return labels[category] || titleize(category);
-}
-
 function protocolDefinition(protocol) {
     return (state.protocols || []).find((entry) => entry.protocol === protocol) || null;
 }
@@ -642,19 +683,9 @@ function protocolDefinition(protocol) {
 function protocolDashboardMeta(protocol) {
     const meta = protocolDefinition(protocol)?.dashboard || {};
     return {
-        categoryLabels: isPlainObject(meta.categoryLabels) ? meta.categoryLabels : null,
-        categoryOrder: Array.isArray(meta.categoryOrder) ? meta.categoryOrder : null,
         groupedCapabilities: isPlainObject(meta.groupedCapabilities) ? meta.groupedCapabilities : null,
         fieldConstraints: isPlainObject(meta.fieldConstraints) ? meta.fieldConstraints : null,
     };
-}
-
-function protocolCategoryLabels(protocol) {
-    return protocolDashboardMeta(protocol).categoryLabels || {};
-}
-
-function protocolCategoryOrder(protocol) {
-    return protocolDashboardMeta(protocol).categoryOrder || [];
 }
 
 function protocolGroupedCapabilities(protocol) {
@@ -2636,14 +2667,7 @@ function capabilitySectionCandidates(entry) {
         sections.push(configSection);
     }
 
-    const categoryToSection = {
-        alerts: "alarms",
-        system: "settings_system",
-        intervals: "settings_system",
-    };
-    if (categoryToSection[category]) {
-        sections.push(categoryToSection[category]);
-    } else if (category !== "") {
+    if (category !== "") {
         sections.push(category);
     }
 
