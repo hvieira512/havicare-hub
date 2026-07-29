@@ -40,6 +40,10 @@ final class DashboardSessionFrontendTest extends TestCase
             'document.body.style.removeProperty("padding-right")',
             $source
         );
+        self::assertStringContainsString('app.hidden = true;', $source);
+        self::assertStringContainsString('login.hidden = false;', $source);
+        self::assertStringContainsString('login.hidden = true;', $source);
+        self::assertStringContainsString('app.hidden = false;', $source);
 
         $showLoginStart = strpos($source, 'const showLogin = message => {');
         $closeOverlays = strpos($source, 'closeDashboardOverlays();', $showLoginStart ?: 0);
@@ -49,5 +53,22 @@ final class DashboardSessionFrontendTest extends TestCase
         self::assertIsInt($closeOverlays);
         self::assertIsInt($hideApp);
         self::assertLessThan($hideApp, $closeOverlays);
+    }
+
+    public function testAuthenticationViewsRemainHiddenUntilSessionResolution(): void
+    {
+        $template = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/index.php'
+        );
+
+        self::assertIsString($template);
+        self::assertStringContainsString(
+            'id="dashboardLogin" class="dashboard-login row g-0 min-vh-100 d-none" hidden',
+            $template
+        );
+        self::assertStringContainsString(
+            '<?= $dashboardApiAuthRequired ? \' hidden\' : \'\' ?>',
+            $template
+        );
     }
 }

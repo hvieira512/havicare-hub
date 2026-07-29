@@ -24,7 +24,7 @@ require_once __DIR__ . '/components/modal.php';
 </head>
 
 <body class="bg-body-tertiary" data-dashboard-auth-required="<?= $dashboardApiAuthRequired ? 'true' : 'false' ?>">
-    <section id="dashboardLogin" class="dashboard-login row g-0 min-vh-100<?= $dashboardApiAuthRequired ? '' : ' d-none' ?>">
+    <section id="dashboardLogin" class="dashboard-login row g-0 min-vh-100 d-none" hidden>
         <div class="dashboard-login-atmosphere col-md-4 d-none d-md-block min-vh-100 position-relative overflow-hidden" aria-hidden="true">
             <div class="dashboard-login-orbit"></div>
             <div class="dashboard-login-signal dashboard-login-signal-one"></div>
@@ -63,7 +63,7 @@ require_once __DIR__ . '/components/modal.php';
         </div>
     </section>
 
-    <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>">
+    <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>
         <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
             <div class="container-fluid">
                 <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>

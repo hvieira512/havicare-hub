@@ -162,8 +162,14 @@ const setLoginBusy = busy => {
 const showLogin = message => {
     const {app, login, loginForm, loginUsername} = elements();
     closeDashboardOverlays();
-    app?.classList.add("d-none");
-    login?.classList.remove("d-none");
+    if (app) {
+        app.hidden = true;
+        app.classList.add("d-none");
+    }
+    if (login) {
+        login.hidden = false;
+        login.classList.remove("d-none");
+    }
     loginForm?.reset();
     if (message !== "") {
         showToast("warning", message);
@@ -173,8 +179,14 @@ const showLogin = message => {
 
 const startDashboard = async () => {
     const {app, login} = elements();
-    login?.classList.add("d-none");
-    app?.classList.remove("d-none");
+    if (login) {
+        login.hidden = true;
+        login.classList.add("d-none");
+    }
+    if (app) {
+        app.hidden = false;
+        app.classList.remove("d-none");
+    }
     if (!dashboardStarted) {
         dashboardStarted = true;
         await onAuthenticated();
