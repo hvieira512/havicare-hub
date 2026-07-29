@@ -104,7 +104,7 @@ final class AlarmClockCapability implements CapabilityContract
 
     public function meta(string $protocol, array $accumulatedMeta = []): array
     {
-        $meta = $accumulatedMeta;
+        $meta = $this->handlers[$protocol]?->meta($accumulatedMeta) ?? $accumulatedMeta;
 
         $recurrenceOptions = $meta['mode']['options'] ?? null;
         if (!is_array($recurrenceOptions) || $recurrenceOptions === []) {

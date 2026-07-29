@@ -1138,10 +1138,12 @@ class OpenApiSpec
                     'AlarmClockItem' => [
                         'type' => 'object',
                         'properties' => [
+                            'label' => ['type' => 'string', 'nullable' => true, 'description' => 'Optional alarm name supported by Wonlex.'],
                             'time' => ['type' => 'string', 'example' => '12:10'],
                             'enabled' => ['type' => 'boolean'],
                             'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1, 'description' => 'Required for Vivistar alarm_clock and omitted for 4P Touch.'],
                             'recurrence' => ['$ref' => '#/components/schemas/AlarmClockRecurrence'],
+                            'url' => ['type' => 'string', 'format' => 'uri', 'nullable' => true, 'description' => 'Optional HTTP(S) voice-reminder audio URL supported by Wonlex.'],
                         ],
                         'required' => ['time', 'enabled'],
                     ],
@@ -1177,6 +1179,8 @@ class OpenApiSpec
                                     ],
                                 ],
                             ],
+                            'label' => ['$ref' => '#/components/schemas/CapabilityMetaField'],
+                            'url' => ['$ref' => '#/components/schemas/CapabilityMetaField'],
                         ],
                     ],
                     'AlarmClockCapability' => [
@@ -1193,7 +1197,7 @@ class OpenApiSpec
                     ],
                     'AlarmClockConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Send items as an array of alarms; an empty array is valid and clears the saved alarms. Include type only for Vivistar, and omit it for 4P Touch.',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Send items as an array of alarms; an empty array is valid and clears the saved alarms. Include type only for Vivistar, and omit it for 4P Touch. Wonlex supports label and an optional HTTP(S) audio URL. Wonlex represents once as the current weekday in its Monday-to-Sunday weekly mask, so remove or disable it after it fires to prevent a weekly repeat.',
                         'properties' => [
                             'items' => [
                                 'type' => 'array',
@@ -1324,7 +1328,7 @@ class OpenApiSpec
                         'properties' => [
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Map of generic capability keys to desired payloads. Empty arrays clear list values. For alarm_clock, send {items:[{time,enabled,recurrence,type?}]}. For Wonlex, phonebook is {contacts:[{name,phone}]}, sos_contacts is a flat subset of phone numbers already present in phonebook, whitelist_enabled controls CallInLimitSwitch, and sos_sms_alert controls SOSSwitch. call_whitelist is reserved for Vivistar and 4P Touch.',
+                                'description' => 'Map of generic capability keys to desired payloads. Empty arrays clear list values. For alarm_clock, send {items:[{time,enabled,recurrence,type?,label?,url?}]}; Wonlex supports label and url. For Wonlex, phonebook is {contacts:[{name,phone}]}, sos_contacts is a flat subset of phone numbers already present in phonebook, whitelist_enabled controls CallInLimitSwitch, and sos_sms_alert controls SOSSwitch. call_whitelist is reserved for Vivistar and 4P Touch.',
                                 'properties' => [
                                     'alarm_clock' => ['$ref' => '#/components/schemas/AlarmClockConfiguration'],
                                     'phonebook' => ['$ref' => '#/components/schemas/PhonebookConfiguration'],

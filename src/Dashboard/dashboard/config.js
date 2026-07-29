@@ -998,6 +998,22 @@ function readAlarmClock(section) {
                 recurrence: {kind: recurrenceKind},
             };
 
+            const labelField = row.querySelector('[data-alarm-clock-field="label"]');
+            if (labelField) {
+                const label = String(labelField.value || "").trim();
+                if (label !== "") {
+                    item.label = label;
+                }
+            }
+
+            const urlField = row.querySelector('[data-alarm-clock-field="url"]');
+            if (urlField) {
+                const url = String(urlField.value || "").trim();
+                if (url !== "") {
+                    item.url = url;
+                }
+            }
+
             const typeField = row.querySelector('[data-alarm-clock-field="type"]:checked');
             if (typeField) {
                 const type = parseInt(String(typeField.value || "1"), 10);
@@ -1922,6 +1938,10 @@ function alarmClockInput(desired, meta = {}) {
               { value: "daily", label: "Todos os dias" },
               { value: "custom", label: "Personalizado" },
           ];
+    const wonlexFields = {
+        label: meta.label?.supported === true,
+        url: meta.url?.supported === true,
+    };
     if (items.length === 0) {
         items.push(defaultAlarmClockItem(typeOptions.length > 0));
     }
@@ -1933,7 +1953,7 @@ function alarmClockInput(desired, meta = {}) {
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addAlarmClockRow">Adicionar item</button>
             </div>
             <div class="vstack gap-2" data-alarm-clock-list>
-                ${items.slice(0, limit).map((item) => alarmClockRow(item, typeOptions, recurrenceOptions)).join("")}
+                ${items.slice(0, limit).map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields)).join("")}
             </div>
         </div>`;
 }
@@ -2867,7 +2887,7 @@ function extractCapabilityValue(value) {
     return value;
 }
 
-function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = []) {
+function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}) {
     const rowId = nextUid("alarm-clock");
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
         item.recurrence?.kind ?? item.kind ?? "once",
@@ -2901,6 +2921,13 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = []) {
     return `
         <div class="border rounded p-3 bg-body" data-repeat-row="alarm_clock">
             <div class="row g-3 align-items-end">
+                ${wonlexFields.label
+                    ? `
+                <div class="col-12 col-lg-4">
+                    <label class="form-label form-label-sm">Nome do alarme</label>
+                    <input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">
+                </div>`
+                    : ""}
                 <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
                     <label class="form-label form-label-sm">Hora</label>
                     <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}">
@@ -2980,6 +3007,14 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = []) {
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
+                ${wonlexFields.url
+                    ? `
+                <div class="col-12">
+                    <label class="form-label form-label-sm">URL do áudio</label>
+                    <input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">
+                    <div class="form-text">Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.</div>
+                </div>`
+                    : ""}
             </div>
         </div>`;
 }
@@ -2998,8 +3033,10 @@ function normalizeAlarmClockItem(item) {
     );
 
     return {
+        label: String(item.label ?? ""),
         time: String(item.time ?? item.alarmTime ?? item.reminderTime ?? ""),
         enabled: boolValue(item.enabled ?? item.switchState, true),
+        url: String(item.url ?? ""),
         type: item.type === undefined || item.type === null
             ? undefined
             : (parseInt(String(item.type), 10) || 1),

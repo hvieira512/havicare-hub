@@ -68,7 +68,23 @@ final class Wonlex implements AlarmClockHandler
 
     public function meta(array $accumulatedMeta = []): array
     {
-        return array_replace_recursive(['limit' => 10], $accumulatedMeta);
+        return array_replace_recursive([
+            'limit' => 10,
+            'label' => [
+                'supported' => true,
+                'label' => 'Nome do alarme',
+            ],
+            'url' => [
+                'supported' => true,
+                'label' => 'Áudio do lembrete',
+                'format' => 'uri',
+                'schemes' => ['http', 'https'],
+            ],
+            'week' => [
+                'order' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                'onceBehavior' => 'current_weekday',
+            ],
+        ], $accumulatedMeta);
     }
 
     public function merge(mixed $existing, mixed $incoming): mixed

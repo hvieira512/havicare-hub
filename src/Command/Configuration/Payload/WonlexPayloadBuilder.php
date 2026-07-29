@@ -127,7 +127,8 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 if ($kind === 'daily') {
                     $week = '1111111';
                 } elseif ($kind === 'once') {
-                    $week = '0000000';
+                    $weekday = (int)date('N');
+                    $week = str_repeat('0', $weekday - 1) . '1' . str_repeat('0', 7 - $weekday);
                 } elseif (is_array($item['recurrence']['days'] ?? null)) {
                     $enabledDays = array_flip(array_map('intval', $item['recurrence']['days']));
                     $week = implode('', array_map(
@@ -137,12 +138,20 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 }
             }
 
+            $url = trim((string)($item['url'] ?? ''));
+            if ($url !== '' && (
+                filter_var($url, FILTER_VALIDATE_URL) === false
+                || !in_array(strtolower((string)parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)
+            )) {
+                throw new \InvalidArgumentException('alarm url must be a valid HTTP or HTTPS URL');
+            }
+
             return array_filter([
                 'label' => trim((string)($item['label'] ?? '')),
                 'startTime' => $time,
                 'week' => trim((string)($week ?? '0000000')),
                 'status' => (string)self::boolInt($item['status'] ?? $item['enabled'] ?? true, 'status'),
-                'url' => trim((string)($item['url'] ?? '')),
+                'url' => $url,
             ], static fn (mixed $value): bool => $value !== '');
         }, array_values($items)));
     }

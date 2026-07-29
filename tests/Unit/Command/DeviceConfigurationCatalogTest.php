@@ -391,6 +391,22 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
         self::assertSame('1111111', $dailyAlarm['payload']['alarmClockList'][0]['week']);
 
+        $audioUrl = 'https://developer.mozilla.org/shared-assets/audio/t-rex-roar.mp3';
+        $onceAlarm = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
+            'items' => [[
+                'label' => 'Audio test',
+                'time' => '20:03',
+                'enabled' => true,
+                'recurrence' => ['kind' => 'once'],
+                'url' => $audioUrl,
+            ]],
+        ]);
+        $weekday = (int)date('N');
+        $expectedWeek = str_repeat('0', $weekday - 1) . '1' . str_repeat('0', 7 - $weekday);
+        self::assertSame($expectedWeek, $onceAlarm['payload']['alarmClockList'][0]['week']);
+        self::assertSame('Audio test', $onceAlarm['payload']['alarmClockList'][0]['label']);
+        self::assertSame($audioUrl, $onceAlarm['payload']['alarmClockList'][0]['url']);
+
         $family = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'familyNumber', [
             'contacts' => [['name' => 'Care', 'phone' => '+351210000000', 'areaCode' => '351']],
         ]);
@@ -417,6 +433,21 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertArrayNotHasKey('plans', $medication['payload']);
         self::assertSame('Medicine', $medication['payload']['drugName']);
         self::assertSame(1.5, $medication['payload']['drugDose']);
+    }
+
+    public function testWonlexAlarmRejectsNonHttpAudioUrl(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('alarm url must be a valid HTTP or HTTPS URL');
+
+        DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
+            'items' => [[
+                'time' => '20:04',
+                'enabled' => true,
+                'recurrence' => ['kind' => 'once'],
+                'url' => 'file:///tmp/alarm.mp3',
+            ]],
+        ]);
     }
 
     public function testWonlexMedicationPlansExpandToOneWireCommandPerPlan(): void

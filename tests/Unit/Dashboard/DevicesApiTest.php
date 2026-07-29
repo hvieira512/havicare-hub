@@ -482,6 +482,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('Medicine', $response['configurations']['alarm_clock'][0]['label'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(10, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
+        self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['label']['supported'] ?? false);
+        self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['url']['supported'] ?? false);
+        self::assertSame(
+            ['http', 'https'],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['url']['schemes'] ?? null
+        );
         self::assertArrayHasKey('sos_contacts', $response['capabilities']['contacts'] ?? []);
     }
 
@@ -2228,6 +2234,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'time' => '08:00',
                     'enabled' => true,
                     'recurrence' => ['kind' => 'daily'],
+                    'url' => 'https://developer.mozilla.org/shared-assets/audio/t-rex-roar.mp3',
                 ]]],
                 'phonebook' => ['contacts' => [[
                     'name' => 'Care',
@@ -2265,6 +2272,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('351', $frames[0]['data']['familyNumbers'][0]['areaCode'] ?? null);
         self::assertSame('15', $frames[1]['data']['configs']['upHeartRate']['interval'] ?? null);
         self::assertSame('1111111', $frames[2]['data']['alarmClockList'][0]['week'] ?? null);
+        self::assertSame('Medicine', $frames[2]['data']['alarmClockList'][0]['label'] ?? null);
+        self::assertSame(
+            'https://developer.mozilla.org/shared-assets/audio/t-rex-roar.mp3',
+            $frames[2]['data']['alarmClockList'][0]['url'] ?? null
+        );
         self::assertSame('210000000', $frames[3]['data']['sosNumbers'][0]['phone'] ?? null);
         self::assertSame(1, $frames[4]['data']['configs']['CallInLimitSwitch']['switchState'] ?? null);
         self::assertSame(1, $frames[5]['data']['configs']['SOSSwitch']['switchState'] ?? null);
