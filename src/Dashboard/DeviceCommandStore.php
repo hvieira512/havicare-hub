@@ -158,6 +158,9 @@ final class DeviceCommandStore
         string $ref = ''
     ): void
     {
+        $uncorrelatedMatch = null;
+        $wonlexSemanticMatch = null;
+
         foreach ($this->commands($imei) as $command) {
             if (!in_array((string)($command['status'] ?? ''), ['waiting'], true)) {
                 continue;
@@ -168,21 +171,30 @@ final class DeviceCommandStore
                 continue;
             }
             $commandIdent = $command['ident'] ?? null;
-            if ($commandIdent !== null && $ident !== null && (string)$commandIdent !== (string)$ident) {
+
+            if ($commandIdent !== null && $ident !== null && (string)$commandIdent === (string)$ident) {
+                $this->acknowledgeCommand($imei, $command, $replyNativeType, $ident, $ref);
+                return;
+            }
+
+            if ($commandIdent === null || ($ident === null && ($command['protocol'] ?? '') !== 'wonlex-json')) {
+                $uncorrelatedMatch ??= $command;
                 continue;
             }
-            if (($command['protocol'] ?? '') === 'wonlex-json' && $commandIdent !== null && $ident === null) {
+
+            // Some Wonlex firmwares generate a fresh ident for both w:reply and
+            // w:update instead of echoing the downlink ident documented by the
+            // protocol. Preserve exact-ident priority, then fall back to the
+            // newest pending command that semantically expects this reply.
+            if (($command['protocol'] ?? '') === 'wonlex-json') {
+                $wonlexSemanticMatch ??= $command;
                 continue;
             }
-            $id = (string)$command['id'];
-            $this->recordCommand($imei, $id, array_merge($command, [
-                'status' => 'acked',
-                'ackedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'replyNativeType' => $replyNativeType,
-                'replyIdent' => $ident,
-                'replyRef' => $ref,
-            ]));
-            return;
+        }
+
+        $command = $uncorrelatedMatch ?? $wonlexSemanticMatch;
+        if (is_array($command)) {
+            $this->acknowledgeCommand($imei, $command, $replyNativeType, $ident, $ref);
         }
     }
 
@@ -234,6 +246,23 @@ final class DeviceCommandStore
             $status,
             $id
         );
+    }
+
+    private function acknowledgeCommand(
+        string $imei,
+        array $command,
+        string $replyNativeType,
+        string|int|null $ident,
+        string $ref
+    ): void {
+        $id = (string)$command['id'];
+        $this->recordCommand($imei, $id, array_merge($command, [
+            'status' => 'acked',
+            'ackedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'replyNativeType' => $replyNativeType,
+            'replyIdent' => $ident,
+            'replyRef' => $ref,
+        ]));
     }
 
     public function findCommand(string $id): ?array

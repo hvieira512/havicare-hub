@@ -153,6 +153,55 @@ final class DashboardStoreTest extends TestCase
         self::assertSame(222222, $commands['two']['replyIdent']);
     }
 
+    public function testWonlexReplyFallsBackToSemanticMatchWhenFirmwareChangesIdent(): void
+    {
+        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
+        $imei = '868705080304962';
+        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+
+        $bytes = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnBO', [], ['ident' => 220365]);
+        $store->recordCommand($imei, 'blood-oxygen', [
+            'status' => 'waiting',
+            'protocol' => 'wonlex-json',
+            'nativeType' => 'dnBO',
+            'expectedReplyTypes' => ['upBO', 'upBatch'],
+            'bytes' => $bytes,
+        ]);
+
+        $store->markCommandReply($imei, 'upBO', 747418, 'w:update');
+        $command = $store->commands($imei)[0] ?? [];
+
+        self::assertSame('acked', $command['status'] ?? null);
+        self::assertSame(220365, $command['ident'] ?? null);
+        self::assertSame('upBO', $command['replyNativeType'] ?? null);
+        self::assertSame(747418, $command['replyIdent'] ?? null);
+        self::assertSame('w:update', $command['replyRef'] ?? null);
+    }
+
+    public function testWonlexSameTypeReplyFallsBackWhenFirmwareChangesIdent(): void
+    {
+        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
+        $imei = '868705080304962';
+        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+
+        $bytes = DeviceCommandCatalog::buildDownlink('wonlex-json', $imei, 'dnBO', [], ['ident' => 220365]);
+        $store->recordCommand($imei, 'blood-oxygen', [
+            'status' => 'waiting',
+            'protocol' => 'wonlex-json',
+            'nativeType' => 'dnBO',
+            'expectedReplyTypes' => ['upBO', 'upBatch'],
+            'bytes' => $bytes,
+        ]);
+
+        $store->markCommandReply($imei, 'dnBO', 642787, 'w:reply');
+        $command = $store->commands($imei)[0] ?? [];
+
+        self::assertSame('acked', $command['status'] ?? null);
+        self::assertSame('dnBO', $command['replyNativeType'] ?? null);
+        self::assertSame(642787, $command['replyIdent'] ?? null);
+        self::assertSame('w:reply', $command['replyRef'] ?? null);
+    }
+
     public function testFourPTouchLssetReplyAcknowledgesSensitivityCommand(): void
     {
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
