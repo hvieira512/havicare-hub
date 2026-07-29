@@ -131,6 +131,9 @@ const TELEMETRY_REQUEST_GROUPS = [
 const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
     "firmware_version",
     "device_status",
+    "call_log",
+    "device_state",
+    "ecg_analysis",
 ]);
 
 function telemetryRequestCards(telemetryCapabilities = {}) {

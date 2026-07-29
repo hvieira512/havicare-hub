@@ -18,6 +18,9 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('label: "Informação do sistema"', $source);
         self::assertStringContainsString('"firmware_version"', $source);
         self::assertStringContainsString('"device_status"', $source);
+        self::assertStringContainsString('"call_log"', $source);
+        self::assertStringContainsString('"device_state"', $source);
+        self::assertStringContainsString('"ecg_analysis"', $source);
         self::assertStringContainsString('filter(([, entry]) => entry?.supported)', $source);
         self::assertStringContainsString('renderRequestCardGroup(group, telemetry)', $source);
         self::assertStringContainsString('group.cards.length', $source);
@@ -31,6 +34,9 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('const isSystemRequestCard = [', $renderersSource);
         self::assertStringContainsString('firmware_version', $renderersSource);
         self::assertStringContainsString('device_status', $renderersSource);
+        self::assertStringContainsString('call_log', $renderersSource);
+        self::assertStringContainsString('device_state', $renderersSource);
+        self::assertStringContainsString('ecg_analysis', $renderersSource);
         self::assertStringContainsString('const title = isSystemRequestCard', $renderersSource);
         self::assertStringContainsString('btn btn-primary btn-sm w-100', $renderersSource);
         self::assertStringContainsString('const buttonRowHtml = buttonHtml', $renderersSource);

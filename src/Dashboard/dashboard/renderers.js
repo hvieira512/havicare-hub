@@ -461,6 +461,9 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const isSystemRequestCard = [
         "firmware_version",
         "device_status",
+        "call_log",
+        "device_state",
+        "ecg_analysis",
     ].includes(type);
 
     const telemetryTypes = requestTelemetryTypes(type);
