@@ -14,7 +14,6 @@ import {esc} from "../format.js";
 import {modelImageHtml, renderButtonGroup} from "../renderers.js";
 import {
     capabilitiesGroupedBySection,
-    capabilityCatalogEntryByKey,
     capabilityLabelByKey,
     deviceTypeLabel,
     deviceTypeOptions,
@@ -521,6 +520,11 @@ async function applyDiscoveryPreview() {
     state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(
         state.settingsModal.currentCapabilitiesModel.capabilities || {},
     );
+    state.settingsModal.capabilityRequestableCapabilities = Array.isArray(
+        state.settingsModal.currentCapabilitiesModel.requestableCapabilities,
+    )
+        ? state.settingsModal.currentCapabilitiesModel.requestableCapabilities.map(String)
+        : [];
     renderCapabilitiesSection();
     renderDiscoverySection();
 }
@@ -542,6 +546,11 @@ async function openModelDetail(modelId) {
     state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(
         model.capabilities || {},
     );
+    state.settingsModal.capabilityRequestableCapabilities = Array.isArray(
+        model.requestableCapabilities,
+    )
+        ? model.requestableCapabilities.map(String)
+        : [];
     state.settingsModal.discoveryRun = null;
     state.settingsModal.discoveryError = "";
     state.settingsModal.discoveryDeviceOptions = [];
@@ -563,6 +572,11 @@ async function openModelDetail(modelId) {
     state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(
         model.capabilities || {},
     ).filter((key) => (templateSet.size === 0 ? true : templateSet.has(key)));
+    const enabledSet = new Set(state.settingsModal.capabilityEnabledCapabilities);
+    state.settingsModal.capabilityRequestableCapabilities =
+        state.settingsModal.capabilityRequestableCapabilities.filter(
+            (key) => enabledSet.has(key),
+        );
 
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
@@ -756,6 +770,14 @@ function renderCapabilitiesSection() {
     const enabled = new Set(
         state.settingsModal.capabilityEnabledCapabilities || [],
     );
+    const requestable = new Set(
+        state.settingsModal.capabilityRequestableCapabilities || [],
+    );
+    const protocolRequestable = new Set(
+        Array.isArray(model?.requestableCapabilityKeys)
+            ? model.requestableCapabilityKeys.map(String)
+            : [],
+    );
     const catalogSections = capabilitiesGroupedBySection(
         state.settingsModal.capabilityCatalog,
     );
@@ -817,7 +839,12 @@ function renderCapabilitiesSection() {
         (count, item) => count + item.entries.length,
         0,
     );
-    els.capabilitySummary.textContent = `${enabled.size}/${totalCapabilities} ativos`;
+    const activeCapabilities = sections.reduce(
+        (count, item) =>
+            count + item.entries.filter((feature) => enabled.has(feature)).length,
+        0,
+    );
+    els.capabilitySummary.textContent = `${activeCapabilities}/${totalCapabilities} ativos`;
 
     const sectionButtonConfig = {
         telemetry: { icon: "fa-chart-line", color: "btn-outline-info" },
@@ -860,24 +887,38 @@ function renderCapabilitiesSection() {
                     .map((feature) => {
                         const labelText =
                             CAPABILITY_LABEL_TRANSLATIONS[feature] ||
-                            capabilityLabelByKey(feature);
+                            capabilityLabelByKey(
+                                feature,
+                                state.settingsModal.capabilityCatalog,
+                            );
                         const sectionState = capabilities[section.section] || {};
                         const isInModelPayload = Object.prototype.hasOwnProperty.call(
                             sectionState,
                             feature,
                         );
+                        const canBeRequested =
+                            section.section === "telemetry" &&
+                            protocolRequestable.has(feature);
+                        const protocolDescription =
+                            section.section === "telemetry"
+                                ? `${esc(String(model?.supplier || "Protocolo"))}: ${canBeRequested ? "receção e pedido" : "apenas receção"}`
+                                : "";
                         return `
                         <div class="d-flex justify-content-between align-items-start gap-3 border rounded px-3 py-2 bg-white">
                             <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequest" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? "checked" : ""}>
+                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilitySupport" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? "checked" : ""}>
                                 <label class="form-check-label" for="cap-${esc(feature)}">${esc(labelText)}</label>
-                                ${!isInModelPayload ? '<div class="small text-secondary">Disponível no catálogo do tipo de dispositivo.</div>' : ""}
+                                <div class="small text-secondary">${protocolDescription || (!isInModelPayload ? "Disponível no catálogo do tipo de dispositivo." : "Suportada pelo modelo")}</div>
                             </div>
                             ${
-                                section.section === "telemetry" &&
-                                capabilityCatalogEntryByKey(feature)?.isRequestable
-                                    ? `<span class="badge bg-success bg-opacity-10 text-success px-3 py-2 fw-medium">${esc("Solicitável")}</span>`
-                                    : ""
+                                canBeRequested
+                                    ? `<div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${esc(feature)}" id="requestable-${esc(feature)}" ${requestable.has(feature) ? "checked" : ""} ${enabled.has(feature) ? "" : "disabled"}>
+                                        <label class="form-check-label small" for="requestable-${esc(feature)}">Solicitável neste modelo</label>
+                                    </div>`
+                                    : section.section === "telemetry"
+                                        ? '<span class="badge text-bg-secondary">Apenas receção</span>'
+                                        : ""
                             }
                         </div>`;
                     })
@@ -905,6 +946,10 @@ async function saveCapabilities() {
     body.append("capabilitiesConfigured", "1");
     for (const feature of state.settingsModal.capabilityEnabledCapabilities || []) {
         body.append("capabilities[]", String(feature));
+    }
+    body.append("requestableCapabilitiesConfigured", "1");
+    for (const feature of state.settingsModal.capabilityRequestableCapabilities || []) {
+        body.append("requestableCapabilities[]", String(feature));
     }
 
     const result = await apiSaveModel(model.id, body);

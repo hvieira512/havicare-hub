@@ -6,6 +6,7 @@ use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Http\ModelImageUrl;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\DeviceProtocol;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Capability\CapabilityCatalog;
@@ -225,6 +226,15 @@ class ModelService
         $imagePath = (string)($entry['image_path'] ?? '');
         $deviceType = (string)($entry['device_type'] ?? 'watch');
         $catalog = $this->db->genericCapabilities->all($deviceType);
+        $requestableCapabilityKeys = $this->requestableTelemetryKeys(
+            $protocol,
+            (string)($entry['supplier_name'] ?? ''),
+            $deviceType
+        );
+        $effectiveRequestable = array_values(array_intersect(
+            $this->db->modelCapabilities->requestableTelemetryFeaturesForModelId($id),
+            $requestableCapabilityKeys
+        ));
 
         return [
             'id' => $id,
@@ -239,6 +249,8 @@ class ModelService
                 $catalog,
                 $this->db->modelCapabilities->enabledFeaturesForModelId($id)
             ),
+            'requestableCapabilityKeys' => $requestableCapabilityKeys,
+            'requestableCapabilities' => $effectiveRequestable,
         ];
     }
 
@@ -271,6 +283,11 @@ class ModelService
             'deviceType' => $deviceType,
             'protocol' => $protocol,
             'enabledCapabilities' => $enabledKeys,
+            'requestableCapabilityKeys' => $this->requestableTelemetryKeys(
+                $protocol,
+                $supplierName,
+                $deviceType
+            ),
             'capabilities' => CapabilityCatalog::buildCapabilityMatrix($catalog, $enabledKeys),
         ];
     }
@@ -286,6 +303,7 @@ class ModelService
         $commercialName = (string)$payload['commercial_name'];
         $deviceType = (string)$payload['device_type'];
         $enabledCapabilities = $payload['enabled_capabilities'];
+        $requestableCapabilities = $payload['requestable_capabilities'];
 
         $imagePath = $this->storeModelImage($request->getUploadedFiles()['image'] ?? null);
         if (is_array($imagePath)) {
@@ -302,6 +320,12 @@ class ModelService
         $stored = is_array($supplier) ? $this->db->models->find((string)$supplier['name'], $internalModel) : null;
         if (is_array($stored)) {
             $this->db->modelCapabilities->replaceForModelId((int)$stored['id'], $enabledCapabilities);
+            if (is_array($requestableCapabilities)) {
+                $this->db->modelCapabilities->replaceTelemetryRequestabilityForModelId(
+                    (int)$stored['id'],
+                    $requestableCapabilities
+                );
+            }
         }
         if (is_string($imagePath) && $previousImagePath !== null && $previousImagePath !== $imagePath) {
             $this->deleteStoredModelImage($previousImagePath);
@@ -326,6 +350,7 @@ class ModelService
         $commercialName = (string)$payload['commercial_name'];
         $deviceType = (string)$payload['device_type'];
         $enabledCapabilities = $payload['enabled_capabilities'];
+        $requestableCapabilities = $payload['requestable_capabilities'];
         if ($this->db->models->existsForDifferentId($id, $supplierId, $internalModel)) {
             return ['error' => ['code' => 'model_exists', 'message' => 'Another model with this supplier and model name already exists']];
         }
@@ -337,6 +362,9 @@ class ModelService
 
         $this->db->models->update($id, $supplierId, $internalModel, $commercialName, $deviceType, $imagePath);
         $this->db->modelCapabilities->replaceForModelId($id, $enabledCapabilities);
+        if (is_array($requestableCapabilities)) {
+            $this->db->modelCapabilities->replaceTelemetryRequestabilityForModelId($id, $requestableCapabilities);
+        }
         if (is_string($imagePath)) {
             $this->deleteStoredModelImage((string)($current['image_path'] ?? ''));
         }
@@ -474,7 +502,37 @@ class ModelService
             }
         }
 
+        $hasRequestableCapabilitiesSelection = array_key_exists('requestableCapabilitiesConfigured', $decoded)
+            || array_key_exists('requestableCapabilities', $decoded)
+            || array_key_exists('requestableCapabilities[]', $decoded);
+        $requestableCapabilities = $this->featureValues(
+            $decoded['requestableCapabilities']
+            ?? $decoded['requestableCapabilities[]']
+            ?? null
+        );
+        if ($hasRequestableCapabilitiesSelection) {
+            $enabledSet = array_fill_keys($enabledCapabilities, true);
+            $requestableCatalog = array_fill_keys(
+                $this->requestableTelemetryKeys($protocol, $supplierName, $deviceType),
+                true
+            );
+            $invalid = array_values(array_filter(
+                $requestableCapabilities,
+                static fn(string $feature): bool =>
+                    !isset($enabledSet[$feature]) || !isset($requestableCatalog[$feature])
+            ));
+            if ($invalid !== []) {
+                return ['error' => [
+                    'code' => 'invalid_requestable_capability',
+                    'message' => 'Requestable telemetry must also be supported and requestable in the capability catalog',
+                ]];
+            }
+        }
+
         $capabilityIds = $this->capabilityIdsForDeviceTypeAndKeys($deviceType, $enabledCapabilities);
+        $requestableCapabilityIds = $hasRequestableCapabilitiesSelection
+            ? $this->capabilityIdsForDeviceTypeAndKeys($deviceType, $requestableCapabilities)
+            : null;
 
         return [
             'supplier_id' => $supplierId,
@@ -482,6 +540,7 @@ class ModelService
             'commercial_name' => $commercialName,
             'device_type' => $deviceType,
             'enabled_capabilities' => $capabilityIds,
+            'requestable_capabilities' => $requestableCapabilityIds,
         ];
     }
 
@@ -583,5 +642,39 @@ class ModelService
         }
 
         return array_values($ids);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function requestableTelemetryKeys(string $protocol, string $supplier, string $deviceType): array
+    {
+        $catalogRequestable = [];
+        foreach ($this->db->genericCapabilities->all($deviceType) as $capability) {
+            if (!empty($capability['is_telemetry']) && !empty($capability['is_requestable'])) {
+                $catalogRequestable[(string)$capability['capability_key']] = true;
+            }
+        }
+        $supplierSupported = array_fill_keys(
+            SupplierCapabilityTemplate::keysForSupplierDeviceType($supplier, $deviceType),
+            true
+        );
+
+        $requestable = [];
+        foreach (DeviceCommandCatalog::commandsForProtocol($protocol) as $command) {
+            if ((string)($command['kind'] ?? '') !== 'request') {
+                continue;
+            }
+            $feature = trim((string)($command['feature'] ?? ''));
+            if (
+                $feature !== ''
+                && isset($catalogRequestable[$feature])
+                && isset($supplierSupported[$feature])
+            ) {
+                $requestable[$feature] = true;
+            }
+        }
+
+        return array_keys($requestable);
     }
 }

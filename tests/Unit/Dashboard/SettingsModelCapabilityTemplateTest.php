@@ -38,5 +38,41 @@ final class SettingsModelCapabilityTemplateTest extends TestCase
             'tmpl.enabledCapabilities.map(String);',
             $source,
         );
+        self::assertStringContainsString(
+            'model.requestableCapabilities.map(String)',
+            $source,
+        );
+        self::assertStringContainsString(
+            'data-action="toggleCapabilitySupport"',
+            $source,
+        );
+        self::assertStringContainsString(
+            'data-action="toggleCapabilityRequestability"',
+            $source,
+        );
+        self::assertStringContainsString(
+            'model.requestableCapabilityKeys.map(String)',
+            $source,
+        );
+        self::assertStringContainsString(
+            'capabilityLabelByKey(',
+            $source,
+        );
+        self::assertStringContainsString(
+            'state.settingsModal.capabilityCatalog,',
+            $source,
+        );
+        self::assertStringContainsString(
+            'Solicitável neste modelo',
+            $source,
+        );
+        self::assertStringContainsString(
+            'Apenas receção',
+            $source,
+        );
+        self::assertStringContainsString(
+            'body.append("requestableCapabilitiesConfigured", "1");',
+            $source,
+        );
     }
 }

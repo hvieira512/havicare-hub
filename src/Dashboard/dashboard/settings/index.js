@@ -85,6 +85,7 @@ async function loadSettingsModal(
     state.settingsModal.capabilityModelId = null;
     state.settingsModal.capabilityModelTemplateKeys = [];
     state.settingsModal.capabilityEnabledCapabilities = [];
+    state.settingsModal.capabilityRequestableCapabilities = [];
     state.settingsModal.currentCapabilitiesModel = null;
     state.settingsModal.discoveryDeviceImei = "";
     state.settingsModal.discoveryDeviceOptions = [];

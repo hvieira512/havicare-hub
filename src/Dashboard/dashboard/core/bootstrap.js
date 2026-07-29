@@ -1718,9 +1718,10 @@ function handleCapabilityDeviceTypeClick(event) {
 }
 
 function handleCapabilityGroupsChange(event) {
-    const checkbox = event.target.closest(
-        '[data-action="toggleCapabilityRequest"]',
-    );
+    const checkbox = event.target.closest([
+        '[data-action="toggleCapabilitySupport"]',
+        '[data-action="toggleCapabilityRequestability"]',
+    ].join(","));
     if (!checkbox) return;
 
     const feature = String(checkbox.dataset.feature || "");
@@ -1729,12 +1730,25 @@ function handleCapabilityGroupsChange(event) {
     const enabled = new Set(
         state.settingsModal.capabilityEnabledCapabilities || [],
     );
-    if (checkbox.checked) {
-        enabled.add(feature);
+    const requestable = new Set(
+        state.settingsModal.capabilityRequestableCapabilities || [],
+    );
+    if (checkbox.dataset.action === "toggleCapabilitySupport") {
+        if (checkbox.checked) {
+            enabled.add(feature);
+        } else {
+            enabled.delete(feature);
+            requestable.delete(feature);
+        }
     } else {
-        enabled.delete(feature);
+        if (checkbox.checked && enabled.has(feature)) {
+            requestable.add(feature);
+        } else {
+            requestable.delete(feature);
+        }
     }
     state.settingsModal.capabilityEnabledCapabilities = [...enabled];
+    state.settingsModal.capabilityRequestableCapabilities = [...requestable];
     renderCapabilitiesSection();
 }
 

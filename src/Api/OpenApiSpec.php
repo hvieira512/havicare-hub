@@ -1594,6 +1594,17 @@ class OpenApiSpec
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'image' => ['type' => 'string', 'example' => '/images/wonlex.png'],
                             'capabilities' => ['$ref' => '#/components/schemas/ModelCapabilitiesMatrix'],
+                            'requestableCapabilities' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'string'],
+                                'example' => ['blood_pressure', 'blood_oxygen', 'location'],
+                            ],
+                            'requestableCapabilityKeys' => [
+                                'type' => 'array',
+                                'description' => 'Telemetry features that the supplier protocol supports requesting for this model family.',
+                                'items' => ['type' => 'string'],
+                                'example' => ['heart_rate', 'blood_pressure', 'blood_oxygen', 'location'],
+                            ],
                         ],
                     ],
                     'ModelCapabilitySection' => [
@@ -1646,6 +1657,7 @@ class OpenApiSpec
                             'deviceType' => ['type' => 'string', 'example' => 'watch'],
                             'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
                             'enabledCapabilities' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'ecg', 'hrv']],
+                            'requestableCapabilityKeys' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'blood_pressure', 'blood_oxygen']],
                             'capabilities' => ['$ref' => '#/components/schemas/ModelCapabilitiesMatrix'],
                         ],
                     ],
@@ -1702,6 +1714,8 @@ class OpenApiSpec
                             'image' => ['type' => 'string', 'format' => 'binary'],
                             'capabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
                             'capabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'phonebook']],
+                            'requestableCapabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
+                            'requestableCapabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'blood_pressure']],
                         ],
                     ],
                     'CapabilityItem' => [

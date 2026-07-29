@@ -50,6 +50,23 @@ final class ModelCapabilityRepository
      */
     public function requestableFeaturesForModelId(int $modelId): array
     {
+        return $this->requestableFeaturesForModelIdFiltered($modelId, false);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requestableTelemetryFeaturesForModelId(int $modelId): array
+    {
+        return $this->requestableFeaturesForModelIdFiltered($modelId, true);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function requestableFeaturesForModelIdFiltered(int $modelId, bool $telemetryOnly): array
+    {
+        $telemetryCondition = $telemetryOnly ? 'AND c.is_telemetry = 1' : '';
         $stmt = $this->pdo->prepare('
             SELECT c.capability_key, m.device_type, s.name AS supplier_name
             FROM model_capabilities mc
@@ -59,6 +76,7 @@ final class ModelCapabilityRepository
             WHERE mc.model_id = ?
               AND mc.enabled = 1
               AND COALESCE(mc.is_requestable, c.is_requestable) = 1
+              ' . $telemetryCondition . '
             ORDER BY c.capability_key
         ');
         $stmt->execute([$modelId]);
@@ -79,6 +97,36 @@ final class ModelCapabilityRepository
         }
 
         return array_keys($requestable);
+    }
+
+    /**
+     * @param list<int|string> $capabilityIds
+     */
+    public function replaceTelemetryRequestabilityForModelId(int $modelId, array $capabilityIds): void
+    {
+        $capabilityIds = $this->normalizeCapabilityIds($modelId, $capabilityIds);
+        $selected = array_fill_keys($capabilityIds, true);
+        $rows = $this->pdo->prepare('
+            SELECT mc.capability_id, c.is_requestable AS catalog_requestable
+            FROM model_capabilities mc
+            JOIN capabilities c ON c.id = mc.capability_id
+            WHERE mc.model_id = ?
+              AND mc.enabled = 1
+              AND c.is_telemetry = 1
+        ');
+        $rows->execute([$modelId]);
+
+        $update = $this->pdo->prepare('
+            UPDATE model_capabilities
+            SET is_requestable = ?
+            WHERE model_id = ? AND capability_id = ?
+        ');
+        foreach ($rows->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $id = (int)($row['capability_id'] ?? 0);
+            $catalogRequestable = (bool)($row['catalog_requestable'] ?? false);
+            $override = $catalogRequestable ? (isset($selected[$id]) ? 1 : 0) : null;
+            $update->execute([$override, $modelId, $id]);
+        }
     }
 
     /**

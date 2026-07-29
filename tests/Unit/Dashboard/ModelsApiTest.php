@@ -35,6 +35,84 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertFalse($response['capabilities']['settings_system']['language_timezone'] ?? false);
     }
 
+    public function testHw20ProShowSeparatesSupportedFromRequestableTelemetry(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+
+        self::assertIsArray($model);
+        $response = $api->show((int)$model['id']);
+
+        self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);
+        self::assertContains('heart_rate', $response['requestableCapabilityKeys'] ?? []);
+        self::assertNotContains('heart_rate', $response['requestableCapabilities'] ?? []);
+        self::assertContains('blood_pressure', $response['requestableCapabilities'] ?? []);
+    }
+
+    public function testUpdatePersistsModelTelemetryRequestabilityOverrides(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+
+        self::assertIsArray($model);
+        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
+            ->withParsedBody([
+                'supplier_id' => (int)$model['supplier_id'],
+                'internalModel' => (string)$model['internal_model'],
+                'commercialName' => (string)$model['commercial_name'],
+                'deviceType' => (string)$model['device_type'],
+                'capabilitiesConfigured' => '1',
+                'capabilities' => ['heart_rate', 'blood_pressure'],
+                'requestableCapabilitiesConfigured' => '1',
+                'requestableCapabilities' => ['heart_rate'],
+            ]);
+
+        $result = $api->update((int)$model['id'], $request);
+
+        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame(
+            ['heart_rate'],
+            $db->modelCapabilities->requestableFeaturesForModelId((int)$model['id'])
+        );
+        $updated = $api->show((int)$model['id']);
+        self::assertSame(['heart_rate'], $updated['requestableCapabilities'] ?? null);
+    }
+
+    public function testUpdateRejectsRequestableTelemetryThatIsNotSupported(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+
+        self::assertIsArray($model);
+        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
+            ->withParsedBody([
+                'supplier_id' => (int)$model['supplier_id'],
+                'internalModel' => (string)$model['internal_model'],
+                'commercialName' => (string)$model['commercial_name'],
+                'deviceType' => (string)$model['device_type'],
+                'capabilitiesConfigured' => '1',
+                'capabilities' => ['blood_pressure'],
+                'requestableCapabilitiesConfigured' => '1',
+                'requestableCapabilities' => ['heart_rate'],
+            ]);
+
+        $result = $api->update((int)$model['id'], $request);
+
+        self::assertSame('invalid_requestable_capability', $result['error']['code'] ?? null);
+    }
+
+    public function testModelRequestabilityOptionsRespectProtocolCommands(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $response = $api->show((int)$model['id']);
+
+        self::assertContains('heart_rate', $response['requestableCapabilityKeys'] ?? []);
+        self::assertNotContains('blood_oxygen', $response['requestableCapabilityKeys'] ?? []);
+    }
+
     public function testTemplateReturnsDerivedCapabilitiesForSupplierAndDeviceType(): void
     {
         [$api, $db] = $this->makeApi();

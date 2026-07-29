@@ -79,6 +79,7 @@ export const state = {
         capabilityModelId: null,
         capabilityModelTemplateKeys: [],
         capabilityEnabledCapabilities: [],
+        capabilityRequestableCapabilities: [],
         currentCapabilitiesModel: null,
         modelFilters: [],
         discoveryDeviceImei: "",
