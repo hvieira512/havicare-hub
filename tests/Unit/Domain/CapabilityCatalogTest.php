@@ -11,7 +11,7 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [73, '5a6f646d1fe4d824a251a42bd4c9f05b96b83353f7932c4e071c5b4c204245df'],
+            'watch' => [70, '366c51de6cc10e11c6fd7e1c2e0f57ff323371dc88fa4820710f5fd0777581be'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
         ];
@@ -70,6 +70,24 @@ final class CapabilityCatalogTest extends TestCase
         }
         self::assertTrue($definitions['weather_data']['isConfigurable']);
         self::assertFalse($definitions['weather_data']['isRequestable']);
+    }
+
+    public function testWonlexSystemReportsAreNotAdvertisedAsTelemetry(): void
+    {
+        $definitions = [];
+        foreach (CapabilityCatalog::definitionsForDeviceType('watch') as $definition) {
+            $definitions[$definition['key']] = $definition;
+        }
+
+        foreach (['call_log', 'sms', 'ecg_analysis'] as $key) {
+            self::assertArrayNotHasKey($key, $definitions);
+        }
+
+        self::assertSame('settings_system', $definitions['device_state']['section']);
+        self::assertFalse($definitions['device_state']['isTelemetry']);
+        self::assertTrue($definitions['device_state']['isEvent']);
+        self::assertContains('device_state', CapabilityCatalog::keysForProtocol('wonlex-json'));
+        self::assertNotContains('device_state', CapabilityCatalog::telemetryKeysForProtocol('wonlex-json'));
     }
 
     public function testWatchTaxonomyExcludesInternalSynchronizationAndGroupsCallRulesWithContacts(): void

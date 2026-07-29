@@ -50,7 +50,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(1648111390075, $events[0]['extra']['measuredAt']);
     }
 
-    public function testDecodesWonlexBreathingTemperatureSleepCallsSmsAndDeviceState(): void
+    public function testDecodesWonlexBreathingTemperatureSleepAndDeviceState(): void
     {
         $decoder = new DeviceEventDecoder();
         $session = $this->session('wonlex-json');
@@ -65,28 +65,26 @@ final class DeviceEventDecoderTest extends TestCase
                 ['startTime' => 1653229800000, 'endTime' => 1653233400000, 'duration' => 60, 'sleeptype' => 'lightSleep'],
             ],
         ]]);
-        $call = $decoder->decode($session, ['type' => 'upCallLog', 'data' => [
-            'phone' => '+351210000000', 'duration' => 60, 'callType' => 1, 'isSwitchOn' => 1,
-        ]]);
-        $sms = $decoder->decode($session, ['type' => 'upSMS', 'data' => [
-            'sender' => 'operator', 'msgContent' => 'Balance: 10 EUR',
-        ]]);
-        $analysis = $decoder->decode($session, ['type' => 'upECGAnalysis', 'data' => [
-            'devType' => 'ECG', 'mealstatus' => '-1', 'medicationstatus' => '1', 'fileBase64' => 'YWJj',
-        ]]);
         $shutdown = $decoder->decode($session, ['type' => 'upShutdown', 'data' => []]);
 
         self::assertSame(20, $breathing[0]['value']['breathsPerMinute']);
         self::assertSame(31.6, $temperature[0]['value']['surfaceCelsius']);
         self::assertSame(28.2, $temperature[0]['value']['environmentCelsius']);
         self::assertSame('deepSleep', $sleep[0]['value']['segments'][0]['type']);
-        self::assertSame('outgoing', $call[0]['value']['direction']);
-        self::assertTrue($call[0]['value']['connected']);
-        self::assertSame('Balance: 10 EUR', $sms[0]['value']['content']);
-        self::assertSame('ecg_analysis', $analysis[0]['feature']);
-        self::assertSame(-1, $analysis[0]['value']['mealStatus']);
-        self::assertSame('YWJj', $analysis[0]['value']['fileBase64']);
         self::assertSame('shutdown', $shutdown[0]['value']['state']);
+    }
+
+    public function testLeavesUnsupportedWonlexReportsInTheRawStreamOnly(): void
+    {
+        $decoder = new DeviceEventDecoder();
+        $session = $this->session('wonlex-json');
+
+        foreach (['upCallLog', 'upSMS', 'upECGAnalysis'] as $nativeType) {
+            self::assertSame([], $decoder->decode($session, [
+                'type' => $nativeType,
+                'data' => ['value' => 'raw-only'],
+            ]));
+        }
     }
 
     public function testDecodesWonlexLocationWithBaseStationsAndWifi(): void

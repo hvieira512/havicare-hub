@@ -300,7 +300,7 @@ function wonlexUplinks(): array
         ['command' => 'upBodyTemperature', 'origin' => 'scheduled/manual/request', 'features' => ['temperature'], 'notes' => 'Body/surface/environment temperature payload.'],
         ['command' => 'upBreathe', 'origin' => 'scheduled/manual/request', 'features' => ['respiration'], 'notes' => 'Respiration measurement upload.'],
         ['command' => 'upECG', 'origin' => 'scheduled/manual/request', 'features' => ['ecg'], 'notes' => 'Waveform upload; may be multi-packet.'],
-        ['command' => 'upECGAnalysis', 'origin' => 'request', 'features' => ['ecg_analysis'], 'notes' => 'ECG analysis result.'],
+        ['command' => 'upECGAnalysis', 'origin' => 'device-report', 'features' => [], 'notes' => 'Raw ECG analysis artifact; not normalized as telemetry.'],
         ['command' => 'upHRV', 'origin' => 'scheduled/manual/request', 'features' => ['hrv'], 'notes' => 'Heart-rate variability upload.'],
         ['command' => 'upPPG', 'origin' => 'scheduled/manual/request', 'features' => ['ppg'], 'notes' => 'PPG waveform upload.'],
         ['command' => 'upRR', 'origin' => 'scheduled/manual/request', 'features' => ['rr_interval'], 'notes' => 'RRI upload.'],

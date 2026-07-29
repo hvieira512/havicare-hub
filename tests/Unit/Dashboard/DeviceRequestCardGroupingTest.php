@@ -18,10 +18,10 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('label: "Informação do sistema"', $source);
         self::assertStringContainsString('"firmware_version"', $source);
         self::assertStringContainsString('"device_status"', $source);
-        self::assertStringContainsString('"call_log"', $source);
-        self::assertStringContainsString('"sms"', $source);
-        self::assertStringContainsString('"device_state"', $source);
-        self::assertStringContainsString('"ecg_analysis"', $source);
+        self::assertStringNotContainsString('"call_log"', $source);
+        self::assertStringNotContainsString('"sms"', $source);
+        self::assertStringNotContainsString('"device_state"', $source);
+        self::assertStringNotContainsString('"ecg_analysis"', $source);
         self::assertStringContainsString('filter(([, entry]) => entry?.supported)', $source);
         self::assertStringContainsString('renderRequestCardGroup(group, telemetry)', $source);
         self::assertStringContainsString('group.cards.length', $source);
@@ -35,10 +35,10 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('const isSystemRequestCard = [', $renderersSource);
         self::assertStringContainsString('firmware_version', $renderersSource);
         self::assertStringContainsString('device_status', $renderersSource);
-        self::assertStringContainsString('call_log', $renderersSource);
-        self::assertStringContainsString('sms', $renderersSource);
-        self::assertStringContainsString('device_state', $renderersSource);
-        self::assertStringContainsString('ecg_analysis', $renderersSource);
+        self::assertStringNotContainsString('call_log', $renderersSource);
+        self::assertStringNotContainsString('"sms"', $renderersSource);
+        self::assertStringNotContainsString('device_state', $renderersSource);
+        self::assertStringNotContainsString('ecg_analysis', $renderersSource);
         self::assertStringContainsString('const title = isSystemRequestCard', $renderersSource);
         self::assertStringContainsString('btn btn-primary btn-sm w-100', $renderersSource);
         self::assertStringContainsString('const buttonRowHtml = buttonHtml', $renderersSource);
@@ -191,6 +191,23 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('.filter((item) => item._source !== "command")', $source);
         self::assertStringContainsString('select.dataset.detailFilterTypesSignature', $source);
         self::assertStringContainsString('insertAdjacentHTML(', $source);
+    }
+
+    public function testDeviceDetailFiltersCommandsByGenericFeatureBeforeNativeType(): void
+    {
+        $source = file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
+        );
+
+        self::assertIsString($source);
+        self::assertStringContainsString(
+            'if (item._source === "command" && p.feature) return p.feature;',
+            $source
+        );
+        self::assertLessThan(
+            strpos($source, 'if (p.nativeType) return p.nativeType;'),
+            strpos($source, 'if (item._source === "command" && p.feature) return p.feature;')
+        );
     }
 
     public function testDeviceSuppliersAreFilteredByDeviceTypeInTheSharedHelper(): void

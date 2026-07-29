@@ -26,10 +26,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072901_clean_watch_capability_taxonomy',
             '2026072902_enum_capability_sections',
             '2026072903_restrict_hw20pro_health_requests',
+            '2026072904_remove_unsupported_wonlex_reports',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(10, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(11, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS
@@ -75,6 +76,10 @@ final class MigrationTest extends MysqlDashboardTestCase
 
         self::assertArrayNotHasKey('device_binding', $rows);
         self::assertArrayNotHasKey('device_settings_sync', $rows);
+        self::assertArrayNotHasKey('call_log', $rows);
+        self::assertArrayNotHasKey('sms', $rows);
+        self::assertArrayNotHasKey('ecg_analysis', $rows);
+        self::assertSame('settings_system', $rows['device_state']['section'] ?? null);
         self::assertSame('contacts', $rows['call_in_restriction']['section'] ?? null);
         self::assertSame('Wrist removal alert', $rows['remove_watch_alarm']['label'] ?? null);
         self::assertSame(0, (int)($rows['push_message']['is_configurable'] ?? -1));

@@ -17,12 +17,9 @@ final class FeatureNormalizer
             'activity' => self::activity($payload),
             'sleep' => self::sleep($payload),
             'ecg' => self::waveform($payload, 'samples'),
-            'ecg_analysis' => self::ecgAnalysis($payload),
             'hrv' => self::scalar($payload, 'milliseconds', ['hrv', 'value', 'data', 'date']),
             'ppg' => self::waveform($payload, 'samples'),
             'rr_interval' => self::rrIntervals($payload),
-            'call_log' => self::callLog($payload),
-            'sms' => self::sms($payload),
             'device_state' => self::deviceState($payload),
             'heartbeat' => self::heartbeat($payload),
             'location' => self::location($payload),
@@ -174,16 +171,6 @@ final class FeatureNormalizer
         ], static fn (mixed $value): bool => $value !== null);
     }
 
-    private static function ecgAnalysis(array $payload): array
-    {
-        return array_filter([
-            'deviceType' => self::stringOrNull($payload['devType'] ?? null),
-            'mealStatus' => self::int($payload['mealstatus'] ?? $payload['mealStatus'] ?? null),
-            'medicationStatus' => self::int($payload['medicationstatus'] ?? $payload['medicationStatus'] ?? null),
-            'fileBase64' => self::stringOrNull($payload['fileBase64'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
-    }
-
     private static function rrIntervals(array $payload): array
     {
         $raw = (string)($payload['data'] ?? $payload['date'] ?? '');
@@ -200,28 +187,6 @@ final class FeatureNormalizer
             'intervals' => $intervals !== [] ? $intervals : null,
             'frequencyHz' => self::int($payload['frequency'] ?? $payload['Frequency'] ?? null),
             'collectionId' => self::stringOrNull($payload['collectionLogo'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
-    }
-
-    private static function callLog(array $payload): array
-    {
-        return array_filter([
-            'name' => self::stringOrNull($payload['name'] ?? null),
-            'phone' => self::stringOrNull($payload['phone'] ?? null),
-            'beginTime' => self::int($payload['beginTime'] ?? null),
-            'endTime' => self::int($payload['endTime'] ?? null),
-            'durationSeconds' => self::int($payload['duration'] ?? null),
-            'waitDurationSeconds' => self::int($payload['waitDuration'] ?? null),
-            'direction' => isset($payload['callType']) ? ((int)$payload['callType'] === 1 ? 'outgoing' : 'incoming') : null,
-            'connected' => isset($payload['isSwitchOn']) ? (bool)$payload['isSwitchOn'] : null,
-        ], static fn (mixed $value): bool => $value !== null);
-    }
-
-    private static function sms(array $payload): array
-    {
-        return array_filter([
-            'sender' => self::stringOrNull($payload['sender'] ?? null),
-            'content' => self::stringOrNull($payload['msgContent'] ?? $payload['content'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
     }
 

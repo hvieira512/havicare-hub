@@ -123,6 +123,7 @@ final class CapabilityCatalog
     public static function protocolSpecificKeys(string $protocol): array
     {
         return match ($protocol) {
+            'wonlex-json' => ['device_state'],
             'voerka-ncs' => ['pager_call'],
             default => [],
         };
@@ -149,10 +150,6 @@ final class CapabilityCatalog
                 'ppg',
                 'rr_interval',
                 'blood_sugar',
-                'call_log',
-                'sms',
-                'device_state',
-                'ecg_analysis',
             ],
             'vivistar-iw' => [
                 'battery',
@@ -262,10 +259,6 @@ final class CapabilityCatalog
             'blood_sugar',
             'firmware_version',
             'device_status' => $feature,
-            'call_log',
-            'sms',
-            'device_state',
-            'ecg_analysis' => $feature,
             default => null,
         };
     }

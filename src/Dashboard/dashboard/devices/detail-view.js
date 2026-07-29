@@ -131,10 +131,6 @@ const TELEMETRY_REQUEST_GROUPS = [
 const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
     "firmware_version",
     "device_status",
-    "call_log",
-    "sms",
-    "device_state",
-    "ecg_analysis",
 ]);
 
 function telemetryRequestCards(telemetryCapabilities = {}) {
@@ -267,6 +263,7 @@ function detailFilterTypesFromItems(items) {
 
 function detailItemType(item) {
     const p = item.payload;
+    if (item._source === "command" && p.feature) return p.feature;
     const mapped = DETAIL_ITEM_TYPES[p.type];
     if (mapped) return mapped(p);
     if (p.nativeType) return p.nativeType;

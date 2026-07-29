@@ -13,6 +13,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026072801SyncWonlexAdultHea
 use Hub\Infrastructure\Persistence\Migration\Version2026072901CleanWatchCapabilityTaxonomy;
 use Hub\Infrastructure\Persistence\Migration\Version2026072902EnumCapabilitySections;
 use Hub\Infrastructure\Persistence\Migration\Version2026072903RestrictHw20ProHealthRequests;
+use Hub\Infrastructure\Persistence\Migration\Version2026072904RemoveUnsupportedWonlexReports;
 use PDO;
 
 final class DashboardDatabase
@@ -67,6 +68,7 @@ final class DashboardDatabase
             new Version2026072901CleanWatchCapabilityTaxonomy(),
             new Version2026072902EnumCapabilitySections(),
             new Version2026072903RestrictHw20ProHealthRequests(),
+            new Version2026072904RemoveUnsupportedWonlexReports(),
         ]))->run();
     }
 }
