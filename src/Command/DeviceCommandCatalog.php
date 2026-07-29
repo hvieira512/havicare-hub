@@ -109,6 +109,47 @@ final class DeviceCommandCatalog
         };
     }
 
+    public static function normalizeQueuedDownlink(string $protocol, string $bytes): string
+    {
+        if ($protocol !== 'wonlex-json') {
+            return $bytes;
+        }
+
+        $adapter = new WonlexAdapter();
+        $decoded = $adapter->decodeIncoming($bytes);
+        if (!is_array($decoded)) {
+            return $bytes;
+        }
+
+        $nativeType = (string)($decoded['type'] ?? '');
+        if (!in_array($nativeType, [
+            'dnHeartRate',
+            'dnBP',
+            'dnBO',
+            'dnTemperature',
+            'dnBreathe',
+            'dnECG',
+            'dnHRV',
+            'dnPPG',
+            'dnRR',
+        ], true)) {
+            return $bytes;
+        }
+
+        $data = is_array($decoded['data'] ?? null) ? $decoded['data'] : [];
+        if (($data['fields'] ?? null) !== []) {
+            return $bytes;
+        }
+
+        unset($data['fields']);
+        if (in_array($nativeType, ['dnECG', 'dnHRV', 'dnPPG', 'dnRR'], true)) {
+            unset($data['frequency'], $data['oneTime'], $data['collectionLogo']);
+        }
+        $decoded['data'] = $data;
+
+        return $adapter->encodeOutgoing($decoded);
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -118,8 +159,8 @@ final class DeviceCommandCatalog
             ['id' => 'dnHeartRate', 'command' => 'dnHeartRate', 'label' => 'Heart rate', 'icon' => 'fa-heart-pulse', 'kind' => 'request', 'feature' => 'heart_rate', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
             ['id' => 'dnBP', 'command' => 'dnBP', 'label' => 'Blood pressure', 'icon' => 'fa-stethoscope', 'kind' => 'request', 'feature' => 'blood_pressure', 'expectedReplyTypes' => ['upBP', 'upBatch']],
             ['id' => 'dnBO', 'command' => 'dnBO', 'label' => 'Blood oxygen', 'icon' => 'fa-droplet', 'kind' => 'request', 'feature' => 'blood_oxygen', 'expectedReplyTypes' => ['upBO', 'upBatch']],
-            ['id' => 'dnTemperature', 'command' => 'dnTemperature', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['upBodyTemperature']],
-            ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'feature' => 'breath_rate', 'expectedReplyTypes' => ['upBreathe']],
+            ['id' => 'dnTemperature', 'command' => 'dnTemperature', 'label' => 'Temperature', 'icon' => 'fa-temperature-half', 'kind' => 'request', 'feature' => 'temperature', 'expectedReplyTypes' => ['upBodyTemperature', 'upBatch']],
+            ['id' => 'dnBreathe', 'command' => 'dnBreathe', 'label' => 'Breath rate', 'icon' => 'fa-lungs', 'kind' => 'request', 'feature' => 'breath_rate', 'expectedReplyTypes' => ['upBreathe', 'upBatch']],
             ['id' => 'dnLocation', 'command' => 'dnLocation', 'label' => 'Location', 'icon' => 'fa-location-dot', 'kind' => 'request', 'feature' => 'location', 'expectedReplyTypes' => ['upLocation']],
             ['id' => 'dnUpSleep', 'command' => 'dnUpSleep', 'label' => 'Sleep data', 'icon' => 'fa-bed', 'kind' => 'data', 'feature' => 'sleep', 'expectedReplyTypes' => ['dnUpSleep']],
             ['id' => 'dnECG', 'command' => 'dnECG', 'label' => 'ECG', 'icon' => 'fa-wave-square', 'kind' => 'request', 'feature' => 'ecg', 'expectedReplyTypes' => ['upECG']],
@@ -168,9 +209,6 @@ final class DeviceCommandCatalog
             'imei' => $imei,
             'timestamp' => $timestamp,
         ], $payload);
-        if (in_array($command, ['dnECG', 'dnHRV', 'dnPPG', 'dnRR'], true)) {
-            $data += ['frequency' => '200', 'oneTime' => 300, 'collectionLogo' => (string)random_int(10000000, 99999999)];
-        }
         if ($command === 'dnUpSleep' && (!isset($data['upDayStr']) || !isset($data['value']))) {
             throw new \InvalidArgumentException('dnUpSleep requires upDayStr and value');
         }

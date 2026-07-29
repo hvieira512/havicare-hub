@@ -401,7 +401,10 @@ class DeviceService
             if ($nativeCommand === '') {
                 continue;
             }
-            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, ['fields' => $entry['data'] ?? []], [
+            $nativePayload = $protocol === 'wonlex-json'
+                ? ($entry['data'] ?? [])
+                : ['fields' => $entry['data'] ?? []];
+            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, $nativePayload, [
                 'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
             ]);
             $id = bin2hex(random_bytes(8));

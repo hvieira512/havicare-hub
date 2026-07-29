@@ -2,6 +2,7 @@
 
 namespace Hub\Dashboard;
 
+use Hub\Command\DeviceCommandCatalog;
 use Predis\ClientInterface;
 
 final class DeviceCommandStore
@@ -62,6 +63,15 @@ final class DeviceCommandStore
                 $bytes = DeviceCommandRecord::wireBytes($command);
                 if ($bytes === '') {
                     continue;
+                }
+                $normalizedBytes = DeviceCommandCatalog::normalizeQueuedDownlink(
+                    (string)($command['protocol'] ?? ''),
+                    $bytes
+                );
+                if ($normalizedBytes !== $bytes) {
+                    $bytes = $normalizedBytes;
+                    $command['bytes'] = $bytes;
+                    unset($command['bytesEncoding']);
                 }
 
                 $attempts = max(1, (int)($command['attempts'] ?? 1));

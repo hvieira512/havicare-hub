@@ -261,6 +261,60 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(300, $decoded['data']['intervalTime'] ?? null);
     }
 
+    public function testWonlexHealthRequestsUseOnlyDocumentedRequiredFields(): void
+    {
+        foreach ([
+            'dnHeartRate',
+            'dnBP',
+            'dnBO',
+            'dnTemperature',
+            'dnBreathe',
+            'dnECG',
+            'dnHRV',
+            'dnPPG',
+            'dnRR',
+        ] as $nativeType) {
+            $wire = DeviceCommandCatalog::buildDownlink(
+                'wonlex-json',
+                '868705080300697',
+                $nativeType,
+                [],
+                ['ident' => 123456]
+            );
+            $decoded = (new WonlexAdapter())->decodeIncoming($wire);
+
+            self::assertIsArray($decoded, $nativeType);
+            self::assertSame($nativeType, $decoded['type'] ?? null, $nativeType);
+            self::assertSame(123456, $decoded['ident'] ?? null, $nativeType);
+            self::assertSame('s:down', $decoded['ref'] ?? null, $nativeType);
+            self::assertSame(
+                ['type', 'imei', 'timestamp'],
+                array_keys($decoded['data'] ?? []),
+                $nativeType
+            );
+        }
+    }
+
+    public function testWonlexWaveformRequestPreservesExplicitOptionalSamplingParameters(): void
+    {
+        $wire = DeviceCommandCatalog::buildDownlink(
+            'wonlex-json',
+            '868705080300697',
+            'dnECG',
+            [
+                'frequency' => '500',
+                'oneTime' => 30,
+                'collectionLogo' => '87654321',
+            ],
+            ['ident' => 123456]
+        );
+        $decoded = (new WonlexAdapter())->decodeIncoming($wire);
+
+        self::assertSame('500', $decoded['data']['frequency'] ?? null);
+        self::assertSame(30, $decoded['data']['oneTime'] ?? null);
+        self::assertSame('87654321', $decoded['data']['collectionLogo'] ?? null);
+    }
+
     public function testWonlexMeasurementIntervalsBuildNestedConfigPayloads(): void
     {
         $ppg = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexPPGInterval', ['interval' => 60]);

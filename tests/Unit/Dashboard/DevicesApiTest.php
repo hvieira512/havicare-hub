@@ -2331,6 +2331,76 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertNotEmpty($response['commands'][0]['nextRetryAt'] ?? null);
     }
 
+    public function testWonlexHealthRequestsMatchDocumentedPayloads(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(
+            function (string $imei, string $bytes) use (&$submitted): string {
+                $submitted[] = [
+                    'imei' => $imei,
+                    'payload' => (new \Hub\Protocol\Adapter\WonlexAdapter())->decodeIncoming($bytes),
+                ];
+                return 'sent';
+            }
+        );
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        $imei = '868705080300698';
+        $features = [
+            'heart_rate' => 'dnHeartRate',
+            'blood_pressure' => 'dnBP',
+            'blood_oxygen' => 'dnBO',
+            'temperature' => 'dnTemperature',
+            'breath_rate' => 'dnBreathe',
+            'ecg' => 'dnECG',
+            'hrv' => 'dnHRV',
+            'ppg' => 'dnPPG',
+            'rr_interval' => 'dnRR',
+        ];
+
+        self::assertIsArray($model);
+        $created = $api->create(json_encode([
+            'imei' => $imei,
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR));
+        self::assertSame('ok', $created['status'] ?? null);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], array_keys($features));
+        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+
+        foreach ($features as $feature => $nativeType) {
+            $response = $api->requestFeature(
+                $imei,
+                json_encode(['feature' => $feature], JSON_THROW_ON_ERROR)
+            );
+            self::assertSame('waiting', $response['status'] ?? null, $nativeType);
+        }
+
+        self::assertCount(count($features), $submitted);
+        foreach ($submitted as $index => $request) {
+            $nativeType = array_values($features)[$index];
+            $payload = $request['payload'] ?? [];
+            $data = $payload['data'] ?? [];
+
+            self::assertSame($imei, $request['imei'] ?? null, $nativeType);
+            self::assertSame($nativeType, $payload['type'] ?? null, $nativeType);
+            self::assertSame('s:down', $payload['ref'] ?? null, $nativeType);
+            self::assertSame($nativeType, $data['type'] ?? null, $nativeType);
+            self::assertSame($imei, $data['imei'] ?? null, $nativeType);
+            self::assertArrayNotHasKey('fields', $data, $nativeType);
+            self::assertIsInt($data['timestamp'] ?? null, $nativeType);
+
+            self::assertSame(
+                ['type', 'imei', 'timestamp'],
+                array_keys($data),
+                "{$nativeType} should only contain the documented required fields"
+            );
+        }
+    }
+
     public function testQueuedTelemetryRequestIsRedispatchedWhenDeliveryBecomesAvailable(): void
     {
         $hub = $this->createMock(\Hub\DeviceHubServer::class);

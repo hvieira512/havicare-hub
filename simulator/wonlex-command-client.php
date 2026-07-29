@@ -264,8 +264,8 @@ function wonlexCommands(): array
         ['command' => 'dnHeartRate', 'title' => 'Request heart rate', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upHeartRate', 'upBatch']],
         ['command' => 'dnBP', 'title' => 'Request blood pressure', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBP', 'upBatch']],
         ['command' => 'dnBO', 'title' => 'Request blood oxygen', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBO', 'upBatch']],
-        ['command' => 'dnTemperature', 'title' => 'Request temperature', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBodyTemperature']],
-        ['command' => 'dnBreathe', 'title' => 'Request respiration', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBreathe']],
+        ['command' => 'dnTemperature', 'title' => 'Request temperature', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBodyTemperature', 'upBatch']],
+        ['command' => 'dnBreathe', 'title' => 'Request respiration', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upBreathe', 'upBatch']],
         ['command' => 'dnECG', 'title' => 'Request ECG', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upECG']],
         ['command' => 'dnECGAnalysis', 'title' => 'Issue ECG analysis results', 'kind' => 'data', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'dnHRV', 'title' => 'Request HRV', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => ['upHRV']],
@@ -377,11 +377,6 @@ function buildDownlinkPayload(string $imei, string $command, string $requestId, 
 function defaultCommandData(string $command, int $timestamp): array
 {
     return match ($command) {
-        'dnECG', 'dnHRV', 'dnPPG', 'dnRR' => [
-            'frequency' => '200',
-            'oneTime' => 300,
-            'collectionLogo' => (string)random_int(10000000, 99999999),
-        ],
         'findPhoneBillOrFlow' => [
             'queryType' => 1,
         ],
