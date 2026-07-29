@@ -130,6 +130,25 @@ const showToast = (type, message) => {
     });
 };
 
+const closeDashboardOverlays = () => {
+    document.querySelectorAll("#dashboardApp .modal.show").forEach(modal => {
+        const instance = window.bootstrap?.Modal?.getInstance(modal);
+        instance?.hide();
+        modal.classList.remove("show");
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+        modal.removeAttribute("aria-modal");
+        modal.removeAttribute("role");
+    });
+
+    document
+        .querySelectorAll(".modal-backdrop, .offcanvas-backdrop")
+        .forEach(backdrop => backdrop.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+};
+
 const setLoginBusy = busy => {
     const {loginSubmit, loginSubmitLabel, loginSubmitLoading} = elements();
     if (loginSubmit) {
@@ -142,6 +161,7 @@ const setLoginBusy = busy => {
 
 const showLogin = message => {
     const {app, login, loginForm, loginUsername} = elements();
+    closeDashboardOverlays();
     app?.classList.add("d-none");
     login?.classList.remove("d-none");
     loginForm?.reset();
