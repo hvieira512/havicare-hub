@@ -25,10 +25,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072801_sync_wonlex_adult_health_capabilities',
             '2026072901_clean_watch_capability_taxonomy',
             '2026072902_enum_capability_sections',
+            '2026072903_restrict_hw20pro_health_requests',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(9, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(10, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS
@@ -40,6 +41,26 @@ final class MigrationTest extends MysqlDashboardTestCase
             "enum('telemetry','health','contacts','alarms','settings_system')",
             strtolower((string)$sectionType)
         );
+    }
+
+    public function testHw20ProHealthRequestabilityMatchesVerifiedFirmwareSupport(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $db = ApiDataAccess::fromDatabase($database);
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+
+        self::assertIsArray($model);
+        $supported = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
+        $requestable = $db->modelCapabilities->requestableFeaturesForModelId((int)$model['id']);
+
+        foreach (['heart_rate', 'temperature', 'breath_rate', 'ecg', 'hrv', 'ppg', 'rr_interval'] as $feature) {
+            self::assertContains($feature, $supported);
+            self::assertNotContains($feature, $requestable);
+        }
+        foreach (['blood_pressure', 'blood_oxygen', 'location'] as $feature) {
+            self::assertContains($feature, $supported);
+            self::assertContains($feature, $requestable);
+        }
     }
 
     public function testWatchCapabilityTaxonomyMigrationMovesActionsAndRemovesInternalSyncEntries(): void

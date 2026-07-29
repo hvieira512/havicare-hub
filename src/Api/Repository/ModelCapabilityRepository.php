@@ -46,6 +46,42 @@ final class ModelCapabilityRepository
     }
 
     /**
+     * @return list<string>
+     */
+    public function requestableFeaturesForModelId(int $modelId): array
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT c.capability_key, m.device_type, s.name AS supplier_name
+            FROM model_capabilities mc
+            JOIN capabilities c ON c.id = mc.capability_id
+            JOIN models m ON m.id = mc.model_id
+            JOIN suppliers s ON s.id = m.supplier_id
+            WHERE mc.model_id = ?
+              AND mc.enabled = 1
+              AND COALESCE(mc.is_requestable, c.is_requestable) = 1
+            ORDER BY c.capability_key
+        ');
+        $stmt->execute([$modelId]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if ($rows === []) {
+            return [];
+        }
+
+        $allowed = $this->allowedFeaturesForModelRow($rows[0]);
+        $requestable = [];
+        foreach ($rows as $row) {
+            $key = trim((string)($row['capability_key'] ?? ''));
+            if ($key === '' || !isset($allowed[$key])) {
+                continue;
+            }
+            $requestable[$key] = true;
+        }
+
+        return array_keys($requestable);
+    }
+
+    /**
      * @param list<int> $modelIds
      * @return array<int, list<string>>
      */
@@ -99,11 +135,15 @@ final class ModelCapabilityRepository
         $capabilityIds = $this->normalizeCapabilityIds($modelId, $capabilityIds);
 
         $this->pdo->beginTransaction();
-        $delete = $this->pdo->prepare('DELETE FROM model_capabilities WHERE model_id = ?');
-        $delete->execute([$modelId]);
+        $disable = $this->pdo->prepare('UPDATE model_capabilities SET enabled = 0 WHERE model_id = ?');
+        $disable->execute([$modelId]);
 
         if ($capabilityIds !== []) {
-            $insert = $this->pdo->prepare('INSERT INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
+            $insert = $this->pdo->prepare('
+                INSERT INTO model_capabilities (model_id, capability_id, enabled)
+                VALUES (?, ?, 1)
+                ON DUPLICATE KEY UPDATE enabled = 1
+            ');
             foreach ($capabilityIds as $capabilityId) {
                 $insert->execute([$modelId, $capabilityId]);
             }

@@ -2331,7 +2331,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertNotEmpty($response['commands'][0]['nextRetryAt'] ?? null);
     }
 
-    public function testWonlexHealthRequestsMatchDocumentedPayloads(): void
+    public function testHw20ProOnlyAllowsVerifiedHealthRequests(): void
     {
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
@@ -2347,10 +2347,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('Wonlex', 'HW20PRO');
         $imei = '868705080300698';
-        $features = [
-            'heart_rate' => 'dnHeartRate',
+        $requestableFeatures = [
             'blood_pressure' => 'dnBP',
             'blood_oxygen' => 'dnBO',
+        ];
+        $nonRequestableFeatures = [
+            'heart_rate' => 'dnHeartRate',
             'temperature' => 'dnTemperature',
             'breath_rate' => 'dnBreathe',
             'ecg' => 'dnECG',
@@ -2358,6 +2360,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'ppg' => 'dnPPG',
             'rr_interval' => 'dnRR',
         ];
+        $features = $requestableFeatures + $nonRequestableFeatures;
 
         self::assertIsArray($model);
         $created = $api->create(json_encode([
@@ -2371,7 +2374,23 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], array_keys($features));
         $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
-        foreach ($features as $feature => $nativeType) {
+        $detail = $api->show($imei);
+        foreach (array_keys($requestableFeatures) as $feature) {
+            self::assertSame(
+                ['supported' => true, 'requestable' => true],
+                $detail['capabilities']['telemetry'][$feature] ?? null,
+                $feature
+            );
+        }
+        foreach (array_keys($nonRequestableFeatures) as $feature) {
+            self::assertSame(
+                ['supported' => true, 'requestable' => false],
+                $detail['capabilities']['telemetry'][$feature] ?? null,
+                $feature
+            );
+        }
+
+        foreach ($requestableFeatures as $feature => $nativeType) {
             $response = $api->requestFeature(
                 $imei,
                 json_encode(['feature' => $feature], JSON_THROW_ON_ERROR)
@@ -2379,9 +2398,17 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             self::assertSame('waiting', $response['status'] ?? null, $nativeType);
         }
 
-        self::assertCount(count($features), $submitted);
+        foreach ($nonRequestableFeatures as $feature => $nativeType) {
+            $response = $api->requestFeature(
+                $imei,
+                json_encode(['feature' => $feature], JSON_THROW_ON_ERROR)
+            );
+            self::assertSame('feature_not_requestable', $response['error']['code'] ?? null, $nativeType);
+        }
+
+        self::assertCount(count($requestableFeatures), $submitted);
         foreach ($submitted as $index => $request) {
-            $nativeType = array_values($features)[$index];
+            $nativeType = array_values($requestableFeatures)[$index];
             $payload = $request['payload'] ?? [];
             $data = $payload['data'] ?? [];
 

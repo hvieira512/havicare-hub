@@ -63,12 +63,12 @@ if ! printf '%s' "$devices" | grep -q "$IMEI"; then
   scenario_fail "dashboard_failure" "devices collection did not include whitelist device"
 fi
 
-command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' -d '{"feature":"heart_rate"}' "http://127.0.0.1:8081/api/devices/$IMEI/requests")"
+command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' -d '{"feature":"blood_oxygen"}' "http://127.0.0.1:8081/api/devices/$IMEI/requests")"
 printf '%s' "$command_response" > "$SCENARIO_DIR/dashboard-command.json"
 if ! printf '%s' "$command_response" | grep -q '"status":"queued"'; then
   scenario_fail "command_failure" "offline dashboard command was not queued"
 fi
-if ! printf '%s' "$command_response" | grep -q '"feature":"heart_rate"'; then
+if ! printf '%s' "$command_response" | grep -q '"feature":"blood_oxygen"'; then
   scenario_fail "command_failure" "generic telemetry request did not echo requested feature"
 fi
 
@@ -77,7 +77,7 @@ printf '%s' "$device" > "$SCENARIO_DIR/dashboard-device.json"
 if ! printf '%s' "$device" | grep -q '"transportPending"'; then
   scenario_fail "dashboard_failure" "device detail did not include transportPending"
 fi
-if ! printf '%s' "$device" | grep -q '"heart_rate"'; then
+if ! printf '%s' "$device" | grep -q '"blood_oxygen"'; then
   scenario_fail "dashboard_failure" "device detail did not include queued generic request state"
 fi
 

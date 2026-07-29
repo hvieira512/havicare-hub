@@ -876,7 +876,7 @@ class DeviceService
             return [];
         }
 
-        $enabled = array_flip($this->db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']));
+        $enabled = array_flip($this->db->modelCapabilities->requestableFeaturesForModelId((int)$model['id']));
 
         return array_values(array_filter($commands, static function (array $entry) use ($enabled): bool {
             $feature = (string)($entry['feature'] ?? '');
