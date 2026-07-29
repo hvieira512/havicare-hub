@@ -40,6 +40,47 @@ const CONFIG_SECTION_ORDER = [
     "settings_system",
 ];
 
+const CONFIGURATION_DELIVERY_META = {
+    waiting_device: {
+        label: "A aguardar",
+        className: "text-bg-warning",
+        tone: "warning",
+        message: "O valor está guardado no Hub e aguarda confirmação do dispositivo.",
+    },
+    failed: {
+        label: "Falhou",
+        className: "text-bg-danger",
+        tone: "danger",
+        message: "O último valor está guardado no Hub, mas não foi aplicado pelo dispositivo.",
+    },
+    never_reported: {
+        label: "Não confirmado",
+        className: "text-bg-warning",
+        tone: "warning",
+        message: "O valor está guardado no Hub, mas nunca foi confirmado pelo dispositivo.",
+    },
+    diverged: {
+        label: "Divergente",
+        className: "text-bg-danger",
+        tone: "danger",
+        message: "O dispositivo reportou um valor diferente do valor guardado no Hub.",
+    },
+    applied: {
+        label: "Aplicado",
+        className: "text-bg-success",
+        tone: "success",
+        message: "",
+    },
+};
+
+const CONFIGURATION_FAILURE_LABELS = {
+    retry_exhausted: "Foram esgotadas todas as tentativas de envio.",
+    response_timeout: "O dispositivo não respondeu dentro do tempo esperado.",
+    delivery_failed: "Não foi possível entregar o comando ao dispositivo.",
+    dropped: "O comando foi descartado antes de ser entregue.",
+    failed: "O dispositivo não confirmou a aplicação do valor.",
+};
+
 const CONFIG_INPUT_RENDERERS = {
     toggle: (entry, desired) => toggleInput(entry, desired),
     fallSensitivity: (_entry, desired) => fallSensitivityInput(desired),
@@ -421,6 +462,7 @@ export function renderDeviceConfigurationRoot(context) {
         configurations = {},
         capabilities = {},
         capabilityCatalog = [],
+        pending = {},
         supplier = "",
         model = "",
         disabled = false,
@@ -493,8 +535,11 @@ export function renderDeviceConfigurationRoot(context) {
                             const stored = entry.requestOnly
                                 ? null
                                 : resolveConfigStored(entry, rowsByKey);
+                            const delivery = entry.requestOnly
+                                ? null
+                                : resolveConfigDelivery(entry, pending);
                             const uiState = uiByKey[entry.key] || null;
-                            return renderConfigSection(protocol, entry, row, capabilities, disabled, uiState, stored);
+                            return renderConfigSection(protocol, entry, row, capabilities, disabled, uiState, stored, delivery);
                         }).join("")}
                     </div>
                 `,
@@ -512,6 +557,7 @@ export function renderConfigSection(
     disabled = false,
     uiState = null,
     stored = null,
+    delivery = null,
 ) {
     const capability = capabilityForEntry(entry, capabilities);
     const desired = normalizeDesired(entry, row, capability ? extractCapabilityValue(capability) : null, protocol);
@@ -519,6 +565,7 @@ export function renderConfigSection(
     const help = configHelp(entry);
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const showConfigurationBadge = !entry.requestOnly;
+    const deliveryMeta = configurationDeliveryMeta(isStored, delivery);
     const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
     const configSectionName = entry.configSectionName || entry.configSection || "";
     const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
@@ -545,14 +592,13 @@ export function renderConfigSection(
                     <div class="fw-semibold">
                         ${esc(entry.label || entry.key)}
                         ${showConfigurationBadge
-                            ? (isStored
-                                ? '<span class="badge text-bg-success ms-2">Configurado</span>'
-                                : '<span class="badge text-bg-warning ms-2">Padrão</span>')
+                            ? `<span class="badge ${deliveryMeta.className} ms-2">${esc(deliveryMeta.label)}</span>`
                             : ""}
                     </div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                 </div>
             </div>
+            ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ""}>
                 ${renderConfigInputs(entry, desired, {...meta, protocol})}
                 <div class="d-flex justify-content-end gap-2 mt-3">
@@ -661,6 +707,55 @@ function resolveConfigStored(entry, rowsByKey) {
     }
 
     return Object.keys(rowsByKey[entry.key] || {}).length > 0;
+}
+
+function resolveConfigDelivery(entry, pending) {
+    const key = String(entry.capabilityKey || entry.key || "");
+    if (key === "") {
+        return null;
+    }
+
+    for (const section of Object.values(pending || {})) {
+        if (
+            section
+            && typeof section === "object"
+            && section[key]
+            && typeof section[key] === "object"
+        ) {
+            return section[key];
+        }
+    }
+
+    return null;
+}
+
+function configurationDeliveryMeta(isStored, delivery) {
+    if (!isStored) {
+        return {
+            label: "Padrão",
+            className: "text-bg-secondary",
+            tone: "secondary",
+            message: "",
+        };
+    }
+
+    const status = String(delivery?.status || "applied");
+    return CONFIGURATION_DELIVERY_META[status]
+        || CONFIGURATION_DELIVERY_META.failed;
+}
+
+function renderConfigurationDeliveryNotice(meta, delivery) {
+    if (!meta.message) {
+        return "";
+    }
+
+    const error = String(delivery?.error || "");
+    const errorMessage = CONFIGURATION_FAILURE_LABELS[error] || "";
+    return `
+        <div class="alert alert-${esc(meta.tone)} small py-2 px-3 mt-3 mb-0" role="status">
+            <i class="fa-solid fa-circle-info me-2"></i>${esc(meta.message)}
+            ${errorMessage ? `<span class="d-block mt-1">${esc(errorMessage)}</span>` : ""}
+        </div>`;
 }
 
 function emptyConfigurationState(text) {

@@ -277,6 +277,7 @@ async function openAddDevice(source = "") {
         capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
+        pending: {},
         capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
@@ -342,6 +343,7 @@ async function editDevice(imei, supplier, model) {
         capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
+        pending: {},
         capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
@@ -411,6 +413,7 @@ async function editDevice(imei, supplier, model) {
         applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || "");
         state.deviceModal.configurations = detail.configurations || {};
+        state.deviceModal.pending = detail.pending || {};
         state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
     } finally {
@@ -639,6 +642,7 @@ function renderDeviceConfigurationModal() {
         catalog: filteredCatalog,
         capabilityCatalog: state.deviceModal.capabilityCatalog,
         configurations: state.deviceModal.configurations,
+        pending: state.deviceModal.pending,
         capabilities: state.deviceModal.capabilities,
         uiByKey: state.deviceModal.configUi,
         supplier: state.deviceModal.supplier,
@@ -1831,6 +1835,8 @@ async function saveDeviceConfiguration(section) {
         if (!isTransientAction) {
             state.deviceModal.configurations =
                 result.configurations || state.deviceModal.configurations;
+            state.deviceModal.pending =
+                result.pending || state.deviceModal.pending;
             state.deviceModal.capabilities =
                 result.capabilities || state.deviceModal.capabilities;
         }
@@ -1839,7 +1845,9 @@ async function saveDeviceConfiguration(section) {
             phase: "sent",
             feedback: {
                 tone: "success",
-                message: "Configuração enviada ao dispositivo.",
+                message: isTransientAction
+                    ? "Pedido enviado ao dispositivo."
+                    : "Valor guardado no Hub e enviado. A aguardar confirmação do dispositivo.",
             },
         });
         renderDeviceConfigurationModal();
@@ -1893,6 +1901,8 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
             }
 
             state.deviceModal.configurations = result?.configurations || {};
+            state.deviceModal.pending = result?.pending || {};
+            state.deviceModal.capabilities = result?.capabilities || {};
             if (shouldRender) {
                 renderDeviceConfigurationModal();
             }
@@ -1903,6 +1913,53 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
         });
 
     return deviceConfigRefreshPromise;
+}
+
+function syncDeviceModalCommandStates(imei, commands) {
+    if (String(state.deviceModal.imei || "") !== String(imei || "")) {
+        return;
+    }
+
+    const commandsById = new Map(
+        (commands || []).map((command) => [String(command?.id || ""), command]),
+    );
+    let changed = false;
+    for (const section of Object.values(state.deviceModal.pending || {})) {
+        for (const delivery of Object.values(section || {})) {
+            const command = commandsById.get(String(delivery?.lastCommandId || ""));
+            if (!command) {
+                continue;
+            }
+
+            const commandStatus = String(command.status || "");
+            const nextStatus = ["failed", "dropped"].includes(commandStatus)
+                ? "failed"
+                : commandStatus === "acked"
+                    ? "applied"
+                    : ["queued", "waiting", "sent"].includes(commandStatus)
+                        ? "waiting_device"
+                        : String(delivery.status || "");
+            const nextError = ["failed", "dropped"].includes(commandStatus)
+                ? String(command.lastError || command.error || commandStatus)
+                : "";
+            if (
+                nextStatus !== String(delivery.status || "")
+                || nextError !== String(delivery.error || "")
+            ) {
+                delivery.status = nextStatus;
+                delivery.error = nextError;
+                changed = true;
+            }
+        }
+    }
+
+    if (
+        changed
+        && state.deviceModal.activeTab === "config"
+        && document.getElementById("deviceModal")?.classList.contains("show")
+    ) {
+        renderDeviceConfigurationModal();
+    }
 }
 
 function setConfigUi(key, updates) {
@@ -2256,6 +2313,7 @@ export async function startDashboard() {
     initDeviceStream({
         state,
         renderSelection,
+        onCommandsUpdated: syncDeviceModalCommandStates,
     });
     initNotifications({
         els,

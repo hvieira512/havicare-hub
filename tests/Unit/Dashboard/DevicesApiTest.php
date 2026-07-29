@@ -1325,6 +1325,41 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('cfg:BP76', $response['transportPending'][0]['dedupeKey'] ?? null);
     }
 
+    public function testRetryExhaustionMarksStoredConfigurationAsFailed(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        $updated = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'fall_detection' => ['enabled' => true],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        $commandId = (string)($updated['results'][0]['operations'][0]['lastCommandId'] ?? '');
+        self::assertNotSame('', $commandId);
+
+        $command = $store->findCommand($commandId)['command'] ?? [];
+        $store->recordCommand('861265061009822', $commandId, array_merge($command, [
+            'attempts' => 3,
+            'maxAttempts' => 3,
+            'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1),
+        ]));
+        $store->retryWaitingCommands(60, 3600, 3, static fn(): string => 'sent');
+
+        $response = $api->show('861265061009822');
+        $delivery = $response['pending']['alarms']['fall_detection'] ?? [];
+        self::assertSame('failed', $delivery['status'] ?? null);
+        self::assertSame('failed', $delivery['error'] ?? null);
+        self::assertSame($commandId, $delivery['lastCommandId'] ?? null);
+        self::assertSame(
+            'failed',
+            $db->deviceConfigurations->allForImei('861265061009822')[0]['last_status'] ?? null
+        );
+    }
+
     public function testConfigurationPatchSendsDownlinksForGenericKeys(): void
     {
         $submitted = [];

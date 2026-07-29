@@ -811,8 +811,10 @@ class DeviceService
 
             [$section, $key] = explode('.', $path, 2);
             $meta = $rowMeta[$key] ?? [];
+            $lastStatus = (string)($meta['last_status'] ?? '');
             $pending[$section][$key] = [
-                'status' => $this->pendingStatus($meta['last_status'] ?? '', $reportedExists),
+                'status' => $this->pendingStatus($lastStatus, $reportedExists),
+                'error' => $this->pendingFailureCode($lastStatus),
                 'desired' => $desiredValue,
                 'reported' => $reportedValue,
                 'updatedAt' => $meta['updated_at'] ?? '',
@@ -1406,10 +1408,18 @@ class DeviceService
                 continue;
             }
             $updatedAt = (string)($row['desired_updated_at'] ?? '');
-            if (!isset($meta[$genericKey]) || strcmp($updatedAt, $meta[$genericKey]['updated_at']) >= 0) {
+            $lastStatus = (string)($row['last_status'] ?? '');
+            $existing = $meta[$genericKey] ?? null;
+            $isNewer = $existing === null
+                || strcmp($updatedAt, (string)$existing['updated_at']) > 0;
+            $sameUpdateWithStrongerStatus = $existing !== null
+                && $updatedAt === (string)$existing['updated_at']
+                && $this->configurationStatusPriority($lastStatus)
+                    > $this->configurationStatusPriority((string)$existing['last_status']);
+            if ($isNewer || $sameUpdateWithStrongerStatus) {
                 $meta[$genericKey] = [
                     'updated_at' => $updatedAt,
-                    'last_status' => (string)($row['last_status'] ?? ''),
+                    'last_status' => $lastStatus,
                     'last_command_id' => (string)($row['last_command_id'] ?? ''),
                 ];
             }
@@ -1418,13 +1428,47 @@ class DeviceService
         return $meta;
     }
 
+    private function configurationStatusPriority(string $status): int
+    {
+        if ($this->pendingFailureCode($status) !== '') {
+            return 3;
+        }
+        if (in_array($status, ['queued', 'waiting', 'sent'], true)) {
+            return 2;
+        }
+        if ($status === 'acked') {
+            return 1;
+        }
+
+        return 0;
+    }
+
     private function pendingStatus(string $lastStatus, bool $reportedExists): string
     {
+        if ($this->pendingFailureCode($lastStatus) !== '') {
+            return 'failed';
+        }
         if (!$reportedExists) {
-            return in_array($lastStatus, ['queued', 'waiting', 'sent', 'acked'], true) ? 'waiting_device' : 'never_reported';
+            if ($lastStatus === 'acked') {
+                return 'applied';
+            }
+            return in_array($lastStatus, ['queued', 'waiting', 'sent'], true)
+                ? 'waiting_device'
+                : 'never_reported';
         }
 
         return 'diverged';
+    }
+
+    private function pendingFailureCode(string $lastStatus): string
+    {
+        return in_array($lastStatus, [
+            'failed',
+            'dropped',
+            'delivery_failed',
+            'retry_exhausted',
+            'response_timeout',
+        ], true) ? $lastStatus : '';
     }
 
     private function normalizeCapabilityValue(

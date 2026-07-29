@@ -1,11 +1,13 @@
 let state;
 let onRenderSelection = () => {};
+let onCommandsUpdated = () => {};
 let eventSource = null;
 let currentImei = '';
 
 export function initDeviceStream(context) {
     state = context.state;
     onRenderSelection = context.renderSelection;
+    onCommandsUpdated = context.onCommandsUpdated || (() => {});
     window.addEventListener('hub-dashboard-api-token-updated', handleTokenUpdated);
 }
 
@@ -70,5 +72,6 @@ function handleStreamUpdate(event) {
         events: data.events || [],
         commands: data.commands || [],
     };
+    onCommandsUpdated(currentImei, data.commands || []);
     onRenderSelection();
 }

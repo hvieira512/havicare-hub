@@ -31,6 +31,7 @@ final class DeviceCommandStore
         $this->redis->lrem($this->deviceListKey($imei, 'commands'), 0, $id);
         $this->redis->lpush($this->deviceListKey($imei, 'commands'), [$id]);
         $this->redis->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+        $this->projectConfigurationStatus($imei, $id, $record);
     }
 
     /**
@@ -171,9 +172,6 @@ final class DeviceCommandStore
                 'replyIdent' => $ident,
                 'replyRef' => $ref,
             ]));
-            if ($this->projection !== null && isset($command['configKey'])) {
-                $this->projection->markApplyStatus($imei, (string)$command['configKey'], 'acked', $id);
-            }
             return;
         }
     }
@@ -208,6 +206,24 @@ final class DeviceCommandStore
             }
         }
         return $commands;
+    }
+
+    private function projectConfigurationStatus(string $imei, string $id, array $record): void
+    {
+        if ($this->projection === null || !isset($record['configKey'])) {
+            return;
+        }
+
+        $status = (string)($record['status'] ?? '');
+        if ($status === '') {
+            return;
+        }
+        $this->projection->markApplyStatus(
+            $imei,
+            (string)$record['configKey'],
+            $status,
+            $id
+        );
     }
 
     public function findCommand(string $id): ?array

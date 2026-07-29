@@ -133,10 +133,21 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('CONFIG_SECTION_LABELS', $source);
         self::assertStringNotContainsString('Monitorização de saúde', $source);
         self::assertStringNotContainsString('Contactos e regras de chamadas', $source);
+        self::assertStringContainsString('const CONFIGURATION_DELIVERY_META = {', $source);
+        self::assertStringContainsString('retry_exhausted:', $source);
+        self::assertStringContainsString('O último valor está guardado no Hub, mas não foi aplicado pelo dispositivo.', $source);
+        self::assertStringContainsString('resolveConfigDelivery(entry, pending)', $source);
+        self::assertStringContainsString('renderConfigurationDeliveryNotice(deliveryMeta, delivery)', $source);
         self::assertStringContainsString('capabilityCatalog: state.deviceModal.capabilityCatalog', $bootstrap);
         self::assertStringContainsString('getCapabilities as apiGetCapabilities', $bootstrap);
         self::assertStringContainsString('entry.capabilityKey', $bootstrap);
         self::assertStringContainsString('enabledCapKeys.includes(entry.capabilityKey)', $bootstrap);
+        self::assertStringContainsString('pending: state.deviceModal.pending', $bootstrap);
+        self::assertStringContainsString('onCommandsUpdated: syncDeviceModalCommandStates', $bootstrap);
+        self::assertStringContainsString(
+            'Valor guardado no Hub e enviado. A aguardar confirmação do dispositivo.',
+            $bootstrap
+        );
         self::assertStringContainsString(
             'wonlexMedicationPlans: (_entry, desired) => wonlexMedicationPlansInput(desired),',
             $source

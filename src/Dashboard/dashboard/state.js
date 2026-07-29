@@ -52,6 +52,7 @@ export const state = {
         capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
+        pending: {},
         capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
