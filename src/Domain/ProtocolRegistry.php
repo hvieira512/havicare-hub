@@ -2,6 +2,8 @@
 
 namespace Hub\Domain;
 
+use Hub\Domain\Capability\Contacts\WonlexContactCodec;
+
 final class ProtocolRegistry
 {
     /**
@@ -41,7 +43,7 @@ final class ProtocolRegistry
                     ],
                     'fieldConstraints' => [
                         'phonebook' => [
-                            'name' => ['maxLength' => 10],
+                            'name' => ['maxLength' => WonlexContactCodec::NAME_MAX_LENGTH],
                             'phone' => ['maxLength' => 20, 'asciiOnly' => true],
                             'allowPartialRows' => true,
                         ],

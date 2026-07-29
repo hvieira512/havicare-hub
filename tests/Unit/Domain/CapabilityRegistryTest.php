@@ -52,6 +52,21 @@ final class CapabilityRegistryTest extends TestCase
         );
     }
 
+    public function testWonlexPhonebookRejectsNamesLongerThanFourCharacters(): void
+    {
+        $registry = new CapabilityRegistry();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('name must contain at most 4 characters');
+
+        $registry->toNative('wonlex-json', 'phonebook', [
+            'contacts' => [[
+                'name' => 'Rodri',
+                'phone' => '+351938854803',
+            ]],
+        ]);
+    }
+
     public function testAlarmClockReadUsesProtocolWhenNativeKeysOverlap(): void
     {
         $registry = new CapabilityRegistry();

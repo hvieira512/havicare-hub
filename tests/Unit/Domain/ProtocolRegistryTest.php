@@ -40,7 +40,7 @@ final class ProtocolRegistryTest extends TestCase
         self::assertSame(10, $dashboard['groupedCapabilities']['sos_contacts']['limit'] ?? null);
         self::assertArrayHasKey('whitelist_enabled', $dashboard['groupedCapabilities']);
         self::assertArrayNotHasKey('call_whitelist', $dashboard['groupedCapabilities']);
-        self::assertSame(10, $dashboard['fieldConstraints']['phonebook']['name']['maxLength'] ?? null);
+        self::assertSame(4, $dashboard['fieldConstraints']['phonebook']['name']['maxLength'] ?? null);
     }
 
     public function testOnlyProtocolsWithConfigCatalogAreReturnedInTheHelper(): void

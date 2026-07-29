@@ -99,7 +99,7 @@ final class PhonebookCapability implements CapabilityContract
         $meta = $accumulatedMeta;
         $meta['limit'] = max((int)($meta['limit'] ?? 0), $protocol === 'wonlex-json' ? 10 : 5);
         $meta['name'] = array_merge(
-            ['maxLength' => 10],
+            ['maxLength' => $protocol === 'wonlex-json' ? WonlexContactCodec::NAME_MAX_LENGTH : 10],
             is_array($meta['name'] ?? null) ? $meta['name'] : []
         );
         $meta['phone'] = array_merge(
@@ -147,6 +147,7 @@ final class PhonebookCapability implements CapabilityContract
             if (!is_array($contact)) {
                 throw new \InvalidArgumentException('contacts items must be objects');
             }
+            WonlexContactCodec::validatePublicName((string)($contact['name'] ?? ''));
             $phone = WonlexContactCodec::publicPhone($contact);
             if ($phone === '') {
                 continue;
