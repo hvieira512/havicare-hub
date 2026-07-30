@@ -119,4 +119,34 @@ final class DeviceConfigurationRepositoryTest extends MysqlDashboardTestCase
         self::assertSame(['phone' => ''], $rows[0]['desired_payload'] ?? null);
         self::assertSame('new', $rows[0]['last_command_id'] ?? null);
     }
+
+    public function testAllForImeiPreservesDifferentGenericConfigurationsSharingNativeKey(): void
+    {
+        $insert = $this->pdo->prepare('
+            INSERT INTO device_configurations (
+                imei, config_key, native_key, protocol, supplier, model, command,
+                desired_payload, reported_payload, last_status, last_command_id,
+                desired_updated_at, reported_at, applied_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ');
+        $insert->execute([
+            '868705080304889', 'phonebook', 'familyNumber', 'wonlex-json', 'Wonlex', 'HW20PRO',
+            'familyNumber', '{"contacts":[{"name":"Hugo","phone":"+351938854803"}]}', '{}',
+            'acked', 'phonebook-command', '2026-07-30T15:44:10Z', '', '2026-07-30T15:44:10Z',
+        ]);
+        $insert->execute([
+            '868705080304889', 'sos_contacts', 'familyNumber', 'wonlex-json', 'Wonlex', 'HW20PRO',
+            'familyNumber', '{"contacts":[{"name":"Hugo","phone":"938854803","areaCode":"351"}]}', '{}',
+            'acked', 'sos-command', '2026-07-30T15:44:15Z', '', '2026-07-30T15:44:16Z',
+        ]);
+
+        $rows = $this->repository->allForImei('868705080304889');
+
+        self::assertCount(2, $rows);
+        self::assertSame(
+            ['phonebook', 'sos_contacts'],
+            array_column($rows, 'config_key')
+        );
+    }
 }

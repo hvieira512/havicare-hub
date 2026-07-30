@@ -21,19 +21,24 @@ final class DeviceConfigurationRepository
         ');
         $stmt->execute([$imei]);
 
-        $latestByNativeKey = [];
+        $latestByLogicalNativeKey = [];
         foreach (array_map([$this, 'normalizeRow'], $stmt->fetchAll()) as $row) {
+            $nativeKey = trim((string)($row['native_key'] ?? $row['config_key'] ?? ''));
+            $genericKey = CapabilityCatalog::normalizeStoredCapabilityKey(
+                (string)($row['config_key'] ?? $nativeKey)
+            ) ?? trim((string)($row['config_key'] ?? $nativeKey));
             $identity = implode("\0", [
                 trim((string)($row['protocol'] ?? '')),
-                trim((string)($row['native_key'] ?? $row['config_key'] ?? '')),
+                $genericKey,
+                $nativeKey,
             ]);
-            $existing = $latestByNativeKey[$identity] ?? null;
+            $existing = $latestByLogicalNativeKey[$identity] ?? null;
             if ($existing === null || $this->isNewerRow($row, $existing)) {
-                $latestByNativeKey[$identity] = $row;
+                $latestByLogicalNativeKey[$identity] = $row;
             }
         }
 
-        $rows = array_values($latestByNativeKey);
+        $rows = array_values($latestByLogicalNativeKey);
         usort($rows, static function (array $left, array $right): int {
             foreach (['desired_updated_at', 'reported_at', 'config_key', 'native_key'] as $key) {
                 $comparison = strcmp((string)($left[$key] ?? ''), (string)($right[$key] ?? ''));
