@@ -629,11 +629,20 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertSame('TAKEPILLS', $payload['command']);
         self::assertSame(['11:25-1-2', '1', '006D006500640073'], array_slice($payload['payload']['fields'] ?? [], 0, 3));
-        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
+        self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,', $wire);
         self::assertStringContainsString(',' . ($payload['payload']['fields'][3] ?? '') . ']', $wire);
+        $escapedAudio = (string)($payload['payload']['fields'][3] ?? '');
+        for ($offset = 0, $length = strlen($escapedAudio); $offset < $length; $offset++) {
+            $byte = ord($escapedAudio[$offset]);
+            self::assertNotContains($byte, [0x5B, 0x5D, 0x2C, 0x2A]);
+            if ($byte === 0x7D) {
+                self::assertLessThan($length, $offset + 1);
+                self::assertContains(ord($escapedAudio[++$offset]), [0x01, 0x02, 0x03, 0x04, 0x05]);
+            }
+        }
     }
 
     public function testFourPTouchTakePillsStripsLegacyDataUrlsFromVoiceData(): void
@@ -651,7 +660,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'voiceMimeType' => 'audio/wav',
         ]);
 
-        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
+        self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
     }
 
     public function testFourPTouchTakePillsAllowsOmittingVoiceAudio(): void
@@ -672,6 +681,16 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,]', $wire);
+    }
+
+    public function testFourPTouchRejectsContentLargerThanFourDigitLengthField(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('exceeds the protocol maximum');
+
+        DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', 'TAKEPILLS', [
+            'fields' => [str_repeat('A', 65536)],
+        ]);
     }
 
     public function testFourPTouchTakePillsMapsToMedicationReminderCapability(): void

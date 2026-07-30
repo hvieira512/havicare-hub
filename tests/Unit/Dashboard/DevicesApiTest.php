@@ -1703,7 +1703,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame(4, substr_count($submitted[0]['bytes'], ','));
-        self::assertMatchesRegularExpression('/,[A-Za-z0-9+\\/=]+\\]$/', $submitted[0]['bytes']);
+        self::assertStringContainsString(",#!AMR\n", $submitted[0]['bytes']);
+        self::assertStringEndsWith(']', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchAcceptsLocationReportingIntervalForFourPTouch(): void

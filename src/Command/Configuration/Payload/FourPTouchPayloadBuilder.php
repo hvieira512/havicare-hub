@@ -143,13 +143,15 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('voiceData must be base64 audio');
         }
 
-        return self::transcodeAudioToArmBase64($binary, $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm');
+        return self::escapeBinaryAudio(
+            self::transcodeAudioToAmr($binary, $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm')
+        );
     }
 
-    private static function transcodeAudioToArmBase64(string $audioBytes, string $mimeType): string
+    private static function transcodeAudioToAmr(string $audioBytes, string $mimeType): string
     {
         if (!self::commandExists('ffmpeg')) {
-            return self::fallbackArmBase64($audioBytes);
+            return self::fallbackAmr($audioBytes);
         }
 
         $inputPath = tempnam(sys_get_temp_dir(), 'takepills-audio-in-');
@@ -165,6 +167,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             }
             $command = [
                 'ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', $inputPath, '-vn',
+                '-t', '15',
                 '-acodec', 'libopencore_amrnb', '-ar', '8000', '-ac', '1', '-b:a', '12.2k',
                 '-f', 'amr', $outputPath,
             ];
@@ -172,15 +175,15 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             if ($exitCode !== 0 || !is_file($outputPath)) {
                 $message = trim($stderr);
                 throw new \RuntimeException($message !== ''
-                    ? "Failed to convert voice recording to ARM: {$message}"
-                    : 'Failed to convert voice recording to ARM');
+                    ? "Failed to convert voice recording to AMR: {$message}"
+                    : 'Failed to convert voice recording to AMR');
             }
-            $armBytes = file_get_contents($outputPath);
-            if ($armBytes === false || $armBytes === '') {
-                throw new \RuntimeException('Converted ARM audio is empty');
+            $amrBytes = file_get_contents($outputPath);
+            if ($amrBytes === false || $amrBytes === '') {
+                throw new \RuntimeException('Converted AMR audio is empty');
             }
 
-            return base64_encode($armBytes);
+            return $amrBytes;
         } finally {
             if (is_file($inputPath)) {
                 @unlink($inputPath);
@@ -200,11 +203,23 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         return $exitCode === 0 && trim(implode("\n", $output)) !== '';
     }
 
-    private static function fallbackArmBase64(string $audioBytes): string
+    private static function fallbackAmr(string $audioBytes): string
     {
         // Keep tests and environments without ffmpeg working by emitting a
         // deterministic AMR-like payload instead of failing the whole request.
-        return base64_encode("#!AMR\n" . substr(hash('sha256', $audioBytes, true), 0, 8));
+        return "#!AMR\n" . substr(hash('sha256', $audioBytes, true), 0, 8);
+    }
+
+    private static function escapeBinaryAudio(string $audioBytes): string
+    {
+        // 4P Touch reserves these bytes inside framed binary payloads.
+        return strtr($audioBytes, [
+            "\x7D" => "\x7D\x01",
+            "\x5B" => "\x7D\x02",
+            "\x5D" => "\x7D\x03",
+            "\x2C" => "\x7D\x04",
+            "\x2A" => "\x7D\x05",
+        ]);
     }
 
     private static function runProcess(array $command): array

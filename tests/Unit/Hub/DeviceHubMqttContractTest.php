@@ -368,7 +368,7 @@ final class DeviceHubMqttContractTest extends TestCase
         ], $mqtt->events[1][1]['command']);
     }
 
-    public function testFourPTouchTakePillsOnlineDownlinkPublishesArmConvertedAudioMetadata(): void
+    public function testFourPTouchTakePillsOnlineDownlinkPublishesAmrConvertedAudioMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
@@ -403,10 +403,10 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('TAKEPILLS', $mqtt->events[1][1]['command']['nativeType'] ?? null);
         self::assertSame('four-p-touch', $mqtt->events[1][1]['command']['protocol'] ?? null);
         self::assertSame('downlink', $mqtt->raw[1][1]['direction'] ?? null);
-        self::assertSame('text', $mqtt->raw[1][1]['debug']['encoding'] ?? null);
-        self::assertStringStartsWith('[3G*7597567372*', $mqtt->raw[1][1]['debug']['payload'] ?? '');
-        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,1,006D006500640073,', $mqtt->raw[1][1]['debug']['payload'] ?? '');
-        self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
+        self::assertSame('base64', $mqtt->raw[1][1]['debug']['encoding'] ?? null);
+        self::assertSame(base64_encode($bytes), $mqtt->raw[1][1]['debug']['payload'] ?? null);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,1,006D006500640073,', $bytes);
+        self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
     }
 
     public function testVivistarTelemetryPacketsReceiveProtocolAck(): void

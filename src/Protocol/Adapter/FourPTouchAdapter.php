@@ -64,13 +64,18 @@ class FourPTouchAdapter implements DeviceAdapterInterface
             $content .= ',' . implode(',', array_map(static fn (mixed $value): string => (string) $value, $fields));
         }
 
-        return sprintf('[%s*%s*%04X*%s]', $manufacturer, $deviceId, strlen($content), $content);
+        $contentLength = strlen($content);
+        if ($contentLength > 0xFFFF) {
+            throw new \InvalidArgumentException('4P Touch content exceeds the protocol maximum of 65535 bytes');
+        }
+
+        return sprintf('[%s*%s*%04X*%s]', $manufacturer, $deviceId, $contentLength, $content);
     }
 
     private function parseFrame(string $raw): ?array
     {
         $message = trim($raw);
-        if (preg_match('/^\[(CS|3G)\*(\d{10})\*([0-9A-Fa-f]{4})\*(.*)\]$/', $message, $matches) !== 1) {
+        if (preg_match('/^\[(CS|3G)\*(\d{10})\*([0-9A-Fa-f]{4})\*(.*)\]$/s', $message, $matches) !== 1) {
             return null;
         }
 
