@@ -32,6 +32,7 @@
 
 :root,
 [data-bs-theme="light"] {
+    --bs-body-font-size: .875rem;
     --bs-primary: #0b163f;
     --bs-primary-rgb: 11, 22, 63;
     --bs-primary-text-emphasis: #070d26;
