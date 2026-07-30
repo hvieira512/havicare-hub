@@ -799,7 +799,13 @@ class DeviceService
     private function pendingConfiguration(?array $model, string $protocol, array $configRows): array
     {
         $desiredCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'desired_payload', false);
-        $reportedCapabilities = $this->deviceCapabilitiesFromPayloadKey($model, $protocol, $configRows, 'reported_payload', false);
+        $reportedCapabilities = $this->deviceCapabilitiesFromPayloadKey(
+            $model,
+            $protocol,
+            $this->configurationValueReportRows($configRows),
+            'reported_payload',
+            false
+        );
         $desiredValues = $this->flattenWritableCapabilities($protocol, $desiredCapabilities);
         $reportedValues = $this->flattenWritableCapabilities($protocol, $reportedCapabilities);
         $rowMeta = $this->genericCapabilityRowMeta($configRows);
@@ -826,6 +832,49 @@ class DeviceService
         }
 
         return $pending;
+    }
+
+    /**
+     * Delivery acknowledgements are persisted in reported_payload so their
+     * timestamp and native response remain inspectable. They are not reported
+     * configuration values and must not be compared with the desired payload.
+     *
+     * @param list<array<string, mixed>> $configRows
+     * @return list<array<string, mixed>>
+     */
+    private function configurationValueReportRows(array $configRows): array
+    {
+        return array_map(function (array $row): array {
+            $reported = is_array($row['reported_payload'] ?? null)
+                ? $row['reported_payload']
+                : [];
+            if ($this->isAcknowledgementOnlyConfigurationReport($reported)) {
+                $row['reported_payload'] = [];
+            }
+
+            return $row;
+        }, $configRows);
+    }
+
+    /**
+     * @param array<string, mixed> $reported
+     */
+    private function isAcknowledgementOnlyConfigurationReport(array $reported): bool
+    {
+        if ((string)($reported['type'] ?? '') !== 'device_config') {
+            return false;
+        }
+
+        $data = $reported['data'] ?? null;
+        if (!is_array($data) || array_diff(array_keys($data), ['status']) !== []) {
+            return false;
+        }
+
+        return in_array(strtolower(trim((string)($data['status'] ?? ''))), [
+            'ok',
+            'success',
+            'acked',
+        ], true);
     }
 
     private function protocolForModel(string $supplier, string $model): string

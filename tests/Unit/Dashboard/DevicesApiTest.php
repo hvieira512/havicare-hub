@@ -1406,6 +1406,51 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('cfg:BP76', $response['transportPending'][0]['dedupeKey'] ?? null);
     }
 
+    public function testAcknowledgementEnvelopeIsAppliedRatherThanDiverged(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['auto_vitals_interval']);
+        $db->deviceConfigurations->saveDesired(
+            '861265061009822',
+            'autoHealthMeasurement',
+            'vivistar-iw',
+            'Vivistar',
+            'L08 Pro',
+            'BP86',
+            ['enabled' => true, 'intervalMinutes' => 30],
+            'acked',
+            'cmd-health'
+        );
+        $db->deviceConfigurations->saveReported(
+            '861265061009822',
+            'autoHealthMeasurement',
+            'vivistar-iw',
+            'Vivistar',
+            'L08 Pro',
+            'AP86',
+            [
+                'schemaVersion' => 2,
+                'type' => 'device_config',
+                'data' => ['status' => 'ok'],
+                'source' => ['protocol' => 'vivistar-iw', 'nativeType' => 'AP86'],
+            ]
+        );
+
+        $response = $api->show('861265061009822');
+        $delivery = $response['pending']['health']['auto_vitals_interval'] ?? [];
+
+        self::assertSame('applied', $delivery['status'] ?? null);
+        self::assertSame(
+            ['enabled' => true, 'intervalMinutes' => 30],
+            $delivery['desired'] ?? null
+        );
+        self::assertNull($delivery['reported'] ?? null);
+        self::assertSame('cmd-health', $delivery['lastCommandId'] ?? null);
+    }
+
     public function testRetryExhaustionMarksStoredConfigurationAsFailed(): void
     {
         [$api, $db, $store] = $this->makeApi();
