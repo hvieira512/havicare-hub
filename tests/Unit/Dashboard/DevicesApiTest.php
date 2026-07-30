@@ -191,10 +191,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
         self::assertSame([], $response['capabilities']['health'] ?? null);
         self::assertSame([], $response['capabilities']['alarms'] ?? null);
-        self::assertSame('never_reported', $response['pending']['contacts']['call_whitelist']['status'] ?? null);
-        self::assertSame('never_reported', $response['pending']['contacts']['whitelist_enabled']['status'] ?? null);
-        self::assertSame('never_reported', $response['pending']['settings_system']['device_password']['status'] ?? null);
-        self::assertSame([], $response['transportPending'] ?? null);
+        self::assertSame('never_reported', $response['configurationSync']['entries']['contacts']['call_whitelist']['status'] ?? null);
+        self::assertSame('never_reported', $response['configurationSync']['entries']['contacts']['whitelist_enabled']['status'] ?? null);
+        self::assertSame('never_reported', $response['configurationSync']['entries']['settings_system']['device_password']['status'] ?? null);
+        self::assertArrayNotHasKey('pending', $response);
+        self::assertArrayNotHasKey('transportPending', $response);
     }
 
     public function testShowDoesNotExposePhonebookForVivistarDevices(): void
@@ -492,7 +493,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $publicContacts = [['name' => 'Care', 'phone' => '+351210000000']];
         self::assertSame($publicContacts, $response['configurations']['phonebook'] ?? null);
         self::assertSame($publicContacts, $response['capabilities']['contacts']['phonebook']['value'] ?? null);
-        self::assertSame($publicContacts, $response['pending']['contacts']['phonebook']['desired'] ?? null);
+        self::assertSame($publicContacts, $response['configurationSync']['entries']['contacts']['phonebook']['desired'] ?? null);
         self::assertSame(['+351210000000'], $response['configurations']['sos_contacts'] ?? null);
         self::assertTrue($response['configurations']['whitelist_enabled']['enabled'] ?? false);
         self::assertArrayNotHasKey('call_whitelist', $response['capabilities']['contacts'] ?? []);
@@ -758,7 +759,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         foreach ([
             $response['configurations']['medication_reminders'] ?? [],
             $response['capabilities']['alarms']['medication_reminders']['value'] ?? [],
-            $response['pending']['alarms']['medication_reminders']['desired'] ?? [],
+            $response['configurationSync']['entries']['alarms']['medication_reminders']['desired'] ?? [],
         ] as $value) {
             self::assertArrayNotHasKey('voiceData', $value);
             self::assertTrue($value['voiceDataAvailable'] ?? false);
@@ -1426,10 +1427,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->show('861265061009822');
 
-        self::assertSame('waiting_device', $response['pending']['alarms']['fall_detection']['status'] ?? null);
-        self::assertSame(['enabled' => true], $response['pending']['alarms']['fall_detection']['desired'] ?? null);
-        self::assertSame('cmd-1', $response['pending']['alarms']['fall_detection']['lastCommandId'] ?? null);
-        self::assertSame('cfg:BP76', $response['transportPending'][0]['dedupeKey'] ?? null);
+        self::assertSame('waiting_device', $response['configurationSync']['entries']['alarms']['fall_detection']['status'] ?? null);
+        self::assertSame(['enabled' => true], $response['configurationSync']['entries']['alarms']['fall_detection']['desired'] ?? null);
+        self::assertArrayNotHasKey('pending', $response);
+        self::assertArrayNotHasKey('transportPending', $response);
     }
 
     public function testAcknowledgementEnvelopeIsAppliedRatherThanDiverged(): void
@@ -1466,15 +1467,17 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
 
         $response = $api->show('861265061009822');
-        $delivery = $response['pending']['health']['auto_vitals_interval'] ?? [];
+        $delivery = $response['configurationSync']['entries']['health']['auto_vitals_interval'] ?? [];
 
-        self::assertSame('applied', $delivery['status'] ?? null);
+        self::assertSame('confirmed', $delivery['status'] ?? null);
         self::assertSame(
             ['enabled' => true, 'intervalMinutes' => 30],
             $delivery['desired'] ?? null
         );
-        self::assertNull($delivery['reported'] ?? null);
-        self::assertSame('cmd-health', $delivery['lastCommandId'] ?? null);
+        self::assertSame(
+            ['enabled' => true, 'intervalMinutes' => 30],
+            $delivery['effective'] ?? null
+        );
     }
 
     public function testRetryExhaustionMarksStoredConfigurationAsFailed(): void
@@ -1502,13 +1505,24 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $store->retryWaitingCommands(60, 3600, 3, static fn(): string => 'sent');
 
         $response = $api->show('861265061009822');
-        $delivery = $response['pending']['alarms']['fall_detection'] ?? [];
+        $delivery = $response['configurationSync']['entries']['alarms']['fall_detection'] ?? [];
         self::assertSame('failed', $delivery['status'] ?? null);
-        self::assertSame('failed', $delivery['error'] ?? null);
-        self::assertSame($commandId, $delivery['lastCommandId'] ?? null);
+        self::assertSame('retry_exhausted', $delivery['operations'][0]['error'] ?? null);
+        self::assertSame($commandId, $delivery['operations'][0]['operationId'] ?? null);
         self::assertSame(
             'failed',
             $db->deviceConfigurations->allForImei('861265061009822')[0]['last_status'] ?? null
+        );
+
+        $retried = $api->updateConfigurations('861265061009822', json_encode([
+            'configurations' => [
+                'fall_detection' => ['enabled' => true],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        self::assertSame(2, $retried['results'][0]['desiredRevision'] ?? null);
+        self::assertNotSame(
+            $updated['results'][0]['changeId'] ?? '',
+            $retried['results'][0]['changeId'] ?? ''
         );
     }
 
@@ -1570,7 +1584,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('fallDetection', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
         self::assertSame('call_whitelist', $response['results'][1]['key'] ?? null);
         self::assertSame(['enabled' => true], $response['configurations']['fall_detection'] ?? null);
-        self::assertSame('waiting_device', $response['pending']['alarms']['fall_detection']['status'] ?? null);
+        self::assertSame('awaiting_ack', $response['configurationSync']['entries']['alarms']['fall_detection']['status'] ?? null);
     }
 
     public function testConfigurationPatchSendsFourPTouchTakePillsDownlink(): void
@@ -2084,7 +2098,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $detail = $api->show('868017032159118');
         self::assertSame([], $detail['configurations']['sos_contacts'] ?? null);
         self::assertSame([], $detail['capabilities']['contacts']['sos_contacts']['value'] ?? null);
-        self::assertSame([], $detail['pending']['contacts']['sos_contacts']['desired'] ?? null);
+        self::assertSame([], $detail['configurationSync']['entries']['contacts']['sos_contacts']['desired'] ?? null);
     }
 
     public function testConfigurationPatchRejectsFourPTouchAlarmClockType(): void

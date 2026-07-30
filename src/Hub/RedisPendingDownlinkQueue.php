@@ -106,6 +106,10 @@ final class RedisPendingDownlinkQueue implements PendingDownlinkQueue
 
     private function dedupeKey(string $bytes, ?array $command): string
     {
+        $operationId = is_array($command) ? (string)($command['operationId'] ?? '') : '';
+        if ($operationId !== '') {
+            return 'operation:' . hash('sha256', $operationId);
+        }
         $nativeType = is_array($command) ? (string)($command['nativeType'] ?? '') : '';
         if ($nativeType !== '') {
             $protocol = is_array($command) ? (string)($command['protocol'] ?? 'unknown') : 'unknown';

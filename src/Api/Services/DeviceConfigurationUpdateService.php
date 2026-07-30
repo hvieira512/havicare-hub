@@ -114,48 +114,55 @@ final class DeviceConfigurationUpdateService
             }
 
             $operations = [];
+            $nativeRows = [];
             foreach ($nativeUpdates as $nativeKey => $nativePayload) {
                 $normalizedNativeKey = $this->comparisonStoredConfigurationKey($nativeKey) ?? $nativeKey;
                 $existingPayload = is_array($currentByKey[$normalizedNativeKey]['desired_payload'] ?? null)
                     ? $currentByKey[$normalizedNativeKey]['desired_payload']
                     : null;
-                if ($existingPayload !== null && $this->valuesEqual($existingPayload, $nativePayload)) {
+                $existingStatus = (string)($currentByKey[$normalizedNativeKey]['last_status'] ?? '');
+                if (
+                    $existingPayload !== null
+                    && $this->valuesEqual($existingPayload, $nativePayload)
+                    && !in_array($existingStatus, ['created', 'failed', 'retry_exhausted', 'response_timeout'], true)
+                ) {
                     continue;
                 }
 
-                $result = $this->persistAndApply(
-                    $imei,
-                    $nativeKey,
-                    $nativePayload,
-                    $supplier,
-                    $model,
-                    $protocol,
-                    $metadata,
-                    $device
+                $prepared = $this->prepareNative(
+                    $imei, $nativeKey, $nativePayload, $supplier, $model, $protocol, $metadata, $device
                 );
-                if (isset($result['error'])) {
+                if (isset($prepared['error'])) {
                     Logger::channel('api')->warning('API device configuration rejected', [
                         'request_id' => $requestId,
                         'imei' => $imei,
                         'config_key' => $genericKey,
                         'native_key' => $nativeKey,
-                        'error_code' => $result['error']['code'] ?? 'invalid_config',
+                        'error_code' => $prepared['error']['code'] ?? 'invalid_config',
                     ]);
-                    return $result;
+                    return $prepared;
                 }
 
                 $currentByKey[$normalizedNativeKey] = [
                     'desired_payload' => $nativePayload,
                 ] + ($currentByKey[$normalizedNativeKey] ?? []);
-                foreach ($result['operations'] as $operation) {
-                    $operations[] = ['nativeKey' => $nativeKey] + $operation;
-                }
+                $nativeRows[] = $prepared['nativeRow'];
+                array_push($operations, ...$prepared['operations']);
             }
 
-            if ($operations !== []) {
+            if ($nativeRows !== []) {
+                $staged = $this->db->configurationLifecycle->stage(
+                    $imei, $genericKey, $payload, $nativeRows, $operations
+                );
+                $dispatched = [];
+                foreach ($staged['operations'] as $operation) {
+                    $dispatched[] = $this->dispatchOperation($imei, $operation);
+                }
                 $results[] = [
                     'key' => $genericKey,
-                    'operations' => $operations,
+                    'changeId' => $staged['changeId'],
+                    'desiredRevision' => $staged['revision'],
+                    'operations' => $dispatched,
                 ];
             }
         }
@@ -169,7 +176,7 @@ final class DeviceConfigurationUpdateService
      * @param array<string, mixed> $device
      * @return array<string, mixed>
      */
-    private function persistAndApply(
+    private function prepareNative(
         string $imei,
         string $nativeKey,
         array $payload,
@@ -194,64 +201,92 @@ final class DeviceConfigurationUpdateService
         }
 
         $operations = [];
-        $lastId = '';
-        $lastStatus = 'dropped';
         $lastCommand = '';
+        $confirmationMode = (string)($entry['confirmationMode']
+            ?? ($protocol === 'vivistar-iw' && $nativeKey === 'deviceMeasuringFrequency'
+                ? 'ack_only'
+                : 'execution_ack'));
         foreach (DeviceConfigurationCatalog::commandPayloads($protocol, $nativeKey, $payload) as $commandPayload) {
             $command = $commandPayload['command'];
             $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
                 'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
             ]);
-            $id = bin2hex(random_bytes(8));
-            $status = $this->hub->submitDownlink($imei, $bytes);
-            $record = [
-                'status' => $status === 'sent' ? 'waiting' : $status,
-                'imei' => $imei,
-                'protocol' => $protocol,
-                'nativeType' => $command,
-                'label' => (string)($entry['label'] ?? $nativeKey),
-                'configKey' => $nativeKey,
-                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
-                'retryable' => true,
-                'bytes' => $bytes,
-                'attempts' => 1,
-                'maxAttempts' => 3,
-                'retryDelaySeconds' => 60,
-                'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-                'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() + 60),
-                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            ];
-            if ($status === 'sent') {
-                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-            }
-            if ($status === 'dropped') {
-                $record['error'] = 'delivery_failed';
-            }
-
-            $this->store->recordCommand($imei, $id, $record);
-            $lastId = $id;
-            $lastStatus = (string)$record['status'];
-            $lastCommand = $command;
+            $id = bin2hex(random_bytes(16));
             $operations[] = [
-                'command' => $command,
-                'deliveryStatus' => $record['status'],
-                'lastCommandId' => $id,
+                'operationId' => $id,
+                'nativeKey' => $nativeKey,
+                'nativeType' => $command,
+                'protocol' => $protocol,
+                'bytes' => $bytes,
+                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                'confirmationMode' => $confirmationMode,
+                'label' => (string)($entry['label'] ?? $nativeKey),
             ];
+            $lastCommand = $command;
         }
 
-        $this->db->deviceConfigurations->saveDesired(
-            $imei,
-            $nativeKey,
-            $protocol,
-            $supplier,
-            $model,
-            $lastCommand,
-            $payload,
-            $lastStatus,
-            $lastId
-        );
+        return [
+            'nativeRow' => [
+                'nativeKey' => $nativeKey,
+                'protocol' => $protocol,
+                'supplier' => $supplier,
+                'model' => $model,
+                'command' => $lastCommand,
+                'payload' => $payload,
+                'confirmationMode' => $confirmationMode,
+                'operationId' => (string)($operations[array_key_last($operations)]['operationId'] ?? ''),
+            ],
+            'operations' => $operations,
+        ];
+    }
 
-        return ['operations' => $operations];
+    /** @param array<string,mixed> $operation */
+    private function dispatchOperation(string $imei, array $operation): array
+    {
+        $id = (string)$operation['operationId'];
+        if (!$this->db->configurationLifecycle->isCurrentOperation($id)) {
+            return ['nativeKey' => $operation['nativeKey'], 'command' => $operation['nativeType'], 'deliveryStatus' => 'superseded', 'lastCommandId' => $id];
+        }
+        $status = $this->hub->submitDownlink($imei, (string)$operation['bytes'], [
+            'operationId' => $id,
+            'changeId' => (string)$operation['changeId'],
+            'genericConfigKey' => (string)$operation['configKey'],
+        ]);
+        $status = $status === 'sent' ? 'waiting' : $status;
+        $error = in_array($status, ['dropped', 'failed'], true) ? 'delivery_failed' : '';
+        $this->db->configurationLifecycle->updateOperation($id, $status, $error);
+        $now = gmdate('Y-m-d\TH:i:s\Z');
+        $record = [
+            'status' => $status,
+            'imei' => $imei,
+            'protocol' => $operation['protocol'],
+            'nativeType' => $operation['nativeType'],
+            'label' => $operation['label'],
+            'configKey' => $operation['nativeKey'],
+            'genericConfigKey' => $operation['configKey'] ?? '',
+            'changeId' => $operation['changeId'],
+            'desiredRevision' => $operation['desiredRevision'],
+            'operationId' => $id,
+            'confirmationMode' => $operation['confirmationMode'],
+            'expectedReplyTypes' => $operation['expectedReplyTypes'],
+            'retryable' => true,
+            'bytes' => $operation['bytes'],
+            'attempts' => 1,
+            'maxAttempts' => 3,
+            'retryDelaySeconds' => 60,
+            'lastAttemptAt' => $now,
+            'nextRetryAt' => gmdate('Y-m-d\TH:i:s\Z', time() + 60),
+            'requestedAt' => $now,
+            'lifecycleStatusPersisted' => true,
+        ];
+        if ($status === 'waiting') {
+            $record['sentAt'] = $now;
+        }
+        if ($error !== '') {
+            $record['error'] = $error;
+        }
+        $this->store->recordCommand($imei, $id, $record);
+        return ['nativeKey' => $operation['nativeKey'], 'command' => $operation['nativeType'], 'deliveryStatus' => $status, 'lastCommandId' => $id];
     }
 
     /**

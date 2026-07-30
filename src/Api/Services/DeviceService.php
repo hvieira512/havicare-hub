@@ -176,6 +176,7 @@ class DeviceService
         $device = array_diff_key($device, array_flip([
             'supplier', 'model', 'deviceType', 'protocol', 'transport', 'lastConnectionId',
         ]));
+        $lifecycle = $this->configurationLifecycle($imei, $modelRow, $protocol, $configRows);
 
         return $this->responseCompactor->compact([
             'device' => $device,
@@ -185,12 +186,12 @@ class DeviceService
                 'stored' => count($configRows),
             ],
             'configurations' => $this->configuration($imei),
+            'effectiveConfigurations' => $lifecycle['effectiveConfigurations'],
+            'configurationSync' => $lifecycle['configurationSync'],
             'capabilities' => $this->deviceCapabilities($modelRow, $protocol, $configRows),
             'enabledCapabilityKeys' => $modelRow !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
                 : CapabilityCatalog::keysForProtocol($protocol),
-            'pending' => $this->pendingConfiguration($modelRow, $protocol, $configRows),
-            'transportPending' => $this->transportPending($imei),
         ]);
     }
 
@@ -537,8 +538,8 @@ class DeviceService
             'status' => 'ok',
             'results' => $results,
             'configurations' => $this->configuration($imei, '', $auth),
-            'pending' => $snapshot['pending'] ?? [],
-            'transportPending' => $snapshot['transportPending'] ?? [],
+            'effectiveConfigurations' => $snapshot['effectiveConfigurations'] ?? [],
+            'configurationSync' => $snapshot['configurationSync'] ?? [],
         ];
     }
 
@@ -794,6 +795,99 @@ class DeviceService
             'queuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->queuedAt),
             'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->expiresAt),
         ], $this->downlinkQueue->pendingFor($imei));
+    }
+
+    /**
+     * @param list<array<string,mixed>> $configRows
+     * @return array{effectiveConfigurations:array<string,mixed>,configurationSync:array<string,mixed>}
+     */
+    private function configurationLifecycle(
+        string $imei,
+        ?array $model,
+        string $protocol,
+        array $configRows
+    ): array {
+        $changes = $this->db->configurationLifecycle->currentForImei($imei);
+        $entries = [];
+        $effective = [];
+        foreach ($changes as $change) {
+            $key = (string)$change['config_key'];
+            $section = CapabilityCatalog::sectionForCapabilityKey($key) ?? 'settings_system';
+            $operations = array_map(static fn(array $operation): array => [
+                'operationId' => (string)$operation['operation_id'],
+                'nativeKey' => (string)$operation['native_key'],
+                'command' => (string)$operation['native_type'],
+                'confirmationMode' => (string)$operation['confirmation_mode'],
+                'deliveryStatus' => (string)$operation['delivery_status'],
+                'error' => (string)$operation['error_code'],
+                'attempts' => (int)$operation['attempts'],
+                'maxAttempts' => (int)$operation['max_attempts'],
+                'updatedAt' => (string)$operation['updated_at'],
+            ], (array)$change['operations']);
+            $effectiveValue = $change['effective_payload'];
+            if (is_array($effectiveValue)) {
+                $effective[$key] = $effectiveValue;
+            }
+            $entries[$section][$key] = [
+                'status' => (string)$change['sync_status'],
+                'changeId' => (string)$change['change_id'],
+                'desiredRevision' => (int)$change['desired_revision'],
+                'desired' => $change['desired_payload'],
+                'effective' => $effectiveValue,
+                'hasUnconfirmedChanges' => (string)$change['sync_status'] !== 'confirmed',
+                'desiredUpdatedAt' => (string)$change['created_at'],
+                'confirmedAt' => (string)$change['confirmed_at'],
+                'operations' => $operations,
+            ];
+        }
+
+        // Rows written before the lifecycle migration remain readable until the
+        // next PATCH creates their first revision.
+        $legacyPending = $this->pendingConfiguration($model, $protocol, $configRows);
+        $desired = $this->configuration($imei);
+        foreach ($desired as $key => $value) {
+            $section = CapabilityCatalog::sectionForCapabilityKey((string)$key) ?? 'settings_system';
+            if (isset($entries[$section][$key])) {
+                continue;
+            }
+            $pending = $legacyPending[$section][$key] ?? null;
+            $status = is_array($pending) ? (string)($pending['status'] ?? 'awaiting_confirmation') : 'confirmed';
+            $legacyEffective = $status === 'confirmed' || $status === 'applied' ? $value : null;
+            if ($legacyEffective !== null) {
+                $effective[$key] = $legacyEffective;
+            }
+            $entries[$section][$key] = [
+                'status' => $status === 'applied' ? 'confirmed' : $status,
+                'changeId' => '',
+                'desiredRevision' => 0,
+                'desired' => $value,
+                'effective' => $legacyEffective,
+                'hasUnconfirmedChanges' => $legacyEffective === null,
+                'operations' => [],
+            ];
+        }
+
+        $flat = [];
+        foreach ($entries as $section) {
+            array_push($flat, ...array_values($section));
+        }
+        $pendingCount = count(array_filter($flat, static fn(array $entry): bool =>
+            !in_array($entry['status'], ['confirmed', 'failed'], true)
+        ));
+        $failedCount = count(array_filter($flat, static fn(array $entry): bool =>
+            $entry['status'] === 'failed'
+        ));
+
+        return [
+            'effectiveConfigurations' => $effective,
+            'configurationSync' => [
+                'status' => $failedCount > 0 ? 'failed' : ($pendingCount > 0 ? 'pending' : 'confirmed'),
+                'hasUnconfirmedChanges' => $pendingCount > 0 || $failedCount > 0,
+                'pendingCount' => $pendingCount,
+                'failedCount' => $failedCount,
+                'entries' => $entries,
+            ],
+        ];
     }
 
     private function pendingConfiguration(?array $model, string $protocol, array $configRows): array

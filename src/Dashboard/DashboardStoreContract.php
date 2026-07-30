@@ -37,6 +37,10 @@ interface DashboardStoreContract
 
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void;
 
+    public function markCommand(string $imei, string $id, array $fields): void;
+
+    public function isCurrentOperation(string $operationId): bool;
+
     public function markCommandReply(
         string $imei,
         string $replyNativeType,

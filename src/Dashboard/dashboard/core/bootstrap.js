@@ -277,7 +277,7 @@ async function openAddDevice(source = "") {
         capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
-        pending: {},
+        configurationSync: {entries: {}},
         capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
@@ -343,7 +343,7 @@ async function editDevice(imei, supplier, model) {
         capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
-        pending: {},
+        configurationSync: {entries: {}},
         capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
@@ -413,7 +413,7 @@ async function editDevice(imei, supplier, model) {
         applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || "");
         state.deviceModal.configurations = detail.configurations || {};
-        state.deviceModal.pending = detail.pending || {};
+        state.deviceModal.configurationSync = detail.configurationSync || {entries: {}};
         state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
     } finally {
@@ -642,7 +642,7 @@ function renderDeviceConfigurationModal() {
         catalog: filteredCatalog,
         capabilityCatalog: state.deviceModal.capabilityCatalog,
         configurations: state.deviceModal.configurations,
-        pending: state.deviceModal.pending,
+        configurationSync: state.deviceModal.configurationSync,
         capabilities: state.deviceModal.capabilities,
         uiByKey: state.deviceModal.configUi,
         supplier: state.deviceModal.supplier,
@@ -1849,8 +1849,8 @@ async function saveDeviceConfiguration(section) {
         if (!isTransientAction) {
             state.deviceModal.configurations =
                 result.configurations || state.deviceModal.configurations;
-            state.deviceModal.pending =
-                result.pending || state.deviceModal.pending;
+            state.deviceModal.configurationSync =
+                result.configurationSync || state.deviceModal.configurationSync;
             state.deviceModal.capabilities =
                 result.capabilities || state.deviceModal.capabilities;
         }
@@ -1915,7 +1915,8 @@ async function refreshDeviceModalConfigurations(shouldRender = true) {
             }
 
             state.deviceModal.configurations = result?.configurations || {};
-            state.deviceModal.pending = result?.pending || {};
+            state.deviceModal.configurationSync =
+                result?.configurationSync || {entries: {}};
             state.deviceModal.capabilities = result?.capabilities || {};
             if (shouldRender) {
                 renderDeviceConfigurationModal();
@@ -1938,9 +1939,14 @@ function syncDeviceModalCommandStates(imei, commands) {
         (commands || []).map((command) => [String(command?.id || ""), command]),
     );
     let changed = false;
-    for (const section of Object.values(state.deviceModal.pending || {})) {
+    for (const section of Object.values(state.deviceModal.configurationSync?.entries || {})) {
         for (const delivery of Object.values(section || {})) {
-            const command = commandsById.get(String(delivery?.lastCommandId || ""));
+            const operation = (delivery?.operations || []).find((item) =>
+                commandsById.has(String(item?.operationId || "")),
+            );
+            const command = operation
+                ? commandsById.get(String(operation.operationId || ""))
+                : null;
             if (!command) {
                 continue;
             }
@@ -1949,9 +1955,11 @@ function syncDeviceModalCommandStates(imei, commands) {
             const nextStatus = ["failed", "dropped"].includes(commandStatus)
                 ? "failed"
                 : commandStatus === "acked"
-                    ? "applied"
+                    ? (String(operation?.confirmationMode || "") === "ack_only"
+                        ? "confirmation_unavailable"
+                        : "confirmed")
                     : ["queued", "waiting", "sent"].includes(commandStatus)
-                        ? "waiting_device"
+                        ? (commandStatus === "queued" ? "pending_delivery" : "awaiting_ack")
                         : String(delivery.status || "");
             const nextError = ["failed", "dropped"].includes(commandStatus)
                 ? String(command.lastError || command.error || commandStatus)

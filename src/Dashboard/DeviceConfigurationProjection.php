@@ -43,11 +43,28 @@ final class DeviceConfigurationProjection
         );
     }
 
-    public function markApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
+    public function markApplyStatus(
+        string $imei,
+        string $key,
+        string $status,
+        string $commandId = '',
+        string $error = ''
+    ): void
     {
         if ($this->db === null) {
             return;
         }
-        $this->db->deviceConfigurations->markApplyStatus($imei, $key, $status, $commandId);
+        if ($commandId !== '' && $this->db->configurationLifecycle->isCurrentOperation($commandId)) {
+            $this->db->configurationLifecycle->updateOperation($commandId, $status, $error);
+            return;
+        }
+        if ($commandId === '') {
+            $this->db->deviceConfigurations->markApplyStatus($imei, $key, $status, $commandId);
+        }
+    }
+
+    public function isCurrentOperation(string $operationId): bool
+    {
+        return $this->db === null || $this->db->configurationLifecycle->isCurrentOperation($operationId);
     }
 }

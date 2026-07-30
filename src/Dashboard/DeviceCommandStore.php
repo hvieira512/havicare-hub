@@ -20,6 +20,8 @@ final class DeviceCommandStore
 
     public function recordCommand(string $imei, string $id, array $record): void
     {
+        $lifecycleAlreadyPersisted = ($record['lifecycleStatusPersisted'] ?? false) === true;
+        unset($record['lifecycleStatusPersisted']);
         $record['id'] = $id;
         $record['updatedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
         $record = DeviceCommandRecord::makeJsonSafe($record);
@@ -32,7 +34,9 @@ final class DeviceCommandStore
         $this->redis->lrem($this->deviceListKey($imei, 'commands'), 0, $id);
         $this->redis->lpush($this->deviceListKey($imei, 'commands'), [$id]);
         $this->redis->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
-        $this->projectConfigurationStatus($imei, $id, $record);
+        if (!$lifecycleAlreadyPersisted) {
+            $this->projectConfigurationStatus($imei, $id, $record);
+        }
     }
 
     /**
@@ -57,6 +61,19 @@ final class DeviceCommandStore
                     continue;
                 }
                 if (!($command['retryable'] ?? false)) {
+                    continue;
+                }
+                $operationId = (string)($command['operationId'] ?? '');
+                if (
+                    $operationId !== ''
+                    && $this->projection !== null
+                    && !$this->projection->isCurrentOperation($operationId)
+                ) {
+                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+                        'status' => 'superseded',
+                        'error' => '',
+                        'lastError' => '',
+                    ]));
                     continue;
                 }
 
@@ -151,6 +168,21 @@ final class DeviceCommandStore
         }
     }
 
+    public function markCommand(string $imei, string $id, array $fields): void
+    {
+        foreach ($this->commands($imei) as $command) {
+            if ((string)($command['id'] ?? '') === $id) {
+                $this->recordCommand($imei, $id, array_merge($command, $fields));
+                return;
+            }
+        }
+    }
+
+    public function isCurrentOperation(string $operationId): bool
+    {
+        return $this->projection === null || $this->projection->isCurrentOperation($operationId);
+    }
+
     public function markCommandReply(
         string $imei,
         string $replyNativeType,
@@ -243,7 +275,8 @@ final class DeviceCommandStore
             $imei,
             (string)$record['configKey'],
             $status,
-            $id
+            $id,
+            (string)($record['lastError'] ?? $record['error'] ?? '')
         );
     }
 

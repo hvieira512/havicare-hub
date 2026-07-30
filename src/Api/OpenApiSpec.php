@@ -166,7 +166,7 @@ class OpenApiSpec
                         'parameters' => [$imeiParam],
                         'responses' => [
                             '200' => [
-                                'description' => 'Device detail with configuration, capabilities and pending commands',
+                                'description' => 'Device detail with desired/effective configuration and synchronization lifecycle',
                                 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/DeviceDetailResponse']]],
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
@@ -1034,11 +1034,14 @@ class OpenApiSpec
                             'configuration' => ['$ref' => '#/components/schemas/DeviceConfigurationSummary'],
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Raw generic configuration values keyed by capability name. Metadata for the UI lives in capabilities.',
+                                'description' => 'Desired generic configuration values stored by the Hub.',
                             ],
+                            'effectiveConfigurations' => [
+                                'type' => 'object',
+                                'description' => 'Configuration values confirmed as effective by the device contract.',
+                            ],
+                            'configurationSync' => ['$ref' => '#/components/schemas/ConfigurationSync'],
                             'capabilities' => ['$ref' => '#/components/schemas/DeviceCapabilitiesMatrix'],
-                            'pending' => ['type' => 'object'],
-                            'transportPending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
                         ],
                     ],
                     'ModelDetail' => [
@@ -1367,10 +1370,24 @@ class OpenApiSpec
                             ],
                             'configurations' => [
                                 'type' => 'object',
-                                'description' => 'Raw generic configuration values keyed by capability name after the update is applied.',
+                                'description' => 'Desired generic configuration values after the update.',
                             ],
-                            'pending' => ['type' => 'object'],
-                            'transportPending' => ['type' => 'array', 'items' => ['$ref' => '#/components/schemas/PendingCommand']],
+                            'effectiveConfigurations' => ['type' => 'object'],
+                            'configurationSync' => ['$ref' => '#/components/schemas/ConfigurationSync'],
+                        ],
+                    ],
+                    'ConfigurationSync' => [
+                        'type' => 'object',
+                        'required' => ['status', 'hasUnconfirmedChanges', 'pendingCount', 'failedCount', 'entries'],
+                        'properties' => [
+                            'status' => ['type' => 'string', 'enum' => ['confirmed', 'pending', 'failed']],
+                            'hasUnconfirmedChanges' => ['type' => 'boolean'],
+                            'pendingCount' => ['type' => 'integer'],
+                            'failedCount' => ['type' => 'integer'],
+                            'entries' => [
+                                'type' => 'object',
+                                'description' => 'Lifecycle entries grouped by capability section and generic key.',
+                            ],
                         ],
                     ],
                     'DeviceConfigurationMutationResult' => [
@@ -1382,6 +1399,8 @@ class OpenApiSpec
                                 'description' => 'Public generic capability key.',
                                 'example' => 'alarm_clock',
                             ],
+                            'changeId' => ['type' => 'string'],
+                            'desiredRevision' => ['type' => 'integer'],
                             'operations' => [
                                 'type' => 'array',
                                 'items' => ['$ref' => '#/components/schemas/DeviceConfigurationNativeOperation'],

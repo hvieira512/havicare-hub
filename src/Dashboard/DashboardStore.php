@@ -98,6 +98,11 @@ final class DashboardStore implements DashboardStoreContract
                     $record['ref'] = (string)($decoded['ref'] ?? '');
                 }
             }
+        } elseif (($record['protocol'] ?? '') === 'vivistar-iw' && !isset($record['ident'])) {
+            $bytes = DeviceCommandRecord::wireBytes($record);
+            if (preg_match('/^IWBP[A-Z0-9]{2},[^,]*,([^,#]+)/', $bytes, $matches) === 1) {
+                $record['ident'] = $matches[1];
+            }
         }
         $this->commands->recordCommand($imei, $id, $record);
     }
@@ -110,6 +115,16 @@ final class DashboardStore implements DashboardStoreContract
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
     {
         $this->commands->markLatestCommand($imei, $nativeType, $fields);
+    }
+
+    public function markCommand(string $imei, string $id, array $fields): void
+    {
+        $this->commands->markCommand($imei, $id, $fields);
+    }
+
+    public function isCurrentOperation(string $operationId): bool
+    {
+        return $this->commands->isCurrentOperation($operationId);
     }
 
     public function markCommandReply(

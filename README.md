@@ -133,15 +133,14 @@ Generic device configuration is read through `GET /api/devices/{imei}` and updat
 - `model`: supplier/model metadata.
 - `configuration`: summary counters for supported versus stored configuration entries.
 - `configurations`: current generic desired values keyed by capability name. These entries contain values only.
+- `effectiveConfigurations`: values confirmed as effective by the device contract.
+- `configurationSync`: revisioned desired/effective convergence and native delivery operations, grouped by capability section.
 - `capabilities`: supported capabilities grouped by section. Writable entries contain the current example/value and all UI metadata in `_meta`.
-- `pending`: normalized configuration entries whose desired state still differs from the last reported state from the device.
-- `transportPending`: raw queued transport downlinks still waiting in Redis because the device was offline.
 
 Important semantics:
 
 - `capabilities` always reflects what the model supports and what the API can accept, not only what is currently stored or acknowledged by the device.
-- `pending` exists to show which normalized configuration values are still waiting for device confirmation or have diverged from the last reported state.
-- `transportPending` is lower-level transport state. It does not replace `pending`.
+- `configurationSync` distinguishes delivery, acknowledgement, confirmation, failure, and supersession. Redis queue details are internal transport state.
 - Public capability entries never expose protocol-native identity. Generic identity, section, and protocol support come from `CapabilityCatalog`; supplier command catalogs are transport-only.
 
 Writable capability sections are:
@@ -221,8 +220,8 @@ Successful configuration updates return:
 - `results`: changed generic capability keys, each with `operations[]`
 - `results[].operations[].nativeKey`: explicit protocol-native identity used for that delivery operation
 - `configurations`: complete current generic values
-- `pending`
-- `transportPending`
+- `effectiveConfigurations`
+- `configurationSync`
 
 ## Telemetry Requests
 

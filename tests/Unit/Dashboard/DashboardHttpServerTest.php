@@ -703,10 +703,11 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         );
         self::assertArrayNotHasKey('blood_pressure', $body['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('auto_vitals_interval', $body['capabilities']['health'] ?? []);
-        self::assertSame('never_reported', $body['pending']['contacts']['call_whitelist']['status'] ?? null);
-        self::assertSame('never_reported', $body['pending']['contacts']['whitelist_enabled']['status'] ?? null);
-        self::assertSame('never_reported', $body['pending']['settings_system']['device_password']['status'] ?? null);
-        self::assertSame([], $body['transportPending'] ?? null);
+        self::assertSame('never_reported', $body['configurationSync']['entries']['contacts']['call_whitelist']['status'] ?? null);
+        self::assertSame('never_reported', $body['configurationSync']['entries']['contacts']['whitelist_enabled']['status'] ?? null);
+        self::assertSame('never_reported', $body['configurationSync']['entries']['settings_system']['device_password']['status'] ?? null);
+        self::assertArrayNotHasKey('pending', $body);
+        self::assertArrayNotHasKey('transportPending', $body);
     }
 
     public function testDeviceDetailAndGenericConfigurationPutExposeNewPendingShape(): void
@@ -756,8 +757,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(200, $put->getStatusCode(), (string)$put->getBody());
         self::assertCount(1, $submitted);
         self::assertStringContainsString('BP76', $submitted[0]['bytes']);
-        self::assertSame('waiting_device', $putBody['pending']['alarms']['fall_detection']['status'] ?? null);
-        self::assertSame('cfg:BP76', $putBody['transportPending'][0]['dedupeKey'] ?? null);
+        self::assertSame('awaiting_ack', $putBody['configurationSync']['entries']['alarms']['fall_detection']['status'] ?? null);
+        self::assertArrayNotHasKey('transportPending', $putBody);
 
         $detail = $server(new ServerRequest(
             'GET',
@@ -771,8 +772,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ['value' => ['enabled' => true], '_meta' => []],
             $detailBody['capabilities']['alarms']['fall_detection'] ?? null
         );
-        self::assertSame('waiting_device', $detailBody['pending']['alarms']['fall_detection']['status'] ?? null);
-        self::assertSame('cfg:BP76', $detailBody['transportPending'][0]['dedupeKey'] ?? null);
+        self::assertSame('awaiting_ack', $detailBody['configurationSync']['entries']['alarms']['fall_detection']['status'] ?? null);
+        self::assertArrayNotHasKey('transportPending', $detailBody);
     }
 
     public function testDeviceDetailExposesTakePillsMetaForFourPTouch(): void

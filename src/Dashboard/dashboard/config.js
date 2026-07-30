@@ -41,6 +41,30 @@ const CONFIG_SECTION_ORDER = [
 ];
 
 const CONFIGURATION_DELIVERY_META = {
+    pending_delivery: {
+        label: "Em envio",
+        className: "text-bg-warning",
+        tone: "warning",
+        message: "O valor está guardado no Hub e aguarda entrega ao dispositivo.",
+    },
+    awaiting_ack: {
+        label: "A aguardar",
+        className: "text-bg-warning",
+        tone: "warning",
+        message: "O valor foi enviado e aguarda resposta do dispositivo.",
+    },
+    confirmation_unavailable: {
+        label: "Não verificável",
+        className: "text-bg-warning",
+        tone: "warning",
+        message: "O dispositivo confirmou a receção, mas este comando não permite verificar o valor efetivo.",
+    },
+    confirmed: {
+        label: "Aplicado",
+        className: "text-bg-success",
+        tone: "success",
+        message: "",
+    },
     waiting_device: {
         label: "A aguardar",
         className: "text-bg-warning",
@@ -480,7 +504,7 @@ export function renderDeviceConfigurationRoot(context) {
         configurations = {},
         capabilities = {},
         capabilityCatalog = [],
-        pending = {},
+        configurationSync = {entries: {}},
         supplier = "",
         model = "",
         disabled = false,
@@ -555,7 +579,7 @@ export function renderDeviceConfigurationRoot(context) {
                                 : resolveConfigStored(entry, rowsByKey);
                             const delivery = entry.requestOnly
                                 ? null
-                                : resolveConfigDelivery(entry, pending);
+                                : resolveConfigDelivery(entry, configurationSync);
                             const uiState = uiByKey[entry.key] || null;
                             return renderConfigSection(
                                 protocol,
@@ -748,13 +772,13 @@ function resolveConfigStored(entry, rowsByKey) {
     return Object.keys(rowsByKey[entry.key] || {}).length > 0;
 }
 
-function resolveConfigDelivery(entry, pending) {
+function resolveConfigDelivery(entry, configurationSync) {
     const key = String(entry.capabilityKey || entry.key || "");
     if (key === "") {
         return null;
     }
 
-    for (const section of Object.values(pending || {})) {
+    for (const section of Object.values(configurationSync?.entries || {})) {
         if (
             section
             && typeof section === "object"

@@ -146,7 +146,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('const CONFIGURATION_DELIVERY_META = {', $source);
         self::assertStringContainsString('retry_exhausted:', $source);
         self::assertStringContainsString('O último valor está guardado no Hub, mas não foi aplicado pelo dispositivo.', $source);
-        self::assertStringContainsString('resolveConfigDelivery(entry, pending)', $source);
+        self::assertStringContainsString('resolveConfigDelivery(entry, configurationSync)', $source);
         self::assertStringContainsString('renderConfigurationDeliveryNotice(deliveryMeta, delivery)', $source);
         self::assertStringContainsString('phonebook: (entry, desired, meta) => contactsInput(entry, desired, meta),', $source);
         self::assertStringContainsString('data-sos-contact-phone', $source);
@@ -162,7 +162,10 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('getCapabilities as apiGetCapabilities', $bootstrap);
         self::assertStringContainsString('entry.capabilityKey', $bootstrap);
         self::assertStringContainsString('enabledCapKeys.includes(entry.capabilityKey)', $bootstrap);
-        self::assertStringContainsString('pending: state.deviceModal.pending', $bootstrap);
+        self::assertStringContainsString(
+            'configurationSync: state.deviceModal.configurationSync',
+            $bootstrap
+        );
         self::assertStringContainsString('onCommandsUpdated: syncDeviceModalCommandStates', $bootstrap);
         self::assertStringContainsString(
             'Valor guardado no Hub e enviado. A aguardar confirmação do dispositivo.',

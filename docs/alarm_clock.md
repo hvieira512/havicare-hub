@@ -198,8 +198,8 @@ The `PATCH` response confirms what was accepted and queued:
 - `status`
 - `results`
 - `configurations`
-- `pending`
-- `transportPending`
+- `effectiveConfigurations`
+- `configurationSync`
 
 Example:
 
@@ -226,24 +226,31 @@ Example:
       }
     ]
   },
-  "pending": {
-    "alarms": {
-      "alarm_clock": {
-        "status": "waiting_device",
-        "desired": [
-          {
-            "time": "11:11",
-            "enabled": true,
-            "type": 2,
-            "recurrence": {
-              "kind": "once"
+  "effectiveConfigurations": {},
+  "configurationSync": {
+    "status": "pending",
+    "hasUnconfirmedChanges": true,
+    "pendingCount": 1,
+    "failedCount": 0,
+    "entries": {
+      "alarms": {
+        "alarm_clock": {
+          "status": "awaiting_ack",
+          "desiredRevision": 1,
+          "desired": [
+            {
+              "time": "11:11",
+              "enabled": true,
+              "type": 2,
+              "recurrence": {
+                "kind": "once"
+              }
             }
-          }
-        ]
+          ]
+        }
       }
     }
-  },
-  "transportPending": []
+  }
 }
 ```
 
@@ -251,8 +258,8 @@ Example:
 
 - `results[*].key` is supplier-native and may be `reminders` or `alarmClock`
 - `configurations` is the normalized state shown back in the UI
-- `pending` shows whether the device has acknowledged the change
-- `transportPending` is for queued transport-level commands
+- `configurationSync` shows the desired revision and whether delivery, acknowledgement, or confirmation is still outstanding
+- `effectiveConfigurations` contains only values the device contract has confirmed
 
 ## Practical flow
 
@@ -262,7 +269,7 @@ Example:
 4. Render configuration forms from `capabilities.alarms`, `capabilities.contacts`, `capabilities.health`, and `capabilities.settings_system`
 5. Pre-fill the alarm editor from `configurations.alarm_clock`
 6. If the user changes alarms, send `PATCH /api/devices/{imei}/configurations`
-7. Refresh the device detail and use `pending` to show whether the update is still waiting on the device
+7. Refresh the device detail and use `configurationSync` to show whether the update is still waiting on the device
 
 ## Key rule
 

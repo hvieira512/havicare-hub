@@ -66,21 +66,21 @@ final class DeviceConfigurationRepository
         if ($this->exists($imei, $key, $nativeKey)) {
             $stmt = $this->pdo->prepare('
                 UPDATE device_configurations
-                SET protocol = ?, supplier = ?, model = ?, command = ?, desired_payload = ?, last_status = ?, last_command_id = ?, desired_updated_at = ?, applied_at = ?
+                SET protocol = ?, supplier = ?, model = ?, command = ?, desired_payload = ?, last_status = ?, last_command_id = ?, desired_updated_at = ?
                 WHERE imei = ? AND config_key = ? AND native_key = ?
             ');
-            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $now, $imei, $key, $nativeKey]);
+            $stmt->execute([$protocol, $supplier, $model, $command, $encoded, $status, $commandId, $now, $imei, $key, $nativeKey]);
             return;
         }
 
         $stmt = $this->pdo->prepare('
             INSERT INTO device_configurations (
                 imei, config_key, native_key, protocol, supplier, model, command, desired_payload, reported_payload,
-                last_status, last_command_id, desired_updated_at, applied_at
+                last_status, last_command_id, desired_updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$imei, $key, $nativeKey, $protocol, $supplier, $model, $command, $encoded, '{}', $status, $commandId, $now, $now]);
+        $stmt->execute([$imei, $key, $nativeKey, $protocol, $supplier, $model, $command, $encoded, '{}', $status, $commandId, $now]);
     }
 
     public function markApplyStatus(string $imei, string $key, string $status, string $commandId = ''): void
@@ -88,12 +88,13 @@ final class DeviceConfigurationRepository
         $nativeKey = trim($key);
         $key = $this->normalizeConfigKey($nativeKey);
         $now = gmdate('Y-m-d\TH:i:s\Z');
-        $stmt = $this->pdo->prepare('
+        $stmt = $this->pdo->prepare("
             UPDATE device_configurations
-            SET last_status = ?, last_command_id = ?, applied_at = ?
+            SET last_status = ?, last_command_id = ?,
+                applied_at = IF(? = 'acked', ?, applied_at)
             WHERE imei = ? AND config_key = ? AND native_key = ?
-        ');
-        $stmt->execute([$status, $commandId, $now, $imei, $key, $nativeKey]);
+        ");
+        $stmt->execute([$status, $commandId, $status, $now, $imei, $key, $nativeKey]);
     }
 
     public function saveReported(

@@ -74,8 +74,8 @@ fi
 
 device="$(curl -s -H "Authorization: Bearer $api_token" "http://127.0.0.1:8081/api/devices/$IMEI")"
 printf '%s' "$device" > "$SCENARIO_DIR/dashboard-device.json"
-if ! printf '%s' "$device" | grep -q '"transportPending"'; then
-  scenario_fail "dashboard_failure" "device detail did not include transportPending"
+if ! printf '%s' "$device" | grep -q '"configurationSync"'; then
+  scenario_fail "dashboard_failure" "device detail did not include configurationSync"
 fi
 if ! printf '%s' "$device" | grep -q '"blood_oxygen"'; then
   scenario_fail "dashboard_failure" "device detail did not include queued generic request state"

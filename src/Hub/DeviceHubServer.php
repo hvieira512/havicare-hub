@@ -147,13 +147,13 @@ class DeviceHubServer
     /**
      * @return 'sent'|'queued'|'dropped'
      */
-    public function submitDownlink(string $imei, string $bytes): string
+    public function submitDownlink(string $imei, string $bytes, ?array $context = null): string
     {
         if ($this->sendDownlink($imei, $bytes)) {
             return 'sent';
         }
 
-        return $this->queueDownlink($imei, $bytes) ? 'queued' : 'dropped';
+        return $this->queueDownlink($imei, $bytes, $context) ? 'queued' : 'dropped';
     }
 
     public function reportDownlinkDropped(string $imei, string $reason, ?string $bytes = null): void
@@ -186,7 +186,7 @@ class DeviceHubServer
         }
     }
 
-    public function queueDownlink(string $imei, string $bytes): bool
+    public function queueDownlink(string $imei, string $bytes, ?array $context = null): bool
     {
         if ($this->downlinkQueue === null) {
             $this->reportDownlinkDropped($imei, 'device_offline', $bytes);
@@ -194,7 +194,7 @@ class DeviceHubServer
         }
 
         $metadata = $this->authorizer->metadataFor($imei);
-        $command = $this->commandMetadata($bytes);
+        $command = array_merge($this->commandMetadata($bytes) ?? [], $context ?? []);
         $commercialName = (string)($metadata['commercialName'] ?? '');
 
         try {
@@ -384,11 +384,29 @@ class DeviceHubServer
 
         foreach ($pending as $downlink) {
             try {
+                $operationId = is_array($downlink->command) ? (string)($downlink->command['operationId'] ?? '') : '';
+                if (
+                    $operationId !== ''
+                    && $this->dashboardStore !== null
+                    && !$this->dashboardStore->isCurrentOperation($operationId)
+                ) {
+                    $this->dashboardStore->markCommand($session->imei, $operationId, [
+                        'status' => 'superseded',
+                        'error' => '',
+                    ]);
+                    $this->downlinkQueue->remove($downlink);
+                    continue;
+                }
                 if (!$this->sendDownlink($session->imei, $downlink->bytes)) {
                     continue;
                 }
                 $nativeType = is_array($downlink->command) ? (string)($downlink->command['nativeType'] ?? '') : '';
-                if ($nativeType !== '') {
+                if ($operationId !== '') {
+                    $this->dashboardStore?->markCommand($session->imei, $operationId, [
+                        'status' => 'waiting',
+                        'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                    ]);
+                } elseif ($nativeType !== '') {
                     $this->dashboardStore?->markLatestCommand($session->imei, $nativeType, [
                         'status' => 'waiting',
                         'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z'),

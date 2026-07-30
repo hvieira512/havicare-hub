@@ -30,10 +30,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072905_normalize_contact_capabilities',
             '2026073001_rename_four_p_touch_whitelist_switch',
             '2026073002_canonicalize_four_p_touch_contact_slots',
+            '2026073003_configuration_lifecycle',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(14, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(15, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS
