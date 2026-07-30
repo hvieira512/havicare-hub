@@ -174,8 +174,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $response['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
         self::assertSame(10, $response['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null);
-        self::assertSame(10, $response['capabilities']['contacts']['call_whitelist']['_meta']['name']['maxLength'] ?? null);
-        self::assertSame(20, $response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
+        self::assertArrayNotHasKey(
+            'maxLength',
+            $response['capabilities']['contacts']['call_whitelist']['_meta']['name'] ?? []
+        );
+        self::assertArrayNotHasKey(
+            'maxLength',
+            $response['capabilities']['contacts']['call_whitelist']['_meta']['phone'] ?? []
+        );
         self::assertTrue($response['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertTrue($response['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
         self::assertArrayNotHasKey('_nativeKey', $response['capabilities']['contacts']['whitelist_enabled']);

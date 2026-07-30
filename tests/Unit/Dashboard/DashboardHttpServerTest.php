@@ -686,8 +686,14 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             $body['capabilities']['contacts']['call_whitelist']['value'] ?? null
         );
         self::assertSame(10, $body['capabilities']['contacts']['call_whitelist']['_meta']['limit'] ?? null);
-        self::assertSame(10, $body['capabilities']['contacts']['call_whitelist']['_meta']['name']['maxLength'] ?? null);
-        self::assertSame(20, $body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['maxLength'] ?? null);
+        self::assertArrayNotHasKey(
+            'maxLength',
+            $body['capabilities']['contacts']['call_whitelist']['_meta']['name'] ?? []
+        );
+        self::assertArrayNotHasKey(
+            'maxLength',
+            $body['capabilities']['contacts']['call_whitelist']['_meta']['phone'] ?? []
+        );
         self::assertTrue($body['capabilities']['contacts']['call_whitelist']['_meta']['phone']['asciiOnly'] ?? false);
         self::assertTrue($body['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
         self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['contacts']['whitelist_enabled']);

@@ -129,7 +129,7 @@ final class CallWhitelistCapability implements CapabilityContract
         }
 
         return array_replace_recursive(
-            ['limit' => 10, 'name' => ['maxLength' => 10], 'phone' => ['maxLength' => 20, 'asciiOnly' => true]],
+            ['limit' => 10, 'phone' => ['asciiOnly' => true]],
             $accumulatedMeta,
         );
     }
