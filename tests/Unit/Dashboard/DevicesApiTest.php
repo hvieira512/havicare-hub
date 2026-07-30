@@ -1470,7 +1470,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'Vivistar',
             'L08 Pro',
             'BP14',
-            ['contacts' => [['name' => 'Ana', 'phone' => '+351911111111']]]
+            ['contacts' => [['name' => 'Bruno', 'phone' => '+351922222222']]]
         );
 
         $response = $api->updateConfigurations('861265061009822', json_encode([
@@ -1489,6 +1489,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('861265061009822', $submitted[0]['imei']);
         self::assertStringContainsString('BP76', $submitted[0]['bytes']);
         self::assertStringContainsString('BP14', $submitted[1]['bytes']);
+        self::assertStringContainsString(
+            '0041006E0061|+351911111111',
+            $submitted[1]['bytes']
+        );
+        self::assertStringNotContainsString('|Ana|+351911111111', $submitted[1]['bytes']);
         self::assertCount(2, $response['results'] ?? []);
         self::assertSame('fall_detection', $response['results'][0]['key'] ?? null);
         self::assertSame('fallDetection', $response['results'][0]['operations'][0]['nativeKey'] ?? null);

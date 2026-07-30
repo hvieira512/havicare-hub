@@ -55,7 +55,10 @@ final class CallWhitelistCapability implements CapabilityContract
     public function toNative(string $protocol, mixed $value): array
     {
         return match ($protocol) {
-            'vivistar-iw' => ['call_whitelist' => self::encodeVivistarContacts($value)],
+            // Keep the persisted native payload structured. The Vivistar payload
+            // builder is the single place that serializes contacts as
+            // UTF-16BE(name)|phone for BP14.
+            'vivistar-iw' => ['call_whitelist' => ['contacts' => self::normalizeContactsList($value)]],
             'four-p-touch' => $this->fourPTouch->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist"),
         };
@@ -217,25 +220,6 @@ final class CallWhitelistCapability implements CapabilityContract
         }
 
         return ['name' => $name, 'phone' => $phone];
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function encodeVivistarContacts(mixed $value): array
-    {
-        $contacts = self::normalizeContactsList($value);
-        $fields = [];
-        foreach (array_slice($contacts, 0, 10) as $contact) {
-            $name = trim((string)($contact['name'] ?? ''));
-            $phone = trim((string)($contact['phone'] ?? ''));
-            if ($phone === '') {
-                continue;
-            }
-            $fields[] = $name !== '' ? "{$name}|{$phone}" : "|{$phone}";
-        }
-
-        return array_pad($fields, 10, '');
     }
 
 }

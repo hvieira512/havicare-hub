@@ -69,7 +69,7 @@ final class VivistarPayloadBuilder extends ConfigurationPayloadBuilder
                 if ($phone === '') {
                     throw new \InvalidArgumentException('phone is required');
                 }
-                $fields[] = $name !== '' ? "{$name}|{$phone}" : "|{$phone}";
+                $fields[] = $name !== '' ? self::utf16Hex($name) . "|{$phone}" : "|{$phone}";
                 continue;
             }
             $phone = trim((string)$contact);

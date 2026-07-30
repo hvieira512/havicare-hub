@@ -96,7 +96,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
 
         self::assertSame('BP14', $payload['command']);
-        self::assertSame(['HAVICARE|+351278710140', '', '', '', '', '', '', '', '', ''], $payload['payload']['fields'] ?? []);
+        self::assertSame(
+            ['00480041005600490043004100520045|+351278710140', '', '', '', '', '', '', '', '', ''],
+            $payload['payload']['fields'] ?? []
+        );
     }
 
     public function testVivistarAutoHealthMeasurementAcceptsZeroMinutesWhenDisabled(): void
