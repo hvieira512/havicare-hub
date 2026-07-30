@@ -1652,7 +1652,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $response['configurations']['medication_reminders']['reminderSettings'] ?? null);
         self::assertSame(0, $response['configurations']['medication_reminders']['number'] ?? null);
         self::assertCount(1, $submitted);
-        self::assertStringContainsString('TAKEPILLS,,0,,]', $submitted[0]['bytes']);
+        self::assertStringContainsString('TAKEPILLS,00:00-0-1,1,,]', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchPreservesStoredTakePillsVoiceWhenOmitted(): void

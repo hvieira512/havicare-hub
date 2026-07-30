@@ -883,10 +883,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
 
         self::assertSame('TAKEPILLS', $payload['command']);
-        self::assertSame(['', '0', '', ''], $payload['payload']['fields'] ?? []);
+        self::assertSame(['00:00-0-1', '1', '', ''], $payload['payload']['fields'] ?? []);
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('TAKEPILLS,,0,,]', $wire);
+        self::assertStringContainsString('TAKEPILLS,00:00-0-1,1,,]', $wire);
     }
 
     public function testFourPTouchSosNumber1BuildsNativeFields(): void

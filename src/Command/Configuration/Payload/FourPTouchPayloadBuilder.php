@@ -73,8 +73,9 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         if ($number === 0) {
-            // Keep the four-parameter frame and encode an empty plan with count zero.
-            return ['', '0', '', ''];
+            // TAKEPILLS only accepts 1-3 slots. Represent an empty generic plan
+            // with one disabled native slot so existing reminders are replaced.
+            return ['00:00-0-1', '1', '', ''];
         }
 
         $fields = [
