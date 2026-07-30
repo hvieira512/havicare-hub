@@ -156,8 +156,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
             'Selecione a escala de sensibilidade suportada pelo firmware (6 ou 8 níveis).',
             $source
         );
-        self::assertStringContainsString('fallSensitivityLevels: () => ({sensitivity: 5})', $source);
-        self::assertStringContainsString('<option value="" ${totalLevels === null ? "selected" : ""} disabled>Selecione…</option>', $source);
+        self::assertStringContainsString('fallSensitivityLevels: () => ({sensitivity: 5, levels: 8})', $source);
+        self::assertStringContainsString(': 8;', $source);
         self::assertStringContainsString('capabilityCatalog: state.deviceModal.capabilityCatalog', $bootstrap);
         self::assertStringContainsString('getCapabilities as apiGetCapabilities', $bootstrap);
         self::assertStringContainsString('entry.capabilityKey', $bootstrap);

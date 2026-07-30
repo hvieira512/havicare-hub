@@ -1757,6 +1757,38 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertStringContainsString('LSSET,4+6', $submitted[0]['bytes']);
     }
 
+    public function testConfigurationPatchDefaultsMissingFourPTouchFallSensitivityScaleToEight(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_sensitivity']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'fall_sensitivity' => [
+                    'sensitivity' => 6,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame('fallDownSensitivity', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
+        self::assertSame('[3G*1703215911*0009*LSSET,6+8]', $submitted[0]['bytes'] ?? null);
+        self::assertSame(
+            ['sensitivity' => 6, 'levels' => 8],
+            $response['configurations']['fall_sensitivity'] ?? null
+        );
+    }
+
     public function testConfigurationPatchAcceptsGenericCallWhitelistForFourPTouch(): void
     {
         $submitted = [];

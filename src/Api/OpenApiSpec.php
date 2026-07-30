@@ -1259,7 +1259,7 @@ class OpenApiSpec
                                 '_meta' => [],
                             ],
                             'fall_sensitivity' => [
-                                'value' => ['sensitivity' => 2],
+                                'value' => ['sensitivity' => 2, 'levels' => 8],
                                 '_meta' => [
                                     'sensitivity' => ['options' => [
                                         ['value' => 1, 'label' => 'Baixa'],

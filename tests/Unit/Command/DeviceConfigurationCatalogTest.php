@@ -1003,14 +1003,17 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['1', '0']], $payload['payload']);
     }
 
-    public function testFourPTouchFallDownSensitivityRequiresFirmwareScale(): void
+    public function testFourPTouchFallDownSensitivityDefaultsFirmwareScaleToEight(): void
     {
-        self::assertSame(
-            'levels is required and must match the firmware scale (6 or 8)',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'fallDownSensitivity', [
-                'sensitivity' => 5,
-            ])
-        );
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'fallDownSensitivity', [
+            'sensitivity' => 5,
+        ]);
+
+        self::assertSame('LSSET', $payload['command']);
+        self::assertSame(['fields' => ['5+8']], $payload['payload']);
+        self::assertNull(DeviceConfigurationCatalog::validate('four-p-touch', 'fallDownSensitivity', [
+            'sensitivity' => 5,
+        ]));
     }
 
     public function testFourPTouchHealthAutoMeasurementBuildsNativeFields(): void

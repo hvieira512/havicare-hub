@@ -494,10 +494,8 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     private static function fallDownSensitivity(array $payload): string
     {
         $level = self::positiveInt($payload['sensitivity'] ?? $payload['sensitivityLevel'] ?? null, 'sensitivity');
-        $totalLevelsValue = $payload['levels'] ?? $payload['totalLevels'] ?? null;
-        if ($totalLevelsValue === null || $totalLevelsValue === '') {
-            throw new \InvalidArgumentException('levels is required and must match the firmware scale (6 or 8)');
-        }
+        $totalLevelsValue = $payload['levels'] ?? $payload['totalLevels'] ?? 8;
+        $totalLevelsValue = $totalLevelsValue === '' ? 8 : $totalLevelsValue;
         $totalLevels = self::rangeInt($totalLevelsValue, 6, 8, 'levels');
         if (!in_array($totalLevels, [6, 8], true)) {
             throw new \InvalidArgumentException('levels must be 6 or 8');

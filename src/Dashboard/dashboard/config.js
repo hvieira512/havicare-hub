@@ -268,7 +268,7 @@ const CONFIG_INPUT_DEFAULTS = {
     wonlexBloodPressureWarning: () => ({switchState: true, hpWarn: 135, LPWarn: 90}),
     languageTimezone: () => ({preset: "0|0"}),
     dualToggle: () => ({enabled: true, callCenterOnFall: false}),
-    fallSensitivityLevels: () => ({sensitivity: 5}),
+    fallSensitivityLevels: () => ({sensitivity: 5, levels: 8}),
     timeRanges: () => ({ranges: ["08:10-09:30"]}),
     timeRange: () => ({range: "21:10-07:30"}),
     wonlexSleepSettings: () => ({
@@ -1551,7 +1551,7 @@ function fallSensitivityLevelsInput(desired) {
     const parsedTotalLevels = parseInt(String(desired.levels ?? ""), 10);
     const totalLevels = [6, 8].includes(parsedTotalLevels)
         ? parsedTotalLevels
-        : null;
+        : 8;
 
     const levels = [
         { label: "Máxima", icon: "fa-bolt", btnClass: "btn-outline-danger" },

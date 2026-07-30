@@ -118,7 +118,7 @@ final class FourPTouchGenericHandler
             'remove_watch_sms_alert' => ['removeWatchSmsAlerts' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
             'whitelist_enabled' => ['rejectUnknownCalls' => ['enabled' => self::requireBoolLikeValue($value, 'enabled')]],
             'fall_detection' => ['fallDownAlert' => self::requireObjectValue($value, 'fallDownAlert')],
-            'fall_sensitivity' => ['fallDownSensitivity' => self::requireObjectValue($value, 'fallDownSensitivity')],
+            'fall_sensitivity' => ['fallDownSensitivity' => $this->fallSensitivityPayload($value)],
             'auto_vitals_interval' => ['healthAutoMeasurement' => self::requireObjectValue($value, 'healthAutoMeasurement')],
             'sound_profile' => ['profile' => ['mode' => self::requireIntField($value, 'mode')]],
             'pedometer_schedule' => ['walkTime' => ['ranges' => self::requireListValue(is_array($value) && array_key_exists('ranges', $value) ? $value['ranges'] : $value, 'ranges')]],
@@ -132,6 +132,19 @@ final class FourPTouchGenericHandler
             'find_device' => ['findDeviceCommand' => []],
             default => throw new \InvalidArgumentException("Unsupported four-p-touch capability {$genericKey}"),
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fallSensitivityPayload(mixed $value): array
+    {
+        $payload = self::requireObjectValue($value, 'fallDownSensitivity');
+        if (!array_key_exists('levels', $payload) && !array_key_exists('totalLevels', $payload)) {
+            $payload['levels'] = 8;
+        }
+
+        return $payload;
     }
 
 }
