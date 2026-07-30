@@ -201,6 +201,26 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('call_whitelist', $response['capabilities']['contacts'] ?? []);
     }
 
+    public function testShowDoesNotLeakLegacyRedisDeviceFields(): void
+    {
+        [$api, , $store] = $this->makeApi();
+        $store->deviceSeen('861265061009822', [
+            'online' => '1',
+            'software' => 'null',
+            'sourceSystem' => 'legacy',
+            'sourceDeviceId' => 'legacy-device',
+        ]);
+
+        $response = $api->show('861265061009822');
+        $device = $response['device'] ?? [];
+
+        self::assertTrue($device['online'] ?? false);
+        self::assertNotSame('', $device['lastSeenAt'] ?? '');
+        self::assertArrayNotHasKey('software', $device);
+        self::assertArrayNotHasKey('sourceSystem', $device);
+        self::assertArrayNotHasKey('sourceDeviceId', $device);
+    }
+
     public function testShowReturnsVoerkaPagerCallCapabilitySupportWithoutStoredConfiguration(): void
     {
         [$api, $db, $store] = $this->makeApi();

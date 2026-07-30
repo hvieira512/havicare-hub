@@ -1717,7 +1717,25 @@ class DeviceService
     private function deviceSnapshot(string $imei): array
     {
         $device = $this->db->whitelist->getDevice($imei) ?? ['imei' => $imei];
-        $storeDevice = $this->store->device($imei);
+        $storeDevice = array_intersect_key(
+            $this->store->device($imei),
+            array_flip([
+                'imei',
+                'supplier',
+                'model',
+                'deviceType',
+                'licenseId',
+                'simNumber',
+                'deviceId',
+                'company',
+                'online',
+                'lastSeenAt',
+                'lastStateAt',
+                'protocol',
+                'transport',
+                'lastConnectionId',
+            ])
+        );
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $device = array_merge(
             $device,
