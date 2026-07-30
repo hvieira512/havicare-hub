@@ -668,10 +668,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
 
         self::assertSame('TAKEPILLS', $payload['command']);
-        self::assertSame(['11:25-1-2', '1', '006D006500640073'], $payload['payload']['fields'] ?? []);
+        self::assertSame(['11:25-1-2', '1', '006D006500640073', ''], $payload['payload']['fields'] ?? []);
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073]', $wire);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,]', $wire);
     }
 
     public function testFourPTouchTakePillsMapsToMedicationReminderCapability(): void
@@ -849,12 +849,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertSame('TAKEPILLS', $payload['command']);
         self::assertSame(
-            ['11:25-1-2-14:30-0-1-18:00-1-3-1010', '3', '006D006500640073'],
+            ['11:25-1-2-14:30-0-1-18:00-1-3-1010', '3', '006D006500640073', ''],
             $payload['payload']['fields'] ?? [],
         );
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073]', $wire);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073,]', $wire);
     }
 
     public function testFourPTouchTakePillsHandlesSingleReminderBackwardCompatible(): void
@@ -871,7 +871,22 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
 
         self::assertSame('TAKEPILLS', $payload['command']);
-        self::assertSame(['11:25-1-2', '1', '006D006500640073'], $payload['payload']['fields'] ?? []);
+        self::assertSame(['11:25-1-2', '1', '006D006500640073', ''], $payload['payload']['fields'] ?? []);
+    }
+
+    public function testFourPTouchTakePillsAllowsClearingAllReminders(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
+            'reminderSettings' => [],
+            'reminderText' => '',
+            'voiceData' => '',
+        ]);
+
+        self::assertSame('TAKEPILLS', $payload['command']);
+        self::assertSame(['', '0', '', ''], $payload['payload']['fields'] ?? []);
+
+        $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
+        self::assertStringContainsString('TAKEPILLS,,0,,]', $wire);
     }
 
     public function testFourPTouchSosNumber1BuildsNativeFields(): void

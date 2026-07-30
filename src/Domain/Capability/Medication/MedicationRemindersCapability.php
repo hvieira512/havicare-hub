@@ -10,7 +10,8 @@ use Hub\Domain\Capability\CapabilityHelpers;
  *
  * Maps to different native shapes per protocol:
  * - wonlex-json: { dnMedicationPlan: { plans: [...] } }
- * - four-p-touch: { takePills: { reminderSettings: [...], number, reminderText, voiceData } }
+ * - four-p-touch: { takePills: { reminderSettings: [...], reminderText, voiceData } }
+ *   The native `number` field is derived from reminderSettings.
  */
 final class MedicationRemindersCapability implements CapabilityContract
 {

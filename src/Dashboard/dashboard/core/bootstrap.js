@@ -14,6 +14,7 @@ import {
     catalogForProtocol,
     readConfigPayload,
     renderDeviceConfigurationRoot,
+    takePillsReminderGroup,
     wonlexMedicationPlanRow,
 } from "../config.js";
 import {
@@ -1228,6 +1229,18 @@ function handleDeviceConfigClick(event) {
         return;
     }
 
+    if (button.dataset.action === "addTakePillsReminder") {
+        appendTakePillsReminder(section);
+        return;
+    }
+
+    if (button.dataset.action === "removeTakePillsReminder") {
+        removeTakePillsReminder(
+            button.closest("[data-takepills-reminder-group]"),
+        );
+        return;
+    }
+
     if (button.dataset.action === "removeWonlexMedicationPlan") {
         removeWonlexMedicationPlan(
             button.closest('[data-repeat-row="wonlexMedicationPlan"]'),
@@ -1317,10 +1330,6 @@ function handleDeviceConfigChange(event) {
                 periodTime.value = "08:00";
             }
         }
-    }
-
-    if (event.target.matches('[data-config-field="number"]') && event.target.closest("[data-config-input=\"takePills\"]")) {
-        syncTakePillsGroupVisibility(section);
     }
 
     if (event.target.matches('[data-config-field="mode"]')) {
@@ -1558,19 +1567,6 @@ function syncTakePillsCustomVisibility(section) {
         if (wrapper) {
             wrapper.classList.toggle("d-none", frequency !== 3);
         }
-    });
-}
-
-function syncTakePillsGroupVisibility(section) {
-    const number =
-        parseInt(
-            section.querySelector('[data-config-field="number"]')?.value ?? "1",
-            10,
-        ) || 1;
-    const groups = section.querySelectorAll("[data-takepills-reminder-group]");
-    groups.forEach((group) => {
-        const idx = parseInt(group.dataset.takepillsReminderGroup, 10);
-        group.classList.toggle("d-none", idx >= number);
     });
 }
 
@@ -2217,6 +2213,69 @@ function appendWonlexMedicationPlan(section) {
         wonlexMedicationPlanRow({}, index),
     );
     renumberWonlexMedicationPlans(list);
+}
+
+function appendTakePillsReminder(section) {
+    const list = section.querySelector("[data-takepills-reminders-list]");
+    if (!list) return;
+
+    const limit = parseInt(list.dataset.repeatLimit || "3", 10) || 3;
+    const index = list.querySelectorAll(
+        "[data-takepills-reminder-group]",
+    ).length;
+    if (index >= limit) return;
+
+    list.insertAdjacentHTML(
+        "beforeend",
+        takePillsReminderGroup(
+            {time: "08:00", enabled: true, frequency: 1, custom: ""},
+            index,
+            [
+                {value: 1, label: "Uma vez"},
+                {value: 2, label: "Diariamente"},
+                {value: 3, label: "Personalizado"},
+            ],
+        ),
+    );
+    syncTakePillsRows(section);
+}
+
+function removeTakePillsReminder(row) {
+    const section = row?.closest("[data-config-section]");
+    if (!row || !section) return;
+
+    row.remove();
+    syncTakePillsRows(section);
+}
+
+function syncTakePillsRows(section) {
+    const list = section.querySelector("[data-takepills-reminders-list]");
+    if (!list) return;
+
+    const rows = list.querySelectorAll("[data-takepills-reminder-group]");
+    rows.forEach((row, index) => {
+        row.dataset.takepillsReminderGroup = String(index);
+        const number = row.querySelector("[data-takepills-reminder-number]");
+        if (number) {
+            number.textContent = `Lembrete ${index + 1}`;
+        }
+        row.querySelectorAll("[data-takepills-index]").forEach((field) => {
+            field.dataset.takepillsIndex = String(index);
+        });
+        const custom = row.querySelector("[data-takepills-custom-wrapper]");
+        if (custom) {
+            custom.dataset.takepillsCustomWrapper = String(index);
+        }
+    });
+
+    const limit = parseInt(list.dataset.repeatLimit || "3", 10) || 3;
+    const addButton = section.querySelector(
+        '[data-action="addTakePillsReminder"]',
+    );
+    if (addButton) {
+        addButton.disabled = rows.length >= limit;
+    }
+    syncTakePillsCustomVisibility(section);
 }
 
 function removeWonlexMedicationPlan(row) {

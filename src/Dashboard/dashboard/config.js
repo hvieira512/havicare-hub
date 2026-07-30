@@ -321,12 +321,8 @@ const CONFIG_INPUT_DEFAULTS = {
     alarm_clock: () => ({items: []}),
     alarms: () => ({alarms: []}),
     takePills: () => ({
-        reminderSettings: [
-            {time: "08:00", enabled: true, frequency: 1, custom: ""},
-            {time: "09:00", enabled: true, frequency: 1, custom: ""},
-            {time: "10:00", enabled: true, frequency: 1, custom: ""},
-        ],
-        number: 1,
+        reminderSettings: [],
+        number: 0,
         reminderText: "",
         voiceData: "",
         voiceMimeType: "audio/webm",
@@ -1065,14 +1061,12 @@ function readTakePills(section) {
     const groups = Array.from(
         section.querySelectorAll("[data-takepills-reminder-group]"),
     );
-    const number = readNumber(section, "number");
+    const number = groups.length;
     const voiceEnabled = readCheckbox(section, "voiceEnabled");
     const voiceData = readText(section, "voiceData");
     const voiceMimeType = readText(section, "voiceMimeType");
 
-    const reminderSettings = groups
-        .slice(0, number)
-        .map((group) => {
+    const reminderSettings = groups.map((group) => {
             const frequency =
                 parseInt(
                     String(
@@ -1098,8 +1092,8 @@ function readTakePills(section) {
                               '[data-takepills-field="reminderCustom"]',
                           )?.value || ""
                         : "",
-            };
-        });
+        };
+    });
 
     const payload = {
         reminderSettings,
@@ -2009,8 +2003,6 @@ function alarmsInput(desired, meta = {}) {
 }
 
 function takePillsInput(desired, meta = {}) {
-    const reminderSettingsList = normalizeTakePillsReminderSettings(desired);
-    const reminderNumber = parseInt(String(desired.number ?? 1), 10) || 1;
     const reminderText = String(desired.reminderText || "");
     const voiceData = String(desired.voiceData || "");
     const voiceMimeType = String(desired.voiceMimeType || "audio/webm");
@@ -2019,64 +2011,64 @@ function takePillsInput(desired, meta = {}) {
     const previewSrc = takePillsVoicePreviewSrc(voiceData, voiceMimeType);
     const frequencyOptions = takePillsFrequencyOptions(meta);
     const numberLimit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
-
-    while (reminderSettingsList.length < numberLimit) {
-        reminderSettingsList.push({
-            time: "08:00",
-            enabled: true,
-            frequency: 1,
-            custom: "",
-        });
-    }
+    const reminderSettingsList = normalizeTakePillsReminderSettings(desired)
+        .slice(0, numberLimit);
 
     return `
         <div class="vstack gap-3">
-            <div class="vstack gap-2" data-takepills-reminders-list>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <div class="fw-semibold">Horários</div>
+                    <div class="small text-secondary">Até ${esc(String(numberLimit))} lembretes.</div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addTakePillsReminder" ${reminderSettingsList.length >= numberLimit ? "disabled" : ""}>
+                    <i class="fa-solid fa-plus me-2"></i>Adicionar lembrete
+                </button>
+            </div>
+            <div class="vstack gap-2" data-takepills-reminders-list data-repeat-limit="${esc(String(numberLimit))}">
                 ${reminderSettingsList
                     .map(
-                        (rs, index) => takePillsReminderGroup(rs, index, frequencyOptions, index >= reminderNumber),
+                        (rs, index) => takePillsReminderGroup(rs, index, frequencyOptions),
                     )
                     .join("")}
             </div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label form-label-sm">N\u00famero</label>
-                    <input class="form-control" type="number" min="1" max="${esc(String(numberLimit))}" step="1" data-config-field="number" value="${esc(String(reminderNumber))}">
-                    <div class="form-text">M\u00e1ximo de ${esc(String(numberLimit))} lembretes.</div>
+            <div class="border rounded p-3 bg-body-tertiary vstack gap-3">
+                <div>
+                    <div class="fw-semibold">Mensagem do plano</div>
+                    <div class="small text-secondary">O protocolo 4P Touch aplica o mesmo texto e áudio a todos os horários.</div>
                 </div>
-                <div class="col-md-6">
+                <div>
                     <label class="form-label form-label-sm">Texto do lembrete</label>
                     <input class="form-control" type="text" data-config-field="reminderText" value="${esc(reminderText)}">
+                <div class="vstack gap-2" data-takepills-audio>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}>
+                        <label class="form-check-label" data-switch-label data-switch-on="\u00c1udio ligado" data-switch-off="\u00c1udio desligado">${voiceEnabled ? "\u00c1udio ligado" : "\u00c1udio desligado"}</label>
+                    </div>
+                    <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}>
+                    <input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}">
+                    <input type="hidden" data-config-field="voiceMimeType" value="${esc(voiceMimeType)}">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord">
+                            <i class="fa-solid fa-microphone me-2"></i>Gravar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop">
+                            <i class="fa-solid fa-stop me-2"></i>Parar
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear">
+                            <i class="fa-solid fa-trash-can me-2"></i>Limpar
+                        </button>
+                        <label class="btn btn-outline-secondary btn-sm mb-0">
+                            <i class="fa-solid fa-file-audio me-2"></i>Carregar
+                            <input type="file" class="d-none" accept="audio/*" data-action="takePillsFile">
+                        </label>
+                        <span class="small text-secondary" data-takepills-status>
+                            ${voiceEnabled ? (hasVoiceData ? "\u00c1udio carregado" : "Sem \u00e1udio") : "\u00c1udio desligado"}
+                        </span>
+                    </div>
+                    <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(previewSrc)}"` : ""}></audio>
+                    </fieldset>
                 </div>
-            </div>
-            <div class="vstack gap-2" data-takepills-audio>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}>
-                    <label class="form-check-label" data-switch-label data-switch-on="\u00c1udio ligado" data-switch-off="\u00c1udio desligado">${voiceEnabled ? "\u00c1udio ligado" : "\u00c1udio desligado"}</label>
-                </div>
-                <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}>
-                <input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}">
-                <input type="hidden" data-config-field="voiceMimeType" value="${esc(voiceMimeType)}">
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord">
-                        <i class="fa-solid fa-microphone me-2"></i>Gravar
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop">
-                        <i class="fa-solid fa-stop me-2"></i>Parar
-                    </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear">
-                        <i class="fa-solid fa-trash-can me-2"></i>Limpar
-                    </button>
-                    <label class="btn btn-outline-secondary btn-sm mb-0">
-                        <i class="fa-solid fa-file-audio me-2"></i>Carregar
-                        <input type="file" class="d-none" accept="audio/*" data-action="takePillsFile">
-                    </label>
-                    <span class="small text-secondary" data-takepills-status>
-                        ${voiceEnabled ? (hasVoiceData ? "\u00c1udio carregado" : "Sem \u00e1udio") : "\u00c1udio desligado"}
-                    </span>
-                </div>
-                <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(previewSrc)}"` : ""}></audio>
-                </fieldset>
             </div>
         </div>`;
 }
@@ -2712,11 +2704,17 @@ function formatFourPTouchAlarmTime(value) {
     return raw;
 }
 
-function takePillsReminderGroup(settings, index, frequencyOptions, hidden) {
+export function takePillsReminderGroup(settings, index, frequencyOptions) {
     const freqValue = parseInt(String(settings.frequency ?? 1), 10) || 1;
     const customVisible = freqValue === 3;
     return `
-        <div class="border rounded p-3 bg-body ${hidden ? "d-none" : ""}" data-takepills-reminder-group="${index}">
+        <div class="border rounded p-3 bg-body" data-takepills-reminder-group="${index}">
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                <span class="small fw-semibold" data-takepills-reminder-number>Lembrete ${index + 1}</span>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeTakePillsReminder" aria-label="Remover lembrete">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
             <div class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label form-label-sm">Hora</label>
@@ -2774,15 +2772,21 @@ function normalizeTakePillsReminderSettings(desired) {
         return [normalizeSingleTakePillsReminder(base)];
     }
 
-    return [
-        {
+    const hasLegacyReminder = [
+        "reminderTime",
+        "reminderEnabled",
+        "reminderFrequency",
+        "reminderCustom",
+    ].some((key) => Object.prototype.hasOwnProperty.call(desired || {}, key));
+    return hasLegacyReminder
+        ? [{
             time: String(desired?.reminderTime ?? "08:00"),
             enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true),
             frequency:
                 parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1,
             custom: String(desired?.reminderCustom ?? desired?.custom ?? ""),
-        },
-    ];
+        }]
+        : [];
 }
 
 function normalizeSingleTakePillsReminder(item) {

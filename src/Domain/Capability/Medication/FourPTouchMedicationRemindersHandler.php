@@ -18,7 +18,21 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
 
     public function toNative(mixed $value): array
     {
-        return ['takePills' => self::requireObjectValue($value, 'medication_reminders')];
+        $desired = self::requireObjectValue($value, 'medication_reminders');
+        $settings = $desired['reminderSettings'] ?? [];
+        if (is_string($settings)) {
+            $settings = $this->parseReminderSettings($settings);
+        } elseif (is_array($settings) && !array_is_list($settings)) {
+            $settings = [$settings];
+        }
+        if (!is_array($settings)) {
+            throw new \InvalidArgumentException('medication_reminders.reminderSettings must be a list');
+        }
+
+        $desired['reminderSettings'] = $settings;
+        $desired['number'] = count($settings);
+
+        return ['takePills' => $desired];
     }
 
     public function fromNative(array $desired): mixed
@@ -32,7 +46,7 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
 
         $value = [
             'reminderSettings' => $settings,
-            'number' => $desired['number'] ?? 1,
+            'number' => count($settings),
             'reminderText' => $desired['reminderText'] ?? '',
             'voiceData' => $desired['voiceData'] ?? '',
         ];
@@ -46,12 +60,8 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
     public function defaultValue(): mixed
     {
         return [
-            'reminderSettings' => [
-                ['time' => '08:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                ['time' => '09:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                ['time' => '10:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-            ],
-            'number' => 1,
+            'reminderSettings' => [],
+            'number' => 0,
             'reminderText' => '',
             'voiceData' => '',
             'voiceMimeType' => 'audio/webm',
@@ -65,6 +75,17 @@ final class FourPTouchMedicationRemindersHandler implements MedicationRemindersH
 
     public function merge(mixed $existing, mixed $incoming): mixed
     {
+        if (
+            is_array($incoming)
+            && array_key_exists('reminderSettings', $incoming)
+            && $incoming['reminderSettings'] === []
+        ) {
+            $incoming['number'] = 0;
+            $incoming['reminderText'] = $incoming['reminderText'] ?? '';
+            $incoming['voiceData'] = $incoming['voiceData'] ?? '';
+            $incoming['voiceMimeType'] = $incoming['voiceMimeType'] ?? '';
+        }
+
         return self::mergeAssociativeValues($existing, $incoming);
     }
 

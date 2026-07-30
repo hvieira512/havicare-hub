@@ -56,7 +56,12 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     private static function takePills(array $payload): array
     {
         $settings = $payload['reminderSettings'] ?? [];
+        $number = 0;
         if (array_is_list($settings)) {
+            $number = count($settings);
+            if ($number > 3) {
+                throw new \InvalidArgumentException('reminderSettings accepts at most 3 reminders');
+            }
             $parts = [];
             foreach ($settings as $setting) {
                 $parts[] = self::takePillsReminderSettings($setting);
@@ -64,20 +69,20 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             $reminderSettings = implode('-', $parts);
         } else {
             $reminderSettings = self::takePillsReminderSettings($settings);
+            $number = 1;
+        }
+
+        if ($number === 0) {
+            // Keep the four-parameter frame and encode an empty plan with count zero.
+            return ['', '0', '', ''];
         }
 
         $fields = [
             $reminderSettings,
-            self::rangeInt($payload['number'] ?? null, 1, 3, 'number'),
+            (string)$number,
             self::utf16Hex(self::requiredString($payload['reminderText'] ?? null, 'reminderText')),
+            self::takePillsVoiceData($payload['voiceData'] ?? '', $payload['voiceMimeType'] ?? null),
         ];
-
-        if (array_key_exists('voiceData', $payload)) {
-            $voiceData = self::takePillsVoiceData($payload['voiceData'], $payload['voiceMimeType'] ?? null);
-            if ($voiceData !== '') {
-                $fields[] = $voiceData;
-            }
-        }
 
         return $fields;
     }

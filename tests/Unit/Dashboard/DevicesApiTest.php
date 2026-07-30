@@ -711,7 +711,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                         'custom' => '1010',
                     ],
                 ],
-                'number' => 3,
+                'number' => 1,
                 'reminderText' => 'meds',
                 'voiceData' => 'QUJDRA==',
             ],
@@ -1620,7 +1620,39 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073', $submitted[0]['bytes']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,1,006D006500640073,]', $submitted[0]['bytes']);
+    }
+
+    public function testConfigurationPatchClearsAllFourPTouchTakePillsReminders(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $response = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'medication_reminders' => [
+                    'reminderSettings' => [],
+                    'reminderText' => '',
+                    'voiceData' => '',
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertSame([], $response['configurations']['medication_reminders']['reminderSettings'] ?? null);
+        self::assertSame(0, $response['configurations']['medication_reminders']['number'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('TAKEPILLS,,0,,]', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchPreservesStoredTakePillsVoiceWhenOmitted(): void
@@ -2187,7 +2219,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073]', $submitted[0]['bytes']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073,]', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchRejectsInvalidRequestWithoutConfigurations(): void

@@ -39,7 +39,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 8, 'label' => '8 níveis'],
                 ],
             ]),
-            $entry('takePills', 'TAKEPILLS', 'Lembrete de medicação com voz', 'takePills', ['reminderSettings', 'number', 'reminderText', 'voiceData'], ['TAKEPILLS'], 'alerts', 70, 3, [
+            $entry('takePills', 'TAKEPILLS', 'Lembrete de medicação com voz', 'takePills', ['reminderSettings', 'reminderText', 'voiceData'], ['TAKEPILLS'], 'alerts', 70, 3, [
                 'frequency' => [
                     ['value' => 1, 'label' => 'Uma vez'],
                     ['value' => 2, 'label' => 'Diariamente'],

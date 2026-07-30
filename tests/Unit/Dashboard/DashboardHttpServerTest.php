@@ -819,7 +819,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                         'custom' => '1010',
                     ],
                 ],
-                'number' => 3,
+                'number' => 1,
                 'reminderText' => 'meds',
                 'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
                 'voiceMimeType' => 'audio/wav',

@@ -190,6 +190,11 @@ final class DeviceRequestCardGroupingTest extends TestCase
         );
         self::assertStringContainsString('function readWonlexMedicationPlans(section)', $source);
         self::assertStringContainsString('function readWonlexWeather(section)', $source);
+        self::assertStringContainsString('data-action="addTakePillsReminder"', $source);
+        self::assertStringContainsString('data-action="removeTakePillsReminder"', $source);
+        self::assertStringContainsString('data-takepills-reminder-number', $source);
+        self::assertStringContainsString('appendTakePillsReminder(section)', $bootstrap);
+        self::assertStringContainsString('removeTakePillsReminder(', $bootstrap);
         self::assertStringContainsString('appendWonlexMedicationPlan(section)', $bootstrap);
         self::assertStringContainsString('[data-medication-period-time=', $bootstrap);
     }

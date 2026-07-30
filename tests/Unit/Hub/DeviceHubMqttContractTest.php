@@ -405,7 +405,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('downlink', $mqtt->raw[1][1]['direction'] ?? null);
         self::assertSame('text', $mqtt->raw[1][1]['debug']['encoding'] ?? null);
         self::assertStringStartsWith('[3G*7597567372*', $mqtt->raw[1][1]['debug']['payload'] ?? '');
-        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,3,006D006500640073,', $mqtt->raw[1][1]['debug']['payload'] ?? '');
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,1,006D006500640073,', $mqtt->raw[1][1]['debug']['payload'] ?? '');
         self::assertStringStartsWith('IyFBTVIK', $payload['payload']['fields'][3] ?? '');
     }
 
