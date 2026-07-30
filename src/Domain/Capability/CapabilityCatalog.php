@@ -310,7 +310,7 @@ final class CapabilityCatalog
             'locationInterval' => 'location_reporting_interval',
             'workingMode' => 'working_mode',
             'wonlexCallInLimitSwitch' => 'whitelist_enabled',
-            'whitelistSwitch' => 'whitelist_enabled',
+            'rejectUnknownCalls', 'whitelistSwitch', 'callInRestriction' => 'whitelist_enabled',
             'whitelist_enabled' => 'whitelist_enabled',
             'resetCommand' => 'reset_device',
             'restartCommand' => 'restart_device',

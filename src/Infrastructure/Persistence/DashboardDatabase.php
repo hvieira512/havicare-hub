@@ -15,6 +15,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026072902EnumCapabilitySect
 use Hub\Infrastructure\Persistence\Migration\Version2026072903RestrictHw20ProHealthRequests;
 use Hub\Infrastructure\Persistence\Migration\Version2026072904RemoveUnsupportedWonlexReports;
 use Hub\Infrastructure\Persistence\Migration\Version2026072905NormalizeContactCapabilities;
+use Hub\Infrastructure\Persistence\Migration\Version2026073001RenameFourPTouchWhitelistSwitch;
 use PDO;
 
 final class DashboardDatabase
@@ -71,6 +72,7 @@ final class DashboardDatabase
             new Version2026072903RestrictHw20ProHealthRequests(),
             new Version2026072904RemoveUnsupportedWonlexReports(),
             new Version2026072905NormalizeContactCapabilities(),
+            new Version2026073001RenameFourPTouchWhitelistSwitch(),
         ]))->run();
     }
 }

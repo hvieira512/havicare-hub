@@ -1137,6 +1137,49 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testFourPTouchWhitelistEnabledUsesDocumentedRejectUnknownCallsCommand(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['whitelist_enabled']);
+        $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1, '', '7597567372', 'havicare');
+
+        $disabled = $api->updateConfigurations('637507597567372', json_encode([
+            'configurations' => [
+                'whitelist_enabled' => ['enabled' => false],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $disabled['status'] ?? null);
+        self::assertSame('rejectUnknownCalls', $disabled['results'][0]['operations'][0]['nativeKey'] ?? null);
+        self::assertCount(1, $submitted);
+        self::assertStringContainsString('DEVREFUSEPHONESWITCH,0]', $submitted[0]['bytes']);
+        $afterDisable = $api->show('637507597567372');
+        self::assertFalse($afterDisable['configurations']['whitelist_enabled']['enabled'] ?? true);
+        self::assertFalse($afterDisable['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? true);
+
+        $enabled = $api->updateConfigurations('637507597567372', json_encode([
+            'configurations' => [
+                'whitelist_enabled' => ['enabled' => true],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $enabled['status'] ?? null);
+        self::assertCount(2, $submitted);
+        self::assertStringContainsString('DEVREFUSEPHONESWITCH,1]', $submitted[1]['bytes']);
+        $afterEnable = $api->show('637507597567372');
+        self::assertTrue($afterEnable['configurations']['whitelist_enabled']['enabled'] ?? false);
+        self::assertTrue($afterEnable['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? false);
+    }
+
     public function testShowMapsVivistarEmptyDaysToOnceRecurrence(): void
     {
         [$api, $db, $store] = $this->makeApi();

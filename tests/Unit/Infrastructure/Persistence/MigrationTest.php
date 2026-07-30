@@ -28,10 +28,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072903_restrict_hw20pro_health_requests',
             '2026072904_remove_unsupported_wonlex_reports',
             '2026072905_normalize_contact_capabilities',
+            '2026073001_rename_four_p_touch_whitelist_switch',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(12, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(13, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS

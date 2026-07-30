@@ -57,10 +57,7 @@ final class WhitelistEnabledCapability implements CapabilityContract
                 ],
             ],
             'four-p-touch' => [
-                'whitelistSwitch' => [
-                    'enabled' => self::requireBoolLikeField($value, 'enabled'),
-                ],
-                'callInRestriction' => [
+                'rejectUnknownCalls' => [
                     'enabled' => self::requireBoolLikeField($value, 'enabled'),
                 ],
             ],

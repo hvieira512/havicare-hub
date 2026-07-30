@@ -75,7 +75,6 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 6, 'label' => 'Sab'],
                 ],
             ]),
-            $entry('whitelistSwitch', 'WHITELISTSWITCH', 'Lista branca ativa', 'toggle', ['enabled'], ['WHITELISTSWITCH'], 'contacts', 35),
             $entry('phonebook', 'PHB', 'Lista telefónica', 'contacts', ['contacts'], ['PHB', 'PHB2'], 'contacts', 55, 5),
             $entry('profile', 'profile', 'Perfil de som', 'soundProfile', ['mode'], ['profile'], 'system', 55, null, [
                 'mode' => [
@@ -85,7 +84,7 @@ final class FourPTouchConfigurationDefinitions
                     ['value' => 4, 'label' => 'Silêncio'],
                 ],
             ]),
-            $entry('callInRestriction', 'DEVREFUSEPHONESWITCH', 'Restrição de chamadas', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'system', 25),
+            $entry('rejectUnknownCalls', 'DEVREFUSEPHONESWITCH', 'Lista branca ativa', 'toggle', ['enabled'], ['DEVREFUSEPHONESWITCH'], 'contacts', 35),
         ];
     }
 }

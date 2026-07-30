@@ -231,6 +231,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('call_whitelist', GenericModelCapabilityCatalog::mapConfigurationKey('call_whitelist'));
         self::assertSame('sos_contacts', GenericModelCapabilityCatalog::mapConfigurationKey('SOSNumber'));
         self::assertSame('whitelist_enabled', GenericModelCapabilityCatalog::mapConfigurationKey('whitelistSwitch'));
+        self::assertSame('whitelist_enabled', GenericModelCapabilityCatalog::mapConfigurationKey('rejectUnknownCalls'));
 
         $config = DeviceConfigurationCatalog::configForProtocol('vivistar-iw', 'call_whitelist');
         self::assertIsArray($config);
@@ -773,7 +774,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         yield 'device status' => ['deviceStatus', 'deviceStatus'];
         yield 'device password' => ['device_password', 'devicePassword'];
         yield 'language timezone' => ['language_timezone', 'languageTimezone'];
-        yield 'whitelist enabled' => ['whitelist_enabled', 'whitelistSwitch'];
+        yield 'whitelist enabled' => ['whitelist_enabled', 'rejectUnknownCalls'];
         yield 'sound profile' => ['sound_profile', 'profile'];
         yield 'do not disturb' => ['do_not_disturb', 'doNotDisturb'];
     }
@@ -1303,13 +1304,13 @@ final class DeviceConfigurationCatalogTest extends TestCase
         );
     }
 
-    public function testFourPTouchCallInRestrictionBuildsNativeFields(): void
+    public function testFourPTouchRejectUnknownCallsBuildsNativeFields(): void
     {
-        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'callInRestriction', ['enabled' => true]);
+        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'rejectUnknownCalls', ['enabled' => true]);
         self::assertSame('DEVREFUSEPHONESWITCH', $on['command']);
         self::assertSame(['fields' => ['1']], $on['payload']);
 
-        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'callInRestriction', ['enabled' => false]);
+        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'rejectUnknownCalls', ['enabled' => false]);
         self::assertSame(['fields' => ['0']], $off['payload']);
     }
 

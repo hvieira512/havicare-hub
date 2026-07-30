@@ -17,15 +17,12 @@ final class WhitelistEnabledCapabilityTest extends TestCase
         );
     }
 
-    public function testFourPTouchKeepsWhitelistSwitchAsNativeKey(): void
+    public function testFourPTouchUsesRejectUnknownCallsAsNativeKey(): void
     {
         $capability = new WhitelistEnabledCapability();
 
         self::assertSame(
-            [
-                'whitelistSwitch' => ['enabled' => true],
-                'callInRestriction' => ['enabled' => true],
-            ],
+            ['rejectUnknownCalls' => ['enabled' => true]],
             $capability->toNative('four-p-touch', ['enabled' => true])
         );
     }
