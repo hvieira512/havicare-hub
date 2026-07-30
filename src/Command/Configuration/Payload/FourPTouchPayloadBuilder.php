@@ -143,9 +143,11 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('voiceData must be base64 audio');
         }
 
-        return self::transcodeAudioToAmr(
-            $binary,
-            $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm'
+        return self::encodeFramedBinary(
+            self::transcodeAudioToAmr(
+                $binary,
+                $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm'
+            )
         );
     }
 
@@ -209,6 +211,19 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         // Keep tests and environments without ffmpeg working by emitting a
         // deterministic AMR-like payload instead of failing the whole request.
         return "#!AMR\n" . substr(hash('sha256', $audioBytes, true), 0, 8);
+    }
+
+    private static function encodeFramedBinary(string $binary): string
+    {
+        // Binary fields share the bracketed 4P Touch wire framing. Stuff bytes
+        // that would otherwise be interpreted as frame or field delimiters.
+        return strtr($binary, [
+            "\x7D" => "\x7D\x01",
+            "\x5B" => "\x7D\x02",
+            "\x5D" => "\x7D\x03",
+            "\x2C" => "\x7D\x04",
+            "\x2A" => "\x7D\x05",
+        ]);
     }
 
     private static function runProcess(array $command): array
