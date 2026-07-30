@@ -43,6 +43,7 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         );
         self::assertSame(1, $first['revision']);
         self::assertTrue($db->configurationLifecycle->isCurrentOperation('op-one'));
+        self::assertTrue($db->configurationLifecycle->updateOperation('op-one', 'acked'));
 
         $second = $db->configurationLifecycle->stage(
             '861728087056333',
@@ -54,6 +55,12 @@ final class DeviceConfigurationLifecycleRepositoryTest extends MysqlDashboardTes
         self::assertSame(2, $second['revision']);
         self::assertFalse($db->configurationLifecycle->isCurrentOperation('op-one'));
         self::assertFalse($db->configurationLifecycle->updateOperation('op-one', 'acked'));
+        $oldStatus = $database->pdo()->query("
+            SELECT delivery_status
+            FROM device_configuration_operations
+            WHERE operation_id = 'op-one'
+        ")->fetchColumn();
+        self::assertSame('acked', $oldStatus);
         self::assertTrue($db->configurationLifecycle->updateOperation('op-two', 'acked'));
 
         $current = $db->configurationLifecycle->currentForImei('861728087056333');

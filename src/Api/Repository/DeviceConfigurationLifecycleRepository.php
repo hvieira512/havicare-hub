@@ -49,7 +49,7 @@ final class DeviceConfigurationLifecycleRepository
                 SET operation_row.delivery_status = 'superseded',
                     operation_row.updated_at = ?
                 WHERE change_row.imei = ? AND change_row.config_key = ?
-                  AND operation_row.delivery_status NOT IN ('acknowledged', 'failed', 'superseded')
+                  AND operation_row.delivery_status NOT IN ('acked', 'failed', 'superseded')
             ");
             $supersedeOps->execute([$now, $imei, $genericKey]);
 
