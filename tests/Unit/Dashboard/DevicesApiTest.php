@@ -1939,6 +1939,46 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    public function testConfigurationPatchClearsExistingSosContactsForFourPTouch(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
+            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+            return 'sent';
+        });
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('4P Touch', 'D46');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
+        $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
+
+        $initial = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'sos_contacts' => ['123456789'],
+            ],
+        ], JSON_THROW_ON_ERROR));
+        self::assertSame('ok', $initial['status'] ?? null);
+
+        $cleared = $api->updateConfigurations('868017032159118', json_encode([
+            'configurations' => [
+                'sos_contacts' => [],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $cleared['status'] ?? null);
+        self::assertCount(3, $cleared['results'][0]['operations'] ?? []);
+        self::assertSame('[3G*1703215911*0004*SOS1]', $submitted[1]['bytes'] ?? null);
+        self::assertSame('[3G*1703215911*0004*SOS2]', $submitted[2]['bytes'] ?? null);
+        self::assertSame('[3G*1703215911*0004*SOS3]', $submitted[3]['bytes'] ?? null);
+
+        $detail = $api->show('868017032159118');
+        self::assertSame([], $detail['configurations']['sos_contacts'] ?? null);
+        self::assertSame([], $detail['capabilities']['contacts']['sos_contacts']['value'] ?? null);
+        self::assertSame([], $detail['pending']['contacts']['sos_contacts']['desired'] ?? null);
+    }
+
     public function testConfigurationPatchRejectsFourPTouchAlarmClockType(): void
     {
         [$api, $db] = $this->makeApi();

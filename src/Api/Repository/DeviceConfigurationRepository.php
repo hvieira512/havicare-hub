@@ -21,7 +21,31 @@ final class DeviceConfigurationRepository
         ');
         $stmt->execute([$imei]);
 
-        return array_map([$this, 'normalizeRow'], $stmt->fetchAll());
+        $latestByNativeKey = [];
+        foreach (array_map([$this, 'normalizeRow'], $stmt->fetchAll()) as $row) {
+            $identity = implode("\0", [
+                trim((string)($row['protocol'] ?? '')),
+                trim((string)($row['native_key'] ?? $row['config_key'] ?? '')),
+            ]);
+            $existing = $latestByNativeKey[$identity] ?? null;
+            if ($existing === null || $this->isNewerRow($row, $existing)) {
+                $latestByNativeKey[$identity] = $row;
+            }
+        }
+
+        $rows = array_values($latestByNativeKey);
+        usort($rows, static function (array $left, array $right): int {
+            foreach (['desired_updated_at', 'reported_at', 'config_key', 'native_key'] as $key) {
+                $comparison = strcmp((string)($left[$key] ?? ''), (string)($right[$key] ?? ''));
+                if ($comparison !== 0) {
+                    return $comparison;
+                }
+            }
+
+            return 0;
+        });
+
+        return $rows;
     }
 
     public function saveDesired(
@@ -123,10 +147,6 @@ final class DeviceConfigurationRepository
             return $key;
         }
 
-        if (in_array($key, ['whitelistGroup1', 'whitelistGroup2', 'sosNumber1', 'sosNumber2', 'sosNumber3'], true)) {
-            return $key;
-        }
-
         return CapabilityCatalog::normalizeStoredCapabilityKey($key) ?? $key;
     }
 
@@ -149,5 +169,30 @@ final class DeviceConfigurationRepository
         $row['reported_payload'] = json_decode((string)($row['reported_payload'] ?? '{}'), true) ?: [];
 
         return $row;
+    }
+
+    private function isNewerRow(array $candidate, array $existing): bool
+    {
+        $candidateTimestamp = $this->rowTimestamp($candidate);
+        $existingTimestamp = $this->rowTimestamp($existing);
+        if ($candidateTimestamp !== $existingTimestamp) {
+            return strcmp($candidateTimestamp, $existingTimestamp) > 0;
+        }
+
+        $nativeKey = trim((string)($candidate['native_key'] ?? $candidate['config_key'] ?? ''));
+        $canonicalKey = $this->normalizeConfigKey($nativeKey);
+        $candidateIsCanonical = (string)($candidate['config_key'] ?? '') === $canonicalKey;
+        $existingIsCanonical = (string)($existing['config_key'] ?? '') === $canonicalKey;
+
+        return $candidateIsCanonical && !$existingIsCanonical;
+    }
+
+    private function rowTimestamp(array $row): string
+    {
+        return max(
+            (string)($row['desired_updated_at'] ?? ''),
+            (string)($row['reported_at'] ?? ''),
+            (string)($row['applied_at'] ?? '')
+        );
     }
 }

@@ -29,10 +29,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026072904_remove_unsupported_wonlex_reports',
             '2026072905_normalize_contact_capabilities',
             '2026073001_rename_four_p_touch_whitelist_switch',
+            '2026073002_canonicalize_four_p_touch_contact_slots',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(13, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(14, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS
@@ -234,6 +235,47 @@ final class MigrationTest extends MysqlDashboardTestCase
             ['imei', 'config_key', 'native_key'],
             $this->primaryKeyColumns($pdo, 'device_configurations')
         );
+    }
+
+    public function testFourPTouchContactSlotMigrationKeepsNewestCanonicalRow(): void
+    {
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+        $insert = $pdo->prepare('
+            INSERT INTO device_configurations (
+                imei, config_key, native_key, protocol, supplier, model, command,
+                desired_payload, reported_payload, last_status, last_command_id,
+                desired_updated_at, reported_at, applied_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ');
+        $insert->execute([
+            '868017032159118', 'sos_contacts', 'sosNumber1', 'four-p-touch', '4P Touch', 'D46', 'SOS1',
+            '{"phone":"123456789"}', '{}', 'acked', 'old', '2026-07-01T08:00:00Z', '', '2026-07-01T08:00:01Z',
+        ]);
+        $insert->execute([
+            '868017032159118', 'sosNumber1', 'sosNumber1', 'four-p-touch', '4P Touch', 'D46', 'SOS1',
+            '{"phone":""}', '{}', 'acked', 'new', '2026-07-02T08:00:00Z', '', '2026-07-02T08:00:01Z',
+        ]);
+        $pdo->exec("
+            DELETE FROM schema_migrations
+            WHERE version = '2026073002_canonicalize_four_p_touch_contact_slots'
+        ");
+
+        $this->reopenDashboardDatabase($this->databaseName($pdo));
+        $rows = $pdo->query("
+            SELECT config_key, native_key, desired_payload, last_command_id
+            FROM device_configurations
+            WHERE imei = '868017032159118'
+              AND native_key = 'sosNumber1'
+        ")->fetchAll();
+
+        self::assertSame([[
+            'config_key' => 'sos_contacts',
+            'native_key' => 'sosNumber1',
+            'desired_payload' => '{"phone":""}',
+            'last_command_id' => 'new',
+        ]], $rows);
     }
 
     public function testMigratedLegacySchemaMatchesFreshSchemaStructure(): void
