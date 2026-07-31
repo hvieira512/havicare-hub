@@ -23,6 +23,21 @@ class Config
         $downlinkQueueTtl = $downlinkQueueTtlRaw === false || trim((string)$downlinkQueueTtlRaw) === ''
             ? 300
             : max(1, (int)$downlinkQueueTtlRaw);
+        $locationResolutionEnabledEnv = getenv('LOCATION_RESOLUTION_ENABLED');
+        $locationResolutionEnabledRaw = strtolower(trim((string)(
+            $locationResolutionEnabledEnv === false || trim((string)$locationResolutionEnabledEnv) === ''
+                ? 'true'
+                : $locationResolutionEnabledEnv
+        )));
+        $locationResolutionEnabled = in_array($locationResolutionEnabledRaw, ['1', 'true', 'yes', 'on'], true);
+        $beaconDbCacheTtlEnv = getenv('BEACONDB_CACHE_TTL_SECONDS');
+        $beaconDbCacheTtl = $beaconDbCacheTtlEnv === false || trim((string)$beaconDbCacheTtlEnv) === ''
+            ? 300
+            : max(0, (int)$beaconDbCacheTtlEnv);
+        $beaconDbFailureCacheTtlEnv = getenv('BEACONDB_FAILURE_CACHE_TTL_SECONDS');
+        $beaconDbFailureCacheTtl = $beaconDbFailureCacheTtlEnv === false || trim((string)$beaconDbFailureCacheTtlEnv) === ''
+            ? 60
+            : max(0, (int)$beaconDbFailureCacheTtlEnv);
 
         return new self([
             'tcp_ingress' => [
@@ -44,6 +59,15 @@ class Config
             'hub' => [
                 'downlink_queue_ttl_seconds' => $downlinkQueueTtl,
                 'whitelist_file' => getenv('WHITELIST_FILE') ?: '',
+            ],
+            'location_resolution' => [
+                'enabled' => $locationResolutionEnabled,
+                'endpoint' => getenv('BEACONDB_ENDPOINT') ?: 'https://api.beacondb.net/v1/geolocate',
+                'user_agent' => getenv('BEACONDB_USER_AGENT') ?: 'HaviCare Devices Hub/1.0',
+                'timeout_seconds' => max(0.1, (float)(getenv('BEACONDB_TIMEOUT_SECONDS') ?: 5.0)),
+                'max_accuracy_meters' => max(0.0, (float)(getenv('BEACONDB_MAX_ACCURACY_METERS') ?: 5000.0)),
+                'cache_ttl_seconds' => $beaconDbCacheTtl,
+                'failure_cache_ttl_seconds' => $beaconDbFailureCacheTtl,
             ],
             'ncs' => [
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),

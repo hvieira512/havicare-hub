@@ -3,6 +3,7 @@
 namespace Hub;
 
 use Hub\Log\Logger;
+use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Protocol\AdapterRegistry;
 use Hub\Registry\Whitelist;
@@ -20,6 +21,7 @@ class DeviceHubServer
     private ?PendingDownlinkQueue $downlinkQueue;
     private ?DashboardStoreContract $dashboardStore;
     private int $downlinkQueueTtlSeconds;
+    private ?LocationTelemetryEnricherContract $locationTelemetryEnricher;
 
     public function __construct(
         Whitelist $whitelist,
@@ -32,6 +34,7 @@ class DeviceHubServer
         ?PendingDownlinkQueue $downlinkQueue = null,
         ?DashboardStoreContract $dashboardStore = null,
         int $downlinkQueueTtlSeconds = 300,
+        ?LocationTelemetryEnricherContract $locationTelemetryEnricher = null,
     ) {
         $this->connections = $connections ?? new ConnectionRegistry();
         $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist, $commercialModelResolver);
@@ -46,6 +49,7 @@ class DeviceHubServer
         );
         $this->downlinkQueue = $downlinkQueue;
         $this->downlinkQueueTtlSeconds = max(1, $downlinkQueueTtlSeconds);
+        $this->locationTelemetryEnricher = $locationTelemetryEnricher;
     }
 
     public function onOpen(ConnectionInterface $conn): void
@@ -321,21 +325,40 @@ class DeviceHubServer
         );
 
         foreach ($message->telemetry as $event) {
-            try {
-                $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
-                $company = $this->currentCompany($session->imei, $session->company);
-                $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
-                $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
-                    $event,
-                    ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
-                ));
-            } catch (\Throwable $e) {
-                $this->mqtt->logPublishFailure('hub', $session->imei, $e);
+            if (($event['type'] ?? null) === 'location' && $this->locationTelemetryEnricher !== null) {
+                $this->locationTelemetryEnricher->enrich($event)->then(
+                    fn (array $enriched): bool => $this->publishTelemetryEvent($session, $enriched),
+                    function (\Throwable $error) use ($session, $event): bool {
+                        Logger::channel('hub')->warning(
+                            "Location resolution failed IMEI={$session->imei}: {$error->getMessage()}"
+                        );
+                        return $this->publishTelemetryEvent($session, $event);
+                    }
+                );
+            } else {
+                $this->publishTelemetryEvent($session, $event);
             }
         }
 
         foreach ($message->responses as $response) {
             $this->sendWatchResponse($session, $response, $conn, $connectionId);
+        }
+    }
+
+    private function publishTelemetryEvent(DeviceSession $session, array $event): bool
+    {
+        try {
+            $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
+            $company = $this->currentCompany($session->imei, $session->company);
+            $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
+            $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
+                $event,
+                ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
+            ));
+            return true;
+        } catch (\Throwable $e) {
+            $this->mqtt->logPublishFailure('hub', $session->imei, $e);
+            return false;
         }
     }
 

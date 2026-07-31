@@ -30,6 +30,7 @@ use React\Http\Middleware\RequestBodyParserMiddleware;
 use React\Http\Middleware\StreamingRequestMiddleware;
 use React\EventLoop\Loop;
 use React\Http\HttpServer as ReactHttpServer;
+use React\Http\Browser;
 use React\Socket\SocketServer;
 
 Bootstrap::loadEnv(__DIR__ . '/..');
@@ -41,6 +42,7 @@ $databaseConfig = $config['database'] ?? [];
 $dashboardConfig = $config['dashboard'] ?? [];
 $ncsConfig = $config['ncs'] ?? [];
 $qinglanstConfig = $config['qinglanst'] ?? [];
+$locationResolutionConfig = $config['location_resolution'] ?? [];
 $downlinkQueueTtlSeconds = (int)($config['hub']['downlink_queue_ttl_seconds'] ?? 300);
 
 $mqttHost = trim((string)($mqttConfig['host'] ?? ''));
@@ -108,13 +110,30 @@ $mqttBridge = new HubMqttBridge(
     $topicPrefix,
     static fn (): MqttClient => $buildMqttClient('pub')
 );
+$locationTelemetryEnricher = null;
+if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
+    $beaconDbClient = new Hub\Location\BeaconDbAsyncClient(
+        new Browser(),
+        (string)($locationResolutionConfig['endpoint'] ?? 'https://api.beacondb.net/v1/geolocate'),
+        (string)($locationResolutionConfig['user_agent'] ?? 'HaviCare Devices Hub/1.0'),
+        (float)($locationResolutionConfig['timeout_seconds'] ?? 5.0),
+    );
+    $locationTelemetryEnricher = new Hub\Location\BeaconDbTelemetryEnricher(
+        new Hub\Location\BeaconDbRequestBuilder(),
+        $beaconDbClient->resolve(...),
+        (float)($locationResolutionConfig['max_accuracy_meters'] ?? 5000.0),
+        (int)($locationResolutionConfig['cache_ttl_seconds'] ?? 300),
+        (int)($locationResolutionConfig['failure_cache_ttl_seconds'] ?? 60),
+    );
+}
 $hubServer = new DeviceHubServer(
     $whitelist,
     $mqttBridge,
     $commercialModelResolver,
     downlinkQueue: $downlinkQueue,
     dashboardStore: $dashboardStore,
-    downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds
+    downlinkQueueTtlSeconds: $downlinkQueueTtlSeconds,
+    locationTelemetryEnricher: $locationTelemetryEnricher,
 );
 $downlink = null;
 $ncsIngress = null;

@@ -12,7 +12,11 @@ use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Whitelist;
 use Hub\ConnectionInterface;
 use Hub\Dashboard\DashboardStoreContract;
+use Hub\Location\BeaconDbRequestBuilder;
+use Hub\Location\BeaconDbTelemetryEnricher;
 use PHPUnit\Framework\TestCase;
+
+use function React\Promise\resolve;
 
 final class DeviceHubMqttContractTest extends TestCase
 {
@@ -423,6 +427,61 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertStringStartsWith('IWBP00,', $connection->sent[0]);
         self::assertStringEndsWith('#', $connection->sent[0]);
         self::assertSame('IWBP49#', $connection->sent[1]);
+    }
+
+    public function testNonGpsLocationIsPublishedWithResolvedCoordinatesInsideData(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $enricher = new BeaconDbTelemetryEnricher(
+            new BeaconDbRequestBuilder(),
+            static fn () => resolve([
+                'httpStatus' => 200,
+                'body' => [
+                    'location' => ['lat' => 41.69176, 'lng' => -8.831533],
+                    'accuracy' => 300,
+                ],
+            ]),
+        );
+        $hub = new DeviceHubServer(
+            new Whitelist($this->whitelistPath),
+            $mqtt,
+            locationTelemetryEnricher: $enricher,
+        );
+        $connection = new ContractFakeConnection(12);
+        $adapter = new WonlexAdapter();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'login',
+            'imei' => '868705080300697',
+            'data' => ['deviceModel' => 'HW20PRO'],
+        ]));
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'upLocation',
+            'imei' => '868705080300697',
+            'data' => [
+                'baseStationType' => 0,
+                'positionDataType' => 1,
+                'baseStation' => [[
+                    'mcc' => 268,
+                    'mnc' => 3,
+                    'lac' => 180,
+                    'cellId' => 194809015,
+                ]],
+                'Wifi' => [
+                    ['ssid' => 'One', 'mac' => 'dc:fe:23:b8:31:73', 'signal' => -44],
+                    ['ssid' => 'Two', 'mac' => 'dc:fe:23:36:57:4d', 'signal' => -47],
+                ],
+            ],
+        ]));
+
+        $location = $mqtt->telemetry[array_key_last($mqtt->telemetry)][1];
+        self::assertSame('location', $location['type']);
+        self::assertArrayNotHasKey('coordinates', $location);
+        self::assertTrue($location['data']['hasCoordinates']);
+        self::assertSame(41.69176, $location['data']['lat']);
+        self::assertSame(-8.831533, $location['data']['lon']);
+        self::assertSame(300.0, $location['data']['accuracyMeters']);
     }
 
     private function sampleWavBase64(): string
