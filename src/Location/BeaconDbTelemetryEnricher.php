@@ -5,26 +5,27 @@ namespace Hub\Location;
 use React\Promise\PromiseInterface;
 
 use function React\Promise\resolve;
-use function React\Promise\reject;
 
 final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContract
 {
-    private \Closure $resolver;
-
-    /** @var array<string, array{expiresAt: float, coordinates: null|array<string, float|bool>}> */
-    private array $cache = [];
+    private LocationProviderContract $provider;
+    private LocationResolutionCacheContract $cache;
 
     /** @var array<string, PromiseInterface<array{httpStatus: int, body: array<string, mixed>}>> */
     private array $pending = [];
 
     public function __construct(
         private readonly BeaconDbRequestBuilder $requestBuilder,
-        callable $resolver,
+        LocationProviderContract|callable $provider,
         private readonly float $maxAccuracyMeters = 500.0,
-        private readonly int $cacheTtlSeconds = 300,
+        private readonly int $cacheTtlSeconds = 86400,
         private readonly int $failureCacheTtlSeconds = 60,
+        ?LocationResolutionCacheContract $cache = null,
     ) {
-        $this->resolver = \Closure::fromCallable($resolver);
+        $this->provider = $provider instanceof LocationProviderContract
+            ? $provider
+            : new CallbackLocationProvider($provider);
+        $this->cache = $cache ?? new ArrayLocationResolutionCache();
     }
 
     public function enrich(array $telemetry): PromiseInterface
@@ -46,21 +47,20 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         }
 
         $key = $this->cacheKey($request);
-        $cached = $this->cache[$key] ?? null;
-        if ($cached !== null && $cached['expiresAt'] >= microtime(true)) {
-            return resolve($cached['coordinates'] === null
-                ? $unresolvedTelemetry
-                : $this->withCoordinates($telemetry, $cached['coordinates']));
+        $cached = $this->cacheGet($key);
+        if (($cached['status'] ?? null) === 'unresolved') {
+            return resolve($unresolvedTelemetry);
         }
-        unset($this->cache[$key]);
+        if (($cached['status'] ?? null) === 'resolved' && is_array($cached['coordinates'] ?? null)) {
+            return resolve($this->withCoordinates($telemetry, $cached['coordinates']));
+        }
 
         try {
-            $promise = $this->pending[$key] ?? ($this->resolver)($request);
+            $promise = $this->pending[$key] ?? $this->provider->resolve($request);
         } catch (\Throwable $error) {
-            return reject($error);
-        }
-        if (!$promise instanceof PromiseInterface) {
-            return reject(new \RuntimeException('BeaconDB resolver must return a promise'));
+            $this->cacheUnresolved($key);
+            $this->logFailure($unresolvedTelemetry, $error);
+            return resolve($unresolvedTelemetry);
         }
         $this->pending[$key] = $promise;
 
@@ -68,12 +68,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
             function (array $response) use ($telemetry, $key): array {
                 unset($this->pending[$key]);
                 $coordinates = $this->coordinates($response);
-                if ($this->cacheTtlSeconds > 0) {
-                    $this->cache[$key] = [
-                        'expiresAt' => microtime(true) + $this->cacheTtlSeconds,
-                        'coordinates' => $coordinates,
-                    ];
-                }
+                $this->cacheResolved($key, $coordinates);
 
                 return $this->withCoordinates($telemetry, $coordinates);
             }
@@ -81,16 +76,8 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
             null,
             function (\Throwable $error) use ($key, $unresolvedTelemetry): array {
                 unset($this->pending[$key]);
-                if ($this->failureCacheTtlSeconds > 0) {
-                    $this->cache[$key] = [
-                        'expiresAt' => microtime(true) + $this->failureCacheTtlSeconds,
-                        'coordinates' => null,
-                    ];
-                }
-                $imei = (string)($unresolvedTelemetry['device']['id'] ?? 'unknown');
-                \Hub\Log\Logger::channel('hub')->warning(
-                    "Location resolution failed IMEI={$imei}: {$error->getMessage()}"
-                );
+                $this->cacheUnresolved($key);
+                $this->logFailure($unresolvedTelemetry, $error);
                 return $unresolvedTelemetry;
             }
         );
@@ -134,6 +121,50 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         }
 
         return hash('sha256', json_encode($identity, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    }
+
+    private function cacheGet(string $key): ?array
+    {
+        try {
+            return $this->cache->get($key);
+        } catch (\Throwable $error) {
+            $this->logCacheFailure('read', $error);
+            return null;
+        }
+    }
+
+    /** @param array<string, float|bool> $coordinates */
+    private function cacheResolved(string $key, array $coordinates): void
+    {
+        try {
+            $this->cache->putResolved($key, $coordinates, $this->cacheTtlSeconds);
+        } catch (\Throwable $error) {
+            $this->logCacheFailure('write', $error);
+        }
+    }
+
+    private function cacheUnresolved(string $key): void
+    {
+        try {
+            $this->cache->putUnresolved($key, $this->failureCacheTtlSeconds);
+        } catch (\Throwable $error) {
+            $this->logCacheFailure('write', $error);
+        }
+    }
+
+    private function logFailure(array $telemetry, \Throwable $error): void
+    {
+        $imei = (string)($telemetry['device']['id'] ?? 'unknown');
+        \Hub\Log\Logger::channel('hub')->warning(
+            "Location resolution failed IMEI={$imei} provider={$this->provider->name()}: {$error->getMessage()}"
+        );
+    }
+
+    private function logCacheFailure(string $operation, \Throwable $error): void
+    {
+        \Hub\Log\Logger::channel('hub')->warning(
+            "Location resolution cache {$operation} failed: {$error->getMessage()}"
+        );
     }
 
     private function withoutUntrustedCoordinates(array $telemetry): array

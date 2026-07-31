@@ -6,6 +6,7 @@ namespace Tests\Unit\Location;
 
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
+use Hub\Location\ArrayLocationResolutionCache;
 use PHPUnit\Framework\TestCase;
 
 use function React\Promise\resolve;
@@ -95,6 +96,39 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         $enricher->enrich($this->nonGpsTelemetry());
 
         self::assertSame(1, $calls);
+    }
+
+    public function testSharedCacheSurvivesEnricherRecreation(): void
+    {
+        $calls = 0;
+        $cache = new ArrayLocationResolutionCache();
+        $resolver = function () use (&$calls) {
+            $calls++;
+            return resolve([
+                'httpStatus' => 200,
+                'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
+            ]);
+        };
+        $first = new BeaconDbTelemetryEnricher(
+            new BeaconDbRequestBuilder(),
+            $resolver,
+            cache: $cache,
+        );
+        $first->enrich($this->nonGpsTelemetry());
+
+        $second = new BeaconDbTelemetryEnricher(
+            new BeaconDbRequestBuilder(),
+            $resolver,
+            cache: $cache,
+        );
+        $result = null;
+        $second->enrich($this->nonGpsTelemetry())->then(function (array $value) use (&$result): void {
+            $result = $value;
+        });
+
+        self::assertSame(1, $calls);
+        self::assertTrue($result['data']['hasCoordinates']);
+        self::assertSame(41.7, $result['data']['lat']);
     }
 
     public function testCacheIdentityIgnoresSignalChangesAndEvidenceOrder(): void

@@ -32,12 +32,17 @@ class Config
         $locationResolutionEnabled = in_array($locationResolutionEnabledRaw, ['1', 'true', 'yes', 'on'], true);
         $beaconDbCacheTtlEnv = getenv('BEACONDB_CACHE_TTL_SECONDS');
         $beaconDbCacheTtl = $beaconDbCacheTtlEnv === false || trim((string)$beaconDbCacheTtlEnv) === ''
-            ? 300
+            ? 86400
             : max(0, (int)$beaconDbCacheTtlEnv);
         $beaconDbFailureCacheTtlEnv = getenv('BEACONDB_FAILURE_CACHE_TTL_SECONDS');
         $beaconDbFailureCacheTtl = $beaconDbFailureCacheTtlEnv === false || trim((string)$beaconDbFailureCacheTtlEnv) === ''
             ? 60
             : max(0, (int)$beaconDbFailureCacheTtlEnv);
+        $locationProviderMaxConcurrency = max(1, (int)(getenv('LOCATION_PROVIDER_MAX_CONCURRENCY') ?: 5));
+        $locationProviderMaxQueue = max(0, (int)(getenv('LOCATION_PROVIDER_MAX_QUEUE') ?: 1000));
+        $locationCircuitFailureThreshold = max(1, (int)(getenv('LOCATION_CIRCUIT_FAILURE_THRESHOLD') ?: 3));
+        $locationCircuitOpenSeconds = max(1, (int)(getenv('LOCATION_CIRCUIT_OPEN_SECONDS') ?: 300));
+        $locationRateLimitOpenSeconds = max(1, (int)(getenv('LOCATION_RATE_LIMIT_OPEN_SECONDS') ?: 3600));
 
         return new self([
             'tcp_ingress' => [
@@ -68,6 +73,11 @@ class Config
                 'max_accuracy_meters' => max(0.0, (float)(getenv('BEACONDB_MAX_ACCURACY_METERS') ?: 500.0)),
                 'cache_ttl_seconds' => $beaconDbCacheTtl,
                 'failure_cache_ttl_seconds' => $beaconDbFailureCacheTtl,
+                'max_concurrency' => $locationProviderMaxConcurrency,
+                'max_queue' => $locationProviderMaxQueue,
+                'circuit_failure_threshold' => $locationCircuitFailureThreshold,
+                'circuit_open_seconds' => $locationCircuitOpenSeconds,
+                'rate_limit_open_seconds' => $locationRateLimitOpenSeconds,
             ],
             'ncs' => [
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),

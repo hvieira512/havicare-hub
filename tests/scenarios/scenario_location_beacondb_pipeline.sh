@@ -23,6 +23,7 @@ export BEACONDB_USER_AGENT="HaviCare local hub location enrichment test"
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 wait_for_mosquitto
 start_mqtt_subscriber
+docker compose exec -T redis sh -lc "redis-cli --scan --pattern 'hub:location:*' | xargs -r redis-cli del >/dev/null"
 
 docker compose exec -T hub sh -lc "rm -f /tmp/beacondb-requests.log /tmp/beacondb-mock.log"
 docker compose exec -d hub sh -lc "php -S 127.0.0.1:8099 tests/scenarios/fixtures/beacondb-router.php >/tmp/beacondb-mock.log 2>&1"
@@ -108,6 +109,61 @@ if printf '%s' "$LOCATION_JSON" | jq -e 'has("coordinates")' >/dev/null; then
 fi
 if ! grep -q '"cellTowers"' "$SCENARIO_DIR/beacondb-requests.log" || ! grep -q '"wifiAccessPoints"' "$SCENARIO_DIR/beacondb-requests.log"; then
   scenario_fail "resolution_failure" "hub did not send normalized cell and Wi-Fi evidence to BeaconDB"
+fi
+
+CACHE_KEYS="$(docker compose exec -T redis redis-cli --scan --pattern 'hub:location:resolution:*' | tr -d '\r')"
+if [ -z "$CACHE_KEYS" ]; then
+  scenario_fail "cache_failure" "hub did not persist the successful radio evidence resolution in Redis"
+fi
+REQUEST_COUNT_BEFORE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
+
+# Restarting the hub also stops the mock provider. The same evidence must still
+# resolve from Redis without a provider request, proving cache persistence.
+docker compose restart hub >/dev/null
+for _ in $(seq 1 20); do
+  if docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1",9000,$e,$m,1); if ($s) { fclose($s); exit(0); } exit(1);'; then
+    break
+  fi
+  sleep 1
+done
+
+docker compose exec -T hub php -r '
+require "vendor/autoload.php";
+$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
+if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+]));
+usleep(200000);
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "upLocation", "imei" => "868705080300697",
+    "data" => [
+        "baseStationType" => 0, "positionDataType" => 1,
+        "baseStation" => [["mcc" => 268, "mnc" => 3, "lac" => 180, "cellId" => 194809015]],
+        "Wifi" => [
+            ["ssid" => "Office", "mac" => "bc:5f:f6:1e:07:be", "signal" => -55],
+            ["ssid" => "Lobby", "mac" => "c4:b8:b5:c4:14:79", "signal" => -53],
+        ],
+    ],
+]));
+usleep(1000000);
+fclose($socket);
+'
+
+for _ in $(seq 1 20); do
+  capture_mqtt_log
+  if [ "$(grep -c '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" || true)" -ge 2 ]; then
+    break
+  fi
+  sleep 1
+done
+REQUEST_COUNT_AFTER="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
+if [ "$(grep -c '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" || true)" -lt 2 ]; then
+  scenario_fail "cache_failure" "hub restart did not resolve repeated evidence from Redis"
+fi
+if [ "$REQUEST_COUNT_AFTER" != "$REQUEST_COUNT_BEFORE" ]; then
+  scenario_fail "cache_failure" "hub contacted the provider for radio evidence already cached in Redis"
 fi
 
 scenario_pass

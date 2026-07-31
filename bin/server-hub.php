@@ -112,18 +112,35 @@ $mqttBridge = new HubMqttBridge(
 );
 $locationTelemetryEnricher = null;
 if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
+    $locationRedis = new RedisClient($redisParameters);
     $beaconDbClient = new Hub\Location\BeaconDbAsyncClient(
         new Browser(),
         (string)($locationResolutionConfig['endpoint'] ?? 'https://api.beacondb.net/v1/geolocate'),
         (string)($locationResolutionConfig['user_agent'] ?? 'HaviCare Devices Hub/1.0'),
         (float)($locationResolutionConfig['timeout_seconds'] ?? 5.0),
     );
+    $locationProvider = new Hub\Location\ConcurrentLocationProvider(
+        new Hub\Location\CircuitBreakingLocationProvider(
+            $beaconDbClient,
+            new Hub\Location\RedisProviderCircuitStateStore($locationRedis),
+            (int)($locationResolutionConfig['circuit_failure_threshold'] ?? 3),
+            (int)($locationResolutionConfig['circuit_open_seconds'] ?? 300),
+            (int)($locationResolutionConfig['rate_limit_open_seconds'] ?? 3600),
+        ),
+        (int)($locationResolutionConfig['max_concurrency'] ?? 5),
+        (int)($locationResolutionConfig['max_queue'] ?? 1000),
+    );
+    $locationCache = new Hub\Location\TieredLocationResolutionCache(
+        new Hub\Location\ArrayLocationResolutionCache(),
+        new Hub\Location\RedisLocationResolutionCache($locationRedis),
+    );
     $locationTelemetryEnricher = new Hub\Location\BeaconDbTelemetryEnricher(
         new Hub\Location\BeaconDbRequestBuilder(),
-        $beaconDbClient->resolve(...),
+        $locationProvider,
         (float)($locationResolutionConfig['max_accuracy_meters'] ?? 500.0),
-        (int)($locationResolutionConfig['cache_ttl_seconds'] ?? 300),
+        (int)($locationResolutionConfig['cache_ttl_seconds'] ?? 86400),
         (int)($locationResolutionConfig['failure_cache_ttl_seconds'] ?? 60),
+        $locationCache,
     );
 }
 $hubServer = new DeviceHubServer(
