@@ -143,7 +143,7 @@ final class DeviceCommandCatalog
 
         unset($data['fields']);
         if (self::isWonlexRequestedWaveform($nativeType)) {
-            $data += self::wonlexWaveformDefaults();
+            $data += self::wonlexWaveformDefaults($nativeType);
         }
         $decoded['data'] = $data;
 
@@ -210,7 +210,7 @@ final class DeviceCommandCatalog
             'timestamp' => $timestamp,
         ], $payload);
         if (self::isWonlexRequestedWaveform($command)) {
-            $data += self::wonlexWaveformDefaults();
+            $data += self::wonlexWaveformDefaults($command);
         }
         if ($command === 'dnUpSleep' && (!isset($data['upDayStr']) || !isset($data['value']))) {
             throw new \InvalidArgumentException('dnUpSleep requires upDayStr and value');
@@ -249,10 +249,14 @@ final class DeviceCommandCatalog
      *
      * @return array{frequency:string,oneTime:int,collectionLogo:string}
      */
-    private static function wonlexWaveformDefaults(): array
+    private static function wonlexWaveformDefaults(string $command): array
     {
         return [
-            'frequency' => '200',
+            'frequency' => match ($command) {
+                'dnECG' => '500',
+                'dnHRV' => '100',
+                default => '200',
+            },
             'oneTime' => 30,
             'collectionLogo' => (string)random_int(10000000, 99999999),
         ];

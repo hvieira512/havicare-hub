@@ -330,7 +330,7 @@ final class DashboardStoreTest extends TestCase
             ['type', 'imei', 'timestamp', 'frequency', 'oneTime', 'collectionLogo'],
             array_keys($decoded['data'] ?? [])
         );
-        self::assertSame('200', $decoded['data']['frequency'] ?? null);
+        self::assertSame('500', $decoded['data']['frequency'] ?? null);
         self::assertSame(30, $decoded['data']['oneTime'] ?? null);
         self::assertMatchesRegularExpression('/^\d{8}$/', (string)($decoded['data']['collectionLogo'] ?? ''));
 

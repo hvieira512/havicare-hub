@@ -298,7 +298,11 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testWonlexRequestedWaveformsUseExplicitShortSamplingParameters(): void
     {
-        foreach (['dnECG', 'dnHRV', 'dnPPG'] as $nativeType) {
+        foreach ([
+            'dnECG' => '500',
+            'dnHRV' => '100',
+            'dnPPG' => '200',
+        ] as $nativeType => $frequency) {
             $wire = DeviceCommandCatalog::buildDownlink(
                 'wonlex-json',
                 '868705080300697',
@@ -308,7 +312,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
             );
             $decoded = (new WonlexAdapter())->decodeIncoming($wire);
 
-            self::assertSame('200', $decoded['data']['frequency'] ?? null, $nativeType);
+            self::assertSame($frequency, $decoded['data']['frequency'] ?? null, $nativeType);
             self::assertSame(30, $decoded['data']['oneTime'] ?? null, $nativeType);
             self::assertMatchesRegularExpression(
                 '/^\d{8}$/',
