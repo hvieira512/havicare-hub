@@ -2623,6 +2623,48 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertNotEmpty($response['commands'][0]['nextRetryAt'] ?? null);
     }
 
+    public function testRepeatedTelemetryRequestSupersedesThePendingRequest(): void
+    {
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturn('sent');
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
+
+        $first = $api->requestFeature(
+            '861265061009822',
+            json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR)
+        );
+        $second = $api->requestFeature(
+            '861265061009822',
+            json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR)
+        );
+
+        $firstId = (string)($first['commands'][0]['id'] ?? '');
+        $secondId = (string)($second['commands'][0]['id'] ?? '');
+        self::assertSame('superseded', $store->findCommand($firstId)['command']['status'] ?? null);
+        self::assertSame('waiting', $store->findCommand($secondId)['command']['status'] ?? null);
+
+        $redispatched = [];
+        $store->recordCommand('861265061009822', $firstId, array_merge(
+            $store->findCommand($firstId)['command'] ?? [],
+            ['nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 1)]
+        ));
+        $store->retryWaitingCommands(
+            60,
+            3600,
+            3,
+            static function (string $imei, string $bytes) use (&$redispatched): string {
+                $redispatched[] = [$imei, $bytes];
+                return 'sent';
+            }
+        );
+
+        self::assertSame([], $redispatched);
+    }
+
     public function testHw20ProOnlyAllowsVerifiedHealthRequests(): void
     {
         $submitted = [];

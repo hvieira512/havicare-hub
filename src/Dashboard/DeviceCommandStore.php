@@ -160,7 +160,7 @@ final class DeviceCommandStore
             if (($command['nativeType'] ?? '') !== $nativeType) {
                 continue;
             }
-            if (in_array((string)($command['status'] ?? ''), ['acked', 'failed', 'dropped'], true)) {
+            if (in_array((string)($command['status'] ?? ''), ['acked', 'failed', 'dropped', 'superseded'], true)) {
                 continue;
             }
             $this->recordCommand($imei, (string)$command['id'], array_merge($command, $fields));

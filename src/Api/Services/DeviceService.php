@@ -396,6 +396,8 @@ class DeviceService
             return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
         }
 
+        $this->supersedeConflictingFeatureRequests($imei, $feature);
+
         $commands = [];
         foreach ($entries as $entry) {
             $nativeCommand = (string)($entry['command'] ?? '');
@@ -441,6 +443,36 @@ class DeviceService
         }
 
         return ['status' => 'sent', 'commands' => $commands];
+    }
+
+    private function supersedeConflictingFeatureRequests(string $imei, string $feature): void
+    {
+        $waveforms = ['ecg', 'hrv', 'ppg', 'rr_interval'];
+        $isWaveform = in_array($feature, $waveforms, true);
+
+        foreach ($this->store->commands($imei) as $command) {
+            if (!in_array((string)($command['status'] ?? ''), ['queued', 'waiting'], true)) {
+                continue;
+            }
+
+            $pendingFeature = (string)($command['feature'] ?? '');
+            $conflicts = $pendingFeature === $feature
+                || ($isWaveform && in_array($pendingFeature, $waveforms, true));
+            if (!$conflicts) {
+                continue;
+            }
+
+            $id = (string)($command['id'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+
+            $this->store->recordCommand($imei, $id, array_merge($command, [
+                'status' => 'superseded',
+                'error' => '',
+                'lastError' => '',
+            ]));
+        }
     }
 
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
