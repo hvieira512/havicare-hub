@@ -462,7 +462,7 @@ Semantics:
 - `baseStations` and `wifiAccessPoints` are optional evidence fields and may appear even when coordinates are absent.
 - Each base station may include `mcc`, `mnc`, `lac`, `cellId`, `radioType`, and `signalStrengthDbm`. Wonlex CDMA evidence is preserved as `sid`, `nid`, and `bid`.
 - Each Wi-Fi observation may include `ssid`, canonical `mac`, `signalStrengthDbm`, `channel`, and `frequencyMhz`.
-- A missing `radioType` is intentional when a supplier reports only "non-CDMA"; consumers must not guess GSM/WCDMA/LTE.
+- Wonlex `baseStationType` is mapped as `0 → lte` and `1 → cdma`, matching its 4G/LTE-CAT1 protocol. For other suppliers, a missing `radioType` remains intentional and consumers must not guess GSM/WCDMA/LTE.
 
 Example:
 
@@ -673,6 +673,6 @@ BEACONDB_USER_AGENT='HaviCare location test (ops@example.com)' \
   --host 127.0.0.1 --port 1883 --once
 ```
 
-The request explicitly disables IP and LAC fallbacks. Wi-Fi resolution requires at least two valid APs; `_nomap`, multicast, locally administered, reserved, duplicate, or malformed MAC observations are excluded. The public BeaconDB endpoint is experimental, so the live call is not part of the regular test suite.
+The request explicitly disables IP and LAC fallbacks. Wi-Fi resolution requires at least two valid APs; `_nomap` (when the firmware provides an SSID), multicast, locally administered, reserved, duplicate, or malformed MAC observations are excluded. Some firmwares provide only BSSIDs and signal strength; those observations remain usable because SSID is optional in the MLS request. The public BeaconDB endpoint is experimental, so the live call is not part of the regular test suite.
 
 Scenario runs retain the newest 20 artifact directories by default. Override that with `ARTIFACT_RUNS_TO_KEEP`, or run `make clean-test-artifacts` to apply the retention policy manually.

@@ -268,7 +268,7 @@ final class DeviceEventDecoder
             'UD2' => 'replay',
             'AL', 'AL_WCDMA', 'AL_LTE', 'AP10' => 'alarm',
             'UD', 'UD_WCDMA', 'UD_LTE', 'AP01' => 'periodic',
-            'upLocation' => match ((string)($payload['dataType'] ?? $payload['DataType'] ?? '')) {
+            'upLocation' => match ((string)($payload['positionDataType'] ?? $payload['dataType'] ?? $payload['DataType'] ?? '')) {
                 '0' => 'periodic',
                 '1' => 'requested',
                 default => null,

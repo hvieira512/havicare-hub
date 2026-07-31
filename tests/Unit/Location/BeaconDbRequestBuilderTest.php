@@ -84,4 +84,19 @@ final class BeaconDbRequestBuilderTest extends TestCase
         self::assertCount(2, $request['wifiAccessPoints']);
         self::assertSame('Office', $request['wifiAccessPoints'][0]['ssid']);
     }
+
+    public function testAcceptsBssidsWhenFirmwareDoesNotProvideSsids(): void
+    {
+        $request = (new BeaconDbRequestBuilder())->build([
+            'wifiAccessPoints' => [
+                ['mac' => 'dc:fe:23:b8:31:73', 'signalStrengthDbm' => -39],
+                ['mac' => '68:aa:c4:f5:12:20', 'signalStrengthDbm' => -64],
+            ],
+        ]);
+
+        self::assertNotNull($request);
+        self::assertCount(2, $request['wifiAccessPoints']);
+        self::assertSame('dc:fe:23:b8:31:73', $request['wifiAccessPoints'][0]['macAddress']);
+        self::assertArrayNotHasKey('ssid', $request['wifiAccessPoints'][0]);
+    }
 }

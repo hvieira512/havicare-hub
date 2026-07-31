@@ -94,7 +94,8 @@ final class DeviceEventDecoderTest extends TestCase
             [
                 'type' => 'upLocation',
                 'data' => [
-                    'dataType' => '1',
+                    'baseStationType' => 0,
+                    'positionDataType' => '1',
                     'gps' => [
                         'GSM' => 90,
                         'lat' => '38.7150',
@@ -121,12 +122,14 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(8, $events[0]['value']['satelliteCount']);
         self::assertSame('wgs84', $events[0]['value']['coordinateSystem']);
         self::assertSame('requested', $events[0]['value']['reportKind']);
+        self::assertSame('lte', $events[0]['value']['radioType']);
         self::assertSame(268, (int)$events[0]['value']['mcc']);
         self::assertSame(1, (int)$events[0]['value']['mnc']);
         self::assertSame(1234, (int)$events[0]['value']['lac']);
         self::assertSame(5679, (int)$events[0]['value']['cellId']);
         self::assertTrue($events[0]['value']['hasCoordinates']);
         self::assertCount(1, $events[0]['value']['baseStations']);
+        self::assertSame('lte', $events[0]['value']['baseStations'][0]['radioType']);
         self::assertCount(1, $events[0]['value']['wifiAccessPoints']);
         self::assertSame('aa:bb:cc:dd:ee:ff', $events[0]['value']['wifiAccessPoints'][0]['mac']);
         self::assertSame(-58, $events[0]['value']['wifiAccessPoints'][0]['signalStrengthDbm']);
@@ -204,6 +207,14 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(42, $events[0]['value']['baseStations'][0]['sid']);
         self::assertSame(7, $events[0]['value']['baseStations'][0]['nid']);
         self::assertSame(1234, $events[0]['value']['baseStations'][0]['bid']);
+    }
+
+    public function testSkipsEmptyWonlexLocationReply(): void
+    {
+        self::assertSame([], (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            ['type' => 'upLocation', 'data' => []]
+        ));
     }
 
     public function testDecodesWonlexActivityAndDeviceConfigPackets(): void

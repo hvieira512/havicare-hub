@@ -222,7 +222,11 @@ final class FeatureNormalizer
         $radioType = self::normalizeRadioType(
             $payload['radioType']
                 ?? $payload['networkType']
-                ?? (($payload['baseStationType'] ?? null) === 1 || (string)($payload['baseStationType'] ?? '') === '1' ? 'cdma' : null)
+                ?? match ((string)($payload['baseStationType'] ?? '')) {
+                    '0' => 'lte',
+                    '1' => 'cdma',
+                    default => null,
+                }
         );
         $mcc = self::stringOrNull($payload['mcc'] ?? $gps['mcc'] ?? null);
         $mnc = self::stringOrNull($payload['mnc'] ?? $gps['mnc'] ?? null);
@@ -275,7 +279,8 @@ final class FeatureNormalizer
             'accuracyMeters' => self::float($payload['accuracy'] ?? $payload['accuracyMeters'] ?? null),
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
-        if ($location === [] && $baseStations === [] && $wifiAccessPoints === []) {
+        $meaningfulLocation = array_diff_key($location, ['hasCoordinates' => true]);
+        if ($meaningfulLocation === [] && $baseStations === [] && $wifiAccessPoints === []) {
             return [];
         }
 

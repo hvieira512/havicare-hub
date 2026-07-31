@@ -90,14 +90,14 @@ final class BeaconDbRequestBuilder
 
             $ssid = trim((string)($point['ssid'] ?? ''));
             $mac = $this->mac($point['mac'] ?? $point['bssid'] ?? null);
-            if ($ssid === '' || str_ends_with(strtolower($ssid), '_nomap') || $mac === null) {
+            if (($ssid !== '' && str_ends_with(strtolower($ssid), '_nomap')) || $mac === null) {
                 continue;
             }
 
-            $entry = [
-                'macAddress' => $mac,
-                'ssid' => $ssid,
-            ];
+            $entry = ['macAddress' => $mac];
+            if ($ssid !== '') {
+                $entry['ssid'] = $ssid;
+            }
             $signal = $this->negativeInteger($point['signalStrengthDbm'] ?? null);
             if ($signal !== null) {
                 $entry['signalStrength'] = $signal;
