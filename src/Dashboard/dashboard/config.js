@@ -133,7 +133,8 @@ const CONFIG_INPUT_RENDERERS = {
     list: (entry, desired) => listInput(entry, desired, "numbers", entry.label || "Lista"),
     sos_contacts: (entry, desired, meta) => sosContactsInput(entry, desired, meta),
     call_whitelist: (entry, desired, meta) => callWhitelistInput(entry, desired, meta),
-    whitelist_enabled: (entry, desired) => toggleInput(entry, desired),
+    whitelist_enabled: (entry, desired) =>
+        toggleInput({...entry, fields: ["enabled"]}, desired),
     phonebook: (entry, desired, meta) => contactsInput(entry, desired, meta),
     contacts: (entry, desired, meta) => contactsInput(entry, desired, meta),
     alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
@@ -269,6 +270,9 @@ const CONFIG_INPUT_READERS = {
         }
         return readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit);
     },
+    whitelist_enabled: (section) => ({
+        enabled: readCheckbox(section, "enabled"),
+    }),
     phonebook: (section) => ({contacts: readContacts(section)}),
     contacts: (section) => ({contacts: readContacts(section)}),
     alarm_clock: (section) => readAlarmClock(section),

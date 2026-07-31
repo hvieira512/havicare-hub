@@ -124,5 +124,14 @@
         "company": "hitcare",
         "simNumber": "",
         "deviceId": "bea6c3dd8e02"
+    },
+    "868705080304889": {
+        "supplier": "Wonlex",
+        "model": "HW20Pro",
+        "deviceType": "watch",
+        "licenseId": 0,
+        "company": "null",
+        "simNumber": "",
+        "deviceId": ""
     }
 }

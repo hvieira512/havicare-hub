@@ -149,6 +149,14 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('resolveConfigDelivery(entry, configurationSync)', $source);
         self::assertStringContainsString('renderConfigurationDeliveryNotice(deliveryMeta, delivery)', $source);
         self::assertStringContainsString('phonebook: (entry, desired, meta) => contactsInput(entry, desired, meta),', $source);
+        self::assertStringContainsString(
+            'toggleInput({...entry, fields: ["enabled"]}, desired)',
+            $source
+        );
+        self::assertStringContainsString(
+            'enabled: readCheckbox(section, "enabled")',
+            $source
+        );
         self::assertStringContainsString('data-sos-contact-phone', $source);
         self::assertStringContainsString('phonebookContacts: relatedConfigurations.phonebook || []', $source);
         self::assertStringContainsString('Apenas contactos existentes na lista telefónica podem ser usados como SOS.', $source);
