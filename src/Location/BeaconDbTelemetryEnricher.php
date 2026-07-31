@@ -37,17 +37,18 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         if ($this->hasTrustedGpsCoordinates($data)) {
             return resolve($telemetry);
         }
+        $unresolvedTelemetry = $this->withoutUntrustedCoordinates($telemetry);
 
         $request = $this->requestBuilder->build($telemetry);
         if ($request === null) {
-            return resolve($telemetry);
+            return resolve($unresolvedTelemetry);
         }
 
         $key = $this->cacheKey($request);
         $cached = $this->cache[$key] ?? null;
         if ($cached !== null && $cached['expiresAt'] >= microtime(true)) {
             return resolve($cached['coordinates'] === null
-                ? $telemetry
+                ? $unresolvedTelemetry
                 : $this->withCoordinates($telemetry, $cached['coordinates']));
         }
         unset($this->cache[$key]);
@@ -74,8 +75,10 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
                 }
 
                 return $this->withCoordinates($telemetry, $coordinates);
-            },
-            function (\Throwable $error) use ($key): void {
+            }
+        )->then(
+            null,
+            function (\Throwable $error) use ($key, $unresolvedTelemetry): array {
                 unset($this->pending[$key]);
                 if ($this->failureCacheTtlSeconds > 0) {
                     $this->cache[$key] = [
@@ -83,7 +86,11 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
                         'coordinates' => null,
                     ];
                 }
-                throw $error;
+                $imei = (string)($unresolvedTelemetry['device']['id'] ?? 'unknown');
+                \Hub\Log\Logger::channel('hub')->warning(
+                    "Location resolution failed IMEI={$imei}: {$error->getMessage()}"
+                );
+                return $unresolvedTelemetry;
             }
         );
     }
@@ -126,6 +133,16 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         }
 
         return hash('sha256', json_encode($identity, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    }
+
+    private function withoutUntrustedCoordinates(array $telemetry): array
+    {
+        $data = isset($telemetry['data']) && is_array($telemetry['data']) ? $telemetry['data'] : [];
+        unset($data['lat'], $data['lon'], $data['accuracyMeters']);
+        $data['hasCoordinates'] = false;
+        $telemetry['data'] = $data;
+
+        return $telemetry;
     }
 
     /** @return array<string, float|bool> */

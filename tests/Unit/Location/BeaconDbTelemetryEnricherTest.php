@@ -149,7 +149,7 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         self::assertSame(-8.8, $result['data']['lon']);
     }
 
-    public function testRejectsCoordinatesOutsideConfiguredAccuracy(): void
+    public function testDropsUntrustedCoordinatesWhenProviderAccuracyIsUnacceptable(): void
     {
         $enricher = new BeaconDbTelemetryEnricher(
             new BeaconDbRequestBuilder(),
@@ -159,17 +159,45 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
             ]),
             maxAccuracyMeters: 5000,
         );
-        $error = null;
+        $telemetry = $this->nonGpsTelemetry();
+        $telemetry['data']['gpsValid'] = false;
+        $telemetry['data']['lat'] = 40.0;
+        $telemetry['data']['lon'] = -7.0;
+        $telemetry['data']['accuracyMeters'] = 0;
+        $result = null;
 
-        $enricher->enrich($this->nonGpsTelemetry())->then(
-            null,
-            function (\Throwable $reason) use (&$error): void {
-                $error = $reason;
-            }
+        $enricher->enrich($telemetry)->then(function (array $value) use (&$result): void {
+            $result = $value;
+        });
+
+        self::assertFalse($result['data']['hasCoordinates']);
+        self::assertArrayNotHasKey('lat', $result['data']);
+        self::assertArrayNotHasKey('lon', $result['data']);
+        self::assertArrayNotHasKey('accuracyMeters', $result['data']);
+    }
+
+    public function testDropsUntrustedCoordinatesWhenProviderDoesNotResolveEvidence(): void
+    {
+        $enricher = new BeaconDbTelemetryEnricher(
+            new BeaconDbRequestBuilder(),
+            static fn () => resolve(['httpStatus' => 404, 'body' => ['error' => 'not found']]),
         );
+        $telemetry = $this->nonGpsTelemetry();
+        $telemetry['data']['gpsValid'] = false;
+        $telemetry['data']['lat'] = 41.706315;
+        $telemetry['data']['lon'] = -8.7930237;
+        $result = null;
 
-        self::assertInstanceOf(\RuntimeException::class, $error);
-        self::assertSame('BeaconDB returned an unacceptable accuracy', $error->getMessage());
+        $enricher->enrich($telemetry)->then(function (array $value) use (&$result): void {
+            $result = $value;
+        });
+
+        self::assertFalse($result['data']['hasCoordinates']);
+        self::assertArrayNotHasKey('lat', $result['data']);
+        self::assertArrayNotHasKey('lon', $result['data']);
+        self::assertSame('cell_wifi', $result['data']['source']);
+        self::assertNotEmpty($result['data']['baseStations']);
+        self::assertNotEmpty($result['data']['wifiAccessPoints']);
     }
 
     private function nonGpsTelemetry(): array
