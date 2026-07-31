@@ -106,7 +106,7 @@ const CONFIGURATION_FAILURE_LABELS = {
 };
 
 const CONFIG_INPUT_RENDERERS = {
-    toggle: (entry, desired) => toggleInput(entry, desired),
+    toggle: (entry, desired, meta) => toggleInput(entry, desired, meta?.protocol),
     fallSensitivity: (_entry, desired) => fallSensitivityInput(desired),
     number: (entry, desired) => numberInput(entry, desired),
     phone: (entry, desired) => phoneInput(entry, desired),
@@ -195,7 +195,7 @@ const CONFIG_INPUT_READERS = {
             ? "RemindValue"
             : "reminderValue";
         return {
-            switchState: readCheckbox(section, "switchState"),
+            enabled: readCheckbox(section, "enabled"),
             [valueField]: readNumber(section, valueField),
         };
     },
@@ -224,7 +224,7 @@ const CONFIG_INPUT_READERS = {
     timeRanges: (section) => ({ranges: readTextArray(section, "ranges")}),
     timeRange: (section) => ({range: readText(section, "range")}),
     wonlexSleepSettings: (section) => ({
-        switchState: readCheckbox(section, "switchState"),
+        enabled: readCheckbox(section, "enabled"),
         sleepStartTime: readText(section, "sleepStartTime"),
         sleepEndTime: readText(section, "sleepEndTime"),
         sleepTarget: readNumber(section, "sleepTarget"),
@@ -236,14 +236,14 @@ const CONFIG_INPUT_READERS = {
             ? "RemindValue"
             : "reminderValue";
         return {
-            switchState: readCheckbox(section, "switchState"),
+            enabled: readCheckbox(section, "enabled"),
             [valueField]: readNumber(section, valueField),
         };
     },
     wonlexHeartRateRange: (section) => ({
-        switchState: readCheckbox(section, "switchState"),
+        enabled: readCheckbox(section, "enabled"),
         remindValue: readNumber(section, "remindValue"),
-        exerciseSwitchState: readCheckbox(section, "exerciseSwitchState"),
+        exerciseEnabled: readCheckbox(section, "exerciseEnabled"),
         exerciseHRMin: readNumber(section, "exerciseHRMin"),
         exerciseHRMax: readNumber(section, "exerciseHRMax"),
         exerciseRemindValue: readNumber(section, "exerciseRemindValue"),
@@ -284,7 +284,11 @@ const CONFIG_INPUT_READERS = {
 };
 
 const CONFIG_INPUT_DEFAULTS = {
-    toggle: (entry) => ({[entry.fields?.[0] || "value"]: true}),
+    toggle: (entry, protocol) => ({
+        [protocol === "wonlex-json" && entry.fields?.[0] === "switchState"
+            ? "enabled"
+            : entry.fields?.[0] || "value"]: true,
+    }),
     fallSensitivity: () => ({sensitivity: 2}),
     number: (entry) => ({[entry.fields?.[0] || "value"]: 0}),
     phone: (entry) => ({[entry.fields?.[0] || "value"]: ""}),
@@ -293,23 +297,23 @@ const CONFIG_INPUT_DEFAULTS = {
     intervalHoursToggle: () => ({enabled: true, intervalHours: 2}),
     workingMode: () => ({mode: 1}),
     bloodPressure: () => ({systolic: 120, diastolic: 80}),
-    wonlexBloodPressureWarning: () => ({switchState: true, hpWarn: 135, LPWarn: 90}),
+    wonlexBloodPressureWarning: () => ({enabled: true, hpWarn: 135, LPWarn: 90}),
     languageTimezone: () => ({preset: "0|0"}),
     dualToggle: () => ({enabled: true, callCenterOnFall: false}),
     fallSensitivityLevels: () => ({sensitivity: 5, levels: 8}),
     timeRanges: () => ({ranges: ["08:10-09:30"]}),
     timeRange: () => ({range: "21:10-07:30"}),
     wonlexSleepSettings: () => ({
-        switchState: true,
+        enabled: true,
         sleepStartTime: "220000",
         sleepEndTime: "100000",
         sleepTarget: 480,
     }),
-    wonlexReminderThreshold: () => ({switchState: true, reminderValue: 90}),
+    wonlexReminderThreshold: () => ({enabled: true, reminderValue: 90}),
     wonlexHeartRateRange: () => ({
-        switchState: true,
+        enabled: true,
         remindValue: 120,
-        exerciseSwitchState: true,
+        exerciseEnabled: true,
         exerciseHRMin: 100,
         exerciseHRMax: 140,
         exerciseRemindValue: 140,
@@ -1202,9 +1206,13 @@ function requestActionInput(entry) {
         </div>`;
 }
 
-function toggleInput(entry, desired) {
-    const field = entry.fields?.[0] || "enabled";
-    const checked = boolValue(desired[field], true);
+function toggleInput(entry, desired, protocol = "") {
+    const nativeField = entry.fields?.[0] || "enabled";
+    const field =
+        protocol === "wonlex-json" && nativeField === "switchState"
+            ? "enabled"
+            : nativeField;
+    const checked = boolValue(desired[field] ?? desired[nativeField], true);
     return `
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="${esc(field)}" ${checked ? "checked" : ""}>
@@ -1494,11 +1502,11 @@ function bloodPressureInput(desired) {
 }
 
 function wonlexBloodPressureWarningInput(desired) {
-    const enabled = boolValue(desired.switchState, true);
+    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
     return `
         <div class="vstack gap-3">
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? "checked" : ""}>
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
             <div class="row g-3">
@@ -1662,11 +1670,11 @@ function timeRangeInput(desired) {
 }
 
 function wonlexSleepSettingsInput(desired) {
-    const enabled = boolValue(desired.switchState, true);
+    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
     return `
         <div class="vstack gap-3">
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? "checked" : ""}>
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
             <div class="row g-3">
@@ -1687,7 +1695,7 @@ function wonlexSleepSettingsInput(desired) {
 }
 
 function wonlexReminderThresholdInput(entry, desired) {
-    const enabled = boolValue(desired.switchState, true);
+    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
     const valueField = (entry.fields || []).includes("RemindValue")
         ? "RemindValue"
         : "reminderValue";
@@ -1699,7 +1707,7 @@ function wonlexReminderThresholdInput(entry, desired) {
     return `
         <div class="vstack gap-3">
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? "checked" : ""}>
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
             <div>
@@ -1710,12 +1718,15 @@ function wonlexReminderThresholdInput(entry, desired) {
 }
 
 function wonlexHeartRateRangeInput(desired) {
-    const enabled = boolValue(desired.switchState, true);
-    const exerciseEnabled = boolValue(desired.exerciseSwitchState, true);
+    const enabled = boolValue(desired.enabled ?? desired.switchState, true);
+    const exerciseEnabled = boolValue(
+        desired.exerciseEnabled ?? desired.exerciseSwitchState,
+        true,
+    );
     return `
         <div class="vstack gap-3">
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" data-config-field="switchState" ${enabled ? "checked" : ""}>
+                <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
             <div class="row g-3">
@@ -1725,7 +1736,7 @@ function wonlexHeartRateRangeInput(desired) {
                 </div>
                 <div class="col-md-6">
                     <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="exerciseSwitchState" ${exerciseEnabled ? "checked" : ""}>
+                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="exerciseEnabled" ${exerciseEnabled ? "checked" : ""}>
                         <label class="form-check-label">Usar limites de exercício</label>
                     </div>
                 </div>

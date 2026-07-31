@@ -158,6 +158,18 @@ final class DeviceRequestCardGroupingTest extends TestCase
             'enabled: readCheckbox(section, "enabled")',
             $source
         );
+        self::assertStringContainsString(
+            'function toggleInput(entry, desired, protocol = "")',
+            $source
+        );
+        self::assertStringContainsString(
+            'desired.enabled ?? desired.switchState',
+            $source
+        );
+        self::assertStringContainsString(
+            'exerciseEnabled: readCheckbox(section, "exerciseEnabled")',
+            $source
+        );
         self::assertStringContainsString('data-sos-contact-phone', $source);
         self::assertStringContainsString('phonebookContacts: relatedConfigurations.phonebook || []', $source);
         self::assertStringContainsString('Apenas contactos existentes na lista telefónica podem ser usados como SOS.', $source);

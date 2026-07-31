@@ -518,6 +518,112 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('sos_contacts', $response['capabilities']['contacts'] ?? []);
     }
 
+    public function testShowDoesNotLeakWonlexSwitchStateIntoGenericConfigurationSurfaces(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $imei = '868705080300697';
+        $created = $api->create(json_encode([
+            'imei' => $imei,
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR));
+        self::assertSame('ok', $created['status'] ?? null);
+
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+        $db->deviceConfigurations->saveDesired(
+            $imei,
+            'wonlexFallWarnSwitch',
+            'wonlex-json',
+            'Wonlex',
+            'HW20PRO',
+            'deviceConfig',
+            ['switchState' => true],
+            'acked'
+        );
+
+        $response = $api->show($imei);
+
+        self::assertSame(
+            ['enabled' => true],
+            $response['configurations']['fall_detection'] ?? null
+        );
+        self::assertSame(
+            ['enabled' => true],
+            $response['capabilities']['alarms']['fall_detection']['value'] ?? null
+        );
+        self::assertSame(
+            ['enabled' => true],
+            $response['effectiveConfigurations']['fall_detection'] ?? null
+        );
+        self::assertSame(
+            ['enabled' => true],
+            $response['configurationSync']['entries']['alarms']['fall_detection']['desired'] ?? null
+        );
+        self::assertArrayNotHasKey('switchState', $response['configurations']['fall_detection'] ?? []);
+    }
+
+    public function testWonlexFallDetectionPatchUsesEnabledPubliclyAndSwitchStateOnWire(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(
+            function (string $imei, string $bytes) use (&$submitted): string {
+                $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+                return 'sent';
+            }
+        );
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $imei = '868705080300697';
+        self::assertSame('ok', $api->create(json_encode([
+            'imei' => $imei,
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
+
+        $updated = $api->updateConfigurations($imei, json_encode([
+            'configurations' => [
+                'fall_detection' => ['enabled' => false],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $updated['status'] ?? null);
+        self::assertCount(1, $submitted);
+        $frame = (new \Hub\Protocol\Adapter\WonlexAdapter())->decodeIncoming($submitted[0]['bytes']);
+        self::assertSame(
+            0,
+            $frame['data']['configs']['FallWarnSwitch']['switchState'] ?? null
+        );
+        self::assertSame(
+            ['enabled' => false],
+            $updated['configurations']['fall_detection'] ?? null
+        );
+        self::assertSame(
+            ['enabled' => false],
+            $updated['configurationSync']['entries']['alarms']['fall_detection']['desired'] ?? null
+        );
+
+        $store->markCommandReply($imei, 'deviceConfig', 999999, 'w:reply');
+        $confirmed = $api->show($imei);
+        self::assertSame(
+            ['enabled' => false],
+            $confirmed['effectiveConfigurations']['fall_detection'] ?? null
+        );
+        self::assertSame(
+            ['enabled' => false],
+            $confirmed['capabilities']['alarms']['fall_detection']['value'] ?? null
+        );
+    }
+
     public function testShowWrapsFourPTouchGenericCapabilitiesWithValueAndMetaShape(): void
     {
         [$api, $db, $store] = $this->makeApi();

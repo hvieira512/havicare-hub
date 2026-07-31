@@ -856,15 +856,31 @@ class DeviceService
                 'maxAttempts' => (int)$operation['max_attempts'],
                 'updatedAt' => (string)$operation['updated_at'],
             ], (array)$change['operations']);
+            $nativeKey = (string)($operations[0]['nativeKey'] ?? '');
+            $desiredValue = $change['desired_payload'];
+            if (is_array($desiredValue)) {
+                $desiredValue = $this->normalizeCapabilityValue(
+                    $protocol,
+                    $key,
+                    $nativeKey,
+                    $desiredValue
+                );
+            }
             $effectiveValue = $change['effective_payload'];
             if (is_array($effectiveValue)) {
+                $effectiveValue = $this->normalizeCapabilityValue(
+                    $protocol,
+                    $key,
+                    $nativeKey,
+                    $effectiveValue
+                );
                 $effective[$key] = $effectiveValue;
             }
             $entries[$section][$key] = [
                 'status' => (string)$change['sync_status'],
                 'changeId' => (string)$change['change_id'],
                 'desiredRevision' => (int)$change['desired_revision'],
-                'desired' => $change['desired_payload'],
+                'desired' => $desiredValue,
                 'effective' => $effectiveValue,
                 'hasUnconfirmedChanges' => (string)$change['sync_status'] !== 'confirmed',
                 'desiredUpdatedAt' => (string)$change['created_at'],

@@ -67,6 +67,42 @@ final class CapabilityRegistryTest extends TestCase
         ]);
     }
 
+    public function testWonlexSwitchFieldsAreNormalizedBidirectionally(): void
+    {
+        $registry = new CapabilityRegistry();
+
+        self::assertSame(
+            ['wonlexFallWarnSwitch' => ['switchState' => false]],
+            $registry->toNative('wonlex-json', 'fall_detection', ['enabled' => false])
+        );
+        self::assertSame(
+            ['enabled' => true],
+            $registry->fromNative(
+                'fall_detection',
+                'wonlexFallWarnSwitch',
+                ['switchState' => 1],
+                'wonlex-json'
+            )
+        );
+        self::assertSame(
+            [
+                'remindValue' => 120,
+                'enabled' => true,
+                'exerciseEnabled' => false,
+            ],
+            $registry->fromNative(
+                'heart_rate_high_alert',
+                'wonlexHeartRateHighRemind',
+                [
+                    'switchState' => 1,
+                    'remindValue' => 120,
+                    'exerciseSwitchState' => 0,
+                ],
+                'wonlex-json'
+            )
+        );
+    }
+
     public function testAlarmClockReadUsesProtocolWhenNativeKeysOverlap(): void
     {
         $registry = new CapabilityRegistry();
