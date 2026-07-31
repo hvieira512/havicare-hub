@@ -285,7 +285,7 @@ final class DashboardStoreTest extends TestCase
         self::assertGreaterThan(time(), strtotime((string)($command['nextRetryAt'] ?? '')));
     }
 
-    public function testQueuedWonlexHealthRequestIsNormalizedBeforeRedispatch(): void
+    public function testQueuedWonlexWaveformRequestIsNormalizedBeforeRedispatch(): void
     {
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
         $imei = '868705080300697';
@@ -296,9 +296,6 @@ final class DashboardStoreTest extends TestCase
             'dnECG',
             [
                 'fields' => [],
-                'frequency' => '200',
-                'oneTime' => 300,
-                'collectionLogo' => '87654321',
             ],
             ['ident' => 123456]
         );
@@ -330,17 +327,21 @@ final class DashboardStoreTest extends TestCase
         self::assertSame($imei, $dispatched[0][0]);
         self::assertSame(123456, $decoded['ident'] ?? null);
         self::assertSame(
-            ['type', 'imei', 'timestamp'],
+            ['type', 'imei', 'timestamp', 'frequency', 'oneTime', 'collectionLogo'],
             array_keys($decoded['data'] ?? [])
         );
+        self::assertSame('200', $decoded['data']['frequency'] ?? null);
+        self::assertSame(30, $decoded['data']['oneTime'] ?? null);
+        self::assertMatchesRegularExpression('/^\d{8}$/', (string)($decoded['data']['collectionLogo'] ?? ''));
 
         $stored = $store->commands($imei)[0] ?? [];
         self::assertSame('waiting', $stored['status'] ?? null);
+        $storedData = (new WonlexAdapter())->decodeIncoming(
+            \Hub\Dashboard\DeviceCommandRecord::wireBytes($stored)
+        )['data'] ?? [];
         self::assertSame(
-            ['type', 'imei', 'timestamp'],
-            array_keys((new WonlexAdapter())->decodeIncoming(
-                \Hub\Dashboard\DeviceCommandRecord::wireBytes($stored)
-            )['data'] ?? [])
+            $decoded['data']['collectionLogo'] ?? null,
+            $storedData['collectionLogo'] ?? null
         );
     }
 

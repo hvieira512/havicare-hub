@@ -142,8 +142,8 @@ final class DeviceCommandCatalog
         }
 
         unset($data['fields']);
-        if (in_array($nativeType, ['dnECG', 'dnHRV', 'dnPPG', 'dnRR'], true)) {
-            unset($data['frequency'], $data['oneTime'], $data['collectionLogo']);
+        if (self::isWonlexRequestedWaveform($nativeType)) {
+            $data += self::wonlexWaveformDefaults();
         }
         $decoded['data'] = $data;
 
@@ -209,6 +209,9 @@ final class DeviceCommandCatalog
             'imei' => $imei,
             'timestamp' => $timestamp,
         ], $payload);
+        if (self::isWonlexRequestedWaveform($command)) {
+            $data += self::wonlexWaveformDefaults();
+        }
         if ($command === 'dnUpSleep' && (!isset($data['upDayStr']) || !isset($data['value']))) {
             throw new \InvalidArgumentException('dnUpSleep requires upDayStr and value');
         }
@@ -233,6 +236,26 @@ final class DeviceCommandCatalog
             'data' => $data,
             'timestamp' => $timestamp,
         ]);
+    }
+
+    private static function isWonlexRequestedWaveform(string $command): bool
+    {
+        return in_array($command, ['dnECG', 'dnHRV', 'dnPPG'], true);
+    }
+
+    /**
+     * These values are optional in the generic Wonlex contract, but some
+     * firmwares do not start waveform collection unless they are explicit.
+     *
+     * @return array{frequency:string,oneTime:int,collectionLogo:string}
+     */
+    private static function wonlexWaveformDefaults(): array
+    {
+        return [
+            'frequency' => '200',
+            'oneTime' => 30,
+            'collectionLogo' => (string)random_int(10000000, 99999999),
+        ];
     }
 
     private static function buildVivistar(string $imei, string $command, array $entry, array $payload = []): string

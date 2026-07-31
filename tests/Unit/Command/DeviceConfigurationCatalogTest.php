@@ -265,7 +265,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(300, $decoded['data']['intervalTime'] ?? null);
     }
 
-    public function testWonlexHealthRequestsUseOnlyDocumentedRequiredFields(): void
+    public function testWonlexScalarHealthRequestsUseOnlyDocumentedRequiredFields(): void
     {
         foreach ([
             'dnHeartRate',
@@ -273,9 +273,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'dnBO',
             'dnTemperature',
             'dnBreathe',
-            'dnECG',
-            'dnHRV',
-            'dnPPG',
             'dnRR',
         ] as $nativeType) {
             $wire = DeviceCommandCatalog::buildDownlink(
@@ -294,6 +291,28 @@ final class DeviceConfigurationCatalogTest extends TestCase
             self::assertSame(
                 ['type', 'imei', 'timestamp'],
                 array_keys($decoded['data'] ?? []),
+                $nativeType
+            );
+        }
+    }
+
+    public function testWonlexRequestedWaveformsUseExplicitShortSamplingParameters(): void
+    {
+        foreach (['dnECG', 'dnHRV', 'dnPPG'] as $nativeType) {
+            $wire = DeviceCommandCatalog::buildDownlink(
+                'wonlex-json',
+                '868705080300697',
+                $nativeType,
+                [],
+                ['ident' => 123456]
+            );
+            $decoded = (new WonlexAdapter())->decodeIncoming($wire);
+
+            self::assertSame('200', $decoded['data']['frequency'] ?? null, $nativeType);
+            self::assertSame(30, $decoded['data']['oneTime'] ?? null, $nativeType);
+            self::assertMatchesRegularExpression(
+                '/^\d{8}$/',
+                (string)($decoded['data']['collectionLogo'] ?? ''),
                 $nativeType
             );
         }
