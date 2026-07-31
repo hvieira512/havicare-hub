@@ -186,3 +186,16 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
     KEY idx_dashboard_notifications_unread (read_at, last_seen_at),
     KEY idx_dashboard_notifications_latest (last_seen_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS private_radio_map_access_points (
+    bssid_hash CHAR(64) NOT NULL PRIMARY KEY,
+    latitude DECIMAL(10,7) NOT NULL,
+    longitude DECIMAL(10,7) NOT NULL,
+    accuracy_meters DECIMAL(8,2) NOT NULL,
+    observation_count INT UNSIGNED NOT NULL DEFAULT 1,
+    source ENUM('learned', 'manual') NOT NULL DEFAULT 'learned',
+    conflicted TINYINT(1) NOT NULL DEFAULT 0,
+    first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_private_radio_map_usable (conflicted, last_seen_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -25,6 +25,7 @@
         "command:vivistar": "php simulator/vivistar-command-client.php",
         "command:wonlex": "php simulator/wonlex-command-client.php",
         "location:probe": "php simulator/location-beacondb-probe.php",
+        "location:radio-map": "php bin/radio-map.php",
         "test:unit": "vendor/bin/phpunit --testsuite unit",
         "test:scenarios": "tests/scenarios/run-all.sh",
         "test": [

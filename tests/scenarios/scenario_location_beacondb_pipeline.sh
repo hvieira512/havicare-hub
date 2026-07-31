@@ -19,17 +19,17 @@ export WHITELIST_FILE="config/whitelist.example.json"
 export LOCATION_RESOLUTION_ENABLED="true"
 export BEACONDB_ENDPOINT="http://127.0.0.1:8099"
 export BEACONDB_USER_AGENT="HaviCare local hub location enrichment test"
-export UNWIRED_LABS_TOKEN="scenario-unwired-token"
-export UNWIRED_LABS_ENDPOINT="http://127.0.0.1:8100"
+export RADIO_MAP_ENABLED="true"
+export RADIO_MAP_HASH_KEY="scenario-private-radio-map-hmac-key"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 wait_for_mosquitto
 start_mqtt_subscriber
 docker compose exec -T redis sh -lc "redis-cli --scan --pattern 'hub:location:*' | xargs -r redis-cli del >/dev/null"
+docker compose exec -T hub php -r 'require "vendor/autoload.php"; $pdo=(new Hub\Infrastructure\Persistence\DashboardDatabase(Hub\Config::load()->all()["database"]))->pdo(); $pdo->exec("DELETE FROM private_radio_map_access_points");'
 
-docker compose exec -T hub sh -lc "rm -f /tmp/beacondb-requests.log /tmp/beacondb-mock.log /tmp/unwired-labs-requests.log /tmp/unwired-labs-mock.log"
+docker compose exec -T hub sh -lc "rm -f /tmp/beacondb-requests.log /tmp/beacondb-mock.log"
 docker compose exec -d hub sh -lc "php -S 127.0.0.1:8099 tests/scenarios/fixtures/beacondb-router.php >/tmp/beacondb-mock.log 2>&1"
-docker compose exec -d hub sh -lc "php -S 127.0.0.1:8100 tests/scenarios/fixtures/unwired-labs-router.php >/tmp/unwired-labs-mock.log 2>&1"
 docker compose exec -d hub sh -lc "BEACONDB_USER_AGENT='HaviCare local location pipeline test' php simulator/location-beacondb-probe.php --host mosquitto --port 1883 --username '$MQTT_SMOKE_USERNAME' --password '$MQTT_SMOKE_PASSWORD' --topic '+/watch/+/telemetry' --count 3 --listen-timeout 15 --endpoint http://127.0.0.1:8099 > /tmp/location-probe.log 2>&1"
 
 for _ in $(seq 1 20); do
@@ -62,6 +62,7 @@ if ! grep -q '"considerIp": false' "$SCENARIO_DIR/location-probe.log"; then
   scenario_fail "contract_failure" "BeaconDB request did not explicitly disable IP positioning"
 fi
 
+# A trusted GPS fix accompanied by Wi-Fi teaches the private radio map.
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
 $adapter = new Hub\Protocol\Adapter\WonlexAdapter();
@@ -126,6 +127,8 @@ usleep(200000);
 fwrite($socket, $adapter->encodeOutgoing([
     "type" => "upLocation", "imei" => "868705080300697",
     "data" => [
+        "gpsValid" => true, "lat" => 41.710001, "lon" => -8.790002,
+        "accuracy" => 20, "satellites" => 7,
         "baseStationType" => 0, "positionDataType" => 1,
         "baseStation" => [["mcc" => 268, "mnc" => 3, "lac" => 180, "cellId" => 194809015]],
         "Wifi" => [
@@ -140,20 +143,62 @@ fclose($socket);
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep -q '"lat":41.706841'; then
+  if grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep -q '"lat":41.710001'; then
     break
   fi
   sleep 1
 done
-docker compose exec -T hub sh -lc "cat /tmp/unwired-labs-requests.log 2>/dev/null || true" > "$SCENARIO_DIR/unwired-labs-requests.log"
-FALLBACK_JSON="$(grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep '"lat":41.706841' | tail -n 1 | cut -d' ' -f2-)"
-if ! printf '%s' "$FALLBACK_JSON" | jq -e '.data.hasCoordinates == true and .data.accuracyMeters == 120' >/dev/null; then
-  scenario_fail "fallback_failure" "Unwired Labs fallback did not publish trusted coordinates"
+GPS_JSON="$(grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep '"lat":41.710001' | tail -n 1 | cut -d' ' -f2-)"
+if ! printf '%s' "$GPS_JSON" | jq -e '.data.source == "gps" and .data.hasCoordinates == true and .data.accuracyMeters == 20' >/dev/null; then
+  scenario_fail "radio_map_learning_failure" "trusted GPS fix was not published unchanged"
 fi
-if ! grep -q '"token":"\*\*\*"' "$SCENARIO_DIR/unwired-labs-requests.log" \
-    || ! grep -q '"address":0' "$SCENARIO_DIR/unwired-labs-requests.log" \
-    || ! grep -q '"bt":0' "$SCENARIO_DIR/unwired-labs-requests.log"; then
-  scenario_fail "fallback_contract_failure" "Unwired Labs request was not converted or redacted correctly"
+
+RADIO_ROWS="$(docker compose exec -T hub php -r 'require "vendor/autoload.php"; $pdo=(new Hub\Infrastructure\Persistence\DashboardDatabase(Hub\Config::load()->all()["database"]))->pdo(); echo $pdo->query("SELECT COUNT(*) FROM private_radio_map_access_points")->fetchColumn();' | tr -d '[:space:]')"
+if [ "$RADIO_ROWS" != "2" ]; then
+  scenario_fail "radio_map_learning_failure" "trusted GPS fix did not persist two hashed access points"
+fi
+REQUEST_COUNT_BEFORE_PRIVATE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
+
+# The next report has no GPS. It must resolve locally, before both the public
+# provider and its resolution cache.
+docker compose exec -T hub php -r '
+require "vendor/autoload.php";
+$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
+if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+]));
+usleep(200000);
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "upLocation", "imei" => "868705080300697",
+    "data" => [
+        "baseStationType" => 0, "positionDataType" => 1,
+        "baseStation" => [["mcc" => 268, "mnc" => 3, "lac" => 180, "cellId" => 194809015]],
+        "Wifi" => [
+            ["ssid" => "Fallback One", "mac" => "10:11:12:13:14:15", "signal" => -55],
+            ["ssid" => "Fallback Two", "mac" => "20:21:22:23:24:25", "signal" => -53],
+        ],
+    ],
+]));
+usleep(1000000);
+fclose($socket);
+'
+
+for _ in $(seq 1 20); do
+  capture_mqtt_log
+  if grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep -q '"accuracyMeters":25'; then
+    break
+  fi
+  sleep 1
+done
+PRIVATE_JSON="$(grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep '"accuracyMeters":25' | tail -n 1 | cut -d' ' -f2-)"
+if ! printf '%s' "$PRIVATE_JSON" | jq -e '.data.source == "cell_wifi" and .data.hasCoordinates == true and .data.lat == 41.710001 and .data.lon == -8.790002 and .data.accuracyMeters == 25' >/dev/null; then
+  scenario_fail "radio_map_resolution_failure" "private radio map did not resolve non-GPS evidence"
+fi
+REQUEST_COUNT_AFTER_PRIVATE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
+if [ "$REQUEST_COUNT_AFTER_PRIVATE" != "$REQUEST_COUNT_BEFORE_PRIVATE" ]; then
+  scenario_fail "radio_map_priority_failure" "hub contacted BeaconDB despite a trusted private radio-map match"
 fi
 
 CACHE_KEYS="$(docker compose exec -T redis redis-cli --scan --pattern 'hub:location:resolution:*' | tr -d '\r')"
@@ -209,6 +254,44 @@ if [ "$(grep -c '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" || t
 fi
 if [ "$REQUEST_COUNT_AFTER" != "$REQUEST_COUNT_BEFORE" ]; then
   scenario_fail "cache_failure" "hub contacted the provider for radio evidence already cached in Redis"
+fi
+
+# The private map is durable MySQL state, not an ephemeral Redis cache.
+docker compose exec -T hub php -r '
+require "vendor/autoload.php";
+$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
+if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+]));
+usleep(200000);
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "upLocation", "imei" => "868705080300697",
+    "data" => [
+        "baseStationType" => 0, "positionDataType" => 1,
+        "Wifi" => [
+            ["ssid" => "Fallback One", "mac" => "10:11:12:13:14:15", "signal" => -55],
+            ["ssid" => "Fallback Two", "mac" => "20:21:22:23:24:25", "signal" => -53],
+        ],
+    ],
+]));
+usleep(1000000);
+fclose($socket);
+'
+for _ in $(seq 1 20); do
+  capture_mqtt_log
+  if [ "$(grep -c '"accuracyMeters":25' "$MQTT_LOG_FILE" || true)" -ge 2 ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$(grep -c '"accuracyMeters":25' "$MQTT_LOG_FILE" || true)" -lt 2 ]; then
+  scenario_fail "radio_map_persistence_failure" "private radio map did not survive the hub restart"
+fi
+REQUEST_COUNT_AFTER_RADIO_RESTART="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
+if [ "$REQUEST_COUNT_AFTER_RADIO_RESTART" != "$REQUEST_COUNT_AFTER" ]; then
+  scenario_fail "radio_map_priority_failure" "restarted hub contacted BeaconDB for private radio-map evidence"
 fi
 
 scenario_pass

@@ -119,7 +119,7 @@ if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
         (string)($locationResolutionConfig['user_agent'] ?? 'HaviCare Devices Hub/1.0'),
         (float)($locationResolutionConfig['timeout_seconds'] ?? 2.0),
     );
-    $primaryLocationProvider = new Hub\Location\ConcurrentLocationProvider(
+    $locationProvider = new Hub\Location\ConcurrentLocationProvider(
         new Hub\Location\CircuitBreakingLocationProvider(
             $beaconDbClient,
             new Hub\Location\RedisProviderCircuitStateStore($locationRedis),
@@ -130,47 +130,35 @@ if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
         (int)($locationResolutionConfig['max_concurrency'] ?? 5),
         (int)($locationResolutionConfig['max_queue'] ?? 1000),
     );
-    $locationProvider = $primaryLocationProvider;
-    $unwiredLabsToken = trim((string)($locationResolutionConfig['unwired_labs_token'] ?? ''));
-    if ($unwiredLabsToken !== '') {
-        $unwiredLabsClient = new Hub\Location\UnwiredLabsAsyncClient(
-            new Browser(),
-            new Hub\Location\UnwiredLabsRequestBuilder(),
-            $unwiredLabsToken,
-            (string)($locationResolutionConfig['unwired_labs_endpoint'] ?? 'https://eu1.unwiredlabs.com/v2/process'),
-            (float)($locationResolutionConfig['unwired_labs_timeout_seconds'] ?? 2.0),
-        );
-        $fallbackLocationProvider = new Hub\Location\ConcurrentLocationProvider(
-            new Hub\Location\CircuitBreakingLocationProvider(
-                $unwiredLabsClient,
-                new Hub\Location\RedisProviderCircuitStateStore($locationRedis),
-                (int)($locationResolutionConfig['circuit_failure_threshold'] ?? 3),
-                (int)($locationResolutionConfig['circuit_open_seconds'] ?? 300),
-                (int)($locationResolutionConfig['rate_limit_open_seconds'] ?? 3600),
-            ),
-            (int)($locationResolutionConfig['max_concurrency'] ?? 5),
-            (int)($locationResolutionConfig['max_queue'] ?? 1000),
-        );
-        $locationProvider = new Hub\Location\SequentialLocationProvider(
-            $primaryLocationProvider,
-            $fallbackLocationProvider,
-            new Hub\Location\LocationResponseValidator(
-                (float)($locationResolutionConfig['max_accuracy_meters'] ?? 500.0),
-            ),
-        );
-    }
     $locationCache = new Hub\Location\TieredLocationResolutionCache(
         new Hub\Location\ArrayLocationResolutionCache(),
         new Hub\Location\RedisLocationResolutionCache($locationRedis),
     );
+    $requestBuilder = new Hub\Location\BeaconDbRequestBuilder();
     $locationTelemetryEnricher = new Hub\Location\BeaconDbTelemetryEnricher(
-        new Hub\Location\BeaconDbRequestBuilder(),
+        $requestBuilder,
         $locationProvider,
         (float)($locationResolutionConfig['max_accuracy_meters'] ?? 500.0),
         (int)($locationResolutionConfig['cache_ttl_seconds'] ?? 86400),
         (int)($locationResolutionConfig['failure_cache_ttl_seconds'] ?? 60),
         $locationCache,
     );
+    if ((bool)($locationResolutionConfig['radio_map_enabled'] ?? true)) {
+        $radioMapHashKey = trim((string)($locationResolutionConfig['radio_map_hash_key'] ?? ''));
+        if ($radioMapHashKey === '') {
+            Logger::channel('hub')->error('Private radio map disabled because RADIO_MAP_HASH_KEY is empty');
+        } else {
+            $privateRadioMap = Hub\Location\PrivateRadioMapFactory::create(
+                $database->pdo(),
+                $locationResolutionConfig,
+                $requestBuilder,
+            );
+            $locationTelemetryEnricher = new Hub\Location\PrivateRadioMapTelemetryEnricher(
+                $privateRadioMap,
+                $locationTelemetryEnricher,
+            );
+        }
+    }
 }
 $hubServer = new DeviceHubServer(
     $whitelist,

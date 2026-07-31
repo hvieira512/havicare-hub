@@ -31,10 +31,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026073001_rename_four_p_touch_whitelist_switch',
             '2026073002_canonicalize_four_p_touch_contact_slots',
             '2026073003_configuration_lifecycle',
+            '2026073101_private_radio_map',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(15, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(16, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS
@@ -300,6 +301,7 @@ final class MigrationTest extends MysqlDashboardTestCase
             'api_users',
             'companies',
             'licenses',
+            'private_radio_map_access_points',
         ] as $table) {
             self::assertSame(
                 $this->columnStructure($fresh, $table),

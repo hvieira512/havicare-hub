@@ -665,9 +665,19 @@ The scenario smoke test starts Mosquitto and the hub, connects a simulated Vivis
 
 The hub resolves normalized non-GPS location evidence asynchronously before publishing that location telemetry. Valid GPS fixes bypass the external API. Successful results are merged into the existing `data.lat`, `data.lon`, `data.hasCoordinates`, and `data.accuracyMeters` fields; no second location envelope is introduced. Resolution failures publish the normalized evidence without coordinates, which existing ingestion safely ignores.
 
-Configure this with `LOCATION_RESOLUTION_ENABLED`, `BEACONDB_ENDPOINT`, `BEACONDB_USER_AGENT`, `BEACONDB_TIMEOUT_SECONDS`, `BEACONDB_MAX_ACCURACY_METERS` (default `500`), `BEACONDB_CACHE_TTL_SECONDS` (default one day), and `BEACONDB_FAILURE_CACHE_TTL_SECONDS`. Successful and failed evidence lookups are cached by normalized radio evidence in Redis, with a short in-process hot cache. The provider is protected by `LOCATION_PROVIDER_MAX_CONCURRENCY`, `LOCATION_PROVIDER_MAX_QUEUE`, `LOCATION_CIRCUIT_FAILURE_THRESHOLD`, `LOCATION_CIRCUIT_OPEN_SECONDS`, and `LOCATION_RATE_LIMIT_OPEN_SECONDS`; HTTP 429 also honors `Retry-After`. API credentials, if a future provider requires them, belong in the hub environment and must not be published to MQTT.
+Resolution order is `private radio map -> resolution cache -> BeaconDB`. The private map is durable MySQL state and is always checked before the public-result cache, so a newly learned local position immediately supersedes an older BeaconDB estimate. BeaconDB remains the only external fallback; the Hub does not require a paid account, API key, or payment method.
 
-When `UNWIRED_LABS_TOKEN` is configured, Unwired Labs is used sequentially only when BeaconDB returns no trusted fix (404, 429, timeout, 5xx, or accuracy above the configured limit). Configure its European endpoint with `UNWIRED_LABS_ENDPOINT` and its independent request timeout with `UNWIRED_LABS_TIMEOUT_SECONDS`. Responses containing `aged`, a degraded `fallback`, or accuracy above the Hub limit are rejected. Daily balance exhaustion opens the Unwired Labs circuit until its midnight UTC reset. The token is loaded only from the Hub environment and is never included in normalized telemetry or MQTT messages.
+The private map learns only from normalized GPS fixes that are explicitly valid and either report accuracy no worse than `RADIO_MAP_MAXIMUM_LEARNING_ACCURACY_METERS` (default `100`) or report at least `RADIO_MAP_MINIMUM_SATELLITES` (default `4`). A conservative default accuracy is used for the latter. At least two known BSSIDs must agree within the configured cluster radius before coordinates are returned. Learned APs that later appear farther than the observation threshold are quarantined; manually seeded entries remain authoritative. BSSIDs are stored as keyed HMAC-SHA256 hashes using the required `RADIO_MAP_HASH_KEY`, never as plaintext. If that key is absent, the private map is disabled rather than storing reversible identifiers.
+
+Configure this with `LOCATION_RESOLUTION_ENABLED`, `BEACONDB_ENDPOINT`, `BEACONDB_USER_AGENT`, `BEACONDB_TIMEOUT_SECONDS`, `BEACONDB_MAX_ACCURACY_METERS` (default `500`), `BEACONDB_CACHE_TTL_SECONDS` (default one day), and `BEACONDB_FAILURE_CACHE_TTL_SECONDS`. Successful and failed public lookups are cached by normalized radio evidence in Redis, with a short in-process hot cache. BeaconDB is protected by `LOCATION_PROVIDER_MAX_CONCURRENCY`, `LOCATION_PROVIDER_MAX_QUEUE`, `LOCATION_CIRCUIT_FAILURE_THRESHOLD`, `LOCATION_CIRCUIT_OPEN_SECONDS`, and `LOCATION_RATE_LIMIT_OPEN_SECONDS`; HTTP 429 also honors `Retry-After`.
+
+Known sites can be seeded operationally without storing raw BSSIDs in the database:
+
+```bash
+composer location:radio-map -- seed \
+  --lat=41.706841 --lon=-8.793279 --accuracy=25 \
+  --bssids=dc:fe:23:36:57:4d,dc:fe:23:b7:ed:ff
+```
 
 The standalone probe remains available for diagnostics. It accepts either a saved normalized telemetry payload or an MQTT filter, builds an MLS/Ichnaea request, calls BeaconDB, and prints the resulting coordinates and accuracy.
 
