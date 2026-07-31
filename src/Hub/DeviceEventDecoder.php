@@ -47,7 +47,7 @@ final class DeviceEventDecoder
                 $this->event('heartbeat', $nativeType, $payload, $payload),
                 $this->event('battery', $nativeType, $payload, $payload),
             ])),
-            'upLocation' => [$this->event('location', $nativeType, $payload, $payload)],
+            'upLocation' => [$this->locationEvent($nativeType, $payload, $payload)],
             'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload, $payload)],
             'upSleep' => [$this->event('sleep', $nativeType, $payload, $payload)],
             'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],
@@ -118,7 +118,7 @@ final class DeviceEventDecoder
     private function decodeVivistar(string $nativeType, array $payload): array
     {
         return match ($nativeType) {
-            'AP01' => [$this->event('location', $nativeType, $payload, $payload)],
+            'AP01' => [$this->locationEvent($nativeType, $payload, $payload)],
             'AP02' => [$this->decodeVivistarAp02($payload)],
             'AP49' => [$this->event('heart_rate', $nativeType, $payload)],
             'APHT' => [
@@ -142,7 +142,7 @@ final class DeviceEventDecoder
                     'battery', 'mcc', 'mnc', 'lac', 'cellId', 'language',
                     'replyAddressRequested', 'mobileLinkRequested', 'wifiRaw', 'date', 'timeUtc',
                 ])),
-                $this->event('location', $nativeType, $payload, $this->only($payload, [
+                $this->locationEvent($nativeType, $payload, $this->only($payload, [
                     'battery', 'language',
                 ])),
                 $this->event('battery', $nativeType, ['battery' => $payload['battery'] ?? null]),
@@ -169,7 +169,7 @@ final class DeviceEventDecoder
         $wifi = $this->parseVivistarWifi((string)($fields[7] ?? ''));
         $firstBase = $baseStations[0] ?? [];
 
-        return $this->event('location', 'AP02', array_filter([
+        return $this->locationEvent('AP02', array_filter([
             'source' => 'vivistar-ap02',
             'gpsValid' => false,
             'mcc' => $this->stringField($fields[3] ?? null),
@@ -211,12 +211,12 @@ final class DeviceEventDecoder
                 $this->event('temperature', $nativeType, $payload, $payload),
             ],
             $this->isFourPTouchPosition($nativeType) => array_values(array_filter([
-                $this->event('location', $nativeType, $payload, $payload),
+                $this->locationEvent($nativeType, $payload, $payload),
                 $this->event('activity', $nativeType, ['steps' => $payload['steps'] ?? null]),
                 $this->event('battery', $nativeType, ['batteryPercent' => $payload['batteryPercent'] ?? null]),
             ])),
             $this->isFourPTouchAlarm($nativeType) => array_values(array_filter([
-                $this->event('location', $nativeType, $payload, $payload),
+                $this->locationEvent($nativeType, $payload, $payload),
                 $this->event('alarm', $nativeType, $payload, $this->only($payload, [
                     'alarmCode',
                     'lat', 'lon', 'gpsValid', 'speed', 'direction', 'gsmSignal', 'satellites',
@@ -254,6 +254,29 @@ final class DeviceEventDecoder
             'value' => $value,
             'extra' => $this->extra($extra, $value),
         ], static fn (mixed $field): bool => $field !== []);
+    }
+
+    private function locationEvent(string $nativeType, array $payload, array $extra = []): ?array
+    {
+        $payload['radioType'] = $payload['radioType'] ?? $payload['networkType'] ?? match ($nativeType) {
+            'UD', 'UD2', 'AL' => 'gsm',
+            'UD_WCDMA', 'AL_WCDMA' => 'wcdma',
+            'UD_LTE', 'AL_LTE' => 'lte',
+            default => null,
+        };
+        $payload['reportKind'] = $payload['reportKind'] ?? match ($nativeType) {
+            'UD2' => 'replay',
+            'AL', 'AL_WCDMA', 'AL_LTE', 'AP10' => 'alarm',
+            'UD', 'UD_WCDMA', 'UD_LTE', 'AP01' => 'periodic',
+            'upLocation' => match ((string)($payload['dataType'] ?? $payload['DataType'] ?? '')) {
+                '0' => 'periodic',
+                '1' => 'requested',
+                default => null,
+            },
+            default => null,
+        };
+
+        return $this->event('location', $nativeType, $payload, $extra);
     }
 
     private function heartRateFromBloodPressure(string $nativeType, array $payload): ?array
@@ -343,10 +366,12 @@ final class DeviceEventDecoder
                 continue;
             }
 
+            $rawSignal = $this->intField($parts[2] ?? null);
             $stations[] = array_filter([
                 'lac' => $parts[0] !== '' ? $parts[0] : null,
                 'cellId' => $parts[1] !== '' ? $parts[1] : null,
-                'gsmSignal' => $this->signalFromDbm($parts[2] ?? null),
+                'gsmSignal' => $this->legacySignalStrength($rawSignal),
+                'signalStrengthDbm' => $this->vivistarSignalDbm($rawSignal),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
         }
 
@@ -365,23 +390,26 @@ final class DeviceEventDecoder
                 continue;
             }
 
+            $rawSignal = $this->intField($parts[2] ?? null);
             $wifi[] = array_filter([
                 'label' => $parts[0] !== '' ? $parts[0] : null,
                 'mac' => $parts[1] !== '' ? $parts[1] : null,
-                'gsmSignal' => $this->signalFromDbm($parts[2] ?? null),
+                'gsmSignal' => $this->legacySignalStrength($rawSignal),
+                'signalStrengthDbm' => $this->vivistarSignalDbm($rawSignal),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
         }
 
         return $wifi;
     }
 
-    private function signalFromDbm(mixed $value): ?int
+    private function legacySignalStrength(?int $value): ?int
     {
-        if ($value === null || $value === '' || !is_numeric((string)$value)) {
-            return null;
-        }
+        return $value === null ? null : max(0, 150 - abs($value));
+    }
 
-        return max(0, 150 - abs((int)$value));
+    private function vivistarSignalDbm(?int $value): ?int
+    {
+        return $value === null ? null : $value - 150;
     }
 
     private function intField(mixed $value): ?int

@@ -94,6 +94,7 @@ final class DeviceEventDecoderTest extends TestCase
             [
                 'type' => 'upLocation',
                 'data' => [
+                    'dataType' => '1',
                     'gps' => [
                         'GSM' => 90,
                         'lat' => '38.7150',
@@ -118,6 +119,8 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(38.715, $events[0]['value']['lat']);
         self::assertSame(-9.145, $events[0]['value']['lon']);
         self::assertSame(8, $events[0]['value']['satelliteCount']);
+        self::assertSame('wgs84', $events[0]['value']['coordinateSystem']);
+        self::assertSame('requested', $events[0]['value']['reportKind']);
         self::assertSame(268, (int)$events[0]['value']['mcc']);
         self::assertSame(1, (int)$events[0]['value']['mnc']);
         self::assertSame(1234, (int)$events[0]['value']['lac']);
@@ -125,6 +128,8 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertTrue($events[0]['value']['hasCoordinates']);
         self::assertCount(1, $events[0]['value']['baseStations']);
         self::assertCount(1, $events[0]['value']['wifiAccessPoints']);
+        self::assertSame('aa:bb:cc:dd:ee:ff', $events[0]['value']['wifiAccessPoints'][0]['mac']);
+        self::assertSame(-58, $events[0]['value']['wifiAccessPoints'][0]['signalStrengthDbm']);
     }
 
     public function testWonlexGpsCoordinateSystemDoesNotOverrideGpsSourceInference(): void
@@ -174,6 +179,31 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertCount(1, $events);
         self::assertSame('wifi', $events[0]['value']['source']);
         self::assertSame('CLINIC', $events[0]['value']['wifiAccessPoints'][0]['ssid']);
+    }
+
+    public function testPreservesWonlexCdmaLocationEvidence(): void
+    {
+        $events = (new DeviceEventDecoder())->decode(
+            $this->session('wonlex-json'),
+            [
+                'type' => 'upLocation',
+                'data' => [
+                    'baseStationType' => 1,
+                    'baseStation' => [[
+                        'sid' => 42,
+                        'nid' => 7,
+                        'bid' => 1234,
+                    ]],
+                ],
+            ]
+        );
+
+        self::assertCount(1, $events);
+        self::assertSame('cell', $events[0]['value']['source']);
+        self::assertSame('cdma', $events[0]['value']['radioType']);
+        self::assertSame(42, $events[0]['value']['baseStations'][0]['sid']);
+        self::assertSame(7, $events[0]['value']['baseStations'][0]['nid']);
+        self::assertSame(1234, $events[0]['value']['baseStations'][0]['bid']);
     }
 
     public function testDecodesWonlexActivityAndDeviceConfigPackets(): void
@@ -462,6 +492,8 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(117, $events[0]['value']['gsmSignal']);
         self::assertCount(1, $events[0]['value']['baseStations']);
         self::assertCount(4, $events[0]['value']['wifiAccessPoints']);
+        self::assertSame(-117, $events[0]['value']['baseStations'][0]['signalStrengthDbm']);
+        self::assertSame(-44, $events[0]['value']['wifiAccessPoints'][0]['signalStrengthDbm']);
         self::assertSame('vivistar-ap02', $events[0]['extra']['sourceRaw']);
         self::assertSame(0, $events[0]['extra']['replyFlag']);
         self::assertSame(1, $events[0]['extra']['baseCount']);
@@ -505,6 +537,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(22.549676666666667, $events[0]['value']['lat']);
         self::assertSame(114.08225833333333, $events[0]['value']['lon']);
         self::assertSame(9, $events[0]['value']['satelliteCount']);
+        self::assertSame('periodic', $events[0]['value']['reportKind']);
         self::assertSame('460', $events[0]['value']['mcc']);
         self::assertSame('9520', $events[0]['value']['lac']);
         self::assertCount(1, $events[0]['value']['baseStations']);
@@ -545,6 +578,7 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertTrue($events[1]['value']['hasCoordinates']);
         self::assertSame(22.549676666666667, $events[1]['value']['lat']);
         self::assertSame(114.08225833333333, $events[1]['value']['lon']);
+        self::assertSame('alarm', $events[1]['value']['reportKind']);
         self::assertArrayNotHasKey('rawCode', $events[1]['extra'] ?? []);
         self::assertSame(80, $events[2]['value']['percent']);
         self::assertArrayNotHasKey('extra', $events[2]);
@@ -641,6 +675,8 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertSame(['location', 'activity', 'battery'], array_column($events, 'feature'));
         self::assertSame('gps', $events[0]['value']['source']);
+        self::assertSame('gsm', $events[0]['value']['radioType']);
+        self::assertSame('replay', $events[0]['value']['reportKind']);
         self::assertTrue($events[0]['value']['hasCoordinates']);
         self::assertSame(38.7167, $events[0]['value']['lat']);
         self::assertSame(-9.1399, $events[0]['value']['lon']);
@@ -648,6 +684,9 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('268', $events[0]['value']['mcc']);
         self::assertSame('1234', $events[0]['value']['lac']);
         self::assertCount(1, $events[0]['value']['baseStations']);
+        self::assertSame('268', $events[0]['value']['baseStations'][0]['mcc']);
+        self::assertSame('01', $events[0]['value']['baseStations'][0]['mnc']);
+        self::assertSame('gsm', $events[0]['value']['baseStations'][0]['radioType']);
         self::assertCount(1, $events[0]['value']['wifiAccessPoints']);
         self::assertSame(1042, $events[1]['value']['steps']);
         self::assertSame(76, $events[2]['value']['percent']);
@@ -681,6 +720,8 @@ final class DeviceEventDecoderTest extends TestCase
 
         self::assertSame(['location', 'alarm', 'battery'], array_column($events, 'feature'));
         self::assertSame('cell', $events[0]['value']['source']);
+        self::assertSame('lte', $events[0]['value']['radioType']);
+        self::assertSame('alarm', $events[0]['value']['reportKind']);
         self::assertFalse($events[0]['value']['hasCoordinates']);
         self::assertArrayNotHasKey('lat', $events[0]['value']);
         self::assertArrayNotHasKey('lon', $events[0]['value']);

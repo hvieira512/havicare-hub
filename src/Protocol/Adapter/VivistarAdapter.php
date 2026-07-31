@@ -271,10 +271,13 @@ class VivistarAdapter implements DeviceAdapterInterface
                 continue;
             }
 
+            $rawSignal = $this->num($parts[2] ?? null);
+
             $wifi[] = array_filter([
                 'ssid' => $parts[0] !== '' ? $parts[0] : null,
                 'mac' => $parts[1] !== '' ? $parts[1] : null,
-                'signal' => $this->num($parts[2] ?? null),
+                'signal' => $rawSignal,
+                'signalStrengthDbm' => is_numeric($rawSignal) ? (int)$rawSignal - 150 : null,
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
         }
 

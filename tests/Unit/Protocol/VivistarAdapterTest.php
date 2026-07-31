@@ -77,6 +77,7 @@ final class VivistarAdapterTest extends TestCase
         self::assertSame(3671, $payload['data']['cellId']);
         self::assertCount(1, $payload['data']['baseStation']);
         self::assertCount(1, $payload['data']['wifi']);
+        self::assertSame(-53, $payload['data']['wifi'][0]['signalStrengthDbm']);
     }
 
     public function testDecodeIncomingParsesAp10AlarmPacket(): void

@@ -219,10 +219,20 @@ final class FeatureNormalizer
     private static function location(array $payload): array
     {
         $gps = isset($payload['gps']) && is_array($payload['gps']) ? $payload['gps'] : [];
+        $radioType = self::normalizeRadioType(
+            $payload['radioType']
+                ?? $payload['networkType']
+                ?? (($payload['baseStationType'] ?? null) === 1 || (string)($payload['baseStationType'] ?? '') === '1' ? 'cdma' : null)
+        );
+        $mcc = self::stringOrNull($payload['mcc'] ?? $gps['mcc'] ?? null);
+        $mnc = self::stringOrNull($payload['mnc'] ?? $gps['mnc'] ?? null);
         $baseStations = self::normalizeBaseStations(
             isset($payload['baseStations']) && is_array($payload['baseStations'])
                 ? $payload['baseStations']
-                : (isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : [])
+                : (isset($payload['baseStation']) && is_array($payload['baseStation']) ? $payload['baseStation'] : []),
+            $mcc,
+            $mnc,
+            $radioType,
         );
         $wifiAccessPoints = self::normalizeWifiAccessPoints(
             isset($payload['wifiAccessPoints']) && is_array($payload['wifiAccessPoints'])
@@ -250,13 +260,16 @@ final class FeatureNormalizer
             'lat' => $lat,
             'lon' => $lon,
             'gpsValid' => $gpsValid,
+            'radioType' => $radioType,
+            'coordinateSystem' => self::normalizeCoordinateSystem($payload['coordinateSystem'] ?? $gps['Type'] ?? null),
+            'reportKind' => self::normalizeReportKind($payload['reportKind'] ?? null),
             'speedKmh' => self::float($payload['speed'] ?? $payload['speedKmh'] ?? $gps['speed'] ?? null),
             'heading' => self::float($payload['direction'] ?? $payload['heading'] ?? $gps['direction'] ?? null),
             'altitudeMeters' => self::float($payload['altitude'] ?? $payload['altitudeMeters'] ?? $gps['height'] ?? null),
             'satelliteCount' => $satelliteCount,
             'gsmSignal' => self::int($payload['gsmSignal'] ?? $gps['GSM'] ?? $firstBaseStation['rxlev'] ?? $firstBaseStation['gsmSignal'] ?? null),
-            'mcc' => self::stringOrNull($payload['mcc'] ?? $gps['mcc'] ?? $firstBaseStation['mcc'] ?? null),
-            'mnc' => self::stringOrNull($payload['mnc'] ?? $gps['mnc'] ?? $firstBaseStation['mnc'] ?? null),
+            'mcc' => $mcc ?? self::stringOrNull($firstBaseStation['mcc'] ?? null),
+            'mnc' => $mnc ?? self::stringOrNull($firstBaseStation['mnc'] ?? null),
             'lac' => self::stringOrNull($payload['lac'] ?? $gps['lac'] ?? $firstBaseStation['lac'] ?? null),
             'cellId' => self::stringOrNull($payload['cellId'] ?? $gps['cellId'] ?? $gps['ci'] ?? $firstBaseStation['ci'] ?? $firstBaseStation['cellId'] ?? null),
             'accuracyMeters' => self::float($payload['accuracy'] ?? $payload['accuracyMeters'] ?? null),
@@ -438,7 +451,12 @@ final class FeatureNormalizer
      * @param array<int, mixed> $stations
      * @return array<int, array<string, mixed>>
      */
-    private static function normalizeBaseStations(array $stations): array
+    private static function normalizeBaseStations(
+        array $stations,
+        ?string $fallbackMcc = null,
+        ?string $fallbackMnc = null,
+        ?string $fallbackRadioType = null,
+    ): array
     {
         $normalized = [];
         foreach ($stations as $station) {
@@ -447,11 +465,19 @@ final class FeatureNormalizer
             }
 
             $entry = array_filter([
-                'mcc' => self::stringOrNull($station['mcc'] ?? null),
-                'mnc' => self::stringOrNull($station['mnc'] ?? null),
+                'mcc' => self::stringOrNull($station['mcc'] ?? $fallbackMcc),
+                'mnc' => self::stringOrNull($station['mnc'] ?? $fallbackMnc),
                 'lac' => self::stringOrNull($station['lac'] ?? null),
                 'cellId' => self::stringOrNull($station['cellId'] ?? $station['ci'] ?? null),
                 'gsmSignal' => self::int($station['gsmSignal'] ?? $station['rxlev'] ?? null),
+                'radioType' => self::normalizeRadioType($station['radioType'] ?? $station['networkType'] ?? $fallbackRadioType),
+                'signalStrengthDbm' => self::normalizeDbm(
+                    $station['signalStrengthDbm'] ?? $station['signalDbm'] ?? $station['rssiDbm'] ?? null,
+                    $station['gsmSignal'] ?? $station['rxlev'] ?? null,
+                ),
+                'sid' => self::int($station['sid'] ?? $station['systemId'] ?? null),
+                'nid' => self::int($station['nid'] ?? $station['networkId'] ?? null),
+                'bid' => self::int($station['bid'] ?? $station['baseStationId'] ?? null),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
             if ($entry !== []) {
@@ -476,8 +502,14 @@ final class FeatureNormalizer
 
             $entry = array_filter([
                 'ssid' => self::stringOrNull($point['ssid'] ?? $point['label'] ?? null),
-                'mac' => self::stringOrNull($point['mac'] ?? null),
-                'signal' => self::int($point['signal'] ?? $point['rssi'] ?? null),
+                'mac' => self::normalizeMac($point['mac'] ?? $point['bssid'] ?? null),
+                'signal' => self::int($point['signal'] ?? $point['rssi'] ?? $point['gsmSignal'] ?? null),
+                'signalStrengthDbm' => self::normalizeDbm(
+                    $point['signalStrengthDbm'] ?? $point['signalDbm'] ?? null,
+                    $point['signal'] ?? $point['rssi'] ?? null,
+                ),
+                'channel' => self::int($point['channel'] ?? null),
+                'frequencyMhz' => self::int($point['frequencyMhz'] ?? $point['frequency'] ?? null),
             ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
             if ($entry !== []) {
@@ -486,5 +518,62 @@ final class FeatureNormalizer
         }
 
         return $normalized;
+    }
+
+    private static function normalizeRadioType(mixed $value): ?string
+    {
+        return match (strtolower(trim((string)$value))) {
+            'gsm', '2g', 'gprs', 'edge' => 'gsm',
+            'wcdma', 'umts', '3g', 'hspa', 'hspa+' => 'wcdma',
+            'lte', '4g', 'cat-m', 'catm' => 'lte',
+            'cdma' => 'cdma',
+            'nr', '5g' => 'nr',
+            default => null,
+        };
+    }
+
+    private static function normalizeCoordinateSystem(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return match (strtolower(trim((string)$value))) {
+            '0', 'global', 'gps', 'wgs84', 'wgs-84' => 'wgs84',
+            '1', 'gaode', 'amap', 'gcj02', 'gcj-02' => 'gcj02',
+            '2', 'baidu', 'bd09', 'bd-09' => 'bd09',
+            '3', 'google' => 'google',
+            '4', 'tencent' => 'tencent',
+            default => null,
+        };
+    }
+
+    private static function normalizeReportKind(mixed $value): ?string
+    {
+        return match (strtolower(trim((string)$value))) {
+            'periodic', 'requested', 'alarm', 'replay' => strtolower(trim((string)$value)),
+            default => null,
+        };
+    }
+
+    private static function normalizeDbm(mixed $explicit, mixed $legacy): ?int
+    {
+        $value = self::int($explicit);
+        if ($value !== null) {
+            return $value < 0 ? $value : null;
+        }
+
+        $value = self::int($legacy);
+        return $value !== null && $value < 0 ? $value : null;
+    }
+
+    private static function normalizeMac(mixed $value): ?string
+    {
+        $hex = strtolower((string)preg_replace('/[^0-9a-f]/i', '', trim((string)$value)));
+        if (strlen($hex) !== 12) {
+            return self::stringOrNull($value);
+        }
+
+        return implode(':', str_split($hex, 2));
     }
 }

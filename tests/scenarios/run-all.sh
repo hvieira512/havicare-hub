@@ -10,6 +10,7 @@ SCENARIOS=(
   "tests/scenarios/scenario_hub_persistent_mqtt_downlink.sh"
   "tests/scenarios/scenario_dashboard_api.sh"
   "tests/scenarios/scenario_ncs_mqtt_ingress.sh"
+  "tests/scenarios/scenario_location_beacondb_pipeline.sh"
 )
 PER_SCENARIO_TIMEOUT_SECONDS="${PER_SCENARIO_TIMEOUT_SECONDS:-240}"
 

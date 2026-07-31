@@ -438,6 +438,9 @@ Field meaning:
 - `lat`
 - `lon`
 - `gpsValid`
+- `radioType`: `gsm`, `wcdma`, `lte`, `cdma`, or `nr` when the protocol identifies it
+- `coordinateSystem`: normalized Wonlex coordinate-system hint when present
+- `reportKind`: `periodic`, `requested`, `alarm`, or `replay` when known
 - `speedKmh`
 - `heading`
 - `altitudeMeters`
@@ -457,6 +460,9 @@ Semantics:
 - `gpsValid` means the protocol marked the GNSS fix as valid. Coordinates may still exist when `gpsValid` is `false`.
 - `source` describes how the position should be interpreted. It should not be inferred only from the presence of coordinates.
 - `baseStations` and `wifiAccessPoints` are optional evidence fields and may appear even when coordinates are absent.
+- Each base station may include `mcc`, `mnc`, `lac`, `cellId`, `radioType`, and `signalStrengthDbm`. Wonlex CDMA evidence is preserved as `sid`, `nid`, and `bid`.
+- Each Wi-Fi observation may include `ssid`, canonical `mac`, `signalStrengthDbm`, `channel`, and `frequencyMhz`.
+- A missing `radioType` is intentional when a supplier reports only "non-CDMA"; consumers must not guess GSM/WCDMA/LTE.
 
 Example:
 
@@ -652,5 +658,21 @@ composer test
 ```
 
 The scenario smoke test starts Mosquitto and the hub, connects a simulated Vivistar TCP device, verifies raw MQTT uplink, publishes MQTT downlink, and verifies the device receives it.
+
+### Local BeaconDB location probe
+
+The probe is deliberately separate from the hub service and does not persist or republish a location. It accepts either a saved normalized telemetry payload or an MQTT filter, builds an MLS/Ichnaea request, calls BeaconDB, and prints the resulting coordinates and accuracy.
+
+```bash
+BEACONDB_USER_AGENT='HaviCare location test (ops@example.com)' \
+  composer location:probe -- --file /path/to/location-telemetry.json
+
+BEACONDB_USER_AGENT='HaviCare location test (ops@example.com)' \
+  composer location:probe -- \
+  --topic 'havicare-hub/+/+/watch/+/telemetry' \
+  --host 127.0.0.1 --port 1883 --once
+```
+
+The request explicitly disables IP and LAC fallbacks. Wi-Fi resolution requires at least two valid APs; `_nomap`, multicast, locally administered, reserved, duplicate, or malformed MAC observations are excluded. The public BeaconDB endpoint is experimental, so the live call is not part of the regular test suite.
 
 Scenario runs retain the newest 20 artifact directories by default. Override that with `ARTIFACT_RUNS_TO_KEEP`, or run `make clean-test-artifacts` to apply the retention policy manually.
