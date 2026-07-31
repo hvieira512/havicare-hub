@@ -1242,6 +1242,19 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['08:10-1-1', '14:30-0-2', '18:00-1-3-0111110']], $payload['payload']);
     }
 
+    public function testFourPTouchAlarmClockMapsGenericMondayAndSundayToNativeMask(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'alarmClock', [
+            'alarms' => [[
+                'time' => '08:10',
+                'enabled' => true,
+                'recurrence' => ['kind' => 'custom', 'days' => [1, 7]],
+            ]],
+        ]);
+
+        self::assertSame(['fields' => ['08:10-1-3-1100000']], $payload['payload']);
+    }
+
     public function testFourPTouchAlarmClockRejectsInvalidCustomMask(): void
     {
         self::assertSame(
