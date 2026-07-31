@@ -84,6 +84,17 @@ final class Wonlex implements AlarmClockHandler
                 'order' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
                 'onceBehavior' => 'current_weekday',
             ],
+            'days' => [
+                'options' => [
+                    ['value' => 1, 'label' => 'Seg'],
+                    ['value' => 2, 'label' => 'Ter'],
+                    ['value' => 3, 'label' => 'Qua'],
+                    ['value' => 4, 'label' => 'Qui'],
+                    ['value' => 5, 'label' => 'Sex'],
+                    ['value' => 6, 'label' => 'Sab'],
+                    ['value' => 7, 'label' => 'Dom'],
+                ],
+            ],
         ], $accumulatedMeta);
     }
 

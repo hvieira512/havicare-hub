@@ -515,6 +515,18 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ['http', 'https'],
             $response['capabilities']['alarms']['alarm_clock']['_meta']['url']['schemes'] ?? null
         );
+        self::assertSame(
+            [
+                ['value' => 1, 'label' => 'Seg'],
+                ['value' => 2, 'label' => 'Ter'],
+                ['value' => 3, 'label' => 'Qua'],
+                ['value' => 4, 'label' => 'Qui'],
+                ['value' => 5, 'label' => 'Sex'],
+                ['value' => 6, 'label' => 'Sab'],
+                ['value' => 7, 'label' => 'Dom'],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
+        );
         self::assertArrayHasKey('sos_contacts', $response['capabilities']['contacts'] ?? []);
     }
 
