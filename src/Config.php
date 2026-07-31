@@ -78,6 +78,8 @@ class Config
                 'circuit_failure_threshold' => $locationCircuitFailureThreshold,
                 'circuit_open_seconds' => $locationCircuitOpenSeconds,
                 'rate_limit_open_seconds' => $locationRateLimitOpenSeconds,
+                'unwired_labs_token' => getenv('UNWIRED_LABS_TOKEN') ?: '',
+                'unwired_labs_endpoint' => getenv('UNWIRED_LABS_ENDPOINT') ?: 'https://eu1.unwiredlabs.com/v2/process',
             ],
             'ncs' => [
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),
