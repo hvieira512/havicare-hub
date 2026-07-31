@@ -47,6 +47,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);
         self::assertStringContainsString('activity: {icon: "fa-person-walking"', $renderersSource);
         self::assertStringContainsString('blood_sugar: {icon: "fa-vial"', $renderersSource);
+        self::assertStringContainsString('superseded: "substituído"', $renderersSource);
 
         self::assertStringContainsString('const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];', $source);
         self::assertStringContainsString('renderTelemetryList([...telemetry, ...ncsEvents]);', $source);

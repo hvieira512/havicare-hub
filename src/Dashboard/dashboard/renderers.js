@@ -236,6 +236,7 @@ const STATUS_BADGE_LABEL = {
     acked: "confirmado",
     failed: "falhou",
     dropped: "descartado",
+    superseded: "substituído",
     unknown: "desconhecido",
 };
 
