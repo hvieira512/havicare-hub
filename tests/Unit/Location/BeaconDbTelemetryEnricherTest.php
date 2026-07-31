@@ -149,6 +149,63 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         self::assertSame(-8.8, $result['data']['lon']);
     }
 
+    public function testDoesNotResolvePureCellLbsEvidence(): void
+    {
+        $calls = 0;
+        $enricher = new BeaconDbTelemetryEnricher(
+            new BeaconDbRequestBuilder(),
+            function () use (&$calls) {
+                $calls++;
+                return resolve([
+                    'httpStatus' => 200,
+                    'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8], 'accuracy' => 100],
+                ]);
+            },
+        );
+        $telemetry = $this->nonGpsTelemetry();
+        $telemetry['data']['source'] = 'cell';
+        $telemetry['data']['gpsValid'] = false;
+        $telemetry['data']['lat'] = 41.0;
+        $telemetry['data']['lon'] = -8.0;
+        unset($telemetry['data']['wifiAccessPoints']);
+        $result = null;
+
+        $enricher->enrich($telemetry)->then(function (array $value) use (&$result): void {
+            $result = $value;
+        });
+
+        self::assertSame(0, $calls);
+        self::assertFalse($result['data']['hasCoordinates']);
+        self::assertArrayNotHasKey('lat', $result['data']);
+        self::assertArrayNotHasKey('lon', $result['data']);
+        self::assertNotEmpty($result['data']['baseStations']);
+    }
+
+    public function testDoesNotFallBackToCellOnlyWhenWifiEvidenceIsInsufficient(): void
+    {
+        $calls = 0;
+        $enricher = new BeaconDbTelemetryEnricher(
+            new BeaconDbRequestBuilder(),
+            function () use (&$calls) {
+                $calls++;
+                return resolve([]);
+            },
+        );
+        $telemetry = $this->nonGpsTelemetry();
+        $telemetry['data']['wifiAccessPoints'] = [
+            ['ssid' => 'Only one', 'mac' => 'dc:fe:23:b8:31:73', 'signalStrengthDbm' => -44],
+        ];
+        $result = null;
+
+        $enricher->enrich($telemetry)->then(function (array $value) use (&$result): void {
+            $result = $value;
+        });
+
+        self::assertSame(0, $calls);
+        self::assertFalse($result['data']['hasCoordinates']);
+        self::assertNotEmpty($result['data']['baseStations']);
+    }
+
     public function testDropsUntrustedCoordinatesWhenProviderAccuracyIsUnacceptable(): void
     {
         $enricher = new BeaconDbTelemetryEnricher(

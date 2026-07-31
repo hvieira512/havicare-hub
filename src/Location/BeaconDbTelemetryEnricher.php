@@ -20,7 +20,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
     public function __construct(
         private readonly BeaconDbRequestBuilder $requestBuilder,
         callable $resolver,
-        private readonly float $maxAccuracyMeters = 5000.0,
+        private readonly float $maxAccuracyMeters = 500.0,
         private readonly int $cacheTtlSeconds = 300,
         private readonly int $failureCacheTtlSeconds = 60,
     ) {
@@ -40,7 +40,8 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         $unresolvedTelemetry = $this->withoutUntrustedCoordinates($telemetry);
 
         $request = $this->requestBuilder->build($telemetry);
-        if ($request === null) {
+        $source = strtolower(trim((string)($data['source'] ?? '')));
+        if ($request === null || $source === 'cell' || !isset($request['wifiAccessPoints'])) {
             return resolve($unresolvedTelemetry);
         }
 

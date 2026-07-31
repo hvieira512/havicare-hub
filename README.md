@@ -459,7 +459,8 @@ Semantics:
 - `lat` and `lon` mean usable coordinates are available. They may come from a valid device GNSS fix or from server-side cell/Wi-Fi resolution.
 - `gpsValid` means the protocol marked the GNSS fix as valid. Coordinates may still exist when `gpsValid` is `false`.
 - `source` describes how the position should be interpreted. It should not be inferred only from the presence of coordinates.
-- When `source` is `cell`, `wifi`, or `cell_wifi`, the hub may replace absent or stale device coordinates with BeaconDB results. The resolved `lat`, `lon`, and `accuracyMeters` remain inside the existing telemetry `data` object.
+- When `source` is `wifi` or `cell_wifi`, the hub may replace absent or stale device coordinates with BeaconDB results. The resolved `lat`, `lon`, and `accuracyMeters` remain inside the existing telemetry `data` object.
+- `source: cell` is retained only as LBS diagnostic evidence and never produces persistable coordinates. Server-side resolution requires at least two usable Wi-Fi access points (`wifi` or `cell_wifi`) and rejects provider results less accurate than 500 metres by default.
 - `baseStations` and `wifiAccessPoints` are optional evidence fields and may appear even when coordinates are absent.
 - Each base station may include `mcc`, `mnc`, `lac`, `cellId`, `radioType`, and `signalStrengthDbm`. Wonlex CDMA evidence is preserved as `sid`, `nid`, and `bid`.
 - Each Wi-Fi observation may include `ssid`, canonical `mac`, `signalStrengthDbm`, `channel`, and `frequencyMhz`.
@@ -664,7 +665,7 @@ The scenario smoke test starts Mosquitto and the hub, connects a simulated Vivis
 
 The hub resolves normalized non-GPS location evidence asynchronously before publishing that location telemetry. Valid GPS fixes bypass the external API. Successful results are merged into the existing `data.lat`, `data.lon`, `data.hasCoordinates`, and `data.accuracyMeters` fields; no second location envelope is introduced. Resolution failures publish the normalized evidence without coordinates, which existing ingestion safely ignores.
 
-Configure this with `LOCATION_RESOLUTION_ENABLED`, `BEACONDB_ENDPOINT`, `BEACONDB_USER_AGENT`, `BEACONDB_TIMEOUT_SECONDS`, `BEACONDB_MAX_ACCURACY_METERS`, `BEACONDB_CACHE_TTL_SECONDS`, and `BEACONDB_FAILURE_CACHE_TTL_SECONDS`. Successful and failed evidence lookups are cached independently in memory to limit provider traffic. API credentials, if a future provider requires them, belong in the hub environment and must not be published to MQTT.
+Configure this with `LOCATION_RESOLUTION_ENABLED`, `BEACONDB_ENDPOINT`, `BEACONDB_USER_AGENT`, `BEACONDB_TIMEOUT_SECONDS`, `BEACONDB_MAX_ACCURACY_METERS` (default `500`), `BEACONDB_CACHE_TTL_SECONDS`, and `BEACONDB_FAILURE_CACHE_TTL_SECONDS`. Successful and failed evidence lookups are cached independently in memory to limit provider traffic. API credentials, if a future provider requires them, belong in the hub environment and must not be published to MQTT.
 
 The standalone probe remains available for diagnostics. It accepts either a saved normalized telemetry payload or an MQTT filter, builds an MLS/Ichnaea request, calls BeaconDB, and prints the resulting coordinates and accuracy.
 
