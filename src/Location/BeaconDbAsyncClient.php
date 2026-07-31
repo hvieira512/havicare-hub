@@ -54,7 +54,7 @@ final class BeaconDbAsyncClient implements LocationProviderContract
                 );
             }
 
-            return ['httpStatus' => $status, 'body' => $body];
+            return ['httpStatus' => $status, 'body' => $body, 'provider' => 'beacondb'];
         }, static function ($error): void {
             if ($error instanceof ResponseException) {
                 $response = $error->getResponse();

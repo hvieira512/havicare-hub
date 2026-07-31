@@ -19,14 +19,17 @@ export WHITELIST_FILE="config/whitelist.example.json"
 export LOCATION_RESOLUTION_ENABLED="true"
 export BEACONDB_ENDPOINT="http://127.0.0.1:8099"
 export BEACONDB_USER_AGENT="HaviCare local hub location enrichment test"
+export UNWIRED_LABS_TOKEN="scenario-unwired-token"
+export UNWIRED_LABS_ENDPOINT="http://127.0.0.1:8100"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 wait_for_mosquitto
 start_mqtt_subscriber
 docker compose exec -T redis sh -lc "redis-cli --scan --pattern 'hub:location:*' | xargs -r redis-cli del >/dev/null"
 
-docker compose exec -T hub sh -lc "rm -f /tmp/beacondb-requests.log /tmp/beacondb-mock.log"
+docker compose exec -T hub sh -lc "rm -f /tmp/beacondb-requests.log /tmp/beacondb-mock.log /tmp/unwired-labs-requests.log /tmp/unwired-labs-mock.log"
 docker compose exec -d hub sh -lc "php -S 127.0.0.1:8099 tests/scenarios/fixtures/beacondb-router.php >/tmp/beacondb-mock.log 2>&1"
+docker compose exec -d hub sh -lc "php -S 127.0.0.1:8100 tests/scenarios/fixtures/unwired-labs-router.php >/tmp/unwired-labs-mock.log 2>&1"
 docker compose exec -d hub sh -lc "BEACONDB_USER_AGENT='HaviCare local location pipeline test' php simulator/location-beacondb-probe.php --host mosquitto --port 1883 --username '$MQTT_SMOKE_USERNAME' --password '$MQTT_SMOKE_PASSWORD' --topic '+/watch/+/telemetry' --count 3 --listen-timeout 15 --endpoint http://127.0.0.1:8099 > /tmp/location-probe.log 2>&1"
 
 for _ in $(seq 1 20); do
@@ -109,6 +112,48 @@ if printf '%s' "$LOCATION_JSON" | jq -e 'has("coordinates")' >/dev/null; then
 fi
 if ! grep -q '"cellTowers"' "$SCENARIO_DIR/beacondb-requests.log" || ! grep -q '"wifiAccessPoints"' "$SCENARIO_DIR/beacondb-requests.log"; then
   scenario_fail "resolution_failure" "hub did not send normalized cell and Wi-Fi evidence to BeaconDB"
+fi
+
+docker compose exec -T hub php -r '
+require "vendor/autoload.php";
+$adapter = new Hub\Protocol\Adapter\WonlexAdapter();
+$socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
+if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+]));
+usleep(200000);
+fwrite($socket, $adapter->encodeOutgoing([
+    "type" => "upLocation", "imei" => "868705080300697",
+    "data" => [
+        "baseStationType" => 0, "positionDataType" => 1,
+        "baseStation" => [["mcc" => 268, "mnc" => 3, "lac" => 180, "cellId" => 194809015]],
+        "Wifi" => [
+            ["ssid" => "Fallback One", "mac" => "10:11:12:13:14:15", "signal" => -55],
+            ["ssid" => "Fallback Two", "mac" => "20:21:22:23:24:25", "signal" => -53],
+        ],
+    ],
+]));
+usleep(1000000);
+fclose($socket);
+'
+
+for _ in $(seq 1 20); do
+  capture_mqtt_log
+  if grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep -q '"lat":41.706841'; then
+    break
+  fi
+  sleep 1
+done
+docker compose exec -T hub sh -lc "cat /tmp/unwired-labs-requests.log 2>/dev/null || true" > "$SCENARIO_DIR/unwired-labs-requests.log"
+FALLBACK_JSON="$(grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep '"lat":41.706841' | tail -n 1 | cut -d' ' -f2-)"
+if ! printf '%s' "$FALLBACK_JSON" | jq -e '.data.hasCoordinates == true and .data.accuracyMeters == 120' >/dev/null; then
+  scenario_fail "fallback_failure" "Unwired Labs fallback did not publish trusted coordinates"
+fi
+if ! grep -q '"token":"\*\*\*"' "$SCENARIO_DIR/unwired-labs-requests.log" \
+    || ! grep -q '"address":0' "$SCENARIO_DIR/unwired-labs-requests.log" \
+    || ! grep -q '"bt":0' "$SCENARIO_DIR/unwired-labs-requests.log"; then
+  scenario_fail "fallback_contract_failure" "Unwired Labs request was not converted or redacted correctly"
 fi
 
 CACHE_KEYS="$(docker compose exec -T redis redis-cli --scan --pattern 'hub:location:resolution:*' | tr -d '\r')"

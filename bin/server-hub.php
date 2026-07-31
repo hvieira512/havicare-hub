@@ -117,9 +117,9 @@ if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
         new Browser(),
         (string)($locationResolutionConfig['endpoint'] ?? 'https://api.beacondb.net/v1/geolocate'),
         (string)($locationResolutionConfig['user_agent'] ?? 'HaviCare Devices Hub/1.0'),
-        (float)($locationResolutionConfig['timeout_seconds'] ?? 5.0),
+        (float)($locationResolutionConfig['timeout_seconds'] ?? 2.0),
     );
-    $locationProvider = new Hub\Location\ConcurrentLocationProvider(
+    $primaryLocationProvider = new Hub\Location\ConcurrentLocationProvider(
         new Hub\Location\CircuitBreakingLocationProvider(
             $beaconDbClient,
             new Hub\Location\RedisProviderCircuitStateStore($locationRedis),
@@ -130,6 +130,35 @@ if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
         (int)($locationResolutionConfig['max_concurrency'] ?? 5),
         (int)($locationResolutionConfig['max_queue'] ?? 1000),
     );
+    $locationProvider = $primaryLocationProvider;
+    $unwiredLabsToken = trim((string)($locationResolutionConfig['unwired_labs_token'] ?? ''));
+    if ($unwiredLabsToken !== '') {
+        $unwiredLabsClient = new Hub\Location\UnwiredLabsAsyncClient(
+            new Browser(),
+            new Hub\Location\UnwiredLabsRequestBuilder(),
+            $unwiredLabsToken,
+            (string)($locationResolutionConfig['unwired_labs_endpoint'] ?? 'https://eu1.unwiredlabs.com/v2/process'),
+            (float)($locationResolutionConfig['unwired_labs_timeout_seconds'] ?? 2.0),
+        );
+        $fallbackLocationProvider = new Hub\Location\ConcurrentLocationProvider(
+            new Hub\Location\CircuitBreakingLocationProvider(
+                $unwiredLabsClient,
+                new Hub\Location\RedisProviderCircuitStateStore($locationRedis),
+                (int)($locationResolutionConfig['circuit_failure_threshold'] ?? 3),
+                (int)($locationResolutionConfig['circuit_open_seconds'] ?? 300),
+                (int)($locationResolutionConfig['rate_limit_open_seconds'] ?? 3600),
+            ),
+            (int)($locationResolutionConfig['max_concurrency'] ?? 5),
+            (int)($locationResolutionConfig['max_queue'] ?? 1000),
+        );
+        $locationProvider = new Hub\Location\SequentialLocationProvider(
+            $primaryLocationProvider,
+            $fallbackLocationProvider,
+            new Hub\Location\LocationResponseValidator(
+                (float)($locationResolutionConfig['max_accuracy_meters'] ?? 500.0),
+            ),
+        );
+    }
     $locationCache = new Hub\Location\TieredLocationResolutionCache(
         new Hub\Location\ArrayLocationResolutionCache(),
         new Hub\Location\RedisLocationResolutionCache($locationRedis),

@@ -69,7 +69,7 @@ class Config
                 'enabled' => $locationResolutionEnabled,
                 'endpoint' => getenv('BEACONDB_ENDPOINT') ?: 'https://api.beacondb.net/v1/geolocate',
                 'user_agent' => getenv('BEACONDB_USER_AGENT') ?: 'HaviCare Devices Hub/1.0',
-                'timeout_seconds' => max(0.1, (float)(getenv('BEACONDB_TIMEOUT_SECONDS') ?: 5.0)),
+                'timeout_seconds' => max(0.1, (float)(getenv('BEACONDB_TIMEOUT_SECONDS') ?: 2.0)),
                 'max_accuracy_meters' => max(0.0, (float)(getenv('BEACONDB_MAX_ACCURACY_METERS') ?: 500.0)),
                 'cache_ttl_seconds' => $beaconDbCacheTtl,
                 'failure_cache_ttl_seconds' => $beaconDbFailureCacheTtl,
@@ -80,6 +80,7 @@ class Config
                 'rate_limit_open_seconds' => $locationRateLimitOpenSeconds,
                 'unwired_labs_token' => getenv('UNWIRED_LABS_TOKEN') ?: '',
                 'unwired_labs_endpoint' => getenv('UNWIRED_LABS_ENDPOINT') ?: 'https://eu1.unwiredlabs.com/v2/process',
+                'unwired_labs_timeout_seconds' => max(0.1, (float)(getenv('UNWIRED_LABS_TIMEOUT_SECONDS') ?: 2.0)),
             ],
             'ncs' => [
                 'enabled' => !in_array(strtolower(trim((string)(getenv('NCS_ENABLED') ?: 'true'))), ['0', 'false', 'no', 'off'], true),

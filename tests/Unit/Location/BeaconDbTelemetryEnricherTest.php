@@ -267,6 +267,25 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
         self::assertArrayNotHasKey('accuracyMeters', $result['data']);
     }
 
+    public function testDropsProviderCoordinatesWithoutAccuracy(): void
+    {
+        $enricher = new BeaconDbTelemetryEnricher(
+            new BeaconDbRequestBuilder(),
+            static fn () => resolve([
+                'httpStatus' => 200,
+                'body' => ['location' => ['lat' => 41.7, 'lng' => -8.8]],
+            ]),
+        );
+        $result = null;
+        $enricher->enrich($this->nonGpsTelemetry())->then(function (array $value) use (&$result): void {
+            $result = $value;
+        });
+
+        self::assertFalse($result['data']['hasCoordinates']);
+        self::assertArrayNotHasKey('lat', $result['data']);
+        self::assertArrayNotHasKey('lon', $result['data']);
+    }
+
     public function testDropsUntrustedCoordinatesWhenProviderDoesNotResolveEvidence(): void
     {
         $enricher = new BeaconDbTelemetryEnricher(

@@ -11,6 +11,14 @@ if (!is_array($body) || ($body['considerIp'] ?? null) !== false) {
     return;
 }
 
+foreach ($body['wifiAccessPoints'] ?? [] as $wifi) {
+    if (($wifi['macAddress'] ?? null) === '10:11:12:13:14:15') {
+        http_response_code(404);
+        echo json_encode(['error' => ['message' => 'not found']]);
+        return;
+    }
+}
+
 echo json_encode([
     'location' => ['lat' => 41.706841, 'lng' => -8.793279],
     'accuracy' => 120,

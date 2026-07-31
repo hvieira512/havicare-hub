@@ -10,6 +10,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
 {
     private LocationProviderContract $provider;
     private LocationResolutionCacheContract $cache;
+    private LocationResponseValidator $responseValidator;
 
     /** @var array<string, PromiseInterface<array{httpStatus: int, body: array<string, mixed>}>> */
     private array $pending = [];
@@ -26,6 +27,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
             ? $provider
             : new CallbackLocationProvider($provider);
         $this->cache = $cache ?? new ArrayLocationResolutionCache();
+        $this->responseValidator = new LocationResponseValidator($this->maxAccuracyMeters);
     }
 
     public function enrich(array $telemetry): PromiseInterface
@@ -67,7 +69,7 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         return $promise->then(
             function (array $response) use ($telemetry, $key): array {
                 unset($this->pending[$key]);
-                $coordinates = $this->coordinates($response);
+                $coordinates = $this->responseValidator->coordinates($response);
                 $this->cacheResolved($key, $coordinates);
 
                 return $this->withCoordinates($telemetry, $coordinates);
@@ -175,41 +177,6 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
         $telemetry['data'] = $data;
 
         return $telemetry;
-    }
-
-    /** @return array<string, float|bool> */
-    private function coordinates(array $response): array
-    {
-        $status = (int)($response['httpStatus'] ?? 0);
-        $body = isset($response['body']) && is_array($response['body']) ? $response['body'] : [];
-        $location = isset($body['location']) && is_array($body['location']) ? $body['location'] : [];
-        $lat = $location['lat'] ?? null;
-        $lon = $location['lng'] ?? $location['lon'] ?? null;
-        $accuracy = $body['accuracy'] ?? null;
-
-        if ($status < 200 || $status >= 300 || !is_numeric($lat) || !is_numeric($lon)) {
-            throw new \RuntimeException("BeaconDB did not resolve the location (HTTP {$status})");
-        }
-
-        $lat = (float)$lat;
-        $lon = (float)$lon;
-        if ($lat < -90.0 || $lat > 90.0 || $lon < -180.0 || $lon > 180.0 || ($lat === 0.0 && $lon === 0.0)) {
-            throw new \RuntimeException('BeaconDB returned invalid coordinates');
-        }
-        if ($accuracy !== null && (!is_numeric($accuracy) || (float)$accuracy < 0.0 || (float)$accuracy > $this->maxAccuracyMeters)) {
-            throw new \RuntimeException('BeaconDB returned an unacceptable accuracy');
-        }
-
-        $coordinates = [
-            'hasCoordinates' => true,
-            'lat' => $lat,
-            'lon' => $lon,
-        ];
-        if ($accuracy !== null) {
-            $coordinates['accuracyMeters'] = (float)$accuracy;
-        }
-
-        return $coordinates;
     }
 
     /** @param array<string, float|bool> $coordinates */
