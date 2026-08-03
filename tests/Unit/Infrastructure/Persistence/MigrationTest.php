@@ -32,10 +32,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026073002_canonicalize_four_p_touch_contact_slots',
             '2026073003_configuration_lifecycle',
             '2026073101_private_radio_map',
+            '2026080301_enable_wonlex_push_message',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(16, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(17, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS
@@ -67,6 +68,8 @@ final class MigrationTest extends MysqlDashboardTestCase
             self::assertContains($feature, $supported);
             self::assertContains($feature, $requestable);
         }
+        self::assertContains('push_message', $supported);
+        self::assertContains('push_message', $requestable);
     }
 
     public function testWatchCapabilityTaxonomyMigrationMovesActionsAndRemovesInternalSyncEntries(): void

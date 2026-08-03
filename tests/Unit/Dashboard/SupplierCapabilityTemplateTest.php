@@ -76,7 +76,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertContains('whitelist_enabled', $keys);
         self::assertNotContains('call_whitelist', $keys);
         self::assertNotContains('call_in_restriction', $keys);
-        self::assertNotContains('push_message', $keys);
+        self::assertContains('push_message', $keys);
     }
 
     public function testFourPTouchWatchTemplateReturnsSupportedSubset(): void

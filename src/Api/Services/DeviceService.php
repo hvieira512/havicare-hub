@@ -354,6 +354,7 @@ class DeviceService
             $id = bin2hex(random_bytes(8));
             $status = $this->hub->submitDownlink($imei, $bytes);
             $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey) ?? [];
+            $expectedReplyTypes = $entry['expectedReplyTypes'] ?? [];
             $record = [
                 'status' => $status,
                 'imei' => $imei,
@@ -361,12 +362,12 @@ class DeviceService
                 'capability' => $capability,
                 'nativeType' => $command,
                 'label' => (string)($entry['label'] ?? $nativeKey),
-                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
+                'expectedReplyTypes' => $expectedReplyTypes,
                 'retryable' => false,
                 'bytes' => $bytes,
                 'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             ];
-            if ($status === 'sent') {
+            if ($status === 'sent' && $expectedReplyTypes !== []) {
                 $record['status'] = 'waiting';
                 $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
             }

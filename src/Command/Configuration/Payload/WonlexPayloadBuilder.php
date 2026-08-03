@@ -45,6 +45,10 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'dnMedicationPlan' => self::medicationPlan($payload),
             'dnDevBindStatus' => ['status' => self::boolInt($payload['status'] ?? $payload['bindStatus'] ?? $payload['enabled'] ?? null, 'status')],
             'resetCommand', 'restartCommand', 'powerOffCommand', 'findDeviceCommand' => [],
+            'pushMessage' => [
+                'msgType' => 'msg',
+                'msg' => self::requiredString($payload['message'] ?? null, 'message'),
+            ],
             'weatherData' => self::weatherData($payload),
             default => throw new \InvalidArgumentException("Unsupported Wonlex configuration {$key}"),
         };

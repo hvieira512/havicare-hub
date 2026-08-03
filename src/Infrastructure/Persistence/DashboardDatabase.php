@@ -19,6 +19,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026073001RenameFourPTouchWh
 use Hub\Infrastructure\Persistence\Migration\Version2026073002CanonicalizeFourPTouchContactSlots;
 use Hub\Infrastructure\Persistence\Migration\Version2026073003ConfigurationLifecycle;
 use Hub\Infrastructure\Persistence\Migration\Version2026073101PrivateRadioMap;
+use Hub\Infrastructure\Persistence\Migration\Version2026080301EnableWonlexPushMessage;
 use PDO;
 
 final class DashboardDatabase
@@ -79,6 +80,7 @@ final class DashboardDatabase
             new Version2026073002CanonicalizeFourPTouchContactSlots(),
             new Version2026073003ConfigurationLifecycle(),
             new Version2026073101PrivateRadioMap(),
+            new Version2026080301EnableWonlexPushMessage(),
         ]))->run();
     }
 }

@@ -7,6 +7,16 @@ use PHPUnit\Framework\TestCase;
 
 final class CapabilityRegistryTest extends TestCase
 {
+    public function testWonlexPushMessageMapsToMessageNoticePayload(): void
+    {
+        $registry = new CapabilityRegistry();
+
+        self::assertSame(
+            ['pushMessage' => ['message' => 'Hello World']],
+            $registry->toNative('wonlex-json', 'push_message', ['message' => 'Hello World'])
+        );
+    }
+
     public function testVivistarAutoVitalsIntervalMapsToAutoHealthMeasurement(): void
     {
         $registry = new CapabilityRegistry();

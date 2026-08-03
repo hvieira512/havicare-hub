@@ -675,7 +675,7 @@ export function renderConfigSection(
 
 function renderConfigActionButton(key, row, uiState, disabled = false) {
     const state = configButtonState(row, uiState);
-    const idleLabel = key === "pushMessage" ? "Enviar mensagem" : "Enviar";
+    const idleLabel = ["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar";
     const isDisabled =
         disabled || ["submitting", "sent", "queued", "waiting"].includes(state);
     const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;

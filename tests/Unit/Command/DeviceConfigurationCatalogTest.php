@@ -365,12 +365,29 @@ final class DeviceConfigurationCatalogTest extends TestCase
     {
         foreach (DeviceConfigurationCatalog::configsForProtocol('wonlex-json') as $entry) {
             $command = (string)($entry['command'] ?? '');
+            if ($command === 'msgNotice') {
+                self::assertSame([], $entry['expectedReplyTypes'] ?? null);
+                continue;
+            }
             self::assertSame(
                 [$command],
                 $entry['expectedReplyTypes'] ?? [],
                 (string)($entry['key'] ?? $command)
             );
         }
+    }
+
+    public function testWonlexPushMessageBuildsDocumentedMessageNotice(): void
+    {
+        $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'pushMessage', [
+            'message' => 'Hello World',
+        ]);
+
+        self::assertSame('msgNotice', $payload['command']);
+        self::assertSame([
+            'msgType' => 'msg',
+            'msg' => 'Hello World',
+        ], $payload['payload']);
     }
 
     public function testWonlexComplexDashboardConfigurationsUseStructuredEditors(): void

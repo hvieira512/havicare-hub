@@ -2451,6 +2451,48 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
     }
 
+    public function testWonlexPushMessageRequestSendsMessageNoticeWithoutWaitingForUndocumentedAck(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(
+            function (string $imei, string $bytes) use (&$submitted): string {
+                $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+                return 'sent';
+            }
+        );
+        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        $imei = '868705080300698';
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+
+        self::assertIsArray($model);
+        self::assertSame('ok', $api->create(json_encode([
+            'imei' => $imei,
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+        $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
+        $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
+
+        $response = $api->requestFeature($imei, json_encode([
+            'capability' => 'push_message',
+            'value' => ['message' => 'Hello World'],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('sent', $response['status'] ?? null);
+        self::assertSame('sent', $response['commands'][0]['status'] ?? null);
+        self::assertFalse($response['commands'][0]['retryable'] ?? true);
+        self::assertSame([], $response['commands'][0]['expectedReplyTypes'] ?? null);
+        self::assertCount(1, $submitted);
+        $frame = (new \Hub\Protocol\Adapter\WonlexAdapter())->decodeIncoming($submitted[0]['bytes']);
+        self::assertSame('msgNotice', $frame['type'] ?? null);
+        self::assertSame('msg', $frame['data']['msgType'] ?? null);
+        self::assertSame('Hello World', $frame['data']['msg'] ?? null);
+        self::assertSame([], $db->deviceConfigurations->allForImei($imei));
+    }
+
     public function testPushMessageRequestRejectsDisabledModelCapability(): void
     {
         [$api, $db] = $this->makeApi();

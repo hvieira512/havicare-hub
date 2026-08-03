@@ -316,6 +316,7 @@ final class CapabilityCatalog
             'restartCommand' => 'restart_device',
             'powerOffCommand' => 'power_off',
             'findDeviceCommand' => 'find_device',
+            'pushMessage' => 'push_message',
             'weatherData' => 'weather_data',
             default => null,
         };
