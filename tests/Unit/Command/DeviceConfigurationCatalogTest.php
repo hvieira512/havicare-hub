@@ -503,6 +503,30 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertArrayNotHasKey('plans', $commands[0]['payload']);
     }
 
+    public function testEmptyWonlexMedicationPlanListProducesEmptyListWireCommand(): void
+    {
+        $commands = DeviceConfigurationCatalog::commandPayloads(
+            'wonlex-json',
+            'dnMedicationPlan',
+            ['plans' => []]
+        );
+
+        self::assertCount(1, $commands);
+        self::assertSame('dnMedicationPlan', $commands[0]['command']);
+        self::assertSame(['plans' => []], $commands[0]['payload']);
+
+        $wire = DeviceCommandCatalog::buildDownlink(
+            'wonlex-json',
+            '868705080304889',
+            $commands[0]['command'],
+            $commands[0]['payload']
+        );
+        $decoded = (new \Hub\Protocol\Adapter\WonlexAdapter())->decodeIncoming($wire);
+
+        self::assertSame('dnMedicationPlan', $decoded['type'] ?? null);
+        self::assertSame([], $decoded['data']['plans'] ?? null);
+    }
+
     public function testWonlexSleepAndThresholdConfigsBuildStructuredPayloads(): void
     {
         $sleep = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexSleepIntervalOrSwitch', [

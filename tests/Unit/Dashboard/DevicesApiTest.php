@@ -2650,6 +2650,59 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertCount(2, $response['configurations']['medication_reminders']['plans'] ?? []);
     }
 
+    public function testWonlexMedicationRemindersCanBeClearedWithEmptyListDownlink(): void
+    {
+        $submitted = [];
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(
+            function (string $imei, string $bytes) use (&$submitted): string {
+                $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+                return 'sent';
+            }
+        );
+        [$api, $db] = $this->makeApi(hub: $hub);
+        $imei = '868705080300698';
+        self::assertSame('ok', $api->create(json_encode([
+            'imei' => $imei,
+            'supplier' => 'Wonlex',
+            'model' => 'HW20PRO',
+            'deviceType' => 'watch',
+            'licenseId' => '0',
+        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+
+        $model = $db->models->find('Wonlex', 'HW20PRO');
+        self::assertIsArray($model);
+        $db->modelCapabilities->replaceForModelId(
+            (int)$model['id'],
+            ['medication_reminders']
+        );
+
+        $response = $api->updateConfigurations($imei, json_encode([
+            'configurations' => [
+                'medication_reminders' => ['plans' => []],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertSame('ok', $response['status'] ?? null);
+        self::assertCount(1, $submitted);
+        $frame = (new \Hub\Protocol\Adapter\WonlexAdapter())
+            ->decodeIncoming($submitted[0]['bytes']);
+        self::assertSame('dnMedicationPlan', $frame['type'] ?? null);
+        self::assertSame([], $frame['data']['plans'] ?? null);
+        self::assertSame(
+            [],
+            $response['configurations']['medication_reminders']['plans'] ?? null
+        );
+        self::assertSame(
+            'awaiting_ack',
+            $response['configurationSync']['entries']['alarms']['medication_reminders']['status'] ?? null
+        );
+        self::assertSame(
+            'dnMedicationPlan',
+            $response['results'][0]['operations'][0]['command'] ?? null
+        );
+    }
+
     public function testFourPTouchAlarmClockConfigurationMapsToNativeCommand(): void
     {
         $submitted = [];

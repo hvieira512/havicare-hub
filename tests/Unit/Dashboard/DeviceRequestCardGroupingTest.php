@@ -218,6 +218,16 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('removeTakePillsReminder(', $bootstrap);
         self::assertStringContainsString('appendWonlexMedicationPlan(section)', $bootstrap);
         self::assertStringContainsString('[data-medication-period-time=', $bootstrap);
+        self::assertStringNotContainsString('if (rows.length <= 1)', $bootstrap);
+        self::assertStringNotContainsString('Adicione pelo menos um medicamento', $source);
+        self::assertStringContainsString(
+            'Nome do medicamento <span class="text-danger" aria-hidden="true">*</span>',
+            $source
+        );
+        self::assertStringContainsString(
+            'Períodos e horários <span class="text-danger" aria-hidden="true">*</span>',
+            $source
+        );
     }
 
     public function testDeviceDetailFilterTypesAreDerivedFromObservedItems(): void

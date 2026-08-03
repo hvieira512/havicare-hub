@@ -202,6 +202,10 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function medicationPlan(array $payload): array
     {
+        if (array_key_exists('plans', $payload) && $payload['plans'] === []) {
+            return ['plans' => []];
+        }
+
         $plan = $payload['plan'] ?? $payload['medicationPlan'] ?? null;
         if ($plan === null && isset($payload['plans'])) {
             if (!is_array($payload['plans']) || count($payload['plans']) !== 1 || !is_array($payload['plans'][0])) {

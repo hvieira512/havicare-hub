@@ -2106,6 +2106,7 @@ function wonlexMedicationPlansInput(desired) {
             <div class="small text-secondary">
                 Cada plano é enviado separadamente ao relógio. Selecione pelo menos um período e indique a respetiva hora.
             </div>
+            <div class="small"><span class="text-danger" aria-hidden="true">*</span> Campo obrigatório</div>
             <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addWonlexMedicationPlan">
                     <i class="fa-solid fa-plus me-2"></i>Adicionar medicamento
@@ -2131,8 +2132,8 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
             </div>
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label form-label-sm">Tipo</label>
-                    <select class="form-select" data-medication-field="drugType">
+                    <label class="form-label form-label-sm">Tipo <span class="text-danger" aria-hidden="true">*</span></label>
+                    <select class="form-select" data-medication-field="drugType" required>
                         ${[
                             [0, "Hipertensão"],
                             [1, "Diabetes"],
@@ -2144,7 +2145,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                     </select>
                 </div>
                 <div class="col-md-8">
-                    <label class="form-label form-label-sm">Nome do medicamento</label>
+                    <label class="form-label form-label-sm">Nome do medicamento <span class="text-danger" aria-hidden="true">*</span></label>
                     <input class="form-control" type="text" data-medication-field="drugName" value="${esc(normalized.drugName)}" placeholder="Ex.: Losartan" required>
                 </div>
                 <div class="col-sm-6 col-md-3">
@@ -2167,22 +2168,22 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                     </select>
                 </div>
                 <div class="col-sm-6 col-md-3">
-                    <label class="form-label form-label-sm">Data inicial</label>
+                    <label class="form-label form-label-sm">Data inicial <span class="text-danger" aria-hidden="true">*</span></label>
                     <input class="form-control" type="date" data-medication-field="drugStartTime" value="${esc(normalized.drugStartTime)}" required>
                 </div>
                 <div class="col-sm-6 col-md-3">
-                    <label class="form-label form-label-sm">Data final</label>
+                    <label class="form-label form-label-sm">Data final <span class="text-danger" aria-hidden="true">*</span></label>
                     <input class="form-control" type="date" data-medication-field="drugEndTime" value="${esc(normalized.drugEndTime)}" required>
                 </div>
                 <div class="col-sm-6 col-md-4">
-                    <label class="form-label form-label-sm">Intervalo</label>
+                    <label class="form-label form-label-sm">Intervalo <span class="text-danger" aria-hidden="true">*</span></label>
                     <div class="input-group">
                         <input class="form-control" type="number" min="0" step="0.5" data-medication-field="drugInterval" value="${esc(String(normalized.drugInterval))}" required>
                         <span class="input-group-text">dias</span>
                     </div>
                 </div>
                 <div class="col-sm-6 col-md-8">
-                    <label class="form-label form-label-sm d-block">Tomar</label>
+                    <label class="form-label form-label-sm d-block">Tomar <span class="text-danger" aria-hidden="true">*</span></label>
                     <div class="btn-group" role="group" aria-label="Relação com a refeição">
                         ${[
                             [0, "Antes da refeição"],
@@ -2198,7 +2199,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                 </div>
             </div>
             <div class="mt-3">
-                <label class="form-label form-label-sm">Períodos e horários</label>
+                <label class="form-label form-label-sm">Períodos e horários <span class="text-danger" aria-hidden="true">*</span></label>
                 <div class="row g-2">
                     ${WONLEX_MEDICATION_PERIODS.map((period) => {
                         const selected = normalized.periods.includes(period.index);
@@ -2345,10 +2346,6 @@ function readWonlexMedicationPlans(section) {
             },
         };
     });
-
-    if (plans.length === 0) {
-        throw new Error("Adicione pelo menos um medicamento");
-    }
 
     return {plans};
 }

@@ -2282,13 +2282,6 @@ function removeWonlexMedicationPlan(row) {
     const list = row?.closest("[data-wonlex-medication-list]");
     if (!row || !list) return;
 
-    const rows = list.querySelectorAll(
-        '[data-repeat-row="wonlexMedicationPlan"]',
-    );
-    if (rows.length <= 1) {
-        return;
-    }
-
     row.remove();
     renumberWonlexMedicationPlans(list);
 }

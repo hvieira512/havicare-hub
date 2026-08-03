@@ -24,9 +24,6 @@ final class WonlexMedicationRemindersHandler implements MedicationRemindersHandl
         $plans = $value['plans'] ?? null;
         if ($plans !== null) {
             $plans = self::requireListValue($plans, 'plans');
-            if ($plans === []) {
-                throw new \InvalidArgumentException('plans must contain at least one medication plan');
-            }
             foreach ($plans as $plan) {
                 if (!is_array($plan)) {
                     throw new \InvalidArgumentException('plans items must be objects');

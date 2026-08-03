@@ -95,16 +95,20 @@ final class DeviceConfigurationCatalog
 
         $payloads = [$payload];
         if ($protocol === 'wonlex-json' && $key === 'dnMedicationPlan' && isset($payload['plans'])) {
-            if (!is_array($payload['plans']) || $payload['plans'] === []) {
-                throw new \InvalidArgumentException('plans must contain at least one medication plan');
+            if (!is_array($payload['plans'])) {
+                throw new \InvalidArgumentException('plans must be a list of medication plans');
             }
-            $payloads = array_map(static function (mixed $plan): array {
-                if (!is_array($plan)) {
-                    throw new \InvalidArgumentException('plans items must be objects');
-                }
+            if ($payload['plans'] === []) {
+                $payloads = [['plans' => []]];
+            } else {
+                $payloads = array_map(static function (mixed $plan): array {
+                    if (!is_array($plan)) {
+                        throw new \InvalidArgumentException('plans items must be objects');
+                    }
 
-                return ['plan' => $plan];
-            }, array_values($payload['plans']));
+                    return ['plan' => $plan];
+                }, array_values($payload['plans']));
+            }
         }
 
         return array_map(static fn(array $item): array => [
