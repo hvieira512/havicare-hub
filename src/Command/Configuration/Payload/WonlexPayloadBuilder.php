@@ -127,9 +127,6 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 throw new \InvalidArgumentException('alarmClockList items must be objects');
             }
             $label = trim((string)($item['label'] ?? ''));
-            if ($label === '') {
-                throw new \InvalidArgumentException('alarm label is required');
-            }
             $time = trim((string)($item['startTime'] ?? $item['time'] ?? ''));
             if ($time === '') {
                 throw new \InvalidArgumentException('alarm startTime is required');

@@ -1973,7 +1973,6 @@ function alarmClockInput(desired, meta = {}) {
           ];
     const wonlexFields = {
         label: meta.label?.supported === true,
-        labelRequired: meta.label?.required === true,
         url: meta.url?.supported === true,
     };
     if (items.length === 0) {
@@ -2968,8 +2967,8 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 ${wonlexFields.label
                     ? `
                 <div class="col-12 col-lg-4">
-                    <label class="form-label form-label-sm">Nome do alarme${wonlexFields.labelRequired ? ' <span class="text-danger">*</span>' : ""}</label>
-                    <input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}" ${wonlexFields.labelRequired ? "required" : ""}>
+                    <label class="form-label form-label-sm">Nome do alarme</label>
+                    <input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">
                 </div>`
                     : ""}
                 <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">

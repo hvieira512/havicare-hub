@@ -510,7 +510,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(10, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
         self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['label']['supported'] ?? false);
-        self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['label']['required'] ?? false);
+        self::assertArrayNotHasKey('required', $response['capabilities']['alarms']['alarm_clock']['_meta']['label'] ?? []);
         self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['url']['supported'] ?? false);
         self::assertSame(
             ['http', 'https'],

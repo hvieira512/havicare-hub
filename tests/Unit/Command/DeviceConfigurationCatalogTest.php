@@ -492,12 +492,9 @@ final class DeviceConfigurationCatalogTest extends TestCase
                 'items' => array_fill(0, 11, $valid),
             ])
         );
-        self::assertSame(
-            'alarm label is required',
-            DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
-                'items' => [array_diff_key($valid, ['label' => true])],
-            ])
-        );
+        self::assertNull(DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
+            'items' => [array_diff_key($valid, ['label' => true])],
+        ]));
         self::assertSame(
             'alarm startTime must use 24-hour HH:mm format',
             DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [

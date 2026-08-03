@@ -72,7 +72,6 @@ final class Wonlex implements AlarmClockHandler
             'limit' => 10,
             'label' => [
                 'supported' => true,
-                'required' => true,
                 'label' => 'Nome do alarme',
             ],
             'url' => [

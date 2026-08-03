@@ -121,11 +121,11 @@ For watches, each alarm item can render:
 - `recurrence.kind`
 - `recurrence.days` when `kind === "custom"`
 
-Required fields should be marked in the UI. `time` and `recurrence` are always required; Wonlex also requires `label`.
+Required fields should be marked in the UI. `time` and `recurrence` are always required. Wonlex optionally supports `label`.
 
 ### Wonlex
 
-Wonlex supports up to 10 alarm entries using a Monday-to-Sunday weekly mask. It supports `daily` and `custom` recurrence, but not a true one-time alarm. `label` is required and `url` is optional.
+Wonlex supports up to 10 alarm entries using a Monday-to-Sunday weekly mask. It supports `daily` and `custom` recurrence, but not a true one-time alarm. `label` and `url` are optional.
 
 ### Vivistar
 
