@@ -47,7 +47,7 @@ final class Wonlex implements AlarmClockHandler
             }
             $recurrence = count($days) === 7
                 ? ['kind' => 'daily']
-                : ($days === [] ? ['kind' => 'once'] : ['kind' => 'custom', 'days' => $days]);
+                : ['kind' => 'custom', 'days' => $days];
 
             return array_filter([
                 'label' => trim((string)($item['label'] ?? '')),
@@ -72,6 +72,7 @@ final class Wonlex implements AlarmClockHandler
             'limit' => 10,
             'label' => [
                 'supported' => true,
+                'required' => true,
                 'label' => 'Nome do alarme',
             ],
             'url' => [
@@ -82,7 +83,12 @@ final class Wonlex implements AlarmClockHandler
             ],
             'week' => [
                 'order' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-                'onceBehavior' => 'current_weekday',
+            ],
+            'mode' => [
+                'options' => [
+                    ['value' => 'daily', 'label' => 'Todos os dias'],
+                    ['value' => 'custom', 'label' => 'Personalizado'],
+                ],
             ],
             'days' => [
                 'options' => [

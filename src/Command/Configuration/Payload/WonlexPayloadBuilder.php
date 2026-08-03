@@ -4,6 +4,8 @@ namespace Hub\Command\Configuration\Payload;
 
 final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    private const ALARM_CLOCK_LIMIT = 10;
+
     public static function build(string $key, array $payload): array
     {
         if (isset($payload['data']) && is_array($payload['data'])) {
@@ -113,17 +115,27 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     private static function alarmClockList(array $payload): array
     {
         $items = $payload['alarmClockList'] ?? $payload['alarmClock'] ?? $payload['alarms'] ?? $payload['items'] ?? null;
-        if (!is_array($items)) {
+        if (!is_array($items) || !array_is_list($items)) {
             throw new \InvalidArgumentException('alarmClockList must be an array');
+        }
+        if (count($items) > self::ALARM_CLOCK_LIMIT) {
+            throw new \InvalidArgumentException('alarmClockList must contain at most 10 items');
         }
 
         return array_values(array_map(static function (mixed $item): array {
             if (!is_array($item)) {
                 throw new \InvalidArgumentException('alarmClockList items must be objects');
             }
+            $label = trim((string)($item['label'] ?? ''));
+            if ($label === '') {
+                throw new \InvalidArgumentException('alarm label is required');
+            }
             $time = trim((string)($item['startTime'] ?? $item['time'] ?? ''));
             if ($time === '') {
                 throw new \InvalidArgumentException('alarm startTime is required');
+            }
+            if (preg_match('/^(?:[01]\\d|2[0-3]):[0-5]\\d$/', $time) !== 1) {
+                throw new \InvalidArgumentException('alarm startTime must use 24-hour HH:mm format');
             }
             $week = $item['week'] ?? null;
             if ($week === null && is_array($item['recurrence'] ?? null)) {
@@ -131,15 +143,37 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 if ($kind === 'daily') {
                     $week = '1111111';
                 } elseif ($kind === 'once') {
-                    $weekday = (int)date('N');
-                    $week = str_repeat('0', $weekday - 1) . '1' . str_repeat('0', 7 - $weekday);
-                } elseif (is_array($item['recurrence']['days'] ?? null)) {
-                    $enabledDays = array_flip(array_map('intval', $item['recurrence']['days']));
+                    throw new \InvalidArgumentException('recurrence once is not supported by Wonlex alarmClock');
+                } elseif ($kind === 'custom') {
+                    $days = $item['recurrence']['days'] ?? null;
+                    if (!is_array($days) || !array_is_list($days) || $days === []) {
+                        throw new \InvalidArgumentException('custom recurrence requires at least one day');
+                    }
+                    $enabledDays = [];
+                    foreach ($days as $day) {
+                        if (!(is_int($day) || (is_string($day) && ctype_digit($day)))) {
+                            throw new \InvalidArgumentException('custom recurrence days must be integers from 1 to 7');
+                        }
+                        $day = (int)$day;
+                        if ($day < 1 || $day > 7) {
+                            throw new \InvalidArgumentException('custom recurrence days must be integers from 1 to 7');
+                        }
+                        $enabledDays[$day] = true;
+                    }
                     $week = implode('', array_map(
                         static fn(int $day): string => isset($enabledDays[$day]) ? '1' : '0',
                         range(1, 7)
                     ));
+                } else {
+                    throw new \InvalidArgumentException('alarm recurrence must be daily or custom');
                 }
+            }
+            if ($week === null) {
+                throw new \InvalidArgumentException('alarm week or recurrence is required');
+            }
+            $week = trim((string)$week);
+            if (preg_match('/^[01]{7}$/', $week) !== 1) {
+                throw new \InvalidArgumentException('alarm week must contain exactly 7 zero-or-one characters');
             }
 
             $url = trim((string)($item['url'] ?? ''));
@@ -151,9 +185,9 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             }
 
             return array_filter([
-                'label' => trim((string)($item['label'] ?? '')),
+                'label' => $label,
                 'startTime' => $time,
-                'week' => trim((string)($week ?? '0000000')),
+                'week' => $week,
                 'status' => (string)self::boolInt($item['status'] ?? $item['enabled'] ?? true, 'status'),
                 'url' => $url,
             ], static fn (mixed $value): bool => $value !== '');

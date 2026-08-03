@@ -510,6 +510,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(10, $response['capabilities']['alarms']['alarm_clock']['_meta']['limit'] ?? null);
         self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['label']['supported'] ?? false);
+        self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['label']['required'] ?? false);
         self::assertTrue($response['capabilities']['alarms']['alarm_clock']['_meta']['url']['supported'] ?? false);
         self::assertSame(
             ['http', 'https'],
@@ -526,6 +527,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 ['value' => 7, 'label' => 'Dom'],
             ],
             $response['capabilities']['alarms']['alarm_clock']['_meta']['days']['options'] ?? null
+        );
+        self::assertSame(
+            [
+                ['value' => 'daily', 'label' => 'Todos os dias'],
+                ['value' => 'custom', 'label' => 'Personalizado'],
+            ],
+            $response['capabilities']['alarms']['alarm_clock']['_meta']['recurrence']['options'] ?? null
         );
         self::assertArrayHasKey('sos_contacts', $response['capabilities']['contacts'] ?? []);
     }

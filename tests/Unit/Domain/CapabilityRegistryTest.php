@@ -152,4 +152,26 @@ final class CapabilityRegistryTest extends TestCase
             ], 'four-p-touch')[0]['time'] ?? null
         );
     }
+
+    public function testWonlexAlarmClockZeroWeekMaskIsNotReportedAsOnce(): void
+    {
+        $registry = new CapabilityRegistry();
+
+        self::assertSame(
+            [[
+                'label' => 'Disabled',
+                'time' => '08:00',
+                'enabled' => false,
+                'recurrence' => ['kind' => 'custom', 'days' => []],
+            ]],
+            $registry->fromNative('alarm_clock', 'alarmClock', [
+                'alarmClockList' => [[
+                    'label' => 'Disabled',
+                    'startTime' => '08:00',
+                    'week' => '0000000',
+                    'status' => '0',
+                ]],
+            ], 'wonlex-json')
+        );
+    }
 }

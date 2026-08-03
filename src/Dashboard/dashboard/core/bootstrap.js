@@ -2174,7 +2174,7 @@ function appendAlarmClockRow(section) {
         }
 
         if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
-            input.checked = String(input.value || "").trim().toLowerCase() === "once";
+            input.checked = false;
             return;
         }
 
@@ -2190,6 +2190,13 @@ function appendAlarmClockRow(section) {
 
         input.value = "";
     });
+    const recurrenceInputs = Array.from(
+        clone.querySelectorAll('[data-alarm-clock-field="recurrenceKind"]'),
+    );
+    const defaultRecurrence = recurrenceInputs.find(
+        (input) => String(input.value || "").trim().toLowerCase() === "once",
+    ) || recurrenceInputs[0];
+    if (defaultRecurrence) defaultRecurrence.checked = true;
 
     syncAlarmClockCustomVisibility(clone);
     const switchLabel = clone.querySelector('[data-alarm-clock-field="enabled"]')
@@ -2308,7 +2315,7 @@ function removeConfigRow(row) {
                 return;
             }
             if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
-                input.checked = String(input.value || "").trim().toLowerCase() === "once";
+                input.checked = false;
                 return;
             }
             if (input.matches('[data-alarm-clock-field="type"]')) {
@@ -2323,6 +2330,13 @@ function removeConfigRow(row) {
                 input.value = "";
             }
         });
+        const recurrenceInputs = Array.from(
+            row.querySelectorAll('[data-alarm-clock-field="recurrenceKind"]'),
+        );
+        const defaultRecurrence = recurrenceInputs.find(
+            (input) => String(input.value || "").trim().toLowerCase() === "once",
+        ) || recurrenceInputs[0];
+        if (defaultRecurrence) defaultRecurrence.checked = true;
         syncAlarmClockCustomVisibility(row);
         resetPhoneControls(row);
         return;

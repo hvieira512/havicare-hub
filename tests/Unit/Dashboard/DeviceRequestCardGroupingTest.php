@@ -93,6 +93,9 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('data-action="addAlarmClockRow"', $source);
         self::assertStringContainsString('data-alarm-clock-field="label"', $source);
         self::assertStringContainsString('data-alarm-clock-field="url"', $source);
+        self::assertStringContainsString('wonlexFields.labelRequired', $source);
+        self::assertStringContainsString('Hora <span class="text-danger">*</span>', $source);
+        self::assertStringContainsString('Recorrência <span class="text-danger">*</span>', $source);
         self::assertStringNotContainsString('data-reminders-list', $source);
         self::assertStringNotContainsString('addReminderRow', $source);
         self::assertStringNotContainsString('removeReminderRow', $source);

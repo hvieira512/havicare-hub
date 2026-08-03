@@ -1141,7 +1141,7 @@ class OpenApiSpec
                     'AlarmClockItem' => [
                         'type' => 'object',
                         'properties' => [
-                            'label' => ['type' => 'string', 'nullable' => true, 'description' => 'Optional alarm name supported by Wonlex.'],
+                            'label' => ['type' => 'string', 'nullable' => true, 'description' => 'Alarm name. Required by Wonlex and omitted when unsupported by the supplier.'],
                             'time' => ['type' => 'string', 'example' => '12:10'],
                             'enabled' => ['type' => 'boolean'],
                             'type' => ['type' => 'integer', 'nullable' => true, 'example' => 1, 'description' => 'Required for Vivistar alarm_clock and omitted for 4P Touch.'],
@@ -1200,7 +1200,7 @@ class OpenApiSpec
                     ],
                     'AlarmClockConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Send items as an array of alarms; an empty array is valid and clears the saved alarms. Include type only for Vivistar, and omit it for 4P Touch. Wonlex supports label and an optional HTTP(S) audio URL. Wonlex represents once as the current weekday in its Monday-to-Sunday weekly mask, so remove or disable it after it fires to prevent a weekly repeat.',
+                        'description' => 'Payload accepted by PATCH /api/devices/{imei}/configurations under configurations.alarm_clock. Send items as an array of alarms; an empty array is valid and clears the saved alarms. Include type only for Vivistar, and omit it for 4P Touch. Wonlex requires label, supports an optional HTTP(S) audio URL, and supports only daily or custom recurrence because its protocol is a weekly Monday-to-Sunday mask.',
                         'properties' => [
                             'items' => [
                                 'type' => 'array',

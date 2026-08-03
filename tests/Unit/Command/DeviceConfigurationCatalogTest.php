@@ -436,20 +436,18 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('1111111', $dailyAlarm['payload']['alarmClockList'][0]['week']);
 
         $audioUrl = 'https://developer.mozilla.org/shared-assets/audio/t-rex-roar.mp3';
-        $onceAlarm = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
+        $customAlarm = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
             'items' => [[
                 'label' => 'Audio test',
                 'time' => '20:03',
                 'enabled' => true,
-                'recurrence' => ['kind' => 'once'],
+                'recurrence' => ['kind' => 'custom', 'days' => [1, 3, 7]],
                 'url' => $audioUrl,
             ]],
         ]);
-        $weekday = (int)date('N');
-        $expectedWeek = str_repeat('0', $weekday - 1) . '1' . str_repeat('0', 7 - $weekday);
-        self::assertSame($expectedWeek, $onceAlarm['payload']['alarmClockList'][0]['week']);
-        self::assertSame('Audio test', $onceAlarm['payload']['alarmClockList'][0]['label']);
-        self::assertSame($audioUrl, $onceAlarm['payload']['alarmClockList'][0]['url']);
+        self::assertSame('1010001', $customAlarm['payload']['alarmClockList'][0]['week']);
+        self::assertSame('Audio test', $customAlarm['payload']['alarmClockList'][0]['label']);
+        self::assertSame($audioUrl, $customAlarm['payload']['alarmClockList'][0]['url']);
 
         $family = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'familyNumber', [
             'contacts' => [['name' => 'Care', 'phone' => '+351210000000', 'areaCode' => '351']],
@@ -479,6 +477,53 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(1.5, $medication['payload']['drugDose']);
     }
 
+    public function testWonlexAlarmClockRejectsValuesOutsideTheDocumentedContract(): void
+    {
+        $valid = [
+            'label' => 'Medicine',
+            'time' => '08:00',
+            'enabled' => true,
+            'recurrence' => ['kind' => 'daily'],
+        ];
+
+        self::assertSame(
+            'alarmClockList must contain at most 10 items',
+            DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
+                'items' => array_fill(0, 11, $valid),
+            ])
+        );
+        self::assertSame(
+            'alarm label is required',
+            DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
+                'items' => [array_diff_key($valid, ['label' => true])],
+            ])
+        );
+        self::assertSame(
+            'alarm startTime must use 24-hour HH:mm format',
+            DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
+                'items' => [array_replace($valid, ['time' => '99:77'])],
+            ])
+        );
+        self::assertSame(
+            'alarm week must contain exactly 7 zero-or-one characters',
+            DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
+                'items' => [array_replace($valid, ['week' => 'abc'])],
+            ])
+        );
+        self::assertSame(
+            'recurrence once is not supported by Wonlex alarmClock',
+            DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
+                'items' => [array_replace($valid, ['recurrence' => ['kind' => 'once']])],
+            ])
+        );
+        self::assertSame(
+            'custom recurrence requires at least one day',
+            DeviceConfigurationCatalog::validate('wonlex-json', 'alarm_clock', [
+                'items' => [array_replace($valid, ['recurrence' => ['kind' => 'custom', 'days' => []]])],
+            ])
+        );
+    }
+
     public function testWonlexAlarmRejectsNonHttpAudioUrl(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -486,9 +531,10 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
             'items' => [[
+                'label' => 'Audio test',
                 'time' => '20:04',
                 'enabled' => true,
-                'recurrence' => ['kind' => 'once'],
+                'recurrence' => ['kind' => 'daily'],
                 'url' => 'file:///tmp/alarm.mp3',
             ]],
         ]);

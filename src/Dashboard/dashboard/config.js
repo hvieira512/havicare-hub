@@ -1973,10 +1973,14 @@ function alarmClockInput(desired, meta = {}) {
           ];
     const wonlexFields = {
         label: meta.label?.supported === true,
+        labelRequired: meta.label?.required === true,
         url: meta.url?.supported === true,
     };
     if (items.length === 0) {
-        items.push(defaultAlarmClockItem(typeOptions.length > 0));
+        items.push(defaultAlarmClockItem(
+            typeOptions.length > 0,
+            recurrenceOptions[0]?.value ?? "once",
+        ));
     }
 
     return `
@@ -2930,7 +2934,7 @@ function extractCapabilityValue(value) {
 function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}) {
     const rowId = nextUid("alarm-clock");
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
-        item.recurrence?.kind ?? item.kind ?? "once",
+        item.recurrence?.kind ?? item.kind ?? recurrenceOptions[0]?.value ?? "once",
     );
     const recurrenceValue = recurrenceKind;
     const dayMask = normalizeAlarmClockDaySelection(
@@ -2964,13 +2968,13 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 ${wonlexFields.label
                     ? `
                 <div class="col-12 col-lg-4">
-                    <label class="form-label form-label-sm">Nome do alarme</label>
-                    <input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">
+                    <label class="form-label form-label-sm">Nome do alarme${wonlexFields.labelRequired ? ' <span class="text-danger">*</span>' : ""}</label>
+                    <input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}" ${wonlexFields.labelRequired ? "required" : ""}>
                 </div>`
                     : ""}
                 <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
-                    <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}">
+                    <label class="form-label form-label-sm">Hora <span class="text-danger">*</span></label>
+                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}" required>
                 </div>
                 <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
                     <div class="form-check form-switch mt-4">
@@ -3002,7 +3006,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 </div>`
                     : ""}
                 <div class="col-12 col-lg-${hasTypeSelector ? "3" : "4"}">
-                    <label class="form-label form-label-sm">Recorrência</label>
+                    <label class="form-label form-label-sm">Recorrência <span class="text-danger">*</span></label>
                     <div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
                         ${recurrenceButtonOptions
                             .map((option) => {
@@ -3024,7 +3028,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                     </div>
                 </div>
                 <div class="col-12 col-lg-3 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
-                    <label class="form-label form-label-sm d-block">Dias personalizados</label>
+                    <label class="form-label form-label-sm d-block">Dias personalizados <span class="text-danger">*</span></label>
                     <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias personalizados">
                         ${dayButtons
                             .map(
@@ -3089,18 +3093,19 @@ function normalizeAlarmClockItem(item) {
     };
 }
 
-function defaultAlarmClockItem(withType = false) {
+function defaultAlarmClockItem(withType = false, recurrence = "once") {
+    const recurrenceKind = normalizeAlarmClockRecurrenceKind(recurrence);
     return withType
         ? {
               time: "",
               enabled: true,
               type: 1,
-              recurrence: {kind: "once"},
+              recurrence: {kind: recurrenceKind},
           }
         : {
               time: "",
               enabled: true,
-              recurrence: {kind: "once"},
+              recurrence: {kind: recurrenceKind},
           };
 }
 
