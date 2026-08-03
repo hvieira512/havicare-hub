@@ -198,6 +198,12 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
                 continue;
             }
             $type = (string)($segment['type'] ?? '');
+            $type = match ($type) {
+                'deep_sleep' => 'deepSleep',
+                'light_sleep' => 'lightSleep',
+                'awake' => 'sober',
+                default => $type,
+            };
             if ($type === 'rem') {
                 $type = 'lightSleep';
             }

@@ -323,6 +323,69 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('868705080300697', $ack['imei']);
     }
 
+    public function testWonlexDataListSleepPublishesReliableNormalizedContract(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $connection = new ContractFakeConnection(13);
+        $adapter = new WonlexAdapter();
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'login',
+            'imei' => '868705080300697',
+            'data' => ['deviceModel' => 'HW20PRO'],
+        ]));
+        $hub->onMessage($connection, $adapter->encodeOutgoing([
+            'type' => 'upSleep',
+            'ident' => 111714,
+            'ref' => 'w:update',
+            'imei' => '868705080300697',
+            'data' => [
+                'type' => 'upSleep',
+                'imei' => '868705080300697',
+                'deviceModel' => 'HW20PRO',
+                'startTime' => 136860420,
+                'endTime' => 172800420,
+                'dataList' => [
+                    [
+                        'startTime' => 136860420,
+                        'endTime' => 146100420,
+                        'duration' => 3.5,
+                        'sleepType' => 'deepSleep',
+                    ],
+                    [
+                        'startTime' => 146100420,
+                        'endTime' => 172800420,
+                        'duration' => 580.5,
+                        'sleepType' => 'lightSleep',
+                    ],
+                ],
+                'timestamp' => 1785725511420,
+            ],
+            'isAccumulative' => 0,
+            'timestamp' => 1785725511420,
+        ]));
+
+        $sleep = $mqtt->telemetry[array_key_last($mqtt->telemetry)][1];
+        self::assertSame('sleep', $sleep['type']);
+        self::assertSame('upSleep', $sleep['source']['nativeType']);
+        self::assertSame([
+            'isAccumulative' => false,
+            'totalDurationMinutes' => 584,
+            'timingValid' => false,
+            'segments' => [
+                ['durationMinutes' => 3.5, 'type' => 'deep_sleep'],
+                ['durationMinutes' => 580.5, 'type' => 'light_sleep'],
+            ],
+        ], $sleep['data']);
+        self::assertArrayNotHasKey('startTime', $sleep['data']);
+        self::assertArrayNotHasKey('endTime', $sleep['data']);
+        self::assertSame(136860420, $sleep['extra']['startTime']);
+        self::assertSame(172800420, $sleep['extra']['endTime']);
+        self::assertCount(2, $sleep['extra']['dataList']);
+    }
+
     public function testOnlineDownlinkPublishesCommandMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();

@@ -15,6 +15,13 @@ final class DeviceEventDecoder
         }
 
         $payload = isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : $decoded;
+        if ($session->protocol === 'wonlex-json' && $nativeType === 'upSleep') {
+            foreach (['isAccumulative', 'IsAccumulative'] as $field) {
+                if (array_key_exists($field, $decoded) && !array_key_exists($field, $payload)) {
+                    $payload[$field] = $decoded[$field];
+                }
+            }
+        }
 
         $events = match ($session->protocol) {
             'wonlex-json' => $this->decodeWonlex($nativeType, $payload),

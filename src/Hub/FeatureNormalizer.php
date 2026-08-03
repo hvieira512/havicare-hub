@@ -123,30 +123,98 @@ final class FeatureNormalizer
     private static function sleep(array $payload): array
     {
         $segments = [];
-        $rawSegments = $payload['dateTime'] ?? $payload['segments'] ?? [];
+        $totalDurationMinutes = 0.0;
+        $hasDuration = false;
+        $timingValid = self::validSleepRange(
+            $payload['startTime'] ?? null,
+            $payload['endTime'] ?? null,
+        );
+        $rawSegments = $payload['dateTime'] ?? $payload['dataList'] ?? $payload['segments'] ?? [];
         if (is_array($rawSegments)) {
             foreach ($rawSegments as $segment) {
                 if (!is_array($segment)) {
                     continue;
                 }
+
+                $duration = self::number($segment['durationMinutes'] ?? $segment['duration'] ?? null);
+                $segmentStart = self::validEpochMilliseconds($segment['startTime'] ?? null);
+                $segmentEnd = self::validEpochMilliseconds($segment['endTime'] ?? $segment['end time'] ?? null);
+                $segmentTimingValid = $segmentStart !== null
+                    && $segmentEnd !== null
+                    && $segmentEnd >= $segmentStart;
+                if ($segmentTimingValid && $duration !== null) {
+                    $boundaryDuration = ($segmentEnd - $segmentStart) / 60000;
+                    $segmentTimingValid = abs($boundaryDuration - (float)$duration) <= 1.0;
+                }
+                if ($segmentTimingValid) {
+                    $outerStart = self::validEpochMilliseconds($payload['startTime'] ?? null);
+                    $outerEnd = self::validEpochMilliseconds($payload['endTime'] ?? null);
+                    if ($outerStart !== null && $outerEnd !== null) {
+                        $segmentTimingValid = $segmentStart >= $outerStart && $segmentEnd <= $outerEnd;
+                    }
+                }
+                $timingValid = $timingValid && $segmentTimingValid;
+
                 $normalized = array_filter([
-                    'startTime' => self::int($segment['startTime'] ?? null),
-                    'endTime' => self::int($segment['endTime'] ?? $segment['end time'] ?? null),
-                    'durationMinutes' => self::int($segment['duration'] ?? null),
-                    'type' => self::stringOrNull($segment['sleepType'] ?? $segment['sleeptype'] ?? null),
+                    'startTime' => $segmentTimingValid ? $segmentStart : null,
+                    'endTime' => $segmentTimingValid ? $segmentEnd : null,
+                    'durationMinutes' => $duration,
+                    'type' => self::normalizeSleepType($segment['sleepType'] ?? $segment['sleeptype'] ?? $segment['type'] ?? null),
                 ], static fn (mixed $value): bool => $value !== null);
                 if ($normalized !== []) {
                     $segments[] = $normalized;
                 }
+                if ($duration !== null && $duration >= 0) {
+                    $totalDurationMinutes += (float)$duration;
+                    $hasDuration = true;
+                }
             }
         }
 
+        $startTime = $timingValid ? self::validEpochMilliseconds($payload['startTime'] ?? null) : null;
+        $endTime = $timingValid ? self::validEpochMilliseconds($payload['endTime'] ?? null) : null;
+        $isAccumulative = self::boolLike(self::first($payload, ['isAccumulative', 'IsAccumulative']));
+
         return array_filter([
-            'startTime' => self::int($payload['startTime'] ?? null),
-            'endTime' => self::int($payload['endTime'] ?? null),
-            'isAccumulative' => isset($payload['IsAccumulative']) ? (bool)$payload['IsAccumulative'] : null,
+            'startTime' => $startTime,
+            'endTime' => $endTime,
+            'isAccumulative' => $isAccumulative,
+            'totalDurationMinutes' => $hasDuration ? self::number($totalDurationMinutes) : null,
+            'timingValid' => $timingValid,
             'segments' => $segments !== [] ? $segments : null,
         ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private static function validSleepRange(mixed $start, mixed $end): bool
+    {
+        $start = self::validEpochMilliseconds($start);
+        $end = self::validEpochMilliseconds($end);
+
+        return $start !== null && $end !== null && $end >= $start;
+    }
+
+    private static function validEpochMilliseconds(mixed $value): ?int
+    {
+        $timestamp = self::int($value);
+        if ($timestamp === null || $timestamp < 946684800000 || $timestamp > 4102444800000) {
+            return null;
+        }
+
+        return $timestamp;
+    }
+
+    private static function normalizeSleepType(mixed $value): ?string
+    {
+        $raw = strtolower(trim((string)$value));
+        $key = str_replace(['_', '-', ' '], '', $raw);
+
+        return match ($key) {
+            'deepsleep', 'deep' => 'deep_sleep',
+            'lightsleep', 'light' => 'light_sleep',
+            'rem' => 'rem',
+            'sober', 'awake', 'wake', 'waking' => 'awake',
+            default => $raw !== '' ? $raw : null,
+        };
     }
 
     private static function waveform(array $payload, string $field): array
@@ -433,6 +501,35 @@ final class FeatureNormalizer
     private static function float(mixed $value): ?float
     {
         return $value === null || $value === '' || !is_numeric((string)$value) ? null : (float)$value;
+    }
+
+    private static function number(mixed $value): int|float|null
+    {
+        $number = self::float($value);
+        if ($number === null) {
+            return null;
+        }
+
+        return floor($number) === $number ? (int)$number : $number;
+    }
+
+    private static function boolLike(mixed $value): ?bool
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_numeric((string)$value)) {
+            return (float)$value !== 0.0;
+        }
+
+        return match (strtolower(trim((string)$value))) {
+            'true', 'yes', 'on', 'enabled' => true,
+            'false', 'no', 'off', 'disabled' => false,
+            default => null,
+        };
     }
 
     private static function stringOrNull(mixed $value): ?string

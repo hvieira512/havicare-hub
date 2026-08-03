@@ -70,8 +70,56 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame(20, $breathing[0]['value']['breathsPerMinute']);
         self::assertSame(31.6, $temperature[0]['value']['surfaceCelsius']);
         self::assertSame(28.2, $temperature[0]['value']['environmentCelsius']);
-        self::assertSame('deepSleep', $sleep[0]['value']['segments'][0]['type']);
+        self::assertSame('deep_sleep', $sleep[0]['value']['segments'][0]['type']);
+        self::assertSame(90, $sleep[0]['value']['totalDurationMinutes']);
+        self::assertTrue($sleep[0]['value']['timingValid']);
         self::assertSame('shutdown', $shutdown[0]['value']['state']);
+    }
+
+    public function testNormalizesRealWonlexDataListSleepWithoutTrustingInvalidTimestamps(): void
+    {
+        $decoder = new DeviceEventDecoder();
+        $events = $decoder->decode($this->session('wonlex-json'), [
+            'type' => 'upSleep',
+            'isAccumulative' => 0,
+            'data' => [
+                'type' => 'upSleep',
+                'imei' => '868705080304962',
+                'deviceModel' => 'HW20PRO',
+                'startTime' => 136860420,
+                'endTime' => 172800420,
+                'dataList' => [
+                    [
+                        'startTime' => 136860420,
+                        'endTime' => 146100420,
+                        'duration' => 3.5,
+                        'sleepType' => 'deepSleep',
+                    ],
+                    [
+                        'startTime' => 146100420,
+                        'endTime' => 172800420,
+                        'duration' => 580.5,
+                        'sleepType' => 'lightSleep',
+                    ],
+                ],
+                'timestamp' => 1785725511420,
+            ],
+        ]);
+
+        self::assertCount(1, $events);
+        self::assertSame('sleep', $events[0]['feature']);
+        self::assertSame([
+            'isAccumulative' => false,
+            'totalDurationMinutes' => 584,
+            'timingValid' => false,
+            'segments' => [
+                ['durationMinutes' => 3.5, 'type' => 'deep_sleep'],
+                ['durationMinutes' => 580.5, 'type' => 'light_sleep'],
+            ],
+        ], $events[0]['value']);
+        self::assertSame(136860420, $events[0]['extra']['startTime'] ?? null);
+        self::assertSame(172800420, $events[0]['extra']['endTime'] ?? null);
+        self::assertCount(2, $events[0]['extra']['dataList'] ?? []);
     }
 
     public function testLeavesUnsupportedWonlexReportsInTheRawStreamOnly(): void
