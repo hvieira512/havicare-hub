@@ -133,6 +133,18 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertCount(0, $message->responses);
     }
 
+    public function testFourPTouchDeviceStatusDoesNotProduceProtocolAck(): void
+    {
+        $protocol = new FourPTouchWatchProtocol(new FourPTouchAdapter(), new DeviceEventDecoder());
+        $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '637507597567372', 'four-p-touch');
+
+        $message = $protocol->handleIncoming($session, '[3G*7597567372*0002*TS]');
+
+        self::assertNotNull($message);
+        self::assertSame('TS', $message->decoded['type']);
+        self::assertCount(0, $message->responses);
+    }
+
     private function wonlexFrame(array $payload): string
     {
         return (new WonlexAdapter())->encodeOutgoing($payload);
