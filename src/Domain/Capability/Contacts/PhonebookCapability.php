@@ -4,6 +4,7 @@ namespace Hub\Domain\Capability\Contacts;
 
 use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
+use Hub\Domain\Capability\CapabilityInputSanitizer;
 
 /**
  * 4P Touch phonebook capability.
@@ -15,7 +16,7 @@ use Hub\Domain\Capability\CapabilityHelpers;
  *
  * The hub translates that contract to the 4P Touch wire command(s).
  */
-final class PhonebookCapability implements CapabilityContract
+final class PhonebookCapability implements CapabilityContract, CapabilityInputSanitizer
 {
     use CapabilityHelpers;
 
@@ -46,6 +47,7 @@ final class PhonebookCapability implements CapabilityContract
 
     public function toNative(string $protocol, mixed $value): array
     {
+        $value = $this->sanitizeInput($protocol, $value);
         $contacts = is_array($value) && array_key_exists('contacts', $value) ? $value['contacts'] : $value;
 
         return match ($protocol) {
@@ -60,6 +62,35 @@ final class PhonebookCapability implements CapabilityContract
             ],
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for phonebook"),
         };
+    }
+
+    public function sanitizeInput(string $protocol, mixed $value): mixed
+    {
+        $maxLength = (int)($this->meta($protocol)['name']['maxLength'] ?? 0);
+        if ($maxLength <= 0 || !is_array($value)) {
+            return $value;
+        }
+
+        $wrapped = array_key_exists('contacts', $value);
+        $contacts = $wrapped ? $value['contacts'] : $value;
+        if (!is_array($contacts) || !array_is_list($contacts)) {
+            return $value;
+        }
+
+        foreach ($contacts as $index => $contact) {
+            if (!is_array($contact) || !array_key_exists('name', $contact)) {
+                continue;
+            }
+            $contact['name'] = self::truncateName(trim((string)$contact['name']), $maxLength);
+            $contacts[$index] = $contact;
+        }
+
+        if ($wrapped) {
+            $value['contacts'] = $contacts;
+            return $value;
+        }
+
+        return $contacts;
     }
 
     public function fromNative(string $nativeKey, array $desired): mixed
@@ -147,7 +178,6 @@ final class PhonebookCapability implements CapabilityContract
             if (!is_array($contact)) {
                 throw new \InvalidArgumentException('contacts items must be objects');
             }
-            WonlexContactCodec::validatePublicName((string)($contact['name'] ?? ''));
             $phone = WonlexContactCodec::publicPhone($contact);
             if ($phone === '') {
                 continue;
@@ -167,5 +197,19 @@ final class PhonebookCapability implements CapabilityContract
         }
 
         return $result;
+    }
+
+    private static function truncateName(string $name, int $maxLength): string
+    {
+        if (function_exists('mb_substr')) {
+            return mb_substr($name, 0, $maxLength, 'UTF-8');
+        }
+
+        $characters = preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY);
+        if ($characters === false) {
+            return substr($name, 0, $maxLength);
+        }
+
+        return implode('', array_slice($characters, 0, $maxLength));
     }
 }

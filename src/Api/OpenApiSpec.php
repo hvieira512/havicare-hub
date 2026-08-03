@@ -1211,7 +1211,7 @@ class OpenApiSpec
                     ],
                     'PhonebookConfiguration' => [
                         'type' => 'object',
-                        'description' => 'Payload accepted under configurations.phonebook for Wonlex and 4P Touch. Send only generic name and international phone fields; native IDs, area codes and SOS flags are managed by the hub. Wonlex accepts up to 10 contacts with names limited to 4 characters; 4P Touch accepts up to 5 contacts with names limited to 10 characters. An empty array clears the phonebook.',
+                        'description' => 'Payload accepted under configurations.phonebook for Wonlex and 4P Touch. Send only generic name and international phone fields; native IDs, area codes and SOS flags are managed by the hub. Wonlex accepts up to 10 contacts and stores the first 4 characters of each name; 4P Touch accepts up to 5 contacts and stores the first 10 characters. An empty array clears the phonebook.',
                         'properties' => [
                             'contacts' => [
                                 'type' => 'array',
@@ -1227,8 +1227,7 @@ class OpenApiSpec
                                         ],
                                         'name' => [
                                             'type' => 'string',
-                                            'maxLength' => 10,
-                                            'description' => 'Unicode string with a maximum of 10 characters.',
+                                            'description' => 'Unicode string. The hub truncates it to the supplier limit exposed in the phonebook capability metadata.',
                                         ],
                                     ],
                                 ],

@@ -87,6 +87,15 @@ final class CapabilityRegistry
         return $this->genericToNative($protocol, $genericKey, $value);
     }
 
+    public function sanitizeInput(string $protocol, string $genericKey, mixed $value): mixed
+    {
+        $contract = $this->contracts[$genericKey] ?? null;
+
+        return $contract instanceof CapabilityInputSanitizer
+            ? $contract->sanitizeInput($protocol, $value)
+            : $value;
+    }
+
     public function fromNative(string $genericKey, string $nativeKey, array $desired, string $protocol = ''): mixed
     {
         if (isset($this->contracts[$genericKey])) {

@@ -62,19 +62,30 @@ final class CapabilityRegistryTest extends TestCase
         );
     }
 
-    public function testWonlexPhonebookRejectsNamesLongerThanFourCharacters(): void
+    public function testWonlexPhonebookTruncatesNamesLongerThanFourCharacters(): void
     {
         $registry = new CapabilityRegistry();
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('name must contain at most 4 characters');
-
-        $registry->toNative('wonlex-json', 'phonebook', [
+        $native = $registry->toNative('wonlex-json', 'phonebook', [
             'contacts' => [[
-                'name' => 'Rodri',
+                'name' => 'Rodrigo',
                 'phone' => '+351938854803',
             ]],
         ]);
+
+        self::assertSame('Rodr', $native['familyNumber']['contacts'][0]['name'] ?? null);
+    }
+
+    public function testFourPTouchPhonebookTruncatesUnicodeNamesToDeclaredLimit(): void
+    {
+        $registry = new CapabilityRegistry();
+        $native = $registry->toNative('four-p-touch', 'phonebook', [
+            'contacts' => [[
+                'name' => 'Áéíóú123456',
+                'phone' => '123456789',
+            ]],
+        ]);
+
+        self::assertSame('Áéíóú12345', $native['phonebook']['contacts'][0]['name'] ?? null);
     }
 
     public function testWonlexSwitchFieldsAreNormalizedBidirectionally(): void

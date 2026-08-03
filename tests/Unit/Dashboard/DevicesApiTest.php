@@ -2093,7 +2093,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'configurations' => [
                 'phonebook' => [
                     'contacts' => [
-                        ['name' => 'Ana', 'phone' => '123456789'],
+                        ['name' => 'ABCDEFGHIJK', 'phone' => '123456789'],
                     ],
                 ],
             ],
@@ -2103,9 +2103,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('phonebook', $response['results'][0]['key'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertStringContainsString('PHB,123456789,0041006E0061', $submitted[0]['bytes']);
+        self::assertStringContainsString(
+            'PHB,123456789,004100420043004400450046004700480049004A',
+            $submitted[0]['bytes']
+        );
         self::assertSame(
-            ['contacts' => [['name' => 'Ana', 'phone' => '123456789']]],
+            ['contacts' => [['name' => 'ABCDEFGHIJ', 'phone' => '123456789']]],
             $db->deviceConfigurations->allForImei('868017032159118')[0]['desired_payload'] ?? null
         );
     }
@@ -2635,7 +2638,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'url' => 'https://developer.mozilla.org/shared-assets/audio/t-rex-roar.mp3',
                 ]]],
                 'phonebook' => ['contacts' => [[
-                    'name' => 'Care',
+                    'name' => 'Rodrigo',
                     'phone' => '+351210000000',
                 ]]],
                 'sos_contacts' => ['+351210000000'],
@@ -2668,6 +2671,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'dnWeather',
         ], array_column($frames, 'type'));
         self::assertSame('351', $frames[0]['data']['familyNumbers'][0]['areaCode'] ?? null);
+        self::assertSame('Rodr', $frames[0]['data']['familyNumbers'][0]['name'] ?? null);
         self::assertSame('15', $frames[1]['data']['configs']['upHeartRate']['interval'] ?? null);
         self::assertSame('1111111', $frames[2]['data']['alarmClockList'][0]['week'] ?? null);
         self::assertSame('Medicine', $frames[2]['data']['alarmClockList'][0]['label'] ?? null);
@@ -2683,7 +2687,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('Lisbon', $frames[8]['data']['city'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(
-            [['name' => 'Care', 'phone' => '+351210000000']],
+            [['name' => 'Rodr', 'phone' => '+351210000000']],
             $response['configurations']['phonebook'] ?? null
         );
         self::assertSame(['+351210000000'], $response['configurations']['sos_contacts'] ?? null);

@@ -107,6 +107,8 @@ final class DeviceConfigurationUpdateService
                 ];
             }
 
+            $payload = $this->capabilities->sanitizeInput($protocol, $genericKey, $payload);
+
             try {
                 $nativeUpdates = $this->capabilities->toNative($protocol, $genericKey, $payload);
             } catch (\InvalidArgumentException $e) {
