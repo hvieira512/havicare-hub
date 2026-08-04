@@ -131,10 +131,11 @@ final class DashboardStore implements DashboardStoreContract
         string $imei,
         string $replyNativeType,
         string|int|null $ident = null,
-        string $ref = ''
+        string $ref = '',
+        ?bool $accepted = null,
     ): void
     {
-        $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref);
+        $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref, $accepted);
     }
 
     public function expireWaitingCommands(int $timeoutSeconds): void

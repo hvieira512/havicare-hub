@@ -743,14 +743,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertStringContainsString(',' . ($payload['payload']['fields'][3] ?? '') . ']', $wire);
         $encodedAudio = (string)($payload['payload']['fields'][3] ?? '');
         self::assertGreaterThan(strlen("#!AMR\n"), strlen($encodedAudio));
-        for ($offset = 0, $length = strlen($encodedAudio); $offset < $length; $offset++) {
-            $byte = ord($encodedAudio[$offset]);
-            self::assertNotContains($byte, [0x5B, 0x5D, 0x2C, 0x2A]);
-            if ($byte === 0x7D) {
-                self::assertLessThan($length, $offset + 1);
-                self::assertContains(ord($encodedAudio[++$offset]), [0x01, 0x02, 0x03, 0x04, 0x05]);
-            }
-        }
+        self::assertSame($encodedAudio, substr($wire, -strlen($encodedAudio) - 1, -1));
     }
 
     public function testFourPTouchTakePillsStripsLegacyDataUrlsFromVoiceData(): void
@@ -789,6 +782,49 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('TAKEPILLS,11:25-1-2,1,006D006500640073,]', $wire);
+    }
+
+    public function testFourPTouchTakePillsRejectsVoiceAudioWhenFfmpegIsUnavailable(): void
+    {
+        $originalPath = getenv('PATH');
+        putenv('PATH=/path-without-ffmpeg');
+        try {
+            $error = DeviceConfigurationCatalog::validate('four-p-touch', 'takePills', [
+                'reminderSettings' => [[
+                    'time' => '11:25',
+                    'enabled' => true,
+                    'frequency' => 2,
+                    'custom' => '',
+                ]],
+                'reminderText' => 'meds',
+                'voiceData' => $this->sampleWavBase64(),
+                'voiceMimeType' => 'audio/wav',
+            ]);
+        } finally {
+            $originalPath === false ? putenv('PATH') : putenv("PATH={$originalPath}");
+        }
+
+        self::assertSame('ffmpeg with AMR-NB support is required for TAKEPILLS voice audio', $error);
+    }
+
+    public function testFourPTouchTakePillsRejectsInvalidReminderSettings(): void
+    {
+        foreach ([
+            ['time' => '25:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
+            ['time' => '11:25', 'enabled' => true, 'frequency' => 4, 'custom' => ''],
+            ['time' => '11:25', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+        ] as $settings) {
+            $error = DeviceConfigurationCatalog::validate('four-p-touch', 'takePills', [
+                'reminderSettings' => [$settings],
+                'reminderText' => 'meds',
+            ]);
+            self::assertNotNull($error);
+        }
+
+        self::assertNotNull(DeviceConfigurationCatalog::validate('four-p-touch', 'takePills', [
+            'reminderSettings' => ['11:25-1-9'],
+            'reminderText' => 'meds',
+        ]));
     }
 
     public function testFourPTouchRejectsContentLargerThanFourDigitLengthField(): void
@@ -967,7 +1003,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
             'reminderSettings' => [
                 ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
                 ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
-                ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+                ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101'],
             ],
             'number' => 3,
             'reminderText' => 'meds',
@@ -976,12 +1012,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertSame('TAKEPILLS', $payload['command']);
         self::assertSame(
-            ['11:25-1-2-14:30-0-1-18:00-1-3-1010', '3', '006D006500640073', ''],
+            ['11:25-1-2-14:30-0-1-18:00-1-3-1010101', '3', '006D006500640073', ''],
             $payload['payload']['fields'] ?? [],
         );
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073,]', $wire);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010101,3,006D006500640073,]', $wire);
     }
 
     public function testFourPTouchTakePillsHandlesSingleReminderBackwardCompatible(): void

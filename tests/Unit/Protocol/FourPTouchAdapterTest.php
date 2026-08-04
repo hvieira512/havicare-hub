@@ -135,6 +135,14 @@ final class FourPTouchAdapterTest extends TestCase
         self::assertSame(['1'], $payload['data']['fields']);
     }
 
+    public function testDecodeIncomingPreservesRejectedTakePillsReply(): void
+    {
+        $payload = (new FourPTouchAdapter())->decodeIncoming('[3G*8800000015*000B*TAKEPILLS,0]');
+
+        self::assertIsArray($payload);
+        self::assertSame('0', $payload['data']['configAck']);
+    }
+
     public function testDecodeIncomingParsesWifiInfoReport(): void
     {
         $adapter = new FourPTouchAdapter();

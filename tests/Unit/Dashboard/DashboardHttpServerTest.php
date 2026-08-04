@@ -792,7 +792,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'D46',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-3-1010',
+                'reminderSettings' => '11:25-1-3-1010101',
                 'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
@@ -816,7 +816,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                         'time' => '11:25',
                         'enabled' => true,
                         'frequency' => 3,
-                        'custom' => '1010',
+                        'custom' => '1010101',
                     ],
                 ],
                 'number' => 1,
@@ -854,7 +854,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             'D46',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010',
+                'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010101',
                 'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => '',
@@ -876,7 +876,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                 'reminderSettings' => [
                     ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
                     ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101'],
                 ],
                 'number' => 3,
                 'reminderText' => 'meds',

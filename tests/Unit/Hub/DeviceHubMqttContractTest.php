@@ -450,7 +450,7 @@ final class DeviceHubMqttContractTest extends TestCase
                 'time' => '11:25',
                 'enabled' => true,
                 'frequency' => 3,
-                'custom' => '1010',
+                'custom' => '1010101',
             ],
             'number' => 3,
             'reminderText' => 'meds',
@@ -472,8 +472,34 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('downlink', $mqtt->raw[1][1]['direction'] ?? null);
         self::assertSame('base64', $mqtt->raw[1][1]['debug']['encoding'] ?? null);
         self::assertSame(base64_encode($bytes), $mqtt->raw[1][1]['debug']['payload'] ?? null);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,1,006D006500640073,', $bytes);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010101,1,006D006500640073,', $bytes);
         self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
+    }
+
+    public function testFourPTouchRejectedTakePillsReplyIsPassedToCommandLifecycle(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $store = $this->createStub(DashboardStoreContract::class);
+        $replies = [];
+        $store->method('markCommandReply')->willReturnCallback(
+            static function (...$arguments) use (&$replies): void {
+                $replies[] = $arguments;
+            }
+        );
+        $hub = new DeviceHubServer(
+            new Whitelist($this->whitelistPath),
+            $mqtt,
+            dashboardStore: $store,
+        );
+        $connection = new ContractFakeConnection(18);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, '[3G*7597567372*000D*LK,50,100,100]');
+        $hub->onMessage($connection, '[3G*7597567372*000B*TAKEPILLS,0]');
+
+        $takePillsReply = $replies[array_key_last($replies)] ?? [];
+        self::assertSame('TAKEPILLS', $takePillsReply[1] ?? null);
+        self::assertFalse($takePillsReply[4] ?? null);
     }
 
     public function testVivistarTelemetryPacketsReceiveProtocolAck(): void

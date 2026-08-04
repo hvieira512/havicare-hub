@@ -444,10 +444,11 @@ final class FeatureNormalizer
     {
         $configs = isset($payload['configs']) && is_array($payload['configs']) ? $payload['configs'] : null;
         $ack = $payload['configAck'] ?? null;
+        $normalizedAck = is_scalar($ack) && $ack !== '' ? (string)$ack : null;
 
         return array_filter([
-            'status' => 'ok',
-            'ack' => is_scalar($ack) && $ack !== '' ? (string)$ack : null,
+            'status' => $normalizedAck === '0' ? 'failed' : 'ok',
+            'ack' => $normalizedAck,
             'settings' => $configs !== [] ? $configs : null,
         ], static fn (mixed $value): bool => $value !== null);
     }

@@ -229,6 +229,27 @@ final class DashboardStoreTest extends TestCase
         self::assertSame('4504816144', $command['replyIdent'] ?? null);
     }
 
+    public function testFourPTouchRejectedTakePillsReplyFailsCommand(): void
+    {
+        $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard');
+        $imei = '351266770073676';
+        $store->registerDevice($imei, '4P Touch', 'Y6M', deviceId: '6677007367');
+        $store->recordCommand($imei, 'take-pills-command', [
+            'status' => 'waiting',
+            'protocol' => 'four-p-touch',
+            'nativeType' => 'TAKEPILLS',
+            'expectedReplyTypes' => ['TAKEPILLS'],
+            'bytes' => '[3G*6677007367*002A*TAKEPILLS,11:25-1-2,1,006D006500640073,]',
+        ]);
+
+        $store->markCommandReply($imei, 'TAKEPILLS', '6677007367', 'w:update', false);
+        $command = $store->commands($imei)[0] ?? [];
+
+        self::assertSame('failed', $command['status'] ?? null);
+        self::assertSame('device_rejected', $command['error'] ?? null);
+        self::assertSame('TAKEPILLS', $command['replyNativeType'] ?? null);
+    }
+
     public function testRetryWaitingCommandsDispatchesQueuedRetryableCommands(): void
     {
         $redis = new InMemoryRedisClient();

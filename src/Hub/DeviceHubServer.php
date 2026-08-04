@@ -317,11 +317,21 @@ class DeviceHubServer
             return;
         }
 
+        $replyAccepted = null;
+        if ($session->protocol === 'four-p-touch' && ($message->decoded['type'] ?? null) === 'TAKEPILLS') {
+            $configAck = (string)($message->decoded['data']['configAck'] ?? '');
+            $replyAccepted = match ($configAck) {
+                '1' => true,
+                '0' => false,
+                default => null,
+            };
+        }
         $this->dashboardStore?->markCommandReply(
             $session->imei,
             (string)($message->decoded['type'] ?? ''),
             $message->decoded['ident'] ?? null,
-            (string)($message->decoded['ref'] ?? '')
+            (string)($message->decoded['ref'] ?? ''),
+            $replyAccepted,
         );
 
         foreach ($message->telemetry as $event) {

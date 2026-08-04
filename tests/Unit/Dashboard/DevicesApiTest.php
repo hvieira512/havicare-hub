@@ -818,7 +818,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'D46',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-3-1010',
+                'reminderSettings' => '11:25-1-3-1010101',
                 'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => 'QUJDRA==',
@@ -834,7 +834,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                         'time' => '11:25',
                         'enabled' => true,
                         'frequency' => 3,
-                        'custom' => '1010',
+                        'custom' => '1010101',
                     ],
                 ],
                 'number' => 1,
@@ -872,7 +872,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'D46',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-3-1010',
+                'reminderSettings' => '11:25-1-3-1010101',
                 'number' => 1,
                 'reminderText' => 'meds',
                 'voiceData' => $voiceData,
@@ -910,7 +910,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'D46',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010',
+                'reminderSettings' => '11:25-1-2-14:30-0-1-18:00-1-3-1010101',
                 'number' => 3,
                 'reminderText' => 'meds',
                 'voiceData' => 'QUJDRA==',
@@ -924,7 +924,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                 'reminderSettings' => [
                     ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
                     ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101'],
                 ],
                 'number' => 3,
                 'reminderText' => 'meds',
@@ -1735,7 +1735,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                         'time' => '11:25',
                         'enabled' => true,
                         'frequency' => 3,
-                        'custom' => '1010',
+                        'custom' => '1010101',
                     ],
                     'number' => 3,
                     'reminderText' => 'meds',
@@ -1746,7 +1746,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
         self::assertSame('868017032159118', $submitted[0]['imei']);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010,1,006D006500640073,]', $submitted[0]['bytes']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-3-1010101,1,006D006500640073,]', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchClearsAllFourPTouchTakePillsReminders(): void
@@ -1803,7 +1803,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'D46',
             'TAKEPILLS',
             [
-                'reminderSettings' => '11:25-1-3-1010',
+                'reminderSettings' => '11:25-1-3-1010101',
                 'number' => 1,
                 'reminderText' => 'old',
                 'voiceData' => 'UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
@@ -1818,7 +1818,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                         'time' => '11:25',
                         'enabled' => true,
                         'frequency' => 3,
-                        'custom' => '1010',
+                        'custom' => '1010101',
                     ],
                     'number' => 1,
                     'reminderText' => 'updated',
@@ -2338,7 +2338,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'reminderSettings' => [
                         ['time' => '11:25', 'enabled' => true, 'frequency' => 2, 'custom' => ''],
                         ['time' => '14:30', 'enabled' => false, 'frequency' => 1, 'custom' => ''],
-                        ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
+                        ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '1010101'],
                     ],
                     'number' => 3,
                     'reminderText' => 'meds',
@@ -2349,7 +2349,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
-        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010,3,006D006500640073,]', $submitted[0]['bytes']);
+        self::assertStringContainsString('TAKEPILLS,11:25-1-2-14:30-0-1-18:00-1-3-1010101,3,006D006500640073,]', $submitted[0]['bytes']);
     }
 
     public function testConfigurationPatchRejectsInvalidRequestWithoutConfigurations(): void

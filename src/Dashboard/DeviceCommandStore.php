@@ -187,7 +187,8 @@ final class DeviceCommandStore
         string $imei,
         string $replyNativeType,
         string|int|null $ident = null,
-        string $ref = ''
+        string $ref = '',
+        ?bool $accepted = null,
     ): void
     {
         $uncorrelatedMatch = null;
@@ -204,7 +205,7 @@ final class DeviceCommandStore
             $commandIdent = $command['ident'] ?? null;
 
             if ($commandIdent !== null && $ident !== null && (string)$commandIdent === (string)$ident) {
-                $this->acknowledgeCommand($imei, $command, $replyNativeType, $ident, $ref);
+                $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted);
                 return;
             }
 
@@ -225,7 +226,7 @@ final class DeviceCommandStore
 
         $command = $uncorrelatedMatch ?? $wonlexSemanticMatch;
         if (is_array($command)) {
-            $this->acknowledgeCommand($imei, $command, $replyNativeType, $ident, $ref);
+            $this->completeCommandReply($imei, $command, $replyNativeType, $ident, $ref, $accepted);
         }
     }
 
@@ -280,20 +281,33 @@ final class DeviceCommandStore
         );
     }
 
-    private function acknowledgeCommand(
+    private function completeCommandReply(
         string $imei,
         array $command,
         string $replyNativeType,
         string|int|null $ident,
-        string $ref
+        string $ref,
+        ?bool $accepted,
     ): void {
         $id = (string)$command['id'];
-        $this->recordCommand($imei, $id, array_merge($command, [
-            'status' => 'acked',
-            'ackedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+        $replyFields = [
             'replyNativeType' => $replyNativeType,
             'replyIdent' => $ident,
             'replyRef' => $ref,
+        ];
+        if ($accepted === false) {
+            $this->recordCommand($imei, $id, array_merge($command, $replyFields, [
+                'status' => 'failed',
+                'failedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+                'error' => 'device_rejected',
+                'lastError' => 'device_rejected',
+            ]));
+            return;
+        }
+
+        $this->recordCommand($imei, $id, array_merge($command, $replyFields, [
+            'status' => 'acked',
+            'ackedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
         ]));
     }
 

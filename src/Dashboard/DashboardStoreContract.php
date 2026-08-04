@@ -45,7 +45,8 @@ interface DashboardStoreContract
         string $imei,
         string $replyNativeType,
         string|int|null $ident = null,
-        string $ref = ''
+        string $ref = '',
+        ?bool $accepted = null,
     ): void;
 
     public function expireWaitingCommands(int $timeoutSeconds): void;

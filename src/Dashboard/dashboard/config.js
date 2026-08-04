@@ -2756,7 +2756,7 @@ export function takePillsReminderGroup(settings, index, frequencyOptions) {
                 </div>
                 <div class="col-md-4 ${customVisible ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">
                     <label class="form-label form-label-sm">Custom</label>
-                    <input class="form-control" type="text" data-takepills-field="reminderCustom" data-takepills-index="${index}" value="${esc(settings.custom)}">
+                    <input class="form-control" type="text" inputmode="numeric" maxlength="7" pattern="[01]{7}" placeholder="0111110" data-takepills-field="reminderCustom" data-takepills-index="${index}" value="${esc(settings.custom)}">
                 </div>
             </div>
         </div>`;

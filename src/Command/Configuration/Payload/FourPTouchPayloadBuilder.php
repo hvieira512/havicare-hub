@@ -57,7 +57,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     {
         $settings = $payload['reminderSettings'] ?? [];
         $number = 0;
-        if (array_is_list($settings)) {
+        if (is_array($settings) && array_is_list($settings)) {
             $number = count($settings);
             if ($number > 3) {
                 throw new \InvalidArgumentException('reminderSettings accepts at most 3 reminders');
@@ -67,9 +67,11 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
                 $parts[] = self::takePillsReminderSettings($setting);
             }
             $reminderSettings = implode('-', $parts);
-        } else {
+        } elseif (is_array($settings) || is_string($settings)) {
             $reminderSettings = self::takePillsReminderSettings($settings);
             $number = 1;
+        } else {
+            throw new \InvalidArgumentException('reminderSettings must be a list, string or object');
         }
 
         if ($number === 0) {
@@ -90,29 +92,14 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function takePillsReminderSettings(mixed $value): string
     {
-        if (is_string($value)) {
-            $value = trim($value);
-            if ($value !== '') {
-                return $value;
-            }
-            throw new \InvalidArgumentException('reminderSettings is required');
+        try {
+            return self::alarmClockEntry($value);
+        } catch (\InvalidArgumentException $e) {
+            throw new \InvalidArgumentException(
+                str_replace('alarm ', 'reminderSettings.', $e->getMessage()),
+                previous: $e,
+            );
         }
-        if (!is_array($value)) {
-            throw new \InvalidArgumentException('reminderSettings must be a string or object');
-        }
-
-        $time = self::requiredString($value['time'] ?? $value['reminderTime'] ?? null, 'reminderSettings.time');
-        $enabled = self::boolInt($value['enabled'] ?? $value['switchState'] ?? null, 'reminderSettings.enabled');
-        $frequency = self::rangeInt($value['frequency'] ?? $value['reminderFrequency'] ?? null, 0, 999, 'reminderSettings.frequency');
-        $custom = array_key_exists('custom', $value)
-            ? trim((string)$value['custom'])
-            : trim((string)($value['reminderCustom'] ?? ''));
-        $parts = [$time, (string)$enabled, (string)$frequency, $custom];
-        while ($parts !== [] && end($parts) === '') {
-            array_pop($parts);
-        }
-
-        return implode('-', $parts);
     }
 
     private static function takePillsVoiceData(mixed $value, mixed $mimeType = null): string
@@ -143,18 +130,16 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('voiceData must be base64 audio');
         }
 
-        return self::encodeFramedBinary(
-            self::transcodeAudioToAmr(
-                $binary,
-                $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm'
-            )
+        return self::transcodeAudioToAmr(
+            $binary,
+            $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm'
         );
     }
 
     private static function transcodeAudioToAmr(string $audioBytes, string $mimeType): string
     {
         if (!self::commandExists('ffmpeg')) {
-            return self::fallbackAmr($audioBytes);
+            throw new \RuntimeException('ffmpeg with AMR-NB support is required for TAKEPILLS voice audio');
         }
 
         $inputPath = tempnam(sys_get_temp_dir(), 'takepills-audio-in-');
@@ -204,26 +189,6 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         exec('command -v ' . escapeshellarg($command) . ' 2>/dev/null', $output, $exitCode);
 
         return $exitCode === 0 && trim(implode("\n", $output)) !== '';
-    }
-
-    private static function fallbackAmr(string $audioBytes): string
-    {
-        // Keep tests and environments without ffmpeg working by emitting a
-        // deterministic AMR-like payload instead of failing the whole request.
-        return "#!AMR\n" . substr(hash('sha256', $audioBytes, true), 0, 8);
-    }
-
-    private static function encodeFramedBinary(string $binary): string
-    {
-        // Binary fields share the bracketed 4P Touch wire framing. Stuff bytes
-        // that would otherwise be interpreted as frame or field delimiters.
-        return strtr($binary, [
-            "\x7D" => "\x7D\x01",
-            "\x5B" => "\x7D\x02",
-            "\x5D" => "\x7D\x03",
-            "\x2C" => "\x7D\x04",
-            "\x2A" => "\x7D\x05",
-        ]);
     }
 
     private static function runProcess(array $command): array
