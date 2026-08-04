@@ -178,9 +178,9 @@ require_once __DIR__ . '/components/modal.php';
                                                 <option value="all">Todos</option>
                                             </select>
                                         </div>
-                                        <div class="col-auto d-flex gap-1">
-                                            <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check') ?></button>
-                                            <button id="clearDetailFiltersBtn" class="btn btn-sm btn-outline-secondary"><?= icon('fa-xmark') ?></button>
+                                        <div class="col-auto ms-auto d-flex gap-1">
+                                            <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
+                                            <button id="clearDetailFiltersBtn" class="btn btn-sm btn-outline-secondary"><?= icon('fa-xmark', 'me-1') ?>Limpar</button>
                                         </div>
                                     </div>
                                 </div>
