@@ -130,10 +130,25 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
             throw new \InvalidArgumentException('voiceData must be base64 audio');
         }
 
-        return self::transcodeAudioToAmr(
+        return self::escapeVoiceBinary(self::transcodeAudioToAmr(
             $binary,
             $detectedMimeType !== '' ? $detectedMimeType : 'audio/webm'
-        );
+        ));
+    }
+
+    /**
+     * Voice bytes share the same framed transport as command delimiters. The
+     * device protocol escapes these values before they are placed in a frame.
+     */
+    private static function escapeVoiceBinary(string $bytes): string
+    {
+        return strtr($bytes, [
+            "\x7D" => "\x7D\x01",
+            "\x5B" => "\x7D\x02",
+            "\x5D" => "\x7D\x03",
+            "\x2C" => "\x7D\x04",
+            "\x2A" => "\x7D\x05",
+        ]);
     }
 
     private static function transcodeAudioToAmr(string $audioBytes, string $mimeType): string

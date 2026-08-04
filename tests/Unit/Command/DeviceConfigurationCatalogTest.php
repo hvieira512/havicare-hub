@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Command;
 
+use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\GenericModelCapabilityCatalog;
@@ -762,6 +763,21 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ]);
 
         self::assertStringStartsWith("#!AMR\n", $payload['payload']['fields'][3] ?? '');
+    }
+
+    public function testFourPTouchTakePillsEscapesReservedVoiceBytes(): void
+    {
+        $escape = \Closure::bind(
+            static fn(string $bytes): string => FourPTouchPayloadBuilder::escapeVoiceBinary($bytes),
+            null,
+            FourPTouchPayloadBuilder::class,
+        );
+
+        self::assertNotNull($escape);
+        self::assertSame(
+            "A\x7D\x01\x7D\x02\x7D\x03\x7D\x04\x7D\x05Z",
+            $escape("A\x7D[],*Z")
+        );
     }
 
     public function testFourPTouchTakePillsAllowsOmittingVoiceAudio(): void
