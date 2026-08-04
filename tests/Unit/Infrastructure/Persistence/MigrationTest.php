@@ -9,6 +9,17 @@ use Tests\Support\MysqlDashboardTestCase;
 
 final class MigrationTest extends MysqlDashboardTestCase
 {
+    public function testApplicationDatabaseSessionUsesUtc(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+
+        self::assertSame('+00:00', $pdo->query('SELECT @@session.time_zone')->fetchColumn());
+        self::assertSame(
+            $pdo->query('SELECT UTC_TIMESTAMP()')->fetchColumn(),
+            $pdo->query('SELECT NOW()')->fetchColumn(),
+        );
+    }
+
     public function testAllMigrationsAreRecordedAndDoNotRerun(): void
     {
         $database = $this->createDashboardDatabase();
