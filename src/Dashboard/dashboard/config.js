@@ -1553,7 +1553,7 @@ function languageTimezoneInput(desired) {
 const languageTimezonePresetOptions = [
     { language: 0, timeZone: "0", label: "English (UTC+0)" },
     { language: 1, timeZone: "8", label: "简体中文 (UTC+8)" },
-    { language: 3, timeZone: "0", label: "Português (UTC+0)" },
+    { language: 3, timeZone: "1", label: "Português (UTC+1)" },
     { language: 4, timeZone: "1", label: "Español (UTC+1)" },
     { language: 5, timeZone: "1", label: "Deutsch (UTC+1)" },
     { language: 10, timeZone: "1", label: "Français (UTC+1)" },

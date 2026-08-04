@@ -74,7 +74,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('languageTimezonePresetOptions', $source);
         self::assertStringContainsString('English (UTC+0)', $source);
         self::assertStringContainsString('简体中文 (UTC+8)', $source);
-        self::assertStringContainsString('Português (UTC+0)', $source);
+        self::assertStringContainsString('Português (UTC+1)', $source);
         self::assertStringContainsString('Español (UTC+1)', $source);
         self::assertStringContainsString('Deutsch (UTC+1)', $source);
         self::assertStringContainsString('Français (UTC+1)', $source);
