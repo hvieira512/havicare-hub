@@ -58,7 +58,6 @@ export const featureLabel = (type) =>
         sleep: "Sono",
         ecg: "ECG",
         hrv: "VFC",
-        weather: "Meteorologia",
         breath_rate: "Frequência respiratória",
         ppg: "PPG",
         rr_interval: "Intervalo RR",
@@ -100,7 +99,6 @@ export const fieldLabel = (key) =>
         workMode: "Modo de trabalho",
         glucoseMgDl: "Glicemia",
         summary: "Resumo",
-        weatherType: "Tipo de tempo",
         reportedAt: "Reportado em",
         temperatureCelsius: "Temperatura",
         lowCelsius: "Mínima",
@@ -170,7 +168,6 @@ export const commandLabel = (command) =>
         HRV: "VFC",
         PPG: "PPG",
         "RR interval": "Intervalo RR",
-        Weather: "Meteorologia",
         "Heart rate and blood pressure":
             "Frequência cardíaca e tensão arterial",
     })[command.label] ||

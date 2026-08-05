@@ -2,7 +2,6 @@ import { esc, fieldLabel, titleize } from "./format.js";
 import { normalizePhoneControl, renderPhoneControl } from "./phone.js";
 import { requestJson } from "./api/http.js";
 import { state } from "./state.js";
-import {defaultWonlexWeather, readWonlexWeather, wonlexWeatherInput} from "./config/wonlex-weather.js";
 import {takePillsInput, takePillsReminderGroup} from "./config/four-p-touch-take-pills.js";
 
 export {takePillsReminderGroup};
@@ -145,7 +144,6 @@ const CONFIG_INPUT_RENDERERS = {
     alarms: (_entry, desired, meta) => alarmsInput(desired, meta),
     takePills: (_entry, desired, meta) => takePillsInput(desired, meta),
     wonlexMedicationPlans: (_entry, desired) => wonlexMedicationPlansInput(desired),
-    wonlexWeather: (_entry, desired) => wonlexWeatherInput(desired),
     soundProfile: (_entry, desired) => soundProfileInput(desired),
 };
 
@@ -283,7 +281,6 @@ const CONFIG_INPUT_READERS = {
     alarms: (section) => ({alarms: readFourPTouchAlarms(section)}),
     takePills: (section) => readTakePills(section),
     wonlexMedicationPlans: (section) => readWonlexMedicationPlans(section),
-    wonlexWeather: (section) => readWonlexWeather(section),
     soundProfile: (section) => ({mode: readNumber(section, "mode")}),
 };
 
@@ -340,7 +337,6 @@ const CONFIG_INPUT_DEFAULTS = {
         voiceMimeType: "audio/webm",
     }),
     wonlexMedicationPlans: () => ({plans: [defaultWonlexMedicationPlan()]}),
-    wonlexWeather: () => defaultWonlexWeather(),
     soundProfile: () => ({mode: 1}),
 };
 
@@ -356,7 +352,6 @@ const CONFIG_INPUT_HELP = {
     sos_contacts: () => "",
     call_whitelist: () => "",
     wonlexMedicationPlans: () => "Formulário guiado para medicamento, dose, período e horários.",
-    wonlexWeather: () => "Condições meteorológicas apresentadas no relógio.",
 };
 
 const CONFIG_INPUT_LABEL = {
@@ -368,7 +363,6 @@ const CONFIG_INPUT_LABEL = {
     whitelist_enabled: "Lista branca ativa",
     phonebook: "Lista telefónica",
     wonlexMedicationPlans: "Plano de medicação",
-    wonlexWeather: "Dados meteorológicos",
 };
 
 export async function catalogForProtocol(protocol) {

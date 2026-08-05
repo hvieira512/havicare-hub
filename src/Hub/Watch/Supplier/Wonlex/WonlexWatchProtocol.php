@@ -92,10 +92,6 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
                 'value' => $this->sleepSummary($sleep),
             ], $ident, $timestamp)];
         }
-        if ($type === 'upWeather' && is_array($state['weather'] ?? null)) {
-            return [$this->downlink($session, 'dnWeather', $this->weatherPayload($state['weather']), $ident, $timestamp)];
-        }
-
         $responses[] = new WatchResponse($this->encodeOutgoing([
             'type' => $type,
             'ident' => $ident,
@@ -213,25 +209,6 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
         }
         $total = array_sum($totals);
         return implode('/', [$total, $totals['deepSleep'], $totals['lightSleep'], $totals['sober']]);
-    }
-
-    private function weatherPayload(array $weather): array
-    {
-        return [
-            'iIsCDMA' => (string)($weather['iIsCDMA'] ?? '0'),
-            'weather' => (string)($weather['weather'] ?? $weather['summary'] ?? ''),
-            'weatherType' => (int)($weather['weatherType'] ?? 0),
-            'province' => (string)($weather['province'] ?? ''),
-            'city' => (string)($weather['city'] ?? ''),
-            'adcode' => (string)($weather['adcode'] ?? ''),
-            'temperature' => (string)($weather['temperature'] ?? $weather['temperatureCelsius'] ?? ''),
-            'winddirection' => (string)($weather['winddirection'] ?? ''),
-            'windpower' => (string)($weather['windpower'] ?? ''),
-            'humidity' => (string)($weather['humidity'] ?? $weather['humidityPercent'] ?? ''),
-            'daytemp' => (string)($weather['daytemp'] ?? $weather['highCelsius'] ?? ''),
-            'nighttemp' => (string)($weather['nighttemp'] ?? $weather['lowCelsius'] ?? ''),
-            'reporttime' => (string)($weather['reporttime'] ?? gmdate('Y-m-d H:i:s')),
-        ];
     }
 
     public function commandMetadata(string $bytes): ?array

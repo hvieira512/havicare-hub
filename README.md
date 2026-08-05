@@ -417,7 +417,7 @@ They share one envelope across all suppliers, models, and supported device types
 Field meaning:
 
 - `schemaVersion`: telemetry schema version. Current value is `2`.
-- `type`: normalized feature name such as `location`, `heart_rate`, `battery`, `activity`, `alarm`, `blood_pressure`, `blood_oxygen`, `temperature`, `heartbeat`, `device_config`, or `weather`.
+- `type`: normalized feature name such as `location`, `heart_rate`, `battery`, `activity`, `alarm`, `blood_pressure`, `blood_oxygen`, `temperature`, `heartbeat`, or `device_config`.
 - `occurredAt`: server-side publish timestamp in UTC.
 - `device.id`: canonical device identity used by the hub and MQTT topics.
 - `device.supplier`: whitelist supplier metadata resolved by the hub.
@@ -557,17 +557,6 @@ Example:
 - `status`
 - `ack`
 - `settings`
-
-#### `weather`
-
-- `status`
-- `summary`
-- `weatherType`
-- `reportedAt`
-- `temperatureCelsius`
-- `lowCelsius`
-- `highCelsius`
-- `humidityPercent`
 
 When a supplier exposes additional fields that do not map cleanly into the shared shape, keep them in `extra` rather than overloading `data` with protocol-specific names.
 

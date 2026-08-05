@@ -487,34 +487,17 @@ final class DeviceEventDecoderTest extends TestCase
         self::assertSame('0', $events[0]['value']['ack']);
     }
 
-    public function testDecodesWonlexWeatherIntoStructuredPayload(): void
+    public function testIgnoresWonlexWeatherRequestAsTelemetry(): void
     {
         $events = (new DeviceEventDecoder())->decode(
             $this->session('wonlex-json'),
             [
                 'type' => 'upWeather',
-                'data' => [
-                    'weather' => 'Cloudy',
-                    'weatherType' => 1,
-                    'reporttime' => '2026-06-17 14:15:00',
-                    'temp' => 22.5,
-                    'lowTemp' => 18.0,
-                    'highTemp' => 25.0,
-                    'humidity' => 61,
-                ],
+                'data' => [],
             ]
         );
 
-        self::assertCount(1, $events);
-        self::assertSame('weather', $events[0]['feature']);
-        self::assertSame('ok', $events[0]['value']['status']);
-        self::assertSame('Cloudy', $events[0]['value']['summary']);
-        self::assertSame(1, $events[0]['value']['weatherType']);
-        self::assertSame('2026-06-17 14:15:00', $events[0]['value']['reportedAt']);
-        self::assertSame(22.5, $events[0]['value']['temperatureCelsius']);
-        self::assertSame(18.0, $events[0]['value']['lowCelsius']);
-        self::assertSame(25.0, $events[0]['value']['highCelsius']);
-        self::assertSame(61, $events[0]['value']['humidityPercent']);
+        self::assertSame([], $events);
     }
 
     public function testIgnoresVivistarRequestAckTypesAsTelemetry(): void

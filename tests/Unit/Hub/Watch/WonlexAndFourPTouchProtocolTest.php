@@ -72,12 +72,6 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
                         ['type' => 'lightSleep', 'durationMinutes' => 152],
                     ],
                 ],
-                'weather' => [
-                    'weather' => 'Cloudy', 'weatherType' => 1, 'province' => 'Lisbon',
-                    'city' => 'Lisbon', 'adcode' => '110101', 'temperature' => '26',
-                    'winddirection' => 'SW', 'windpower' => '2', 'humidity' => '56',
-                    'daytemp' => '32', 'nighttemp' => '25', 'reporttime' => '2026-07-28 12:00:00',
-                ],
             ]
         );
         $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
@@ -103,11 +97,6 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         ]));
         self::assertSame('200/48/152/0', $adapter->decodeIncoming($sleep->responses[0]->bytes)['data']['value']);
 
-        $weather = $protocol->handleIncoming($session, $this->wonlexFrame([
-            'type' => 'upWeather', 'ident' => 456789, 'ref' => 'w:update',
-        ]));
-        self::assertSame('dnWeather', $adapter->decodeIncoming($weather->responses[0]->bytes)['type']);
-        self::assertSame('Lisbon', $adapter->decodeIncoming($weather->responses[0]->bytes)['data']['city']);
     }
 
     public function testFourPTouchProducesProtocolAck(): void

@@ -23,6 +23,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026073003ConfigurationLifec
 use Hub\Infrastructure\Persistence\Migration\Version2026073101PrivateRadioMap;
 use Hub\Infrastructure\Persistence\Migration\Version2026080301EnableWonlexPushMessage;
 use Hub\Infrastructure\Persistence\Migration\Version2026080501ScopeApiUsersByLicense;
+use Hub\Infrastructure\Persistence\Migration\Version2026080502RemoveWeatherCapability;
 
 final class DatabaseMigrationPlan
 {
@@ -48,6 +49,7 @@ final class DatabaseMigrationPlan
             new Version2026073101PrivateRadioMap(),
             new Version2026080301EnableWonlexPushMessage(),
             new Version2026080501ScopeApiUsersByLicense(),
+            new Version2026080502RemoveWeatherCapability(),
         ];
     }
 

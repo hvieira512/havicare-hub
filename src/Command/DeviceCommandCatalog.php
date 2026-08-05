@@ -167,7 +167,6 @@ final class DeviceCommandCatalog
             ['id' => 'dnHRV', 'command' => 'dnHRV', 'label' => 'HRV', 'icon' => 'fa-chart-line', 'kind' => 'request', 'feature' => 'hrv', 'expectedReplyTypes' => ['upHRV']],
             ['id' => 'dnPPG', 'command' => 'dnPPG', 'label' => 'PPG', 'icon' => 'fa-circle-nodes', 'kind' => 'request', 'feature' => 'ppg', 'expectedReplyTypes' => ['upPPG']],
             ['id' => 'dnRR', 'command' => 'dnRR', 'label' => 'RR interval', 'icon' => 'fa-stopwatch', 'kind' => 'request', 'feature' => 'rr_interval', 'expectedReplyTypes' => ['upRR']],
-            ['id' => 'dnWeather', 'command' => 'dnWeather', 'label' => 'Weather', 'icon' => 'fa-cloud-sun', 'kind' => 'data', 'feature' => 'weather', 'expectedReplyTypes' => ['dnWeather']],
         ];
     }
 
@@ -215,14 +214,6 @@ final class DeviceCommandCatalog
         if ($command === 'dnUpSleep' && (!isset($data['upDayStr']) || !isset($data['value']))) {
             throw new \InvalidArgumentException('dnUpSleep requires upDayStr and value');
         }
-        if ($command === 'dnWeather') {
-            foreach (['weather', 'weatherType', 'province', 'city', 'adcode', 'temperature', 'winddirection', 'windpower', 'humidity', 'daytemp', 'nighttemp', 'reporttime'] as $required) {
-                if (!array_key_exists($required, $data)) {
-                    throw new \InvalidArgumentException("dnWeather requires {$required}");
-                }
-            }
-        }
-
         $ident = $context['ident'] ?? random_int(100000, 999999);
         if (!is_int($ident) && !(is_string($ident) && ctype_digit($ident))) {
             throw new \InvalidArgumentException('Wonlex ident must be numeric');

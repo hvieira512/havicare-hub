@@ -50,7 +50,6 @@ final class WonlexConfigurationDefinitions
             // Wonlex documents msgNotice as a one-way notification and does not
             // define a device reply for it.
             $entry('pushMessage', 'msgNotice', 'Enviar mensagem ao relógio', 'pushMessage', ['message'], [], 'system', 145, null, null, true),
-            $entry('weatherData', 'dnWeather', 'Dados meteorológicos', 'wonlexWeather', ['weather'], ['dnWeather'], 'system', 150),
         ];
     }
 }

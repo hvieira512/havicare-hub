@@ -7,6 +7,7 @@ namespace Tests\Unit\Infrastructure\Persistence;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Infrastructure\Persistence\DatabaseSchemaGuard;
+use Hub\Infrastructure\Persistence\Migration\Version2026080502RemoveWeatherCapability;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class MigrationTest extends MysqlDashboardTestCase
@@ -31,6 +32,50 @@ final class MigrationTest extends MysqlDashboardTestCase
             $pdo->query('SELECT UTC_TIMESTAMP()')->fetchColumn(),
             $pdo->query('SELECT NOW()')->fetchColumn(),
         );
+    }
+
+    public function testWeatherRemovalMigrationCleansCatalogConfigurationsAndLifecycle(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+        $pdo->exec("
+            INSERT INTO capabilities (
+                device_type, section, capability_key, label, is_configurable
+            ) VALUES ('watch', 'settings_system', 'weather_data', 'Weather', 1)
+        ");
+        $capabilityId = (int)$pdo->lastInsertId();
+        $modelId = (int)$pdo->query("SELECT id FROM models WHERE device_type = 'watch' LIMIT 1")->fetchColumn();
+        $pdo->exec("INSERT INTO model_capabilities (model_id, capability_id) VALUES ({$modelId}, {$capabilityId})");
+        $pdo->exec("
+            INSERT INTO device_configurations (
+                imei, config_key, native_key, protocol, command, desired_payload, reported_payload
+            ) VALUES ('weather-test', 'weather_data', 'weatherData', 'wonlex-json', 'dnWeather', '{}', '{}')
+        ");
+        $pdo->exec("
+            INSERT INTO device_configuration_changes (
+                change_id, imei, config_key, desired_revision, desired_payload, sync_status, created_at, updated_at
+            ) VALUES ('weather-change', 'weather-test', 'weather_data', 1, '{}', 'pending_delivery', 'now', 'now')
+        ");
+        $pdo->exec("
+            INSERT INTO device_configuration_operations (
+                operation_id, change_id, imei, config_key, native_key, native_type,
+                protocol, command_bytes, expected_reply_types, created_at, updated_at
+            ) VALUES (
+                'weather-operation', 'weather-change', 'weather-test', 'weather_data',
+                'weatherData', 'dnWeather', 'wonlex-json', '{}', '[]', 'now', 'now'
+            )
+        ");
+
+        (new Version2026080502RemoveWeatherCapability())->up($pdo);
+
+        foreach (['capabilities', 'model_capabilities', 'device_configurations',
+            'device_configuration_changes', 'device_configuration_operations'] as $table) {
+            self::assertSame(0, (int)$pdo->query("SELECT COUNT(*) FROM {$table} WHERE " . match ($table) {
+                'capabilities' => "capability_key = 'weather_data'",
+                'model_capabilities' => "capability_id = {$capabilityId}",
+                'device_configuration_operations' => "operation_id = 'weather-operation'",
+                default => "config_key = 'weather_data'",
+            })->fetchColumn(), $table);
+        }
     }
 
     public function testAllMigrationsAreRecordedAndDoNotRerun(): void
@@ -58,10 +103,15 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026073101_private_radio_map',
             '2026080301_enable_wonlex_push_message',
             '2026080501_scope_api_users_by_license',
+            '2026080502_remove_weather_capability',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(18, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(19, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(
+            0,
+            (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
+        );
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS

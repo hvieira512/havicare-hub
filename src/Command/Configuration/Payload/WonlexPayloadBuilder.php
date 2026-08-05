@@ -51,7 +51,6 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
                 'msgType' => 'msg',
                 'msg' => self::requiredString($payload['message'] ?? null, 'message'),
             ],
-            'weatherData' => self::weatherData($payload),
             default => throw new \InvalidArgumentException("Unsupported Wonlex configuration {$key}"),
         };
     }
@@ -273,15 +272,4 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
         ];
     }
 
-    private static function weatherData(array $payload): array
-    {
-        $weather = is_array($payload['weather'] ?? null) ? $payload['weather'] : $payload;
-        foreach (['weather', 'weatherType', 'province', 'city', 'adcode', 'temperature', 'winddirection', 'windpower', 'humidity', 'daytemp', 'nighttemp', 'reporttime'] as $field) {
-            if (!array_key_exists($field, $weather)) {
-                throw new \InvalidArgumentException("{$field} is required");
-            }
-        }
-
-        return ['iIsCDMA' => (string)($weather['iIsCDMA'] ?? '0')] + $weather;
-    }
 }

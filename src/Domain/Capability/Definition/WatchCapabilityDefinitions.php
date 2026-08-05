@@ -75,7 +75,6 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'restart_device', 'label' => 'Restart device', 'sortOrder' => 15, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'power_off', 'label' => 'Power off', 'sortOrder' => 16, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
             ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'find_device', 'label' => 'Find device', 'sortOrder' => 18, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => true],
-            ['deviceType' => 'watch', 'section' => 'settings_system', 'key' => 'weather_data', 'label' => 'Weather data', 'sortOrder' => 19, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'center_number', 'label' => 'Center number', 'sortOrder' => 45, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'step_reporting_interval', 'label' => 'Step interval', 'sortOrder' => 180, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'health', 'key' => 'pedometer_schedule', 'label' => 'Pedometer schedule', 'sortOrder' => 190, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

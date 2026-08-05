@@ -573,20 +573,10 @@ class DeviceHubServer
             'bindStatus' => $licenseId !== '0' && strtolower($company) !== 'null' ? 1 : 0,
             'configurations' => $configurations,
         ];
-        foreach ($configurations as $configuration) {
-            if (($configuration['command'] ?? '') === 'dnWeather' && is_array($configuration['payload'] ?? null)) {
-                $state['weather'] = $configuration['payload'];
-                break;
-            }
-        }
-
         foreach ($this->dashboardStore?->recent($session->imei, 'telemetry') ?? [] as $event) {
             $type = (string)($event['type'] ?? '');
             if ($type === 'sleep' && !isset($state['sleep']) && is_array($event['data'] ?? null)) {
                 $state['sleep'] = $event['data'];
-            }
-            if ($type === 'weather' && !isset($state['weather']) && is_array($event['data'] ?? null)) {
-                $state['weather'] = $event['data'];
             }
         }
 

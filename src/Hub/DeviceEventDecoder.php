@@ -58,7 +58,6 @@ final class DeviceEventDecoder
             'upStep', 'upKcal', 'upDistance', 'upTodayActivity', 'upRun', 'upWalk' => [$this->event('activity', $nativeType, $payload, $payload)],
             'upSleep' => [$this->event('sleep', $nativeType, $payload, $payload)],
             'upDeviceConfig' => [$this->event('device_config', $nativeType, $payload, $payload)],
-            'upWeather' => [$this->event('weather', $nativeType, $payload, $payload)],
             'upShutdown' => [$this->event('device_state', $nativeType, ['state' => 'shutdown'] + $payload, $payload)],
             'upReset' => [$this->event('device_state', $nativeType, ['state' => 'factory_reset'] + $payload, $payload)],
             'upBatch' => $this->decodeWonlexBatch($nativeType, $payload),
@@ -308,9 +307,6 @@ final class DeviceEventDecoder
         $normalizedAliases = [
             'configAck' => 'ack',
             'configs' => 'settings',
-            'weather' => 'summary',
-            'reporttime' => 'reportedAt',
-            'reportTime' => 'reportedAt',
             'temperature' => 'temperatureCelsius',
             'temp' => 'temperatureCelsius',
             'lowTemp' => 'lowCelsius',

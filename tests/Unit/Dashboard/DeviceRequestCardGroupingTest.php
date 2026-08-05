@@ -62,9 +62,6 @@ final class DeviceRequestCardGroupingTest extends TestCase
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config.js'
         );
         $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/wonlex-weather.js'
-        );
-        $source .= file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
         );
 
@@ -118,9 +115,6 @@ final class DeviceRequestCardGroupingTest extends TestCase
     {
         $source = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config.js'
-        );
-        $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/wonlex-weather.js'
         );
         $source .= file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
@@ -211,21 +205,14 @@ final class DeviceRequestCardGroupingTest extends TestCase
             'wonlexMedicationPlans: (_entry, desired) => wonlexMedicationPlansInput(desired),',
             $source
         );
-        self::assertStringContainsString(
-            'wonlexWeather: (_entry, desired) => wonlexWeatherInput(desired),',
-            $source
-        );
         self::assertStringContainsString('data-medication-field="drugName"', $source);
         self::assertStringContainsString('data-medication-period', $source);
-        self::assertStringContainsString('data-weather-field="weatherType"', $source);
-        self::assertStringContainsString('data-weather-field="reporttime"', $source);
         self::assertStringContainsString('Use 0 para desativar.', $source);
         self::assertStringNotContainsString(
             'numericValue(configuredValue, 0) <= 0',
             $source
         );
         self::assertStringContainsString('function readWonlexMedicationPlans(section)', $source);
-        self::assertStringContainsString('function readWonlexWeather(section)', $source);
         self::assertStringContainsString('data-action="addTakePillsReminder"', $source);
         self::assertStringContainsString('data-action="removeTakePillsReminder"', $source);
         self::assertStringContainsString('data-takepills-reminder-number', $source);

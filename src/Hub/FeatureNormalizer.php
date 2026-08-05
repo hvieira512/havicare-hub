@@ -25,7 +25,6 @@ final class FeatureNormalizer
             'location' => self::location($payload),
             'alarm' => self::alarm($payload),
             'device_config' => self::deviceConfig($payload),
-            'weather' => self::weather($payload),
             'firmware_version' => self::firmwareVersion($payload),
             'device_status' => self::deviceStatus($payload),
             default => [],
@@ -465,22 +464,6 @@ final class FeatureNormalizer
         return array_filter([
             'deviceTime' => self::stringOrNull($payload['deviceTime'] ?? null),
         ], static fn (mixed $value): bool => $value !== null);
-    }
-
-    private static function weather(array $payload): array
-    {
-        $weather = array_filter([
-            'status' => 'ok',
-            'summary' => self::stringOrNull($payload['summary'] ?? $payload['weather'] ?? null),
-            'weatherType' => self::int($payload['weatherType'] ?? null),
-            'reportedAt' => self::stringOrNull($payload['reportedAt'] ?? $payload['reporttime'] ?? $payload['reportTime'] ?? null),
-            'temperatureCelsius' => self::float($payload['temperatureCelsius'] ?? $payload['temperature'] ?? $payload['temp'] ?? null),
-            'lowCelsius' => self::float($payload['lowCelsius'] ?? $payload['lowTemp'] ?? $payload['lowTemperature'] ?? null),
-            'highCelsius' => self::float($payload['highCelsius'] ?? $payload['highTemp'] ?? $payload['highTemperature'] ?? null),
-            'humidityPercent' => self::int($payload['humidityPercent'] ?? $payload['humidity'] ?? null),
-        ], static fn (mixed $value): bool => $value !== null);
-
-        return count($weather) > 1 ? $weather : [];
     }
 
     private static function first(array $payload, array $keys): mixed

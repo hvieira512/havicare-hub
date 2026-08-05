@@ -394,14 +394,11 @@ final class DeviceConfigurationCatalogTest extends TestCase
     public function testWonlexComplexDashboardConfigurationsUseStructuredEditors(): void
     {
         $medication = DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'dnMedicationPlan');
-        $weather = DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'weatherData');
 
         self::assertIsArray($medication);
-        self::assertIsArray($weather);
         self::assertSame('wonlexMedicationPlans', $medication['input'] ?? null);
-        self::assertSame('wonlexWeather', $weather['input'] ?? null);
         self::assertStringNotContainsString('JSON', (string)($medication['label'] ?? ''));
-        self::assertStringNotContainsString('JSON', (string)($weather['label'] ?? ''));
+        self::assertNull(DeviceConfigurationCatalog::configForProtocol('wonlex-json', 'weatherData'));
     }
 
     public function testWonlexStructuredDeviceConfigBuildsNestedPayloads(): void

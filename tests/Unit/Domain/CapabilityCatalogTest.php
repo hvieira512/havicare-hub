@@ -11,7 +11,7 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [69, '1282959d916330a134742489379668904666339eed3f578a7277e5385c1ba795'],
+            'watch' => [68, 'b76b3fcc74b3a702af05df2070db1b22b81e7cd5e8095143a08a9cd70b606617'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
         ];
@@ -57,7 +57,7 @@ final class CapabilityCatalogTest extends TestCase
         }
     }
 
-    public function testWonlexControlsAreRequestableActionsAndWeatherIsPersistentConfiguration(): void
+    public function testWonlexControlsAreRequestableActionsAndWeatherIsNotAdvertised(): void
     {
         $definitions = [];
         foreach (CapabilityCatalog::definitionsForDeviceType('watch') as $definition) {
@@ -68,8 +68,7 @@ final class CapabilityCatalogTest extends TestCase
             self::assertFalse($definitions[$key]['isConfigurable']);
             self::assertTrue($definitions[$key]['isRequestable']);
         }
-        self::assertTrue($definitions['weather_data']['isConfigurable']);
-        self::assertFalse($definitions['weather_data']['isRequestable']);
+        self::assertArrayNotHasKey('weather_data', $definitions);
     }
 
     public function testWonlexSystemReportsAreNotAdvertisedAsTelemetry(): void

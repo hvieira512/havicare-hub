@@ -2611,7 +2611,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'whitelist_enabled',
             'sos_sms_alert',
             'medication_reminders',
-            'weather_data',
             'heart_rate_measurement_interval',
         ]);
         $plan = [
@@ -2623,21 +2622,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'drugInterval' => 1,
             'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
         ];
-        $weather = [
-            'weather' => 'Cloudy',
-            'weatherType' => 2,
-            'province' => 'Lisbon',
-            'city' => 'Lisbon',
-            'adcode' => '1106',
-            'temperature' => '22',
-            'winddirection' => 'NW',
-            'windpower' => '3',
-            'humidity' => '65',
-            'daytemp' => '24',
-            'nighttemp' => '17',
-            'reporttime' => '2026-07-28 15:15:00',
-        ];
-
         $response = $api->updateConfigurations($imei, json_encode([
             'configurations' => [
                 'heart_rate_measurement_interval' => ['interval' => 15],
@@ -2659,12 +2643,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     $plan + ['drugName' => 'Morning medicine'],
                     $plan + ['drugName' => 'Evening medicine'],
                 ]],
-                'weather_data' => $weather,
             ],
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('ok', $response['status'] ?? null);
-        self::assertCount(9, $submitted);
+        self::assertCount(8, $submitted);
         $adapter = new \Hub\Protocol\Adapter\WonlexAdapter();
         $frames = array_map(
             static fn(array $item): array => $adapter->decodeIncoming($item['bytes']) ?? [],
@@ -2679,7 +2662,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'deviceConfig',
             'dnMedicationPlan',
             'dnMedicationPlan',
-            'dnWeather',
         ], array_column($frames, 'type'));
         self::assertSame('351', $frames[0]['data']['familyNumbers'][0]['areaCode'] ?? null);
         self::assertSame('Rodr', $frames[0]['data']['familyNumbers'][0]['name'] ?? null);
@@ -2695,7 +2677,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame(1, $frames[5]['data']['configs']['SOSSwitch']['switchState'] ?? null);
         self::assertSame('Morning medicine', $frames[6]['data']['drugName'] ?? null);
         self::assertSame('Evening medicine', $frames[7]['data']['drugName'] ?? null);
-        self::assertSame('Lisbon', $frames[8]['data']['city'] ?? null);
         self::assertSame('daily', $response['configurations']['alarm_clock'][0]['recurrence']['kind'] ?? null);
         self::assertSame(
             [['name' => 'Rodr', 'phone' => '+351210000000']],

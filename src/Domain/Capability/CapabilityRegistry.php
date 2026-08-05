@@ -212,7 +212,6 @@ final class CapabilityRegistry
             'power_off' => ['powerOffCommand' => []],
             'find_device' => ['findDeviceCommand' => []],
             'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            'weather_data' => ['weatherData' => self::requireObjectValue($value, 'weatherData')],
             default => [
                 $this->resolveWonlexNativeKey($genericKey) => $this->wonlexToNative(
                     self::requireObjectValue($value, $genericKey)
