@@ -11,9 +11,9 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [68, 'b76b3fcc74b3a702af05df2070db1b22b81e7cd5e8095143a08a9cd70b606617'],
+            'watch' => [68, 'e7a6cb2efba6184bd788d8ed3d25180cc4508989d4b9751e426e1d8ce7b431b1'],
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
-            'radar' => [4, '20bc94db11ca7dd29da50ea2ba226a5e372e8045a6a3e3aece65aaf5acab97f9'],
+            'radar' => [4, 'b18cde2f1c1a75b44b0290c7770225f6efc486d561829ffa31ca4d584dcb0426'],
         ];
 
         foreach ($expected as $deviceType => [$count, $hash]) {
@@ -100,8 +100,8 @@ final class CapabilityCatalogTest extends TestCase
         self::assertArrayNotHasKey('device_settings_sync', $definitions);
         self::assertArrayNotHasKey('call_in_restriction', $definitions);
         self::assertSame('contacts', $definitions['whitelist_enabled']['section']);
-        self::assertSame('Wrist removal alert', $definitions['remove_watch_alarm']['label']);
-        self::assertSame('Wrist removal SMS alert', $definitions['remove_watch_sms_alert']['label']);
+        self::assertSame('Alerta de remoção do relógio', $definitions['remove_watch_alarm']['label']);
+        self::assertSame('SMS de remoção do relógio', $definitions['remove_watch_sms_alert']['label']);
 
         self::assertNull(CapabilityCatalog::mapConfigurationKey('wonlex-json', 'dnDevBindStatus'));
         self::assertNull(CapabilityCatalog::mapConfigurationKey('wonlex-json', 'deviceConfig'));

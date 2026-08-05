@@ -10,10 +10,10 @@ final class RadarCapabilityDefinitions
     public static function all(): array
     {
         return [
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'positions', 'label' => 'Positions', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals', 'label' => 'Vitals', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'position_minute_stats', 'label' => 'Position minute stats', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals_minute_stats', 'label' => 'Vitals minute stats', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'positions', 'label' => 'Posições', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals', 'label' => 'Sinais vitais', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'position_minute_stats', 'label' => 'Estatísticas de posições por minuto', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals_minute_stats', 'label' => 'Estatísticas de sinais vitais por minuto', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
         ];
     }
 }

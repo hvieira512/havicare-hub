@@ -34,66 +34,6 @@ import {
 
 let els;
 
-const CAPABILITY_LABEL_TRANSLATIONS = {
-    positions: "Posições",
-    vitals: "Sinais vitais",
-    position_minute_stats: "Estatísticas de posições por minuto",
-    vitals_minute_stats: "Estatísticas de sinais vitais por minuto",
-    location: "Localização",
-    heart_rate: "Frequência cardíaca",
-    blood_pressure: "Pressão arterial",
-    blood_oxygen: "Oxigénio no sangue",
-    temperature: "Temperatura",
-    breath_rate: "Frequência respiratória",
-    sleep: "Sono",
-    ecg: "ECG",
-    hrv: "VFC",
-    ppg: "PPG",
-    rr_interval: "Intervalo RR",
-    auto_vitals_interval: "Vitais automáticos",
-    heart_rate_measurement_interval: "Frequência cardíaca",
-    blood_pressure_measurement_interval: "Pressão arterial",
-    blood_oxygen_measurement_interval: "Oxigénio no sangue",
-    temperature_measurement_interval: "Temperatura",
-    breath_rate_measurement_interval: "Frequência respiratória",
-    ecg_measurement_interval: "ECG",
-    hrv_measurement_interval: "VFC",
-    ppg_measurement_interval: "PPG",
-    rr_interval_measurement_interval: "Intervalo RR",
-    heart_rate_continuous: "Frequência cardíaca contínua",
-    blood_oxygen_continuous: "Oxigénio no sangue contínuo",
-    blood_pressure_trend: "Tendência de pressão arterial",
-    temperature_continuous: "Temperatura contínua",
-    step_goal: "Meta de passos",
-    sleep_monitoring: "Sono",
-    blood_pressure_calibration: "Calibração de pressão arterial",
-    step_reporting_interval: "Passos",
-    pedometer_schedule: "Pedómetro",
-    sos_contacts: "Contactos SOS",
-    phonebook: "Lista telefónica",
-    call_whitelist: "Lista branca",
-    whitelist_enabled: "Lista branca ativa",
-    monitor_number: "Número de monitorização",
-    alarm_clock: "Alarmes",
-    medication_reminders: "Lembretes de medicação",
-    low_battery_alert: "Bateria fraca",
-    fall_detection: "Quedas",
-    fall_sensitivity: "Sensibilidade de queda",
-    sos_sms_alert: "SOS SMS",
-    blood_oxygen_alert: "Oxigénio no sangue",
-    temperature_high_alert: "Temperatura alta",
-    temperature_low_alert: "Temperatura baixa",
-    blood_pressure_alert: "Pressão arterial",
-    heart_rate_high_alert: "Frequência cardíaca alta",
-    heart_rate_low_alert: "Frequência cardíaca baixa",
-    remove_watch_alarm: "Remoção do relógio",
-    remove_watch_sms_alert: "SMS de remoção do relógio",
-    location_reporting_interval: "Localização",
-    working_mode: "Modo de funcionamento",
-    device_password: "Palavra-passe",
-    language_timezone: "Idioma e fuso horário",
-};
-
 async function initSettingsCapabilities(context) {
     els = context.els;
 }
@@ -884,12 +824,10 @@ function renderCapabilitiesSection() {
             <div class="d-flex flex-column gap-2">
                 ${section.entries
                     .map((feature) => {
-                        const labelText =
-                            CAPABILITY_LABEL_TRANSLATIONS[feature] ||
-                            capabilityLabelByKey(
-                                feature,
-                                state.settingsModal.capabilityCatalog,
-                            );
+                        const labelText = capabilityLabelByKey(
+                            feature,
+                            state.settingsModal.capabilityCatalog,
+                        );
                         const sectionState = capabilities[section.section] || {};
                         const isInModelPayload = Object.prototype.hasOwnProperty.call(
                             sectionState,

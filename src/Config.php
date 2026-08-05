@@ -2,10 +2,24 @@
 
 namespace Hub;
 
+/**
+ * @phpstan-type TcpIngressConfig array{host: string, port: int}
+ * @phpstan-type DashboardConfig array{host: string, port: int, api_auth_required: bool, api_token_ttl_seconds: int, api_refresh_token_ttl_seconds: int, history_limit: int, command_timeout_seconds: int, device_idle_timeout_seconds: int}
+ * @phpstan-type HubRuntimeConfig array{downlink_queue_ttl_seconds: int, whitelist_file: string}
+ * @phpstan-type LocationResolutionConfig array{enabled: bool, endpoint: string, user_agent: string, timeout_seconds: float, max_accuracy_meters: float, cache_ttl_seconds: int, failure_cache_ttl_seconds: int, max_concurrency: int, max_queue: int, circuit_failure_threshold: int, circuit_open_seconds: int, rate_limit_open_seconds: int, radio_map_enabled: bool, radio_map_hash_key: string, radio_map_minimum_matches: int, radio_map_maximum_learning_accuracy_meters: float, radio_map_default_gps_accuracy_meters: float, radio_map_minimum_satellites: int, radio_map_maximum_observation_distance_meters: float, radio_map_cluster_radius_meters: float, radio_map_cache_ttl_seconds: int}
+ * @phpstan-type NcsConfig array{enabled: bool, topic_filter: string}
+ * @phpstan-type QinglanstConfig array{enabled: bool, host: string, port: int, username: string, password: string, topic_filter: string, client_id_prefix: string, dashboard_seen_min_interval_ms: int, position_history_sample_ms: int}
+ * @phpstan-type MqttConfig array{host: string, port: int, username: string, password: string, topic_prefix: string, client_id_prefix: string, keepalive: int, timeout: float, tls_enabled: bool, tls_verify_peer: bool, tls_ca_file: string, tls_cert_file: string, tls_key_file: string}
+ * @phpstan-type RedisConfig array{host: string, port: int, password: string}
+ * @phpstan-type DatabaseConfig array{driver: string, host: string, port: int, name: string, username: string, password: string, charset: string}
+ * @phpstan-type HubConfig array{tcp_ingress: TcpIngressConfig, dashboard: DashboardConfig, hub: HubRuntimeConfig, location_resolution: LocationResolutionConfig, ncs: NcsConfig, qinglanst: QinglanstConfig, mqtt: MqttConfig, redis: RedisConfig, database: DatabaseConfig}
+ */
 class Config
 {
+    /** @var HubConfig */
     private array $data;
 
+    /** @param HubConfig $data */
     public function __construct(array $data)
     {
         $this->data = $data;
@@ -133,6 +147,7 @@ class Config
         ]);
     }
 
+    /** @return HubConfig */
     public function all(): array
     {
         return $this->data;

@@ -38,50 +38,50 @@ Bootstrap::loadEnv(__DIR__ . '/..');
 
 $config = Config::load()->all();
 (new HubConfigurationValidator())->validate($config);
-$mqttConfig = $config['mqtt'] ?? [];
-$redisConfig = $config['redis'] ?? [];
-$databaseConfig = $config['database'] ?? [];
-$dashboardConfig = $config['dashboard'] ?? [];
-$ncsConfig = $config['ncs'] ?? [];
-$qinglanstConfig = $config['qinglanst'] ?? [];
-$locationResolutionConfig = $config['location_resolution'] ?? [];
-$downlinkQueueTtlSeconds = (int)($config['hub']['downlink_queue_ttl_seconds'] ?? 300);
+$mqttConfig = $config['mqtt'];
+$redisConfig = $config['redis'];
+$databaseConfig = $config['database'];
+$dashboardConfig = $config['dashboard'];
+$ncsConfig = $config['ncs'];
+$qinglanstConfig = $config['qinglanst'];
+$locationResolutionConfig = $config['location_resolution'];
+$downlinkQueueTtlSeconds = $config['hub']['downlink_queue_ttl_seconds'];
 
-$mqttHost = trim((string)($mqttConfig['host'] ?? ''));
+$mqttHost = trim($mqttConfig['host']);
 if ($mqttHost === '') {
     Logger::channel('hub')->error('MQTT_HOST is required for the devices hub');
     exit(1);
 }
 
-$clientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($mqttConfig['client_id_prefix'] ?? 'havicare-hub')) ?: 'havicare-hub';
-$topicPrefix = trim((string)($mqttConfig['topic_prefix'] ?? ''), '/');
+$clientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', $mqttConfig['client_id_prefix']) ?: 'havicare-hub';
+$topicPrefix = trim($mqttConfig['topic_prefix'], '/');
 
 $createMqttClient = static function (string $suffix, bool $stableClientId = false, ?Repository $repository = null) use ($mqttConfig, $mqttHost, $clientIdPrefix): MqttClient {
     $clientId = $stableClientId
         ? substr($clientIdPrefix . '-' . $suffix, 0, 23)
         : substr($clientIdPrefix . '-' . $suffix . '-' . getmypid(), 0, 23);
 
-    return new MqttClient($mqttHost, (int)($mqttConfig['port'] ?? 1883), $clientId, MqttClient::MQTT_3_1_1, $repository);
+    return new MqttClient($mqttHost, $mqttConfig['port'], $clientId, MqttClient::MQTT_3_1_1, $repository);
 };
 
 $connectMqttClient = static function (MqttClient $client, bool $cleanSession = true) use ($mqttConfig): MqttClient {
-    $username = (string)($mqttConfig['username'] ?? '');
-    $password = (string)($mqttConfig['password'] ?? '');
-    $timeout = max(1, (int)ceil((float)($mqttConfig['timeout'] ?? 5.0)));
+    $username = $mqttConfig['username'];
+    $password = $mqttConfig['password'];
+    $timeout = max(1, (int)ceil($mqttConfig['timeout']));
 
     $settings = (new ConnectionSettings())
         ->setUsername($username !== '' ? $username : null)
         ->setPassword($password !== '' ? $password : null)
-        ->setKeepAliveInterval(max(1, (int)($mqttConfig['keepalive'] ?? 60)))
+        ->setKeepAliveInterval(max(1, $mqttConfig['keepalive']))
         ->setConnectTimeout($timeout)
         ->setSocketTimeout($timeout)
-        ->setUseTls((bool)($mqttConfig['tls_enabled'] ?? false))
-        ->setTlsVerifyPeer((bool)($mqttConfig['tls_verify_peer'] ?? true))
-        ->setTlsVerifyPeerName((bool)($mqttConfig['tls_verify_peer'] ?? true))
-        ->setTlsSelfSignedAllowed(!(bool)($mqttConfig['tls_verify_peer'] ?? true))
-        ->setTlsCertificateAuthorityFile(((string)($mqttConfig['tls_ca_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_ca_file'] : null)
-        ->setTlsClientCertificateFile(((string)($mqttConfig['tls_cert_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_cert_file'] : null)
-        ->setTlsClientCertificateKeyFile(((string)($mqttConfig['tls_key_file'] ?? '')) !== '' ? (string)$mqttConfig['tls_key_file'] : null);
+        ->setUseTls($mqttConfig['tls_enabled'])
+        ->setTlsVerifyPeer($mqttConfig['tls_verify_peer'])
+        ->setTlsVerifyPeerName($mqttConfig['tls_verify_peer'])
+        ->setTlsSelfSignedAllowed(!$mqttConfig['tls_verify_peer'])
+        ->setTlsCertificateAuthorityFile($mqttConfig['tls_ca_file'] !== '' ? $mqttConfig['tls_ca_file'] : null)
+        ->setTlsClientCertificateFile($mqttConfig['tls_cert_file'] !== '' ? $mqttConfig['tls_cert_file'] : null)
+        ->setTlsClientCertificateKeyFile($mqttConfig['tls_key_file'] !== '' ? $mqttConfig['tls_key_file'] : null);
 
     $client->connect($settings, $cleanSession);
 
@@ -94,18 +94,18 @@ $buildMqttClient = static fn (string $suffix, bool $cleanSession = true, bool $s
 $database = new Hub\Infrastructure\Persistence\DashboardDatabase($databaseConfig);
 (new Hub\Infrastructure\Persistence\DatabaseSchemaGuard($database->pdo()))->assertCurrent();
 $dataAccess = Hub\Api\Repository\ApiDataAccess::fromDatabase($database);
-$whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
+$whitelistFile = trim($config['hub']['whitelist_file']);
 $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
 $redisParameters = [
-    'host' => (string)($redisConfig['host'] ?? '127.0.0.1'),
-    'port' => (int)($redisConfig['port'] ?? 6379),
+    'host' => $redisConfig['host'],
+    'port' => $redisConfig['port'],
 ];
-$redisPassword = (string)($redisConfig['password'] ?? '');
+$redisPassword = $redisConfig['password'];
 if ($redisPassword !== '') {
     $redisParameters['password'] = $redisPassword;
 }
 $downlinkQueue = new RedisPendingDownlinkQueue(new RedisClient($redisParameters));
-$dashboardStore = new DashboardStore(new RedisClient($redisParameters), (int)($dashboardConfig['history_limit'] ?? 100));
+$dashboardStore = new DashboardStore(new RedisClient($redisParameters), $dashboardConfig['history_limit']);
 $dashboardStore->setDataAccess($dataAccess);
 $commercialModelResolver = new Hub\CommercialModelResolver($dataAccess->models);
 $mqttBridge = new HubMqttBridge(
@@ -114,24 +114,24 @@ $mqttBridge = new HubMqttBridge(
     static fn (): MqttClient => $buildMqttClient('pub')
 );
 $locationTelemetryEnricher = null;
-if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
+if ($locationResolutionConfig['enabled']) {
     $locationRedis = new RedisClient($redisParameters);
     $beaconDbClient = new Hub\Location\BeaconDbAsyncClient(
         new Browser(),
-        (string)($locationResolutionConfig['endpoint'] ?? 'https://api.beacondb.net/v1/geolocate'),
-        (string)($locationResolutionConfig['user_agent'] ?? 'HaviCare Devices Hub/1.0'),
-        (float)($locationResolutionConfig['timeout_seconds'] ?? 2.0),
+        $locationResolutionConfig['endpoint'],
+        $locationResolutionConfig['user_agent'],
+        $locationResolutionConfig['timeout_seconds'],
     );
     $locationProvider = new Hub\Location\ConcurrentLocationProvider(
         new Hub\Location\CircuitBreakingLocationProvider(
             $beaconDbClient,
             new Hub\Location\RedisProviderCircuitStateStore($locationRedis),
-            (int)($locationResolutionConfig['circuit_failure_threshold'] ?? 3),
-            (int)($locationResolutionConfig['circuit_open_seconds'] ?? 300),
-            (int)($locationResolutionConfig['rate_limit_open_seconds'] ?? 3600),
+            $locationResolutionConfig['circuit_failure_threshold'],
+            $locationResolutionConfig['circuit_open_seconds'],
+            $locationResolutionConfig['rate_limit_open_seconds'],
         ),
-        (int)($locationResolutionConfig['max_concurrency'] ?? 5),
-        (int)($locationResolutionConfig['max_queue'] ?? 1000),
+        $locationResolutionConfig['max_concurrency'],
+        $locationResolutionConfig['max_queue'],
     );
     $locationCache = new Hub\Location\TieredLocationResolutionCache(
         new Hub\Location\ArrayLocationResolutionCache(),
@@ -141,13 +141,13 @@ if ((bool)($locationResolutionConfig['enabled'] ?? true)) {
     $locationTelemetryEnricher = new Hub\Location\BeaconDbTelemetryEnricher(
         $requestBuilder,
         $locationProvider,
-        (float)($locationResolutionConfig['max_accuracy_meters'] ?? 500.0),
-        (int)($locationResolutionConfig['cache_ttl_seconds'] ?? 86400),
-        (int)($locationResolutionConfig['failure_cache_ttl_seconds'] ?? 60),
+        $locationResolutionConfig['max_accuracy_meters'],
+        $locationResolutionConfig['cache_ttl_seconds'],
+        $locationResolutionConfig['failure_cache_ttl_seconds'],
         $locationCache,
     );
-    if ((bool)($locationResolutionConfig['radio_map_enabled'] ?? true)) {
-        $radioMapHashKey = trim((string)($locationResolutionConfig['radio_map_hash_key'] ?? ''));
+    if ($locationResolutionConfig['radio_map_enabled']) {
+        $radioMapHashKey = trim($locationResolutionConfig['radio_map_hash_key']);
         if ($radioMapHashKey === '') {
             Logger::channel('hub')->error('Private radio map disabled because RADIO_MAP_HASH_KEY is empty');
         } else {
@@ -175,7 +175,7 @@ $hubServer = new DeviceHubServer(
 $downlink = null;
 $ncsIngress = null;
 $downlinkTopicFilter = $mqttBridge->downlinkTopicFilter();
-$ncsTopicFilter = trim((string)($ncsConfig['topic_filter'] ?? '/voerka/#'));
+$ncsTopicFilter = trim($ncsConfig['topic_filter']);
 $subscriberRepository = new MemoryRepository();
 $subscriberRepository->addSubscription(new Subscription(
     $downlinkTopicFilter,
@@ -205,7 +205,7 @@ $downlink = new HubDownlinkSubscriber(
 $connectMqttClient($subscriber, false);
 
 $ncsSubscriber = null;
-if ((bool)($ncsConfig['enabled'] ?? true)) {
+if ($ncsConfig['enabled']) {
     $ncsSubscriberRepository = new MemoryRepository();
     $ncsSubscriberRepository->addSubscription(new Subscription(
         $ncsTopicFilter,
@@ -239,17 +239,17 @@ if ((bool)($ncsConfig['enabled'] ?? true)) {
 }
 
 $qinglanstIngress = null;
-if ((bool)($qinglanstConfig['enabled'] ?? true)) {
-    $qinglanstHost = trim((string)($qinglanstConfig['host'] ?? ''));
+if ($qinglanstConfig['enabled']) {
+    $qinglanstHost = trim($qinglanstConfig['host']);
     if ($qinglanstHost !== '') {
-        $qinglanstPort = (int)($qinglanstConfig['port'] ?? 1883);
-        $qinglanstUsername = trim((string)($qinglanstConfig['username'] ?? ''));
-        $qinglanstPassword = trim((string)($qinglanstConfig['password'] ?? ''));
-        $qinglanstTopicFilter = trim((string)($qinglanstConfig['topic_filter'] ?? 'radar/1001/#'));
-        $qinglanstClientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)($qinglanstConfig['client_id_prefix'] ?? 'qinglanst-radar')) ?: 'qinglanst-radar';
+        $qinglanstPort = $qinglanstConfig['port'];
+        $qinglanstUsername = trim($qinglanstConfig['username']);
+        $qinglanstPassword = trim($qinglanstConfig['password']);
+        $qinglanstTopicFilter = trim($qinglanstConfig['topic_filter']);
+        $qinglanstClientIdPrefix = preg_replace('/[^a-zA-Z0-9_-]/', '-', $qinglanstConfig['client_id_prefix']) ?: 'qinglanst-radar';
         $qinglanstDashboardWritePolicy = new QinglanstDashboardWritePolicy(
-            (int)($qinglanstConfig['dashboard_seen_min_interval_ms'] ?? 5000),
-            (int)($qinglanstConfig['position_history_sample_ms'] ?? 1000),
+            $qinglanstConfig['dashboard_seen_min_interval_ms'],
+            $qinglanstConfig['position_history_sample_ms'],
         );
 
         $createQinglanstClient = static function (string $suffix, ?Repository $repository = null) use ($qinglanstHost, $qinglanstPort, $qinglanstClientIdPrefix): MqttClient {
@@ -302,10 +302,10 @@ if ((bool)($qinglanstConfig['enabled'] ?? true)) {
 }
 
 $loop = Loop::get();
-$tcpHost = $config['tcp_ingress']['host'] ?? '0.0.0.0';
-$tcpPort = $config['tcp_ingress']['port'] ?? 9000;
-$dashboardHost = (string)($dashboardConfig['host'] ?? '0.0.0.0');
-$dashboardPort = (int)($dashboardConfig['port'] ?? 8081);
+$tcpHost = $config['tcp_ingress']['host'];
+$tcpPort = $config['tcp_ingress']['port'];
+$dashboardHost = $dashboardConfig['host'];
+$dashboardPort = $dashboardConfig['port'];
 
 $tcpIngress = new HubTcpIngress($hubServer, $loop, $tcpHost, $tcpPort);
 
@@ -316,9 +316,9 @@ $dashboard = new DashboardHttpServer(
         $hubServer,
         $downlinkQueue,
         $dataAccess,
-        (bool)($dashboardConfig['api_auth_required'] ?? true),
-        (int)($dashboardConfig['api_token_ttl_seconds'] ?? 3600),
-        (int)($dashboardConfig['api_refresh_token_ttl_seconds'] ?? 2592000)
+        $dashboardConfig['api_auth_required'],
+        $dashboardConfig['api_token_ttl_seconds'],
+        $dashboardConfig['api_refresh_token_ttl_seconds']
     );
     $dashboardServer = new ReactHttpServer(
         new StreamingRequestMiddleware(),
@@ -386,15 +386,15 @@ if ($qinglanstIngress !== null) {
 $loop->addPeriodicTimer(10, function () use ($dashboardStore, $dashboardConfig, $hubServer): void {
     $dashboardStore->retryWaitingCommands(
         60,
-        (int)($dashboardConfig['command_timeout_seconds'] ?? 3600),
+        $dashboardConfig['command_timeout_seconds'],
         3,
         static fn(string $imei, string $bytes, array $command): string => $hubServer->submitDownlink($imei, $bytes)
     );
-    $dashboardStore->expireWaitingCommands((int)($dashboardConfig['command_timeout_seconds'] ?? 3600));
-    $dashboardStore->expireStaleDevices((int)($dashboardConfig['device_idle_timeout_seconds'] ?? 1800));
+    $dashboardStore->expireWaitingCommands($dashboardConfig['command_timeout_seconds']);
+    $dashboardStore->expireStaleDevices($dashboardConfig['device_idle_timeout_seconds']);
 });
 $loop->addPeriodicTimer(10, function () use ($hubServer, $dashboardConfig): void {
-    $hubServer->expireIdleConnections((int)($dashboardConfig['device_idle_timeout_seconds'] ?? 1800));
+    $hubServer->expireIdleConnections($dashboardConfig['device_idle_timeout_seconds']);
 });
 
 Logger::channel('hub')->info('=== Hitecosystem Devices Hub ===');

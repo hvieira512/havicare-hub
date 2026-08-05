@@ -8,6 +8,7 @@ use Hub\Api\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Infrastructure\Persistence\DatabaseSchemaGuard;
 use Hub\Infrastructure\Persistence\Migration\Version2026080502RemoveWeatherCapability;
+use Hub\Infrastructure\Persistence\Migration\Version2026080503NormalizeCapabilityLabelsPtPt;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class MigrationTest extends MysqlDashboardTestCase
@@ -78,6 +79,23 @@ final class MigrationTest extends MysqlDashboardTestCase
         }
     }
 
+    public function testCapabilityLabelMigrationSynchronizesPortugueseCatalogLabels(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+        $pdo->exec("UPDATE capabilities SET label = 'Heart rate' WHERE device_type = 'watch' AND capability_key = 'heart_rate'");
+        $pdo->exec("UPDATE capabilities SET label = 'Positions' WHERE device_type = 'radar' AND capability_key = 'positions'");
+
+        (new Version2026080503NormalizeCapabilityLabelsPtPt())->up($pdo);
+
+        $labels = $pdo->query("
+            SELECT CONCAT(device_type, ':', capability_key), label
+            FROM capabilities
+        ")->fetchAll(\PDO::FETCH_KEY_PAIR);
+        self::assertSame('Frequência cardíaca', $labels['watch:heart_rate'] ?? null);
+        self::assertSame('Posições', $labels['radar:positions'] ?? null);
+        self::assertSame('Chamada de enfermagem', $labels['ncs:pager_call'] ?? null);
+    }
+
     public function testAllMigrationsAreRecordedAndDoNotRerun(): void
     {
         $database = $this->createDashboardDatabase();
@@ -104,10 +122,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026080301_enable_wonlex_push_message',
             '2026080501_scope_api_users_by_license',
             '2026080502_remove_weather_capability',
+            '2026080503_normalize_capability_labels_pt_pt',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(19, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(20, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
@@ -165,7 +184,7 @@ final class MigrationTest extends MysqlDashboardTestCase
         self::assertSame('settings_system', $rows['device_state']['section'] ?? null);
         self::assertArrayNotHasKey('call_in_restriction', $rows);
         self::assertSame('contacts', $rows['whitelist_enabled']['section'] ?? null);
-        self::assertSame('Wrist removal alert', $rows['remove_watch_alarm']['label'] ?? null);
+        self::assertSame('Alerta de remoção do relógio', $rows['remove_watch_alarm']['label'] ?? null);
         self::assertSame(0, (int)($rows['push_message']['is_configurable'] ?? -1));
         self::assertSame(1, (int)($rows['push_message']['is_requestable'] ?? -1));
         self::assertSame(0, (int)($rows['make_call']['is_configurable'] ?? -1));
