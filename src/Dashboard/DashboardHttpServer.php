@@ -3,7 +3,6 @@
 namespace Hub\Dashboard;
 
 use Hub\Api\ApiKernel;
-use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Api\Services\ApiUserService;
 use Hub\Api\Services\AuthService;
@@ -30,7 +29,6 @@ final class DashboardHttpServer
     private const MODEL_IMAGE_ROUTE = '/model-images';
     private const PUBLIC_ASSET_EXTENSIONS = ['css', 'ico', 'jpeg', 'jpg', 'js', 'png', 'svg', 'woff2'];
     private ApiKernel $apiKernel;
-    private array $apiCredentials = [];
 
     public function __construct(
         private DashboardStore $store,
@@ -39,22 +37,10 @@ final class DashboardHttpServer
         private DeviceHubServer $hub,
         private ?PendingDownlinkQueue $downlinkQueue,
         private ApiDataAccess $db,
-        private string $username,
-        private string $password,
         private bool $apiAuthRequired = true,
         private int $apiTokenTtlSeconds = 3600,
         private int $apiRefreshTokenTtlSeconds = 2592000,
     ) {
-        if ($this->apiAuthRequired) {
-            $this->apiCredentials = array_values(array_filter([[
-                'username' => $this->username,
-                'password' => $this->password,
-                'role' => ApiAuthContext::ROLE_HUB_ADMIN,
-            ]], static fn (array $credential): bool => trim((string)$credential['username']) !== '' && (string)$credential['password'] !== ''));
-        } else {
-            $this->apiCredentials = [];
-        }
-
         foreach ($this->whitelist->all() as $imei => $metadata) {
             $this->store->registerDevice(
                 (string)$imei,
@@ -71,7 +57,7 @@ final class DashboardHttpServer
         $deviceService = new DeviceService($this->store, $this->whitelist, $this->hub, $this->downlinkQueue, $this->db);
         $this->apiKernel = new ApiKernel(
             $this->apiAuthRequired,
-            new AuthService($this->apiCredentials, $this->tokens, $this->db, $this->apiTokenTtlSeconds, $this->apiRefreshTokenTtlSeconds),
+            new AuthService($this->tokens, $this->db, $this->apiTokenTtlSeconds, $this->apiRefreshTokenTtlSeconds),
             $deviceService,
             new ModelService($this->db),
             new CapabilityService($this->db),

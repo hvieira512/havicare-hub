@@ -16,8 +16,6 @@ export MQTT_USERNAME="$MQTT_PUBLISHER_USERNAME"
 export MQTT_PASSWORD="$MQTT_PUBLISHER_PASSWORD"
 export MQTT_TOPIC_PREFIX=""
 export WHITELIST_FILE="config/whitelist.example.json"
-export DASHBOARD_USERNAME="admin"
-export DASHBOARD_PASSWORD="secret"
 export DASHBOARD_API_AUTH_REQUIRED="true"
 
 IMEI="868705080300697"
@@ -37,6 +35,22 @@ if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 8081, $e, $m,
   scenario_fail "dashboard_failure" "dashboard HTTP listener did not become ready"
 fi
 
+docker compose exec -T hub php -r '
+require "vendor/autoload.php";
+Hub\Bootstrap::loadEnv(getcwd());
+$config = Hub\Config::load()->all();
+$db = Hub\Api\Repository\ApiDataAccess::fromDatabase(
+    new Hub\Infrastructure\Persistence\DashboardDatabase($config["database"])
+);
+$existing = $db->apiUsers->findByUsername("admin");
+$hash = password_hash("secret", PASSWORD_DEFAULT);
+if (is_array($existing)) {
+    $db->apiUsers->update((int)$existing["id"], "admin", "hub_admin", 0, true, $hash);
+} else {
+    $db->apiUsers->create("admin", $hash, "hub_admin", 0, true);
+}
+'
+
 unauth_status="$(curl -s -o /tmp/dashboard-unauth.txt -w '%{http_code}' http://127.0.0.1:8081/api/devices)"
 if [ "$unauth_status" != "401" ]; then
   scenario_fail "auth_failure" "dashboard API did not require bearer auth"
@@ -49,7 +63,7 @@ if [ -z "$api_token" ]; then
   scenario_fail "auth_failure" "dashboard API login did not issue bearer token"
 fi
 
-html="$(curl -s -u admin:secret http://127.0.0.1:8081/dashboard)"
+html="$(curl -s http://127.0.0.1:8081/dashboard)"
 if ! printf '%s' "$html" | grep -q 'Hitecosystem Hub de Dispositivos'; then
   scenario_fail "dashboard_failure" "dashboard HTML did not render expected page"
 fi

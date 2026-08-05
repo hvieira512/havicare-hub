@@ -11,7 +11,6 @@ use Hub\Log\Logger;
 class AuthService
 {
     public function __construct(
-        private array $credentials,
         private ApiTokenStore $tokens,
         private ApiDataAccess $db,
         private int $tokenTtlSeconds = 3600,
@@ -63,7 +62,7 @@ class AuthService
             'username' => (string)$identity['username'],
             'role' => (string)$identity['role'],
             'license_id' => $identity['licenseId'],
-            'auth_source' => $identity['userId'] !== null ? 'db_user' : 'bootstrap_admin',
+            'auth_source' => 'db_user',
         ]);
 
         return [
@@ -131,38 +130,6 @@ class AuthService
                     'licenseRefId' => $licenseRefId,
                     'companyId' => $companyId,
                     'company' => $company,
-                ];
-            }
-        }
-
-        return $this->bootstrapIdentityForCredentials($username, $password);
-    }
-
-    private function bootstrapIdentityForCredentials(string $username, string $password): ?array
-    {
-        foreach ($this->credentials as $credential) {
-            if (!is_array($credential)) {
-                continue;
-            }
-
-            $expectedUsername = trim((string)($credential['username'] ?? ''));
-            $expectedPassword = (string)($credential['password'] ?? '');
-            $role = trim((string)($credential['role'] ?? ''));
-            if ($expectedUsername === '' || $expectedPassword === '' || $role === '') {
-                continue;
-            }
-
-            if (hash_equals($expectedUsername, $username) && hash_equals($expectedPassword, $password)) {
-                return [
-                    'userId' => null,
-                    'username' => $expectedUsername,
-                    'role' => $role,
-                    'licenseId' => isset($credential['licenseId']) && trim((string)$credential['licenseId']) !== ''
-                        ? DeviceMetadata::normalizeLicenseId((string)$credential['licenseId'])
-                        : null,
-                    'licenseRefId' => isset($credential['licenseRefId']) ? (int)$credential['licenseRefId'] : null,
-                    'companyId' => isset($credential['companyId']) ? (int)$credential['companyId'] : null,
-                    'company' => isset($credential['company']) ? trim((string)$credential['company']) : null,
                 ];
             }
         }

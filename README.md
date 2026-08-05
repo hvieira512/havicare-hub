@@ -75,7 +75,7 @@ The hub serves a Bootstrap 5 dashboard at:
 http://127.0.0.1:8081/dashboard
 ```
 
-When API authentication is enabled, the dashboard presents an admin login before loading its application. `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` optionally define a bootstrap admin credential and must either both be set or both be empty. There is no default bootstrap password. Database users with the `hub_admin` role can also sign in. The bearer and refresh tokens returned by `/api/auth/login` are held in the browser tab's `sessionStorage`.
+When API authentication is enabled, the dashboard presents a login before loading its application. Authentication uses enabled users from the `api_users` table; administrators use the `hub_admin` role and tenant users use `license_client`. The bearer and refresh tokens returned by `/api/auth/login` are held in the browser tab's `sessionStorage`.
 
 API access uses `POST /api/auth/login` and bearer tokens when `DASHBOARD_API_AUTH_REQUIRED=true` (default). The dashboard warns after 15 minutes without user activity and logs out after 20 minutes. In development, set `DASHBOARD_API_AUTH_REQUIRED=false` to expose `/api/*` and bypass the dashboard login. Additional users are managed by admins in the dashboard settings modal or through `/api/users`.
 

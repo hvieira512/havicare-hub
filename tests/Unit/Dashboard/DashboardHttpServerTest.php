@@ -1085,6 +1085,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $hitcareLicenseRef = $db->licenses->create($hitcareId, '1001', 'hitcare-license');
         $db->licenses->create($otherCareId, '2002', 'othercare-license');
         $db->licenses->create($otherCareId, '1001', 'overlapping-license-number');
+        $db->apiUsers->create('admin', password_hash('secret', PASSWORD_DEFAULT), 'hub_admin', 0, true);
         $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true, $hitcareLicenseRef);
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
         $db->whitelist->register('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
@@ -1107,8 +1108,6 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             $hub,
             $queue,
             $db,
-            'admin',
-            'secret',
             $apiAuthRequired,
             $apiTokenTtlSeconds,
             $apiRefreshTokenTtlSeconds

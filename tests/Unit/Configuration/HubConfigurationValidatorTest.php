@@ -9,23 +9,13 @@ use PHPUnit\Framework\TestCase;
 
 final class HubConfigurationValidatorTest extends TestCase
 {
-    public function testAllowsEmptyBootstrapCredentialAndDisabledOptionalIngress(): void
+    public function testAllowsDisabledOptionalIngress(): void
     {
         (new HubConfigurationValidator())->validate([
-            'dashboard' => ['username' => '', 'password' => ''],
             'qinglanst' => ['enabled' => false],
         ]);
 
         self::addToAssertionCount(1);
-    }
-
-    public function testRejectsPartialBootstrapCredential(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        (new HubConfigurationValidator())->validate([
-            'dashboard' => ['username' => 'admin', 'password' => ''],
-            'qinglanst' => ['enabled' => false],
-        ]);
     }
 
     public function testRejectsEnabledQinglanstIngressWithoutCredentials(): void
@@ -33,7 +23,6 @@ final class HubConfigurationValidatorTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('QINGLANST_MQTT_HOST');
         (new HubConfigurationValidator())->validate([
-            'dashboard' => ['username' => '', 'password' => ''],
             'qinglanst' => ['enabled' => true],
         ]);
     }
