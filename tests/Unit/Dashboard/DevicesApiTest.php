@@ -90,7 +90,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('L08 Pro', $response['data'][0]['model'] ?? null);
     }
 
-    public function testListFiltersByPartialModelOnStoreFallback(): void
+    public function testListFiltersByPartialModelFromDatabaseSourceOfTruth(): void
     {
         [$api] = $this->makeApi();
 
@@ -1783,6 +1783,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     public function testConfigurationPatchPreservesStoredTakePillsVoiceWhenOmitted(): void
     {
+        if (!\Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder::supportsVoiceTranscoding()) {
+            self::markTestSkipped('ffmpeg with AMR-NB support is not available');
+        }
         $submitted = [];
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
@@ -3088,10 +3091,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     private function makeApi(?\Hub\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null): array
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
+        $db->whitelist->register('868017032159118', '4P Touch', 'D46', 'watch', 0, '', '1703215911');
         $store = new DashboardStore(new InMemoryRedisClientForDevicesApi(), prefix: 'test:dashboard:devices-api');
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro');
-        $whitelist = new Whitelist($this->whitelistPath);
+        $whitelist = new Whitelist($this->whitelistPath, $db->whitelist);
 
         $api = new DeviceService(
             $store,

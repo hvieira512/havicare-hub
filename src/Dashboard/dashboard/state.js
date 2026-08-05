@@ -108,7 +108,6 @@ export const state = {
     modelPreviewObjectUrl: null,
     loadingCommands: new Set(),
     deviceListPage: 1,
-    deviceListPageSize: 20,
     telemetryPage: 1,
     telemetryPageSize: 10,
 };

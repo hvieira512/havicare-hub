@@ -40,6 +40,15 @@ final class LicenseRepository
         return TimestampFormatter::normalizeRows($stmt->fetchAll());
     }
 
+    public function findByCompanyAndLicense(int $companyId, int $licenseId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE company_id = ? AND license_id = ?');
+        $stmt->execute([$companyId, $licenseId]);
+
+        $row = $stmt->fetch();
+        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+    }
+
     public function findByCompanyId(int $companyId): array
     {
         $stmt = $this->pdo->prepare("SELECT l.id, l.company_id, l.license_id, l.name, l.created_at, l.updated_at, c.name AS company_name FROM licenses l LEFT JOIN companies c ON c.id = l.company_id WHERE l.company_id = ? ORDER BY l.license_id");

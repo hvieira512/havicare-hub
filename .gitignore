@@ -1,5 +1,6 @@
 # Composer dependencies
 /vendor/
+/node_modules/
 
 # Runtime output
 /var/

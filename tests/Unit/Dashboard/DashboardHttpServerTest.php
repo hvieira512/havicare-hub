@@ -80,6 +80,39 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame($first, $second);
     }
 
+    public function testDashboardOnlyServesExplicitPublicAssets(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+
+        $stylesheet = $server(new ServerRequest('GET', '/main.css'));
+        self::assertSame(200, $stylesheet->getStatusCode());
+        self::assertSame('text/css', $stylesheet->getHeaderLine('Content-Type'));
+
+        $module = $server(new ServerRequest('GET', '/dashboard/app.js'));
+        self::assertSame(200, $module->getStatusCode());
+        self::assertSame('application/javascript', $module->getHeaderLine('Content-Type'));
+
+        $logo = $server(new ServerRequest('GET', '/assets/logo.svg'));
+        self::assertSame(200, $logo->getStatusCode());
+        self::assertSame('image/svg+xml', $logo->getHeaderLine('Content-Type'));
+    }
+
+    public function testDashboardDoesNotExposeSourceOrFilesOutsidePublicAssetRoots(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+
+        foreach ([
+            '/DashboardHttpServer.php',
+            '/index.php',
+            '/../../.env',
+            '/dashboard/../../../Config.php',
+            '/dashboard/%2e%2e/%2e%2e/Config.php',
+        ] as $path) {
+            $response = $server(new ServerRequest('GET', $path));
+            self::assertSame(404, $response->getStatusCode(), $path);
+        }
+    }
+
     public function testModelImageUploadIsCompressedAndStoredAsGeneratedJpeg(): void
     {
         $source = imagecreatetruecolor(900, 300);
@@ -408,6 +441,29 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             static fn(array $device): string => (string)$device['imei'],
             $body['data'] ?? []
         ));
+    }
+
+    public function testTenantClientCannotAccessSameLicenseNumberFromAnotherCompany(): void
+    {
+        [$server, $db, $store] = $this->makeServerWithDatabase();
+        $store->registerDevice('861265061009855', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'otherCare');
+        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $db->whitelist->register('861265061009855', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'otherCare');
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $list = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => 'Bearer ' . $token]));
+        $payload = json_decode((string)$list->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame(['861265061009822'], array_map(
+            static fn(array $device): string => (string)$device['imei'],
+            $payload['data'] ?? []
+        ));
+
+        $detail = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009855',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        self::assertSame(404, $detail->getStatusCode());
     }
 
     public function testAdminCanFilterDevicesByCompany(): void
@@ -1024,11 +1080,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     {
         $redis = new InMemoryRedisClientForDashboardHttpServerTest();
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true);
         $hitcareId = $db->companies->create('hitcare');
         $otherCareId = $db->companies->create('otherCare');
-        $db->licenses->create($hitcareId, '1001', 'hitcare-license');
+        $hitcareLicenseRef = $db->licenses->create($hitcareId, '1001', 'hitcare-license');
         $db->licenses->create($otherCareId, '2002', 'othercare-license');
+        $db->licenses->create($otherCareId, '1001', 'overlapping-license-number');
+        $db->apiUsers->create('tenant', password_hash('tenant-secret', PASSWORD_DEFAULT), 'license_client', '1001', true, $hitcareLicenseRef);
+        $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $db->whitelist->register('861265061009833', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'otherCare');
+        $db->whitelist->register('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
         $store = new DashboardStore($redis, prefix: 'test:dashboard:http');
         $store->setDataAccess($db);
         $store->registerDevice('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
@@ -1043,7 +1103,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $server = new DashboardHttpServer(
             $store,
             new ApiTokenStore($redis, 'test:api-tokens'),
-            new Whitelist($this->whitelistPath),
+            new Whitelist($this->whitelistPath, $db->whitelist),
             $hub,
             $queue,
             $db,

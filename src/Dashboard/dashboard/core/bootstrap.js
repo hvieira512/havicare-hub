@@ -73,9 +73,19 @@ import {
     renderSelection,
 } from "../devices/detail-view.js";
 import {disconnectDeviceStream, initDeviceStream} from "../devices/stream.js";
+import {
+    clearTakePillsRecording,
+    loadTakePillsAudio,
+    startTakePillsRecording,
+    stopTakePillsRecording,
+    syncTakePillsCustomVisibility,
+    syncTakePillsVoiceVisibility,
+} from "../devices/take-pills-audio.js";
 import {initNotifications} from "../notifications.js";
 import {
     clearModelsFilters,
+    deleteApiUser,
+    editApiUser,
     handleActiveModelsFiltersClick,
     handleCompanyListClick,
     handleLicenseListClick,
@@ -129,7 +139,6 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
-const takePillsRecordingState = new WeakMap();
 let deviceConfigRefreshPromise = null;
 const FILTERS_STORAGE_KEY = "hub-dashboard-device-filters";
 const SELECTED_DEVICE_STORAGE_KEY = "hub-dashboard-selected-device";
@@ -1415,174 +1424,6 @@ function handleDeviceConfigInput(event) {
     }
 }
 
-async function startTakePillsRecording(section) {
-    const state = takePillsRecordingState.get(section);
-    if (state?.recorder?.state === "recording") {
-        return;
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-        alert("Este navegador não suporta gravação de áudio.");
-        return;
-    }
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-        const mimeType = pickTakePillsMimeType();
-        const recorder = new MediaRecorder(stream, mimeType ? {mimeType} : undefined);
-        const nextState = {
-            stream,
-            recorder,
-            chunks: [],
-            mimeType: recorder.mimeType || mimeType || "audio/webm",
-            cancelled: false,
-        };
-        takePillsRecordingState.set(section, nextState);
-        updateTakePillsRecorderUi(section, "A gravar...", true);
-        recorder.addEventListener("dataavailable", event => {
-            if (event.data && event.data.size > 0) {
-                nextState.chunks.push(event.data);
-            }
-        });
-        recorder.addEventListener("stop", async () => {
-            try {
-                if (nextState.cancelled) {
-                    return;
-                }
-                const blob = new Blob(nextState.chunks, {type: nextState.mimeType});
-                await setTakePillsAudioFromBlob(section, blob, nextState.mimeType);
-            } finally {
-                stopTakePillsStream(nextState.stream);
-                takePillsRecordingState.delete(section);
-                updateTakePillsRecorderUi(
-                    section,
-                    nextState.cancelled ? "Sem áudio" : "Gravação concluída",
-                    false,
-                );
-            }
-        });
-        recorder.start();
-    } catch (error) {
-        stopTakePillsStream(state?.stream || null);
-        takePillsRecordingState.delete(section);
-        alert(error instanceof Error ? error.message : "Não foi possível iniciar a gravação.");
-        updateTakePillsRecorderUi(section, "Sem áudio", false);
-    }
-}
-
-async function stopTakePillsRecording(section) {
-    const state = takePillsRecordingState.get(section);
-    if (state?.recorder?.state === "recording") {
-        state.recorder.stop();
-    }
-}
-
-function clearTakePillsRecording(section) {
-    const state = takePillsRecordingState.get(section);
-    if (state?.recorder?.state === "recording") {
-        state.cancelled = true;
-        state.recorder.stop();
-    }
-    stopTakePillsStream(state?.stream || null);
-    takePillsRecordingState.delete(section);
-    const input = section.querySelector('[data-config-field="voiceData"]');
-    const mimeInput = section.querySelector('[data-config-field="voiceMimeType"]');
-    const fileInput = section.querySelector('[data-action="takePillsFile"]');
-    const preview = section.querySelector("[data-takepills-preview]");
-    if (input) input.value = "";
-    if (mimeInput) mimeInput.value = "";
-    if (fileInput) fileInput.value = "";
-    if (preview) preview.removeAttribute("src");
-    preview?.load?.();
-    syncTakePillsVoiceVisibility(section);
-    updateTakePillsRecorderUi(section, "Sem áudio", false);
-}
-
-async function loadTakePillsAudio(section, file) {
-    if (!file) {
-        return;
-    }
-
-    try {
-        await setTakePillsAudioFromBlob(section, file, file.type || "audio/*");
-        const fileInput = section.querySelector('[data-action="takePillsFile"]');
-        if (fileInput) {
-            fileInput.value = "";
-        }
-        syncTakePillsVoiceVisibility(section);
-        updateTakePillsRecorderUi(section, "Áudio carregado", false);
-    } catch (error) {
-        alert(error instanceof Error ? error.message : "Não foi possível carregar o áudio.");
-    }
-}
-
-async function setTakePillsAudioFromBlob(section, blob, mimeType) {
-    const base64 = await blobToBase64(blob);
-    const input = section.querySelector('[data-config-field="voiceData"]');
-    const mimeInput = section.querySelector('[data-config-field="voiceMimeType"]');
-    const preview = section.querySelector("[data-takepills-preview]");
-    const normalizedMimeType = mimeType || blob.type || "audio/webm";
-    if (input) {
-        input.value = base64;
-    }
-    if (mimeInput) {
-        mimeInput.value = normalizedMimeType;
-    }
-    if (preview) {
-        preview.src = `data:${normalizedMimeType};base64,${base64}`;
-        preview.type = normalizedMimeType;
-    }
-}
-
-function updateTakePillsRecorderUi(section, status, recording) {
-    const recordBtn = section.querySelector('[data-action="takePillsRecord"]');
-    const stopBtn = section.querySelector('[data-action="takePillsStop"]');
-    const statusEl = section.querySelector("[data-takepills-status]");
-    const controls = section.querySelector("[data-takepills-audio-controls]");
-    const voiceEnabled = section.querySelector('[data-config-field="voiceEnabled"]')?.checked || false;
-    recordBtn?.classList.toggle("d-none", !!recording);
-    stopBtn?.classList.toggle("d-none", !recording);
-    if (controls) {
-        controls.toggleAttribute("disabled", !voiceEnabled);
-    }
-    if (statusEl) {
-        statusEl.textContent = voiceEnabled ? status : "Áudio desligado";
-    }
-}
-
-function syncTakePillsCustomVisibility(section) {
-    const groups = section.querySelectorAll("[data-takepills-reminder-group]");
-    groups.forEach((group) => {
-        const idx = group.dataset.takepillsReminderGroup;
-        const frequency =
-            parseInt(
-                group.querySelector(
-                    '[data-takepills-field="reminderFrequency"]',
-                )?.value ?? "1",
-                10,
-            ) || 1;
-        const wrapper = section.querySelector(
-            `[data-takepills-custom-wrapper="${idx}"]`,
-        );
-        if (wrapper) {
-            wrapper.classList.toggle("d-none", frequency !== 3);
-        }
-    });
-}
-
-function syncTakePillsVoiceVisibility(section) {
-    const voiceEnabled = section.querySelector('[data-config-field="voiceEnabled"]')?.checked || false;
-    const controls = section.querySelector("[data-takepills-audio-controls]");
-    const status = section.querySelector("[data-takepills-status]");
-    if (controls) {
-        controls.toggleAttribute("disabled", !voiceEnabled);
-    }
-    if (status) {
-        const hasVoiceData = String(section.querySelector('[data-config-field="voiceData"]')?.value || "").trim() !== "";
-        status.textContent = voiceEnabled ? (hasVoiceData ? "Áudio carregado" : "Sem áudio") : "Áudio desligado";
-    }
-}
-
 function syncFourPTouchAlarmCustomVisibility(row) {
     if (!row) {
         return;
@@ -1612,39 +1453,6 @@ function normalizeTwentyFourHourTimeInput(input) {
         return;
     }
     input.value = `${digits.slice(0, 2)}:${digits.slice(2)}`;
-}
-
-function stopTakePillsStream(stream) {
-    if (!stream) return;
-    for (const track of stream.getTracks()) {
-        track.stop();
-    }
-}
-
-function pickTakePillsMimeType() {
-    if (typeof MediaRecorder === "undefined") {
-        return "";
-    }
-    const candidates = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/ogg;codecs=opus",
-        "audio/ogg",
-    ];
-    return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) || "";
-}
-
-function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const result = String(reader.result || "");
-            const commaIndex = result.indexOf(",");
-            resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
-        };
-        reader.onerror = () => reject(reader.error || new Error("Failed to read audio"));
-        reader.readAsDataURL(blob);
-    });
 }
 
 function handleConfigFeedbackClosed(event) {

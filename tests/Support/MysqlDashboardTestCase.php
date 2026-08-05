@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use Hub\Infrastructure\Persistence\DashboardDatabase;
+use Hub\Infrastructure\Persistence\DatabaseMigrator;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
@@ -22,12 +23,16 @@ abstract class MysqlDashboardTestCase extends TestCase
     protected function createDashboardDatabase(): DashboardDatabase
     {
         $databaseName = $this->createEmptyDatabase();
-        return new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+        $database = new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+        (new DatabaseMigrator($database->pdo()))->migrate();
+        return $database;
     }
 
     protected function reopenDashboardDatabase(string $databaseName): DashboardDatabase
     {
-        return new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+        $database = new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+        (new DatabaseMigrator($database->pdo()))->migrate();
+        return $database;
     }
 
     protected function createEmptyDatabase(): string

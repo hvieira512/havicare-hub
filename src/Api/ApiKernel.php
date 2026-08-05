@@ -110,7 +110,13 @@ final class ApiKernel
                 'exception' => $e::class,
                 'message' => $e->getMessage(),
             ]);
-            $response = $this->cors->apply($this->json->respond(['error' => ['code' => 'server_error', 'message' => $e->getMessage()]], 500));
+            $response = $this->cors->apply($this->json->respond([
+                'error' => [
+                    'code' => 'server_error',
+                    'message' => 'Internal server error',
+                    'requestId' => $requestId,
+                ],
+            ], 500));
             $response = $response->withHeader('X-Request-Id', $requestId);
             $this->safeLogApiRequest($request, $response, $startedAt, $routePattern, $authContext, 'error');
             return $response;

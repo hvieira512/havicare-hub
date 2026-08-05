@@ -28,6 +28,23 @@ final class WhitelistRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    public function findByDeviceId(string $deviceId, ?string $deviceType = null): ?array
+    {
+        $sql = 'SELECT * FROM whitelist WHERE device_id = ?';
+        $params = [$deviceId];
+        if ($deviceType !== null) {
+            $sql .= ' AND device_type = ?';
+            $params[] = DeviceMetadata::normalizeDeviceType($deviceType);
+        }
+        $sql .= ' ORDER BY imei LIMIT 1';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+
+        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+    }
+
     public function getDevice(string $imei): ?array
     {
         $stmt = $this->pdo->prepare($this->deviceSelectSql() . ' WHERE w.imei = ?');
@@ -41,13 +58,13 @@ final class WhitelistRepository
      * @param array{deviceType?: string, licenseId?: string, company?: string, supplier?: string, model?: string, q?: string} $filters
      * @return array{items: array<int, array<string, mixed>>, total: int, available: array<string, array<int, string>>}
      */
-    public function listPage(array $filters, int $page, int $limit, ?string $licenseScope = null): array
+    public function listPage(array $filters, int $page, int $limit, ?string $licenseScope = null, ?string $companyScope = null): array
     {
         $page = max(1, $page);
         $limit = max(1, $limit);
         $offset = ($page - 1) * $limit;
 
-        [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope);
+        [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope, $companyScope);
 
         $stmt = $this->pdo->prepare($this->deviceSelectSql() . $whereSql . ' ORDER BY w.imei LIMIT ? OFFSET ?');
         $bindIndex = 1;
@@ -66,11 +83,11 @@ final class WhitelistRepository
             'items' => $items,
             'total' => (int)$count->fetchColumn(),
             'available' => [
-                'deviceType' => $this->distinctValues('w.device_type', 'deviceType', $filters, 'deviceType', $licenseScope),
-                'licenseId' => $this->distinctValues('w.license_id', 'licenseId', $filters, 'licenseId', $licenseScope),
-                'supplier' => $this->distinctValues('w.supplier', 'supplier', $filters, 'supplier', $licenseScope),
-                'model' => $this->distinctValues('w.model', 'model', $filters, 'model', $licenseScope),
-                'company' => $this->distinctValues('w.company', 'company', $filters, 'company', $licenseScope),
+                'deviceType' => $this->distinctValues('w.device_type', 'deviceType', $filters, 'deviceType', $licenseScope, $companyScope),
+                'licenseId' => $this->distinctValues('w.license_id', 'licenseId', $filters, 'licenseId', $licenseScope, $companyScope),
+                'supplier' => $this->distinctValues('w.supplier', 'supplier', $filters, 'supplier', $licenseScope, $companyScope),
+                'model' => $this->distinctValues('w.model', 'model', $filters, 'model', $licenseScope, $companyScope),
+                'company' => $this->distinctValues('w.company', 'company', $filters, 'company', $licenseScope, $companyScope),
             ],
         ];
     }
@@ -155,7 +172,7 @@ final class WhitelistRepository
      * @param array{deviceType?: string, licenseId?: string, supplier?: string, model?: string, q?: string} $filters
      * @return array{0: string, 1: array<int, mixed>}
      */
-    private function buildWhereClause(array $filters, ?string $licenseScope = null): array
+    private function buildWhereClause(array $filters, ?string $licenseScope = null, ?string $companyScope = null): array
     {
         $clauses = [];
         $params = [];
@@ -163,6 +180,11 @@ final class WhitelistRepository
         if ($licenseScope !== null && trim($licenseScope) !== '') {
             $clauses[] = 'w.license_id = ?';
             $params[] = DeviceMetadata::normalizeLicenseId($licenseScope);
+        }
+
+        if ($companyScope !== null && trim($companyScope) !== '') {
+            $clauses[] = 'LOWER(w.company) = LOWER(?)';
+            $params[] = trim($companyScope);
         }
 
         $deviceType = trim((string)($filters['deviceType'] ?? 'all'));
@@ -217,11 +239,11 @@ final class WhitelistRepository
      * @param array{deviceType?: string, licenseId?: string, company?: string, supplier?: string, model?: string, q?: string} $filters
      * @return list<string>
      */
-    private function distinctValues(string $column, string $alias, array $filters, string $excludeKey, ?string $licenseScope = null): array
+    private function distinctValues(string $column, string $alias, array $filters, string $excludeKey, ?string $licenseScope = null, ?string $companyScope = null): array
     {
         $candidateFilters = $filters;
         unset($candidateFilters[$excludeKey]);
-        [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope);
+        [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
         $stmt = $this->pdo->prepare("SELECT DISTINCT {$column} AS {$alias} FROM whitelist w" . $this->deviceJoinSql() . $whereSql . " ORDER BY {$column}");
         $stmt->execute($params);
         $values = [];

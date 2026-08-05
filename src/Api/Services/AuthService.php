@@ -74,7 +74,10 @@ class AuthService
                 $this->tokenTtlSeconds,
                 $this->refreshTokenTtlSeconds,
                 $identity['userId'],
-                $identity['licenseId']
+                $identity['licenseId'],
+                $identity['licenseRefId'],
+                $identity['companyId'],
+                $identity['company'],
             ),
         ];
     }
@@ -113,13 +116,21 @@ class AuthService
             $licenseId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT
                 ? DeviceMetadata::normalizeLicenseId((string)($user['license_id'] ?? ''))
                 : null;
+            $licenseRefId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? (int)($user['license_ref_id'] ?? 0) : null;
+            $companyId = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? (int)($user['company_id'] ?? 0) : null;
+            $company = $role === ApiAuthContext::ROLE_LICENSE_CLIENT ? trim((string)($user['company_name'] ?? '')) : null;
 
-            if ($enabled && $hash !== '' && password_verify($password, $hash) && in_array($role, ApiAuthContext::roles(), true)) {
+            $tenantIsValid = $role !== ApiAuthContext::ROLE_LICENSE_CLIENT
+                || ($licenseId > 0 && $licenseRefId > 0 && $companyId > 0 && $company !== '');
+            if ($enabled && $tenantIsValid && $hash !== '' && password_verify($password, $hash) && in_array($role, ApiAuthContext::roles(), true)) {
                 return [
                     'userId' => (int)($user['id'] ?? 0),
                     'username' => (string)($user['username'] ?? $username),
                     'role' => $role,
                     'licenseId' => $licenseId,
+                    'licenseRefId' => $licenseRefId,
+                    'companyId' => $companyId,
+                    'company' => $company,
                 ];
             }
         }
@@ -149,6 +160,9 @@ class AuthService
                     'licenseId' => isset($credential['licenseId']) && trim((string)$credential['licenseId']) !== ''
                         ? DeviceMetadata::normalizeLicenseId((string)$credential['licenseId'])
                         : null,
+                    'licenseRefId' => isset($credential['licenseRefId']) ? (int)$credential['licenseRefId'] : null,
+                    'companyId' => isset($credential['companyId']) ? (int)$credential['companyId'] : null,
+                    'company' => isset($credential['company']) ? trim((string)$credential['company']) : null,
                 ];
             }
         }

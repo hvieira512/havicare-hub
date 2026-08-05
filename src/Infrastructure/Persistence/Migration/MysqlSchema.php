@@ -45,6 +45,20 @@ final class MysqlSchema
         return (int)$stmt->fetchColumn() > 0;
     }
 
+    public function hasForeignKey(string $table, string $constraint): bool
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT COUNT(*)
+            FROM information_schema.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = ?
+              AND CONSTRAINT_NAME = ?
+              AND CONSTRAINT_TYPE = \'FOREIGN KEY\'
+        ');
+        $stmt->execute([$table, $constraint]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
     public function addColumn(string $table, string $column, string $definition): void
     {
         if (!$this->hasColumn($table, $column)) {

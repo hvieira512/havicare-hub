@@ -103,13 +103,8 @@ final class DeviceRuntimeStore
      */
     public function devices(): array
     {
-        $devices = [];
-        foreach ($this->redis->smembers($this->key('devices')) as $imei) {
-            $data = $this->redis->hgetall($this->deviceKey((string)$imei));
-            if ($data !== []) {
-                $devices[] = $this->normalizeDevice($data);
-            }
-        }
+        $states = $this->runtimeStates(array_map('strval', $this->redis->smembers($this->key('devices'))));
+        $devices = array_values($states);
         usort($devices, static fn (array $a, array $b): int => strcmp((string)($a['imei'] ?? ''), (string)($b['imei'] ?? '')));
         return $devices;
     }
@@ -125,9 +120,27 @@ final class DeviceRuntimeStore
      */
     public function runtimeStates(array $imeis): array
     {
+        $imeis = array_values(array_unique(array_filter(
+            array_map('strval', $imeis),
+            static fn (string $imei): bool => $imei !== ''
+        )));
+        if ($imeis === []) {
+            return [];
+        }
+
+        $responses = $this->redis->pipeline(function ($pipe) use ($imeis): void {
+            foreach ($imeis as $imei) {
+                $pipe->hgetall($this->deviceKey($imei));
+            }
+        });
+
         $states = [];
-        foreach (array_values(array_unique(array_filter(array_map('strval', $imeis), static fn (string $imei): bool => $imei !== ''))) as $imei) {
-            $state = $this->redis->hgetall($this->deviceKey($imei));
+        foreach ($imeis as $index => $imei) {
+            // Lightweight in-memory clients used by consumers may not expose
+            // pipeline results; retain the direct-read compatibility path.
+            $state = is_array($responses) && array_key_exists($index, $responses)
+                ? $responses[$index]
+                : $this->redis->hgetall($this->deviceKey($imei));
             if ($state === []) {
                 continue;
             }

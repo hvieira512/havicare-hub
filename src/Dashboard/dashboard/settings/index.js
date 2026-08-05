@@ -46,6 +46,7 @@ import {
 
 let els;
 let ui;
+let apiUserLicenses = [];
 
 export function initSettings(context) {
     els = context.els;
@@ -166,8 +167,13 @@ async function loadSettingsSuppliersSection(page = 1) {
 }
 
 async function loadSettingsApiUsersSection(page = 1) {
-    const response = await apiGetApiUsers({ page });
+    const [response, licensesResponse] = await Promise.all([
+        apiGetApiUsers({ page }),
+        apiGetLicenses({ page: 1, limit: 1000 }),
+    ]);
     const users = response.data || [];
+    apiUserLicenses = licensesResponse.data || [];
+    renderApiUserLicenseOptions();
     state.settingsModal.apiUsersPagination = response.pagination || null;
     state.settingsModal.sectionLoaded.apiUsers = true;
     renderApiUsersSection(users);
@@ -253,16 +259,21 @@ function renderApiUsersSection(users) {
         <tr>
         <td>${esc(user.username)}</td>
         <td><span class="badge text-bg-light border">${esc(apiRoleLabel(user.role))}</span></td>
-        <td>${user.role === "hub_admin" ? '<span class="text-secondary">Todas</span>' : esc(user.license_id || "-")}</td>
+        <td>${user.role === "hub_admin" ? '<span class="text-secondary">Todas</span>' : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
         <td><span class="badge ${Number(user.enabled) === 1 ? "text-bg-success" : "text-bg-secondary"}">${Number(user.enabled) === 1 ? "ativo" : "inativo"}</span></td>
         <td>
-        <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-id="${esc(user.license_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-${Number(user.enabled) === 1 ? "warning" : "success"} btn-sm" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-id="${esc(user.license_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="${Number(user.enabled) === 1 ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? "pause" : "play"}"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-${Number(user.enabled) === 1 ? "warning" : "success"} btn-sm" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="${Number(user.enabled) === 1 ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? "pause" : "play"}"></i></button>
         <button class="btn btn-outline-danger btn-sm" data-id="${user.id}" data-action="deleteApiUser" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`,
         )
         .join("");
+}
+
+function renderApiUserLicenseOptions() {
+    els.apiUserLicenseRefId.innerHTML = '<option value="">Selecionar licença</option>'
+        + apiUserLicenses.map((license) => `<option value="${esc(license.id)}">${esc(`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`)}</option>`).join("");
 }
 
 function resetApiUserForm() {
@@ -278,7 +289,7 @@ function editApiUser(button) {
     els.apiUserId.value = button.dataset.id || "";
     els.apiUsername.value = button.dataset.username || "";
     els.apiUserRole.value = button.dataset.role || "license_client";
-    els.apiUserLicenseId.value = button.dataset.licenseId || "";
+    els.apiUserLicenseRefId.value = button.dataset.licenseRefId || "";
     els.apiUserEnabled.checked = !!button.dataset.enabled;
     els.apiUserPassword.value = "";
     els.apiUserPassword.placeholder = "Deixar vazio para manter";
@@ -287,9 +298,9 @@ function editApiUser(button) {
 
 function syncApiUserRoleFields() {
     const isAdmin = els.apiUserRole.value === "hub_admin";
-    els.apiUserLicenseId.disabled = isAdmin;
+    els.apiUserLicenseRefId.disabled = isAdmin;
     if (isAdmin) {
-        els.apiUserLicenseId.value = "";
+        els.apiUserLicenseRefId.value = "";
     }
 }
 
@@ -299,7 +310,7 @@ async function saveApiUser() {
         username: els.apiUsername.value.trim(),
         password: els.apiUserPassword.value,
         role: els.apiUserRole.value,
-        licenseId: els.apiUserLicenseId.value.trim(),
+        licenseRefId: els.apiUserLicenseRefId.value.trim(),
         enabled: els.apiUserEnabled.checked,
     };
     if (!body.username) {
@@ -310,7 +321,7 @@ async function saveApiUser() {
         alert("Password é obrigatória para novo utilizador");
         return;
     }
-    if (body.role === "license_client" && !body.licenseId) {
+    if (body.role === "license_client" && !body.licenseRefId) {
         alert("Licença é obrigatória para clientes");
         return;
     }
@@ -329,7 +340,7 @@ async function toggleApiUser(button) {
     const result = await apiSaveApiUser(button.dataset.id, {
         username: button.dataset.username || "",
         role: button.dataset.role || "license_client",
-        licenseId: button.dataset.licenseId || "",
+        licenseRefId: button.dataset.licenseRefId || "",
         enabled: !button.dataset.enabled,
     });
     if (result.error) {

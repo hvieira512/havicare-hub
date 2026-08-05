@@ -4,6 +4,16 @@ namespace Hub\Command\Configuration\Payload;
 
 final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 {
+    public static function supportsVoiceTranscoding(): bool
+    {
+        if (!self::commandExists('ffmpeg')) {
+            return false;
+        }
+
+        [$exitCode, $output] = self::runProcess(['ffmpeg', '-hide_banner', '-encoders']);
+        return $exitCode === 0 && str_contains($output, 'libopencore_amrnb');
+    }
+
     public static function build(string $key, array $payload): array
     {
         if (isset($payload['fields']) && is_array($payload['fields'])) {
@@ -153,7 +163,7 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
 
     private static function transcodeAudioToAmr(string $audioBytes, string $mimeType): string
     {
-        if (!self::commandExists('ffmpeg')) {
+        if (!self::supportsVoiceTranscoding()) {
             throw new \RuntimeException('ffmpeg with AMR-NB support is required for TAKEPILLS voice audio');
         }
 

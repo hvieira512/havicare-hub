@@ -37,6 +37,7 @@ class DeviceService
     private CapabilityRegistry $capabilityRegistry;
     private DeviceConfigurationUpdateService $configurationUpdates;
     private DeviceConfigurationQueryService $configurationQueries;
+    private DeviceAssociationService $associations;
 
     public function __construct(
         private DashboardStoreContract $store,
@@ -69,6 +70,7 @@ class DeviceService
             $this->db,
             $this->capabilityRegistry,
         );
+        $this->associations = new DeviceAssociationService($this->store, $this->whitelist, $this->db);
     }
 
     public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
@@ -85,42 +87,8 @@ class DeviceService
             'q' => $this->query->filter($params, 'q', ''),
         ];
         $licenseScope = $auth !== null && !$auth->isAdmin() ? $auth->licenseId : null;
-        $result = $this->db->whitelist->listPage($filters, $page, $limit, $licenseScope);
-        if ((int)$result['total'] === 0) {
-            $devices = $this->scopeDevices($this->store->devices(), $auth);
-            $filtered = array_map(
-                fn (array $device): array => $this->presentation->attachImage($device, $this->modelForSupplierAndName(
-                    (string)($device['supplier'] ?? ''),
-                    (string)($device['model'] ?? '')
-                ), $baseUrl),
-                $this->deviceFilter->filterDevices($devices, $filters)
-            );
-            $available = [
-                'deviceType' => $this->collection->uniqueValues(array_map(
-                    static fn (array $device): string => DeviceMetadata::normalizeDeviceType((string)($device['deviceType'] ?? 'watch')),
-                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'deviceType')
-                )),
-                'licenseId' => $this->collection->uniqueValues(array_map(
-                    static fn (array $device): string => DeviceMetadata::normalizeLicenseId((string)($device['licenseId'] ?? '0')),
-                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'licenseId')
-                )),
-                'supplier' => $this->collection->uniqueValues(array_map(
-                    static fn (array $device): string => trim((string)($device['supplier'] ?? '')),
-                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'supplier')
-                )),
-                'model' => $this->collection->uniqueValues(array_map(
-                    static fn (array $device): string => trim((string)($device['model'] ?? '')),
-                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'model')
-                )),
-                'company' => $this->collection->uniqueValues(array_map(
-                    static fn (array $device): string => trim((string)($device['company'] ?? 'null')),
-                    $this->deviceFilter->filterDevicesForOptions($devices, $filters, 'company')
-                )),
-            ];
-
-            return $this->collection->respond($filtered, $page, $limit, $filters, $available);
-        }
-
+        $companyScope = $auth !== null && !$auth->isAdmin() ? $auth->company : null;
+        $result = $this->db->whitelist->listPage($filters, $page, $limit, $licenseScope, $companyScope);
         $runtimeStates = $this->store->runtimeStates(array_map(
             static fn (array $device): string => (string)($device['imei'] ?? ''),
             $result['items']
@@ -719,80 +687,12 @@ class DeviceService
 
     public function patchAssociation(string $imei, string $body, ?ApiAuthContext $auth = null): array
     {
-        $existing = $this->whitelist->getMetadata($imei);
-        if ($existing === null) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
-        $company = trim((string)($decoded['company'] ?? ''));
-        $licenseId = DeviceMetadata::normalizeLicenseId((string)($decoded['licenseId'] ?? ''));
-        if ($company === '' || $licenseId === 0) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'company and licenseId are required']];
-        }
-
-        if ($auth !== null && !$auth->isAdmin()) {
-            if (!$auth->canAccessLicense($licenseId)) {
-                return ['error' => ['code' => 'forbidden', 'message' => 'Forbidden']];
-            }
-
-            $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
-            $currentCompany = trim((string)($existing['company'] ?? 'null'));
-            if ($currentLicenseId !== 0 || $currentCompany !== 'null') {
-                return ['error' => ['code' => 'device_already_associated', 'message' => 'Device is already associated']];
-            }
-        }
-
-        $license = $this->licenseForAssociation($company, $licenseId, true);
-        if ($license === null) {
-            return ['error' => ['code' => 'invalid_association', 'message' => 'company and licenseId do not match a registered license']];
-        }
-
-        $this->whitelist->updateAssociation($imei, $company, $licenseId);
-        $this->store->updateDeviceAssociation($imei, $company, $licenseId);
-
-        return [
-            'status' => 'ok',
-            'imei' => $imei,
-            'association' => [
-                'company' => $company,
-                'licenseId' => $licenseId,
-            ],
-        ];
+        return $this->associations->associate($imei, $body, $auth);
     }
 
     public function deleteAssociation(string $imei, ?ApiAuthContext $auth = null): array
     {
-        $existing = $this->whitelist->getMetadata($imei);
-        if ($existing === null) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
-        $currentCompany = trim((string)($existing['company'] ?? 'null'));
-        if ($currentLicenseId === 0 && $currentCompany === 'null') {
-            return ['error' => ['code' => 'association_not_found', 'message' => 'Device association was not found']];
-        }
-
-        if ($auth !== null && !$auth->isAdmin() && !$auth->canAccessLicense($currentLicenseId)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        $this->whitelist->updateAssociation($imei, 'null', 0);
-        $this->store->updateDeviceAssociation($imei, 'null', 0);
-
-        return [
-            'status' => 'ok',
-            'imei' => $imei,
-            'association' => [
-                'company' => 'null',
-                'licenseId' => 0,
-            ],
-        ];
+        return $this->associations->remove($imei, $auth);
     }
 
     public function delete(string $imei): array
@@ -1084,8 +984,9 @@ class DeviceService
 
         $device ??= $this->deviceSnapshot($imei);
         $licenseId = $this->deviceLicenseId($imei, $device);
+        $company = $this->deviceCompany($imei, $device);
 
-        return $auth->canAccessLicense($licenseId);
+        return $auth->canAccessTenant($company, $licenseId);
     }
 
     private function deviceLicenseId(string $imei, array $device): int
@@ -1097,6 +998,17 @@ class DeviceService
 
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         return DeviceMetadata::normalizeLicenseId((string)($metadata['licenseId'] ?? '0'));
+    }
+
+    private function deviceCompany(string $imei, array $device): string
+    {
+        $company = trim((string)($device['company'] ?? ''));
+        if ($company !== '') {
+            return $company;
+        }
+
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        return trim((string)($metadata['company'] ?? ''));
     }
 
     private function scopeDevices(array $devices, ?ApiAuthContext $auth): array
@@ -1834,27 +1746,6 @@ class DeviceService
     private function mergeCapabilityValue(string $genericKey, mixed $existing, mixed $incoming): mixed
     {
         return $this->capabilityRegistry->merge($genericKey, $existing, $incoming);
-    }
-
-    private function licenseForAssociation(string $company, string $licenseId, bool $createIfMissing = false): ?array
-    {
-        $companyRow = $this->db->companies->findByName($company);
-        if ($companyRow === null) {
-            return null;
-        }
-
-        foreach ($this->db->licenses->findByLicenseId($licenseId) as $row) {
-            if ((int)($row['company_id'] ?? 0) === (int)($companyRow['id'] ?? 0)) {
-                return $row;
-            }
-        }
-
-        if (!$createIfMissing) {
-            return null;
-        }
-
-        $createdId = $this->db->licenses->create((int)($companyRow['id'] ?? 0), (int)$licenseId, '');
-        return $this->db->licenses->findById($createdId);
     }
 
     private function deviceSnapshot(string $imei): array

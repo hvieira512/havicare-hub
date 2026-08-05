@@ -61,6 +61,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
         $source = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config.js'
         );
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/wonlex-weather.js'
+        );
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
+        );
 
         self::assertIsString($source);
         self::assertStringContainsString('requestAction: (entry) => requestActionInput(entry),', $source);
@@ -112,6 +118,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
     {
         $source = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config.js'
+        );
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/wonlex-weather.js'
+        );
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
         );
         $bootstrap = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'

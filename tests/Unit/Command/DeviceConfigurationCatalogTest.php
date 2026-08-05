@@ -722,6 +722,9 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchTakePillsBuildsVoiceReminderFields(): void
     {
+        if (!FourPTouchPayloadBuilder::supportsVoiceTranscoding()) {
+            self::markTestSkipped('ffmpeg with AMR-NB support is not available');
+        }
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
             'reminderSettings' => [
                 'time' => '11:25',
@@ -749,6 +752,9 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchTakePillsStripsLegacyDataUrlsFromVoiceData(): void
     {
+        if (!FourPTouchPayloadBuilder::supportsVoiceTranscoding()) {
+            self::markTestSkipped('ffmpeg with AMR-NB support is not available');
+        }
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'takePills', [
             'reminderSettings' => [
                 'time' => '11:25',

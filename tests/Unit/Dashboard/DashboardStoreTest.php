@@ -35,6 +35,21 @@ final class DashboardStoreTest extends TestCase
         self::assertSame([], $store->commands('861265061009822'));
     }
 
+    public function testCommandRetentionRemovesEvictedRecordsAndGlobalIndexEntries(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, limit: 2, prefix: 'test:dashboard');
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+
+        $store->recordCommand('861265061009822', 'cmd-1', ['status' => 'waiting']);
+        $store->recordCommand('861265061009822', 'cmd-2', ['status' => 'waiting']);
+        $store->recordCommand('861265061009822', 'cmd-3', ['status' => 'waiting']);
+
+        self::assertSame(['cmd-3', 'cmd-2'], array_column($store->commands('861265061009822'), 'id'));
+        self::assertNull($store->findCommand('cmd-1'));
+        self::assertSame('cmd-2', $store->findCommand('cmd-2')['command']['id'] ?? null);
+    }
+
     public function testExpireStaleDevicesMarksOldOnlineDevicesOffline(): void
     {
         $redis = new InMemoryRedisClient();

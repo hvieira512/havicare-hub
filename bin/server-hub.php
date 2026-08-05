@@ -5,6 +5,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Bootstrap;
 use Hub\Config;
+use Hub\Configuration\HubConfigurationValidator;
 use Hub\Api\Auth\ApiTokenStore;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
@@ -36,6 +37,7 @@ use React\Socket\SocketServer;
 Bootstrap::loadEnv(__DIR__ . '/..');
 
 $config = Config::load()->all();
+(new HubConfigurationValidator())->validate($config);
 $mqttConfig = $config['mqtt'] ?? [];
 $redisConfig = $config['redis'] ?? [];
 $databaseConfig = $config['database'] ?? [];
@@ -90,6 +92,7 @@ $buildMqttClient = static fn (string $suffix, bool $cleanSession = true, bool $s
     => $connectMqttClient($createMqttClient($suffix, $stableClientId), $cleanSession);
 
 $database = new Hub\Infrastructure\Persistence\DashboardDatabase($databaseConfig);
+(new Hub\Infrastructure\Persistence\DatabaseSchemaGuard($database->pdo()))->assertCurrent();
 $dataAccess = Hub\Api\Repository\ApiDataAccess::fromDatabase($database);
 $whitelistFile = trim((string)($config['hub']['whitelist_file'] ?? ''));
 $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);

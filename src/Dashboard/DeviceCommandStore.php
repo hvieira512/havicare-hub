@@ -33,7 +33,17 @@ final class DeviceCommandStore
         $this->redis->hset($this->commandIndexKey(), $id, $imei);
         $this->redis->lrem($this->deviceListKey($imei, 'commands'), 0, $id);
         $this->redis->lpush($this->deviceListKey($imei, 'commands'), [$id]);
-        $this->redis->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+        $evictedIds = array_map(
+            'strval',
+            $this->redis->lrange($this->deviceListKey($imei, 'commands'), $this->limit, $this->limit)
+        );
+        $this->redis->pipeline(function ($pipe) use ($imei, $evictedIds): void {
+            foreach ($evictedIds as $evictedId) {
+                $pipe->hdel($this->commandHashKey($imei), $evictedId);
+                $pipe->hdel($this->commandIndexKey(), $evictedId);
+            }
+            $pipe->ltrim($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+        });
         if (!$lifecycleAlreadyPersisted) {
             $this->projectConfigurationStatus($imei, $id, $record);
         }

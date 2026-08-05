@@ -28,6 +28,7 @@ final class DashboardHttpServer
 {
     private const MODEL_IMAGE_DIR = __DIR__ . '/../../var/dashboard/model-images';
     private const MODEL_IMAGE_ROUTE = '/model-images';
+    private const PUBLIC_ASSET_EXTENSIONS = ['css', 'ico', 'jpeg', 'jpg', 'js', 'png', 'svg', 'woff2'];
     private ApiKernel $apiKernel;
     private array $apiCredentials = [];
 
@@ -115,13 +116,15 @@ final class DashboardHttpServer
                 return $this->modelImage($matches[1]);
             }
             if ($method === 'GET' && !str_starts_with($path, '/api/') && $path !== '/' && $path !== '/dashboard') {
-                $file = __DIR__ . $path;
-                if (file_exists($file) && is_file($file)) {
+                $file = $this->publicAssetPath($path);
+                if ($file !== null) {
                     return $this->staticFile($file);
                 }
             }
-        } catch (\Throwable $e) {
-            return $this->cors($this->json(['error' => ['code' => 'server_error', 'message' => $e->getMessage()]], 500));
+        } catch (\Throwable) {
+            return $this->cors($this->json([
+                'error' => ['code' => 'server_error', 'message' => 'Internal server error'],
+            ], 500));
         }
 
         return $this->cors($this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404));
@@ -168,6 +171,52 @@ final class DashboardHttpServer
             default => 'text/plain',
         };
         return new Response(200, ['Content-Type' => $mime], (string) file_get_contents($path));
+    }
+
+    private function publicAssetPath(string $requestPath): ?string
+    {
+        $requestPath = rawurldecode($requestPath);
+        if (str_contains($requestPath, "\0") || str_contains($requestPath, '\\')) {
+            return null;
+        }
+
+        $routes = [
+            '/main.css' => [__DIR__, 'main.css'],
+            '/main.js' => [__DIR__, 'main.js'],
+        ];
+        if (isset($routes[$requestPath])) {
+            [$root, $relativePath] = $routes[$requestPath];
+            return $this->assetWithinRoot($root, $relativePath);
+        }
+
+        foreach (['/assets/' => __DIR__ . '/assets', '/dashboard/' => __DIR__ . '/dashboard'] as $prefix => $root) {
+            if (str_starts_with($requestPath, $prefix)) {
+                return $this->assetWithinRoot($root, substr($requestPath, strlen($prefix)));
+            }
+        }
+
+        return null;
+    }
+
+    private function assetWithinRoot(string $root, string $relativePath): ?string
+    {
+        if ($relativePath === '' || str_contains($relativePath, '..')) {
+            return null;
+        }
+
+        $realRoot = realpath($root);
+        $realPath = realpath($root . '/' . ltrim($relativePath, '/'));
+        if ($realRoot === false || $realPath === false || !is_file($realPath)) {
+            return null;
+        }
+
+        $rootPrefix = rtrim($realRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (!str_starts_with($realPath, $rootPrefix)) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
+        return in_array($extension, self::PUBLIC_ASSET_EXTENSIONS, true) ? $realPath : null;
     }
 
     private function modelImage(string $filename): Response

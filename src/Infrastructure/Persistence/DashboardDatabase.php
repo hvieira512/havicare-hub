@@ -2,24 +2,6 @@
 
 namespace Hub\Infrastructure\Persistence;
 
-use Hub\Infrastructure\Persistence\Migration\MigrationRunner;
-use Hub\Infrastructure\Persistence\Migration\Version2026072401UpgradeLegacySchema;
-use Hub\Infrastructure\Persistence\Migration\Version2026072402SeedReferenceCatalog;
-use Hub\Infrastructure\Persistence\Migration\Version2026072403RebuildModelCapabilities;
-use Hub\Infrastructure\Persistence\Migration\Version2026072404SeedModelCapabilities;
-use Hub\Infrastructure\Persistence\Migration\Version2026072405NormalizeConfigurationKeys;
-use Hub\Infrastructure\Persistence\Migration\Version2026072406AddDashboardNotifications;
-use Hub\Infrastructure\Persistence\Migration\Version2026072801SyncWonlexAdultHealthCapabilities;
-use Hub\Infrastructure\Persistence\Migration\Version2026072901CleanWatchCapabilityTaxonomy;
-use Hub\Infrastructure\Persistence\Migration\Version2026072902EnumCapabilitySections;
-use Hub\Infrastructure\Persistence\Migration\Version2026072903RestrictHw20ProHealthRequests;
-use Hub\Infrastructure\Persistence\Migration\Version2026072904RemoveUnsupportedWonlexReports;
-use Hub\Infrastructure\Persistence\Migration\Version2026072905NormalizeContactCapabilities;
-use Hub\Infrastructure\Persistence\Migration\Version2026073001RenameFourPTouchWhitelistSwitch;
-use Hub\Infrastructure\Persistence\Migration\Version2026073002CanonicalizeFourPTouchContactSlots;
-use Hub\Infrastructure\Persistence\Migration\Version2026073003ConfigurationLifecycle;
-use Hub\Infrastructure\Persistence\Migration\Version2026073101PrivateRadioMap;
-use Hub\Infrastructure\Persistence\Migration\Version2026080301EnableWonlexPushMessage;
 use PDO;
 
 final class DashboardDatabase
@@ -47,41 +29,10 @@ final class DashboardDatabase
         ]);
         $this->pdo->exec("SET time_zone = '+00:00'");
 
-        $this->bootstrapSchema();
     }
 
     public function pdo(): PDO
     {
         return $this->pdo;
-    }
-
-    private function bootstrapSchema(): void
-    {
-        $schemaPath = __DIR__ . '/../../../database/schema.sql';
-        $schema = file_get_contents($schemaPath);
-        if (!is_string($schema) || trim($schema) === '') {
-            throw new \RuntimeException('database schema file is missing or empty');
-        }
-
-        $this->pdo->exec($schema);
-        (new MigrationRunner($this->pdo, [
-            new Version2026072401UpgradeLegacySchema(),
-            new Version2026072402SeedReferenceCatalog(),
-            new Version2026072403RebuildModelCapabilities(),
-            new Version2026072404SeedModelCapabilities(),
-            new Version2026072405NormalizeConfigurationKeys(),
-            new Version2026072406AddDashboardNotifications(),
-            new Version2026072801SyncWonlexAdultHealthCapabilities(),
-            new Version2026072901CleanWatchCapabilityTaxonomy(),
-            new Version2026072902EnumCapabilitySections(),
-            new Version2026072903RestrictHw20ProHealthRequests(),
-            new Version2026072904RemoveUnsupportedWonlexReports(),
-            new Version2026072905NormalizeContactCapabilities(),
-            new Version2026073001RenameFourPTouchWhitelistSwitch(),
-            new Version2026073002CanonicalizeFourPTouchContactSlots(),
-            new Version2026073003ConfigurationLifecycle(),
-            new Version2026073101PrivateRadioMap(),
-            new Version2026080301EnableWonlexPushMessage(),
-        ]))->run();
     }
 }

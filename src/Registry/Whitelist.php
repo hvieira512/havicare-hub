@@ -11,11 +11,17 @@ class Whitelist
     private array $devices;
     private string $filePath;
     private ?WhitelistRepository $db;
+    private int $databaseCacheLoadedAt = 0;
 
-    public function __construct(?string $filePath = null, ?WhitelistRepository $db = null)
+    public function __construct(
+        ?string $filePath = null,
+        ?WhitelistRepository $db = null,
+        private int $databaseCacheTtlSeconds = 5,
+    )
     {
         $this->filePath = $filePath ?? __DIR__ . '/../../config/whitelist.json';
         $this->db = $db;
+        $this->databaseCacheTtlSeconds = max(0, $this->databaseCacheTtlSeconds);
         $this->load();
     }
 
@@ -24,9 +30,8 @@ class Whitelist
         $this->devices = [];
 
         if ($this->db !== null) {
-            foreach ($this->db->all() as $row) {
-                $this->loadEntry((string)$row['imei'], $row);
-            }
+            $this->loadDatabaseCache();
+            return;
         }
 
         if (file_exists($this->filePath)) {
@@ -85,26 +90,34 @@ class Whitelist
 
     public function isAuthorized(string $imei): bool
     {
-        return isset($this->devices[$imei]);
+        return $this->getMetadata($imei) !== null;
     }
 
     public function getModel(string $imei): ?string
     {
-        return $this->devices[$imei]['model'] ?? null;
+        return $this->getMetadata($imei)['model'] ?? null;
     }
 
     public function getSupplier(string $imei): ?string
     {
-        return $this->devices[$imei]['supplier'] ?? null;
+        return $this->getMetadata($imei)['supplier'] ?? null;
     }
 
     public function getMetadata(string $imei): ?array
     {
+        if ($this->db !== null) {
+            $this->refreshDatabaseCacheIfStale();
+        }
+
         return $this->devices[$imei] ?? null;
     }
 
     public function all(): array
     {
+        if ($this->db !== null) {
+            $this->refreshDatabaseCacheIfStale();
+        }
+
         return $this->devices;
     }
 
@@ -132,14 +145,18 @@ class Whitelist
             'deviceId' => $deviceId,
         ];
         $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
-        $this->saveFile();
+        if ($this->db === null) {
+            $this->saveFile();
+        }
     }
 
     public function unregister(string $imei): void
     {
         unset($this->devices[$imei]);
         $this->db?->unregister($imei);
-        $this->saveFile();
+        if ($this->db === null) {
+            $this->saveFile();
+        }
     }
 
     public function update(
@@ -153,7 +170,7 @@ class Whitelist
         string $company = 'null',
     ): bool
     {
-        if (!isset($this->devices[$imei])) {
+        if ($this->getMetadata($imei) === null) {
             return false;
         }
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
@@ -169,13 +186,15 @@ class Whitelist
             'deviceId' => $deviceId,
         ];
         $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
-        $this->saveFile();
+        if ($this->db === null) {
+            $this->saveFile();
+        }
         return true;
     }
 
     public function updateAssociation(string $imei, string $company, string $licenseId): bool
     {
-        if (!isset($this->devices[$imei])) {
+        if ($this->getMetadata($imei) === null) {
             return false;
         }
 
@@ -184,7 +203,9 @@ class Whitelist
         $this->devices[$imei]['company'] = $company;
         $this->devices[$imei]['licenseId'] = $licenseId;
         $this->db?->updateAssociation($imei, $company, $licenseId);
-        $this->saveFile();
+        if ($this->db === null) {
+            $this->saveFile();
+        }
 
         return true;
     }
@@ -205,6 +226,9 @@ class Whitelist
         }
 
         if ($protocol === 'four-p-touch') {
+            if ($this->db !== null) {
+                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias));
+            }
             foreach ($this->devices as $canonicalImei => $metadata) {
                 if (($metadata['deviceId'] ?? '') !== $alias) {
                     continue;
@@ -217,6 +241,9 @@ class Whitelist
         }
 
         if ($protocol === 'ncs') {
+            if ($this->db !== null) {
+                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'ncs'));
+            }
             foreach ($this->devices as $canonicalImei => $metadata) {
                 if (($metadata['deviceType'] ?? '') !== 'ncs') {
                     continue;
@@ -233,6 +260,9 @@ class Whitelist
         }
 
         if ($protocol === 'qinglanst-radar' || $protocol === 'qinglanst') {
+            if ($this->db !== null) {
+                return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'radar'));
+            }
             foreach ($this->devices as $canonicalImei => $metadata) {
                 if (($metadata['deviceType'] ?? '') !== 'radar') {
                     continue;
@@ -247,6 +277,58 @@ class Whitelist
         }
 
         return null;
+    }
+
+    private function normalizeMetadata(array $value): array
+    {
+        $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
+        if ($deviceId === '') {
+            $deviceId = trim((string)($value['sourceDeviceId'] ?? $value['source_device_id'] ?? ''));
+        }
+
+        return [
+            'supplier' => trim((string)($value['supplier'] ?? '')),
+            'model' => trim((string)($value['model'] ?? '')),
+            'deviceType' => DeviceMetadata::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch')),
+            'licenseId' => DeviceMetadata::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0')),
+            'company' => trim((string)($value['company'] ?? 'null')),
+            'simNumber' => trim((string)($value['simNumber'] ?? $value['sim_number'] ?? '')),
+            'deviceId' => $deviceId,
+        ];
+    }
+
+    private function refreshDatabaseCacheIfStale(): void
+    {
+        if (
+            $this->db !== null
+            && ($this->databaseCacheTtlSeconds === 0
+                || (time() - $this->databaseCacheLoadedAt) >= $this->databaseCacheTtlSeconds)
+        ) {
+            $this->devices = [];
+            $this->loadDatabaseCache();
+        }
+    }
+
+    private function loadDatabaseCache(): void
+    {
+        if ($this->db === null) {
+            return;
+        }
+
+        foreach ($this->db->all() as $row) {
+            $this->loadEntry((string)$row['imei'], $row);
+        }
+        $this->databaseCacheLoadedAt = time();
+    }
+
+    private function resolvedDatabaseAlias(?array $row): ?array
+    {
+        if ($row === null) {
+            return null;
+        }
+
+        $imei = trim((string)($row['imei'] ?? ''));
+        return $imei === '' ? null : ['imei' => $imei] + $this->normalizeMetadata($row);
     }
 
     private function saveFile(): void

@@ -437,6 +437,9 @@ final class DeviceHubMqttContractTest extends TestCase
 
     public function testFourPTouchTakePillsOnlineDownlinkPublishesAmrConvertedAudioMetadata(): void
     {
+        if (!\Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder::supportsVoiceTranscoding()) {
+            self::markTestSkipped('ffmpeg with AMR-NB support is not available');
+        }
         $mqtt = new ContractRecordingHubMqttBridge();
         $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
         $connection = new ContractFakeConnection(8);

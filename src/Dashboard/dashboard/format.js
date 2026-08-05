@@ -129,7 +129,6 @@ export const fieldLabel = (key) =>
         password: "Palavra-passe",
         phone: "Telefone",
         Battery: "Bateria (%)",
-        steps: "Passos",
         bindStatus: "Vinculação",
         switchState: "Estado",
         sleepStartTime: "Início do sono",

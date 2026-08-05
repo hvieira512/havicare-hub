@@ -40,7 +40,7 @@ Database schemas:
 database/schema.sql
 ```
 
-Runtime initialization is MySQL-only. [DashboardDatabase.php](/Users/hugo/dev/hitecosystem-devices-hub/src/Infrastructure/Persistence/DashboardDatabase.php) applies the idempotent base schema and then runs versioned migrations from `src/Infrastructure/Persistence/Migration/`. Applied versions are recorded in `schema_migrations` under a MySQL advisory lock.
+Database connections never mutate the schema. Run `php bin/migrate.php` as an explicit deployment step before starting or restarting the hub. The command applies the idempotent base schema and versioned migrations from `src/Infrastructure/Persistence/Migration/`; applied versions are recorded in `schema_migrations` under a MySQL advisory lock. The runtime refuses to start when the schema is missing or behind.
 
 Reference suppliers, models, capabilities, and initial model capability selections are seeded by one-time migrations. Restarting the hub does not recreate deleted catalog rows or overwrite administrator-managed model capability selections.
 
@@ -75,14 +75,14 @@ The hub serves a Bootstrap 5 dashboard at:
 http://127.0.0.1:8081/dashboard
 ```
 
-When API authentication is enabled, the dashboard presents an admin login before loading its application. `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` define the bootstrap admin credential; by default that credential is `admin` / `secret`. Database users with the `hub_admin` role can also sign in. The bearer and refresh tokens returned by `/api/auth/login` are held in the browser tab's `sessionStorage`.
+When API authentication is enabled, the dashboard presents an admin login before loading its application. `DASHBOARD_USERNAME` and `DASHBOARD_PASSWORD` optionally define a bootstrap admin credential and must either both be set or both be empty. There is no default bootstrap password. Database users with the `hub_admin` role can also sign in. The bearer and refresh tokens returned by `/api/auth/login` are held in the browser tab's `sessionStorage`.
 
 API access uses `POST /api/auth/login` and bearer tokens when `DASHBOARD_API_AUTH_REQUIRED=true` (default). The dashboard warns after 15 minutes without user activity and logs out after 20 minutes. In development, set `DASHBOARD_API_AUTH_REQUIRED=false` to expose `/api/*` and bypass the dashboard login. Additional users are managed by admins in the dashboard settings modal or through `/api/users`.
 
 API user roles:
 
 - `hub_admin`: unrestricted hub administration.
-- `license_client`: tied to exactly one `license_id`; can list/read devices in that license, request telemetry/configuration downlinks, inspect those command statuses, and update configuration for those devices. Devices with license `0` are admin-only.
+- `license_client`: tied to one exact company/license database row; can list/read devices only when both company and public `license_id` match, request telemetry/configuration downlinks, inspect those command statuses, and update configuration for those devices. Devices with license `0` are admin-only.
 
 License clients must be created in MySQL through the dashboard settings or `/api/users`. Environment-backed tenant credentials are not supported because they cannot carry a durable license association.
 
@@ -624,7 +624,16 @@ Downlink accepts either a raw MQTT payload string or JSON:
 
 ## Whitelist
 
-Devices are authorized through [config/whitelist.json](config/whitelist.json) as key-value pairs of canonical device identity to metadata:
+MySQL is the production source of truth for authorized devices. Manage it through the dashboard/API. `config/whitelist.json` is retained only for file-backed development/tests and as a legacy import source; the running DB-backed hub neither imports it implicitly nor writes to it.
+
+To import a legacy JSON file once, after the schema is current:
+
+```bash
+php bin/migrate.php
+php bin/import-whitelist.php config/whitelist.json
+```
+
+The JSON format is a map of canonical device identity to metadata:
 
 ```json
 {
@@ -656,8 +665,19 @@ Unknown devices are disconnected and a rejection is published to `null/0/watch/{
 ## Tests
 
 ```bash
+composer analyse
+npm test
+npm run lint
 composer test
 ```
+
+`composer analyse` is intentionally an initial level-0 PHPStan gate over `src/` and `bin/`. Raise the level incrementally as legacy dynamic-array contracts acquire precise types.
+
+## Production deployment
+
+`make prod-update` performs a fast-forward pull, installs production Composer dependencies, applies migrations, and only then restarts `health-hub`. Before the first deployment of a tenant-isolation migration, back up MySQL and confirm every `license_client` user maps unambiguously to one company/license row. Ambiguous legacy users are deliberately left unscoped and cannot authenticate until an administrator assigns the exact license.
+
+Required external credentials must be supplied through the production environment. The hub has no built-in dashboard password and Qinglanst integration is disabled unless explicitly enabled with all required connection values.
 
 The scenario smoke test starts Mosquitto and the hub, connects a simulated Vivistar TCP device, verifies raw MQTT uplink, publishes MQTT downlink, and verifies the device receives it.
 

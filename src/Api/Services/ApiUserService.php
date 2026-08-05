@@ -64,7 +64,8 @@ class ApiUserService
             password_hash((string)$payload['password'], PASSWORD_DEFAULT),
             (string)$payload['role'],
             (int)$payload['licenseId'],
-            (bool)$payload['enabled']
+            (bool)$payload['enabled'],
+            $payload['licenseRefId'],
         );
 
         return ['status' => 'ok', 'id' => $id];
@@ -95,7 +96,8 @@ class ApiUserService
             (string)$payload['role'],
             (int)$payload['licenseId'],
             (bool)$payload['enabled'],
-            $passwordHash
+            $passwordHash,
+            $payload['licenseRefId'],
         );
 
         return ['status' => 'ok', 'id' => $id];
@@ -123,6 +125,8 @@ class ApiUserService
         $password = (string)($decoded['password'] ?? '');
         $role = trim((string)($decoded['role'] ?? ''));
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($decoded['licenseId'] ?? $decoded['license_id'] ?? ''));
+        $licenseRefId = (int)($decoded['licenseRefId'] ?? $decoded['license_ref_id'] ?? 0);
+        $companyId = (int)($decoded['companyId'] ?? $decoded['company_id'] ?? 0);
         $enabled = array_key_exists('enabled', $decoded) ? (bool)$decoded['enabled'] : true;
 
         if ($username === '') {
@@ -137,11 +141,21 @@ class ApiUserService
         if (!in_array($role, ApiAuthContext::roles(), true)) {
             return ['error' => ['code' => 'invalid_role', 'message' => 'role must be hub_admin or license_client']];
         }
-        if ($role === ApiAuthContext::ROLE_LICENSE_CLIENT && $licenseId === 0) {
-            return ['error' => ['code' => 'invalid_license', 'message' => 'licenseId is required for license clients']];
+        if ($role === ApiAuthContext::ROLE_LICENSE_CLIENT) {
+            $license = $licenseRefId > 0
+                ? $this->db->licenses->findById($licenseRefId)
+                : ($companyId > 0 && $licenseId > 0
+                    ? $this->db->licenses->findByCompanyAndLicense($companyId, $licenseId)
+                    : null);
+            if ($license === null) {
+                return ['error' => ['code' => 'invalid_license', 'message' => 'A valid company license is required for license clients']];
+            }
+            $licenseRefId = (int)$license['id'];
+            $licenseId = DeviceMetadata::normalizeLicenseId((string)$license['license_id']);
         }
         if ($role === ApiAuthContext::ROLE_HUB_ADMIN) {
             $licenseId = 0;
+            $licenseRefId = null;
         }
 
         return [
@@ -149,6 +163,7 @@ class ApiUserService
             'password' => trim($password),
             'role' => $role,
             'licenseId' => $licenseId,
+            'licenseRefId' => $licenseRefId,
             'enabled' => $enabled,
         ];
     }

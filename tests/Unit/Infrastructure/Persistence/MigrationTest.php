@@ -5,10 +5,23 @@ declare(strict_types=1);
 namespace Tests\Unit\Infrastructure\Persistence;
 
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Infrastructure\Persistence\DashboardDatabase;
+use Hub\Infrastructure\Persistence\DatabaseSchemaGuard;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class MigrationTest extends MysqlDashboardTestCase
 {
+    public function testDatabaseConnectionDoesNotApplySchemaOrMigrations(): void
+    {
+        $databaseName = $this->createEmptyDatabase();
+        $database = new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+
+        self::assertSame([], $database->pdo()->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN));
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('php bin/migrate.php');
+        (new DatabaseSchemaGuard($database->pdo()))->assertCurrent();
+    }
+
     public function testApplicationDatabaseSessionUsesUtc(): void
     {
         $pdo = $this->createDashboardDatabase()->pdo();
@@ -44,10 +57,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026073003_configuration_lifecycle',
             '2026073101_private_radio_map',
             '2026080301_enable_wonlex_push_message',
+            '2026080501_scope_api_users_by_license',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(17, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(18, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         $sectionType = $pdo->query("
             SELECT COLUMN_TYPE
             FROM information_schema.COLUMNS

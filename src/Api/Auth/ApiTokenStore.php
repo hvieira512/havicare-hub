@@ -16,7 +16,16 @@ final class ApiTokenStore
         $this->prefix = trim($this->prefix, ':');
     }
 
-    public function issue(string $username, string $role, int $ttlSeconds, ?int $userId = null, int|string|null $licenseId = null): array
+    public function issue(
+        string $username,
+        string $role,
+        int $ttlSeconds,
+        ?int $userId = null,
+        int|string|null $licenseId = null,
+        ?int $licenseRefId = null,
+        ?int $companyId = null,
+        ?string $company = null,
+    ): array
     {
         [$token, $payload] = $this->issueStoredToken(
             $username,
@@ -24,6 +33,9 @@ final class ApiTokenStore
             $ttlSeconds,
             $userId,
             $licenseId,
+            $licenseRefId,
+            $companyId,
+            $company,
             self::TOKEN_TYPE_ACCESS
         );
 
@@ -33,6 +45,9 @@ final class ApiTokenStore
             'username' => $username,
             'role' => $role,
             'license_id' => $licenseId,
+            'license_ref_id' => $licenseRefId,
+            'company_id' => $companyId,
+            'company' => $company,
             'expires_in' => $ttlSeconds,
             'expires_at' => $payload['expiresAt'],
         ];
@@ -44,15 +59,21 @@ final class ApiTokenStore
         int $accessTtlSeconds,
         int $refreshTtlSeconds,
         ?int $userId = null,
-        int|string|null $licenseId = null
+        int|string|null $licenseId = null,
+        ?int $licenseRefId = null,
+        ?int $companyId = null,
+        ?string $company = null,
     ): array {
-        $access = $this->issue($username, $role, $accessTtlSeconds, $userId, $licenseId);
+        $access = $this->issue($username, $role, $accessTtlSeconds, $userId, $licenseId, $licenseRefId, $companyId, $company);
         [$refreshToken, $refreshPayload] = $this->issueStoredToken(
             $username,
             $role,
             $refreshTtlSeconds,
             $userId,
             $licenseId,
+            $licenseRefId,
+            $companyId,
+            $company,
             self::TOKEN_TYPE_REFRESH
         );
 
@@ -83,7 +104,10 @@ final class ApiTokenStore
             $accessTtlSeconds,
             $refreshTtlSeconds,
             $context->userId,
-            $context->licenseId
+            $context->licenseId,
+            $context->licenseRefId,
+            $context->companyId,
+            $context->company,
         );
     }
 
@@ -113,6 +137,9 @@ final class ApiTokenStore
         int $ttlSeconds,
         ?int $userId,
         int|string|null $licenseId,
+        ?int $licenseRefId,
+        ?int $companyId,
+        ?string $company,
         string $tokenType
     ): array {
         $ttlSeconds = max(1, $ttlSeconds);
@@ -125,6 +152,9 @@ final class ApiTokenStore
             'username' => $username,
             'role' => $role,
             'licenseId' => $licenseId,
+            'licenseRefId' => $licenseRefId,
+            'companyId' => $companyId,
+            'company' => $company,
             'issuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $issuedAt),
             'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $expiresAt),
         ];
@@ -166,8 +196,17 @@ final class ApiTokenStore
         $licenseId = isset($payload['licenseId']) && $payload['licenseId'] !== null
             ? (int)$payload['licenseId']
             : null;
+        $licenseRefId = isset($payload['licenseRefId']) && $payload['licenseRefId'] !== null
+            ? (int)$payload['licenseRefId']
+            : null;
+        $companyId = isset($payload['companyId']) && $payload['companyId'] !== null
+            ? (int)$payload['companyId']
+            : null;
+        $company = isset($payload['company']) && trim((string)$payload['company']) !== ''
+            ? trim((string)$payload['company'])
+            : null;
 
-        return new ApiAuthContext($userId, $username, $role, $licenseId);
+        return new ApiAuthContext($userId, $username, $role, $licenseId, $licenseRefId, $companyId, $company);
     }
 
     private function key(string $token): string

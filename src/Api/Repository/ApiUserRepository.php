@@ -14,13 +14,13 @@ final class ApiUserRepository
     public function all(): array
     {
         return TimestampFormatter::normalizeRows($this->pdo
-            ->query('SELECT id, username, role, license_id, enabled, created_at, updated_at FROM api_users ORDER BY username')
+            ->query($this->selectSql() . ' ORDER BY u.username')
             ->fetchAll());
     }
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, username, password_hash, role, license_id, enabled, created_at, updated_at FROM api_users WHERE id = ?');
+        $stmt = $this->pdo->prepare($this->selectSql(true) . ' WHERE u.id = ?');
         $stmt->execute([$id]);
 
         $row = $stmt->fetch();
@@ -29,40 +29,40 @@ final class ApiUserRepository
 
     public function findByUsername(string $username): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, username, password_hash, role, license_id, enabled, created_at, updated_at FROM api_users WHERE lower(username) = lower(?)');
+        $stmt = $this->pdo->prepare($this->selectSql(true) . ' WHERE lower(u.username) = lower(?)');
         $stmt->execute([$username]);
 
         $row = $stmt->fetch();
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
-    public function create(string $username, string $passwordHash, string $role, int $licenseId, bool $enabled): int
+    public function create(string $username, string $passwordHash, string $role, int $licenseId, bool $enabled, ?int $licenseRefId = null): int
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO api_users (username, password_hash, role, license_id, enabled)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO api_users (username, password_hash, role, license_id, license_ref_id, enabled)
+            VALUES (?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$username, $passwordHash, $role, $licenseId, $enabled ? 1 : 0]);
+        $stmt->execute([$username, $passwordHash, $role, $licenseId, $licenseRefId, $enabled ? 1 : 0]);
 
         return (int)$this->pdo->lastInsertId();
     }
 
-    public function update(int $id, string $username, string $role, int $licenseId, bool $enabled, ?string $passwordHash = null): bool
+    public function update(int $id, string $username, string $role, int $licenseId, bool $enabled, ?string $passwordHash = null, ?int $licenseRefId = null): bool
     {
         if ($passwordHash !== null) {
             $stmt = $this->pdo->prepare('
                 UPDATE api_users
-                SET username = ?, password_hash = ?, role = ?, license_id = ?, enabled = ?
+                SET username = ?, password_hash = ?, role = ?, license_id = ?, license_ref_id = ?, enabled = ?
                 WHERE id = ?
             ');
-            $stmt->execute([$username, $passwordHash, $role, $licenseId, $enabled ? 1 : 0, $id]);
+            $stmt->execute([$username, $passwordHash, $role, $licenseId, $licenseRefId, $enabled ? 1 : 0, $id]);
         } else {
             $stmt = $this->pdo->prepare('
                 UPDATE api_users
-                SET username = ?, role = ?, license_id = ?, enabled = ?
+                SET username = ?, role = ?, license_id = ?, license_ref_id = ?, enabled = ?
                 WHERE id = ?
             ');
-            $stmt->execute([$username, $role, $licenseId, $enabled ? 1 : 0, $id]);
+            $stmt->execute([$username, $role, $licenseId, $licenseRefId, $enabled ? 1 : 0, $id]);
         }
 
         return $stmt->rowCount() > 0;
@@ -80,5 +80,19 @@ final class ApiUserRepository
         $stmt->execute([$id, $username]);
 
         return (int)$stmt->fetchColumn() > 0;
+    }
+
+    private function selectSql(bool $includePasswordHash = false): string
+    {
+        $password = $includePasswordHash ? ', u.password_hash' : '';
+
+        return "
+            SELECT u.id, u.username{$password}, u.role, u.license_id, u.license_ref_id,
+                   u.enabled, u.created_at, u.updated_at,
+                   l.company_id, c.name AS company_name, l.name AS license_name
+            FROM api_users u
+            LEFT JOIN licenses l ON l.id = u.license_ref_id
+            LEFT JOIN companies c ON c.id = l.company_id
+        ";
     }
 }

@@ -2,6 +2,10 @@ import { esc, fieldLabel, titleize } from "./format.js";
 import { normalizePhoneControl, renderPhoneControl } from "./phone.js";
 import { requestJson } from "./api/http.js";
 import { state } from "./state.js";
+import {defaultWonlexWeather, readWonlexWeather, wonlexWeatherInput} from "./config/wonlex-weather.js";
+import {takePillsInput, takePillsReminderGroup} from "./config/four-p-touch-take-pills.js";
+
+export {takePillsReminderGroup};
 
 let uidCounter = 0;
 const protocolCatalogRequests = {};
@@ -485,9 +489,7 @@ function assignCapabilitySection(entry, capabilityCatalog) {
         category: section,
         configSectionName: section,
         sectionLabel: String(definition.sectionLabel || section),
-        requestOnly:
-            Boolean(definition.isRequestable)
-            && !Boolean(definition.isConfigurable),
+        requestOnly: definition.isRequestable && !definition.isConfigurable,
     };
 }
 
@@ -2020,78 +2022,7 @@ function alarmsInput(desired, meta = {}) {
         </div>`;
 }
 
-function takePillsInput(desired, meta = {}) {
-    const reminderText = String(desired.reminderText || "");
-    const voiceData = String(desired.voiceData || "");
-    const voiceMimeType = String(desired.voiceMimeType || "audio/webm");
-    const hasVoiceData = voiceData.trim() !== "" || desired.voiceDataAvailable === true;
-    const voiceEnabled = normalizeTakePillsVoiceEnabled(desired, hasVoiceData);
-    const previewSrc = takePillsVoicePreviewSrc(voiceData, voiceMimeType);
-    const frequencyOptions = takePillsFrequencyOptions(meta);
-    const numberLimit = Math.max(1, parseInt(String(meta.limit ?? 3), 10) || 3);
-    const reminderSettingsList = normalizeTakePillsReminderSettings(desired)
-        .slice(0, numberLimit);
-
-    return `
-        <div class="vstack gap-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div>
-                    <div class="fw-semibold">Horários</div>
-                    <div class="small text-secondary">Até ${esc(String(numberLimit))} lembretes.</div>
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addTakePillsReminder" ${reminderSettingsList.length >= numberLimit ? "disabled" : ""}>
-                    <i class="fa-solid fa-plus me-2"></i>Adicionar lembrete
-                </button>
-            </div>
-            <div class="vstack gap-2" data-takepills-reminders-list data-repeat-limit="${esc(String(numberLimit))}">
-                ${reminderSettingsList
-                    .map(
-                        (rs, index) => takePillsReminderGroup(rs, index, frequencyOptions),
-                    )
-                    .join("")}
-            </div>
-            <div class="border rounded p-3 bg-body-tertiary vstack gap-3">
-                <div>
-                    <div class="fw-semibold">Mensagem do plano</div>
-                    <div class="small text-secondary">O protocolo 4P Touch aplica o mesmo texto e áudio a todos os horários.</div>
-                </div>
-                <div>
-                    <label class="form-label form-label-sm">Texto do lembrete</label>
-                    <input class="form-control" type="text" data-config-field="reminderText" value="${esc(reminderText)}">
-                <div class="vstack gap-2" data-takepills-audio>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" role="switch" data-config-field="voiceEnabled" ${voiceEnabled ? "checked" : ""}>
-                        <label class="form-check-label" data-switch-label data-switch-on="\u00c1udio ligado" data-switch-off="\u00c1udio desligado">${voiceEnabled ? "\u00c1udio ligado" : "\u00c1udio desligado"}</label>
-                    </div>
-                    <fieldset class="vstack gap-2" data-takepills-audio-controls ${voiceEnabled ? "" : "disabled"}>
-                    <input type="hidden" data-config-field="voiceData" value="${esc(voiceData)}">
-                    <input type="hidden" data-config-field="voiceMimeType" value="${esc(voiceMimeType)}">
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="takePillsRecord">
-                            <i class="fa-solid fa-microphone me-2"></i>Gravar
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm d-none" data-action="takePillsStop">
-                            <i class="fa-solid fa-stop me-2"></i>Parar
-                        </button>
-                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="takePillsClear">
-                            <i class="fa-solid fa-trash-can me-2"></i>Limpar
-                        </button>
-                        <label class="btn btn-outline-secondary btn-sm mb-0">
-                            <i class="fa-solid fa-file-audio me-2"></i>Carregar
-                            <input type="file" class="d-none" accept="audio/*" data-action="takePillsFile">
-                        </label>
-                        <span class="small text-secondary" data-takepills-status>
-                            ${voiceEnabled ? (hasVoiceData ? "\u00c1udio carregado" : "Sem \u00e1udio") : "\u00c1udio desligado"}
-                        </span>
-                    </div>
-                    <audio class="w-100" controls preload="none" data-takepills-preview ${hasVoiceData ? `src="${esc(previewSrc)}"` : ""}></audio>
-                    </fieldset>
-                </div>
-            </div>
-        </div>`;
-}
-
-const WONLEX_MEDICATION_PERIODS = [
+ const WONLEX_MEDICATION_PERIODS = [
     {index: 0, key: "Morning", label: "Manhã", defaultTime: "08:00"},
     {index: 1, key: "Midday", label: "Meio-dia", defaultTime: "12:00"},
     {index: 2, key: "Night", label: "Noite", defaultTime: "19:00"},
@@ -2353,163 +2284,6 @@ function readWonlexMedicationPlans(section) {
     return {plans};
 }
 
-function wonlexWeatherInput(desired) {
-    const weather = normalizeWonlexWeather(desired);
-    return `
-        <div class="vstack gap-3">
-            <div class="small text-secondary">Os dados são enviados para o mostrador meteorológico do relógio.</div>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Condição</label>
-                    <input class="form-control" type="text" data-weather-field="weather" value="${esc(weather.weather)}" placeholder="Ex.: Nublado" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Tipo de tempo</label>
-                    <select class="form-select" data-weather-field="weatherType">
-                        ${[
-                            [0, "Sol"],
-                            [1, "Nublado"],
-                            [2, "Vento"],
-                            [3, "Chuva"],
-                            [4, "Neve"],
-                            [5, "Muitas nuvens"],
-                            [6, "Nevoeiro"],
-                            [7, "Outro"],
-                        ].map(([value, label]) => `
-                            <option value="${value}" ${weather.weatherType === value ? "selected" : ""}>${esc(label)}</option>
-                        `).join("")}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Data da previsão</label>
-                    <input class="form-control" type="datetime-local" step="1" data-weather-field="reporttime" value="${esc(weatherDateTimeLocal(weather.reporttime))}" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Distrito / província</label>
-                    <input class="form-control" type="text" data-weather-field="province" value="${esc(weather.province)}" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Cidade</label>
-                    <input class="form-control" type="text" data-weather-field="city" value="${esc(weather.city)}" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Código da região</label>
-                    <input class="form-control" type="text" data-weather-field="adcode" value="${esc(weather.adcode)}" placeholder="Ex.: 1106" required>
-                </div>
-                ${[
-                    ["temperature", "Temperatura atual", "°C"],
-                    ["daytemp", "Máxima diurna", "°C"],
-                    ["nighttemp", "Mínima noturna", "°C"],
-                    ["humidity", "Humidade", "%"],
-                ].map(([field, label, suffix]) => `
-                    <div class="col-sm-6 col-md-3">
-                        <label class="form-label form-label-sm">${esc(label)}</label>
-                        <div class="input-group">
-                            <input class="form-control" type="number" step="0.1" data-weather-field="${field}" value="${esc(weather[field])}" required>
-                            <span class="input-group-text">${esc(suffix)}</span>
-                        </div>
-                    </div>
-                `).join("")}
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Direção do vento</label>
-                    <input class="form-control" type="text" data-weather-field="winddirection" value="${esc(weather.winddirection)}" placeholder="Ex.: Noroeste" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Força do vento</label>
-                    <input class="form-control" type="text" data-weather-field="windpower" value="${esc(weather.windpower)}" placeholder="Ex.: 3" required>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" role="switch" data-weather-field="iIsCDMA" ${weather.iIsCDMA === "1" ? "checked" : ""}>
-                        <label class="form-check-label" data-switch-label data-switch-on="Rede CDMA" data-switch-off="Rede não CDMA">${weather.iIsCDMA === "1" ? "Rede CDMA" : "Rede não CDMA"}</label>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-}
-
-function normalizeWonlexWeather(desired) {
-    const source = desired?.weather && typeof desired.weather === "object"
-        ? desired.weather
-        : desired || {};
-    const fallback = defaultWonlexWeather();
-    return {
-        ...fallback,
-        ...Object.fromEntries(
-            Object.entries(source).map(([key, value]) => [key, String(value ?? "")]),
-        ),
-        weatherType: parseInt(String(source.weatherType ?? fallback.weatherType), 10) || 0,
-        iIsCDMA: String(source.iIsCDMA ?? fallback.iIsCDMA) === "1" ? "1" : "0",
-    };
-}
-
-function defaultWonlexWeather() {
-    return {
-        iIsCDMA: "0",
-        weather: "",
-        weatherType: 0,
-        province: "",
-        city: "",
-        adcode: "",
-        temperature: "",
-        winddirection: "",
-        windpower: "",
-        humidity: "",
-        daytemp: "",
-        nighttemp: "",
-        reporttime: "",
-    };
-}
-
-function readWonlexWeather(section) {
-    const value = (field) => String(
-        section.querySelector(`[data-weather-field="${field}"]`)?.value || "",
-    ).trim();
-    const required = [
-        ["weather", "condição"],
-        ["province", "distrito / província"],
-        ["city", "cidade"],
-        ["adcode", "código da região"],
-        ["temperature", "temperatura atual"],
-        ["winddirection", "direção do vento"],
-        ["windpower", "força do vento"],
-        ["humidity", "humidade"],
-        ["daytemp", "temperatura máxima"],
-        ["nighttemp", "temperatura mínima"],
-        ["reporttime", "data da previsão"],
-    ];
-    for (const [field, label] of required) {
-        if (value(field) === "") {
-            throw new Error(`Dados meteorológicos: indique ${label}`);
-        }
-    }
-
-    return {
-        iIsCDMA: section.querySelector('[data-weather-field="iIsCDMA"]')?.checked ? "1" : "0",
-        weather: value("weather"),
-        weatherType: parseInt(value("weatherType"), 10) || 0,
-        province: value("province"),
-        city: value("city"),
-        adcode: value("adcode"),
-        temperature: value("temperature"),
-        winddirection: value("winddirection"),
-        windpower: value("windpower"),
-        humidity: value("humidity"),
-        daytemp: value("daytemp"),
-        nighttemp: value("nighttemp"),
-        reporttime: weatherWireDateTime(value("reporttime")),
-    };
-}
-
-function weatherDateTimeLocal(value) {
-    return String(value || "").trim().replace(" ", "T").slice(0, 19);
-}
-
-function weatherWireDateTime(value) {
-    const normalized = String(value || "").trim().replace("T", " ");
-    return normalized.length === 16 ? `${normalized}:00` : normalized;
-}
-
 function numericValue(value, fallback = 0) {
     const parsed = parseFloat(String(value ?? ""));
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -2719,152 +2493,7 @@ function formatFourPTouchAlarmTime(value) {
     return raw;
 }
 
-export function takePillsReminderGroup(settings, index, frequencyOptions) {
-    const freqValue = parseInt(String(settings.frequency ?? 1), 10) || 1;
-    const customVisible = freqValue === 3;
-    return `
-        <div class="border rounded p-3 bg-body" data-takepills-reminder-group="${index}">
-            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                <span class="small fw-semibold" data-takepills-reminder-number>Lembrete ${index + 1}</span>
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeTakePillsReminder" aria-label="Remover lembrete">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            </div>
-            <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${esc(settings.time)}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label form-label-sm d-block">Estado</label>
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" role="switch" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}>
-                        <label class="form-check-label" data-switch-label data-switch-on="Ligado" data-switch-off="Desligado">${settings.enabled ? "Ligado" : "Desligado"}</label>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label form-label-sm">Frequ\u00eancia</label>
-                    <select class="form-select" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency>
-                        ${frequencyOptions
-                            .map(
-                                (option) => `
-                            <option value="${esc(String(option.value))}" ${parseInt(String(option.value), 10) === freqValue ? "selected" : ""}>${esc(String(option.label))}</option>
-                        `,
-                            )
-                            .join("")}
-                    </select>
-                </div>
-                <div class="col-md-4 ${customVisible ? "" : "d-none"}" data-takepills-custom-wrapper="${index}">
-                    <label class="form-label form-label-sm">Custom</label>
-                    <input class="form-control" type="text" inputmode="numeric" maxlength="7" pattern="[01]{7}" placeholder="0111110" data-takepills-field="reminderCustom" data-takepills-index="${index}" value="${esc(settings.custom)}">
-                </div>
-            </div>
-        </div>`;
-}
-
-function normalizeTakePillsVoiceEnabled(desired, hasVoiceData) {
-    if (typeof desired?.voiceEnabled === "boolean") {
-        return desired.voiceEnabled;
-    }
-    if (typeof desired?.voiceEnabled === "string") {
-        return boolValue(desired.voiceEnabled, hasVoiceData);
-    }
-    return hasVoiceData;
-}
-
-function normalizeTakePillsReminderSettings(desired) {
-    const base = desired?.reminderSettings;
-
-    if (Array.isArray(base)) {
-        return base.map((item) => normalizeSingleTakePillsReminder(item));
-    }
-
-    if (typeof base === "string" && base.trim() !== "") {
-        return parseTakePillsReminderString(base);
-    }
-
-    if (base && typeof base === "object" && !Array.isArray(base)) {
-        return [normalizeSingleTakePillsReminder(base)];
-    }
-
-    const hasLegacyReminder = [
-        "reminderTime",
-        "reminderEnabled",
-        "reminderFrequency",
-        "reminderCustom",
-    ].some((key) => Object.prototype.hasOwnProperty.call(desired || {}, key));
-    return hasLegacyReminder
-        ? [{
-            time: String(desired?.reminderTime ?? "08:00"),
-            enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true),
-            frequency:
-                parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1,
-            custom: String(desired?.reminderCustom ?? desired?.custom ?? ""),
-        }]
-        : [];
-}
-
-function normalizeSingleTakePillsReminder(item) {
-    if (typeof item === "string") {
-        const parts = item.split("-");
-        return {
-            time: String(parts[0] ?? "08:00"),
-            enabled: boolValue(parts[1] ?? true, true),
-            frequency: parseInt(String(parts[2] ?? 1), 10) || 1,
-            custom: String(parts.slice(3).join("-") ?? ""),
-        };
-    }
-    return {
-        time: String(item.time ?? item.reminderTime ?? "08:00"),
-        enabled: boolValue(item.enabled ?? item.switchState, true),
-        frequency: parseInt(String(item.frequency ?? item.frequencies ?? 1), 10) || 1,
-        custom: String(item.custom ?? item.reminderCustom ?? ""),
-    };
-}
-
-function parseTakePillsReminderString(str) {
-    const parts = str.split("-");
-    const reminders = [];
-    let i = 0;
-    while (i < parts.length) {
-        const time = parts[i++] ?? "08:00";
-        const enabled = boolValue(parts[i++] ?? true, true);
-        const frequency = parseInt(parts[i++] ?? "1", 10) || 1;
-        let custom = "";
-        if (frequency === 3 && i < parts.length) {
-            custom = parts[i++];
-        }
-        reminders.push({ time, enabled, frequency, custom });
-    }
-    return reminders;
-}
-
-function takePillsVoicePreviewSrc(voiceData, voiceMimeType) {
-    const value = String(voiceData || "").trim();
-    if (value === "") {
-        return "";
-    }
-    if (value.startsWith("data:")) {
-        return value;
-    }
-    const mimeType = String(voiceMimeType || "audio/webm").trim() || "audio/webm";
-    return `data:${mimeType};base64,${value}`;
-}
-
-function takePillsFrequencyOptions(meta) {
-    const options = meta?.frequency?.options;
-    if (Array.isArray(options) && options.length) {
-        return options;
-    }
-
-    return [
-        { value: 1, label: "Uma vez" },
-        { value: 2, label: "Diariamente" },
-        { value: 3, label: "Personalizado" },
-    ];
-}
-
-function capabilityForEntry(entry, capabilities) {
+ function capabilityForEntry(entry, capabilities) {
     const key = entry.capabilityKey || entry.key;
     if (!key) {
         return null;

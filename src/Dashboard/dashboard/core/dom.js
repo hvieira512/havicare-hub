@@ -204,7 +204,7 @@ export function cacheElements() {
         apiUsername: document.getElementById("apiUsername"),
         apiUserPassword: document.getElementById("apiUserPassword"),
         apiUserRole: document.getElementById("apiUserRole"),
-        apiUserLicenseId: document.getElementById("apiUserLicenseId"),
+        apiUserLicenseRefId: document.getElementById("apiUserLicenseRefId"),
         apiUserEnabled: document.getElementById("apiUserEnabled"),
         resetApiUserBtn: document.getElementById("resetApiUserBtn"),
         saveApiUserBtn: document.getElementById("saveApiUserBtn"),

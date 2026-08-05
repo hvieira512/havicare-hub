@@ -302,8 +302,10 @@ ob_start();
                             </select>
                         </div>
                         <div class="col-md-5">
-                            <label for="apiUserLicenseId" class="form-label">Licença</label>
-                            <input type="text" class="form-control form-control-sm" id="apiUserLicenseId" placeholder="1001">
+                            <label for="apiUserLicenseRefId" class="form-label">Empresa / licença</label>
+                            <select class="form-select form-select-sm" id="apiUserLicenseRefId">
+                                <option value="">Selecionar licença</option>
+                            </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <div class="form-check form-switch mb-2">
@@ -322,7 +324,7 @@ ob_start();
                                 <tr>
                                     <th>Utilizador</th>
                                     <th>Perfil</th>
-                                    <th>Licença</th>
+                                    <th>Empresa / licença</th>
                                     <th>Estado</th>
                                     <th></th>
                                 </tr>

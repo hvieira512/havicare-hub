@@ -48,6 +48,7 @@ if (!is_numeric($lat) || !is_numeric($lon) || !is_numeric($accuracy) || $bssids 
 
 try {
     $database = new DashboardDatabase($config['database'] ?? []);
+    (new \Hub\Infrastructure\Persistence\DatabaseSchemaGuard($database->pdo()))->assertCurrent();
     $count = PrivateRadioMapFactory::create($database->pdo(), $locationConfig)->seed(
         $bssids,
         (float)$lat,
