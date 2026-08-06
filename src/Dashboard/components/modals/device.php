@@ -42,6 +42,11 @@ ob_start();
                                     <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
                                     <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                 </div>
+                                <div id="deviceGatewayLinksRow" class="d-none">
+                                    <label for="deviceGatewayLinks" class="form-label">Gateways autorizados</label>
+                                    <select class="form-select" id="deviceGatewayLinks" multiple size="4" aria-describedby="deviceGatewayLinksHelp"></select>
+                                    <div class="form-text" id="deviceGatewayLinksHelp">Selecione os gateways autorizados a reportar dados deste sensor.</div>
+                                </div>
                                 <div class="row g-3">
                                     <div class="col-12 col-md-6">
                                         <div>

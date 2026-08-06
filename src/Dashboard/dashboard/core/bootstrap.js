@@ -1,8 +1,11 @@
 import {
+    createDeviceLink as apiCreateDeviceLink,
     deleteDevice as apiDeleteDevice,
+    deleteDeviceLink as apiDeleteDeviceLink,
     getCapabilities as apiGetCapabilities,
     getCompanies as apiGetCompanies,
     getDevice as apiGetDevice,
+    getDevices as apiGetDevices,
     getLicenses as apiGetLicenses,
     requestCapability as apiRequestCapability,
     saveConfiguration as apiSaveConfiguration,
@@ -62,6 +65,11 @@ import {
     supplierProtocol,
     suppliersForDeviceType,
 } from "../devices/list-detail.js";
+import {
+    eligibleGateways,
+    gatewayKeysFromLinks,
+    gatewayLinkChanges,
+} from "../devices/gateway-links.js";
 import {
     allDetailItems,
     applyDetailFilters,
@@ -208,21 +216,114 @@ async function populateLicenseSelectForCompany(companyName) {
     return true;
 }
 
-function handleCompanySelect() {
+function selectedGatewayKeys() {
+    return [...(els.deviceGatewayLinks?.selectedOptions || [])]
+        .map((option) => String(option.value || "").trim().toLowerCase())
+        .filter(Boolean);
+}
+
+function renderGatewayOptions(gateways = [], selectedKeys = []) {
+    if (!els.deviceGatewayLinks) return;
+
+    const selected = new Set(
+        selectedKeys.map((key) => String(key || "").trim().toLowerCase()),
+    );
+    els.deviceGatewayLinks.innerHTML = gateways
+        .map((gateway) => {
+            const key = String(gateway.imei || "").trim().toLowerCase();
+            const model = String(gateway.model || "").trim();
+            const label = model ? `${key} — ${model}` : key;
+            return `<option value="${esc(key)}"${selected.has(key) ? " selected" : ""}>${esc(label)}</option>`;
+        })
+        .join("");
+    els.deviceGatewayLinks.disabled = gateways.length === 0;
+    state.deviceModal.gatewayOptions = gateways;
+    state.deviceModal.selectedGatewayKeys = selectedGatewayKeys();
+}
+
+async function refreshGatewayOptions(selectedKeys = null) {
+    if (!els.deviceGatewayLinksRow || !els.deviceGatewayLinks) return;
+
+    const deviceType = normalizeDeviceType(
+        els.deviceForm.dataset.deviceType || "watch",
+    );
+    const isDiaperSensor = deviceType === "diaper_sensor";
+    els.deviceGatewayLinksRow.classList.toggle("d-none", !isDiaperSensor);
+    if (!isDiaperSensor) {
+        renderGatewayOptions([], []);
+        return;
+    }
+
+    const company = els.deviceCompany.value || "";
+    const licenseId = els.deviceLicenseId.value || "0";
+    const preserved = selectedKeys === null
+        ? selectedGatewayKeys()
+        : selectedKeys;
+    if (!company || licenseId === "0") {
+        renderGatewayOptions([], []);
+        els.deviceGatewayLinksHelp.textContent =
+            "Selecione primeiro a empresa e a licença do sensor.";
+        return;
+    }
+
+    els.deviceGatewayLinks.disabled = true;
+    els.deviceGatewayLinksHelp.textContent = "A carregar gateways...";
+    const response = await apiGetDevices({
+        page: 1,
+        limit: 500,
+        deviceType: "gateway",
+        company,
+        licenseId,
+    });
+    if (response?.error) {
+        renderGatewayOptions(
+            preserved.map((imei) => ({imei})),
+            preserved,
+        );
+        els.deviceGatewayLinks.disabled = true;
+        els.deviceGatewayLinksHelp.textContent =
+            "Não foi possível carregar os gateways disponíveis; as ligações atuais foram preservadas.";
+        return;
+    }
+
+    const gateways = eligibleGateways(response.data || [], company, licenseId);
+    renderGatewayOptions(gateways, preserved);
+    els.deviceGatewayLinksHelp.textContent = gateways.length
+        ? "Selecione um ou mais gateways autorizados a reportar dados deste sensor."
+        : "Não existem gateways para esta empresa e licença.";
+}
+
+async function syncGatewayLinks(sensorKey, currentKeys, desiredKeys) {
+    const changes = gatewayLinkChanges(currentKeys, desiredKeys);
+    for (const gatewayKey of changes.add) {
+        const result = await apiCreateDeviceLink(gatewayKey, sensorKey);
+        if (result?.error) return result.error.message || result.error.code;
+    }
+    for (const gatewayKey of changes.remove) {
+        const result = await apiDeleteDeviceLink(gatewayKey, sensorKey);
+        if (result?.error) return result.error.message || result.error.code;
+    }
+    return "";
+}
+
+async function handleCompanySelect() {
     const companyName = els.deviceCompanySelect.value;
     els.deviceCompany.value = companyName || "";
+    els.deviceLicenseId.value = "0";
     if (companyName) {
-        void populateLicenseSelectForCompany(companyName);
+        await populateLicenseSelectForCompany(companyName);
     } else {
         els.deviceLicenseSelect.innerHTML =
             '<option value="0">Nenhuma</option>';
         els.deviceLicenseSelect.disabled = true;
         els.deviceLicenseId.value = "0";
     }
+    await refreshGatewayOptions([]);
 }
 
 function handleLicenseSelect() {
     els.deviceLicenseId.value = els.deviceLicenseSelect.value || "0";
+    void refreshGatewayOptions([]);
 }
 
 function setDeviceFormError(message = "") {
@@ -280,6 +381,9 @@ async function openAddDevice(source = "") {
         licenseId: "0",
         simNumber: "",
         deviceId: "",
+        linkedGatewayKeys: [],
+        selectedGatewayKeys: [],
+        gatewayOptions: [],
         supplier: "",
         model: "",
         protocol: "",
@@ -318,6 +422,7 @@ async function openAddDevice(source = "") {
         detectedModelName,
         detectedDeviceType,
     );
+    await refreshGatewayOptions([]);
     els.deviceImei.value = detectedDeviceType === "watch" ? identity : "";
     const identityInput = detectedDeviceType === "watch"
         ? els.deviceImei
@@ -346,6 +451,9 @@ async function editDevice(imei, supplier, model) {
         licenseId: "0",
         simNumber: "",
         deviceId: "",
+        linkedGatewayKeys: [],
+        selectedGatewayKeys: [],
+        gatewayOptions: [],
         supplier,
         model,
         protocol: "",
@@ -422,6 +530,12 @@ async function editDevice(imei, supplier, model) {
         els.deviceDeviceId.value = String(device.deviceId || "");
         applyFourPTouchDeviceIdUi();
         state.deviceModal.deviceId = String(device.deviceId || "");
+        const linkedGatewayKeys = gatewayKeysFromLinks(
+            detail.linkedDevices || [],
+        );
+        state.deviceModal.linkedGatewayKeys = linkedGatewayKeys;
+        state.deviceModal.selectedGatewayKeys = linkedGatewayKeys;
+        await refreshGatewayOptions(linkedGatewayKeys);
         state.deviceModal.configurations = detail.configurations || {};
         state.deviceModal.configurationSync = detail.configurationSync || {entries: {}};
         state.deviceModal.capabilities = detail.capabilities || {};
@@ -503,6 +617,10 @@ function renderDeviceTypeSelector(selectedType = "watch") {
     els.deviceImeiRow?.classList.toggle("d-none", !showImeiSim);
     els.deviceSimRow?.classList.toggle("d-none", !showImeiSim);
     els.deviceDeviceIdRow?.classList.toggle("d-none", !showDeviceId);
+    els.deviceGatewayLinksRow?.classList.toggle(
+        "d-none",
+        deviceType !== "diaper_sensor",
+    );
 
     if (deviceType === "ncs") {
         els.deviceDeviceIdLabel.textContent = "Device ID (MAC)";
@@ -715,6 +833,9 @@ async function saveDevice() {
 
     const originalImei = els.deviceImei.dataset.originalImei || "";
     const company = els.deviceCompany.value || "null";
+    const desiredGatewayKeys = deviceType === "diaper_sensor"
+        ? selectedGatewayKeys()
+        : [];
     if (deviceType !== "watch" && (licenseId === "" || licenseId === "0")) {
         alert(
             "É necessário selecionar uma licença para este tipo de dispositivo",
@@ -740,6 +861,25 @@ async function saveDevice() {
         }
         setDeviceFormError(result.error.message || result.error.code);
         return;
+    }
+
+    if (deviceType === "diaper_sensor") {
+        const currentGatewayKeys = originalImei && originalImei !== imei
+            ? []
+            : state.deviceModal.linkedGatewayKeys || [];
+        const linkError = await syncGatewayLinks(
+            imei,
+            currentGatewayKeys,
+            desiredGatewayKeys,
+        );
+        if (linkError) {
+            setDeviceFormError(
+                `Dispositivo guardado, mas não foi possível atualizar os gateways: ${linkError}`,
+            );
+            return;
+        }
+        state.deviceModal.linkedGatewayKeys = desiredGatewayKeys;
+        state.deviceModal.selectedGatewayKeys = desiredGatewayKeys;
     }
 
     if (
@@ -1102,6 +1242,9 @@ function handleDeviceFormInput(event) {
 
 function handleDeviceFormChange(event) {
     setDeviceFormError("");
+    if (event.target === els.deviceGatewayLinks) {
+        state.deviceModal.selectedGatewayKeys = selectedGatewayKeys();
+    }
     if (event.target.matches("[data-phone-country]")) {
         syncPhoneControl(event.target);
         void syncDeviceModalContext();
@@ -1475,13 +1618,14 @@ function handleDeviceSupplierClick(event) {
     if (button) renderDeviceSelectors(button.dataset.value, "");
 }
 
-function handleDeviceTypeClick(event) {
+async function handleDeviceTypeClick(event) {
     const button = event.target.closest('[data-action="selectDeviceType"]');
     if (!button) return;
 
     const deviceType = normalizeDeviceType(button.dataset.value);
     renderDeviceTypeSelector(deviceType);
-    renderDeviceSelectors("", "", deviceType);
+    await renderDeviceSelectors("", "", deviceType);
+    await refreshGatewayOptions([]);
 }
 
 function handleDeviceModelClick(event) {

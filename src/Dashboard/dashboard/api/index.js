@@ -1,6 +1,8 @@
 export {authHeaders, formRequest, requestJson, withQuery} from './http.js';
 export {
+    createDeviceLink,
     deleteDevice,
+    deleteDeviceLink,
     getDevice,
     getDevices,
     requestCapability,
