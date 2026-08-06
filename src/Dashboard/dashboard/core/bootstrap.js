@@ -217,32 +217,91 @@ async function populateLicenseSelectForCompany(companyName) {
 }
 
 function selectedGatewayKeys() {
-    return [...(els.deviceGatewayLinks?.selectedOptions || [])]
-        .map((option) => String(option.value || "").trim().toLowerCase())
+    return [
+        ...(els.deviceGatewayLinksList?.querySelectorAll(
+            "input[type=checkbox][data-gateway-key]",
+        ) || []),
+    ]
+        .filter((input) => input.checked)
+        .map((input) => String(input.dataset.gatewayKey || "").trim().toLowerCase())
         .filter(Boolean);
 }
 
-function renderGatewayOptions(gateways = [], selectedKeys = []) {
-    if (!els.deviceGatewayLinks) return;
+function syncGatewayLinkButtons() {
+    const inputs = [
+        ...(els.deviceGatewayLinksList?.querySelectorAll(
+            "input[type=checkbox][data-gateway-key]",
+        ) || []),
+    ];
+    if (els.deviceGatewayLinksSelectAllBtn) {
+        els.deviceGatewayLinksSelectAllBtn.disabled =
+            inputs.length === 0 || inputs.every((input) => input.checked);
+    }
+    if (els.deviceGatewayLinksClearBtn) {
+        els.deviceGatewayLinksClearBtn.disabled =
+            inputs.length === 0 || inputs.every((input) => !input.checked);
+    }
+}
+
+function updateGatewayLinkSelection() {
+    state.deviceModal.selectedGatewayKeys = selectedGatewayKeys();
+    if (els.deviceGatewayLinksCount) {
+        els.deviceGatewayLinksCount.textContent = String(
+            state.deviceModal.selectedGatewayKeys.length,
+        );
+    }
+    syncGatewayLinkButtons();
+}
+
+function setGatewayLinksDisabled(disabled) {
+    els.deviceGatewayLinksList
+        ?.querySelectorAll("input[type=checkbox]")
+        .forEach((input) => {
+            input.disabled = disabled;
+        });
+    if (disabled) {
+        if (els.deviceGatewayLinksSelectAllBtn) {
+            els.deviceGatewayLinksSelectAllBtn.disabled = true;
+        }
+        if (els.deviceGatewayLinksClearBtn) {
+            els.deviceGatewayLinksClearBtn.disabled = true;
+        }
+    } else {
+        syncGatewayLinkButtons();
+    }
+}
+
+function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") {
+    const list = els.deviceGatewayLinksList;
+    if (!list) return;
 
     const selected = new Set(
         selectedKeys.map((key) => String(key || "").trim().toLowerCase()),
     );
-    els.deviceGatewayLinks.innerHTML = gateways
-        .map((gateway) => {
-            const key = String(gateway.imei || "").trim().toLowerCase();
-            const model = String(gateway.model || "").trim();
-            const label = model ? `${key} — ${model}` : key;
-            return `<option value="${esc(key)}"${selected.has(key) ? " selected" : ""}>${esc(label)}</option>`;
-        })
-        .join("");
-    els.deviceGatewayLinks.disabled = gateways.length === 0;
+    if (gateways.length === 0) {
+        list.innerHTML = emptyText
+            ? `<li class="list-group-item small text-secondary">${esc(emptyText)}</li>`
+            : "";
+    } else {
+        list.innerHTML = gateways
+            .map((gateway) => {
+                const key = String(gateway.imei || "").trim().toLowerCase();
+                const model = String(gateway.model || "").trim();
+                const label = model ? `${key} — ${model}` : key;
+                const inputId = `deviceGateway-${key}`;
+                return `<li class="list-group-item d-flex align-items-center">
+                    <input class="form-check-input me-1" type="checkbox" id="${inputId}" data-gateway-key="${esc(key)}"${selected.has(key) ? " checked" : ""}>
+                    <label class="form-check-label stretched-link" for="${inputId}">${esc(label)}</label>
+                </li>`;
+            })
+            .join("");
+    }
     state.deviceModal.gatewayOptions = gateways;
-    state.deviceModal.selectedGatewayKeys = selectedGatewayKeys();
+    updateGatewayLinkSelection();
 }
 
 async function refreshGatewayOptions(selectedKeys = null) {
-    if (!els.deviceGatewayLinksRow || !els.deviceGatewayLinks) return;
+    if (!els.deviceGatewayLinksRow || !els.deviceGatewayLinksList) return;
 
     const deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
@@ -260,13 +319,17 @@ async function refreshGatewayOptions(selectedKeys = null) {
         ? selectedGatewayKeys()
         : selectedKeys;
     if (!company || licenseId === "0") {
-        renderGatewayOptions([], []);
+        renderGatewayOptions(
+            [],
+            [],
+            "Selecione primeiro a empresa e a licença do sensor.",
+        );
         els.deviceGatewayLinksHelp.textContent =
             "Selecione primeiro a empresa e a licença do sensor.";
         return;
     }
 
-    els.deviceGatewayLinks.disabled = true;
+    setGatewayLinksDisabled(true);
     els.deviceGatewayLinksHelp.textContent = "A carregar gateways...";
     const response = await apiGetDevices({
         page: 1,
@@ -280,7 +343,7 @@ async function refreshGatewayOptions(selectedKeys = null) {
             preserved.map((imei) => ({imei})),
             preserved,
         );
-        els.deviceGatewayLinks.disabled = true;
+        setGatewayLinksDisabled(true);
         els.deviceGatewayLinksHelp.textContent =
             "Não foi possível carregar os gateways disponíveis; as ligações atuais foram preservadas.";
         return;
@@ -964,6 +1027,22 @@ function bindEvents() {
     });
     els.deviceCompanySelect.addEventListener("change", handleCompanySelect);
     els.deviceLicenseSelect.addEventListener("change", handleLicenseSelect);
+    els.deviceGatewayLinksSelectAllBtn.addEventListener("click", () => {
+        els.deviceGatewayLinksList
+            ?.querySelectorAll("input[data-gateway-key]")
+            .forEach((input) => {
+                input.checked = true;
+            });
+        updateGatewayLinkSelection();
+    });
+    els.deviceGatewayLinksClearBtn.addEventListener("click", () => {
+        els.deviceGatewayLinksList
+            ?.querySelectorAll("input[data-gateway-key]")
+            .forEach((input) => {
+                input.checked = false;
+            });
+        updateGatewayLinkSelection();
+    });
     els.deviceListLimit.addEventListener("change", handleDeviceListLimitChange);
     els.deviceListSearch.addEventListener("input", handleDeviceListSearchInput);
     els.deviceTypeFilter.addEventListener("change", handleDeviceFilterChange);
@@ -1242,8 +1321,8 @@ function handleDeviceFormInput(event) {
 
 function handleDeviceFormChange(event) {
     setDeviceFormError("");
-    if (event.target === els.deviceGatewayLinks) {
-        state.deviceModal.selectedGatewayKeys = selectedGatewayKeys();
+    if (event.target.matches("#deviceGatewayLinksList input[data-gateway-key]")) {
+        updateGatewayLinkSelection();
     }
     if (event.target.matches("[data-phone-country]")) {
         syncPhoneControl(event.target);
@@ -2339,6 +2418,9 @@ function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength
 
 export async function startDashboard() {
     els = cacheElements();
+    if (els.deviceGatewayLinksList) {
+        els.deviceGatewayLinksList.style.maxHeight = "16rem";
+    }
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceSelectorModal = new bootstrap.Modal(
         document.getElementById("deviceSelectorModal"),

@@ -42,11 +42,6 @@ ob_start();
                                     <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
                                     <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                 </div>
-                                <div id="deviceGatewayLinksRow" class="d-none">
-                                    <label for="deviceGatewayLinks" class="form-label">Gateways autorizados</label>
-                                    <select class="form-select" id="deviceGatewayLinks" multiple size="4" aria-describedby="deviceGatewayLinksHelp"></select>
-                                    <div class="form-text" id="deviceGatewayLinksHelp">Selecione os gateways autorizados a reportar dados deste sensor.</div>
-                                </div>
                                 <div class="row g-3">
                                     <div class="col-12 col-md-6">
                                         <div>
@@ -66,6 +61,18 @@ ob_start();
                                         </div>
                                         <input type="hidden" id="deviceLicenseId" value="0">
                                     </div>
+                                </div>
+                                <div id="deviceGatewayLinksRow" class="d-none">
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <span class="form-label mb-0">Gateways autorizados</span>
+                                        <span class="badge text-bg-primary rounded-pill" id="deviceGatewayLinksCount">0</span>
+                                    </div>
+                                    <ul class="list-group overflow-auto mt-1" id="deviceGatewayLinksList" aria-describedby="deviceGatewayLinksHelp"></ul>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="deviceGatewayLinksSelectAllBtn">Selecionar todos</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deviceGatewayLinksClearBtn">Limpar</button>
+                                    </div>
+                                    <div class="form-text" id="deviceGatewayLinksHelp">Selecione os gateways autorizados a reportar dados deste sensor.</div>
                                 </div>
                                 <div id="deviceImeiRow">
                                     <label for="deviceImei" class="form-label">IMEI</label>
