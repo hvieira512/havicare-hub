@@ -160,7 +160,55 @@ class DeviceService
             'enabledCapabilityKeys' => $modelRow !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
                 : CapabilityCatalog::keysForProtocol($protocol),
+            'linkedDevices' => $this->db->gatewayDeviceLinks->forDevice($imei),
         ]);
+    }
+
+    public function links(string $imei, ?ApiAuthContext $auth = null): array
+    {
+        if (!$this->canAccessDevice($imei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+        return ['data' => $this->db->gatewayDeviceLinks->forDevice($imei)];
+    }
+
+    public function createLink(string $imei, string $linkedImei, ?ApiAuthContext $auth = null): array
+    {
+        $validation = $this->validateGatewayLink($imei, $linkedImei, $auth);
+        if (isset($validation['error'])) {
+            return $validation;
+        }
+        $this->db->gatewayDeviceLinks->upsert($imei, $linkedImei);
+        return ['status' => 'ok', 'gatewayDeviceKey' => $imei, 'linkedDeviceKey' => $linkedImei];
+    }
+
+    public function deleteLink(string $imei, string $linkedImei, ?ApiAuthContext $auth = null): array
+    {
+        $validation = $this->validateGatewayLink($imei, $linkedImei, $auth);
+        if (isset($validation['error'])) {
+            return $validation;
+        }
+        $this->db->gatewayDeviceLinks->delete($imei, $linkedImei);
+        return ['status' => 'ok', 'gatewayDeviceKey' => $imei, 'linkedDeviceKey' => $linkedImei];
+    }
+
+    private function validateGatewayLink(string $imei, string $linkedImei, ?ApiAuthContext $auth): array
+    {
+        $gateway = $this->whitelist->getMetadata($imei);
+        $linked = $this->whitelist->getMetadata($linkedImei);
+        if ($gateway === null || $linked === null || !$this->canAccessDevice($imei, $auth) || !$this->canAccessDevice($linkedImei, $auth)) {
+            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+        }
+        if (($gateway['deviceType'] ?? '') !== 'gateway' || ($linked['deviceType'] ?? '') !== 'diaper_sensor') {
+            return ['error' => ['code' => 'invalid_link', 'message' => 'A gateway can only link to a diaper sensor']];
+        }
+        if (
+            (string)($gateway['company'] ?? 'null') !== (string)($linked['company'] ?? 'null')
+            || (string)($gateway['licenseId'] ?? '0') !== (string)($linked['licenseId'] ?? '0')
+        ) {
+            return ['error' => ['code' => 'invalid_link', 'message' => 'Linked devices must belong to the same company and license']];
+        }
+        return ['status' => 'ok'];
     }
 
     public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
@@ -574,7 +622,7 @@ class DeviceService
             return ['error' => ['code' => 'device_exists', 'message' => 'Device with this IMEI already exists']];
         }
         if ($licenseId === 0 && $deviceType !== 'watch') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
+            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
         }
         $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
         $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
@@ -662,7 +710,7 @@ class DeviceService
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_license_id',
             ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for NCS and Radars']];
+            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
         }
         $deviceId = $this->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
         if ($newImei !== $imei) {

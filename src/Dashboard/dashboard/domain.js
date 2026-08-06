@@ -2,6 +2,8 @@ export const deviceTypeOptions = [
     { value: "watch", label: "Relógio" },
     { value: "ncs", label: "NCS" },
     { value: "radar", label: "Radar" },
+    { value: "gateway", label: "Gateway" },
+    { value: "diaper_sensor", label: "Medidor de fraldas" },
 ];
 
 export function normalizeDeviceType(deviceType) {

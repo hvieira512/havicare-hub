@@ -3066,6 +3066,27 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('invalid_request', $legacyCapabilities['error']['code'] ?? null);
     }
 
+    public function testDeviceGroupedRoutesCanLinkGatewayAndDiaperSensor(): void
+    {
+        [$api] = $this->makeApi();
+        foreach ([
+            ['imei' => 'd48c49f7909c', 'supplier' => 'MOKO', 'model' => 'MKGW3'],
+            ['imei' => 'eec5000202f9', 'supplier' => 'MONIT', 'model' => 'MECS-PRO'],
+        ] as $device) {
+            $result = $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
+            self::assertSame('ok', $result['status'] ?? null);
+        }
+
+        self::assertSame('ok', $api->createLink('d48c49f7909c', 'eec5000202f9')['status'] ?? null);
+        $links = $api->links('d48c49f7909c');
+        self::assertSame('eec5000202f9', $links['data'][0]['deviceKey'] ?? null);
+        self::assertSame('diaper_sensor', $links['data'][0]['deviceType'] ?? null);
+        self::assertSame('eec5000202f9', $api->show('d48c49f7909c')['linkedDevices'][0]['deviceKey'] ?? null);
+
+        self::assertSame('ok', $api->deleteLink('d48c49f7909c', 'eec5000202f9')['status'] ?? null);
+        self::assertSame([], $api->links('d48c49f7909c')['data'] ?? null);
+    }
+
     /**
      * @return array{0: DeviceService, 1: ApiDataAccess, 2: DashboardStore}
      */

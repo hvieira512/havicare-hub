@@ -27,7 +27,7 @@ final class SupplierDeviceTypeRepository
                     sdt.updated_at
                 FROM supplier_device_types sdt
                 INNER JOIN suppliers s ON s.id = sdt.supplier_id
-                ORDER BY FIELD(sdt.device_type, 'watch', 'ncs', 'radar'), s.name
+                ORDER BY FIELD(sdt.device_type, 'watch', 'ncs', 'radar', 'gateway', 'diaper_sensor'), s.name
             ")
             ->fetchAll());
     }

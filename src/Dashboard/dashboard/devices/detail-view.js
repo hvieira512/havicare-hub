@@ -67,7 +67,11 @@ function renderSelection() {
 
     const device = state.selectedDetail.device;
     const deviceModel = state.selectedDetail.model;
-    renderSelectedDeviceSummary(device, deviceModel);
+    renderSelectedDeviceSummary(
+        device,
+        deviceModel,
+        state.selectedDetail.linkedDevices || [],
+    );
 
     if (!state.detailFilters.from) {
         const sevenDaysAgo = new Date();
@@ -163,7 +167,7 @@ function telemetryRequestCards(telemetryCapabilities = {}) {
         .filter((group) => group.cards.length);
 }
 
-function renderSelectedDeviceSummary(device, deviceModel) {
+function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     const supplier = String(deviceModel?.supplier || "");
     const model = String(deviceModel?.internalModel || "");
     const image = String(deviceModel?.image || "");
@@ -181,6 +185,15 @@ function renderSelectedDeviceSummary(device, deviceModel) {
 
     if (device.simNumber) {
         facts.push({ label: "SIM", value: String(device.simNumber) });
+    }
+    if (linkedDevices.length) {
+        facts.push({
+            label: "Dispositivos ligados",
+            value: linkedDevices
+                .map((linked) => String(linked.deviceKey || ""))
+                .filter(Boolean)
+                .join(", "),
+        });
     }
 
     els.selectedDevicePreview.innerHTML = image

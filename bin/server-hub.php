@@ -16,6 +16,8 @@ use Hub\HubTcpIngress;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
 use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
+use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
+use Hub\Ingress\Mqtt\Moko\RedisObservationStateStore;
 use Hub\RedisPendingDownlinkQueue;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
@@ -43,6 +45,7 @@ $redisConfig = $config['redis'];
 $databaseConfig = $config['database'];
 $dashboardConfig = $config['dashboard'];
 $ncsConfig = $config['ncs'];
+$mokoConfig = $config['moko'];
 $qinglanstConfig = $config['qinglanst'];
 $locationResolutionConfig = $config['location_resolution'];
 $downlinkQueueTtlSeconds = $config['hub']['downlink_queue_ttl_seconds'];
@@ -174,6 +177,7 @@ $hubServer = new DeviceHubServer(
 );
 $downlink = null;
 $ncsIngress = null;
+$mokoIngress = null;
 $downlinkTopicFilter = $mqttBridge->downlinkTopicFilter();
 $ncsTopicFilter = trim($ncsConfig['topic_filter']);
 $subscriberRepository = new MemoryRepository();
@@ -236,6 +240,45 @@ if ($ncsConfig['enabled']) {
         commercialModelResolver: $commercialModelResolver
     );
     $connectMqttClient($ncsSubscriber, false);
+}
+
+$mokoTopicFilter = trim($mokoConfig['topic_filter']);
+$mokoSubscriber = null;
+if ($mokoConfig['enabled']) {
+    $mokoSubscriberRepository = new MemoryRepository();
+    $mokoSubscriberRepository->addSubscription(new Subscription(
+        $mokoTopicFilter,
+        MqttClient::QOS_AT_LEAST_ONCE,
+        static function (string $topic, string $message) use (&$mokoIngress): void {
+            $mokoIngress?->handleReceivedMessage($topic, $message);
+        }
+    ));
+    $mokoSubscriber = $createMqttClient('moko-sub', true, $mokoSubscriberRepository);
+    $mokoIngress = new MokoBridge(
+        $mokoSubscriber,
+        $whitelist,
+        $mqttBridge,
+        $dataAccess->gatewayDeviceLinks,
+        new RedisObservationStateStore(new RedisClient($redisParameters)),
+        $mokoTopicFilter,
+        function () use (&$mokoIngress, $createMqttClient, $connectMqttClient, $mokoTopicFilter): MqttClient {
+            $repository = new MemoryRepository();
+            $repository->addSubscription(new Subscription(
+                $mokoTopicFilter,
+                MqttClient::QOS_AT_LEAST_ONCE,
+                static function (string $topic, string $message) use (&$mokoIngress): void {
+                    $mokoIngress?->handleReceivedMessage($topic, $message);
+                }
+            ));
+            return $connectMqttClient($createMqttClient('moko-sub', true, $repository), false);
+        },
+        $dashboardStore,
+        $commercialModelResolver,
+        $mokoConfig['dedupe_ttl_seconds'],
+        $mokoConfig['telemetry_refresh_seconds'],
+        $mokoConfig['idle_timeout_seconds'],
+    );
+    $connectMqttClient($mokoSubscriber, false);
 }
 
 $qinglanstIngress = null;
@@ -346,6 +389,15 @@ if ($ncsIngress !== null) {
     }
 }
 
+if ($mokoIngress !== null) {
+    try {
+        $mokoIngress->start();
+    } catch (\Throwable $e) {
+        Logger::channel('hub')->error('MOKO gateway ingress subscription failed: ' . $e->getMessage());
+        exit(1);
+    }
+}
+
 if ($qinglanstIngress !== null) {
     try {
         $qinglanstIngress->start();
@@ -369,6 +421,16 @@ if ($ncsIngress !== null) {
             $ncsIngress->tick(0.001);
         } catch (\Throwable $e) {
             Logger::channel('hub')->error('NCS ingress loop failed: ' . $e->getMessage());
+        }
+    });
+}
+
+if ($mokoIngress !== null) {
+    $loop->addPeriodicTimer(0.05, function () use ($mokoIngress): void {
+        try {
+            $mokoIngress->tick(0.001);
+        } catch (\Throwable $e) {
+            Logger::channel('hub')->error('MOKO gateway ingress loop failed: ' . $e->getMessage());
         }
     });
 }
@@ -409,6 +471,9 @@ Logger::channel('hub')->info('MQTT raw topics: ' . $mqttBridge->topic('{licenseI
 Logger::channel('hub')->info('MQTT downlink topics: ' . $mqttBridge->topic('{licenseId}/watch/{deviceKey}/downlink'));
 if ($ncsIngress !== null) {
     Logger::channel('hub')->info("NCS ingress topics: {$ncsTopicFilter} -> " . $mqttBridge->topic('{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}'));
+}
+if ($mokoIngress !== null) {
+    Logger::channel('hub')->info("MOKO MKGW3 ingress topics: {$mokoTopicFilter} -> " . $mqttBridge->topic('{company}/{licenseId}/gateway/{gatewayMac}/{raw|status|events|telemetry}'));
 }
 if ($qinglanstIngress !== null) {
     Logger::channel('hub')->info("Qinglanst radar ingress: {$qinglanstTopicFilter} -> " . $mqttBridge->topic('{company}/{licenseId}/radar/{deviceUid}/{telemetry|events}'));

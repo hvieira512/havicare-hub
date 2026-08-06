@@ -105,6 +105,18 @@ final class ProtocolRegistry
                     'fieldConstraints' => [],
                 ],
             ],
+            'moko-mkgw3' => [
+                'label' => 'MOKO',
+                'deviceType' => 'gateway',
+                'supportsConfigCatalog' => false,
+                'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
+            ],
+            'monit-mecs-pro-ble' => [
+                'label' => 'MONIT',
+                'deviceType' => 'diaper_sensor',
+                'supportsConfigCatalog' => false,
+                'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
+            ],
         ];
     }
 

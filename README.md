@@ -348,6 +348,43 @@ The raw payload keeps:
 - The topic namespace already identifies the NCS family, so normalized `type` values stay flat and do not use dotted prefixes like `ncs.pager.help_call`.
 - The generic capability exposed for this family is `pager_call` in `alarms`, with the display label `Chamada de enfermagem`.
 
+## MOKO MKGW3 and MONIT MECS Pro
+
+The MKGW3 sends JSON to the existing broker topic below. This is an ingress topic owned by the gateway configuration; it is not a canonical hub output topic:
+
+```text
+havicare-hub/null/0/gw/{gatewayMac}/raw
+```
+
+Both the topic MAC and `device_info.mac` must identify the same registered `gateway` device. The hub currently accepts MKGW3 message `3004` (gateway heartbeat/network state) and `3070` (BLE scan observations). Unsupported or malformed messages do not produce normalized records.
+
+Register the gateway and every MONIT sensor through the existing `/api/devices` API using the catalog models `MOKO/MKGW3` and `MONIT/MECS-PRO`. A sensor observation is accepted only when both devices share the same company and license and an enabled link exists in `gateway_device_links`:
+
+```text
+GET    /api/devices/{gatewayMac}/links
+POST   /api/devices/{gatewayMac}/links/{sensorMac}
+DELETE /api/devices/{gatewayMac}/links/{sensorMac}
+```
+
+Canonical gateway output is published to:
+
+```text
+{company}/{licenseId}/gateway/{gatewayMac}/raw
+{company}/{licenseId}/gateway/{gatewayMac}/telemetry
+{company}/{licenseId}/gateway/{gatewayMac}/events
+{company}/{licenseId}/gateway/{gatewayMac}/status
+```
+
+Every valid `3004` or `3070` message produces a decoded gateway `raw` record. A `3004` additionally produces `connectivity` telemetry with `data.interface` (`ethernet`, `wifi`, or `ethernet_wifi`) and, when supplied, `data.signalStrengthDbm`. Gateway lifecycle produces retained `online`/`offline` status and `device.connected`/`device.disconnected` events. The hub considers an active gateway offline after `MOKO_GATEWAY_IDLE_TIMEOUT_SECONDS` without ingress.
+
+An authorized MONIT BLE observation produces three independent telemetry records on `{company}/{licenseId}/diaper_sensor/{sensorMac}/telemetry`:
+
+- `battery`: `data.percent`
+- `diaper_moisture`: the ten sensor channels (`baseline`, `value`, and `delta`), `affectedChannelCount`, and `maximumDelta`
+- `diaper_condition`: only `data.state`, with `clean`, `attention`, or `change_required`
+
+The sensor publishes a `change_required` event to `{company}/{licenseId}/diaper_sensor/{sensorMac}/events` only when its condition transitions into that state. Redis suppresses the same BLE advertisement received by multiple linked gateways during the configured deduplication window and stores the last normalized capability/condition state; MySQL remains the durable source of truth for devices and links.
+
 ## MQTT Topics
 
 Uplink from device to MQTT:
@@ -359,6 +396,12 @@ Uplink from device to MQTT:
 {company}/{licenseId}/watch/{deviceKey}/status
 {company}/{licenseId}/radar/{deviceKey}/telemetry
 {company}/{licenseId}/radar/{deviceKey}/events
+{company}/{licenseId}/gateway/{deviceKey}/raw
+{company}/{licenseId}/gateway/{deviceKey}/telemetry
+{company}/{licenseId}/gateway/{deviceKey}/events
+{company}/{licenseId}/gateway/{deviceKey}/status
+{company}/{licenseId}/diaper_sensor/{deviceKey}/telemetry
+{company}/{licenseId}/diaper_sensor/{deviceKey}/events
 {licenseId}/ncs/{deviceKey}/raw
 {licenseId}/ncs/{deviceKey}/telemetry
 {licenseId}/ncs/{deviceKey}/events
@@ -379,7 +422,7 @@ Topic semantics:
 
 - `company` is the tenant namespace for watch devices. Unassociated devices use `null`.
 - `licenseId` is the tenant license scope for watches. Unassociated devices use `0`.
-- `watch` is the TCP-ingress device type. `radar` and `ncs` are MQTT-ingress device types.
+- `watch` is the TCP-ingress device type. `radar`, `gateway`, `diaper_sensor`, and `ncs` are MQTT/BLE-ingress device types.
 - `deviceKey` is the canonical topic identity for watches and NCS. For Qinglanst radars the hub republishes on the upstream radar UID from the source topic.
 
 ## Telemetry Payload Contract
@@ -389,6 +432,8 @@ Telemetry messages are published to:
 ```text
 {company}/{licenseId}/watch/{deviceKey}/telemetry
 {company}/{licenseId}/radar/{deviceKey}/telemetry
+{company}/{licenseId}/gateway/{deviceKey}/telemetry
+{company}/{licenseId}/diaper_sensor/{deviceKey}/telemetry
 {licenseId}/ncs/{deviceKey}/telemetry
 ```
 

@@ -514,6 +514,11 @@ function renderDeviceTypeSelector(selectedType = "watch") {
         els.deviceDeviceIdHelp.textContent =
             "Identificador do dispositivo radar no protocolo.";
         els.deviceDeviceId.placeholder = "ID do dispositivo";
+    } else if (deviceType === "gateway" || deviceType === "diaper_sensor") {
+        els.deviceDeviceIdLabel.textContent = "MAC";
+        els.deviceDeviceIdHelp.textContent =
+            "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).";
+        els.deviceDeviceId.placeholder = "d48c49f7909c";
     } else {
         els.deviceDeviceIdLabel.textContent = "Device ID";
         els.deviceDeviceIdHelp.textContent =
@@ -684,7 +689,7 @@ async function saveDevice() {
             ? ""
             : els.deviceDeviceId.value.trim();
 
-    if (deviceType === "ncs" || deviceType === "radar") {
+    if (deviceType !== "watch") {
         if (!deviceId || !supplier || !model) {
             alert("Device ID, fornecedor e modelo são obrigatórios");
             return;

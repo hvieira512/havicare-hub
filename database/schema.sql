@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS models (
     supplier_id BIGINT UNSIGNED NOT NULL,
     internal_model VARCHAR(191) NOT NULL,
     commercial_name VARCHAR(191) NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL DEFAULT 'watch',
     image_path VARCHAR(255) NOT NULL DEFAULT '',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS models (
 
 CREATE TABLE IF NOT EXISTS supplier_device_types (
     supplier_id BIGINT UNSIGNED NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar') NOT NULL,
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (supplier_id, device_type),
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS supplier_device_types (
 
 CREATE TABLE IF NOT EXISTS capabilities (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL DEFAULT 'watch',
     section ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL,
     capability_key VARCHAR(191) NOT NULL,
     label VARCHAR(191) NOT NULL,
@@ -65,13 +65,25 @@ CREATE TABLE IF NOT EXISTS whitelist (
     imei VARCHAR(64) NOT NULL PRIMARY KEY,
     supplier VARCHAR(191) NOT NULL,
     model VARCHAR(191) NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar') NOT NULL DEFAULT 'watch',
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL DEFAULT 'watch',
     license_id INT UNSIGNED NOT NULL DEFAULT 0,
     sim_number VARCHAR(64) NOT NULL DEFAULT '',
     device_id VARCHAR(191) NOT NULL DEFAULT '',
     company VARCHAR(191) NOT NULL DEFAULT 'null',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS gateway_device_links (
+    gateway_device_key VARCHAR(64) NOT NULL,
+    linked_device_key VARCHAR(64) NOT NULL,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (gateway_device_key, linked_device_key),
+    KEY idx_gateway_device_links_linked (linked_device_key, enabled),
+    CONSTRAINT fk_gateway_device_links_gateway FOREIGN KEY (gateway_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE,
+    CONSTRAINT fk_gateway_device_links_device FOREIGN KEY (linked_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS device_configurations (

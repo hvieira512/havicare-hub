@@ -1,0 +1,50 @@
+<?php
+
+namespace Hub\Ingress\Mqtt\Moko;
+
+use Predis\ClientInterface;
+
+final class RedisObservationStateStore implements ObservationStateStore
+{
+    public function __construct(
+        private ClientInterface $redis,
+        private string $prefix = 'hub:moko',
+    ) {
+    }
+
+    public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool
+    {
+        $result = $this->redis->set(
+            "{$this->prefix}:dedupe:{$deviceKey}:{$fingerprint}",
+            '1',
+            'EX',
+            max(1, $ttlSeconds),
+            'NX'
+        );
+        return strtoupper((string)$result) === 'OK';
+    }
+
+    public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds): bool
+    {
+        $key = "{$this->prefix}:last:{$deviceKey}:{$capability}";
+        $fingerprint = hash('sha256', json_encode($payload['data'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '');
+        $now = time();
+        $stored = json_decode((string)($this->redis->get($key) ?? ''), true);
+        if (is_array($stored) && ($stored['fingerprint'] ?? '') === $fingerprint && $now - (int)($stored['publishedAt'] ?? 0) < max(1, $refreshSeconds)) {
+            return false;
+        }
+        $this->redis->set($key, json_encode(['fingerprint' => $fingerprint, 'publishedAt' => $now], JSON_THROW_ON_ERROR));
+        return true;
+    }
+
+    public function transitionCondition(string $deviceKey, string $condition): ?string
+    {
+        $key = "{$this->prefix}:condition:{$deviceKey}";
+        $previous = $this->redis->get($key);
+        $this->redis->set($key, $condition);
+        if (!is_string($previous) || $previous === '' || $previous === $condition) {
+            return null;
+        }
+        return $previous;
+    }
+}

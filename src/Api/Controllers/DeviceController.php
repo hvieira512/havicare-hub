@@ -86,6 +86,24 @@ final class DeviceController
         return $this->json->respond($result, $this->status->map($result));
     }
 
+    public function links(array $params, ServerRequestInterface $request): Response
+    {
+        $result = $this->service->links($params['imei'], RequestContext::auth($request));
+        return $this->json->respond($result, $this->status->map($result));
+    }
+
+    public function createLink(array $params, ServerRequestInterface $request): Response
+    {
+        $result = $this->service->createLink($params['imei'], $params['linkedImei'], RequestContext::auth($request));
+        return $this->json->respond($result, $this->status->map($result, 201));
+    }
+
+    public function deleteLink(array $params, ServerRequestInterface $request): Response
+    {
+        $result = $this->service->deleteLink($params['imei'], $params['linkedImei'], RequestContext::auth($request));
+        return $this->json->respond($result, $this->status->map($result));
+    }
+
     public function patchAssociation(array $params, ServerRequestInterface $request): Response
     {
         $result = $this->service->patchAssociation($params['imei'], RequestContext::requestBody($request), RequestContext::auth($request));

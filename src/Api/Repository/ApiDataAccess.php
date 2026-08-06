@@ -19,6 +19,7 @@ final class ApiDataAccess
         public readonly CompanyRepository $companies,
         public readonly LicenseRepository $licenses,
         public readonly DashboardNotificationRepository $dashboardNotifications,
+        public readonly GatewayDeviceLinkRepository $gatewayDeviceLinks,
     ) {
     }
 
@@ -39,6 +40,7 @@ final class ApiDataAccess
             new CompanyRepository($pdo),
             new LicenseRepository($pdo),
             new DashboardNotificationRepository($pdo),
+            new GatewayDeviceLinkRepository($pdo),
         );
     }
 }

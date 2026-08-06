@@ -50,6 +50,8 @@ final class ProtocolRegistryTest extends TestCase
         self::assertContains('wonlex-json', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('voerka-ncs', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('qinglanst-radar', ProtocolRegistry::protocolsWithConfigCatalog());
+        self::assertNotContains('moko-mkgw3', ProtocolRegistry::protocolsWithConfigCatalog());
+        self::assertNotContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());
     }
 
     public function testForSupplierIsDerivedFromTheRegistryTable(): void
@@ -57,6 +59,8 @@ final class ProtocolRegistryTest extends TestCase
         self::assertSame('four-p-touch', ProtocolRegistry::forSupplier('4P Touch'));
         self::assertSame('vivistar-iw', ProtocolRegistry::forSupplier('Vivistar'));
         self::assertSame('wonlex-json', ProtocolRegistry::forSupplier('Wonlex'));
+        self::assertSame('moko-mkgw3', ProtocolRegistry::forSupplier('MOKO'));
+        self::assertSame('monit-mecs-pro-ble', ProtocolRegistry::forSupplier('MONIT'));
         self::assertSame('', ProtocolRegistry::forSupplier('Unknown'));
     }
 }

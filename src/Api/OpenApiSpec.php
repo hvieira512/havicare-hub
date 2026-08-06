@@ -15,6 +15,13 @@ class OpenApiSpec
             'description' => 'Device IMEI',
             'schema' => ['type' => 'string', 'example' => '865028000000306'],
         ];
+        $linkedImeiParam = [
+            'name' => 'linkedImei',
+            'in' => 'path',
+            'required' => true,
+            'description' => 'Linked device canonical key',
+            'schema' => ['type' => 'string', 'example' => 'eec5000202f9'],
+        ];
 
         $supplierIdParam = [
             'name' => 'id',
@@ -219,6 +226,38 @@ class OpenApiSpec
                             ],
                             '400' => ['$ref' => '#/components/responses/Error'],
                             '403' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/devices/{imei}/links' => [
+                    'get' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'List devices linked to a gateway or sensor',
+                        'parameters' => [$imeiParam],
+                        'responses' => [
+                            '200' => ['description' => 'Linked devices', 'content' => ['application/json' => ['schema' => ['type' => 'object']]]],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                ],
+                '/api/devices/{imei}/links/{linkedImei}' => [
+                    'post' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Link a diaper sensor to a gateway',
+                        'parameters' => [$imeiParam, $linkedImeiParam],
+                        'responses' => [
+                            '201' => ['description' => 'Device link created', 'content' => ['application/json' => ['schema' => ['type' => 'object']]]],
+                            '400' => ['$ref' => '#/components/responses/Error'],
+                            '404' => ['$ref' => '#/components/responses/Error'],
+                        ],
+                    ],
+                    'delete' => [
+                        'tags' => ['Devices'],
+                        'summary' => 'Remove a gateway-device link',
+                        'parameters' => [$imeiParam, $linkedImeiParam],
+                        'responses' => [
+                            '200' => ['description' => 'Device link removed', 'content' => ['application/json' => ['schema' => ['type' => 'object']]]],
+                            '404' => ['$ref' => '#/components/responses/Error'],
                         ],
                     ],
                 ],
@@ -641,7 +680,7 @@ class OpenApiSpec
                         'tags' => ['Capabilities'],
                         'summary' => 'List device-type capability catalog',
                         'parameters' => [
-                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['watch', 'ncs', 'radar']]],
+                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor']]],
                         ],
                         'responses' => [
                             '200' => [
