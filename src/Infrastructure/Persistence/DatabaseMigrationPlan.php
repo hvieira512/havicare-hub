@@ -26,6 +26,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026080501ScopeApiUsersByLic
 use Hub\Infrastructure\Persistence\Migration\Version2026080502RemoveWeatherCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026080503NormalizeCapabilityLabelsPtPt;
 use Hub\Infrastructure\Persistence\Migration\Version2026080601GatewayDiaperDevices;
+use Hub\Infrastructure\Persistence\Migration\Version2026080602DiaperTelemetrySections;
 
 final class DatabaseMigrationPlan
 {
@@ -54,6 +55,7 @@ final class DatabaseMigrationPlan
             new Version2026080502RemoveWeatherCapability(),
             new Version2026080503NormalizeCapabilityLabelsPtPt(),
             new Version2026080601GatewayDiaperDevices(),
+            new Version2026080602DiaperTelemetrySections(),
         ];
     }
 

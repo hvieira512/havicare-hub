@@ -3082,6 +3082,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('eec5000202f9', $links['data'][0]['deviceKey'] ?? null);
         self::assertSame('diaper_sensor', $links['data'][0]['deviceType'] ?? null);
         self::assertSame('eec5000202f9', $api->show('d48c49f7909c')['linkedDevices'][0]['deviceKey'] ?? null);
+        $sensor = $api->show('eec5000202f9');
+        self::assertArrayHasKey('diaper_moisture', $sensor['capabilities']['telemetry'] ?? []);
+        self::assertArrayHasKey('diaper_condition', $sensor['capabilities']['telemetry'] ?? []);
+        self::assertArrayNotHasKey('diaper_moisture', $sensor['capabilities']['health'] ?? []);
+        self::assertFalse($sensor['capabilities']['telemetry']['diaper_moisture']['requestable'] ?? true);
+        self::assertFalse($sensor['capabilities']['telemetry']['diaper_condition']['requestable'] ?? true);
 
         self::assertSame('ok', $api->deleteLink('d48c49f7909c', 'eec5000202f9')['status'] ?? null);
         self::assertSame([], $api->links('d48c49f7909c')['data'] ?? null);

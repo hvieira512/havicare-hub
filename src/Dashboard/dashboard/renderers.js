@@ -39,6 +39,8 @@ const CARD_TONE_BY_TYPE = {
     blood_sugar: {border: "warning", bg: "bg-warning", text: "text-warning"},
     temperature: {border: "warning", bg: "bg-warning", text: "text-warning"},
     battery: {border: "success", bg: "bg-success", text: "text-success"},
+    diaper_moisture: {border: "info", bg: "bg-info", text: "text-info"},
+    diaper_condition: {border: "warning", bg: "bg-warning", text: "text-warning"},
     activity: {border: "primary", bg: "bg-primary", text: "text-primary"},
     location: {border: "success", bg: "bg-success", text: "text-success"},
     heartbeat: {border: "info", bg: "bg-info", text: "text-info"},
@@ -71,6 +73,8 @@ const REQUEST_CARD_CONTENT_BY_TYPE = {
     blood_sugar: {icon: "fa-vial", value: "Glicemia"},
     temperature: {icon: "fa-temperature-half", value: "Temperatura"},
     battery: {icon: "fa-battery-three-quarters", value: "Bateria"},
+    diaper_moisture: {icon: "fa-droplet", value: "Humidade da fralda"},
+    diaper_condition: {icon: "fa-baby", value: "Estado da fralda"},
     activity: {icon: "fa-person-walking", value: "Atividade"},
     location: {icon: "fa-location-dot", value: "Localização"},
     sleep: {icon: "fa-bed", value: "Sono"},
@@ -145,6 +149,19 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-battery-three-quarters",
         value: `${data.percent ?? "-"}%`,
         details: batteryDetails(data),
+    }),
+    diaper_moisture: (data) => ({
+        icon: "fa-droplet",
+        value: `Delta ${data.maximumDelta ?? "-"} · ${data.affectedChannelCount ?? 0} canais afetados`,
+    }),
+    diaper_condition: (data) => ({
+        icon: "fa-baby",
+        value:
+            ({
+                clean: "Fralda limpa",
+                attention: "Atenção",
+                change_required: "Mudança necessária",
+            })[data.state] || "Estado desconhecido",
     }),
     activity: (data) => ({
         icon: "fa-person-walking",

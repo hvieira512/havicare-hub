@@ -124,10 +124,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026080502_remove_weather_capability',
             '2026080503_normalize_capability_labels_pt_pt',
             '2026080601_gateway_diaper_devices',
+            '2026080602_diaper_telemetry_sections',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(21, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(22, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
@@ -168,6 +169,10 @@ final class MigrationTest extends MysqlDashboardTestCase
         self::assertSame(
             ['battery', 'change_required', 'diaper_condition', 'diaper_moisture'],
             array_values(array_unique(array_map('strval', $pdo->query("SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' ORDER BY capability_key")->fetchAll(\PDO::FETCH_COLUMN))))
+        );
+        self::assertSame(
+            ['diaper_condition', 'diaper_moisture'],
+            $pdo->query("SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' AND section = 'telemetry' AND capability_key LIKE 'diaper_%' ORDER BY capability_key")->fetchAll(\PDO::FETCH_COLUMN)
         );
     }
 

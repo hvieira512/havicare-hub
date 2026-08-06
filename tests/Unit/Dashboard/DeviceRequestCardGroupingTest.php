@@ -45,6 +45,9 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('mt-3 d-grid gap-2 min-w-0', $renderersSource);
         self::assertStringNotContainsString('mb-2 min-w-0', $renderersSource);
         self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);
+        self::assertStringContainsString('diaper_moisture: {icon: "fa-droplet"', $renderersSource);
+        self::assertStringContainsString('diaper_condition: {icon: "fa-baby"', $renderersSource);
+        self::assertStringContainsString('change_required: "Mudança necessária"', $renderersSource);
         self::assertStringContainsString('activity: {icon: "fa-person-walking"', $renderersSource);
         self::assertStringContainsString('blood_sugar: {icon: "fa-vial"', $renderersSource);
         self::assertStringContainsString('superseded: "substituído"', $renderersSource);

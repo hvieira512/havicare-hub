@@ -15,7 +15,7 @@ final class CapabilityCatalogTest extends TestCase
             'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
             'radar' => [4, 'b18cde2f1c1a75b44b0290c7770225f6efc486d561829ffa31ca4d584dcb0426'],
             'gateway' => [3, '0da2bdcb67a191f32fdf9ae47f0e9b9339bd49dd026d4d41e616b52ed430c07a'],
-            'diaper_sensor' => [4, '10f7dbe2679a58d1564970d50940629c93a89ffde6c0513d261e6cb41461152e'],
+            'diaper_sensor' => [4, '89c723e312265a99e5d444acb20aee6d7e4d545288df6b6c39815fdc10abecf1'],
         ];
 
         foreach ($expected as $deviceType => [$count, $hash]) {
