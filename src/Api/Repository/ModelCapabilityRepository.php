@@ -17,7 +17,7 @@ final class ModelCapabilityRepository
     public function enabledFeaturesForModelId(int $modelId): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT c.capability_key, m.device_type, s.name AS supplier_name
+            SELECT c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
             JOIN capabilities c ON c.id = mc.capability_id
             JOIN models m ON m.id = mc.model_id
@@ -68,7 +68,7 @@ final class ModelCapabilityRepository
     {
         $telemetryCondition = $telemetryOnly ? 'AND c.is_telemetry = 1' : '';
         $stmt = $this->pdo->prepare('
-            SELECT c.capability_key, m.device_type, s.name AS supplier_name
+            SELECT c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
             JOIN capabilities c ON c.id = mc.capability_id
             JOIN models m ON m.id = mc.model_id
@@ -142,7 +142,7 @@ final class ModelCapabilityRepository
 
         $placeholders = implode(',', array_fill(0, count($modelIds), '?'));
         $stmt = $this->pdo->prepare("
-            SELECT mc.model_id, c.capability_key, m.device_type, s.name AS supplier_name
+            SELECT mc.model_id, c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
             FROM model_capabilities mc
             JOIN capabilities c ON c.id = mc.capability_id
             JOIN models m ON m.id = mc.model_id
@@ -160,7 +160,9 @@ final class ModelCapabilityRepository
             if ($modelId <= 0) {
                 continue;
             }
-            $cacheKey = trim((string)($row['supplier_name'] ?? '')) . ':' . trim((string)($row['device_type'] ?? ''));
+            $cacheKey = trim((string)($row['supplier_name'] ?? ''))
+                . ':' . trim((string)($row['internal_model'] ?? ''))
+                . ':' . trim((string)($row['device_type'] ?? ''));
             if (!array_key_exists($cacheKey, $allowedCache)) {
                 $allowedCache[$cacheKey] = $this->allowedFeaturesForModelRow($row);
             }
@@ -255,12 +257,12 @@ final class ModelCapabilityRepository
     }
 
     /**
-     * @return array{device_type: string, supplier_name: string}
+     * @return array{device_type: string, supplier_name: string, internal_model: string}
      */
     private function modelContextForModelId(int $modelId): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT m.device_type, s.name AS supplier_name
+            SELECT m.device_type, m.internal_model, s.name AS supplier_name
             FROM models m
             JOIN suppliers s ON s.id = m.supplier_id
             WHERE m.id = ?
@@ -271,6 +273,7 @@ final class ModelCapabilityRepository
         return [
             'device_type' => is_string($row['device_type'] ?? null) && $row['device_type'] !== '' ? (string)$row['device_type'] : 'watch',
             'supplier_name' => is_string($row['supplier_name'] ?? null) ? (string)$row['supplier_name'] : '',
+            'internal_model' => is_string($row['internal_model'] ?? null) ? (string)$row['internal_model'] : '',
         ];
     }
 
@@ -280,8 +283,9 @@ final class ModelCapabilityRepository
     private function allowedCapabilityIdsForModelId(int $modelId): array
     {
         $context = $this->modelContextForModelId($modelId);
-        $allowedKeys = SupplierCapabilityTemplate::keysForSupplierDeviceType(
+        $allowedKeys = SupplierCapabilityTemplate::keysForModel(
             $context['supplier_name'],
+            $context['internal_model'],
             $context['device_type']
         );
 
@@ -305,8 +309,9 @@ final class ModelCapabilityRepository
      */
     private function allowedFeaturesForModelRow(array $row): array
     {
-        $allowed = SupplierCapabilityTemplate::keysForSupplierDeviceType(
+        $allowed = SupplierCapabilityTemplate::keysForModel(
             (string)($row['supplier_name'] ?? ''),
+            (string)($row['internal_model'] ?? ''),
             (string)($row['device_type'] ?? 'watch')
         );
 

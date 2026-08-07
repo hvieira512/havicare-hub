@@ -11,7 +11,13 @@ final class SupplierCapabilityTemplate
      */
     public static function keysForSupplierDeviceType(string $supplierName, string $deviceType): array
     {
-        $protocol = DeviceProtocol::forSupplier($supplierName);
+        return self::keysForModel($supplierName, '', $deviceType);
+    }
+
+    /** @return list<string> */
+    public static function keysForModel(string $supplierName, string $internalModel, string $deviceType): array
+    {
+        $protocol = DeviceProtocol::forModel($supplierName, $internalModel);
         if ($protocol === '') {
             return [];
         }

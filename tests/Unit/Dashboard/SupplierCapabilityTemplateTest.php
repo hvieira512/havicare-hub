@@ -115,6 +115,18 @@ final class SupplierCapabilityTemplateTest extends TestCase
         self::assertSame(['pager_call'], $actual);
     }
 
+    public function testMokoGatewayCapabilitiesAreModelSpecific(): void
+    {
+        self::assertSame(
+            ['connectivity'],
+            SupplierCapabilityTemplate::keysForModel('MOKO', 'MKGW3', 'gateway')
+        );
+        self::assertSame(
+            ['connectivity', 'battery', 'location'],
+            SupplierCapabilityTemplate::keysForModel('MOKO', 'MKGW4', 'gateway')
+        );
+    }
+
     public function testNcsCatalogPlacesPagerCallInAlarms(): void
     {
         $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('ncs');

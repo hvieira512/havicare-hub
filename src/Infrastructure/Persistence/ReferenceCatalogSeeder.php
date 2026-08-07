@@ -139,7 +139,7 @@ final class ReferenceCatalogSeeder
     private function seedModelCapabilities(PDO $pdo): void
     {
         $models = $pdo->query('
-            SELECT m.id, m.device_type, s.name AS supplier_name
+            SELECT m.id, m.internal_model, m.device_type, s.name AS supplier_name
             FROM models m
             JOIN suppliers s ON s.id = m.supplier_id
         ')->fetchAll(PDO::FETCH_ASSOC);
@@ -153,8 +153,9 @@ final class ReferenceCatalogSeeder
             if ((int)$count->fetchColumn() > 0) {
                 continue;
             }
-            foreach (SupplierCapabilityTemplate::keysForSupplierDeviceType(
+            foreach (SupplierCapabilityTemplate::keysForModel(
                 (string)$model['supplier_name'],
+                (string)$model['internal_model'],
                 (string)$model['device_type']
             ) as $key) {
                 $capability->execute([(string)$model['device_type'], $key]);
