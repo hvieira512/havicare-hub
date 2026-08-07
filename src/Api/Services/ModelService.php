@@ -51,7 +51,7 @@ class ModelService
         $models = array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
             $supplierRaw = trim((string)($model['supplier'] ?? ''));
             $supplier = mb_strtolower($supplierRaw);
-            $protocol = mb_strtolower(DeviceProtocol::forSupplier($supplierRaw));
+            $protocol = mb_strtolower(DeviceProtocol::forModel($supplierRaw, (string)($model['internal_model'] ?? '')));
             $deviceType = mb_strtolower(trim((string)($model['device_type'] ?? 'watch')));
             $internalModel = mb_strtolower(trim((string)($model['internal_model'] ?? '')));
             $commercialName = mb_strtolower(trim((string)($model['commercial_name'] ?? '')));
@@ -79,14 +79,14 @@ class ModelService
             'supplier' => $this->collection->uniqueValues(array_map(
                 static fn (array $model): string => trim((string)($model['supplier'] ?? '')),
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
-                    $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
+                    $protocol = DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? ''));
                     $deviceType = trim((string)($model['device_type'] ?? 'watch'));
                     return (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol'])
                         && (($filters['deviceType'] ?? null) === null || $deviceType === $filters['deviceType']);
                 }))
             )),
             'protocol' => $this->collection->uniqueValues(array_map(
-                static fn (array $model): string => DeviceProtocol::forSupplier((string)($model['supplier'] ?? '')),
+                static fn (array $model): string => DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? '')),
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
                     $supplier = trim((string)($model['supplier'] ?? ''));
                     $deviceType = trim((string)($model['device_type'] ?? 'watch'));
@@ -98,7 +98,7 @@ class ModelService
                 static fn (array $model): string => trim((string)($model['device_type'] ?? 'watch')),
                 array_values(array_filter($this->db->models->all(), static function (array $model) use ($filters): bool {
                     $supplier = trim((string)($model['supplier'] ?? ''));
-                    $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
+                    $protocol = DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? ''));
                     return (($filters['supplier'] ?? null) === null || $supplier === $filters['supplier'])
                         && (($filters['protocol'] ?? null) === null || $protocol === $filters['protocol']);
                 }))
@@ -116,7 +116,7 @@ class ModelService
         ));
         $models = array_map(function (array $model) use ($enabledByModel, &$catalogByType, $baseUrl): array {
             $modelId = (int)($model['id'] ?? 0);
-            $protocol = DeviceProtocol::forSupplier((string)($model['supplier'] ?? ''));
+            $protocol = DeviceProtocol::forModel((string)($model['supplier'] ?? ''), (string)($model['internal_model'] ?? ''));
             $deviceType = (string)($model['device_type'] ?? 'watch');
             $catalogByType[$deviceType] ??= $this->db->genericCapabilities->all($deviceType);
             return [
@@ -191,7 +191,7 @@ class ModelService
                 'internalModel' => (string)($model['internal_model'] ?? ''),
                 'commercialName' => (string)($model['commercial_name'] ?? ''),
                 'deviceType' => $deviceType,
-                'protocol' => DeviceProtocol::forSupplier($supplierName),
+                'protocol' => DeviceProtocol::forModel($supplierName, (string)($model['internal_model'] ?? '')),
                 'image' => $this->imageUrl->resolve((string)($model['image'] ?? ''), $baseUrl),
             ];
         }
@@ -222,7 +222,7 @@ class ModelService
             return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
         }
 
-        $protocol = DeviceProtocol::forSupplier((string)($entry['supplier_name'] ?? ''));
+        $protocol = DeviceProtocol::forModel((string)($entry['supplier_name'] ?? ''), (string)($entry['internal_model'] ?? ''));
         $imagePath = (string)($entry['image_path'] ?? '');
         $deviceType = (string)($entry['device_type'] ?? 'watch');
         $catalog = $this->db->genericCapabilities->all($deviceType);

@@ -153,10 +153,16 @@ final class MigrationTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($database);
 
         $gatewayModel = $db->models->find('MOKO', 'MKGW3');
+        $cellularGatewayModel = $db->models->find('MOKO', 'MKGW4');
         $sensorModel = $db->models->find('MONIT', 'MECS-PRO');
         self::assertIsArray($gatewayModel);
+        self::assertIsArray($cellularGatewayModel);
         self::assertIsArray($sensorModel);
         self::assertSame(['connectivity'], $db->modelCapabilities->enabledFeaturesForModelId((int)$gatewayModel['id']));
+        self::assertSame(
+            ['battery', 'connectivity', 'location'],
+            $db->modelCapabilities->enabledFeaturesForModelId((int)$cellularGatewayModel['id'])
+        );
         self::assertSame(
             ['battery', 'change_required', 'diaper_condition', 'diaper_moisture'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$sensorModel['id'])

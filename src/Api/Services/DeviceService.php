@@ -970,7 +970,7 @@ class DeviceService
 
     private function protocolForModel(string $supplier, string $model): string
     {
-        return DeviceProtocol::forSupplier($supplier);
+        return DeviceProtocol::forModel($supplier, $model);
     }
 
     private function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceType, string $deviceId): string

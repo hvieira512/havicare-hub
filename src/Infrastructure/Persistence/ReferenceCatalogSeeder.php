@@ -19,6 +19,7 @@ final class ReferenceCatalogSeeder
         ['Voerka', 'W812', 'W812', 'ncs', ''],
         ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
         ['MOKO', 'MKGW3', 'MOKOSmart MKGW3', 'gateway', ''],
+        ['MOKO', 'MKGW4', 'MOKOSmart MKGW4', 'gateway', ''],
         ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', ''],
     ];
 

@@ -39,7 +39,7 @@ final class ModelRepository
 
     public function protocolForModel(string $supplier, string $internalModel): string
     {
-        return DeviceProtocol::forSupplier($supplier);
+        return DeviceProtocol::forModel($supplier, $internalModel);
     }
 
     public function add(int $supplierId, string $internalModel, string $commercialName, string $deviceType, ?string $imagePath = null): void

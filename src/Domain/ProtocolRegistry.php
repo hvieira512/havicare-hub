@@ -111,6 +111,12 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => false,
                 'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
             ],
+            'moko-mkgw4' => [
+                'label' => 'MOKO MKGW4',
+                'deviceType' => 'gateway',
+                'supportsConfigCatalog' => false,
+                'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
+            ],
             'monit-mecs-pro-ble' => [
                 'label' => 'MONIT',
                 'deviceType' => 'diaper_sensor',

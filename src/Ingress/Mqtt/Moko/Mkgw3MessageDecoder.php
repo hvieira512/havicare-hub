@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
-final class Mkgw3MessageDecoder
+final class Mkgw3MessageDecoder implements MessageDecoder
 {
     /** @return array{messageId: int, gatewayMac: string, data: mixed}|null */
     public function decode(string $payload): ?array
@@ -22,6 +22,8 @@ final class Mkgw3MessageDecoder
             'messageId' => (int)$messageId,
             'gatewayMac' => $gatewayMac,
             'data' => $message['data'] ?? null,
+            'protocol' => 'moko-mkgw3',
+            'encoding' => 'json',
         ];
     }
 }

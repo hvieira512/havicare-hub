@@ -348,17 +348,19 @@ The raw payload keeps:
 - The topic namespace already identifies the NCS family, so normalized `type` values stay flat and do not use dotted prefixes like `ncs.pager.help_call`.
 - The generic capability exposed for this family is `pager_call` in `alarms`, with the display label `Chamada de enfermagem`.
 
-## MOKO MKGW3 and MONIT MECS Pro
+## MOKO gateways and MONIT MECS Pro
 
-The MKGW3 sends JSON to the existing broker topic below. This is an ingress topic owned by the gateway configuration; it is not a canonical hub output topic:
+Both MOKO gateway models use the existing broker topic below. This is an ingress topic owned by the gateway configuration; it is not a canonical hub output topic:
 
 ```text
 havicare-hub/null/0/gw/{gatewayMac}/raw
 ```
 
-Both the topic MAC and `device_info.mac` must identify the same registered `gateway` device. The hub currently accepts MKGW3 message `3004` (gateway heartbeat/network state) and `3070` (BLE scan observations). Unsupported or malformed messages do not produce normalized records.
+The indoor PoE `MKGW3` sends JSON and supports message `3004` (Ethernet/Wi-Fi heartbeat) and `3070` (BLE scan observations). The outdoor cellular/GPS `MKGW4` sends a binary frame beginning with `ef`; the hub supports `3004` (cellular status), `3089` (GPS/LBS fix), and `30a0`/`30b2` (BLE scan observations). The MKGW4 decoder also accepts an ASCII HEX representation for diagnostics and fixture replay.
 
-Register the gateway and every MONIT sensor through the existing `/api/devices` API using the catalog models `MOKO/MKGW3` and `MONIT/MECS-PRO`. A sensor observation is accepted only when both devices share the same company and license and an enabled link exists in `gateway_device_links`:
+Both the topic MAC and the MAC embedded in the JSON or binary frame must identify the same registered `gateway` device. Unsupported, malformed, truncated, or mismatched messages do not produce normalized records.
+
+Register the gateway and every MONIT sensor through the existing `/api/devices` API using `MOKO/MKGW3` or `MOKO/MKGW4` as appropriate, and `MONIT/MECS-PRO` for the sensor. A sensor observation is accepted only when both devices share the same company and license and an enabled link exists in `gateway_device_links`:
 
 ```text
 GET    /api/devices/{gatewayMac}/links
@@ -375,15 +377,130 @@ Canonical gateway output is published to:
 {company}/{licenseId}/gateway/{gatewayMac}/status
 ```
 
-Every valid `3004` or `3070` message produces a decoded gateway `raw` record. A `3004` additionally produces `connectivity` telemetry with `data.interface` (`ethernet`, `wifi`, or `ethernet_wifi`) and, when supplied, `data.signalStrengthDbm`. Gateway lifecycle produces retained `online`/`offline` status and `device.connected`/`device.disconnected` events. The hub considers an active gateway offline after `MOKO_GATEWAY_IDLE_TIMEOUT_SECONDS` without ingress.
+Every supported message produces a decoded gateway `raw` record. MKGW3 `3004` produces `connectivity` telemetry with `data.interface` (`ethernet`, `wifi`, or `ethernet_wifi`). MKGW4 `3004` produces cellular `connectivity` telemetry (`networkType`, raw `signalQuality`, and derived `signalStrengthDbm`) plus `battery` telemetry containing `voltageMv`. MKGW4 `3089` produces `location` telemetry when GPS coordinates are present; an LBS-only fix remains available in decoded raw data as `tac_lac` and `cell_id`. Gateway lifecycle produces retained `online`/`offline` status and `device.connected`/`device.disconnected` events. The hub considers an active gateway offline after `MOKO_GATEWAY_IDLE_TIMEOUT_SECONDS` without ingress.
 
-An authorized MONIT BLE observation produces three independent telemetry records on `{company}/{licenseId}/diaper_sensor/{sensorMac}/telemetry`:
+### MONIT diaper sensor MQTT output
 
-- `battery`: `data.percent`
-- `diaper_moisture`: the ten sensor channels (`baseline`, `value`, and `delta`), `affectedChannelCount`, and `maximumDelta`
-- `diaper_condition`: only `data.state`, with `clean`, `attention`, or `change_required`
+An authorized MONIT BLE observation is normalized under the sensor identity, not the gateway identity. The canonical output topics are:
 
-The sensor publishes a `change_required` event to `{company}/{licenseId}/diaper_sensor/{sensorMac}/events` only when its condition transitions into that state. Redis suppresses the same BLE advertisement received by multiple linked gateways during the configured deduplication window and stores the last normalized capability/condition state; MySQL remains the durable source of truth for devices and links.
+```text
+{company}/{licenseId}/diaper_sensor/{sensorMac}/telemetry
+{company}/{licenseId}/diaper_sensor/{sensorMac}/events
+```
+
+`MQTT_TOPIC_PREFIX` is prepended when configured. The current implementation does not publish a sensor-level `raw` or `status` topic. The decoded upstream message remains available in the gateway's canonical `raw` topic.
+
+#### Telemetry
+
+Each accepted observation is normalized into three independent telemetry capabilities. Every capability is published as a separate JSON MQTT message using this envelope:
+
+```json
+{
+  "schemaVersion": 2,
+  "type": "battery",
+  "occurredAt": "2026-08-06T13:52:08Z",
+  "device": {
+    "id": "eec5000202f9",
+    "supplier": "MONIT",
+    "model": "MECS-PRO",
+    "commercialName": "MONIT MECS Pro"
+  },
+  "data": {},
+  "source": {
+    "protocol": "monit-mecs-pro-ble",
+    "nativeType": "manufacturer_data",
+    "gatewayId": "d48c49f7909c",
+    "rssiDbm": -83
+  }
+}
+```
+
+`source.gatewayId` identifies the linked MOKO gateway that received the advertisement. `source.rssiDbm` and `device.commercialName` are omitted when unavailable.
+
+The three normalized telemetry types and their `data` shapes are:
+
+- `battery`: the decoded battery percentage.
+
+  ```json
+  {
+    "type": "battery",
+    "data": {
+      "percent": 87
+    }
+  }
+  ```
+
+- `diaper_moisture`: all ten measuring channels and their aggregate moisture indicators. `delta` is `max(value - baseline, 0)`. A channel is counted as affected when its `delta` is at least `12`.
+
+  ```json
+  {
+    "type": "diaper_moisture",
+    "data": {
+      "channels": [
+        {"index": 1, "baseline": 1, "value": 13, "delta": 12},
+        {"index": 2, "baseline": 1, "value": 13, "delta": 12},
+        {"index": 3, "baseline": 1, "value": 13, "delta": 12},
+        {"index": 4, "baseline": 1, "value": 13, "delta": 12},
+        {"index": 5, "baseline": 1, "value": 1, "delta": 0},
+        {"index": 6, "baseline": 1, "value": 1, "delta": 0},
+        {"index": 7, "baseline": 1, "value": 1, "delta": 0},
+        {"index": 8, "baseline": 1, "value": 1, "delta": 0},
+        {"index": 9, "baseline": 1, "value": 1, "delta": 0},
+        {"index": 10, "baseline": 1, "value": 1, "delta": 0}
+      ],
+      "affectedChannelCount": 4,
+      "maximumDelta": 12
+    }
+  }
+  ```
+
+- `diaper_condition`: the normalized diaper state only.
+
+  ```json
+  {
+    "type": "diaper_condition",
+    "data": {
+      "state": "change_required"
+    }
+  }
+  ```
+
+The state is derived as follows:
+
+- `clean`: every channel has a `delta` below `4`.
+- `change_required`: at least four channels have a `delta` of `12` or more.
+- `attention`: every other non-clean measurement.
+
+The telemetry messages are non-retained and use MQTT QoS 0. Each capability is published independently when its `data` changes. Unchanged capability data is published again after `MOKO_GATEWAY_TELEMETRY_REFRESH_SECONDS`, which defaults to 60 seconds.
+
+#### Events
+
+The only current diaper sensor event is `change_required`. It is published when a sensor transitions from a previously known `clean` or `attention` state into `change_required`:
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "change_required",
+  "occurredAt": "2026-08-06T13:52:08Z",
+  "device": {
+    "id": "eec5000202f9",
+    "supplier": "MONIT",
+    "model": "MECS-PRO",
+    "commercialName": "MONIT MECS Pro"
+  },
+  "data": {
+    "previousState": "attention"
+  },
+  "source": {
+    "protocol": "monit-mecs-pro-ble",
+    "gatewayId": "d48c49f7909c"
+  }
+}
+```
+
+When Redis has no prior condition for the sensor, the first observation initializes the state and does not generate an event, even when its condition is already `change_required`. Repeated `change_required` observations also do not generate additional events; the sensor must transition out of and then back into that state. Events are non-retained and use MQTT QoS 1.
+
+Redis suppresses the same BLE advertisement received by multiple linked gateways during `MOKO_GATEWAY_DEDUPE_TTL_SECONDS`, which defaults to 5 seconds. It also stores the last normalized capability fingerprints and condition state. MySQL remains the durable source of truth for registered devices and gateway links.
 
 ## MQTT Topics
 
@@ -462,7 +579,7 @@ They share one envelope across all suppliers, models, and supported device types
 Field meaning:
 
 - `schemaVersion`: telemetry schema version. Current value is `2`.
-- `type`: normalized feature name such as `location`, `heart_rate`, `battery`, `activity`, `alarm`, `blood_pressure`, `blood_oxygen`, `temperature`, `heartbeat`, or `device_config`.
+- `type`: normalized feature name such as `location`, `heart_rate`, `battery`, `diaper_moisture`, `diaper_condition`, `activity`, `alarm`, `blood_pressure`, `blood_oxygen`, `temperature`, `heartbeat`, or `device_config`.
 - `occurredAt`: server-side publish timestamp in UTC.
 - `device.id`: canonical device identity used by the hub and MQTT topics.
 - `device.supplier`: whitelist supplier metadata resolved by the hub.

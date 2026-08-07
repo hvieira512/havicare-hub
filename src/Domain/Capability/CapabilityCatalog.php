@@ -182,6 +182,7 @@ final class CapabilityCatalog
                 'vitals_minute_stats',
             ],
             'moko-mkgw3' => ['connectivity'],
+            'moko-mkgw4' => ['connectivity', 'battery', 'location'],
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_condition'],
             default => [],
         };

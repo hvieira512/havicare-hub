@@ -51,6 +51,7 @@ final class ProtocolRegistryTest extends TestCase
         self::assertNotContains('voerka-ncs', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('qinglanst-radar', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('moko-mkgw3', ProtocolRegistry::protocolsWithConfigCatalog());
+        self::assertNotContains('moko-mkgw4', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());
     }
 

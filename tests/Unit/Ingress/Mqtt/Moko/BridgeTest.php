@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 final class BridgeTest extends TestCase
 {
     private const ADV_DATA = '0201041aff5900021535c80410418015dc8200410418415dc8200202f9c3';
+    private const MKGW4_HEARTBEAT = 'ef3004c5e390f30bce00400000046a759cd8010007464444204c54450200011203000210740400060002000200000500010006000f38363130373630383232333235313107000400000998';
 
     public function testAuthorizedLinkedSensorPublishesIndependentTelemetryAndDeduplicatesReplay(): void
     {
@@ -58,6 +59,22 @@ final class BridgeTest extends TestCase
         self::assertTrue($mqtt->statuses[0]['retain'] ?? false);
     }
 
+    public function testMkgw4HeartbeatPublishesCellularConnectivityBatteryAndOnlineStatus(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt, true);
+        $bridge->handleReceivedMessage(
+            'havicare-hub/null/0/gw/c5e390f30bce/raw',
+            hex2bin(self::MKGW4_HEARTBEAT)
+        );
+
+        self::assertSame(['connectivity', 'battery'], array_column($mqtt->telemetry, 'type'));
+        self::assertSame('cellular', $mqtt->telemetry[0]['payload']['data']['interface'] ?? null);
+        self::assertSame(4212, $mqtt->telemetry[1]['payload']['data']['voltageMv'] ?? null);
+        self::assertSame('moko-mkgw4', $mqtt->raw[0]['payload']['debug']['protocol'] ?? null);
+        self::assertSame(['online'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
     public function testUnlinkedSensorDoesNotPublishSensorTelemetry(): void
     {
         $mqtt = new RecordingHubMqttBridge();
@@ -99,6 +116,7 @@ final class BridgeTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'moko-whitelist-');
         file_put_contents($path, json_encode([
             'd48c49f7909c' => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
+            'c5e390f30bce' => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
             'eec5000202f9' => ['supplier' => 'MONIT', 'model' => 'MECS-PRO', 'deviceType' => 'diaper_sensor', 'licenseId' => '1001', 'company' => 'hitcare'],
         ], JSON_THROW_ON_ERROR));
         $links = new class($linked) implements GatewayDeviceLinkLookup {

@@ -28,7 +28,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly int $dedupeTtlSeconds = 5,
         private readonly int $telemetryRefreshSeconds = 60,
         private readonly int $gatewayIdleTimeoutSeconds = 180,
-        private readonly ?Mkgw3MessageDecoder $messageDecoder = null,
+        private readonly ?MessageDecoder $messageDecoder = null,
         private readonly ?MonitMecsProDecoder $monitDecoder = null,
         private readonly ?MonitNormalizer $monitNormalizer = null,
         private readonly ?GatewayNormalizer $gatewayNormalizer = null,
@@ -39,7 +39,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $whitelist,
             $mqttBridge,
             $topicFilter,
-            sourceName: 'moko-mkgw3',
+            sourceName: 'moko-gateway',
             reconnectSubscriber: $reconnectSubscriber,
             dashboardStore: $dashboardStore,
         );
@@ -81,26 +81,26 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     {
         $parsedTopic = Topic::parse($topic);
         if ($parsedTopic === null) {
-            Logger::channel('hub')->warning("Ignoring unsupported MKGW3 topic {$topic}");
+            Logger::channel('hub')->warning("Ignoring unsupported MOKO gateway topic {$topic}");
             return;
         }
 
         $gateway = $this->whitelist->resolve($parsedTopic->gatewayMac);
         if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
-            $this->recordUnauthorizedDevice($parsedTopic->gatewayMac, 'moko-mkgw3', ident: $parsedTopic->gatewayMac);
-            Logger::channel('hub')->warning("Ignoring unregistered MKGW3 gateway mac={$parsedTopic->gatewayMac}");
+            $this->recordUnauthorizedDevice($parsedTopic->gatewayMac, 'moko-gateway', ident: $parsedTopic->gatewayMac);
+            Logger::channel('hub')->warning("Ignoring unregistered MOKO gateway mac={$parsedTopic->gatewayMac}");
             return;
         }
 
-        $decoded = ($this->messageDecoder ?? new Mkgw3MessageDecoder())->decode($payload);
+        $decoded = ($this->messageDecoder ?? new MokoMessageDecoder())->decode($payload);
         if ($decoded === null || $decoded['gatewayMac'] !== $parsedTopic->gatewayMac) {
-            Logger::channel('hub')->warning("Ignoring invalid MKGW3 payload or gateway MAC mismatch on {$topic}");
+            Logger::channel('hub')->warning("Ignoring invalid MOKO gateway payload or gateway MAC mismatch on {$topic}");
             return;
         }
         $gateway = $this->enrich($gateway);
         $this->recordGateway($gateway, $decoded, $topic, $payload);
 
-        if ($decoded['messageId'] === 3070 && is_array($decoded['data'])) {
+        if (in_array((string)$decoded['messageId'], ['3070', '30a0', '30b2'], true) && is_array($decoded['data'])) {
             foreach ($decoded['data'] as $observation) {
                 if (is_array($observation)) {
                     $this->handleObservation($gateway, $observation);
@@ -117,6 +117,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $licenseId = (string)$gateway['licenseId'];
         $company = (string)($gateway['company'] ?? 'null');
         $this->gatewayLastSeenAt[$deviceKey] = ($this->clock)();
+        $protocol = (string)($decoded['protocol'] ?? 'moko-gateway');
+        $encoding = (string)($decoded['encoding'] ?? 'unknown');
         $raw = [
             'schemaVersion' => 1,
             'direction' => 'uplink',
@@ -124,10 +126,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'device' => $this->device($gateway),
             'data' => $decoded,
             'debug' => [
-                'protocol' => 'moko-mkgw3',
+                'protocol' => $protocol,
                 'transport' => 'mqtt',
-                'encoding' => 'json',
-                'payload' => json_decode($originalPayload, true),
+                'encoding' => $encoding,
+                'payload' => $encoding === 'json' ? json_decode($originalPayload, true) : bin2hex($originalPayload),
                 'sourceTopic' => $sourceTopic,
             ],
         ];
@@ -135,7 +137,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $this->dashboardStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$gateway['supplier'], 'model' => (string)$gateway['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => 'moko-mkgw3', 'transport' => 'mqtt', 'online' => '1',
+            'protocol' => $protocol, 'transport' => 'mqtt', 'online' => '1',
         ]);
         $this->dashboardStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
 

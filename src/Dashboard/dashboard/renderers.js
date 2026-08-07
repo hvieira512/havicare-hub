@@ -147,7 +147,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     battery: (data) => ({
         icon: "fa-battery-three-quarters",
-        value: `${data.percent ?? "-"}%`,
+        value: data.percent != null ? `${data.percent}%` : (data.voltageMv != null ? `${data.voltageMv} mV` : "-"),
         details: batteryDetails(data),
     }),
     diaper_moisture: (data) => ({
