@@ -3,6 +3,19 @@ import assert from "node:assert/strict";
 
 import {renderRequestCardShell} from "../../src/Dashboard/dashboard/renderers.js";
 
+const channel = (index, delta, baseline = 1) => ({
+    index,
+    baseline,
+    value: baseline + delta,
+    delta,
+});
+
+const moistureCard = (data) => renderRequestCardShell(
+    {feature: "diaper_moisture", requestable: false},
+    false,
+    [{type: "diaper_moisture", occurredAt: "2026-08-06T13:00:00Z", data}],
+);
+
 test("MONIT condition renders as a status card without a request button", () => {
     const html = renderRequestCardShell(
         {feature: "diaper_condition", requestable: false},
@@ -15,18 +28,70 @@ test("MONIT condition renders as a status card without a request button", () => 
     assert.doesNotMatch(html, /data-action="requestFeature"/);
 });
 
-test("MONIT moisture renders its latest status without a request button", () => {
-    const html = renderRequestCardShell(
-        {feature: "diaper_moisture", requestable: false},
-        false,
-        [{
-            type: "diaper_moisture",
-            occurredAt: "2026-08-06T13:00:00Z",
-            data: {maximumDelta: 7, affectedChannelCount: 2},
-        }],
-    );
+test("MONIT moisture takes the full row and renders one column per channel", () => {
+    const html = moistureCard({
+        channels: [channel(1, 0), channel(2, 5), channel(3, 28)],
+        affectedChannelCount: 1,
+        maximumDelta: 28,
+    });
 
-    assert.match(html, /Delta 7 · 2 canais afetados/);
+    assert.match(html, /col-12 col-md-12/);
+    assert.equal(html.match(/class="diaper-channel"/g).length, 3);
     assert.match(html, /fa-droplet/);
     assert.doesNotMatch(html, /data-action="requestFeature"/);
+});
+
+test("MONIT moisture bands each channel against the normalizer thresholds", () => {
+    // 3 is dry (<4), 4 and 11 are damp, 12 is the affected threshold.
+    const html = moistureCard({
+        channels: [channel(1, 3), channel(2, 4), channel(3, 11), channel(4, 12)],
+        affectedChannelCount: 1,
+        maximumDelta: 12,
+    });
+
+    const bands = [...html.matchAll(/diaper-channel-fill diaper-channel-fill--(\w+)/g)]
+        .map((match) => match[1]);
+    assert.deepEqual(bands, ["dry", "damp", "damp", "wet"]);
+});
+
+test("MONIT moisture scales bar height to twice the threshold and clamps above it", () => {
+    const html = moistureCard({
+        channels: [channel(1, 0), channel(2, 12), channel(3, 24), channel(4, 63)],
+        affectedChannelCount: 3,
+        maximumDelta: 63,
+    });
+
+    const heights = [...html.matchAll(/style="height:([\d.]+)%"/g)]
+        .map((match) => Number(match[1]));
+    assert.deepEqual(heights, [0, 50, 100, 100]);
+});
+
+test("MONIT moisture summarises the maximum delta and affected channel count", () => {
+    const html = moistureCard({
+        channels: [channel(1, 2), channel(2, 31), channel(3, 16)],
+        affectedChannelCount: 2,
+        maximumDelta: 31,
+    });
+
+    assert.match(html, /Máx\. <strong class="text-body">31<\/strong>/);
+    assert.match(html, /<strong class="text-body">2<\/strong> de 3 canais acima do limiar \(12\)/);
+});
+
+test("MONIT moisture exposes the baseline and raw reading per channel", () => {
+    const html = moistureCard({
+        channels: [channel(5, 3, 32)],
+        affectedChannelCount: 0,
+        maximumDelta: 3,
+    });
+
+    // Baselines differ wildly between channels, so the raw reading is only
+    // meaningful next to its baseline.
+    assert.match(html, /Canal 5 · delta 3 \(base 32, leitura 35\)/);
+});
+
+test("MONIT moisture degrades to a plain card when no channels are reported", () => {
+    const html = moistureCard({affectedChannelCount: 0, maximumDelta: 0});
+
+    assert.match(html, /Humidade da fralda/);
+    assert.doesNotMatch(html, /diaper-strip/);
 });

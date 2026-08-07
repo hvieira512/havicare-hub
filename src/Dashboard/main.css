@@ -385,6 +385,91 @@ body {
     white-space: nowrap;
 }
 
+.diaper-strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: .35rem;
+    align-items: end;
+}
+
+.diaper-channel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .2rem;
+    min-width: 0;
+}
+
+.diaper-channel-value {
+    text-align: center;
+    font-size: .75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    color: var(--bs-secondary-color);
+}
+
+.diaper-channel-value--damp {
+    color: #1d4ed8;
+}
+
+.diaper-channel-value--wet {
+    color: #1e3a8a;
+}
+
+.diaper-channel-track {
+    position: relative;
+    height: 64px;
+    border-radius: .35rem;
+    background: var(--bs-tertiary-bg);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+/* The "needs changing" threshold, so it is obvious which bars crossed it. */
+.diaper-channel-track::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--diaper-threshold, 50%);
+    border-top: 1px dashed var(--bs-border-color);
+    opacity: .9;
+    pointer-events: none;
+}
+
+/* No min-height: a dry channel reading 0 must paint nothing at all, otherwise
+   an empty strip still looks faintly wet. */
+.diaper-channel-fill {
+    width: 100%;
+    border-radius: .35rem .35rem 0 0;
+    background: #cbd5e1;
+    transition: height .2s ease-in-out;
+}
+
+.diaper-channel-fill--damp {
+    background: #93c5fd;
+}
+
+.diaper-channel-fill--wet {
+    background: #3b82f6;
+}
+
+.diaper-channel-index {
+    text-align: center;
+    font-size: .65rem;
+    line-height: 1.2;
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.diaper-moisture-summary {
+    border-top: 1px solid var(--bs-border-color);
+    padding-top: .5rem;
+}
+
 .selected-device-facts dt {
     color: var(--bs-secondary-color);
     font-size: .8rem;

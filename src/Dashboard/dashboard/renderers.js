@@ -152,7 +152,9 @@ const UPLINK_CARD_RENDERERS = {
     }),
     diaper_moisture: (data) => ({
         icon: "fa-droplet",
-        value: `Delta ${data.maximumDelta ?? "-"} · ${data.affectedChannelCount ?? 0} canais afetados`,
+        value: featureLabel("diaper_moisture"),
+        span: 12,
+        body: diaperMoistureBody(data),
     }),
     diaper_condition: (data) => ({
         icon: "fa-baby",
@@ -354,6 +356,59 @@ function ncsPagerContent(type) {
     return { icon, value };
 }
 
+// Mirrors the thresholds in Hub\Ingress\Mqtt\Moko\MonitNormalizer so the strip
+// can never disagree with the condition card beside it.
+const DIAPER_DAMP_DELTA = 4;
+const DIAPER_AFFECTED_DELTA = 12;
+// Deltas are 6-bit (0-63) but the decision happens at 12, and a dry channel
+// reads 0-3. Scaling to the full range would flatten every real reading, so the
+// bars scale to twice the threshold and taller readings clamp to full height.
+const DIAPER_SCALE_DELTA = 24;
+
+function diaperMoistureBand(delta) {
+    if (delta >= DIAPER_AFFECTED_DELTA) return "wet";
+    if (delta >= DIAPER_DAMP_DELTA) return "damp";
+    return "dry";
+}
+
+function diaperMoistureBody(data) {
+    const channels = Array.isArray(data?.channels) ? data.channels : [];
+    if (channels.length === 0) {
+        return "";
+    }
+
+    const columns = channels
+        .map((channel, position) => {
+            // Baselines differ by an order of magnitude between channels, so
+            // only the delta is comparable across the strip.
+            const delta = Math.max(0, Number(channel?.delta ?? 0) || 0);
+            const index = channel?.index ?? position + 1;
+            const band = diaperMoistureBand(delta);
+            const height = Math.min(100, (delta / DIAPER_SCALE_DELTA) * 100);
+            const tooltip = `Canal ${index} · delta ${delta} (base ${channel?.baseline ?? "-"}, leitura ${channel?.value ?? "-"})`;
+
+            return `<div class="diaper-channel" title="${esc(tooltip)}">
+                <div class="diaper-channel-value diaper-channel-value--${band}">${esc(delta)}</div>
+                <div class="diaper-channel-track">
+                    <div class="diaper-channel-fill diaper-channel-fill--${band}" style="height:${height}%"></div>
+                </div>
+                <div class="diaper-channel-index">${esc(index)}</div>
+            </div>`;
+        })
+        .join("");
+
+    const maximum = Math.max(0, Number(data?.maximumDelta ?? 0) || 0);
+    const affected = Math.max(0, Number(data?.affectedChannelCount ?? 0) || 0);
+    const thresholdOffset = (DIAPER_AFFECTED_DELTA / DIAPER_SCALE_DELTA) * 100;
+
+    return `<div class="diaper-moisture mt-3">
+        <div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${columns}</div>
+        <div class="diaper-moisture-summary small text-secondary mt-2">
+            Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-body">${esc(affected)}</strong> de ${channels.length} canais acima do limiar (${DIAPER_AFFECTED_DELTA})
+        </div>
+    </div>`;
+}
+
 function batteryDetails(data) {
     if (BATTERY_CHARGING_STATE_LABEL[data.chargingState]) {
         return BATTERY_CHARGING_STATE_LABEL[data.chargingState];
@@ -472,12 +527,17 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         )
         .sort((a, b) => eventTime(b) - eventTime(a))[0];
 
-    const lastValue = lastTelemetry
-        ? uplinkCardContent(type, lastTelemetry.data).value
-        : card.value;
+    const lastContent = lastTelemetry
+        ? uplinkCardContent(type, lastTelemetry.data)
+        : null;
+    const lastValue = lastContent ? lastContent.value : card.value;
     const title = isSystemRequestCard
         ? card.value || featureLabel(type)
         : lastValue || card.value || featureLabel(type);
+    // A card may ask for the full row and supply its own body, so richer
+    // telemetry does not need a special case in this shell.
+    const span = lastContent?.span || card.span || 6;
+    const bodyHtml = lastContent?.body || "";
     const buttonHtml = requestable
         ? `<button class="btn btn-primary btn-sm w-100" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? "disabled" : ""}>${loading ? '<span class="spinner-border spinner-border-sm me-2"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-2"></i>Pedir'}</button>`
         : "";
@@ -486,7 +546,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         : "";
 
     return `
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-${span}">
         <div class="card h-100 border-${tone.border}">
         <div class="card-body">
         <div class="d-flex align-items-center gap-3 min-w-0">
@@ -495,6 +555,7 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         </div>
         <div class="fw-bold ${tone.text} text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
         </div>
+        ${bodyHtml}
         ${buttonRowHtml}
         </div>
         </div>
