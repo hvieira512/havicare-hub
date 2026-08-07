@@ -39,6 +39,7 @@ const CARD_TONE_BY_TYPE = {
     blood_sugar: {border: "warning", bg: "bg-warning", text: "text-warning"},
     temperature: {border: "warning", bg: "bg-warning", text: "text-warning"},
     battery: {border: "success", bg: "bg-success", text: "text-success"},
+    connectivity: {border: "info", bg: "bg-info", text: "text-info"},
     diaper_moisture: {border: "info", bg: "bg-info", text: "text-info"},
     diaper_condition: {border: "warning", bg: "bg-warning", text: "text-warning"},
     activity: {border: "primary", bg: "bg-primary", text: "text-primary"},
@@ -73,6 +74,7 @@ const REQUEST_CARD_CONTENT_BY_TYPE = {
     blood_sugar: {icon: "fa-vial", value: "Glicemia"},
     temperature: {icon: "fa-temperature-half", value: "Temperatura"},
     battery: {icon: "fa-battery-three-quarters", value: "Bateria"},
+    connectivity: {icon: "fa-wifi", value: "Conectividade"},
     diaper_moisture: {icon: "fa-droplet", value: "Humidade da fralda"},
     diaper_condition: {icon: "fa-baby", value: "Estado da fralda"},
     activity: {icon: "fa-person-walking", value: "Atividade"},
@@ -149,6 +151,11 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-battery-three-quarters",
         value: data.percent != null ? `${data.percent}%` : (data.voltageMv != null ? `${data.voltageMv} mV` : "-"),
         details: batteryDetails(data),
+    }),
+    connectivity: (data) => ({
+        icon: connectivityIcon(data),
+        value: connectivityValue(data),
+        details: compactDetails(data, ["signalQuality"]),
     }),
     diaper_moisture: (data) => ({
         icon: "fa-droplet",
@@ -356,6 +363,47 @@ function ncsPagerContent(type) {
     return { icon, value };
 }
 
+// Interfaces emitted by Hub\Ingress\Mqtt\Moko\GatewayNormalizer.
+const CONNECTIVITY_INTERFACE_LABELS = {
+    wifi: "Wi-Fi",
+    ethernet: "Ethernet",
+    ethernet_wifi: "Ethernet + Wi-Fi",
+    cellular: "Rede móvel",
+};
+
+const CONNECTIVITY_INTERFACE_ICONS = {
+    wifi: "fa-wifi",
+    ethernet: "fa-ethernet",
+    ethernet_wifi: "fa-network-wired",
+    cellular: "fa-tower-cell",
+};
+
+function connectivityIcon(data) {
+    return CONNECTIVITY_INTERFACE_ICONS[String(data?.interface || "").trim()] || "fa-wifi";
+}
+
+function connectivityValue(data) {
+    const parts = [];
+    const iface = String(data?.interface || "").trim();
+    if (iface !== "") {
+        parts.push(CONNECTIVITY_INTERFACE_LABELS[iface] || titleize(iface));
+    }
+
+    const networkType = String(data?.networkType || "").trim();
+    if (networkType !== "") {
+        parts.push(networkType);
+    }
+
+    // A wired gateway reports no RSSI at all, and 0 dBm is a legitimate
+    // reading, so test for null rather than falsiness.
+    const dbm = data?.signalStrengthDbm;
+    if (dbm !== null && dbm !== undefined && dbm !== "" && Number.isFinite(Number(dbm))) {
+        parts.push(`${Number(dbm)} dBm`);
+    }
+
+    return parts.length > 0 ? parts.join(" · ") : featureLabel("connectivity");
+}
+
 // Mirrors the thresholds in Hub\Ingress\Mqtt\Moko\MonitNormalizer so the strip
 // can never disagree with the condition card beside it.
 const DIAPER_DAMP_DELTA = 4;
@@ -510,7 +558,6 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     const type = commandFeature(command);
     const card = requestCardContent(type);
     const tone = cardTone(type, command);
-    const icon = command.icon || card.icon;
     const tooltip = featureLabel(type) || card.value || type;
     const requestable = command.requestable !== false;
     const isSystemRequestCard = [
@@ -531,6 +578,9 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         ? uplinkCardContent(type, lastTelemetry.data)
         : null;
     const lastValue = lastContent ? lastContent.value : card.value;
+    // The card shows the latest telemetry, so an icon derived from that reading
+    // wins over the static one -- a wired gateway must not show a Wi-Fi icon.
+    const icon = command.icon || lastContent?.icon || card.icon;
     const title = isSystemRequestCard
         ? card.value || featureLabel(type)
         : lastValue || card.value || featureLabel(type);

@@ -9,6 +9,7 @@ use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Infrastructure\Persistence\DatabaseSchemaGuard;
 use Hub\Infrastructure\Persistence\Migration\Version2026080502RemoveWeatherCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026080503NormalizeCapabilityLabelsPtPt;
+use Hub\Infrastructure\Persistence\Migration\Version2026080702EnableMkgw4GatewayCapabilities;
 use Tests\Support\MysqlDashboardTestCase;
 
 final class MigrationTest extends MysqlDashboardTestCase
@@ -96,6 +97,58 @@ final class MigrationTest extends MysqlDashboardTestCase
         self::assertSame('Chamada de enfermagem', $labels['ncs:pager_call'] ?? null);
     }
 
+    public function testMkgw4CapabilityMigrationEnablesRowsThatWereAlreadyDisabled(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+        $select = "
+            SELECT c.capability_key, mc.enabled
+            FROM model_capabilities mc
+            JOIN models m ON m.id = mc.model_id AND m.internal_model = 'MKGW4'
+            JOIN suppliers s ON s.id = m.supplier_id AND s.name = 'MOKO'
+            JOIN capabilities c ON c.id = mc.capability_id AND c.device_type = 'gateway'
+            ORDER BY c.capability_key
+        ";
+
+        // Reproduce the production state: the rows exist but are disabled, which
+        // is exactly the case the original INSERT IGNORE could not repair.
+        $pdo->exec("
+            UPDATE model_capabilities mc
+            JOIN models m ON m.id = mc.model_id AND m.internal_model = 'MKGW4'
+            JOIN suppliers s ON s.id = m.supplier_id AND s.name = 'MOKO'
+            SET mc.enabled = 0
+        ");
+        self::assertSame(
+            ['battery' => 0, 'connectivity' => 0, 'location' => 0],
+            array_map('intval', $pdo->query($select)->fetchAll(\PDO::FETCH_KEY_PAIR)),
+        );
+
+        (new Version2026080702EnableMkgw4GatewayCapabilities())->up($pdo);
+
+        self::assertSame(
+            ['battery' => 1, 'connectivity' => 1, 'location' => 1],
+            array_map('intval', $pdo->query($select)->fetchAll(\PDO::FETCH_KEY_PAIR)),
+        );
+    }
+
+    public function testMkgw3KeepsOnlyConnectivityAfterTheMkgw4Repair(): void
+    {
+        $pdo = $this->createDashboardDatabase()->pdo();
+
+        (new Version2026080702EnableMkgw4GatewayCapabilities())->up($pdo);
+
+        // MKGW3 is PoE powered with no GPS, so the repair must not spill over.
+        $rows = $pdo->query("
+            SELECT c.capability_key, mc.enabled
+            FROM model_capabilities mc
+            JOIN models m ON m.id = mc.model_id AND m.internal_model = 'MKGW3'
+            JOIN suppliers s ON s.id = m.supplier_id AND s.name = 'MOKO'
+            JOIN capabilities c ON c.id = mc.capability_id AND c.device_type = 'gateway'
+            ORDER BY c.capability_key
+        ")->fetchAll(\PDO::FETCH_KEY_PAIR);
+
+        self::assertSame(['connectivity' => 1], array_map('intval', $rows));
+    }
+
     public function testAllMigrationsAreRecordedAndDoNotRerun(): void
     {
         $database = $this->createDashboardDatabase();
@@ -126,10 +179,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026080601_gateway_diaper_devices',
             '2026080602_diaper_telemetry_sections',
             '2026080701_add_mkgw4_gateway',
+            '2026080702_enable_mkgw4_gateway_capabilities',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(23, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(24, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()

@@ -28,6 +28,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026080503NormalizeCapabilit
 use Hub\Infrastructure\Persistence\Migration\Version2026080601GatewayDiaperDevices;
 use Hub\Infrastructure\Persistence\Migration\Version2026080602DiaperTelemetrySections;
 use Hub\Infrastructure\Persistence\Migration\Version2026080701AddMkgw4Gateway;
+use Hub\Infrastructure\Persistence\Migration\Version2026080702EnableMkgw4GatewayCapabilities;
 
 final class DatabaseMigrationPlan
 {
@@ -58,6 +59,7 @@ final class DatabaseMigrationPlan
             new Version2026080601GatewayDiaperDevices(),
             new Version2026080602DiaperTelemetrySections(),
             new Version2026080701AddMkgw4Gateway(),
+            new Version2026080702EnableMkgw4GatewayCapabilities(),
         ];
     }
 
