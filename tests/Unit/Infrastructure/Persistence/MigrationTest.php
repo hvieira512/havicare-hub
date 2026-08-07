@@ -125,10 +125,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026080503_normalize_capability_labels_pt_pt',
             '2026080601_gateway_diaper_devices',
             '2026080602_diaper_telemetry_sections',
+            '2026080701_add_mkgw4_gateway',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(22, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(23, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
