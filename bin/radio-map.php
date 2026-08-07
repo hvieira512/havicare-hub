@@ -5,13 +5,10 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Hub\Bootstrap;
-use Hub\Config;
-use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Location\PrivateRadioMapFactory;
+use Hub\Runtime\CliBootstrap;
 
-Bootstrap::loadEnv(__DIR__ . '/..');
-$config = Config::load()->all();
+$config = CliBootstrap::config(__DIR__ . '/..');
 $locationConfig = $config['location_resolution'] ?? [];
 if (!(bool)($locationConfig['radio_map_enabled'] ?? true)) {
     fwrite(STDERR, "Private radio map is disabled\n");
@@ -47,8 +44,7 @@ if (!is_numeric($lat) || !is_numeric($lon) || !is_numeric($accuracy) || $bssids 
 }
 
 try {
-    $database = new DashboardDatabase($config['database'] ?? []);
-    (new \Hub\Infrastructure\Persistence\DatabaseSchemaGuard($database->pdo()))->assertCurrent();
+    $database = CliBootstrap::database($config);
     $count = PrivateRadioMapFactory::create($database->pdo(), $locationConfig)->seed(
         $bssids,
         (float)$lat,

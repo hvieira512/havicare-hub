@@ -5,8 +5,9 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Bootstrap;
 use Hub\Config;
+use Hub\Mqtt\BrokerSettings;
+use Hub\Mqtt\ConnectionFactory;
 use Hub\Protocol\Adapter\WonlexAdapter;
-use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\MqttClient;
 
 Bootstrap::loadEnv(__DIR__ . '/..');
@@ -72,18 +73,20 @@ if ($selected === []) {
     exit(1);
 }
 
-$clientId = substr('health-wonlex-command-' . getmypid() . '-' . bin2hex(random_bytes(4)), 0, 23);
-$client = new MqttClient($host, $port, $clientId, MqttClient::MQTT_3_1_1);
-
-$settings = (new ConnectionSettings())
-    ->setUsername($username !== '' ? $username : null)
-    ->setPassword($password !== '' ? $password : null)
-    ->setKeepAliveInterval(30)
-    ->setConnectTimeout(5)
-    ->setSocketTimeout(5);
+$connections = new ConnectionFactory(new BrokerSettings(
+    $host,
+    $port,
+    $username,
+    $password,
+    'health-wonlex-command',
+    keepalive: 30,
+    connectTimeout: 5,
+    socketTimeout: 5,
+));
+$client = $connections->create(bin2hex(random_bytes(4)));
 
 try {
-    $client->connect($settings, true);
+    $connections->connect($client, true);
 } catch (Throwable $e) {
     fwrite(STDERR, "Failed to connect to MQTT broker {$host}:{$port} as " . ($username !== '' ? $username : '<anonymous>') . "\n");
     fwrite(STDERR, $e->getMessage() . PHP_EOL);

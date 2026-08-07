@@ -12,8 +12,9 @@ use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder;
 use Hub\Ingress\Mqtt\Qinglanst\Topic;
 use Hub\Registry\Whitelist;
-use PhpMqtt\Client\ConnectionSettings;
-use PhpMqtt\Client\MqttClient;
+use Hub\Mqtt\BrokerSettings;
+use Hub\Mqtt\ConnectionFactory;
+use Hub\Runtime\HubServices;
 use Predis\Client as RedisClient;
 
 Bootstrap::loadEnv(__DIR__ . '/..');
@@ -58,11 +59,11 @@ $redisHost = (string)($options['redis-host'] ?? ($redisConfig['host'] ?? '127.0.
 $redisPort = (int)($options['redis-port'] ?? ($redisConfig['port'] ?? 6379));
 $redisPass = (string)($options['redis-pass'] ?? ($redisConfig['password'] ?? ''));
 
-$redisParameters = ['host' => $redisHost, 'port' => $redisPort];
-if ($redisPass !== '') {
-    $redisParameters['password'] = $redisPass;
-}
-$redis = new RedisClient($redisParameters);
+$redis = new RedisClient(HubServices::redisParameters([
+    'host' => $redisHost,
+    'port' => $redisPort,
+    'password' => $redisPass,
+]));
 $dashboardStore = new DashboardStore($redis, $historyLimit, 'hub:dashboard:benchmark:qinglanst');
 $writePolicy = new DashboardWritePolicy(
     max(0, (int)($options['seen-min-ms'] ?? 5000)),
@@ -73,17 +74,16 @@ $whitelist = new Whitelist();
 $decoder = new PayloadDecoder();
 $normalizer = new MessageNormalizer();
 
-$clientId = substr('qinglanst-bench-' . getmypid(), 0, 23);
-$mqttClient = new MqttClient($mqttHost, $mqttPort, $clientId, MqttClient::MQTT_3_1_1);
-$mqttClient->connect(
-    (new ConnectionSettings())
-        ->setUsername($mqttUser !== '' ? $mqttUser : null)
-        ->setPassword($mqttPass !== '' ? $mqttPass : null)
-        ->setKeepAliveInterval(60)
-        ->setConnectTimeout(5)
-        ->setSocketTimeout(5),
-    true
-);
+$mqttClient = (new ConnectionFactory(new BrokerSettings(
+    $mqttHost,
+    $mqttPort,
+    $mqttUser,
+    $mqttPass,
+    'qinglanst-bench',
+    keepalive: 60,
+    connectTimeout: 5,
+    socketTimeout: 5,
+)))->build('run');
 $mqttBridge = new HubMqttBridge($mqttClient, $mqttPrefix);
 
 $samples = loadSamples($input, $limit);

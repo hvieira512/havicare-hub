@@ -2,10 +2,11 @@
 
 namespace Hub;
 
+use Hub\Ingress\Mqtt\MqttIngress;
 use Hub\Log\Logger;
 use PhpMqtt\Client\MqttClient;
 
-class HubDownlinkSubscriber
+class HubDownlinkSubscriber implements MqttIngress
 {
     private const DEFAULT_DEVICE_TYPE = 'watch';
 

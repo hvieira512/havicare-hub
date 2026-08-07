@@ -7,7 +7,8 @@ use Hub\Bootstrap;
 use Hub\Config;
 use Hub\Location\BeaconDbClient;
 use Hub\Location\BeaconDbRequestBuilder;
-use PhpMqtt\Client\ConnectionSettings;
+use Hub\Mqtt\BrokerSettings;
+use Hub\Mqtt\ConnectionFactory;
 use PhpMqtt\Client\MqttClient;
 
 Bootstrap::loadEnv(__DIR__ . '/..');
@@ -116,21 +117,20 @@ $listenTimeout = max(1.0, (float)($args['listen-timeout'] ?? 60.0));
 $received = 0;
 $successful = 0;
 
-$mqttClient = new MqttClient(
+$connections = new ConnectionFactory(new BrokerSettings(
     $host,
     $port,
-    substr('location-probe-' . getmypid() . '-' . bin2hex(random_bytes(3)), 0, 23),
-    MqttClient::MQTT_3_1_1,
-);
-$settings = (new ConnectionSettings())
-    ->setUsername($username !== '' ? $username : null)
-    ->setPassword($password !== '' ? $password : null)
-    ->setKeepAliveInterval(30)
-    ->setConnectTimeout(5)
-    ->setSocketTimeout(5);
+    $username,
+    $password,
+    'location-probe',
+    keepalive: 30,
+    connectTimeout: 5,
+    socketTimeout: 5,
+));
+$mqttClient = $connections->create(bin2hex(random_bytes(3)));
 
 try {
-    $mqttClient->connect($settings, true);
+    $connections->connect($mqttClient, true);
     $mqttClient->subscribe($topic, static function (string $messageTopic, string $message) use (&$received, &$successful, $process): void {
         $decoded = json_decode($message, true);
         if (!is_array($decoded) || ($decoded['type'] ?? null) !== 'location') {
