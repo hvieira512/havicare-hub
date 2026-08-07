@@ -761,7 +761,13 @@ function refreshRequestGridTooltips() {
     els.requestGrid
         .querySelectorAll('[data-bs-toggle="tooltip"]')
         .forEach((element) => {
-            bootstrap.Tooltip.getOrCreateInstance(element);
+            // The grid is rebuilt on every telemetry push, which disposes these
+            // instances. An animated tooltip queues its hide completion on the
+            // fade transition, and dispose() cannot cancel that callback -- it
+            // then runs against a nulled instance and throws. Opting out of the
+            // animation makes the hide complete synchronously, so there is
+            // nothing left pending to race with the next render.
+            bootstrap.Tooltip.getOrCreateInstance(element, {animation: false});
         });
 }
 
