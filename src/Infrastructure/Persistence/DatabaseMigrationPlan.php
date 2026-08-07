@@ -27,6 +27,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026080502RemoveWeatherCapab
 use Hub\Infrastructure\Persistence\Migration\Version2026080503NormalizeCapabilityLabelsPtPt;
 use Hub\Infrastructure\Persistence\Migration\Version2026080601GatewayDiaperDevices;
 use Hub\Infrastructure\Persistence\Migration\Version2026080602DiaperTelemetrySections;
+use Hub\Infrastructure\Persistence\Migration\Version2026080701AddMkgw4Gateway;
 
 final class DatabaseMigrationPlan
 {
@@ -56,6 +57,7 @@ final class DatabaseMigrationPlan
             new Version2026080503NormalizeCapabilityLabelsPtPt(),
             new Version2026080601GatewayDiaperDevices(),
             new Version2026080602DiaperTelemetrySections(),
+            new Version2026080701AddMkgw4Gateway(),
         ];
     }
 
