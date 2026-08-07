@@ -271,6 +271,31 @@ function setGatewayLinksDisabled(disabled) {
     }
 }
 
+const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="2.5" y="13.5" width="19" height="7" rx="1.75"></rect>
+    <path d="M6 17h.01M9.5 17h5"></path>
+    <path d="M12 10.5v-7M8.75 6.75 12 3.5l3.25 3.25"></path>
+</svg>`;
+
+function gatewayCardMarkup(gateway, checked) {
+    const key = String(gateway.imei || "").trim().toLowerCase();
+    const model = String(gateway.model || "").trim();
+    const image = String(gateway.image || "").trim();
+    const thumb = image
+        ? `<img src="${esc(image)}" alt="" loading="lazy" decoding="async">`
+        : GATEWAY_THUMB_PLACEHOLDER;
+
+    return `<label class="gateway-card">
+        <input class="form-check-input gateway-card-check" type="checkbox" data-gateway-key="${esc(key)}"${checked ? " checked" : ""}>
+        <span class="gateway-card-thumb">${thumb}</span>
+        <span class="gateway-card-text">
+            <span class="gateway-card-mac">${esc(key)}</span>
+            <span class="gateway-card-model">${esc(model || "Modelo desconhecido")}</span>
+        </span>
+    </label>`;
+}
+
 function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") {
     const list = els.deviceGatewayLinksList;
     if (!list) return;
@@ -280,20 +305,14 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
     );
     if (gateways.length === 0) {
         list.innerHTML = emptyText
-            ? `<li class="list-group-item small text-secondary">${esc(emptyText)}</li>`
+            ? `<p class="gateway-picker-empty small text-secondary mb-0">${esc(emptyText)}</p>`
             : "";
     } else {
         list.innerHTML = gateways
-            .map((gateway) => {
-                const key = String(gateway.imei || "").trim().toLowerCase();
-                const model = String(gateway.model || "").trim();
-                const label = model ? `${key} — ${model}` : key;
-                const inputId = `deviceGateway-${key}`;
-                return `<li class="list-group-item d-flex align-items-center">
-                    <input class="form-check-input me-1" type="checkbox" id="${inputId}" data-gateway-key="${esc(key)}"${selected.has(key) ? " checked" : ""}>
-                    <label class="form-check-label stretched-link" for="${inputId}">${esc(label)}</label>
-                </li>`;
-            })
+            .map((gateway) => gatewayCardMarkup(
+                gateway,
+                selected.has(String(gateway.imei || "").trim().toLowerCase()),
+            ))
             .join("");
     }
     state.deviceModal.gatewayOptions = gateways;
@@ -2418,9 +2437,6 @@ function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength
 
 export async function startDashboard() {
     els = cacheElements();
-    if (els.deviceGatewayLinksList) {
-        els.deviceGatewayLinksList.style.maxHeight = "16rem";
-    }
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceSelectorModal = new bootstrap.Modal(
         document.getElementById("deviceSelectorModal"),
