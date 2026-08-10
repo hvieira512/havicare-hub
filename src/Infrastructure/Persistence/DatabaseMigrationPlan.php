@@ -30,6 +30,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026080602DiaperTelemetrySec
 use Hub\Infrastructure\Persistence\Migration\Version2026080701AddMkgw4Gateway;
 use Hub\Infrastructure\Persistence\Migration\Version2026080702EnableMkgw4GatewayCapabilities;
 use Hub\Infrastructure\Persistence\Migration\Version2026081001BraceletDevices;
+use Hub\Infrastructure\Persistence\Migration\Version2026081002UnifyHelpCallLabel;
 
 final class DatabaseMigrationPlan
 {
@@ -62,6 +63,7 @@ final class DatabaseMigrationPlan
             new Version2026080701AddMkgw4Gateway(),
             new Version2026080702EnableMkgw4GatewayCapabilities(),
             new Version2026081001BraceletDevices(),
+            new Version2026081002UnifyHelpCallLabel(),
         ];
     }
 

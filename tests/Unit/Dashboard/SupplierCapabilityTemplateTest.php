@@ -137,7 +137,7 @@ final class SupplierCapabilityTemplateTest extends TestCase
 
         self::assertCount(1, $match);
         self::assertSame('alarms', $match[0]['section'] ?? null);
-        self::assertSame('Chamada de enfermagem', $match[0]['label'] ?? null);
+        self::assertSame('Chamada de ajuda', $match[0]['label'] ?? null);
         self::assertFalse($match[0]['isConfigurable'] ?? true);
         self::assertFalse($match[0]['isTelemetry'] ?? true);
         self::assertTrue($match[0]['isEvent'] ?? false);

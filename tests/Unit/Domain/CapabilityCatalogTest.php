@@ -12,11 +12,16 @@ final class CapabilityCatalogTest extends TestCase
     {
         $expected = [
             'watch' => [68, 'e7a6cb2efba6184bd788d8ed3d25180cc4508989d4b9751e426e1d8ce7b431b1'],
-            'ncs' => [1, 'fc019c829255013c927ce1c7bcea7cc0d7fc4e76e70b021a6819e41664c09fdd'],
+            'ncs' => [1, 'bf0447cade6d4ed25110a537a4536f2d5ee9ac195e467d114a10b4ac6e9b2c0b'],
             'radar' => [4, 'b18cde2f1c1a75b44b0290c7770225f6efc486d561829ffa31ca4d584dcb0426'],
             'gateway' => [3, '0da2bdcb67a191f32fdf9ae47f0e9b9339bd49dd026d4d41e616b52ed430c07a'],
             'diaper_sensor' => [4, '89c723e312265a99e5d444acb20aee6d7e4d545288df6b6c39815fdc10abecf1'],
+            'bracelet' => [3, '16ca71291d05ec6c08e98d889b0bed4453725b1e6481fa5d1d02f807f76c2e28'],
         ];
+
+        // A device type added without a hash here would otherwise go unguarded,
+        // which is how bracelet was first missed.
+        self::assertSame(CapabilityCatalog::deviceTypes(), array_keys($expected));
 
         foreach ($expected as $deviceType => [$count, $hash]) {
             $definitions = CapabilityCatalog::definitionsForDeviceType($deviceType);

@@ -94,7 +94,7 @@ final class MigrationTest extends MysqlDashboardTestCase
         ")->fetchAll(\PDO::FETCH_KEY_PAIR);
         self::assertSame('Frequência cardíaca', $labels['watch:heart_rate'] ?? null);
         self::assertSame('Posições', $labels['radar:positions'] ?? null);
-        self::assertSame('Chamada de enfermagem', $labels['ncs:pager_call'] ?? null);
+        self::assertSame('Chamada de ajuda', $labels['ncs:pager_call'] ?? null);
     }
 
     public function testMkgw4CapabilityMigrationEnablesRowsThatWereAlreadyDisabled(): void
@@ -181,10 +181,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026080701_add_mkgw4_gateway',
             '2026080702_enable_mkgw4_gateway_capabilities',
             '2026081001_bracelet_devices',
+            '2026081002_unify_help_call_label',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(25, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(26, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()

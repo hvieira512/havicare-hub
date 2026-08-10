@@ -10,7 +10,7 @@ final class NcsCapabilityDefinitions
     public static function all(): array
     {
         return [
-            ['deviceType' => 'ncs', 'section' => 'alarms', 'key' => 'pager_call', 'label' => 'Chamada de enfermagem', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            ['deviceType' => 'ncs', 'section' => 'alarms', 'key' => 'pager_call', 'label' => 'Chamada de ajuda', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
         ];
     }
 }

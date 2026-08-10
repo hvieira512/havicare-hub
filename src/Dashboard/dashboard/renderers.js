@@ -89,7 +89,7 @@ const REQUEST_CARD_CONTENT_BY_TYPE = {
     rr_interval: {icon: "fa-stopwatch", value: "Intervalo RR"},
     "device.connected": {icon: "fa-plug-circle-check", value: "Ligado"},
     "device.disconnected": {icon: "fa-plug-circle-xmark", value: "Desligado"},
-    help_call: {icon: "fa-triangle-exclamation", value: "Chamada de enfermagem"},
+    help_call: {icon: "fa-triangle-exclamation", value: "Chamada de ajuda"},
     reset: {icon: "fa-bell-slash", value: "Cancelado"},
     unknown: {icon: "fa-bell", value: "Desconhecido"},
 };
@@ -256,7 +256,7 @@ const STATUS_BADGE_LABEL = {
 };
 
 const NCS_PAGER_EVENT_VALUE = {
-    help_call: "Chamada de enfermagem",
+    help_call: "Chamada de ajuda",
     reset: "Cancelado",
 };
 

@@ -59,7 +59,7 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($pagerCall);
         self::assertSame('ncs', $pagerCall['deviceType'] ?? null);
         self::assertSame('alarms', $pagerCall['section'] ?? null);
-        self::assertSame('Chamada de enfermagem', $pagerCall['label'] ?? null);
+        self::assertSame('Chamada de ajuda', $pagerCall['label'] ?? null);
         self::assertTrue($pagerCall['isEvent'] ?? false);
         self::assertFalse($pagerCall['isConfigurable'] ?? true);
         self::assertFalse($pagerCall['isRequestable'] ?? true);
