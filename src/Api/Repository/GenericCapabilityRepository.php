@@ -112,7 +112,7 @@ final class GenericCapabilityRepository
         }
 
         usort($filtered, static function (array $left, array $right): int {
-            $deviceTypeOrder = ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor'];
+            $deviceTypeOrder = ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'];
             $sectionOrder = ['telemetry', 'health', 'contacts', 'alarms', 'settings_system'];
             $deviceIndex = static function (string $deviceType) use ($deviceTypeOrder): int {
                 $index = array_search($deviceType, $deviceTypeOrder, true);

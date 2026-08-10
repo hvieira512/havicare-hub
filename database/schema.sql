@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS models (
     supplier_id BIGINT UNSIGNED NOT NULL,
     internal_model VARCHAR(191) NOT NULL,
     commercial_name VARCHAR(191) NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL DEFAULT 'watch',
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
     image_path VARCHAR(255) NOT NULL DEFAULT '',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS models (
 
 CREATE TABLE IF NOT EXISTS supplier_device_types (
     supplier_id BIGINT UNSIGNED NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL,
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (supplier_id, device_type),
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS supplier_device_types (
 
 CREATE TABLE IF NOT EXISTS capabilities (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL DEFAULT 'watch',
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
     section ENUM('telemetry', 'health', 'contacts', 'alarms', 'settings_system') NOT NULL,
     capability_key VARCHAR(191) NOT NULL,
     label VARCHAR(191) NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS whitelist (
     imei VARCHAR(64) NOT NULL PRIMARY KEY,
     supplier VARCHAR(191) NOT NULL,
     model VARCHAR(191) NOT NULL,
-    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor') NOT NULL DEFAULT 'watch',
+    device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
     license_id INT UNSIGNED NOT NULL DEFAULT 0,
     sim_number VARCHAR(64) NOT NULL DEFAULT '',
     device_id VARCHAR(191) NOT NULL DEFAULT '',

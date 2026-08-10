@@ -123,6 +123,12 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => false,
                 'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
             ],
+            'moko-w6r' => [
+                'label' => 'MOKO W6R',
+                'deviceType' => 'bracelet',
+                'supportsConfigCatalog' => false,
+                'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
+            ],
         ];
     }
 

@@ -49,6 +49,7 @@ import {
     isDeviceSelectorOpen,
     isFourPTouchSelection,
     licenseDisplayLabel,
+    linksToGateway,
     loadDevice,
     loadSummary,
     ensureProtocolsLoaded,
@@ -64,6 +65,7 @@ import {
     selectDevice,
     supplierProtocol,
     suppliersForDeviceType,
+    usesMacAddress,
 } from "../devices/list-detail.js";
 import {
     eligibleGateways,
@@ -325,9 +327,9 @@ async function refreshGatewayOptions(selectedKeys = null) {
     const deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
     );
-    const isDiaperSensor = deviceType === "diaper_sensor";
-    els.deviceGatewayLinksRow.classList.toggle("d-none", !isDiaperSensor);
-    if (!isDiaperSensor) {
+    const isGatewayLinked = linksToGateway(deviceType);
+    els.deviceGatewayLinksRow.classList.toggle("d-none", !isGatewayLinked);
+    if (!isGatewayLinked) {
         renderGatewayOptions([], []);
         return;
     }
@@ -701,7 +703,7 @@ function renderDeviceTypeSelector(selectedType = "watch") {
     els.deviceDeviceIdRow?.classList.toggle("d-none", !showDeviceId);
     els.deviceGatewayLinksRow?.classList.toggle(
         "d-none",
-        deviceType !== "diaper_sensor",
+        !linksToGateway(deviceType),
     );
 
     if (deviceType === "ncs") {
@@ -714,7 +716,7 @@ function renderDeviceTypeSelector(selectedType = "watch") {
         els.deviceDeviceIdHelp.textContent =
             "Identificador do dispositivo radar no protocolo.";
         els.deviceDeviceId.placeholder = "ID do dispositivo";
-    } else if (deviceType === "gateway" || deviceType === "diaper_sensor") {
+    } else if (usesMacAddress(deviceType)) {
         els.deviceDeviceIdLabel.textContent = "MAC";
         els.deviceDeviceIdHelp.textContent =
             "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).";
@@ -915,7 +917,7 @@ async function saveDevice() {
 
     const originalImei = els.deviceImei.dataset.originalImei || "";
     const company = els.deviceCompany.value || "null";
-    const desiredGatewayKeys = deviceType === "diaper_sensor"
+    const desiredGatewayKeys = linksToGateway(deviceType)
         ? selectedGatewayKeys()
         : [];
     if (deviceType !== "watch" && (licenseId === "" || licenseId === "0")) {
@@ -945,7 +947,7 @@ async function saveDevice() {
         return;
     }
 
-    if (deviceType === "diaper_sensor") {
+    if (linksToGateway(deviceType)) {
         const currentGatewayKeys = originalImei && originalImei !== imei
             ? []
             : state.deviceModal.linkedGatewayKeys || [];

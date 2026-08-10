@@ -8,7 +8,7 @@ final class DeviceMetadata
     {
         $normalized = strtolower(trim($deviceType));
 
-        return in_array($normalized, ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor'], true) ? $normalized : 'watch';
+        return in_array($normalized, ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'], true) ? $normalized : 'watch';
     }
 
     public static function normalizeLicenseId(string $licenseId): int

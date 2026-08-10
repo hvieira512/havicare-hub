@@ -16,11 +16,10 @@ final class Version2026080601GatewayDiaperDevices implements Migration
 
     public function up(PDO $pdo): void
     {
-        $type = "ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor')";
-        $pdo->exec("ALTER TABLE models MODIFY device_type {$type} NOT NULL DEFAULT 'watch'");
-        $pdo->exec("ALTER TABLE supplier_device_types MODIFY device_type {$type} NOT NULL");
-        $pdo->exec("ALTER TABLE capabilities MODIFY device_type {$type} NOT NULL DEFAULT 'watch'");
-        $pdo->exec("ALTER TABLE whitelist MODIFY device_type {$type} NOT NULL DEFAULT 'watch'");
+        // Widens from the shared list rather than a literal one: on a fresh
+        // database this replays after the catalog has already been seeded with
+        // newer device types, and a narrower list would truncate those rows.
+        DeviceTypeColumn::widen($pdo);
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS gateway_device_links (
                 gateway_device_key VARCHAR(64) NOT NULL,

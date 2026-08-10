@@ -21,6 +21,7 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'MKGW3', 'MOKOSmart MKGW3', 'gateway', ''],
         ['MOKO', 'MKGW4', 'MOKOSmart MKGW4', 'gateway', ''],
         ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', ''],
+        ['MOKO', 'W6R', 'MOKO W6R', 'bracelet', ''],
     ];
 
     private const SUPPLIER_DEVICE_TYPES = [
@@ -31,6 +32,7 @@ final class ReferenceCatalogSeeder
         ['Qinglanst', 'radar'],
         ['MOKO', 'gateway'],
         ['MONIT', 'diaper_sensor'],
+        ['MOKO', 'bracelet'],
     ];
 
     public function seedReferenceData(PDO $pdo): void

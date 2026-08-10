@@ -4,7 +4,21 @@ export const deviceTypeOptions = [
     { value: "radar", label: "Radar" },
     { value: "gateway", label: "Gateway" },
     { value: "diaper_sensor", label: "Medidor de fraldas" },
+    { value: "bracelet", label: "Pulseira" },
 ];
+
+// Device types that are not on the network themselves: a MOKO gateway relays
+// their BLE advertisements, so each one is linked to one or more gateways.
+export const GATEWAY_LINKED_DEVICE_TYPES = ["diaper_sensor", "bracelet"];
+
+export function linksToGateway(deviceType) {
+    return GATEWAY_LINKED_DEVICE_TYPES.includes(deviceType);
+}
+
+// Identified by a canonical MAC rather than an IMEI.
+export function usesMacAddress(deviceType) {
+    return deviceType === "gateway" || linksToGateway(deviceType);
+}
 
 export function normalizeDeviceType(deviceType) {
     return deviceTypeOptions.some((option) => option.value === deviceType)

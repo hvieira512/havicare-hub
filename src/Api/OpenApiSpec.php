@@ -680,7 +680,7 @@ class OpenApiSpec
                         'tags' => ['Capabilities'],
                         'summary' => 'List device-type capability catalog',
                         'parameters' => [
-                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor']]],
+                            ['name' => 'deviceType', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet']]],
                         ],
                         'responses' => [
                             '200' => [

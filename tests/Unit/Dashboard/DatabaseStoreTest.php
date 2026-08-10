@@ -15,7 +15,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $catalog = $db->genericCapabilities->all('watch');
         self::assertNotEmpty($catalog);
         self::assertSame('watch', $catalog[0]['device_type'] ?? null);
-        self::assertSame(8, count($db->models->all()));
+        self::assertSame(9, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -27,7 +27,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
 
         $db = ApiDataAccess::fromDatabase($database);
-        self::assertSame(8, count($db->models->all()));
+        self::assertSame(9, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -55,6 +55,15 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         sort($expectedGateway);
         sort($actualGateway);
         self::assertSame($expectedGateway, $actualGateway);
+
+        $w6r = $db->models->find('MOKO', 'W6R');
+        self::assertIsArray($w6r);
+        self::assertSame('bracelet', $w6r['device_type'] ?? null);
+        $expectedBracelet = ['battery', 'motion', 'help_call'];
+        $actualBracelet = $db->modelCapabilities->enabledFeaturesForModelId((int)$w6r['id']);
+        sort($expectedBracelet);
+        sort($actualBracelet);
+        self::assertSame($expectedBracelet, $actualBracelet);
     }
 
     public function testCompletedMigrationsDoNotRerunOnRestart(): void

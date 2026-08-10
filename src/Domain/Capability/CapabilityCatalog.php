@@ -8,6 +8,7 @@ use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Definition\NcsCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\RadarCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\GatewayCapabilityDefinitions;
+use Hub\Domain\Capability\Definition\BraceletCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\DiaperSensorCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\WatchCapabilityDefinitions;
 use Hub\Domain\DeviceMetadata;
@@ -26,7 +27,7 @@ final class CapabilityCatalog
      */
     public static function deviceTypes(): array
     {
-        return ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor'];
+        return ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'];
     }
 
     /**
@@ -54,6 +55,7 @@ final class CapabilityCatalog
             RadarCapabilityDefinitions::all(),
             GatewayCapabilityDefinitions::all(),
             DiaperSensorCapabilityDefinitions::all(),
+            BraceletCapabilityDefinitions::all(),
         );
     }
 
@@ -130,6 +132,7 @@ final class CapabilityCatalog
             'wonlex-json' => ['device_state'],
             'voerka-ncs' => ['pager_call'],
             'monit-mecs-pro-ble' => ['change_required'],
+            'moko-w6r' => ['help_call'],
             default => [],
         };
     }
@@ -184,6 +187,7 @@ final class CapabilityCatalog
             'moko-mkgw3' => ['connectivity'],
             'moko-mkgw4' => ['connectivity', 'battery', 'location'],
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_condition'],
+            'moko-w6r' => ['battery', 'motion'],
             default => [],
         };
     }
