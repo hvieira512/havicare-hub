@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * Decodes MOKO W6R (BXP-B / "MK Button") advertisements relayed by a gateway.
+ * Decodes MOKO W6R (BXP-B / "MK Button") observations relayed by a gateway.
  *
- * Layout comes from the BXP-B Series tab of "MOKO Beacon - ADV Format Summary
- * Sheet". Two service data blocks are relevant, and either may be absent:
+ * A MKGW3 recognises MOKO beacons and reports them already parsed, with no raw
+ * advertising bytes at all:
  *
- *   FEE0  alarm frame     which press mode fired, and that mode's trigger count
- *   EA00  general info    accelerometer, temperature and battery
+ *   {"type":"bxp-button","frame_type":0,"trigger_count":69,"alarm_status":1,
+ *    "batt_vol":98,"x_axis_data":-4,"y_axis_data":-20,"z_axis_data":1052, ...}
  *
- * Offsets are resolved by walking the advertising data structures rather than
- * indexing the packet, because the sheet's absolute offsets do not agree with
- * its own length bytes.
+ * so that is the primary input. Gateways that hand over raw advertising data
+ * instead are still decoded from the BXP-B layout documented in the "MOKO
+ * Beacon - ADV Format Summary Sheet", and both paths produce the same result.
  */
 final class W6rDecoder
 {
@@ -23,12 +23,18 @@ final class W6rDecoder
     private const ALARM_SERVICE = 'e0fe';
     private const INFO_SERVICE = '00ea';
 
+    /**
+     * The gateway reports the alarm frame type with the 0x20 base removed, so
+     * 0x20 "single press mode" arrives as 0.
+     */
     private const PRESS_MODES = [
-        0x20 => 'single',
-        0x21 => 'double',
-        0x22 => 'long',
-        0x23 => 'inactivity',
+        0 => 'single',
+        1 => 'double',
+        2 => 'long',
+        3 => 'inactivity',
     ];
+
+    private const RAW_FRAME_BASE = 0x20;
 
     /**
      * @param array<string, mixed> $observation a single entry of a 3070 scan report
@@ -41,19 +47,88 @@ final class W6rDecoder
             return null;
         }
 
+        $decoded = $this->fromGatewayFields($observation) ?? $this->fromAdvertisingData($observation);
+        if ($decoded === null) {
+            return null;
+        }
+
+        return ['mac' => $mac] + $decoded;
+    }
+
+    /**
+     * @param array<string, mixed> $observation
+     * @return array<string, mixed>|null
+     */
+    private function fromGatewayFields(array $observation): ?array
+    {
+        if ((string)($observation['type'] ?? '') !== 'bxp-button') {
+            return null;
+        }
+
+        $pressMode = self::PRESS_MODES[(int)($observation['frame_type'] ?? -1)] ?? null;
+        if ($pressMode === null || !isset($observation['trigger_count'])) {
+            return null;
+        }
+
+        $alarm = [
+            'pressMode' => $pressMode,
+            'triggerCount' => (int)$observation['trigger_count'],
+            'triggered' => (int)($observation['alarm_status'] ?? 0) === 1,
+            'deviceId' => (string)($observation['device_id'] ?? ''),
+        ];
+
+        return array_filter([
+            'alarm' => $alarm,
+            // The scan response is not always captured, so these arrive only
+            // on some sightings of the same device.
+            'info' => $this->gatewayInfo($observation),
+        ], static fn(mixed $value): bool => $value !== null);
+    }
+
+    /**
+     * @param array<string, mixed> $observation
+     * @return array<string, mixed>|null
+     */
+    private function gatewayInfo(array $observation): ?array
+    {
+        $hasAcceleration = isset($observation['x_axis_data'], $observation['y_axis_data'], $observation['z_axis_data']);
+        if (!$hasAcceleration && !isset($observation['batt_vol'])) {
+            return null;
+        }
+
+        $info = [];
+        if ($hasAcceleration) {
+            $info['accelerationMg'] = [
+                'x' => (int)$observation['x_axis_data'],
+                'y' => (int)$observation['y_axis_data'],
+                'z' => (int)$observation['z_axis_data'],
+            ];
+        }
+        if (isset($observation['batt_vol'])) {
+            $info += $this->battery((int)$observation['batt_vol']);
+        }
+
+        return $info;
+    }
+
+    /**
+     * @param array<string, mixed> $observation
+     * @return array<string, mixed>|null
+     */
+    private function fromAdvertisingData(array $observation): ?array
+    {
         $structures = array_merge(
             $this->adStructures((string)($observation['adv_data'] ?? '')),
             $this->adStructures((string)($observation['rsp_data'] ?? '')),
         );
 
-        $alarm = $this->alarm($this->serviceData($structures, self::ALARM_SERVICE));
-        $info = $this->info($this->serviceData($structures, self::INFO_SERVICE));
+        $alarm = $this->rawAlarm($this->serviceData($structures, self::ALARM_SERVICE));
+        $info = $this->rawInfo($this->serviceData($structures, self::INFO_SERVICE));
         if ($alarm === null && $info === null) {
             return null;
         }
 
         return array_filter([
-            'mac' => $mac,
             'alarm' => $alarm,
             'info' => $info,
         ], static fn(mixed $value): bool => $value !== null);
@@ -61,23 +136,22 @@ final class W6rDecoder
 
     /**
      * @param list<int>|null $data service data payload with the UUID stripped
-     * @return array{pressMode: string, frameType: int, triggerCount: int, triggered: bool, deviceId: string, firmwareType: int}|null
+     * @return array<string, mixed>|null
      */
-    private function alarm(?array $data): ?array
+    private function rawAlarm(?array $data): ?array
     {
         // frame type, status flag, 2-byte count, 6-byte device id, firmware type
         if ($data === null || count($data) < 11) {
             return null;
         }
 
-        $pressMode = self::PRESS_MODES[$data[0]] ?? null;
+        $pressMode = self::PRESS_MODES[$data[0] - self::RAW_FRAME_BASE] ?? null;
         if ($pressMode === null) {
             return null;
         }
 
         return [
             'pressMode' => $pressMode,
-            'frameType' => $data[0],
             'triggerCount' => ($data[2] << 8) | $data[3],
             // Bit 1 is the main button's alarm state; bit 2 is a sub button that
             // only BXP-B03-D firmware has.
@@ -86,22 +160,19 @@ final class W6rDecoder
                 static fn(int $byte): string => sprintf('%02x', $byte),
                 array_slice($data, 4, 6)
             )),
-            'firmwareType' => $data[10],
         ];
     }
 
     /**
      * @param list<int>|null $data service data payload with the UUID stripped
-     * @return array{accelerationMg: array{x: int, y: int, z: int}, batteryPercent?: int, batteryVoltageMv?: int}|null
+     * @return array<string, mixed>|null
      */
-    private function info(?array $data): ?array
+    private function rawInfo(?array $data): ?array
     {
         // frame type, full scale, threshold, x, y, z, temperature, ranging, battery
         if ($data === null || count($data) < 15 || $data[0] !== 0x00) {
             return null;
         }
-
-        $battery = ($data[13] << 8) | $data[14];
 
         return [
             'accelerationMg' => [
@@ -109,11 +180,17 @@ final class W6rDecoder
                 'y' => $this->signed16($data[6], $data[7]),
                 'z' => $this->signed16($data[8], $data[9]),
             ],
-            // Above 100 the field carries millivolts instead of a percentage.
-            ...($battery > 100
-                ? ['batteryVoltageMv' => $battery]
-                : ['batteryPercent' => $battery]),
-        ];
+        ] + $this->battery(($data[13] << 8) | $data[14]);
+    }
+
+    /**
+     * Above 100 the field carries millivolts instead of a percentage.
+     *
+     * @return array<string, int>
+     */
+    private function battery(int $value): array
+    {
+        return $value > 100 ? ['batteryVoltageMv' => $value] : ['batteryPercent' => $value];
     }
 
     /**

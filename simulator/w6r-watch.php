@@ -110,12 +110,15 @@ $client->subscribe($topicFilter, function (string $unusedTopic, string $message)
         $state['lastRssi'] = (int)($observation['rssi'] ?? 0);
         $state['lastGateway'] = $gateway;
 
-        if ($adv === '' && $rsp === '') {
+        // A MKGW3 reports MOKO beacons already parsed, so there is usually no
+        // raw hex at all: ask the decoder rather than looking for bytes.
+        $result = $decoder->decode($observation);
+        if ($result === null) {
             $state['empty']++;
             continue;
         }
 
-        $key = $adv . '|' . $rsp;
+        $key = json_encode([$result['alarm']['pressMode'] ?? null, $result['alarm']['triggerCount'] ?? null, $result['info'] ?? null]);
         if (isset($state['payloads'][$key])) {
             continue;
         }
@@ -133,13 +136,9 @@ $client->subscribe($topicFilter, function (string $unusedTopic, string $message)
             }
         }
 
-        $result = $decoder->decode(['mac' => $target, 'adv_data' => $adv, 'rsp_data' => $rsp]);
-        if ($result === null) {
-            fwrite(STDOUT, "\n  W6rDecoder: no MOKO button frame found in this payload.\n");
-        } else {
-            fwrite(STDOUT, "\n  W6rDecoder DECODED IT:\n");
-            fwrite(STDOUT, '    ' . str_replace("\n", "\n    ", trim(print_r($result, true))) . "\n");
-        }
+        fwrite(STDOUT, "  observation: " . json_encode($observation) . "\n");
+        fwrite(STDOUT, "\n  W6rDecoder DECODED IT:\n");
+        fwrite(STDOUT, '    ' . str_replace("\n", "\n    ", trim(print_r($result, true))) . "\n");
         fwrite(STDOUT, str_repeat('=', 72) . "\n\n");
     }
 }, 0);
