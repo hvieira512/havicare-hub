@@ -42,6 +42,7 @@ import {
     humanizeCapabilityKey,
     licenseDisplayLabel,
     licenseLabel,
+    linksToGateway,
     modelCommercialName,
     modelDeviceType,
     modelDisplayLabel,
@@ -54,6 +55,7 @@ import {
     supplierProtocol,
     suppliersForDeviceType,
     suppliersFromModels,
+    usesMacAddress,
 } from "../domain.js";
 import {
     initDeviceDetailView,
@@ -489,6 +491,7 @@ export {
     isFourPTouchSelection,
     licenseDisplayLabel,
     licenseLabel,
+    linksToGateway,
     loadDevice,
     loadSummary,
     modelCommercialName,
@@ -510,4 +513,5 @@ export {
     supplierProtocol,
     suppliersForDeviceType,
     suppliersFromModels,
+    usesMacAddress,
 };
