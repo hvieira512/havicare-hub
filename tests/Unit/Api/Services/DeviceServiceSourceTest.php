@@ -21,10 +21,13 @@ final class DeviceServiceSourceTest extends TestCase
         self::assertStringNotContainsString("'_nativeKey'", $source);
     }
 
-    public function testDeviceServiceSkipsUnsupportedContractDefaultsAndEntries(): void
+    public function testCapabilityProjectionSkipsUnsupportedContractDefaultsAndEntries(): void
     {
+        // The projection moved to DeviceCapabilityPresenter; this still asserts
+        // on source text, which is brittle -- it belongs as a behavioural test
+        // against the presenter now that it has only two dependencies.
         $source = file_get_contents(
-            dirname(__DIR__, 4) . '/src/Api/Services/DeviceService.php'
+            dirname(__DIR__, 4) . '/src/Api/Services/DeviceCapabilityPresenter.php'
         );
 
         self::assertIsString($source);
