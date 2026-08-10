@@ -987,6 +987,41 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(0, $store->updates()->listenerCount());
     }
 
+    public function testClosingTheStreamDuringABurstLeavesNoTimersOrListeners(): void
+    {
+        [$server, , $store] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+        ));
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(1, $store->updates()->listenerCount());
+
+        // Schedule a flush, then disconnect before its coalescing window ends.
+        $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 70]);
+        $response->getBody()->close();
+
+        self::assertSame(0, $store->updates()->listenerCount());
+
+        // The pending flush must not survive the close: run the loop past the
+        // coalescing window and confirm nothing is left holding it open.
+        $loop = Loop::get();
+        $ticks = 0;
+        $loop->addPeriodicTimer(0.05, static function ($timer) use ($loop, &$ticks): void {
+            if (++$ticks >= 10) {
+                $loop->cancelTimer($timer);
+                $loop->stop();
+            }
+        });
+        $loop->run();
+
+        // A write after the close must reach nobody at all.
+        $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 71]);
+        self::assertSame(0, $store->updates()->listenerCount());
+    }
+
     public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
@@ -1346,6 +1381,7 @@ final class InMemoryRedisClientForDashboardHttpServerTest implements ClientInter
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
             'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
+            'hmget' => $this->hmget((string)$arguments[0], (array)$arguments[1]),
             'lpush' => $this->lpush((string)$arguments[0], $arguments[1]),
             'ltrim' => $this->ltrim((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
@@ -1419,6 +1455,12 @@ final class InMemoryRedisClientForDashboardHttpServerTest implements ClientInter
     private function hget(string $key, string $field): ?string
     {
         return $this->hashes[$key][$field] ?? null;
+    }
+
+    /** @return list<string|null> values in the order requested, null where absent */
+    private function hmget(string $key, array $fields): array
+    {
+        return array_map(fn(string $field): ?string => $this->hashes[$key][$field] ?? null, $fields);
     }
 
     private function lpush(string $key, $values): int

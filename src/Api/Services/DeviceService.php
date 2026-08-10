@@ -40,8 +40,6 @@ class DeviceService
     private DeviceConfigurationQueryService $configurationQueries;
     private DeviceAssociationService $associations;
 
-    private DeviceUpdateNotifier $updates;
-
     public function __construct(
         private DashboardStoreContract $store,
         private Whitelist $whitelist,
@@ -56,9 +54,7 @@ class DeviceService
         ?DeviceConfigurationUpdateService $configurationUpdates = null,
         ?DeviceConfigurationQueryService $configurationQueries = null,
         ?DeviceResponseCompactor $responseCompactor = null,
-        ?DeviceUpdateNotifier $updates = null,
     ) {
-        $this->updates = $updates ?? new DeviceUpdateNotifier();
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
         $this->deviceFilter = $deviceFilter ?? new DeviceCollectionFilter();
@@ -762,7 +758,7 @@ class DeviceService
      */
     public function updates(): DeviceUpdateNotifier
     {
-        return $this->updates;
+        return $this->store->updates();
     }
 
     public function recent(string $imei, ?ApiAuthContext $auth = null): array

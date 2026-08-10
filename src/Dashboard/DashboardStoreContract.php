@@ -15,6 +15,15 @@ interface DashboardStoreContract
         string $company = 'null'
     ): void;
 
+    /**
+     * Streams subscribe here to be told when a device's history changes.
+     *
+     * It lives on the contract so consumers take it from the store they
+     * already hold: a separately injected notifier can silently be the
+     * wrong instance, and nothing would ever fire.
+     */
+    public function updates(): DeviceUpdateNotifier;
+
     public function deleteDevice(string $imei): void;
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void;

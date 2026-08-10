@@ -85,16 +85,15 @@ final class DeviceController
         // The store announces its own writes, so there is nothing to poll for.
         // A burst -- a bracelet broadcasting one press for 30 seconds, or a
         // command moving through its lifecycle -- collapses into a single send.
-        $flushScheduled = false;
+        $flushTimer = null;
         $unsubscribe = $this->service->updates()->subscribe(
             $imei,
-            static function () use ($loop, $send, &$flushScheduled): void {
-                if ($flushScheduled) {
+            static function () use ($loop, $send, &$flushTimer): void {
+                if ($flushTimer !== null) {
                     return;
                 }
-                $flushScheduled = true;
-                $loop->addTimer(self::STREAM_COALESCE_SECONDS, static function () use ($send, &$flushScheduled): void {
-                    $flushScheduled = false;
+                $flushTimer = $loop->addTimer(self::STREAM_COALESCE_SECONDS, static function () use ($send, &$flushTimer): void {
+                    $flushTimer = null;
                     $send('update');
                 });
             }
@@ -106,8 +105,14 @@ final class DeviceController
             $send('update');
         });
 
-        $stream->on('close', static function () use ($timer, $loop, $unsubscribe): void {
+        $stream->on('close', static function () use ($timer, $loop, $unsubscribe, &$flushTimer): void {
             $loop->cancelTimer($timer);
+            // A burst arriving as the client disconnects would otherwise leave
+            // this timer holding the closure until it fires for nothing.
+            if ($flushTimer !== null) {
+                $loop->cancelTimer($flushTimer);
+                $flushTimer = null;
+            }
             $unsubscribe();
         });
 

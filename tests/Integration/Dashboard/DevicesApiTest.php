@@ -3218,6 +3218,7 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
             'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
+            'hmget' => $this->hmget((string)$arguments[0], (array)$arguments[1]),
             'lpush' => $this->lpush((string)$arguments[0], $arguments[1]),
             'ltrim' => $this->ltrim((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
@@ -3276,6 +3277,12 @@ final class InMemoryRedisClientForDevicesApi implements ClientInterface
     private function hget(string $key, string $field): ?string
     {
         return $this->hashes[$key][$field] ?? null;
+    }
+
+    /** @return list<string|null> values in the order requested, null where absent */
+    private function hmget(string $key, array $fields): array
+    {
+        return array_map(fn(string $field): ?string => $this->hashes[$key][$field] ?? null, $fields);
     }
 
     private function hdel(string $key, array|string $fields): int

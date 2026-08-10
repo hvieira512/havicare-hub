@@ -245,30 +245,76 @@ final class DeviceCommandStore
         $cutoff = time() - max(1, $timeoutSeconds);
         foreach ($this->runtime->devices() as $device) {
             $imei = (string)($device['imei'] ?? '');
+            if ($imei === '') {
+                continue;
+            }
             foreach ($this->commands($imei) as $command) {
-                if (($command['status'] ?? '') !== 'waiting') {
+                $status = (string)($command['status'] ?? '');
+                if (!in_array($status, ['waiting', 'queued'], true)) {
                     continue;
                 }
-                $sentAt = strtotime((string)($command['sentAt'] ?? '')) ?: 0;
-                if ($sentAt > 0 && $sentAt <= $cutoff) {
-                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, ['status' => 'failed', 'error' => 'response_timeout']));
+                // Queued and retryable means "waiting for the device to come
+                // back"; the retry sweep owns that one and redispatches it for
+                // as long as it takes.
+                if ($status === 'queued' && ($command['retryable'] ?? false)) {
+                    continue;
+                }
+                $startedAt = $this->commandStartedAt($command);
+                if ($startedAt > 0 && $startedAt <= $cutoff) {
+                    $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
+                        // Never sent means the device owes us nothing; only a
+                        // command that actually went out timed out waiting.
+                        'status' => 'failed',
+                        'error' => $status === 'waiting' ? 'response_timeout' : 'delivery_failed',
+                    ]));
                 }
             }
         }
     }
 
-    public function commands(string $imei): array
+    /**
+     * When a command started counting against the timeout.
+     *
+     * sentAt is absent for anything that never reached the device, so falling
+     * back keeps those from ageing forever and sitting pending on the dashboard.
+     *
+     * @param array<string, mixed> $command
+     */
+    private function commandStartedAt(array $command): int
     {
-        $commands = [];
-        foreach ($this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1) as $id) {
-            $raw = $this->redis->hget($this->commandHashKey($imei), (string)$id);
-            if (is_string($raw)) {
-                $decoded = json_decode($raw, true);
-                if (is_array($decoded)) {
-                    $commands[] = $decoded;
-                }
+        foreach (['sentAt', 'lastAttemptAt', 'requestedAt'] as $field) {
+            $timestamp = strtotime((string)($command[$field] ?? '')) ?: 0;
+            if ($timestamp > 0) {
+                return $timestamp;
             }
         }
+
+        return 0;
+    }
+
+    public function commands(string $imei): array
+    {
+        $ids = $this->redis->lrange($this->deviceListKey($imei, 'commands'), 0, $this->limit - 1);
+        if ($ids === []) {
+            return [];
+        }
+
+        // One round-trip for the whole page rather than one per id: the device
+        // stream re-reads this on every push, so a hundred round-trips per
+        // read is the difference between cheap and not.
+        $raws = $this->redis->hmget($this->commandHashKey($imei), array_map(strval(...), $ids));
+
+        $commands = [];
+        foreach ($raws as $raw) {
+            if (!is_string($raw)) {
+                continue;
+            }
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $commands[] = $decoded;
+            }
+        }
+
         return $commands;
     }
 

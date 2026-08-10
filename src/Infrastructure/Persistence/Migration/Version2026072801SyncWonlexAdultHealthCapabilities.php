@@ -42,6 +42,11 @@ final class Version2026072801SyncWonlexAdultHealthCapabilities implements Migrat
         $capability = $pdo->prepare(
             'SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?'
         );
+        // INSERT IGNORE only adds missing rows: a row already present with
+        // enabled = 0 is left alone. That is the intended behaviour here, since
+        // a capability switched off by hand should stay off -- but a migration
+        // meant to *repair* existing rows needs an UPDATE instead, which is
+        // what Version2026080702 had to do for the MKGW4 flags.
         $insert = $pdo->prepare(
             'INSERT IGNORE INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)'
         );

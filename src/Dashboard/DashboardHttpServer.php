@@ -62,7 +62,6 @@ final class DashboardHttpServer
             $this->hub,
             $this->downlinkQueue,
             $this->db,
-            updates: $this->store->updates(),
         );
         $this->apiKernel = new ApiKernel(
             $this->apiAuthRequired,

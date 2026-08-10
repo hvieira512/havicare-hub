@@ -21,7 +21,7 @@ import {normalizeDeviceType} from "../domain.js";
 import {
     renderPagination,
     resolvePaginationPage,
-} from "../shared/pagination.js";
+} from "../pagination.js";
 import {
     clearModelsFilters,
     handleActiveModelsFiltersClick,

@@ -35,6 +35,78 @@ final class DashboardStoreTest extends TestCase
         self::assertSame([], $store->commands('861265061009822'));
     }
 
+    public function testWaitingCommandWithoutSentAtStillExpires(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+
+        // No sentAt: nothing else would ever move this out of "waiting", so it
+        // would sit pending on the dashboard forever.
+        $store->recordCommand('861265061009822', 'cmd-1', [
+            'status' => 'waiting',
+            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
+        ]);
+
+        $store->expireWaitingCommands(3600);
+
+        self::assertSame('failed', $store->commands('861265061009822')[0]['status'] ?? null);
+    }
+
+    public function testNonRetryableQueuedCommandEventuallyFails(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+
+        // The retry sweep skips anything not retryable, so without this the
+        // command has no path to a terminal state at all.
+        $store->recordCommand('861265061009822', 'cmd-1', [
+            'status' => 'queued',
+            'retryable' => false,
+            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
+        ]);
+
+        $store->expireWaitingCommands(3600);
+
+        self::assertSame('failed', $store->commands('861265061009822')[0]['status'] ?? null);
+    }
+
+    public function testRetryableQueuedCommandIsNotExpiredWhileItAwaitsAnOfflineDevice(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+
+        // Queued-and-retryable means "waiting for the device to come back",
+        // which is deliberate and must survive the sweep.
+        $store->recordCommand('861265061009822', 'cmd-1', [
+            'status' => 'queued',
+            'retryable' => true,
+            'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
+        ]);
+
+        $store->expireWaitingCommands(3600);
+
+        self::assertSame('queued', $store->commands('861265061009822')[0]['status'] ?? null);
+    }
+
+    public function testRecentCommandsAreLeftAloneBySweep(): void
+    {
+        $redis = new InMemoryRedisClient();
+        $store = new DashboardStore($redis, prefix: 'test:dashboard');
+        $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
+
+        $store->recordCommand('861265061009822', 'cmd-1', [
+            'status' => 'waiting',
+            'sentAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 5),
+        ]);
+
+        $store->expireWaitingCommands(3600);
+
+        self::assertSame('waiting', $store->commands('861265061009822')[0]['status'] ?? null);
+    }
+
     public function testCommandRetentionRemovesEvictedRecordsAndGlobalIndexEntries(): void
     {
         $redis = new InMemoryRedisClient();
@@ -472,6 +544,7 @@ final class InMemoryRedisClient implements ClientInterface
             'hset' => $this->hset((string)$arguments[0], (string)$arguments[1], (string)$arguments[2]),
             'hdel' => $this->hdel((string)$arguments[0], $arguments[1]),
             'hget' => $this->hget((string)$arguments[0], (string)$arguments[1]),
+            'hmget' => $this->hmget((string)$arguments[0], (array)$arguments[1]),
             'lpush' => $this->lpush((string)$arguments[0], $arguments[1]),
             'ltrim' => $this->ltrim((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
             'lrange' => $this->lrange((string)$arguments[0], (int)$arguments[1], (int)$arguments[2]),
@@ -528,6 +601,12 @@ final class InMemoryRedisClient implements ClientInterface
     private function hget(string $key, string $field): ?string
     {
         return $this->hashes[$key][$field] ?? null;
+    }
+
+    /** @return list<string|null> values in the order requested, null where absent */
+    private function hmget(string $key, array $fields): array
+    {
+        return array_map(fn(string $field): ?string => $this->hashes[$key][$field] ?? null, $fields);
     }
 
     private function hdel(string $key, array|string $fields): int

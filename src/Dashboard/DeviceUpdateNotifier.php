@@ -15,7 +15,7 @@ namespace Hub\Dashboard;
  * reads the authoritative state itself, so a missed or duplicated notification
  * costs a redundant read rather than a wrong payload.
  */
-final class DeviceUpdateNotifier
+class DeviceUpdateNotifier
 {
     /** @var array<string, array<int, callable(): void>> */
     private array $listeners = [];

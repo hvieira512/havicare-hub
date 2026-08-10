@@ -25,7 +25,7 @@ import {
     statusBadge,
     uplinkCardContent,
 } from "../renderers.js";
-import {renderPagination, resolvePaginationPage} from "../shared/pagination.js";
+import {renderPagination, resolvePaginationPage} from "../pagination.js";
 import {
     capabilitiesForSupplier,
     capabilitiesGroupedBySection,
