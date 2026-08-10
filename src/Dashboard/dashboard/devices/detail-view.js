@@ -22,6 +22,7 @@ import {
 import {
     emptyPanel,
     cardTone,
+    helpCallSummaryCard,
     renderRequestCardShell,
     statusBadge,
     uplinkCardContent,
@@ -109,6 +110,7 @@ function renderSelection() {
             state.selectedDetail?.capabilities?.telemetry || {},
         ),
         telemetry,
+        ncsEvents,
     );
     if (deviceType === "ncs") {
         renderNcsEventCards(ncsEvents);
@@ -513,21 +515,24 @@ function radarPositionDetails(data) {
     return [countLabel, ...personLines].join("<br>");
 }
 
-function renderRequestCards(groups, telemetry = []) {
+function renderRequestCards(groups, telemetry = [], events = []) {
     const totalCards = groups.reduce(
         (count, group) => count + group.cards.length,
         0,
     );
+    // Rendered from the event history rather than a capability, so it appears
+    // exactly when the device has actually called for help.
+    const helpCalls = helpCallSummaryCard(events);
 
     els.requestCardCount.textContent = totalCards
         ? `${totalCards} ações`
         : "";
     disposeRequestGridTooltips();
-    els.requestGrid.innerHTML = totalCards
-        ? groups
-              .map((group) => renderRequestCardGroup(group, telemetry))
-              .join("")
-        : `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
+
+    const cards = totalCards
+        ? groups.map((group) => renderRequestCardGroup(group, telemetry)).join("")
+        : "";
+    els.requestGrid.innerHTML = helpCalls + cards || `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
     refreshRequestGridTooltips();
 }
 

@@ -1,4 +1,5 @@
 import {
+    ago,
     commandLabel,
     esc,
     eventTime,
@@ -6,6 +7,7 @@ import {
     fieldLabel,
     rowPayload,
     titleize,
+    when,
 } from "./format.js";
 
 const COMMAND_FEATURE_RULES = [
@@ -365,6 +367,8 @@ export function uplinkCardContent(type, data) {
 }
 
 // A W6R press carries which kind of press it was; an NCS pager does not.
+const HELP_CALL_PRESS_MODES = ["single", "double", "long"];
+
 const PRESS_TYPE_LABEL = {
     single: "toque simples",
     double: "toque duplo",
@@ -674,4 +678,72 @@ function compactDetails(data, keys) {
         )
         .map((key) => `${esc(fieldLabel(key))}: ${esc(data[key])}`)
         .join(" · ");
+}
+
+/**
+ * Summary of the most recent help call per press mode.
+ *
+ * The device has no way to tell us a call was cancelled: dismissing is a
+ * downlink command, and because the bracelet only advertises while alarmed,
+ * every frame we ever see carries alarm_status = 1. So this deliberately does
+ * not model an active/cleared alarm -- it reports when each press last
+ * happened, which is a fact we can actually observe.
+ *
+ * @param {Array} events raw event payloads for the device
+ * @returns {string} card markup, or "" when the device has never called
+ */
+export function helpCallSummaryCard(events = []) {
+    const calls = (Array.isArray(events) ? events : [])
+        .map(rowPayload)
+        .filter((payload) => String(payload?.type || "") === "help_call");
+
+    if (calls.length === 0) {
+        return "";
+    }
+
+    const latest = {};
+    for (const call of calls) {
+        const mode = String(call?.data?.pressType || "");
+        if (!HELP_CALL_PRESS_MODES.includes(mode)) {
+            continue;
+        }
+        if (latest[mode] === undefined || eventTime(call) > eventTime(latest[mode])) {
+            latest[mode] = call;
+        }
+    }
+
+    const rows = HELP_CALL_PRESS_MODES.map((mode) => {
+        const call = latest[mode];
+        // The shared label reads as a suffix ("... (toque simples)"), so it is
+        // capitalised here where it heads a row instead.
+        const suffix = PRESS_TYPE_LABEL[mode];
+        const label = esc(suffix.charAt(0).toUpperCase() + suffix.slice(1));
+        if (call === undefined) {
+            return `<div class="help-call-row">
+                <span class="help-call-mode">${label}</span>
+                <span class="help-call-never">nunca</span>
+            </div>`;
+        }
+
+        const occurredAt = call.occurredAt || call.recordedAt || "";
+        return `<div class="help-call-row" data-occurred-at="${esc(occurredAt)}">
+            <span class="help-call-mode">${label}</span>
+            <span class="help-call-ago">${esc(ago(occurredAt))}</span>
+            <span class="help-call-at">${esc(when(occurredAt))}</span>
+        </div>`;
+    }).join("");
+
+    return `<div class="col-12">
+        <div class="card h-100 border-danger">
+        <div class="card-body">
+        <div class="d-flex align-items-center gap-3 min-w-0 mb-3">
+        <div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
+        </div>
+        <div class="help-call-summary">${rows}</div>
+        </div>
+        </div>
+        </div>`;
 }
