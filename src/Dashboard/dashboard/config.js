@@ -1,13 +1,41 @@
 import { esc, fieldLabel, titleize } from "./format.js";
 import { normalizePhoneControl, renderPhoneControl } from "./phone.js";
-import { requestJson } from "./api/http.js";
-import { state } from "./state.js";
 import {takePillsInput, takePillsReminderGroup} from "./config/four-p-touch-take-pills.js";
+import {
+    formatFourPTouchAlarmTime,
+    normalizeAlarmClockRecurrenceKind,
+    readAlarmClockDays,
+    readFourPTouchAlarmDays,
+} from "./config/alarm-fields.js";
+import {
+    findDuplicateValues,
+    firstFieldName,
+    readAlarmClock,
+    readCheckbox,
+    readContacts,
+    readFourPTouchAlarms,
+    readJson,
+    readNumber,
+    readPhone,
+    readPhoneArray,
+    readTakePills,
+    readText,
+    readTextArray,
+    readUniquePhoneArray,
+    jsonInput,
+} from "./config/readers.js";
+import {
+    catalogForProtocol,
+    isPlainObject,
+    protocolDefinition,
+    protocolFieldConstraints,
+    protocolGroupedCapabilities,
+    protocolPhonebookConstraints,
+} from "./config/protocol-catalog.js";
 
-export {takePillsReminderGroup};
+export {takePillsReminderGroup, catalogForProtocol};
 
 let uidCounter = 0;
-const protocolCatalogRequests = {};
 
 const CONFIG_ACTION_BUTTON_META = {
     idle: {
@@ -365,37 +393,6 @@ const CONFIG_INPUT_LABEL = {
     wonlexMedicationPlans: "Plano de medicação",
 };
 
-export async function catalogForProtocol(protocol) {
-    if (!protocol) {
-        return [];
-    }
-
-    const protocolMeta = protocolDefinition(protocol);
-    if (protocolMeta && protocolMeta.supportsConfigCatalog === false) {
-        return [];
-    }
-
-    if (state.protocolCatalogs[protocol]) {
-        return state.protocolCatalogs[protocol];
-    }
-
-    if (protocolCatalogRequests[protocol]) {
-        return protocolCatalogRequests[protocol];
-    }
-
-    protocolCatalogRequests[protocol] = (async () => {
-        const response = await requestJson(
-            `/api/protocols/${encodeURIComponent(protocol)}/config-catalog`,
-        );
-        const catalog = Array.isArray(response.data) ? response.data : [];
-        state.protocolCatalogs[protocol] = catalog;
-        return catalog;
-    })().finally(() => {
-        delete protocolCatalogRequests[protocol];
-    });
-
-    return protocolCatalogRequests[protocol];
-}
 
 export function groupedCatalog(catalog) {
     const groups = [];
@@ -838,332 +835,12 @@ function configInputLabel(input) {
     return CONFIG_INPUT_LABEL[input] || titleize(input);
 }
 
-function protocolDefinition(protocol) {
-    return (state.protocols || []).find((entry) => entry.protocol === protocol) || null;
-}
 
-function protocolDashboardMeta(protocol) {
-    const meta = protocolDefinition(protocol)?.dashboard || {};
-    return {
-        groupedCapabilities: isPlainObject(meta.groupedCapabilities) ? meta.groupedCapabilities : null,
-        fieldConstraints: isPlainObject(meta.fieldConstraints) ? meta.fieldConstraints : null,
-    };
-}
 
-function protocolGroupedCapabilities(protocol) {
-    return protocolDashboardMeta(protocol).groupedCapabilities || {};
-}
 
-function protocolFieldConstraints(protocol) {
-    return protocolDashboardMeta(protocol).fieldConstraints || {};
-}
 
-function protocolPhonebookConstraints(protocol) {
-    return protocolFieldConstraints(protocol).phonebook || {};
-}
 
-function isPlainObject(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-}
 
-function firstFieldName(section) {
-    return (
-        section.querySelector("[data-config-field]")?.dataset.configField ||
-        "value"
-    );
-}
-
-function readCheckbox(section, field) {
-    return (
-        section.querySelector(`[data-config-field="${CSS.escape(field)}"]`)
-            ?.checked || false
-    );
-}
-
-function readNumber(section, field) {
-    const nodes = Array.from(
-        section.querySelectorAll(`[data-config-field="${CSS.escape(field)}"]`),
-    );
-    const input =
-        nodes.find((node) => ("checked" in node ? node.checked : false)) ||
-        nodes[0] ||
-        null;
-    const value = input?.value ?? "";
-    const parsed = parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function readText(section, field) {
-    return String(
-        section.querySelector(`[data-config-field="${CSS.escape(field)}"]`)
-            ?.value || "",
-    ).trim();
-}
-
-function readTextArray(section, field) {
-    return Array.from(
-        section.querySelectorAll(`[data-config-field="${CSS.escape(field)}"]`),
-    )
-        .map((input) => String(input.value || "").trim())
-        .filter(Boolean);
-}
-
-function readPhoneArray(section, field) {
-    return Array.from(
-        section.querySelectorAll(
-            `[data-phone-control][data-config-field="${CSS.escape(field)}"]`,
-        ),
-    )
-        .map((control) => normalizePhoneControl(control))
-        .filter(Boolean);
-}
-
-function readUniquePhoneArray(section, field, label) {
-    const values = readPhoneArray(section, field);
-    const duplicates = findDuplicateValues(values);
-    if (duplicates.length > 0) {
-        throw new Error(`${label}: números repetidos não são permitidos`);
-    }
-
-    return values;
-}
-
-function readPhone(section, field) {
-    const control = section.querySelector(
-        `[data-phone-control][data-config-field="${CSS.escape(field)}"]`,
-    );
-    return control ? normalizePhoneControl(control) : "";
-}
-
-function readContacts(section) {
-    const phonebookConstraints = protocolPhonebookConstraints(
-        String(section.dataset.configProtocol || ""),
-    );
-    const nameMaxLength = parseInt(
-        String(section.dataset.phonebookNameMaxLength || phonebookConstraints.name?.maxLength || "0"),
-        10,
-    ) || 0;
-    const contacts = [];
-    let sawIncompleteRow = false;
-
-    for (const row of section.querySelectorAll('[data-repeat-row="contacts"]')) {
-        const name = readContactName(row, nameMaxLength);
-        const phone = readContactPhone(row);
-        if (name === "" && phone === "") {
-            continue;
-        }
-        if (name === "" || phone === "") {
-            sawIncompleteRow = true;
-            if (!phonebookConstraints.allowPartialRows) {
-                throw new Error("Nome e telefone são obrigatórios");
-            }
-            continue;
-        }
-
-        contacts.push({name, phone});
-    }
-
-    if (phonebookConstraints.allowPartialRows && contacts.length === 0 && sawIncompleteRow) {
-        throw new Error("Nome e telefone são obrigatórios");
-    }
-
-    return contacts;
-}
-
-function findDuplicateValues(values) {
-    const seen = new Set();
-    const duplicates = new Set();
-    for (const value of values) {
-        if (seen.has(value)) {
-            duplicates.add(value);
-            continue;
-        }
-        seen.add(value);
-    }
-
-    return [...duplicates];
-}
-
-function readContactName(row, maxLength) {
-    const input = row.querySelector('[data-repeat-field="name"]');
-    const value = String(input?.value || "").trim();
-    if (maxLength > 0 && unicodeLength(value) > maxLength) {
-        throw new Error(`O nome deve ter no máximo ${maxLength} caracteres`);
-    }
-
-    return value;
-}
-
-function readContactPhone(row) {
-    return normalizePhoneControl(
-        row.querySelector('[data-phone-control][data-repeat-field="phone"]'),
-    );
-}
-
-function unicodeLength(value) {
-    return Array.from(String(value || "")).length;
-}
-
-function readAlarmClock(section) {
-    const items = Array.from(
-        section.querySelectorAll('[data-repeat-row="alarm_clock"]'),
-    )
-        .map((row) => {
-            const recurrenceKind = normalizeAlarmClockRecurrenceKind(
-                row.querySelector('[data-alarm-clock-field="recurrenceKind"]:checked')?.value || "once",
-            );
-            const item = {
-                time: String(
-                    row.querySelector('[data-alarm-clock-field="time"]')?.value || "",
-                ).trim(),
-                enabled:
-                    row.querySelector('[data-alarm-clock-field="enabled"]')?.checked ||
-                    false,
-                recurrence: {kind: recurrenceKind},
-            };
-
-            const labelField = row.querySelector('[data-alarm-clock-field="label"]');
-            if (labelField) {
-                const label = String(labelField.value || "").trim();
-                if (label !== "") {
-                    item.label = label;
-                }
-            }
-
-            const urlField = row.querySelector('[data-alarm-clock-field="url"]');
-            if (urlField) {
-                const url = String(urlField.value || "").trim();
-                if (url !== "") {
-                    item.url = url;
-                }
-            }
-
-            const typeField = row.querySelector('[data-alarm-clock-field="type"]:checked');
-            if (typeField) {
-                const type = parseInt(String(typeField.value || "1"), 10);
-                if (Number.isFinite(type)) {
-                    item.type = type;
-                }
-            }
-
-            if (item.recurrence.kind === "custom") {
-                const days = readAlarmClockDays(row);
-                item.recurrence.days = days;
-                if (!Array.isArray(days) || days.length === 0) {
-                    throw new Error("Selecione pelo menos um dia para a recorrência personalizada");
-                }
-            }
-
-            return item;
-        })
-        .filter((item) => item.time !== "");
-
-    return {items};
-}
-
-function readTakePills(section) {
-    const groups = Array.from(
-        section.querySelectorAll("[data-takepills-reminder-group]"),
-    );
-    const number = groups.length;
-    const voiceEnabled = readCheckbox(section, "voiceEnabled");
-    const voiceData = readText(section, "voiceData");
-    const voiceMimeType = readText(section, "voiceMimeType");
-
-    const reminderSettings = groups.map((group) => {
-            const frequency =
-                parseInt(
-                    String(
-                        group.querySelector(
-                            '[data-takepills-field="reminderFrequency"]',
-                        )?.value ?? "1",
-                    ),
-                    10,
-                ) || 1;
-            return {
-                time:
-                    group.querySelector(
-                        '[data-takepills-field="reminderTime"]',
-                    )?.value || "",
-                enabled:
-                    group.querySelector(
-                        '[data-takepills-field="reminderEnabled"]',
-                    )?.checked || false,
-                frequency,
-                custom:
-                    frequency === 3
-                        ? group.querySelector(
-                              '[data-takepills-field="reminderCustom"]',
-                          )?.value || ""
-                        : "",
-        };
-    });
-
-    const payload = {
-        reminderSettings,
-        number,
-        reminderText: readText(section, "reminderText"),
-    };
-
-    if (voiceEnabled && voiceData !== "") {
-        payload.voiceData = voiceData;
-        if (voiceMimeType !== "") {
-            payload.voiceMimeType = voiceMimeType;
-        }
-    } else if (!voiceEnabled) {
-        payload.voiceData = "";
-    }
-
-    return payload;
-}
-
-function readFourPTouchAlarms(section) {
-    return Array.from(section.querySelectorAll("[data-fourptouch-alarm-row]"))
-        .map((row) => {
-            const mode = parseInt(
-                String(row.querySelector('[data-fourptouch-field="mode"]')?.value || "1"),
-                10,
-            ) || 1;
-            const alarm = {
-                time: formatFourPTouchAlarmTime(
-                    row.querySelector('[data-fourptouch-field="time"]')?.value || "",
-                ),
-                enabled:
-                    row.querySelector('[data-fourptouch-field="enabled"]')?.checked ||
-                    false,
-                mode,
-                custom: mode === 3 ? readFourPTouchAlarmDays(row) : "",
-            };
-
-            if (mode === 3 && alarm.custom === "0000000") {
-                throw new Error("Selecione pelo menos um dia para o alarme personalizado");
-            }
-
-            return alarm;
-        })
-        .filter((alarm) => alarm.time !== "");
-}
-
-function jsonInput(desired) {
-    return `
-        <div>
-            <label class="form-label form-label-sm">JSON</label>
-            <textarea class="form-control font-monospace" rows="4" data-config-field="json">${esc(JSON.stringify(desired, null, 2))}</textarea>
-        </div>`;
-}
-
-function readJson(section) {
-    const textarea = section.querySelector('[data-config-field="json"]');
-    if (!textarea) {
-        return {};
-    }
-
-    try {
-        return JSON.parse(textarea.value || "{}");
-    } catch {
-        throw new Error("JSON inválido para esta configuração");
-    }
-}
 
 function makeCallInput(entry, desired) {
     return `
@@ -2426,17 +2103,6 @@ function parseFourPTouchAlarmString(value) {
     };
 }
 
-function readFourPTouchAlarmDays(row) {
-    const selected = new Set(
-        Array.from(row.querySelectorAll('[data-fourptouch-day="customDays"]:checked'))
-            .map((input) => String(input.value || ""))
-            .filter(Boolean),
-    );
-
-    return ["0", "1", "2", "3", "4", "5", "6"]
-        .map((day) => (selected.has(day) ? "1" : "0"))
-        .join("");
-}
 
 function normalizeFourPTouchAlarmDays(value) {
     const raw = String(value || "").trim();
@@ -2468,24 +2134,6 @@ function isFourPTouchAlarmDaySelected(mask, day) {
     return false;
 }
 
-function formatFourPTouchAlarmTime(value) {
-    const raw = String(value || "").trim();
-    if (raw === "") {
-        return "";
-    }
-
-    const hhmm = raw.replace(/[^0-9]/g, "");
-    if (hhmm.length === 4) {
-        return `${hhmm.slice(0, 2)}:${hhmm.slice(2, 4)}`;
-    }
-
-    if (/^\d{1,2}:\d{2}$/.test(raw)) {
-        const [hour, minute] = raw.split(":");
-        return `${String(parseInt(hour, 10)).padStart(2, "0")}:${String(parseInt(minute, 10)).padStart(2, "0")}`;
-    }
-
-    return raw;
-}
 
  function capabilityForEntry(entry, capabilities) {
     const key = entry.capabilityKey || entry.key;
@@ -2731,19 +2379,6 @@ function defaultAlarmClockItem(withType = false, recurrence = "once") {
           };
 }
 
-function normalizeAlarmClockRecurrenceKind(value) {
-    const raw = String(value || "").trim().toLowerCase();
-    if (raw === "daily" || raw === "2") {
-        return "daily";
-    }
-    if (raw === "custom" || raw === "3") {
-        return "custom";
-    }
-    if (raw === "once" || raw === "1" || raw === "") {
-        return "once";
-    }
-    return "once";
-}
 
 function normalizeAlarmClockDaySelection(value) {
     if (Array.isArray(value)) {
@@ -2778,13 +2413,6 @@ function normalizeAlarmClockDaySelection(value) {
         .filter(Boolean);
 }
 
-function readAlarmClockDays(row) {
-    return Array.from(
-        row.querySelectorAll('[data-alarm-clock-day="customDays"]:checked'),
-    )
-        .map((input) => parseInt(String(input.value || ""), 10))
-        .filter((day) => Number.isFinite(day) && day >= 1 && day <= 7);
-}
 
 function boolValue(value, fallback = false) {
     if (value === true || value === 1 || value === "1") {
