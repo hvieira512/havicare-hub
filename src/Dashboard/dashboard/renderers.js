@@ -40,6 +40,7 @@ const CARD_TONE_BY_TYPE = {
     temperature: {border: "warning", bg: "bg-warning", text: "text-warning"},
     battery: {border: "success", bg: "bg-success", text: "text-success"},
     connectivity: {border: "info", bg: "bg-info", text: "text-info"},
+    motion: {border: "primary", bg: "bg-primary", text: "text-primary"},
     diaper_moisture: {border: "info", bg: "bg-info", text: "text-info"},
     diaper_condition: {border: "warning", bg: "bg-warning", text: "text-warning"},
     activity: {border: "primary", bg: "bg-primary", text: "text-primary"},
@@ -75,6 +76,7 @@ const REQUEST_CARD_CONTENT_BY_TYPE = {
     temperature: {icon: "fa-temperature-half", value: "Temperatura"},
     battery: {icon: "fa-battery-three-quarters", value: "Bateria"},
     connectivity: {icon: "fa-wifi", value: "Conectividade"},
+    motion: {icon: "fa-person-running", value: "Movimento"},
     diaper_moisture: {icon: "fa-droplet", value: "Humidade da fralda"},
     diaper_condition: {icon: "fa-baby", value: "Estado da fralda"},
     activity: {icon: "fa-person-walking", value: "Atividade"},
@@ -222,7 +224,12 @@ const UPLINK_CARD_RENDERERS = {
         value: "Intervalo RR",
         details: compactDetails(data, ["intervalMs"]),
     }),
-    help_call: () => ncsPagerContent("help_call"),
+    help_call: (data) => helpCallContent(data),
+    motion: (data) => ({
+        icon: "fa-person-running",
+        value: data?.magnitudeMg != null ? `${data.magnitudeMg} mg` : featureLabel("motion"),
+        details: compactDetails(data, ["xMg", "yMg", "zMg"]),
+    }),
     reset: () => ncsPagerContent("reset"),
     "device.connected": () => ({icon: "fa-plug-circle-check", value: "Ligado"}),
     "device.disconnected": () => ({icon: "fa-plug-circle-xmark", value: "Desligado"}),
@@ -355,6 +362,22 @@ export function uplinkCardContent(type, data) {
             details: compactDetails(data, Object.keys(data).slice(0, 4)),
         }
     );
+}
+
+// A W6R press carries which kind of press it was; an NCS pager does not.
+const PRESS_TYPE_LABEL = {
+    single: "toque simples",
+    double: "toque duplo",
+    long: "toque longo",
+};
+
+function helpCallContent(data) {
+    const base = ncsPagerContent("help_call");
+    const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];
+
+    return pressType === undefined
+        ? base
+        : {...base, value: `${base.value} (${pressType})`};
 }
 
 function ncsPagerContent(type) {

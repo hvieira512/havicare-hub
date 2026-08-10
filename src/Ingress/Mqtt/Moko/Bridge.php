@@ -32,6 +32,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly ?MonitMecsProDecoder $monitDecoder = null,
         private readonly ?MonitNormalizer $monitNormalizer = null,
         private readonly ?GatewayNormalizer $gatewayNormalizer = null,
+        private readonly ?W6rDecoder $w6rDecoder = null,
+        private readonly ?W6rNormalizer $w6rNormalizer = null,
         ?callable $clock = null,
     ) {
         parent::__construct(
@@ -159,32 +161,124 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         }
     }
 
-    /** @param array<string, mixed> $gateway @param array<string, mixed> $observation */
+    /**
+     * A gateway relays every BLE device it can see, so each observation is
+     * offered to the decoders in turn and the first one that recognises it
+     * owns the payload.
+     *
+     * @param array<string, mixed> $gateway @param array<string, mixed> $observation
+     */
     private function handleObservation(array $gateway, array $observation): void
     {
-        $decoded = ($this->monitDecoder ?? new MonitMecsProDecoder())->decode($observation);
-        if ($decoded === null) {
+        $monit = ($this->monitDecoder ?? new MonitMecsProDecoder())->decode($observation);
+        if ($monit !== null) {
+            $this->handleMonitObservation($gateway, $monit);
             return;
         }
-        $sensorKey = (string)$decoded['mac'];
-        $sensor = $this->whitelist->resolve($sensorKey);
-        if ($sensor === null || ($sensor['deviceType'] ?? '') !== 'diaper_sensor') {
-            $this->recordUnauthorizedDevice($sensorKey, 'monit-mecs-pro-ble', ident: $sensorKey);
-            return;
+
+        $w6r = ($this->w6rDecoder ?? new W6rDecoder())->decode($observation);
+        if ($w6r !== null) {
+            $this->handleW6rObservation($gateway, $w6r);
         }
+    }
+
+    /**
+     * Resolves a relayed device and confirms it is allowed to reach us through
+     * this gateway.
+     *
+     * @param array<string, mixed> $gateway
+     * @return array<string, mixed>|null
+     */
+    private function linkedDevice(array $gateway, string $deviceKey, string $deviceType, string $protocol): ?array
+    {
+        $device = $this->whitelist->resolve($deviceKey);
+        if ($device === null || ($device['deviceType'] ?? '') !== $deviceType) {
+            $this->recordUnauthorizedDevice($deviceKey, $protocol, ident: $deviceKey);
+            return null;
+        }
+
         if (
-            !$this->links->isEnabled((string)$gateway['imei'], (string)$sensor['imei'])
-            || (string)($gateway['company'] ?? 'null') !== (string)($sensor['company'] ?? 'null')
-            || (string)$gateway['licenseId'] !== (string)$sensor['licenseId']
+            !$this->links->isEnabled((string)$gateway['imei'], (string)$device['imei'])
+            || (string)($gateway['company'] ?? 'null') !== (string)($device['company'] ?? 'null')
+            || (string)$gateway['licenseId'] !== (string)$device['licenseId']
         ) {
-            Logger::channel('hub')->warning("Ignoring unlinked MONIT sensor={$sensorKey} gateway={$gateway['imei']}");
+            Logger::channel('hub')->warning(
+                "Ignoring unlinked {$protocol} device={$deviceKey} gateway={$gateway['imei']}"
+            );
+            return null;
+        }
+
+        return $this->enrich($device);
+    }
+
+    /**
+     * A pressed W6R broadcasts for 30 seconds, so the same trigger count
+     * arrives many times over. Each press mode keeps its own counter, and only
+     * a change is a new press.
+     *
+     * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
+     */
+    private function handleW6rObservation(array $gateway, array $decoded): void
+    {
+        $deviceKey = (string)$decoded['mac'];
+        $device = $this->linkedDevice($gateway, $deviceKey, 'bracelet', 'moko-w6r');
+        if ($device === null) {
+            return;
+        }
+
+        $previousTriggerCount = null;
+        if (isset($decoded['alarm']['pressMode'], $decoded['alarm']['triggerCount'])) {
+            // Returns null both on the first sighting and when the counter has
+            // not moved, which is exactly when no press should be reported.
+            $previous = $this->state->transitionCondition(
+                $deviceKey . ':press:' . $decoded['alarm']['pressMode'],
+                (string)$decoded['alarm']['triggerCount'],
+            );
+            $previousTriggerCount = $previous === null ? null : (int)$previous;
+        }
+
+        $normalized = ($this->w6rNormalizer ?? new W6rNormalizer())->normalize(
+            $decoded,
+            $device,
+            (string)$gateway['imei'],
+            $previousTriggerCount,
+        );
+
+        $deviceType = (string)$device['deviceType'];
+        $licenseId = (string)$device['licenseId'];
+        $company = (string)($device['company'] ?? 'null');
+        $this->dashboardStore?->deviceSeen($deviceKey, [
+            'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
+            'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
+            'protocol' => 'moko-w6r', 'transport' => 'ble_gateway', 'online' => '1',
+        ]);
+
+        foreach ($normalized['telemetry'] as $capability => $telemetry) {
+            if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds)) {
+                continue;
+            }
+            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
+            $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
+
+        foreach ($normalized['events'] as $event) {
+            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
+            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
+    }
+
+    /** @param array<string, mixed> $gateway @param array<string, mixed> $decoded */
+    private function handleMonitObservation(array $gateway, array $decoded): void
+    {
+        $sensorKey = (string)$decoded['mac'];
+        $sensor = $this->linkedDevice($gateway, $sensorKey, 'diaper_sensor', 'monit-mecs-pro-ble');
+        if ($sensor === null) {
             return;
         }
         if (!$this->state->acceptObservation($sensorKey, hash('sha256', (string)$decoded['raw20']), $this->dedupeTtlSeconds)) {
             return;
         }
 
-        $sensor = $this->enrich($sensor);
         $normalized = ($this->monitNormalizer ?? new MonitNormalizer())->normalize($decoded, $sensor, (string)$gateway['imei']);
         $deviceType = (string)$sensor['deviceType'];
         $licenseId = (string)$sensor['licenseId'];
