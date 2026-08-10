@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Api\Services;
+namespace Tests\Integration\Api\Services;
 
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Repository\ApiDataAccess;

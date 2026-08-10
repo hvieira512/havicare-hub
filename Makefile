@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub analyse lint test-frontend test-unit test-scenarios test-all clean-test-artifacts ssl-setup ps dev-hub dev prod-update prod-restart prod-status prod-logs
+.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub analyse lint test-frontend test-unit test-integration test-scenarios test-all clean-test-artifacts ssl-setup ps dev-hub dev prod-update prod-restart prod-status prod-logs
 
 HEALTH_HUB_SERVICE ?= health-hub
 
@@ -54,6 +54,9 @@ smoke-hub:
 test-unit:
 	vendor/bin/phpunit --testsuite unit
 
+test-integration:
+	vendor/bin/phpunit --testsuite integration
+
 analyse:
 	composer analyse
 
@@ -66,7 +69,7 @@ test-frontend:
 test-scenarios:
 	tests/scenarios/run-all.sh
 
-test-all: analyse lint test-frontend test-unit test-scenarios
+test-all: analyse lint test-frontend test-unit test-integration test-scenarios
 
 clean-test-artifacts:
 	tests/scenarios/cleanup-artifacts.sh

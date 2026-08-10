@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Api\Repository;
+namespace Tests\Integration\Api\Repository;
 
 use Hub\Api\Repository\ApiDataAccess;
 use Tests\Support\MysqlDashboardTestCase;

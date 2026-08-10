@@ -10,6 +10,8 @@ use Hub\Ingress\Mqtt\Ncs\Bridge;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {
@@ -28,7 +30,7 @@ final class BridgeTest extends TestCase
                 'device_not_authorized'
             );
         $bridge = new Bridge(
-            new FakeSubscriber(),
+            new FakeMqttSubscriber(),
             new Whitelist($whitelistPath),
             new RecordingHubMqttBridge(),
             dashboardStore: $dashboardStore,
@@ -43,21 +45,4 @@ final class BridgeTest extends TestCase
     }
 }
 
-final class RecordingHubMqttBridge extends HubMqttBridge
-{
-    public function __construct()
-    {
-    }
-}
 
-final class FakeSubscriber extends MqttClient
-{
-    public function __construct()
-    {
-        parent::__construct('127.0.0.1', 1883, 'fake-ncs-sub');
-    }
-
-    public function subscribe(string $topicFilter, ?callable $callback = null, int $qualityOfService = 0): void
-    {
-    }
-}

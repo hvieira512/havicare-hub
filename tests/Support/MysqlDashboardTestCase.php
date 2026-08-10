@@ -12,6 +12,16 @@ use PHPUnit\Framework\TestCase;
 
 abstract class MysqlDashboardTestCase extends TestCase
 {
+    /**
+     * Replaying every migration per test costs ~820ms and dominates the suite,
+     * so the schema is built once per process into a template database and each
+     * test clones it instead (~180ms).
+     */
+    private static ?string $templateDatabaseName = null;
+
+    /** @var list<string>|null */
+    private static ?array $templateTableNames = null;
+
     /** @var list<string> */
     private array $temporaryDatabaseNames = [];
 
@@ -23,9 +33,76 @@ abstract class MysqlDashboardTestCase extends TestCase
     protected function createDashboardDatabase(): DashboardDatabase
     {
         $databaseName = $this->createEmptyDatabase();
-        $database = new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
-        (new DatabaseMigrator($database->pdo()))->migrate();
-        return $database;
+        $this->cloneTemplateInto($databaseName);
+
+        return new DashboardDatabase($this->dashboardDatabaseConfig($databaseName));
+    }
+
+    /**
+     * Builds the migrated template once and copies it into a fresh database.
+     *
+     * The clone is a plain structure + data copy, so a test still gets its own
+     * isolated database and can run DDL or open extra connections against it.
+     */
+    private function cloneTemplateInto(string $databaseName): void
+    {
+        $admin = $this->adminPdo();
+
+        if (self::$templateDatabaseName === null) {
+            $templateName = 'hub_test_tpl_' . bin2hex(random_bytes(6));
+            $config = $this->mysqlAdminConfig();
+            $admin->exec(sprintf(
+                'CREATE DATABASE `%s` CHARACTER SET %s COLLATE %s',
+                $templateName,
+                $config['charset'],
+                $config['charset'] . '_unicode_ci'
+            ));
+
+            $template = new DashboardDatabase($this->dashboardDatabaseConfig($templateName));
+            (new DatabaseMigrator($template->pdo()))->migrate();
+
+            self::$templateDatabaseName = $templateName;
+            self::$templateTableNames = $template->pdo()
+                ->query(sprintf(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = '%s'",
+                    $templateName
+                ))
+                ->fetchAll(PDO::FETCH_COLUMN);
+
+            // The template outlives every test, so drop it when the process ends
+            // rather than in tearDown.
+            register_shutdown_function(static function () use ($config, $templateName): void {
+                try {
+                    (new PDO(
+                        sprintf('mysql:host=%s;port=%d;charset=%s', $config['host'], $config['port'], $config['charset']),
+                        $config['username'],
+                        $config['password']
+                    ))->exec(sprintf('DROP DATABASE IF EXISTS `%s`', $templateName));
+                } catch (\Throwable) {
+                }
+            });
+        }
+
+        // CREATE TABLE ... LIKE drops foreign keys, and gateway_device_links
+        // depends on ON DELETE CASCADE, so replay the real DDL instead.
+        $admin->exec('SET FOREIGN_KEY_CHECKS = 0');
+        try {
+            $admin->exec(sprintf('USE `%s`', $databaseName));
+            foreach (self::$templateTableNames ?? [] as $table) {
+                $ddl = (string)$admin
+                    ->query(sprintf('SHOW CREATE TABLE `%s`.`%s`', self::$templateDatabaseName, $table))
+                    ->fetch(PDO::FETCH_NUM)[1];
+                $admin->exec($ddl);
+                $admin->exec(sprintf(
+                    'INSERT INTO `%s` SELECT * FROM `%s`.`%s`',
+                    $table,
+                    self::$templateDatabaseName,
+                    $table
+                ));
+            }
+        } finally {
+            $admin->exec('SET FOREIGN_KEY_CHECKS = 1');
+        }
     }
 
     protected function reopenDashboardDatabase(string $databaseName): DashboardDatabase

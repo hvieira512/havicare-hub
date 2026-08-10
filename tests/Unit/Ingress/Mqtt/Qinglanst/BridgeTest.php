@@ -10,6 +10,8 @@ use Hub\Ingress\Mqtt\Qinglanst\Bridge;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {
@@ -28,7 +30,7 @@ final class BridgeTest extends TestCase
                 'device_not_authorized'
             );
         $bridge = new Bridge(
-            new FakeSubscriber(),
+            new FakeMqttSubscriber(),
             new Whitelist($whitelistPath),
             new RecordingHubMqttBridge(),
             dashboardStore: $dashboardStore,
@@ -55,7 +57,7 @@ final class BridgeTest extends TestCase
 
         $mqttBridge = new RecordingHubMqttBridge();
         $bridge = new Bridge(
-            new FakeSubscriber(),
+            new FakeMqttSubscriber(),
             new Whitelist($whitelistPath),
             $mqttBridge,
             decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
@@ -84,9 +86,9 @@ final class BridgeTest extends TestCase
             ], JSON_THROW_ON_ERROR)
         );
 
-        self::assertSame('radar-topic-uid', $mqttBridge->telemetryDeviceKey);
-        self::assertSame('minute_stats', $mqttBridge->telemetryPayload['type'] ?? null);
-        self::assertSame('Qinglanst RD-V1 Pro', $mqttBridge->telemetryPayload['device']['commercialName'] ?? null);
+        self::assertSame('radar-topic-uid', $mqttBridge->lastTelemetry()['imei']);
+        self::assertSame('minute_stats', $mqttBridge->lastTelemetry()['payload']['type'] ?? null);
+        self::assertSame('Qinglanst RD-V1 Pro', $mqttBridge->lastTelemetry()['payload']['device']['commercialName'] ?? null);
 
         @unlink($whitelistPath);
     }
@@ -100,30 +102,4 @@ final class BridgeTest extends TestCase
     }
 }
 
-final class RecordingHubMqttBridge extends HubMqttBridge
-{
-    public ?string $telemetryDeviceKey = null;
-    public ?array $telemetryPayload = null;
 
-    public function __construct()
-    {
-    }
-
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
-    {
-        $this->telemetryDeviceKey = $imei;
-        $this->telemetryPayload = $payload;
-    }
-}
-
-final class FakeSubscriber extends MqttClient
-{
-    public function __construct()
-    {
-        parent::__construct('127.0.0.1', 1883, 'fake-qinglanst-sub');
-    }
-
-    public function subscribe(string $topicFilter, ?callable $callback = null, int $qualityOfService = 0): void
-    {
-    }
-}

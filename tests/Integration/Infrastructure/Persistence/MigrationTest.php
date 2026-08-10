@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Infrastructure\Persistence;
+namespace Tests\Integration\Infrastructure\Persistence;
 
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Infrastructure\Persistence\DashboardDatabase;

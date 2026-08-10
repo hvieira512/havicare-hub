@@ -15,7 +15,15 @@
     },
     "autoload": {
         "psr-4": {
-            "Hub\\": ["src/Hub/", "src/"]
+            "Hub\\": [
+                "src/Hub/",
+                "src/"
+            ]
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -27,11 +35,16 @@
         "location:probe": "php simulator/location-beacondb-probe.php",
         "location:radio-map": "php bin/radio-map.php",
         "test:unit": "vendor/bin/phpunit --testsuite unit",
+        "test:integration": "vendor/bin/phpunit --testsuite integration",
+        "test:php": "vendor/bin/phpunit",
+        "test:frontend": "npm test",
         "analyse": "php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress --debug",
         "test:scenarios": "tests/scenarios/run-all.sh",
         "test": [
             "@analyse",
             "@test:unit",
+            "@test:integration",
+            "@test:frontend",
             "@test:scenarios"
         ]
     },
@@ -44,6 +57,15 @@
             "advisories": {
                 "block": false
             }
-        }
+        },
+        "process-timeout": 1800
+    },
+    "scripts-descriptions": {
+        "test:unit": "Fast suite: no external services (seconds).",
+        "test:integration": "MySQL-backed suite; skips without a reachable MySQL.",
+        "test:php": "Both PHP suites.",
+        "test:frontend": "Node test runner over tests/Frontend.",
+        "test:scenarios": "End-to-end scenarios against docker compose.",
+        "test": "Everything: phpstan, both PHP suites, frontend, scenarios."
     }
 }

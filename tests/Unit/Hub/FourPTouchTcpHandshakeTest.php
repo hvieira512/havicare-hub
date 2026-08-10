@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 final class FourPTouchTcpHandshakeTest extends TestCase
 {
@@ -80,18 +81,18 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertCount(1, $mqtt->events);
         self::assertCount(3, $mqtt->telemetry);
         self::assertCount(1, $mqtt->raw);
-        self::assertSame('637507597567372', $mqtt->statuses[0][0]);
-        self::assertSame('online', $mqtt->statuses[0][1]['state']);
-        self::assertSame('4P Touch', $mqtt->statuses[0][1]['device']['supplier']);
-        self::assertSame('4P-TOUCH', $mqtt->statuses[0][1]['device']['model']);
-        self::assertSame('device.connected', $mqtt->events[0][1]['type']);
-        self::assertSame('heartbeat', $mqtt->telemetry[0][1]['type']);
-        self::assertSame(2, $mqtt->telemetry[0][1]['schemaVersion']);
-        self::assertSame('four-p-touch', $mqtt->telemetry[0][1]['source']['protocol']);
-        self::assertSame('LK', $mqtt->telemetry[0][1]['source']['nativeType']);
-        self::assertSame('activity', $mqtt->telemetry[1][1]['type']);
-        self::assertSame('battery', $mqtt->telemetry[2][1]['type']);
-        self::assertSame('text', $mqtt->raw[0][1]['debug']['encoding']);
+        self::assertSame('637507597567372', $mqtt->statuses[0]['imei']);
+        self::assertSame('online', $mqtt->statuses[0]['payload']['state']);
+        self::assertSame('4P Touch', $mqtt->statuses[0]['payload']['device']['supplier']);
+        self::assertSame('4P-TOUCH', $mqtt->statuses[0]['payload']['device']['model']);
+        self::assertSame('device.connected', $mqtt->events[0]['payload']['type']);
+        self::assertSame('heartbeat', $mqtt->telemetry[0]['payload']['type']);
+        self::assertSame(2, $mqtt->telemetry[0]['payload']['schemaVersion']);
+        self::assertSame('four-p-touch', $mqtt->telemetry[0]['payload']['source']['protocol']);
+        self::assertSame('LK', $mqtt->telemetry[0]['payload']['source']['nativeType']);
+        self::assertSame('activity', $mqtt->telemetry[1]['payload']['type']);
+        self::assertSame('battery', $mqtt->telemetry[2]['payload']['type']);
+        self::assertSame('text', $mqtt->raw[0]['payload']['debug']['encoding']);
     }
 
     public function testFourPTouchAlarmGetsProtocolAckOverTcp(): void
@@ -168,34 +169,3 @@ final class FourPTouchTcpHandshakeTest extends TestCase
     }
 }
 
-final class RecordingHubMqttBridge extends HubMqttBridge
-{
-    public array $raw = [];
-    public array $statuses = [];
-    public array $events = [];
-    public array $telemetry = [];
-
-    public function __construct()
-    {
-    }
-
-    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
-    {
-        $this->raw[] = [$imei, $payload];
-    }
-
-    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
-    {
-        $this->statuses[] = [$imei, $payload, $retain];
-    }
-
-    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
-    {
-        $this->events[] = [$imei, $payload];
-    }
-
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
-    {
-        $this->telemetry[] = [$imei, $payload];
-    }
-}

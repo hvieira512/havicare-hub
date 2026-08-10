@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Dashboard;
+namespace Tests\Integration\Dashboard;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Repository\ApiDataAccess;

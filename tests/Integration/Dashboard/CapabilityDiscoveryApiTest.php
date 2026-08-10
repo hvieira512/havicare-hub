@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Dashboard;
+namespace Tests\Integration\Dashboard;
 
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Repository\CapabilityDiscoveryRepository;

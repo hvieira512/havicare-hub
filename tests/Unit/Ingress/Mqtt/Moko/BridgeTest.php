@@ -11,6 +11,8 @@ use Hub\Ingress\Mqtt\Moko\Bridge;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\RecordingHubMqttBridge;
+use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {
@@ -124,7 +126,7 @@ final class BridgeTest extends TestCase
             public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool { return $this->linked; }
         };
         return new Bridge(
-            new FakeSubscriber(), new Whitelist($path), $mqtt, $links, new ArrayObservationStateStore(),
+            new FakeMqttSubscriber(), new Whitelist($path), $mqtt, $links, new ArrayObservationStateStore(),
             gatewayIdleTimeoutSeconds: $idleTimeout,
             clock: $clock,
         );
@@ -144,21 +146,4 @@ final class BridgeTest extends TestCase
     }
 }
 
-final class RecordingHubMqttBridge extends HubMqttBridge
-{
-    public array $raw = [];
-    public array $telemetry = [];
-    public array $events = [];
-    public array $statuses = [];
-    public function __construct() {}
-    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void { $this->raw[] = compact('imei', 'payload', 'deviceType', 'licenseId', 'company'); }
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void { $this->telemetry[] = ['type' => $payload['type']] + compact('imei', 'payload', 'deviceType', 'licenseId', 'company'); }
-    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void { $this->events[] = ['type' => $payload['type']] + compact('imei', 'payload', 'deviceType', 'licenseId', 'company'); }
-    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void { $this->statuses[] = compact('imei', 'payload', 'retain', 'deviceType', 'licenseId', 'company'); }
-}
 
-final class FakeSubscriber extends MqttClient
-{
-    public function __construct() { parent::__construct('127.0.0.1', 1883, 'fake-moko-sub'); }
-    public function subscribe(string $topicFilter, ?callable $callback = null, int $qualityOfService = 0): void {}
-}

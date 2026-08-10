@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Api\Repository;
+namespace Tests\Integration\Api\Repository;
 
 use Hub\Api\Repository\DeviceConfigurationRepository;
 use PDO;
