@@ -65,6 +65,39 @@ test("the card states no alarm status, only when each press last happened", () =
     assert.doesNotMatch(html, /ativ[oa]|em curso|cancelad/i);
 });
 
+test("the modes lay out as three columns that stack on small viewports", () => {
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+
+    assert.match(html, /class="row g-2"/);
+    assert.equal(html.match(/class="col-12 col-md-4"/g).length, 3);
+});
+
+test("each mode carries its own icon", () => {
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+
+    for (const icon of ["fa-1", "fa-2", "fa-stopwatch"]) {
+        assert.match(html, new RegExp(`fa-solid ${icon} `));
+    }
+});
+
+test("a mode that has fired carries a tooltip with the exact timestamp", () => {
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+
+    assert.match(html, /data-bs-toggle="tooltip"/);
+    // The rendered time is locale dependent, so only its presence is asserted.
+    assert.match(html, /data-bs-title="[^"]+"/);
+    // Reachable by keyboard, since hover alone would hide it from some users.
+    assert.match(html, /tabindex="0"/);
+});
+
+test("a mode that never fired has no tooltip, having no timestamp to show", () => {
+    const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
+
+    // One call, so exactly one of the three columns is hoverable.
+    assert.equal(html.match(/data-bs-toggle="tooltip"/g).length, 1);
+    assert.equal(html.match(/data-occurred-at=/g).length, 1);
+});
+
 test("payload rows wrapped by the store are unwrapped", () => {
     const html = helpCallSummaryCard([
         {payload: call("double", "2026-08-10T12:26:18Z")},

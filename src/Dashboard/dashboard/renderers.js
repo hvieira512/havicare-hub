@@ -375,6 +375,14 @@ const PRESS_TYPE_LABEL = {
     long: "toque longo",
 };
 
+// What separates the modes is how many presses, or how long one lasts, so the
+// icons say exactly that.
+const HELP_CALL_PRESS_ICON = {
+    single: "fa-1",
+    double: "fa-2",
+    long: "fa-stopwatch",
+};
+
 function helpCallContent(data) {
     const base = ncsPagerContent("help_call");
     const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];
@@ -712,25 +720,31 @@ export function helpCallSummaryCard(events = []) {
         }
     }
 
-    const rows = HELP_CALL_PRESS_MODES.map((mode) => {
+    // Three side by side on a desktop, stacked full width on a phone.
+    const columns = HELP_CALL_PRESS_MODES.map((mode) => {
         const call = latest[mode];
         // The shared label reads as a suffix ("... (toque simples)"), so it is
-        // capitalised here where it heads a row instead.
+        // capitalised here where it titles a column instead.
         const suffix = PRESS_TYPE_LABEL[mode];
         const label = esc(suffix.charAt(0).toUpperCase() + suffix.slice(1));
-        if (call === undefined) {
-            return `<div class="help-call-row">
-                <span class="help-call-mode">${label}</span>
-                <span class="help-call-never">nunca</span>
-            </div>`;
-        }
+        const icon = HELP_CALL_PRESS_ICON[mode];
+        const called = call !== undefined;
+        const occurredAt = called ? call.occurredAt || call.recordedAt || "" : "";
+        // The relative time is the readable one; the exact timestamp is a
+        // detail, so it waits behind a tooltip rather than crowding the column.
+        const tooltip = called
+            ? ` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(when(occurredAt))}" aria-label="${label}: ${esc(when(occurredAt))}" tabindex="0"`
+            : "";
 
-        const occurredAt = call.occurredAt || call.recordedAt || "";
-        return `<div class="help-call-row" data-occurred-at="${esc(occurredAt)}">
-            <span class="help-call-mode">${label}</span>
-            <span class="help-call-ago">${esc(ago(occurredAt))}</span>
-            <span class="help-call-at">${esc(when(occurredAt))}</span>
-        </div>`;
+        return `<div class="col-12 col-md-4">
+            <div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${called ? ` data-occurred-at="${esc(occurredAt)}"` : ""}${tooltip}>
+            <i class="fa-solid ${icon} ${called ? "text-danger" : "text-body-secondary"}" style="width:1.25rem;text-align:center;flex-shrink:0;"></i>
+            <div class="min-w-0">
+            <div class="fw-semibold text-truncate">${label}</div>
+            <div class="small text-body-secondary">${called ? esc(ago(occurredAt)) : '<span class="help-call-never">nunca</span>'}</div>
+            </div>
+            </div>
+            </div>`;
     }).join("");
 
     return `<div class="col-12">
@@ -742,7 +756,7 @@ export function helpCallSummaryCard(events = []) {
         </div>
         <div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
         </div>
-        <div class="help-call-summary">${rows}</div>
+        <div class="row g-2">${columns}</div>
         </div>
         </div>
         </div>`;
