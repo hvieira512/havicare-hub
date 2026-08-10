@@ -14,6 +14,12 @@ use React\Stream\ThroughStream;
 
 final class DeviceController
 {
+    /** A burst of writes collapses into one send after this delay. */
+    private const STREAM_COALESCE_SECONDS = 0.25;
+
+    /** Catches writes made outside this process, and keeps the socket warm. */
+    private const STREAM_FALLBACK_SECONDS = 15;
+
     public function __construct(
         private DeviceService $service,
         private JsonResponder $json,
@@ -48,27 +54,61 @@ final class DeviceController
 
         $loop = Loop::get();
         $stream = new ThroughStream();
-        $initialPayload = "event: snapshot\ndata: " . json_encode($snapshot, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n\n";
+        $lastPayload = null;
 
-        $loop->futureTick(static function () use ($stream, $initialPayload): void {
-            if ($stream->isWritable()) {
-                $stream->write($initialPayload);
-            }
-        });
-
-        $timer = $loop->addPeriodicTimer(2, function () use ($imei, $auth, $stream): void {
+        $send = function (string $event) use ($imei, $auth, $stream, &$lastPayload): void {
             if (!$stream->isWritable()) {
                 return;
             }
 
             $data = $this->service->recent($imei, $auth);
-            if (!isset($data['error'])) {
-                $stream->write("event: update\ndata: " . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n\n");
+            if (isset($data['error'])) {
+                return;
             }
+
+            $payload = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            if ($payload === $lastPayload) {
+                // Nothing changed: keep the connection alive without making the
+                // client re-render the same history.
+                $stream->write(": keep-alive\n\n");
+                return;
+            }
+
+            $lastPayload = $payload;
+            $stream->write("event: {$event}\ndata: {$payload}\n\n");
+        };
+
+        $loop->futureTick(static function () use ($send): void {
+            $send('snapshot');
         });
 
-        $stream->on('close', static function () use ($timer, $loop): void {
+        // The store announces its own writes, so there is nothing to poll for.
+        // A burst -- a bracelet broadcasting one press for 30 seconds, or a
+        // command moving through its lifecycle -- collapses into a single send.
+        $flushScheduled = false;
+        $unsubscribe = $this->service->updates()->subscribe(
+            $imei,
+            static function () use ($loop, $send, &$flushScheduled): void {
+                if ($flushScheduled) {
+                    return;
+                }
+                $flushScheduled = true;
+                $loop->addTimer(self::STREAM_COALESCE_SECONDS, static function () use ($send, &$flushScheduled): void {
+                    $flushScheduled = false;
+                    $send('update');
+                });
+            }
+        );
+
+        // Safety net for writes this process cannot observe, such as a CLI
+        // script touching the store, and it doubles as the SSE keep-alive.
+        $timer = $loop->addPeriodicTimer(self::STREAM_FALLBACK_SECONDS, static function () use ($send): void {
+            $send('update');
+        });
+
+        $stream->on('close', static function () use ($timer, $loop, $unsubscribe): void {
             $loop->cancelTimer($timer);
+            $unsubscribe();
         });
 
         return new Response(200, [

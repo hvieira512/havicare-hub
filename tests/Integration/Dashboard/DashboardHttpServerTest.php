@@ -944,6 +944,49 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('_nativeKey', $body['capabilities']['alarms']['medication_reminders']);
     }
 
+    public function testStreamPushesUpdatesAsTheyAreWrittenAndReleasesItsListenerOnClose(): void
+    {
+        [$server, , $store] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+        ));
+        self::assertSame(200, $response->getStatusCode());
+
+        // A single stream holds a single listener.
+        self::assertSame(1, $store->updates()->listenerCount());
+
+        $frames = $this->collectSseFramesUntilUpdate($response, function () use ($store): void {
+            $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 71]);
+            $store->recordCommand('861265061009822', 'cmd-9', [
+                'status' => 'waiting',
+                'imei' => '861265061009822',
+                'protocol' => 'vivistar',
+                'requestId' => 'BPXL',
+                'nativeType' => 'BPXL',
+                'label' => 'Heart rate',
+                'feature' => 'heart_rate',
+                'expectedReplyTypes' => [],
+                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
+            ]);
+        });
+
+        // Arriving at all inside the deadline proves the push path: the periodic
+        // fallback only fires after STREAM_FALLBACK_SECONDS.
+        self::assertStringContainsString("event: snapshot\n", $frames);
+        self::assertStringContainsString("event: update\n", $frames);
+
+        $update = $this->decodeSseFrame(substr($frames, (int)strpos($frames, 'event: update')));
+        // The burst of writes coalesces into one frame carrying both.
+        self::assertSame('heart_rate', $update['telemetry'][0]['type'] ?? null);
+        self::assertSame('BPXL', $update['commands'][0]['requestId'] ?? null);
+
+        $response->getBody()->close();
+        self::assertSame(0, $store->updates()->listenerCount());
+    }
+
     public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
@@ -1166,6 +1209,39 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $loop->run();
 
         return $frame;
+    }
+
+    /**
+     * Reads the snapshot, runs $write, and keeps reading until the pushed update
+     * arrives. The deadline is far below the stream's periodic fallback, so a
+     * frame here can only have come from the store announcing the write.
+     */
+    private function collectSseFramesUntilUpdate(
+        \Psr\Http\Message\ResponseInterface $response,
+        callable $write
+    ): string {
+        $body = $response->getBody();
+        $frames = '';
+        $loop = Loop::get();
+
+        $body->on('data', static function (string $chunk) use (&$frames, $loop): void {
+            $frames .= $chunk;
+            if (str_contains($frames, 'event: update')) {
+                $loop->stop();
+            }
+        });
+
+        $loop->addTimer(0.05, static function () use ($write): void {
+            $write();
+        });
+        $timeout = $loop->addTimer(2.0, static function () use ($loop): void {
+            $loop->stop();
+        });
+
+        $loop->run();
+        $loop->cancelTimer($timeout);
+
+        return $frames;
     }
 
     private function decodeSseFrame(string $frame): array

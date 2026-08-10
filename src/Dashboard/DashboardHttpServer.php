@@ -54,7 +54,16 @@ final class DashboardHttpServer
             );
         }
 
-        $deviceService = new DeviceService($this->store, $this->whitelist, $this->hub, $this->downlinkQueue, $this->db);
+        // The store announces its own writes, so the stream must subscribe to that
+        // exact notifier rather than one of its own.
+        $deviceService = new DeviceService(
+            $this->store,
+            $this->whitelist,
+            $this->hub,
+            $this->downlinkQueue,
+            $this->db,
+            updates: $this->store->updates(),
+        );
         $this->apiKernel = new ApiKernel(
             $this->apiAuthRequired,
             new AuthService($this->tokens, $this->db, $this->apiTokenTtlSeconds, $this->apiRefreshTokenTtlSeconds),

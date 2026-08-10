@@ -15,15 +15,28 @@ final class DashboardStore implements DashboardStoreContract
     private DeviceCommandStore $commands;
     private DeviceConfigurationProjection $projection;
 
+    private DeviceUpdateNotifier $updates;
+
     public function __construct(
         ClientInterface $redis,
         private int $limit = 100,
         private string $prefix = 'hub:dashboard',
+        ?DeviceUpdateNotifier $updates = null,
     ) {
+        $this->updates = $updates ?? new DeviceUpdateNotifier();
         $this->runtime = new DeviceRuntimeStore($redis, $this->limit, $this->prefix);
         $this->projection = new DeviceConfigurationProjection();
         $this->events = new DeviceEventStore($redis, $this->limit, $this->prefix, $this->projection);
         $this->commands = new DeviceCommandStore($redis, $this->runtime, $this->limit, $this->prefix, $this->projection);
+    }
+
+    /**
+     * Streams subscribe here to be told when a device's history changes, so
+     * they do not have to poll for it.
+     */
+    public function updates(): DeviceUpdateNotifier
+    {
+        return $this->updates;
     }
 
     public function setDataAccess(?ApiDataAccess $db): void
@@ -85,6 +98,12 @@ final class DashboardStore implements DashboardStoreContract
     public function append(string $imei, string $list, array $payload): void
     {
         $this->events->append($imei, $list, $payload);
+        // DeviceService::recent() serves telemetry, events and commands. The
+        // raw list is written on every gateway message and never streamed, so
+        // announcing it would wake every listener for nothing.
+        if ($list === 'telemetry' || $list === 'events') {
+            $this->updates->notify($imei);
+        }
     }
 
     public function recordCommand(string $imei, string $id, array $record): void
@@ -105,21 +124,25 @@ final class DashboardStore implements DashboardStoreContract
             }
         }
         $this->commands->recordCommand($imei, $id, $record);
+        $this->updates->notify($imei);
     }
 
     public function retryWaitingCommands(int $retryAfterSeconds, int $timeoutSeconds, int $maxAttempts, callable $dispatch): void
     {
         $this->commands->retryWaitingCommands($retryAfterSeconds, $timeoutSeconds, $maxAttempts, $dispatch);
+        $this->updates->notifyAll();
     }
 
     public function markLatestCommand(string $imei, string $nativeType, array $fields): void
     {
         $this->commands->markLatestCommand($imei, $nativeType, $fields);
+        $this->updates->notify($imei);
     }
 
     public function markCommand(string $imei, string $id, array $fields): void
     {
         $this->commands->markCommand($imei, $id, $fields);
+        $this->updates->notify($imei);
     }
 
     public function isCurrentOperation(string $operationId): bool
@@ -136,11 +159,13 @@ final class DashboardStore implements DashboardStoreContract
     ): void
     {
         $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref, $accepted);
+        $this->updates->notify($imei);
     }
 
     public function expireWaitingCommands(int $timeoutSeconds): void
     {
         $this->commands->expireWaitingCommands($timeoutSeconds);
+        $this->updates->notifyAll();
     }
 
     public function expireStaleDevices(int $timeoutSeconds): void

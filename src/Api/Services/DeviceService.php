@@ -17,6 +17,7 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\DeviceProtocol;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Dashboard\DeviceCommandRecord;
+use Hub\Dashboard\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\DeviceHubServer;
 use Hub\Log\Logger;
@@ -39,6 +40,8 @@ class DeviceService
     private DeviceConfigurationQueryService $configurationQueries;
     private DeviceAssociationService $associations;
 
+    private DeviceUpdateNotifier $updates;
+
     public function __construct(
         private DashboardStoreContract $store,
         private Whitelist $whitelist,
@@ -53,7 +56,9 @@ class DeviceService
         ?DeviceConfigurationUpdateService $configurationUpdates = null,
         ?DeviceConfigurationQueryService $configurationQueries = null,
         ?DeviceResponseCompactor $responseCompactor = null,
+        ?DeviceUpdateNotifier $updates = null,
     ) {
+        $this->updates = $updates ?? new DeviceUpdateNotifier();
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
         $this->deviceFilter = $deviceFilter ?? new DeviceCollectionFilter();
@@ -749,6 +754,15 @@ class DeviceService
         $this->store->deleteDevice($imei);
 
         return ['status' => 'ok', 'imei' => $imei];
+    }
+
+    /**
+     * The stream subscribes here to learn when recent() would return something
+     * new, instead of re-reading it on a timer.
+     */
+    public function updates(): DeviceUpdateNotifier
+    {
+        return $this->updates;
     }
 
     public function recent(string $imei, ?ApiAuthContext $auth = null): array
