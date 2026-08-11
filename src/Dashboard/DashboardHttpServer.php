@@ -106,7 +106,9 @@ final class DashboardHttpServer
             if ($method === 'GET' && preg_match('#^' . self::MODEL_IMAGE_ROUTE . '/([a-f0-9]{32}\.jpg)$#', $path, $matches) === 1) {
                 return $this->modelImage($matches[1]);
             }
-            if ($method === 'GET' && !str_starts_with($path, '/api/') && $path !== '/' && $path !== '/dashboard') {
+            // /api/, / and /dashboard already returned above, so anything
+            // still here and GET is a candidate static asset.
+            if ($method === 'GET') {
                 $file = $this->publicAssetPath($path);
                 if ($file !== null) {
                     return $this->staticFile($file);

@@ -8,6 +8,10 @@ require __DIR__ . '/../vendor/autoload.php';
 use Hub\Location\PrivateRadioMapFactory;
 use Hub\Runtime\CliBootstrap;
 
+// $argv only exists when register_argc_argv is on; $_SERVER always carries it.
+/** @var list<string> $arguments */
+$arguments = (array)($_SERVER['argv'] ?? []);
+
 $config = CliBootstrap::config(__DIR__ . '/..');
 $locationConfig = $config['location_resolution'] ?? [];
 if (!(bool)($locationConfig['radio_map_enabled'] ?? true)) {
@@ -19,14 +23,14 @@ if (trim((string)($locationConfig['radio_map_hash_key'] ?? '')) === '') {
     exit(2);
 }
 
-$command = $argv[1] ?? '';
+$command = $arguments[1] ?? '';
 if ($command !== 'seed') {
     fwrite(STDERR, "Usage: php bin/radio-map.php seed --lat=... --lon=... --accuracy=... --bssids=mac1,mac2\n");
     exit(2);
 }
 
 $options = [];
-foreach (array_slice($argv, 2) as $argument) {
+foreach (array_slice($arguments, 2) as $argument) {
     if (preg_match('/^--(lat|lon|accuracy|bssids)=(.*)$/', $argument, $matches) === 1) {
         $options[$matches[1]] = $matches[2];
     }

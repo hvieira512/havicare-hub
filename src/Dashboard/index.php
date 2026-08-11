@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 
 require_once __DIR__ . '/components/helpers.php';
+
+// Supplied by DashboardHttpServer::page(), which requires this file. Declared
+// here so the template states its own contract instead of assuming a caller.
+$dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
 require_once __DIR__ . '/components/pagination.php';
 require_once __DIR__ . '/components/modal.php';
 

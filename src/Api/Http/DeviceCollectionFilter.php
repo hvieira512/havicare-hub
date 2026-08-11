@@ -49,9 +49,6 @@ final class DeviceCollectionFilter
         ]));
 
         foreach ($tokens as $token) {
-            if ($token === '') {
-                continue;
-            }
             if (str_contains($haystack, $token)) {
                 continue;
             }

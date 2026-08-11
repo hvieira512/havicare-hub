@@ -1,8 +1,50 @@
 parameters:
-    level: 0
+    # Level 4 turns on the dead-code and impossible-condition rules. Those are
+    # what found the undeclared resourceId on ConnectionInterface and an NCS
+    # branch that could never run, so they are worth failing the build over.
+    level: 4
     paths:
         - src
         - bin
     tmpDir: var/phpstan
     parallel:
         maximumNumberOfProcesses: 1
+
+    ignoreErrors:
+        # Defensive style rather than defects: `?? ` on an offset that happens to
+        # always exist, a redundant is_array() on a known array, `?->` on a value
+        # this call site cannot receive as null. Removing them would make the code
+        # more brittle against inputs the type system only *believes* are narrow.
+        - identifier: nullCoalesce.offset
+        - identifier: nullCoalesce.expr
+        - identifier: nullsafe.neverNull
+        - identifier: function.alreadyNarrowedType
+        - identifier: notIdentical.alwaysTrue
+        - identifier: booleanAnd.rightAlwaysTrue
+        - identifier: instanceof.alwaysTrue
+        # A nullable return kept because the interface it implements allows null.
+        - identifier: return.unusedType
+        # Exhaustive match over a fixed key set: the last arm and the default are
+        # unreachable by inference, but dropping the default would turn an
+        # unexpected key into an UnhandledMatchError.
+        - identifier: match.alwaysTrue
+          path: src/Api/Services/ModelService.php
+
+        # Predis declares pipeline() on Client, not on ClientInterface. Narrowing
+        # our hints to Client would break the in-memory doubles the tests use,
+        # which implement the interface.
+        -
+            message: '#Call to an undefined method Predis\\ClientInterface::pipeline\(\)#'
+
+        # The subscriber is assigned after the closure that reads it is built, so
+        # the by-reference capture is populated by the time it runs. The `?->`
+        # is the guard for the window before that.
+        -
+            message: '#Cannot call method handleReceivedMessage\(\) on null#'
+            path: src/Ingress/Mqtt/SubscriberFactory.php
+
+        # page() is also reached through newInstanceWithoutConstructor(), where
+        # the promoted property really is uninitialised.
+        -
+            identifier: isset.initializedProperty
+            path: src/Dashboard/DashboardHttpServer.php
