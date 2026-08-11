@@ -2,6 +2,8 @@
 
 namespace Hub\Ingress\Mqtt\Ncs;
 
+use Hub\Domain\DeviceMetadata;
+
 use Hub\Log\Logger;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
@@ -84,7 +86,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         $deviceKey = (string)$device['imei'];
         $deviceType = (string)$device['deviceType'];
-        $licenseId = (string)$device['licenseId'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
 
         $this->mqttBridge->publishRaw($deviceKey, $normalized['raw'], $deviceType, $licenseId, $company);

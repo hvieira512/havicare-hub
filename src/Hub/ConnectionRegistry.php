@@ -43,7 +43,7 @@ class ConnectionRegistry
         string $model,
         string $commercialName = '',
         string $deviceType = 'watch',
-        string $licenseId = '0',
+        int $licenseId = 0,
         string $company = 'null',
     ): DeviceSession
     {

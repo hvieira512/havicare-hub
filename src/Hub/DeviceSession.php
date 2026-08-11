@@ -14,7 +14,7 @@ class DeviceSession
         public readonly string $model = '',
         public readonly string $commercialName = '',
         public readonly string $deviceType = 'watch',
-        public readonly string $licenseId = '0',
+        public readonly int $licenseId = 0,
         public readonly string $company = 'null',
     ) {
     }
@@ -45,7 +45,7 @@ class DeviceSession
         string $model,
         string $commercialName = '',
         string $deviceType = 'watch',
-        string $licenseId = '0',
+        int $licenseId = 0,
         string $company = 'null',
     ): self
     {

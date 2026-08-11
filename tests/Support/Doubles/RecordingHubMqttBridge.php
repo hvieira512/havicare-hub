@@ -31,22 +31,22 @@ final class RecordingHubMqttBridge extends HubMqttBridge
         // Deliberately does not call parent: there is no broker to connect to.
     }
 
-    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->raw[] = self::entry($imei, $payload, $deviceType, $licenseId, $company);
     }
 
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->telemetry[] = self::entry($imei, $payload, $deviceType, $licenseId, $company);
     }
 
-    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->events[] = self::entry($imei, $payload, $deviceType, $licenseId, $company);
     }
 
-    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->statuses[] = self::entry($imei, $payload, $deviceType, $licenseId, $company) + ['retain' => $retain];
     }
@@ -69,7 +69,7 @@ final class RecordingHubMqttBridge extends HubMqttBridge
      * @param array<string, mixed> $payload
      * @return array{type: ?string, imei: string, payload: array<string, mixed>, deviceType: string, licenseId: string, company: string}
      */
-    private static function entry(string $imei, array $payload, string $deviceType, string $licenseId, string $company): array
+    private static function entry(string $imei, array $payload, string $deviceType, int $licenseId, string $company): array
     {
         return [
             'type' => isset($payload['type']) ? (string)$payload['type'] : null,

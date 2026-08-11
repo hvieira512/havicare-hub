@@ -2,6 +2,8 @@
 
 namespace Hub;
 
+use Hub\Domain\DeviceMetadata;
+
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Dashboard\DashboardStoreContract;
@@ -452,7 +454,7 @@ class DeviceHubServer
         }
     }
 
-    private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null', string $commercialName = ''): void
+    private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
     {
         try {
             $this->mqtt->publishStatus($imei, RawPayload::status($imei, $supplier, $model, $state, null, $commercialName), true, $deviceType, $licenseId, $company);
@@ -474,7 +476,7 @@ class DeviceHubServer
         }
     }
 
-    private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null', string $commercialName = ''): void
+    private function publishEvent(string $imei, string $supplier, string $model, string $type, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
     {
         try {
             $this->mqtt->publishEvent($imei, RawPayload::event($imei, $supplier, $model, $type, null, null, $commercialName), $deviceType, $licenseId, $company);
@@ -518,7 +520,7 @@ class DeviceHubServer
         string $type,
         ?array $command = null,
         string $deviceType = 'watch',
-        string $licenseId = '0',
+        int $licenseId = 0,
         string $commercialName = ''
     ): void
     {
@@ -535,7 +537,7 @@ class DeviceHubServer
         string $type,
         string $bytes,
         string $deviceType = 'watch',
-        string $licenseId = '0',
+        int $licenseId = 0,
         ?array $command = null,
         string $commercialName = ''
     ): void
@@ -543,11 +545,14 @@ class DeviceHubServer
         $this->recordEvent($imei, $supplier, $model, $type, $command ?? $this->commandMetadata($bytes), $deviceType, $licenseId, $commercialName);
     }
 
-    private function currentLicenseId(string $imei, string $fallback = '0'): string
+    private function currentLicenseId(string $imei, int $fallback = 0): int
     {
         $metadata = $this->authorizer->metadataFor($imei);
-        $licenseId = (string)($metadata['licenseId'] ?? '');
-        return $licenseId !== '' ? $licenseId : $fallback;
+        $licenseId = DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0);
+
+        // 0 means "unassigned", so an absent value falls back rather than
+        // silently scoping the device to license 0.
+        return $licenseId !== 0 ? $licenseId : $fallback;
     }
 
     private function currentCompany(string $imei, string $fallback = 'null'): string

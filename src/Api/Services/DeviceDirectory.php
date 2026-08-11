@@ -108,7 +108,7 @@ final class DeviceDirectory
         ));
     }
 
-    public function normalizeLicenseId(string $licenseId, string $deviceType): int
+    public function normalizeLicenseId(int|string $licenseId, string $deviceType): int
     {
         $normalized = trim($licenseId);
 

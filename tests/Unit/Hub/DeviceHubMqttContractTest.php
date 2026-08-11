@@ -642,25 +642,25 @@ final class ContractRecordingHubMqttBridge extends HubMqttBridge
     {
     }
 
-    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->raw[] = [$imei, $payload];
         $this->rawTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'raw');
     }
 
-    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishStatus(string $imei, array $payload, bool $retain = true, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->statuses[] = [$imei, $payload, $retain];
         $this->statusTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status');
     }
 
-    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishEvent(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->events[] = [$imei, $payload];
         $this->eventTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'events');
     }
 
-    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', string $licenseId = '0', string $company = 'null'): void
+    public function publishTelemetry(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void
     {
         $this->telemetry[] = [$imei, $payload];
         $this->telemetryTopics[] = $this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry');

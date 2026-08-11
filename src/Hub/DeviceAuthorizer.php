@@ -2,6 +2,8 @@
 
 namespace Hub;
 
+use Hub\Domain\DeviceMetadata;
+
 use Hub\Registry\Whitelist;
 
 class DeviceAuthorizer
@@ -30,13 +32,13 @@ class DeviceAuthorizer
             model: (string)$resolved['model'],
             commercialName: $commercialName,
             deviceType: (string)($resolved['deviceType'] ?? 'watch'),
-            licenseId: (string)($resolved['licenseId'] ?? '0'),
+            licenseId: DeviceMetadata::normalizeLicenseId($resolved['licenseId'] ?? 0),
             company: (string)($resolved['company'] ?? 'null'),
         );
     }
 
     /**
-     * @return array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: string, company: string}
+     * @return array{supplier: string, model: string, commercialName: string, deviceType: string, licenseId: int, company: string}
      */
     public function metadataFor(string $imei): array
     {
@@ -49,7 +51,7 @@ class DeviceAuthorizer
             'model' => $model,
             'commercialName' => $this->commercialNameFor($supplier, $model),
             'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
-            'licenseId' => (string)($metadata['licenseId'] ?? '0'),
+            'licenseId' => DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
             'company' => (string)($metadata['company'] ?? 'null'),
         ];
     }

@@ -164,7 +164,7 @@ class Whitelist
         string $supplier,
         string $model,
         string $deviceType = 'watch',
-        string $licenseId = '0',
+        int|string $licenseId = 0,
         string $simNumber = '',
         string $deviceId = '',
         string $company = 'null',
@@ -192,7 +192,7 @@ class Whitelist
         return true;
     }
 
-    public function updateAssociation(string $imei, string $company, string $licenseId): bool
+    public function updateAssociation(string $imei, string $company, int|string $licenseId): bool
     {
         if ($this->getMetadata($imei) === null) {
             return false;

@@ -32,7 +32,7 @@ final class BridgeTest extends TestCase
         self::assertSame(['battery', 'diaper_moisture', 'diaper_condition'], array_column($mqtt->telemetry, 'type'));
         self::assertSame(['device.connected'], array_column($mqtt->events, 'type'));
         self::assertSame('hitcare', $mqtt->telemetry[0]['company']);
-        self::assertSame('1001', $mqtt->telemetry[0]['licenseId']);
+        self::assertSame(1001, $mqtt->telemetry[0]['licenseId']);
         self::assertSame('diaper_sensor', $mqtt->telemetry[0]['deviceType']);
     }
 

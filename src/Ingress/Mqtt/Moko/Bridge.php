@@ -2,6 +2,8 @@
 
 namespace Hub\Ingress\Mqtt\Moko;
 
+use Hub\Domain\DeviceMetadata;
+
 use Hub\CommercialModelResolver;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Log\Logger;
@@ -67,7 +69,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 continue;
             }
             $deviceType = (string)$gateway['deviceType'];
-            $licenseId = (string)$gateway['licenseId'];
+            $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
             $company = (string)($gateway['company'] ?? 'null');
             $status = RawPayload::status($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'offline', null, (string)($gateway['commercialName'] ?? ''));
             $event = RawPayload::event($deviceKey, (string)$gateway['supplier'], (string)$gateway['model'], 'device.disconnected', null, null, (string)($gateway['commercialName'] ?? ''));
@@ -116,7 +118,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     {
         $deviceKey = (string)$gateway['imei'];
         $deviceType = (string)$gateway['deviceType'];
-        $licenseId = (string)$gateway['licenseId'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($gateway['licenseId'] ?? 0);
         $company = (string)($gateway['company'] ?? 'null');
         $this->gatewayLastSeenAt[$deviceKey] = ($this->clock)();
         $protocol = (string)($decoded['protocol'] ?? 'moko-gateway');
@@ -245,7 +247,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         );
 
         $deviceType = (string)$device['deviceType'];
-        $licenseId = (string)$device['licenseId'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         $this->dashboardStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
@@ -281,7 +283,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         $normalized = ($this->monitNormalizer ?? new MonitNormalizer())->normalize($decoded, $sensor, (string)$gateway['imei']);
         $deviceType = (string)$sensor['deviceType'];
-        $licenseId = (string)$sensor['licenseId'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($sensor['licenseId'] ?? 0);
         $company = (string)($sensor['company'] ?? 'null');
         $this->dashboardStore?->deviceSeen($sensorKey, [
             'supplier' => (string)$sensor['supplier'], 'model' => (string)$sensor['model'],

@@ -42,7 +42,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
             'HW20PRO',
             '',
             'watch',
-            '1001',
+            1001,
             'hitcare'
         );
 

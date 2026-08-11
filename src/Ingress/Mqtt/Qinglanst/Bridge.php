@@ -2,6 +2,8 @@
 
 namespace Hub\Ingress\Mqtt\Qinglanst;
 
+use Hub\Domain\DeviceMetadata;
+
 use Hub\Log\Logger;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
@@ -127,7 +129,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $dashboardKey = (string)$device['imei'];
         $topicDeviceKey = $parsedTopic->deviceUid;
         $deviceType = (string)$device['deviceType'];
-        $licenseId = (string)$device['licenseId'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         $nowMs = (int) floor(microtime(true) * 1000);
 
