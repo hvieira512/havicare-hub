@@ -1,0 +1,195 @@
+import {
+    createDeviceLink as apiCreateDeviceLink,
+    deleteDeviceLink as apiDeleteDeviceLink,
+    getDevices as apiGetDevices,
+} from "../api/index.js";
+import {esc} from "../format.js";
+import {state} from "../state.js";
+import {linksToGateway, normalizeDeviceType} from "./list-detail.js";
+import {eligibleGateways, gatewayLinkChanges} from "./gateway-links.js";
+
+/**
+ * The gateway-link picker in the device modal: which gateways a sensor may
+ * talk to, rendered as selectable cards.
+ *
+ * Follows the same shape as the other view modules -- it receives the cached
+ * element map through initGatewayLinksUi rather than reaching for one itself.
+ */
+
+let els;
+
+export function initGatewayLinksUi(context) {
+    els = context.els;
+}
+
+export function selectedGatewayKeys() {
+    return [
+        ...(els.deviceGatewayLinksList?.querySelectorAll(
+            "input[type=checkbox][data-gateway-key]",
+        ) || []),
+    ]
+        .filter((input) => input.checked)
+        .map((input) => String(input.dataset.gatewayKey || "").trim().toLowerCase())
+        .filter(Boolean);
+}
+
+function syncGatewayLinkButtons() {
+    const inputs = [
+        ...(els.deviceGatewayLinksList?.querySelectorAll(
+            "input[type=checkbox][data-gateway-key]",
+        ) || []),
+    ];
+    if (els.deviceGatewayLinksSelectAllBtn) {
+        els.deviceGatewayLinksSelectAllBtn.disabled =
+            inputs.length === 0 || inputs.every((input) => input.checked);
+    }
+    if (els.deviceGatewayLinksClearBtn) {
+        els.deviceGatewayLinksClearBtn.disabled =
+            inputs.length === 0 || inputs.every((input) => !input.checked);
+    }
+}
+
+export function updateGatewayLinkSelection() {
+    state.deviceModal.selectedGatewayKeys = selectedGatewayKeys();
+    if (els.deviceGatewayLinksCount) {
+        els.deviceGatewayLinksCount.textContent = String(
+            state.deviceModal.selectedGatewayKeys.length,
+        );
+    }
+    syncGatewayLinkButtons();
+}
+
+function setGatewayLinksDisabled(disabled) {
+    els.deviceGatewayLinksList
+        ?.querySelectorAll("input[type=checkbox]")
+        .forEach((input) => {
+            input.disabled = disabled;
+        });
+    if (disabled) {
+        if (els.deviceGatewayLinksSelectAllBtn) {
+            els.deviceGatewayLinksSelectAllBtn.disabled = true;
+        }
+        if (els.deviceGatewayLinksClearBtn) {
+            els.deviceGatewayLinksClearBtn.disabled = true;
+        }
+    } else {
+        syncGatewayLinkButtons();
+    }
+}
+
+const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="2.5" y="13.5" width="19" height="7" rx="1.75"></rect>
+    <path d="M6 17h.01M9.5 17h5"></path>
+    <path d="M12 10.5v-7M8.75 6.75 12 3.5l3.25 3.25"></path>
+</svg>`;
+
+function gatewayCardMarkup(gateway, checked) {
+    const key = String(gateway.imei || "").trim().toLowerCase();
+    const model = String(gateway.model || "").trim();
+    const image = String(gateway.image || "").trim();
+    const thumb = image
+        ? `<img src="${esc(image)}" alt="" loading="lazy" decoding="async">`
+        : GATEWAY_THUMB_PLACEHOLDER;
+
+    return `<label class="gateway-card">
+        <input class="form-check-input gateway-card-check" type="checkbox" data-gateway-key="${esc(key)}"${checked ? " checked" : ""}>
+        <span class="gateway-card-thumb">${thumb}</span>
+        <span class="gateway-card-text">
+            <span class="gateway-card-mac">${esc(key)}</span>
+            <span class="gateway-card-model">${esc(model || "Modelo desconhecido")}</span>
+        </span>
+    </label>`;
+}
+
+function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") {
+    const list = els.deviceGatewayLinksList;
+    if (!list) return;
+
+    const selected = new Set(
+        selectedKeys.map((key) => String(key || "").trim().toLowerCase()),
+    );
+    if (gateways.length === 0) {
+        list.innerHTML = emptyText
+            ? `<p class="gateway-picker-empty small text-secondary mb-0">${esc(emptyText)}</p>`
+            : "";
+    } else {
+        list.innerHTML = gateways
+            .map((gateway) => gatewayCardMarkup(
+                gateway,
+                selected.has(String(gateway.imei || "").trim().toLowerCase()),
+            ))
+            .join("");
+    }
+    state.deviceModal.gatewayOptions = gateways;
+    updateGatewayLinkSelection();
+}
+
+export async function refreshGatewayOptions(selectedKeys = null) {
+    if (!els.deviceGatewayLinksRow || !els.deviceGatewayLinksList) return;
+
+    const deviceType = normalizeDeviceType(
+        els.deviceForm.dataset.deviceType || "watch",
+    );
+    const isGatewayLinked = linksToGateway(deviceType);
+    els.deviceGatewayLinksRow.classList.toggle("d-none", !isGatewayLinked);
+    if (!isGatewayLinked) {
+        renderGatewayOptions([], []);
+        return;
+    }
+
+    const company = els.deviceCompany.value || "";
+    const licenseId = els.deviceLicenseId.value || "0";
+    const preserved = selectedKeys === null
+        ? selectedGatewayKeys()
+        : selectedKeys;
+    if (!company || licenseId === "0") {
+        renderGatewayOptions(
+            [],
+            [],
+            "Selecione primeiro a empresa e a licença do sensor.",
+        );
+        els.deviceGatewayLinksHelp.textContent =
+            "Selecione primeiro a empresa e a licença do sensor.";
+        return;
+    }
+
+    setGatewayLinksDisabled(true);
+    els.deviceGatewayLinksHelp.textContent = "A carregar gateways...";
+    const response = await apiGetDevices({
+        page: 1,
+        limit: 500,
+        deviceType: "gateway",
+        company,
+        licenseId,
+    });
+    if (response?.error) {
+        renderGatewayOptions(
+            preserved.map((imei) => ({imei})),
+            preserved,
+        );
+        setGatewayLinksDisabled(true);
+        els.deviceGatewayLinksHelp.textContent =
+            "Não foi possível carregar os gateways disponíveis; as ligações atuais foram preservadas.";
+        return;
+    }
+
+    const gateways = eligibleGateways(response.data || [], company, licenseId);
+    renderGatewayOptions(gateways, preserved);
+    els.deviceGatewayLinksHelp.textContent = gateways.length
+        ? "Selecione um ou mais gateways autorizados a reportar dados deste sensor."
+        : "Não existem gateways para esta empresa e licença.";
+}
+
+export async function syncGatewayLinks(sensorKey, currentKeys, desiredKeys) {
+    const changes = gatewayLinkChanges(currentKeys, desiredKeys);
+    for (const gatewayKey of changes.add) {
+        const result = await apiCreateDeviceLink(gatewayKey, sensorKey);
+        if (result?.error) return result.error.message || result.error.code;
+    }
+    for (const gatewayKey of changes.remove) {
+        const result = await apiDeleteDeviceLink(gatewayKey, sensorKey);
+        if (result?.error) return result.error.message || result.error.code;
+    }
+    return "";
+}

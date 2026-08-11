@@ -7,16 +7,13 @@ use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\DeviceCollectionFilter;
 use Hub\Api\Http\DeviceResponseCompactor;
-use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
-use Hub\Domain\DeviceProtocol;
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\Dashboard\DeviceCommandRecord;
 use Hub\Dashboard\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\DeviceHubServer;
@@ -40,6 +37,8 @@ class DeviceService
     private DeviceConfigurationQueryService $configurationQueries;
     private DeviceAssociationService $associations;
     private DeviceCapabilityPresenter $capabilities;
+    private DeviceDirectory $directory;
+    private DeviceFeatureRequestService $featureRequests;
 
     public function __construct(
         private DashboardStoreContract $store,
@@ -76,6 +75,16 @@ class DeviceService
         // Built here rather than injected: it is a projection of the same
         // registry and database this service already holds.
         $this->capabilities = new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
+        $this->directory = new DeviceDirectory($this->store, $this->whitelist, $this->db);
+        $this->featureRequests = new DeviceFeatureRequestService(
+            $this->store,
+            $this->whitelist,
+            $this->hub,
+            $this->db,
+            $this->capabilityRegistry,
+            $this->capabilities,
+            $this->directory,
+        );
     }
 
     public function list(string $query = '', ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
@@ -100,8 +109,8 @@ class DeviceService
         ));
         $items = array_map(
             fn (array $device): array => $this->presentation->attachImage(
-                $this->overlayRuntimeState($device, $runtimeStates),
-                $this->modelForSupplierAndName(
+                $this->directory->overlayRuntimeState($device, $runtimeStates),
+                $this->directory->modelForSupplierAndName(
                     (string)($device['supplier'] ?? ''),
                     (string)($device['model'] ?? '')
                 ),
@@ -128,12 +137,12 @@ class DeviceService
 
     public function show(string $imei, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
-        $device = $this->deviceSnapshot($imei);
-        if (!$this->canAccessDevice($imei, $auth, $device)) {
+        $device = $this->directory->deviceSnapshot($imei);
+        if (!$this->directory->canAccessDevice($imei, $auth, $device)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
-        $modelRow = $this->modelForDevice($device);
+        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
+        $modelRow = $this->directory->modelForDevice($device);
         $configRows = $this->db->deviceConfigurations->allForImei($imei);
         $model = null;
         if ($modelRow !== null) {
@@ -171,7 +180,7 @@ class DeviceService
 
     public function links(string $imei, ?ApiAuthContext $auth = null): array
     {
-        if (!$this->canAccessDevice($imei, $auth)) {
+        if (!$this->directory->canAccessDevice($imei, $auth)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
         return ['data' => $this->db->gatewayDeviceLinks->forDevice($imei)];
@@ -201,7 +210,7 @@ class DeviceService
     {
         $gateway = $this->whitelist->getMetadata($imei);
         $linked = $this->whitelist->getMetadata($linkedImei);
-        if ($gateway === null || $linked === null || !$this->canAccessDevice($imei, $auth) || !$this->canAccessDevice($linkedImei, $auth)) {
+        if ($gateway === null || $linked === null || !$this->directory->canAccessDevice($imei, $auth) || !$this->directory->canAccessDevice($linkedImei, $auth)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
         if (($gateway['deviceType'] ?? '') !== 'gateway' || ($linked['deviceType'] ?? '') !== 'diaper_sensor') {
@@ -216,317 +225,32 @@ class DeviceService
         return ['status' => 'ok'];
     }
 
+
     public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
-        if (!$this->canAccessDevice($imei, $auth)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'not_found',
-            ]);
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'invalid_json',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
-        $feature = trim((string)($decoded['feature'] ?? ''));
-        $capability = trim((string)($decoded['capability'] ?? ''));
-        if ($feature === '' && $capability !== '') {
-            return $this->requestCapabilityAction($imei, $decoded, $auth, $requestId);
-        }
-        if ($feature === '') {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'missing_feature',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'feature is required']];
-        }
-
-        $device = $this->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
-        $modelRow = $this->modelForSupplierAndName($supplier, $model);
-
-        $telemetrySupport = $this->capabilities->telemetryCapabilities($modelRow, $protocol);
-        if (!($telemetrySupport[$feature]['supported'] ?? false)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'feature' => $feature,
-                'error_code' => 'unsupported_feature',
-            ]);
-            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
-        }
-        if (!($telemetrySupport[$feature]['requestable'] ?? false)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'feature' => $feature,
-                'error_code' => 'feature_not_requestable',
-            ]);
-            return ['error' => ['code' => 'feature_not_requestable', 'message' => 'Feature cannot be requested for this device']];
-        }
-
-        $result = $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
-        Logger::channel('api')->info('API telemetry request processed', [
-            'request_id' => $requestId,
-            'imei' => $imei,
-            'feature' => $feature,
-            'status' => $result['status'] ?? null,
-            'error_code' => $result['error']['code'] ?? null,
-            'command_count' => count($result['commands'] ?? []),
-        ]);
-
-        if (isset($result['error'])) {
-            return $result;
-        }
-
-        $requestStatus = 'ok';
-        if (($result['commands'] ?? []) !== []) {
-            $statuses = array_values(array_unique(array_map(
-                static fn(array $command): string => (string)($command['status'] ?? 'unknown'),
-                $result['commands']
-            )));
-            $requestStatus = count($statuses) === 1 ? $statuses[0] : 'partial';
-        }
-
-        return [
-            'status' => $requestStatus,
-            'feature' => $feature,
-            'commands' => $result['commands'] ?? [],
-        ];
-    }
-
-    private function requestCapabilityAction(string $imei, array $decoded, ?ApiAuthContext $auth = null, string $requestId = ''): array
-    {
-        $capability = trim((string)($decoded['capability'] ?? ''));
-        if (!$this->canAccessDevice($imei, $auth)) {
-            Logger::channel('api')->warning('API capability request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'capability' => $capability,
-                'error_code' => 'not_found',
-            ]);
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
-        }
-
-        if ($capability === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'capability is required']];
-        }
-
-        $device = $this->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
-        $modelRow = $this->modelForSupplierAndName($supplier, $model);
-        $enabled = array_flip($modelRow !== null
-            ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
-            : CapabilityCatalog::keysForProtocol($protocol));
-
-        if (!isset($enabled[$capability])) {
-            Logger::channel('api')->warning('API capability request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'capability' => $capability,
-                'error_code' => 'unsupported_feature',
-            ]);
-            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Capability is not supported for this device']];
-        }
-
-        try {
-            $nativeUpdates = $this->capabilityRegistry->toNative($protocol, $capability, $decoded['value'] ?? null);
-        } catch (\InvalidArgumentException $e) {
-            Logger::channel('api')->warning('API capability request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'capability' => $capability,
-                'error_code' => 'invalid_config',
-                'message' => $e->getMessage(),
-            ]);
-            return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
-        }
-
-        $commands = [];
-        foreach ($nativeUpdates as $nativeKey => $payload) {
-            $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
-            if ($error !== null) {
-                return ['error' => ['code' => 'invalid_config', 'message' => $error]];
-            }
-
-            $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
-            $command = $commandPayload['command'];
-            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
-                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
-            ]);
-            $id = bin2hex(random_bytes(8));
-            $status = $this->hub->submitDownlink($imei, $bytes);
-            $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey) ?? [];
-            $expectedReplyTypes = $entry['expectedReplyTypes'] ?? [];
-            $record = [
-                'status' => $status,
-                'imei' => $imei,
-                'protocol' => $protocol,
-                'capability' => $capability,
-                'nativeType' => $command,
-                'label' => (string)($entry['label'] ?? $nativeKey),
-                'expectedReplyTypes' => $expectedReplyTypes,
-                'retryable' => false,
-                'bytes' => $bytes,
-                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
-            ];
-            if ($status === 'sent' && $expectedReplyTypes !== []) {
-                $record['status'] = 'waiting';
-                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
-            }
-            if ($status === 'dropped') {
-                $record['error'] = 'delivery_failed';
-            }
-            $this->store->recordCommand($imei, $id, $record);
-            $commands[] = DeviceCommandRecord::makeJsonSafe(array_merge($record, ['id' => $id]));
-        }
-
-        $statuses = array_values(array_unique(array_map(
-            static fn(array $command): string => (string)($command['status'] ?? 'unknown'),
-            $commands
-        )));
-
-        return [
-            'status' => count($statuses) === 1 ? $statuses[0] : 'partial',
-            'capability' => $capability,
-            'commands' => $commands,
-        ];
-    }
-
-    private function sendFeatureCommands(string $imei, string $protocol, string $feature, array $metadata, array $device): array
-    {
-        $entries = DeviceCommandCatalog::commandsForFeature($protocol, $feature);
-        if ($entries === []) {
-            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
-        }
-
-        $this->supersedeConflictingFeatureRequests($imei, $feature);
-
-        $commands = [];
-        foreach ($entries as $entry) {
-            $nativeCommand = (string)($entry['command'] ?? '');
-            if ($nativeCommand === '') {
-                continue;
-            }
-            $nativePayload = $protocol === 'wonlex-json'
-                ? ($entry['data'] ?? [])
-                : ['fields' => $entry['data'] ?? []];
-            $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, $nativePayload, [
-                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
-            ]);
-            $id = bin2hex(random_bytes(8));
-            $status = $this->hub->submitDownlink($imei, $bytes);
-            $requestedAt = time();
-            $record = [
-                'status' => $status,
-                'imei' => $imei,
-                'protocol' => $protocol,
-                'requestId' => (string)($entry['id'] ?? $nativeCommand),
-                'feature' => $feature,
-                'nativeType' => $nativeCommand,
-                'label' => (string)($entry['label'] ?? $nativeCommand),
-                'expectedReplyTypes' => $entry['expectedReplyTypes'] ?? [],
-                'retryable' => true,
-                'bytes' => $bytes,
-                'attempts' => 1,
-                'maxAttempts' => 3,
-                'retryDelaySeconds' => 60,
-                'lastAttemptAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt),
-                'nextRetryAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt + 60),
-                'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt),
-            ];
-            if ($status === 'sent') {
-                $record['status'] = 'waiting';
-                $record['sentAt'] = gmdate('Y-m-d\\TH:i:s\\Z', $requestedAt);
-            }
-            if ($status === 'dropped') {
-                $record['error'] = 'delivery_failed';
-            }
-            $this->store->recordCommand($imei, $id, $record);
-            $commands[] = DeviceCommandRecord::makeJsonSafe(array_merge($record, ['id' => $id]));
-        }
-
-        return ['status' => 'sent', 'commands' => $commands];
-    }
-
-    private function supersedeConflictingFeatureRequests(string $imei, string $feature): void
-    {
-        $waveforms = ['ecg', 'hrv', 'ppg', 'rr_interval'];
-        $isWaveform = in_array($feature, $waveforms, true);
-
-        foreach ($this->store->commands($imei) as $command) {
-            if (!in_array((string)($command['status'] ?? ''), ['queued', 'waiting'], true)) {
-                continue;
-            }
-
-            $pendingFeature = (string)($command['feature'] ?? '');
-            $conflicts = $pendingFeature === $feature
-                || ($isWaveform && in_array($pendingFeature, $waveforms, true));
-            if (!$conflicts) {
-                continue;
-            }
-
-            $id = (string)($command['id'] ?? '');
-            if ($id === '') {
-                continue;
-            }
-
-            $this->store->recordCommand($imei, $id, array_merge($command, [
-                'status' => 'superseded',
-                'error' => '',
-                'lastError' => '',
-            ]));
-        }
+        return $this->featureRequests->requestFeature($imei, $body, $auth, $requestId);
     }
 
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
     {
-        $result = $this->store->findCommand($id);
-        if ($result === null) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Command was not found']];
-        }
-        $device = is_array($result['device'] ?? null) ? $result['device'] : [];
-        $imei = (string)($device['imei'] ?? '');
-        if ($imei === '' || !$this->canAccessDevice($imei, $auth, $device)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Command was not found']];
-        }
-
-        return $result;
+        return $this->featureRequests->commandStatus($id, $auth);
     }
 
     public function configuration(string $imei, string $query = '', ?ApiAuthContext $auth = null): array
     {
-        if (!$this->canAccessDevice($imei, $auth)) {
+        if (!$this->directory->canAccessDevice($imei, $auth)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
 
-        $device = $this->deviceSnapshot($imei);
+        $device = $this->directory->deviceSnapshot($imei);
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel((string)($device['supplier'] ?? ($metadata['supplier'] ?? '')), (string)($device['model'] ?? ($metadata['model'] ?? ''))));
+        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? ($metadata['supplier'] ?? '')), (string)($device['model'] ?? ($metadata['model'] ?? ''))));
         return $this->configurationQueries->current($imei, $protocol);
     }
 
     public function updateConfigurations(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
-        if (!$this->canAccessDevice($imei, $auth)) {
+        if (!$this->directory->canAccessDevice($imei, $auth)) {
             Logger::channel('api')->warning('API device configuration rejected', [
                 'request_id' => $requestId,
                 'imei' => $imei,
@@ -556,12 +280,12 @@ class DeviceService
             return ['error' => ['code' => 'invalid_request', 'message' => 'configurations object is required']];
         }
 
-        $device = $this->deviceSnapshot($imei);
+        $device = $this->directory->deviceSnapshot($imei);
         $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
         $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
-        $protocol = (string)($device['protocol'] ?? $this->protocolForModel($supplier, $model));
-        $modelRow = $this->modelForSupplierAndName($supplier, $model);
+        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel($supplier, $model));
+        $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
         $update = $this->configurationUpdates->update(
             $imei,
             $decoded['configurations'],
@@ -611,9 +335,9 @@ class DeviceService
         $imei = trim((string)($decoded['imei'] ?? ''));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
-        $modelRecord = $this->modelForSupplierAndName($supplier, $model);
+        $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $decoded['deviceType'] ?? 'watch'));
-        $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
+        $licenseId = $this->directory->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         $company = trim((string)($decoded['company'] ?? 'null'));
@@ -629,7 +353,7 @@ class DeviceService
         if ($licenseId === 0 && $deviceType !== 'watch') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
         }
-        $deviceId = $this->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
+        $deviceId = $this->directory->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
         $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
 
@@ -676,9 +400,9 @@ class DeviceService
         $newImei = trim((string)($decoded['imei'] ?? $imei));
         $supplier = trim((string)($decoded['supplier'] ?? ''));
         $model = trim((string)($decoded['model'] ?? ''));
-        $modelRecord = $this->modelForSupplierAndName($supplier, $model);
+        $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $decoded['deviceType'] ?? 'watch'));
-        $licenseId = $this->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
+        $licenseId = $this->directory->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
         $company = trim((string)($decoded['company'] ?? 'null'));
@@ -717,7 +441,7 @@ class DeviceService
             ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
         }
-        $deviceId = $this->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
+        $deviceId = $this->directory->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
@@ -767,7 +491,7 @@ class DeviceService
 
     public function recent(string $imei, ?ApiAuthContext $auth = null): array
     {
-        if (!$this->canAccessDevice($imei, $auth)) {
+        if (!$this->directory->canAccessDevice($imei, $auth)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
 
@@ -982,166 +706,4 @@ class DeviceService
         ], true);
     }
 
-    private function protocolForModel(string $supplier, string $model): string
-    {
-        return DeviceProtocol::forModel($supplier, $model);
-    }
-
-    private function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceType, string $deviceId): string
-    {
-        $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
-        if ($this->protocolForModel($supplier, $model) !== 'four-p-touch') {
-            return $deviceType === 'watch' ? '' : $deviceId;
-        }
-
-        if ($deviceType !== 'watch') {
-            return $deviceId;
-        }
-
-        $derived = DeviceCommandCatalog::deriveFourPTouchDeviceId($imei);
-        return $derived !== '' ? $derived : $deviceId;
-    }
-
-    private function modelForDevice(array $device): ?array
-    {
-        return $this->modelForSupplierAndName((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
-    }
-
-    private function modelForSupplierAndName(string $supplier, string $model): ?array
-    {
-        if (trim($supplier) === '' || trim($model) === '') {
-            return null;
-        }
-
-        return $this->db->models->find($supplier, $model);
-    }
-
-
-    private function canAccessDevice(string $imei, ?ApiAuthContext $auth, ?array $device = null): bool
-    {
-        if ($auth === null || $auth->isAdmin()) {
-            return true;
-        }
-
-        $device ??= $this->deviceSnapshot($imei);
-        $licenseId = $this->deviceLicenseId($imei, $device);
-        $company = $this->deviceCompany($imei, $device);
-
-        return $auth->canAccessTenant($company, $licenseId);
-    }
-
-    private function deviceLicenseId(string $imei, array $device): int
-    {
-        $licenseId = trim((string)($device['licenseId'] ?? ''));
-        if ($licenseId !== '') {
-            return DeviceMetadata::normalizeLicenseId($licenseId);
-        }
-
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        return DeviceMetadata::normalizeLicenseId((string)($metadata['licenseId'] ?? '0'));
-    }
-
-    private function deviceCompany(string $imei, array $device): string
-    {
-        $company = trim((string)($device['company'] ?? ''));
-        if ($company !== '') {
-            return $company;
-        }
-
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        return trim((string)($metadata['company'] ?? ''));
-    }
-
-    private function scopeDevices(array $devices, ?ApiAuthContext $auth): array
-    {
-        if ($auth === null || $auth->isAdmin()) {
-            return $devices;
-        }
-
-        return array_values(array_filter(
-            $devices,
-            fn(array $device): bool => $this->canAccessDevice((string)($device['imei'] ?? ''), $auth, $device)
-        ));
-    }
-
-    private function normalizeLicenseId(string $licenseId, string $deviceType): int
-    {
-        $normalized = trim($licenseId);
-
-        if ($normalized === '' && $deviceType === 'watch') {
-            return 0;
-        }
-
-        return $normalized !== '' ? (int)$normalized : 0;
-    }
-
-
-    private function deviceSnapshot(string $imei): array
-    {
-        $device = $this->db->whitelist->getDevice($imei) ?? ['imei' => $imei];
-        $storeDevice = array_intersect_key(
-            $this->store->device($imei),
-            array_flip([
-                'imei',
-                'supplier',
-                'model',
-                'deviceType',
-                'licenseId',
-                'simNumber',
-                'deviceId',
-                'company',
-                'online',
-                'lastSeenAt',
-                'lastStateAt',
-                'protocol',
-                'transport',
-                'lastConnectionId',
-            ])
-        );
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $device = array_merge(
-            $device,
-            array_filter($storeDevice, static fn (mixed $value): bool => $value !== '' && $value !== null)
-        );
-        $device += [
-            'supplier' => (string)($metadata['supplier'] ?? ''),
-            'model' => (string)($metadata['model'] ?? ''),
-            'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
-            'licenseId' => (int)($metadata['licenseId'] ?? 0),
-            'simNumber' => (string)($metadata['simNumber'] ?? ''),
-            'deviceId' => (string)($metadata['deviceId'] ?? ''),
-            'company' => (string)($metadata['company'] ?? 'null'),
-        ];
-        $runtimeStates = $this->store->runtimeStates([$imei]);
-
-        return $this->overlayRuntimeState($device, $runtimeStates);
-    }
-
-    /**
-     * @param array<string, array<string, mixed>> $runtimeStates
-     */
-    private function overlayRuntimeState(array $device, array $runtimeStates): array
-    {
-        $imei = (string)($device['imei'] ?? '');
-        if ($imei === '' || !isset($runtimeStates[$imei])) {
-            $device['online'] = (bool)($device['online'] ?? false);
-            return $device;
-        }
-
-        $runtime = $runtimeStates[$imei];
-        foreach ([
-            'online',
-            'lastSeenAt',
-            'lastStateAt',
-            'protocol',
-            'transport',
-            'lastConnectionId',
-        ] as $field) {
-            if (array_key_exists($field, $runtime)) {
-                $device[$field] = $runtime[$field];
-            }
-        }
-
-        return $device;
-    }
 }

@@ -8,12 +8,15 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityCatalog;
+use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\Capability\Contacts\WonlexContactCodec;
 use Hub\Log\Logger;
 
 final class DeviceConfigurationUpdateService
 {
+    use CapabilityHelpers;
+
     public function __construct(
         private DashboardStoreContract $store,
         private DeviceHubServer $hub,
@@ -331,23 +334,6 @@ final class DeviceConfigurationUpdateService
         return $this->normalizeComparableValue($left) === $this->normalizeComparableValue($right);
     }
 
-    private function normalizeComparableValue(mixed $value): mixed
-    {
-        if (!is_array($value)) {
-            return $value;
-        }
-        if (array_is_list($value)) {
-            return array_map(fn(mixed $item): mixed => $this->normalizeComparableValue($item), $value);
-        }
-
-        $normalized = [];
-        foreach ($value as $key => $item) {
-            $normalized[(string)$key] = $this->normalizeComparableValue($item);
-        }
-        ksort($normalized);
-
-        return $normalized;
-    }
 
     /**
      * @param array<string, array<string, mixed>> $currentByKey

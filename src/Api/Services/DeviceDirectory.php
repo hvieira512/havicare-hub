@@ -1,0 +1,191 @@
+<?php
+
+namespace Hub\Api\Services;
+
+use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Repository\ApiDataAccess;
+use Hub\Command\DeviceCommandCatalog;
+use Hub\Dashboard\DashboardStoreContract;
+use Hub\Domain\DeviceMetadata;
+use Hub\Domain\DeviceProtocol;
+use Hub\Registry\Whitelist;
+
+/**
+ * Looking a device up and deciding who may see it.
+ *
+ * Every part of the device API needs this -- reading one, requesting a feature
+ * from one, projecting its configuration -- so it sits behind a collaborator
+ * rather than being reachable only from inside DeviceService.
+ */
+final class DeviceDirectory
+{
+    public function __construct(
+        private DashboardStoreContract $store,
+        private Whitelist $whitelist,
+        private ApiDataAccess $db,
+    ) {
+    }
+
+    public function protocolForModel(string $supplier, string $model): string
+    {
+        return DeviceProtocol::forModel($supplier, $model);
+    }
+
+    public function normalizeDeviceId(string $imei, string $supplier, string $model, string $deviceType, string $deviceId): string
+    {
+        $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
+        if ($this->protocolForModel($supplier, $model) !== 'four-p-touch') {
+            return $deviceType === 'watch' ? '' : $deviceId;
+        }
+
+        if ($deviceType !== 'watch') {
+            return $deviceId;
+        }
+
+        $derived = DeviceCommandCatalog::deriveFourPTouchDeviceId($imei);
+        return $derived !== '' ? $derived : $deviceId;
+    }
+
+    public function modelForDevice(array $device): ?array
+    {
+        return $this->modelForSupplierAndName((string)($device['supplier'] ?? ''), (string)($device['model'] ?? ''));
+    }
+
+    public function modelForSupplierAndName(string $supplier, string $model): ?array
+    {
+        if (trim($supplier) === '' || trim($model) === '') {
+            return null;
+        }
+
+        return $this->db->models->find($supplier, $model);
+    }
+
+
+    public function canAccessDevice(string $imei, ?ApiAuthContext $auth, ?array $device = null): bool
+    {
+        if ($auth === null || $auth->isAdmin()) {
+            return true;
+        }
+
+        $device ??= $this->deviceSnapshot($imei);
+        $licenseId = $this->deviceLicenseId($imei, $device);
+        $company = $this->deviceCompany($imei, $device);
+
+        return $auth->canAccessTenant($company, $licenseId);
+    }
+
+    private function deviceLicenseId(string $imei, array $device): int
+    {
+        $licenseId = trim((string)($device['licenseId'] ?? ''));
+        if ($licenseId !== '') {
+            return DeviceMetadata::normalizeLicenseId($licenseId);
+        }
+
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        return DeviceMetadata::normalizeLicenseId((string)($metadata['licenseId'] ?? '0'));
+    }
+
+    private function deviceCompany(string $imei, array $device): string
+    {
+        $company = trim((string)($device['company'] ?? ''));
+        if ($company !== '') {
+            return $company;
+        }
+
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        return trim((string)($metadata['company'] ?? ''));
+    }
+
+    public function scopeDevices(array $devices, ?ApiAuthContext $auth): array
+    {
+        if ($auth === null || $auth->isAdmin()) {
+            return $devices;
+        }
+
+        return array_values(array_filter(
+            $devices,
+            fn(array $device): bool => $this->canAccessDevice((string)($device['imei'] ?? ''), $auth, $device)
+        ));
+    }
+
+    public function normalizeLicenseId(string $licenseId, string $deviceType): int
+    {
+        $normalized = trim($licenseId);
+
+        if ($normalized === '' && $deviceType === 'watch') {
+            return 0;
+        }
+
+        return $normalized !== '' ? (int)$normalized : 0;
+    }
+
+
+    public function deviceSnapshot(string $imei): array
+    {
+        $device = $this->db->whitelist->getDevice($imei) ?? ['imei' => $imei];
+        $storeDevice = array_intersect_key(
+            $this->store->device($imei),
+            array_flip([
+                'imei',
+                'supplier',
+                'model',
+                'deviceType',
+                'licenseId',
+                'simNumber',
+                'deviceId',
+                'company',
+                'online',
+                'lastSeenAt',
+                'lastStateAt',
+                'protocol',
+                'transport',
+                'lastConnectionId',
+            ])
+        );
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $device = array_merge(
+            $device,
+            array_filter($storeDevice, static fn (mixed $value): bool => $value !== '' && $value !== null)
+        );
+        $device += [
+            'supplier' => (string)($metadata['supplier'] ?? ''),
+            'model' => (string)($metadata['model'] ?? ''),
+            'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
+            'licenseId' => (int)($metadata['licenseId'] ?? 0),
+            'simNumber' => (string)($metadata['simNumber'] ?? ''),
+            'deviceId' => (string)($metadata['deviceId'] ?? ''),
+            'company' => (string)($metadata['company'] ?? 'null'),
+        ];
+        $runtimeStates = $this->store->runtimeStates([$imei]);
+
+        return $this->overlayRuntimeState($device, $runtimeStates);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $runtimeStates
+     */
+    public function overlayRuntimeState(array $device, array $runtimeStates): array
+    {
+        $imei = (string)($device['imei'] ?? '');
+        if ($imei === '' || !isset($runtimeStates[$imei])) {
+            $device['online'] = (bool)($device['online'] ?? false);
+            return $device;
+        }
+
+        $runtime = $runtimeStates[$imei];
+        foreach ([
+            'online',
+            'lastSeenAt',
+            'lastStateAt',
+            'protocol',
+            'transport',
+            'lastConnectionId',
+        ] as $field) {
+            if (array_key_exists($field, $runtime)) {
+                $device[$field] = $runtime[$field];
+            }
+        }
+
+        return $device;
+    }
+}

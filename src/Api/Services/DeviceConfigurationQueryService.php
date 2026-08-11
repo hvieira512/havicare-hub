@@ -80,17 +80,6 @@ final class DeviceConfigurationQueryService
     /**
      * @param array<string|int, mixed> $value
      */
-    private function stringifyPhoneList(array $value): mixed
-    {
-        if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
-            return self::stringList($value['numbers']);
-        }
-        if (!array_is_list($value)) {
-            return $value;
-        }
-
-        return self::stringList($value);
-    }
 
     /**
      * @param array<string|int, mixed> $value

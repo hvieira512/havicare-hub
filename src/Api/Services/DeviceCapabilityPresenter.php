@@ -492,24 +492,6 @@ final class DeviceCapabilityPresenter
         return $this->normalizeComparableValue($left) === $this->normalizeComparableValue($right);
     }
 
-    private function normalizeComparableValue(mixed $value): mixed
-    {
-        if (!is_array($value)) {
-            return $value;
-        }
-
-        if (array_is_list($value)) {
-            return array_map(fn(mixed $item): mixed => $this->normalizeComparableValue($item), $value);
-        }
-
-        $normalized = [];
-        foreach ($value as $key => $item) {
-            $normalized[(string)$key] = $this->normalizeComparableValue($item);
-        }
-        ksort($normalized);
-
-        return $normalized;
-    }
 
     /**
      * @param list<array<string, mixed>> $configRows
@@ -620,18 +602,6 @@ final class DeviceCapabilityPresenter
      * @param array<string|int, mixed> $value
      * @return mixed
      */
-    private function stringifyPhoneList(array $value): mixed
-    {
-        if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
-            return self::stringList($value['numbers']);
-        }
-
-        if (!array_is_list($value)) {
-            return $value;
-        }
-
-        return self::stringList($value);
-    }
 
     /**
      * @param array<string|int, mixed> $value
