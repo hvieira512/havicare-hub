@@ -291,7 +291,7 @@ class Whitelist
             'model' => trim((string)($value['model'] ?? '')),
             'deviceType' => DeviceMetadata::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch')),
             'licenseId' => DeviceMetadata::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0')),
-            'company' => trim((string)($value['company'] ?? 'null')),
+            'company' => DeviceMetadata::normalizeCompany((string)($value['company'] ?? 'null')),
             'simNumber' => trim((string)($value['simNumber'] ?? $value['sim_number'] ?? '')),
             'deviceId' => $deviceId,
         ];

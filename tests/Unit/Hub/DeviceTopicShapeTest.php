@@ -54,6 +54,34 @@ final class DeviceTopicShapeTest extends TestCase
         self::assertSame('null', DeviceMetadata::normalizeCompany(null));
     }
 
+    public function testAMixedCaseCompanyCannotReachATopic(): void
+    {
+        // The whitelist file is hand-editable, so the entry normaliser is the
+        // last gate before a company name becomes part of a topic.
+        $whitelistPath = sys_get_temp_dir() . '/casing-' . bin2hex(random_bytes(4)) . '.json';
+        file_put_contents($whitelistPath, json_encode([
+            '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'HitCare'],
+        ], JSON_THROW_ON_ERROR));
+
+        try {
+            $metadata = (new \Hub\Registry\Whitelist($whitelistPath))->getMetadata('861265061009822');
+
+            self::assertSame('hitcare', $metadata['company'] ?? null);
+            self::assertSame(
+                'hitcare/1001/watch/861265061009822/status',
+                $this->bridge()->deviceTopic(
+                    (string)$metadata['company'],
+                    (int)$metadata['licenseId'],
+                    'watch',
+                    '861265061009822',
+                    'status'
+                )
+            );
+        } finally {
+            @unlink($whitelistPath);
+        }
+    }
+
     public function testSlashesInTheCompanyCannotSplitTheTopic(): void
     {
         self::assertSame(

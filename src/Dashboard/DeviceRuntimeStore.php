@@ -34,7 +34,7 @@ final class DeviceRuntimeStore
             'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
             'simNumber' => $simNumber,
             'deviceId' => $deviceId,
-            'company' => trim($company),
+            'company' => DeviceMetadata::normalizeCompany($company),
         ];
         $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {
             $pipe->sadd($this->key('devices'), $imei);
@@ -64,7 +64,7 @@ final class DeviceRuntimeStore
     {
         $payload = [
             'imei' => $imei,
-            'company' => trim($company),
+            'company' => DeviceMetadata::normalizeCompany($company),
             'licenseId' => DeviceMetadata::normalizeLicenseId($licenseId),
         ];
         $this->redis->pipeline(function ($pipe) use ($imei, $payload): void {

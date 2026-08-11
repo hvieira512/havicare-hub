@@ -2,6 +2,8 @@
 
 namespace Hub\Api\Services;
 
+use Hub\Domain\DeviceMetadata;
+
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;
@@ -38,7 +40,7 @@ class CompanyService
         if (!is_array($decoded)) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
-        $name = trim((string)($decoded['name'] ?? ''));
+        $name = DeviceMetadata::normalizeCompany((string)($decoded['name'] ?? ''));
         if ($name === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
         }
@@ -60,7 +62,7 @@ class CompanyService
         if (!is_array($decoded)) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
-        $name = trim((string)($decoded['name'] ?? ''));
+        $name = DeviceMetadata::normalizeCompany((string)($decoded['name'] ?? ''));
         if ($name === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
         }
