@@ -30,7 +30,6 @@ final class DashboardServerFactory
             new ApiTokenStore($services->redis),
             $services->whitelist,
             $services->hubServer,
-            $services->downlinkQueue,
             $services->dataAccess,
             (bool)$dashboardConfig['api_auth_required'],
             (int)$dashboardConfig['api_token_ttl_seconds'],

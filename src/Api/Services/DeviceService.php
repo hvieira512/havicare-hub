@@ -3,9 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Http\CollectionQuery;
-use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Http\DevicePresentation;
-use Hub\Api\Http\DeviceCollectionFilter;
 use Hub\Api\Http\DeviceResponseCompactor;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
@@ -22,8 +20,6 @@ use Hub\Registry\Whitelist;
 class DeviceService
 {
     private CollectionQuery $query;
-    private CollectionResponder $collection;
-    private DeviceCollectionFilter $deviceFilter;
     private DevicePresentation $presentation;
     private DeviceResponseCompactor $responseCompactor;
     private CapabilityRegistry $capabilityRegistry;
@@ -40,8 +36,6 @@ class DeviceService
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
         ?CollectionQuery $query = null,
-        ?CollectionResponder $collection = null,
-        ?DeviceCollectionFilter $deviceFilter = null,
         ?DevicePresentation $presentation = null,
         ?CapabilityRegistry $capabilityRegistry = null,
         ?DeviceConfigurationUpdateService $configurationUpdates = null,
@@ -49,8 +43,6 @@ class DeviceService
         ?DeviceResponseCompactor $responseCompactor = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
-        $this->collection = $collection ?? new CollectionResponder();
-        $this->deviceFilter = $deviceFilter ?? new DeviceCollectionFilter();
         $this->presentation = $presentation ?? new DevicePresentation();
         $this->responseCompactor = $responseCompactor ?? new DeviceResponseCompactor();
         $this->capabilityRegistry = $capabilityRegistry ?? new CapabilityRegistry();
@@ -228,7 +220,7 @@ class DeviceService
         return $this->featureRequests->commandStatus($id, $auth);
     }
 
-    public function configuration(string $imei, string $query = '', ?ApiAuthContext $auth = null): array
+    public function configuration(string $imei, ?ApiAuthContext $auth = null): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
@@ -307,7 +299,7 @@ class DeviceService
         return [
             'status' => 'ok',
             'results' => $results,
-            'configurations' => $this->configuration($imei, '', $auth),
+            'configurations' => $this->configuration($imei, $auth),
             'effectiveConfigurations' => $snapshot['effectiveConfigurations'] ?? [],
             'configurationSync' => $snapshot['configurationSync'] ?? [],
         ];

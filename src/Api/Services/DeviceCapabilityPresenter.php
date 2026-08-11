@@ -301,7 +301,7 @@ final class DeviceCapabilityPresenter
 
         $desired = $this->capabilityRegistry->defaultValue($protocol, $genericKey);
         if ($desired === [] && !$this->capabilityRegistry->has($genericKey)) {
-            $desired = $this->defaultDesiredPayloadForConfigEntry($entry, $protocol, $genericKey);
+            $desired = $this->defaultDesiredPayloadForConfigEntry($entry);
         }
 
         $value = $this->capabilityRegistry->has($genericKey)
@@ -337,7 +337,7 @@ final class DeviceCapabilityPresenter
     /**
      * @return array<string, mixed>
      */
-    private function defaultDesiredPayloadForConfigEntry(array $entry, string $protocol, string $genericKey): array
+    private function defaultDesiredPayloadForConfigEntry(array $entry): array
     {
         $input = (string)($entry['input'] ?? 'json');
         $field = static fn(int $index = 0): string => (string)($entry['fields'][$index] ?? '');

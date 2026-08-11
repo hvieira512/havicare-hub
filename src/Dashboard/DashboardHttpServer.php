@@ -18,7 +18,6 @@ use Hub\Api\Services\ProtocolService;
 use Hub\Api\Services\SupplierService;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\DeviceHubServer;
-use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -35,7 +34,6 @@ final class DashboardHttpServer
         private ApiTokenStore $tokens,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
-        private ?PendingDownlinkQueue $downlinkQueue,
         private ApiDataAccess $db,
         private bool $apiAuthRequired = true,
         private int $apiTokenTtlSeconds = 3600,

@@ -1183,7 +1183,6 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             new ApiTokenStore($redis, 'test:api-tokens'),
             new Whitelist($this->whitelistPath, $db->whitelist),
             $hub,
-            $queue,
             $db,
             $apiAuthRequired,
             $apiTokenTtlSeconds,
