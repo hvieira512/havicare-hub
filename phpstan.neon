@@ -11,6 +11,9 @@ parameters:
         maximumNumberOfProcesses: 1
 
     ignoreErrors:
+        # notIdentical.alwaysTrue is deliberately NOT here: it is what would
+        # have caught an int licenseId compared against the string '0', and
+        # silencing it cost a live bug.
         # Defensive style rather than defects: `?? ` on an offset that happens to
         # always exist, a redundant is_array() on a known array, `?->` on a value
         # this call site cannot receive as null. Removing them would make the code
@@ -19,11 +22,19 @@ parameters:
         - identifier: nullCoalesce.expr
         - identifier: nullsafe.neverNull
         - identifier: function.alreadyNarrowedType
-        - identifier: notIdentical.alwaysTrue
         - identifier: booleanAnd.rightAlwaysTrue
         - identifier: instanceof.alwaysTrue
         # A nullable return kept because the interface it implements allows null.
         - identifier: return.unusedType
+        # A generic mixed-value callback and a regex capture: PHPStan narrows
+        # these from the literal at the call site, but the guards are the
+        # function's own contract with any future caller.
+        -
+            identifier: notIdentical.alwaysTrue
+            paths:
+                - src/Api/Routing/ApiRoute.php
+                - src/Hub/DeviceEventDecoder.php
+                - src/Protocol/Adapter/VivistarAdapter.php
         # Exhaustive match over a fixed key set: the last arm and the default are
         # unreachable by inference, but dropping the default would turn an
         # unexpected key into an UnhandledMatchError.

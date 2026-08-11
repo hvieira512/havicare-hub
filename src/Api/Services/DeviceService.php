@@ -324,7 +324,7 @@ class DeviceService
         $licenseId = $this->directory->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
-        $company = trim((string)($decoded['company'] ?? 'null'));
+        $company = DeviceMetadata::normalizeCompany((string)($decoded['company'] ?? 'null'));
         if ($imei === '' || $supplier === '' || $model === '') {
             return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
         }
@@ -389,7 +389,7 @@ class DeviceService
         $licenseId = $this->directory->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
         $simNumber = trim((string)($decoded['simNumber'] ?? ''));
         $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
-        $company = trim((string)($decoded['company'] ?? 'null'));
+        $company = DeviceMetadata::normalizeCompany((string)($decoded['company'] ?? 'null'));
         if ($newImei === '' || $supplier === '' || $model === '') {
             Logger::channel('api')->warning('API device update rejected', [
                 'request_id' => $requestId,

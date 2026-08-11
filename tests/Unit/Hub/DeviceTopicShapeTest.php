@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
+use Hub\Domain\DeviceMetadata;
 use Hub\HubMqttBridge;
 use PHPUnit\Framework\TestCase;
 
@@ -41,6 +42,16 @@ final class DeviceTopicShapeTest extends TestCase
             'hitcare/1001/watch/861265061009822/events',
             $this->bridge()->deviceTopic('hitcare', 1001, 'watch', '861265061009822', 'events')
         );
+    }
+
+    public function testCompanyCasingIsNormalisedSoOneTenantIsOneTopicSpace(): void
+    {
+        // Topics are case sensitive: "hitCare" and "hitcare" would be two
+        // different tenants to a subscriber.
+        self::assertSame('hitcare', DeviceMetadata::normalizeCompany('hitCare'));
+        self::assertSame('havicare', DeviceMetadata::normalizeCompany(' haviCare '));
+        self::assertSame('null', DeviceMetadata::normalizeCompany(''));
+        self::assertSame('null', DeviceMetadata::normalizeCompany(null));
     }
 
     public function testSlashesInTheCompanyCannotSplitTheTopic(): void

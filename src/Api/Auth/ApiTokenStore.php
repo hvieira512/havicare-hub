@@ -192,14 +192,14 @@ final class ApiTokenStore
             return null;
         }
 
-        $userId = isset($payload['userId']) && $payload['userId'] !== null ? (int)$payload['userId'] : null;
-        $licenseId = isset($payload['licenseId']) && $payload['licenseId'] !== null
+        $userId = isset($payload['userId']) ? (int)$payload['userId'] : null;
+        $licenseId = isset($payload['licenseId'])
             ? (int)$payload['licenseId']
             : null;
-        $licenseRefId = isset($payload['licenseRefId']) && $payload['licenseRefId'] !== null
+        $licenseRefId = isset($payload['licenseRefId'])
             ? (int)$payload['licenseRefId']
             : null;
-        $companyId = isset($payload['companyId']) && $payload['companyId'] !== null
+        $companyId = isset($payload['companyId'])
             ? (int)$payload['companyId']
             : null;
         $company = isset($payload['company']) && trim((string)$payload['company']) !== ''

@@ -12,6 +12,18 @@ final class DeviceMetadata
     }
 
     /**
+     * Company names are part of the MQTT topic, and topics are case sensitive:
+     * "hitCare" and "hitcare" are two different tenants to a subscriber. One
+     * casing, chosen here, keeps a tenant's devices in one place.
+     */
+    public static function normalizeCompany(?string $company): string
+    {
+        $normalized = strtolower(trim((string)$company));
+
+        return $normalized !== '' ? $normalized : 'null';
+    }
+
+    /**
      * licenseId arrives as an int from the API and as a string from the
      * whitelist file and Redis. int is the canonical in-memory form -- it is
      * what tenant access control compares -- so every edge converges here.

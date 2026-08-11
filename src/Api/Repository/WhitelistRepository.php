@@ -104,7 +104,7 @@ final class WhitelistRepository
     ): void {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $company = trim($company);
+        $company = DeviceMetadata::normalizeCompany($company);
         $existing = $this->get($imei);
         if ($existing === null) {
             $stmt = $this->pdo->prepare('
@@ -131,7 +131,7 @@ final class WhitelistRepository
 
     public function updateAssociation(string $imei, string $company, int $licenseId): bool
     {
-        $company = trim($company);
+        $company = DeviceMetadata::normalizeCompany($company);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
         $stmt = $this->pdo->prepare('
             UPDATE whitelist

@@ -28,6 +28,36 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertSame('heartbeat', (new WonlexAdapter())->decodeIncoming($heartbeat->responses[0]->bytes)['type']);
     }
 
+    /**
+     * A device needs both a company and a license to count as bound. The
+     * company check alone used to carry this, so a licenseId compared against
+     * the wrong type went unnoticed.
+     */
+    public function testWonlexLoginIsUnboundWhenACompanyHasNoLicense(): void
+    {
+        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
+        $session = new DeviceSession(
+            new WatchFakeConnection(),
+            'tcp',
+            true,
+            '868705080300697',
+            'wonlex-json',
+            'Wonlex',
+            'HW20PRO',
+            '',
+            'watch',
+            0,
+            'havicare'
+        );
+
+        $reply = $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'login', 'ident' => 100003]));
+
+        self::assertSame(
+            0,
+            (new WonlexAdapter())->decodeIncoming($reply->responses[0]->bytes)['data']['bindStatus']
+        );
+    }
+
     public function testWonlexLoginUsesActualBindingState(): void
     {
         $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());

@@ -112,7 +112,7 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
     {
         if (!is_callable($this->stateProvider)) {
             return [
-                'bindStatus' => $session->licenseId !== '0' && strtolower($session->company) !== 'null' ? 1 : 0,
+                'bindStatus' => $session->licenseId !== 0 && strtolower($session->company) !== 'null' ? 1 : 0,
                 'configurations' => [],
             ];
         }

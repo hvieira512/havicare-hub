@@ -31,7 +31,7 @@ final class DeviceAssociationService
             return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
         }
 
-        $company = trim((string)($decoded['company'] ?? ''));
+        $company = DeviceMetadata::normalizeCompany((string)($decoded['company'] ?? ''));
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($decoded['licenseId'] ?? ''));
         if ($company === '' || $licenseId === 0) {
             return ['error' => ['code' => 'invalid_request', 'message' => 'company and licenseId are required']];

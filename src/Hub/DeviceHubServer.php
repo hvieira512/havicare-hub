@@ -575,7 +575,7 @@ class DeviceHubServer
         $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
         $company = $this->currentCompany($session->imei, $session->company);
         $state = [
-            'bindStatus' => $licenseId !== '0' && strtolower($company) !== 'null' ? 1 : 0,
+            'bindStatus' => $licenseId !== 0 && strtolower($company) !== 'null' ? 1 : 0,
             'configurations' => $configurations,
         ];
         foreach ($this->dashboardStore?->recent($session->imei, 'telemetry') ?? [] as $event) {

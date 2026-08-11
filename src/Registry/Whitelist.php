@@ -67,7 +67,7 @@ class Whitelist
         $model = trim((string)($value['model'] ?? ''));
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch'));
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0'));
-        $company = trim((string)($value['company'] ?? 'null'));
+        $company = DeviceMetadata::normalizeCompany((string)($value['company'] ?? 'null'));
         $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
         $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
         if ($deviceId === '') {
@@ -134,7 +134,7 @@ class Whitelist
     {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $company = trim($company);
+        $company = DeviceMetadata::normalizeCompany($company);
         $this->devices[$imei] = [
             'supplier' => $supplier,
             'model' => $model,
@@ -175,7 +175,7 @@ class Whitelist
         }
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $company = trim($company);
+        $company = DeviceMetadata::normalizeCompany($company);
         $this->devices[$imei] = [
             'supplier' => $supplier,
             'model' => $model,
@@ -198,7 +198,7 @@ class Whitelist
             return false;
         }
 
-        $company = trim($company);
+        $company = DeviceMetadata::normalizeCompany($company);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
         $this->devices[$imei]['company'] = $company;
         $this->devices[$imei]['licenseId'] = $licenseId;
