@@ -1,5 +1,6 @@
 import {renderPhoneControl, resetPhoneControls} from "../phone.js";
-import {takePillsReminderGroup, wonlexMedicationPlanRow} from "../config.js";
+import {takePillsReminderGroup} from "../config.js";
+import {wonlexMedicationPlanRow} from "./inputs.js";
 import {syncTakePillsCustomVisibility} from "../devices/take-pills-audio.js";
 
 /**
