@@ -9,7 +9,7 @@ export const deviceTypeOptions = [
 
 // Device types that are not on the network themselves: a MOKO gateway relays
 // their BLE advertisements, so each one is linked to one or more gateways.
-export const GATEWAY_LINKED_DEVICE_TYPES = ["diaper_sensor", "bracelet"];
+const GATEWAY_LINKED_DEVICE_TYPES = ["diaper_sensor", "bracelet"];
 
 export function linksToGateway(deviceType) {
     return GATEWAY_LINKED_DEVICE_TYPES.includes(deviceType);

@@ -2,7 +2,6 @@
 
 namespace Hub\Api\Controllers;
 
-use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ErrorStatusMapper;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\RequestContext;

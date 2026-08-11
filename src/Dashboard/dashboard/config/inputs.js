@@ -1206,7 +1206,7 @@ export function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [
         </div>`;
 }
 
-export function nextUid(prefix) {
+function nextUid(prefix) {
     uidCounter += 1;
     return `${prefix}-${uidCounter}`;
 }

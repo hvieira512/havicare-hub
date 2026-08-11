@@ -3108,7 +3108,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $store,
             $whitelist,
             $hub ?? $this->makeHubServerMock(),
-            $queue,
             $db
         );
 

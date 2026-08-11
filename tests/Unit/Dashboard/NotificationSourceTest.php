@@ -13,7 +13,10 @@ final class NotificationSourceTest extends TestCase
         $root = dirname(__DIR__, 3);
         $page = file_get_contents($root . '/src/Dashboard/index.php');
         $notifications = file_get_contents($root . '/src/Dashboard/dashboard/notifications.js');
-        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/core/bootstrap.js');
+        // The add-device flow lives in the device modal module now; the wiring
+        // that starts notifications is still in bootstrap.
+        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/core/bootstrap.js')
+            . file_get_contents($root . '/src/Dashboard/dashboard/devices/device-modal.js');
 
         self::assertIsString($page);
         self::assertIsString($notifications);

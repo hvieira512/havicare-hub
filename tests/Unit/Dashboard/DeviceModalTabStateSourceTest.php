@@ -11,13 +11,13 @@ final class DeviceModalTabStateSourceTest extends TestCase
     public function testEditingAnotherDevicePreservesTheVisibleConfigurationTab(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/device-modal.js'
         );
 
         self::assertIsString($source);
         self::assertStringContainsString('function activeDeviceModalTab()', $source);
         self::assertMatchesRegularExpression(
-            '/async function editDevice\\(imei, supplier, model\\).*?'
+            '/(?:export )?async function editDevice\\(imei, supplier, model\\).*?'
             . 'const activeTab = activeDeviceModalTab\\(\\);.*?'
             . 'state\\.deviceModal = \\{.*?'
             . 'activeTab,/s',
@@ -28,7 +28,7 @@ final class DeviceModalTabStateSourceTest extends TestCase
     public function testAddDeviceResetsBothBootstrapTabButtons(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/device-modal.js'
         );
 
         self::assertIsString($source);

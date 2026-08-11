@@ -20,7 +20,6 @@ export {
     createCompany,
     deleteCompany,
     getCompanies,
-    getCompany,
     updateCompany,
 } from './companies.js';
 export {
@@ -37,8 +36,6 @@ export {
     saveModel,
 } from './models.js';
 export {
-    createSupplier,
-    deleteSupplier,
     getSuppliers,
     updateSupplier,
 } from './suppliers.js';
@@ -49,11 +46,8 @@ export {
 } from './users.js';
 export {
     getCapabilities,
-    getCapability,
 } from './capabilities.js';
 export {
     applyCapabilityDiscoveryRun,
-    getCapabilityDiscoveryRun,
-    listCapabilityDiscoveryRuns,
     previewCapabilityDiscovery,
 } from './capability-discovery.js';

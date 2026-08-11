@@ -7,7 +7,6 @@ use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\RequestContext;
 use Hub\Api\Services\ModelService;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\UploadedFileInterface;
 use React\Http\Message\Response;
 
 final class ModelController

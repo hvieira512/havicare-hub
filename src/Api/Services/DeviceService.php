@@ -10,7 +10,6 @@ use Hub\Api\Http\DeviceResponseCompactor;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
-use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Dashboard\DashboardStoreContract;
@@ -18,15 +17,10 @@ use Hub\Dashboard\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
 use Hub\DeviceHubServer;
 use Hub\Log\Logger;
-use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 
 class DeviceService
 {
-    use CapabilityHelpers;
-
-    private const DEFAULT_COLLECTION_LIMIT = 20;
-
     private CollectionQuery $query;
     private CollectionResponder $collection;
     private DeviceCollectionFilter $deviceFilter;
@@ -44,7 +38,6 @@ class DeviceService
         private DashboardStoreContract $store,
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
-        private ?PendingDownlinkQueue $downlinkQueue,
         private ApiDataAccess $db,
         ?CollectionQuery $query = null,
         ?CollectionResponder $collection = null,
@@ -224,7 +217,6 @@ class DeviceService
         }
         return ['status' => 'ok'];
     }
-
 
     public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
@@ -500,20 +492,6 @@ class DeviceService
             'events' => $this->store->recent($imei, 'events'),
             'commands' => $this->store->commands($imei),
         ];
-    }
-
-    private function transportPending(string $imei): array
-    {
-        if ($this->downlinkQueue === null) {
-            return [];
-        }
-
-        return array_map(static fn($item): array => [
-            'dedupeKey' => $item->dedupeKey,
-            'command' => $item->command,
-            'queuedAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->queuedAt),
-            'expiresAt' => gmdate('Y-m-d\\TH:i:s\\Z', $item->expiresAt),
-        ], $this->downlinkQueue->pendingFor($imei));
     }
 
     /**

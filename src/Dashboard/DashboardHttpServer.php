@@ -60,7 +60,6 @@ final class DashboardHttpServer
             $this->store,
             $this->whitelist,
             $this->hub,
-            $this->downlinkQueue,
             $this->db,
         );
         $this->apiKernel = new ApiKernel(

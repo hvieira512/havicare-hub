@@ -32,7 +32,6 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
             $this->store,
             $this->whitelist,
             $this->hub,
-            null,
             $this->db
         );
     }

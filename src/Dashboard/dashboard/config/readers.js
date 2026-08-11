@@ -135,7 +135,7 @@ export function findDuplicateValues(values) {
     return [...duplicates];
 }
 
-export function readContactName(row, maxLength) {
+function readContactName(row, maxLength) {
     const input = row.querySelector('[data-repeat-field="name"]');
     const value = String(input?.value || "").trim();
     if (maxLength > 0 && unicodeLength(value) > maxLength) {
@@ -145,13 +145,13 @@ export function readContactName(row, maxLength) {
     return value;
 }
 
-export function readContactPhone(row) {
+function readContactPhone(row) {
     return normalizePhoneControl(
         row.querySelector('[data-phone-control][data-repeat-field="phone"]'),
     );
 }
 
-export function unicodeLength(value) {
+function unicodeLength(value) {
     return Array.from(String(value || "")).length;
 }
 

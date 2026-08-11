@@ -3,7 +3,6 @@
 namespace Hub\Domain\Capability\Medication;
 
 use Hub\Domain\Capability\CapabilityContract;
-use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
  * Capability for medication reminders (take_pills).
@@ -15,8 +14,6 @@ use Hub\Domain\Capability\CapabilityHelpers;
  */
 final class MedicationRemindersCapability implements CapabilityContract
 {
-    use CapabilityHelpers;
-
     private MedicationRemindersHandler $wonlex;
     private MedicationRemindersHandler $fourPTouch;
 

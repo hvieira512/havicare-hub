@@ -67,6 +67,14 @@ final class DeviceRequestCardGroupingTest extends TestCase
         $source .= file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
         );
+        // The input renderers moved out of config.js; the assertions below span
+        // the dispatch table and the renderers it points at.
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/inputs.js'
+        );
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/normalizers.js'
+        );
 
         self::assertIsString($source);
         self::assertStringContainsString('requestAction: (entry) => requestActionInput(entry),', $source);
@@ -122,8 +130,20 @@ final class DeviceRequestCardGroupingTest extends TestCase
         $source .= file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
         );
+        // The input renderers moved out of config.js; the assertions below span
+        // the dispatch table and the renderers it points at.
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/inputs.js'
+        );
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/normalizers.js'
+        );
         $bootstrap = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'
+        ) . file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/device-modal.js'
+        ) . file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config-panel.js'
         );
 
         self::assertIsString($source);

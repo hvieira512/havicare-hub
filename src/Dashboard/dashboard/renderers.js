@@ -327,7 +327,7 @@ export function emptyPanel(text) {
     return `<div class="text-secondary border rounded bg-body-tertiary p-3">${esc(text)}</div>`;
 }
 
-export function commandFeature(command) {
+function commandFeature(command) {
     if (command.feature) return command.feature;
     const haystack =
         `${command.command || ""} ${command.label || ""}`.toLowerCase();
@@ -349,7 +349,7 @@ export function cardTone(type, command = {}) {
     };
 }
 
-export function requestCardContent(type) {
+function requestCardContent(type) {
     return REQUEST_CARD_CONTENT_BY_TYPE[type] || {
         icon: "fa-circle-info",
         value: featureLabel(type),

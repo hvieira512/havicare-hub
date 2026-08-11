@@ -54,7 +54,7 @@ export function protocolDefinition(protocol) {
     return (state.protocols || []).find((entry) => entry.protocol === protocol) || null;
 }
 
-export function protocolDashboardMeta(protocol) {
+function protocolDashboardMeta(protocol) {
     const meta = protocolDefinition(protocol)?.dashboard || {};
     return {
         groupedCapabilities: isPlainObject(meta.groupedCapabilities) ? meta.groupedCapabilities : null,

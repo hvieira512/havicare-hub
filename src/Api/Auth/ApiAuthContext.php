@@ -6,7 +6,6 @@ final class ApiAuthContext
 {
     public const ROLE_HUB_ADMIN = 'hub_admin';
     public const ROLE_LICENSE_CLIENT = 'license_client';
-    public const ROLE_TENANT_CLIENT = self::ROLE_LICENSE_CLIENT;
 
     public function __construct(
         public readonly ?int $userId,

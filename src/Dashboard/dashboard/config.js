@@ -445,7 +445,7 @@ const CONFIG_INPUT_LABEL = {
     wonlexMedicationPlans: "Plano de medicação",
 };
 
-export function groupedCatalog(catalog) {
+function groupedCatalog(catalog) {
     const groups = [];
     const index = new Map();
 

@@ -218,7 +218,7 @@ export function setConfigUi(key, updates) {
     };
 }
 
-export function clearConfigUiPhase(key, phase) {
+function clearConfigUiPhase(key, phase) {
     const current = state.deviceModal.configUi[key];
     if (!current || current.phase !== phase) {
         return;
@@ -233,7 +233,7 @@ export function clearConfigUiPhase(key, phase) {
     state.deviceModal.configUi[key] = next;
 }
 
-export function clearConfigFeedback(key) {
+function clearConfigFeedback(key) {
     const current = state.deviceModal.configUi[key];
     if (!current) {
         return;
@@ -248,7 +248,7 @@ export function clearConfigFeedback(key) {
     state.deviceModal.configUi[key] = next;
 }
 
-export function transitionConfigPhase(key, phase, delayMs, callback) {
+function transitionConfigPhase(key, phase, delayMs, callback) {
     clearTimeout(configPhaseTimers.get(key));
     configPhaseTimers.set(
         key,
