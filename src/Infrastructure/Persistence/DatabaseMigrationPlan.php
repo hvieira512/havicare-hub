@@ -31,6 +31,8 @@ use Hub\Infrastructure\Persistence\Migration\Version2026080701AddMkgw4Gateway;
 use Hub\Infrastructure\Persistence\Migration\Version2026080702EnableMkgw4GatewayCapabilities;
 use Hub\Infrastructure\Persistence\Migration\Version2026081001BraceletDevices;
 use Hub\Infrastructure\Persistence\Migration\Version2026081002UnifyHelpCallLabel;
+use Hub\Infrastructure\Persistence\Migration\Version2026081101MigrateVivistarPhonebookRows;
+use Hub\Infrastructure\Persistence\Migration\Version2026081102BackfillMissingModelCapabilities;
 
 final class DatabaseMigrationPlan
 {
@@ -64,6 +66,8 @@ final class DatabaseMigrationPlan
             new Version2026080702EnableMkgw4GatewayCapabilities(),
             new Version2026081001BraceletDevices(),
             new Version2026081002UnifyHelpCallLabel(),
+            new Version2026081101MigrateVivistarPhonebookRows(),
+            new Version2026081102BackfillMissingModelCapabilities(),
         ];
     }
 

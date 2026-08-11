@@ -182,10 +182,12 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026080702_enable_mkgw4_gateway_capabilities',
             '2026081001_bracelet_devices',
             '2026081002_unify_help_call_label',
+            '2026081101_migrate_vivistar_phonebook_rows',
+            '2026081102_backfill_missing_model_capabilities',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(26, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(28, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
