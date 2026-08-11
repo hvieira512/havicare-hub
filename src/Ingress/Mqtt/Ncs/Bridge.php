@@ -118,14 +118,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 'licenseId' => $licenseId,
             ]));
         }
-
-        if (isset($normalized['telemetry']) && is_array($normalized['telemetry'])) {
-            $this->mqttBridge->publishTelemetry($deviceKey, $normalized['telemetry'], $deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($deviceKey, 'telemetry', array_merge($normalized['telemetry'], [
-                'deviceType' => $deviceType,
-                'licenseId' => $licenseId,
-            ]));
-        }
     }
 
     /**

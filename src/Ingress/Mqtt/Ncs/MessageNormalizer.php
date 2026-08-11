@@ -65,7 +65,7 @@ final class MessageNormalizer
     /**
      * @param array<string, mixed> $message
      * @param array<string, mixed> $device
-     * @return array{raw: array<string, mixed>, event: array<string, mixed>}
+     * @return array{raw: array<string, mixed>, event?: array<string, mixed>}
      */
     private function normalizeEvent(array $message, array $device, array $raw): array
     {

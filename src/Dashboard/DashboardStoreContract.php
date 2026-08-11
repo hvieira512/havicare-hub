@@ -88,7 +88,10 @@ interface DashboardStoreContract
     public function findCommand(string $id): ?array;
 
     /**
-     * @return array<string, array<string, mixed>>
+     * Built commands in send order, not a keyed map: the hub forwards this
+     * straight into the Wonlex device state, so the shape is on the wire.
+     *
+     * @return list<array<string, mixed>>
      */
     public function desiredConfigurations(string $imei): array;
 }

@@ -141,6 +141,9 @@ final class DashboardHttpServer
 
     private function page(): string
     {
+        // page() is also reached through newInstanceWithoutConstructor(), where
+        // the promoted property is genuinely uninitialised -- hence isset()
+        // rather than a plain read, which would fatal.
         $dashboardApiAuthRequired = isset($this->apiAuthRequired) ? $this->apiAuthRequired : true;
 
         ob_start();
