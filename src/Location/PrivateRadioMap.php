@@ -42,7 +42,7 @@ final class PrivateRadioMap
         $learned = 0;
         $updates = [];
 
-        foreach ($hashes as $mac => $hash) {
+        foreach ($hashes as $hash) {
             $current = $existing[$hash] ?? null;
             if (is_array($current) && ($current['source'] ?? '') === 'manual') {
                 continue;

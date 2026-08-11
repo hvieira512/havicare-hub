@@ -207,7 +207,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private function resolveDevice(Topic $topic): ?array
     {
         $deviceUid = $topic->deviceUid;
-        $licenseId = $topic->licenseId;
 
         $resolved = $this->whitelist->resolve($deviceUid, 'qinglanst-radar');
         if ($resolved !== null) {

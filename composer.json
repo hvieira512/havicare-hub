@@ -45,7 +45,8 @@
             "@test:integration",
             "@test:frontend",
             "@test:scenarios"
-        ]
+        ],
+        "lsp:php": "nvim --headless -u ~/.config/nvim/init.lua -l scripts/lsp-diagnostics.lua $(git ls-files '*.php')"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5",

@@ -149,12 +149,6 @@ final class RadarValueMapper
         11 => true,
     ];
 
-    private static ?array $postureLabelToCode = null;
-    private static ?array $lastEventLabelToCode = null;
-    private static ?array $sleepStateLabelToCode = null;
-    private static ?array $breathingStatusLabelToCode = null;
-    private static ?array $heartStatusLabelToCode = null;
-    private static ?array $vitalStatusLabelToCode = null;
     private static ?array $detectionCategoryLabelToCode = null;
     private static ?array $detectionTypeLabelToCode = null;
     private static ?array $detectionLevelLabelToCode = null;
@@ -359,63 +353,6 @@ final class RadarValueMapper
 
         $code = (int)$value;
         return $map[$code] ?? $fallback;
-    }
-
-    private static function postureLabelToCode(): array
-    {
-        if (self::$postureLabelToCode === null) {
-            self::$postureLabelToCode = array_flip(self::POSTURE_CODE_TO_LABEL);
-            self::$postureLabelToCode['In Bed'] = 6;
-        }
-        return self::$postureLabelToCode;
-    }
-
-    private static function lastEventLabelToCode(): array
-    {
-        if (self::$lastEventLabelToCode === null) {
-            self::$lastEventLabelToCode = array_flip(self::LAST_EVENT_CODE_TO_LABEL);
-        }
-        return self::$lastEventLabelToCode;
-    }
-
-    private static function sleepStateLabelToCode(): array
-    {
-        if (self::$sleepStateLabelToCode === null) {
-            self::$sleepStateLabelToCode = array_flip(self::SLEEP_STATE_CODE_TO_LABEL);
-            self::$sleepStateLabelToCode['unknown'] = 0;
-            self::$sleepStateLabelToCode['Unknown'] = 0;
-        }
-        return self::$sleepStateLabelToCode;
-    }
-
-    private static function breathingStatusLabelToCode(): array
-    {
-        if (self::$breathingStatusLabelToCode === null) {
-            self::$breathingStatusLabelToCode = array_flip(self::BREATHING_STATUS_CODE_TO_LABEL);
-            self::$breathingStatusLabelToCode['unknown'] = 0;
-            self::$breathingStatusLabelToCode['Unknown'] = 0;
-        }
-        return self::$breathingStatusLabelToCode;
-    }
-
-    private static function heartStatusLabelToCode(): array
-    {
-        if (self::$heartStatusLabelToCode === null) {
-            self::$heartStatusLabelToCode = array_flip(self::HEART_STATUS_CODE_TO_LABEL);
-            self::$heartStatusLabelToCode['unknown'] = 3;
-            self::$heartStatusLabelToCode['Unknown'] = 3;
-        }
-        return self::$heartStatusLabelToCode;
-    }
-
-    private static function vitalStatusLabelToCode(): array
-    {
-        if (self::$vitalStatusLabelToCode === null) {
-            self::$vitalStatusLabelToCode = array_flip(self::VITAL_STATUS_CODE_TO_LABEL);
-            self::$vitalStatusLabelToCode['unknown'] = 0;
-            self::$vitalStatusLabelToCode['Unknown'] = 0;
-        }
-        return self::$vitalStatusLabelToCode;
     }
 
     private static function detectionCategoryLabelToCode(): array

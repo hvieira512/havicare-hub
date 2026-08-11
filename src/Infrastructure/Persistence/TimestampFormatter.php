@@ -73,7 +73,7 @@ final class TimestampFormatter
 
         try {
             return new DateTimeImmutable($value, $timezone);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return null;
         }
     }

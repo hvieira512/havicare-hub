@@ -288,7 +288,7 @@ final class ApiKernel
             } else {
                 $contents = (string)$body;
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return null;
         }
 
