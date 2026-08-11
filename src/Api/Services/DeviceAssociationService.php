@@ -8,6 +8,7 @@ use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Domain\DeviceMetadata;
+use Hub\DeviceHubServer;
 use Hub\Registry\Whitelist;
 
 final class DeviceAssociationService
@@ -16,6 +17,7 @@ final class DeviceAssociationService
         private DashboardStoreContract $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
+        private ?DeviceHubServer $hub = null,
     ) {
     }
 
@@ -53,7 +55,8 @@ final class DeviceAssociationService
             return ['error' => ['code' => 'invalid_association', 'message' => 'company and licenseId do not match a registered license']];
         }
 
-        $this->whitelist->updateAssociation($imei, $company, (string)$licenseId);
+        $this->releaseRetainedStatus($existing, $imei, $company, $licenseId);
+        $this->whitelist->updateAssociation($imei, $company, $licenseId);
         $this->store->updateDeviceAssociation($imei, $company, $licenseId);
 
         return ['status' => 'ok', 'imei' => $imei, 'association' => ['company' => $company, 'licenseId' => $licenseId]];
@@ -75,7 +78,8 @@ final class DeviceAssociationService
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
 
-        $this->whitelist->updateAssociation($imei, 'null', '0');
+        $this->releaseRetainedStatus($existing, $imei, 'null', 0);
+        $this->whitelist->updateAssociation($imei, 'null', 0);
         $this->store->updateDeviceAssociation($imei, 'null', 0);
 
         return ['status' => 'ok', 'imei' => $imei, 'association' => ['company' => 'null', 'licenseId' => 0]];
@@ -95,5 +99,29 @@ final class DeviceAssociationService
 
         $createdId = $this->db->licenses->create((int)$companyRow['id'], $licenseId, '');
         return $this->db->licenses->findById($createdId);
+    }
+
+    /**
+     * Drops the retained status a device leaves behind on its previous tenant.
+     *
+     * Without this the old topic keeps serving the device's last status to
+     * anyone subscribed to that tenant, long after it moved.
+     *
+     * @param array<string, mixed> $existing metadata before the change
+     */
+    private function releaseRetainedStatus(array $existing, string $imei, string $company, int $licenseId): void
+    {
+        $previousCompany = DeviceMetadata::normalizeCompany((string)($existing['company'] ?? 'null'));
+        $previousLicenseId = DeviceMetadata::normalizeLicenseId($existing['licenseId'] ?? 0);
+        if ($previousCompany === DeviceMetadata::normalizeCompany($company) && $previousLicenseId === $licenseId) {
+            return;
+        }
+
+        $this->hub?->clearRetainedStatus(
+            $previousCompany,
+            $previousLicenseId,
+            DeviceMetadata::normalizeDeviceType((string)($existing['deviceType'] ?? 'watch')),
+            $imei
+        );
     }
 }

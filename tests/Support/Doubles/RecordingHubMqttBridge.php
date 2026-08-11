@@ -14,6 +14,9 @@ use Hub\HubMqttBridge;
  */
 final class RecordingHubMqttBridge extends HubMqttBridge
 {
+    /** @var list<array{company: string, licenseId: int, deviceType: string, imei: string}> */
+    public array $clearedRetainedStatus = [];
+
     /** @var list<array{type: ?string, imei: string, payload: array<string, mixed>, deviceType: string, licenseId: string, company: string}> */
     public array $raw = [];
 
@@ -79,5 +82,10 @@ final class RecordingHubMqttBridge extends HubMqttBridge
             'licenseId' => $licenseId,
             'company' => $company,
         ];
+    }
+
+    public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
+    {
+        $this->clearedRetainedStatus[] = compact('company', 'licenseId', 'deviceType', 'imei');
     }
 }

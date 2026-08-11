@@ -88,6 +88,30 @@ class HubMqttBridge
         return trim($company, '/') . '/' . $licenseId . '/' . trim($deviceType, '/') . '/' . trim($deviceKey, '/') . '/' . trim($kind, '/');
     }
 
+    /**
+     * Deletes the retained status a device left on a tenant's topic.
+     *
+     * Status is published retained, so a device that moves between tenants
+     * keeps announcing itself on every topic it ever used -- a subscriber to
+     * the old tenant still receives it. MQTT deletes a retained message with a
+     * zero-length payload; an empty JSON document would only replace it.
+     */
+    public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
+    {
+        $topic = $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status'));
+
+        try {
+            $this->publisher->publish($topic, '', MqttClient::QOS_AT_LEAST_ONCE, true);
+        } catch (\Throwable $e) {
+            if ($this->reconnectPublisher === null) {
+                throw $e;
+            }
+
+            $this->reconnect();
+            $this->publisher->publish($topic, '', MqttClient::QOS_AT_LEAST_ONCE, true);
+        }
+    }
+
     public function logPublishFailure(string $channel, string $imei, \Throwable $e): void
     {
         Logger::channel($channel)->error("MQTT publish failed for IMEI=$imei: {$e->getMessage()}");

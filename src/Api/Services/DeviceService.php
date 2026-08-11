@@ -56,7 +56,7 @@ class DeviceService
             $this->db,
             $this->capabilityRegistry,
         );
-        $this->associations = new DeviceAssociationService($this->store, $this->whitelist, $this->db);
+        $this->associations = new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
         // Built here rather than injected: it is a projection of the same
         // registry and database this service already holds.
         $this->capabilities = new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
@@ -425,6 +425,20 @@ class DeviceService
             ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
         }
+        // The device may be leaving a tenant, changing type, or changing imei;
+        // each of those leaves a retained status on the old topic.
+        $previous = $this->whitelist->getMetadata($imei) ?? [];
+        $previousCompany = DeviceMetadata::normalizeCompany((string)($previous['company'] ?? 'null'));
+        $previousLicenseId = DeviceMetadata::normalizeLicenseId($previous['licenseId'] ?? 0);
+        $previousDeviceType = DeviceMetadata::normalizeDeviceType((string)($previous['deviceType'] ?? 'watch'));
+        if ($newImei !== $imei
+            || $previousCompany !== $company
+            || $previousLicenseId !== $licenseId
+            || $previousDeviceType !== $deviceType
+        ) {
+            $this->hub->clearRetainedStatus($previousCompany, $previousLicenseId, $previousDeviceType, $imei);
+        }
+
         $deviceId = $this->directory->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
@@ -458,6 +472,13 @@ class DeviceService
 
     public function delete(string $imei): array
     {
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $this->hub->clearRetainedStatus(
+            DeviceMetadata::normalizeCompany((string)($metadata['company'] ?? 'null')),
+            DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
+            DeviceMetadata::normalizeDeviceType((string)($metadata['deviceType'] ?? 'watch')),
+            $imei
+        );
         $this->whitelist->unregister($imei);
         $this->store->deleteDevice($imei);
 

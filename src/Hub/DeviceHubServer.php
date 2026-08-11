@@ -454,6 +454,18 @@ class DeviceHubServer
         }
     }
 
+    /**
+     * Called when a device's tenant changes, with the tenant it is leaving.
+     */
+    public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
+    {
+        try {
+            $this->mqtt->clearRetainedStatus($company, $licenseId, $deviceType, $imei);
+        } catch (\Throwable $e) {
+            $this->mqtt->logPublishFailure('hub', $imei, $e);
+        }
+    }
+
     private function publishStatus(string $imei, string $supplier, string $model, string $state, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null', string $commercialName = ''): void
     {
         try {
