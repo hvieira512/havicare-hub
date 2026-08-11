@@ -442,6 +442,87 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
     }
 
+    /**
+     * licenseId reaches registration as an int from the API and as a string
+     * from the whitelist file, and tenant isolation must not depend on which.
+     */
+    public function testTenantIsolationHoldsWhateverTypeTheLicenseIdArrivesAs(): void
+    {
+        foreach ([['1001', '2002'], [1001, 2002]] as [$mine, $theirs]) {
+            [$server, $db, $store] = $this->makeServerWithDatabase();
+            $store->registerDevice('861265061009866', 'Vivistar', 'L08 Pro', 'watch', $mine, '', '', 'hitcare');
+            $db->whitelist->register('861265061009866', 'Vivistar', 'L08 Pro', 'watch', $mine, '', '', 'hitcare');
+            $store->registerDevice('861265061009877', 'Vivistar', 'L08 Pro', 'watch', $theirs, '', '', 'otherCare');
+            $db->whitelist->register('861265061009877', 'Vivistar', 'L08 Pro', 'watch', $theirs, '', '', 'otherCare');
+
+            $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+            $label = is_string($mine) ? 'string' : 'int';
+
+            $mineResponse = $server(new ServerRequest(
+                'GET',
+                '/api/devices/861265061009866',
+                ['Authorization' => 'Bearer ' . $token]
+            ));
+            self::assertSame(200, $mineResponse->getStatusCode(), "own device, {$label} licenseId");
+
+            $theirsResponse = $server(new ServerRequest(
+                'GET',
+                '/api/devices/861265061009877',
+                ['Authorization' => 'Bearer ' . $token]
+            ));
+            self::assertSame(404, $theirsResponse->getStatusCode(), "other tenant's device, {$label} licenseId");
+        }
+    }
+
+    public function testDeviceWithoutALicenseIsInvisibleToATenantClient(): void
+    {
+        [$server, $db, $store] = $this->makeServerWithDatabase();
+        $store->registerDevice('861265061009888', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
+        $db->whitelist->register('861265061009888', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009888',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+
+        self::assertSame(404, $response->getStatusCode());
+    }
+
+    /**
+     * The inverse of the test below, and the one that actually exercises
+     * license scoping: same company, different license. Company scoping alone
+     * cannot catch this, so without it the license clause could be removed
+     * entirely and every other tenant test would still pass.
+     */
+    public function testTenantClientCannotAccessAnotherLicenseWithinItsOwnCompany(): void
+    {
+        [$server, $db, $store] = $this->makeServerWithDatabase();
+        $hitcareId = $db->companies->create('hitcare-extra-holder');
+        $db->licenses->create($hitcareId, '3003', 'hitcare-second-license');
+
+        // Same company as the tenant, a license the tenant does not hold.
+        $store->registerDevice('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');
+        $db->whitelist->register('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');
+
+        $token = $this->loginToken($server, 'tenant', 'tenant-secret');
+
+        $list = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => 'Bearer ' . $token]));
+        $imeis = array_map(
+            static fn(array $device): string => (string)$device['imei'],
+            json_decode((string)$list->getBody(), true, 512, JSON_THROW_ON_ERROR)['data'] ?? []
+        );
+        self::assertNotContains('861265061009899', $imeis, 'listing must be scoped by license, not company alone');
+
+        $detail = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009899',
+            ['Authorization' => 'Bearer ' . $token]
+        ));
+        self::assertSame(404, $detail->getStatusCode());
+    }
+
     public function testTenantClientCannotAccessSameLicenseNumberFromAnotherCompany(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();

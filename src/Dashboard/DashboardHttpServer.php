@@ -18,6 +18,7 @@ use Hub\Api\Services\ProtocolService;
 use Hub\Api\Services\SupplierService;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\DeviceHubServer;
+use Hub\Domain\DeviceMetadata;
 use Hub\Registry\Whitelist;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\Message\Response;
@@ -45,7 +46,7 @@ final class DashboardHttpServer
                 (string)($metadata['supplier'] ?? ''),
                 (string)($metadata['model'] ?? ''),
                 (string)($metadata['deviceType'] ?? 'watch'),
-                (string)($metadata['licenseId'] ?? '0'),
+                DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
                 (string)($metadata['simNumber'] ?? ''),
                 (string)($metadata['deviceId'] ?? ''),
                 (string)($metadata['company'] ?? 'null')

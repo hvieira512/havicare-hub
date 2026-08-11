@@ -58,7 +58,7 @@ final class WhitelistRepository
      * @param array{deviceType?: string, licenseId?: string, company?: string, supplier?: string, model?: string, q?: string} $filters
      * @return array{items: array<int, array<string, mixed>>, total: int, available: array<string, array<int, string>>}
      */
-    public function listPage(array $filters, int $page, int $limit, ?string $licenseScope = null, ?string $companyScope = null): array
+    public function listPage(array $filters, int $page, int $limit, ?int $licenseScope = null, ?string $companyScope = null): array
     {
         $page = max(1, $page);
         $limit = max(1, $limit);
@@ -172,12 +172,12 @@ final class WhitelistRepository
      * @param array{deviceType?: string, licenseId?: string, supplier?: string, model?: string, q?: string} $filters
      * @return array{0: string, 1: array<int, mixed>}
      */
-    private function buildWhereClause(array $filters, ?string $licenseScope = null, ?string $companyScope = null): array
+    private function buildWhereClause(array $filters, ?int $licenseScope = null, ?string $companyScope = null): array
     {
         $clauses = [];
         $params = [];
 
-        if ($licenseScope !== null && trim($licenseScope) !== '') {
+        if ($licenseScope !== null) {
             $clauses[] = 'w.license_id = ?';
             $params[] = DeviceMetadata::normalizeLicenseId($licenseScope);
         }
@@ -239,7 +239,7 @@ final class WhitelistRepository
      * @param array{deviceType?: string, licenseId?: string, company?: string, supplier?: string, model?: string, q?: string} $filters
      * @return list<string>
      */
-    private function distinctValues(string $column, string $alias, array $filters, string $excludeKey, ?string $licenseScope = null, ?string $companyScope = null): array
+    private function distinctValues(string $column, string $alias, array $filters, string $excludeKey, ?int $licenseScope = null, ?string $companyScope = null): array
     {
         $candidateFilters = $filters;
         unset($candidateFilters[$excludeKey]);
