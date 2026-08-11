@@ -1,3 +1,8 @@
+// Storage keys live with the storage helpers so any view can read the same
+// value without re-declaring the string.
+export const FILTERS_STORAGE_KEY = "hub-dashboard-device-filters";
+export const SELECTED_DEVICE_STORAGE_KEY = "hub-dashboard-selected-device";
+
 export function loadJsonStorage(key) {
     try {
         const stored = localStorage.getItem(key);
