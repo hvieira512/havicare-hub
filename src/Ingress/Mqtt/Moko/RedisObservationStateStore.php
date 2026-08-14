@@ -37,14 +37,16 @@ final class RedisObservationStateStore implements ObservationStateStore
         return true;
     }
 
-    public function transitionCondition(string $deviceKey, string $condition): ?string
+    /** @return array{previous: ?string}|null */
+    public function transitionCondition(string $deviceKey, string $condition): ?array
     {
         $key = "{$this->prefix}:condition:{$deviceKey}";
         $previous = $this->redis->get($key);
         $this->redis->set($key, $condition);
-        if (!is_string($previous) || $previous === '' || $previous === $condition) {
+        $known = is_string($previous) && $previous !== '';
+        if ($known && $previous === $condition) {
             return null;
         }
-        return $previous;
+        return ['previous' => $known ? $previous : null];
     }
 }

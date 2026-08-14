@@ -230,13 +230,19 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         $previousTriggerCount = null;
         if (isset($decoded['alarm']['pressMode'], $decoded['alarm']['triggerCount'])) {
-            // Returns null both on the first sighting and when the counter has
-            // not moved, which is exactly when no press should be reported.
-            $previous = $this->state->transitionCondition(
+            $transition = $this->state->transitionCondition(
                 $deviceKey . ':press:' . $decoded['alarm']['pressMode'],
                 (string)$decoded['alarm']['triggerCount'],
             );
-            $previousTriggerCount = $previous === null ? null : (int)$previous;
+            // No press is reported either when the counter has not moved OR on the first
+            // sighting of this bracelet: the counter is cumulative, so seeing it for the
+            // first time says nothing about a press having just happened. This is the
+            // opposite of the diaper condition below, where a first observation that is
+            // already `change_required` MUST raise the alarm -- which is why the store
+            // now reports both facts and each caller decides what to do with them.
+            $previousTriggerCount = $transition === null || $transition['previous'] === null
+                ? null
+                : (int)$transition['previous'];
         }
 
         $normalized = ($this->w6rNormalizer ?? new W6rNormalizer())->normalize(
@@ -298,11 +304,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->dashboardStore?->append($sensorKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
-        $previous = $this->state->transitionCondition($sensorKey, $normalized['condition']);
-        if ($normalized['condition'] === 'change_required' && $previous !== null) {
+        $transition = $this->state->transitionCondition($sensorKey, $normalized['condition']);
+        if ($normalized['condition'] === 'change_required' && $transition !== null) {
             $event = [
                 'schemaVersion' => 1, 'type' => 'change_required', 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => $this->device($sensor), 'data' => ['previousState' => $previous],
+                'device' => $this->device($sensor), 'data' => ['previousState' => $transition['previous']],
                 'source' => ['protocol' => 'monit-mecs-pro-ble', 'gatewayId' => (string)$gateway['imei']],
             ];
             $this->mqttBridge->publishEvent($sensorKey, $event, $deviceType, $licenseId, $company);

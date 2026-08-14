@@ -30,10 +30,15 @@ final class ArrayObservationStateStore implements ObservationStateStore
         return true;
     }
 
-    public function transitionCondition(string $deviceKey, string $condition): ?string
+    /** @return array{previous: ?string}|null */
+    public function transitionCondition(string $deviceKey, string $condition): ?array
     {
         $previous = $this->conditions[$deviceKey] ?? null;
         $this->conditions[$deviceKey] = $condition;
-        return is_string($previous) && $previous !== $condition ? $previous : null;
+        $known = is_string($previous) && $previous !== '';
+        if ($known && $previous === $condition) {
+            return null;
+        }
+        return ['previous' => $known ? $previous : null];
     }
 }
