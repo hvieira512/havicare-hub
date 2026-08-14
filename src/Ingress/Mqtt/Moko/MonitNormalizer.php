@@ -69,8 +69,18 @@ final class MonitNormalizer
                     'channels' => $channels,
                     'affectedChannelCount' => $affected,
                     'maximumDelta' => max($decoded['normalized']),
-                    'moistureIndex' => $this->buildMoistureIndex($decoded['normalized'], $condition),
-                    'moistureAlertIndex' => self::MOISTURE_INDEX_BANDS['change_required'][0],
+                ]] + $common,
+                // Capacidade PROPRIA e nao um campo da `diaper_moisture`, que e detalhe deste
+                // fornecedor: os 10 canais capacitivos sao do MONIT MECS-PRO e mais nada. Um
+                // segundo medidor de fraldas -- outra marca, outra contagem de canais, ou um
+                // que de uma leitura unica -- nao tem `channels` nem `maximumDelta`, mas tem
+                // seguramente "quao humido, 0-100". O nivel e o contrato generico; os canais
+                // sao o detalhe do decoder. Guardado dentro da mensagem do fornecedor, o
+                // segundo modelo obrigava a duplicar o campo ou a que os consumidores lessem
+                // uma mensagem com forma de MONIT para tirar um numero que nada tem de MONIT.
+                'diaper_moisture_level' => ['type' => 'diaper_moisture_level', 'data' => [
+                    'index' => $this->buildMoistureIndex($decoded['normalized'], $condition),
+                    'alertIndex' => self::MOISTURE_INDEX_BANDS['change_required'][0],
                 ]] + $common,
                 'diaper_condition' => ['type' => 'diaper_condition', 'data' => ['state' => $condition]] + $common,
             ],
@@ -90,8 +100,13 @@ final class MonitNormalizer
      * partir do `maximumDelta` e do `affectedChannelCount` -- ficava com os limiares
      * duplicados num segundo repositorio E com menos informacao do que existe aqui.
      *
-     * O `moistureAlertIndex` viaja no payload pela mesma razao: sem ele, quem desenha a marca
-     * de alerta no ecra tinha de escrever o 40 em hardcode, que e outra copia do limiar.
+     * O `alertIndex` viaja no payload pela mesma razao: sem ele, quem desenha a marca de alerta
+     * no ecra tinha de escrever o 40 em hardcode, que e outra copia do limiar dos 4 canais.
+     *
+     * Vai na sua propria capacidade `diaper_moisture_level`, o que tem uma consequencia para
+     * quem consome: tendo impressao digital propria, e suprimida em separado da mensagem dos
+     * canais. Como o indice e um inteiro grosseiro que muitas vezes nao muda entre leituras,
+     * chega MENOS vezes do que a humidade -- ninguem pode assumir que as duas vem juntas.
      *
      * COMO FUNCIONA:
      *

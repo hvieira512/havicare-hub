@@ -29,7 +29,7 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $payload);
 
         self::assertCount(2, $mqtt->raw);
-        self::assertSame(['battery', 'diaper_moisture', 'diaper_condition'], array_column($mqtt->telemetry, 'type'));
+        self::assertSame(['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'], array_column($mqtt->telemetry, 'type'));
         self::assertSame(['device.connected'], array_column($mqtt->events, 'type'));
         self::assertSame('hitcare', $mqtt->telemetry[0]['company']);
         self::assertSame(1001, $mqtt->telemetry[0]['licenseId']);

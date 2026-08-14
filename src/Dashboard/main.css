@@ -470,6 +470,45 @@ body {
     padding-top: .5rem;
 }
 
+/* The moisture level: one horizontal 0-100 track, unlike the per-channel strip
+   above it. The alert mark is positioned from the payload's alertIndex, so this
+   stylesheet holds no copy of the threshold. */
+.diaper-level-track {
+    position: relative;
+    height: 14px;
+    border-radius: .35rem;
+    background: var(--bs-tertiary-bg);
+    overflow: hidden;
+}
+
+.diaper-level-track::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--diaper-threshold, 40%);
+    border-left: 1px dashed var(--bs-border-color);
+    opacity: .9;
+    pointer-events: none;
+}
+
+/* No min-width, for the same reason the channel bars have no min-height: an
+   index of 0 must paint nothing at all. */
+.diaper-level-fill {
+    height: 100%;
+    border-radius: .35rem 0 0 .35rem;
+    background: #cbd5e1;
+    transition: width .2s ease-in-out;
+}
+
+.diaper-level-fill--damp {
+    background: #93c5fd;
+}
+
+.diaper-level-fill--wet {
+    background: #3b82f6;
+}
+
 .selected-device-facts dt {
     color: var(--bs-secondary-color);
     font-size: .8rem;

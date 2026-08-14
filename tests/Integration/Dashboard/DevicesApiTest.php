@@ -3084,8 +3084,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('diaper_moisture', $sensor['capabilities']['telemetry'] ?? []);
         self::assertArrayHasKey('diaper_condition', $sensor['capabilities']['telemetry'] ?? []);
         self::assertArrayNotHasKey('diaper_moisture', $sensor['capabilities']['health'] ?? []);
+        self::assertArrayHasKey('diaper_moisture_level', $sensor['capabilities']['telemetry'] ?? []);
         self::assertFalse($sensor['capabilities']['telemetry']['diaper_moisture']['requestable'] ?? true);
         self::assertFalse($sensor['capabilities']['telemetry']['diaper_condition']['requestable'] ?? true);
+        // Sem botao de pedido: o sensor e BLE passivo e nao aceita pedidos, como os outros dois.
+        self::assertFalse($sensor['capabilities']['telemetry']['diaper_moisture_level']['requestable'] ?? true);
 
         self::assertSame('ok', $api->deleteLink('d48c49f7909c', 'eec5000202f9')['status'] ?? null);
         self::assertSame([], $api->links('d48c49f7909c')['data'] ?? null);

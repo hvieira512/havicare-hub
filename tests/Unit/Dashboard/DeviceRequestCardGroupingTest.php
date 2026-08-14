@@ -46,7 +46,11 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('mb-2 min-w-0', $renderersSource);
         self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);
         self::assertStringContainsString('diaper_moisture: {icon: "fa-droplet"', $renderersSource);
+        self::assertStringContainsString('diaper_moisture_level: {icon: "fa-percent"', $renderersSource);
         self::assertStringContainsString('diaper_condition: {icon: "fa-baby"', $renderersSource);
+        // A marca de alerta sai do payload. Se alguem escrever o 40 aqui, e uma segunda copia
+        // do limiar dos 4 canais que decide o estado no normalizador.
+        self::assertStringContainsString('Number(data?.alertIndex)', $renderersSource);
         self::assertStringContainsString('change_required: "Mudança necessária"', $renderersSource);
         self::assertStringContainsString('activity: {icon: "fa-person-walking"', $renderersSource);
         self::assertStringContainsString('blood_sugar: {icon: "fa-vial"', $renderersSource);

@@ -54,6 +54,7 @@ export const featureLabel = (type) =>
         connectivity: "Conectividade",
         motion: "Movimento",
         diaper_moisture: "Humidade da fralda",
+        diaper_moisture_level: "Nível de humidade",
         diaper_condition: "Estado da fralda",
         activity: "Atividade",
         location: "Localização",

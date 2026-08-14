@@ -44,6 +44,7 @@ const CARD_TONE_BY_TYPE = {
     connectivity: {border: "info", bg: "bg-info", text: "text-info"},
     motion: {border: "primary", bg: "bg-primary", text: "text-primary"},
     diaper_moisture: {border: "info", bg: "bg-info", text: "text-info"},
+    diaper_moisture_level: {border: "info", bg: "bg-info", text: "text-info"},
     diaper_condition: {border: "warning", bg: "bg-warning", text: "text-warning"},
     activity: {border: "primary", bg: "bg-primary", text: "text-primary"},
     location: {border: "success", bg: "bg-success", text: "text-success"},
@@ -80,6 +81,7 @@ const REQUEST_CARD_CONTENT_BY_TYPE = {
     connectivity: {icon: "fa-wifi", value: "Conectividade"},
     motion: {icon: "fa-person-running", value: "Movimento"},
     diaper_moisture: {icon: "fa-droplet", value: "Humidade da fralda"},
+    diaper_moisture_level: {icon: "fa-percent", value: "Nível de humidade"},
     diaper_condition: {icon: "fa-baby", value: "Estado da fralda"},
     activity: {icon: "fa-person-walking", value: "Atividade"},
     location: {icon: "fa-location-dot", value: "Localização"},
@@ -166,6 +168,12 @@ const UPLINK_CARD_RENDERERS = {
         value: featureLabel("diaper_moisture"),
         span: 12,
         body: diaperMoistureBody(data),
+    }),
+    diaper_moisture_level: (data) => ({
+        icon: "fa-percent",
+        value: data?.index != null ? `${data.index}` : "-",
+        span: 12,
+        body: diaperMoistureLevelBody(data),
     }),
     diaper_condition: (data) => ({
         icon: "fa-baby",
@@ -488,6 +496,40 @@ function diaperMoistureBody(data) {
         <div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${columns}</div>
         <div class="diaper-moisture-summary small text-secondary mt-2">
             Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-body">${esc(affected)}</strong> de ${channels.length} canais acima do limiar (${DIAPER_AFFECTED_DELTA})
+        </div>
+    </div>`;
+}
+
+// The alert mark comes from the payload, never from a constant here. Hardcoding
+// the 40 would be a second copy of the four-affected-channels threshold that
+// decides the condition, and the normalizer publishes alertIndex precisely so
+// this file does not have to know it.
+//
+// Two tones only, split on that threshold, and deliberately not three: the
+// clean/attention distinction is already on the diaper_condition card beside
+// this one, so repeating it here would add nothing and could disagree with it.
+function diaperMoistureLevelBody(data) {
+    const index = Number(data?.index);
+    if (!Number.isFinite(index)) {
+        return "";
+    }
+
+    const alertIndex = Number(data?.alertIndex);
+    const hasAlert = Number.isFinite(alertIndex);
+    const band = hasAlert && index >= alertIndex ? "wet" : "damp";
+    const width = Math.max(0, Math.min(100, index));
+    const mark = hasAlert
+        ? `style="--diaper-threshold:${Math.max(0, Math.min(100, alertIndex))}%"`
+        : "";
+
+    return `<div class="diaper-level mt-3">
+        <div class="diaper-level-track" ${mark}>
+            <div class="diaper-level-fill diaper-level-fill--${band}" style="width:${width}%"></div>
+        </div>
+        <div class="diaper-moisture-summary small text-secondary mt-2">
+            Índice <strong class="text-body">${esc(index)}</strong> de 100${
+                hasAlert ? ` · alerta a partir de <strong class="text-body">${esc(alertIndex)}</strong>` : ""
+            }
         </div>
     </div>`;
 }

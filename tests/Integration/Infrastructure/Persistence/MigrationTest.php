@@ -184,10 +184,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026081002_unify_help_call_label',
             '2026081101_migrate_vivistar_phonebook_rows',
             '2026081102_backfill_missing_model_capabilities',
+            '2026081401_diaper_moisture_level_capability',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(28, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(29, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
@@ -223,7 +224,7 @@ final class MigrationTest extends MysqlDashboardTestCase
             $db->modelCapabilities->enabledFeaturesForModelId((int)$cellularGatewayModel['id'])
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture'],
+            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$sensorModel['id'])
         );
         self::assertContains('gateway_device_links', $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN));
@@ -232,11 +233,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             array_values(array_unique(array_map('strval', $pdo->query("SELECT capability_key FROM capabilities WHERE device_type = 'gateway' ORDER BY capability_key")->fetchAll(\PDO::FETCH_COLUMN))))
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture'],
+            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level'],
             array_values(array_unique(array_map('strval', $pdo->query("SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' ORDER BY capability_key")->fetchAll(\PDO::FETCH_COLUMN))))
         );
         self::assertSame(
-            ['diaper_condition', 'diaper_moisture'],
+            ['diaper_condition', 'diaper_moisture', 'diaper_moisture_level'],
             $pdo->query("SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' AND section = 'telemetry' AND capability_key LIKE 'diaper_%' ORDER BY capability_key")->fetchAll(\PDO::FETCH_COLUMN)
         );
     }

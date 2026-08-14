@@ -33,6 +33,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026081001BraceletDevices;
 use Hub\Infrastructure\Persistence\Migration\Version2026081002UnifyHelpCallLabel;
 use Hub\Infrastructure\Persistence\Migration\Version2026081101MigrateVivistarPhonebookRows;
 use Hub\Infrastructure\Persistence\Migration\Version2026081102BackfillMissingModelCapabilities;
+use Hub\Infrastructure\Persistence\Migration\Version2026081401DiaperMoistureLevelCapability;
 
 final class DatabaseMigrationPlan
 {
@@ -68,6 +69,7 @@ final class DatabaseMigrationPlan
             new Version2026081002UnifyHelpCallLabel(),
             new Version2026081101MigrateVivistarPhonebookRows(),
             new Version2026081102BackfillMissingModelCapabilities(),
+            new Version2026081401DiaperMoistureLevelCapability(),
         ];
     }
 

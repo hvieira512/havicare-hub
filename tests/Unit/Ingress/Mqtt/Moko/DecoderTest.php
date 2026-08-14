@@ -105,7 +105,7 @@ final class DecoderTest extends TestCase
         $decoded = (new MonitMecsProDecoder())->decode(['mac' => 'eec5000202f9', 'adv_data' => self::ADV_DATA]);
         $result = (new MonitNormalizer())->normalize($decoded, $this->device('diaper_sensor'), 'd48c49f7909c');
 
-        self::assertSame(['battery', 'diaper_moisture', 'diaper_condition'], array_keys($result['telemetry']));
+        self::assertSame(['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'], array_keys($result['telemetry']));
         self::assertSame(['state' => 'clean'], $result['telemetry']['diaper_condition']['data']);
         self::assertSame(1, $result['telemetry']['diaper_moisture']['data']['maximumDelta']);
         self::assertSame(['percent' => 87], $result['telemetry']['battery']['data']);
