@@ -105,7 +105,8 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
     private static function bloodPressureWarning(array $payload): array
     {
         return ['configs' => ['BPEarlyWarning' => [
-            'switchState' => self::boolInt($payload['switchState'] ?? null, 'switchState'),
+            // The dashboard sends the generic 'enabled', like every other switch.
+            'switchState' => self::boolInt($payload['switchState'] ?? $payload['enabled'] ?? null, 'switchState'),
             'hpWarn' => self::nonNegativeInt($payload['hpWarn'] ?? null, 'hpWarn'),
             'LPWarn' => self::nonNegativeInt($payload['LPWarn'] ?? null, 'LPWarn'),
         ]]];

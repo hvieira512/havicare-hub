@@ -270,17 +270,14 @@ const CONFIG_INPUT_READERS = {
         systolic: readNumber(section, "systolic"),
         diastolic: readNumber(section, "diastolic"),
     }),
-    wonlexBloodPressureWarning: (section) => {
-        const valueField = section.querySelector(
-            '[data-config-field="RemindValue"]',
-        )
-            ? "RemindValue"
-            : "reminderValue";
-        return {
-            enabled: readCheckbox(section, "enabled"),
-            [valueField]: readNumber(section, valueField),
-        };
-    },
+    wonlexBloodPressureWarning: (section) => ({
+        // The form offers a systolic and a diastolic threshold, which is what
+        // the Wonlex BPEarlyWarning config carries. Reading a single reminder
+        // value here would drop both of them.
+        enabled: readCheckbox(section, "enabled"),
+        hpWarn: readNumber(section, "hpWarn"),
+        LPWarn: readNumber(section, "LPWarn"),
+    }),
     languageTimezone: (section) => {
         const value = readText(section, "preset");
         const [language, timeZone] = value.split("|", 2);

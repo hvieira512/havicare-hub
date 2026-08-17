@@ -5,6 +5,7 @@ namespace Hub\Api\Services;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Domain\Capability\ConfigurationInputDefaults;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityCatalog;
@@ -72,47 +73,90 @@ final class DeviceCapabilityPresenter
     ): array
     {
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
+        $matrix = $this->supportedCapabilityMatrix($model, $protocol, $deviceType);
+
+        $capabilities = [];
+        foreach (CapabilityCatalog::sections() as $section => $_label) {
+            $capabilities[$section] = [];
+        }
+        $capabilities['telemetry'] = $this->telemetryCapabilities($model, $protocol, $matrix);
+
+        if ($includeDefaults) {
+            $capabilities = $this->seedSupportedDefaults($capabilities, $matrix, $protocol);
+        }
+
+        [$capabilities, $stored] = $this->applyStoredRows($capabilities, $configRows, $payloadKey, $protocol);
+        $capabilities = $this->wrapStoredEntries($capabilities, $stored, $protocol);
+        $meta = $this->withContractFallbackMeta($stored['meta'], $capabilities, $protocol);
+        $capabilities = $this->wrapRemainingEntries($capabilities, $meta, $stored['nativeKeyForGeneric'], $protocol);
+
+        if ($deviceType === 'ncs') {
+            $capabilities = $this->markSupportedWithoutConfiguration($capabilities, $matrix);
+        }
+
+        return $capabilities;
+    }
+
+    /**
+     * What the model declares it supports, or what the protocol supports when
+     * the device has no model on record.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    private function supportedCapabilityMatrix(?array $model, string $protocol, string $deviceType): array
+    {
         $catalog = $this->db->genericCapabilities->all($deviceType);
         $supportedKeys = $model !== null
             ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($model['id'] ?? 0))
             : CapabilityCatalog::keysForProtocol($protocol);
-        $matrix = CapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
-        $capabilities = [];
 
-        foreach (CapabilityCatalog::sections() as $section => $_label) {
-            $capabilities[$section] = [];
-        }
+        return CapabilityCatalog::buildCapabilityMatrix($catalog, $supportedKeys);
+    }
 
-        $capabilities['telemetry'] = $this->telemetryCapabilities($model, $protocol, $matrix);
+    /**
+     * Supported capabilities are served even when the device has never stored a
+     * value, so the dashboard can offer them.
+     *
+     * @param array<string, array<string, mixed>> $capabilities
+     * @param array<string, array<string, bool>> $matrix
+     * @return array<string, array<string, mixed>>
+     */
+    private function seedSupportedDefaults(array $capabilities, array $matrix, string $protocol): array
+    {
+        foreach ($matrix as $section => $sectionMatrix) {
+            if ($section === 'telemetry') {
+                continue;
+            }
 
-        if ($includeDefaults) {
-            foreach ($matrix as $section => $sectionMatrix) {
-                if ($section === 'telemetry') {
+            foreach ($sectionMatrix as $genericKey => $supported) {
+                if (!$supported || !$this->contractAllowsProtocol($genericKey, $protocol)) {
+                    continue;
+                }
+                if (array_key_exists($genericKey, $capabilities[$section])) {
                     continue;
                 }
 
-                foreach ($sectionMatrix as $genericKey => $supported) {
-                    if (!$supported) {
-                        continue;
-                    }
-                    if (
-                        $this->capabilityRegistry->has($genericKey)
-                        && !$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)
-                    ) {
-                        continue;
-                    }
-
-                    if (!array_key_exists($genericKey, $capabilities[$section])) {
-                        $entry = $this->defaultCapabilityEntry($protocol, $genericKey);
-                        if ($entry === []) {
-                            continue;
-                        }
-                        $capabilities[$section][$genericKey] = $entry;
-                    }
+                $entry = $this->defaultCapabilityEntry($protocol, $genericKey);
+                if ($entry === []) {
+                    continue;
                 }
+                $capabilities[$section][$genericKey] = $entry;
             }
         }
 
+        return $capabilities;
+    }
+
+    /**
+     * Folds the stored configuration rows into the capability tree, collecting
+     * the metadata and native keys each generic key was built from.
+     *
+     * @param array<string, array<string, mixed>> $capabilities
+     * @param list<array<string, mixed>> $configRows
+     * @return array{0: array<string, array<string, mixed>>, 1: array{meta: array<string, mixed>, nativeKeyForGeneric: array<string, string>, nativeKeysPerGeneric: array<string, array<string, true>>}}
+     */
+    private function applyStoredRows(array $capabilities, array $configRows, string $payloadKey, string $protocol): array
+    {
         $meta = [];
         $nativeKeysPerGeneric = [];
         $nativeKeyForGeneric = [];
@@ -137,10 +181,7 @@ final class DeviceCapabilityPresenter
                 continue;
             }
 
-            if (
-                $this->capabilityRegistry->has($genericKey)
-                && !$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)
-            ) {
+            if (!$this->contractAllowsProtocol($genericKey, $protocol)) {
                 continue;
             }
 
@@ -182,43 +223,71 @@ final class DeviceCapabilityPresenter
             }
         }
 
-        foreach ($meta as $genericKey => $metaData) {
+        return [$capabilities, [
+            'meta' => $meta,
+            'nativeKeyForGeneric' => $nativeKeyForGeneric,
+            'nativeKeysPerGeneric' => $nativeKeysPerGeneric,
+        ]];
+    }
+
+    /**
+     * Wraps the capabilities that came from stored rows into their public
+     * {value, _meta} shape.
+     *
+     * @param array<string, array<string, mixed>> $capabilities
+     * @param array{meta: array<string, mixed>, nativeKeyForGeneric: array<string, string>, nativeKeysPerGeneric: array<string, array<string, true>>} $stored
+     * @return array<string, array<string, mixed>>
+     */
+    private function wrapStoredEntries(array $capabilities, array $stored, string $protocol): array
+    {
+        foreach ($stored['meta'] as $genericKey => $metaData) {
             $hasContract = $this->capabilityRegistry->has($genericKey);
-            if ($hasContract && !$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)) {
+            if (!$this->contractAllowsProtocol($genericKey, $protocol)) {
                 continue;
             }
             $supportsMultiple = $hasContract && $this->capabilityRegistry->get($genericKey)?->supportsMultipleNativeKeys();
 
-            if (
-                !$supportsMultiple
-                && count($nativeKeysPerGeneric[$genericKey] ?? []) > 1
-            ) {
+            // Several native keys folded into one generic key with no contract
+            // saying how to combine them: leave the raw value alone.
+            if (!$supportsMultiple && count($stored['nativeKeysPerGeneric'][$genericKey] ?? []) > 1) {
                 continue;
             }
 
-            foreach ($capabilities as $section => &$sectionCaps) {
-                if (array_key_exists($genericKey, $sectionCaps)) {
-                    if ($hasContract) {
-                        $sectionCaps[$genericKey] = $this->capabilityRegistry->responseEntry(
-                            $protocol,
-                            $genericKey,
-                            (string)($nativeKeyForGeneric[$genericKey] ?? ''),
-                            $sectionCaps[$genericKey],
-                            $metaData,
-                        );
-                    } else {
-                        $sectionCaps[$genericKey] = [
-                            'value' => $sectionCaps[$genericKey],
-                            '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $metaData),
-                        ];
-                    }
-                    break;
+            foreach ($capabilities as $section => $sectionCaps) {
+                if (!array_key_exists($genericKey, $sectionCaps)) {
+                    continue;
                 }
+
+                $capabilities[$section][$genericKey] = $hasContract
+                    ? $this->capabilityRegistry->responseEntry(
+                        $protocol,
+                        $genericKey,
+                        (string)($stored['nativeKeyForGeneric'][$genericKey] ?? ''),
+                        $sectionCaps[$genericKey],
+                        $metaData,
+                    )
+                    : [
+                        'value' => $sectionCaps[$genericKey],
+                        '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $metaData),
+                    ];
+                break;
             }
-            unset($sectionCaps);
         }
 
-        foreach ($capabilities as $section => $sectionCaps) {
+        return $capabilities;
+    }
+
+    /**
+     * Capabilities with a contract but no stored metadata still advertise the
+     * contract's own metadata.
+     *
+     * @param array<string, mixed> $meta
+     * @param array<string, array<string, mixed>> $capabilities
+     * @return array<string, mixed>
+     */
+    private function withContractFallbackMeta(array $meta, array $capabilities, string $protocol): array
+    {
+        foreach ($capabilities as $sectionCaps) {
             foreach ($sectionCaps as $genericKey => $value) {
                 if (isset($meta[$genericKey]) || !is_array($value) || !$this->capabilityRegistry->has($genericKey)) {
                     continue;
@@ -231,12 +300,26 @@ final class DeviceCapabilityPresenter
             }
         }
 
-        foreach ($capabilities as $section => &$sectionCaps) {
+        return $meta;
+    }
+
+    /**
+     * Wraps whatever is still a bare value, which is everything seeded from
+     * defaults rather than from a stored row.
+     *
+     * @param array<string, array<string, mixed>> $capabilities
+     * @param array<string, mixed> $meta
+     * @param array<string, string> $nativeKeyForGeneric
+     * @return array<string, array<string, mixed>>
+     */
+    private function wrapRemainingEntries(array $capabilities, array $meta, array $nativeKeyForGeneric, string $protocol): array
+    {
+        foreach ($capabilities as $section => $sectionCaps) {
             if ($section === 'telemetry') {
                 continue;
             }
 
-            foreach ($sectionCaps as $genericKey => &$value) {
+            foreach ($sectionCaps as $genericKey => $value) {
                 if (
                     !is_array($value)
                     || (array_key_exists('value', $value) && array_key_exists('_meta', $value))
@@ -244,47 +327,66 @@ final class DeviceCapabilityPresenter
                     continue;
                 }
 
-                if ($this->capabilityRegistry->has($genericKey)) {
-                    if (!$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)) {
-                        continue;
-                    }
-                    $value = $this->capabilityRegistry->responseEntry(
-                        $protocol,
-                        $genericKey,
-                        (string)($nativeKeyForGeneric[$genericKey] ?? ''),
-                        $value,
-                        $meta[$genericKey] ?? [],
-                    );
-                } else {
-                    $value = [
+                if (!$this->capabilityRegistry->has($genericKey)) {
+                    $capabilities[$section][$genericKey] = [
                         'value' => $value,
                         '_meta' => $this->enrichCapabilityMeta($genericKey, $protocol, $meta[$genericKey] ?? []),
                     ];
-                }
-            }
-            unset($value);
-        }
-        unset($sectionCaps);
-
-        if ($deviceType === 'ncs') {
-            foreach ($matrix as $section => $sectionMatrix) {
-                if ($section === 'telemetry') {
                     continue;
                 }
 
-                foreach ($sectionMatrix as $genericKey => $supported) {
-                    if (!$supported || array_key_exists($genericKey, $capabilities[$section] ?? [])) {
-                        continue;
-                    }
-
-                    $capabilities[$section][$genericKey] = [
-                        'supported' => true,
-                    ];
+                if (!$this->capabilityRegistry->supportsProtocol($genericKey, $protocol)) {
+                    continue;
                 }
+
+                $capabilities[$section][$genericKey] = $this->capabilityRegistry->responseEntry(
+                    $protocol,
+                    $genericKey,
+                    (string)($nativeKeyForGeneric[$genericKey] ?? ''),
+                    $value,
+                    $meta[$genericKey] ?? [],
+                );
             }
         }
 
         return $capabilities;
+    }
+
+    /**
+     * NCS devices expose capabilities the hub cannot configure, so a supported
+     * capability with no configuration entry is still advertised.
+     *
+     * @param array<string, array<string, mixed>> $capabilities
+     * @param array<string, array<string, bool>> $matrix
+     * @return array<string, array<string, mixed>>
+     */
+    private function markSupportedWithoutConfiguration(array $capabilities, array $matrix): array
+    {
+        foreach ($matrix as $section => $sectionMatrix) {
+            if ($section === 'telemetry') {
+                continue;
+            }
+
+            foreach ($sectionMatrix as $genericKey => $supported) {
+                if (!$supported || array_key_exists($genericKey, $capabilities[$section] ?? [])) {
+                    continue;
+                }
+
+                $capabilities[$section][$genericKey] = ['supported' => true];
+            }
+        }
+
+        return $capabilities;
+    }
+
+    /**
+     * A capability with a contract is only served for protocols its contract
+     * supports; one without a contract is always allowed.
+     */
+    private function contractAllowsProtocol(string $genericKey, string $protocol): bool
+    {
+        return !$this->capabilityRegistry->has($genericKey)
+            || $this->capabilityRegistry->supportsProtocol($genericKey, $protocol);
     }
 
     private function defaultCapabilityEntry(string $protocol, string $genericKey): array
@@ -301,7 +403,7 @@ final class DeviceCapabilityPresenter
 
         $desired = $this->capabilityRegistry->defaultValue($protocol, $genericKey);
         if ($desired === [] && !$this->capabilityRegistry->has($genericKey)) {
-            $desired = $this->defaultDesiredPayloadForConfigEntry($entry);
+            $desired = ConfigurationInputDefaults::forEntry($entry);
         }
 
         $value = $this->capabilityRegistry->has($genericKey)
@@ -332,65 +434,6 @@ final class DeviceCapabilityPresenter
         }
 
         return null;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function defaultDesiredPayloadForConfigEntry(array $entry): array
-    {
-        $input = (string)($entry['input'] ?? 'json');
-        $field = static fn(int $index = 0): string => (string)($entry['fields'][$index] ?? '');
-
-        return match ($input) {
-            'toggle' => [($field(0) ?: 'enabled') => true],
-            'number' => [($field(0) ?: 'value') => 0],
-            'phone' => [($field(0) ?: 'phone') => ''],
-            'text' => [($field(0) ?: 'value') => ''],
-            'pushMessage' => ['message' => ''],
-            'makeCall' => ['phone' => ''],
-            'resetAction', 'requestAction' => [],
-            'intervalToggle' => ['enabled' => true, 'intervalMinutes' => 60],
-            'intervalHoursToggle' => ['enabled' => true, 'intervalHours' => 2],
-            'workingMode' => ['mode' => 1],
-            'bloodPressure' => ['systolic' => 120, 'diastolic' => 80],
-            'wonlexBloodPressureWarning' => ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
-            'languageTimezone' => ['language' => 0, 'timeZone' => '0'],
-            'dualToggle' => ['enabled' => true, 'callCenterOnFall' => false],
-            'fallSensitivityLevels' => ['sensitivity' => 5, 'levels' => 8],
-            'timeRanges' => ['ranges' => ['08:10-09:30']],
-            'timeRange' => ['range' => '21:10-07:30'],
-            'wonlexSleepSettings' => [
-                'switchState' => true,
-                'sleepStartTime' => '220000',
-                'sleepEndTime' => '100000',
-                'sleepTarget' => 480,
-            ],
-            'wonlexReminderThreshold' => ['switchState' => true, ($field(1) ?: 'reminderValue') => 90],
-            'wonlexHeartRateRange' => [
-                'switchState' => true,
-                'remindValue' => 120,
-                'exerciseSwitchState' => true,
-                'exerciseHRMin' => 100,
-                'exerciseHRMax' => 140,
-                'exerciseRemindValue' => 140,
-            ],
-            'list' => ['numbers' => array_fill(0, max(1, (int)($entry['limit'] ?? 3)), '')],
-            'contacts' => ['contacts' => [['name' => '', 'phone' => '']]],
-            'takePills' => [
-                'reminderSettings' => [
-                    ['time' => '08:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '09:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                    ['time' => '10:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
-                ],
-                'number' => 1,
-                'reminderText' => '',
-                'voiceData' => '',
-                'voiceMimeType' => 'audio/webm',
-            ],
-            'soundProfile' => ['mode' => 1],
-            default => [],
-        };
     }
 
     /**
@@ -449,132 +492,6 @@ final class DeviceCapabilityPresenter
         return $telemetry;
     }
 
-    /**
-     * @param array<string, mixed> $capabilities
-     * @return array<string, mixed>
-     */
-    public function flattenWritableCapabilities(string $protocol, array $capabilities): array
-    {
-        $flattened = [];
-        foreach ($capabilities as $section => $entries) {
-            if ($section === 'telemetry' || !is_array($entries)) {
-                continue;
-            }
-            foreach ($entries as $key => $value) {
-                if (is_array($value) && array_key_exists('supported', $value) && !array_key_exists('value', $value)) {
-                    continue;
-                }
-                $flattened["{$section}.{$key}"] = $this->publicConfigurationValueForGenericKey(
-                    $protocol,
-                    $key,
-                    $this->extractCapabilityValue($value)
-                );
-            }
-        }
-
-        return $flattened;
-    }
-
-    private function extractCapabilityValue(mixed $value): mixed
-    {
-        if (is_array($value) && array_key_exists('value', $value)) {
-            return $value['value'];
-        }
-        if (is_array($value) && array_key_exists('items', $value) && array_key_exists('_meta', $value)) {
-            return $value['items'];
-        }
-
-        return $value;
-    }
-
-    public function capabilityValuesEqual(mixed $left, mixed $right): bool
-    {
-        return $this->normalizeComparableValue($left) === $this->normalizeComparableValue($right);
-    }
-
-
-    /**
-     * @param list<array<string, mixed>> $configRows
-     * @return array<string, array{updated_at: string, last_status: string, last_command_id: string}>
-     */
-    public function genericCapabilityRowMeta(array $configRows): array
-    {
-        $meta = [];
-        foreach ($configRows as $row) {
-            $nativeKey = $this->storedNativeConfigurationKey($row);
-            if ($nativeKey === null) {
-                continue;
-            }
-            $genericKey = CapabilityCatalog::normalizeStoredCapabilityKey(
-                (string)($row['config_key'] ?? $nativeKey)
-            );
-            if ($genericKey === null) {
-                continue;
-            }
-            $updatedAt = (string)($row['desired_updated_at'] ?? '');
-            $lastStatus = (string)($row['last_status'] ?? '');
-            $existing = $meta[$genericKey] ?? null;
-            $isNewer = $existing === null
-                || strcmp($updatedAt, (string)$existing['updated_at']) > 0;
-            $sameUpdateWithStrongerStatus = $existing !== null
-                && $updatedAt === (string)$existing['updated_at']
-                && $this->configurationStatusPriority($lastStatus)
-                    > $this->configurationStatusPriority((string)$existing['last_status']);
-            if ($isNewer || $sameUpdateWithStrongerStatus) {
-                $meta[$genericKey] = [
-                    'updated_at' => $updatedAt,
-                    'last_status' => $lastStatus,
-                    'last_command_id' => (string)($row['last_command_id'] ?? ''),
-                ];
-            }
-        }
-
-        return $meta;
-    }
-
-    private function configurationStatusPriority(string $status): int
-    {
-        if ($this->pendingFailureCode($status) !== '') {
-            return 3;
-        }
-        if (in_array($status, ['queued', 'waiting', 'sent'], true)) {
-            return 2;
-        }
-        if ($status === 'acked') {
-            return 1;
-        }
-
-        return 0;
-    }
-
-    public function pendingStatus(string $lastStatus, bool $reportedExists): string
-    {
-        if ($this->pendingFailureCode($lastStatus) !== '') {
-            return 'failed';
-        }
-        if (!$reportedExists) {
-            if ($lastStatus === 'acked') {
-                return 'applied';
-            }
-            return in_array($lastStatus, ['queued', 'waiting', 'sent'], true)
-                ? 'waiting_device'
-                : 'never_reported';
-        }
-
-        return 'diverged';
-    }
-
-    public function pendingFailureCode(string $lastStatus): string
-    {
-        return in_array($lastStatus, [
-            'failed',
-            'dropped',
-            'delivery_failed',
-            'retry_exhausted',
-            'response_timeout',
-        ], true) ? $lastStatus : '';
-    }
-
     public function normalizeCapabilityValue(
         string $protocol,
         string $genericKey,
@@ -585,130 +502,10 @@ final class DeviceCapabilityPresenter
         return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired, $protocol);
     }
 
-    private function publicConfigurationValueForGenericKey(string $protocol, string $genericKey, mixed $value): mixed
-    {
-        return match ($genericKey) {
-            'sos_contacts' => is_array($value)
-                ? $this->stringifyPhoneList($value)
-                : [],
-            'call_whitelist' => is_array($value)
-                ? $this->stringifyCallWhitelistValue($protocol, $value)
-                : $value,
-            default => $value,
-        };
-    }
-
     /**
      * @param array<string|int, mixed> $value
      * @return mixed
      */
-
-    /**
-     * @param array<string|int, mixed> $value
-     * @return mixed
-     */
-    private function stringifyCallWhitelistValue(string $protocol, array $value): mixed
-    {
-        if ($protocol === 'vivistar-iw') {
-            $normalize = self::normalizePublicContactItem(...);
-            if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
-                return array_values(array_filter(array_map(
-                    $normalize,
-                    $value['contacts']
-                )));
-            }
-
-            if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
-                return array_values(array_filter(array_map(
-                    static fn(mixed $phone): ?array => $normalize(['phone' => $phone]),
-                    $value['numbers']
-                )));
-            }
-
-            if (array_is_list($value)) {
-                if ($value !== [] && is_array($value[0] ?? null)) {
-                    return array_values(array_filter(array_map(
-                        $normalize,
-                        $value
-                    )));
-                }
-
-                return array_values(array_filter(array_map(
-                    static fn(mixed $phone): ?array => $normalize(['phone' => $phone]),
-                    $value
-                )));
-            }
-
-            return $value;
-        }
-
-        if (array_key_exists('numbers', $value) && is_array($value['numbers'])) {
-            return self::stringList($value['numbers']);
-        }
-
-        if (array_key_exists('contacts', $value) && is_array($value['contacts'])) {
-            return self::stringList(array_map(
-                static fn(mixed $contact): string => self::normalizePublicContactPhone($contact),
-                $value['contacts']
-            ));
-        }
-
-        if (!array_is_list($value)) {
-            if (array_key_exists('phone', $value)) {
-                return self::stringList([(string)$value['phone']]);
-            }
-
-            return $value;
-        }
-
-        if ($value !== [] && is_array($value[0] ?? null)) {
-            return self::stringList(array_map(
-                static fn(mixed $contact): string => self::normalizePublicContactPhone($contact),
-                $value
-            ));
-        }
-
-        return self::stringList($value);
-    }
-
-    /**
-     * @param mixed $item
-     * @return array{name: string, phone: string}|null
-     */
-    private static function normalizePublicContactItem(mixed $item): ?array
-    {
-        if (!is_array($item)) {
-            $phone = trim((string)$item);
-            if ($phone === '') {
-                return null;
-            }
-
-            return ['name' => '', 'phone' => $phone];
-        }
-
-        $name = trim((string)($item['name'] ?? ''));
-        $phone = trim((string)($item['phone'] ?? ''));
-        if ($name === '' && $phone === '') {
-            return null;
-        }
-        if ($phone === '') {
-            return null;
-        }
-
-        return ['name' => $name, 'phone' => $phone];
-    }
-
-    /**
-     * @param mixed $item
-     */
-    private static function normalizePublicContactPhone(mixed $item): string
-    {
-        if (is_array($item)) {
-            return trim((string)($item['phone'] ?? ''));
-        }
-
-        return trim((string)$item);
-    }
 
     /**
      * @param array<string, mixed> $metaData

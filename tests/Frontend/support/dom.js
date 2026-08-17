@@ -19,7 +19,9 @@ export function configSection(renderConfigInputs, entry, desired = {}, meta = {}
     const input = entry.input || "json";
     const html = renderConfigInputs(entry, desired, meta);
 
+    // data-config-protocol matters: some readers branch on it, so a section
+    // without it silently exercises the wrong path.
     return parseFragment(
-        `<section data-config-input="${input}" data-config-limit="${entry.limit ?? ""}">${html}</section>`
+        `<section data-config-input="${input}" data-config-protocol="${meta.protocol ?? ""}" data-config-limit="${entry.limit ?? ""}">${html}</section>`
     ).firstElementChild;
 }

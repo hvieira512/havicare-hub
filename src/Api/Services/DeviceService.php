@@ -30,6 +30,7 @@ class DeviceService
     private DeviceConfigurationQueryService $configurationQueries;
     private DeviceAssociationService $associations;
     private DeviceCapabilityPresenter $capabilities;
+    private ConfigurationSyncStatus $configurationSync;
     private DeviceDirectory $directory;
     private DeviceFeatureRequestService $featureRequests;
 
@@ -63,6 +64,7 @@ class DeviceService
         // Built here rather than injected: it is a projection of the same
         // registry and database this service already holds.
         $this->capabilities = new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
+        $this->configurationSync = new ConfigurationSyncStatus();
         $this->directory = new DeviceDirectory($this->store, $this->whitelist, $this->db);
         $this->featureRequests = new DeviceFeatureRequestService(
             $this->store,
@@ -624,32 +626,12 @@ class DeviceService
             'reported_payload',
             false
         );
-        $desiredValues = $this->capabilities->flattenWritableCapabilities($protocol, $desiredCapabilities);
-        $reportedValues = $this->capabilities->flattenWritableCapabilities($protocol, $reportedCapabilities);
-        $rowMeta = $this->capabilities->genericCapabilityRowMeta($configRows);
-        $pending = [];
-
-        foreach ($desiredValues as $path => $desiredValue) {
-            $reportedExists = array_key_exists($path, $reportedValues);
-            $reportedValue = $reportedExists ? $reportedValues[$path] : null;
-            if ($reportedExists && $this->capabilities->capabilityValuesEqual($desiredValue, $reportedValue)) {
-                continue;
-            }
-
-            [$section, $key] = explode('.', $path, 2);
-            $meta = $rowMeta[$key] ?? [];
-            $lastStatus = (string)($meta['last_status'] ?? '');
-            $pending[$section][$key] = [
-                'status' => $this->capabilities->pendingStatus($lastStatus, $reportedExists),
-                'error' => $this->capabilities->pendingFailureCode($lastStatus),
-                'desired' => $desiredValue,
-                'reported' => $reportedValue,
-                'updatedAt' => $meta['updated_at'] ?? '',
-                'lastCommandId' => $meta['last_command_id'] ?? '',
-            ];
-        }
-
-        return $pending;
+        return $this->configurationSync->pendingEntries(
+            $protocol,
+            $desiredCapabilities,
+            $reportedCapabilities,
+            $configRows,
+        );
     }
 
     /**
