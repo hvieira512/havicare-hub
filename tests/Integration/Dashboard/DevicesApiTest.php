@@ -3094,6 +3094,29 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $api->links('d48c49f7909c')['data'] ?? null);
     }
 
+    public function testDeviceGroupedRoutesCanLinkGatewayAndBracelet(): void
+    {
+        [$api] = $this->makeApi();
+        foreach ([
+            ['imei' => 'c5e390f30bce', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
+            ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6R'],
+            ['imei' => '861265061009823', 'supplier' => 'Vivistar', 'model' => 'L08 Pro'],
+        ] as $device) {
+            $result = $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
+            self::assertSame('ok', $result['status'] ?? null);
+        }
+
+        self::assertSame('ok', $api->createLink('c5e390f30bce', 'fbd87c59ba8b')['status'] ?? null);
+        self::assertSame('bracelet', $api->links('c5e390f30bce')['data'][0]['deviceType'] ?? null);
+
+        // Um relogio nao e relaido por BLE, por isso continua a ser recusado.
+        $invalid = $api->createLink('c5e390f30bce', '861265061009823');
+        self::assertSame('invalid_link', $invalid['error']['code'] ?? null);
+
+        self::assertSame('ok', $api->deleteLink('c5e390f30bce', 'fbd87c59ba8b')['status'] ?? null);
+        self::assertSame([], $api->links('c5e390f30bce')['data'] ?? null);
+    }
+
     /**
      * @return array{0: DeviceService, 1: ApiDataAccess, 2: DashboardStore}
      */

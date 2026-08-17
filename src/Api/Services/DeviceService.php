@@ -19,6 +19,9 @@ use Hub\Registry\Whitelist;
 
 class DeviceService
 {
+    /** Device types a gateway relays over BLE. Mirrors GATEWAY_LINKED_DEVICE_TYPES in dashboard/domain.js. */
+    private const GATEWAY_LINKED_DEVICE_TYPES = ['diaper_sensor', 'bracelet'];
+
     private CollectionQuery $query;
     private DevicePresentation $presentation;
     private DeviceResponseCompactor $responseCompactor;
@@ -198,8 +201,8 @@ class DeviceService
         if ($gateway === null || $linked === null || !$this->directory->canAccessDevice($imei, $auth) || !$this->directory->canAccessDevice($linkedImei, $auth)) {
             return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
         }
-        if (($gateway['deviceType'] ?? '') !== 'gateway' || ($linked['deviceType'] ?? '') !== 'diaper_sensor') {
-            return ['error' => ['code' => 'invalid_link', 'message' => 'A gateway can only link to a diaper sensor']];
+        if (($gateway['deviceType'] ?? '') !== 'gateway' || !in_array($linked['deviceType'] ?? '', self::GATEWAY_LINKED_DEVICE_TYPES, true)) {
+            return ['error' => ['code' => 'invalid_link', 'message' => 'A gateway can only link to a diaper sensor or a bracelet']];
         }
         if (
             (string)($gateway['company'] ?? 'null') !== (string)($linked['company'] ?? 'null')
