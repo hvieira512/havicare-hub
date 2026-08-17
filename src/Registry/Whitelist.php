@@ -93,16 +93,6 @@ class Whitelist
         return $this->getMetadata($imei) !== null;
     }
 
-    public function getModel(string $imei): ?string
-    {
-        return $this->getMetadata($imei)['model'] ?? null;
-    }
-
-    public function getSupplier(string $imei): ?string
-    {
-        return $this->getMetadata($imei)['supplier'] ?? null;
-    }
-
     public function getMetadata(string $imei): ?array
     {
         if ($this->db !== null) {

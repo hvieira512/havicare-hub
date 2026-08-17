@@ -305,11 +305,6 @@ class DeviceService
         ];
     }
 
-    public function saveConfiguration(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
-    {
-        return $this->updateConfigurations($imei, $body, $auth, $requestId);
-    }
-
     public function create(string $body): array
     {
         $decoded = json_decode($body, true);

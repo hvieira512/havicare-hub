@@ -28,16 +28,6 @@ trait CapabilityHelpers
         return $normalized;
     }
 
-    /** @return list<string> */
-    public static function requireStringListValue(mixed $value, string $field): array
-    {
-        if (!is_array($value)) {
-            throw new \InvalidArgumentException("{$field} must be an array");
-        }
-
-        return self::stringList($value);
-    }
-
     /**
      * @return list<string>
      */
@@ -176,14 +166,6 @@ trait CapabilityHelpers
         $incomingList = is_array($incoming) ? array_values($incoming) : [];
 
         return array_values(array_merge($existingList, $incomingList));
-    }
-
-    public static function mergeStringLists(mixed $existing, mixed $incoming): array
-    {
-        return self::stringList(array_merge(
-            is_array($existing) ? $existing : [],
-            is_array($incoming) ? $incoming : [],
-        ));
     }
 
     protected function stringifyPhoneList(array $value): mixed

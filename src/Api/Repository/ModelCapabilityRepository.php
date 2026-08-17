@@ -204,31 +204,6 @@ final class ModelCapabilityRepository
 
     /**
      * @param list<int|string> $capabilityIds
-     */
-    public function ensureCapabilityIdsForModelId(int $modelId, array $capabilityIds): void
-    {
-        $capabilityIds = $this->normalizeCapabilityIds($modelId, $capabilityIds);
-        if ($capabilityIds === []) {
-            return;
-        }
-
-        foreach ($capabilityIds as $capabilityId) {
-            $exists = $this->pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ? AND capability_id = ?');
-            $exists->execute([$modelId, $capabilityId]);
-            if ((int)$exists->fetchColumn() > 0) {
-                continue;
-            }
-
-            $insert = $this->pdo->prepare('
-                INSERT INTO model_capabilities (model_id, capability_id, enabled)
-                VALUES (?, ?, 1)
-            ');
-            $insert->execute([$modelId, $capabilityId]);
-        }
-    }
-
-    /**
-     * @param list<int|string> $capabilityIds
      * @return list<int>
      */
     private function normalizeCapabilityIds(int $modelId, array $capabilityIds): array

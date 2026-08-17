@@ -8,16 +8,6 @@ final class LocationResponseValidator
     {
     }
 
-    public function isTrusted(array $response): bool
-    {
-        try {
-            $this->coordinates($response);
-            return true;
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
     /** @return array{hasCoordinates: true, lat: float, lon: float, accuracyMeters: float} */
     public function coordinates(array $response): array
     {

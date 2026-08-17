@@ -125,10 +125,6 @@
     --bs-dropdown-link-active-bg: #0b163f;
 }
 
-.progress {
-    --bs-progress-bar-bg: #0b163f;
-}
-
 body {
     font-family: 'Poppins', sans-serif;
 }

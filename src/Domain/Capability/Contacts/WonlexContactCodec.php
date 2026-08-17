@@ -102,15 +102,6 @@ final class WonlexContactCodec
         return $digits === '' ? '' : ($hasPlus ? '+' : '') . $digits;
     }
 
-    public static function validatePublicName(string $name): void
-    {
-        if (self::unicodeLength(trim($name)) > self::NAME_MAX_LENGTH) {
-            throw new \InvalidArgumentException(
-                'name must contain at most ' . self::NAME_MAX_LENGTH . ' characters'
-            );
-        }
-    }
-
     /**
      * @return array{0: string, 1: string}
      */
@@ -136,13 +127,4 @@ final class WonlexContactCodec
         return ['', $normalized];
     }
 
-    private static function unicodeLength(string $value): int
-    {
-        if (function_exists('mb_strlen')) {
-            return mb_strlen($value, 'UTF-8');
-        }
-
-        $count = preg_match_all('/./us', $value, $matches);
-        return $count === false ? strlen($value) : $count;
-    }
 }

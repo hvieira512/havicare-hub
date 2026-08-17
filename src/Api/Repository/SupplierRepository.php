@@ -54,31 +54,10 @@ final class SupplierRepository
         $stmt->execute([$enabled ? 1 : 0, $id]);
     }
 
-    public function rename(int $id, string $newName): void
-    {
-        $old = $this->findById($id);
-        if ($old === null) {
-            return;
-        }
-
-        $oldName = (string)($old['name'] ?? '');
-        $this->pdo->beginTransaction();
-        $this->pdo->prepare('UPDATE suppliers SET name = ? WHERE id = ?')->execute([$newName, $id]);
-        $this->pdo->prepare('UPDATE whitelist SET supplier = ? WHERE supplier = ?')->execute([$newName, $oldName]);
-        $this->pdo->commit();
-    }
-
     public function delete(int $id): void
     {
         $stmt = $this->pdo->prepare('DELETE FROM suppliers WHERE id = ?');
         $stmt->execute([$id]);
     }
 
-    public function countModels(int $id): int
-    {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM models WHERE supplier_id = ?');
-        $stmt->execute([$id]);
-
-        return (int)$stmt->fetchColumn();
-    }
 }

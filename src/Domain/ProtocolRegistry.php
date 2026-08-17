@@ -150,11 +150,6 @@ final class ProtocolRegistry
         return (string)(self::all()[trim($protocol)]['label'] ?? trim($protocol));
     }
 
-    public static function deviceTypeForProtocol(string $protocol): string
-    {
-        return (string)(self::all()[trim($protocol)]['deviceType'] ?? 'watch');
-    }
-
     /**
      * @return list<string>
      */

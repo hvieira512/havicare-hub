@@ -10,16 +10,6 @@ final class TimestampFormatter
     private const DB_FORMAT = 'Y-m-d H:i:s';
     private const ISO_FORMAT = 'Y-m-d\TH:i:s\Z';
 
-    public static function toDatabase(?string $value = null): string
-    {
-        $dateTime = self::parse($value);
-        if ($dateTime === null) {
-            return gmdate(self::DB_FORMAT);
-        }
-
-        return $dateTime->setTimezone(new DateTimeZone('UTC'))->format(self::DB_FORMAT);
-    }
-
     public static function toIso(?string $value = null): string
     {
         $dateTime = self::parse($value);

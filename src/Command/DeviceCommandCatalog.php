@@ -78,17 +78,6 @@ final class DeviceCommandCatalog
         ));
     }
 
-    public static function requestForProtocol(string $protocol, string $requestId): ?array
-    {
-        foreach (self::commandsForProtocol($protocol) as $entry) {
-            if (($entry['id'] ?? $entry['command'] ?? '') === $requestId || ($entry['command'] ?? '') === $requestId) {
-                return $entry;
-            }
-        }
-
-        return null;
-    }
-
     public static function buildDownlink(string $protocol, string $imei, string $command, array $payload = [], array $context = []): string
     {
         $entry = self::commandForProtocol($protocol, $command);

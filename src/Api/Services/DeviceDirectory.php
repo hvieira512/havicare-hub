@@ -96,18 +96,6 @@ final class DeviceDirectory
         return trim((string)($metadata['company'] ?? ''));
     }
 
-    public function scopeDevices(array $devices, ?ApiAuthContext $auth): array
-    {
-        if ($auth === null || $auth->isAdmin()) {
-            return $devices;
-        }
-
-        return array_values(array_filter(
-            $devices,
-            fn(array $device): bool => $this->canAccessDevice((string)($device['imei'] ?? ''), $auth, $device)
-        ));
-    }
-
     public function normalizeLicenseId(int|string $licenseId, string $deviceType): int
     {
         $normalized = trim($licenseId);
