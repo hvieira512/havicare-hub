@@ -23,23 +23,9 @@ final class SupplierController
         return $this->json->respond($this->service->list((string)$request->getUri()->getQuery()));
     }
 
-    public function create(ServerRequestInterface $request): Response
-    {
-        $result = $this->service->create(RequestContext::requestBody($request));
-
-        return $this->json->respond($result, $this->status->map($result));
-    }
-
     public function update(array $params, ServerRequestInterface $request): Response
     {
         $result = $this->service->update((int)$params['id'], RequestContext::requestBody($request));
-
-        return $this->json->respond($result, $this->status->map($result));
-    }
-
-    public function delete(array $params): Response
-    {
-        $result = $this->service->delete((int)$params['id']);
 
         return $this->json->respond($result, $this->status->map($result));
     }

@@ -42,11 +42,6 @@ class SupplierService
         return $this->collection->respond($suppliers, $page, $limit, $filters, $available);
     }
 
-    public function create(string $body): array
-    {
-        return ['error' => ['code' => 'read_only', 'message' => 'Suppliers are defined in code and cannot be created through the API']];
-    }
-
     public function update(int $id, string $body): array
     {
         $decoded = json_decode($body, true);
@@ -64,10 +59,5 @@ class SupplierService
         }
 
         return ['status' => 'ok'];
-    }
-
-    public function delete(int $id): array
-    {
-        return ['error' => ['code' => 'read_only', 'message' => 'Suppliers are defined in code and cannot be deleted through the API']];
     }
 }

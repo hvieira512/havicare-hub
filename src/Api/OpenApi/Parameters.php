@@ -1,0 +1,72 @@
+<?php
+
+namespace Hub\Api\OpenApi;
+
+/**
+ * Reusable OpenAPI parameter builders shared by the path definitions.
+ */
+final class Parameters
+{
+    /**
+     * Documented path parameter with a scalar schema.
+     */
+    public static function path(string $name, string $description, string $type, string|int $example): array
+    {
+        return [
+            'name' => $name,
+            'in' => 'path',
+            'required' => true,
+            'description' => $description,
+            'schema' => ['type' => $type, 'example' => $example],
+        ];
+    }
+
+    /**
+     * Path parameter carrying an explicit schema, such as an enum or a bounded integer.
+     */
+    public static function pathSchema(string $name, array $schema): array
+    {
+        return [
+            'name' => $name,
+            'in' => 'path',
+            'required' => true,
+            'schema' => $schema,
+        ];
+    }
+
+    public static function id(string $description, string $type = 'integer', string|int $example = 1): array
+    {
+        return self::path('id', $description, $type, $example);
+    }
+
+    public static function imei(): array
+    {
+        return self::path('imei', 'Device IMEI', 'string', '865028000000306');
+    }
+
+    public static function linkedImei(): array
+    {
+        return self::path('linkedImei', 'Linked device canonical key', 'string', 'eec5000202f9');
+    }
+
+    public static function query(string $name, array $schema): array
+    {
+        return ['name' => $name, 'in' => 'query', 'required' => false, 'schema' => $schema];
+    }
+
+    public static function stringQuery(string $name): array
+    {
+        return self::query($name, ['type' => 'string']);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>> page and limit query parameters
+     */
+    public static function pagination(int $defaultLimit = 20): array
+    {
+        return [
+            self::query('page', ['type' => 'integer', 'default' => 1]),
+            self::query('limit', ['type' => 'integer', 'default' => $defaultLimit]),
+        ];
+    }
+}
