@@ -52,7 +52,13 @@ final class W6rDecoder
             return null;
         }
 
-        return ['mac' => $mac] + $decoded;
+        // The gateway measures RSSI, not the beacon, so it only ever arrives on the
+        // observation. Carried through here so proximity consumers see it, exactly
+        // as MonitMecsProDecoder does for the diaper sensor.
+        return array_filter(
+            ['mac' => $mac, 'rssiDbm' => is_numeric($observation['rssi'] ?? null) ? (int)$observation['rssi'] : null] + $decoded,
+            static fn(mixed $value): bool => $value !== null,
+        );
     }
 
     /**

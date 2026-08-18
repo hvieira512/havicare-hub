@@ -24,9 +24,9 @@ final class RedisObservationStateStore implements ObservationStateStore
         return strtoupper((string)$result) === 'OK';
     }
 
-    public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds): bool
+    public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds, string $observedBy = ''): bool
     {
-        $key = "{$this->prefix}:last:{$deviceKey}:{$capability}";
+        $key = "{$this->prefix}:last:{$deviceKey}:{$capability}" . ($observedBy === '' ? '' : ":{$observedBy}");
         $fingerprint = hash('sha256', json_encode($payload['data'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '');
         $now = time();
         $stored = json_decode((string)($this->redis->get($key) ?? ''), true);

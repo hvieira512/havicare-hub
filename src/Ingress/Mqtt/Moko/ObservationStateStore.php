@@ -6,8 +6,17 @@ interface ObservationStateStore
 {
     public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool;
 
-    /** @param array<string, mixed> $payload */
-    public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds): bool;
+    /**
+     * `$observedBy` scopes the throttle to whoever made the observation. A relayed
+     * BLE device is seen by every gateway in range, and each sighting is a distinct
+     * measurement -- notably its RSSI, which differs per gateway. Without the scope
+     * the first gateway to publish suppresses the others for `$refreshSeconds` and
+     * which one wins is a race, so the reported gatewayId was effectively arbitrary.
+     * Empty for a device reporting about itself.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds, string $observedBy = ''): bool;
 
     /**
      * Returns null when the condition did not change, otherwise the transition.

@@ -262,7 +262,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ]);
 
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
-            if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds)) {
+            if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
                 continue;
             }
             $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
@@ -297,7 +297,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'protocol' => 'monit-mecs-pro-ble', 'transport' => 'ble_gateway', 'online' => '1',
         ]);
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
-            if (!$this->state->shouldPublish($sensorKey, $capability, $telemetry, $this->telemetryRefreshSeconds)) {
+            if (!$this->state->shouldPublish($sensorKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
                 continue;
             }
             $this->mqttBridge->publishTelemetry($sensorKey, $telemetry, $deviceType, $licenseId, $company);

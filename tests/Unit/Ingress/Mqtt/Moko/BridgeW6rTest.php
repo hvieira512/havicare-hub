@@ -21,14 +21,15 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 final class BridgeW6rTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';
+    private const GATEWAY2 = 'c5e390f30bce';
     private const BRACELET = 'fbd87c59ba8b';
 
     /** @param array<string, mixed> $overrides */
-    private function scanPayload(array $overrides = []): string
+    private function scanPayload(array $overrides = [], string $gateway = self::GATEWAY): string
     {
         return json_encode([
             'msg_id' => 3070,
-            'device_info' => ['mac' => self::GATEWAY],
+            'device_info' => ['mac' => $gateway],
             'data' => [$overrides + [
                 'type_code' => 7,
                 'type' => 'bxp-button',
@@ -54,6 +55,7 @@ final class BridgeW6rTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'moko-w6r-whitelist-');
         file_put_contents($path, json_encode([
             self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
+            self::GATEWAY2 => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
             self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6R', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
         ], JSON_THROW_ON_ERROR));
 
@@ -76,9 +78,9 @@ final class BridgeW6rTest extends TestCase
         );
     }
 
-    private function deliver(Bridge $bridge, string $payload): void
+    private function deliver(Bridge $bridge, string $payload, string $gateway = self::GATEWAY): void
     {
-        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . self::GATEWAY . '/raw', $payload);
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . $gateway . '/raw', $payload);
     }
 
     /**
@@ -186,5 +188,32 @@ final class BridgeW6rTest extends TestCase
         // Routing a bracelet must not stop the gateway's own raw/status output.
         self::assertNotSame([], $mqtt->raw);
         self::assertSame(self::GATEWAY, $mqtt->raw[0]['imei']);
+    }
+
+    public function testEachGatewayThatSeesTheBraceletReportsItsOwnSighting(): void
+    {
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        // Same device, same values, two gateways -- but different RSSI, because that
+        // is measured by the receiver. Throttling per device alone collapsed these
+        // into one publish and whichever gateway won the race owned the payload,
+        // which made source.gatewayId arbitrary and hid the other gateway entirely.
+        $this->deliver($bridge, $this->scanPayload(['rssi' => -82], self::GATEWAY), self::GATEWAY);
+        $this->deliver($bridge, $this->scanPayload(['rssi' => -66], self::GATEWAY2), self::GATEWAY2);
+
+        $motion = array_values(array_filter(
+            $this->forBracelet($mqtt->telemetry),
+            static fn(array $entry): bool => $entry['type'] === 'motion',
+        ));
+        self::assertCount(2, $motion);
+        self::assertSame(
+            [self::GATEWAY, self::GATEWAY2],
+            array_map(static fn(array $e): string => $e['payload']['source']['gatewayId'], $motion),
+        );
+        self::assertSame([-82, -66], array_map(
+            static fn(array $e): int => $e['payload']['source']['rssiDbm'],
+            $motion,
+        ));
     }
 }

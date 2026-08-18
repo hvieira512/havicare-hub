@@ -18,9 +18,9 @@ final class ArrayObservationStateStore implements ObservationStateStore
         return true;
     }
 
-    public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds): bool
+    public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds, string $observedBy = ''): bool
     {
-        $key = $deviceKey . ':' . $capability;
+        $key = $deviceKey . ':' . $capability . ':' . $observedBy;
         $fingerprint = hash('sha256', json_encode($payload['data'] ?? []) ?: '');
         $stored = $this->published[$key] ?? null;
         if (is_array($stored) && $stored['fingerprint'] === $fingerprint && time() - $stored['publishedAt'] < max(1, $refreshSeconds)) {

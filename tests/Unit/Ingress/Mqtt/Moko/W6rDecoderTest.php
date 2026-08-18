@@ -65,6 +65,21 @@ final class W6rDecoderTest extends TestCase
         self::assertSame('000001', $decoded['alarm']['deviceId']);
     }
 
+    public function testCarriesTheGatewayMeasuredRssiThrough(): void
+    {
+        // Proximity work needs this: only the gateway can measure it, so it exists
+        // on the observation and nowhere in the advertisement itself.
+        self::assertSame(-82, (new W6rDecoder())->decode(self::SINGLE_PRESS)['rssiDbm'] ?? null);
+    }
+
+    public function testOmitsRssiWhenTheGatewayDidNotReportIt(): void
+    {
+        $observation = self::SINGLE_PRESS;
+        unset($observation['rssi']);
+
+        self::assertArrayNotHasKey('rssiDbm', (new W6rDecoder())->decode($observation));
+    }
+
     public function testFrameTypeIsReportedWithoutTheSpecBaseOffset(): void
     {
         // The sheet numbers the modes 0x20/0x21/0x22, the gateway 0/1/2. Each
