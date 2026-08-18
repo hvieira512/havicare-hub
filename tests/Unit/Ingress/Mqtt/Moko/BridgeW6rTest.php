@@ -106,9 +106,11 @@ final class BridgeW6rTest extends TestCase
         // The trigger count is a running total, so the first sighting is only
         // a baseline -- it must not replay the device's press history.
         self::assertSame([], array_column($this->forBracelet($mqtt->events), 'type'));
-        self::assertSame(['battery', 'motion'], array_column($this->forBracelet($mqtt->telemetry), 'type'));
-        self::assertSame(98, $this->forBracelet($mqtt->telemetry)[0]['payload']['data']['percent']);
-        self::assertSame('bracelet', $this->forBracelet($mqtt->telemetry)[0]['deviceType']);
+        // Proximity leads: it is reported per sighting, before the throttled
+        // telemetry the normalizer produces.
+        self::assertSame(['proximity', 'battery', 'motion'], array_column($this->forBracelet($mqtt->telemetry), 'type'));
+        self::assertSame(98, $this->forBracelet($mqtt->telemetry)[1]['payload']['data']['percent']);
+        self::assertSame('bracelet', $this->forBracelet($mqtt->telemetry)[1]['deviceType']);
     }
 
     public function testARisingCounterPublishesAHelpCallWithThePressType(): void

@@ -11,6 +11,15 @@ use Hub\RawPayload;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
+    /**
+     * How each relayed device type reports, keyed by device type. Needed when the
+     * signal goes quiet, because there is no observation left to read it from.
+     */
+    private const RELAYED_PROTOCOLS = [
+        'bracelet' => 'moko-w6r',
+        'diaper_sensor' => 'monit-mecs-pro-ble',
+    ];
+
     /** @var array<string, array<string, mixed>> */
     private array $onlineGateways = [];
     /** @var array<string, float> */
@@ -37,6 +46,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly ?W6rDecoder $w6rDecoder = null,
         private readonly ?W6rNormalizer $w6rNormalizer = null,
         ?callable $clock = null,
+        private readonly ?ProximityTracker $proximityTracker = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -55,10 +65,23 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private readonly GatewayDeviceLinkLookup $links;
     private readonly ObservationStateStore $state;
 
+    /**
+     * Resolved once and kept, unlike the stateless decoders above which the call
+     * sites build on demand: this one carries the sample window, so a fresh
+     * instance per sighting would see an empty window every time.
+     */
+    private ?ProximityTracker $proximity = null;
+
+    private function proximity(): ProximityTracker
+    {
+        return $this->proximity ??= $this->proximityTracker ?? new ProximityTracker();
+    }
+
     public function tick(float $timeout = 0.01): void
     {
         parent::tick($timeout);
         $this->expireIdleGateways();
+        $this->expireStaleProximity();
     }
 
     public function expireIdleGateways(): void
@@ -260,11 +283,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => 'moko-w6r', 'transport' => 'ble_gateway', 'online' => '1',
         ]);
-        $this->dashboardStore?->recordGatewaySighting(
-            $deviceKey,
-            (string)$gateway['imei'],
-            isset($decoded['rssiDbm']) ? (int)$decoded['rssiDbm'] : null,
-        );
+        $this->recordSignal($device, $gateway, 'moko-w6r', $decoded['rssiDbm'] ?? null);
 
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
@@ -277,6 +296,96 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         foreach ($normalized['events'] as $event) {
             $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
+    }
+
+    /**
+     * Report the signal between a relayed device and the gateway that heard it.
+     *
+     * Published per sighting rather than through shouldPublish(): that throttle
+     * fingerprints the telemetry data, and the signal lives outside it, so a
+     * sighting whose signal moved but whose readings did not was being dropped --
+     * leaving the client a series with holes it could not see, and no way to know
+     * its own statistics were computed on one.
+     *
+     * Not appended to the device history either. Every other telemetry is, but at
+     * roughly forty sightings a minute per pair this would bury the history list
+     * and the dashboard's telemetry table under readings nobody scrolls through.
+     *
+     * @param array<string, mixed> $device the relayed device, already authorized
+     * @param array<string, mixed> $gateway
+     */
+    private function recordSignal(array $device, array $gateway, string $protocol, mixed $rssiDbm): void
+    {
+        $deviceKey = (string)$device['imei'];
+        $gatewayKey = (string)$gateway['imei'];
+        $this->dashboardStore?->recordGatewaySighting(
+            $deviceKey,
+            $gatewayKey,
+            is_numeric($rssiDbm) ? (int)$rssiDbm : null,
+        );
+        if (!is_numeric($rssiDbm)) {
+            return;
+        }
+
+        $this->publishProximity(
+            $device,
+            $gateway,
+            $protocol,
+            $this->proximity()->record($deviceKey, $gatewayKey, (int)$rssiDbm, ($this->clock)()),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $device
+     * @param array<string, mixed> $gateway
+     * @param array<string, mixed> $data
+     */
+    private function publishProximity(array $device, array $gateway, string $protocol, array $data): void
+    {
+        $this->mqttBridge->publishTelemetry(
+            (string)$device['imei'],
+            [
+                'schemaVersion' => 2,
+                'type' => 'proximity',
+                'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+                'device' => $this->device($device),
+                'data' => ['gatewayId' => (string)$gateway['imei']] + $data,
+                'source' => array_filter([
+                    'protocol' => $protocol,
+                    'nativeType' => 'manufacturer_data',
+                    'gatewayId' => (string)$gateway['imei'],
+                    'rssiDbm' => $data['rssiDbm'] ?? null,
+                ], static fn(mixed $value): bool => $value !== null),
+            ],
+            (string)$device['deviceType'],
+            DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
+            (string)($device['company'] ?? 'null'),
+        );
+    }
+
+    /**
+     * Tell the client when a pair has gone quiet.
+     *
+     * `unknown` is not `far`: out of range, a flat battery, a gateway offline and a
+     * filter set too strictly are indistinguishable from each other and from
+     * nobody being there. Reported once per pair, so silence stays silent
+     * afterwards.
+     */
+    public function expireStaleProximity(): void
+    {
+        foreach ($this->proximity()->takeStale(($this->clock)()) as $pair) {
+            $device = $this->whitelist->resolve($pair['deviceKey']);
+            $gateway = $this->whitelist->resolve($pair['gatewayKey']);
+            if ($device === null || $gateway === null) {
+                continue;
+            }
+            $this->publishProximity(
+                $this->enrich($device),
+                $gateway,
+                self::RELAYED_PROTOCOLS[(string)($device['deviceType'] ?? '')] ?? 'moko-gateway',
+                ['state' => 'unknown', 'samples' => 0],
+            );
         }
     }
 
@@ -301,11 +410,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => 'monit-mecs-pro-ble', 'transport' => 'ble_gateway', 'online' => '1',
         ]);
-        $this->dashboardStore?->recordGatewaySighting(
-            $sensorKey,
-            (string)$gateway['imei'],
-            isset($decoded['rssiDbm']) ? (int)$decoded['rssiDbm'] : null,
-        );
+        $this->recordSignal($sensor, $gateway, 'monit-mecs-pro-ble', $decoded['rssiDbm'] ?? null);
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             if (!$this->state->shouldPublish($sensorKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
                 continue;

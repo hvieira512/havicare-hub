@@ -87,7 +87,7 @@ final class BridgeMonitAlarmTest extends TestCase
 
         self::assertSame([], $this->alarms($mqtt));
         self::assertSame(
-            ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'],
+            ['proximity', 'battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'],
             array_column($mqtt->telemetry, 'type')
         );
     }
