@@ -164,15 +164,52 @@ final class Mkgw4MessageDecoder implements MessageDecoder
                 0xa1 => $device['min_rssi'] = $this->signed($value),
                 0xa2 => $device['avg_rssi'] = $this->signed($value),
                 0xa3 => $device['scan_count'] = $this->unsigned($value),
-                default => $tlv['tag'] >= 0x0a && $tlv['tag'] < 0xa0
-                    ? $device['data_block_' . ($tlv['tag'] - 9)] = bin2hex($value)
-                    : null,
+                default => $device += $this->typedFields($device['type_code'] ?? -1, $tlv['tag'], $value),
             };
         }
         if ($device !== []) {
             $devices[] = $device;
         }
         return $devices;
+    }
+
+    /**
+     * Tags from 0x0a up mean different things per beacon type, so only the types
+     * we actually consume are named. A bxp-button is named the way a MKGW3 names
+     * the same fields -- including stripping the 0x20 frame type base -- so that
+     * W6rDecoder sees one shape regardless of which gateway relayed the button.
+     * Anything else stays an opaque data block, as before.
+     *
+     * @return array<string, mixed>
+     */
+    private function typedFields(int $typeCode, int $tag, string $value): array
+    {
+        if ($tag < 0x0a || $tag >= 0xa0) {
+            return [];
+        }
+        if ($typeCode !== 7) {
+            return ['data_block_' . ($tag - 9) => bin2hex($value)];
+        }
+
+        $number = $this->unsigned($value);
+
+        return match ($tag) {
+            0x0a => ['frame_type' => $number >= 0x20 ? $number - 0x20 : $number],
+            // Bit 0 is the password verification flag, bit 1 the alarm itself.
+            0x0b => ['passwd_verification' => $number & 0x01, 'alarm_status' => ($number & 0x02) !== 0 ? 1 : 0],
+            0x0c => ['trigger_count' => $number],
+            0x0d => ['device_id' => bin2hex($value)],
+            0x0f => ['adv_name' => $value],
+            0x12 => strlen($value) === 6 ? [
+                'x_axis_data' => $this->signed(substr($value, 0, 2)),
+                'y_axis_data' => $this->signed(substr($value, 2, 2)),
+                'z_axis_data' => $this->signed(substr($value, 4, 2)),
+            ] : [],
+            // Above 100 this field carries millivolts, below it a percentage;
+            // W6rDecoder already tells those apart.
+            0x15 => ['batt_vol' => $number],
+            default => ['data_block_' . ($tag - 9) => bin2hex($value)],
+        };
     }
 
     private function scanType(int $typeCode): string

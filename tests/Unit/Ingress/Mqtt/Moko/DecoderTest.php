@@ -10,6 +10,7 @@ use Hub\Ingress\Mqtt\Moko\Mkgw4MessageDecoder;
 use Hub\Ingress\Mqtt\Moko\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
 use Hub\Ingress\Mqtt\Moko\Topic;
+use Hub\Ingress\Mqtt\Moko\W6rDecoder;
 use PHPUnit\Framework\TestCase;
 
 final class DecoderTest extends TestCase
@@ -78,6 +79,37 @@ final class DecoderTest extends TestCase
         self::assertSame(self::ADV_DATA, $decoded['data'][0]['adv_data'] ?? null);
         self::assertSame(-83, $decoded['data'][0]['rssi'] ?? null);
         self::assertSame(87, (new MonitMecsProDecoder())->decode($decoded['data'][0])['batteryPercent'] ?? null);
+    }
+
+    /**
+     * A real 0x30A0 entry captured from MKGW4 c5e390f30bce relaying the W6R
+     * fbd87c59ba8b. A MKGW4 never sends advertising raw data for a bxp-button,
+     * only the parsed fields, so this is the only path that can reach W6rDecoder.
+     */
+    public function testDecodesMkgw4ButtonScanEntryTheSameWayAsAMkgw3(): void
+    {
+        $entry = '00000107010006fbd87c59ba8b020001010300056a83297600040001b80a0001200b000103'
+            . '0c0002012b0d00030000010e0001010f00094d4b20427574746f6e10000100110002005012'
+            . '0006fe50fd900300130002011814000100150002006116000100';
+        $decoded = (new Mkgw4MessageDecoder())->decode(bin2hex($this->mkgw4Frame('30a0', hex2bin($entry))));
+
+        $device = $decoded['data'][0] ?? [];
+        self::assertSame('bxp-button', $device['type'] ?? null);
+        self::assertSame('fbd87c59ba8b', $device['mac'] ?? null);
+        self::assertSame(-72, $device['rssi'] ?? null);
+        // 0x20 single press mode arrives with the base stripped, as a MKGW3 sends it.
+        self::assertSame(0, $device['frame_type'] ?? null);
+        self::assertSame(299, $device['trigger_count'] ?? null);
+        self::assertSame(1, $device['alarm_status'] ?? null);
+        self::assertSame('MK Button', $device['adv_name'] ?? null);
+        self::assertArrayNotHasKey('adv_data', $device);
+
+        $w6r = (new W6rDecoder())->decode($device);
+        self::assertSame('single', $w6r['alarm']['pressMode'] ?? null);
+        self::assertSame(299, $w6r['alarm']['triggerCount'] ?? null);
+        self::assertTrue($w6r['alarm']['triggered'] ?? false);
+        self::assertSame(97, $w6r['info']['batteryPercent'] ?? null);
+        self::assertSame(['x' => -432, 'y' => -624, 'z' => 768], $w6r['info']['accelerationMg'] ?? null);
     }
 
     public function testDecodesVerifiedMecsProBitstream(): void
