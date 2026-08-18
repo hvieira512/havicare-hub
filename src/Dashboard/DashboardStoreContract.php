@@ -38,6 +38,15 @@ interface DashboardStoreContract
 
     public function deviceSeen(string $imei, array $fields): void;
 
+    /**
+     * Signal strength belongs to the (device, gateway) pair, so it is recorded
+     * against the relayed device and read by both sides of the link.
+     */
+    public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void;
+
+    /** @return array<string, array<string, mixed>> gateway key => sighting */
+    public function gatewaySightings(string $deviceKey): array;
+
     public function deviceOffline(string $imei): void;
 
     public function append(string $imei, string $list, array $payload): void;

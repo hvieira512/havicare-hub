@@ -260,6 +260,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => 'moko-w6r', 'transport' => 'ble_gateway', 'online' => '1',
         ]);
+        $this->dashboardStore?->recordGatewaySighting(
+            $deviceKey,
+            (string)$gateway['imei'],
+            isset($decoded['rssiDbm']) ? (int)$decoded['rssiDbm'] : null,
+        );
 
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
@@ -296,6 +301,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => 'monit-mecs-pro-ble', 'transport' => 'ble_gateway', 'online' => '1',
         ]);
+        $this->dashboardStore?->recordGatewaySighting(
+            $sensorKey,
+            (string)$gateway['imei'],
+            isset($decoded['rssiDbm']) ? (int)$decoded['rssiDbm'] : null,
+        );
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             if (!$this->state->shouldPublish($sensorKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
                 continue;

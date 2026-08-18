@@ -7,7 +7,8 @@ import {esc} from "../format.js";
 import {state} from "../state.js";
 import {linksToGateway, normalizeDeviceType} from "./list-detail.js";
 import {eligibleGateways, gatewayLinkChanges} from "./gateway-links.js";
-import {gatewaySignals, signalLabel} from "./gateway-signal.js";
+import {disposeTooltips, refreshTooltips} from "../core/tooltips.js";
+import {linkSignal, signalMeter} from "./gateway-signal.js";
 
 /**
  * The gateway-link picker in the device modal: which gateways a sensor may
@@ -99,15 +100,17 @@ function gatewayCardMarkup(gateway, checked, signal = null) {
         <span class="gateway-card-text">
             <span class="gateway-card-mac">${esc(key)}</span>
             <span class="gateway-card-model">${esc(model || "Modelo desconhecido")}</span>
-            <span class="gateway-card-signal ${signal ? "text-body" : "text-secondary"}">${esc(signalLabel(signal))}</span>
         </span>
+        ${signalMeter(signal)}
     </label>`;
 }
 
 /**
- * Signals come from the sensor's own telemetry, so they only apply while the
- * modal is editing the device that is currently selected in the detail view.
- * Editing anything else shows no signal rather than another device's.
+ * Signals ride on the sensor's own link rows, so they only apply while the modal
+ * is editing the device that is currently selected in the detail view. Editing
+ * anything else shows no signal rather than another device's.
+ *
+ * @returns {Map<string, {rssiDbm: number, at: string}>} keyed by gateway MAC
  */
 function signalsForEditedDevice() {
     const editing = String(els.deviceImei?.value || "").trim().toLowerCase();
@@ -116,7 +119,14 @@ function signalsForEditedDevice() {
     ).trim().toLowerCase();
     if (!editing || editing !== selected) return new Map();
 
-    return gatewaySignals(state.selectedDetail?.recent?.telemetry || []);
+    const signals = new Map();
+    for (const linked of state.selectedDetail?.linkedDevices || []) {
+        const signal = linkSignal(linked);
+        const key = String(linked.deviceKey || "").trim().toLowerCase();
+        if (key && signal) signals.set(key, signal);
+    }
+
+    return signals;
 }
 
 function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") {
@@ -126,6 +136,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
     const selected = new Set(
         selectedKeys.map((key) => String(key || "").trim().toLowerCase()),
     );
+    disposeTooltips(list);
     if (gateways.length === 0) {
         list.innerHTML = emptyText
             ? `<p class="gateway-picker-empty small text-secondary mb-0">${esc(emptyText)}</p>`
@@ -143,6 +154,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
             })
             .join("");
     }
+    refreshTooltips(list);
     state.deviceModal.gatewayOptions = gateways;
     updateGatewayLinkSelection();
 }

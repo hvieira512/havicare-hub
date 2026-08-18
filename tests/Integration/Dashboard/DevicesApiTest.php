@@ -3117,6 +3117,40 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame([], $api->links('c5e390f30bce')['data'] ?? null);
     }
 
+    public function testBothSidesOfALinkSeeTheSignalThatPairWasHeardOn(): void
+    {
+        [$api, , $store] = $this->makeApi();
+        foreach ([
+            ['imei' => 'c5e390f30bce', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
+            ['imei' => 'dc1603ecf1f7', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
+            ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6R'],
+        ] as $device) {
+            $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
+        }
+        $api->createLink('c5e390f30bce', 'fbd87c59ba8b');
+        $api->createLink('dc1603ecf1f7', 'fbd87c59ba8b');
+
+        // Only one of the two gateways ever hears the bracelet.
+        $store->recordGatewaySighting('fbd87c59ba8b', 'c5e390f30bce', -71);
+
+        $onTheBracelet = array_column($api->show('fbd87c59ba8b')['linkedDevices'], 'rssiDbm', 'deviceKey');
+        self::assertSame(-71, $onTheBracelet['c5e390f30bce'] ?? null);
+        // A gateway that never heard it must stay empty rather than read as 0 dBm,
+        // which would be the strongest signal there is.
+        self::assertArrayNotHasKey('rssiDbm', array_column(
+            $api->show('fbd87c59ba8b')['linkedDevices'],
+            null,
+            'deviceKey'
+        )['dc1603ecf1f7']);
+
+        // The same sighting, read from the gateway's own page: it is stored against
+        // the relayed device, so the link resolves it from either direction.
+        $onTheGateway = $api->show('c5e390f30bce')['linkedDevices'][0] ?? [];
+        self::assertSame('fbd87c59ba8b', $onTheGateway['deviceKey'] ?? null);
+        self::assertSame(-71, $onTheGateway['rssiDbm'] ?? null);
+        self::assertNotSame('', $onTheGateway['signalSeenAt'] ?? '');
+    }
+
     /**
      * @return array{0: DeviceService, 1: ApiDataAccess, 2: DashboardStore}
      */

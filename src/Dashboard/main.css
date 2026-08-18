@@ -381,14 +381,35 @@ body {
     white-space: nowrap;
 }
 
-/* Last signal this gateway reported for the sensor being edited. */
-.gateway-card-signal {
-    display: block;
-    font-size: .75rem;
-    line-height: 1.3;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
+/*
+ * Signal strength as four rising bars. The filled count carries the reading as
+ * well as the colour does, so the meter still reads without hue perception, and
+ * the exact dBm lives in its tooltip.
+ */
+.signal-meter {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 1rem;
+    flex-shrink: 0;
+    cursor: help;
 }
+
+.signal-meter-bar {
+    width: 3px;
+    border-radius: 1px;
+    background-color: currentColor;
+    opacity: .2;
+}
+
+.signal-meter-bar-on {
+    opacity: 1;
+}
+
+.signal-meter-bar:nth-child(1) { height: 25%; }
+.signal-meter-bar:nth-child(2) { height: 50%; }
+.signal-meter-bar:nth-child(3) { height: 75%; }
+.signal-meter-bar:nth-child(4) { height: 100%; }
 
 .diaper-strip {
     display: grid;

@@ -28,7 +28,8 @@ import {
     uplinkCardContent,
 } from "../renderers.js";
 import {clearStorageKey, saveTextStorage} from "../core/storage.js";
-import {gatewaySignalRows, gatewaySignals} from "./gateway-signal.js";
+import {disposeTooltips, refreshTooltips} from "../core/tooltips.js";
+import {gatewaySignalRows} from "./gateway-signal.js";
 
 const DETAIL_ITEM_TYPES = {
     "device.connected": () => "device.connected",
@@ -194,10 +195,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         // currently hear the device, which is the useful part.
         facts.push({
             label: "Dispositivos ligados",
-            html: gatewaySignalRows(
-                linkedDevices,
-                gatewaySignals(state.selectedDetail?.recent?.telemetry || []),
-            ),
+            html: gatewaySignalRows(linkedDevices),
             wide: true,
         });
     }
@@ -207,6 +205,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         : '<i class="fa-solid fa-microchip fa-xl text-secondary"></i>';
     els.selectedDeviceTitle.innerHTML = `<span class="rounded-circle ${device.online ? "bg-success" : "bg-danger"} d-inline-block flex-shrink-0 me-2" style="width:.75rem;height:.75rem;"></span>${esc(device.imei)}`;
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
+    disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts
         .map(
             (item) => `
@@ -217,6 +216,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     `,
         )
         .join("");
+    refreshTooltips(els.selectedDeviceFacts);
 }
 
 function allDetailItems() {
@@ -531,13 +531,13 @@ function renderRequestCards(groups, telemetry = [], events = []) {
     els.requestCardCount.textContent = totalCards
         ? `${totalCards} ações`
         : "";
-    disposeRequestGridTooltips();
+    disposeTooltips(els.requestGrid);
 
     const cards = totalCards
         ? groups.map((group) => renderRequestCardGroup(group, telemetry)).join("")
         : "";
     els.requestGrid.innerHTML = helpCalls + cards || `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
-    refreshRequestGridTooltips();
+    refreshTooltips(els.requestGrid);
 }
 
 function renderRequestCardGroup(group, telemetry = []) {
@@ -759,38 +759,6 @@ function renderConnectionTimeline(rows) {
             xAxis: dateAxis,
         }),
     );
-}
-
-function refreshRequestGridTooltips() {
-    const bootstrap = window.bootstrap;
-    if (!bootstrap?.Tooltip || !els.requestGrid) {
-        return;
-    }
-
-    els.requestGrid
-        .querySelectorAll('[data-bs-toggle="tooltip"]')
-        .forEach((element) => {
-            // The grid is rebuilt on every telemetry push, which disposes these
-            // instances. An animated tooltip queues its hide completion on the
-            // fade transition, and dispose() cannot cancel that callback -- it
-            // then runs against a nulled instance and throws. Opting out of the
-            // animation makes the hide complete synchronously, so there is
-            // nothing left pending to race with the next render.
-            bootstrap.Tooltip.getOrCreateInstance(element, {animation: false});
-        });
-}
-
-function disposeRequestGridTooltips() {
-    const bootstrap = window.bootstrap;
-    if (!bootstrap?.Tooltip || !els.requestGrid) {
-        return;
-    }
-
-    els.requestGrid
-        .querySelectorAll('[data-bs-toggle="tooltip"]')
-        .forEach((element) => {
-            bootstrap.Tooltip.getInstance(element)?.dispose();
-        });
 }
 
 function connectionTimelineData(events) {

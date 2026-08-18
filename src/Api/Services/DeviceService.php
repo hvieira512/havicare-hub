@@ -164,8 +164,42 @@ class DeviceService
             'enabledCapabilityKeys' => $modelRow !== null
                 ? $this->db->modelCapabilities->enabledFeaturesForModelId((int)($modelRow['id'] ?? 0))
                 : CapabilityCatalog::keysForProtocol($protocol),
-            'linkedDevices' => $this->db->gatewayDeviceLinks->forDevice($imei),
+            'linkedDevices' => $this->withGatewaySightings(
+                $this->db->gatewayDeviceLinks->forDevice($imei)
+            ),
         ]);
+    }
+
+    /**
+     * Adds the last signal each link was heard on.
+     *
+     * A sighting is always stored against the relayed device, so the link's own
+     * two columns resolve it from either side: a sensor's page and its gateway's
+     * page read the same record instead of each needing its own lookup.
+     *
+     * @param list<array<string, mixed>> $links
+     * @return list<array<string, mixed>>
+     */
+    private function withGatewaySightings(array $links): array
+    {
+        $byDevice = [];
+        foreach ($links as $index => $link) {
+            $relayedKey = (string)($link['linkedDeviceKey'] ?? '');
+            $gatewayKey = (string)($link['gatewayDeviceKey'] ?? '');
+            if ($relayedKey === '' || $gatewayKey === '') {
+                continue;
+            }
+            $byDevice[$relayedKey] ??= $this->store->gatewaySightings($relayedKey);
+            $sighting = $byDevice[$relayedKey][$gatewayKey] ?? null;
+            if (is_array($sighting)) {
+                $links[$index] += [
+                    'rssiDbm' => isset($sighting['rssiDbm']) ? (int)$sighting['rssiDbm'] : null,
+                    'signalSeenAt' => (string)($sighting['lastSeenAt'] ?? ''),
+                ];
+            }
+        }
+
+        return $links;
     }
 
     public function links(string $imei, ?ApiAuthContext $auth = null): array

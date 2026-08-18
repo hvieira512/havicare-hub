@@ -57,6 +57,7 @@ final class DeviceRuntimeStore
             $this->deviceListKey($imei, 'events'),
             $this->deviceListKey($imei, 'commands'),
             $this->commandHashKey($imei),
+            $this->sightingKey($imei),
         ]);
     }
 
@@ -86,6 +87,44 @@ final class DeviceRuntimeStore
             $pipe->hmset($this->deviceKey($imei), $payload);
             $pipe->zadd($this->onlineDeviceSetKey(), [$imei => $score]);
         });
+    }
+
+    /**
+     * The last time a gateway heard a relayed device, and how strongly.
+     *
+     * Always keyed by the relayed device rather than by the gateway, so both
+     * sides of a link read the same record: a sensor's page asks for its own
+     * gateways, a gateway's page asks each of its sensors.
+     *
+     * Signal strength belongs to the pair, not to either device, which is why it
+     * lives here instead of on the device hash or as a capability of its own.
+     */
+    public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void
+    {
+        if ($deviceKey === '' || $gatewayKey === '') {
+            return;
+        }
+
+        $this->redis->hset($this->sightingKey($deviceKey), $gatewayKey, json_encode(
+            array_filter(
+                ['rssiDbm' => $rssiDbm, 'lastSeenAt' => gmdate('Y-m-d\\TH:i:s\\Z')],
+                static fn(mixed $value): bool => $value !== null,
+            ),
+            JSON_THROW_ON_ERROR,
+        ));
+    }
+
+    /** @return array<string, array<string, mixed>> gateway key => sighting */
+    public function gatewaySightings(string $deviceKey): array
+    {
+        $sightings = [];
+        foreach ($this->redis->hgetall($this->sightingKey($deviceKey)) ?: [] as $gatewayKey => $encoded) {
+            $decoded = json_decode((string)$encoded, true);
+            if (is_array($decoded)) {
+                $sightings[(string)$gatewayKey] = $decoded;
+            }
+        }
+        return $sightings;
     }
 
     public function deviceOffline(string $imei): void
@@ -179,6 +218,11 @@ final class DeviceRuntimeStore
     private function deviceListKey(string $imei, string $list): string
     {
         return $this->key("device:{$imei}:{$list}");
+    }
+
+    private function sightingKey(string $imei): string
+    {
+        return $this->key("sighting:{$imei}");
     }
 
     private function commandHashKey(string $imei): string

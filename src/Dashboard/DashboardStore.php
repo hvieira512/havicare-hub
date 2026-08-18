@@ -90,6 +90,17 @@ final class DashboardStore implements DashboardStoreContract
         $this->runtime->deviceSeen($imei, $fields);
     }
 
+    public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void
+    {
+        $this->runtime->recordGatewaySighting($deviceKey, $gatewayKey, $rssiDbm);
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    public function gatewaySightings(string $deviceKey): array
+    {
+        return $this->runtime->gatewaySightings($deviceKey);
+    }
+
     public function deviceOffline(string $imei): void
     {
         $this->runtime->deviceOffline($imei);
