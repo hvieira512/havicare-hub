@@ -28,6 +28,7 @@ import {
     uplinkCardContent,
 } from "../renderers.js";
 import {clearStorageKey, saveTextStorage} from "../core/storage.js";
+import {gatewaySignalRows, gatewaySignals} from "./gateway-signal.js";
 
 const DETAIL_ITEM_TYPES = {
     "device.connected": () => "device.connected",
@@ -189,12 +190,15 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         facts.push({ label: "SIM", value: String(device.simNumber) });
     }
     if (linkedDevices.length) {
+        // A bare list of MACs said nothing about whether those gateways can
+        // currently hear the device, which is the useful part.
         facts.push({
             label: "Dispositivos ligados",
-            value: linkedDevices
-                .map((linked) => String(linked.deviceKey || ""))
-                .filter(Boolean)
-                .join(", "),
+            html: gatewaySignalRows(
+                linkedDevices,
+                gatewaySignals(state.selectedDetail?.recent?.telemetry || []),
+            ),
+            wide: true,
         });
     }
 
@@ -206,9 +210,9 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     els.selectedDeviceFacts.innerHTML = facts
         .map(
             (item) => `
-        <div class="col-6">
+        <div class="${item.wide ? "col-12" : "col-6"}">
             <dt>${esc(item.label)}</dt>
-            <dd class="text-break">${esc(item.value)}</dd>
+            <dd class="text-break">${item.html ?? esc(item.value)}</dd>
         </div>
     `,
         )

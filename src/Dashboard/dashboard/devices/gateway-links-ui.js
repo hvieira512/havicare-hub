@@ -7,6 +7,7 @@ import {esc} from "../format.js";
 import {state} from "../state.js";
 import {linksToGateway, normalizeDeviceType} from "./list-detail.js";
 import {eligibleGateways, gatewayLinkChanges} from "./gateway-links.js";
+import {gatewaySignals, signalLabel} from "./gateway-signal.js";
 
 /**
  * The gateway-link picker in the device modal: which gateways a sensor may
@@ -84,7 +85,7 @@ const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon" viewBox=
     <path d="M12 10.5v-7M8.75 6.75 12 3.5l3.25 3.25"></path>
 </svg>`;
 
-function gatewayCardMarkup(gateway, checked) {
+function gatewayCardMarkup(gateway, checked, signal = null) {
     const key = String(gateway.imei || "").trim().toLowerCase();
     const model = String(gateway.model || "").trim();
     const image = String(gateway.image || "").trim();
@@ -98,8 +99,24 @@ function gatewayCardMarkup(gateway, checked) {
         <span class="gateway-card-text">
             <span class="gateway-card-mac">${esc(key)}</span>
             <span class="gateway-card-model">${esc(model || "Modelo desconhecido")}</span>
+            <span class="gateway-card-signal ${signal ? "text-body" : "text-secondary"}">${esc(signalLabel(signal))}</span>
         </span>
     </label>`;
+}
+
+/**
+ * Signals come from the sensor's own telemetry, so they only apply while the
+ * modal is editing the device that is currently selected in the detail view.
+ * Editing anything else shows no signal rather than another device's.
+ */
+function signalsForEditedDevice() {
+    const editing = String(els.deviceImei?.value || "").trim().toLowerCase();
+    const selected = String(
+        state.selectedDetail?.device?.imei || "",
+    ).trim().toLowerCase();
+    if (!editing || editing !== selected) return new Map();
+
+    return gatewaySignals(state.selectedDetail?.recent?.telemetry || []);
 }
 
 function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") {
@@ -114,11 +131,16 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
             ? `<p class="gateway-picker-empty small text-secondary mb-0">${esc(emptyText)}</p>`
             : "";
     } else {
+        const signals = signalsForEditedDevice();
         list.innerHTML = gateways
-            .map((gateway) => gatewayCardMarkup(
-                gateway,
-                selected.has(String(gateway.imei || "").trim().toLowerCase()),
-            ))
+            .map((gateway) => {
+                const key = String(gateway.imei || "").trim().toLowerCase();
+                return gatewayCardMarkup(
+                    gateway,
+                    selected.has(key),
+                    signals.get(key) || null,
+                );
+            })
             .join("");
     }
     state.deviceModal.gatewayOptions = gateways;
