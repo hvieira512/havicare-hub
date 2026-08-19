@@ -108,7 +108,7 @@ final class BridgeW6rTest extends TestCase
         self::assertSame([], array_column($this->forBracelet($mqtt->events), 'type'));
         // Proximity leads: it is reported per sighting, before the throttled
         // telemetry the normalizer produces.
-        self::assertSame(['proximity', 'battery', 'motion'], array_column($this->forBracelet($mqtt->telemetry), 'type'));
+        self::assertSame(['proximity', 'battery'], array_column($this->forBracelet($mqtt->telemetry), 'type'));
         self::assertSame(98, $this->forBracelet($mqtt->telemetry)[1]['payload']['data']['percent']);
         self::assertSame('bracelet', $this->forBracelet($mqtt->telemetry)[1]['deviceType']);
     }
@@ -204,18 +204,18 @@ final class BridgeW6rTest extends TestCase
         $this->deliver($bridge, $this->scanPayload(['rssi' => -82], self::GATEWAY), self::GATEWAY);
         $this->deliver($bridge, $this->scanPayload(['rssi' => -66], self::GATEWAY2), self::GATEWAY2);
 
-        $motion = array_values(array_filter(
+        $battery = array_values(array_filter(
             $this->forBracelet($mqtt->telemetry),
-            static fn(array $entry): bool => $entry['type'] === 'motion',
+            static fn(array $entry): bool => $entry['type'] === 'battery',
         ));
-        self::assertCount(2, $motion);
+        self::assertCount(2, $battery);
         self::assertSame(
             [self::GATEWAY, self::GATEWAY2],
-            array_map(static fn(array $e): string => $e['payload']['source']['gatewayId'], $motion),
+            array_map(static fn(array $e): string => $e['payload']['source']['gatewayId'], $battery),
         );
         self::assertSame([-82, -66], array_map(
             static fn(array $e): int => $e['payload']['source']['rssiDbm'],
-            $motion,
+            $battery,
         ));
     }
 }

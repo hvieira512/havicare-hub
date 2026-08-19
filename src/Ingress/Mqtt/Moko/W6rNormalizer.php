@@ -65,19 +65,20 @@ final class W6rNormalizer
             $telemetry['battery'] = ['type' => 'battery', 'data' => ['voltageMv' => (int)$info['batteryVoltageMv']]] + $common;
         }
 
-        if (isset($info['accelerationMg']) && is_array($info['accelerationMg'])) {
-            $axes = $info['accelerationMg'];
-            $telemetry['motion'] = ['type' => 'motion', 'data' => [
-                'xMg' => (int)$axes['x'],
-                'yMg' => (int)$axes['y'],
-                'zMg' => (int)$axes['z'],
-                // Orientation-independent, so a single number is comparable
-                // across wearers and mounting positions.
-                'magnitudeMg' => (int)round(sqrt(
-                    ($axes['x'] ** 2) + ($axes['y'] ** 2) + ($axes['z'] ** 2)
-                )),
-            ]] + $common;
-        }
+        // The accelerometer in `accelerationMg` is deliberately not normalized.
+        // It arrives with every advertisement, so it published at roughly one
+        // message every two seconds -- 35k a day per bracelet -- and on a worn
+        // bracelet at rest it carries nothing: measured over a minute it held
+        // four distinct magnitudes, 1044/1048/1052/1056 mg, which is gravity
+        // plus the sensor's 4 mg resolution. The publish throttle could not
+        // suppress it either, because that noise changes the payload
+        // fingerprint on almost every reading.
+        //
+        // Nothing consumed it. Proximity alarms are decided from RSSI alone
+        // (rssiMaxDbm, rssiMedianDbm, samples), and the one use that movement
+        // would have served -- telling a worn bracelet from one left on a table
+        // near a door -- does not arise, because the bracelet is worn and the
+        // alarm is for a gateway on a gate.
 
         return $telemetry;
     }

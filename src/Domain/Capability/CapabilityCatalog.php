@@ -187,7 +187,7 @@ final class CapabilityCatalog
             'moko-mkgw3' => ['connectivity'],
             'moko-mkgw4' => ['connectivity', 'battery', 'location'],
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'],
-            'moko-w6r' => ['battery', 'motion'],
+            'moko-w6r' => ['battery'],
             default => [],
         };
     }

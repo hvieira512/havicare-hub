@@ -120,7 +120,14 @@ final class W6rNormalizerTest extends TestCase
         self::assertSame([], $result['events']);
     }
 
-    public function testBatteryAndMotionBecomeTelemetry(): void
+    /**
+     * The accelerometer is present in the advertisement and deliberately dropped.
+     * It published every couple of seconds carrying nothing but gravity and the
+     * sensor's 4 mg of noise, and nothing consumed it: proximity is decided from
+     * RSSI alone. Asserting on the input still containing `accelerationMg` is the
+     * point -- it proves the field is ignored rather than merely absent.
+     */
+    public function testBatteryBecomesTelemetryAndTheAccelerometerIsIgnored(): void
     {
         $result = (new W6rNormalizer())->normalize(
             $this->decoded('single', 5, [
@@ -132,12 +139,8 @@ final class W6rNormalizerTest extends TestCase
             previousTriggerCount: 5,
         );
 
-        self::assertSame(['battery', 'motion'], array_keys($result['telemetry']));
+        self::assertSame(['battery'], array_keys($result['telemetry']));
         self::assertSame(80, $result['telemetry']['battery']['data']['percent']);
-        self::assertSame(40, $result['telemetry']['motion']['data']['xMg']);
-        self::assertSame(-124, $result['telemetry']['motion']['data']['yMg']);
-        // sqrt(40^2 + 124^2 + 984^2) = 992.59
-        self::assertSame(993, $result['telemetry']['motion']['data']['magnitudeMg']);
     }
 
     public function testVoltageIsUsedWhenThereIsNoPercentage(): void

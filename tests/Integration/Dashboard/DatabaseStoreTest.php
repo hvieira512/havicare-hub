@@ -59,7 +59,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $w6r = $db->models->find('MOKO', 'W6R');
         self::assertIsArray($w6r);
         self::assertSame('bracelet', $w6r['device_type'] ?? null);
-        $expectedBracelet = ['battery', 'motion', 'help_call'];
+        $expectedBracelet = ['battery', 'help_call'];
         $actualBracelet = $db->modelCapabilities->enabledFeaturesForModelId((int)$w6r['id']);
         sort($expectedBracelet);
         sort($actualBracelet);

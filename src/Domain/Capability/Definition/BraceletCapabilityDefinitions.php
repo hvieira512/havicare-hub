@@ -16,7 +16,6 @@ final class BraceletCapabilityDefinitions
     {
         return [
             ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'battery', 'label' => 'Bateria', 'sortOrder' => 10, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'bracelet', 'section' => 'telemetry', 'key' => 'motion', 'label' => 'Movimento', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'bracelet', 'section' => 'alarms', 'key' => 'help_call', 'label' => 'Chamada de ajuda', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
         ];
     }
