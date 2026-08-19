@@ -235,6 +235,11 @@ const UPLINK_CARD_RENDERERS = {
         details: compactDetails(data, ["intervalMs"]),
     }),
     help_call: (data) => helpCallContent(data),
+    motion: (data) => ({
+        icon: "fa-person-running",
+        value: data?.magnitudeMg != null ? `${data.magnitudeMg} mg` : featureLabel("motion"),
+        details: compactDetails(data, ["xMg", "yMg", "zMg"]),
+    }),
     reset: () => ncsPagerContent("reset"),
     "device.connected": () => ({icon: "fa-plug-circle-check", value: "Ligado"}),
     "device.disconnected": () => ({icon: "fa-plug-circle-xmark", value: "Desligado"}),

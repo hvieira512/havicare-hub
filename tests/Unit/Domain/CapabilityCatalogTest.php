@@ -16,7 +16,7 @@ final class CapabilityCatalogTest extends TestCase
             'radar' => [4, 'b18cde2f1c1a75b44b0290c7770225f6efc486d561829ffa31ca4d584dcb0426'],
             'gateway' => [3, '0da2bdcb67a191f32fdf9ae47f0e9b9339bd49dd026d4d41e616b52ed430c07a'],
             'diaper_sensor' => [5, 'e038b3e67f7ba9ed615ce8fdb387f138af5c81c8001a1caedae1165f66b322ad'],
-            'bracelet' => [2, '8f2a6fe2d595c7697dc20672b07a148bedd984c718fe45a21c6a0108855c04cd'],
+            'bracelet' => [3, '16ca71291d05ec6c08e98d889b0bed4453725b1e6481fa5d1d02f807f76c2e28'],
         ];
 
         // A device type added without a hash here would otherwise go unguarded,

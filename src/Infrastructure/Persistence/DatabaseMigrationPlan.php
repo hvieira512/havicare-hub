@@ -35,6 +35,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026081101MigrateVivistarPho
 use Hub\Infrastructure\Persistence\Migration\Version2026081102BackfillMissingModelCapabilities;
 use Hub\Infrastructure\Persistence\Migration\Version2026081401DiaperMoistureLevelCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026081901RemoveBraceletMotionCapability;
+use Hub\Infrastructure\Persistence\Migration\Version2026081902RestoreBraceletMotionCapability;
 
 final class DatabaseMigrationPlan
 {
@@ -72,6 +73,7 @@ final class DatabaseMigrationPlan
             new Version2026081102BackfillMissingModelCapabilities(),
             new Version2026081401DiaperMoistureLevelCapability(),
             new Version2026081901RemoveBraceletMotionCapability(),
+            new Version2026081902RestoreBraceletMotionCapability(),
         ];
     }
 
