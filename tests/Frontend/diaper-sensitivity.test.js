@@ -113,6 +113,18 @@ test("os quatro perfis sao botoes e nao um select", () => {
     assert.match(pane, /btn-outline-danger[\s\S]*?more_alerts/);
 });
 
+test("as etiquetas nomeiam a sensibilidade e nao a contagem de alertas", () => {
+    // O controlo chama-se sensibilidade, portanto as opcoes tambem: "menos alertas"
+    // descrevia a consequencia e obrigava a inverter, porque sensibilidade baixa da
+    // menos alertas. Baixa/Normal/Alta e o que os relogios usam para a queda.
+    const pane = paneOf("deviceConfigPane");
+
+    assert.match(pane, /data-diaper-profile="fewer_alerts"[\s\S]*?>Baixa\s*</);
+    assert.match(pane, /data-diaper-profile="normal"[\s\S]*?>Normal\s*</);
+    assert.match(pane, /data-diaper-profile="more_alerts"[\s\S]*?>Alta\s*</);
+    assert.doesNotMatch(pane, /Menos alertas|Mais alertas/);
+});
+
 test("nada e gravado antes de haver um sensor carregado", async () => {
     // Um dispositivo novo nao passou por um GET, portanto nao houve escolha nenhuma.
     // Devolver o preset por omissao mandava um DELETE inutil a cada gravacao.
