@@ -555,6 +555,7 @@ export function renderDeviceConfigurationRoot(context) {
         disabled = false,
         activeCategory = "",
         uiByKey = {},
+        quietWhenEmpty = false,
     } = context;
     if (!protocol) {
         return emptyConfigurationState(
@@ -563,9 +564,12 @@ export function renderDeviceConfigurationRoot(context) {
     }
 
     if (!catalog.length) {
-        return emptyConfigurationState(
-            "Este protocolo não tem configurações suportadas.",
-        );
+        // Calado quando quem nos chama ja mostrou uma configuracao decidida no hub:
+        // "este protocolo não tem configurações suportadas" e verdade sobre downlinks
+        // e mentira sobre o ecra, que tem uma configuracao logo acima.
+        return quietWhenEmpty
+            ? ""
+            : emptyConfigurationState("Este protocolo não tem configurações suportadas.");
     }
 
     const rowsByKey = configurations;

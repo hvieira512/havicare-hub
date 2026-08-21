@@ -6,10 +6,12 @@ import {JSDOM} from "jsdom";
 // Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
 import "./support/browser-env.js";
 import {
+    hasDiaperSensitivity,
     initDiaperSensitivityUi,
     loadDiaperSensitivity,
     selectedDiaperSensitivity,
 } from "../../src/Dashboard/dashboard/devices/diaper-sensitivity-ui.js";
+import {renderDeviceConfigurationRoot} from "../../src/Dashboard/dashboard/config.js";
 
 /**
  * O selector de sensibilidade do medidor de fraldas.
@@ -67,12 +69,12 @@ test("o selector e irmao do painel de configuracoes e nao filho", () => {
 function harness() {
     const dom = new JSDOM(`<!doctype html><body>
         <div id="row" class="d-none">
-            <select id="profile">
-                <option value="more_alerts">Mais</option>
-                <option value="normal">Normal</option>
-                <option value="fewer_alerts">Menos</option>
-                <option value="custom">Personalizado</option>
-            </select>
+            <div id="group">
+                <button data-diaper-profile="fewer_alerts"></button>
+                <button data-diaper-profile="normal"></button>
+                <button data-diaper-profile="more_alerts"></button>
+                <button data-diaper-profile="custom"></button>
+            </div>
             <div id="custom" class="d-none">
                 <input type="number" id="range">
                 <input type="number" id="value">
@@ -82,30 +84,82 @@ function harness() {
     const d = dom.window.document;
     const els = {
         deviceDiaperSensitivityRow: d.getElementById("row"),
-        deviceDiaperSensitivityProfile: d.getElementById("profile"),
+        deviceDiaperSensitivityGroup: d.getElementById("group"),
         deviceDiaperSensitivityCustom: d.getElementById("custom"),
         deviceDiaperPollutionRange: d.getElementById("range"),
         deviceDiaperPollutionValue: d.getElementById("value"),
     };
     initDiaperSensitivityUi({els});
 
-    return els;
+    return {els, document: d};
 }
+
+function press(els, profile) {
+    els.deviceDiaperSensitivityGroup
+        .querySelector(`[data-diaper-profile="${profile}"]`)
+        .dispatchEvent(new els.deviceDiaperSensitivityGroup.ownerDocument.defaultView.MouseEvent("click", {bubbles: true}));
+}
+
+test("os quatro perfis sao botoes e nao um select", () => {
+    const pane = paneOf("deviceConfigPane");
+
+    assert.doesNotMatch(pane, /<select/, "a forma e a do grupo de botoes dos relogios");
+    for (const profile of ["fewer_alerts", "normal", "more_alerts", "custom"]) {
+        assert.match(pane, new RegExp(`data-diaper-profile="${profile}"`));
+    }
+    // Menos sensivel em verde, normal em ambar, mais sensivel em vermelho, como na
+    // sensibilidade de queda dos relogios.
+    assert.match(pane, /btn-outline-success[\s\S]*?fewer_alerts/);
+    assert.match(pane, /btn-outline-danger[\s\S]*?more_alerts/);
+});
 
 test("nada e gravado antes de haver um sensor carregado", async () => {
     // Um dispositivo novo nao passou por um GET, portanto nao houve escolha nenhuma.
     // Devolver o preset por omissao mandava um DELETE inutil a cada gravacao.
-    const els = harness();
+    const {els} = harness();
     await loadDiaperSensitivity("", "diaper_sensor");
 
     assert.equal(selectedDiaperSensitivity("diaper_sensor"), null);
-    assert.ok(els.deviceDiaperSensitivityRow.classList.contains("d-none") === false);
+    assert.equal(hasDiaperSensitivity(), false);
+    assert.equal(els.deviceDiaperSensitivityRow.classList.contains("d-none"), false);
 });
 
 test("a linha desaparece quando o dispositivo nao e um medidor de fraldas", async () => {
-    const els = harness();
+    const {els} = harness();
     await loadDiaperSensitivity("fbd87c59ba8b", "bracelet");
 
     assert.ok(els.deviceDiaperSensitivityRow.classList.contains("d-none"));
     assert.equal(selectedDiaperSensitivity("bracelet"), null);
+});
+
+test("premir personalizado revela os campos e mantem os valores", () => {
+    const {els} = harness();
+    els.deviceDiaperPollutionRange.value = "5";
+    els.deviceDiaperPollutionValue.value = "9";
+
+    press(els, "custom");
+
+    assert.equal(els.deviceDiaperSensitivityCustom.classList.contains("d-none"), false);
+    assert.equal(els.deviceDiaperPollutionRange.value, "5", "um preset escreveria por cima");
+    assert.equal(
+        els.deviceDiaperSensitivityGroup
+            .querySelector('[data-diaper-profile="custom"]')
+            .getAttribute("aria-pressed"),
+        "true",
+    );
+});
+
+test("o painel de baixo cala-se quando ha uma configuracao mostrada acima", () => {
+    // "Este protocolo nao tem configuracoes suportadas" e verdade sobre downlinks e
+    // mentira sobre o ecra, que tem a sensibilidade logo acima.
+    const context = {protocol: "monit-mecs-pro-ble", catalog: []};
+
+    assert.match(
+        renderDeviceConfigurationRoot(context),
+        /não tem configurações suportadas/,
+    );
+    assert.equal(
+        renderDeviceConfigurationRoot({...context, quietWhenEmpty: true}),
+        "",
+    );
 });

@@ -92,21 +92,29 @@ ob_start();
                 </div>
                 <div class="tab-pane fade h-100" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
                     <div id="deviceDiaperSensitivityRow" class="d-none mb-3">
-                        <label for="deviceDiaperSensitivityProfile" class="form-label">Sensibilidade dos alertas</label>
-                        <select class="form-select" id="deviceDiaperSensitivityProfile">
-                            <option value="more_alerts">Mais alertas</option>
-                            <option value="normal">Normal</option>
-                            <option value="fewer_alerts">Menos alertas</option>
-                            <option value="custom">Personalizado</option>
-                        </select>
+                        <label class="form-label form-label-sm">Sensibilidade dos alertas</label>
+                        <div class="btn-group w-100" role="group" aria-label="Sensibilidade dos alertas" id="deviceDiaperSensitivityGroup">
+                            <button type="button" class="btn btn-outline-success" data-diaper-profile="fewer_alerts" aria-pressed="false">
+                                <i class="fa-solid fa-feather-pointed me-2"></i>Menos alertas
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" data-diaper-profile="normal" aria-pressed="false">
+                                <i class="fa-solid fa-shield-heart me-2"></i>Normal
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" data-diaper-profile="more_alerts" aria-pressed="false">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>Mais alertas
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-diaper-profile="custom" aria-pressed="false">
+                                <i class="fa-solid fa-sliders me-2"></i>Personalizado
+                            </button>
+                        </div>
                         <div class="row g-2 mt-2 d-none" id="deviceDiaperSensitivityCustom">
                             <div class="col">
-                                <label for="deviceDiaperPollutionRange" class="form-label small mb-1">Canais afetados</label>
+                                <label for="deviceDiaperPollutionRange" class="form-label form-label-sm mb-1">Canais afetados</label>
                                 <input type="number" class="form-control" id="deviceDiaperPollutionRange" min="2" max="10" step="1">
                                 <div class="form-text">Quantos canais molhados obrigam a uma muda.</div>
                             </div>
                             <div class="col">
-                                <label for="deviceDiaperPollutionValue" class="form-label small mb-1">Limiar por canal</label>
+                                <label for="deviceDiaperPollutionValue" class="form-label form-label-sm mb-1">Limiar por canal</label>
                                 <input type="number" class="form-control" id="deviceDiaperPollutionValue" min="5" max="25" step="1">
                                 <div class="form-text">A partir de quanto um canal conta como molhado.</div>
                             </div>

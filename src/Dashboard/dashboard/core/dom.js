@@ -85,7 +85,7 @@ export function cacheElements() {
         deviceGatewayLinksClearBtn: document.getElementById("deviceGatewayLinksClearBtn"),
         deviceGatewayLinksHelp: document.getElementById("deviceGatewayLinksHelp"),
         deviceDiaperSensitivityRow: document.getElementById("deviceDiaperSensitivityRow"),
-        deviceDiaperSensitivityProfile: document.getElementById("deviceDiaperSensitivityProfile"),
+        deviceDiaperSensitivityGroup: document.getElementById("deviceDiaperSensitivityGroup"),
         deviceDiaperSensitivityCustom: document.getElementById("deviceDiaperSensitivityCustom"),
         deviceDiaperPollutionRange: document.getElementById("deviceDiaperPollutionRange"),
         deviceDiaperPollutionValue: document.getElementById("deviceDiaperPollutionValue"),
