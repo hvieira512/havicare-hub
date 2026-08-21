@@ -51,13 +51,47 @@ export function initDiaperSensitivityUi(context) {
         event.preventDefault();
         void save();
     });
+    els.deviceDiaperSensitivityResetBtn?.addEventListener("click", (event) => {
+        event.preventDefault();
+        // Poe no preset Normal, que e o que os sensores correm por omissao. Nao grava:
+        // muda o que esta no ecra e o Guardar ao lado e que o confirma, como qualquer
+        // botao de repor ao lado de um de submeter.
+        applyProfile("normal");
+        feedback("");
+    });
 }
 
+/**
+ * A mesma caixa de aviso das configuracoes dos relogios, e nao texto inline.
+ *
+ * Escrita aqui em vez de reutilizar o renderConfigFeedback porque esse recebe o estado
+ * de UI do painel de downlinks, que esta linha nao tem -- copia-se a forma, nao a
+ * canalizacao.
+ */
 function feedback(message, tone = "") {
     const element = els.deviceDiaperSensitivityFeedback;
     if (!element) return;
-    element.textContent = message;
-    element.className = tone === "" ? "small" : `small text-${tone}`;
+    if (message === "") {
+        element.innerHTML = "";
+        return;
+    }
+    const known = tone === "danger" || tone === "success";
+    element.innerHTML = known
+        ? `<div class="alert alert-${tone} fade show small mt-3 mb-0 py-2 px-3" role="alert">${escapeHtml(message)}</div>`
+        : `<div class="small text-secondary mt-2">${escapeHtml(message)}</div>`;
+}
+
+function escapeHtml(value) {
+    return String(value).replace(
+        /[&<>"']/g,
+        (character) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+        })[character],
+    );
 }
 
 /**
@@ -155,6 +189,7 @@ export async function loadDiaperSensitivity(imei, deviceType) {
     // Depois de escrever os valores: num perfil personalizado o applyProfile nao os
     // reescreve, e assim os que vieram da API sobrevivem.
     applyProfile(data.profile || "custom");
+    feedback("");
     loadedImei = imei;
 }
 

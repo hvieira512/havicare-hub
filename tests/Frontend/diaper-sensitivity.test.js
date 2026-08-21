@@ -80,7 +80,8 @@ function harness() {
                 <input type="number" id="value">
             </div>
             <button id="save"></button>
-            <span id="feedback"></span>
+            <button id="reset"></button>
+            <div id="feedback"></div>
         </div>
     </body>`);
     const d = dom.window.document;
@@ -91,6 +92,7 @@ function harness() {
         deviceDiaperPollutionRange: d.getElementById("range"),
         deviceDiaperPollutionValue: d.getElementById("value"),
         deviceDiaperSensitivitySaveBtn: d.getElementById("save"),
+        deviceDiaperSensitivityResetBtn: d.getElementById("reset"),
         deviceDiaperSensitivityFeedback: d.getElementById("feedback"),
     };
     initDiaperSensitivityUi({els});
@@ -203,7 +205,7 @@ test("guardar antes de o dispositivo existir explica-se em vez de falhar calado"
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     assert.match(els.deviceDiaperSensitivityFeedback.textContent, /Guarde o dispositivo/);
-    assert.match(els.deviceDiaperSensitivityFeedback.className, /text-danger/);
+    assert.match(els.deviceDiaperSensitivityFeedback.innerHTML, /alert-danger/);
 });
 
 test("mudar de perfil limpa a mensagem anterior", async () => {
@@ -214,5 +216,66 @@ test("mudar de perfil limpa a mensagem anterior", async () => {
 
     press(els, "custom");
 
-    assert.equal(els.deviceDiaperSensitivityFeedback.textContent, "");
+    assert.equal(els.deviceDiaperSensitivityFeedback.innerHTML, "");
+});
+
+test("os botoes de accao alinham ao fim, como nas configuracoes dos relogios", () => {
+    // Um botao sozinho encostado a esquerda lia-se fora do lugar ao lado das outras
+    // configuracoes, que usam justify-content-end com o de accao e o de repor.
+    const pane = paneOf("deviceConfigPane");
+    const row = pane.slice(pane.indexOf("justify-content-end"));
+
+    assert.match(pane, /d-flex justify-content-end gap-2/);
+    assert.ok(
+        row.indexOf("deviceDiaperSensitivitySaveBtn") < row.indexOf("deviceDiaperSensitivityResetBtn"),
+        "guardar antes de repor, como nos relogios",
+    );
+    assert.match(pane, /deviceDiaperSensitivityResetBtn[\s\S]*?fa-rotate-left/);
+});
+
+test("o feedback e a caixa de aviso dos relogios e nao texto inline", async () => {
+    const {els} = harness();
+    await loadDiaperSensitivity("", "diaper_sensor");
+
+    click(els.deviceDiaperSensitivitySaveBtn);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.match(els.deviceDiaperSensitivityFeedback.innerHTML, /class="alert alert-danger/);
+});
+
+test("repor poe no preset normal e limpa a mensagem", async () => {
+    const {els} = harness();
+    await loadDiaperSensitivity("", "diaper_sensor");
+    press(els, "custom");
+    els.deviceDiaperPollutionRange.value = "2";
+    els.deviceDiaperPollutionValue.value = "5";
+    click(els.deviceDiaperSensitivitySaveBtn);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.notEqual(els.deviceDiaperSensitivityFeedback.innerHTML, "");
+
+    click(els.deviceDiaperSensitivityResetBtn);
+
+    // Normal marcado, os valores do preset escritos, os campos personalizados
+    // escondidos, e a mensagem anterior limpa.
+    assert.equal(
+        els.deviceDiaperSensitivityGroup
+            .querySelector('[data-diaper-profile="normal"]')
+            .getAttribute("aria-pressed"),
+        "true",
+    );
+    assert.equal(els.deviceDiaperPollutionRange.value, "4");
+    assert.equal(els.deviceDiaperPollutionValue.value, "12");
+    assert.ok(els.deviceDiaperSensitivityCustom.classList.contains("d-none"));
+    assert.equal(els.deviceDiaperSensitivityFeedback.innerHTML, "");
+});
+
+test("repor nao grava sozinho, o guardar ao lado e que confirma", async () => {
+    // Um botao de repor ao lado de um de submeter muda o ecra e nao escreve. Escrever
+    // em silencio ao premir repor era uma alteracao de alarmes que ninguem pediu.
+    const {els} = harness();
+    await loadDiaperSensitivity("", "diaper_sensor");
+
+    click(els.deviceDiaperSensitivityResetBtn);
+
+    assert.equal(els.deviceDiaperSensitivityFeedback.innerHTML, "", "nao ha resultado de gravacao");
 });

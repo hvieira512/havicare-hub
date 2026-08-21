@@ -87,6 +87,7 @@ export function cacheElements() {
         deviceDiaperSensitivityRow: document.getElementById("deviceDiaperSensitivityRow"),
         deviceDiaperSensitivityGroup: document.getElementById("deviceDiaperSensitivityGroup"),
         deviceDiaperSensitivitySaveBtn: document.getElementById("deviceDiaperSensitivitySaveBtn"),
+        deviceDiaperSensitivityResetBtn: document.getElementById("deviceDiaperSensitivityResetBtn"),
         deviceDiaperSensitivityFeedback: document.getElementById("deviceDiaperSensitivityFeedback"),
         deviceDiaperSensitivityCustom: document.getElementById("deviceDiaperSensitivityCustom"),
         deviceDiaperPollutionRange: document.getElementById("deviceDiaperPollutionRange"),

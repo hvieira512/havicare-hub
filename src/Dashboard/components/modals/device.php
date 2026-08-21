@@ -107,6 +107,7 @@ ob_start();
                                 <i class="fa-solid fa-sliders me-2"></i>Personalizado
                             </button>
                         </div>
+                        <div class="form-text" id="deviceDiaperSensitivityHelp">Decidida no hub: o sensor apenas transmite e nada lhe é enviado. Passa a valer na leitura seguinte.</div>
                         <div class="row g-2 mt-2 d-none" id="deviceDiaperSensitivityCustom">
                             <div class="col">
                                 <label for="deviceDiaperPollutionRange" class="form-label form-label-sm mb-1">Canais afetados</label>
@@ -119,13 +120,15 @@ ob_start();
                                 <div class="form-text">A partir de quanto um canal conta como molhado.</div>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center gap-2 mt-2">
+                        <div class="d-flex justify-content-end gap-2 mt-3">
                             <button type="button" class="btn btn-primary btn-sm" id="deviceDiaperSensitivitySaveBtn">
                                 <i class="fa-solid fa-floppy-disk me-2"></i>Guardar
                             </button>
-                            <span class="small" id="deviceDiaperSensitivityFeedback" role="status" aria-live="polite"></span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="deviceDiaperSensitivityResetBtn" title="Repor" aria-label="Repor">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
                         </div>
-                        <div class="form-text" id="deviceDiaperSensitivityHelp">Decidida no hub: o sensor apenas transmite e nada lhe é enviado. Passa a valer na leitura seguinte.</div>
+                        <div id="deviceDiaperSensitivityFeedback" role="status" aria-live="polite"></div>
                     </div>
                     <div id="deviceConfigRoot"></div>
                 </div>
