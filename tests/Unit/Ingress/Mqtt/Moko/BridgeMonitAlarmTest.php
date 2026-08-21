@@ -108,7 +108,7 @@ final class BridgeMonitAlarmTest extends TestCase
         $bridge->handleReceivedMessage($this->topic(), $this->scan('three_wet'));
         self::assertCount(0, $this->alarms($mqtt), 'No preset normal isto e attention.');
 
-        $sensitivity->settings = DiaperSensitivity::PRESETS['more_alerts'];
+        $sensitivity->settings = DiaperSensitivity::PRESETS['high'];
         $bridge->handleReceivedMessage($this->topic(), $this->scan('three_wet', battery: 79));
 
         $alarms = $this->alarms($mqtt);
@@ -128,7 +128,7 @@ final class BridgeMonitAlarmTest extends TestCase
         $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
         self::assertCount(1, $this->alarms($mqtt));
 
-        $sensitivity->settings = DiaperSensitivity::PRESETS['fewer_alerts'];
+        $sensitivity->settings = DiaperSensitivity::PRESETS['low'];
         $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required', battery: 79));
         self::assertCount(1, $this->alarms($mqtt), 'Com menos alertas a mesma leitura e attention.');
 

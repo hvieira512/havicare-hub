@@ -199,9 +199,9 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheProfileNameIsDerivedFromTheValues(): void
     {
-        self::assertSame('more_alerts', DiaperSensitivity::profile(3, 7));
+        self::assertSame('high', DiaperSensitivity::profile(3, 7));
         self::assertSame('normal', DiaperSensitivity::profile(4, 12));
-        self::assertSame('fewer_alerts', DiaperSensitivity::profile(7, 15));
+        self::assertSame('low', DiaperSensitivity::profile(7, 15));
         self::assertSame('custom', DiaperSensitivity::profile(5, 9));
     }
 

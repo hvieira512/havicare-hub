@@ -434,7 +434,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         //
         // Na chave nao servia: seria fresca a primeira vez que cada par (sensor, configuracao)
         // aparecesse, mas depois lembrava-se do valor antigo. Passar de `normal` para
-        // `fewer_alerts` e voltar a `normal` reencontrava a chave antiga com
+        // `low` e voltar a `normal` reencontrava a chave antiga com
         // `change_required` la dentro, nao via transicao, e engolia o alarme.
         $transition = $this->state->transitionCondition(
             $sensorKey,

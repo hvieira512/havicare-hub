@@ -188,7 +188,7 @@ final class DeviceSchemas
                     'pollutionValue' => ['type' => 'integer', 'example' => 12],
                     'profile' => [
                         'type' => 'string',
-                        'enum' => ['more_alerts', 'normal', 'fewer_alerts', 'custom'],
+                        'enum' => ['low', 'normal', 'high', 'custom'],
                         'description' => 'Derived from the two values, never stored, so the two cannot disagree.',
                     ],
                     'pollutionRangeGrade' => ['type' => 'string', 'enum' => ['sensitive', 'normal', 'insensitive']],

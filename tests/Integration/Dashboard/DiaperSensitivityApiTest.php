@@ -90,8 +90,9 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         self::assertSame([2, 10], $data['bounds']['pollutionRange'] ?? null);
         self::assertSame([5, 25], $data['bounds']['pollutionValue'] ?? null);
         self::assertSame(
-            ['more_alerts', 'normal', 'fewer_alerts'],
-            array_keys($data['presets'] ?? [])
+            ['low', 'normal', 'high'],
+            array_keys($data['presets'] ?? []),
+            'do menos sensivel para o mais, como no ecra'
         );
     }
 
@@ -101,13 +102,13 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 
         $updated = $this->put($api, self::SENSOR, ['pollutionRange' => 3, 'pollutionValue' => 7]);
         self::assertSame('ok', $updated['status'] ?? null);
-        self::assertSame('more_alerts', $updated['profile'] ?? null);
+        self::assertSame('high', $updated['profile'] ?? null);
         self::assertSame('sensitive', $updated['pollutionRangeGrade'] ?? null);
         self::assertSame('sensitive', $updated['pollutionValueGrade'] ?? null);
 
         $read = $api->diaperSensitivity(self::SENSOR)['data'] ?? [];
         self::assertSame(3, $read['pollutionRange'] ?? null);
-        self::assertSame('more_alerts', $read['profile'] ?? null);
+        self::assertSame('high', $read['profile'] ?? null);
     }
 
     public function testAnOffPresetPairIsNamedCustomAndNotStoredAsAFourthState(): void

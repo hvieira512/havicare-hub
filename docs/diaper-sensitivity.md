@@ -26,13 +26,19 @@ regra com que o hub deriva o estado da fralda a partir da mesma leitura física.
 | `pollutionRange` | quantos canais têm de estar molhados para exigir muda | 2–10 | 2–3 sensível, 4–5 normal, 6–10 insensível |
 | `pollutionValue` | o delta por canal que conta como molhado | 5–25 | 5–8 sensível, 9–16 normal, 17–25 insensível |
 
-Presets da app:
+Os três presets da app, do menos sensível para o mais:
 
-| Preset | `pollutionRange` | `pollutionValue` |
-|---|---|---|
-| `more_alerts` | 3 | 7 |
-| `normal` | 4 | 12 |
-| `fewer_alerts` | 7 | 15 |
+| Preset | Etiqueta | `pollutionRange` | `pollutionValue` |
+|---|---|---|---|
+| `low` | Baixa | 7 | 15 |
+| `normal` | Normal | 4 | 12 |
+| `high` | Alta | 3 | 7 |
+
+A app deles chama-lhes "More/Normal/Fewer Diaper Alerts", pela consequência. O hub
+nomeia-os pela grandeza que se regula, como o `fall_sensitivity` dos relógios: é a
+sensibilidade baixa que produz menos alertas, e chaves que falassem de contagem de
+alertas obrigavam a inverter o eixo para as ler. O perfil nunca é guardado — é sempre
+derivado dos dois inteiros — portanto renomeá-lo não tocou em dados nenhuns.
 
 Ausência de configuração significa `normal`. Isso é deliberado e evita uma migração
 de backfill: os sensores já registados continuam a comportar-se exactamente como hoje.
@@ -107,7 +113,7 @@ Guardar perfil *e* valores permite que discordem — perfil `normal` com valores
 Guardam-se só os dois inteiros; o nome calcula-se:
 
 ```
-(3,7) -> 'more_alerts'   (4,12) -> 'normal'   (7,15) -> 'fewer_alerts'
+(3,7) -> 'high'   (4,12) -> 'normal'   (7,15) -> 'low'
 qualquer outro par -> 'custom'
 ```
 
@@ -174,7 +180,7 @@ segundos: é quanto tempo uma alteração leva a ser aplicada pela ingestão, se
 
 Mudar a sensibilidade muda a condição derivada para a mesma leitura física. Uma fralda
 com 3 canais afectados está em `attention` no Normal e torna-se `change_required` no
-`more_alerts`. O evento tem de sair — e no sentido inverso, um alarme activo que deixa
+`high`. O evento tem de sair — e no sentido inverso, um alarme activo que deixa
 de o ser não pode ficar preso.
 
 A solução não precisa de plumbing novo: **a configuração entra no valor guardado da
@@ -191,7 +197,7 @@ sensor visto pela primeira vez já em `change_required` levante o alarme.
 
 **Isto foi corrigido durante a implementação, e o teste é que o apanhou.** A primeira
 versão punha a configuração na *chave*, e assim ela só era fresca a primeira vez que
-cada par (sensor, configuração) aparecia. Passar de `normal` para `fewer_alerts` e
+cada par (sensor, configuração) aparecia. Passar de `normal` para `low` e
 voltar a `normal` reencontrava a chave antiga com `change_required` lá dentro, não via
 transição, e engolia o alarme numa fralda suja — pior do que o problema que a feature
 vinha resolver. No valor, os quatro cenários (apertar, aliviar, voltar, repetir) saem
@@ -284,7 +290,7 @@ PHPStan encontre qualquer chamador não ligado em vez de silenciosamente cair no
 - **`derivedCleanThreshold`** — `intdiv(v,4)+1` para `v` = 5, 7, 12, 15, 25 →
   2, 2, 4, 4, 7.
 - **`sameReadingChangesConditionAcrossPresets`** — um vector com 3 canais a 13:
-  `more_alerts` → `change_required`; `normal` → `attention`; `fewer_alerts` →
+  `high` → `change_required`; `normal` → `attention`; `low` →
   `attention`. Orientado a tabela, um caso por preset.
 - **`bandInvariantsHoldForEverySetting`** — o teste que importa. Varre
   `pollutionRange` 2–10 × `pollutionValue` 5–25 × um conjunto de vectores de canais
@@ -313,7 +319,7 @@ o que importa é que nenhuma expectativa mudou. O mesmo se aplica ao `DecoderTes
 
 - **`settingsChangeReRaisesActiveAlarm`** — lookup falso a devolver `normal`, uma
   observação que aterra em `attention`, nenhum evento. O lookup passa a
-  `more_alerts`, a mesma observação → `change_required` com `previousState` nulo e
+  `high`, a mesma observação → `change_required` com `previousState` nulo e
   evento publicado.
 - **`unchangedSettingsDoNotReRaise`** — a mesma configuração duas vezes, evento uma
   só vez.
@@ -343,7 +349,7 @@ o que importa é que nenhuma expectativa mudou. O mesmo se aplica ao `DecoderTes
 
 1. `make test` e `phpstan`.
 2. Localmente em Docker, com o simulador ou reproduzindo uma trama capturada:
-   `PUT` do perfil `more_alerts` no sensor `eec5000202f9` e confirmar no tópico
+   `PUT` do perfil `high` no sensor `eec5000202f9` e confirmar no tópico
    `telemetry` que o `diaper_condition.data.state` muda para a mesma trama, que o
    `requiredChannelCount` acompanha, e que o evento `change_required` sai uma vez.
 3. Confirmar que a alteração é aplicada em ≤ 5 s sem reiniciar o processo.

@@ -94,13 +94,13 @@ ob_start();
                     <div id="deviceDiaperSensitivityRow" class="d-none mb-3">
                         <label class="form-label form-label-sm">Sensibilidade dos alertas</label>
                         <div class="btn-group w-100" role="group" aria-label="Sensibilidade dos alertas" id="deviceDiaperSensitivityGroup">
-                            <button type="button" class="btn btn-outline-success" data-diaper-profile="fewer_alerts" aria-pressed="false">
+                            <button type="button" class="btn btn-outline-success" data-diaper-profile="low" aria-pressed="false">
                                 <i class="fa-solid fa-feather-pointed me-2"></i>Baixa
                             </button>
                             <button type="button" class="btn btn-outline-warning" data-diaper-profile="normal" aria-pressed="false">
                                 <i class="fa-solid fa-shield-heart me-2"></i>Normal
                             </button>
-                            <button type="button" class="btn btn-outline-danger" data-diaper-profile="more_alerts" aria-pressed="false">
+                            <button type="button" class="btn btn-outline-danger" data-diaper-profile="high" aria-pressed="false">
                                 <i class="fa-solid fa-triangle-exclamation me-2"></i>Alta
                             </button>
                             <button type="button" class="btn btn-outline-secondary" data-diaper-profile="custom" aria-pressed="false">

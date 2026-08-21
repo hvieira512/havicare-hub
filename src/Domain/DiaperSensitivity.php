@@ -20,14 +20,21 @@ namespace Hub\Domain;
 final class DiaperSensitivity
 {
     /**
-     * Os três presets da app da MONIT.
+     * Os três presets da app da MONIT, nomeados pela sensibilidade que representam.
+     *
+     * A app deles chama-lhes "More/Normal/Fewer Diaper Alerts", pela consequência. O
+     * hub nomeia-os pela grandeza que se está a regular, como o `fall_sensitivity` dos
+     * relógios: baixa sensibilidade é que dá menos alertas, e ter as chaves a falar de
+     * contagem de alertas obrigava a inverter o eixo para as ler.
+     *
+     * Ordenados do menos sensível para o mais, que é a ordem em que aparecem no ecrã.
      *
      * @var array<string, array{pollutionRange: int, pollutionValue: int}>
      */
     public const PRESETS = [
-        'more_alerts' => ['pollutionRange' => 3, 'pollutionValue' => 7],
+        'low' => ['pollutionRange' => 7, 'pollutionValue' => 15],
         'normal' => ['pollutionRange' => 4, 'pollutionValue' => 12],
-        'fewer_alerts' => ['pollutionRange' => 7, 'pollutionValue' => 15],
+        'high' => ['pollutionRange' => 3, 'pollutionValue' => 7],
     ];
 
     /** Gamas que a app deles aceita, em [mínimo, máximo]. */
@@ -54,7 +61,7 @@ final class DiaperSensitivity
      * O nome do perfil é derivado dos valores e nunca guardado.
      *
      * Guardar perfil E valores permitia que discordassem -- um perfil "normal" com
-     * os valores do "more_alerts". Com uma só fonte de verdade isso é impossível, e
+     * os valores do "high". Com uma só fonte de verdade isso é impossível, e
      * o "personalizado" sai de graça em vez de ser um quarto estado a manter.
      */
     public static function profile(int $pollutionRange, int $pollutionValue): string

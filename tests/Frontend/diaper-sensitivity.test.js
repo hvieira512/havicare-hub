@@ -70,9 +70,9 @@ function harness() {
     const dom = new JSDOM(`<!doctype html><body>
         <div id="row" class="d-none">
             <div id="group">
-                <button data-diaper-profile="fewer_alerts"></button>
+                <button data-diaper-profile="low"></button>
                 <button data-diaper-profile="normal"></button>
-                <button data-diaper-profile="more_alerts"></button>
+                <button data-diaper-profile="high"></button>
                 <button data-diaper-profile="custom"></button>
             </div>
             <div id="custom" class="d-none">
@@ -114,13 +114,13 @@ test("os quatro perfis sao botoes e nao um select", () => {
     const pane = paneOf("deviceConfigPane");
 
     assert.doesNotMatch(pane, /<select/, "a forma e a do grupo de botoes dos relogios");
-    for (const profile of ["fewer_alerts", "normal", "more_alerts", "custom"]) {
+    for (const profile of ["low", "normal", "high", "custom"]) {
         assert.match(pane, new RegExp(`data-diaper-profile="${profile}"`));
     }
     // Menos sensivel em verde, normal em ambar, mais sensivel em vermelho, como na
     // sensibilidade de queda dos relogios.
-    assert.match(pane, /btn-outline-success[\s\S]*?fewer_alerts/);
-    assert.match(pane, /btn-outline-danger[\s\S]*?more_alerts/);
+    assert.match(pane, /btn-outline-success[\s\S]*?low/);
+    assert.match(pane, /btn-outline-danger[\s\S]*?high/);
 });
 
 test("as etiquetas nomeiam a sensibilidade e nao a contagem de alertas", () => {
@@ -129,9 +129,9 @@ test("as etiquetas nomeiam a sensibilidade e nao a contagem de alertas", () => {
     // menos alertas. Baixa/Normal/Alta e o que os relogios usam para a queda.
     const pane = paneOf("deviceConfigPane");
 
-    assert.match(pane, /data-diaper-profile="fewer_alerts"[\s\S]*?>Baixa\s*</);
+    assert.match(pane, /data-diaper-profile="low"[\s\S]*?>Baixa\s*</);
     assert.match(pane, /data-diaper-profile="normal"[\s\S]*?>Normal\s*</);
-    assert.match(pane, /data-diaper-profile="more_alerts"[\s\S]*?>Alta\s*</);
+    assert.match(pane, /data-diaper-profile="high"[\s\S]*?>Alta\s*</);
     assert.doesNotMatch(pane, /Menos alertas|Mais alertas/);
 });
 
