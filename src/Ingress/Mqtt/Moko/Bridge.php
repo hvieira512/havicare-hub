@@ -5,6 +5,8 @@ namespace Hub\Ingress\Mqtt\Moko;
 use Hub\Domain\DeviceMetadata;
 
 use Hub\CommercialModelResolver;
+use Hub\Domain\DiaperSensitivity;
+use Hub\Domain\DiaperSensitivityLookup;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Log\Logger;
 use Hub\RawPayload;
@@ -47,6 +49,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly ?W6rNormalizer $w6rNormalizer = null,
         ?callable $clock = null,
         private readonly ?ProximityTracker $proximityTracker = null,
+        private readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
     ) {
         parent::__construct(
             $subscriber,
@@ -401,7 +404,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        $normalized = ($this->monitNormalizer ?? new MonitNormalizer())->normalize($decoded, $sensor, (string)$gateway['imei']);
+        // Sem lookup ligado a sensibilidade e a do preset normal, que e o comportamento
+        // com que o hub sempre correu -- o valor por omissao esta aqui e nao no
+        // normalizador, onde um parametro opcional esconderia uma ligacao esquecida.
+        $sensitivity = $this->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
+        $normalized = ($this->monitNormalizer ?? new MonitNormalizer())
+            ->normalize($decoded, $sensor, (string)$gateway['imei'], $sensitivity);
         $deviceType = (string)$sensor['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($sensor['licenseId'] ?? 0);
         $company = (string)($sensor['company'] ?? 'null');
@@ -419,11 +427,28 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->dashboardStore?->append($sensorKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
-        $transition = $this->state->transitionCondition($sensorKey, $normalized['condition']);
+        // A sensibilidade entra no VALOR guardado e nao na chave. Mudar a configuracao muda
+        // a condicao derivada para a mesma leitura fisica, e essa mudanca tem de contar como
+        // transicao -- senao um cuidador que aperta a sensibilidade numa fralda ja suja nao
+        // recebe alarme nenhum.
+        //
+        // Na chave nao servia: seria fresca a primeira vez que cada par (sensor, configuracao)
+        // aparecesse, mas depois lembrava-se do valor antigo. Passar de `normal` para
+        // `fewer_alerts` e voltar a `normal` reencontrava a chave antiga com
+        // `change_required` la dentro, nao via transicao, e engolia o alarme.
+        $transition = $this->state->transitionCondition(
+            $sensorKey,
+            $normalized['condition'] . '@' . $sensitivity['pollutionRange'] . '-' . $sensitivity['pollutionValue'],
+        );
         if ($normalized['condition'] === 'change_required' && $transition !== null) {
+            // A sensibilidade fica dentro do estado guardado e NAO sai no evento: o
+            // `previousState` e parte do contrato publicado e continua a ser um dos tres
+            // estados, ou nulo.
+            $stored = $transition['previous'];
+            $previous = is_string($stored) ? explode('@', $stored, 2)[0] : null;
             $event = [
                 'schemaVersion' => 1, 'type' => 'change_required', 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => $this->device($sensor), 'data' => ['previousState' => $transition['previous']],
+                'device' => $this->device($sensor), 'data' => ['previousState' => $previous],
                 'source' => ['protocol' => 'monit-mecs-pro-ble', 'gatewayId' => (string)$gateway['imei']],
             ];
             $this->mqttBridge->publishEvent($sensorKey, $event, $deviceType, $licenseId, $company);

@@ -36,6 +36,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026081102BackfillMissingMod
 use Hub\Infrastructure\Persistence\Migration\Version2026081401DiaperMoistureLevelCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026081901RemoveBraceletMotionCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026081902RestoreBraceletMotionCapability;
+use Hub\Infrastructure\Persistence\Migration\Version2026082101DiaperSensorSettings;
 
 final class DatabaseMigrationPlan
 {
@@ -74,6 +75,7 @@ final class DatabaseMigrationPlan
             new Version2026081401DiaperMoistureLevelCapability(),
             new Version2026081901RemoveBraceletMotionCapability(),
             new Version2026081902RestoreBraceletMotionCapability(),
+            new Version2026082101DiaperSensorSettings(),
         ];
     }
 

@@ -85,6 +85,7 @@ if ($config['moko']['enabled']) {
             (int)$config['moko']['dedupe_ttl_seconds'],
             (int)$config['moko']['telemetry_refresh_seconds'],
             (int)$config['moko']['idle_timeout_seconds'],
+            diaperSensitivity: $services->dataAccess->diaperSensitivity,
         ),
     ));
     $enabledIngresses[] = 'moko';

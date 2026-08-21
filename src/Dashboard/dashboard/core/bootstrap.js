@@ -117,6 +117,7 @@ import {
     setConfigUi,
     syncDeviceModalCommandStates,
 } from "../devices/config-panel.js";
+import {initDiaperSensitivityUi} from "../devices/diaper-sensitivity-ui.js";
 import {
     initGatewayLinksUi,
     refreshGatewayOptions,
@@ -1045,6 +1046,7 @@ function handleApiUserListClick(event) {
 export async function startDashboard() {
     els = cacheElements();
     initGatewayLinksUi({els});
+    initDiaperSensitivityUi({els});
     initDeviceConfigPanel({els});
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceSelectorModal = new bootstrap.Modal(

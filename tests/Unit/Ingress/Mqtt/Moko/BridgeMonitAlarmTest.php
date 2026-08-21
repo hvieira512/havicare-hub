@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
+use Hub\Domain\DiaperSensitivity;
+use Hub\Domain\DiaperSensitivityLookup;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\MutableDiaperSensitivity;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
@@ -92,6 +95,82 @@ final class BridgeMonitAlarmTest extends TestCase
         );
     }
 
+    public function testTighteningTheSensitivityRaisesTheAlarmForTheSameReading(): void
+    {
+        // Tres canais molhados: no preset normal sao 3 de 4 exigidos, portanto `attention`.
+        // Apertar para "mais alertas" (3 canais, delta 7) torna a MESMA leitura numa muda
+        // necessaria -- e o alarme tem de tocar, senao apertar a sensibilidade numa fralda
+        // ja suja nao produz nada.
+        $mqtt = new RecordingHubMqttBridge();
+        $sensitivity = new MutableDiaperSensitivity();
+        $bridge = $this->bridge($mqtt, $sensitivity);
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('three_wet'));
+        self::assertCount(0, $this->alarms($mqtt), 'No preset normal isto e attention.');
+
+        $sensitivity->settings = DiaperSensitivity::PRESETS['more_alerts'];
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('three_wet', battery: 79));
+
+        $alarms = $this->alarms($mqtt);
+        self::assertCount(1, $alarms);
+        self::assertSame('attention', $alarms[0]['payload']['data']['previousState']);
+    }
+
+    public function testLooseningAndTighteningAgainDoesNotSwallowTheAlarm(): void
+    {
+        // O caso que a primeira versao desta feature falhava. Com a sensibilidade na CHAVE do
+        // estado em vez de no valor, voltar a um preset ja usado reencontrava o
+        // `change_required` antigo, nao via transicao, e a fralda suja ficava sem alarme.
+        $mqtt = new RecordingHubMqttBridge();
+        $sensitivity = new MutableDiaperSensitivity();
+        $bridge = $this->bridge($mqtt, $sensitivity);
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
+        self::assertCount(1, $this->alarms($mqtt));
+
+        $sensitivity->settings = DiaperSensitivity::PRESETS['fewer_alerts'];
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required', battery: 79));
+        self::assertCount(1, $this->alarms($mqtt), 'Com menos alertas a mesma leitura e attention.');
+
+        $sensitivity->settings = DiaperSensitivity::PRESETS['normal'];
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required', battery: 78));
+
+        $alarms = $this->alarms($mqtt);
+        self::assertCount(2, $alarms, 'Voltar ao preset anterior tem de reavaliar, nao recordar.');
+        self::assertSame('attention', $alarms[1]['payload']['data']['previousState']);
+    }
+
+    public function testTheSensitivityNeverLeaksIntoThePublishedEvent(): void
+    {
+        // A sensibilidade vive dentro do estado guardado para que uma alteracao conte como
+        // transicao. O `previousState` e contrato publicado e continua a ser um dos tres
+        // estados, ou nulo -- nunca "attention@7-15".
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt, new MutableDiaperSensitivity());
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('attention'));
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
+
+        $previous = $this->alarms($mqtt)[0]['payload']['data']['previousState'];
+        self::assertSame('attention', $previous);
+        self::assertStringNotContainsString('@', (string)$previous);
+    }
+
+    public function testWithoutALookupTheHubKeepsItsHistoricalThresholds(): void
+    {
+        // Sem lookup ligado -- que e como todos os outros testes deste ficheiro constroem o
+        // bridge -- a sensibilidade e a do preset normal, que sao os limiares que o hub tinha
+        // em hardcode. Isto e o que garante que ligar a feature nao mexeu em producao.
+        $mqtt = new RecordingHubMqttBridge();
+        $bridge = $this->bridge($mqtt);
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('three_wet'));
+        self::assertCount(0, $this->alarms($mqtt));
+
+        $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
+        self::assertCount(1, $this->alarms($mqtt));
+    }
+
     /**
      * The diaper alarms only. The gateway publishes its own `device.connected` on the
      * first message it is seen on, and that is not what these tests measure.
@@ -139,6 +218,7 @@ final class BridgeMonitAlarmTest extends TestCase
             'clean' => array_fill(0, 10, 2),                        // delta 1
             'attention' => array_fill(0, 10, 7),                    // delta 6, nenhum >= 12
             'change_required' => [13, 13, 13, 13, 1, 1, 1, 1, 1, 1], // 4 canais a delta 12
+            'three_wet' => [13, 13, 13, 1, 1, 1, 1, 1, 1, 1],           // 3 canais a delta 12
             default => throw new \InvalidArgumentException($condition),
         };
 
@@ -162,7 +242,7 @@ final class BridgeMonitAlarmTest extends TestCase
         return '020104' . sprintf('%02x', strlen($manufacturer) / 2 + 1) . 'ff' . $manufacturer;
     }
 
-    private function bridge(RecordingHubMqttBridge $mqtt): Bridge
+    private function bridge(RecordingHubMqttBridge $mqtt, ?DiaperSensitivityLookup $sensitivity = null): Bridge
     {
         $path = tempnam(sys_get_temp_dir(), 'moko-whitelist-');
         file_put_contents($path, json_encode([
@@ -183,6 +263,8 @@ final class BridgeMonitAlarmTest extends TestCase
             $mqtt,
             $links,
             new ArrayObservationStateStore(),
+            diaperSensitivity: $sensitivity,
         );
     }
+
 }

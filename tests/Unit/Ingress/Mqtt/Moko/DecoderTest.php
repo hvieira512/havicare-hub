@@ -7,6 +7,7 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 use Hub\Ingress\Mqtt\Moko\GatewayNormalizer;
 use Hub\Ingress\Mqtt\Moko\Mkgw3MessageDecoder;
 use Hub\Ingress\Mqtt\Moko\Mkgw4MessageDecoder;
+use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Moko\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
 use Hub\Ingress\Mqtt\Moko\Topic;
@@ -135,7 +136,7 @@ final class DecoderTest extends TestCase
     public function testNormalizesIndependentMonitCapabilitiesWithSimpleCondition(): void
     {
         $decoded = (new MonitMecsProDecoder())->decode(['mac' => 'eec5000202f9', 'adv_data' => self::ADV_DATA]);
-        $result = (new MonitNormalizer())->normalize($decoded, $this->device('diaper_sensor'), 'd48c49f7909c');
+        $result = (new MonitNormalizer())->normalize($decoded, $this->device('diaper_sensor'), 'd48c49f7909c', DiaperSensitivity::normal());
 
         self::assertSame(['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'], array_keys($result['telemetry']));
         self::assertSame(['state' => 'clean'], $result['telemetry']['diaper_condition']['data']);
@@ -152,7 +153,7 @@ final class DecoderTest extends TestCase
             'normalized' => [12, 12, 12, 12, 0, 0, 0, 0, 0, 0],
             'rssiDbm' => -70,
         ];
-        $result = (new MonitNormalizer())->normalize($decoded, $this->device('diaper_sensor'), 'd48c49f7909c');
+        $result = (new MonitNormalizer())->normalize($decoded, $this->device('diaper_sensor'), 'd48c49f7909c', DiaperSensitivity::normal());
         self::assertSame('change_required', $result['condition']);
         self::assertSame(['state' => 'change_required'], $result['telemetry']['diaper_condition']['data']);
     }

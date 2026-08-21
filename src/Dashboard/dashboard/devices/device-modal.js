@@ -17,6 +17,11 @@ import {
     renderSelection,
 } from "./detail-view.js";
 import {
+    loadDiaperSensitivity,
+    saveDiaperSensitivity,
+    selectedDiaperSensitivity,
+} from "./diaper-sensitivity-ui.js";
+import {
     refreshGatewayOptions,
     selectedGatewayKeys,
     syncGatewayLinks,
@@ -384,6 +389,10 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.linkedGatewayKeys = linkedGatewayKeys;
         state.deviceModal.selectedGatewayKeys = linkedGatewayKeys;
         await refreshGatewayOptions(linkedGatewayKeys);
+        await loadDiaperSensitivity(
+            String(device.imei || ""),
+            state.deviceModal.deviceType,
+        );
         state.deviceModal.configurations = detail.configurations || {};
         state.deviceModal.configurationSync = detail.configurationSync || {entries: {}};
         state.deviceModal.capabilities = detail.capabilities || {};
@@ -468,6 +477,10 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
     els.deviceGatewayLinksRow?.classList.toggle(
         "d-none",
         !linksToGateway(deviceType),
+    );
+    els.deviceDiaperSensitivityRow?.classList.toggle(
+        "d-none",
+        deviceType !== "diaper_sensor",
     );
 
     if (deviceType === "ncs") {
@@ -676,6 +689,19 @@ export async function saveDevice() {
         }
         state.deviceModal.linkedGatewayKeys = desiredGatewayKeys;
         state.deviceModal.selectedGatewayKeys = desiredGatewayKeys;
+    }
+
+    // Depois de o dispositivo existir, pela mesma razao que os links: a configuracao
+    // tem uma chave estrangeira para a whitelist.
+    const sensitivityError = await saveDiaperSensitivity(
+        imei,
+        selectedDiaperSensitivity(deviceType),
+    );
+    if (sensitivityError) {
+        setDeviceFormError(
+            `Dispositivo guardado, mas nao foi possivel atualizar a sensibilidade: ${sensitivityError}`,
+        );
+        return;
     }
 
     if (

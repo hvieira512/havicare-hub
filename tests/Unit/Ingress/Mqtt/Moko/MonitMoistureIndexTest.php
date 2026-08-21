@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
+use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
@@ -18,6 +19,12 @@ use PHPUnit\Framework\TestCase;
  *      mesmo ecra.
  *   2. As fronteiras das bandas caem nos limiares que decidem o estado, em particular os 40
  *      nos 4 canais molhados. E o valor que desenha a marca de alerta no ecra.
+ *
+ * Todas as asseroes deste ficheiro sao anteriores a sensibilidade ser configuravel e nenhuma
+ * mudou quando passou a ser: e essa a prova de que o preset normal reproduz exactamente os
+ * limiares que estavam em hardcode. So as chamadas passaram a dizer explicitamente qual e o
+ * preset, porque o parametro e obrigatorio -- de proposito, para que uma ligacao esquecida
+ * falhe na analise estatica em vez de decidir alarmes com limiares que ninguem escolheu.
  */
 final class MonitMoistureIndexTest extends TestCase
 {
@@ -53,7 +60,12 @@ final class MonitMoistureIndexTest extends TestCase
     /** @param list<int> $deltas @return array<string, array<string, mixed>> */
     private function telemetry(array $deltas): array
     {
-        $result = (new MonitNormalizer())->normalize($this->decoded($deltas), self::DEVICE, 'c5e390f30bce');
+        $result = (new MonitNormalizer())->normalize(
+            $this->decoded($deltas),
+            self::DEVICE,
+            'c5e390f30bce',
+            DiaperSensitivity::normal(),
+        );
 
         return array_map(static fn(array $message): array => $message['data'], $result['telemetry']);
     }
@@ -193,7 +205,8 @@ final class MonitMoistureIndexTest extends TestCase
         $result = (new MonitNormalizer())->normalize(
             $this->decoded([12, 12, 12, 12]),
             self::DEVICE,
-            'c5e390f30bce'
+            'c5e390f30bce',
+            DiaperSensitivity::normal(),
         );
 
         self::assertSame(['state' => 'change_required'], $result['telemetry']['diaper_condition']['data']);

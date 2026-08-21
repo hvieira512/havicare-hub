@@ -86,6 +86,15 @@ CREATE TABLE IF NOT EXISTS gateway_device_links (
     CONSTRAINT fk_gateway_device_links_device FOREIGN KEY (linked_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS diaper_sensor_settings (
+    imei VARCHAR(64) NOT NULL PRIMARY KEY,
+    pollution_range TINYINT UNSIGNED NOT NULL,
+    pollution_value TINYINT UNSIGNED NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_diaper_sensor_settings_device FOREIGN KEY (imei) REFERENCES whitelist(imei) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS device_configurations (
     imei VARCHAR(64) NOT NULL,
     config_key VARCHAR(191) NOT NULL,

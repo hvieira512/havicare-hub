@@ -161,6 +161,48 @@ final class DeviceSchemas
                     'linkedDeviceKey' => ['type' => 'string', 'example' => 'eec5000202f9'],
                 ],
             ],
+            'DiaperSensitivityRequest' => [
+                'type' => 'object',
+                'required' => ['pollutionRange', 'pollutionValue'],
+                'properties' => [
+                    'pollutionRange' => [
+                        'type' => 'integer',
+                        'minimum' => 2,
+                        'maximum' => 10,
+                        'example' => 4,
+                        'description' => 'How many channels must read wet before a change is required.',
+                    ],
+                    'pollutionValue' => [
+                        'type' => 'integer',
+                        'minimum' => 5,
+                        'maximum' => 25,
+                        'example' => 12,
+                        'description' => 'The per-channel delta above the dry baseline that counts as wet.',
+                    ],
+                ],
+            ],
+            'DiaperSensitivityResponse' => [
+                'type' => 'object',
+                'properties' => [
+                    'pollutionRange' => ['type' => 'integer', 'example' => 4],
+                    'pollutionValue' => ['type' => 'integer', 'example' => 12],
+                    'profile' => [
+                        'type' => 'string',
+                        'enum' => ['more_alerts', 'normal', 'fewer_alerts', 'custom'],
+                        'description' => 'Derived from the two values, never stored, so the two cannot disagree.',
+                    ],
+                    'pollutionRangeGrade' => ['type' => 'string', 'enum' => ['sensitive', 'normal', 'insensitive']],
+                    'pollutionValueGrade' => ['type' => 'string', 'enum' => ['sensitive', 'normal', 'insensitive']],
+                    'presets' => [
+                        'type' => 'object',
+                        'description' => 'The named presets, so a client builds the selector without its own copy.',
+                    ],
+                    'bounds' => [
+                        'type' => 'object',
+                        'description' => 'Accepted [minimum, maximum] per field.',
+                    ],
+                ],
+            ],
         ];
     }
 

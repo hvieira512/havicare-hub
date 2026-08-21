@@ -164,7 +164,9 @@ Os dez canais capacitivos, em bruto e normalizados.
     {"index": 10, "baseline": 32, "value": 36, "delta": 4}
   ],
   "affectedChannelCount": 0,
-  "maximumDelta": 4
+  "maximumDelta": 4,
+  "requiredChannelCount": 4,
+  "wetDelta": 12
 }
 ```
 
@@ -174,8 +176,16 @@ Os dez canais capacitivos, em bruto e normalizados.
 | `baseline` | a referência de seco do canal, tal como o sensor a reporta. Vai de 0 a 63 e varia muito de canal para canal (1 contra 32, acima) — é normal, é uma calibração por eléctrodo e não uma leitura |
 | `value` | leitura capacitiva actual em bruto, de 0 a 63 |
 | `delta` | `max(value - baseline, 0)`. **É o único número do canal que vale a pena mostrar a alguém** |
-| `affectedChannelCount` | quantos canais têm `delta` igual ou superior a 12 |
+| `affectedChannelCount` | quantos canais têm `delta` igual ou superior ao `wetDelta` |
 | `maximumDelta` | o maior `delta` dos dez canais |
+| `requiredChannelCount` | quantos canais molhados obrigam a muda neste sensor |
+| `wetDelta` | o `delta` a partir do qual um canal conta como molhado neste sensor |
+
+Os dois últimos são configuráveis **por sensor** e viajam com a leitura pela mesma
+razão que o `alertIndex` viaja com o nível: quem mostra "3 de 4 canais afetados"
+precisa do 4, e por serem por sensor já não o pode escrever fixo. Ler sempre do
+payload. Os valores por omissão, 4 e 12, correspondem ao perfil intermédio dos três
+que existem, e são o comportamento de qualquer sensor a que ninguém tenha mexido.
 
 Esta mensagem é o detalhe do fornecedor e não o contrato genérico. Outra marca de
 medidor de fraldas terá outra contagem de canais, ou uma leitura única e nenhum canal.
@@ -382,6 +392,8 @@ máximo (há algum sítio molhado?) e a contagem (quão espalhado está?) — e 
 - Os nomes e os significados dos campos do envelope da secção 3.
 - Os valores de `type`: `battery`, `diaper_moisture`, `diaper_moisture_level`,
   `diaper_condition`, `proximity`, e o evento `change_required`.
+- O `requiredChannelCount` e o `wetDelta` acompanharem sempre a leitura dos canais, e
+  serem os limiares realmente aplicados a essa leitura.
 - O `diaper_condition.data.state` é exactamente um de `clean`, `attention`,
   `change_required`.
 - O `diaper_moisture_level.data.index` é um inteiro de 0 a 100, e o `alertIndex` viaja
@@ -394,9 +406,17 @@ máximo (há algum sítio molhado?) e a contagem (quão espalhado está?) — e 
 
 ### Não depender de
 
-- **Os valores dos limiares.** O 12, o 4, o 4 e os limites das bandas são política do
-  hub e podem ser afinados à medida que os dados reais se acumulam. Ler o `alertIndex`
-  do payload; nunca escrever 40.
+- **Os valores dos limiares.** São política do hub, configuráveis por sensor, e podem
+  ser afinados à medida que os dados reais se acumulam. Ler o `alertIndex`, o
+  `requiredChannelCount` e o `wetDelta` do payload; nunca escrever 40, 4 ou 12.
+- **Os limiares serem iguais em todos os sensores.** Dois sensores do mesmo modelo
+  podem estar em perfis de sensibilidade diferentes, porque a necessidade varia de
+  pessoa para pessoa. Uma leitura idêntica pode dar estados diferentes em dois
+  sensores, e isso não é um defeito.
+- **Os limiares serem estáveis no tempo.** Podem mudar a qualquer momento por acção
+  de quem cuida. Quando mudam, a avaliação seguinte é feita de novo com as regras
+  novas, e um `change_required` que passe a aplicar-se gera o seu evento como
+  qualquer outro.
 - **Dez canais.** O `diaper_moisture` é a forma da MONIT. Um segundo fornecedor terá
   outra, e o `diaper_moisture_level` é o campo que existe para os dois.
 - **A cadência e a ordem de chegada.** Ver abaixo.
