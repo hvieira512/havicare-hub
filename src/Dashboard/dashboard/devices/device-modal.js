@@ -699,7 +699,7 @@ export async function saveDevice() {
     );
     if (sensitivityError) {
         setDeviceFormError(
-            `Dispositivo guardado, mas nao foi possivel atualizar a sensibilidade: ${sensitivityError}`,
+            `Dispositivo guardado, mas não foi possível atualizar a sensibilidade: ${sensitivityError}`,
         );
         return;
     }

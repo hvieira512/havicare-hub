@@ -74,26 +74,6 @@ ob_start();
                                     </div>
                                     <div class="form-text" id="deviceGatewayLinksHelp">Selecione os gateways autorizados a reportar dados deste sensor.</div>
                                 </div>
-                                <div id="deviceDiaperSensitivityRow" class="d-none">
-                                    <label for="deviceDiaperSensitivityProfile" class="form-label">Sensibilidade dos alertas</label>
-                                    <select class="form-select" id="deviceDiaperSensitivityProfile">
-                                        <option value="more_alerts">Mais alertas</option>
-                                        <option value="normal">Normal</option>
-                                        <option value="fewer_alerts">Menos alertas</option>
-                                        <option value="custom">Personalizado</option>
-                                    </select>
-                                    <div class="row g-2 mt-2 d-none" id="deviceDiaperSensitivityCustom">
-                                        <div class="col">
-                                            <label for="deviceDiaperPollutionRange" class="form-label small mb-1">Canais afetados</label>
-                                            <input type="number" class="form-control" id="deviceDiaperPollutionRange" min="2" max="10" step="1">
-                                        </div>
-                                        <div class="col">
-                                            <label for="deviceDiaperPollutionValue" class="form-label small mb-1">Limiar por canal</label>
-                                            <input type="number" class="form-control" id="deviceDiaperPollutionValue" min="5" max="25" step="1">
-                                        </div>
-                                    </div>
-                                    <div class="form-text" id="deviceDiaperSensitivityHelp">Decidida no hub. Nada e enviado para o sensor, que so transmite.</div>
-                                </div>
                                 <div id="deviceImeiRow">
                                     <label for="deviceImei" class="form-label">IMEI</label>
                                     <input type="text" class="form-control" id="deviceImei" required>
@@ -111,6 +91,28 @@ ob_start();
                     </form>
                 </div>
                 <div class="tab-pane fade h-100" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
+                    <div id="deviceDiaperSensitivityRow" class="d-none mb-3">
+                        <label for="deviceDiaperSensitivityProfile" class="form-label">Sensibilidade dos alertas</label>
+                        <select class="form-select" id="deviceDiaperSensitivityProfile">
+                            <option value="more_alerts">Mais alertas</option>
+                            <option value="normal">Normal</option>
+                            <option value="fewer_alerts">Menos alertas</option>
+                            <option value="custom">Personalizado</option>
+                        </select>
+                        <div class="row g-2 mt-2 d-none" id="deviceDiaperSensitivityCustom">
+                            <div class="col">
+                                <label for="deviceDiaperPollutionRange" class="form-label small mb-1">Canais afetados</label>
+                                <input type="number" class="form-control" id="deviceDiaperPollutionRange" min="2" max="10" step="1">
+                                <div class="form-text">Quantos canais molhados obrigam a uma muda.</div>
+                            </div>
+                            <div class="col">
+                                <label for="deviceDiaperPollutionValue" class="form-label small mb-1">Limiar por canal</label>
+                                <input type="number" class="form-control" id="deviceDiaperPollutionValue" min="5" max="25" step="1">
+                                <div class="form-text">A partir de quanto um canal conta como molhado.</div>
+                            </div>
+                        </div>
+                        <div class="form-text" id="deviceDiaperSensitivityHelp">Decidida no hub: o sensor apenas transmite e nada lhe é enviado. Passa a valer na leitura seguinte.</div>
+                    </div>
                     <div id="deviceConfigRoot"></div>
                 </div>
             </div>

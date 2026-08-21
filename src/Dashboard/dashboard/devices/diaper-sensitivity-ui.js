@@ -24,6 +24,16 @@ let els;
 let presets = {};
 let bounds = {};
 
+/**
+ * O sensor cujos valores estao no ecra, ou "" quando nao ha nenhum carregado.
+ *
+ * E isto que decide se ha algo para gravar, e nao a classe CSS da linha: a linha vive
+ * no separador das configuracoes, que esta escondido enquanto o dispositivo nao existe,
+ * e uma decisao baseada em visibilidade dependia de duas coisas que se podem
+ * dessincronizar.
+ */
+let loadedImei = "";
+
 const NORMAL = {pollutionRange: 4, pollutionValue: 12};
 
 export function initDiaperSensitivityUi(context) {
@@ -62,9 +72,9 @@ function applyBounds() {
 export async function loadDiaperSensitivity(imei, deviceType) {
     const visible = deviceType === "diaper_sensor";
     els.deviceDiaperSensitivityRow?.classList.toggle("d-none", !visible);
+    loadedImei = "";
     if (!visible || !imei) {
         // Um sensor por criar mostra o preset normal, que e o que vai receber.
-        presets = presets || {};
         setFields("normal", NORMAL);
         return;
     }
@@ -79,6 +89,7 @@ export async function loadDiaperSensitivity(imei, deviceType) {
     bounds = data.bounds || {};
     applyBounds();
     setFields(data.profile || "custom", data);
+    loadedImei = imei;
 }
 
 function setFields(profile, values) {
@@ -97,9 +108,14 @@ function setFields(profile, values) {
     );
 }
 
-/** O que esta escolhido no ecra, ou null quando a linha nao se aplica. */
+/**
+ * O que esta escolhido no ecra, ou null quando nao ha escolha para gravar.
+ *
+ * Devolve null quando nada foi carregado -- num dispositivo novo nao houve escolha
+ * nenhuma, e devolver o preset por omissao mandava um pedido inutil a cada gravacao.
+ */
 export function selectedDiaperSensitivity(deviceType) {
-    if (deviceType !== "diaper_sensor" || !els.deviceDiaperSensitivityProfile) {
+    if (deviceType !== "diaper_sensor" || loadedImei === "" || !els.deviceDiaperSensitivityProfile) {
         return null;
     }
     const profile = els.deviceDiaperSensitivityProfile.value;
