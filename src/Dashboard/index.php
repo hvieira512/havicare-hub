@@ -217,6 +217,7 @@ require_once __DIR__ . '/components/modal.php';
         </main>
 
         <?php require __DIR__ . '/components/modals/device.php'; ?>
+        <?php require __DIR__ . '/components/modals/device-wizard.php'; ?>
         <?php require __DIR__ . '/components/modals/settings.php'; ?>
         <?php require __DIR__ . '/components/modals/device-selector.php'; ?>
     </div>

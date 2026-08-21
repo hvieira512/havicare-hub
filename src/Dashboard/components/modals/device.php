@@ -91,45 +91,6 @@ ob_start();
                     </form>
                 </div>
                 <div class="tab-pane fade h-100" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
-                    <div id="deviceDiaperSensitivityRow" class="d-none mb-3">
-                        <label class="form-label form-label-sm">Sensibilidade dos alertas</label>
-                        <div class="btn-group w-100" role="group" aria-label="Sensibilidade dos alertas" id="deviceDiaperSensitivityGroup">
-                            <button type="button" class="btn btn-outline-success" data-diaper-profile="low" aria-pressed="false">
-                                <i class="fa-solid fa-feather-pointed me-2"></i>Baixa
-                            </button>
-                            <button type="button" class="btn btn-outline-warning" data-diaper-profile="normal" aria-pressed="false">
-                                <i class="fa-solid fa-shield-heart me-2"></i>Normal
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" data-diaper-profile="high" aria-pressed="false">
-                                <i class="fa-solid fa-triangle-exclamation me-2"></i>Alta
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" data-diaper-profile="custom" aria-pressed="false">
-                                <i class="fa-solid fa-sliders me-2"></i>Personalizado
-                            </button>
-                        </div>
-                        <div class="form-text" id="deviceDiaperSensitivityHelp">Decidida no hub: o sensor apenas transmite e nada lhe é enviado. Passa a valer na leitura seguinte.</div>
-                        <div class="row g-2 mt-2 d-none" id="deviceDiaperSensitivityCustom">
-                            <div class="col">
-                                <label for="deviceDiaperPollutionRange" class="form-label form-label-sm mb-1">Canais afetados</label>
-                                <input type="number" class="form-control" id="deviceDiaperPollutionRange" min="2" max="10" step="1">
-                                <div class="form-text">Quantos canais molhados obrigam a uma muda.</div>
-                            </div>
-                            <div class="col">
-                                <label for="deviceDiaperPollutionValue" class="form-label form-label-sm mb-1">Limiar por canal</label>
-                                <input type="number" class="form-control" id="deviceDiaperPollutionValue" min="5" max="25" step="1">
-                                <div class="form-text">A partir de quanto um canal conta como molhado.</div>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                            <button type="button" class="btn btn-primary btn-sm" id="deviceDiaperSensitivitySaveBtn">
-                                <i class="fa-solid fa-floppy-disk me-2"></i>Guardar
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="deviceDiaperSensitivityResetBtn" title="Repor" aria-label="Repor">
-                                <i class="fa-solid fa-rotate-left"></i>
-                            </button>
-                        </div>
-                        <div id="deviceDiaperSensitivityFeedback" role="status" aria-live="polite"></div>
-                    </div>
                     <div id="deviceConfigRoot"></div>
                 </div>
             </div>
@@ -141,4 +102,4 @@ $body = (string) ob_get_clean();
 
 $footer = '<button type="button" class="btn btn-danger d-none" id="deleteDeviceBtn"><i class="fa-solid fa-trash me-1"></i>Eliminar</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
-render_modal('deviceModal', 'Dispositivo', $body, $footer, 'modal-fullscreen');
+render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-fullscreen');

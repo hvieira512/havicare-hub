@@ -13,10 +13,9 @@ final class NotificationSourceTest extends TestCase
         $root = dirname(__DIR__, 3);
         $page = file_get_contents($root . '/src/Dashboard/index.php');
         $notifications = file_get_contents($root . '/src/Dashboard/dashboard/notifications.js');
-        // The add-device flow lives in the device modal module now; the wiring
-        // that starts notifications is still in bootstrap.
-        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/core/bootstrap.js')
-            . file_get_contents($root . '/src/Dashboard/dashboard/devices/device-modal.js');
+        // Adicionar um dispositivo passou a ser o assistente, num modal proprio; a
+        // ligacao que arranca as notificacoes continua no bootstrap.
+        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/core/bootstrap.js');
 
         self::assertIsString($page);
         self::assertIsString($notifications);
@@ -31,10 +30,14 @@ final class NotificationSourceTest extends TestCase
         self::assertStringContainsString('data-notification-id=', $notifications);
         self::assertStringContainsString('data-notification-dismiss=', $notifications);
         self::assertStringContainsString('void addDevice(notification)', $notifications);
-        self::assertStringContainsString('async function openAddDevice(source = "")', $bootstrap);
+        // O aviso de um dispositivo nao autorizado abre o assistente ja com o que o hub
+        // reportou -- protocolo para o modelo, modelo para o tipo, e a identidade -- para
+        // nao se escrever a mao o que ele acabou de dizer.
+        self::assertStringContainsString('async function openWizard(source = "")', $bootstrap);
+        self::assertStringContainsString('function seedFromNotification(source)', $bootstrap);
         self::assertStringContainsString('String(model.protocol || "") === protocol', $bootstrap);
-        self::assertStringContainsString('renderDeviceTypeSelector(detectedDeviceType)', $bootstrap);
-        self::assertStringContainsString('detectedSupplier', $bootstrap);
+        self::assertStringContainsString('type: modelDeviceType(detected)', $bootstrap);
+        self::assertStringContainsString('openAddDevice: openWizard', $bootstrap);
         self::assertStringContainsString('initNotifications({', $bootstrap);
     }
 }

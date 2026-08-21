@@ -25,24 +25,27 @@ final class DeviceModalTabStateSourceTest extends TestCase
         );
     }
 
-    public function testAddDeviceResetsBothBootstrapTabButtons(): void
+    public function testTheWizardHasNoTabsToLeaveInTheWrongState(): void
     {
-        $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/device-modal.js'
-        );
+        // Este teste substitui um que verificava que abrir o "adicionar" reponha os dois
+        // botoes de separador, porque o mesmo modal servia os dois trabalhos e podia
+        // ficar com o separador das configuracoes activo de uma edicao anterior.
+        //
+        // Com o assistente num modal proprio e sem separadores, esse estado nao existe
+        // para ser reposto. O invariante deixou de ser "repor" e passou a ser "nao ter".
+        $root = dirname(__DIR__, 3);
+        $wizard = file_get_contents($root . '/src/Dashboard/components/modals/device-wizard.php');
+        $edit = file_get_contents($root . '/src/Dashboard/components/modals/device.php');
 
-        self::assertIsString($source);
-        self::assertStringContainsString(
-            'els.deviceConfigTabBtn?.classList.remove("active");',
-            $source,
-        );
-        self::assertStringContainsString(
-            'els.deviceConfigTabBtn?.setAttribute("aria-selected", "false");',
-            $source,
-        );
-        self::assertStringContainsString(
-            'els.deviceGeneralTabBtn?.setAttribute("aria-selected", "true");',
-            $source,
-        );
+        self::assertIsString($wizard);
+        self::assertIsString($edit);
+        self::assertStringNotContainsString('nav-link', $wizard);
+        self::assertStringNotContainsString('tab-pane', $wizard);
+        self::assertStringContainsString("render_modal('deviceWizardModal'", $wizard);
+
+        // O modal de edicao mantem os seus separadores, que e o que esta mudanca nao toca.
+        self::assertStringContainsString('deviceConfigTabBtn', $edit);
+        self::assertStringContainsString('deviceGeneralTabBtn', $edit);
     }
+
 }

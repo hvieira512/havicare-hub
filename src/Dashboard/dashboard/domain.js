@@ -7,17 +7,105 @@ export const deviceTypeOptions = [
     { value: "bracelet", label: "Pulseira" },
 ];
 
-// Device types that are not on the network themselves: a MOKO gateway relays
-// their BLE advertisements, so each one is linked to one or more gateways.
-const GATEWAY_LINKED_DEVICE_TYPES = ["diaper_sensor", "bracelet"];
+const MAC_IDENTITY = {
+    field: "deviceId",
+    label: "MAC",
+    help: "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).",
+    placeholder: "d48c49f7909c",
+};
+
+/**
+ * O que cada tipo de dispositivo tem, numa linha por tipo.
+ *
+ * Antes disto, as diferenças por tipo viviam em três formas ao mesmo tempo: predicados
+ * aqui, cadeias de `if` no modal a trocar rótulos e ajudas, e visibilidade de linhas
+ * espalhada por `classList.toggle`. Acrescentar um tipo obrigava a encontrar as três.
+ *
+ * `identity` é o campo que identifica a unidade e o que se lhe escreve ao lado. `sim`
+ * diz se há número de SIM. `gatewayLinks` diz se o dispositivo é retransmitido por um
+ * gateway em vez de falar por conta própria. `hubRules` são as configurações decididas
+ * no hub, sem downlink -- lista vazia é o caso comum.
+ *
+ * ponytail: isto duplica o que o hub já sabe nas definições de capacidades por tipo, em
+ * PHP. A saída certa é a API servir o descritor, como já serve as capacidades; consolidar
+ * primeiro num só sítio no frontend é o que torna essa migração numa substituição de
+ * tabela por chamada, em vez de uma caça a ramificações.
+ */
+export const DEVICE_TYPES = {
+    watch: {
+        identity: {
+            field: "imei",
+            label: "IMEI",
+            help: "15 dígitos, como vem impresso no dispositivo.",
+            placeholder: "861265061009822",
+        },
+        sim: true,
+        gatewayLinks: false,
+        hubRules: [],
+    },
+    ncs: {
+        identity: {
+            field: "deviceId",
+            label: "Device ID (MAC)",
+            help: "MAC address do dispositivo NCS (ex.: bea6c3dd8e02). Obrigatório.",
+            placeholder: "MAC address (ex.: bea6c3dd8e02)",
+        },
+        sim: false,
+        gatewayLinks: false,
+        hubRules: [],
+    },
+    radar: {
+        identity: {
+            field: "deviceId",
+            label: "Device ID",
+            help: "Identificador do dispositivo radar no protocolo.",
+            placeholder: "ID do dispositivo",
+        },
+        sim: false,
+        gatewayLinks: false,
+        hubRules: [],
+    },
+    gateway: {
+        identity: MAC_IDENTITY,
+        sim: false,
+        gatewayLinks: false,
+        hubRules: [],
+    },
+    diaper_sensor: {
+        identity: MAC_IDENTITY,
+        sim: false,
+        gatewayLinks: true,
+        hubRules: ["diaper_sensitivity"],
+    },
+    bracelet: {
+        identity: MAC_IDENTITY,
+        sim: false,
+        gatewayLinks: true,
+        hubRules: [],
+    },
+};
+
+/**
+ * A linha de um tipo, sempre utilizável.
+ *
+ * Normaliza como o `normalizeDeviceType`, porque todos os chamadores o faziam antes de
+ * decidir e repetir isso em cada um é como as três formas divergem.
+ */
+export function deviceTypeFields(deviceType) {
+    return DEVICE_TYPES[normalizeDeviceType(deviceType)];
+}
 
 export function linksToGateway(deviceType) {
-    return GATEWAY_LINKED_DEVICE_TYPES.includes(deviceType);
+    return deviceTypeFields(deviceType).gatewayLinks;
 }
 
 // Identified by a canonical MAC rather than an IMEI.
 export function usesMacAddress(deviceType) {
-    return deviceType === "gateway" || linksToGateway(deviceType);
+    return deviceTypeFields(deviceType).identity.label === "MAC";
+}
+
+export function hubRulesFor(deviceType) {
+    return deviceTypeFields(deviceType).hubRules;
 }
 
 export function normalizeDeviceType(deviceType) {

@@ -16,7 +16,7 @@ import {
 import {
     renderSelection,
 } from "./detail-view.js";
-import {loadDiaperSensitivity} from "./diaper-sensitivity-ui.js";
+import {loadHubRules} from "./hub-rules/index.js";
 import {
     refreshGatewayOptions,
     selectedGatewayKeys,
@@ -33,6 +33,7 @@ import {
     findModelInfo,
     isDeviceSelectorOpen,
     isFourPTouchSelection,
+    deviceTypeFields,
     linksToGateway,
     loadDevice,
     loadSummary,
@@ -44,7 +45,6 @@ import {
     normalizeDeviceType,
     supplierProtocol,
     suppliersForDeviceType,
-    usesMacAddress,
 } from "./list-detail.js";
 import {
     disconnectDeviceStream,
@@ -194,99 +194,9 @@ export function activeDeviceModalTab() {
         : "general";
 }
 
-export async function openAddDevice(source = "") {
-    await ensureDeviceTypeSuppliersModelsLoaded();
-    const notification = source && typeof source === "object" ? source : null;
-    const identity = String(notification?.imei || source || "").trim();
-    const protocol = String(notification?.protocol || "").trim();
-    const reportedModel = String(notification?.model || "").trim();
-    const protocolModels = (state.deviceTypeSuppliersModels || []).filter(
-        (model) => String(model.protocol || "") === protocol,
-    );
-    const detectedModel = protocolModels.find(
-        (model) =>
-            modelInternalName(model) === reportedModel
-            || modelCommercialName(model) === reportedModel,
-    ) || protocolModels[0] || null;
-    const detectedDeviceType = detectedModel
-        ? modelDeviceType(detectedModel)
-        : "watch";
-    const detectedSupplier = String(detectedModel?.supplier || "");
-    const detectedModelName = reportedModel === ""
-        ? ""
-        : modelInternalName(detectedModel);
-
-    els.deviceModalLabel.textContent = "Adicionar dispositivo";
-    els.deviceForm.reset();
-    delete els.deviceImei.dataset.originalImei;
-    resetConfigUiState();
-    state.deviceModal = {
-        mode: "create",
-        activeTab: "general",
-        activeCategory: "",
-        imei: "",
-        originalImei: "",
-        deviceType: "watch",
-        licenseId: "0",
-        simNumber: "",
-        deviceId: "",
-        linkedGatewayKeys: [],
-        selectedGatewayKeys: [],
-        gatewayOptions: [],
-        supplier: "",
-        model: "",
-        protocol: "",
-        catalog: [],
-        capabilityCatalog: [],
-        catalogLoading: false,
-        configurations: [],
-        configurationSync: {entries: {}},
-        capabilities: {},
-        enabledCapabilityKeys: [],
-        configUi: {},
-        errorMessage: "",
-        loading: false,
-    };
-    setDeviceFormError("");
-    els.deviceConfigTabBtn?.classList.add("d-none");
-    els.deviceConfigTabBtn?.classList.remove("active");
-    els.deviceConfigTabBtn?.setAttribute("aria-selected", "false");
-    els.deviceConfigPane?.classList.remove("show", "active");
-    els.deviceGeneralTabBtn?.classList.add("active");
-    els.deviceGeneralTabBtn?.setAttribute("aria-selected", "true");
-    els.deviceGeneralPane?.classList.add("show", "active");
-    els.deleteDeviceBtn.classList.add("d-none");
-    renderDeviceSimNumberField("");
-    renderDeviceTypeSelector(detectedDeviceType);
-    await populateCompanySelect();
-    els.deviceCompany.value = "";
-    els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
-    els.deviceLicenseSelect.disabled = true;
-    els.deviceLicenseId.value = "0";
-    els.deviceDeviceId.value = detectedDeviceType === "watch"
-        ? ""
-        : String(notification?.ident || identity).trim();
-    await renderDeviceSelectors(
-        detectedSupplier,
-        detectedModelName,
-        detectedDeviceType,
-    );
-    await refreshGatewayOptions([]);
-    els.deviceImei.value = detectedDeviceType === "watch" ? identity : "";
-    const identityInput = detectedDeviceType === "watch"
-        ? els.deviceImei
-        : els.deviceDeviceId;
-    identityInput.dispatchEvent(new Event("input", {bubbles: true}));
-    deviceModal.show();
-    if (identityInput.value !== "") {
-        identityInput.focus();
-    }
-}
-
 export async function editDevice(imei, supplier, model) {
     await ensureDeviceTypeSuppliersModelsLoaded();
     const activeTab = activeDeviceModalTab();
-    els.deviceModalLabel.textContent = "Editar dispositivo";
     els.deviceImei.value = imei;
     els.deviceImei.dataset.originalImei = imei;
     resetConfigUiState();
@@ -385,10 +295,11 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.linkedGatewayKeys = linkedGatewayKeys;
         state.deviceModal.selectedGatewayKeys = linkedGatewayKeys;
         await refreshGatewayOptions(linkedGatewayKeys);
-        await loadDiaperSensitivity(
+        state.deviceModal.hubRules = await loadHubRules(
             String(device.imei || ""),
             state.deviceModal.deviceType,
         );
+        state.deviceModal.hubRuleFeedback = {};
         state.deviceModal.configurations = detail.configurations || {};
         state.deviceModal.configurationSync = detail.configurationSync || {entries: {}};
         state.deviceModal.capabilities = detail.capabilities || {};
@@ -465,40 +376,18 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
         "selectDeviceType",
     );
 
-    const showImeiSim = deviceType === "watch";
-    const showDeviceId = deviceType !== "watch";
-    els.deviceImeiRow?.classList.toggle("d-none", !showImeiSim);
-    els.deviceSimRow?.classList.toggle("d-none", !showImeiSim);
-    els.deviceDeviceIdRow?.classList.toggle("d-none", !showDeviceId);
-    els.deviceGatewayLinksRow?.classList.toggle(
-        "d-none",
-        !linksToGateway(deviceType),
-    );
-    els.deviceDiaperSensitivityRow?.classList.toggle(
-        "d-none",
-        deviceType !== "diaper_sensor",
-    );
+    // Uma linha da tabela em vez de quatro cadeias de `if` e cinco toggles decididos aqui.
+    const fields = deviceTypeFields(deviceType);
+    const byImei = fields.identity.field === "imei";
+    els.deviceImeiRow?.classList.toggle("d-none", !byImei);
+    els.deviceSimRow?.classList.toggle("d-none", !fields.sim);
+    els.deviceDeviceIdRow?.classList.toggle("d-none", byImei);
+    els.deviceGatewayLinksRow?.classList.toggle("d-none", !fields.gatewayLinks);
 
-    if (deviceType === "ncs") {
-        els.deviceDeviceIdLabel.textContent = "Device ID (MAC)";
-        els.deviceDeviceIdHelp.textContent =
-            "MAC address do dispositivo NCS (ex.: bea6c3dd8e02). Obrigatório.";
-        els.deviceDeviceId.placeholder = "MAC address (ex.: bea6c3dd8e02)";
-    } else if (deviceType === "radar") {
-        els.deviceDeviceIdLabel.textContent = "Device ID";
-        els.deviceDeviceIdHelp.textContent =
-            "Identificador do dispositivo radar no protocolo.";
-        els.deviceDeviceId.placeholder = "ID do dispositivo";
-    } else if (usesMacAddress(deviceType)) {
-        els.deviceDeviceIdLabel.textContent = "MAC";
-        els.deviceDeviceIdHelp.textContent =
-            "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).";
-        els.deviceDeviceId.placeholder = "d48c49f7909c";
-    } else {
-        els.deviceDeviceIdLabel.textContent = "Device ID";
-        els.deviceDeviceIdHelp.textContent =
-            "Identificador do dispositivo no protocolo (IMEI, MAC, etc.).";
-        els.deviceDeviceId.placeholder = "ID do dispositivo no protocolo";
+    if (!byImei) {
+        els.deviceDeviceIdLabel.textContent = fields.identity.label;
+        els.deviceDeviceIdHelp.textContent = fields.identity.help;
+        els.deviceDeviceId.placeholder = fields.identity.placeholder;
     }
 }
 

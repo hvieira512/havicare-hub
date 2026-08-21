@@ -6,7 +6,7 @@ import {
 import {readConfigPayload, renderDeviceConfigurationRoot} from "../config.js";
 import {emptyPanel} from "../renderers.js";
 import {resetPhoneControls} from "../phone.js";
-import {hasDiaperSensitivity} from "./diaper-sensitivity-ui.js";
+import {hasHubRules, renderHubRules} from "./hub-rules/index.js";
 import {state} from "../state.js";
 
 /**
@@ -339,10 +339,18 @@ export function renderDeviceConfigurationModal() {
           )
         : state.deviceModal.catalog.filter((entry) => entry.capabilityKey);
 
-    els.deviceConfigRoot.innerHTML = renderDeviceConfigurationRoot({
-        // O separador nao esta vazio quando ha uma configuracao decidida no hub
-        // mostrada acima deste painel, e dizer que esta contradiz o que se ve.
-        quietWhenEmpty: hasDiaperSensitivity(),
+    // As regras do hub sao configuracoes como as outras e vivem no mesmo separador. Vem
+    // primeiro porque valem de imediato: nao ha nada a aguardar entrega.
+    const deviceType = state.deviceModal.deviceType;
+    const hubRules = renderHubRules(
+        deviceType,
+        state.deviceModal.hubRules || {},
+        state.deviceModal.hubRuleFeedback || {},
+    );
+
+    els.deviceConfigRoot.innerHTML = hubRules + renderDeviceConfigurationRoot({
+        // Sem downlinks E sem regras do hub e que o separador esta vazio.
+        quietWhenEmpty: hasHubRules(deviceType),
         protocol: state.deviceModal.protocol,
         catalog: filteredCatalog,
         capabilityCatalog: state.deviceModal.capabilityCatalog,

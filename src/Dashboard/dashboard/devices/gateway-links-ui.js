@@ -86,7 +86,11 @@ const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon" viewBox=
     <path d="M12 10.5v-7M8.75 6.75 12 3.5l3.25 3.25"></path>
 </svg>`;
 
-function gatewayCardMarkup(gateway, checked, signal = null) {
+/**
+ * O card de um gateway. Exportado para o assistente de adicionar o reutilizar: as classes
+ * e os estados de foco vivem no CSS e duplicar o markup era duplicar essa contratacao.
+ */
+export function gatewayCardMarkup(gateway, checked, signal = null) {
     const key = String(gateway.imei || "").trim().toLowerCase();
     const model = String(gateway.model || "").trim();
     const image = String(gateway.image || "").trim();

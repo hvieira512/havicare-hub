@@ -52,6 +52,7 @@ import {
     licenseDisplayLabel,
     linksToGateway,
     loadDevice,
+    deviceTypeFields,
     loadSummary,
     ensureProtocolsLoaded,
     modelCommercialName,
@@ -94,7 +95,6 @@ import {
     handleCompanySelect,
     handleDeleteDeviceBtnClick,
     handleLicenseSelect,
-    openAddDevice,
     populateCompanySelect,
     populateLicenseSelectForCompany,
     renderDeviceSelectors,
@@ -117,7 +117,8 @@ import {
     setConfigUi,
     syncDeviceModalCommandStates,
 } from "../devices/config-panel.js";
-import {initDiaperSensitivityUi} from "../devices/diaper-sensitivity-ui.js";
+import {initCreateWizard, openCreateWizard} from "../devices/create-wizard.js";
+import {ruleFor, selectHubRuleValue} from "../devices/hub-rules/index.js";
 import {
     initGatewayLinksUi,
     refreshGatewayOptions,
@@ -202,16 +203,17 @@ import {
 
 let els = {};
 let deviceModal = null;
+let deviceWizardModal = null;
 let deviceSelectorModal = null;
 let settingsModal = null;
 
 function bindEvents() {
     els.addDeviceBtn.addEventListener("click", () => {
-        void openAddDevice();
+        void openWizard();
     });
     els.openAddDeviceFromSelectorBtn.addEventListener("click", () => {
         deviceSelectorModal?.hide();
-        void openAddDevice();
+        void openWizard();
     });
     els.openDeviceSelectorBtn.addEventListener("click", () => {
         void openDeviceSelector();
@@ -602,11 +604,87 @@ function handleTelemetryPagerClick(event) {
     renderTelemetryList(telemetryRows);
 }
 
+/**
+ * Grava uma regra do hub. Sem estado de entrega: nao ha nada a caminho de um dispositivo,
+ * por isso o resultado e "Guardado" ou o erro, e nao "Enviado" nem "A espera".
+ */
+async function saveHubRule(key) {
+    const rule = ruleFor(key);
+    const block = els.deviceConfigRoot.querySelector(`[data-hub-rule="${key}"]`);
+    if (!rule || !block) return;
+
+    const data = (state.deviceModal.hubRules || {})[key] || {};
+    const selection = rule.read(block, data);
+    const invalid = rule.validate?.(selection);
+    if (invalid) {
+        setHubRuleFeedback(key, invalid, "danger");
+        return;
+    }
+
+    const imei = String(state.deviceModal.imei || els.deviceImei?.value || "").trim();
+    const error = await rule.save(imei, selection);
+    if (error) {
+        setHubRuleFeedback(key, error, "danger");
+        return;
+    }
+    // Recarrega para o perfil derivado e as gamas vierem do servidor, e nao do que o
+    // ecra supos: e o servidor que decide o nome do perfil a partir dos dois inteiros.
+    state.deviceModal.hubRules = {
+        ...(state.deviceModal.hubRules || {}),
+        [key]: await rule.load(imei),
+    };
+    setHubRuleFeedback(key, "Guardado.", "success");
+}
+
+function setHubRuleFeedback(key, message, tone) {
+    state.deviceModal.hubRuleFeedback = {
+        ...(state.deviceModal.hubRuleFeedback || {}),
+        [key]: {message, tone},
+    };
+    renderDeviceConfigurationModal();
+}
+
+function clearHubRuleFeedback(key) {
+    if (!key || !state.deviceModal.hubRuleFeedback?.[key]) return;
+    const next = {...state.deviceModal.hubRuleFeedback};
+    delete next[key];
+    state.deviceModal.hubRuleFeedback = next;
+}
+
 function handleDeviceConfigClick(event) {
+    // As regras do hub vivem no mesmo painel mas nao no ciclo de vida dos downlinks:
+    // gravam de imediato e nao tem seccao de configuracao nem estado de entrega.
+    const hubChoice = event.target.closest("[data-hub-rule-value]");
+    if (hubChoice) {
+        event.preventDefault();
+        selectHubRuleValue(hubChoice.closest("[data-hub-rule]"), hubChoice.dataset.hubRuleValue);
+        clearHubRuleFeedback(hubChoice.closest("[data-hub-rule]")?.dataset.hubRule);
+        return;
+    }
+
     const button = event.target.closest(
         "[data-config-category], [data-action]",
     );
     if (!button) return;
+
+    if (button.dataset.action === "saveHubRule") {
+        event.preventDefault();
+        void saveHubRule(button.dataset.hubRuleKey);
+        return;
+    }
+    if (button.dataset.action === "resetHubRule") {
+        event.preventDefault();
+        const key = button.dataset.hubRuleKey;
+        const rule = ruleFor(key);
+        if (rule) {
+            selectHubRuleValue(
+                els.deviceConfigRoot.querySelector(`[data-hub-rule="${key}"]`),
+                rule.resetProfile,
+            );
+            clearHubRuleFeedback(key);
+        }
+        return;
+    }
 
     if (button.dataset.configCategory) {
         event.preventDefault();
@@ -1043,12 +1121,148 @@ function handleApiUserListClick(event) {
     }
 }
 
+/**
+ * As licencas de uma empresa, para o assistente.
+ *
+ * Nao reutiliza o `populateLicenseSelectForCompany` do modal de edicao porque esse
+ * escreve directamente nos elementos daquele formulario. O assistente desenha os seus
+ * proprios, e o que precisa e dos dados.
+ */
+async function wizardLicensesFor(companyName) {
+    if (state.companies.length === 0) {
+        const data = await apiGetCompanies({limit: 500});
+        state.companies = data?.error ? [] : data.data || [];
+    }
+    const company = state.companies.find((entry) => entry.name === companyName);
+    if (!company) return [];
+    const result = await apiGetLicenses({limit: 500, companyId: company.id});
+    if (result?.error) return [];
+
+    return (result.data || []).map((license) => ({
+        value: license.license_id,
+        label: license.name
+            ? `${license.license_id} — ${license.name}`
+            : String(license.license_id),
+    }));
+}
+
+/**
+ * Cria o dispositivo e, se for retransmitido, autoriza os gateways escolhidos.
+ *
+ * Devolve a mensagem de erro ou null, que e o contrato que o assistente espera -- ele
+ * desenha o erro no seu lugar em vez de o modal saber onde.
+ */
+/**
+ * Abre o assistente.
+ *
+ * Carrega as empresas e os gateways antes de mostrar, para a primeira pergunta ja poder
+ * dizer quantos modelos existem por tipo e a terceira ja ter as empresas.
+ */
+async function openWizard(source = "") {
+    await ensureDeviceTypeSuppliersModelsLoaded();
+    if (state.companies.length === 0) {
+        const data = await apiGetCompanies({limit: 500});
+        state.companies = data?.error ? [] : data.data || [];
+    }
+    await loadWizardGateways();
+    openCreateWizard(
+        state.companies.map((company) => company.name),
+        seedFromNotification(source),
+    );
+    deviceWizardModal.show();
+}
+
+/**
+ * As respostas que uma notificacao de dispositivo nao autorizado ja permite dar.
+ *
+ * O hub viu o dispositivo e disse o protocolo, o modelo reportado e a identidade. Isso
+ * chega para o tipo e o modelo, e evita escrever a mao o que ele acabou de dizer. Sem
+ * notificacao devolve nada, e o assistente comeca do zero.
+ */
+function seedFromNotification(source) {
+    const notification = source && typeof source === "object" ? source : null;
+    const identity = String(notification?.imei || source || "").trim();
+    if (identity === "") return {};
+
+    const protocol = String(notification?.protocol || "").trim();
+    const reported = String(notification?.model || "").trim();
+    const candidates = (state.deviceTypeSuppliersModels || []).filter(
+        (model) => String(model.protocol || "") === protocol,
+    );
+    const detected = candidates.find(
+        (model) =>
+            modelInternalName(model) === reported
+            || modelCommercialName(model) === reported,
+    ) || candidates[0] || null;
+
+    if (!detected) return {identity};
+
+    return {
+        type: modelDeviceType(detected),
+        model: {
+            supplier: String(detected.supplier || ""),
+            model: modelInternalName(detected),
+        },
+        identity,
+    };
+}
+
+/** Os gateways registados, para o assistente poder oferecer os da mesma empresa. */
+async function loadWizardGateways() {
+    const result = await apiGetDevices({deviceType: "gateway", limit: 500});
+    state.wizardGateways = result?.error
+        ? []
+        : (result.data || []).map((device) => ({
+            imei: String(device.imei || "").toLowerCase(),
+            model: device.model || "",
+            image: device.image || "",
+            company: device.company || "",
+            licenseId: device.licenseId ?? device.license_id ?? "",
+        }));
+}
+
+async function createDeviceFromWizard(answers) {
+    const fields = deviceTypeFields(answers.type);
+    const identity = String(answers.identity || "").trim();
+    const byImei = fields.identity.field === "imei";
+
+    const result = await apiSaveDevice(
+        identity,
+        answers.model.supplier,
+        answers.model.model,
+        answers.type,
+        String(answers.owner.licenseId),
+        fields.sim ? String(answers.sim || "") : "",
+        byImei ? "" : identity,
+        "",
+        answers.owner.company,
+    );
+    if (result?.error) {
+        return result._httpStatus === 409
+            ? "Já existe um dispositivo com esta identidade."
+            : result.error.message || result.error.code;
+    }
+
+    for (const gatewayKey of answers.gateways || []) {
+        const linked = await apiCreateDeviceLink(gatewayKey, identity);
+        if (linked?.error) {
+            return `Dispositivo criado, mas não foi possível autorizar o gateway ${gatewayKey}.`;
+        }
+    }
+
+    deviceWizardModal.hide();
+    await loadSummary();
+    return null;
+}
+
 export async function startDashboard() {
     els = cacheElements();
     initGatewayLinksUi({els});
-    initDiaperSensitivityUi({els});
     initDeviceConfigPanel({els});
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
+    deviceWizardModal = new bootstrap.Modal(
+        document.getElementById("deviceWizardModal"),
+    );
     deviceSelectorModal = new bootstrap.Modal(
         document.getElementById("deviceSelectorModal"),
     );
@@ -1056,6 +1270,11 @@ export async function startDashboard() {
         document.getElementById("settingsModal"),
     );
     initDeviceModal({els, deviceModal, deviceSelectorModal, settingsModal});
+    initCreateWizard({
+        els,
+        loadLicenses: wizardLicensesFor,
+        onCreate: createDeviceFromWizard,
+    });
     initDeviceListDetail({
         els,
         ui: {deviceModal, deviceSelectorModal, settingsModal},
@@ -1072,7 +1291,7 @@ export async function startDashboard() {
     });
     initNotifications({
         els,
-        openAddDevice,
+        openAddDevice: openWizard,
     });
     bindEvents();
     await ensureProtocolsLoaded();

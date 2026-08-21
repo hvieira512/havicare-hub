@@ -1,4 +1,6 @@
 export const state = {
+    // Gateways registados, para o assistente de adicionar oferecer os elegiveis.
+    wizardGateways: [],
     companies: [],
     summary: {
         devices: [],
