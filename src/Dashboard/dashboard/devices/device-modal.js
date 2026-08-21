@@ -16,11 +16,7 @@ import {
 import {
     renderSelection,
 } from "./detail-view.js";
-import {
-    loadDiaperSensitivity,
-    saveDiaperSensitivity,
-    selectedDiaperSensitivity,
-} from "./diaper-sensitivity-ui.js";
+import {loadDiaperSensitivity} from "./diaper-sensitivity-ui.js";
 import {
     refreshGatewayOptions,
     selectedGatewayKeys,
@@ -689,19 +685,6 @@ export async function saveDevice() {
         }
         state.deviceModal.linkedGatewayKeys = desiredGatewayKeys;
         state.deviceModal.selectedGatewayKeys = desiredGatewayKeys;
-    }
-
-    // Depois de o dispositivo existir, pela mesma razao que os links: a configuracao
-    // tem uma chave estrangeira para a whitelist.
-    const sensitivityError = await saveDiaperSensitivity(
-        imei,
-        selectedDiaperSensitivity(deviceType),
-    );
-    if (sensitivityError) {
-        setDeviceFormError(
-            `Dispositivo guardado, mas não foi possível atualizar a sensibilidade: ${sensitivityError}`,
-        );
-        return;
     }
 
     if (

@@ -79,6 +79,8 @@ function harness() {
                 <input type="number" id="range">
                 <input type="number" id="value">
             </div>
+            <button id="save"></button>
+            <span id="feedback"></span>
         </div>
     </body>`);
     const d = dom.window.document;
@@ -88,16 +90,22 @@ function harness() {
         deviceDiaperSensitivityCustom: d.getElementById("custom"),
         deviceDiaperPollutionRange: d.getElementById("range"),
         deviceDiaperPollutionValue: d.getElementById("value"),
+        deviceDiaperSensitivitySaveBtn: d.getElementById("save"),
+        deviceDiaperSensitivityFeedback: d.getElementById("feedback"),
     };
     initDiaperSensitivityUi({els});
 
     return {els, document: d};
 }
 
+function click(element) {
+    element.dispatchEvent(
+        new element.ownerDocument.defaultView.MouseEvent("click", {bubbles: true}),
+    );
+}
+
 function press(els, profile) {
-    els.deviceDiaperSensitivityGroup
-        .querySelector(`[data-diaper-profile="${profile}"]`)
-        .dispatchEvent(new els.deviceDiaperSensitivityGroup.ownerDocument.defaultView.MouseEvent("click", {bubbles: true}));
+    click(els.deviceDiaperSensitivityGroup.querySelector(`[data-diaper-profile="${profile}"]`));
 }
 
 test("os quatro perfis sao botoes e nao um select", () => {
@@ -174,4 +182,37 @@ test("o painel de baixo cala-se quando ha uma configuracao mostrada acima", () =
         renderDeviceConfigurationRoot({...context, quietWhenEmpty: true}),
         "",
     );
+});
+
+test("a linha tem o seu proprio botao de guardar", () => {
+    // Sem ele era preciso voltar ao separador Geral para gravar, que e onde vive o
+    // "Guardar dispositivo". As configuracoes dos relogios tambem gravam no seu lugar.
+    const pane = paneOf("deviceConfigPane");
+
+    assert.match(pane, /id="deviceDiaperSensitivitySaveBtn"/);
+    // "Guardar" e nao "Enviar": nada e enviado ao sensor, que so transmite.
+    assert.match(pane, /deviceDiaperSensitivitySaveBtn[\s\S]*?>Guardar\s*</);
+    assert.doesNotMatch(pane, /deviceDiaperSensitivitySaveBtn[\s\S]*?>Enviar\s*</);
+});
+
+test("guardar antes de o dispositivo existir explica-se em vez de falhar calado", async () => {
+    const {els} = harness();
+    await loadDiaperSensitivity("", "diaper_sensor");
+
+    click(els.deviceDiaperSensitivitySaveBtn);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    assert.match(els.deviceDiaperSensitivityFeedback.textContent, /Guarde o dispositivo/);
+    assert.match(els.deviceDiaperSensitivityFeedback.className, /text-danger/);
+});
+
+test("mudar de perfil limpa a mensagem anterior", async () => {
+    const {els} = harness();
+    await loadDiaperSensitivity("", "diaper_sensor");
+    click(els.deviceDiaperSensitivitySaveBtn);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    press(els, "custom");
+
+    assert.equal(els.deviceDiaperSensitivityFeedback.textContent, "");
 });

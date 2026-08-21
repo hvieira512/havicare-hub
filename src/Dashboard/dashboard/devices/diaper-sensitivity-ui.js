@@ -45,7 +45,46 @@ export function initDiaperSensitivityUi(context) {
         if (!button) return;
         event.preventDefault();
         applyProfile(String(button.dataset.diaperProfile || "normal"));
+        feedback("");
     });
+    els.deviceDiaperSensitivitySaveBtn?.addEventListener("click", (event) => {
+        event.preventDefault();
+        void save();
+    });
+}
+
+function feedback(message, tone = "") {
+    const element = els.deviceDiaperSensitivityFeedback;
+    if (!element) return;
+    element.textContent = message;
+    element.className = tone === "" ? "small" : `small text-${tone}`;
+}
+
+/**
+ * Grava a escolha do ecra, com o seu proprio botao.
+ *
+ * Botao proprio e nao o "Guardar dispositivo" do separador Geral, como as
+ * configuracoes dos relogios: esta e um recurso independente, com o seu endpoint, e
+ * obrigar a voltar a outro separador para a gravar era o que estava errado. O verbo e
+ * "Guardar" e nao "Enviar" porque nada e enviado ao sensor.
+ */
+async function save() {
+    const selection = selectedDiaperSensitivity("diaper_sensor");
+    if (selection === null) {
+        feedback("Guarde o dispositivo primeiro.", "danger");
+        return;
+    }
+    const {pollutionRange, pollutionValue} = selection;
+    if (!Number.isInteger(pollutionRange) || !Number.isInteger(pollutionValue)) {
+        feedback("Indique dois números inteiros.", "danger");
+        return;
+    }
+
+    els.deviceDiaperSensitivitySaveBtn.disabled = true;
+    feedback("A guardar...");
+    const error = await saveDiaperSensitivity(loadedImei, selection);
+    els.deviceDiaperSensitivitySaveBtn.disabled = false;
+    feedback(error ?? "Guardado.", error ? "danger" : "success");
 }
 
 /** Marca o botao activo e, num preset, escreve os valores que ele representa. */

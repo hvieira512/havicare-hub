@@ -119,6 +119,12 @@ ob_start();
                                 <div class="form-text">A partir de quanto um canal conta como molhado.</div>
                             </div>
                         </div>
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <button type="button" class="btn btn-primary btn-sm" id="deviceDiaperSensitivitySaveBtn">
+                                <i class="fa-solid fa-floppy-disk me-2"></i>Guardar
+                            </button>
+                            <span class="small" id="deviceDiaperSensitivityFeedback" role="status" aria-live="polite"></span>
+                        </div>
                         <div class="form-text" id="deviceDiaperSensitivityHelp">Decidida no hub: o sensor apenas transmite e nada lhe é enviado. Passa a valer na leitura seguinte.</div>
                     </div>
                     <div id="deviceConfigRoot"></div>
