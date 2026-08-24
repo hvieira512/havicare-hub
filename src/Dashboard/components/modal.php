@@ -17,8 +17,11 @@ function render_modal(
     string $size = '',
     string $headerHtml = ''
 ): void {
-    $isFullscreen = str_contains($size, 'modal-fullscreen');
-    $dialogClass = trim('modal-dialog ' . ($isFullscreen ? '' : 'modal-dialog-centered ') . $size);
+    // Só o ecrã inteiro em todas as larguras é que dispensa o centrado. O
+    // `modal-fullscreen-md-down` contém a mesma string mas só é ecrã inteiro em telefone,
+    // e a comparação por substring tirava-lhe o centrado também em ecrã largo.
+    $isAlwaysFullscreen = in_array('modal-fullscreen', explode(' ', $size), true);
+    $dialogClass = trim('modal-dialog ' . ($isAlwaysFullscreen ? '' : 'modal-dialog-centered ') . $size);
     $titleMarkup = $headerHtml !== ''
         ? $headerHtml
         : '<h5 class="modal-title" id="' . h($id) . 'Label">' . h($title) . '</h5>';

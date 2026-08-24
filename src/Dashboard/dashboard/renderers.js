@@ -391,6 +391,7 @@ export function telemetryCard({
     span = 6,
     icon,
     title,
+    value = "",
     tooltip = "",
     body = "",
     feature = "",
@@ -428,7 +429,10 @@ export function telemetryCard({
         <div class="telemetry-card-icon${tone ? ` telemetry-card-icon-${esc(tone)}` : ""}"${tip}>
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
-        <div class="telemetry-card-title fw-semibold text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
+        <div class="flex-grow-1 min-w-0">
+        <div class="telemetry-card-title fw-semibold text-truncate" title="${esc(title)}">${esc(title)}</div>
+        ${value ? `<div class="telemetry-card-value tabular-nums text-truncate" title="${esc(value)}">${esc(value)}</div>` : ""}
+        </div>
         ${state}
         </div>
         ${body}
@@ -737,9 +741,11 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     // The card shows the latest telemetry, so an icon derived from that reading
     // wins over the static one -- a wired gateway must not show a Wi-Fi icon.
     const icon = command.icon || lastContent?.icon || card.icon;
-    const title = isSystemRequestCard
-        ? card.value || featureLabel(type)
-        : lastValue || card.value || featureLabel(type);
+    // O titulo e sempre o nome da categoria. A leitura mais recente substituia-o, o que
+    // dava mosaicos a dizer "78%" e "Atencao" sem dizer 78% de que: num dispositivo com
+    // telemetria a chegar, o cartao perdia o nome exactamente quando tinha o que mostrar.
+    const title = featureLabel(type) || card.value || type;
+    const value = isSystemRequestCard ? card.value : lastValue;
     // A card may ask for the full row and supply its own body, so richer
     // telemetry does not need a special case in this shell.
     const span = lastContent?.span || card.span || 6;
@@ -749,6 +755,8 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         span,
         icon,
         title,
+        // O valor so aparece quando diz algo que o titulo nao diga.
+        value: value && value !== title ? value : "",
         tooltip,
         body: bodyHtml,
         // Um cartao que nao se pode pedir nao e clicavel: o que nao responde ao clique

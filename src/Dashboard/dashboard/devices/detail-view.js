@@ -479,8 +479,14 @@ function renderTelemetryList(telemetryRows) {
     els.telemetryCount.textContent = telemetry.length
         ? `${telemetry.length} eventos`
         : "";
+    // Uma linha por evento, em colunas: pastilha do icone, nome, valor, hora. Era um
+    // bloco de tres linhas por evento -- nome e valor, o tipo nativo, e os detalhes --
+    // sem coluna alinhada nenhuma, o que dava seis eventos no espaco de dezoito e
+    // obrigava a ler cada um por inteiro para comparar duas horas.
     els.telemetryList.innerHTML = pageRows.length
-        ? `<div class="list-group">${pageRows.map(renderTelemetryRow).join("")}</div>`
+        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
+            <tbody>${pageRows.map(renderTelemetryRow).join("")}</tbody>
+           </table>`
         : emptyPanel("Ainda não há eventos recebidos.");
     renderTelemetryPager(telemetry.length, totalPages);
 }
@@ -520,20 +526,24 @@ function renderTelemetryRow(payload) {
     const card = uplinkCardContent(type, data);
     const details = telemetryDetails(data, payload);
 
+    const tone = cardTone(type);
     return `
-        <div class="list-group-item">
-        <div class="d-flex justify-content-between gap-3">
-        <div class="min-width-0">
-        <div class="fw-semibold"><i class="fa-solid ${esc(card.icon)} text-secondary me-2"></i>${esc(featureLabel(type))}</div>
-        <div class="small text-secondary">${esc(payload.source?.nativeType || "telemetria")}</div>
-        </div>
-        <div class="text-end flex-shrink-0">
-        <div class="fw-semibold">${esc(card.value)}</div>
-        <div class="small text-secondary">${esc(when(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</div>
-        </div>
-        </div>
-        ${details ? `<div class="small text-secondary mt-2 text-break">${details}</div>` : ""}
-        </div>`;
+        <tr>
+        <td style="width:34px">
+            <span class="telemetry-row-icon${tone ? ` telemetry-card-icon-${esc(tone)}` : ""}">
+                <i class="fa-solid ${esc(card.icon)}"></i>
+            </span>
+        </td>
+        <td style="width:200px">
+            <div class="fw-semibold">${esc(featureLabel(type))}</div>
+            <div class="section-label" style="letter-spacing:0;text-transform:none">${esc(payload.source?.nativeType || "telemetria")}</div>
+        </td>
+        <td class="tabular-nums">
+            <div class="fw-semibold">${esc(card.value)}</div>
+            ${details ? `<div class="section-label text-break" style="letter-spacing:0;text-transform:none">${details}</div>` : ""}
+        </td>
+        <td class="text-end text-nowrap tabular-nums text-secondary" style="width:150px">${esc(when(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
+        </tr>`;
 }
 
 function telemetryDetails(data, payload) {
@@ -733,6 +743,8 @@ function renderConnectionTimeline(rows) {
     const disconnectedCount = events.filter(
         (e) => e.type === "device.disconnected",
     ).length;
+
+    els.connectionSection.classList.toggle("d-none", events.length === 0);
 
     if (events.length < 2) {
         if (connectionChartRoot) {

@@ -39,6 +39,7 @@ require_once __DIR__ . '/components/modal.php';
              * pela primeira vez não sabia onde estava.
              */
             ?>
+            <span class="dashboard-login-badge"><img src="/assets/logo.svg" alt="hitHUB"></span>
             <div class="dashboard-login-mark">
                 <span class="dashboard-login-signature">HUB / OPERATIONS</span>
                 <p class="dashboard-login-pitch">Ingestão, decisão e reencaminhamento de telemetria de dispositivos de saúde.</p>
@@ -133,16 +134,21 @@ require_once __DIR__ . '/components/modal.php';
             <div class="row g-3">
                 <aside id="deviceColumn" class="col-12 col-lg-4">
                     <div class="card h-100">
-                        <div class="card-header">
-                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                                <span><?= icon('fa-microchip', 'me-2') ?>Dispositivo selecionado</span>
+                        <?php
+                        /**
+                         * A etiqueta e os botões dentro do corpo, não numa faixa de
+                         * cabeçalho cinzenta: uma faixa cinzenta dentro de um cartão
+                         * branco é a mesma caixa-dentro-de-caixa que a regra 1 tira.
+                         */
+                        ?>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+                                <span class="section-label">Dispositivo</span>
                                 <div class="d-flex align-items-center gap-2">
-                                    <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher</button>
-                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-primary"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                                    <button id="openDeviceSelectorBtn" class="btn btn-sm btn-outline-secondary row-action" type="button"><?= icon('fa-list', 'me-1') ?>Escolher</button>
+                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary row-action"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body">
                             <div id="deviceSelectionEmptyState" class="text-center text-secondary py-5">
                                 <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
                                 <h1 class="h5 mt-3">Selecione um dispositivo</h1>
@@ -241,7 +247,15 @@ require_once __DIR__ . '/components/modal.php';
                                  */
                                 ?>
                                 <div class="vstack gap-4">
-                                    <section>
+                                    <?php
+                                    /**
+                                     * A secção esconde-se quando não há ligações: os
+                                     * dispositivos que entram por gateway nunca têm
+                                     * nenhuma, e ficavam 180px em branco no topo do
+                                     * painel a dizer nada.
+                                     */
+                                    ?>
+                                    <section id="connectionSection">
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline" style="height:180px;width:100%;"></div>
                                     </section>

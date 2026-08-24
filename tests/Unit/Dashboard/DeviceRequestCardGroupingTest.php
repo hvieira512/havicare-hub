@@ -44,7 +44,11 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('"sms"', $renderersSource);
         self::assertStringNotContainsString('device_state', $renderersSource);
         self::assertStringNotContainsString('ecg_analysis', $renderersSource);
-        self::assertStringContainsString('const title = isSystemRequestCard', $renderersSource);
+        // O título é sempre o nome da categoria; a leitura mais recente é um valor por
+        // baixo. Substituí-lo pela leitura dava mosaicos a dizer "78%" e "Atenção" sem
+        // dizer 78% de quê — perdia-se o nome exactamente quando havia o que mostrar.
+        self::assertStringContainsString('const title = featureLabel(type) || card.value || type;', $renderersSource);
+        self::assertStringContainsString('const value = isSystemRequestCard ? card.value : lastValue;', $renderersSource);
         // O estado do pedido em curso é a pastilha do sistema, não um spinner dentro de
         // um botão que já não existe.
         self::assertStringContainsString('stateLabel: requestable && loading ? "A pedir" : ""', $renderersSource);

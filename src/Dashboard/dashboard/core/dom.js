@@ -41,6 +41,7 @@ export function cacheElements() {
         detailFilterType: document.getElementById("detailFilterType"),
         detailSearch: document.getElementById("detailSearch"),
         downlinkRequestCount: document.getElementById("downlinkRequestCount"),
+        connectionSection: document.getElementById("connectionSection"),
         detailActiveFilters: document.getElementById("detailActiveFilters"),
         detailFilterCount: document.getElementById("detailFilterCount"),
         applyDetailFiltersBtn: document.getElementById("applyDetailFiltersBtn"),

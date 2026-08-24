@@ -233,6 +233,20 @@ body {
     color: var(--bs-body-color);
 }
 
+/* A pastilha do icone numa linha de evento: a mesma ideia do cartao, em 26px. */
+.telemetry-row-icon {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: .75rem;
+}
+
 /* O cartao que e o proprio pedido. Sem sombra nem cor: o que diz que responde ao clique
    e o contorno a escurecer e o icone a ganhar contraste. */
 .telemetry-card-action {
@@ -352,6 +366,14 @@ body {
     }
 }
 
+/* A leitura mais recente, sob o nome da categoria. */
+.telemetry-card-value {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-top: .125rem;
+}
+
 /* O icone de um cartao de telemetria. Era pintado com a cor contextual da categoria --
    quatro cores num painel, em contorno, texto e fundo -- e a categoria le-se no icone,
    nao na cor. Cinzento, para a cor ficar disponivel para o estado. */
@@ -397,10 +419,16 @@ body {
         #f4f5f7;
 }
 
+/* O cinzento claro da maqueta, e nao branco: os campos sao brancos, e sobre branco puro
+   desapareciam -- o lado direito lia-se como uma folha vazia com texto solto. */
 .dashboard-login-panel {
-    background: rgba(255, 255, 255, .92);
+    background: #f4f5f7;
     box-shadow: -1.5rem 0 4rem rgba(18, 28, 45, .08);
     z-index: 1;
+}
+
+.dashboard-login-panel .form-control {
+    background-color: #fff;
 }
 
 .dashboard-login-brand img {
@@ -437,6 +465,22 @@ body {
         linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
     background-size: 80px 80px;
+}
+
+/* A marca no canto superior esquerdo do painel escuro, como na maqueta. O logo e escuro,
+   por isso inverte-se, como ja acontece na barra de navegacao. */
+.dashboard-login-badge {
+    position: absolute;
+    left: 3rem;
+    top: 2.5rem;
+}
+
+.dashboard-login-badge img {
+    height: 24px;
+    width: auto;
+    display: block;
+    filter: invert(100%);
+    opacity: .9;
 }
 
 /* A assinatura e a frase, no canto inferior esquerdo. Estavam a direita e sem frase. */
