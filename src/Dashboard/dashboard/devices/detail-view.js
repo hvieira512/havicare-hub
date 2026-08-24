@@ -54,8 +54,12 @@ function renderSelection() {
         !!state.selectedDetail,
     );
     els.selectedDevicePanel.classList.toggle("d-none", !state.selectedDetail);
-    els.detailEmptyState.classList.toggle("d-none", !!state.selectedDetail);
     els.deviceDetail.classList.toggle("d-none", !state.selectedDetail);
+    // Sem dispositivo escolhido, a coluna da atividade nao tem nada para dizer que a da
+    // esquerda ja nao diga -- e essa tem o botao. Uma mensagem repetida em duas colunas
+    // le-se como erro, por isso a coluna desaparece e a da escolha ocupa a largura.
+    els.detailColumn.classList.toggle("d-none", !state.selectedDetail);
+    els.deviceColumn.classList.toggle("col-lg-4", !!state.selectedDetail);
     if (!state.selectedDetail) {
         els.requestCardCount.textContent = "";
         els.requestGrid.innerHTML = "";
@@ -675,6 +679,9 @@ function renderNcsEventCard({type, latest}) {
 }
 
 function renderDownlinkRequests(commands) {
+    els.downlinkRequestCount.textContent = commands.length
+        ? `${commands.length} ${commands.length === 1 ? "pedido" : "pedidos"}`
+        : "";
     els.downlinkRequests.innerHTML = commands.length
         ? `
         <div class="table-responsive">

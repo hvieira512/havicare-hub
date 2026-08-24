@@ -161,10 +161,6 @@ require_once __DIR__ . '/components/modal.php';
                 <section id="detailColumn" class="col-12 col-lg-8">
                     <div class="card">
                         <div class="card-body">
-                            <div id="detailEmptyState" class="text-center text-secondary py-5">
-                                <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>
-                                <h1 class="h5 mt-3">Selecione um dispositivo</h1>
-                            </div>
                             <div id="deviceDetail" class="d-none">
                                 <div id="detailFiltersPanel" class="mb-3">
                                     <div class="d-flex align-items-center gap-2">
@@ -204,25 +200,30 @@ require_once __DIR__ . '/components/modal.php';
                                         </div>
                                     </div>
                                 </div>
+                                <?php
+                                /**
+                                 * As ligações ao servidor vêm primeiro: são a âncora temporal de tudo o
+                                 * que está em baixo, e leem-se antes de se olhar para uma linha.
+                                 *
+                                 * Os eventos e os pedidos ficam empilhados em largura total. A meia
+                                 * largura, a coluna de estado dos pedidos não cabia e o valor de um
+                                 * evento truncava — e quando não havia nada, o ecrã dizia duas vezes
+                                 * que não havia nada.
+                                 */
+                                ?>
                                 <div class="vstack gap-4">
-                                    <div class="row g-3">
-                                        <div class="col-12 col-lg-6 d-flex flex-column">
-                                            <section class="flex-grow-1 d-flex flex-column">
-                                                <?= section_header('Eventos recebidos', 'telemetryCount') ?>
-                                                <div id="telemetryList" class="overflow-auto" style="max-height:50vh;"></div>
-                                                <?= pagination_component('telemetry') ?>
-                                            </section>
-                                        </div>
-                                        <div class="col-12 col-lg-6 d-flex flex-column">
-                                            <section class="flex-grow-1 d-flex flex-column">
-                                                <?= section_header('Pedidos ao dispositivo') ?>
-                                                <div id="downlinkRequests" class="overflow-auto" style="max-height:50vh;"></div>
-                                            </section>
-                                        </div>
-                                    </div>
                                     <section>
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline" style="height:180px;width:100%;"></div>
+                                    </section>
+                                    <section class="border-top pt-4">
+                                        <?= section_header('Eventos recebidos', 'telemetryCount') ?>
+                                        <div id="telemetryList" class="overflow-auto" style="max-height:40vh;"></div>
+                                        <?= pagination_component('telemetry') ?>
+                                    </section>
+                                    <section class="border-top pt-4">
+                                        <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount') ?>
+                                        <div id="downlinkRequests" class="overflow-auto" style="max-height:40vh;"></div>
                                     </section>
                                 </div>
                             </div>

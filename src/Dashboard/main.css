@@ -171,6 +171,35 @@ body {
     color: var(--bs-body-color);
 }
 
+/* O cartao que e o proprio pedido. Sem sombra nem cor: o que diz que responde ao clique
+   e o contorno a escurecer e o icone a ganhar contraste. */
+.telemetry-card-action {
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .12s ease, background-color .12s ease;
+}
+
+.telemetry-card-action:hover:not(:disabled),
+.telemetry-card-action:focus-visible {
+    border-color: var(--bs-primary-border-subtle);
+    background: var(--bs-tertiary-bg);
+}
+
+.telemetry-card-action:hover:not(:disabled) .telemetry-card-icon,
+.telemetry-card-action:focus-visible .telemetry-card-icon {
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-emphasis-color);
+}
+
+.telemetry-card-action:disabled {
+    cursor: default;
+    opacity: .75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .telemetry-card-action { transition: none; }
+}
+
 /* O icone de um cartao de telemetria. Era pintado com a cor contextual da categoria --
    quatro cores num painel, em contorno, texto e fundo -- e a categoria le-se no icone,
    nao na cor. Cinzento, para a cor ficar disponivel para o estado. */

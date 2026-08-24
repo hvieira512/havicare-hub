@@ -30,7 +30,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/renderers.js'
         );
         self::assertIsString($renderersSource);
-        self::assertStringContainsString('const buttonHtml = requestable', $renderersSource);
+        // O cartão é o pedido: a acção vive na casca do cartão e não num botão dentro
+        // dele. Oito cartões davam oito botões primários escuros no mesmo painel, e o
+        // alvo de clique era a parte mais pequena de uma área que já era toda clicável.
+        self::assertStringContainsString('data-action="requestFeature" data-feature=', $renderersSource);
+        self::assertStringContainsString('feature: requestable ? type : ""', $renderersSource);
+        self::assertStringNotContainsString('btn btn-primary btn-sm w-100', $renderersSource);
         self::assertStringNotContainsString('if (!requestable) {', $renderersSource);
         self::assertStringContainsString('const isSystemRequestCard = [', $renderersSource);
         self::assertStringContainsString('firmware_version', $renderersSource);
@@ -40,9 +45,10 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('device_state', $renderersSource);
         self::assertStringNotContainsString('ecg_analysis', $renderersSource);
         self::assertStringContainsString('const title = isSystemRequestCard', $renderersSource);
-        self::assertStringContainsString('btn btn-primary btn-sm w-100', $renderersSource);
-        self::assertStringContainsString('const buttonRowHtml = buttonHtml', $renderersSource);
-        self::assertStringContainsString('mt-3 d-grid gap-2 min-w-0', $renderersSource);
+        // O estado do pedido em curso é a pastilha do sistema, não um spinner dentro de
+        // um botão que já não existe.
+        self::assertStringContainsString('stateLabel: requestable && loading ? "A pedir" : ""', $renderersSource);
+        self::assertStringNotContainsString('spinner-border spinner-border-sm me-2', $renderersSource);
         self::assertStringNotContainsString('mb-2 min-w-0', $renderersSource);
         self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);
         self::assertStringContainsString('diaper_moisture: {icon: "fa-droplet"', $renderersSource);

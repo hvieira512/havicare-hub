@@ -209,13 +209,15 @@ const UPLINK_CARD_RENDERERS = {
     "device.disconnected": () => ({icon: "fa-plug-circle-xmark", value: "Desligado"}),
 };
 
-const STATUS_BADGE_CLASS = {
-    queued: "text-bg-secondary",
-    sent: "text-bg-primary",
-    waiting: "text-bg-warning",
-    acked: "text-bg-success",
-    failed: "text-bg-danger",
-    dropped: "text-bg-danger",
+// Uma familia de estado so: e a mesma pastilha das configuracoes e das regras do hub.
+// O tom vazio deixa a pastilha no azul subtil da marca, que e o estado neutro.
+const STATUS_BADGE_TONE = {
+    queued: "config-state-secondary",
+    sent: "",
+    waiting: "config-state-warning",
+    acked: "config-state-success",
+    failed: "config-state-danger",
+    dropped: "config-state-danger",
 };
 
 const STATUS_BADGE_LABEL = {
@@ -344,25 +346,49 @@ function commandFeature(command) {
  * NCS -- e a cor por categoria vivia nas duas copias. O icone passa a identificar a
  * categoria sozinho: a cor fica reservada ao estado, que e o que a pastilha diz.
  */
-export function telemetryCard({span = 6, icon, title, tooltip = "", body = ""}) {
+export function telemetryCard({
+    span = 6,
+    icon,
+    title,
+    tooltip = "",
+    body = "",
+    feature = "",
+    pending = false,
+    stateLabel = "",
+}) {
     const tip = tooltip
         ? ` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top"`
           + ` data-bs-title="${esc(tooltip)}" aria-label="${esc(tooltip)}" tabindex="0"`
         : "";
+    // O cartao e o pedido: quando ha um feature para pedir, e ele o botao. Um botao
+    // "Pedir" dentro de cada cartao dava oito primarios escuros no mesmo painel, e o
+    // alvo de clique era a parte mais pequena de uma area que ja era toda clicavel.
+    const clickable = feature !== "";
+    const tag = clickable ? "button" : "div";
+    const attrs = clickable
+        ? ` type="button" class="card h-100 telemetry-card-action text-start"`
+          + ` data-action="requestFeature" data-feature="${esc(feature)}"`
+          + `${pending ? " disabled" : ""}`
+        : ` class="card h-100"`;
+    const state = stateLabel
+        ? `<span class="config-state ${pending ? "config-state-warning" : "config-state-secondary"} flex-shrink-0">`
+          + `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
+        : "";
 
     return `
         <div class="col-12 col-md-${span}">
-        <div class="card h-100">
+        <${tag}${attrs}>
         <div class="card-body">
         <div class="d-flex align-items-center gap-3 min-w-0">
         <div class="telemetry-card-icon"${tip}>
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
         <div class="fw-semibold text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
+        ${state}
         </div>
         ${body}
         </div>
-        </div>
+        </${tag}>
         </div>`;
 }
 
@@ -673,19 +699,18 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     // telemetry does not need a special case in this shell.
     const span = lastContent?.span || card.span || 6;
     const bodyHtml = lastContent?.body || "";
-    const buttonHtml = requestable
-        ? `<button class="btn btn-primary btn-sm w-100" data-feature="${esc(type)}" data-action="requestFeature" ${loading ? "disabled" : ""}>${loading ? '<span class="spinner-border spinner-border-sm me-2"></span>A pedir' : '<i class="fa-solid fa-paper-plane me-2"></i>Pedir'}</button>`
-        : "";
-    const buttonRowHtml = buttonHtml
-        ? `<div class="mt-3 d-grid gap-2 min-w-0">${buttonHtml}</div>`
-        : "";
 
     return telemetryCard({
         span,
         icon,
         title,
         tooltip,
-        body: `${bodyHtml}${buttonRowHtml}`,
+        body: bodyHtml,
+        // Um cartao que nao se pode pedir nao e clicavel: o que nao responde ao clique
+        // nao deve parecer que responde.
+        feature: requestable ? type : "",
+        pending: requestable && loading,
+        stateLabel: requestable && loading ? "A pedir" : "",
     });
 }
 
@@ -706,9 +731,9 @@ function requestTelemetryTypes(type) {
 }
 
 export function statusBadge(status) {
-    const cls = STATUS_BADGE_CLASS[status] || "text-bg-light";
+    const tone = STATUS_BADGE_TONE[status] ?? "config-state-secondary";
     const label = STATUS_BADGE_LABEL[status] || titleize(status).toLowerCase();
-    return `<span class="badge ${cls}">${esc(label)}</span>`;
+    return `<span class="config-state ${tone}"><span class="config-state-dot"></span>${esc(label)}</span>`;
 }
 
 function alarmValue(data) {
