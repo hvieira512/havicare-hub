@@ -83,17 +83,48 @@ class DeviceService
         $params = $this->query->params($query);
         $page = $this->query->page($params);
         $limit = $this->query->limit($params, 5);
+        // Todos aceitam vários valores menos o estado, que é uma escolha de três: todos,
+        // ligados, desligados. Escolher "ligados e desligados" seria escolher todos, que já
+        // é a ausência do filtro.
         $filters = [
-            'deviceType' => $this->query->filter($params, 'deviceType'),
-            'licenseId' => $this->query->filter($params, 'licenseId'),
-            'company' => $this->query->filter($params, 'company'),
-            'supplier' => $this->query->filter($params, 'supplier'),
-            'model' => $this->query->filter($params, 'model'),
+            'deviceType' => $this->query->filterList($params, 'deviceType'),
+            'supplier' => $this->query->filterList($params, 'supplier'),
+            'model' => $this->query->filterList($params, 'model'),
+            'license' => $this->query->filterList($params, 'license'),
             'q' => $this->query->filter($params, 'q', ''),
         ];
+        $online = $this->query->onlineFilter($params);
+
+        // A empresa e a licença deixaram de ser dois parâmetros e passaram a pares em
+        // `license`. Este endpoint é público e documentado, por isso a forma antiga continua
+        // a funcionar em vez de passar a ser ignorada em silêncio: uma empresa com licença dá
+        // o par, uma empresa sozinha dá a empresa toda, e uma licença sozinha continua a ser
+        // a condição independente que sempre foi -- não há par para formar sem empresa.
+        $legacyCompany = $this->query->filter($params, 'company');
+        $legacyLicenseId = $this->query->filter($params, 'licenseId');
+        if ($legacyCompany !== null && $legacyCompany !== 'all') {
+            $filters['license'][] = $legacyLicenseId !== null && $legacyLicenseId !== 'all'
+                ? $legacyCompany . ':' . $legacyLicenseId
+                : $legacyCompany;
+        } elseif ($legacyLicenseId !== null && $legacyLicenseId !== 'all') {
+            $filters['licenseId'] = $legacyLicenseId;
+        }
         $licenseScope = $auth !== null && !$auth->isAdmin() ? $auth->licenseId : null;
         $companyScope = $auth !== null && !$auth->isAdmin() ? $auth->company : null;
-        $result = $this->db->whitelist->listPage($filters, $page, $limit, $licenseScope, $companyScope);
+
+        // A presença não está na base de dados, e por isso entra na consulta como uma lista
+        // de IMEI em vez de uma coluna. Entra na mesma cláusula que os outros filtros, o que
+        // mantém a paginação, o total e as contagens por opção certos -- filtrá-la depois de
+        // paginar dava uma página de vinte a devolver seis e um total a mentir.
+        $onlineImeis = $online === null ? [] : $this->store->onlineDeviceImeis();
+        $queryFilters = $filters;
+        if ($online === true) {
+            $queryFilters['imeiIn'] = $onlineImeis;
+        } elseif ($online === false) {
+            $queryFilters['imeiNotIn'] = $onlineImeis;
+        }
+
+        $result = $this->db->whitelist->listPage($queryFilters, $page, $limit, $licenseScope, $companyScope);
         $runtimeStates = $this->store->runtimeStates(array_map(
             static fn (array $device): string => (string)($device['imei'] ?? ''),
             $result['items']
@@ -120,9 +151,38 @@ class DeviceService
                 'total' => (int)$result['total'],
             ],
             'filters' => [
-                'applied' => $filters,
+                'applied' => $filters + [
+                    'online' => $online,
+                    'company' => $legacyCompany,
+                    'licenseId' => $legacyLicenseId,
+                ],
                 'available' => $result['available'],
+                'counts' => $result['counts'],
             ],
+            // O total e quantos deles estão ligados, sem filtro nenhum aplicado. É o que o
+            // cabeçalho do modal mostra, e não muda quando se filtra -- por isso não custa
+            // um pedido por cada caixa que se marca.
+            'summary' => $this->deviceSummary($licenseScope, $companyScope),
+        ];
+    }
+
+    /**
+     * @return array{total: int, online: int}
+     */
+    private function deviceSummary(?int $licenseScope, ?string $companyScope): array
+    {
+        $unfiltered = $this->db->whitelist->listPage([], 1, 1, $licenseScope, $companyScope);
+        $online = $this->db->whitelist->listPage(
+            ['imeiIn' => $this->store->onlineDeviceImeis()],
+            1,
+            1,
+            $licenseScope,
+            $companyScope
+        );
+
+        return [
+            'total' => (int)$unfiltered['total'],
+            'online' => (int)$online['total'],
         ];
     }
 

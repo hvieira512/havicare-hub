@@ -19,7 +19,9 @@ final class DeviceListImageSourceTest extends TestCase
         self::assertIsString($detailSource);
 
         self::assertStringContainsString('device.image', $listSource);
-        self::assertStringContainsString('device.model || "-"', $listSource);
+        // O modelo e o fornecedor vêm da própria linha e não de uma consulta ao catálogo:
+        // o cartão junta-os na linha de contexto sob o IMEI.
+        self::assertStringContainsString('[device.supplier, device.model]', $listSource);
         self::assertStringNotContainsString('ensureModelsLoaded(),', $listSource);
         self::assertStringNotContainsString('modelLookup', $listSource);
         self::assertStringNotContainsString('findModelInfo(supplier, model)', $listSource);

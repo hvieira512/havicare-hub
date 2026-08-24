@@ -206,6 +206,14 @@ final class DashboardStore implements DashboardStoreContract
         return $this->runtime->runtimeStates($imeis);
     }
 
+    /**
+     * @return list<string>
+     */
+    public function onlineDeviceImeis(): array
+    {
+        return $this->runtime->onlineDeviceImeis();
+    }
+
     public function recent(string $imei, string $list): array
     {
         return $this->events->recent($imei, $list);

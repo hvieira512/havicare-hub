@@ -81,22 +81,140 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         [$api, $db] = $this->makeApi();
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
 
-        $response = $api->list('page=1&limit=5&model=L08');
+        $response = $api->list('page=1&limit=5&model=L08 Pro');
 
         self::assertSame(1, $response['pagination']['total'] ?? null);
         self::assertSame('861265061009822', $response['data'][0]['imei'] ?? null);
         self::assertSame('L08 Pro', $response['data'][0]['model'] ?? null);
     }
 
-    public function testListFiltersByPartialModelFromDatabaseSourceOfTruth(): void
+    /**
+     * O filtro de modelo compara por igualdade e não por semelhança.
+     *
+     * As opções vêm da própria lista de modelos existentes, logo o que chega é sempre um
+     * nome inteiro. Com `LIKE`, escolher "L08" trazia também um "L08 Pro Max" que ninguém
+     * marcou — e a procura por texto livre já cobre a correspondência parcial.
+     */
+    public function testListModelFilterMatchesTheWholeNameAndNotAPrefix(): void
     {
         [$api] = $this->makeApi();
 
-        $response = $api->list('page=1&limit=5&model=L08');
+        self::assertSame(0, $api->list('page=1&limit=5&model=L08')['pagination']['total'] ?? null);
+        self::assertSame(1, $api->list('page=1&limit=5&model=L08 Pro')['pagination']['total'] ?? null);
+        self::assertSame(1, $api->list('page=1&limit=5&q=L08')['pagination']['total'] ?? null);
+    }
 
-        self::assertSame(1, $response['pagination']['total'] ?? null);
-        self::assertSame('861265061009822', $response['data'][0]['imei'] ?? null);
-        self::assertSame('L08 Pro', $response['data'][0]['model'] ?? null);
+    public function testListAcceptsSeveralValuesForTheSameFilter(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $db->whitelist->register('865028000000306', 'Wonlex', 'HW20PRO', 'radar');
+
+        $both = $api->list('page=1&limit=10&deviceType[]=watch&deviceType[]=radar');
+        $onlyRadar = $api->list('page=1&limit=10&deviceType[]=radar');
+
+        self::assertSame(3, $both['pagination']['total'] ?? null);
+        self::assertSame(1, $onlyRadar['pagination']['total'] ?? null);
+    }
+
+    /**
+     * A empresa e a licença escolhem pares, e não duas listas cruzadas.
+     *
+     * Como duas condições independentes, escolher {alfa, beta} e {1001, 2002} trazia também
+     * um dispositivo da alfa com a licença 2002. As duas versões acertam nos casos simples e
+     * só divergem quando duas empresas partilham números de licença — que é exactamente o
+     * caso em que alguém está a usar este filtro a sério.
+     */
+    public function testLicenseFilterMatchesCompanyAndLicensePairsAndNotTheirCrossProduct(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $db->whitelist->register('900000000000001', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        $db->whitelist->register('900000000000002', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'beta');
+        $db->whitelist->register('900000000000003', 'Vivistar', 'L08 Pro', 'watch', 2002, '', '', 'alfa');
+
+        $pairs = $api->list('page=1&limit=10&license[]=alfa:1001&license[]=beta:2002');
+        $wholeCompany = $api->list('page=1&limit=10&license[]=alfa');
+
+        $imeis = array_map(static fn (array $row): string => (string)$row['imei'], $pairs['data']);
+        sort($imeis);
+
+        self::assertSame(2, $pairs['pagination']['total'] ?? null);
+        self::assertSame(['900000000000001', '900000000000002'], $imeis);
+        // A empresa inteira é o atalho para todos os pares dela, incluindo o que ficou fora.
+        self::assertSame(2, $wholeCompany['pagination']['total'] ?? null);
+    }
+
+    public function testLicenseFilterNoneMatchesDevicesWithoutCompanyOrLicense(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $db->whitelist->register('900000000000004', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+
+        $response = $api->list('page=1&limit=10&license[]=none');
+        $imeis = array_map(static fn (array $row): string => (string)$row['imei'], $response['data']);
+
+        self::assertNotContains('900000000000004', $imeis);
+        self::assertContains('861265061009822', $imeis);
+    }
+
+    /**
+     * O estado não está na base de dados: é presença em runtime, e entra na consulta como
+     * uma lista de IMEI. Entra na mesma cláusula que os outros filtros, e é isso que mantém
+     * a paginação e o total certos -- filtrá-lo depois de paginar dava uma página de dez a
+     * devolver um e um total a mentir.
+     */
+    public function testListFiltersByOnlineStateWithoutBreakingTheTotal(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $db->whitelist->register('900000000000005', 'Vivistar', 'L08 Pro');
+        $store->deviceSeen('861265061009822', ['online' => '1']);
+
+        $online = $api->list('page=1&limit=1&online=online');
+        $offline = $api->list('page=1&limit=1&online=offline');
+        $all = $api->list('page=1&limit=1');
+
+        self::assertSame(1, $online['pagination']['total'] ?? null);
+        self::assertSame('861265061009822', $online['data'][0]['imei'] ?? null);
+        self::assertSame(
+            (int)$all['pagination']['total'],
+            (int)$online['pagination']['total'] + (int)$offline['pagination']['total']
+        );
+    }
+
+    public function testListCountsEveryOptionAndBuildsTheLicenseTree(): void
+    {
+        [$api, $db, $store] = $this->makeApi();
+        $db->whitelist->register('900000000000006', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        $db->whitelist->register('900000000000007', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        $store->deviceSeen('900000000000006', ['online' => '1']);
+
+        $response = $api->list('page=1&limit=1');
+        $counts = $response['filters']['counts'] ?? [];
+        $tree = $counts['license'] ?? [];
+        $alfa = null;
+        foreach ($tree['companies'] ?? [] as $company) {
+            if ($company['company'] === 'alfa') {
+                $alfa = $company;
+            }
+        }
+
+        self::assertNotNull($alfa);
+        self::assertSame(2, $alfa['count']);
+        self::assertSame([['licenseId' => 1001, 'count' => 2]], $alfa['licenses']);
+        // Os que não têm empresa também não têm licença: uma não existe sem a outra.
+        self::assertGreaterThan(0, (int)($tree['none'] ?? 0));
+
+        $watch = null;
+        foreach ($counts['deviceType'] ?? [] as $option) {
+            if ($option['value'] === 'watch') {
+                $watch = $option;
+            }
+        }
+        self::assertNotNull($watch);
+        self::assertGreaterThan(0, $watch['count']);
+
+        // O total e quantos estão ligados não mudam com os filtros, e por isso não custam um
+        // pedido por cada caixa que se marca.
+        self::assertSame(4, $response['summary']['total'] ?? null);
+        self::assertSame(1, $response['summary']['online'] ?? null);
     }
 
     public function testListReturnsAbsoluteModelImageUrl(): void

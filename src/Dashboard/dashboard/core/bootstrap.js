@@ -54,6 +54,7 @@ import {
     loadDevice,
     deviceTypeFields,
     loadSummary,
+    renderDeviceSelector,
     ensureProtocolsLoaded,
     modelCommercialName,
     modelDisplayLabel,
@@ -260,25 +261,24 @@ function bindEvents() {
     });
     els.deviceListLimit.addEventListener("change", handleDeviceListLimitChange);
     els.deviceListSearch.addEventListener("input", handleDeviceListSearchInput);
-    els.deviceTypeFilter.addEventListener("change", handleDeviceFilterChange);
-    els.deviceLicenseFilter.addEventListener(
-        "change",
-        handleDeviceFilterChange,
+    // Um ouvinte por coluna e não um por controlo: as opções são redesenhadas a cada
+    // resposta, e ligar o ouvinte a cada botão obrigava a religá-los todos de cada vez.
+    for (const root of [
+        els.deviceTypeFilter,
+        els.deviceSupplierFilter,
+        els.deviceModelFilter,
+        els.deviceLicenseFilter,
+    ]) {
+        root?.addEventListener("click", handleDeviceFilterClick);
+    }
+    els.deviceModelFilterSearch?.addEventListener(
+        "input",
+        handleDeviceModelFilterSearch,
     );
-    els.deviceCompanyFilter.addEventListener(
-        "change",
-        handleDeviceFilterChange,
-    );
-    els.deviceSupplierFilter.addEventListener(
-        "change",
-        handleDeviceFilterChange,
-    );
-    els.deviceModelFilter.addEventListener("change", handleDeviceFilterChange);
+    for (const input of document.querySelectorAll('input[name="deviceOnlineFilter"]')) {
+        input.addEventListener("change", handleDeviceOnlineFilterChange);
+    }
     els.clearDeviceFiltersBtn.addEventListener("click", clearDeviceFilters);
-    els.deviceActiveFilters.addEventListener(
-        "click",
-        handleActiveDeviceFiltersClick,
-    );
     els.deviceImei.addEventListener("input", handleDeviceImeiInput);
     els.deviceLicenseId.addEventListener("input", handleDeviceImeiInput);
     els.deviceDeviceId.addEventListener("input", handleDeviceImeiInput);
@@ -571,44 +571,96 @@ function handleDeviceFormChange(event) {
     }
 }
 
-async function handleDeviceFilterChange() {
+/**
+ * Marcar ou desmarcar um valor de filtro.
+ *
+ * Nada marcado quer dizer tudo, e é por isso que não há opção "Todos" no topo de cada
+ * grupo: desmarcar o último valor é o que a repõe.
+ *
+ * Marcar uma empresa marca-a inteira, e por isso apaga as licenças dela que estivessem
+ * marcadas à parte -- ter as duas coisas na lista significaria a mesma empresa duas vezes
+ * na condição. Marcar uma licença de uma empresa que estava inteira troca a empresa pelas
+ * suas licenças, para que desmarcar uma só tire essa.
+ */
+async function toggleDeviceFilter(key, value) {
+    const current = state.deviceFilters[key] || [];
+    let next;
+
+    if (current.includes(value)) {
+        next = current.filter((entry) => entry !== value);
+    } else if (key === "license" && !value.includes(":") && value !== "none") {
+        next = [...current.filter((entry) => !entry.startsWith(`${value}:`)), value];
+    } else if (key === "license" && value.includes(":")) {
+        const company = value.slice(0, value.lastIndexOf(":"));
+        if (current.includes(company)) {
+            const siblings = licenseValuesForCompany(company).filter(
+                (entry) => entry !== value,
+            );
+            next = [...current.filter((entry) => entry !== company), ...siblings];
+        } else {
+            next = [...current, value];
+        }
+    } else {
+        next = [...current, value];
+    }
+
+    state.deviceFilters = { ...state.deviceFilters, [key]: next };
+    state.deviceListPage = 1;
+    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
+    await loadSummary();
+}
+
+/** Um filtro guardado, seja lista ou valor único da forma antiga. */
+function storedFilterList(value) {
+    if (Array.isArray(value)) {
+        return value.map(String).filter((entry) => entry !== "" && entry !== "all");
+    }
+    const single = normalizeFilterValue(value);
+    return single === null ? [] : [single];
+}
+
+function licenseValuesForCompany(company) {
+    const tree = state.summary.deviceFilterCounts?.license || {companies: []};
+    const entry = (tree.companies || []).find(
+        (candidate) => String(candidate.company) === company,
+    );
+    return (entry?.licenses || []).map((license) => `${company}:${license.licenseId}`);
+}
+
+async function handleDeviceFilterClick(event) {
+    const button = event.target.closest('[data-action="toggleDeviceFilter"]');
+    if (!button || button.disabled) return;
+    const key = button.dataset.filterKey;
+    const value = button.dataset.filterValue;
+    if (!key || value === undefined || !(key in state.deviceFilters)) return;
+    await toggleDeviceFilter(key, value);
+}
+
+async function handleDeviceOnlineFilterChange(event) {
+    const value = event.target.value;
     state.deviceFilters = {
-        deviceType: normalizeFilterValue(els.deviceTypeFilter.value),
-        licenseId: normalizeFilterValue(els.deviceLicenseFilter.value),
-        company: normalizeFilterValue(els.deviceCompanyFilter.value),
-        supplier: normalizeFilterValue(els.deviceSupplierFilter.value),
-        model: normalizeFilterValue(els.deviceModelFilter.value),
+        ...state.deviceFilters,
+        online: value === "all" ? null : value === "online",
     };
     state.deviceListPage = 1;
     saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
     await loadSummary();
 }
 
-async function handleActiveDeviceFiltersClick(event) {
-    const button = event.target.closest('[data-action="removeDeviceFilter"]');
-    if (!button) return;
-
-    const key = button.dataset.filterKey;
-    if (!key || !(key in state.deviceFilters)) return;
-
-    state.deviceFilters = {
-        ...state.deviceFilters,
-        [key]: null,
-    };
-    state.deviceListPage = 1;
-    saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
-    await loadSummary();
+function handleDeviceModelFilterSearch() {
+    state.deviceModelFilterSearch = els.deviceModelFilterSearch.value;
+    renderDeviceSelector();
 }
 
 async function clearDeviceFilters() {
-    const defaults = {
-        deviceType: null,
-        licenseId: null,
-        company: null,
-        supplier: null,
-        model: null,
+    state.deviceFilters = {
+        deviceType: [],
+        supplier: [],
+        model: [],
+        license: [],
+        online: null,
     };
-    state.deviceFilters = { ...defaults };
+    state.deviceModelFilterSearch = "";
     state.deviceListPage = 1;
     clearStorageKey(FILTERS_STORAGE_KEY);
     await loadSummary();
@@ -1342,14 +1394,17 @@ export async function startDashboard() {
     bindEvents();
     await ensureProtocolsLoaded();
 
+    // Os filtros guardados podem ser da forma antiga -- um valor por chave, e `licenseId` e
+    // `company` separados. `storedFilterList` aceita as duas, para que quem tinha filtros
+    // guardados os veja convertidos em vez de perdidos.
     const stored = loadJsonStorage(FILTERS_STORAGE_KEY);
     if (stored && typeof stored === "object") {
         state.deviceFilters = {
-            deviceType: normalizeFilterValue(stored.deviceType),
-            licenseId: normalizeFilterValue(stored.licenseId),
-            company: normalizeFilterValue(stored.company),
-            supplier: normalizeFilterValue(stored.supplier),
-            model: normalizeFilterValue(stored.model),
+            deviceType: storedFilterList(stored.deviceType),
+            supplier: storedFilterList(stored.supplier),
+            model: storedFilterList(stored.model),
+            license: storedFilterList(stored.license),
+            online: typeof stored.online === "boolean" ? stored.online : null,
         };
     }
     const storedSelectedImei = loadTextStorage(SELECTED_DEVICE_STORAGE_KEY);

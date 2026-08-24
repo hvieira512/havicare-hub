@@ -60,6 +60,23 @@ final class Parameters
     }
 
     /**
+     * Um filtro que aceita vários valores.
+     *
+     * `explode: true` sem `style` dá `chave[]=a&chave[]=b`, que é a forma que o `parse_str`
+     * do lado do servidor lê como array.
+     */
+    public static function stringList(string $name): array
+    {
+        return [
+            'name' => $name,
+            'in' => 'query',
+            'required' => false,
+            'explode' => true,
+            'schema' => ['type' => 'array', 'items' => ['type' => 'string']],
+        ];
+    }
+
+    /**
      * @return array<int, array<string, mixed>> page and limit query parameters
      */
     public static function pagination(int $defaultLimit = 20): array

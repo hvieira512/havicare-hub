@@ -31,4 +31,54 @@ final class CollectionQuery
 
         return $value === '' ? $default : $value;
     }
+
+    /**
+     * Um filtro que aceita vários valores.
+     *
+     * Lê tanto `?supplier[]=a&supplier[]=b` como `?supplier=a,b`, porque a primeira forma é
+     * o que um cliente que constrói a query com um array produz naturalmente e a segunda é
+     * o que se escreve à mão. "all" continua a querer dizer "sem filtro", como no filtro de
+     * valor único, para que um cliente antigo não passe a filtrar pela palavra "all".
+     *
+     * @return list<string>
+     */
+    public function filterList(array $params, string $key): array
+    {
+        $raw = $params[$key] ?? null;
+        if ($raw === null) {
+            return [];
+        }
+
+        $values = is_array($raw) ? $raw : explode(',', (string)$raw);
+        $clean = [];
+        foreach ($values as $value) {
+            if (is_array($value)) {
+                continue;
+            }
+            $value = trim((string)$value);
+            if ($value === '' || $value === 'all') {
+                continue;
+            }
+            $clean[] = $value;
+        }
+
+        return array_values(array_unique($clean));
+    }
+
+    /**
+     * O estado de ligação: `online`, `offline`, ou nada quando não se filtra.
+     *
+     * É o único filtro de valor único desta listagem, porque escolher os dois é o mesmo que
+     * não escolher nenhum -- e isso já é a ausência do parâmetro.
+     */
+    public function onlineFilter(array $params): ?bool
+    {
+        $value = strtolower(trim((string)($params['online'] ?? '')));
+
+        return match ($value) {
+            'online', '1', 'true' => true,
+            'offline', '0', 'false' => false,
+            default => null,
+        };
+    }
 }

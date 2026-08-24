@@ -90,6 +90,13 @@ interface DashboardStoreContract
 
     public function runtimeStates(array $imeis): array;
 
+    /**
+     * Os IMEI dos dispositivos ligados, para filtrar a listagem por estado.
+     *
+     * @return list<string>
+     */
+    public function onlineDeviceImeis(): array;
+
     public function recent(string $imei, string $list): array;
 
     public function commands(string $imei): array;

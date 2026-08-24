@@ -197,6 +197,41 @@ final class DeviceRuntimeStore
         }
     }
 
+    /**
+     * Os dispositivos que estão ligados, para se poder filtrar por estado.
+     *
+     * O conjunto ordenado por última vez visto dá os candidatos, e é ele que torna isto
+     * barato: são os que foram vistos e ainda não expiraram, e não a frota toda. Não leva
+     * janela de tempo porque não precisa -- quem tira um dispositivo do conjunto é o próprio
+     * `expireStaleDevices`, no mesmo momento em que lhe põe a bandeira a zero.
+     *
+     * E quem decide é essa bandeira, e não a pertença ao conjunto: é a mesma que a pastilha
+     * do painel lê. O conjunto é actualizado a cada avistamento, e um ponto de entrada que
+     * registasse o avistamento sem declarar o estado punha aqui um dispositivo que o painel
+     * desenha como desligado. Filtro e pastilha respondem sempre o mesmo.
+     *
+     * @return list<string>
+     */
+    public function onlineDeviceImeis(): array
+    {
+        $candidates = array_values(array_filter(array_map(
+            'strval',
+            $this->redis->zrangebyscore($this->onlineDeviceSetKey(), '-inf', '+inf')
+        )));
+        if ($candidates === []) {
+            return [];
+        }
+
+        $online = [];
+        foreach ($this->runtimeStates($candidates) as $imei => $state) {
+            if (($state['online'] ?? false) === true) {
+                $online[] = (string)$imei;
+            }
+        }
+
+        return $online;
+    }
+
     private function normalizeDevice(array $data): array
     {
         $data['online'] = ((string)($data['online'] ?? '0')) === '1';

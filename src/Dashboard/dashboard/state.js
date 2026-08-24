@@ -13,6 +13,15 @@ export const state = {
             supplier: [],
             model: [],
         },
+        // As contagens por opção, que dizem o que se ganha ao marcar mais uma caixa. Vêm na
+        // mesma resposta que traz a lista, logo actualizam-se com ela.
+        deviceFilterCounts: {
+            deviceType: [],
+            supplier: [],
+            model: [],
+            license: {companies: [], none: 0},
+        },
+        deviceTotals: {total: 0, online: 0},
     },
     deviceListPageSize: 20,
     deviceTypeSuppliersModels: [],
@@ -29,13 +38,21 @@ export const state = {
         type: "all",
         q: "",
     },
+    // Listas e não valores: todos os filtros da listagem aceitam vários valores ao mesmo
+    // tempo. A licença guarda pares "empresa" ou "empresa:número", ou "none" para os
+    // dispositivos sem empresa nem licença -- as duas coisas são um filtro só, porque uma
+    // licença pertence a uma empresa e um dispositivo tem as duas ou nenhuma.
+    //
+    // O estado é o único de valor único: "ligados e desligados" é "todos", que já é a
+    // terceira opção, e por isso guarda-se como `null`, `true` ou `false`.
     deviceFilters: {
-        deviceType: null,
-        licenseId: null,
-        company: null,
-        supplier: null,
-        model: null,
+        deviceType: [],
+        supplier: [],
+        model: [],
+        license: [],
+        online: null,
     },
+    deviceModelFilterSearch: "",
     deviceSearchQuery: "",
     selectedImei: null,
     selectedDetail: null,

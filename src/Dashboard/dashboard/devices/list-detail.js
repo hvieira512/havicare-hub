@@ -88,15 +88,16 @@ function apiRoleLabel(role) {
 }
 
 async function loadSummary() {
+    const {online} = state.deviceFilters;
     const [devicesResponse] = await Promise.all([
         apiGetDevices({
             page: state.deviceListPage,
             limit: state.deviceListPageSize,
             deviceType: state.deviceFilters.deviceType,
-            licenseId: state.deviceFilters.licenseId,
-            company: state.deviceFilters.company,
             supplier: state.deviceFilters.supplier,
             model: state.deviceFilters.model,
+            license: state.deviceFilters.license,
+            online: online === null ? null : online ? "online" : "offline",
             q: state.deviceSearchQuery,
         }),
         ensureLicensesLoaded(),
@@ -117,6 +118,13 @@ async function loadSummary() {
             supplier: [],
             model: [],
         },
+        deviceFilterCounts: devicesResponse.filters?.counts || {
+            deviceType: [],
+            supplier: [],
+            model: [],
+            license: {companies: [], none: 0},
+        },
+        deviceTotals: devicesResponse.summary || {total: 0, online: 0},
     };
     state.deviceListPageSize =
         state.summary.devicePagination.limit || state.deviceListPageSize;
@@ -235,59 +243,84 @@ function renderDeviceSelector() {
         els.deviceListSearch.value = state.deviceSearchQuery;
     }
     renderDeviceFilterControls();
+    renderDeviceSelectorSummary();
 
-    const tableMarkup = state.summary.devices.length
-        ? `
-        <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0 device-list-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Estado</th>
-                        <th>IMEI</th>
-                        <th>Tipo</th>
-                        <th>Modelo</th>
-                        <th>Empresa</th>
-                        <th>Licença</th>
-                        <th>SIM</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${state.summary.devices
-                        .map((device) => {
-                            const isSelected =
-                                state.selectedImei === device.imei;
-                            const imageMarkup = device.image
-                                ? `<img src="${esc(device.image)}" class="object-fit-contain" alt="${esc(device.model || device.imei)}" style="width:40px;height:40px;">`
-                                : '<i class="fa-solid fa-microchip fa-xl text-secondary" style="width:40px"></i>';
-                            return `
-                            <tr${isSelected ? ' class="table-primary"' : ""} data-imei="${esc(device.imei)}" data-action="select" role="button" tabindex="0">
-                                <td data-cell="thumb" style="width:52px">${imageMarkup}</td>
-                                <td data-cell="state">
-                                    <span class="config-state ${device.online ? "config-state-success" : "config-state-secondary"}">
-                                        <span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}
-                                    </span>
-                                </td>
-                                <td data-cell="imei" class="fw-semibold text-break tabular-nums">${esc(device.imei)}</td>
-                                <td data-cell="type">${esc(deviceTypeLabel(normalizeDeviceType(device.deviceType)))}</td>
-                                <td data-cell="model">
-                                    ${esc(device.model || "-")}
-                                    ${device.supplier ? `<span class="section-label d-block">${esc(device.supplier)}</span>` : ""}
-                                </td>
-                                <td data-cell="company">${esc(companyLabel(device.company))}</td>
-                                <td data-cell="license" class="tabular-nums">${esc(licenseDisplayLabel(device.licenseId))}</td>
-                                <td data-cell="sim" class="text-break tabular-nums">${esc(device.simNumber || "-")}</td>
-                            </tr>`;
-                        })
-                        .join("")}
-                </tbody>
-            </table>
-        </div>
-    `
+    els.deviceList.innerHTML = state.summary.devices.length
+        ? state.summary.devices.map(renderDeviceCard).join("")
         : emptyPanel("Não há dispositivos para o filtro selecionado.");
-
-    els.deviceList.innerHTML = tableMarkup;
     renderDevicePagination(state.summary.devicePagination);
+}
+
+function renderDeviceSelectorSummary() {
+    if (!els.deviceSelectorSummary) return;
+    const {total, online} = state.summary.deviceTotals || {total: 0, online: 0};
+    els.deviceSelectorSummary.textContent = total
+        ? `${total} ${total === 1 ? "dispositivo" : "dispositivos"} · ${online} ligado${online === 1 ? "" : "s"}`
+        : "";
+}
+
+/**
+ * Um dispositivo por linha, e a linha toda.
+ *
+ * Era uma tabela de oito colunas, todas com o mesmo peso. Quem abre este modal quer
+ * reconhecer *um* dispositivo, e reconhece-o pela foto, pelo estado e pelo IMEI -- o resto é
+ * confirmação. Em cartão, esses três ficam à esquerda e a atribuição fica em campos de
+ * largura fixa à direita, que caem sempre na mesma abcissa: lê-se a descer por coluna, como
+ * uma tabela, mas cada dispositivo continua a ser um objecto com contorno próprio.
+ */
+function renderDeviceCard(device) {
+    const selected = state.selectedImei === device.imei;
+    const image = device.image
+        ? `<img src="${esc(device.image)}" alt="${esc(device.model || device.imei)}">`
+        : '<i class="fa-solid fa-microchip"></i>';
+    const meta = [
+        deviceTypeLabel(normalizeDeviceType(device.deviceType)),
+        [device.supplier, device.model].filter(Boolean).join(" "),
+    ]
+        .filter(Boolean)
+        .join(" · ");
+
+    return `
+        <button type="button" class="device-card${selected ? " selected" : ""}${device.online ? "" : " offline"}"
+            data-imei="${esc(device.imei)}" data-action="select"${selected ? ' aria-current="true"' : ""}>
+        <span class="device-card-thumb">${image}</span>
+        <span class="config-state ${device.online ? "config-state-success" : "config-state-secondary"}">
+            <span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}
+        </span>
+        <span class="device-card-identity">
+            <span class="min-width-0">
+                <span class="device-card-imei d-block">${esc(device.imei)}</span>
+                <span class="device-card-meta d-block">${esc(meta)}</span>
+            </span>
+        </span>
+        <span class="device-card-fields">
+            <span class="device-card-field">
+                <span class="device-card-field-label">Licença</span>
+                ${deviceLicenseValue(device)}
+            </span>
+            <span class="device-card-field">
+                <span class="device-card-field-label">SIM</span>
+                <span class="device-card-field-value${device.simNumber ? " tabular-nums" : " empty"}">${esc(device.simNumber || "—")}</span>
+            </span>
+        </span>
+        </button>`;
+}
+
+/**
+ * A licença de um dispositivo, num campo só.
+ *
+ * A licença pertence à empresa, e um dispositivo tem as duas ou nenhuma -- não existe
+ * "empresa sem licença" nem uma licença fora de uma empresa. Por isso o valor tem duas
+ * formas e não quatro: `empresa · número`, ou "Sem licença".
+ */
+function deviceLicenseValue(device) {
+    const company = String(device.company || "").trim();
+    const licenseId = normalizeLicenseId(device.licenseId);
+    if (company === "" || company.toLowerCase() === "null" || licenseId === 0) {
+        return '<span class="device-card-field-value empty">Sem licença</span>';
+    }
+
+    return `<span class="device-card-field-value">${esc(company)}<span class="license-separator">·</span><span class="license-number">${esc(licenseId)}</span></span>`;
 }
 
 function renderDevicePagination(pagination) {
@@ -301,103 +334,251 @@ function renderDevicePagination(pagination) {
     });
 }
 
-function renderSelectOptions(select, options, selectedValue, labelForValue) {
-    const normalizedSelectedValue = normalizeFilterValue(selectedValue);
-    const html = [
-        '<option value="all">Todos</option>',
-        ...options.map(
-            (option) =>
-                `<option value="${esc(option)}"${option === normalizedSelectedValue ? " selected" : ""}>${esc(labelForValue(option))}</option>`,
-        ),
-    ];
-    select.innerHTML = html.join("");
-    select.value = options.includes(normalizedSelectedValue)
-        ? normalizedSelectedValue
-        : "all";
+/** O ícone de cada tipo de dispositivo, o mesmo do assistente de criação. */
+const DEVICE_TYPE_ICON = {
+    watch: "fa-clock",
+    radar: "fa-wifi",
+    gateway: "fa-tower-broadcast",
+    diaper_sensor: "fa-droplet",
+    bracelet: "fa-ring",
+    ncs: "fa-bell-concierge",
+};
+
+/**
+ * O mosaico de tipos, a aceitar vários.
+ *
+ * Reaproveita a grelha do assistente de "Adicionar dispositivo": escolher o tipo de
+ * dispositivo passa a ser o mesmo gesto nos dois sítios, em vez de ser uma lista num e um
+ * mosaico no outro. Os tipos vêm do catálogo e não das contagens, para que um tipo sem
+ * dispositivos apareça apagado -- saber que a frota não tem pulseiras é informação.
+ */
+function renderDeviceTypeFilter() {
+    const counts = new Map(
+        (state.summary.deviceFilterCounts?.deviceType || []).map((option) => [
+            normalizeDeviceType(option.value),
+            option.count,
+        ]),
+    );
+    const selected = state.deviceFilters.deviceType;
+
+    els.deviceTypeFilter.innerHTML = deviceTypeOptions
+        .map((option) => {
+            const value = normalizeDeviceType(option.value);
+            const count = counts.get(value) || 0;
+            const on = selected.includes(value);
+            return `
+            <button type="button" class="device-type-tile${on ? " selected" : ""}"
+                data-action="toggleDeviceFilter" data-filter-key="deviceType" data-filter-value="${esc(value)}"
+                ${count === 0 && !on ? "disabled" : ""} aria-pressed="${on ? "true" : "false"}">
+            <span class="device-type-tile-check"><i class="fa-solid fa-check"></i></span>
+            <span class="device-type-tile-icon"><i class="fa-solid ${esc(DEVICE_TYPE_ICON[value] || "fa-microchip")}"></i></span>
+            <span class="device-type-tile-name">${esc(deviceTypeLabel(value))}</span>
+            <span class="device-type-tile-count">${count === 0 ? "nenhum" : count}</span>
+            </button>`;
+        })
+        .join("");
+}
+
+/** Uma lista de opções de escolha múltipla, com a contagem de cada uma. */
+function renderFilterOptionList(rootEl, key, options, labelForValue, search = "") {
+    const selected = state.deviceFilters[key];
+    const needle = search.trim().toLowerCase();
+    // O que está marcado sobe: numa lista longa, uma opção marcada podia ficar fora de
+    // vista e o filtro passava a agir sem se ver de onde.
+    const visible = options
+        .filter((option) => {
+            if (needle === "") return true;
+            return (
+                String(option.value).toLowerCase().includes(needle) ||
+                String(labelForValue(option.value)).toLowerCase().includes(needle)
+            );
+        })
+        .sort((left, right) => {
+            const leftOn = selected.includes(String(left.value)) ? 0 : 1;
+            const rightOn = selected.includes(String(right.value)) ? 0 : 1;
+            return leftOn - rightOn || right.count - left.count;
+        });
+
+    rootEl.innerHTML = visible.length
+        ? visible
+              .map((option) => {
+                  const value = String(option.value);
+                  return filterOptionMarkup({
+                      key,
+                      value,
+                      label: labelForValue(value),
+                      count: option.count,
+                      selected: selected.includes(value),
+                  });
+              })
+              .join("")
+        : `<div class="small text-secondary px-1 py-2">Nada corresponde à procura.</div>`;
+}
+
+function filterOptionMarkup({key, value, label, count, selected, partial = false, nested = false}) {
+    const classes = [
+        "filter-option",
+        nested ? "filter-option-nested" : "",
+        selected ? "selected" : "",
+        partial ? "partial" : "",
+    ]
+        .filter(Boolean)
+        .join(" ");
+
+    return `
+        <button type="button" class="${classes}" data-action="toggleDeviceFilter"
+            data-filter-key="${esc(key)}" data-filter-value="${esc(value)}" aria-pressed="${selected ? "true" : "false"}">
+        <span class="filter-option-box"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
+        <span class="filter-option-name">${esc(label)}</span>
+        <span class="filter-option-count">${esc(count)}</span>
+        </button>`;
+}
+
+/**
+ * A árvore de empresas e licenças.
+ *
+ * A empresa é a caixa de cima e as licenças dela ficam indentadas por baixo. Marcar a
+ * empresa marca-a toda; marcar algumas licenças deixa a empresa no traço do meio, que é o
+ * estado que diz "esta empresa, mas não inteira".
+ *
+ * "Sem licença" é a primeira opção e é folha: é a única que não pertence a empresa nenhuma,
+ * e no fim ficava atrás de uma lista de empresas que pode crescer.
+ */
+function renderDeviceLicenseFilter() {
+    const tree = state.summary.deviceFilterCounts?.license || {companies: [], none: 0};
+    const selected = state.deviceFilters.license;
+    const rows = [];
+
+    if (tree.none > 0) {
+        rows.push(
+            filterOptionMarkup({
+                key: "license",
+                value: "none",
+                label: "Sem licença",
+                count: tree.none,
+                selected: selected.includes("none"),
+            }),
+        );
+    }
+
+    for (const company of tree.companies || []) {
+        const name = String(company.company);
+        const licenses = company.licenses || [];
+        const licenseValues = licenses.map((license) => `${name}:${license.licenseId}`);
+        const companySelected = selected.includes(name);
+        const someLicenseSelected = licenseValues.some((value) => selected.includes(value));
+
+        rows.push(
+            filterOptionMarkup({
+                key: "license",
+                value: name,
+                label: companyLabel(name),
+                count: company.count,
+                selected: companySelected,
+                partial: !companySelected && someLicenseSelected,
+            }),
+        );
+
+        if (licenses.length === 0) {
+            continue;
+        }
+
+        rows.push(
+            `<div class="filter-branch">${licenses
+                .map((license) => {
+                    const value = `${name}:${license.licenseId}`;
+                    return filterOptionMarkup({
+                        key: "license",
+                        value,
+                        label: licenseDisplayLabel(
+                            license.licenseId,
+                            state.settingsModal.licenses || [],
+                        ),
+                        count: license.count,
+                        selected: companySelected || selected.includes(value),
+                        nested: true,
+                    });
+                })
+                .join("")}</div>`,
+        );
+    }
+
+    els.deviceLicenseFilter.innerHTML = rows.length
+        ? rows.join("")
+        : '<div class="small text-secondary px-1 py-2">Não há licenças para mostrar.</div>';
 }
 
 function renderDeviceFilterControls() {
-    const options = state.summary.deviceFiltersAvailable || {
+    const counts = state.summary.deviceFilterCounts || {
         deviceType: [],
-        licenseId: [],
-        company: [],
         supplier: [],
         model: [],
+        license: {companies: [], none: 0},
     };
-    renderSelectOptions(
-        els.deviceTypeFilter,
-        options.deviceType || [],
-        state.deviceFilters.deviceType,
-        (value) => deviceTypeLabel(value),
-    );
-    renderSelectOptions(
-        els.deviceLicenseFilter,
-        options.licenseId || [],
-        state.deviceFilters.licenseId,
-        (value) => licenseLabel(value),
-    );
-    renderSelectOptions(
-        els.deviceCompanyFilter,
-        options.company || [],
-        state.deviceFilters.company,
-        (value) => companyLabel(value),
-    );
-    renderSelectOptions(
+
+    renderDeviceTypeFilter();
+    renderFilterOptionList(
         els.deviceSupplierFilter,
-        options.supplier || [],
-        state.deviceFilters.supplier,
+        "supplier",
+        counts.supplier || [],
         (value) => value,
     );
-    renderSelectOptions(
+    renderFilterOptionList(
         els.deviceModelFilter,
-        options.model || [],
-        state.deviceFilters.model,
+        "model",
+        counts.model || [],
         (value) => modelDisplayName("", value),
+        state.deviceModelFilterSearch,
     );
-    renderAppliedDeviceFilters();
+    renderDeviceLicenseFilter();
+
+    if (els.deviceModelFilterSearch) {
+        els.deviceModelFilterSearch.value = state.deviceModelFilterSearch;
+    }
+    for (const input of document.querySelectorAll('input[name="deviceOnlineFilter"]')) {
+        const {online} = state.deviceFilters;
+        const value = online === null ? "all" : online ? "online" : "offline";
+        input.checked = input.value === value;
+    }
+
+    renderDeviceFilterCounters();
 }
 
-function renderAppliedDeviceFilters() {
-    const labels = [];
-
-    if (state.deviceFilters.deviceType) {
-        labels.push({
-            key: "deviceType",
-            label: `Tipo: ${deviceTypeLabel(state.deviceFilters.deviceType)}`,
-        });
-    }
-    if (state.deviceFilters.licenseId) {
-        labels.push({
-            key: "licenseId",
-            label: `Licença: ${licenseLabel(state.deviceFilters.licenseId)}`,
-        });
-    }
-    if (state.deviceFilters.company) {
-        labels.push({
-            key: "company",
-            label: `Empresa: ${companyLabel(state.deviceFilters.company)}`,
-        });
-    }
-    if (state.deviceFilters.supplier) {
-        labels.push({
-            key: "supplier",
-            label: `Fornecedor: ${state.deviceFilters.supplier}`,
-        });
-    }
-    if (state.deviceFilters.model) {
-        labels.push({
-            key: "model",
-            label: `Modelo: ${modelDisplayName("", state.deviceFilters.model)}`,
-        });
+/**
+ * Os contadores ao lado de cada título, e o do topo.
+ *
+ * O do topo conta os grupos com filtro aplicado e não os valores marcados: diz quantas
+ * coisas estão a estreitar a lista, que é a pergunta que se faz ao olhar para lá.
+ */
+function renderDeviceFilterCounters() {
+    const perGroup = {
+        deviceType: state.deviceFilters.deviceType.length,
+        supplier: state.deviceFilters.supplier.length,
+        model: state.deviceFilters.model.length,
+        license: state.deviceFilters.license.length,
+    };
+    const counterEls = {
+        deviceType: els.deviceTypeFilterCount,
+        supplier: els.deviceSupplierFilterCount,
+        model: els.deviceModelFilterCount,
+        license: els.deviceLicenseFilterCount,
+    };
+    for (const [key, count] of Object.entries(perGroup)) {
+        const el = counterEls[key];
+        if (!el) continue;
+        el.textContent = count ? String(count) : "";
+        el.classList.toggle("d-none", count === 0);
     }
 
-    els.deviceActiveFilters.innerHTML = filterChips(labels, "removeDeviceFilter");
-    // O contador no botao e o que diz que ha filtros ligados sem os selects estarem
-    // abertos. Sem filtros nao ha contador nem a linha das pastilhas -- o vazio nao
-    // precisa de uma frase a dizer que esta vazio.
-    els.deviceFilterCount.textContent = labels.length ? String(labels.length) : "";
-    els.deviceFilterCount.classList.toggle("d-none", labels.length === 0);
-    els.clearDeviceFiltersBtn.classList.toggle("d-none", labels.length === 0);
+    const activeGroups =
+        Object.values(perGroup).filter((count) => count > 0).length +
+        (state.deviceFilters.online === null ? 0 : 1);
+    for (const el of [els.deviceFilterCount, els.deviceFilterCountMobile]) {
+        if (!el) continue;
+        el.textContent = activeGroups ? String(activeGroups) : "";
+        el.classList.toggle("d-none", activeGroups === 0);
+    }
+    els.clearDeviceFiltersBtn.classList.toggle("d-none", activeGroups === 0);
 }
 
 function handleDeviceListLimitChange() {
@@ -501,7 +682,6 @@ export {
     normalizeFilterValue,
     normalizeLicenseId,
     openDeviceSelector,
-    renderAppliedDeviceFilters,
     renderDeviceFilterControls,
     renderDevicePagination,
     renderDeviceSelector,

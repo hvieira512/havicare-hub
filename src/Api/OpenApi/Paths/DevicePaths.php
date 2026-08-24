@@ -23,11 +23,19 @@ final class DevicePaths
                 'get' => [
                     'tags' => [self::TAG],
                     'summary' => 'List devices',
+                    // Os filtros de conjunto aceitam vários valores, como `deviceType[]=a&
+                    // deviceType[]=b` ou `deviceType=a,b`. `license` escolhe pares empresa e
+                    // licença -- `empresa`, `empresa:número`, ou `none` para os dispositivos
+                    // sem uma nem outra -- porque uma licença pertence sempre a uma empresa.
+                    // `company` e `licenseId` são a forma anterior e continuam a funcionar.
                     'parameters' => array_merge(Parameters::pagination(5), [
-                        Parameters::stringQuery('deviceType'),
+                        Parameters::stringList('deviceType'),
+                        Parameters::stringList('supplier'),
+                        Parameters::stringList('model'),
+                        Parameters::stringList('license'),
+                        Parameters::query('online', ['type' => 'string', 'enum' => ['online', 'offline']]),
+                        Parameters::stringQuery('company'),
                         Parameters::stringQuery('licenseId'),
-                        Parameters::stringQuery('supplier'),
-                        Parameters::stringQuery('model'),
                         Parameters::query('q', ['type' => 'string', 'default' => '']),
                     ]),
                     'responses' => [
