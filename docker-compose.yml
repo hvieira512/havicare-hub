@@ -53,7 +53,11 @@ services:
   hub:
     build: .
     container_name: havicare-hub
-    command: sh -lc "php bin/migrate.php && exec bin/dev.sh php bin/server-hub.php"
+    # vendor/ is gitignored and the bind mount below hides the image's copy, so a
+    # fresh clone has none: install before migrate.php, which needs the autoloader.
+    # ponytail: the retry works around extraction races on macOS bind mounts; drop
+    # it if vendor/ ever moves to a named volume.
+    command: sh -lc "composer install --no-interaction || composer install --no-interaction; php bin/migrate.php && exec bin/dev.sh php bin/server-hub.php"
     ports:
       - "8081:8081"
       - "9000:9000"
