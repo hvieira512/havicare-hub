@@ -129,6 +129,33 @@ body {
     font-family: 'Poppins', sans-serif;
 }
 
+/* As duas colunas do ecra principal chegam ao fundo do ecra. A altura das duas vinha do
+   conteudo, e a mais curta acabava a meio do ecra com o cinzento da pagina por baixo --
+   duas listas com espaco para crescer e nenhuma a usa-lo. `min-height` e nao `height`:
+   quando o conteudo passa do ecra, a pagina cresce como sempre. */
+#dashboardApp {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+}
+
+.dashboard-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.dashboard-main > .row {
+    flex: 1 1 auto;
+}
+
+/* Na coluna da esquerda, e o cartao dos mosaicos que absorve o resto: o da identidade tem
+   a altura dos factos que mostra, e esticar esse deixava o `Editar` a flutuar sozinho. */
+#requestCardsCard {
+    flex: 1 1 auto;
+}
+
 /* ===== primitivas do sistema ===== */
 
 /* A barra de navegacao e o navy da marca. */
@@ -259,7 +286,9 @@ body {
     white-space: nowrap;
     padding: .15rem .3rem .15rem .55rem;
     border-radius: 20px;
-    background: var(--bs-tertiary-bg);
+    /* O cinzento da maqueta e nao o `tertiary-bg`: a um tom do branco do cartao a pastilha
+       nao se lia como pastilha, era texto em maiusculas com um ponto a frente. */
+    background: var(--bs-secondary-bg);
     color: var(--bs-secondary-color);
 }
 
@@ -286,10 +315,12 @@ body {
     font-size: .625rem;
 }
 
+/* O fundo do realce e mais escuro que o da pastilha, senao nao se via: a pastilha ja e o
+   `secondary-bg`, que era tambem o realce. */
 .filter-chip-remove:hover,
 .filter-chip-remove:focus-visible {
-    background: var(--bs-secondary-bg);
-    color: var(--bs-body-color);
+    background: var(--bs-tertiary-color);
+    color: var(--bs-body-bg);
 }
 
 /* O painel de detalhe enche o cartao, para as duas listas terem altura para crescer. Nao

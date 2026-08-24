@@ -26,7 +26,7 @@ ob_start();
 </div>
 <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
     <div id="deviceActiveFilters" class="d-flex flex-wrap gap-2"></div>
-    <button id="clearDeviceFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none d-none" type="button">Limpar</button>
+    <button id="clearDeviceFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" type="button">Limpar</button>
 </div>
 <div class="collapse" id="deviceFiltersCollapse">
     <div class="row g-2 pt-3">

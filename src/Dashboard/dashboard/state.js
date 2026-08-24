@@ -116,7 +116,10 @@ export const state = {
     loadingCommands: new Set(),
     deviceListPage: 1,
     telemetryPage: 1,
-    telemetryPageSize: 10,
+    // Doze e nao dez: com os detalhes reduzidos ao que cada tipo declara, a maioria das
+    // linhas passou a ter uma linha de texto em vez de duas ou tres, e cabem mais duas na
+    // mesma altura. Cem eventos passam de dez paginas para nove.
+    telemetryPageSize: 12,
 };
 
 export function selectImei(imei) {

@@ -11,7 +11,6 @@ import {
 } from "../domain.js";
 import {
     commandLabel,
-    displayValue,
     esc,
     eventTime,
     featureLabel,
@@ -533,7 +532,11 @@ function renderTelemetryRow(payload) {
     const data =
         payload?.data && typeof payload.data === "object" ? payload.data : {};
     const card = uplinkCardContent(type, data);
-    const details = telemetryDetails(data, payload);
+    // Os detalhes sao os que cada tipo escolhe, e nao todos os campos do payload. Eram
+    // todos: uma leitura de bateria dizia "79%" e por baixo "Percentagem: 79", e uma de
+    // humidade da fralda despejava dez campos internos -- "RequiredChannelCount: 4" --
+    // debaixo do proprio nome. Cada renderizador ja declara o que vale a pena mostrar.
+    const details = card.details || "";
 
     const tone = cardTone(type);
     return `
@@ -545,72 +548,11 @@ function renderTelemetryRow(payload) {
         </td>
         <td class="fw-medium" style="width:36%">${esc(featureLabel(type))}</td>
         <td class="tabular-nums text-break">
-            ${esc(card.value)}
+            ${esc(card.rowValue || card.value)}
             ${details ? `<div class="telemetry-row-details text-secondary" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</div>` : ""}
         </td>
         <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(payload.occurredAt || payload.recordedAt))}">${esc(whenShort(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
         </tr>`;
-}
-
-function telemetryDetails(data, payload) {
-    if (payload?.type === "position") {
-        return radarPositionDetails(data);
-    }
-
-    const details = [];
-    const skipKeys =
-        payload?.type === "help_call" ||
-        payload?.type === "reset"
-            ? new Set(["event", "alarm"])
-            : new Set();
-    if (data && typeof data === "object") {
-        for (const [key, value] of Object.entries(data)) {
-            if (value === undefined || value === null || value === "") continue;
-            if (skipKeys.has(key)) continue;
-            details.push(`${fieldLabel(key)}: ${esc(displayValue(value))}`);
-        }
-    }
-    if (payload?.extra && typeof payload.extra === "object") {
-        details.push(
-            ...Object.entries(payload.extra)
-                .filter(
-                    ([, value]) =>
-                        value !== undefined && value !== null && value !== "",
-                )
-                .slice(0, 6)
-                .map(
-                    ([key, value]) =>
-                        `${fieldLabel(key)}: ${esc(displayValue(value))}`,
-                ),
-        );
-    }
-    return details.join(" · ");
-}
-
-function radarPositionDetails(data) {
-    const people = Array.isArray(data?.people) ? data.people : [];
-    if (!people.length) {
-        return "Pessoas: 0";
-    }
-
-    const countLabel = `Pessoas: ${people.length}`;
-    const personLines = people.map((person, index) => {
-        const personIndex = person?.person_index ?? index + 1;
-        const x = displayValue(person?.x_position_dm);
-        const y = displayValue(person?.y_position_dm);
-        const z = displayValue(person?.z_position_cm);
-        const posture = displayValue(person?.posture_state);
-
-        return [
-            `Pessoa ${esc(personIndex)}`,
-            `x: ${esc(x)} dm`,
-            `y: ${esc(y)} dm`,
-            `z: ${esc(z)} cm`,
-            `postura: ${esc(posture)}`,
-        ].join(" · ");
-    });
-
-    return [countLabel, ...personLines].join("<br>");
 }
 
 function renderRequestCards(groups, telemetry = [], events = []) {

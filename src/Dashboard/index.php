@@ -130,7 +130,7 @@ require_once __DIR__ . '/components/modal.php';
                 </div>
             </div>
         </nav>
-        <main class="container-fluid py-3">
+        <main class="container-fluid py-3 dashboard-main">
             <div class="row g-3">
                 <?php
                 /**
@@ -216,7 +216,8 @@ require_once __DIR__ . '/components/modal.php';
                                     </div>
                                     <div id="detailActiveFiltersRow" class="d-flex flex-wrap align-items-center gap-2 mt-2 d-none">
                                         <div id="detailActiveFilters" class="d-flex flex-wrap gap-2"></div>
-                                        <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none d-none" type="button">Limpar</button>
+                                        <?php /* A acção mais fraca da linha, e não a mais forte: em azul primário competia com as pastilhas. */ ?>
+                                        <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" type="button">Limpar</button>
                                     </div>
                                     <div class="collapse" id="detailFiltersCollapse">
                                         <div class="row g-2 align-items-end pt-3">

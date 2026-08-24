@@ -171,6 +171,9 @@ const UPLINK_CARD_RENDERERS = {
     diaper_moisture: (data) => ({
         icon: "fa-droplet",
         value: featureLabel("diaper_moisture"),
+        // Numa linha de lista nao ha espaco para a tira dos dez canais, e o mosaico do
+        // cartao ja a mostra. O que resta e o resumo: quantos canais passaram o limiar.
+        rowValue: diaperMoistureRowValue(data),
         span: 12,
         body: diaperMoistureBody(data),
     }),
@@ -619,6 +622,24 @@ function diaperMoistureLevelBody(data) {
             }
         </div>
     </div>`;
+}
+
+/**
+ * O valor de uma leitura de humidade da fralda, para uma linha de lista.
+ *
+ * O cartão mostra a tira dos dez canais; numa linha só cabe o que a tira resume — o delta
+ * mais alto e quantos canais passaram o limiar. Sem isto, a linha dizia "Humidade da
+ * fralda" na coluna do nome e outra vez na coluna do valor, sem número nenhum.
+ */
+function diaperMoistureRowValue(data) {
+    const channels = Array.isArray(data?.channels) ? data.channels : [];
+    if (channels.length === 0) {
+        return "";
+    }
+
+    const maximum = Math.max(0, Number(data?.maximumDelta ?? 0) || 0);
+    const affected = Math.max(0, Number(data?.affectedChannelCount ?? 0) || 0);
+    return `máx. ${maximum} · ${affected} de ${channels.length} acima do limiar`;
 }
 
 function batteryDetails(data) {

@@ -96,7 +96,7 @@ ob_start();
                                 </div>
                                 <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
                                     <div id="modelsActiveFilters" class="d-flex flex-wrap gap-2"></div>
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="clearModelsFiltersBtn">Limpar</button>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" id="clearModelsFiltersBtn">Limpar</button>
                                 </div>
                                 <div class="collapse" id="modelsFiltersCollapse">
                                     <div class="row g-3 pt-3">
@@ -284,7 +284,7 @@ ob_start();
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
                         <div id="capabilityActiveFilters" class="d-flex flex-wrap gap-2"></div>
-                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="capabilitySupplierClear" data-action="clearCapabilitySupplier">Limpar</button>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" id="capabilitySupplierClear" data-action="clearCapabilitySupplier">Limpar</button>
                     </div>
                     <div class="collapse" id="capabilityFiltersCollapse">
                         <div class="row g-3 pt-3">
