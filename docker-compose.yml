@@ -44,6 +44,11 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
     networks:
       default:
         aliases:
@@ -123,9 +128,13 @@ services:
       RADIO_MAP_CLUSTER_RADIUS_METERS: ${RADIO_MAP_CLUSTER_RADIUS_METERS:-150}
       RADIO_MAP_CACHE_TTL_SECONDS: ${RADIO_MAP_CACHE_TTL_SECONDS:-60}
     depends_on:
-      - mosquitto
-      - redis
-      - mysql
+      mosquitto:
+        condition: service_started
+      redis:
+        condition: service_started
+      # migrate.php runs at startup, so wait for the first-boot init to finish
+      mysql:
+        condition: service_healthy
     networks:
       default:
         aliases:
