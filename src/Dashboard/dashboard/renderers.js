@@ -399,20 +399,20 @@ export function telemetryCard({
     stateLabel = "",
     tone = "",
 }) {
-    const tip = tooltip
-        ? ` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top"`
-          + ` data-bs-title="${esc(tooltip)}" aria-label="${esc(tooltip)}" tabindex="0"`
-        : "";
     // O cartao e o pedido: quando ha um feature para pedir, e ele o botao. Um botao
     // "Pedir" dentro de cada cartao dava oito primarios escuros no mesmo painel, e o
     // alvo de clique era a parte mais pequena de uma area que ja era toda clicavel.
+    //
+    // Sem tooltip: o nome da categoria esta escrito no cartao, por isso a tooltip repetia
+    // em cima do rato o que ja estava no ecra.
     const clickable = feature !== "";
     const tag = clickable ? "button" : "div";
+    const toneClass = tone ? ` telemetry-card-tone-${esc(tone)}` : "";
     const attrs = clickable
-        ? ` type="button" class="card h-100 telemetry-card-action text-start"`
+        ? ` type="button" class="card h-100 telemetry-card-action text-start${toneClass}"`
           + ` data-action="requestFeature" data-feature="${esc(feature)}"`
           + `${pending ? " disabled" : ""}`
-        : ` class="card h-100"`;
+        : ` class="card h-100${toneClass}"`;
     const state = stateLabel
         ? `<span class="config-state ${pending ? "config-state-warning" : "config-state-secondary"} flex-shrink-0">`
           + `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
@@ -426,11 +426,11 @@ export function telemetryCard({
         <${tag}${attrs}>
         <div class="card-body">
         <div class="telemetry-card-head d-flex align-items-center gap-3 min-w-0">
-        <div class="telemetry-card-icon${tone ? ` telemetry-card-icon-${esc(tone)}` : ""}"${tip}>
+        <div class="telemetry-card-icon">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
         <div class="flex-grow-1 min-w-0">
-        <div class="telemetry-card-title fw-semibold text-truncate" title="${esc(title)}">${esc(title)}</div>
+        <div class="telemetry-card-title text-truncate" title="${esc(title)}">${esc(title)}</div>
         ${value ? `<div class="telemetry-card-value tabular-nums text-truncate" title="${esc(value)}">${esc(value)}</div>` : ""}
         </div>
         ${state}

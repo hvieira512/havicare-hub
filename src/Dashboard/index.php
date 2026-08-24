@@ -194,9 +194,9 @@ require_once __DIR__ . '/components/modal.php';
                     </div>
                 </aside>
                 <section id="detailColumn" class="col-12 col-lg-8">
-                    <div class="card">
-                        <div class="card-body">
-                            <div id="deviceDetail" class="d-none">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div id="deviceDetail" class="d-none device-detail-open">
                                 <div id="detailFiltersPanel" class="mb-3">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="input-group input-group-sm flex-grow-1">
@@ -246,28 +246,36 @@ require_once __DIR__ . '/components/modal.php';
                                  * que não havia nada.
                                  */
                                 ?>
-                                <div class="vstack gap-4">
-                                    <?php
-                                    /**
-                                     * A secção esconde-se quando não há ligações: os
-                                     * dispositivos que entram por gateway nunca têm
-                                     * nenhuma, e ficavam 180px em branco no topo do
-                                     * painel a dizer nada.
-                                     */
-                                    ?>
-                                    <section id="connectionSection">
+                                <?php
+                                /**
+                                 * Eventos e pedidos lado a lado, e a encher até ao fundo.
+                                 *
+                                 * Empilhados davam duas listas curtas com metade da altura
+                                 * do painel vazia por baixo. Ao lado, cada uma usa a altura
+                                 * toda — e é a mesma pergunta feita em dois sentidos: o que
+                                 * o dispositivo mandou e o que lhe foi pedido.
+                                 *
+                                 * A secção das ligações esconde-se quando não há nenhuma:
+                                 * os dispositivos que entram por gateway nunca têm, e
+                                 * ficavam 180px em branco no topo.
+                                 */
+                                ?>
+                                <div class="device-detail-stack d-flex flex-column gap-4">
+                                    <section id="connectionSection" class="flex-shrink-0">
                                         <?= section_header('Ligações ao servidor') ?>
                                         <div id="connectionTimeline" style="height:180px;width:100%;"></div>
                                     </section>
-                                    <section class="border-top pt-4">
-                                        <?= section_header('Eventos recebidos', 'telemetryCount') ?>
-                                        <div id="telemetryList" class="overflow-auto" style="max-height:40vh;"></div>
-                                        <?= pagination_component('telemetry') ?>
-                                    </section>
-                                    <section class="border-top pt-4">
-                                        <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount') ?>
-                                        <div id="downlinkRequests" class="overflow-auto" style="max-height:40vh;"></div>
-                                    </section>
+                                    <div class="row g-4 flex-grow-1 border-top pt-4" style="min-height:0">
+                                        <div class="col-12 col-xl-6 d-flex flex-column">
+                                            <?= section_header('Eventos recebidos', 'telemetryCount') ?>
+                                            <div id="telemetryList" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
+                                            <?= pagination_component('telemetry') ?>
+                                        </div>
+                                        <div class="col-12 col-xl-6 d-flex flex-column border-start-xl">
+                                            <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount') ?>
+                                            <div id="downlinkRequests" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

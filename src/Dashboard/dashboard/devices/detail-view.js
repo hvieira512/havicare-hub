@@ -530,7 +530,7 @@ function renderTelemetryRow(payload) {
     return `
         <tr>
         <td style="width:34px">
-            <span class="telemetry-row-icon${tone ? ` telemetry-card-icon-${esc(tone)}` : ""}">
+            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
                 <i class="fa-solid ${esc(card.icon)}"></i>
             </span>
         </td>
