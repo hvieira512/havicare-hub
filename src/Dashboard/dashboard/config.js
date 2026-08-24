@@ -593,14 +593,14 @@ export function renderDeviceConfigurationRoot(context) {
                     <div class="fw-semibold">Configurações do dispositivo</div>
                     <div class="small text-secondary">${supplier || model ? `${esc(supplier)} ${esc(model)}` : ""}</div>
                 </div>
-                <span class="badge text-bg-secondary">${normalizedCatalog.length} opções</span>
             </div>
-            <div class="nav nav-tabs nav-fill flex-wrap gap-1" role="tablist">
+            <div class="nav nav-underline flex-wrap gap-3" role="tablist">
                 ${groups
                     .map(
                         (group) => `
-                    <button type="button" class="nav-link ${group.key === currentCategory ? "active" : ""}" data-config-category="${esc(group.key)}">
+                    <button type="button" class="nav-link d-inline-flex align-items-center gap-2 ${group.key === currentCategory ? "active" : ""}" data-config-category="${esc(group.key)}">
                         ${esc(group.label)}
+                        <span class="badge rounded-pill text-bg-secondary">${group.entries.length}</span>
                     </button>
                 `,
                     )

@@ -373,23 +373,23 @@ function renderDiscoveryEvidence() {
                     <div class="small text-secondary">IMEI ${esc(run.device?.imei || "")} · ${esc(run.device?.supplier || "")} ${esc(run.device?.model || "")}</div>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <span class="badge text-bg-success">+${(changes.add || []).length}</span>
-                    <span class="badge text-bg-secondary">-${(changes.remove || []).length}</span>
-                    <span class="badge ${run.status === "applied" ? "text-bg-primary" : "text-bg-warning"}">${esc(run.status || "draft")}</span>
+                    <span class="config-state config-state-success"><span class="config-state-dot"></span>+${(changes.add || []).length}</span>
+                    <span class="config-state config-state-secondary"><span class="config-state-dot"></span>−${(changes.remove || []).length}</span>
+                    <span class="config-state ${run.status === "applied" ? "" : "config-state-warning"}"><span class="config-state-dot"></span>${esc(run.status || "draft")}</span>
                 </div>
             </div>
             <div class="small text-secondary mt-2">${esc((run.currentEnabledCapabilityKeys || []).length)} capacidades atuais · ${(run.suggestedEnabledCapabilityKeys || []).length} sugeridas</div>
         </div>
         <div class="vstack gap-2">
             ${evidence.slice(0, 12).map((entry) => `
-                <div class="d-flex justify-content-between align-items-center gap-3 border rounded px-3 py-2 bg-white">
+                <div class="d-flex justify-content-between align-items-center gap-3 border rounded-3 px-3 py-2">
                     <div>
                         <div class="fw-semibold">${esc(entry.label || entry.key || "")}</div>
-                        <div class="small text-secondary">${esc(entry.key || "")} · ${esc(entry.section || "")}</div>
+                        <div class="section-label" style="letter-spacing:0;text-transform:none">${esc(entry.key || "")} · ${esc(entry.section || "")}</div>
                     </div>
                     <div class="d-flex gap-2 flex-wrap">
-                        <span class="badge ${entry.supported ? "text-bg-success" : "text-bg-secondary"}">${entry.supported ? "suportado" : "não suportado"}</span>
-                        <span class="badge ${entry.configured ? "text-bg-primary" : "text-bg-light border"}">${entry.configured ? "no modelo" : "não configurado"}</span>
+                        <span class="config-state ${entry.supported ? "config-state-success" : "config-state-secondary"}"><span class="config-state-dot"></span>${entry.supported ? "suportado" : "não suportado"}</span>
+                        <span class="config-state ${entry.configured ? "" : "config-state-secondary"}"><span class="config-state-dot"></span>${entry.configured ? "no modelo" : "não configurado"}</span>
                     </div>
                 </div>
             `).join("")}
