@@ -400,6 +400,7 @@ export function telemetryCard({
     feature = "",
     pending = false,
     stateLabel = "",
+    stateTone = "",
     tone = "",
 }) {
     // O cartao e o pedido: quando ha um feature para pedir, e ele o botao. Um botao
@@ -416,8 +417,12 @@ export function telemetryCard({
           + ` data-action="requestFeature" data-feature="${esc(feature)}"`
           + `${pending ? " disabled" : ""}`
         : ` class="card h-100${toneClass}"`;
+    // A pastilha leva a sua linha, e nao o canto da linha do icone. Num mosaico de 206px, o
+    // icone (36) mais a largura minima do nome (63) mais a pastilha (72) nao cabem nos 160
+    // uteis: "em fila" saia cortado em "em fi" por cima do contorno do cartao. O aviao de
+    // papel, com 11px, continua no canto -- esse cabe.
     const state = stateLabel
-        ? `<span class="config-state ${pending ? "config-state-warning" : "config-state-secondary"} flex-shrink-0">`
+        ? `<span class="config-state ${esc(stateTone || (pending ? "config-state-warning" : "config-state-secondary"))} align-self-start">`
           + `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
         : "";
     // O canto superior direito e o lugar do pedido: em repouso, o aviao de papel diz que o
@@ -448,8 +453,9 @@ export function telemetryCard({
         <div class="telemetry-card-title">${esc(title)}</div>
         ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
         </div>
-        ${state || requestHint}
+        ${requestHint}
         </div>
+        ${state}
         ${body}
         </div>
         </${tag}>
@@ -748,7 +754,67 @@ function displayPersonIndex(value) {
     return value === undefined || value === null || value === "" ? "-" : String(value);
 }
 
-export function renderRequestCardShell(command, loading, telemetry = []) {
+/**
+ * Os estados de um pedido que o mosaico mostra, e o tom de cada um.
+ *
+ * `acked` fica de fora porque a resposta já é o valor do mosaico, e `superseded` também:
+ * um pedido substituído tem um mais recente atrás dele, e é esse que se mostra. O que não
+ * pode faltar é a falha — se um pedido falhou e nada respondeu depois, o mosaico calado
+ * era indistinguível de um mosaico a que nunca se pediu nada.
+ */
+const REQUEST_CARD_STATE = {
+    queued: {label: "em fila", tone: "config-state-secondary"},
+    sent: {label: "enviado", tone: "config-state-secondary"},
+    waiting: {label: "à espera", tone: "config-state-warning"},
+    failed: {label: "falhou", tone: "config-state-danger"},
+    dropped: {label: "descartado", tone: "config-state-danger"},
+};
+
+/**
+ * O estado do pedido mais recente desta categoria, para a pastilha do mosaico.
+ *
+ * Uma falha só se mostra enquanto for a última palavra: se chegou uma leitura depois dela,
+ * o dispositivo respondeu e é o valor que conta.
+ */
+function latestRequestState(type, commands, lastTelemetryTime) {
+    const latest = commands
+        .filter((command) => commandFeature(command) === type)
+        .sort((left, right) => commandTime(right) - commandTime(left))[0];
+    if (!latest) {
+        return null;
+    }
+
+    const entry = REQUEST_CARD_STATE[String(latest.status || "")];
+    if (!entry) {
+        return null;
+    }
+
+    const failed = entry.tone === "config-state-danger";
+    if (failed && lastTelemetryTime && lastTelemetryTime > commandTime(latest)) {
+        return null;
+    }
+
+    return entry;
+}
+
+/**
+ * A hora de um pedido.
+ *
+ * Não é o `eventTime`: um evento traz `occurredAt` ou `recordedAt`, e um pedido traz
+ * `requestedAt`. Ordenar pedidos com o `eventTime` dava zero em todos, e o "mais recente"
+ * passava a ser o primeiro da lista.
+ */
+function commandTime(command) {
+    const time = Date.parse(command?.requestedAt || "");
+    return Number.isNaN(time) ? eventTime(command) : time;
+}
+
+export function renderRequestCardShell(
+    command,
+    loading,
+    telemetry = [],
+    commands = [],
+) {
     const type = commandFeature(command);
     const card = requestCardContent(type);
     const tooltip = featureLabel(type) || card.value || type;
@@ -783,6 +849,18 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
     // telemetry does not need a special case in this shell.
     const span = lastContent?.span || card.span || 6;
     const bodyHtml = lastContent?.body || "";
+    // "A pedir" durava o que durava a chamada HTTP que punha o pedido na fila, e desaparecia
+    // no instante em que o pedido passava a existir de verdade: o mosaico esquecia-o
+    // exactamente quando havia algo para dizer, e o unico sitio que ainda sabia era a lista
+    // ao lado. A pastilha passa a seguir o estado do pedido, que e o que o utilizador
+    // esperava ver quando clicou.
+    const requestState = requestable
+        ? latestRequestState(
+              type,
+              commands,
+              lastTelemetry ? eventTime(lastTelemetry) : 0,
+          )
+        : null;
 
     return telemetryCard({
         span,
@@ -796,7 +874,8 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         // nao deve parecer que responde.
         feature: requestable ? type : "",
         pending: requestable && loading,
-        stateLabel: requestable && loading ? "A pedir" : "",
+        stateLabel: loading ? "a pedir" : requestState?.label || "",
+        stateTone: loading ? "config-state-warning" : requestState?.tone || "",
         tone: cardTone(type),
     });
 }

@@ -26,10 +26,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         // A faixa com o nome do grupo só existe quando há mais do que um grupo: num relógio,
         // que só tem "Telemetria", era uma moldura com um título por cima dos mosaicos,
         // dentro de um cartão que já se chama "Pedir dados".
-        self::assertStringContainsString(
-            'renderRequestCardGroup(group, telemetry, groups.length > 1)',
-            $source
-        );
+        self::assertStringContainsString('groups.length > 1,', $source);
         self::assertStringContainsString('if (!showLabel) {', $source);
         self::assertStringContainsString('group.cards.length', $source);
 
@@ -58,7 +55,18 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('const value = isSystemRequestCard ? card.value : lastValue;', $renderersSource);
         // O estado do pedido em curso é a pastilha do sistema, não um spinner dentro de
         // um botão que já não existe.
-        self::assertStringContainsString('stateLabel: requestable && loading ? "A pedir" : ""', $renderersSource);
+        // A pastilha segue o estado do pedido, e não a chamada HTTP que o põe na fila.
+        // "A pedir" durava o que durava essa chamada e desaparecia no instante em que o
+        // pedido passava a existir: o mosaico esquecia-o exactamente quando havia algo para
+        // dizer, e o único sítio que ainda sabia era a lista ao lado.
+        self::assertStringContainsString('const REQUEST_CARD_STATE = {', $renderersSource);
+        self::assertStringContainsString('function latestRequestState(', $renderersSource);
+        // A hora de um pedido é `requestedAt`; ordená-los pelo `eventTime` dos eventos dava
+        // zero em todos e o "mais recente" passava a ser o primeiro da lista.
+        self::assertStringContainsString('function commandTime(command) {', $renderersSource);
+        // `acked` fica de fora: a resposta já é o valor do mosaico.
+        self::assertStringNotContainsString('acked: {label:', $renderersSource);
+        self::assertStringContainsString('stateLabel: loading ? "a pedir" : requestState?.label || ""', $renderersSource);
         self::assertStringNotContainsString('spinner-border spinner-border-sm me-2', $renderersSource);
         self::assertStringNotContainsString('mb-2 min-w-0', $renderersSource);
         self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);

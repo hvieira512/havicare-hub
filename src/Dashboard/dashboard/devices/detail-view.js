@@ -122,6 +122,7 @@ function renderSelection() {
         ),
         telemetry,
         ncsEvents,
+        commands,
     );
     if (deviceType === "ncs") {
         renderNcsEventCards(ncsEvents);
@@ -555,7 +556,12 @@ function renderTelemetryRow(payload) {
         </tr>`;
 }
 
-function renderRequestCards(groups, telemetry = [], events = []) {
+function renderRequestCards(
+    groups,
+    telemetry = [],
+    events = [],
+    commands = [],
+) {
     const totalCards = groups.reduce(
         (count, group) => count + group.cards.length,
         0,
@@ -571,7 +577,12 @@ function renderRequestCards(groups, telemetry = [], events = []) {
     const cards = totalCards
         ? groups
               .map((group) =>
-                  renderRequestCardGroup(group, telemetry, groups.length > 1),
+                  renderRequestCardGroup(
+                      group,
+                      telemetry,
+                      groups.length > 1,
+                      commands,
+                  ),
               )
               .join("")
         : "";
@@ -579,7 +590,12 @@ function renderRequestCards(groups, telemetry = [], events = []) {
     refreshTooltips(els.requestGrid);
 }
 
-function renderRequestCardGroup(group, telemetry = [], showLabel = true) {
+function renderRequestCardGroup(
+    group,
+    telemetry = [],
+    showLabel = true,
+    commands = [],
+) {
     const cards = group.cards
         .map((command) =>
             renderRequestCardShell(
@@ -590,6 +606,7 @@ function renderRequestCardGroup(group, telemetry = [], showLabel = true) {
                     ),
                 ),
                 telemetry,
+                commands,
             ),
         )
         .join("");
