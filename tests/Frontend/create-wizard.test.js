@@ -141,3 +141,16 @@ test("o Anterior esconde-se no primeiro passo em vez de ficar cinzento", () => {
     assert.match(wizardJs, /wizardBackBtn\.classList\.toggle\("d-none", !wizard\.canGoBack\(\)\)/);
     assert.doesNotMatch(wizardJs, /wizardBackBtn\.disabled/);
 });
+
+test("a empresa oferece \"Sem empresa\" e e essa a escolha de partida", () => {
+    const wizardJs = readFileSync(
+        new URL("../../src/Dashboard/dashboard/devices/create-wizard.js", import.meta.url),
+        "utf8",
+    );
+
+    // O modal antigo tinha-a e o assistente perdeu-a: um dispositivo pode nao pertencer a
+    // nenhuma empresa, e essa e a hipotese mais comum ao registar.
+    assert.match(wizardJs, /<option value=""\$\{owner\?\.company \? "" : " selected"\}>Sem empresa<\/option>/);
+    // E nao pode travar o passo, senao nao ha como avancar sem escolher uma empresa.
+    assert.match(wizardJs, /key: "owner"[\s\S]*?optional: true/);
+});

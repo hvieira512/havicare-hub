@@ -249,3 +249,46 @@ test("o passo 1 completa-se com as suas tres perguntas e nao com a do passo 2", 
     assert.equal(w.isStepComplete(1), true);
     assert.equal(w.isStepComplete(2), false);
 });
+
+test("uma pergunta opcional nao trava o passo, mas continua a ser feita", () => {
+    // A empresa e assim: um dispositivo pode nao ter nenhuma, e por isso nao lhe
+    // responder tem de deixar avancar -- sem que a pergunta desapareca do ecra, que e o
+    // que aconteceria se a omissao contasse como resposta.
+    const w = createWizard({
+        steps: STEPS,
+        questions: [
+            {
+                key: "type",
+                step: 1,
+                clears: [],
+                isAnswered: (a) => Boolean(a.type),
+                badges: () => [],
+            },
+            {
+                key: "owner",
+                step: 1,
+                clears: [],
+                optional: true,
+                isAnswered: (a) => Boolean(a.owner),
+                badges: () => [],
+            },
+            {
+                key: "identity",
+                step: 2,
+                clears: [],
+                isAnswered: (a) => Boolean(a.identity),
+                badges: () => [],
+            },
+        ],
+    });
+
+    assert.equal(w.canAdvance(), false, "a obrigatoria ainda trava");
+
+    w.answer("type", "x");
+    assert.equal(w.current().key, "owner", "a opcional continua a ser feita");
+    assert.equal(w.canAdvance(), true, "mas nao trava o avanco");
+
+    w.advance();
+    w.answer("identity", "i");
+    assert.equal(w.isComplete(), true, "criar nao espera pela opcional");
+});

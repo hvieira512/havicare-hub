@@ -67,6 +67,10 @@ const QUESTIONS = [
         key: "owner",
         step: 1,
         clears: [],
+        // Um dispositivo pode nao ter empresa, e sem empresa nao ha licenca para
+        // escolher. "Sem empresa" e o que esta escolhido a partida, e enquanto for a
+        // escolha a pergunta fica aberta -- so colapsa em badges quando ha mesmo empresa.
+        optional: true,
         isAnswered: (a) => Boolean(a.owner?.company && a.owner?.licenseId),
         badges: (a) => [
             {label: "Empresa", value: a.owner.company},
@@ -325,12 +329,15 @@ function renderModel(type) {
 }
 
 function renderOwner(owner) {
+    // As licencas carregadas so valem enquanto houver empresa escolhida: reabrir a
+    // pergunta apaga a resposta, e a lista da empresa anterior nao pode ficar de pe.
+    const available = owner?.company ? licenses : [];
     return `
         <div class="row g-3">
             <div class="col-sm-6">
                 <label class="form-label form-label-sm" for="wizardCompany">Empresa</label>
                 <select class="form-select" id="wizardCompany" data-wizard-company>
-                    <option value="">Selecione...</option>
+                    <option value=""${owner?.company ? "" : " selected"}>Sem empresa</option>
                     ${companies
                         .map(
                             (name) => `<option value="${esc(name)}"${name === owner?.company ? " selected" : ""}>${esc(name)}</option>`,
@@ -340,9 +347,9 @@ function renderOwner(owner) {
             </div>
             <div class="col-sm-6">
                 <label class="form-label form-label-sm" for="wizardLicense">Licença</label>
-                <select class="form-select" id="wizardLicense" data-wizard-license ${licenses.length ? "" : "disabled"}>
-                    <option value="">${licenses.length ? "Selecione..." : "Escolha a empresa primeiro"}</option>
-                    ${licenses
+                <select class="form-select" id="wizardLicense" data-wizard-license ${available.length ? "" : "disabled"}>
+                    <option value="">${available.length ? "Selecione..." : "Nenhuma"}</option>
+                    ${available
                         .map(
                             (license) => `<option value="${esc(String(license.value))}">${esc(license.label)}</option>`,
                         )

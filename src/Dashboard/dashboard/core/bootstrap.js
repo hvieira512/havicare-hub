@@ -1231,11 +1231,12 @@ async function createDeviceFromWizard(answers) {
         answers.model.supplier,
         answers.model.model,
         answers.type,
-        String(answers.owner.licenseId),
+        // Sem empresa nao ha licenca: e o "0" que a whitelist ja usa para dizer isso.
+        String(answers.owner?.licenseId || "0"),
         fields.sim ? String(answers.sim || "") : "",
         byImei ? "" : identity,
         "",
-        answers.owner.company,
+        answers.owner?.company || "",
     );
     if (result?.error) {
         return result._httpStatus === 409

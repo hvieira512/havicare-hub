@@ -27,14 +27,26 @@ export function createWizard({questions, steps}) {
         return questions.filter((question) => question.step === number);
     }
 
-    /** Um passo esta completo quando todas as suas perguntas tem resposta. */
+    /**
+     * Uma pergunta `optional` nao trava o passo: nao lhe responder e, em si, uma
+     * resposta. A empresa e assim -- um dispositivo pode nao ter nenhuma -- e por isso
+     * continua a ser feita, com a omissao escolhida a partida, sem impedir o avanco.
+     */
+    function blocks(question) {
+        return !question.optional && !isAnswered(question);
+    }
+
+    /** Um passo esta completo quando nenhuma das suas perguntas o trava. */
     function isStepComplete(number) {
-        return inStep(number).every(isAnswered);
+        return !inStep(number).some(blocks);
     }
 
     /**
      * A primeira pergunta sem resposta DENTRO do passo actual, ou null quando o passo
      * esta completo.
+     *
+     * Sem resposta e nao "que trave": uma pergunta opcional continua a ser feita ate ser
+     * respondida, e o que a omissao dispensa e o avanco, nao a pergunta.
      *
      * Limitada ao passo de proposito. Derivar o passo da pergunta activa, como a
      * primeira versao fazia, fazia a barra de progresso saltar para o passo seguinte no
@@ -62,8 +74,8 @@ export function createWizard({questions, steps}) {
         canGoBack: () => step > 1,
         isLastStep: () => step === steps.length,
 
-        /** Tudo respondido: e o que habilita o botao de criar. */
-        isComplete: () => questions.every(isAnswered),
+        /** Tudo o que e preciso respondido: e o que habilita o botao de criar. */
+        isComplete: () => !questions.some(blocks),
 
         advance() {
             if (isStepComplete(step) && step < steps.length) step += 1;
