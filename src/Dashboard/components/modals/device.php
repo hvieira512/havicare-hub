@@ -116,4 +116,6 @@ $header = '<div class="modal-device-identity" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
     . '</div>';
 
-render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-dialog-scrollable', $header);
+// Folha de ecrã inteiro em telefone: é o único sítio onde o ecrã inteiro é a resposta
+// certa, com o cabeçalho e o rodapé fixos e a acção principal ao alcance do polegar.
+render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-fullscreen-md-down modal-dialog-scrollable', $header);

@@ -25,6 +25,47 @@ const COMMAND_FEATURE_RULES = [
     ["rr", "rr_interval"],
 ];
 
+/**
+ * A cor de cada categoria de telemetria.
+ *
+ * Vive no icone e mais nada. Antes pintava tambem o contorno do cartao e o titulo, o que
+ * dava quatro cores por painel e um cartao inteiro a competir com o seguinte; e a
+ * frequencia cardiaca e a tensao arterial vinham em vermelho de perigo por serem sinais
+ * vitais, o que num cartao que so oferece pedir uma leitura le-se como alarme.
+ *
+ * Tirar a cor toda foi longe demais: o icone colorido e o que se reconhece de relance
+ * numa grelha de oito, e sem ele todos os mosaicos ficam iguais.
+ */
+const CARD_TONE_BY_TYPE = {
+    positions: "info",
+    vitals: "success",
+    position_minute_stats: "secondary",
+    vitals_minute_stats: "secondary",
+    blood_oxygen: "info",
+    blood_sugar: "warning",
+    temperature: "warning",
+    battery: "success",
+    connectivity: "info",
+    motion: "primary",
+    diaper_moisture: "info",
+    diaper_moisture_level: "info",
+    diaper_condition: "warning",
+    activity: "primary",
+    location: "success",
+    heartbeat: "danger",
+    breath_rate: "info",
+    rr_interval: "info",
+    sleep: "primary",
+    help_call: "danger",
+    reset: "warning",
+    heart_rate: "danger",
+    blood_pressure: "danger",
+    ecg: "danger",
+    hrv: "danger",
+    "device.connected": "success",
+    "device.disconnected": "danger",
+};
+
 const REQUEST_CARD_CONTENT_BY_TYPE = {
     positions: {icon: "fa-location-crosshairs", value: "Posições"},
     vitals: {icon: "fa-heart-pulse", value: "Sinais vitais"},
@@ -355,6 +396,7 @@ export function telemetryCard({
     feature = "",
     pending = false,
     stateLabel = "",
+    tone = "",
 }) {
     const tip = tooltip
         ? ` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top"`
@@ -383,7 +425,7 @@ export function telemetryCard({
         <${tag}${attrs}>
         <div class="card-body">
         <div class="telemetry-card-head d-flex align-items-center gap-3 min-w-0">
-        <div class="telemetry-card-icon"${tip}>
+        <div class="telemetry-card-icon${tone ? ` telemetry-card-icon-${esc(tone)}` : ""}"${tip}>
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
         <div class="telemetry-card-title fw-semibold text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
@@ -714,7 +756,13 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         feature: requestable ? type : "",
         pending: requestable && loading,
         stateLabel: requestable && loading ? "A pedir" : "",
+        tone: cardTone(type),
     });
+}
+
+/** A cor da categoria, para o icone. Sem entrada na tabela, o icone fica neutro. */
+export function cardTone(type) {
+    return CARD_TONE_BY_TYPE[type] || "";
 }
 
 function requestTelemetryTypes(type) {

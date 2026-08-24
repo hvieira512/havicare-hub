@@ -33,42 +33,64 @@ require_once __DIR__ . '/components/modal.php';
             <div class="dashboard-login-orbit"></div>
             <div class="dashboard-login-signal dashboard-login-signal-one"></div>
             <div class="dashboard-login-signal dashboard-login-signal-two"></div>
-            <span>HUB / OPERATIONS</span>
+            <?php
+            /**
+             * O painel escuro tinha atmosfera e assinatura, mas nenhuma frase: quem chega
+             * pela primeira vez não sabia onde estava.
+             */
+            ?>
+            <div class="dashboard-login-mark">
+                <span class="dashboard-login-signature">HUB / OPERATIONS</span>
+                <p class="dashboard-login-pitch">Ingestão, decisão e reencaminhamento de telemetria de dispositivos de saúde.</p>
+            </div>
         </div>
         <div class="dashboard-login-panel col-12 col-md-8 min-vh-100 d-flex flex-column justify-content-center position-relative px-4 px-lg-5 py-5">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-12 col-lg-8 col-xl-7 col-xxl-5">
-                        <div class="dashboard-login-brand d-flex justify-content-center mb-5">
-                            <img src="/assets/logo.svg" alt="hitHUB">
-                        </div>
-                        <form id="dashboardLoginForm" class="dashboard-login-form d-grid gap-3" novalidate>
-                            <div>
-                                <label for="dashboardLoginUsername" class="form-label">Utilizador</label>
-                                <input id="dashboardLoginUsername" name="username" class="form-control" type="text" autocomplete="username" required autofocus>
-                            </div>
-                            <div>
-                                <label for="dashboardLoginPassword" class="form-label">Palavra-passe</label>
-                                <input id="dashboardLoginPassword" name="password" class="form-control" type="password" autocomplete="current-password" required>
-                            </div>
-                            <div class="d-flex justify-content-end">
-                                <button id="dashboardLoginSubmit" class="btn btn-primary btn-lg dashboard-login-submit" type="submit">
-                                    <span class="dashboard-login-submit-label">Entrar</span>
-                                    <span class="dashboard-login-submit-loading d-none">
-                                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                                        <span>A entrar…</span>
-                                    </span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+            <?php
+            /**
+             * Uma medida fixa em vez da largura que a coluna der: sem ela a mancha do
+             * formulário mudava de forma a cada monitor, entre 300 e 600px.
+             *
+             * O botão passa a largura total. Estava alinhado à direita debaixo de dois
+             * campos de largura total, e o olho descia em coluna para saltar de lado no
+             * último passo.
+             */
+            ?>
+            <div class="dashboard-login-form-column">
+                <div class="dashboard-login-brand mb-4">
+                    <img src="/assets/logo.svg" alt="hitHUB">
                 </div>
+                <h1 class="h4 mb-1">Entrar</h1>
+                <p class="text-secondary small mb-4">Painel de operações. O acesso é por utilizador da API.</p>
+                <form id="dashboardLoginForm" class="dashboard-login-form d-grid gap-3" novalidate>
+                    <div>
+                        <label for="dashboardLoginUsername" class="section-label d-block mb-1">Utilizador</label>
+                        <input id="dashboardLoginUsername" name="username" class="form-control form-control-lg" type="text" autocomplete="username" required autofocus>
+                    </div>
+                    <div>
+                        <label for="dashboardLoginPassword" class="section-label d-block mb-1">Palavra-passe</label>
+                        <input id="dashboardLoginPassword" name="password" class="form-control form-control-lg" type="password" autocomplete="current-password" required>
+                    </div>
+                    <button id="dashboardLoginSubmit" class="btn btn-primary btn-lg dashboard-login-submit w-100 mt-2" type="submit">
+                        <span class="dashboard-login-submit-label">Entrar</span>
+                        <span class="dashboard-login-submit-loading d-none">
+                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span>A entrar…</span>
+                        </span>
+                    </button>
+                </form>
             </div>
         </div>
     </section>
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>
-        <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
+        <?php
+        /**
+         * A barra é do navy da marca e não do preto do Bootstrap. `bg-dark` é o cinzento
+         * quase preto do tema, que não é cor nenhuma do produto — e ao lado do navy dos
+         * botões primários lia-se como um terceiro escuro sem razão.
+         */
+        ?>
+        <nav class="navbar navbar-expand-lg navbar-dark dashboard-navbar">
             <div class="container-fluid">
                 <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
                 <div class="d-flex align-items-center gap-2">

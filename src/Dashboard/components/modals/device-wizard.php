@@ -39,4 +39,4 @@ $footer = '<button type="button" class="btn btn-outline-secondary" id="wizardBac
     . '<button type="button" class="btn btn-primary" id="wizardNextBtn">Seguinte'
     . '<i class="fa-solid fa-arrow-right ms-2"></i></button>';
 
-render_modal('deviceWizardModal', 'Adicionar dispositivo', $body, $footer, 'modal-lg');
+render_modal('deviceWizardModal', 'Adicionar dispositivo', $body, $footer, 'modal-lg modal-fullscreen-md-down');

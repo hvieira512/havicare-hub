@@ -117,6 +117,7 @@ import {
     resetConfigUiState,
     saveDeviceConfiguration,
     setConfigUi,
+    syncConfigSectionDirty,
     syncDeviceModalCommandStates,
 } from "../devices/config-panel.js";
 import {initCreateWizard, openCreateWizard} from "../devices/create-wizard.js";
@@ -158,7 +159,6 @@ import {
     editApiUser,
     handleActiveModelsFiltersClick,
     handleCompanyListClick,
-    handleLicenseListClick,
     handleModelsListLimitChange,
     handleModelsListSearchInput,
     handleSettingsPaginationClick,
@@ -492,12 +492,7 @@ function bindEvents() {
     );
     els.settingsCompanyPagination?.addEventListener("click", (event) =>
         handleSettingsPaginationClick(event, "companyPagination", (page) =>
-            loadSettingsCompanySection(page, 1),
-        ),
-    );
-    els.settingsLicensesPagination?.addEventListener("click", (event) =>
-        handleSettingsPaginationClick(event, "licensesPagination", (page) =>
-            loadSettingsCompanySection(1, page),
+            loadSettingsCompanySection(page),
         ),
     );
     els.deviceList.addEventListener("click", handleDeviceListClick);
@@ -520,10 +515,17 @@ function bindEvents() {
     els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
     els.apiUserListBody.addEventListener("click", handleApiUserListClick);
     els.companyListBody.addEventListener("click", handleCompanyListClick);
-    els.licenseListBody.addEventListener("click", handleLicenseListClick);
     els.deviceConfigRoot.addEventListener("click", handleDeviceConfigClick);
     els.deviceConfigRoot.addEventListener("input", handleDeviceConfigInput);
     els.deviceConfigRoot.addEventListener("change", handleDeviceConfigChange);
+    // O "Enviar" de cada bloco acende por diferenca. Um ouvinte na raiz para os dois
+    // eventos, depois de quem trata o campo ja ter feito o seu trabalho.
+    for (const type of ["input", "change", "click"]) {
+        els.deviceConfigRoot.addEventListener(type, (event) => {
+            const section = event.target.closest("[data-config-section]");
+            if (section) syncConfigSectionDirty(section);
+        });
+    }
     els.deviceConfigRoot.addEventListener(
         "closed.bs.alert",
         handleConfigFeedbackClosed,
@@ -1124,8 +1126,22 @@ function handleRequestGridClick(event) {
 function handleSupplierListClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
-    const { id, action, enabled } = button.dataset;
+    const { id, action, enabled, supplier } = button.dataset;
     if (action === "toggleSupplier") toggleSupplier(parseInt(id), !!enabled);
+    if (action === "openSupplierModels") openSupplierModels(supplier || "");
+}
+
+/**
+ * A contagem de modelos de um fornecedor leva ao separador dos modelos, já filtrado.
+ *
+ * Marcar a secção como não carregada é o que faz o `shown.bs.tab` do separador ir buscar
+ * a lista com o filtro novo -- não se chama o load aqui para não ir duas vezes.
+ */
+function openSupplierModels(supplier) {
+    state.settingsModal.modelsSupplier = supplier;
+    state.settingsModal.modelsPage = 1;
+    state.settingsModal.sectionLoaded.models = false;
+    bootstrap.Tab.getOrCreateInstance(els.settingsModelsTabBtn).show();
 }
 
 function handleModelListClick(event) {

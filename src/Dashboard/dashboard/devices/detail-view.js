@@ -20,6 +20,7 @@ import {
     when,
 } from "../format.js";
 import {
+    cardTone,
     emptyPanel,
     filterChips,
     telemetryCard,
@@ -678,6 +679,7 @@ function renderNcsEventCard({type, latest}) {
     return telemetryCard({
         icon: content.icon,
         title: content.value,
+        tone: cardTone(type),
         body: `
         <div class="small text-secondary mt-2">Último evento: ${esc(timestamp)}</div>
         ${pagerId ? `<div class="small text-secondary">Pager: ${esc(pagerId)}</div>` : ""}`,

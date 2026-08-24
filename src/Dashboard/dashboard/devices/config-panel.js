@@ -364,5 +364,49 @@ export function renderDeviceConfigurationModal() {
         disabled: !state.deviceModal.protocol,
     });
     resetPhoneControls(els.deviceConfigRoot);
+    captureConfigSectionPristine();
     armConfigFeedbackAutoClose();
+}
+
+/**
+ * A fotografia do valor de cada bloco logo depois de desenhar.
+ *
+ * E o que permite ao "Enviar" so acender quando o valor muda: nove blocos com nove
+ * primarios escuros davam nove accoes igualmente urgentes num separador onde a maior
+ * parte das vezes nao se muda nada.
+ *
+ * Falha aberta de proposito: um bloco cuja leitura nao se consegue tirar fica com o
+ * botao activo, que e o comportamento antigo. E melhor um botao a mais do que uma
+ * configuracao que nao se consegue enviar.
+ */
+function captureConfigSectionPristine() {
+    for (const section of els.deviceConfigRoot.querySelectorAll("[data-config-section]")) {
+        try {
+            section.dataset.configPristine = JSON.stringify(readConfigPayload(section));
+        } catch {
+            delete section.dataset.configPristine;
+        }
+        syncConfigSectionDirty(section);
+    }
+}
+
+/** Acende o "Enviar" do bloco quando o valor difere do que estava desenhado. */
+export function syncConfigSectionDirty(section) {
+    const button = section.querySelector('[data-action="saveConfig"]');
+    // Só o estado inactivo é que se gere por diferença: a enviar, enviado ou falhado, o
+    // botão está a dizer outra coisa e não se lhe mexe.
+    if (!button || button.dataset.configPhase !== "idle") return;
+    if (!("configPristine" in section.dataset)) return;
+
+    let dirty = true;
+    try {
+        dirty = JSON.stringify(readConfigPayload(section)) !== section.dataset.configPristine;
+    } catch {
+        dirty = true;
+    }
+
+    button.classList.toggle("btn-primary", dirty);
+    button.classList.toggle("btn-outline-secondary", !dirty);
+    button.classList.toggle("row-action", !dirty);
+    button.disabled = !dirty;
 }

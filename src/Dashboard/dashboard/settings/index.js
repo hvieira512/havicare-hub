@@ -197,7 +197,11 @@ function renderSuppliersSection(suppliers) {
             </span>
         </td>
         <td class="fw-semibold">${esc(supplier.name)}</td>
-        <td class="tabular-nums">${supplier.model_count}</td>
+        <td class="tabular-nums">${Number(supplier.model_count) > 0
+            // A contagem é um valor e leva a algum lado: ao separador dos modelos já
+            // filtrado por este fornecedor, que é a pergunta seguinte de quem a lê.
+            ? `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none tabular-nums" data-action="openSupplierModels" data-supplier="${esc(supplier.name)}">${supplier.model_count}</button>`
+            : '<span class="text-secondary">0</span>'}</td>
         <td class="text-end">
         <button class="btn btn-outline-secondary btn-sm row-action" data-id="${supplier.id}" data-enabled="${supplier.enabled ? "1" : ""}" data-action="toggleSupplier" title="${supplier.enabled ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${supplier.enabled ? "pause" : "play"}"></i></button>
         </td>
@@ -398,31 +402,44 @@ async function deleteApiUser(id) {
     await loadSettingsApiUsersSection();
 }
 
-function renderCompanySection(companies) {
+function renderCompanySection(companies, licenses) {
     resetCompanyForm();
     if (els.companiesTabSummary) {
         const total = (companies || []).length;
-        const licenses = (companies || []).reduce(
-            (sum, item) => sum + Number(item.license_count ?? 0),
-            0,
-        );
+        const owned = (licenses || []).length;
         els.companiesTabSummary.textContent =
-            `${total} ${total === 1 ? "empresa" : "empresas"} · ${licenses} ${licenses === 1 ? "licença" : "licenças"}`;
+            `${total} ${total === 1 ? "empresa" : "empresas"} · ${owned} ${owned === 1 ? "licença" : "licenças"}`;
     }
+    // Uma linha por empresa, e as suas licenças indentadas por baixo. Eram duas tabelas
+    // lado a lado com o mesmo peso, e a relação -- uma licença pertence a uma empresa --
+    // só se percebia porque o formulário da licença tinha um select de empresa.
     els.companyListBody.innerHTML = (companies || [])
-        .map(
-            (item) => `
+        .map((item) => {
+            const owned = (licenses || []).filter(
+                (license) => String(license.company_id) === String(item.id),
+            );
+            return `
         <tr>
         <td class="fw-semibold">${esc(item.name)}</td>
-        <td>
-            <span class="config-state config-state-secondary"><span class="config-state-dot"></span>${item.license_count ?? 0} ${Number(item.license_count) === 1 ? "licença" : "licenças"}</span>
-        </td>
+        <td class="text-secondary">${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</td>
         <td class="text-end text-nowrap">
+        <button class="btn btn-link btn-sm p-0 text-decoration-none me-2" data-action="newLicenseForCompany" data-company-id="${item.id}">Nova licença</button>
         <button class="btn btn-outline-secondary btn-sm row-action" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
-        </tr>`,
-        )
+        </tr>
+        ${owned.map((license) => `
+        <tr class="company-license-row">
+        <td colspan="2">
+            <span class="section-label me-2 tabular-nums" style="letter-spacing:0">ID ${esc(license.license_id)}</span>
+            ${esc(license.name || "sem nome")}
+        </td>
+        <td class="text-end text-nowrap">
+        <button class="btn btn-outline-secondary btn-sm row-action" data-action="editLicense" data-id="${license.id}" data-company-id="${license.company_id}" data-company-name="${esc(license.company_name || "")}" data-license-id="${esc(license.license_id)}" data-name="${esc(license.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+        </td>
+        </tr>`).join("")}`;
+        })
         .join("");
 }
 
@@ -470,6 +487,10 @@ async function deleteCompany(id) {
     await loadSettingsCompanySection();
 }
 
+/**
+ * As licencas ja se desenham dentro da empresa a que pertencem, na lista das empresas.
+ * O que fica por fazer aqui e encher o select de empresa do formulario.
+ */
 function renderLicensesSection(licenses, companies) {
     resetLicenseForm();
     const companyOptions = (companies || [])
@@ -477,20 +498,6 @@ function renderLicensesSection(licenses, companies) {
         .join("");
     els.licenseCompanySelect.innerHTML =
         '<option value="">Selecionar empresa</option>' + companyOptions;
-    els.licenseListBody.innerHTML = (licenses || [])
-        .map(
-            (item) => `
-        <tr>
-        <td class="section-label">${esc(item.company_name || "-")}</td>
-        <td class="tabular-nums fw-semibold">${esc(item.license_id)}</td>
-        <td>${esc(item.name || "-")}</td>
-        <td class="text-end text-nowrap">
-        <button class="btn btn-outline-secondary btn-sm row-action" data-action="editLicense" data-id="${item.id}" data-company-id="${item.company_id}" data-company-name="${esc(item.company_name || "")}" data-license-id="${esc(item.license_id)}" data-name="${esc(item.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${item.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
-        </td>
-        </tr>`,
-        )
-        .join("");
 }
 
 function resetLicenseForm() {
@@ -541,17 +548,20 @@ async function deleteLicense(id) {
     await loadSettingsCompanySection();
 }
 
-async function loadSettingsCompanySection(companiesPage = 1, licensesPage = 1) {
+async function loadSettingsCompanySection(companiesPage = 1) {
+    // As licenças vêm todas de uma vez porque são desenhadas dentro da empresa a que
+    // pertencem: paginá-las à parte deixava uma licença fora da página da sua empresa.
+    // ponytail: limite de 1000, que é muito acima do real; se um dia passar disso, a
+    // resposta é buscar as licenças por empresa e não aumentar o número.
     const [companyData, licensesData] = await Promise.all([
         apiGetCompanies({ page: companiesPage }),
-        apiGetLicenses({ page: licensesPage }),
+        apiGetLicenses({ page: 1, limit: 1000 }),
     ]);
     const companies = companyData.data || [];
     const licenses = licensesData.data || [];
     state.settingsModal.sectionLoaded.company = true;
     state.settingsModal.companyPagination = companyData.pagination || null;
-    state.settingsModal.licensesPagination = licensesData.pagination || null;
-    renderCompanySection(companies);
+    renderCompanySection(companies, licenses);
     renderLicensesSection(licenses, companies);
     renderSettingsPagination(
         state.settingsModal.companyPagination,
@@ -559,13 +569,6 @@ async function loadSettingsCompanySection(companiesPage = 1, licensesPage = 1) {
         els.settingsCompanyPaginationSummary,
         els.settingsCompanyPaginationControls,
         "settingsCompanyPage",
-    );
-    renderSettingsPagination(
-        state.settingsModal.licensesPagination,
-        els.settingsLicensesPagination,
-        els.settingsLicensesPaginationSummary,
-        els.settingsLicensesPaginationControls,
-        "settingsLicensesPage",
     );
 }
 
@@ -576,18 +579,20 @@ function handleCompanyListClick(event) {
         editCompany(button);
     } else if (button.dataset.action === "deleteCompany") {
         void deleteCompany(Number(button.dataset.id));
-    }
-}
-
-function handleLicenseListClick(event) {
-    const button = event.target.closest("button");
-    if (!button) return;
-    if (button.dataset.action === "editLicense") {
+    } else if (button.dataset.action === "editLicense") {
         editLicense(button);
     } else if (button.dataset.action === "deleteLicense") {
         void deleteLicense(Number(button.dataset.id));
+    } else if (button.dataset.action === "newLicenseForCompany") {
+        // A licença nasce dentro da empresa: o formulário abre com a empresa já escolhida.
+        resetLicenseForm();
+        els.licenseCompanySelect.value = button.dataset.companyId || "";
+        toggleCollapse(els.licenseFormCollapse, true);
     }
 }
+
+// O `handleLicenseListClick` saiu com a tabela de licencas: as linhas das licencas vivem
+// na lista das empresas, e e o `handleCompanyListClick` que as trata.
 
 function activateSettingsSection(section) {
     state.settingsModal.section = section;
@@ -613,7 +618,6 @@ export {
     editLicense,
     handleActiveModelsFiltersClick,
     handleCompanyListClick,
-    handleLicenseListClick,
     handleModelsListLimitChange,
     handleModelsListSearchInput,
     handleSettingsPaginationClick,

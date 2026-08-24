@@ -359,14 +359,14 @@ ob_start();
                         </table>
                     </div>
                     <?= pagination_component('settingsCompany') ?>
-                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap border-top pt-4 mb-3">
-                        <div>
-                            <div class="fw-semibold">Licenças</div>
-                            <div class="small text-secondary">Cada licença pertence a uma empresa e é o âmbito de acesso dos utilizadores API.</div>
-                        </div>
-                        <button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newLicenseBtn"
-                            data-bs-toggle="collapse" data-bs-target="#licenseFormCollapse" aria-controls="licenseFormCollapse"><?= icon('fa-plus', 'me-1') ?>Nova licença</button>
-                    </div>
+                    <?php
+                    /**
+                     * A tabela de licenças em separado desapareceu: cada licença aparece
+                     * indentada sob a sua empresa, na lista acima. O formulário fica —
+                     * é o «Nova licença» de cada linha de empresa que o abre, já com a
+                     * empresa escolhida.
+                     */
+                    ?>
                     <div class="collapse mb-3" id="licenseFormCollapse">
                     <form id="licenseForm" class="row g-2 p-3 border rounded-3">
                         <input type="hidden" id="licenseId">
@@ -387,20 +387,6 @@ ob_start();
                         </div>
                     </form>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Empresa</th>
-                                    <th>ID</th>
-                                    <th>Nome</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="licenseListBody"></tbody>
-                        </table>
-                    </div>
-                    <?= pagination_component('settingsLicenses') ?>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
                     <?php

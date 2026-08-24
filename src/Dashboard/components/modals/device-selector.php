@@ -75,4 +75,4 @@ ob_start();
 <?php
 $footer = (string) ob_get_clean();
 
-render_modal('deviceSelectorModal', 'Selecionar dispositivo', $body, $footer, 'modal-xl modal-dialog-scrollable');
+render_modal('deviceSelectorModal', 'Selecionar dispositivo', $body, $footer, 'modal-xl modal-fullscreen-md-down modal-dialog-scrollable');
