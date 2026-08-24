@@ -28,7 +28,6 @@ export function cacheElements() {
         telemetryPager: document.getElementById("telemetry"),
         telemetryPagerSummary: document.getElementById("telemetrySummary"),
         telemetryPagerControls: document.getElementById("telemetryControls"),
-        requestCardCount: document.getElementById("requestCardCount"),
         requestGrid: document.getElementById("requestGrid"),
         requestCardsCard: document.getElementById("requestCardsCard"),
         ncsEventSection: document.getElementById("ncsEventSection"),

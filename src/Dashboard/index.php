@@ -179,10 +179,15 @@ require_once __DIR__ . '/components/modal.php';
                             </div>
                         </div>
                     </div>
+                    <?php
+                    /**
+                     * Só o mosaico, sem título, contagem nem legenda. Um cartão a dizer
+                     * "Pedir dados · 8 disponíveis · O mosaico é o pedido." explicava três
+                     * vezes o que oito mosaicos com o nome da categoria mostram sozinhos.
+                     */
+                    ?>
                     <div class="card" id="requestCardsCard">
                         <div class="card-body">
-                            <?= section_header('Pedir dados', 'requestCardCount') ?>
-                            <div class="text-secondary small mb-3">O mosaico é o pedido.</div>
                             <div class="row g-3" id="requestGrid"></div>
                         </div>
                     </div>

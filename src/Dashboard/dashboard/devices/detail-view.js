@@ -64,10 +64,9 @@ function renderSelection() {
     els.detailColumn.classList.toggle("d-none", !state.selectedDetail);
     els.deviceColumn.classList.toggle("col-lg-4", !!state.selectedDetail);
     // O cartao dos pedidos e agora um cartao seu, e sem dispositivo escolhido nao tem
-    // pedidos nenhuns para mostrar -- ficava um cartao com um titulo e uma frase solta.
+    // mosaico nenhum para mostrar -- ficava um cartao branco e vazio.
     els.requestCardsCard?.classList.toggle("d-none", !state.selectedDetail);
     if (!state.selectedDetail) {
-        els.requestCardCount.textContent = "";
         els.requestGrid.innerHTML = "";
         els.ncsEventCardCount.textContent = "";
         els.ncsEventGrid.innerHTML = "";
@@ -623,13 +622,10 @@ function renderRequestCards(groups, telemetry = [], events = []) {
     // exactly when the device has actually called for help.
     const helpCalls = helpCallSummaryCard(events);
 
-    els.requestCardCount.textContent = totalCards
-        ? `${totalCards} ${totalCards === 1 ? 'disponível' : 'disponíveis'}`
-        : "";
     disposeTooltips(els.requestGrid);
 
     // Com um grupo so, a faixa com o nome do grupo nao separa nada: e uma moldura com um
-    // titulo por cima dos mosaicos, dentro de um cartao que ja se chama "Pedir dados".
+    // titulo por cima dos mosaicos, num cartao que e so o mosaico.
     const cards = totalCards
         ? groups
               .map((group) =>

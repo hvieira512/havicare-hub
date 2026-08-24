@@ -421,22 +421,22 @@ export function telemetryCard({
     // A 375px, um mosaico por linha desperdica metade da largura em nomes de duas
     // palavras. Dois por linha, e largura toda so para os que trazem corpo (span 12).
     const mobileColumn = span >= 12 ? "col-12" : "col-6";
-    // O icone em cima, o nome em baixo. Lado a lado, o nome ficava com metade da largura do
-    // mosaico e "Oxigenio no sangue" truncava a meio -- e o `title` que compensava isso era
-    // outra tooltip a dizer o que ja estava escrito. Em coluna, o nome tem a largura toda.
+    // O icone a esquerda, o nome e o valor ao lado. O nome pode quebrar em duas linhas em
+    // vez de ser truncado, que era o que obrigava a um `title` a repetir "Oxigenio no
+    // sangue" em cima do rato.
     return `
         <div class="${mobileColumn} col-md-${span}">
         <${tag}${attrs}>
         <div class="card-body telemetry-card-body">
-        <div class="d-flex align-items-start justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-3">
         <div class="telemetry-card-icon">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
-        ${state}
-        </div>
-        <div class="min-w-0">
+        <div class="flex-grow-1 min-w-0">
         <div class="telemetry-card-title">${esc(title)}</div>
         ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
+        </div>
+        ${state}
         </div>
         ${body}
         </div>

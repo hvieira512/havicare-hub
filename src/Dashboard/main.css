@@ -460,15 +460,17 @@ body {
     }
 }
 
-/* O mosaico e uma coluna: o icone em cima, o nome em baixo, e a pastilha de estado no canto
-   oposto ao icone. Era o icone e o nome lado a lado, o que a 375px com dois mosaicos por
-   linha truncava "Oxigénio no sangue" em "Oxigénio no sa" -- e a correcao vivia num
-   `@media` a 575px, quando o problema era a mesma falta de largura a qualquer medida. */
+/* O icone a esquerda, o nome e o valor ao lado dele, e a pastilha de estado no extremo. A
+   coluna interna e so para separar esta linha do corpo que alguns mosaicos trazem -- a
+   barra de humidade da fralda, por exemplo.
+
+   O nome quebra em duas linhas em vez de ser truncado: a 375px, com dois mosaicos por
+   linha, "Oxigénio no sangue" ficava "Oxigénio no sa" e o `title` que o completava era uma
+   tooltip a dizer o que ja estava escrito no ecra. */
 .telemetry-card-body {
     display: flex;
     flex-direction: column;
-    gap: .5rem;
-    min-height: 4.75rem;
+    gap: .75rem;
 }
 
 .telemetry-card-title {
@@ -488,8 +490,8 @@ body {
    quatro cores num painel, em contorno, texto e fundo -- e a categoria le-se no icone,
    nao na cor. Cinzento, para a cor ficar disponivel para o estado. */
 .telemetry-card-icon {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
