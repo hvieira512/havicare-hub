@@ -80,6 +80,8 @@ import {
     clearDetailFilters,
     filterDetailItems,
     updateDetailFilterDraft,
+    applyDetailSearch,
+    removeDetailFilter,
     requestTelemetryFeature,
     renderTelemetryList,
     renderSelection,
@@ -314,6 +316,19 @@ function bindEvents() {
     els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);
     els.detailFilterTo.addEventListener("change", updateDetailFilterDraft);
     els.detailFilterType.addEventListener("change", updateDetailFilterDraft);
+    els.detailSearch.addEventListener("input", applyDetailSearch);
+    els.detailActiveFilters.addEventListener("click", (event) => {
+        const button = event.target.closest('[data-action="removeDetailFilter"]');
+        if (!button) return;
+        const key = button.dataset.filterKey;
+        // A pastilha do intervalo cobre as duas datas, por isso limpa as duas.
+        if (key === "range") {
+            removeDetailFilter("from");
+            removeDetailFilter("to");
+            return;
+        }
+        removeDetailFilter(key);
+    });
     els.deleteDeviceBtn.addEventListener("click", handleDeleteDeviceBtnClick);
     els.deviceSupplierButtons.addEventListener(
         "click",

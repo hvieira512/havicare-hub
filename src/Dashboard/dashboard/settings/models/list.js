@@ -85,6 +85,10 @@ async function loadSettingsModelsSection(page = 1) {
     if (els.modelsListSearch) {
         els.modelsListSearch.value = state.settingsModal.modelsSearchQuery;
     }
+    if (els.modelsTabSummary) {
+        const total = state.settingsModal.modelsPagination?.total ?? models.length;
+        els.modelsTabSummary.textContent = `${total} ${total === 1 ? "modelo" : "modelos"}`;
+    }
 }
 
 function handleModelsListLimitChange() {

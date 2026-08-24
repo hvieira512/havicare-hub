@@ -166,25 +166,41 @@ require_once __DIR__ . '/components/modal.php';
                                 <h1 class="h5 mt-3">Selecione um dispositivo</h1>
                             </div>
                             <div id="deviceDetail" class="d-none">
-                                <div id="detailFiltersPanel" class="border rounded bg-body-tertiary p-2 mb-3">
-                                    <div class="row g-2 align-items-end">
-                                        <div class="col-auto">
-                                            <label for="detailFilterFrom" class="form-label form-label-sm small text-secondary mb-1">De</label>
-                                            <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                <div id="detailFiltersPanel" class="mb-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="input-group input-group-sm flex-grow-1">
+                                            <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
+                                            <input id="detailSearch" type="search" class="form-control" placeholder="Procurar na atividade">
                                         </div>
-                                        <div class="col-auto">
-                                            <label for="detailFilterTo" class="form-label form-label-sm small text-secondary mb-1">Até</label>
-                                            <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
-                                        </div>
-                                        <div class="col-auto">
-                                            <label for="detailFilterType" class="form-label form-label-sm small text-secondary mb-1">Tipo</label>
-                                            <select id="detailFilterType" class="form-select form-select-sm">
-                                                <option value="all">Todos</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-auto ms-auto d-flex gap-1">
-                                            <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
-                                            <button id="clearDetailFiltersBtn" class="btn btn-sm btn-outline-secondary"><?= icon('fa-xmark', 'me-1') ?>Limpar</button>
+                                        <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 flex-shrink-0" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#detailFiltersCollapse" aria-expanded="false" aria-controls="detailFiltersCollapse">
+                                            <?= icon('fa-sliders') ?>Filtros
+                                            <span id="detailFilterCount" class="badge rounded-pill text-bg-primary d-none"></span>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                                        <div id="detailActiveFilters" class="d-flex flex-wrap gap-2"></div>
+                                        <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none d-none" type="button">Limpar</button>
+                                    </div>
+                                    <div class="collapse" id="detailFiltersCollapse">
+                                        <div class="row g-2 align-items-end pt-3">
+                                            <div class="col-auto">
+                                                <label for="detailFilterFrom" class="section-label d-block mb-1">De</label>
+                                                <input type="datetime-local" id="detailFilterFrom" class="form-control form-control-sm">
+                                            </div>
+                                            <div class="col-auto">
+                                                <label for="detailFilterTo" class="section-label d-block mb-1">Até</label>
+                                                <input type="datetime-local" id="detailFilterTo" class="form-control form-control-sm">
+                                            </div>
+                                            <div class="col-auto">
+                                                <label for="detailFilterType" class="section-label d-block mb-1">Tipo</label>
+                                                <select id="detailFilterType" class="form-select form-select-sm">
+                                                    <option value="all">Todos</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-auto">
+                                                <button id="applyDetailFiltersBtn" class="btn btn-sm btn-primary"><?= icon('fa-check', 'me-1') ?>Aplicar</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -45,42 +45,41 @@ ob_start();
                     <div id="modelsCarousel" class="carousel slide" data-bs-touch="false">
                         <div class="carousel-inner">
                             <div class="carousel-item active">
-                                <div class="border rounded bg-body-tertiary p-3 mb-3">
-                                    <div class="row g-3">
+                                <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
+                                    <div>
+                                        <div class="fw-semibold">Modelos</div>
+                                        <div class="small text-secondary" id="modelsTabSummary"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn"><?= icon('fa-plus', 'me-1') ?>Novo modelo</button>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm flex-grow-1">
+                                        <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
+                                        <input id="modelsListSearch" type="search" class="form-control" placeholder="Procurar modelo">
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 flex-shrink-0" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#modelsFiltersCollapse" aria-expanded="false" aria-controls="modelsFiltersCollapse">
+                                        <?= icon('fa-sliders') ?>Filtros
+                                        <span id="modelsFilterCount" class="badge rounded-pill text-bg-primary d-none"></span>
+                                    </button>
+                                </div>
+                                <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                                    <div id="modelsActiveFilters" class="d-flex flex-wrap gap-2"></div>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="clearModelsFiltersBtn">Limpar</button>
+                                </div>
+                                <div class="collapse" id="modelsFiltersCollapse">
+                                    <div class="row g-3 pt-3">
                                         <div class="col-12 col-md-6">
-                                            <div class="form-label">Tipo de dispositivo</div>
+                                            <div class="section-label mb-1">Tipo de dispositivo</div>
                                             <div id="modelsDeviceTypeButtons" class="btn-group flex-wrap w-100" role="group"></div>
                                         </div>
                                         <div class="col-12 col-md-6">
-                                            <div class="form-label">Fornecedor</div>
+                                            <div class="section-label mb-1">Fornecedor</div>
                                             <div id="modelsSupplierButtons" class="btn-group flex-wrap w-100" role="group"></div>
                                         </div>
                                     </div>
-                                    <div id="modelsActiveFilters" class="d-flex flex-wrap gap-2 mt-3">
-                                        <span class="small text-secondary">Sem filtros ativos</span>
-                                    </div>
                                 </div>
-                                <div class="d-flex justify-content-end mb-3">
-                                    <button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn"><?= icon('fa-plus', 'me-1') ?>Novo modelo</button>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
-                                    <select id="modelsListLimit" class="form-select form-select-sm w-auto">
-                                        <option value="5">5</option>
-                                        <option value="10">10</option>
-                                        <option value="15">15</option>
-                                        <option value="20">20</option>
-                                        <option value="30">30</option>
-                                        <option value="50">50</option>
-                                    </select>
-                                    <div class="flex-grow-1" style="min-width: 220px;">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
-                                            <input id="modelsListSearch" type="search" class="form-control" placeholder="Pesquisar modelo">
-                                        </div>
-                                    </div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="clearModelsFiltersBtn"><?= icon('fa-eraser', 'me-1') ?>Limpar filtros</button>
-                                </div>
-                                <div class="table-responsive">
+                                <div class="table-responsive mt-3">
                                     <table class="table table-sm align-middle table-hover">
                                         <thead>
                                             <tr>
@@ -93,6 +92,17 @@ ob_start();
                                         </thead>
                                         <tbody id="modelListBody"></tbody>
                                     </table>
+                                </div>
+                                <div class="d-flex justify-content-end align-items-center gap-2 mt-3">
+                                    <label for="modelsListLimit" class="section-label mb-0">Por página</label>
+                                    <select id="modelsListLimit" class="form-select form-select-sm w-auto">
+                                        <option value="5">5</option>
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                        <option value="20">20</option>
+                                        <option value="30">30</option>
+                                        <option value="50">50</option>
+                                    </select>
                                 </div>
                                 <?= pagination_component('settingsModels') ?>
                             </div>

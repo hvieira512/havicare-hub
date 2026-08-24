@@ -138,6 +138,39 @@ body {
     --bs-card-border-color: #e9ecef;
 }
 
+/* A pastilha de um filtro aplicado. Neutra: o filtro nao e um estado do sistema, e a
+   unica cor do painel de filtros e o contador do botao, que diz quantos estao ligados. */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .8125rem;
+    padding: .15rem .25rem .15rem .6rem;
+    border-radius: 20px;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+
+.filter-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--bs-secondary-color);
+    font-size: .6875rem;
+}
+
+.filter-chip-remove:hover,
+.filter-chip-remove:focus-visible {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+
 /* O icone de um cartao de telemetria. Era pintado com a cor contextual da categoria --
    quatro cores num painel, em contorno, texto e fundo -- e a categoria le-se no icone,
    nao na cor. Cinzento, para a cor ficar disponivel para o estado. */

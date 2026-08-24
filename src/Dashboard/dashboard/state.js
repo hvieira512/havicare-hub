@@ -21,11 +21,13 @@ export const state = {
         from: "",
         to: "",
         type: "all",
+        q: "",
     },
     detailFiltersDraft: {
         from: "",
         to: "",
         type: "all",
+        q: "",
     },
     deviceFilters: {
         deviceType: null,
@@ -128,7 +130,7 @@ export function clearSelection() {
     state.selectedImei = null;
     state.selectedDetail = null;
     state.telemetryPage = 1;
-    state.detailFiltersDraft = { from: "", to: "", type: "all" };
+    state.detailFiltersDraft = { from: "", to: "", type: "all", q: "" };
 }
 
 export function setTelemetryPage(page, totalPages) {

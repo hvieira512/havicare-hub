@@ -296,6 +296,28 @@ export function renderButtonGroup(
 }
 
 /**
+ * As pastilhas dos filtros aplicados, com o x para remover cada um.
+ *
+ * O arranjo e sempre o mesmo: a pesquisa e o botao de filtros na primeira linha, e as
+ * pastilhas do que esta aplicado na linha de baixo. Estava escrito a letra na listagem
+ * de dispositivos e na de modelos, e a diferenca era so o nome da accao.
+ */
+export function filterChips(labels, action) {
+    return labels
+        .map(
+            (item) => `
+        <span class="filter-chip">
+            <span>${esc(item.label)}</span>
+            <button type="button" class="filter-chip-remove" data-action="${esc(action)}"
+                data-filter-key="${esc(item.key)}" aria-label="Remover filtro ${esc(item.label)}">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </span>`,
+        )
+        .join("");
+}
+
+/**
  * O estado vazio de um painel.
  *
  * Texto e nao caixa: um painel vazio dentro de um cartao branco ganhava uma segunda

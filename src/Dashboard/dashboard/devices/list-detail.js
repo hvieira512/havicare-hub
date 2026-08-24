@@ -21,6 +21,7 @@ import {
 } from "../format.js";
 import {
     emptyPanel,
+    filterChips,
     renderRequestCardShell,
     statusBadge,
     uplinkCardContent,
@@ -390,20 +391,13 @@ function renderAppliedDeviceFilters() {
         });
     }
 
-    els.deviceActiveFilters.innerHTML = labels.length
-        ? labels
-              .map(
-                  (item) => `
-            <span class="badge text-bg-secondary d-inline-flex align-items-center gap-2">
-                <span>${esc(item.label)}</span>
-                <button type="button" class="btn btn-sm p-0 border-0 text-white" data-action="removeDeviceFilter" data-filter-key="${esc(item.key)}" aria-label="Remover filtro">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </span>
-        `,
-              )
-              .join("")
-        : '<span class="small text-secondary">Sem filtros ativos</span>';
+    els.deviceActiveFilters.innerHTML = filterChips(labels, "removeDeviceFilter");
+    // O contador no botao e o que diz que ha filtros ligados sem os selects estarem
+    // abertos. Sem filtros nao ha contador nem a linha das pastilhas -- o vazio nao
+    // precisa de uma frase a dizer que esta vazio.
+    els.deviceFilterCount.textContent = labels.length ? String(labels.length) : "";
+    els.deviceFilterCount.classList.toggle("d-none", labels.length === 0);
+    els.clearDeviceFiltersBtn.classList.toggle("d-none", labels.length === 0);
 }
 
 function handleDeviceListLimitChange() {

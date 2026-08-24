@@ -21,6 +21,7 @@ import {
 } from "../format.js";
 import {
     emptyPanel,
+    filterChips,
     telemetryCard,
     helpCallSummaryCard,
     renderRequestCardShell,
@@ -249,7 +250,11 @@ function allDetailItems() {
 }
 
 function filterDetailItems(items) {
-    const { from, to, type } = state.detailFilters;
+    const { from, to, type, q } = state.detailFilters;
+    // A pesquisa corre sobre o que esta carregado, que e a janela escolhida nas datas --
+    // nao ha procura no historico todo porque o filtro de atividade sempre foi do lado do
+    // cliente. Compara com o que a pessoa ve na linha: o tipo e o valor formatado.
+    const needle = String(q || "").trim().toLowerCase();
     return items.filter((item) => {
         if (type !== "all" && type !== "") {
             const itemType = detailItemType(item);
@@ -261,8 +266,18 @@ function filterDetailItems(items) {
             if (from && time < new Date(from).getTime()) return false;
             if (to && time > new Date(to).getTime()) return false;
         }
+        if (needle !== "" && !detailItemHaystack(item).includes(needle)) {
+            return false;
+        }
         return true;
     });
+}
+
+/** O que a linha mostra, em minusculas: o tipo e o valor formatado. */
+function detailItemHaystack(item) {
+    const itemType = detailItemType(item);
+    const content = uplinkCardContent(itemType, item.payload?.data || {});
+    return `${itemType} ${fieldLabel(itemType)} ${content?.value ?? ""}`.toLowerCase();
 }
 
 function detailFilterTypesFromItems(items) {
@@ -356,6 +371,7 @@ function syncDetailFilterControls() {
     els.detailFilterFrom.value = state.detailFiltersDraft?.from || state.detailFilters.from;
     els.detailFilterTo.value = state.detailFiltersDraft?.to || state.detailFilters.to;
     els.detailFilterType.value = state.detailFiltersDraft?.type || state.detailFilters.type;
+    renderDetailActiveFilters();
 }
 
 function applyDetailFilters() {
@@ -363,6 +379,7 @@ function applyDetailFilters() {
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
         type: els.detailFilterType.value,
+        q: state.detailFilters.q,
     };
     state.detailFiltersDraft = { ...state.detailFilters };
     state.telemetryPage = 1;
@@ -370,10 +387,59 @@ function applyDetailFilters() {
 }
 
 function clearDetailFilters() {
-    state.detailFilters = { from: "", to: "", type: "all" };
+    state.detailFilters = { from: "", to: "", type: "all", q: "" };
     state.detailFiltersDraft = { ...state.detailFilters };
     state.telemetryPage = 1;
+    if (els.detailSearch) els.detailSearch.value = "";
     renderSelection();
+}
+
+/**
+ * A pesquisa nao espera pelo "Aplicar": escreve-se e a lista responde.
+ *
+ * Os selects de data e tipo tem um botao porque uma data a meio de ser escrita nao e uma
+ * data; um texto a meio de ser escrito ja e um prefixo util.
+ */
+function applyDetailSearch() {
+    state.detailFilters = {
+        ...state.detailFilters,
+        q: els.detailSearch.value,
+    };
+    state.detailFiltersDraft = { ...state.detailFiltersDraft, q: els.detailSearch.value };
+    state.telemetryPage = 1;
+    renderSelection();
+}
+
+function removeDetailFilter(key) {
+    const cleared = key === "type" ? "all" : "";
+    state.detailFilters = { ...state.detailFilters, [key]: cleared };
+    state.detailFiltersDraft = { ...state.detailFilters };
+    state.telemetryPage = 1;
+    if (key === "q" && els.detailSearch) els.detailSearch.value = "";
+    renderSelection();
+}
+
+/** As pastilhas do que esta aplicado, na linha abaixo da pesquisa. */
+function renderDetailActiveFilters() {
+    const { from, to, type, q } = state.detailFilters;
+    const labels = [];
+    if (from || to) {
+        labels.push({
+            key: from && to ? "range" : from ? "from" : "to",
+            label: `${from ? when(from) : "início"} → ${to ? when(to) : "agora"}`,
+        });
+    }
+    if (type && type !== "all") {
+        labels.push({key: "type", label: fieldLabel(type) || type});
+    }
+    if (String(q || "").trim() !== "") {
+        labels.push({key: "q", label: `"${q.trim()}"`});
+    }
+
+    els.detailActiveFilters.innerHTML = filterChips(labels, "removeDetailFilter");
+    els.detailFilterCount.textContent = labels.length ? String(labels.length) : "";
+    els.detailFilterCount.classList.toggle("d-none", labels.length === 0);
+    els.clearDetailFiltersBtn.classList.toggle("d-none", labels.length === 0);
 }
 
 function updateDetailFilterDraft() {
@@ -381,6 +447,7 @@ function updateDetailFilterDraft() {
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
         type: els.detailFilterType.value,
+        q: state.detailFilters.q,
     };
 }
 
@@ -801,7 +868,9 @@ function clearSelectedDeviceFromStorage() {
 export {
     allDetailItems,
     applyDetailFilters,
+    applyDetailSearch,
     clearDetailFilters,
+    removeDetailFilter,
     clearSelectedDeviceFromStorage,
     initDeviceDetailView,
     filterDetailItems,
