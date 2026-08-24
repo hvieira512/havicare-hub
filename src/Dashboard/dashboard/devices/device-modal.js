@@ -58,9 +58,11 @@ import {
     resetPhoneControls,
 } from "../phone.js";
 import {
+    modelImageHtml,
     modelPreviewHtml,
     renderButtonGroup,
 } from "../renderers.js";
+import {companyLabel, deviceTypeLabel} from "../domain.js";
 import {
     selectImei,
     state,
@@ -304,6 +306,7 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.configurationSync = detail.configurationSync || {entries: {}};
         state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
+        renderDeviceModalIdentity(device, deviceModel, deviceType);
     } finally {
         if (!companiesLoaded && state.deviceModal.errorMessage === "") {
             setDeviceFormError("Ligacao ao servidor indisponivel.");
@@ -312,6 +315,43 @@ export async function editDevice(imei, supplier, model) {
         await syncDeviceModalContext();
         renderDeviceConfigurationModal();
     }
+}
+
+/**
+ * A identidade do dispositivo no cabeçalho do modal.
+ *
+ * O título dizia «Editar dispositivo» e mais nada: qual dispositivo era só se sabia a ler
+ * o campo do IMEI, a meio do formulário. Aqui está sempre à vista, mesmo com o separador
+ * das configurações aberto e a página a rolar.
+ */
+function renderDeviceModalIdentity(device, deviceModel, deviceType) {
+    if (!els.deviceModalIdentity) return;
+
+    const imei = String(device?.imei || state.deviceModal.imei || "");
+    const commercial = String(deviceModel?.commercialName || deviceModel?.internalModel || "");
+    const supplier = String(deviceModel?.supplier || "");
+    const company = companyLabel(device?.company);
+    const licenseId = String(device?.licenseId || "0");
+    const online = Boolean(device?.online);
+    const meta = [
+        deviceTypeLabel(normalizeDeviceType(deviceType)),
+        [supplier, commercial].filter((part) => part !== "").join(" "),
+        licenseId !== "0" && licenseId !== ""
+            ? `${company} / ${licenseId}`
+            : company,
+    ].filter((part) => part !== "");
+
+    els.deviceModalIdentity.innerHTML = `
+        <span class="modal-device-thumb">${modelImageHtml(deviceModel, 26)}</span>
+        <span class="min-w-0">
+            <span class="d-flex align-items-center gap-2 flex-wrap">
+                <h5 class="modal-title mb-0 tabular-nums" id="deviceModalLabel">${esc(imei)}</h5>
+                <span class="config-state ${online ? "config-state-success" : "config-state-secondary"}">
+                    <span class="config-state-dot"></span>${online ? "Ligado" : "Desligado"}
+                </span>
+            </span>
+            <span class="d-block small text-secondary">${esc(meta.join(" · "))}</span>
+        </span>`;
 }
 
 export async function renderDeviceSelectors(

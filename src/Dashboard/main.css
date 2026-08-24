@@ -359,8 +359,30 @@ body {
     max-height: 260px;
 }
 
-.device-modal-shell {
-    padding: 1rem;
+/* A identidade do que se esta a editar, no cabecalho do modal. */
+.modal-device-identity {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.modal-device-thumb {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .625rem;
+    background: var(--bs-tertiary-bg);
+}
+
+.modal-device-thumb img,
+.modal-device-thumb i {
+    max-width: 26px;
+    max-height: 26px;
 }
 
 .settings-modal-shell {
@@ -672,12 +694,12 @@ body {
     height: calc(100% - 2rem);
 }
 
-#deviceModal .modal-dialog.modal-fullscreen .modal-content,
+/* O modal de definicoes continua de ecra inteiro: e um painel de administracao com cinco
+   listas, nao um formulario. O de editar um dispositivo deixou de o ser. */
 #settingsModal .modal-dialog.modal-fullscreen .modal-content {
     height: 100%;
 }
 
-#deviceModal .modal-body,
 #settingsModal .modal-body {
     display: flex;
     flex-direction: column;
@@ -686,30 +708,20 @@ body {
     padding: 0;
 }
 
-#deviceModal .modal-body>.device-modal-shell,
 #settingsModal .modal-body>.settings-modal-shell {
     min-height: 100%;
 }
 
 @media (max-width: 575.98px) {
 
-    #deviceModal .modal-dialog.modal-fullscreen,
     #settingsModal .modal-dialog.modal-fullscreen {
         margin: 0;
         width: 100vw;
         height: 100%;
     }
 
-    .device-modal-shell {
-        padding: 0;
-    }
-
     .settings-modal-shell {
         padding: 0;
-    }
-
-    .device-modal-shell .nav-pills {
-        width: 100%;
     }
 
     .settings-modal-shell .nav-pills {

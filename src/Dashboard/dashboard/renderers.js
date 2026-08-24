@@ -252,7 +252,7 @@ const ALARM_VALUE_BY_PRIORITY = [
     ["lowBattery", "Bateria fraca"],
 ];
 
-export function modelImageHtml(modelInfo) {
+export function modelImageHtml(modelInfo, size = 40) {
     const label =
         modelInfo?.commercial_name ||
         modelInfo?.commercialName ||
@@ -261,8 +261,8 @@ export function modelImageHtml(modelInfo) {
         modelInfo?.model ||
         "Modelo";
     return modelInfo?.image
-        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(label)}" style="width:40px;height:40px;">`
-        : '<i class="fa-solid fa-microchip fa-xl text-secondary" style="width:40px"></i>';
+        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(label)}" style="width:${size}px;height:${size}px;">`
+        : `<i class="fa-solid fa-microchip text-secondary" style="width:${size}px;font-size:${Math.round(size * 0.62)}px"></i>`;
 }
 
 export function modelPreviewHtml(modelInfo, label = "Modelo") {

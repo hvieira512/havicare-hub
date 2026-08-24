@@ -243,13 +243,13 @@ function renderDeviceSelector() {
                 <thead>
                     <tr>
                         <th></th>
+                        <th>Estado</th>
                         <th>IMEI</th>
                         <th>Tipo</th>
                         <th>Modelo</th>
                         <th>Empresa</th>
                         <th>Licença</th>
                         <th>SIM</th>
-                        <th>Estado</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -263,6 +263,11 @@ function renderDeviceSelector() {
                             return `
                             <tr${isSelected ? ' class="table-primary"' : ""} data-imei="${esc(device.imei)}" data-action="select" role="button" tabindex="0">
                                 <td style="width:52px">${imageMarkup}</td>
+                                <td>
+                                    <span class="config-state ${device.online ? "config-state-success" : "config-state-secondary"}">
+                                        <span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}
+                                    </span>
+                                </td>
                                 <td class="fw-semibold text-break tabular-nums">${esc(device.imei)}</td>
                                 <td>${esc(deviceTypeLabel(normalizeDeviceType(device.deviceType)))}</td>
                                 <td>
@@ -272,11 +277,6 @@ function renderDeviceSelector() {
                                 <td>${esc(companyLabel(device.company))}</td>
                                 <td class="tabular-nums">${esc(licenseDisplayLabel(device.licenseId))}</td>
                                 <td class="text-break tabular-nums">${esc(device.simNumber || "-")}</td>
-                                <td>
-                                    <span class="config-state ${device.online ? "config-state-success" : "config-state-secondary"}">
-                                        <span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}
-                                    </span>
-                                </td>
                             </tr>`;
                         })
                         .join("")}

@@ -4,27 +4,32 @@ declare(strict_types=1);
 
 ob_start();
 ?>
-<div class="device-modal-shell d-flex flex-column h-100">
-    <div class="row g-4 h-100 align-items-lg-center">
-        <div class="col-lg-2 d-flex align-items-lg-center justify-content-center justify-content-lg-center h-100">
-            <div class="nav nav-pills flex-row flex-lg-column justify-content-center justify-content-lg-start gap-2 w-100" id="deviceModalNav" role="tablist">
-                <button class="nav-link active text-start" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
-                    Geral
-                </button>
-                <button class="nav-link text-start d-none" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
-                    Configurações
-                </button>
-            </div>
-        </div>
-        <div class="col-lg-10 d-flex flex-column h-100">
-            <div class="tab-content flex-grow-1">
-                <div class="tab-pane fade show active h-100" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
-                    <form id="deviceForm" class="row g-4 align-items-stretch">
-                        <div class="col-lg-5">
-                            <?= showcase_preview('devicePreview') ?>
-                        </div>
-                        <div class="col-lg-7">
-                            <div class="vstack gap-3 h-100">
+<?php
+/**
+ * Os separadores ficam colados ao conteúdo que comandam, sob o cabeçalho.
+ *
+ * Eram pills verticais numa coluna de duas unidades, alinhados ao centro vertical de um
+ * modal de ecrã inteiro — longe do cabeçalho e a meia altura do nada. O ecrã inteiro
+ * também saiu: um formulário de 400px centrado em 900px de janela deixava metade do ecrã
+ * em branco e o rodapé a 400px do último campo.
+ */
+?>
+<div class="device-modal-shell">
+    <div class="nav nav-underline mb-4" id="deviceModalNav" role="tablist">
+        <button class="nav-link active" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
+            Geral
+        </button>
+        <button class="nav-link d-none" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
+            Configurações
+        </button>
+    </div>
+    <div>
+        <div>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
+                    <form id="deviceForm" class="row g-4">
+                        <div class="col-lg-8 order-lg-1">
+                            <div class="vstack gap-3">
                                 <div>
                                     <div class="form-label">Tipo de dispositivo</div>
                                     <div id="deviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
@@ -83,14 +88,17 @@ ob_start();
                                     <div id="deviceSimNumberRoot"></div>
                                 </div>
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
-                                <div class="d-flex justify-content-end mt-auto">
+                                <div class="d-flex justify-content-end">
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
                                 </div>
                             </div>
                         </div>
+                        <div class="col-lg-4 order-lg-2">
+                            <?= showcase_preview('devicePreview') ?>
+                        </div>
                     </form>
                 </div>
-                <div class="tab-pane fade h-100" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
+                <div class="tab-pane fade" id="deviceConfigPane" role="tabpanel" aria-labelledby="deviceConfigTabBtn">
                     <div id="deviceConfigRoot"></div>
                 </div>
             </div>
@@ -100,6 +108,12 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-danger d-none" id="deleteDeviceBtn"><i class="fa-solid fa-trash me-1"></i>Eliminar</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
+$footer = '<button type="button" class="btn btn-outline-danger d-none" id="deleteDeviceBtn"><i class="fa-solid fa-trash me-1"></i>Eliminar</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
-render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-fullscreen');
+// A identidade do dispositivo vive no cabeçalho e é escrita pelo JavaScript, porque só
+// depois de carregar é que se sabe o modelo e se está ligado.
+$header = '<div class="modal-device-identity" id="deviceModalIdentity">'
+    . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
+    . '</div>';
+
+render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-dialog-scrollable', $header);

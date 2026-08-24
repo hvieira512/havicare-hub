@@ -73,8 +73,13 @@ services:
     volumes:
       - .:/app
     environment:
-      MQTT_HOST: mosquitto
-      MQTT_PORT: 1883
+      # O mosquitto local por omissão, e não o MQTT_HOST do .env: numa máquina limpa esse
+      # aponta para um broker remoto e o arranque parecia partido. Mas apontar ao broker
+      # remoto é o que faz aparecer os gateways, os medidores de fraldas, as pulseiras e
+      # os radares em localhost, por isso fica um nome próprio para pedir isso de propósito
+      # -- HUB_MQTT_HOST=88.99.104.197 -- em vez de acontecer por acidente.
+      MQTT_HOST: ${HUB_MQTT_HOST:-mosquitto}
+      MQTT_PORT: ${HUB_MQTT_PORT:-1883}
       MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-}
       MQTT_CLIENT_ID_PREFIX: ${MQTT_CLIENT_ID_PREFIX:-havicare-hub-dev}
       MQTT_USERNAME: ${MQTT_USERNAME:-}
