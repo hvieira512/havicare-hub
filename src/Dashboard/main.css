@@ -388,8 +388,8 @@ body {
     font-size: .75rem;
 }
 
-/* O cartao que e o proprio pedido. Sem sombra nem cor: o que diz que responde ao clique
-   e o contorno a escurecer e o icone a ganhar contraste. */
+/* O cartao que e o proprio pedido. Sem sombra: o que responde ao clique diz-se em repouso
+   pelo aviao de papel no canto, e ao passar o rato pelo tom da categoria a acender. */
 .telemetry-card-action {
     /* Um `button` encolhe para o conteudo, e um `div.card` nao: sem isto, o mosaico de
        "Atividade" ficava mais estreito que o de "Oxigenio no sangue" na mesma coluna. */
@@ -399,16 +399,41 @@ body {
     transition: border-color .12s ease, background-color .12s ease;
 }
 
+/* O tom da categoria a acender, e nao o cinzento. Isto escrevia `--bs-primary-border-subtle`
+   e `--bs-tertiary-bg` por cima do tom, por isso um mosaico de bateria verde e um de
+   frequencia cardiaca vermelho ficavam os dois cinzentos ao passar o rato -- a cor que o
+   identificava desaparecia exactamente no momento em que se ia clicar nele. */
 .telemetry-card-action:hover:not(:disabled),
 .telemetry-card-action:focus-visible {
-    border-color: var(--bs-primary-border-subtle);
-    background: var(--bs-tertiary-bg);
+    border-color: var(--tone-fg, var(--bs-primary));
+    background: var(--tone-bg, var(--bs-tertiary-bg));
 }
 
+/* A pastilha do icone inverte: sobre o cartao agora tingido, o branco destaca-a. */
 .telemetry-card-action:hover:not(:disabled) .telemetry-card-icon,
 .telemetry-card-action:focus-visible .telemetry-card-icon {
-    background: var(--bs-primary-bg-subtle);
-    color: var(--bs-emphasis-color);
+    background: var(--bs-body-bg);
+    color: var(--tone-fg, var(--bs-body-color));
+}
+
+/* O aviao de papel: presente em repouso, mas quase apagado -- oito mosaicos com um icone
+   nitido no canto liam-se como oito avisos. Ao passar o rato ganha o tom da categoria. */
+.telemetry-card-hint {
+    font-size: .6875rem;
+    line-height: 1.6;
+    color: var(--bs-secondary-color);
+    opacity: .4;
+    transition: opacity .12s ease, color .12s ease;
+}
+
+.telemetry-card-action:hover:not(:disabled) .telemetry-card-hint,
+.telemetry-card-action:focus-visible .telemetry-card-hint {
+    color: var(--tone-fg, var(--bs-body-color));
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .telemetry-card-hint { transition: none; }
 }
 
 .telemetry-card-action:disabled {

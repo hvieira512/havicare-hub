@@ -420,6 +420,15 @@ export function telemetryCard({
         ? `<span class="config-state ${pending ? "config-state-warning" : "config-state-secondary"} flex-shrink-0">`
           + `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
         : "";
+    // O canto superior direito e o lugar do pedido: em repouso, o aviao de papel diz que o
+    // mosaico se pode pedir; enquanto o pedido corre, a pastilha diz em que estado esta.
+    // Um mosaico que nao se pode pedir nao tem nada ali, e e essa ausencia que os separa --
+    // antes so o hover os distinguia, e por isso era preciso passar o rato por cima de oito
+    // mosaicos para descobrir quais respondiam ao clique. Decorativo: o nome da categoria e
+    // o `aria-label` do botao ja dizem o que ele faz.
+    const requestHint = clickable && !stateLabel
+        ? '<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-paper-plane"></i></span>'
+        : "";
 
     // A 375px, um mosaico por linha desperdica metade da largura em nomes de duas
     // palavras. Dois por linha, e largura toda so para os que trazem corpo (span 12).
@@ -439,7 +448,7 @@ export function telemetryCard({
         <div class="telemetry-card-title">${esc(title)}</div>
         ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
         </div>
-        ${state}
+        ${state || requestHint}
         </div>
         ${body}
         </div>
