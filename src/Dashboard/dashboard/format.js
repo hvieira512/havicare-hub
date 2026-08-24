@@ -35,6 +35,21 @@ export const when = (value) => {
     return new Date(parsed).toLocaleString("pt-PT");
 };
 
+/**
+ * A hora de uma linha de lista: dia, mês e hora, sem ano.
+ *
+ * A coluna da hora e a ultima de quatro em meio painel, e "24/08/2026, 14:34:44" ocupava
+ * la um terco da largura para dizer o ano quatro vezes por linha. A janela de filtro
+ * comeca por omissao a sete dias, por isso o dia e o mes bastam para nao haver duvida.
+ */
+export const whenShort = (value) => {
+    if (!value) return "";
+    const parsed = Date.parse(value);
+    if (Number.isNaN(parsed)) return String(value);
+    const date = new Date(parsed);
+    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}, ${date.toLocaleTimeString("pt-PT")}`;
+};
+
 export const featureLabel = (type) =>
     ({
         positions: "Posições",

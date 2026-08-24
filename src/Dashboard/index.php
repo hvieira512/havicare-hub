@@ -132,21 +132,22 @@ require_once __DIR__ . '/components/modal.php';
         </nav>
         <main class="container-fluid py-3">
             <div class="row g-3">
-                <aside id="deviceColumn" class="col-12 col-lg-4">
-                    <div class="card h-100">
-                        <?php
-                        /**
-                         * A etiqueta e os botões dentro do corpo, não numa faixa de
-                         * cabeçalho cinzenta: uma faixa cinzenta dentro de um cartão
-                         * branco é a mesma caixa-dentro-de-caixa que a regra 1 tira.
-                         */
-                        ?>
+                <?php
+                /**
+                 * Dois cartões, não um: a identidade do dispositivo e o que se lhe pede
+                 * são duas coisas, e a maqueta separa-as. Num cartão só, a divisória
+                 * interna tinha de fazer o trabalho que o espaço entre cartões faz melhor.
+                 */
+                ?>
+                <aside id="deviceColumn" class="col-12 col-lg-4 d-flex flex-column gap-3">
+                    <div class="card">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                 <span class="section-label">Dispositivo</span>
                                 <div class="d-flex align-items-center gap-2">
-                                    <button id="openDeviceSelectorBtn" class="btn btn-sm btn-outline-secondary row-action" type="button"><?= icon('fa-list', 'me-1') ?>Escolher</button>
-                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary row-action"><?= icon('fa-plus', 'me-1') ?>Adicionar</button>
+                                    <button id="openDeviceSelectorBtn" class="btn btn-sm btn-outline-secondary row-action" type="button">Escolher</button>
+                                    <?php /* Só o ícone: o "+" ao lado de "Escolher" não precisa da palavra. */ ?>
+                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary row-action" type="button" title="Adicionar dispositivo" aria-label="Adicionar dispositivo"><?= icon('fa-plus') ?></button>
                                 </div>
                             </div>
                             <div id="deviceSelectionEmptyState" class="text-center text-secondary py-5">
@@ -156,9 +157,9 @@ require_once __DIR__ . '/components/modal.php';
                                 <button id="emptyStateSelectDeviceBtn" class="btn btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher dispositivo</button>
                             </div>
                             <div id="selectedDevicePanel" class="d-none">
-                                <div class="d-flex align-items-start gap-3 mb-4">
+                                <div class="d-flex align-items-start gap-3 pt-3">
                                     <div id="selectedDevicePreview" class="selected-device-preview"></div>
-                                    <div class="min-width-0 flex-grow-1 lh-1">
+                                    <div class="min-width-0 flex-grow-1">
                                         <?php
                                         /**
                                          * O estado primeiro, o identificador depois: num
@@ -167,29 +168,28 @@ require_once __DIR__ . '/components/modal.php';
                                          */
                                         ?>
                                         <div class="mb-1"><span id="selectedDeviceBadge" class="config-state"></span></div>
-                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                            <h1 class="h4 mb-0 text-break tabular-nums" id="selectedDeviceTitle"></h1>
-                                        </div>
+                                        <h1 class="h4 mb-1 text-break tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
-                                        <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary row-action mt-2" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
                                     </div>
                                 </div>
-                                <dl id="selectedDeviceFacts" class="selected-device-facts row g-3 mb-0"></dl>
-                                <div class="border-top pt-4 mt-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="fw-semibold"><?= icon('fa-paper-plane', 'me-2') ?>Pedir dados ao dispositivo</span>
-                                        <span id="requestCardCount" class="small text-secondary"></span>
-                                    </div>
-                                    <div class="row g-3" id="requestGrid"></div>
-                                </div>
-                                <div id="ncsEventSection" class="border-top pt-4 mt-4 d-none">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="fw-semibold"><?= icon('fa-bell', 'me-2') ?>Eventos NCS recentes</span>
-                                        <span id="ncsEventCardCount" class="small text-secondary"></span>
-                                    </div>
-                                    <div class="row g-3" id="ncsEventGrid"></div>
+                                <dl id="selectedDeviceFacts" class="selected-device-facts row g-3 mb-0 border-top mt-3 pt-3"></dl>
+                                <div class="border-top mt-3 pt-3 d-flex justify-content-end">
+                                    <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary row-action" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="card" id="requestCardsCard">
+                        <div class="card-body">
+                            <?= section_header('Pedir dados', 'requestCardCount') ?>
+                            <div class="text-secondary small mb-3">O mosaico é o pedido.</div>
+                            <div class="row g-3" id="requestGrid"></div>
+                        </div>
+                    </div>
+                    <div class="card d-none" id="ncsEventSection">
+                        <div class="card-body">
+                            <?= section_header('Eventos NCS recentes', 'ncsEventCardCount') ?>
+                            <div class="row g-3" id="ncsEventGrid"></div>
                         </div>
                     </div>
                 </aside>
@@ -197,7 +197,7 @@ require_once __DIR__ . '/components/modal.php';
                     <div class="card h-100">
                         <div class="card-body d-flex flex-column">
                             <div id="deviceDetail" class="d-none device-detail-open">
-                                <div id="detailFiltersPanel" class="mb-3">
+                                <div id="detailFiltersPanel">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="input-group input-group-sm flex-grow-1">
                                             <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
@@ -206,10 +206,10 @@ require_once __DIR__ . '/components/modal.php';
                                         <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 flex-shrink-0" type="button"
                                             data-bs-toggle="collapse" data-bs-target="#detailFiltersCollapse" aria-expanded="false" aria-controls="detailFiltersCollapse">
                                             <?= icon('fa-sliders') ?>Filtros
-                                            <span id="detailFilterCount" class="badge rounded-pill text-bg-primary d-none"></span>
+                                            <span id="detailFilterCount" class="count-chip count-chip-strong d-none"></span>
                                         </button>
                                     </div>
-                                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                                    <div id="detailActiveFiltersRow" class="d-flex flex-wrap align-items-center gap-2 mt-2 d-none">
                                         <div id="detailActiveFilters" class="d-flex flex-wrap gap-2"></div>
                                         <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none d-none" type="button">Limpar</button>
                                     </div>
@@ -260,19 +260,19 @@ require_once __DIR__ . '/components/modal.php';
                                  * ficavam 180px em branco no topo.
                                  */
                                 ?>
-                                <div class="device-detail-stack d-flex flex-column gap-4">
-                                    <section id="connectionSection" class="flex-shrink-0">
+                                <div class="device-detail-stack d-flex flex-column">
+                                    <section id="connectionSection" class="card-section flex-shrink-0">
                                         <?= section_header('Ligações ao servidor') ?>
-                                        <div id="connectionTimeline" style="height:180px;width:100%;"></div>
+                                        <div id="connectionTimeline" style="height:110px;width:100%;"></div>
                                     </section>
-                                    <div class="row g-4 flex-grow-1 border-top pt-4" style="min-height:0">
-                                        <div class="col-12 col-xl-6 d-flex flex-column">
-                                            <?= section_header('Eventos recebidos', 'telemetryCount') ?>
+                                    <div class="card-section row g-0 flex-grow-1" style="min-height:0">
+                                        <div class="col-12 col-xl-6 d-flex flex-column pe-xl-4">
+                                            <?= section_header('Eventos recebidos', 'telemetryCount', true) ?>
                                             <div id="telemetryList" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
                                             <?= pagination_component('telemetry') ?>
                                         </div>
-                                        <div class="col-12 col-xl-6 d-flex flex-column border-start-xl">
-                                            <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount') ?>
+                                        <div class="col-12 col-xl-6 d-flex flex-column border-start-xl ps-xl-4 mt-4 mt-xl-0">
+                                            <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
                                             <div id="downlinkRequests" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
                                         </div>
                                     </div>

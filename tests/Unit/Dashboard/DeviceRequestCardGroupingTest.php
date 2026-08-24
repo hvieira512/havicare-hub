@@ -23,7 +23,14 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('"device_state"', $source);
         self::assertStringNotContainsString('"ecg_analysis"', $source);
         self::assertStringContainsString('filter(([, entry]) => entry?.supported)', $source);
-        self::assertStringContainsString('renderRequestCardGroup(group, telemetry)', $source);
+        // A faixa com o nome do grupo só existe quando há mais do que um grupo: num relógio,
+        // que só tem "Telemetria", era uma moldura com um título por cima dos mosaicos,
+        // dentro de um cartão que já se chama "Pedir dados".
+        self::assertStringContainsString(
+            'renderRequestCardGroup(group, telemetry, groups.length > 1)',
+            $source
+        );
+        self::assertStringContainsString('if (!showLabel) {', $source);
         self::assertStringContainsString('group.cards.length', $source);
 
         $renderersSource = file_get_contents(

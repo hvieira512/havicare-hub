@@ -18,6 +18,7 @@ import {
     fieldLabel,
     rowPayload,
     when,
+    whenShort,
 } from "../format.js";
 import {
     cardTone,
@@ -26,6 +27,7 @@ import {
     telemetryCard,
     helpCallSummaryCard,
     renderRequestCardShell,
+    requestCardContent,
     statusBadge,
     uplinkCardContent,
 } from "../renderers.js";
@@ -61,6 +63,9 @@ function renderSelection() {
     // le-se como erro, por isso a coluna desaparece e a da escolha ocupa a largura.
     els.detailColumn.classList.toggle("d-none", !state.selectedDetail);
     els.deviceColumn.classList.toggle("col-lg-4", !!state.selectedDetail);
+    // O cartao dos pedidos e agora um cartao seu, e sem dispositivo escolhido nao tem
+    // pedidos nenhuns para mostrar -- ficava um cartao com um titulo e uma frase solta.
+    els.requestCardsCard?.classList.toggle("d-none", !state.selectedDetail);
     if (!state.selectedDetail) {
         els.requestCardCount.textContent = "";
         els.requestGrid.innerHTML = "";
@@ -184,9 +189,11 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     const typeLabel = deviceTypeLabel(
         normalizeDeviceType(deviceModel?.deviceType || "watch"),
     );
+    // A empresa antes da licenca: a licenca pertence a empresa, e lida ao contrario dava o
+    // numero antes de se saber de quem e.
     const facts = [
-        { label: "Licença", value: licenseLabel(device.licenseId) },
         { label: "Empresa", value: companyLabel(device.company) },
+        { label: "Licença", value: licenseLabel(device.licenseId) },
         {
             label: "Última ligação",
             value: when(device.lastSeenAt) || "Sem registo",
@@ -451,6 +458,9 @@ function renderDetailActiveFilters() {
     els.detailFilterCount.textContent = labels.length ? String(labels.length) : "";
     els.detailFilterCount.classList.toggle("d-none", labels.length === 0);
     els.clearDetailFiltersBtn.classList.toggle("d-none", labels.length === 0);
+    // Sem filtros aplicados a linha inteira sai: vazia, deixava o espaco de uma linha
+    // entre a pesquisa e a divisoria abaixo, e nada la dentro para o justificar.
+    els.detailActiveFiltersRow?.classList.toggle("d-none", labels.length === 0);
 }
 
 function updateDetailFilterDraft() {
@@ -476,9 +486,9 @@ function renderTelemetryList(telemetryRows) {
     const start = (state.telemetryPage - 1) * state.telemetryPageSize;
     const pageRows = telemetry.slice(start, start + state.telemetryPageSize);
 
-    els.telemetryCount.textContent = telemetry.length
-        ? `${telemetry.length} eventos`
-        : "";
+    // O contador e uma pastilha encostada ao titulo, e la dentro cabe o numero e mais nada:
+    // "100 eventos" ao lado de "Eventos recebidos" dizia "eventos" duas vezes.
+    els.telemetryCount.textContent = telemetry.length ? String(telemetry.length) : "";
     // Uma linha por evento, em colunas: pastilha do icone, nome, valor, hora. Era um
     // bloco de tres linhas por evento -- nome e valor, o tipo nativo, e os detalhes --
     // sem coluna alinhada nenhuma, o que dava seis eventos no espaco de dezoito e
@@ -534,15 +544,12 @@ function renderTelemetryRow(payload) {
                 <i class="fa-solid ${esc(card.icon)}"></i>
             </span>
         </td>
-        <td style="width:200px">
-            <div class="fw-semibold">${esc(featureLabel(type))}</div>
-            <div class="section-label" style="letter-spacing:0;text-transform:none">${esc(payload.source?.nativeType || "telemetria")}</div>
+        <td class="fw-medium" style="width:36%">${esc(featureLabel(type))}</td>
+        <td class="tabular-nums text-break">
+            ${esc(card.value)}
+            ${details ? `<div class="telemetry-row-details text-secondary" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</div>` : ""}
         </td>
-        <td class="tabular-nums">
-            <div class="fw-semibold">${esc(card.value)}</div>
-            ${details ? `<div class="section-label text-break" style="letter-spacing:0;text-transform:none">${details}</div>` : ""}
-        </td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" style="width:150px">${esc(when(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
+        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(payload.occurredAt || payload.recordedAt))}">${esc(whenShort(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
         </tr>`;
 }
 
@@ -617,43 +624,50 @@ function renderRequestCards(groups, telemetry = [], events = []) {
     const helpCalls = helpCallSummaryCard(events);
 
     els.requestCardCount.textContent = totalCards
-        ? `${totalCards} ações`
+        ? `${totalCards} ${totalCards === 1 ? 'disponível' : 'disponíveis'}`
         : "";
     disposeTooltips(els.requestGrid);
 
+    // Com um grupo so, a faixa com o nome do grupo nao separa nada: e uma moldura com um
+    // titulo por cima dos mosaicos, dentro de um cartao que ja se chama "Pedir dados".
     const cards = totalCards
-        ? groups.map((group) => renderRequestCardGroup(group, telemetry)).join("")
+        ? groups
+              .map((group) =>
+                  renderRequestCardGroup(group, telemetry, groups.length > 1),
+              )
+              .join("")
         : "";
     els.requestGrid.innerHTML = helpCalls + cards || `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
     refreshTooltips(els.requestGrid);
 }
 
-function renderRequestCardGroup(group, telemetry = []) {
+function renderRequestCardGroup(group, telemetry = [], showLabel = true) {
+    const cards = group.cards
+        .map((command) =>
+            renderRequestCardShell(
+                command,
+                state.loadingCommands.has(
+                    String(
+                        command.id || command.feature || command.command || "",
+                    ),
+                ),
+                telemetry,
+            ),
+        )
+        .join("");
+
+    if (!showLabel) {
+        return cards;
+    }
+
     return `
         <div class="col-12">
         <div class="border rounded-3 p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="section-label">${esc(group.label || "Pedidos")}</div>
-        <span class="small text-secondary">${group.cards.length}</span>
+        <span class="count-chip">${group.cards.length}</span>
         </div>
-        <div class="row g-3">
-        ${group.cards
-            .map((command) =>
-                renderRequestCardShell(
-                    command,
-                    state.loadingCommands.has(
-                        String(
-                            command.id ||
-                                command.feature ||
-                                command.command ||
-                                "",
-                        ),
-                    ),
-                    telemetry,
-                ),
-            )
-            .join("")}
-        </div>
+        <div class="row g-3">${cards}</div>
         </div>
         </div>`;
 }
@@ -697,33 +711,43 @@ function renderNcsEventCard({type, latest}) {
 }
 
 function renderDownlinkRequests(commands) {
-    els.downlinkRequestCount.textContent = commands.length
-        ? `${commands.length} ${commands.length === 1 ? "pedido" : "pedidos"}`
-        : "";
+    els.downlinkRequestCount.textContent = commands.length ? String(commands.length) : "";
+    // A mesma linha dos eventos recebidos, do outro lado: pastilha do icone, nome, estado,
+    // hora. Eram cinco colunas com cabecalho -- "Pedido em", "Pedido", "Estado", "Resposta",
+    // "Detalhes" -- que a meia largura do painel truncavam todas. O que se perdia da coluna
+    // "Resposta" cabe no `title` da pastilha, e o erro passa a segunda linha do nome, que e
+    // o unico dos dois que se precisa de ver sem passar o rato.
     els.downlinkRequests.innerHTML = commands.length
-        ? `
-        <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-        <thead>
-        <tr><th>Pedido em</th><th>Pedido</th><th>Estado</th><th>Resposta</th><th>Detalhes</th></tr>
-        </thead>
-        <tbody>
-        ${commands.map(renderDownlinkRow).join("")}
-        </tbody>
-        </table>
-        </div>`
+        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
+            <tbody>${commands.map(renderDownlinkRow).join("")}</tbody>
+           </table>`
         : emptyPanel("Ainda não há pedidos ao dispositivo.");
 }
 
 function renderDownlinkRow(command) {
     const status = String(command.status || "unknown");
+    const feature = String(command.feature || "");
+    const content = requestCardContent(feature);
+    const tone = cardTone(feature);
+    const replied = command.ackedAt
+        ? `Resposta ${when(command.ackedAt)}`
+        : command.sentAt
+          ? `Enviado ${when(command.sentAt)}`
+          : expectedReplies(command);
+    const note = command.error || "";
     return `
         <tr>
-        <td class="text-nowrap small">${esc(when(command.requestedAt) || "-")}</td>
-        <td><div class="fw-semibold">${esc(commandLabel(command) || "Pedido")}</div><div class="small text-secondary">${esc(command.nativeType || "")}</div></td>
-        <td>${statusBadge(status)}</td>
-        <td class="small">${esc(command.ackedAt ? when(command.ackedAt) : command.sentAt ? when(command.sentAt) : "-")}</td>
-        <td class="small text-secondary">${esc(command.error || command.replyNativeType || expectedReplies(command))}</td>
+        <td style="width:34px">
+            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
+                <i class="fa-solid ${esc(content.icon)}"></i>
+            </span>
+        </td>
+        <td class="fw-medium" style="width:190px">
+            ${esc(commandLabel(command) || content.value || "Pedido")}
+            ${note ? `<div class="fw-normal text-secondary text-break">${esc(note)}</div>` : ""}
+        </td>
+        <td${replied ? ` title="${esc(replied)}"` : ""}>${statusBadge(status)}</td>
+        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(command.requestedAt))}">${esc(whenShort(command.requestedAt) || "-")}</td>
         </tr>`;
 }
 
