@@ -189,7 +189,9 @@ import {
     backToModelList,
     applyDiscoveryPreview,
     deleteCurrentModel,
-    editCurrentModel,
+    saveModelDetail,
+    syncModelDetailDirty,
+    resetModelDetailFields,
     handleCapabilitySupplierClick,
     handleDiscoveryDeviceChange,
     generateDiscoveryPreview,
@@ -377,7 +379,10 @@ function bindEvents() {
     els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
     els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
     els.clearModelsFiltersBtn.addEventListener("click", clearModelsFilters);
-    els.modelDetailEditBtn.addEventListener("click", editCurrentModel);
+    els.modelDetailSaveBtn.addEventListener("click", saveModelDetail);
+    els.modelDetailResetBtn.addEventListener("click", resetModelDetailFields);
+    els.modelDetailFields.addEventListener("input", syncModelDetailDirty);
+    els.modelDetailFields.addEventListener("change", syncModelDetailDirty);
     els.modelDetailDeleteBtn.addEventListener("click", () => {
         void deleteCurrentModel();
     });

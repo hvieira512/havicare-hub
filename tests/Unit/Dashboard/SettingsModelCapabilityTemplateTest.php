@@ -62,12 +62,20 @@ final class SettingsModelCapabilityTemplateTest extends TestCase
             'state.settingsModal.capabilityCatalog,',
             $source,
         );
+        // Um controlo por eixo. «Apenas receção» era um badge e «Solicitável neste
+        // modelo» um interruptor, para a mesma pergunta -- o modelo aceita pedido? --
+        // e só uma das duas formas se podia mudar. São sempre dois interruptores, e
+        // quando o protocolo não suporta pedido é a etiqueta que diz a razão.
         self::assertStringContainsString(
-            'Solicitável neste modelo',
+            'for="requestable-${esc(feature)}">Solicitável</label>',
             $source,
         );
         self::assertStringContainsString(
-            'Apenas receção',
+            'não suporta pedido',
+            $source,
+        );
+        self::assertStringNotContainsString(
+            '<span class="badge text-bg-secondary">Apenas receção</span>',
             $source,
         );
         self::assertStringContainsString(

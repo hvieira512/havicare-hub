@@ -37,11 +37,14 @@ function renderModelsSection(models) {
         .map(
             (model) => `
         <tr data-action="modelCapabilities" data-id="${model.id}" role="button" tabindex="0">
-        <td>${modelImageHtml(model)}</td>
+        <td style="width:48px">${modelImageHtml(model, 32)}</td>
+        <td>
+            <div class="fw-semibold">${esc(modelCommercialName(model))}</div>
+            <div class="section-label">${esc(modelInternalName(model))}</div>
+        </td>
         <td>${esc(model.supplier)}</td>
-        <td>${esc(modelCommercialName(model))}</td>
-        <td>${esc(modelInternalName(model))}</td>
         <td>${esc(deviceTypeLabel(modelDeviceType(model)))}</td>
+        <td class="text-end text-secondary"><i class="fa-solid fa-chevron-right"></i></td>
         </tr>`,
         )
         .join("");

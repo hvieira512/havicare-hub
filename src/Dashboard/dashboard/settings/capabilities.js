@@ -7,6 +7,7 @@ import {
     getModel as apiGetModel,
     getModelFilters as apiGetModelFilters,
     getModelTemplate as apiGetModelTemplate,
+    getSuppliers as apiGetSuppliers,
     saveModel as apiSaveModel,
 } from "../api/index.js";
 import {state} from "../state.js";
@@ -547,6 +548,7 @@ async function openModelDetail(modelId) {
     els.modelsBreadcrumbCurrent.classList.remove("d-none");
     els.modelsBreadcrumbCurrent.classList.add("active");
 
+    await ensureModelDetailSuppliers();
     renderModelDetailInfo(model);
     renderCapabilitiesSection();
     renderDiscoverySection();
@@ -566,11 +568,141 @@ function renderModelDetailInfo(model) {
           )
         : `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
     els.modelDetailName.textContent = label;
-    els.modelDetailTitle.textContent = label;
-    els.modelDetailSupplier.textContent = String(model.supplier || "");
-    els.modelDetailSupplierValue.textContent = String(model.supplier || "");
-    els.modelDetailTypeValue.textContent = deviceTypeLabel(modelDeviceType(model));
-    els.modelDetailInternalModelValue.textContent = modelInternalName(model);
+
+    els.modelDetailCommercialName.value = label;
+    els.modelDetailInternalModel.value = modelInternalName(model);
+    renderModelDetailSelect(
+        els.modelDetailSupplierSelect,
+        modelDetailSuppliers().map((supplier) => ({
+            value: String(supplier.name),
+            label: String(supplier.name),
+        })),
+        String(model.supplier || ""),
+    );
+    renderModelDetailSelect(
+        els.modelDetailDeviceType,
+        deviceTypeOptions.map((option) => ({
+            value: option.value,
+            label: option.label,
+        })),
+        modelDeviceType(model),
+    );
+
+    // A fotografia do estado limpo, para se saber se algo mudou sem comparar campo a
+    // campo espalhado por quem trata cada evento.
+    state.settingsModal.modelDetailPristine = readModelDetailFields();
+    syncModelDetailDirty();
+    void renderModelDetailDeleteHint(model);
+}
+
+/**
+ * Os fornecedores com o seu id, que e o que o `supplier_id` do modelo precisa.
+ *
+ * Vem do separador dos fornecedores quando esse ja foi aberto; caso contrario carrega-se
+ * aqui, porque o detalhe de um modelo alcanca-se sem passar por lá.
+ */
+function modelDetailSuppliers() {
+    return state.modelModalSuppliers || [];
+}
+
+async function ensureModelDetailSuppliers() {
+    if ((state.modelModalSuppliers || []).length > 0) return;
+    const response = await apiGetSuppliers({limit: 200});
+    state.modelModalSuppliers = response?.error ? [] : response.data || [];
+}
+
+function renderModelDetailSelect(select, options, selected) {
+    if (!select) return;
+    select.innerHTML = options
+        .map(
+            (option) =>
+                `<option value="${esc(option.value)}"${option.value === selected ? " selected" : ""}>${esc(option.label)}</option>`,
+        )
+        .join("");
+    select.value = selected;
+}
+
+function readModelDetailFields() {
+    return {
+        commercialName: String(els.modelDetailCommercialName?.value || "").trim(),
+        internalModel: String(els.modelDetailInternalModel?.value || "").trim(),
+        supplier: String(els.modelDetailSupplierSelect?.value || ""),
+        deviceType: String(els.modelDetailDeviceType?.value || ""),
+    };
+}
+
+/** O "Guardar" aparece por diferença: sem alteração nao ha botao para premir. */
+function syncModelDetailDirty() {
+    const pristine = state.settingsModal.modelDetailPristine;
+    if (!pristine || !els.modelDetailSaveBtn) return;
+    const current = readModelDetailFields();
+    const dirty = Object.keys(pristine).some((key) => pristine[key] !== current[key]);
+
+    els.modelDetailSaveBtn.classList.toggle("d-none", !dirty);
+    els.modelDetailResetBtn.classList.toggle("d-none", !dirty);
+    els.modelDetailDirtyState.classList.toggle("d-none", dirty);
+}
+
+function resetModelDetailFields() {
+    const pristine = state.settingsModal.modelDetailPristine;
+    if (!pristine) return;
+    els.modelDetailCommercialName.value = pristine.commercialName;
+    els.modelDetailInternalModel.value = pristine.internalModel;
+    els.modelDetailSupplierSelect.value = pristine.supplier;
+    els.modelDetailDeviceType.value = pristine.deviceType;
+    syncModelDetailDirty();
+}
+
+/**
+ * Quantos dispositivos usam este modelo.
+ *
+ * A consequencia de apagar escrita ao lado do botao, e nao depois de se premir: o
+ * endpoint de dispositivos ja filtra por modelo, por isso e a paginacao que da o total.
+ */
+async function renderModelDetailDeleteHint(model) {
+    if (!els.modelDetailDeleteHint) return;
+    const internal = modelInternalName(model);
+    const result = await apiGetDevices({model: internal, limit: 1});
+    const total = result?.error ? null : (result?.pagination?.total ?? null);
+    els.modelDetailDeleteHint.textContent = total === null
+        ? "Os dispositivos que o usam ficam sem template de capacidades."
+        : total === 0
+            ? "Nenhum dispositivo usa este modelo."
+            : `${total} ${total === 1 ? "dispositivo usa" : "dispositivos usam"} o ${internal}.`
+              + " Apagar o modelo deixa-os sem template de capacidades.";
+}
+
+async function saveModelDetail() {
+    const model = state.settingsModal.currentCapabilitiesModel;
+    if (!model) return;
+    const fields = readModelDetailFields();
+    if (fields.commercialName === "" || fields.internalModel === "") {
+        alert("O nome comercial e o modelo interno são obrigatórios.");
+        return;
+    }
+
+    const supplier = modelDetailSuppliers().find(
+        (item) => String(item.name) === fields.supplier,
+    );
+    const body = new FormData();
+    body.append("supplier_id", String(supplier?.id ?? model.supplier_id));
+    body.append("internalModel", fields.internalModel);
+    body.append("commercialName", fields.commercialName);
+    body.append("deviceType", fields.deviceType);
+    body.append("protocol", String(model.protocol || ""));
+
+    const result = await apiSaveModel(model.id, body);
+    if (result.error) {
+        alert(result.error.message || result.error.code);
+        return;
+    }
+
+    const refreshed = await apiGetModel(model.id);
+    if (!refreshed?.error && refreshed?.model) {
+        state.settingsModal.currentCapabilitiesModel = refreshed.model;
+        renderModelDetailInfo(refreshed.model);
+    }
+    state.settingsModal.sectionLoaded.models = false;
 }
 
 function backToModelList() {
@@ -685,34 +817,8 @@ async function refreshNewModelCapabilityTemplate() {
     }
 }
 
-async function editCurrentModel() {
-    const model = state.settingsModal.currentCapabilitiesModel;
-    if (!model) return;
-    if (!state.settingsModal.sectionLoaded.modelFilters) {
-        await loadSettingsModelFilters();
-    }
-
-    editModel(
-        Number(model.id),
-        Number(model.supplier_id || model.supplierId || 0),
-        model.supplier || "",
-        model.internal_model || model.internalModel || "",
-        model.commercial_name || model.commercialName || "",
-        model.device_type || model.deviceType || "watch",
-        model.image || "",
-    );
-
-    els.modelsBreadcrumbModels.classList.remove("active");
-    els.modelsBreadcrumbNew.textContent = `Editar: ${modelCommercialName(model)}`;
-    els.modelsBreadcrumbNew.classList.remove("d-none");
-    els.modelsBreadcrumbNew.classList.add("active");
-    els.modelsBreadcrumbCurrent.classList.add("d-none");
-    els.modelsBreadcrumbCurrent.classList.remove("active");
-
-    if (state.settingsModal.modelsCarousel) {
-        state.settingsModal.modelsCarousel.to(1);
-    }
-}
+// O `editCurrentModel` saiu com o botao "Editar": os campos do detalhe sao os controlos,
+// e guardam-se ali. O formulario do carrossel fica so para criar um modelo novo.
 
 async function deleteCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
@@ -809,12 +915,15 @@ function renderCapabilitiesSection() {
     );
     els.capabilitySummary.textContent = `${activeCapabilities}/${totalCapabilities} ativos`;
 
-    const sectionButtonConfig = {
-        telemetry: { icon: "fa-chart-line", color: "btn-outline-info" },
-        health: { icon: "fa-heart-pulse", color: "btn-outline-success" },
-        contacts: { icon: "fa-address-book", color: "btn-outline-primary" },
-        alarms: { icon: "fa-bell", color: "btn-outline-danger" },
-        settings_system: { icon: "fa-gear", color: "btn-outline-secondary" },
+    // Cinco seccoes irmas, cinco icones -- e uma cor. Eram ciano cheio, verde, navy,
+    // vermelho e cinzento, como se tivessem gravidades diferentes, e o vermelho dos
+    // alarmes lia-se como erro em vez de categoria.
+    const sectionIcons = {
+        telemetry: "fa-chart-line",
+        health: "fa-heart-pulse",
+        contacts: "fa-address-book",
+        alarms: "fa-bell",
+        settings_system: "fa-gear",
     };
 
     let activeSection = state.settingsModal.activeCapabilitySection;
@@ -824,15 +933,14 @@ function renderCapabilitiesSection() {
     }
 
     els.capabilitySectionNav.innerHTML = sections
-        .map(({ section, label }) => {
-            const cfg = sectionButtonConfig[section] || {
-                icon: "fa-gear",
-                color: "btn-secondary",
-            };
+        .map(({ section, label, entries }) => {
+            const icon = sectionIcons[section] || "fa-gear";
             const isActive = section === activeSection;
+            const active = (entries || []).filter((feature) => enabled.has(feature)).length;
             return `
-        <button type="button" class="btn btn-sm flex-fill ${cfg.color} ${isActive ? "active" : ""} d-flex align-items-center justify-content-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
-            <i class="fa-solid ${cfg.icon}"></i> ${esc(label)}
+        <button type="button" class="btn btn-sm ${isActive ? "btn-primary" : "btn-outline-secondary row-action"} d-inline-flex align-items-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
+            <i class="fa-solid ${icon}"></i>${esc(label)}
+            <span class="badge rounded-pill ${isActive ? "text-bg-light" : "text-bg-secondary"}">${active}</span>
         </button>`;
         })
         .join("");
@@ -864,23 +972,26 @@ function renderCapabilitiesSection() {
                             section.section === "telemetry"
                                 ? `${esc(String(model?.supplier || "Protocolo"))}: ${canBeRequested ? "receção e pedido" : "apenas receção"}`
                                 : "";
+                        // "Apenas receção" era um badge e "Solicitável" um interruptor,
+                        // para a mesma pergunta: o modelo aceita pedido? Sao sempre dois
+                        // interruptores, na mesma posicao. Quando o fornecedor nao suporta
+                        // pedido, o segundo fica desligado com a razao na etiqueta -- em
+                        // vez de trocar de tipo de controlo.
+                        const requestableSwitch = section.section !== "telemetry"
+                            ? ""
+                            : `<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap">
+                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${esc(feature)}" id="requestable-${esc(feature)}" ${canBeRequested && requestable.has(feature) ? "checked" : ""} ${canBeRequested && enabled.has(feature) ? "" : "disabled"}>
+                                <label class="form-check-label small" for="requestable-${esc(feature)}">Solicitável</label>
+                                ${canBeRequested ? "" : `<div class="section-label">${esc(String(model?.supplier || "O protocolo"))} não suporta pedido</div>`}
+                               </div>`;
                         return `
-                        <div class="d-flex justify-content-between align-items-start gap-3 border rounded px-3 py-2 bg-white">
+                        <div class="d-flex justify-content-between align-items-start gap-3 border rounded-3 px-3 py-2">
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilitySupport" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? "checked" : ""}>
                                 <label class="form-check-label" for="cap-${esc(feature)}">${esc(labelText)}</label>
-                                <div class="small text-secondary">${protocolDescription || (!isInModelPayload ? "Disponível no catálogo do tipo de dispositivo." : "Suportada pelo modelo")}</div>
+                                <div class="section-label">${protocolDescription || (!isInModelPayload ? "Disponível no catálogo do tipo de dispositivo." : "Suportada pelo modelo")}</div>
                             </div>
-                            ${
-                                canBeRequested
-                                    ? `<div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${esc(feature)}" id="requestable-${esc(feature)}" ${requestable.has(feature) ? "checked" : ""} ${enabled.has(feature) ? "" : "disabled"}>
-                                        <label class="form-check-label small" for="requestable-${esc(feature)}">Solicitável neste modelo</label>
-                                    </div>`
-                                    : section.section === "telemetry"
-                                        ? '<span class="badge text-bg-secondary">Apenas receção</span>'
-                                        : ""
-                            }
+                            ${requestableSwitch}
                         </div>`;
                     })
                     .join("")}
@@ -936,8 +1047,10 @@ export {
     openModelDetail,
     backToModelList,
     openNewModelForm,
-    editCurrentModel,
     deleteCurrentModel,
+    saveModelDetail,
+    syncModelDetailDirty,
+    resetModelDetailFields,
     renderCapabilitiesSection,
     revokeModelPreviewUrl,
     saveCapabilities,

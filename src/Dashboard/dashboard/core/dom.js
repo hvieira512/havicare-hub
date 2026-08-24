@@ -174,16 +174,21 @@ export function cacheElements() {
         modelsNewModelBtn: document.getElementById("modelsNewModelBtn"),
         modelDetailImage: document.getElementById("modelDetailImage"),
         modelDetailName: document.getElementById("modelDetailName"),
-        modelDetailTitle: document.getElementById("modelDetailTitle"),
-        modelDetailSupplier: document.getElementById("modelDetailSupplier"),
-        modelDetailSupplierValue: document.getElementById(
-            "modelDetailSupplierValue",
+        modelDetailFields: document.getElementById("modelDetailFields"),
+        modelDetailCommercialName: document.getElementById(
+            "modelDetailCommercialName",
         ),
-        modelDetailTypeValue: document.getElementById("modelDetailTypeValue"),
-        modelDetailInternalModelValue: document.getElementById(
-            "modelDetailInternalModelValue",
+        modelDetailInternalModel: document.getElementById(
+            "modelDetailInternalModel",
         ),
-        modelDetailEditBtn: document.getElementById("modelDetailEditBtn"),
+        modelDetailSupplierSelect: document.getElementById(
+            "modelDetailSupplierSelect",
+        ),
+        modelDetailDeviceType: document.getElementById("modelDetailDeviceType"),
+        modelDetailDirtyState: document.getElementById("modelDetailDirtyState"),
+        modelDetailSaveBtn: document.getElementById("modelDetailSaveBtn"),
+        modelDetailResetBtn: document.getElementById("modelDetailResetBtn"),
+        modelDetailDeleteHint: document.getElementById("modelDetailDeleteHint"),
         modelDetailDeleteBtn: document.getElementById("modelDetailDeleteBtn"),
         capabilityTitle: document.getElementById("capabilityTitle"),
         capabilitySubtitle: document.getElementById("capabilitySubtitle"),

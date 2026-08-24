@@ -97,11 +97,11 @@ ob_start();
                                     <table class="table table-sm align-middle table-hover">
                                         <thead>
                                             <tr>
-                                                <th>Imagem</th>
+                                                <th></th>
+                                                <th>Modelo</th>
                                                 <th>Fornecedor</th>
-                                                <th>Nome comercial</th>
-                                                <th>Modelo interno</th>
                                                 <th>Tipo</th>
+                                                <th></th>
                                             </tr>
                                         </thead>
                                         <tbody id="modelListBody"></tbody>
@@ -164,7 +164,42 @@ ob_start();
                                 <div class="d-flex align-items-center gap-2 mb-3">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-action="backToModelList"><?= icon('fa-arrow-left', 'me-1') ?>Voltar</button>
                                 </div>
-                                <div class="row g-3 mb-3">
+                                <?php
+                                /**
+                                 * O que se lê é o que se edita.
+                                 *
+                                 * Fornecedor, tipo e modelo interno estavam escritos como
+                                 * texto, com um botão «Editar» ao lado para os poder mudar
+                                 * — três campos de um formulário a fingir que eram um
+                                 * resumo. O «Guardar» aparece quando algum muda.
+                                 */
+                                ?>
+                                <div class="row g-4 mb-4">
+                                    <div class="col-lg-8" id="modelDetailFields">
+                                        <div class="mb-3">
+                                            <label for="modelDetailCommercialName" class="section-label d-block mb-1">Nome comercial</label>
+                                            <input type="text" class="form-control fw-semibold" id="modelDetailCommercialName">
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label for="modelDetailSupplierSelect" class="section-label d-block mb-1">Fornecedor</label>
+                                                <select class="form-select" id="modelDetailSupplierSelect"></select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="modelDetailDeviceType" class="section-label d-block mb-1">Tipo</label>
+                                                <select class="form-select" id="modelDetailDeviceType"></select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label for="modelDetailInternalModel" class="section-label d-block mb-1">Modelo interno</label>
+                                                <input type="text" class="form-control" id="modelDetailInternalModel">
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 mt-3">
+                                            <span class="config-state config-state-secondary" id="modelDetailDirtyState"><span class="config-state-dot"></span>Sem alterações</span>
+                                            <button type="button" class="btn btn-primary btn-sm d-none" id="modelDetailSaveBtn"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="modelDetailResetBtn">Descartar</button>
+                                        </div>
+                                    </div>
                                     <div class="col-lg-4">
                                         <div id="modelDetailImage" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-3 h-100">
                                             <div class="text-center text-secondary w-100">
@@ -173,25 +208,10 @@ ob_start();
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-lg-8">
-                                        <div class="border rounded bg-body-tertiary p-3 h-100">
-                                            <h3 class="h5 mb-0" id="modelDetailTitle"></h3>
-                                            <div class="small text-secondary mb-3" id="modelDetailSupplier"></div>
-                                            <div class="vstack gap-1 small" id="modelDetailInfo">
-                                                <div>Fornecedor: <strong id="modelDetailSupplierValue"></strong></div>
-                                                <div>Tipo: <strong id="modelDetailTypeValue"></strong></div>
-                                                <div>Modelo interno: <strong id="modelDetailInternalModelValue"></strong></div>
-                                            </div>
-                                            <div class="d-flex gap-2 mt-3">
-                                                <button type="button" class="btn btn-outline-primary btn-sm" id="modelDetailEditBtn"><?= icon('fa-pen', 'me-1') ?>Editar</button>
-                                                <button type="button" class="btn btn-outline-danger btn-sm" id="modelDetailDeleteBtn"><?= icon('fa-trash', 'me-1') ?>Apagar</button>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 border-top pt-4">
                                     <div>
-                                        <h2 class="h5 mb-1" id="capabilityTitle">Capacidades</h2>
+                                        <div class="section-label mb-1" id="capabilityTitle">Capacidades</div>
                                         <div class="small text-secondary" id="capabilitySubtitle"></div>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
@@ -201,6 +221,21 @@ ob_start();
                                 </div>
                                 <div id="capabilitySectionNav" class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Secções de capacidade"></div>
                                 <div id="capabilityGroups"></div>
+                                <?php
+                                /**
+                                 * Apagar sai do cabeçalho. Estava no mesmo grupo do
+                                 * «Editar», do mesmo tamanho e a 8px da acção mais usada.
+                                 * É o último parágrafo do painel, com a consequência
+                                 * escrita ao lado.
+                                 */
+                                ?>
+                                <div class="border-top mt-4 pt-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                                    <div>
+                                        <div class="fw-semibold">Apagar este modelo</div>
+                                        <div class="small text-secondary" id="modelDetailDeleteHint">Os dispositivos que o usam ficam sem template de capacidades.</div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm row-action row-action-danger flex-shrink-0" id="modelDetailDeleteBtn"><?= icon('fa-trash', 'me-1') ?>Apagar modelo</button>
+                                </div>
                             </div>
                         </div>
                     </div>
