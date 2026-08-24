@@ -241,44 +241,68 @@ ob_start();
                     </div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCapabilitiesPane" role="tabpanel" aria-labelledby="settingsCapabilitiesTabBtn">
-                    <div class="border rounded bg-body-tertiary p-3 mb-3">
-                        <div class="form-label">Tipo de dispositivo</div>
-                        <div id="capabilityDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
-                        <div class="mt-3">
-                            <div class="form-label d-flex align-items-center gap-2">
-                                <span>Fornecedor</span>
-                                <span id="capabilitySupplierClear" class="small d-none">
-                                    <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" data-action="clearCapabilitySupplier">Limpar filtro</button>
-                                </span>
+                    <?php
+                    /**
+                     * Os três painéis empilhados faziam três trabalhos diferentes —
+                     * filtrar, descobrir e ler o catálogo — todos com a mesma moldura
+                     * cinzenta e sem hierarquia entre eles. O cabeçalho e o padrão de
+                     * filtro dão o primeiro; a descoberta ganha faixa própria porque é
+                     * uma acção, não um painel de leitura.
+                     */
+                    ?>
+                    <div class="mb-3">
+                        <div class="fw-semibold">Capacidades</div>
+                        <div class="small text-secondary" id="capabilitySupplierSummary"></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm flex-grow-1">
+                            <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
+                            <input id="capabilityCatalogSearch" type="search" class="form-control" placeholder="Procurar capacidade ou chave">
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 flex-shrink-0" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#capabilityFiltersCollapse" aria-controls="capabilityFiltersCollapse">
+                            <?= icon('fa-sliders') ?>Filtros
+                            <span id="capabilityFilterCount" class="badge rounded-pill text-bg-primary d-none"></span>
+                        </button>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                        <div id="capabilityActiveFilters" class="d-flex flex-wrap gap-2"></div>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none d-none" id="capabilitySupplierClear" data-action="clearCapabilitySupplier">Limpar</button>
+                    </div>
+                    <div class="collapse" id="capabilityFiltersCollapse">
+                        <div class="row g-3 pt-3">
+                            <div class="col-md-6">
+                                <div class="section-label mb-1">Tipo de dispositivo</div>
+                                <div id="capabilityDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
                             </div>
-                            <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
-                            <div id="capabilitySupplierSummary" class="small text-secondary mt-2"></div>
+                            <div class="col-md-6">
+                                <div class="section-label mb-1">Fornecedor</div>
+                                <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="border rounded bg-body-tertiary p-3 mb-3">
+                    <div class="border border-secondary-subtle rounded-3 p-3 my-3">
                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                             <div>
-                                <div class="form-label mb-1">Descoberta guiada</div>
-                                <div id="discoveryModelSummary" class="small text-secondary">Selecione um modelo para gerar uma proposta a partir de um dispositivo online.</div>
+                                <div class="fw-semibold">Descoberta guiada</div>
+                                <div id="discoveryModelSummary" class="small text-secondary" style="max-width:56ch">Selecione um modelo para gerar uma proposta a partir de um dispositivo online.</div>
                             </div>
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="discoveryRefreshDevicesBtn">Atualizar dispositivos</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm row-action flex-shrink-0" id="discoveryRefreshDevicesBtn">Atualizar dispositivos</button>
                         </div>
-                        <div class="row g-3 mt-2">
-                            <div class="col-md-6">
-                                <label for="discoveryDeviceSelect" class="form-label small">Dispositivo online</label>
+                        <div class="d-flex align-items-end gap-2 flex-wrap mt-3">
+                            <div style="min-width:240px;flex:1">
+                                <label for="discoveryDeviceSelect" class="section-label d-block mb-1">Dispositivo online</label>
                                 <select id="discoveryDeviceSelect" class="form-select form-select-sm">
                                     <option value="">Sem dispositivos disponíveis</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 d-flex align-items-end justify-content-md-end gap-2">
-                                <button type="button" class="btn btn-primary btn-sm" id="discoveryGenerateBtn">Gerar proposta</button>
-                                <button type="button" class="btn btn-success btn-sm" id="discoveryApplyBtn" disabled>Aplicar</button>
-                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" id="discoveryGenerateBtn">Gerar proposta</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm row-action" id="discoveryApplyBtn" disabled>Aplicar</button>
                         </div>
                         <div id="discoveryStatus" class="small text-secondary mt-3"></div>
                         <div id="discoveryEvidence" class="vstack gap-2 mt-3"></div>
                     </div>
-                    <div id="capabilityCatalogEmpty" class="text-secondary border rounded bg-body-tertiary p-4 text-center d-none">
+                    <div id="capabilityCatalogEmpty" class="text-secondary p-4 text-center d-none">
                         <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
                         <div class="mt-2">Sem capacidades generalizadas definidas para este tipo de dispositivo.</div>
                     </div>

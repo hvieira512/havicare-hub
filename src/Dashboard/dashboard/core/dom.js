@@ -214,6 +214,13 @@ export function cacheElements() {
         capabilitySupplierClear: document.getElementById(
             "capabilitySupplierClear",
         ),
+        capabilityActiveFilters: document.getElementById(
+            "capabilityActiveFilters",
+        ),
+        capabilityFilterCount: document.getElementById("capabilityFilterCount"),
+        capabilityCatalogSearch: document.getElementById(
+            "capabilityCatalogSearch",
+        ),
         discoveryModelSummary: document.getElementById("discoveryModelSummary"),
         discoveryDeviceSelect: document.getElementById("discoveryDeviceSelect"),
         discoveryRefreshDevicesBtn: document.getElementById(

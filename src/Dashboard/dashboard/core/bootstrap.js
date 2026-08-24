@@ -193,6 +193,7 @@ import {
     syncModelDetailDirty,
     resetModelDetailFields,
     handleCapabilitySupplierClick,
+    handleCapabilityCatalogSearch,
     handleDiscoveryDeviceChange,
     generateDiscoveryPreview,
     loadSettingsCapabilitiesSection,
@@ -363,6 +364,14 @@ function bindEvents() {
         "click",
         () => selectCapabilitySupplier(""),
     );
+    els.capabilityCatalogSearch?.addEventListener(
+        "input",
+        handleCapabilityCatalogSearch,
+    );
+    els.capabilityActiveFilters?.addEventListener("click", (event) => {
+        if (!event.target.closest('[data-action="removeCapabilityFilter"]')) return;
+        selectCapabilitySupplier("");
+    });
     els.discoveryDeviceSelect?.addEventListener(
         "change",
         handleDiscoveryDeviceChange,

@@ -12,7 +12,7 @@ import {
 } from "../api/index.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {modelImageHtml, renderButtonGroup} from "../renderers.js";
+import {filterChips, modelImageHtml, renderButtonGroup} from "../renderers.js";
 import {
     capabilitiesGroupedBySection,
     capabilityLabelByKey,
@@ -179,7 +179,8 @@ function renderCapabilitiesCatalogSection() {
                     hasSupplierFilter
                         ? enabledSet.has(entry.key)
                         : true,
-                );
+                )
+                .filter((entry) => matchesCapabilityQuery(entry));
             if (visibleEntries.length === 0) {
                 return null;
             }
@@ -191,43 +192,60 @@ function renderCapabilitiesCatalogSection() {
         "d-none",
         visibleSections.length > 0,
     );
+    // Cada capacidade tinha ate quatro badges em quatro cores -- trinta e duas pastilhas
+    // numa lista de dezasseis, para responder a perguntas binarias. As mesmas respostas
+    // em colunas: o que ha para comparar entre capacidades le-se em coluna, nao em
+    // pastilhas dentro de cada linha.
     els.capabilityCatalogViewer.innerHTML = visibleSections
         .map(
-            ({ section, label, entries }) => `
-        <section class="border rounded-3 p-3">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            ({ label, entries }) => `
+        <section>
+            <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="section-label">${esc(label)}</div>
-                <span class="small text-secondary">${entries.length} capacidades</span>
+                <span class="small text-secondary">${entries.length} ${entries.length === 1 ? "capacidade" : "capacidades"}</span>
             </div>
-            <div class="vstack gap-2">
+            <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Capacidade</th>
+                        <th style="width:170px">Chave</th>
+                        <th style="width:120px">Tipo</th>
+                        <th style="width:110px">Configurável</th>
+                        <th style="width:110px">Solicitável</th>
+                    </tr>
+                </thead>
+                <tbody>
                 ${entries
-                    .map((entry) => {
-                        const supported = hasSupplierFilter
-                            ? enabledSet.has(entry.key)
-                            : true;
-                        return `
-                    <div class="border rounded px-3 py-2 bg-white">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div>
-                                <div class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</div>
-                                <div class="small text-secondary">${esc(entry.key)}</div>
-                            </div>
-                            ${hasSupplierFilter ? `<span class="badge ${supported ? "text-bg-success" : "text-bg-secondary"} mt-1 flex-shrink-0">${supported ? "suportado" : "não suportado"}</span>` : ""}
-                        </div>
-                        <div class="d-flex flex-wrap gap-2 mt-2">
-                            <span class="badge text-bg-${entry.isTelemetry ? "info" : (entry.isEvent ? "warning" : "secondary")}">${entry.isTelemetry ? "telemetria" : (entry.isEvent ? "evento" : "configuração")}</span>
-                            ${entry.isConfigurable ? `<span class="badge text-bg-primary">configurável</span>` : ""}
-                            <span class="badge text-bg-${entry.isRequestable ? "success" : "secondary"}">${entry.isRequestable ? "solicitável" : "não solicitável"}</span>
-                        </div>
-                    </div>
-                `;
-                    })
+                    .map((entry) => `
+                    <tr>
+                        <td class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</td>
+                        <td class="section-label" style="letter-spacing:0;text-transform:none">${esc(entry.key)}</td>
+                        <td class="text-secondary">${entry.isTelemetry ? "Telemetria" : (entry.isEvent ? "Evento" : "Configuração")}</td>
+                        <td>${entry.isConfigurable ? '<i class="fa-solid fa-check"></i>' : '<span class="text-secondary">—</span>'}</td>
+                        <td>${entry.isRequestable ? '<i class="fa-solid fa-check"></i>' : '<span class="text-secondary">—</span>'}</td>
+                    </tr>`)
                     .join("")}
+                </tbody>
+            </table>
             </div>
         </section>
     `,
         )
         .join("");
+}
+
+function handleCapabilityCatalogSearch() {
+    state.settingsModal.capabilityQuery = els.capabilityCatalogSearch.value;
+    renderCapabilitiesCatalogSection();
+}
+
+/** A pesquisa do catalogo: compara com o nome e com a chave, que e o que a linha mostra. */
+function matchesCapabilityQuery(entry) {
+    const needle = String(state.settingsModal.capabilityQuery || "").trim().toLowerCase();
+    if (needle === "") return true;
+    const label = String(entry.label || humanizeCapabilityKey(entry.key)).toLowerCase();
+    return label.includes(needle) || String(entry.key).toLowerCase().includes(needle);
 }
 
 function renderCapabilitySupplierButtons() {
@@ -264,13 +282,26 @@ function updateCapabilitySupplierSummary(hasFilter) {
 
     els.capabilitySupplierClear.classList.toggle("d-none", !supplierId);
 
+    const total = state.settingsModal.capabilityCatalog.length;
     if (supplier) {
-        const total = state.settingsModal.capabilityCatalog.length;
         const supported = state.settingsModal.capabilityTemplateEnabledKeys.length;
         els.capabilitySupplierSummary.textContent =
-            `A mostrar capacidades suportadas por ${supplier.name}: ${supported} de ${total} capacidades.`;
+            `${supported} de ${total} capacidades suportadas por ${supplier.name}.`;
     } else {
-        els.capabilitySupplierSummary.textContent = "";
+        els.capabilitySupplierSummary.textContent =
+            `${total} ${total === 1 ? "capacidade" : "capacidades"} no tipo escolhido.`;
+    }
+
+    // O filtro activo le-se na pastilha, e o contador no botao diz que ha um sem os
+    // botoes de fornecedor estarem abertos.
+    if (els.capabilityActiveFilters) {
+        els.capabilityActiveFilters.innerHTML = supplier
+            ? filterChips([{key: "supplier", label: String(supplier.name)}], "removeCapabilityFilter")
+            : "";
+    }
+    if (els.capabilityFilterCount) {
+        els.capabilityFilterCount.textContent = supplier ? "1" : "";
+        els.capabilityFilterCount.classList.toggle("d-none", !supplier);
     }
 }
 
@@ -1038,6 +1069,7 @@ export {
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
     handleCapabilitySupplierClick,
+    handleCapabilityCatalogSearch,
     handleDiscoveryDeviceChange,
     loadDiscoveryDevices,
     generateDiscoveryPreview,
