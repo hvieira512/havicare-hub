@@ -131,12 +131,19 @@ require_once __DIR__ . '/components/modal.php';
                                 <div class="d-flex align-items-start gap-3 mb-4">
                                     <div id="selectedDevicePreview" class="selected-device-preview"></div>
                                     <div class="min-width-0 flex-grow-1 lh-1">
-                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
-                                            <h1 class="h4 mb-0 text-break" id="selectedDeviceTitle"></h1>
-                                            <span id="selectedDeviceBadge" class="badge"></span>
-                                            <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
+                                        <?php
+                                        /**
+                                         * O estado primeiro, o identificador depois: num
+                                         * painel de operações a primeira pergunta sobre um
+                                         * dispositivo é se está ligado.
+                                         */
+                                        ?>
+                                        <div class="mb-1"><span id="selectedDeviceBadge" class="config-state"></span></div>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                            <h1 class="h4 mb-0 text-break tabular-nums" id="selectedDeviceTitle"></h1>
                                         </div>
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
+                                        <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary row-action mt-2" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
                                     </div>
                                 </div>
                                 <dl id="selectedDeviceFacts" class="selected-device-facts row g-3 mb-0"></dl>

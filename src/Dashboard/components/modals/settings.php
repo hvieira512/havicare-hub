@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 ob_start();
 ?>
+<?php
+/**
+ * Menu à esquerda em ecrã largo, tira de separadores com scroll lateral em telefone.
+ *
+ * A coluna vertical não cabe a 375px: as pills esparramavam-se numa linha larga e o
+ * painel saía do ecrã. Cinco separadores não encolhem para caber — deslizam, e o
+ * quinto cortado na margem é o sinal de que há mais.
+ */
+?>
 <div class="settings-modal-shell d-flex flex-column h-100">
     <div class="row g-4 h-100 align-items-lg-center">
-        <div class="col-lg-2 d-flex align-items-lg-center justify-content-center justify-content-lg-center h-100">
-            <div class="nav nav-pills flex-row flex-lg-column justify-content-center justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
+        <div class="col-12 col-lg-2 d-flex align-items-lg-center h-100">
+            <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
                 <button class="nav-link active text-start" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores</button>
                 <button class="nav-link text-start" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos</button>
                 <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
@@ -15,7 +24,7 @@ ob_start();
                 <button class="nav-link text-start" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API</button>
             </div>
         </div>
-        <div class="col-lg-10 d-flex flex-column h-100">
+        <div class="col-12 col-lg-10 d-flex flex-column h-100">
             <div class="tab-content flex-grow-1">
                 <div class="tab-pane fade show active h-100" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
                     <?php

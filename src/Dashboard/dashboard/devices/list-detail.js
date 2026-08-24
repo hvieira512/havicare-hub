@@ -239,7 +239,7 @@ function renderDeviceSelector() {
     const tableMarkup = state.summary.devices.length
         ? `
         <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
+            <table class="table table-sm align-middle mb-0 device-list-table">
                 <thead>
                     <tr>
                         <th></th>
@@ -262,21 +262,21 @@ function renderDeviceSelector() {
                                 : '<i class="fa-solid fa-microchip fa-xl text-secondary" style="width:40px"></i>';
                             return `
                             <tr${isSelected ? ' class="table-primary"' : ""} data-imei="${esc(device.imei)}" data-action="select" role="button" tabindex="0">
-                                <td style="width:52px">${imageMarkup}</td>
-                                <td>
+                                <td data-cell="thumb" style="width:52px">${imageMarkup}</td>
+                                <td data-cell="state">
                                     <span class="config-state ${device.online ? "config-state-success" : "config-state-secondary"}">
                                         <span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}
                                     </span>
                                 </td>
-                                <td class="fw-semibold text-break tabular-nums">${esc(device.imei)}</td>
-                                <td>${esc(deviceTypeLabel(normalizeDeviceType(device.deviceType)))}</td>
-                                <td>
+                                <td data-cell="imei" class="fw-semibold text-break tabular-nums">${esc(device.imei)}</td>
+                                <td data-cell="type">${esc(deviceTypeLabel(normalizeDeviceType(device.deviceType)))}</td>
+                                <td data-cell="model">
                                     ${esc(device.model || "-")}
                                     ${device.supplier ? `<span class="section-label d-block">${esc(device.supplier)}</span>` : ""}
                                 </td>
-                                <td>${esc(companyLabel(device.company))}</td>
-                                <td class="tabular-nums">${esc(licenseDisplayLabel(device.licenseId))}</td>
-                                <td class="text-break tabular-nums">${esc(device.simNumber || "-")}</td>
+                                <td data-cell="company">${esc(companyLabel(device.company))}</td>
+                                <td data-cell="license" class="tabular-nums">${esc(licenseDisplayLabel(device.licenseId))}</td>
+                                <td data-cell="sim" class="text-break tabular-nums">${esc(device.simNumber || "-")}</td>
                             </tr>`;
                         })
                         .join("")}

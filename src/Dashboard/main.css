@@ -230,6 +230,96 @@ body {
     .telemetry-card-action { transition: none; }
 }
 
+/* Nenhuma tabela de oito colunas sobrevive a 375px: o IMEI quebrava um digito por linha.
+   A linha passa a duas alturas -- estado e identificador em cima, modelo e empresa em
+   baixo -- e as colunas que nao cabem desaparecem em vez de encolherem. O tipo le-se na
+   miniatura e a licenca e do detalhe, nao da escolha. */
+@media (max-width: 767.98px) {
+    .device-list-table thead {
+        display: none;
+    }
+
+    .device-list-table tbody,
+    .device-list-table tr,
+    .device-list-table td {
+        display: block;
+    }
+
+    .device-list-table tr {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        grid-template-areas:
+            "thumb imei  state"
+            "thumb model company";
+        align-items: center;
+        gap: .125rem .625rem;
+        padding: .625rem .25rem;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+    }
+
+    .device-list-table td {
+        padding: 0;
+        border: 0;
+        min-width: 0;
+        background-color: transparent;
+        box-shadow: none;
+    }
+
+    /* O realce da linha escolhida pinta a linha e nao cada celula: com o `tr` a ser uma
+       grelha, o fundo por celula deixava lacunas entre elas. */
+    .device-list-table tr.table-primary {
+        background-color: var(--bs-table-bg);
+        border-radius: .375rem;
+    }
+
+    .device-list-table td[data-cell="thumb"] {
+        grid-area: thumb;
+        width: auto !important;
+    }
+
+    .device-list-table td[data-cell="imei"] { grid-area: imei; }
+    .device-list-table td[data-cell="state"] { grid-area: state; }
+    .device-list-table td[data-cell="model"] { grid-area: model; font-size: .8125rem; }
+
+    .device-list-table td[data-cell="company"] {
+        grid-area: company;
+        font-size: .8125rem;
+        color: var(--bs-secondary-color);
+        text-align: right;
+    }
+
+    .device-list-table td[data-cell="type"],
+    .device-list-table td[data-cell="license"],
+    .device-list-table td[data-cell="sim"] {
+        display: none;
+    }
+
+    .device-list-table td[data-cell="thumb"] img,
+    .device-list-table td[data-cell="thumb"] i {
+        width: 36px !important;
+        height: 36px !important;
+    }
+}
+
+/* A 375px, dois mosaicos por linha nao deixam espaco para o icone e o nome lado a lado:
+   "Oxigénio no sangue" truncava em "Oxigénio no sa". O icone sobe para cima do nome, e o
+   nome passa a poder quebrar em duas linhas em vez de ser cortado. */
+@media (max-width: 575.98px) {
+    .telemetry-card-head {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: .5rem !important;
+    }
+
+    .telemetry-card-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        font-size: .8125rem;
+        line-height: 1.3;
+    }
+}
+
 /* O icone de um cartao de telemetria. Era pintado com a cor contextual da categoria --
    quatro cores num painel, em contorno, texto e fundo -- e a categoria le-se no icone,
    nao na cor. Cinzento, para a cor ficar disponivel para o estado. */
@@ -750,6 +840,36 @@ body {
 
     .settings-modal-shell .nav-pills {
         width: 100%;
+    }
+}
+
+/* Abaixo do ecra largo, o menu das definicoes e uma tira que desliza. O `align-items`
+   centrado da linha esticava as pills a altura toda da coluna, o que dava um bloco navy
+   de 700px em telefone. */
+@media (max-width: 991.98px) {
+    .settings-modal-shell>.row {
+        align-items: flex-start !important;
+        height: auto !important;
+    }
+
+    /* Sem isto a coluna do menu ocupa a altura toda e as pills esticam com ela: dava um
+       bloco de 700px com o nome do separador centrado no meio do nada. */
+    .settings-modal-shell>.row>[class*="col-"] {
+        height: auto !important;
+    }
+
+    .settings-modal-nav {
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: .375rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        scrollbar-width: thin;
+    }
+
+    .settings-modal-nav .nav-link {
+        flex: none;
+        white-space: nowrap;
     }
 }
 

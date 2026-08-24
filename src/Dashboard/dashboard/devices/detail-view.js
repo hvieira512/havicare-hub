@@ -208,7 +208,13 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     els.selectedDevicePreview.innerHTML = image
         ? `<img src="${esc(image)}" class="object-fit-contain" alt="${esc(model || device.imei)}" style="max-width:56px;max-height:56px;">`
         : '<i class="fa-solid fa-microchip fa-xl text-secondary"></i>';
-    els.selectedDeviceTitle.innerHTML = `<span class="rounded-circle ${device.online ? "bg-success" : "bg-danger"} d-inline-block flex-shrink-0 me-2" style="width:.75rem;height:.75rem;"></span>${esc(device.imei)}`;
+    els.selectedDeviceTitle.textContent = device.imei;
+    // O estado e a primeira coisa que se pergunta sobre um dispositivo, e vem antes do
+    // identificador. Era um ponto colorido sem palavra -- e o vermelho de "desligado"
+    // competia com o vermelho de erro no resto do ecra.
+    els.selectedDeviceBadge.className = `config-state ${device.online ? "config-state-success" : "config-state-secondary"}`;
+    els.selectedDeviceBadge.innerHTML =
+        `<span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}`;
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
     disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts

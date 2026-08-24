@@ -375,15 +375,18 @@ export function telemetryCard({
           + `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
         : "";
 
+    // A 375px, um mosaico por linha desperdica metade da largura em nomes de duas
+    // palavras. Dois por linha, e largura toda so para os que trazem corpo (span 12).
+    const mobileColumn = span >= 12 ? "col-12" : "col-6";
     return `
-        <div class="col-12 col-md-${span}">
+        <div class="${mobileColumn} col-md-${span}">
         <${tag}${attrs}>
         <div class="card-body">
-        <div class="d-flex align-items-center gap-3 min-w-0">
+        <div class="telemetry-card-head d-flex align-items-center gap-3 min-w-0">
         <div class="telemetry-card-icon"${tip}>
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
-        <div class="fw-semibold text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
+        <div class="telemetry-card-title fw-semibold text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
         ${state}
         </div>
         ${body}
