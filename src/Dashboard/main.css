@@ -129,6 +129,31 @@ body {
     font-family: 'Poppins', sans-serif;
 }
 
+/* ===== primitivas do sistema ===== */
+
+/* Uma elevacao so: a pagina e cinzenta, o cartao e branco, e dentro do cartao separa-se
+   com linha e espaco. O contorno do cartao e mais claro que o das linhas interiores, para
+   a moldura exterior nao competir com as divisorias que estruturam o conteudo. */
+.card {
+    --bs-card-border-color: #e9ecef;
+}
+
+/* A etiqueta em maiusculas e o unico cabecalho de seccao dentro de um cartao: o titulo do
+   ecra nao pode competir com um h5 em cada bloco. Existia em quatro variantes -- os factos
+   do dispositivo, o nome do passo do assistente, a chave da badge da trilha e a pastilha de
+   estado -- com tres tamanhos e tres espacamentos diferentes. E a mesma coisa, e passa a
+   ter uma medida so. */
+.section-label,
+.selected-device-facts dt,
+.wizard-steps .wizard-step-name,
+.wizard-trail .wizard-badge-key {
+    font-size: .6875rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
 .dashboard-login {
     background:
         radial-gradient(circle at 15% 15%, rgba(11, 22, 63, .12), transparent 32rem),
@@ -536,17 +561,11 @@ body {
 }
 
 .selected-device-facts dt {
-    color: var(--bs-secondary-color);
-    font-size: .8rem;
-    font-weight: 600;
     margin-bottom: .25rem;
-    text-transform: uppercase;
-    letter-spacing: .04em;
 }
 
 .selected-device-facts dd {
     margin-bottom: 0;
-    font-size: .95rem;
 }
 
 .navbar-brand img {
@@ -655,11 +674,7 @@ body {
 }
 
 .wizard-steps .wizard-step-name {
-    font-size: .65rem;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    font-weight: 600;
-    color: var(--bs-secondary-color);
+    white-space: nowrap;
 }
 
 .wizard-steps .wizard-step.is-now .wizard-step-name {
@@ -694,11 +709,7 @@ body {
 }
 
 .wizard-trail .wizard-badge-key {
-    font-size: .625rem;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--bs-secondary-color);
-    font-weight: 600;
+    white-space: nowrap;
 }
 
 .wizard-trail .wizard-trail-sep {
@@ -866,7 +877,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: .35rem;
-    font-size: .65rem;
+    font-size: .6875rem;
     font-weight: 600;
     letter-spacing: .04em;
     text-transform: uppercase;

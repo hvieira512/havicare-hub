@@ -110,7 +110,7 @@ require_once __DIR__ . '/components/modal.php';
         <main class="container-fluid py-3">
             <div class="row g-3">
                 <aside id="deviceColumn" class="col-12 col-lg-4">
-                    <div class="card shadow-sm h-100">
+                    <div class="card h-100">
                         <div class="card-header">
                             <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                 <span><?= icon('fa-microchip', 'me-2') ?>Dispositivo selecionado</span>
@@ -159,7 +159,7 @@ require_once __DIR__ . '/components/modal.php';
                     </div>
                 </aside>
                 <section id="detailColumn" class="col-12 col-lg-8">
-                    <div class="card shadow-sm">
+                    <div class="card">
                         <div class="card-body">
                             <div id="detailEmptyState" class="text-center text-secondary py-5">
                                 <?= icon('fa-tablet-screen-button', 'fs-1 opacity-25') ?>

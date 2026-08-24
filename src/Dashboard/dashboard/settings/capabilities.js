@@ -32,6 +32,10 @@ import {
     loadSettingsModelsSection,
 } from "./models/index.js";
 
+// A descoberta guiada está por acabar: fica visível e desligada até o caminho de
+// gerar e aplicar a proposta estar pronto de ponta a ponta.
+const DISCOVERY_ENABLED = false;
+
 let els;
 
 async function initSettingsCapabilities(context) {
@@ -189,9 +193,9 @@ function renderCapabilitiesCatalogSection() {
     els.capabilityCatalogViewer.innerHTML = visibleSections
         .map(
             ({ section, label, entries }) => `
-        <section class="border rounded bg-body-tertiary p-3">
+        <section class="border rounded-3 p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h6 mb-0">${esc(label)}</h3>
+                <div class="section-label">${esc(label)}</div>
                 <span class="small text-secondary">${entries.length} capacidades</span>
             </div>
             <div class="vstack gap-2">
@@ -363,6 +367,26 @@ function renderDiscoveryEvidence() {
 
 function renderDiscoverySection() {
     if (!els.discoveryModelSummary || !els.discoveryDeviceSelect || !els.discoveryStatus || !els.discoveryApplyBtn || !els.discoveryGenerateBtn) {
+        return;
+    }
+
+    // A descoberta guiada ainda não está pronta. Os controlos ficam à vista mas
+    // desligados, para se perceber o que vem a seguir em vez de a secção desaparecer.
+    // A guarda vive aqui porque é por esta função que todo o desenho da secção passa.
+    if (!DISCOVERY_ENABLED) {
+        els.discoveryModelSummary.textContent =
+            "Em breve: o hub propõe as capacidades a partir de um dispositivo online, em vez de se escreverem à mão.";
+        els.discoveryDeviceSelect.innerHTML = '<option value="">Em breve</option>';
+        els.discoveryDeviceSelect.disabled = true;
+        els.discoveryGenerateBtn.disabled = true;
+        els.discoveryApplyBtn.disabled = true;
+        if (els.discoveryRefreshDevicesBtn) {
+            els.discoveryRefreshDevicesBtn.disabled = true;
+        }
+        els.discoveryStatus.textContent = "";
+        if (els.discoveryEvidence) {
+            els.discoveryEvidence.innerHTML = "";
+        }
         return;
     }
 
@@ -816,9 +840,9 @@ function renderCapabilitiesSection() {
     const section = sections.find((s) => s.section === activeSection);
     if (section) {
         els.capabilityGroups.innerHTML = `
-        <section class="border rounded bg-body-tertiary p-3">
+        <section class="border rounded-3 p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h6 mb-0">${esc(section.label)}</h3>
+                <div class="section-label">${esc(section.label)}</div>
                 <span class="small text-secondary">${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
             </div>
             <div class="d-flex flex-column gap-2">

@@ -328,11 +328,17 @@ export function renderButtonGroup(
             return `<button type="button" class="btn btn-sm ${value === selected ? "btn-primary" : "btn-outline-primary"}" data-action="${esc(action)}" data-value="${esc(value)}">${esc(label)}</button>`;
         })
         .join("")
-        : '<div class="text-secondary border rounded bg-body-tertiary px-3 py-2 small">Sem opções disponíveis</div>';
+        : '<div class="text-secondary small py-2">Sem opções disponíveis</div>';
 }
 
+/**
+ * O estado vazio de um painel.
+ *
+ * Texto e nao caixa: um painel vazio dentro de um cartao branco ganhava uma segunda
+ * moldura cinzenta a dizer que nao ha nada, e a moldura lia-se como conteudo.
+ */
 export function emptyPanel(text) {
-    return `<div class="text-secondary border rounded bg-body-tertiary p-3">${esc(text)}</div>`;
+    return `<div class="text-secondary py-3">${esc(text)}</div>`;
 }
 
 function commandFeature(command) {

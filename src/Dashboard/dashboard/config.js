@@ -1,4 +1,5 @@
 import { esc, fieldLabel, titleize } from "./format.js";
+import { emptyPanel } from "./renderers.js";
 import { normalizePhoneControl, renderPhoneControl } from "./phone.js";
 import {takePillsInput, takePillsReminderGroup} from "./config/four-p-touch-take-pills.js";
 import {
@@ -549,7 +550,7 @@ export function renderDeviceConfigurationRoot(context) {
         quietWhenEmpty = false,
     } = context;
     if (!protocol) {
-        return emptyConfigurationState(
+        return emptyPanel(
             "Selecione fornecedor e modelo para ver as configurações.",
         );
     }
@@ -560,7 +561,7 @@ export function renderDeviceConfigurationRoot(context) {
         // e mentira sobre o ecra, que tem uma configuracao logo acima.
         return quietWhenEmpty
             ? ""
-            : emptyConfigurationState("Este protocolo não tem configurações suportadas.");
+            : emptyPanel("Este protocolo não tem configurações suportadas.");
     }
 
     const rowsByKey = configurations;
@@ -683,7 +684,7 @@ export function renderConfigSection(
     ].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
+        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
             <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
                 <div>
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -858,10 +859,6 @@ function renderConfigurationDeliveryNotice(meta, delivery) {
             <i class="fa-solid fa-circle-info me-2"></i>${esc(meta.message)}
             ${errorMessage ? `<span class="d-block mt-1">${esc(errorMessage)}</span>` : ""}
         </div>`;
-}
-
-function emptyConfigurationState(text) {
-    return `<div class="text-secondary border rounded bg-body-tertiary p-3">${esc(text)}</div>`;
 }
 
 function configHelp(entry) {

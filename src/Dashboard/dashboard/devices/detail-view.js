@@ -543,10 +543,10 @@ function renderRequestCards(groups, telemetry = [], events = []) {
 function renderRequestCardGroup(group, telemetry = []) {
     return `
         <div class="col-12">
-        <div class="border rounded bg-body-tertiary p-3">
+        <div class="border rounded-3 p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="fw-semibold">${esc(group.label || "Pedidos")}</div>
-        <span class="badge text-bg-secondary">${group.cards.length}</span>
+        <div class="section-label">${esc(group.label || "Pedidos")}</div>
+        <span class="small text-secondary">${group.cards.length}</span>
         </div>
         <div class="row g-3">
         ${group.cards
