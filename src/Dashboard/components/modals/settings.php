@@ -18,14 +18,28 @@ ob_start();
         <div class="col-lg-10 d-flex flex-column h-100">
             <div class="tab-content flex-grow-1">
                 <div class="tab-pane fade show active h-100" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
-                    <div class="small text-secondary mb-3 p-3 border rounded bg-body-tertiary">Os fornecedores são definidos em código. Não é possível adicionar ou remover fornecedores através do painel.</div>
+                    <?php
+                    /**
+                     * A regra mais importante do separador estava no fim, numa caixa
+                     * cinzenta do mesmo tom do fundo: os fornecedores vêm do código e não
+                     * se criam aqui. Sobe para subtítulo, que é onde se lê antes de se
+                     * procurar o botão de criar que não existe.
+                     */
+                    ?>
+                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+                        <div>
+                            <div class="fw-semibold">Fornecedores</div>
+                            <div class="small text-secondary" style="max-width:52ch">Definidos em código. Não se acrescentam nem removem pelo painel — aparecem quando um modelo novo os traz.</div>
+                        </div>
+                        <span class="config-state config-state-secondary flex-shrink-0"><span class="config-state-dot"></span>Só leitura</span>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
+                                    <th>Estado</th>
                                     <th>Nome</th>
                                     <th>Modelos</th>
-                                    <th>Estado</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -236,7 +250,24 @@ ob_start();
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
-                    <form id="companyForm" class="row g-2 mb-3 p-3 border rounded bg-body-tertiary">
+                    <?php
+                    /**
+                     * Uma licença pertence a uma empresa, e as duas tabelas estavam lado a
+                     * lado com o mesmo peso — a relação só se percebia porque o formulário
+                     * da licença tinha um select de empresa. Cada nível ganha o seu
+                     * cabeçalho e o seu primário, e os formulários saem da lista.
+                     */
+                    ?>
+                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+                        <div>
+                            <div class="fw-semibold">Empresas</div>
+                            <div class="small text-secondary" id="companiesTabSummary"></div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn"
+                            data-bs-toggle="collapse" data-bs-target="#companyFormCollapse" aria-controls="companyFormCollapse"><?= icon('fa-plus', 'me-1') ?>Nova empresa</button>
+                    </div>
+                    <div class="collapse mb-3" id="companyFormCollapse">
+                    <form id="companyForm" class="row g-2 p-3 border rounded-3">
                         <input type="hidden" id="companyId">
                         <div class="col-md-6">
                             <input type="text" class="form-control form-control-sm" id="companyName" placeholder="Nome da empresa" required>
@@ -246,6 +277,7 @@ ob_start();
                             <button id="saveCompanyBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
                         </div>
                     </form>
+                    </div>
                     <div class="table-responsive mb-4">
                         <table class="table table-sm align-middle">
                             <thead>
@@ -259,8 +291,16 @@ ob_start();
                         </table>
                     </div>
                     <?= pagination_component('settingsCompany') ?>
-                    <h3 class="h6 mb-3">Licenças</h3>
-                    <form id="licenseForm" class="row g-2 mb-3 p-3 border rounded bg-body-tertiary">
+                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap border-top pt-4 mb-3">
+                        <div>
+                            <div class="fw-semibold">Licenças</div>
+                            <div class="small text-secondary">Cada licença pertence a uma empresa e é o âmbito de acesso dos utilizadores API.</div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newLicenseBtn"
+                            data-bs-toggle="collapse" data-bs-target="#licenseFormCollapse" aria-controls="licenseFormCollapse"><?= icon('fa-plus', 'me-1') ?>Nova licença</button>
+                    </div>
+                    <div class="collapse mb-3" id="licenseFormCollapse">
+                    <form id="licenseForm" class="row g-2 p-3 border rounded-3">
                         <input type="hidden" id="licenseId">
                         <div class="col-md-4">
                             <select class="form-select form-select-sm" id="licenseCompanySelect">
@@ -278,6 +318,7 @@ ob_start();
                             <button id="saveLicenseBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
                         </div>
                     </form>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>
@@ -294,7 +335,23 @@ ob_start();
                     <?= pagination_component('settingsLicenses') ?>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
-                    <form id="apiUserForm" class="row g-3 mb-4 p-3 border rounded bg-body-tertiary">
+                    <?php
+                    /**
+                     * Criar sai da lista. Cinco campos abertos no topo — incluindo uma
+                     * password — eram o primeiro que se via ao abrir um separador que se
+                     * vem ler. O formulário aparece quando se pede.
+                     */
+                    ?>
+                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
+                        <div>
+                            <div class="fw-semibold">Utilizadores API</div>
+                            <div class="small text-secondary" id="apiUsersTabSummary"></div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn"
+                            data-bs-toggle="collapse" data-bs-target="#apiUserFormCollapse" aria-controls="apiUserFormCollapse"><?= icon('fa-plus', 'me-1') ?>Novo utilizador</button>
+                    </div>
+                    <div class="collapse mb-3" id="apiUserFormCollapse">
+                    <form id="apiUserForm" class="row g-3 p-3 border rounded-3">
                         <input type="hidden" id="apiUserId">
                         <div class="col-md-4">
                             <label for="apiUsername" class="form-label">Utilizador</label>
@@ -328,14 +385,15 @@ ob_start();
                             <button id="saveApiUserBtn" type="button" class="btn btn-primary btn-sm flex-fill"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
                         </div>
                     </form>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
+                                    <th>Estado</th>
                                     <th>Utilizador</th>
                                     <th>Perfil</th>
-                                    <th>Empresa / licença</th>
-                                    <th>Estado</th>
+                                    <th>Âmbito</th>
                                     <th></th>
                                 </tr>
                             </thead>

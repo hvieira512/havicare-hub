@@ -138,6 +138,30 @@ body {
     --bs-card-border-color: #e9ecef;
 }
 
+/* As accoes de uma linha de tabela. Eram contornos em amarelo, azul e vermelho na mesma
+   linha -- tres cores de aviso por linha, nenhuma delas a indicar gravidade real. Ficam
+   todas neutras e do mesmo peso; so a destrutiva se pinta, e so quando o rato esta em
+   cima dela, que e quando a gravidade importa. */
+.row-action {
+    --bs-btn-color: var(--bs-secondary-color);
+    --bs-btn-border-color: var(--bs-border-color);
+    --bs-btn-hover-color: var(--bs-body-color);
+    --bs-btn-hover-bg: var(--bs-tertiary-bg);
+    --bs-btn-hover-border-color: var(--bs-border-color);
+    --bs-btn-active-color: var(--bs-body-color);
+    --bs-btn-active-bg: var(--bs-secondary-bg);
+    --bs-btn-active-border-color: var(--bs-border-color);
+}
+
+.row-action-danger {
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--bs-danger);
+    --bs-btn-hover-border-color: var(--bs-danger);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--bs-danger);
+    --bs-btn-active-border-color: var(--bs-danger);
+}
+
 /* Identificadores e valores em coluna alinham digito a digito. Um IMEI de 15 digitos numa
    tabela de vinte linhas le-se por comparacao, e sem isto cada linha comeca noutro sitio. */
 .tabular-nums {

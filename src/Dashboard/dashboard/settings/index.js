@@ -191,11 +191,15 @@ function renderSuppliersSection(suppliers) {
         .map(
             (supplier) => `
         <tr>
-        <td>${esc(supplier.name)}</td>
-        <td>${supplier.model_count}</td>
-        <td><span class="badge ${supplier.enabled ? "text-bg-success" : "text-bg-secondary"}">${supplier.enabled ? "ativo" : "inativo"}</span></td>
         <td>
-        <button class="btn btn-outline-${supplier.enabled ? "warning" : "success"} btn-sm" data-id="${supplier.id}" data-enabled="${supplier.enabled ? "1" : ""}" data-action="toggleSupplier" title="${supplier.enabled ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${supplier.enabled ? "pause" : "play"}"></i></button>
+            <span class="config-state ${supplier.enabled ? "config-state-success" : "config-state-secondary"}">
+                <span class="config-state-dot"></span>${supplier.enabled ? "Ativo" : "Inativo"}
+            </span>
+        </td>
+        <td class="fw-semibold">${esc(supplier.name)}</td>
+        <td class="tabular-nums">${supplier.model_count}</td>
+        <td class="text-end">
+        <button class="btn btn-outline-secondary btn-sm row-action" data-id="${supplier.id}" data-enabled="${supplier.enabled ? "1" : ""}" data-action="toggleSupplier" title="${supplier.enabled ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${supplier.enabled ? "pause" : "play"}"></i></button>
         </td>
         </tr>`,
         )
@@ -253,18 +257,35 @@ async function saveModel() {
 
 function renderApiUsersSection(users) {
     resetApiUserForm();
+    const total = (users || []).length;
+    const admins = (users || []).filter((user) => user.role === "hub_admin").length;
+    if (els.apiUsersTabSummary) {
+        els.apiUsersTabSummary.textContent = total === 0
+            ? "Nenhum utilizador"
+            : `${total} ${total === 1 ? "utilizador" : "utilizadores"}`
+              + (admins ? ` · ${admins} com acesso a todas as licenças` : "");
+    }
     els.apiUserListBody.innerHTML = (users || [])
         .map(
             (user) => `
         <tr>
-        <td>${esc(user.username)}</td>
-        <td><span class="badge text-bg-light border">${esc(apiRoleLabel(user.role))}</span></td>
-        <td>${user.role === "hub_admin" ? '<span class="text-secondary">Todas</span>' : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
-        <td><span class="badge ${Number(user.enabled) === 1 ? "text-bg-success" : "text-bg-secondary"}">${Number(user.enabled) === 1 ? "ativo" : "inativo"}</span></td>
         <td>
-        <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-${Number(user.enabled) === 1 ? "warning" : "success"} btn-sm" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="${Number(user.enabled) === 1 ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? "pause" : "play"}"></i></button>
-        <button class="btn btn-outline-danger btn-sm" data-id="${user.id}" data-action="deleteApiUser" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+            <span class="config-state ${Number(user.enabled) === 1 ? "config-state-success" : "config-state-secondary"}">
+                <span class="config-state-dot"></span>${Number(user.enabled) === 1 ? "Ativo" : "Inativo"}
+            </span>
+        </td>
+        <td class="fw-semibold">${esc(user.username)}</td>
+        <td class="section-label">${esc(apiRoleLabel(user.role))}</td>
+        <td>${user.role === "hub_admin"
+            // O âmbito é a informação com mais consequência da tabela -- quem vê os dados
+            // de que licença. "Todas" estava em cinzento mais fraco que o resto da linha,
+            // como se fosse um valor por omissão sem importância. É um privilégio.
+            ? '<span class="config-state"><span class="config-state-dot"></span>Todas as licenças</span>'
+            : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
+        <td class="text-end text-nowrap">
+        <button class="btn btn-outline-secondary btn-sm row-action" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm row-action" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="${Number(user.enabled) === 1 ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? "pause" : "play"}"></i></button>
+        <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${user.id}" data-action="deleteApiUser" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`,
         )
@@ -283,6 +304,7 @@ function resetApiUserForm() {
     els.apiUserEnabled.checked = true;
     els.apiUserPassword.placeholder = "Obrigatória para novo utilizador";
     syncApiUserRoleFields();
+    toggleCollapse(els.apiUserFormCollapse, false);
 }
 
 function editApiUser(button) {
@@ -294,6 +316,20 @@ function editApiUser(button) {
     els.apiUserPassword.value = "";
     els.apiUserPassword.placeholder = "Deixar vazio para manter";
     syncApiUserRoleFields();
+    // O formulario esta fechado por omissao: editar tem de o abrir, senao o clique no
+    // lapis preenchia campos que ninguem estava a ver.
+    toggleCollapse(els.apiUserFormCollapse, true);
+}
+
+/** Abre ou fecha um `collapse` do Bootstrap sem depender do botao que o comanda. */
+function toggleCollapse(element, show) {
+    if (!element || typeof bootstrap === "undefined") return;
+    const instance = bootstrap.Collapse.getOrCreateInstance(element, {toggle: false});
+    if (show) {
+        instance.show();
+    } else {
+        instance.hide();
+    }
 }
 
 function syncApiUserRoleFields() {
@@ -364,15 +400,26 @@ async function deleteApiUser(id) {
 
 function renderCompanySection(companies) {
     resetCompanyForm();
+    if (els.companiesTabSummary) {
+        const total = (companies || []).length;
+        const licenses = (companies || []).reduce(
+            (sum, item) => sum + Number(item.license_count ?? 0),
+            0,
+        );
+        els.companiesTabSummary.textContent =
+            `${total} ${total === 1 ? "empresa" : "empresas"} · ${licenses} ${licenses === 1 ? "licença" : "licenças"}`;
+    }
     els.companyListBody.innerHTML = (companies || [])
         .map(
             (item) => `
         <tr>
-        <td>${esc(item.name)}</td>
-        <td>${item.license_count ?? 0}</td>
+        <td class="fw-semibold">${esc(item.name)}</td>
         <td>
-        <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+            <span class="config-state config-state-secondary"><span class="config-state-dot"></span>${item.license_count ?? 0} ${Number(item.license_count) === 1 ? "licença" : "licenças"}</span>
+        </td>
+        <td class="text-end text-nowrap">
+        <button class="btn btn-outline-secondary btn-sm row-action" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`,
         )
@@ -382,11 +429,13 @@ function renderCompanySection(companies) {
 function resetCompanyForm() {
     els.companyForm.reset();
     els.companyId.value = "";
+    toggleCollapse(els.companyFormCollapse, false);
 }
 
 function editCompany(button) {
     els.companyId.value = button.dataset.id || "";
     els.companyName.value = button.dataset.name || "";
+    toggleCollapse(els.companyFormCollapse, true);
 }
 
 async function saveCompany() {
@@ -432,12 +481,12 @@ function renderLicensesSection(licenses, companies) {
         .map(
             (item) => `
         <tr>
-        <td>${esc(item.company_name || "-")}</td>
-        <td>${esc(item.license_id)}</td>
+        <td class="section-label">${esc(item.company_name || "-")}</td>
+        <td class="tabular-nums fw-semibold">${esc(item.license_id)}</td>
         <td>${esc(item.name || "-")}</td>
-        <td>
-        <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${item.id}" data-company-id="${item.company_id}" data-company-name="${esc(item.company_name || "")}" data-license-id="${esc(item.license_id)}" data-name="${esc(item.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+        <td class="text-end text-nowrap">
+        <button class="btn btn-outline-secondary btn-sm row-action" data-action="editLicense" data-id="${item.id}" data-company-id="${item.company_id}" data-company-name="${esc(item.company_name || "")}" data-license-id="${esc(item.license_id)}" data-name="${esc(item.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${item.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
         </tr>`,
         )
@@ -447,6 +496,7 @@ function renderLicensesSection(licenses, companies) {
 function resetLicenseForm() {
     els.licenseForm.reset();
     els.licenseId.value = "";
+    toggleCollapse(els.licenseFormCollapse, false);
 }
 
 function editLicense(button) {
@@ -454,6 +504,7 @@ function editLicense(button) {
     els.licenseCompanySelect.value = button.dataset.companyId || "";
     els.licenseLicenseId.value = button.dataset.licenseId || "";
     els.licenseName.value = button.dataset.name || "";
+    toggleCollapse(els.licenseFormCollapse, true);
 }
 
 async function saveLicense() {
