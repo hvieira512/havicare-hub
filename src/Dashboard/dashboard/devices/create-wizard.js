@@ -48,6 +48,17 @@ const STEPS = ["Classificação", "Este aparelho"];
  * As perguntas. Cada uma sabe quando esta respondida, que badges produz e o que a sua
  * resposta invalida -- e nada mais. O desenho de cada uma esta em `renderQuestion`.
  */
+/**
+ * As perguntas que aparecem na trilha, respondidas ou nao, com o nome que levam antes de
+ * ter resposta. A do passo 2 nao entra: a trilha e a classificacao, e o passo 2 e sobre
+ * este aparelho em concreto.
+ */
+const TRAIL_QUESTIONS = [
+    {key: "type", label: "Tipo"},
+    {key: "model", label: "Modelo"},
+    {key: "owner", label: "Empresa"},
+];
+
 const QUESTIONS = [
     {
         key: "type",
@@ -149,22 +160,42 @@ function render() {
  * Cada badge e um botao para a sua pergunta. O "alterar" so reabria a ultima resposta,
  * o que obrigava a refazer tudo o que viesse depois para voltar ao tipo.
  */
+/**
+ * As tres perguntas da classificacao estao sempre na trilha, e o passo no fim da linha.
+ *
+ * So as respondidas apareciam, o que deixava a linha vazia ao abrir e nao dizia quantas
+ * perguntas faltavam. Uma pendente esbatida ja diz o que vem a seguir; a activa fica
+ * contornada; a respondida fica cheia e e um botao para voltar aquela pergunta.
+ */
 function renderTrail() {
-    const badges = wizard.badges();
+    const answered = new Map(
+        wizard.badges().map((badge) => [badge.key, badge]),
+    );
+    const currentKey = wizard.current()?.key || "";
     const step = wizard.step();
 
     els.wizardTrail.setAttribute("aria-valuenow", String(step));
-    els.wizardTrail.innerHTML = badges
-        .map(
-            (badge, index) => `
-            ${index > 0 ? '<span class="wizard-trail-sep">›</span>' : ""}
+    els.wizardTrail.innerHTML = TRAIL_QUESTIONS
+        .map((question, index) => {
+            const badge = answered.get(question.key);
+            const sep = index > 0 ? '<span class="wizard-trail-sep">›</span>' : "";
+            if (badge) {
+                return `${sep}
             <button type="button" class="wizard-badge" data-wizard-reopen="${esc(badge.key)}"
                 title="Voltar a esta pergunta">
                 <span class="wizard-badge-key">${esc(badge.label)}</span>${esc(String(badge.value))}
-            </button>`,
-        )
+            </button>`;
+            }
+            const pendingClass = question.key === currentKey
+                ? "wizard-badge wizard-badge-now"
+                : "wizard-badge wizard-badge-pending";
+            return `${sep}
+            <span class="${pendingClass}">
+                <span class="wizard-badge-key">${esc(question.label)}</span>
+            </span>`;
+        })
         .join("")
-        + `<span class="wizard-trail-step">${step} de ${STEPS.length} · ${esc(STEPS[step - 1])}</span>`;
+        + `<span class="wizard-trail-step">Passo ${step} de ${STEPS.length} · ${esc(STEPS[step - 1])}</span>`;
 }
 
 /**

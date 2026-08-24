@@ -1124,6 +1124,23 @@ body {
     border-color: var(--bs-primary-border-subtle);
 }
 
+/* A pergunta activa: contornada, sem valor ainda. */
+.wizard-trail .wizard-badge-now {
+    background: transparent;
+    border-color: var(--bs-primary-border-subtle);
+    cursor: default;
+}
+
+/* As que faltam: esbatidas, para se ver quantas sao sem parecerem clicaveis. */
+.wizard-trail .wizard-badge-pending {
+    background: var(--bs-tertiary-bg);
+    cursor: default;
+}
+
+.wizard-trail .wizard-badge-pending .wizard-badge-key {
+    color: var(--bs-secondary-color);
+}
+
 .wizard-trail .wizard-badge-key {
     white-space: nowrap;
 }
