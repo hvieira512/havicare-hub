@@ -12,6 +12,7 @@ import {
     modelInternalName,
 } from "../../domain.js";
 import {renderModelsFilterButtons} from "./filters.js";
+import {setSettingsNavCount} from "../index.js";
 import {resetModelForm} from "./form.js";
 import {
     getSettingsModelsRuntime,
@@ -90,7 +91,18 @@ async function loadSettingsModelsSection(page = 1) {
     }
     if (els.modelsTabSummary) {
         const total = state.settingsModal.modelsPagination?.total ?? models.length;
-        els.modelsTabSummary.textContent = `${total} ${total === 1 ? "modelo" : "modelos"}`;
+        // Os fornecedores contam-se dos filtros, que trazem o conjunto todo -- contá-los
+        // desta página dava "12 modelos · 2 fornecedores" numa página de dois.
+        const suppliers = new Set(
+            (state.settingsModal.modelFilters || [])
+                .flatMap((filter) => filter?.suppliers || [])
+                .map((supplier) => String(supplier?.name || ""))
+                .filter(Boolean),
+        );
+        els.modelsTabSummary.textContent = suppliers.size
+            ? `${total} ${total === 1 ? "modelo" : "modelos"} · ${suppliers.size} ${suppliers.size === 1 ? "fornecedor" : "fornecedores"}`
+            : `${total} ${total === 1 ? "modelo" : "modelos"}`;
+        setSettingsNavCount("Models", total);
     }
 }
 

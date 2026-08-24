@@ -17,11 +17,19 @@ ob_start();
     <div class="row g-4 h-100 align-items-lg-center">
         <div class="col-12 col-lg-2 d-flex align-items-lg-center h-100">
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
-                <button class="nav-link active text-start" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores</button>
-                <button class="nav-link text-start" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos</button>
+                <?php
+                /**
+                 * Cada secção leva a sua contagem no menu, como na maqueta: sabe-se
+                 * quantos modelos ou quantas empresas existem antes de abrir o separador.
+                 * Capacidades não leva — não é uma lista de coisas contáveis, é o catálogo
+                 * de um tipo de dispositivo à escolha.
+                 */
+                ?>
+                <button class="nav-link active text-start d-flex align-items-center justify-content-between gap-2" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores<span class="settings-nav-count d-none" id="settingsSuppliersCount"></span></button>
+                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos<span class="settings-nav-count d-none" id="settingsModelsCount"></span></button>
                 <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
-                <button class="nav-link text-start" id="settingsCompanyTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCompanyPane" type="button" role="tab" aria-controls="settingsCompanyPane" aria-selected="false">Empresas</button>
-                <button class="nav-link text-start" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API</button>
+                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsCompanyTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCompanyPane" type="button" role="tab" aria-controls="settingsCompanyPane" aria-selected="false">Empresas<span class="settings-nav-count d-none" id="settingsCompanyCount"></span></button>
+                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API<span class="settings-nav-count d-none" id="settingsApiUsersCount"></span></button>
             </div>
         </div>
         <div class="col-12 col-lg-10 d-flex flex-column h-100">
@@ -46,9 +54,9 @@ ob_start();
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
-                                    <th>Estado</th>
                                     <th>Nome</th>
                                     <th>Modelos</th>
+                                    <th>Estado</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -346,18 +354,14 @@ ob_start();
                         </div>
                     </form>
                     </div>
-                    <div class="table-responsive mb-4">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Licenças</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="companyListBody"></tbody>
-                        </table>
-                    </div>
+                    <?php
+                    /**
+                     * Um cartão por empresa, com as licenças dentro dele — não linhas de
+                     * uma tabela. Uma licença não é uma irmã da empresa, é uma filha, e é
+                     * o cartão que a contém que diz isso sem precisar de uma coluna.
+                     */
+                    ?>
+                    <div id="companyListBody" class="mb-4"></div>
                     <?= pagination_component('settingsCompany') ?>
                     <?php
                     /**
@@ -444,10 +448,10 @@ ob_start();
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
-                                    <th>Estado</th>
                                     <th>Utilizador</th>
                                     <th>Perfil</th>
                                     <th>Âmbito</th>
+                                    <th>Estado</th>
                                     <th></th>
                                 </tr>
                             </thead>

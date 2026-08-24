@@ -6,6 +6,7 @@ import {
     getApiUsers as apiGetApiUsers,
     getCompanies as apiGetCompanies,
     getLicenses as apiGetLicenses,
+    getModels as apiGetModels,
     getSuppliers as apiGetSuppliers,
     saveApiUser as apiSaveApiUser,
     saveLicense as apiSaveLicense,
@@ -99,6 +100,7 @@ async function loadSettingsModal(
     state.modelModal.templateDeviceType = "watch";
     activateSettingsSection(section);
     ui.settingsModal.show();
+    void loadSettingsNavCounts();
     if (section === "suppliers") {
         void loadSettingsSuppliersSection();
     } else if (section === "models") {
@@ -155,6 +157,7 @@ async function loadSettingsSuppliersSection(page = 1) {
     const suppliers = response.data || [];
     state.settingsModal.suppliersPagination = response.pagination || null;
     state.modelModalSuppliers = suppliers;
+    setSettingsNavCount("Suppliers", response.pagination?.total ?? suppliers.length);
     state.settingsModal.sectionLoaded.suppliers = true;
     renderSuppliersSection(suppliers);
     renderSettingsPagination(
@@ -191,17 +194,17 @@ function renderSuppliersSection(suppliers) {
         .map(
             (supplier) => `
         <tr>
-        <td>
-            <span class="config-state ${supplier.enabled ? "config-state-success" : "config-state-secondary"}">
-                <span class="config-state-dot"></span>${supplier.enabled ? "Ativo" : "Inativo"}
-            </span>
-        </td>
         <td class="fw-semibold">${esc(supplier.name)}</td>
         <td class="tabular-nums">${Number(supplier.model_count) > 0
             // A contagem é um valor e leva a algum lado: ao separador dos modelos já
             // filtrado por este fornecedor, que é a pergunta seguinte de quem a lê.
             ? `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none tabular-nums" data-action="openSupplierModels" data-supplier="${esc(supplier.name)}">${supplier.model_count}</button>`
             : '<span class="text-secondary">0</span>'}</td>
+        <td>
+            <span class="config-state ${supplier.enabled ? "config-state-success" : "config-state-secondary"}">
+                <span class="config-state-dot"></span>${supplier.enabled ? "Ativo" : "Inativo"}
+            </span>
+        </td>
         <td class="text-end">
         <button class="btn btn-outline-secondary btn-sm row-action" data-id="${supplier.id}" data-enabled="${supplier.enabled ? "1" : ""}" data-action="toggleSupplier" title="${supplier.enabled ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${supplier.enabled ? "pause" : "play"}"></i></button>
         </td>
@@ -264,6 +267,7 @@ function renderApiUsersSection(users) {
     const total = (users || []).length;
     const admins = (users || []).filter((user) => user.role === "hub_admin").length;
     if (els.apiUsersTabSummary) {
+        setSettingsNavCount("ApiUsers", total);
         els.apiUsersTabSummary.textContent = total === 0
             ? "Nenhum utilizador"
             : `${total} ${total === 1 ? "utilizador" : "utilizadores"}`
@@ -273,11 +277,6 @@ function renderApiUsersSection(users) {
         .map(
             (user) => `
         <tr>
-        <td>
-            <span class="config-state ${Number(user.enabled) === 1 ? "config-state-success" : "config-state-secondary"}">
-                <span class="config-state-dot"></span>${Number(user.enabled) === 1 ? "Ativo" : "Inativo"}
-            </span>
-        </td>
         <td class="fw-semibold">${esc(user.username)}</td>
         <td class="section-label">${esc(apiRoleLabel(user.role))}</td>
         <td>${user.role === "hub_admin"
@@ -286,6 +285,11 @@ function renderApiUsersSection(users) {
             // como se fosse um valor por omissão sem importância. É um privilégio.
             ? '<span class="config-state"><span class="config-state-dot"></span>Todas as licenças</span>'
             : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
+        <td>
+            <span class="config-state ${Number(user.enabled) === 1 ? "config-state-success" : "config-state-secondary"}">
+                <span class="config-state-dot"></span>${Number(user.enabled) === 1 ? "Ativo" : "Inativo"}
+            </span>
+        </td>
         <td class="text-end text-nowrap">
         <button class="btn btn-outline-secondary btn-sm row-action" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-outline-secondary btn-sm row-action" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="${Number(user.enabled) === 1 ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? "pause" : "play"}"></i></button>
@@ -323,6 +327,45 @@ function editApiUser(button) {
     // O formulario esta fechado por omissao: editar tem de o abrir, senao o clique no
     // lapis preenchia campos que ninguem estava a ver.
     toggleCollapse(els.apiUserFormCollapse, true);
+}
+
+/**
+ * As contagens do menu, todas, ao abrir o modal.
+ *
+ * Cada separador enche a sua quando carrega, mas so carrega quando se abre -- e o menu
+ * ficava com um numero no primeiro separador e nada nos outros quatro. Sao quatro pedidos
+ * de uma linha cada, so para ler o total da paginacao.
+ *
+ * Falha em silencio: um numero que nao se sabe nao aparece, e a contagem do separador
+ * enche-a quando ele abrir.
+ */
+async function loadSettingsNavCounts() {
+    const asks = [
+        ["Suppliers", apiGetSuppliers],
+        ["Models", apiGetModels],
+        ["Company", apiGetCompanies],
+        ["ApiUsers", apiGetApiUsers],
+    ];
+    await Promise.all(asks.map(async ([key, ask]) => {
+        const response = await ask({page: 1, limit: 1});
+        if (response?.error) return;
+        const total = response?.pagination?.total;
+        if (Number.isFinite(Number(total))) setSettingsNavCount(key, total);
+    }));
+}
+
+/**
+ * A contagem de uma seccao no menu das definicoes.
+ *
+ * Cada carregador chama isto com o seu total, em vez de haver um sitio que sabe contar
+ * tudo -- so quem foi buscar a lista e que sabe quantos sao.
+ */
+export function setSettingsNavCount(key, total) {
+    const element = els[`settings${key}Count`];
+    if (!element) return;
+    const known = Number.isFinite(Number(total));
+    element.textContent = known ? String(total) : "";
+    element.classList.toggle("d-none", !known);
 }
 
 /** Abre ou fecha um `collapse` do Bootstrap sem depender do botao que o comanda. */
@@ -409,6 +452,7 @@ function renderCompanySection(companies, licenses) {
         const owned = (licenses || []).length;
         els.companiesTabSummary.textContent =
             `${total} ${total === 1 ? "empresa" : "empresas"} · ${owned} ${owned === 1 ? "licença" : "licenças"}`;
+        setSettingsNavCount("Company", total);
     }
     // Uma linha por empresa, e as suas licenças indentadas por baixo. Eram duas tabelas
     // lado a lado com o mesmo peso, e a relação -- uma licença pertence a uma empresa --
@@ -419,26 +463,30 @@ function renderCompanySection(companies, licenses) {
                 (license) => String(license.company_id) === String(item.id),
             );
             return `
-        <tr>
-        <td class="fw-semibold">${esc(item.name)}</td>
-        <td class="text-secondary">${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</td>
-        <td class="text-end text-nowrap">
-        <button class="btn btn-link btn-sm p-0 text-decoration-none me-2" data-action="newLicenseForCompany" data-company-id="${item.id}">Nova licença</button>
-        <button class="btn btn-outline-secondary btn-sm row-action" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
-        </td>
-        </tr>
+        <div class="card mb-2">
+        <div class="card-body p-3">
+        <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <div class="fw-semibold">${esc(item.name)}</div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="config-state config-state-secondary"><span class="config-state-dot"></span>${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</span>
+                <button class="btn btn-link btn-sm p-0 text-decoration-none" data-action="newLicenseForCompany" data-company-id="${item.id}">Nova licença</button>
+                <button class="btn btn-outline-secondary btn-sm row-action" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>
         ${owned.map((license) => `
-        <tr class="company-license-row">
-        <td colspan="2">
-            <span class="section-label me-2 tabular-nums" style="letter-spacing:0">ID ${esc(license.license_id)}</span>
-            ${esc(license.name || "sem nome")}
-        </td>
-        <td class="text-end text-nowrap">
-        <button class="btn btn-outline-secondary btn-sm row-action" data-action="editLicense" data-id="${license.id}" data-company-id="${license.company_id}" data-company-name="${esc(license.company_name || "")}" data-license-id="${esc(license.license_id)}" data-name="${esc(license.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
-        </td>
-        </tr>`).join("")}`;
+        <div class="company-license-row d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-2 min-w-0">
+                <span class="section-label tabular-nums" style="letter-spacing:0">ID ${esc(license.license_id)}</span>
+                <span class="text-truncate">${esc(license.name || "sem nome")}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button class="btn btn-outline-secondary btn-sm row-action" data-action="editLicense" data-id="${license.id}" data-company-id="${license.company_id}" data-company-name="${esc(license.company_name || "")}" data-license-id="${esc(license.license_id)}" data-name="${esc(license.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`).join("")}
+        </div>
+        </div>`;
         })
         .join("");
 }
