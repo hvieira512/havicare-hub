@@ -5,7 +5,7 @@
 Quando o utilizador pedir para verificar, testar, atualizar ou entrar em produção, usar:
 
 - Alias SSH: `hub-prod` (configurado localmente em `~/.ssh/config`)
-- Diretório do projeto: `/opt/hitecosystem-devices-hub`
+- Diretório do projeto: `/opt/havicare-hub`
 - Serviço: `health-hub`
 - Comando habitual de atualização: `make prod-update`
 
@@ -23,7 +23,7 @@ Quando o pedido incluir uma atualização de produção:
 1. Inspecionar as alterações existentes e preservar trabalho não relacionado.
 2. Implementar e testar localmente.
 3. Fazer commit e push quando o utilizador o pedir ou quando fizerem parte explícita do fluxo solicitado.
-4. Entrar no diretório `/opt/hitecosystem-devices-hub` em produção.
+4. Entrar no diretório `/opt/havicare-hub` em produção.
 5. Executar `make prod-update`.
 6. Verificar o estado e os logs do serviço `health-hub`.
 7. Testar a funcionalidade em produção com os dispositivos, API, Redis ou MQTT relevantes.

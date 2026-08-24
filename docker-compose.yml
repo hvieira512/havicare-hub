@@ -52,7 +52,7 @@ services:
 
   hub:
     build: .
-    container_name: hitecosystem-devices-hub
+    container_name: havicare-hub
     command: sh -lc "php bin/migrate.php && exec bin/dev.sh php bin/server-hub.php"
     ports:
       - "8081:8081"

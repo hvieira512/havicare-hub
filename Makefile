@@ -87,7 +87,7 @@ dev-hub: hub
 
 dev-dashboard:
 	docker compose stop hub 2>/dev/null; \
-	docker compose run --rm --service-ports --name hitecosystem-devices-hub-dev \
+	docker compose run --rm --service-ports --name havicare-hub-dev \
 		-e WATCH_DIRS="/app/src/Dashboard /app/config/whitelist.json" \
 		hub bin/dev.sh php bin/server-hub.php
 
