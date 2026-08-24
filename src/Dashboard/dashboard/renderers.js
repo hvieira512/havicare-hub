@@ -25,42 +25,6 @@ const COMMAND_FEATURE_RULES = [
     ["rr", "rr_interval"],
 ];
 
-const ALERT_CARD_TYPES = new Set([
-    "heart_rate",
-    "blood_pressure",
-    "ecg",
-    "hrv",
-]);
-
-const CARD_TONE_BY_TYPE = {
-    positions: {border: "info", bg: "bg-info", text: "text-info"},
-    vitals: {border: "success", bg: "bg-success", text: "text-success"},
-    position_minute_stats: {border: "secondary", bg: "bg-secondary", text: "text-secondary"},
-    vitals_minute_stats: {border: "secondary", bg: "bg-secondary", text: "text-secondary"},
-    blood_oxygen: {border: "info", bg: "bg-info", text: "text-info"},
-    blood_sugar: {border: "warning", bg: "bg-warning", text: "text-warning"},
-    temperature: {border: "warning", bg: "bg-warning", text: "text-warning"},
-    battery: {border: "success", bg: "bg-success", text: "text-success"},
-    connectivity: {border: "info", bg: "bg-info", text: "text-info"},
-    motion: {border: "primary", bg: "bg-primary", text: "text-primary"},
-    diaper_moisture: {border: "info", bg: "bg-info", text: "text-info"},
-    diaper_moisture_level: {border: "info", bg: "bg-info", text: "text-info"},
-    diaper_condition: {border: "warning", bg: "bg-warning", text: "text-warning"},
-    activity: {border: "primary", bg: "bg-primary", text: "text-primary"},
-    location: {border: "success", bg: "bg-success", text: "text-success"},
-    heartbeat: {border: "info", bg: "bg-info", text: "text-info"},
-    breath_rate: {border: "info", bg: "bg-info", text: "text-info"},
-    rr_interval: {border: "info", bg: "bg-info", text: "text-info"},
-    sleep: {border: "primary", bg: "bg-primary", text: "text-primary"},
-    help_call: {border: "danger", bg: "bg-danger", text: "text-danger"},
-    reset: {border: "warning", bg: "bg-warning", text: "text-warning"},
-    unknown: {border: "secondary", bg: "bg-secondary", text: "text-secondary"},
-    "device.connected": {border: "success", bg: "bg-success", text: "text-success"},
-    "device.disconnected": {border: "danger", bg: "bg-danger", text: "text-danger"},
-};
-
-const ALERT_CARD_TONE = {border: "danger", bg: "bg-danger", text: "text-danger"};
-
 const REQUEST_CARD_CONTENT_BY_TYPE = {
     positions: {icon: "fa-location-crosshairs", value: "Posições"},
     vitals: {icon: "fa-heart-pulse", value: "Sinais vitais"},
@@ -351,16 +315,33 @@ function commandFeature(command) {
     return "device_config";
 }
 
-export function cardTone(type, command = {}) {
-    const key = type || commandFeature(command);
-    if (ALERT_CARD_TYPES.has(key)) {
-        return ALERT_CARD_TONE;
-    }
-    return CARD_TONE_BY_TYPE[key] || {
-        border: "secondary",
-        bg: "bg-secondary",
-        text: "text-secondary",
-    };
+/**
+ * A casca de um cartao de telemetria: o icone, o titulo, e o corpo que quem chama traz.
+ *
+ * Era a mesma marcacao escrita em dois sitios -- os pedidos ao dispositivo e os eventos
+ * NCS -- e a cor por categoria vivia nas duas copias. O icone passa a identificar a
+ * categoria sozinho: a cor fica reservada ao estado, que e o que a pastilha diz.
+ */
+export function telemetryCard({span = 6, icon, title, tooltip = "", body = ""}) {
+    const tip = tooltip
+        ? ` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top"`
+          + ` data-bs-title="${esc(tooltip)}" aria-label="${esc(tooltip)}" tabindex="0"`
+        : "";
+
+    return `
+        <div class="col-12 col-md-${span}">
+        <div class="card h-100">
+        <div class="card-body">
+        <div class="d-flex align-items-center gap-3 min-w-0">
+        <div class="telemetry-card-icon"${tip}>
+        <i class="fa-solid ${esc(icon)}"></i>
+        </div>
+        <div class="fw-semibold text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
+        </div>
+        ${body}
+        </div>
+        </div>
+        </div>`;
 }
 
 function requestCardContent(type) {
@@ -640,7 +621,6 @@ function displayPersonIndex(value) {
 export function renderRequestCardShell(command, loading, telemetry = []) {
     const type = commandFeature(command);
     const card = requestCardContent(type);
-    const tone = cardTone(type, command);
     const tooltip = featureLabel(type) || card.value || type;
     const requestable = command.requestable !== false;
     const isSystemRequestCard = [
@@ -678,21 +658,13 @@ export function renderRequestCardShell(command, loading, telemetry = []) {
         ? `<div class="mt-3 d-grid gap-2 min-w-0">${buttonHtml}</div>`
         : "";
 
-    return `
-        <div class="col-12 col-md-${span}">
-        <div class="card h-100 border-${tone.border}">
-        <div class="card-body">
-        <div class="d-flex align-items-center gap-3 min-w-0">
-        <div class="bg-${tone.border} bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-${tone.border}" style="width:36px;height:36px;flex-shrink:0;" data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(tooltip)}" aria-label="${esc(tooltip)}" tabindex="0">
-        <i class="fa-solid ${esc(icon)}"></i>
-        </div>
-        <div class="fw-bold ${tone.text} text-truncate flex-grow-1 min-w-0" title="${esc(title)}">${esc(title)}</div>
-        </div>
-        ${bodyHtml}
-        ${buttonRowHtml}
-        </div>
-        </div>
-        </div>`;
+    return telemetryCard({
+        span,
+        icon,
+        title,
+        tooltip,
+        body: `${bodyHtml}${buttonRowHtml}`,
+    });
 }
 
 function requestTelemetryTypes(type) {

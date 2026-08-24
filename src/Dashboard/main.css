@@ -138,6 +138,21 @@ body {
     --bs-card-border-color: #e9ecef;
 }
 
+/* O icone de um cartao de telemetria. Era pintado com a cor contextual da categoria --
+   quatro cores num painel, em contorno, texto e fundo -- e a categoria le-se no icone,
+   nao na cor. Cinzento, para a cor ficar disponivel para o estado. */
+.telemetry-card-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
+
 /* A etiqueta em maiusculas e o unico cabecalho de seccao dentro de um cartao: o titulo do
    ecra nao pode competir com um h5 em cada bloco. Existia em quatro variantes -- os factos
    do dispositivo, o nome do passo do assistente, a chave da badge da trilha e a pastilha de
