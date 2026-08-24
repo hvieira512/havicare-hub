@@ -223,12 +223,11 @@ body {
 
 /* A etiqueta em maiusculas e o unico cabecalho de seccao dentro de um cartao: o titulo do
    ecra nao pode competir com um h5 em cada bloco. Existia em quatro variantes -- os factos
-   do dispositivo, o nome do passo do assistente, a chave da badge da trilha e a pastilha de
-   estado -- com tres tamanhos e tres espacamentos diferentes. E a mesma coisa, e passa a
-   ter uma medida so. */
+   do dispositivo, a chave da badge da trilha, o nome do passo do assistente e a pastilha
+   de estado -- com tres tamanhos e tres espacamentos diferentes. E a mesma coisa, e passa
+   a ter uma medida so. */
 .section-label,
 .selected-device-facts dt,
-.wizard-steps .wizard-step-name,
 .wizard-trail .wizard-badge-key {
     font-size: .6875rem;
     font-weight: 600;
@@ -732,50 +731,17 @@ body {
 
 /* A barra mostra os passos com nome, e nao uma percentagem: quem esta no primeiro tem de
    conseguir ver o que falta. */
-.wizard-steps {
-    display: flex;
-    gap: .625rem;
-}
-
-.wizard-steps .wizard-step {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: .4rem;
-}
-
-.wizard-steps .wizard-step-bar {
-    height: 3px;
-    border-radius: 2px;
-    background: var(--bs-border-color);
-    transition: background-color .25s ease;
-}
-
-.wizard-steps .wizard-step.is-done .wizard-step-bar,
-.wizard-steps .wizard-step.is-now .wizard-step-bar {
-    background: var(--bs-primary);
-}
-
-.wizard-steps .wizard-step-name {
-    white-space: nowrap;
-}
-
-.wizard-steps .wizard-step.is-now .wizard-step-name {
-    color: var(--bs-body-color);
-}
-
-/* A trilha das respostas ja dadas. Cada badge colapsa uma pergunta respondida, o que faz
-   o ecra nunca acumular controlos. */
+/* A trilha das respostas ja dadas, e o passo no fim da linha. Cada badge colapsa uma
+   pergunta respondida, o que faz o ecra nunca acumular controlos -- e cada um e um botao
+   para voltar aquela pergunta. */
 .wizard-trail {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: .4rem;
     min-height: 1.9rem;
-}
-
-.wizard-trail:empty {
-    display: none;
+    padding-bottom: .875rem;
+    border-bottom: 1px solid var(--bs-border-color);
 }
 
 .wizard-trail .wizard-badge {
@@ -785,13 +751,27 @@ body {
     font-size: .8rem;
     font-weight: 500;
     padding: .25rem .7rem .25rem .55rem;
+    border: 1px solid transparent;
     border-radius: 20px;
     background: var(--bs-primary-bg-subtle);
     color: var(--bs-emphasis-color);
     animation: wizard-badge-in .32s cubic-bezier(.2, .8, .3, 1) both;
+    cursor: pointer;
+}
+
+.wizard-trail .wizard-badge:hover,
+.wizard-trail .wizard-badge:focus-visible {
+    border-color: var(--bs-primary-border-subtle);
 }
 
 .wizard-trail .wizard-badge-key {
+    white-space: nowrap;
+}
+
+.wizard-trail .wizard-trail-step {
+    margin-left: auto;
+    font-size: .8rem;
+    color: var(--bs-secondary-color);
     white-space: nowrap;
 }
 

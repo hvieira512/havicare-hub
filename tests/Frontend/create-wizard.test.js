@@ -49,11 +49,26 @@ test("o titulo do modal de edicao e estatico", () => {
     assert.doesNotMatch(MODAL_JS, /deviceModalLabel\.textContent/);
 });
 
-test("o assistente tem barra de progresso, trilha e lugar para a imagem", () => {
-    assert.match(WIZARD, /id="wizardSteps"/);
-    assert.match(WIZARD, /id="wizardTrail"/);
+test("a trilha e a barra de progresso, e tem lugar para a imagem", () => {
+    // Eram duas linhas seguidas a dizer a mesma coisa: uma barra de passos e, debaixo
+    // dela, os badges das respostas. A trilha ficou com as duas funcoes, incluindo a
+    // semantica de progresso.
+    assert.match(WIZARD, /id="wizardTrail"[^>]*role="progressbar"/);
+    assert.doesNotMatch(WIZARD, /id="wizardSteps"/);
     assert.match(WIZARD, /id="wizardArt"/);
-    assert.match(WIZARD, /role="progressbar"/);
+});
+
+test("cada badge da trilha volta a sua pergunta, e nao so a ultima", () => {
+    const wizardJs = readFileSync(
+        new URL("../../src/Dashboard/dashboard/devices/create-wizard.js", import.meta.url),
+        "utf8",
+    );
+
+    // O "alterar" reabria sempre a ultima resposta, o que obrigava a refazer tudo o que
+    // vinha depois para se voltar ao tipo.
+    assert.match(wizardJs, /data-wizard-reopen="\$\{esc\(badge\.key\)\}"/);
+    assert.match(wizardJs, /wizard\.reopen\(badge\.dataset\.wizardReopen\)/);
+    assert.doesNotMatch(wizardJs, /data-wizard-reopen="last"/);
 });
 
 test("o assistente comeca com o passo seguinte e sem separadores", () => {

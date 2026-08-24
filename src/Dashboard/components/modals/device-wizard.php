@@ -16,9 +16,13 @@ declare(strict_types=1);
 ob_start();
 ?>
 <div class="device-wizard">
-    <div class="wizard-steps" id="wizardSteps" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1"></div>
-
-    <div class="wizard-trail" id="wizardTrail"></div>
+    <?php
+    /**
+     * A trilha é a barra de progresso: os badges dizem onde se está e o passo, no fim da
+     * linha, diz quanto falta. Eram duas linhas seguidas a dizer a mesma coisa.
+     */
+    ?>
+    <div class="wizard-trail" id="wizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1"></div>
 
     <div class="wizard-stage">
         <div class="wizard-ask" id="wizardAsk"></div>

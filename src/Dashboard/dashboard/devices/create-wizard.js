@@ -133,42 +133,38 @@ export function openCreateWizard(companyList = [], seed = {}) {
 /* ---------- desenho ---------- */
 
 function render() {
-    renderSteps();
     renderTrail();
     renderArt();
     renderAsk();
     renderFooter();
 }
 
-function renderSteps() {
-    const step = wizard.step();
-    els.wizardSteps.setAttribute("aria-valuenow", String(step));
-    els.wizardSteps.innerHTML = STEPS.map((name, index) => {
-        const number = index + 1;
-        const cls = number < step ? "is-done" : number === step ? "is-now" : "";
-        return `
-            <div class="wizard-step ${cls}">
-                <div class="wizard-step-bar"></div>
-                <div class="wizard-step-name">${number} · ${esc(name)}</div>
-            </div>`;
-    }).join("");
-}
-
+/**
+ * A trilha, com o passo a que pertence no fim da linha.
+ *
+ * Eram duas linhas a dizer a mesma coisa: uma barra "1 · Classificacao / 2 · Este
+ * aparelho" e, debaixo dela, os badges das respostas. Uma linha basta -- os badges dizem
+ * onde se esta, e o passo diz quanto falta.
+ *
+ * Cada badge e um botao para a sua pergunta. O "alterar" so reabria a ultima resposta,
+ * o que obrigava a refazer tudo o que viesse depois para voltar ao tipo.
+ */
 function renderTrail() {
     const badges = wizard.badges();
+    const step = wizard.step();
+
+    els.wizardTrail.setAttribute("aria-valuenow", String(step));
     els.wizardTrail.innerHTML = badges
         .map(
             (badge, index) => `
             ${index > 0 ? '<span class="wizard-trail-sep">›</span>' : ""}
-            <span class="wizard-badge">
+            <button type="button" class="wizard-badge" data-wizard-reopen="${esc(badge.key)}"
+                title="Voltar a esta pergunta">
                 <span class="wizard-badge-key">${esc(badge.label)}</span>${esc(String(badge.value))}
-            </span>`,
+            </button>`,
         )
         .join("")
-        + (badges.length
-            ? '<button type="button" class="btn btn-link btn-sm p-0 ms-1 text-decoration-underline"'
-              + ' data-wizard-reopen="last">alterar</button>'
-            : "");
+        + `<span class="wizard-trail-step">${step} de ${STEPS.length} · ${esc(STEPS[step - 1])}</span>`;
 }
 
 /**
@@ -454,11 +450,9 @@ function handleClick(event) {
 }
 
 function handleTrailClick(event) {
-    if (!event.target.closest("[data-wizard-reopen]")) return;
-    const badges = wizard.badges();
-    const last = badges[badges.length - 1];
-    if (!last) return;
-    wizard.reopen(last.key);
+    const badge = event.target.closest("[data-wizard-reopen]");
+    if (!badge) return;
+    wizard.reopen(badge.dataset.wizardReopen);
     render();
 }
 

@@ -46,7 +46,6 @@ export function cacheElements() {
         applyDetailFiltersBtn: document.getElementById("applyDetailFiltersBtn"),
         clearDetailFiltersBtn: document.getElementById("clearDetailFiltersBtn"),
         addDeviceBtn: document.getElementById("addDeviceBtn"),
-        wizardSteps: document.getElementById("wizardSteps"),
         wizardTrail: document.getElementById("wizardTrail"),
         wizardAsk: document.getElementById("wizardAsk"),
         wizardArt: document.getElementById("wizardArt"),
