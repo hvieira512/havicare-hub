@@ -138,6 +138,12 @@ body {
     --bs-card-border-color: #e9ecef;
 }
 
+/* Identificadores e valores em coluna alinham digito a digito. Um IMEI de 15 digitos numa
+   tabela de vinte linhas le-se por comparacao, e sem isto cada linha comeca noutro sitio. */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
 /* A pastilha de um filtro aplicado. Neutra: o filtro nao e um estado do sistema, e a
    unica cor do painel de filtros e o contador do botao, que diz quantos estao ligados. */
 .filter-chip {
