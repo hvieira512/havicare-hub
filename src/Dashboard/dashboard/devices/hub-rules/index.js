@@ -53,8 +53,8 @@ function renderRule(rule, data, feedback) {
         <section class="border rounded p-3 mb-3" data-hub-rule="${esc(rule.key)}">
             <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
                 <span class="fw-semibold">${esc(rule.name)}</span>
-                <span class="hub-rule-state">
-                    <span class="hub-rule-dot"></span>Aplicada no hub
+                <span class="config-state">
+                    <span class="config-state-dot"></span>Aplicada no hub
                 </span>
             </div>
             ${rule.render(data)}

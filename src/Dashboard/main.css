@@ -853,12 +853,16 @@ body {
     color: var(--bs-secondary-color);
 }
 
-/* ===== regras do hub, no painel de configuracoes ===== */
+/* ===== estado de um bloco de configuracao ===== */
 
 /* O estado vive no bloco e nao no separador: umas configuracoes viajam para o
    dispositivo e podem ficar pendentes, outras valem de imediato. Nomear separadores por
-   essa diferenca era nomear pela implementacao. */
-.hub-rule-state {
+   essa diferenca era nomear pela implementacao.
+
+   A mesma pastilha serve as duas familias -- a regra do hub, que so tem um estado, e a
+   configuracao por downlink, que tem varios. O tom e que muda, e so o fundo: a leitura
+   nao pode depender da cor, por isso o texto diz sempre qual e o estado. */
+.config-state {
     display: inline-flex;
     align-items: center;
     gap: .35rem;
@@ -870,9 +874,15 @@ body {
     border-radius: 20px;
     background: var(--bs-primary-bg-subtle);
     color: var(--bs-emphasis-color);
+    white-space: nowrap;
 }
 
-.hub-rule-state .hub-rule-dot {
+.config-state-secondary { background: var(--bs-secondary-bg-subtle); }
+.config-state-success { background: var(--bs-success-bg-subtle); }
+.config-state-warning { background: var(--bs-warning-bg-subtle); }
+.config-state-danger { background: var(--bs-danger-bg-subtle); }
+
+.config-state .config-state-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;

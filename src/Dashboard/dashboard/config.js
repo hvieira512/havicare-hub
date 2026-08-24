@@ -126,55 +126,46 @@ const CONFIG_SECTION_ORDER = [
 const CONFIGURATION_DELIVERY_META = {
     pending_delivery: {
         label: "Em envio",
-        className: "text-bg-warning",
         tone: "warning",
         message: "O valor está guardado no Hub e aguarda entrega ao dispositivo.",
     },
     awaiting_ack: {
         label: "A aguardar",
-        className: "text-bg-warning",
         tone: "warning",
         message: "O valor foi enviado e aguarda resposta do dispositivo.",
     },
     confirmation_unavailable: {
         label: "Não verificável",
-        className: "text-bg-warning",
         tone: "warning",
         message: "O dispositivo confirmou a receção, mas este comando não permite verificar o valor efetivo.",
     },
     confirmed: {
         label: "Aplicado",
-        className: "text-bg-success",
         tone: "success",
         message: "",
     },
     waiting_device: {
         label: "A aguardar",
-        className: "text-bg-warning",
         tone: "warning",
         message: "O valor está guardado no Hub e aguarda confirmação do dispositivo.",
     },
     failed: {
         label: "Falhou",
-        className: "text-bg-danger",
         tone: "danger",
         message: "O último valor está guardado no Hub, mas não foi aplicado pelo dispositivo.",
     },
     never_reported: {
         label: "Não confirmado",
-        className: "text-bg-warning",
         tone: "warning",
         message: "O valor está guardado no Hub, mas nunca foi confirmado pelo dispositivo.",
     },
     diverged: {
         label: "Divergente",
-        className: "text-bg-danger",
         tone: "danger",
         message: "O dispositivo reportou um valor diferente do valor guardado no Hub.",
     },
     applied: {
         label: "Aplicado",
-        className: "text-bg-success",
         tone: "success",
         message: "",
     },
@@ -693,16 +684,16 @@ export function renderConfigSection(
 
     return `
         <section class="border rounded-3 p-3 mb-3 bg-body-tertiary" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
-            <div>
+            <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
                 <div>
-                    <div class="fw-semibold">
-                        ${esc(entry.label || entry.key)}
-                        ${showConfigurationBadge
-                            ? `<span class="badge ${deliveryMeta.className} ms-2">${esc(deliveryMeta.label)}</span>`
-                            : ""}
-                    </div>
+                    <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                 </div>
+                ${showConfigurationBadge
+                    ? `<span class="config-state config-state-${esc(deliveryMeta.tone)}">
+                        <span class="config-state-dot"></span>${esc(deliveryMeta.label)}
+                       </span>`
+                    : ""}
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ""}>
@@ -845,7 +836,6 @@ function configurationDeliveryMeta(isStored, delivery) {
     if (!isStored) {
         return {
             label: "Padrão",
-            className: "text-bg-secondary",
             tone: "secondary",
             message: "",
         };
