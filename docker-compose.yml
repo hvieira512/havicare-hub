@@ -1,3 +1,7 @@
+# Fixo, e nao derivado da pasta: mudar o nome da pasta mudava o nome do projeto e com ele
+# o dos volumes, o que deixava a base de dados de desenvolvimento para tras.
+name: havicare-hub
+
 services:
   mosquitto:
     image: eclipse-mosquitto:2
