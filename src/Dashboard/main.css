@@ -731,6 +731,54 @@ body {
     transition: border-color .12s ease, background-color .12s ease;
 }
 
+/* O esqueleto empresta a geometria do cartao, mas nao e um alvo: sem isto reagia ao rato e
+   dava a entender que se podia escolher um dispositivo que ainda nao chegou. */
+.device-card-skeleton {
+    cursor: default;
+    pointer-events: none;
+}
+
+/* A miniatura empresta a medida e o raio ao esqueleto, mas o fundo dela e o da caixa vazia da
+   fotografia -- e main.css vem depois do Bootstrap, logo ganhava ao `.placeholder`. Sem isto
+   a miniatura ficava quase invisivel ao lado das barras. */
+.device-card-skeleton .device-card-thumb {
+    background-color: currentcolor;
+}
+
+/* A pastilha de estado do cartao a serio tem a largura do seu texto. A barra que a substitui
+   nao tem texto, e sem medida ficava um risco de 1em. */
+.device-card-skeleton-pill {
+    width: 5.25rem;
+    height: 1.25rem;
+    border-radius: 1rem;
+}
+
+/* As linhas enchem a moldura, em vez de serem um bloco no topo com espaco vazio por baixo.
+   `flex: 1` estica a caixa ate a paginacao e `overflow: hidden` corta as que nao cabem, o que
+   deixa o numero de linhas ser generoso sem medir a altura da moldura em JavaScript. */
+.device-card-skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* A lista so estica enquanto tem o esqueleto dentro. Esticada sempre, uma lista de tres
+   dispositivos empurrava a paginacao para o fundo da moldura. O `:has` desliga-se sozinho
+   quando os cartoes verdadeiros substituem o esqueleto -- nao ha classe para limpar. */
+.device-card-list:has(.device-card-skeleton-list) {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/* Ao pedir de novo, o que esta no ecra e o resultado anterior. Esbatido diz que ainda esta a
+   mudar, e deixa-o legivel -- trocar a lista por um esqueleto a cada filtro custava mais. */
+.device-card-list[aria-busy="true"] {
+    opacity: .55;
+}
+
 .device-card:hover,
 .device-card:focus-visible {
     border-color: var(--bs-primary-border-subtle);

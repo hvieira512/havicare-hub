@@ -71,6 +71,9 @@ let els;
 let ui;
 let services;
 let deviceSearchTimer = null;
+// Quantas linhas de esqueleto no máximo: a moldura mais alta (46rem) leva doze cartões, e
+// acima disso seriam linhas cortadas a custo zero de informação.
+const SKELETON_MAX_ROWS = 12;
 export function initDeviceListDetail(context) {
     els = context.els;
     ui = context.ui;
@@ -87,7 +90,21 @@ function apiRoleLabel(role) {
     return role === "hub_admin" ? "Admin Hub" : "Cliente por licença";
 }
 
+/**
+ * Enquanto o pedido corre, a lista fica marcada como ocupada. Vale para todos os que pedem
+ * de novo -- filtro, pesquisa, página --, onde o conteúdo antigo continua no ecrã e sem isto
+ * nada dizia que ainda estava a mudar.
+ */
 async function loadSummary() {
+    els.deviceList?.setAttribute("aria-busy", "true");
+    try {
+        return await fetchSummary();
+    } finally {
+        els.deviceList?.removeAttribute("aria-busy");
+    }
+}
+
+async function fetchSummary() {
     const {online} = state.deviceFilters;
     const [devicesResponse] = await Promise.all([
         apiGetDevices({
@@ -225,9 +242,75 @@ async function ensureProtocolsLoaded(force = false) {
     return state.protocols;
 }
 
+/**
+ * O modal abre primeiro e enche-se quando a resposta chega.
+ *
+ * Com o `show()` depois do `await`, um `/api/devices` lento deixava o botão sem resposta
+ * nenhuma -- e ainda clicável, logo cada clique pedia outra vez. E era mais do que um
+ * pedido: as licenças e, com um dispositivo já escolhido, o detalhe dele também esperavam.
+ *
+ * O esqueleto só aparece quando não há nada para mostrar. Numa segunda abertura a lista
+ * anterior fica à vista, marcada como ocupada, porque uma lista antiga por um instante diz
+ * mais do que caixas vazias.
+ */
 async function openDeviceSelector() {
-    await loadSummary();
     ui.deviceSelectorModal?.show();
+    if (!els.deviceList.childElementCount) {
+        renderDeviceSelectorSkeleton();
+    }
+    await loadSummary();
+}
+
+/**
+ * O esqueleto da lista e dos filtros.
+ *
+ * Cada linha é o cartão a sério -- as mesmas classes, logo a mesma altura, o mesmo raio e as
+ * mesmas colunas -- com barras no lugar do texto. Copiar só a caixa de fora dava uma linha
+ * mais baixa que a verdadeira, e a lista saltava quando os dados chegavam.
+ *
+ * As linhas enchem a moldura em vez de serem um bloco no topo: são tantas quantas a página
+ * pode trazer, e a caixa corta as que não cabem. Assim o que se espera ocupa o espaço do que
+ * vem, sem medir alturas em JavaScript.
+ *
+ * A onda é a `placeholder-wave` do Bootstrap e não a `placeholder-glow`: varre da esquerda
+ * para a direita, e no contentor é uma passagem só sobre a lista toda em vez de uma por
+ * linha. Está no contentor por isso.
+ */
+function renderDeviceSelectorSkeleton() {
+    const repeat = (count, markup) => Array.from({length: count}, () => markup).join("");
+    const row = `
+        <div class="device-card device-card-skeleton" aria-hidden="true">
+        <span class="device-card-thumb placeholder"></span>
+        <span class="placeholder device-card-skeleton-pill"></span>
+        <span class="device-card-identity">
+            <span class="min-width-0 w-100">
+                <span class="placeholder d-block col-7 mb-1"></span>
+                <span class="placeholder d-block col-4"></span>
+            </span>
+        </span>
+        <span class="device-card-fields">
+            <span class="device-card-field"><span class="placeholder col-9"></span></span>
+            <span class="device-card-field"><span class="placeholder col-7"></span></span>
+        </span>
+        </div>`;
+
+    els.deviceList.innerHTML = `
+        <div class="device-card-skeleton-list placeholder-wave">
+        ${repeat(Math.min(state.deviceListPageSize, SKELETON_MAX_ROWS), row)}
+        </div>`;
+
+    for (const el of [els.deviceSupplierFilter, els.deviceModelFilter, els.deviceLicenseFilter]) {
+        el.innerHTML = `
+            <div class="placeholder-wave">
+            ${repeat(
+                3,
+                `<div class="filter-option" aria-hidden="true">
+                    <span class="filter-option-box"></span>
+                    <span class="placeholder col-6"></span>
+                </div>`,
+            )}
+            </div>`;
+    }
 }
 
 function isDeviceSelectorOpen() {
