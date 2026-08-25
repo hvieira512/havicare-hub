@@ -30,8 +30,10 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('if (!showLabel) {', $source);
         self::assertStringContainsString('group.cards.length', $source);
 
+        // Era o renderers.js, que se dividiu: as pecas genericas ficaram no widgets.js e a
+        // maquina dos cartoes de telemetria, que e o que estas afirmacoes olham, ficou aqui.
         $renderersSource = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/renderers.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/telemetry-cards.js'
         );
         self::assertIsString($renderersSource);
         // O cartão é o pedido: a acção vive na casca do cartão e não num botão dentro
