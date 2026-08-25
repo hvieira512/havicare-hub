@@ -4,7 +4,7 @@ import {
 } from "../../api/index.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
-import {modelImageHtml} from "../../renderers.js";
+import {modelImageHtml} from "../../widgets.js";
 import {
     deviceTypeLabel,
     modelCommercialName,

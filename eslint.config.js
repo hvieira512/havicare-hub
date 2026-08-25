@@ -19,7 +19,12 @@ export default [
         },
         rules: {
             ...js.configs.recommended.rules,
-            "no-unused-vars": "off",
+            // Ligado como aviso e nao erro: os imports nao usados e os exports sem
+            // chamadores eram invisiveis, e foi assim que o codigo morto se acumulou --
+            // o teste do grafo de modulos so prova que cada ficheiro e alcancavel, nao
+            // que cada nome importado e usado. Os argumentos ficam de fora porque as
+            // assinaturas dos handlers de eventos nao usam sempre o `event`.
+            "no-unused-vars": ["warn", {args: "none"}],
             "no-empty": ["error", {allowEmptyCatch: true}],
         },
     },

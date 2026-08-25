@@ -4,7 +4,7 @@ import {
     saveConfiguration as apiSaveConfiguration,
 } from "../api/index.js";
 import {readConfigPayload, renderDeviceConfigurationRoot} from "../config.js";
-import {emptyPanel} from "../renderers.js";
+import {emptyPanel} from "../widgets.js";
 import {resetPhoneControls} from "../phone.js";
 import {hasHubRules, renderHubRules} from "./hub-rules/index.js";
 import {state} from "../state.js";

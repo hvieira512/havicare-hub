@@ -1,5 +1,20 @@
 import {esc} from "./format.js";
 
+/** O resumo das listagens servidas pela API, que dizem quantos registos existem em total. */
+const defaultSummary = (start, end, total) => `A mostrar de ${start} até ${end} | ${total}`;
+
+/**
+ * Os controlos de paginação, para as listagens da API e para as que paginam no cliente.
+ *
+ * `summary` existe porque as duas famílias dizem a mesma coisa de formas diferentes e
+ * ambas estão certas: uma listagem servida em páginas anuncia-se por extenso, e os painéis
+ * estreitos do dispositivo escolhido só têm largura para "1–12 de 30".
+ *
+ * `goAction` existe porque os handlers dos painéis do dispositivo estão registados em
+ * `telemetryPageGo`/`downlinkPageGo` e não em `${actionPrefix}Go`. Deixar o valor por
+ * omissão nesses dois sítios não dava erro nenhum -- os botões numerados simplesmente
+ * deixavam de responder, e o anterior/seguinte continuava a funcionar.
+ */
 export function renderPagination({
     pagination,
     rootEl,
@@ -7,6 +22,8 @@ export function renderPagination({
     controlsEl,
     actionPrefix,
     defaultLimit = 20,
+    summary = defaultSummary,
+    goAction = `${actionPrefix}Go`,
 }) {
     const total = pagination?.total ?? 0;
     const totalPages = pagination?.total_pages ?? 1;
@@ -23,12 +40,12 @@ export function renderPagination({
     const pageStart = (currentPage - 1) * limit + 1;
     const pageEnd = Math.min(total, currentPage * limit);
     rootEl.classList.remove("d-none");
-    summaryEl.textContent = `A mostrar de ${pageStart} até ${pageEnd} | ${total}`;
+    summaryEl.textContent = summary(pageStart, pageEnd, total);
     controlsEl.innerHTML = [
         `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(actionPrefix)}Prev" ${currentPage <= 1 ? "disabled" : ""} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
         ...Array.from({length: totalPages}, (_, index) => {
             const page = index + 1;
-            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="${esc(actionPrefix)}Go" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ""}>${page}</button>`;
+            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="${esc(goAction)}" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ""}>${page}</button>`;
         }),
         `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(actionPrefix)}Next" ${currentPage >= totalPages ? "disabled" : ""} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
     ].join("");

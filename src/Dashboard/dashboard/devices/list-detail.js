@@ -5,29 +5,15 @@ import {
     getModels as apiGetModels,
     getProtocols as apiGetProtocols,
     getSuppliers as apiGetSuppliers,
-    requestFeature as apiRequestFeature,
 } from "../api/index.js";
 import {getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels} from "../api/models.js";
-import {state, clearSelection, selectImei, setTelemetryPage} from "../state.js";
-import {
-    commandLabel,
-    displayValue,
-    esc,
-    eventTime,
-    featureLabel,
-    fieldLabel,
-    rowPayload,
-    when,
-} from "../format.js";
+import {state, clearSelection, selectImei} from "../state.js";
+import {esc} from "../format.js";
 import {
     deviceLicenseHtml,
     emptyPanel,
-    filterChips,
     renderDeviceTypeTiles,
-    renderRequestCardShell,
-    statusBadge,
-    uplinkCardContent,
-} from "../renderers.js";
+} from "../widgets.js";
 import {renderPagination, resolvePaginationPage} from "../pagination.js";
 import {
     capabilitiesForSupplier,
@@ -71,7 +57,6 @@ import {connectDeviceStream, disconnectDeviceStream} from "./stream.js";
 
 let els;
 let ui;
-let services;
 let deviceSearchTimer = null;
 // Quantas linhas de esqueleto no máximo: a moldura mais alta (46rem) leva doze cartões, e
 // acima disso seriam linhas cortadas a custo zero de informação.
@@ -79,17 +64,12 @@ const SKELETON_MAX_ROWS = 12;
 export function initDeviceListDetail(context) {
     els = context.els;
     ui = context.ui;
-    services = context.services;
     initDeviceDetailView(context);
 }
 
 function normalizeFilterValue(value) {
     if (!value || value === "undefined" || value === "all") return null;
     return String(value);
-}
-
-function apiRoleLabel(role) {
-    return role === "hub_admin" ? "Admin Hub" : "Cliente por licença";
 }
 
 /**
@@ -679,7 +659,6 @@ async function loadDevice(imei) {
 }
 
 export {
-    apiRoleLabel,
     capabilitiesForSupplier,
     capabilitiesGroupedBySection,
     capabilityCatalogEntryByKey,

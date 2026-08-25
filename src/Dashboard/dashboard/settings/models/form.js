@@ -1,6 +1,6 @@
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
-import {renderButtonGroup, renderDeviceTypeTiles} from "../../renderers.js";
+import {renderButtonGroup, renderDeviceTypeTiles} from "../../widgets.js";
 import {
     deviceTypeOptions,
     normalizeDeviceType,
@@ -73,7 +73,7 @@ function updateModelProtocolAndPreview() {
 }
 
 function resetModelForm(selectedSupplierId = "") {
-    const {els, callbacks} = getSettingsModelsRuntime();
+    const {els} = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelForm.reset();
     delete els.modelForm.dataset.modelId;

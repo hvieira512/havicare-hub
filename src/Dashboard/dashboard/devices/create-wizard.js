@@ -1,6 +1,6 @@
 import {esc} from "../format.js";
 import {state} from "../state.js";
-import {modelPreviewHtml} from "../renderers.js";
+import {modelPreviewHtml} from "../widgets.js";
 import {
     deviceTypeFields,
     deviceTypeLabel,

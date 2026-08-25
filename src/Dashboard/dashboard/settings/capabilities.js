@@ -14,11 +14,11 @@ import {state} from "../state.js";
 import {esc} from "../format.js";
 import {
     filterChips,
-    modelImageHtml,
+    modelPreviewHtml,
     renderButtonGroup,
     renderDeviceTypeTiles,
-    requestCardContent,
-} from "../renderers.js";
+} from "../widgets.js";
+import {requestCardContent} from "../telemetry-cards.js";
 import {
     capabilitiesGroupedBySection,
     capabilityLabelByKey,
@@ -33,7 +33,6 @@ import {
 } from "../domain.js";
 import {
     loadSettingsModelFilters,
-    editModel,
     resetModelForm,
     revokeModelPreviewUrl,
     loadSettingsModelsSection,
@@ -660,12 +659,7 @@ async function openModelDetail(modelId) {
 
 function renderModelDetailInfo(model) {
     const label = modelCommercialName(model);
-    els.modelDetailImage.innerHTML = modelImageHtml(model)
-        ? modelImageHtml(model).replace(
-              'style="width:40px;height:40px;"',
-              'style="max-height:120px;" class="object-fit-contain"',
-          )
-        : `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
+    els.modelDetailImage.innerHTML = modelPreviewHtml(model, label);
     els.modelDetailName.textContent = label;
 
     els.modelDetailCommercialName.value = label;
@@ -950,19 +944,9 @@ function renderCapabilitiesSection() {
         state.settingsModal.capabilityCatalog,
     );
 
-    if (model) {
-        const label = modelCommercialName(model);
-        els.modelDetailImage.innerHTML = modelImageHtml(model)
-            ? modelImageHtml(model).replace(
-                  'style="width:40px;height:40px;"',
-                  'style="max-height:120px;" class="object-fit-contain"',
-              )
-            : `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
-        els.modelDetailName.textContent = label;
-    } else {
-        els.modelDetailImage.innerHTML = `<div class="text-center text-secondary w-100"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">Modelo</div></div>`;
-        els.modelDetailName.textContent = "Modelo";
-    }
+    const detailLabel = model ? modelCommercialName(model) : "Modelo";
+    els.modelDetailImage.innerHTML = modelPreviewHtml(model, detailLabel);
+    els.modelDetailName.textContent = detailLabel;
 
     const capabilities =
         model?.capabilities && typeof model.capabilities === "object"

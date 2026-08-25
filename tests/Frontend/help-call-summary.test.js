@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {helpCallSummaryCard} from "../../src/Dashboard/dashboard/renderers.js";
+import {helpCallSummaryCard} from "../../src/Dashboard/dashboard/telemetry-cards.js";
 
 const call = (pressType, occurredAt) => ({
     type: "help_call",

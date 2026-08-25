@@ -1,32 +1,14 @@
 import {
     createDeviceLink as apiCreateDeviceLink,
-    deleteDevice as apiDeleteDevice,
-    deleteDeviceLink as apiDeleteDeviceLink,
-    getCapabilities as apiGetCapabilities,
     getCompanies as apiGetCompanies,
     getDevice as apiGetDevice,
     getDevices as apiGetDevices,
     getLicenses as apiGetLicenses,
-    requestCapability as apiRequestCapability,
-    saveConfiguration as apiSaveConfiguration,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import {esc} from "../format.js";
-import {emptyPanel, modelPreviewHtml, renderButtonGroup} from "../renderers.js";
+import {syncPhoneControl} from "../phone.js";
 import {
-    catalogForProtocol,
-    readConfigPayload,
-    renderDeviceConfigurationRoot,
-    takePillsReminderGroup,
-} from "../config.js";
-import {
-    normalizePhoneControl,
-    renderPhoneControl,
-    resetPhoneControls,
-    syncPhoneControl,
-} from "../phone.js";
-import {
-    selectImei,
     setDownlinkPage,
     setTelemetryPage,
     state,
@@ -39,47 +21,26 @@ import {
     loadJsonStorage,
     loadTextStorage,
     saveJsonStorage,
-    saveTextStorage,
 } from "./storage.js";
 import {
-    clearSelection,
-    deriveFourPTouchDeviceId,
-    deviceTypeLabel,
-    deviceTypeOptions,
     ensureDeviceTypeSuppliersModelsLoaded,
-    findModelInfo,
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
     handleDevicePaginationClick,
     initDeviceListDetail,
-    isDeviceSelectorOpen,
-    isFourPTouchSelection,
-    licenseDisplayLabel,
-    linksToGateway,
     loadDevice,
     deviceTypeFields,
     loadSummary,
     renderDeviceSelector,
     ensureProtocolsLoaded,
     modelCommercialName,
-    modelDisplayLabel,
-    modelDisplayName,
     modelInternalName,
     modelDeviceType,
-    modelsForSupplierAndType,
     normalizeDeviceType,
     normalizeFilterValue,
     openDeviceSelector,
     selectDevice,
-    supplierProtocol,
-    suppliersForDeviceType,
-    usesMacAddress,
 } from "../devices/list-detail.js";
-import {
-    eligibleGateways,
-    gatewayKeysFromLinks,
-    gatewayLinkChanges,
-} from "../devices/gateway-links.js";
 import {
     allDetailItems,
     applyDetailFilters,
@@ -93,37 +54,25 @@ import {
     renderTelemetryList,
     renderSelection,
 } from "../devices/detail-view.js";
-import {disconnectDeviceStream, initDeviceStream} from "../devices/stream.js";
+import {initDeviceStream} from "../devices/stream.js";
 import {
-    activeDeviceModalTab,
-    applyFourPTouchDeviceIdUi,
-    deleteDevice,
     editDevice,
     ensureDeviceConfigurationCatalogLoaded,
-    getDeviceSimNumberValue,
     handleCompanySelect,
     handleDeleteDeviceBtnClick,
     handleLicenseSelect,
-    populateCompanySelect,
-    populateLicenseSelectForCompany,
     renderDeviceSelectors,
-    renderDeviceSimNumberField,
     renderDeviceTypeSelector,
     saveDevice,
     setDeviceFormError,
     syncDeviceModalContext,
-    updateDevicePreview,
     initDeviceModal,
 } from "../devices/device-modal.js";
 import {
-    armConfigFeedbackAutoClose,
     dismissConfigFeedback,
     initDeviceConfigPanel,
-    refreshDeviceModalConfigurations,
     renderDeviceConfigurationModal,
-    resetConfigUiState,
     saveDeviceConfiguration,
-    setConfigUi,
     syncConfigSectionDirty,
     syncDeviceModalCommandStates,
 } from "../devices/config-panel.js";
@@ -132,8 +81,6 @@ import {ruleFor, selectHubRuleValue} from "../devices/hub-rules/index.js";
 import {
     initGatewayLinksUi,
     refreshGatewayOptions,
-    selectedGatewayKeys,
-    syncGatewayLinks,
     updateGatewayLinkSelection,
 } from "../devices/gateway-links-ui.js";
 import {
@@ -142,14 +89,10 @@ import {
     appendPhoneListRow,
     appendTakePillsReminder,
     appendWonlexMedicationPlan,
-    createContactRow,
-    isFourPTouchPhonebookSection,
     removeConfigRow,
     removeTakePillsReminder,
     removeWonlexMedicationPlan,
-    renumberWonlexMedicationPlans,
     syncAlarmClockCustomVisibility,
-    syncTakePillsRows,
 } from "../config/row-editing.js";
 import {
     clearTakePillsRecording,
@@ -1434,7 +1377,6 @@ export async function startDashboard() {
     initDeviceListDetail({
         els,
         ui: {deviceModal, deviceSelectorModal, settingsModal},
-        services: {},
     });
     initSettings({
         els,

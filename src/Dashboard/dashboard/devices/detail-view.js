@@ -2,16 +2,11 @@ import {
     requestFeature as apiRequestFeature,
 } from "../api/index.js";
 import {
-    clearSelection,
     setDownlinkPage,
     setTelemetryPage,
     state,
 } from "../state.js";
-import {
-    deviceTypeLabel,
-    deviceTypeOptions,
-    normalizeDeviceType,
-} from "../domain.js";
+import {deviceTypeLabel, normalizeDeviceType} from "../domain.js";
 import {
     commandLabel,
     esc,
@@ -22,18 +17,17 @@ import {
     when,
     whenShort,
 } from "../format.js";
+import {deviceLicenseHtml, emptyPanel, filterChips} from "../widgets.js";
 import {
     cardTone,
-    deviceLicenseHtml,
-    emptyPanel,
-    filterChips,
     telemetryCard,
     helpCallSummaryCard,
     renderRequestCardShell,
     requestCardContent,
     statusBadge,
     uplinkCardContent,
-} from "../renderers.js";
+} from "../telemetry-cards.js";
+import {renderPagination} from "../pagination.js";
 import {clearStorageKey, saveTextStorage} from "../core/storage.js";
 import {disposeTooltips, refreshTooltips} from "../core/tooltips.js";
 import {gatewaySignalRows} from "./gateway-signal.js";
@@ -495,35 +489,34 @@ function renderTelemetryList(telemetryRows) {
             <tbody>${pageRows.map(renderTelemetryRow).join("")}</tbody>
            </table>`
         : emptyPanel("Ainda não há eventos recebidos.");
-    renderTelemetryPager(telemetry.length, totalPages);
+    renderClientPager("telemetry", telemetry.length, totalPages);
 }
 
-function renderTelemetryPager(totalRows, totalPages) {
-    const root = els.telemetryPager;
-    const summaryEl = els.telemetryPagerSummary;
-    const controlsEl = els.telemetryPagerControls;
+/**
+ * Os dois painéis do dispositivo escolhido paginam no cliente, mas os controlos são os
+ * mesmos da listagem servida pela API -- por isso saem do mesmo `renderPagination`, com o
+ * resumo curto que a largura destas colunas comporta.
+ */
+function renderClientPager(prefix, totalRows, totalPages) {
+    const root = els[`${prefix}Pager`];
+    const summaryEl = els[`${prefix}PagerSummary`];
+    const controlsEl = els[`${prefix}PagerControls`];
+    if (!root || !summaryEl || !controlsEl) return;
 
-    if (totalRows <= state.telemetryPageSize) {
-        root.classList.add("d-none");
-        summaryEl.textContent = "";
-        controlsEl.innerHTML = "";
-        return;
-    }
-
-    const currentPage = state.telemetryPage;
-    const limit = state.telemetryPageSize;
-    const pageStart = (currentPage - 1) * limit + 1;
-    const pageEnd = Math.min(totalRows, currentPage * limit);
-    root.classList.remove("d-none");
-    summaryEl.textContent = `${pageStart}–${pageEnd} de ${totalRows}`;
-    controlsEl.innerHTML = [
-        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryPrev" ${currentPage <= 1 ? "disabled" : ""} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
-        ...Array.from({ length: totalPages }, (_, index) => {
-            const page = index + 1;
-            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="telemetryPageGo" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ""}>${page}</button>`;
-        }),
-        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryNext" ${currentPage >= totalPages ? "disabled" : ""} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
-    ].join("");
+    renderPagination({
+        pagination: {
+            total: totalRows,
+            total_pages: totalPages,
+            page: state[`${prefix}Page`],
+            limit: state[`${prefix}PageSize`],
+        },
+        rootEl: root,
+        summaryEl,
+        controlsEl,
+        actionPrefix: prefix,
+        goAction: `${prefix}PageGo`,
+        summary: (start, end, total) => `${start}–${end} de ${total}`,
+    });
 }
 
 function renderTelemetryRow(payload) {
@@ -690,36 +683,7 @@ function renderDownlinkRequests(commands) {
            </table>`
         : emptyPanel("Ainda não há pedidos ao dispositivo.");
 
-    renderDownlinkPager(commands.length, totalPages);
-}
-
-function renderDownlinkPager(totalRows, totalPages) {
-    const root = els.downlinkPager;
-    const summaryEl = els.downlinkPagerSummary;
-    const controlsEl = els.downlinkPagerControls;
-    if (!root || !summaryEl || !controlsEl) return;
-
-    if (totalRows <= state.downlinkPageSize) {
-        root.classList.add("d-none");
-        summaryEl.textContent = "";
-        controlsEl.innerHTML = "";
-        return;
-    }
-
-    const currentPage = state.downlinkPage;
-    const limit = state.downlinkPageSize;
-    const pageStart = (currentPage - 1) * limit + 1;
-    const pageEnd = Math.min(totalRows, currentPage * limit);
-    root.classList.remove("d-none");
-    summaryEl.textContent = `${pageStart}–${pageEnd} de ${totalRows}`;
-    controlsEl.innerHTML = [
-        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="downlinkPrev" ${currentPage <= 1 ? "disabled" : ""} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
-        ...Array.from({ length: totalPages }, (_, index) => {
-            const page = index + 1;
-            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="downlinkPageGo" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ""}>${page}</button>`;
-        }),
-        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="downlinkNext" ${currentPage >= totalPages ? "disabled" : ""} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
-    ].join("");
+    renderClientPager("downlink", commands.length, totalPages);
 }
 
 function renderDownlinkRow(command) {
@@ -760,13 +724,6 @@ function renderConnectionTimeline(rows) {
             ),
         )
         .sort((a, b) => eventTime(a) - eventTime(b));
-
-    const connectedCount = events.filter(
-        (e) => e.type === "device.connected",
-    ).length;
-    const disconnectedCount = events.filter(
-        (e) => e.type === "device.disconnected",
-    ).length;
 
     // A single event is not a timeline, and the device badge already says whether it is
     // connected, so the section stays hidden until there is something to plot.

@@ -38,7 +38,6 @@ import {
     loadDevice,
     loadSummary,
     modelCommercialName,
-    modelDeviceType,
     modelDisplayLabel,
     modelInternalName,
     modelsForSupplierAndType,
@@ -62,7 +61,7 @@ import {
     modelPreviewHtml,
     renderButtonGroup,
     renderDeviceTypeTiles,
-} from "../renderers.js";
+} from "../widgets.js";
 import {companyLabel, deviceTypeLabel} from "../domain.js";
 import {
     selectImei,
@@ -84,14 +83,10 @@ import {
 
 let els;
 let deviceModal;
-let deviceSelectorModal;
-let settingsModal;
 
 export function initDeviceModal(context) {
     els = context.els;
     deviceModal = context.deviceModal;
-    deviceSelectorModal = context.deviceSelectorModal;
-    settingsModal = context.settingsModal;
 }
 
 export async function populateCompanySelect() {

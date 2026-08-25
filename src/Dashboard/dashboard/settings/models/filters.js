@@ -1,10 +1,9 @@
 import {state} from "../../state.js";
-import {esc} from "../../format.js";
 import {
     filterChips,
     renderButtonGroup,
     renderDeviceTypeTiles,
-} from "../../renderers.js";
+} from "../../widgets.js";
 import {
     deviceTypeLabel,
     deviceTypeOptions,

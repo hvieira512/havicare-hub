@@ -1,28 +1,13 @@
-import { esc, fieldLabel, titleize } from "./format.js";
-import { emptyPanel } from "./renderers.js";
-import { normalizePhoneControl, renderPhoneControl } from "./phone.js";
+import { esc, titleize } from "./format.js";
+import { emptyPanel } from "./widgets.js";
 import {takePillsInput, takePillsReminderGroup} from "./config/four-p-touch-take-pills.js";
 import {
-    boolValue,
-    defaultAlarmClockItem,
     defaultWonlexMedicationPlan,
-    formatReminderTime,
-    isFourPTouchAlarmDaySelected,
-    normalizeAlarmClockDaySelection,
-    normalizeAlarmClockItem,
-    normalizeAlarmClockItems,
-    normalizeFourPTouchAlarmDays,
-    normalizeFourPTouchAlarmItem,
-    normalizeFourPTouchAlarms,
-    normalizeWonlexMedicationPlan,
-    normalizeWonlexMedicationPlans,
     numericValue,
-    parseFourPTouchAlarmString,
     WONLEX_MEDICATION_PERIODS,
 } from "./config/normalizers.js";
 import {
     alarmClockInput,
-    alarmClockRow,
     alarmsInput,
     bloodPressureInput,
     callWhitelistInput,
@@ -30,7 +15,6 @@ import {
     dualToggleInput,
     fallSensitivityInput,
     fallSensitivityLevelsInput,
-    fourPTouchAlarmRow,
     intervalHoursToggleInput,
     intervalToggleInput,
     languageTimezoneInput,
@@ -38,7 +22,6 @@ import {
     makeCallInput,
     numberInput,
     phoneInput,
-    phoneRepeaterInput,
     pushMessageInput,
     requestActionInput,
     resetActionInput,
@@ -50,20 +33,12 @@ import {
     toggleInput,
     wonlexBloodPressureWarningInput,
     wonlexHeartRateRangeInput,
-    wonlexMedicationPlanRow,
     wonlexMedicationPlansInput,
     wonlexReminderThresholdInput,
     wonlexSleepSettingsInput,
     workingModeInput,
 } from "./config/inputs.js";
 import {
-    formatFourPTouchAlarmTime,
-    normalizeAlarmClockRecurrenceKind,
-    readAlarmClockDays,
-    readFourPTouchAlarmDays,
-} from "./config/alarm-fields.js";
-import {
-    findDuplicateValues,
     firstFieldName,
     readAlarmClock,
     readCheckbox,
@@ -81,11 +56,8 @@ import {
 } from "./config/readers.js";
 import {
     catalogForProtocol,
-    isPlainObject,
-    protocolDefinition,
     protocolFieldConstraints,
     protocolGroupedCapabilities,
-    protocolPhonebookConstraints,
 } from "./config/protocol-catalog.js";
 
 export {takePillsReminderGroup, catalogForProtocol};

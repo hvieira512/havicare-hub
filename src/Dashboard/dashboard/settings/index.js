@@ -16,8 +16,6 @@ import {
 } from "../api/index.js";
 import { state } from "../state.js";
 import { esc } from "../format.js";
-import {modelPreviewHtml} from "../renderers.js";
-import {apiRoleLabel} from "../devices/list-detail.js";
 import {normalizeDeviceType} from "../domain.js";
 import {
     renderPagination,
@@ -48,6 +46,11 @@ import {
 let els;
 let ui;
 let apiUserLicenses = [];
+
+/** O perfil de um utilizador da API, por palavras. Só a aba de utilizadores o mostra. */
+function apiRoleLabel(role) {
+    return role === "hub_admin" ? "Admin Hub" : "Cliente por licença";
+}
 
 export function initSettings(context) {
     els = context.els;

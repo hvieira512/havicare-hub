@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {renderRequestCardShell} from "../../src/Dashboard/dashboard/renderers.js";
+import {renderRequestCardShell} from "../../src/Dashboard/dashboard/telemetry-cards.js";
 
 const channel = (index, delta, baseline = 1) => ({
     index,
