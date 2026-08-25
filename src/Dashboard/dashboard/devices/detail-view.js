@@ -541,15 +541,17 @@ function renderTelemetryRow(payload) {
     const tone = cardTone(type);
     return `
         <tr>
-        <td style="width:34px">
+        <td>
             <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
                 <i class="fa-solid ${esc(card.icon)}"></i>
             </span>
         </td>
-        <td class="fw-medium" style="width:36%">${esc(featureLabel(type))}</td>
-        <td class="tabular-nums text-break">
-            ${esc(card.rowValue || card.value)}
-            ${details ? `<div class="telemetry-row-details text-secondary" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</div>` : ""}
+        <td class="fw-medium" title="${esc(featureLabel(type))}">${esc(featureLabel(type))}</td>
+        <td class="tabular-nums">
+            <span class="telemetry-row-stack">
+                <span class="telemetry-row-value">${esc(card.rowValue || card.value)}</span>
+                ${details ? `<span class="telemetry-row-details" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</span>` : ""}
+            </span>
         </td>
         <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(payload.occurredAt || payload.recordedAt))}">${esc(whenShort(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
         </tr>`;
@@ -734,14 +736,16 @@ function renderDownlinkRow(command) {
     const note = command.error || "";
     return `
         <tr>
-        <td style="width:34px">
+        <td>
             <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
                 <i class="fa-solid ${esc(content.icon)}"></i>
             </span>
         </td>
-        <td class="fw-medium" style="width:190px">
-            ${esc(commandLabel(command) || content.value || "Pedido")}
-            ${note ? `<div class="fw-normal text-secondary text-break">${esc(note)}</div>` : ""}
+        <td class="fw-medium">
+            <span class="telemetry-row-stack">
+                <span class="telemetry-row-value" title="${esc(commandLabel(command) || content.value || "Pedido")}">${esc(commandLabel(command) || content.value || "Pedido")}</span>
+                ${note ? `<span class="telemetry-row-details fw-normal" title="${esc(note)}">${esc(note)}</span>` : ""}
+            </span>
         </td>
         <td${replied ? ` title="${esc(replied)}"` : ""}>${statusBadge(status)}</td>
         <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(command.requestedAt))}">${esc(whenShort(command.requestedAt) || "-")}</td>

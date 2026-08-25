@@ -398,40 +398,91 @@ body {
         padding: 0 .5rem 0 0;
     }
 
+    /* As larguras fixas das colunas nao se aplicam a uma grelha: aqui quem manda sao as
+       faixas do `tr`, e cada celula volta a medir o que a sua faixa lhe der. */
     .telemetry-table > tbody > tr > td:nth-child(1) {
         grid-column: 1;
         grid-row: 1;
+        width: auto;
     }
 
     .telemetry-table > tbody > tr > td:nth-child(2) {
         grid-column: 2;
         grid-row: 1;
+        width: auto;
     }
 
     .telemetry-table > tbody > tr > td:nth-child(4) {
         grid-column: 3;
         grid-row: 1;
         padding-right: 0;
+        width: auto;
     }
 
     .telemetry-table > tbody > tr > td:nth-child(3) {
         grid-column: 2 / -1;
         grid-row: 2;
         padding: .125rem 0 0 0;
+        width: auto;
     }
 }
 
-/* Os detalhes de um evento cabem em duas linhas e nao mais. Um radar traz vinte campos no
-   mesmo evento -- "Versao: 0 · Pessoas: 0 · Distancia a andar: 0 · ..." -- e a meia largura
-   do painel isso dava uma coluna de uma palavra por linha que empurrava a hora fora do
-   ecra. O texto completo fica no `title` da celula. */
-.telemetry-row-details {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+/* Uma linha por evento, sempre a mesma altura.
+   Metade dos tipos declara detalhes e a outra metade nao, e como esses detalhes iam para
+   uma segunda linha a lista alternava entre alturas conforme o tipo de cada evento -- o
+   ritmo quebrava a cada duas ou tres linhas. Os detalhes passam a seguir ao valor, na mesma
+   linha, e o que nao cabe corta-se com reticencias. O texto completo fica no `title` da
+   celula, que e onde ja estava a versao integral. */
+.telemetry-table {
+    table-layout: fixed;
+}
+
+/* Colunas fixas, iguais nos dois paineis: o icone, o nome, o valor com o que sobra, e a
+   hora. Sem isto cada pagina media as suas colunas pelo conteudo que lhe tocou, e as duas
+   listas lado a lado nunca alinhavam entre si nem de uma pagina para a outra. */
+.telemetry-table > tbody > tr > td:nth-child(1) {
+    width: 2.125rem;
+}
+
+.telemetry-table > tbody > tr > td:nth-child(2) {
+    width: 34%;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* A hora mede o que a hora precisa e nunca se corta: e a coluna que se usa para comparar
+   dois eventos, e "25/08, 12:47:5..." nao serve para comparar nada. */
+.telemetry-table > tbody > tr > td:nth-child(4) {
+    width: 7.5rem;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+/* Metade dos tipos declara detalhes e a outra metade nao, e a segunda linha de uns fazia a
+   lista alternar entre duas alturas. A altura de duas linhas fica reservada aqui, no
+   contentor, e nao numa linha vazia: assim uma linha sem detalhes centra o valor no meio da
+   altura reservada em vez de o encostar ao topo. */
+.telemetry-row-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 2.4rem;
+    min-width: 0;
+}
+
+.telemetry-row-value,
+.telemetry-row-details {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.telemetry-row-details {
+    color: var(--bs-secondary-color);
     font-size: .8125rem;
-    line-height: 1.35;
+    line-height: 1.3;
 }
 
 /* A pastilha do icone numa linha de evento: a mesma ideia do cartao, em 26px. */
