@@ -169,8 +169,12 @@ final class DeviceRequestCardGroupingTest extends TestCase
         $source .= file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/normalizers.js'
         );
+        // Os handlers do painel de configuracao sairam do bootstrap.js para o seu proprio
+        // modulo; as afirmacoes que olham para eles seguem-no.
         $bootstrap = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'
+        ) . file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/handlers/device-config.js'
         ) . file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/device-modal.js'
         ) . file_get_contents(

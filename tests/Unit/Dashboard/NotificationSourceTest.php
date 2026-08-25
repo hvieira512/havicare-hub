@@ -14,8 +14,10 @@ final class NotificationSourceTest extends TestCase
         $page = file_get_contents($root . '/src/Dashboard/index.php');
         $notifications = file_get_contents($root . '/src/Dashboard/dashboard/notifications.js');
         // Adicionar um dispositivo passou a ser o assistente, num modal proprio; a
-        // ligacao que arranca as notificacoes continua no bootstrap.
-        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/core/bootstrap.js');
+        // ligacao que arranca as notificacoes continua no bootstrap, mas o que o assistente
+        // faz com o aviso mudou-se para o modulo dos seus handlers.
+        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/core/bootstrap.js')
+            . file_get_contents($root . '/src/Dashboard/dashboard/core/handlers/create-wizard.js');
 
         self::assertIsString($page);
         self::assertIsString($notifications);
