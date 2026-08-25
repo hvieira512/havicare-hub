@@ -383,21 +383,15 @@ function renderDeviceTypeFilter() {
 function renderFilterOptionList(rootEl, key, options, labelForValue, search = "") {
     const selected = state.deviceFilters[key];
     const needle = search.trim().toLowerCase();
-    // O que está marcado sobe: numa lista longa, uma opção marcada podia ficar fora de
-    // vista e o filtro passava a agir sem se ver de onde.
-    const visible = options
-        .filter((option) => {
-            if (needle === "") return true;
-            return (
-                String(option.value).toLowerCase().includes(needle) ||
-                String(labelForValue(option.value)).toLowerCase().includes(needle)
-            );
-        })
-        .sort((left, right) => {
-            const leftOn = selected.includes(String(left.value)) ? 0 : 1;
-            const rightOn = selected.includes(String(right.value)) ? 0 : 1;
-            return leftOn - rightOn || right.count - left.count;
-        });
+    // A ordem é a que vem do servidor e não muda ao marcar: com o que está marcado a subir
+    // ao topo, a opção seguinte deslocava-se debaixo do cursor entre dois cliques.
+    const visible = options.filter((option) => {
+        if (needle === "") return true;
+        return (
+            String(option.value).toLowerCase().includes(needle) ||
+            String(labelForValue(option.value)).toLowerCase().includes(needle)
+        );
+    });
 
     rootEl.innerHTML = visible.length
         ? visible
