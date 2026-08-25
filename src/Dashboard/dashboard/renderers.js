@@ -435,14 +435,8 @@ export function telemetryCard({
         ? '<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-paper-plane"></i></span>'
         : "";
 
-    // A 375px, um mosaico por linha desperdica metade da largura em nomes de duas
-    // palavras. Dois por linha, e largura toda so para os que trazem corpo (span 12).
-    const mobileColumn = span >= 12 ? "col-12" : "col-6";
-    // O icone a esquerda, o nome e o valor ao lado. O nome pode quebrar em duas linhas em
-    // vez de ser truncado, que era o que obrigava a um `title` a repetir "Oxigenio no
-    // sangue" em cima do rato.
     return `
-        <div class="${mobileColumn} col-md-${span}">
+        <div class="col-12 col-md-${span}">
         <${tag}${attrs}>
         <div class="card-body telemetry-card-body">
         <div class="d-flex align-items-center gap-3">
