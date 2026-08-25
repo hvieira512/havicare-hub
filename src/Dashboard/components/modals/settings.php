@@ -25,19 +25,7 @@ ob_start();
                         </div>
                         <span class="config-state config-state-secondary flex-shrink-0"><span class="config-state-dot"></span>Só leitura</span>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Modelos</th>
-                                    <th>Estado</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="supplierListBody"></tbody>
-                        </table>
-                    </div>
+                    <?= data_table(['Nome', 'Modelos', 'Estado', ''], 'supplierListBody') ?>
                     <?= pagination_component('settingsSuppliers') ?>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsModelsPane" role="tabpanel" aria-labelledby="settingsModelsTabBtn">
@@ -51,23 +39,14 @@ ob_start();
                     <div id="modelsCarousel" class="carousel slide" data-bs-touch="false">
                         <div class="carousel-inner">
                             <div class="carousel-item active">
-                                <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-3">
-                                    <div>
-                                        <div class="fw-semibold">Modelos</div>
-                                        <div class="small text-secondary" id="modelsTabSummary"></div>
-                                    </div>
-                                    <button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn"><?= icon('fa-plus', 'me-1') ?>Novo modelo</button>
-                                </div>
+                                <?= tab_pane_header(
+                                    'Modelos',
+                                    'modelsTabSummary',
+                                    '<button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn">' . icon('fa-plus', 'me-1') . 'Novo modelo</button>'
+                                ) ?>
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="input-group input-group-sm flex-grow-1">
-                                        <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
-                                        <input id="modelsListSearch" type="search" class="form-control" placeholder="Procurar modelo">
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 flex-shrink-0" type="button"
-                                        data-bs-toggle="collapse" data-bs-target="#modelsFiltersCollapse" aria-expanded="false" aria-controls="modelsFiltersCollapse">
-                                        <?= icon('fa-sliders') ?>Filtros
-                                        <span id="modelsFilterCount" class="badge rounded-pill text-bg-primary d-none"></span>
-                                    </button>
+                                    <?= search_input('modelsListSearch', 'Procurar modelo', 'flex-grow-1') ?>
+                                    <?= filter_toggle_button('modelsFiltersCollapse', 'modelsFilterCount', 'flex-shrink-0') ?>
                                 </div>
                                 <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
                                     <div id="modelsActiveFilters" class="d-flex flex-wrap gap-2"></div>
@@ -85,30 +64,9 @@ ob_start();
                                         </div>
                                     </div>
                                 </div>
-                                <div class="table-responsive mt-3">
-                                    <table class="table table-sm align-middle table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th></th>
-                                                <th>Modelo</th>
-                                                <th>Fornecedor</th>
-                                                <th>Tipo</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="modelListBody"></tbody>
-                                    </table>
-                                </div>
+                                <?= data_table(['', 'Modelo', 'Fornecedor', 'Tipo', ''], 'modelListBody', 'table-hover', 'mt-3') ?>
                                 <div class="d-flex justify-content-end align-items-center gap-2 mt-3">
-                                    <label for="modelsListLimit" class="section-label mb-0">Por página</label>
-                                    <select id="modelsListLimit" class="form-select form-select-sm w-auto">
-                                        <option value="5">5</option>
-                                        <option value="10">10</option>
-                                        <option value="15">15</option>
-                                        <option value="20">20</option>
-                                        <option value="30">30</option>
-                                        <option value="50">50</option>
-                                    </select>
+                                    <?= page_size_select('modelsListLimit') ?>
                                 </div>
                                 <?= pagination_component('settingsModels') ?>
                             </div>
@@ -118,7 +76,7 @@ ob_start();
                                         <div id="modelPreview" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
                                             <input type="file" id="modelImage" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
                                             <div id="modelPreviewContent" class="text-center text-secondary w-100">
-                                                <i class="fa-solid fa-microchip fs-1 opacity-50"></i>
+                                                <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
                                                 <div class="small mt-2">Novo modelo</div>
                                             </div>
                                         </div>
@@ -185,7 +143,7 @@ ob_start();
                                     <div class="col-lg-4">
                                         <div id="modelDetailImage" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-3 h-100">
                                             <div class="text-center text-secondary w-100">
-                                                <i class="fa-solid fa-microchip fs-1 opacity-50"></i>
+                                                <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
                                                 <div class="small mt-2" id="modelDetailName">Modelo</div>
                                             </div>
                                         </div>
@@ -220,15 +178,8 @@ ob_start();
                         <div class="small text-secondary" id="capabilitySupplierSummary"></div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <div class="input-group input-group-sm flex-grow-1">
-                            <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
-                            <input id="capabilityCatalogSearch" type="search" class="form-control" placeholder="Procurar capacidade ou chave">
-                        </div>
-                        <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 flex-shrink-0" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#capabilityFiltersCollapse" aria-controls="capabilityFiltersCollapse">
-                            <?= icon('fa-sliders') ?>Filtros
-                            <span id="capabilityFilterCount" class="badge rounded-pill text-bg-primary d-none"></span>
-                        </button>
+                        <?= search_input('capabilityCatalogSearch', 'Procurar capacidade ou chave', 'flex-grow-1') ?>
+                        <?= filter_toggle_button('capabilityFiltersCollapse', 'capabilityFilterCount', 'flex-shrink-0') ?>
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
                         <div id="capabilityActiveFilters" class="d-flex flex-wrap gap-2"></div>
@@ -275,14 +226,14 @@ ob_start();
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
-                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
-                        <div>
-                            <div class="fw-semibold">Empresas</div>
-                            <div class="small text-secondary" id="companiesTabSummary"></div>
-                        </div>
-                        <button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn"
-                            data-bs-toggle="collapse" data-bs-target="#companyFormCollapse" aria-controls="companyFormCollapse"><?= icon('fa-plus', 'me-1') ?>Nova empresa</button>
-                    </div>
+                    <?= tab_pane_header(
+                        'Empresas',
+                        'companiesTabSummary',
+                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn"'
+                        . ' data-bs-toggle="collapse" data-bs-target="#companyFormCollapse"'
+                        . ' aria-expanded="false" aria-controls="companyFormCollapse">'
+                        . icon('fa-plus', 'me-1') . 'Nova empresa</button>'
+                    ) ?>
                     <div class="collapse mb-3" id="companyFormCollapse">
                     <form id="companyForm" class="row g-2 p-3 border rounded-3">
                         <input type="hidden" id="companyId">
@@ -319,14 +270,14 @@ ob_start();
                     </div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
-                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
-                        <div>
-                            <div class="fw-semibold">Utilizadores API</div>
-                            <div class="small text-secondary" id="apiUsersTabSummary"></div>
-                        </div>
-                        <button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn"
-                            data-bs-toggle="collapse" data-bs-target="#apiUserFormCollapse" aria-controls="apiUserFormCollapse"><?= icon('fa-plus', 'me-1') ?>Novo utilizador</button>
-                    </div>
+                    <?= tab_pane_header(
+                        'Utilizadores API',
+                        'apiUsersTabSummary',
+                        '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn"'
+                        . ' data-bs-toggle="collapse" data-bs-target="#apiUserFormCollapse"'
+                        . ' aria-expanded="false" aria-controls="apiUserFormCollapse">'
+                        . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
+                    ) ?>
                     <div class="collapse mb-3" id="apiUserFormCollapse">
                     <form id="apiUserForm" class="row g-3 p-3 border rounded-3">
                         <input type="hidden" id="apiUserId">
@@ -363,20 +314,7 @@ ob_start();
                         </div>
                     </form>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Utilizador</th>
-                                    <th>Perfil</th>
-                                    <th>Âmbito</th>
-                                    <th>Estado</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="apiUserListBody"></tbody>
-                        </table>
-                    </div>
+                    <?= data_table(['Utilizador', 'Perfil', 'Âmbito', 'Estado', ''], 'apiUserListBody') ?>
                     <?= pagination_component('settingsApiUsers') ?>
                 </div>
             </div>

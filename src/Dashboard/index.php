@@ -159,15 +159,8 @@ require_once __DIR__ . '/components/modal.php';
                             <div id="deviceDetail" class="d-none device-detail-open">
                                 <div id="detailFiltersPanel">
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="input-group input-group-sm flex-grow-1">
-                                            <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
-                                            <input id="detailSearch" type="search" class="form-control" placeholder="Procurar na atividade">
-                                        </div>
-                                        <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 flex-shrink-0" type="button"
-                                            data-bs-toggle="collapse" data-bs-target="#detailFiltersCollapse" aria-expanded="false" aria-controls="detailFiltersCollapse">
-                                            <?= icon('fa-sliders') ?>Filtros
-                                            <span id="detailFilterCount" class="count-chip count-chip-strong d-none"></span>
-                                        </button>
+                                        <?= search_input('detailSearch', 'Procurar na atividade', 'flex-grow-1') ?>
+                                        <?= filter_toggle_button('detailFiltersCollapse', 'detailFilterCount', 'flex-shrink-0') ?>
                                     </div>
                                     <div id="detailActiveFiltersRow" class="d-flex flex-wrap align-items-center gap-2 mt-2 d-none">
                                         <div id="detailActiveFilters" class="d-flex flex-wrap gap-2"></div>

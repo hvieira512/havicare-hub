@@ -18,8 +18,8 @@ ob_start();
 $body = (string) ob_get_clean();
 
 $footer = '<button type="button" class="btn btn-outline-secondary" id="wizardBackBtn">'
-    . '<i class="fa-solid fa-arrow-left me-2"></i>Anterior</button>'
+    . icon('fa-arrow-left', 'me-2') . 'Anterior</button>'
     . '<button type="button" class="btn btn-primary" id="wizardNextBtn">Seguinte'
-    . '<i class="fa-solid fa-arrow-right ms-2"></i></button>';
+    . icon('fa-arrow-right', 'ms-2') . '</button>';
 
 render_modal('deviceWizardModal', 'Adicionar dispositivo', $body, $footer, 'modal-lg modal-fullscreen-md-down');

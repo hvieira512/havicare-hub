@@ -6,11 +6,7 @@ ob_start();
 ?>
 <div class="row g-0 device-selector-body">
     <div class="col-12 d-lg-none p-3 pb-0">
-        <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2" type="button"
-            data-bs-toggle="collapse" data-bs-target="#deviceFilterPanel" aria-expanded="false" aria-controls="deviceFilterPanel">
-            <?= icon('fa-sliders') ?>Filtros
-            <span id="deviceFilterCountMobile" class="count-chip count-chip-strong d-none"></span>
-        </button>
+        <?= filter_toggle_button('deviceFilterPanel', 'deviceFilterCountMobile') ?>
     </div>
     <aside id="deviceFilterPanel" class="col-12 col-lg-4 p-3 device-filter-column collapse d-lg-block">
         <div class="d-flex align-items-center justify-content-between gap-2">
@@ -23,7 +19,7 @@ ob_start();
             </button>
         </div>
 
-        <div class="filter-group">
+        <div class="d-flex flex-column">
             <span class="section-label d-block mb-2">Estado</span>
             <div class="btn-group w-100" role="group" aria-label="Estado de ligação">
                 <input type="radio" class="btn-check" name="deviceOnlineFilter" id="deviceOnlineAll" value="all" autocomplete="off" checked>
@@ -35,61 +31,25 @@ ob_start();
             </div>
         </div>
 
-        <div class="filter-group">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="section-label">Tipo</span>
-                <span id="deviceTypeFilterCount" class="count-chip d-none"></span>
-            </div>
-            <div id="deviceTypeFilter" class="device-type-grid"></div>
-        </div>
+        <?= filter_group('Tipo', 'deviceTypeFilterCount', 'deviceTypeFilter', 'device-type-grid') ?>
+        <?= filter_group('Fornecedor', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list') ?>
 
-        <div class="filter-group">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="section-label">Fornecedor</span>
-                <span id="deviceSupplierFilterCount" class="count-chip d-none"></span>
-            </div>
-            <div id="deviceSupplierFilter" class="filter-list"></div>
-        </div>
-
-        <div class="filter-group">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="section-label">Modelo</span>
-                <span id="deviceModelFilterCount" class="count-chip d-none"></span>
-            </div>
-            <div class="input-group input-group-sm mb-2">
-                <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
-                <input id="deviceModelFilterSearch" type="search" class="form-control" placeholder="Procurar modelo">
-            </div>
+        <div class="d-flex flex-column">
+            <?= section_header('Modelo', 'deviceModelFilterCount', true, true) ?>
+            <?= search_input('deviceModelFilterSearch', 'Procurar modelo', 'mb-2') ?>
             <div id="deviceModelFilter" class="filter-list"></div>
         </div>
 
-        <div class="filter-group">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="section-label">Licença</span>
-                <span id="deviceLicenseFilterCount" class="count-chip d-none"></span>
-            </div>
-            <div id="deviceLicenseFilter" class="filter-list"></div>
-        </div>
+        <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list') ?>
     </aside>
 
     <section class="col-12 col-lg-8 p-3 device-list-column">
-        <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text"><?= icon('fa-magnifying-glass') ?></span>
-            <input id="deviceListSearch" type="search" class="form-control" placeholder="Procurar IMEI, fornecedor ou modelo">
-        </div>
+        <?= search_input('deviceListSearch', 'Procurar IMEI, fornecedor ou modelo', 'mb-3') ?>
         <div id="deviceList" class="device-card-list"></div>
         <div class="d-flex justify-content-between align-items-center gap-2 mt-3 flex-wrap">
             <?= pagination_component('deviceListPagination') ?>
             <div class="d-flex align-items-center gap-2 ms-auto">
-                <label for="deviceListLimit" class="section-label mb-0">Por página</label>
-                <select id="deviceListLimit" class="form-select form-select-sm w-auto">
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="15">15</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="50">50</option>
-                </select>
+                <?= page_size_select('deviceListLimit') ?>
             </div>
         </div>
     </section>
