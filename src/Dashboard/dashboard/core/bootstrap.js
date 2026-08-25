@@ -25,7 +25,12 @@ import {
     resetPhoneControls,
     syncPhoneControl,
 } from "../phone.js";
-import {selectImei, setTelemetryPage, state} from "../state.js";
+import {
+    selectImei,
+    setDownlinkPage,
+    setTelemetryPage,
+    state,
+} from "../state.js";
 import {cacheElements} from "./dom.js";
 import {
     FILTERS_STORAGE_KEY,
@@ -84,6 +89,7 @@ import {
     applyDetailSearch,
     removeDetailFilter,
     requestTelemetryFeature,
+    renderDownlinkRequests,
     renderTelemetryList,
     renderSelection,
 } from "../devices/detail-view.js";
@@ -314,6 +320,7 @@ function bindEvents() {
     });
     els.apiUserRole.addEventListener("change", syncApiUserRoleFields);
     els.telemetryPager.addEventListener("click", handleTelemetryPagerClick);
+    els.downlinkPager?.addEventListener("click", handleDownlinkPagerClick);
     els.applyDetailFiltersBtn.addEventListener("click", applyDetailFilters);
     els.clearDetailFiltersBtn.addEventListener("click", clearDetailFilters);
     els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);
@@ -668,6 +675,28 @@ async function clearDeviceFilters() {
     state.deviceListPage = 1;
     clearStorageKey(FILTERS_STORAGE_KEY);
     await loadSummary();
+}
+
+function handleDownlinkPagerClick(event) {
+    const button = event.target.closest("[data-action]");
+    if (!button || !state.selectedDetail) return;
+
+    const commands = filterDetailItems(allDetailItems())
+        .filter((item) => item._source === "command")
+        .map((item) => item.raw);
+    const totalPages = Math.max(
+        1,
+        Math.ceil(commands.length / state.downlinkPageSize),
+    );
+
+    if (button.dataset.action === "downlinkPrev")
+        setDownlinkPage(state.downlinkPage - 1, totalPages);
+    if (button.dataset.action === "downlinkNext")
+        setDownlinkPage(state.downlinkPage + 1, totalPages);
+    if (button.dataset.action === "downlinkPageGo")
+        setDownlinkPage(parseInt(button.dataset.page || "1", 10), totalPages);
+
+    renderDownlinkRequests(commands);
 }
 
 function handleTelemetryPagerClick(event) {

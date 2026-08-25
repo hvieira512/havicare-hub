@@ -209,6 +209,7 @@ require_once __DIR__ . '/components/modal.php';
                                         <div class="col-12 col-xl-6 d-flex flex-column border-start-xl ps-xl-4 mt-4 mt-xl-0">
                                             <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
                                             <div id="downlinkRequests" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
+                                            <?= pagination_component('downlink') ?>
                                         </div>
                                     </div>
                                 </div>

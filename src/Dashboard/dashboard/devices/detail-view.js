@@ -1,7 +1,12 @@
 import {
     requestFeature as apiRequestFeature,
 } from "../api/index.js";
-import {clearSelection, setTelemetryPage, state} from "../state.js";
+import {
+    clearSelection,
+    setDownlinkPage,
+    setTelemetryPage,
+    state,
+} from "../state.js";
 import {
     companyLabel,
     deviceTypeLabel,
@@ -661,16 +666,59 @@ function renderNcsEventCard({type, latest}) {
 
 function renderDownlinkRequests(commands) {
     els.downlinkRequestCount.textContent = commands.length ? String(commands.length) : "";
+
+    // Paginado como os eventos recebidos: a coluna cresce com o historico, e sem paginas os
+    // pedidos antigos ficavam atras de um scroll interno que ninguem via.
+    const totalPages = Math.max(
+        1,
+        Math.ceil(commands.length / state.downlinkPageSize),
+    );
+    setDownlinkPage(state.downlinkPage, totalPages);
+
+    const start = (state.downlinkPage - 1) * state.downlinkPageSize;
+    const pageRows = commands.slice(start, start + state.downlinkPageSize);
+
     // A mesma linha dos eventos recebidos, do outro lado: pastilha do icone, nome, estado,
     // hora. Eram cinco colunas com cabecalho -- "Pedido em", "Pedido", "Estado", "Resposta",
     // "Detalhes" -- que a meia largura do painel truncavam todas. O que se perdia da coluna
     // "Resposta" cabe no `title` da pastilha, e o erro passa a segunda linha do nome, que e
     // o unico dos dois que se precisa de ver sem passar o rato.
-    els.downlinkRequests.innerHTML = commands.length
+    els.downlinkRequests.innerHTML = pageRows.length
         ? `<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${commands.map(renderDownlinkRow).join("")}</tbody>
+            <tbody>${pageRows.map(renderDownlinkRow).join("")}</tbody>
            </table>`
         : emptyPanel("Ainda não há pedidos ao dispositivo.");
+
+    renderDownlinkPager(commands.length, totalPages);
+}
+
+function renderDownlinkPager(totalRows, totalPages) {
+    const root = els.downlinkPager;
+    const summaryEl = els.downlinkPagerSummary;
+    const controlsEl = els.downlinkPagerControls;
+    if (!root || !summaryEl || !controlsEl) return;
+
+    if (totalRows <= state.downlinkPageSize) {
+        root.classList.add("d-none");
+        summaryEl.textContent = "";
+        controlsEl.innerHTML = "";
+        return;
+    }
+
+    const currentPage = state.downlinkPage;
+    const limit = state.downlinkPageSize;
+    const pageStart = (currentPage - 1) * limit + 1;
+    const pageEnd = Math.min(totalRows, currentPage * limit);
+    root.classList.remove("d-none");
+    summaryEl.textContent = `${pageStart}–${pageEnd} de ${totalRows}`;
+    controlsEl.innerHTML = [
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="downlinkPrev" ${currentPage <= 1 ? "disabled" : ""} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
+        ...Array.from({ length: totalPages }, (_, index) => {
+            const page = index + 1;
+            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="downlinkPageGo" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ""}>${page}</button>`;
+        }),
+        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="downlinkNext" ${currentPage >= totalPages ? "disabled" : ""} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
+    ].join("");
 }
 
 function renderDownlinkRow(command) {

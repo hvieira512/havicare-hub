@@ -137,11 +137,14 @@ export const state = {
     // linhas passou a ter uma linha de texto em vez de duas ou tres, e cabem mais duas na
     // mesma altura. Cem eventos passam de dez paginas para nove.
     telemetryPageSize: 12,
+    downlinkPage: 1,
+    downlinkPageSize: 12,
 };
 
 export function selectImei(imei) {
     if (state.selectedImei !== imei) {
         state.telemetryPage = 1;
+        state.downlinkPage = 1;
     }
     state.selectedImei = imei;
 }
@@ -150,9 +153,14 @@ export function clearSelection() {
     state.selectedImei = null;
     state.selectedDetail = null;
     state.telemetryPage = 1;
+    state.downlinkPage = 1;
     state.detailFiltersDraft = { from: "", to: "", type: "all", q: "" };
 }
 
 export function setTelemetryPage(page, totalPages) {
     state.telemetryPage = Math.min(Math.max(1, page), Math.max(1, totalPages));
+}
+
+export function setDownlinkPage(page, totalPages) {
+    state.downlinkPage = Math.min(Math.max(1, page), Math.max(1, totalPages));
 }
