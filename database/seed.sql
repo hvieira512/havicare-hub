@@ -182,3 +182,32 @@ INSERT IGNORE INTO gateway_device_links (gateway_device_key, linked_device_key, 
     ('c5e390f30bce', 'fbd87c59ba8b', 1),
     ('d48c49f7909c', 'fbd87c59ba8b', 1),
     ('dc1603ecf1f7', 'fbd87c59ba8b', 1);
+
+-- The HW20PRO capability overrides, which are the one place production disagrees with
+-- what the migrations alone produce. 2026072903_restrict_hw20pro_health_requests marked
+-- all seven health capabilities non-requestable; three of them were turned back on by
+-- hand afterwards, `location` was set explicitly, and two were switched off entirely.
+-- These statements reproduce that final state rather than the blanket rule.
+UPDATE model_capabilities mc
+JOIN models m ON m.id = mc.model_id
+JOIN suppliers s ON s.id = m.supplier_id
+JOIN capabilities c ON c.id = mc.capability_id
+SET mc.is_requestable = 1
+WHERE s.name = 'Wonlex' AND m.internal_model = 'HW20PRO'
+  AND c.capability_key IN ('breath_rate', 'heart_rate', 'location', 'temperature');
+
+UPDATE model_capabilities mc
+JOIN models m ON m.id = mc.model_id
+JOIN suppliers s ON s.id = m.supplier_id
+JOIN capabilities c ON c.id = mc.capability_id
+SET mc.is_requestable = 0
+WHERE s.name = 'Wonlex' AND m.internal_model = 'HW20PRO'
+  AND c.capability_key IN ('ecg', 'hrv', 'ppg', 'rr_interval');
+
+UPDATE model_capabilities mc
+JOIN models m ON m.id = mc.model_id
+JOIN suppliers s ON s.id = m.supplier_id
+JOIN capabilities c ON c.id = mc.capability_id
+SET mc.enabled = 0
+WHERE s.name = 'Wonlex' AND m.internal_model = 'HW20PRO'
+  AND c.capability_key IN ('breath_rate', 'temperature');

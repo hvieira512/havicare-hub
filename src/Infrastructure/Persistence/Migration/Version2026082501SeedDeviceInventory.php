@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence\Migration;
 
+use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use PDO;
 
 /**
@@ -31,6 +32,11 @@ final class Version2026082501SeedDeviceInventory implements Migration
         }
 
         $pdo->exec($seed);
+
+        // The models the seed adds arrive after the capability seeding migrations have
+        // run, so nothing has given them a template yet and their cards would be empty.
+        (new ReferenceCatalogSeeder())->seedMissingModelCapabilities($pdo);
+
         $this->copyModelImages();
     }
 
