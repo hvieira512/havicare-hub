@@ -9,7 +9,32 @@ import {
     titleize,
     when,
 } from "./format.js";
-import {deviceTypeLabel, normalizeDeviceType} from "./domain.js";
+import {
+    deviceTypeLabel,
+    normalizeDeviceType,
+    normalizeLicenseId,
+} from "./domain.js";
+
+/**
+ * A atribuicao de um dispositivo, num campo so.
+ *
+ * A licenca pertence a empresa, e um dispositivo tem as duas ou nenhuma -- nao existe
+ * "empresa sem licenca" nem uma licenca fora de uma empresa. Por isso o valor tem duas
+ * formas e nao quatro: `empresa · numero`, ou "Sem licenca".
+ *
+ * `valueClass` existe porque o cartao da listagem precisa do seu proprio corte de texto e
+ * o painel de factos do dispositivo escolhido nao: la o valor herda a tipografia do `dd`.
+ */
+export function deviceLicenseHtml(device, valueClass = "") {
+    const company = String(device.company || "").trim();
+    const licenseId = normalizeLicenseId(device.licenseId);
+    if (company === "" || company.toLowerCase() === "null" || licenseId === "0") {
+        return `<span class="${valueClass ? `${valueClass} ` : ""}license-empty">Sem licença</span>`;
+    }
+
+    const attribute = valueClass ? ` class="${valueClass}"` : "";
+    return `<span${attribute}>${esc(company)}<span class="license-separator">·</span><span class="license-number">${esc(licenseId)}</span></span>`;
+}
 
 const COMMAND_FEATURE_RULES = [
     ["heart", "heart_rate"],

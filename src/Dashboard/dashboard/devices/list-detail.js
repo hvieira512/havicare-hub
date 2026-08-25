@@ -20,6 +20,7 @@ import {
     when,
 } from "../format.js";
 import {
+    deviceLicenseHtml,
     emptyPanel,
     filterChips,
     renderDeviceTypeTiles,
@@ -380,7 +381,7 @@ function renderDeviceCard(device) {
         <span class="device-card-fields">
             <span class="device-card-field">
                 <span class="device-card-field-label">Licença</span>
-                ${deviceLicenseValue(device)}
+                ${deviceLicenseHtml(device, "device-card-field-value")}
             </span>
             <span class="device-card-field">
                 <span class="device-card-field-label">SIM</span>
@@ -388,23 +389,6 @@ function renderDeviceCard(device) {
             </span>
         </span>
         </button>`;
-}
-
-/**
- * A licença de um dispositivo, num campo só.
- *
- * A licença pertence à empresa, e um dispositivo tem as duas ou nenhuma -- não existe
- * "empresa sem licença" nem uma licença fora de uma empresa. Por isso o valor tem duas
- * formas e não quatro: `empresa · número`, ou "Sem licença".
- */
-function deviceLicenseValue(device) {
-    const company = String(device.company || "").trim();
-    const licenseId = normalizeLicenseId(device.licenseId);
-    if (company === "" || company.toLowerCase() === "null" || licenseId === 0) {
-        return '<span class="device-card-field-value empty">Sem licença</span>';
-    }
-
-    return `<span class="device-card-field-value">${esc(company)}<span class="license-separator">·</span><span class="license-number">${esc(licenseId)}</span></span>`;
 }
 
 function renderDevicePagination(pagination) {

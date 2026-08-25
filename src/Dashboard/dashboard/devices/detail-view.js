@@ -8,10 +8,8 @@ import {
     state,
 } from "../state.js";
 import {
-    companyLabel,
     deviceTypeLabel,
     deviceTypeOptions,
-    licenseLabel,
     normalizeDeviceType,
 } from "../domain.js";
 import {
@@ -26,6 +24,7 @@ import {
 } from "../format.js";
 import {
     cardTone,
+    deviceLicenseHtml,
     emptyPanel,
     filterChips,
     telemetryCard,
@@ -187,11 +186,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     const typeLabel = deviceTypeLabel(
         normalizeDeviceType(deviceModel?.deviceType || "watch"),
     );
-    // A empresa antes da licenca: a licenca pertence a empresa, e lida ao contrario dava o
-    // numero antes de se saber de quem e.
     const facts = [
-        { label: "Empresa", value: companyLabel(device.company) },
-        { label: "Licença", value: licenseLabel(device.licenseId) },
+        { label: "Licença", html: deviceLicenseHtml(device) },
         {
             label: "Última ligação",
             value: when(device.lastSeenAt) || "Sem registo",

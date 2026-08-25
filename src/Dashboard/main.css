@@ -1101,16 +1101,19 @@ body {
     white-space: nowrap;
 }
 
-.device-card-field-value .license-number {
+/* Sem o prefixo do cartao: o mesmo par empresa/licenca aparece no painel do dispositivo
+   escolhido, onde o valor nao esta dentro de um .device-card-field-value. */
+.license-number {
     color: var(--bs-secondary-color);
     font-variant-numeric: tabular-nums;
 }
 
-.device-card-field-value .license-separator {
+.license-separator {
     color: var(--bs-border-color);
     padding: 0 1px;
 }
 
+.license-empty,
 .device-card-field-value.empty { color: var(--bs-secondary-color); }
 
 /* Num telefone as cinco colunas nao cabem, mas o cartao continua uma grelha e nao uma
