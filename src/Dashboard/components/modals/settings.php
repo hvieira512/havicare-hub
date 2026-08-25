@@ -236,11 +236,11 @@ ob_start();
                     </div>
                     <div class="collapse" id="capabilityFiltersCollapse">
                         <div class="row g-3 pt-3">
-                            <div class="col-md-6">
+                            <div class="col-md-8">
                                 <div class="section-label mb-1">Tipo de dispositivo</div>
                                 <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="section-label mb-1">Fornecedor</div>
                                 <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
                             </div>
