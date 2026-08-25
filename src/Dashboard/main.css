@@ -375,6 +375,52 @@ body {
     padding-right: 0;
 }
 
+/* Num telefone as quatro colunas dividem os ~310px uteis do cartao entre nome, valor e
+   hora, e o nome ainda leva uma largura fixa no proprio `td`. A linha passa a duas: o
+   icone, o nome e a hora em cima, o valor com a largura toda em baixo. Serve as duas
+   tabelas do painel, os eventos recebidos e os pedidos ao dispositivo. */
+@media (max-width: 575.98px) {
+    .telemetry-table > tbody > tr {
+        display: grid;
+        grid-template-columns: 2.125rem minmax(0, 1fr) auto;
+        align-items: start;
+        padding: .5rem 0;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .telemetry-table > tbody > tr:last-child {
+        border-bottom: 0;
+    }
+
+    .telemetry-table > tbody > tr > td {
+        width: auto;
+        border-bottom: 0;
+        padding: 0 .5rem 0 0;
+    }
+
+    .telemetry-table > tbody > tr > td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .telemetry-table > tbody > tr > td:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .telemetry-table > tbody > tr > td:nth-child(4) {
+        grid-column: 3;
+        grid-row: 1;
+        padding-right: 0;
+    }
+
+    .telemetry-table > tbody > tr > td:nth-child(3) {
+        grid-column: 2 / -1;
+        grid-row: 2;
+        padding: .125rem 0 0 0;
+    }
+}
+
 /* Os detalhes de um evento cabem em duas linhas e nao mais. Um radar traz vinte campos no
    mesmo evento -- "Versao: 0 · Pessoas: 0 · Distancia a andar: 0 · ..." -- e a meia largura
    do painel isso dava uma coluna de uma palavra por linha que empurrava a hora fora do
@@ -857,7 +903,11 @@ body {
     line-height: 1.5;
 }
 
+/* Bloco, e nao inline: `overflow` e `text-overflow` nao fazem nada numa caixa inline, e
+   sem isso o numero do SIM saia do cartao em vez de ser cortado. */
 .device-card-field-value {
+    display: block;
+    min-width: 0;
     font-size: .8125rem;
     line-height: 1.35;
     overflow: hidden;
@@ -897,14 +947,21 @@ body {
     .device-card > .config-state { grid-area: state; }
     .device-card-identity { grid-area: identity; min-width: 0; }
 
+    /* O SIM pede a largura que precisa em vez de levar 5.25rem fixos: um numero portugues
+       com indicativo mede mais do que isso e transbordava. A licenca fica com o resto e
+       encolhe, que e o que `minmax(0, 1fr)` garante. */
     .device-card-fields {
         grid-area: fields;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 5.25rem;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: .5rem;
         margin-top: .3125rem;
         border-top: 1px solid var(--bs-border-color);
         padding-top: .5rem;
+    }
+
+    .device-card-field {
+        min-width: 0;
     }
 }
 
@@ -1589,6 +1646,15 @@ body {
 
     .settings-modal-shell .nav-pills {
         width: 100%;
+    }
+
+    /* O `h-100` das folhas e do conteudo estica o separador a altura toda do modal de ecra
+       inteiro: sete fornecedores deixavam meio ecra em branco por baixo da tabela. Em
+       telefone cada folha mede o que o seu conteudo mede. */
+    .settings-modal-shell,
+    .settings-modal-shell .tab-content,
+    .settings-modal-shell .tab-pane {
+        height: auto !important;
     }
 }
 
