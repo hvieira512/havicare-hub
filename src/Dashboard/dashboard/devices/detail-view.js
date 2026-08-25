@@ -723,17 +723,16 @@ function renderConnectionTimeline(rows) {
         (e) => e.type === "device.disconnected",
     ).length;
 
-    els.connectionSection.classList.toggle("d-none", events.length === 0);
+    // A single event is not a timeline, and the device badge already says whether it is
+    // connected, so the section stays hidden until there is something to plot.
+    els.connectionSection.classList.toggle("d-none", events.length < 2);
 
     if (events.length < 2) {
         if (connectionChartRoot) {
             connectionChartRoot.dispose();
             connectionChartRoot = null;
         }
-        els.connectionTimeline.innerHTML =
-            events.length === 1
-                ? `<div class="text-center text-secondary py-4"><i class="fa-solid fa-circle ${events[0].type === "device.connected" ? "text-success" : "text-secondary"} me-2"></i>${events[0].type === "device.connected" ? "Ligado" : "Desligado"} · ${esc(when(events[0].occurredAt || events[0].recordedAt))}</div>`
-                : "";
+        els.connectionTimeline.innerHTML = "";
         return;
     }
 
