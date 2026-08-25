@@ -22,7 +22,7 @@ ob_start();
                             <div class="vstack gap-3">
                                 <div>
                                     <div class="form-label">Tipo de dispositivo</div>
-                                    <div id="deviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
+                                    <div id="deviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
                                 </div>
                                 <div>
                                     <div class="form-label">Fornecedor</div>

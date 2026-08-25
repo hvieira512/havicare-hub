@@ -77,7 +77,7 @@ ob_start();
                                     <div class="row g-3 pt-3">
                                         <div class="col-12 col-md-6">
                                             <div class="section-label mb-1">Tipo de dispositivo</div>
-                                            <div id="modelsDeviceTypeButtons" class="btn-group flex-wrap w-100" role="group"></div>
+                                            <div id="modelsDeviceTypeButtons" class="device-type-grid is-wide w-100" role="group"></div>
                                         </div>
                                         <div class="col-12 col-md-6">
                                             <div class="section-label mb-1">Fornecedor</div>
@@ -127,7 +127,7 @@ ob_start();
                                         <div class="vstack gap-3 h-100">
                                             <div>
                                                 <div class="form-label">Tipo de dispositivo</div>
-                                                <div id="modelDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
+                                                <div id="modelDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
                                             </div>
                                             <div>
                                                 <div class="form-label">Fornecedor</div>
@@ -238,7 +238,7 @@ ob_start();
                         <div class="row g-3 pt-3">
                             <div class="col-md-6">
                                 <div class="section-label mb-1">Tipo de dispositivo</div>
-                                <div id="capabilityDeviceTypeButtons" class="btn-group flex-wrap" role="group"></div>
+                                <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
                             </div>
                             <div class="col-md-6">
                                 <div class="section-label mb-1">Fornecedor</div>
@@ -271,6 +271,7 @@ ob_start();
                         <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
                         <div class="mt-2">Sem capacidades generalizadas definidas para este tipo de dispositivo.</div>
                     </div>
+                    <div id="capabilityCatalogSectionNav" class="capability-section-nav" role="group" aria-label="Secções do catálogo"></div>
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">

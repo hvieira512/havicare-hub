@@ -352,6 +352,10 @@ function bindEvents() {
         handleCapabilityGroupsChange,
     );
     els.capabilitySectionNav.addEventListener("click", jumpCapabilitySection);
+    els.capabilityCatalogSectionNav?.addEventListener(
+        "click",
+        scrollCapabilityCatalogSection,
+    );
     els.capabilityDeviceTypeButtons.addEventListener(
         "click",
         handleCapabilityDeviceTypeClick,
@@ -1148,6 +1152,31 @@ function handleCapabilityGroupsChange(event) {
     state.settingsModal.capabilityEnabledCapabilities = [...enabled];
     state.settingsModal.capabilityRequestableCapabilities = [...requestable];
     renderCapabilitiesSection();
+}
+
+/**
+ * A tira do catalogo desloca a lista ate a seccao, e nao filtra: o catalogo fica todo numa
+ * superficie, que e o que serve para auditar um fornecedor de ponta a ponta.
+ */
+function scrollCapabilityCatalogSection(event) {
+    const chip = event.target.closest(
+        '[data-action="scrollCapabilityCatalogSection"]',
+    );
+    if (!chip) return;
+
+    const target = document.getElementById(chip.dataset.target || "");
+    if (!target) return;
+
+    els.capabilityCatalogSectionNav
+        .querySelectorAll(".capability-section-chip")
+        .forEach((other) => other.classList.toggle("selected", other === chip));
+
+    target.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+    });
 }
 
 function jumpCapabilitySection(event) {

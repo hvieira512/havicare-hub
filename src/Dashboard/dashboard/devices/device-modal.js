@@ -61,6 +61,7 @@ import {
     modelImageHtml,
     modelPreviewHtml,
     renderButtonGroup,
+    renderDeviceTypeTiles,
 } from "../renderers.js";
 import {companyLabel, deviceTypeLabel} from "../domain.js";
 import {
@@ -409,12 +410,10 @@ export async function renderDeviceSelectors(
 export function renderDeviceTypeSelector(selectedType = "watch") {
     const deviceType = normalizeDeviceType(selectedType);
     els.deviceForm.dataset.deviceType = deviceType;
-    renderButtonGroup(
-        els.deviceTypeButtons,
-        deviceTypeOptions,
-        deviceType,
-        "selectDeviceType",
-    );
+    renderDeviceTypeTiles(els.deviceTypeButtons, deviceTypeOptions, {
+        selected: deviceType,
+        action: "selectDeviceType",
+    });
 
     // Uma linha da tabela em vez de quatro cadeias de `if` e cinco toggles decididos aqui.
     const fields = deviceTypeFields(deviceType);

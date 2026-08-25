@@ -585,6 +585,141 @@ body {
     gap: .5rem;
 }
 
+/* A mesma grelha fora da coluna estreita do selector: nos modais ha largura para mais do
+   que duas colunas, e duas deixavam metade da linha vazia. */
+.device-type-grid.is-wide {
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+}
+
+/* ===== catalogo de capacidades ===== */
+
+/* A tira das seccoes fica colada ao topo enquanto a lista corre por baixo, e cada pastilha
+   aponta para o `id` da sua seccao. Com cinco cabecalhos dentro de milhares de pixeis de
+   scroll, saber onde esta uma seccao exigia procura-la. */
+.capability-section-nav {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    gap: .375rem;
+    overflow-x: auto;
+    padding: .625rem 0;
+    margin-bottom: .25rem;
+    background: var(--bs-body-bg);
+    scrollbar-width: thin;
+}
+
+.capability-section-chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .375rem;
+    padding: .3125rem .6875rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 20px;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-size: .8125rem;
+    font-weight: 560;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .12s ease, border-color .12s ease;
+}
+
+.capability-section-chip .count {
+    font-size: .6875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--bs-secondary-color);
+}
+
+.capability-section-chip:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+.capability-section-chip.selected {
+    background: var(--bs-primary-bg-subtle);
+    border-color: var(--bs-primary-border-subtle);
+}
+
+.capability-section-chip.selected .count {
+    color: var(--bs-primary);
+}
+
+/* A seccao passa a ser um destino de scroll, e o desvio e a altura da tira, para o
+   cabecalho nao ficar debaixo dela ao chegar. */
+.capability-catalog-section {
+    scroll-margin-top: 3.25rem;
+}
+
+/* Uma linha por capacidade: o numero, o icone que a capacidade ja tem nos cartoes de
+   pedido, o nome, e os factos que sobram depois de tirar o tipo -- que era a seccao
+   repetida em cada linha. Nada leva largura fixa. */
+.capability-row {
+    display: grid;
+    grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .625rem;
+    padding: .4375rem .75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+}
+
+/* O numero conta o que o fornecedor suporta, em negrito e apagado: enumera sem competir
+   com o nome que esta ao lado. */
+.capability-index {
+    font-weight: 700;
+    font-size: 1.0625rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--bs-emphasis-color);
+    opacity: .22;
+}
+
+.capability-icon {
+    display: flex;
+    justify-content: center;
+    color: var(--bs-secondary-color);
+}
+
+.capability-name {
+    font-weight: 600;
+    font-size: .9375rem;
+    min-width: 0;
+}
+
+.capability-facts {
+    font-size: .8125rem;
+    color: var(--bs-secondary-color);
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Existe para o tipo de dispositivo, mas o fornecedor escolhido nao a declara. Fica
+   apagada e no fundo afundado: e contexto, e nao uma linha que se possa accionar. */
+.capability-row.is-unsupported {
+    opacity: .42;
+    background: var(--bs-tertiary-bg);
+}
+
+.capability-row.is-unsupported .capability-index {
+    opacity: .12;
+}
+
+@media (max-width: 575.98px) {
+    .capability-row {
+        grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .capability-facts {
+        grid-column: 3;
+        text-align: left;
+        white-space: normal;
+    }
+}
+
 .device-type-tile {
     position: relative;
     display: flex;

@@ -212,6 +212,9 @@ export function cacheElements() {
         capabilityCatalogViewer: document.getElementById(
             "capabilityCatalogViewer",
         ),
+        capabilityCatalogSectionNav: document.getElementById(
+            "capabilityCatalogSectionNav",
+        ),
         capabilitySupplierButtons: document.getElementById(
             "capabilitySupplierButtons",
         ),

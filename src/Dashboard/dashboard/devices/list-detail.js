@@ -22,6 +22,7 @@ import {
 import {
     emptyPanel,
     filterChips,
+    renderDeviceTypeTiles,
     renderRequestCardShell,
     statusBadge,
     uplinkCardContent,
@@ -417,23 +418,11 @@ function renderDevicePagination(pagination) {
     });
 }
 
-/** O ícone de cada tipo de dispositivo, o mesmo do assistente de criação. */
-const DEVICE_TYPE_ICON = {
-    watch: "fa-clock",
-    radar: "fa-wifi",
-    gateway: "fa-tower-broadcast",
-    diaper_sensor: "fa-droplet",
-    bracelet: "fa-ring",
-    ncs: "fa-bell-concierge",
-};
-
 /**
  * O mosaico de tipos, a aceitar vários.
  *
- * Reaproveita a grelha do assistente de "Adicionar dispositivo": escolher o tipo de
- * dispositivo passa a ser o mesmo gesto nos dois sítios, em vez de ser uma lista num e um
- * mosaico no outro. Os tipos vêm do catálogo e não das contagens, para que um tipo sem
- * dispositivos apareça apagado -- saber que a frota não tem pulseiras é informação.
+ * Os tipos vêm do catálogo e não das contagens, para que um tipo sem dispositivos apareça
+ * apagado -- saber que a frota não tem pulseiras é informação.
  */
 function renderDeviceTypeFilter() {
     const counts = new Map(
@@ -442,24 +431,12 @@ function renderDeviceTypeFilter() {
             option.count,
         ]),
     );
-    const selected = state.deviceFilters.deviceType;
 
-    els.deviceTypeFilter.innerHTML = deviceTypeOptions
-        .map((option) => {
-            const value = normalizeDeviceType(option.value);
-            const count = counts.get(value) || 0;
-            const on = selected.includes(value);
-            return `
-            <button type="button" class="device-type-tile${on ? " selected" : ""}"
-                data-action="toggleDeviceFilter" data-filter-key="deviceType" data-filter-value="${esc(value)}"
-                ${count === 0 && !on ? "disabled" : ""} aria-pressed="${on ? "true" : "false"}">
-            <span class="device-type-tile-check"><i class="fa-solid fa-check"></i></span>
-            <span class="device-type-tile-icon"><i class="fa-solid ${esc(DEVICE_TYPE_ICON[value] || "fa-microchip")}"></i></span>
-            <span class="device-type-tile-name">${esc(deviceTypeLabel(value))}</span>
-            <span class="device-type-tile-count">${count === 0 ? "nenhum" : count}</span>
-            </button>`;
-        })
-        .join("");
+    renderDeviceTypeTiles(els.deviceTypeFilter, deviceTypeOptions, {
+        selected: state.deviceFilters.deviceType,
+        multiple: true,
+        counts,
+    });
 }
 
 /** Uma lista de opções de escolha múltipla, com a contagem de cada uma. */

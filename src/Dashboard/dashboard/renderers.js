@@ -9,6 +9,7 @@ import {
     titleize,
     when,
 } from "./format.js";
+import {deviceTypeLabel, normalizeDeviceType} from "./domain.js";
 
 const COMMAND_FEATURE_RULES = [
     ["heart", "heart_rate"],
@@ -339,6 +340,70 @@ export function renderButtonGroup(
         })
         .join("")
         : '<div class="text-secondary small py-2">Sem opções disponíveis</div>';
+}
+
+/** O ícone de cada tipo de dispositivo, o mesmo do assistente de criação. */
+const DEVICE_TYPE_ICON = {
+    watch: "fa-clock",
+    radar: "fa-wifi",
+    gateway: "fa-tower-broadcast",
+    diaper_sensor: "fa-droplet",
+    bracelet: "fa-ring",
+    ncs: "fa-bell-concierge",
+};
+
+export function deviceTypeIcon(deviceType) {
+    return DEVICE_TYPE_ICON[normalizeDeviceType(deviceType)] || "fa-microchip";
+}
+
+/**
+ * O mosaico de tipos de dispositivo, o único controlo de tipo no painel.
+ *
+ * `multiple` separa o filtro, onde se marcam vários, da escolha de um tipo só num
+ * formulário -- e é o que decide se saem os atributos do filtro ou só o `data-value` que
+ * as acções de escolha única leem.
+ *
+ * As contagens são opcionais porque não existem sempre: ao criar um modelo ainda não há
+ * nada para contar, e um mosaico a dizer "nenhum" debaixo do nome mentia sobre isso.
+ */
+export function renderDeviceTypeTiles(
+    container,
+    options,
+    {
+        selected = [],
+        multiple = false,
+        counts = null,
+        action = "toggleDeviceFilter",
+        filterKey = "deviceType",
+    } = {},
+) {
+    const chosen = (Array.isArray(selected) ? selected : [selected])
+        .filter((value) => value !== null && value !== undefined && value !== "")
+        .map((value) => normalizeDeviceType(String(value)));
+
+    container.innerHTML = options
+        .map((option) => {
+            const value = normalizeDeviceType(
+                typeof option === "string" ? option : option.value,
+            );
+            const on = chosen.includes(value);
+            const count = counts
+                ? Number((counts.get ? counts.get(value) : counts[value]) || 0)
+                : null;
+            const filterAttrs = multiple
+                ? ` data-filter-key="${esc(filterKey)}" data-filter-value="${esc(value)}"`
+                : "";
+            return `
+            <button type="button" class="device-type-tile${on ? " selected" : ""}"
+                data-action="${esc(action)}" data-value="${esc(value)}"${filterAttrs}
+                ${count === 0 && !on ? "disabled" : ""} aria-pressed="${on ? "true" : "false"}">
+            ${multiple ? '<span class="device-type-tile-check"><i class="fa-solid fa-check"></i></span>' : ""}
+            <span class="device-type-tile-icon"><i class="fa-solid ${esc(deviceTypeIcon(value))}"></i></span>
+            <span class="device-type-tile-name">${esc(deviceTypeLabel(value))}</span>
+            ${counts ? `<span class="device-type-tile-count">${count === 0 ? "nenhum" : count}</span>` : ""}
+            </button>`;
+        })
+        .join("");
 }
 
 /**

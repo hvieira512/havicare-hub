@@ -1,6 +1,6 @@
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
-import {renderButtonGroup} from "../../renderers.js";
+import {renderButtonGroup, renderDeviceTypeTiles} from "../../renderers.js";
 import {
     deviceTypeOptions,
     normalizeDeviceType,
@@ -44,12 +44,10 @@ function renderModelSupplierButtons(selectedSupplierId) {
 
 function renderModelDeviceTypeButtons(selectedDeviceType) {
     const {els} = getSettingsModelsRuntime();
-    renderButtonGroup(
-        els.modelDeviceTypeButtons,
-        deviceTypeOptions,
-        selectedDeviceType,
-        "selectModelDeviceType",
-    );
+    renderDeviceTypeTiles(els.modelDeviceTypeButtons, deviceTypeOptions, {
+        selected: selectedDeviceType,
+        action: "selectModelDeviceType",
+    });
 }
 
 function revokeModelPreviewUrl() {

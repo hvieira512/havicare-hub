@@ -12,7 +12,13 @@ import {
 } from "../api/index.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {filterChips, modelImageHtml, renderButtonGroup} from "../renderers.js";
+import {
+    filterChips,
+    modelImageHtml,
+    renderButtonGroup,
+    renderDeviceTypeTiles,
+    requestCardContent,
+} from "../renderers.js";
 import {
     capabilitiesGroupedBySection,
     capabilityLabelByKey,
@@ -148,17 +154,20 @@ async function selectCapabilitySupplier(supplierId) {
 }
 
 function renderCapabilitiesCatalogSection() {
-    renderButtonGroup(
-        els.capabilityDeviceTypeButtons,
-        deviceTypeOptions,
-        state.settingsModal.capabilityDeviceType || "watch",
-        "selectCapabilityDeviceType",
-    );
+    renderDeviceTypeTiles(els.capabilityDeviceTypeButtons, deviceTypeOptions, {
+        selected: state.settingsModal.capabilityDeviceType || "watch",
+        action: "selectCapabilityDeviceType",
+    });
 
     const supplierId = state.settingsModal.capabilitySupplier;
     const enabledKeys = state.settingsModal.capabilityTemplateEnabledKeys;
     const enabledSet = new Set(enabledKeys);
     const hasSupplierFilter = !!supplierId && enabledKeys.length > 0;
+    const supplier = supplierId
+        ? state.settingsModal.capabilitySuppliersForDeviceType.find(
+            (candidate) => String(candidate.id) === String(supplierId),
+        )
+        : null;
 
     renderCapabilitySupplierButtons();
     updateCapabilitySupplierSummary(hasSupplierFilter);
@@ -175,12 +184,14 @@ function renderCapabilitiesCatalogSection() {
                         entry.isConfigurable ||
                         entry.isEvent,
                 )
-                .filter((entry) =>
-                    hasSupplierFilter
-                        ? enabledSet.has(entry.key)
-                        : true,
-                )
-                .filter((entry) => matchesCapabilityQuery(entry));
+                .filter((entry) => matchesCapabilityQuery(entry))
+                // As que o fornecedor nao declara deixam de desaparecer: saber que uma
+                // capacidade existe para o tipo de dispositivo e que este fornecedor nao a
+                // traz e a pergunta que se vem aqui fazer.
+                .map((entry) => ({
+                    ...entry,
+                    supported: !hasSupplierFilter || enabledSet.has(entry.key),
+                }));
             if (visibleEntries.length === 0) {
                 return null;
             }
@@ -192,38 +203,104 @@ function renderCapabilitiesCatalogSection() {
         "d-none",
         visibleSections.length > 0,
     );
-    // Um cartao por capacidade, com os factos numa linha que quebra. A tabela que estava
-    // aqui fixava 510px de colunas e nao cabia num telefone; o que ela alinhava nao paga
-    // uma segunda maquetacao para manter.
+    // Sem a chave: quem administra o hub nao precisa do vocabulario do protocolo, e o
+    // icone -- o mesmo que a capacidade ja tem nos cartoes de pedido -- passa a ser o que
+    // se reconhece. O tipo tambem sai, porque era a seccao repetida em cada linha.
+    const supplierName = supplier ? supplier.name : "";
+
     els.capabilityCatalogViewer.innerHTML = visibleSections
-        .map(
-            ({ label, entries }) => `
-        <section>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="section-label">${esc(label)}</div>
-                <span class="small text-secondary">${entries.length} ${entries.length === 1 ? "capacidade" : "capacidades"}</span>
-            </div>
-            <div class="vstack gap-2">
-            ${entries
+        .map(({ section, label, entries }) => {
+            const supported = entries.filter((entry) => entry.supported).length;
+            let index = 0;
+
+            const rows = entries
                 .map((entry) => {
-                    const facts = [
-                        entry.isTelemetry ? "Telemetria" : (entry.isEvent ? "Evento" : "Configuração"),
-                        entry.isConfigurable ? "Configurável" : null,
-                        entry.isRequestable ? "Solicitável" : "Não solicitável",
-                    ].filter(Boolean);
+                    const facts = entry.supported
+                        ? [
+                            entry.isConfigurable ? "Configurável" : null,
+                            entry.isRequestable ? "Solicitável" : null,
+                        ].filter(Boolean)
+                        : [supplierName ? `não oferecido pela ${supplierName}` : "não oferecido"];
+                    // Numera o que e suportado, para o ultimo numero da seccao dizer
+                    // quantas capacidades o dispositivo tem de facto.
+                    const number = entry.supported
+                        ? String(++index).padStart(2, "0")
+                        : "—";
                     return `
-                <div class="border rounded px-3 py-2">
-                    <div class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</div>
-                    <div class="section-label" style="letter-spacing:0;text-transform:none">${esc(entry.key)}</div>
-                    <div class="d-flex flex-wrap gap-2 small text-secondary mt-1">${facts.map((fact) => `<span>${esc(fact)}</span>`).join('<span aria-hidden="true">·</span>')}</div>
+                <div class="capability-row${entry.supported ? "" : " is-unsupported"}">
+                    <span class="capability-index" aria-hidden="true">${number}</span>
+                    <span class="capability-icon"><i class="fa-solid ${esc(capabilityIcon(entry, section))}"></i></span>
+                    <span class="capability-name">${esc(entry.label || humanizeCapabilityKey(entry.key))}</span>
+                    <span class="capability-facts">${esc(facts.join(" · "))}</span>
                 </div>`;
                 })
-                .join("")}
+                .join("");
+
+            return `
+        <section id="${esc(catalogSectionId(section))}" class="capability-catalog-section">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="section-label">${esc(label)}</div>
+                <span class="small text-secondary">${supported === entries.length ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}` : `${supported} de ${entries.length}`}</span>
             </div>
+            <div class="vstack gap-2">${rows}</div>
         </section>
-    `,
-        )
+    `;
+        })
         .join("");
+
+    renderCapabilityCatalogSectionNav(visibleSections);
+}
+
+/**
+ * Cinco seccoes irmas, cinco icones -- e uma cor. Eram ciano cheio, verde, navy, vermelho
+ * e cinzento, como se tivessem gravidades diferentes, e o vermelho dos alarmes lia-se como
+ * erro em vez de categoria.
+ */
+const SECTION_ICONS = {
+    telemetry: "fa-chart-line",
+    health: "fa-heart-pulse",
+    contacts: "fa-address-book",
+    alarms: "fa-bell",
+    settings_system: "fa-gear",
+};
+
+/**
+ * O icone de uma capacidade no catalogo.
+ *
+ * O mapa dos cartoes de pedido cobre o que se pede a um dispositivo, que e sobretudo
+ * telemetria. Fora disso caia tudo no mesmo `fa-circle-info`, e catorze circulos iguais
+ * numa seccao de alarmes dizem menos do que icone nenhum -- por isso o recurso e o icone da
+ * seccao, que ao menos e verdade.
+ */
+function capabilityIcon(entry, section) {
+    const mapped = requestCardContent(entry.key);
+    if (mapped.icon && mapped.icon !== "fa-circle-info") return mapped.icon;
+    return SECTION_ICONS[section] || "fa-circle-info";
+}
+
+/** O `id` da seccao no catalogo, que e o destino das pastilhas da tira. */
+function catalogSectionId(section) {
+    return `capabilityCatalog-${String(section).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
+/**
+ * A tira de seccoes: cada pastilha aponta para o `id` da sua seccao e leva a contagem do
+ * que o fornecedor suporta, para se saber o tamanho de uma seccao antes de se ir la.
+ */
+function renderCapabilityCatalogSectionNav(sections) {
+    if (!els.capabilityCatalogSectionNav) return;
+
+    els.capabilityCatalogSectionNav.innerHTML = sections.length > 1
+        ? sections
+            .map(({ section, label, entries }) => {
+                const supported = entries.filter((entry) => entry.supported).length;
+                return `
+            <button type="button" class="capability-section-chip" data-action="scrollCapabilityCatalogSection" data-target="${esc(catalogSectionId(section))}">
+                ${esc(label)}<span class="count">${supported}</span>
+            </button>`;
+            })
+            .join("")
+        : "";
 }
 
 function handleCapabilityCatalogSearch() {
@@ -937,17 +1014,6 @@ function renderCapabilitiesSection() {
     );
     els.capabilitySummary.textContent = `${activeCapabilities}/${totalCapabilities} ativos`;
 
-    // Cinco seccoes irmas, cinco icones -- e uma cor. Eram ciano cheio, verde, navy,
-    // vermelho e cinzento, como se tivessem gravidades diferentes, e o vermelho dos
-    // alarmes lia-se como erro em vez de categoria.
-    const sectionIcons = {
-        telemetry: "fa-chart-line",
-        health: "fa-heart-pulse",
-        contacts: "fa-address-book",
-        alarms: "fa-bell",
-        settings_system: "fa-gear",
-    };
-
     let activeSection = state.settingsModal.activeCapabilitySection;
     if (!activeSection || !sections.some((s) => s.section === activeSection)) {
         activeSection = sections[0]?.section || "";
@@ -956,7 +1022,7 @@ function renderCapabilitiesSection() {
 
     els.capabilitySectionNav.innerHTML = sections
         .map(({ section, label, entries }) => {
-            const icon = sectionIcons[section] || "fa-gear";
+            const icon = SECTION_ICONS[section] || "fa-gear";
             const isActive = section === activeSection;
             const active = (entries || []).filter((feature) => enabled.has(feature)).length;
             return `

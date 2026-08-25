@@ -1,6 +1,10 @@
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
-import {filterChips, renderButtonGroup} from "../../renderers.js";
+import {
+    filterChips,
+    renderButtonGroup,
+    renderDeviceTypeTiles,
+} from "../../renderers.js";
 import {
     deviceTypeLabel,
     deviceTypeOptions,
@@ -119,14 +123,16 @@ function renderModelsFilterButtons() {
         label: name,
     }));
 
-    renderButtonGroup(
+    renderDeviceTypeTiles(
         els.modelsDeviceTypeButtons,
         deviceTypeOptionsFiltered.map((option) => ({
             value: option.value,
             label: option.label,
         })),
-        state.settingsModal.modelsDeviceType || "",
-        "selectModelsDeviceType",
+        {
+            selected: state.settingsModal.modelsDeviceType || "",
+            action: "selectModelsDeviceType",
+        },
     );
     renderButtonGroup(
         els.modelsSupplierButtons,
