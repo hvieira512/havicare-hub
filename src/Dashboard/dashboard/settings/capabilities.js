@@ -228,7 +228,7 @@ function renderCapabilitiesCatalogSection() {
                     return `
                 <div class="capability-row${entry.supported ? "" : " is-unsupported"}">
                     <span class="capability-index" aria-hidden="true">${number}</span>
-                    <span class="capability-icon"><i class="fa-solid ${esc(capabilityIcon(entry, section))}"></i></span>
+                    <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${esc(capabilityIcon(entry, section))}"></i></span>
                     <span class="capability-name">${esc(entry.label || humanizeCapabilityKey(entry.key))}</span>
                     <span class="capability-facts">${esc(facts.join(" · "))}</span>
                 </div>`;

@@ -354,8 +354,8 @@ function renderDeviceCard(device) {
         </span>
         <span class="device-card-identity">
             <span class="min-width-0">
-                <span class="device-card-imei d-block">${esc(device.imei)}</span>
-                <span class="device-card-meta d-block">${esc(meta)}</span>
+                <span class="device-card-imei d-block text-truncate">${esc(device.imei)}</span>
+                <span class="device-card-meta d-block text-truncate">${esc(meta)}</span>
             </span>
         </span>
         <span class="device-card-fields">

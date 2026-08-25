@@ -471,14 +471,9 @@ body {
     min-width: 0;
 }
 
-.telemetry-row-value,
-.telemetry-row-details {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
+/* A truncagem destas duas vive na marcacao, em `d-block text-truncate`: o `d-block` tem de
+   ir junto porque `overflow` e `text-overflow` nao fazem nada num elemento inline, e estes
+   sao `span`. Aqui fica so o que o Bootstrap nao da. */
 .telemetry-row-details {
     color: var(--bs-secondary-color);
     font-size: .8125rem;
@@ -623,11 +618,6 @@ body {
     }
 }
 
-.filter-group {
-    display: flex;
-    flex-direction: column;
-}
-
 /* O mosaico de tipos: o mesmo do assistente de "Adicionar dispositivo", a duas colunas
    porque e o que cabe numa coluna de 4/12. */
 .device-type-grid {
@@ -726,12 +716,6 @@ body {
     text-align: right;
     color: var(--bs-emphasis-color);
     opacity: .22;
-}
-
-.capability-icon {
-    display: flex;
-    justify-content: center;
-    color: var(--bs-secondary-color);
 }
 
 .capability-name {
@@ -1065,18 +1049,12 @@ body {
     font-weight: 600;
     line-height: 1.3;
     font-variant-numeric: tabular-nums;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .device-card-meta {
     font-size: .75rem;
     color: var(--bs-secondary-color);
     line-height: 1.35;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .device-card-field-label {
@@ -1773,14 +1751,6 @@ body {
     }
 }
 
-.selected-device-facts dt {
-    margin-bottom: .25rem;
-}
-
-.selected-device-facts dd {
-    margin-bottom: 0;
-}
-
 .navbar-brand img {
     height: 30px;
     width: auto;
@@ -2082,18 +2052,9 @@ body {
     outline-offset: 2px;
 }
 
-.wizard-card.is-selected {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary-bg-subtle);
-}
-
 .wizard-card-icon {
     font-size: 1.4rem;
     color: var(--bs-secondary-color);
-}
-
-.wizard-card.is-selected .wizard-card-icon {
-    color: var(--bs-primary);
 }
 
 /* A miniatura tem altura fixa para os cards de uma linha ficarem alinhados mesmo com

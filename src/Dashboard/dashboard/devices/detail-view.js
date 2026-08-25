@@ -217,8 +217,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         .map(
             (item) => `
         <div class="${item.wide ? "col-12" : "col-6"}">
-            <dt>${esc(item.label)}</dt>
-            <dd class="text-break">${item.html ?? esc(item.value)}</dd>
+            <dt class="mb-1">${esc(item.label)}</dt>
+            <dd class="text-break mb-0">${item.html ?? esc(item.value)}</dd>
         </div>
     `,
         )
@@ -541,8 +541,8 @@ function renderTelemetryRow(payload) {
         <td class="fw-medium" title="${esc(featureLabel(type))}">${esc(featureLabel(type))}</td>
         <td class="tabular-nums">
             <span class="telemetry-row-stack">
-                <span class="telemetry-row-value">${esc(card.rowValue || card.value)}</span>
-                ${details ? `<span class="telemetry-row-details" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</span>` : ""}
+                <span class="d-block text-truncate">${esc(card.rowValue || card.value)}</span>
+                ${details ? `<span class="telemetry-row-details d-block text-truncate" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</span>` : ""}
             </span>
         </td>
         <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(payload.occurredAt || payload.recordedAt))}">${esc(whenShort(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
@@ -706,8 +706,8 @@ function renderDownlinkRow(command) {
         </td>
         <td class="fw-medium">
             <span class="telemetry-row-stack">
-                <span class="telemetry-row-value" title="${esc(commandLabel(command) || content.value || "Pedido")}">${esc(commandLabel(command) || content.value || "Pedido")}</span>
-                ${note ? `<span class="telemetry-row-details fw-normal" title="${esc(note)}">${esc(note)}</span>` : ""}
+                <span class="d-block text-truncate" title="${esc(commandLabel(command) || content.value || "Pedido")}">${esc(commandLabel(command) || content.value || "Pedido")}</span>
+                ${note ? `<span class="telemetry-row-details fw-normal d-block text-truncate" title="${esc(note)}">${esc(note)}</span>` : ""}
             </span>
         </td>
         <td${replied ? ` title="${esc(replied)}"` : ""}>${statusBadge(status)}</td>
