@@ -163,6 +163,20 @@ body {
     background-color: var(--bs-primary);
 }
 
+/* Os botoes da barra eram btn-dark, o quase-preto do Bootstrap, que sobre o navy da marca
+   se le como um segundo escuro. Dentro da barra passam a pedir a cor a propria barra. */
+.dashboard-navbar .btn-dark {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: rgba(255, 255, 255, 0.08);
+    --bs-btn-border-color: rgba(255, 255, 255, 0.18);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: rgba(255, 255, 255, 0.16);
+    --bs-btn-hover-border-color: rgba(255, 255, 255, 0.28);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: rgba(255, 255, 255, 0.22);
+    --bs-btn-active-border-color: rgba(255, 255, 255, 0.32);
+}
+
 /* Uma elevacao so: a pagina e cinzenta, o cartao e branco, e dentro do cartao separa-se
    com linha e espaco. O contorno do cartao e mais claro que o das linhas interiores, para
    a moldura exterior nao competir com as divisorias que estruturam o conteudo. */
