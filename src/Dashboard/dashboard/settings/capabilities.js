@@ -192,10 +192,9 @@ function renderCapabilitiesCatalogSection() {
         "d-none",
         visibleSections.length > 0,
     );
-    // Cada capacidade tinha ate quatro badges em quatro cores -- trinta e duas pastilhas
-    // numa lista de dezasseis, para responder a perguntas binarias. As mesmas respostas
-    // em colunas: o que ha para comparar entre capacidades le-se em coluna, nao em
-    // pastilhas dentro de cada linha.
+    // Um cartao por capacidade, com os factos numa linha que quebra. A tabela que estava
+    // aqui fixava 510px de colunas e nao cabia num telefone; o que ela alinhava nao paga
+    // uma segunda maquetacao para manter.
     els.capabilityCatalogViewer.innerHTML = visibleSections
         .map(
             ({ label, entries }) => `
@@ -204,30 +203,22 @@ function renderCapabilitiesCatalogSection() {
                 <div class="section-label">${esc(label)}</div>
                 <span class="small text-secondary">${entries.length} ${entries.length === 1 ? "capacidade" : "capacidades"}</span>
             </div>
-            <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th>Capacidade</th>
-                        <th style="width:170px">Chave</th>
-                        <th style="width:120px">Tipo</th>
-                        <th style="width:110px">Configurável</th>
-                        <th style="width:110px">Solicitável</th>
-                    </tr>
-                </thead>
-                <tbody>
-                ${entries
-                    .map((entry) => `
-                    <tr>
-                        <td class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</td>
-                        <td class="section-label" style="letter-spacing:0;text-transform:none">${esc(entry.key)}</td>
-                        <td class="text-secondary">${entry.isTelemetry ? "Telemetria" : (entry.isEvent ? "Evento" : "Configuração")}</td>
-                        <td>${entry.isConfigurable ? '<i class="fa-solid fa-check"></i>' : '<span class="text-secondary">—</span>'}</td>
-                        <td>${entry.isRequestable ? '<i class="fa-solid fa-check"></i>' : '<span class="text-secondary">—</span>'}</td>
-                    </tr>`)
-                    .join("")}
-                </tbody>
-            </table>
+            <div class="vstack gap-2">
+            ${entries
+                .map((entry) => {
+                    const facts = [
+                        entry.isTelemetry ? "Telemetria" : (entry.isEvent ? "Evento" : "Configuração"),
+                        entry.isConfigurable ? "Configurável" : null,
+                        entry.isRequestable ? "Solicitável" : "Não solicitável",
+                    ].filter(Boolean);
+                    return `
+                <div class="border rounded px-3 py-2">
+                    <div class="fw-semibold">${esc(entry.label || humanizeCapabilityKey(entry.key))}</div>
+                    <div class="section-label" style="letter-spacing:0;text-transform:none">${esc(entry.key)}</div>
+                    <div class="d-flex flex-wrap gap-2 small text-secondary mt-1">${facts.map((fact) => `<span>${esc(fact)}</span>`).join('<span aria-hidden="true">·</span>')}</div>
+                </div>`;
+                })
+                .join("")}
             </div>
         </section>
     `,
