@@ -2,20 +2,15 @@
 
 declare(strict_types=1);
 
-/**
- * A moldura de um modal.
- *
- * O `$headerHtml` é a identidade do que se está a editar, quando existe: um modal que diz
- * só «Editar dispositivo» obriga a ler o campo do IMEI, a meio do formulário, para saber
- * qual. Quando é passado, substitui o título — não se acrescenta a ele.
- */
 function render_modal(
     string $id,
     string $title,
     string $body,
     string $footer = '',
     string $size = '',
-    string $headerHtml = ''
+    string $headerHtml = '',
+    // Classes do corpo: `p-0` para quem prefere que o conteúdo traga o seu próprio padding.
+    string $bodyClass = ''
 ): void {
     // Só o ecrã inteiro em todas as larguras é que dispensa o centrado. O
     // `modal-fullscreen-md-down` contém a mesma string mas só é ecrã inteiro em telefone,
@@ -33,7 +28,7 @@ function render_modal(
                     <?= $titleMarkup ?>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="<?= h(trim('modal-body ' . $bodyClass)) ?>">
                     <?= $body ?>
                 </div>
                 <div class="modal-footer">

@@ -33,12 +33,6 @@ require_once __DIR__ . '/components/modal.php';
             <div class="dashboard-login-orbit"></div>
             <div class="dashboard-login-signal dashboard-login-signal-one"></div>
             <div class="dashboard-login-signal dashboard-login-signal-two"></div>
-            <?php
-            /**
-             * O painel escuro tinha atmosfera e assinatura, mas nenhuma frase: quem chega
-             * pela primeira vez não sabia onde estava.
-             */
-            ?>
             <span class="dashboard-login-badge"><img src="/assets/logo.svg" alt="hitHUB"></span>
             <div class="dashboard-login-mark">
                 <span class="dashboard-login-signature">HUB / OPERATIONS</span>
@@ -46,16 +40,6 @@ require_once __DIR__ . '/components/modal.php';
             </div>
         </div>
         <div class="dashboard-login-panel col-12 col-md-8 min-vh-100 d-flex flex-column justify-content-center position-relative px-4 px-lg-5 py-5">
-            <?php
-            /**
-             * Uma medida fixa em vez da largura que a coluna der: sem ela a mancha do
-             * formulário mudava de forma a cada monitor, entre 300 e 600px.
-             *
-             * O botão passa a largura total. Estava alinhado à direita debaixo de dois
-             * campos de largura total, e o olho descia em coluna para saltar de lado no
-             * último passo.
-             */
-            ?>
             <div class="dashboard-login-form-column">
                 <div class="dashboard-login-brand mb-4">
                     <img src="/assets/logo.svg" alt="hitHUB">
@@ -65,11 +49,11 @@ require_once __DIR__ . '/components/modal.php';
                 <form id="dashboardLoginForm" class="dashboard-login-form d-grid gap-3" novalidate>
                     <div>
                         <label for="dashboardLoginUsername" class="section-label d-block mb-1">Utilizador</label>
-                        <input id="dashboardLoginUsername" name="username" class="form-control form-control-lg" type="text" autocomplete="username" required autofocus>
+                        <input id="dashboardLoginUsername" name="username" class="form-control" type="text" autocomplete="username" required autofocus>
                     </div>
                     <div>
                         <label for="dashboardLoginPassword" class="section-label d-block mb-1">Palavra-passe</label>
-                        <input id="dashboardLoginPassword" name="password" class="form-control form-control-lg" type="password" autocomplete="current-password" required>
+                        <input id="dashboardLoginPassword" name="password" class="form-control" type="password" autocomplete="current-password" required>
                     </div>
                     <button id="dashboardLoginSubmit" class="btn btn-primary btn-lg dashboard-login-submit w-100 mt-2" type="submit">
                         <span class="dashboard-login-submit-label">Entrar</span>
@@ -84,13 +68,6 @@ require_once __DIR__ . '/components/modal.php';
     </section>
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>
-        <?php
-        /**
-         * A barra é do navy da marca e não do preto do Bootstrap. `bg-dark` é o cinzento
-         * quase preto do tema, que não é cor nenhuma do produto — e ao lado do navy dos
-         * botões primários lia-se como um terceiro escuro sem razão.
-         */
-        ?>
         <nav class="navbar navbar-expand-lg navbar-dark dashboard-navbar">
             <div class="container-fluid">
                 <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
@@ -132,13 +109,6 @@ require_once __DIR__ . '/components/modal.php';
         </nav>
         <main class="container-fluid py-3 dashboard-main">
             <div class="row g-3">
-                <?php
-                /**
-                 * Dois cartões, não um: a identidade do dispositivo e o que se lhe pede
-                 * são duas coisas, e a maqueta separa-as. Num cartão só, a divisória
-                 * interna tinha de fazer o trabalho que o espaço entre cartões faz melhor.
-                 */
-                ?>
                 <aside id="deviceColumn" class="col-12 col-lg-4 d-flex flex-column gap-3">
                     <div class="card">
                         <div class="card-body">
@@ -146,7 +116,6 @@ require_once __DIR__ . '/components/modal.php';
                                 <span class="section-label">Dispositivo</span>
                                 <div class="d-flex align-items-center gap-2">
                                     <button id="openDeviceSelectorBtn" class="btn btn-sm btn-outline-secondary row-action" type="button">Escolher</button>
-                                    <?php /* Só o ícone: o "+" ao lado de "Escolher" não precisa da palavra. */ ?>
                                     <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary row-action" type="button" title="Adicionar dispositivo" aria-label="Adicionar dispositivo"><?= icon('fa-plus') ?></button>
                                 </div>
                             </div>
@@ -160,13 +129,6 @@ require_once __DIR__ . '/components/modal.php';
                                 <div class="d-flex align-items-start gap-3 pt-3">
                                     <div id="selectedDevicePreview" class="selected-device-preview"></div>
                                     <div class="min-width-0 flex-grow-1">
-                                        <?php
-                                        /**
-                                         * O estado primeiro, o identificador depois: num
-                                         * painel de operações a primeira pergunta sobre um
-                                         * dispositivo é se está ligado.
-                                         */
-                                        ?>
                                         <div class="mb-1"><span id="selectedDeviceBadge" class="config-state"></span></div>
                                         <h1 class="h4 mb-1 text-break tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
@@ -179,13 +141,6 @@ require_once __DIR__ . '/components/modal.php';
                             </div>
                         </div>
                     </div>
-                    <?php
-                    /**
-                     * Só o mosaico, sem título, contagem nem legenda. Um cartão a dizer
-                     * "Pedir dados · 8 disponíveis · O mosaico é o pedido." explicava três
-                     * vezes o que oito mosaicos com o nome da categoria mostram sozinhos.
-                     */
-                    ?>
                     <div class="card" id="requestCardsCard">
                         <div class="card-body">
                             <div class="row g-3" id="requestGrid"></div>
@@ -216,7 +171,6 @@ require_once __DIR__ . '/components/modal.php';
                                     </div>
                                     <div id="detailActiveFiltersRow" class="d-flex flex-wrap align-items-center gap-2 mt-2 d-none">
                                         <div id="detailActiveFilters" class="d-flex flex-wrap gap-2"></div>
-                                        <?php /* A acção mais fraca da linha, e não a mais forte: em azul primário competia com as pastilhas. */ ?>
                                         <button id="clearDetailFiltersBtn" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" type="button">Limpar</button>
                                     </div>
                                     <div class="collapse" id="detailFiltersCollapse">
@@ -241,31 +195,6 @@ require_once __DIR__ . '/components/modal.php';
                                         </div>
                                     </div>
                                 </div>
-                                <?php
-                                /**
-                                 * As ligações ao servidor vêm primeiro: são a âncora temporal de tudo o
-                                 * que está em baixo, e leem-se antes de se olhar para uma linha.
-                                 *
-                                 * Os eventos e os pedidos ficam empilhados em largura total. A meia
-                                 * largura, a coluna de estado dos pedidos não cabia e o valor de um
-                                 * evento truncava — e quando não havia nada, o ecrã dizia duas vezes
-                                 * que não havia nada.
-                                 */
-                                ?>
-                                <?php
-                                /**
-                                 * Eventos e pedidos lado a lado, e a encher até ao fundo.
-                                 *
-                                 * Empilhados davam duas listas curtas com metade da altura
-                                 * do painel vazia por baixo. Ao lado, cada uma usa a altura
-                                 * toda — e é a mesma pergunta feita em dois sentidos: o que
-                                 * o dispositivo mandou e o que lhe foi pedido.
-                                 *
-                                 * A secção das ligações esconde-se quando não há nenhuma:
-                                 * os dispositivos que entram por gateway nunca têm, e
-                                 * ficavam 180px em branco no topo.
-                                 */
-                                ?>
                                 <div class="device-detail-stack d-flex flex-column">
                                     <section id="connectionSection" class="card-section flex-shrink-0">
                                         <?= section_header('Ligações ao servidor') ?>

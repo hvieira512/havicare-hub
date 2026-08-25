@@ -4,27 +4,10 @@ declare(strict_types=1);
 
 ob_start();
 ?>
-<?php
-/**
- * Menu à esquerda em ecrã largo, tira de separadores com scroll lateral em telefone.
- *
- * A coluna vertical não cabe a 375px: as pills esparramavam-se numa linha larga e o
- * painel saía do ecrã. Cinco separadores não encolhem para caber — deslizam, e o
- * quinto cortado na margem é o sinal de que há mais.
- */
-?>
 <div class="settings-modal-shell d-flex flex-column h-100">
     <div class="row g-4 h-100 align-items-lg-center">
         <div class="col-12 col-lg-2 d-flex align-items-lg-center h-100">
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
-                <?php
-                /**
-                 * Cada secção leva a sua contagem no menu, como na maqueta: sabe-se
-                 * quantos modelos ou quantas empresas existem antes de abrir o separador.
-                 * Capacidades não leva — não é uma lista de coisas contáveis, é o catálogo
-                 * de um tipo de dispositivo à escolha.
-                 */
-                ?>
                 <button class="nav-link active text-start d-flex align-items-center justify-content-between gap-2" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores<span class="settings-nav-count d-none" id="settingsSuppliersCount"></span></button>
                 <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos<span class="settings-nav-count d-none" id="settingsModelsCount"></span></button>
                 <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
@@ -35,14 +18,6 @@ ob_start();
         <div class="col-12 col-lg-10 d-flex flex-column h-100">
             <div class="tab-content flex-grow-1">
                 <div class="tab-pane fade show active h-100" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
-                    <?php
-                    /**
-                     * A regra mais importante do separador estava no fim, numa caixa
-                     * cinzenta do mesmo tom do fundo: os fornecedores vêm do código e não
-                     * se criam aqui. Sobe para subtítulo, que é onde se lê antes de se
-                     * procurar o botão de criar que não existe.
-                     */
-                    ?>
                     <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
                         <div>
                             <div class="fw-semibold">Fornecedores</div>
@@ -181,16 +156,6 @@ ob_start();
                                 <div class="d-flex align-items-center gap-2 mb-3">
                                     <button type="button" class="btn btn-sm btn-outline-secondary" data-action="backToModelList"><?= icon('fa-arrow-left', 'me-1') ?>Voltar</button>
                                 </div>
-                                <?php
-                                /**
-                                 * O que se lê é o que se edita.
-                                 *
-                                 * Fornecedor, tipo e modelo interno estavam escritos como
-                                 * texto, com um botão «Editar» ao lado para os poder mudar
-                                 * — três campos de um formulário a fingir que eram um
-                                 * resumo. O «Guardar» aparece quando algum muda.
-                                 */
-                                ?>
                                 <div class="row g-4 mb-4">
                                     <div class="col-lg-8" id="modelDetailFields">
                                         <div class="mb-3">
@@ -238,14 +203,6 @@ ob_start();
                                 </div>
                                 <div id="capabilitySectionNav" class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Secções de capacidade"></div>
                                 <div id="capabilityGroups"></div>
-                                <?php
-                                /**
-                                 * Apagar sai do cabeçalho. Estava no mesmo grupo do
-                                 * «Editar», do mesmo tamanho e a 8px da acção mais usada.
-                                 * É o último parágrafo do painel, com a consequência
-                                 * escrita ao lado.
-                                 */
-                                ?>
                                 <div class="border-top mt-4 pt-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
                                     <div>
                                         <div class="fw-semibold">Apagar este modelo</div>
@@ -258,15 +215,6 @@ ob_start();
                     </div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCapabilitiesPane" role="tabpanel" aria-labelledby="settingsCapabilitiesTabBtn">
-                    <?php
-                    /**
-                     * Os três painéis empilhados faziam três trabalhos diferentes —
-                     * filtrar, descobrir e ler o catálogo — todos com a mesma moldura
-                     * cinzenta e sem hierarquia entre eles. O cabeçalho e o padrão de
-                     * filtro dão o primeiro; a descoberta ganha faixa própria porque é
-                     * uma acção, não um painel de leitura.
-                     */
-                    ?>
                     <div class="mb-3">
                         <div class="fw-semibold">Capacidades</div>
                         <div class="small text-secondary" id="capabilitySupplierSummary"></div>
@@ -326,14 +274,6 @@ ob_start();
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
-                    <?php
-                    /**
-                     * Uma licença pertence a uma empresa, e as duas tabelas estavam lado a
-                     * lado com o mesmo peso — a relação só se percebia porque o formulário
-                     * da licença tinha um select de empresa. Cada nível ganha o seu
-                     * cabeçalho e o seu primário, e os formulários saem da lista.
-                     */
-                    ?>
                     <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
                         <div>
                             <div class="fw-semibold">Empresas</div>
@@ -354,23 +294,8 @@ ob_start();
                         </div>
                     </form>
                     </div>
-                    <?php
-                    /**
-                     * Um cartão por empresa, com as licenças dentro dele — não linhas de
-                     * uma tabela. Uma licença não é uma irmã da empresa, é uma filha, e é
-                     * o cartão que a contém que diz isso sem precisar de uma coluna.
-                     */
-                    ?>
                     <div id="companyListBody" class="mb-4"></div>
                     <?= pagination_component('settingsCompany') ?>
-                    <?php
-                    /**
-                     * A tabela de licenças em separado desapareceu: cada licença aparece
-                     * indentada sob a sua empresa, na lista acima. O formulário fica —
-                     * é o «Nova licença» de cada linha de empresa que o abre, já com a
-                     * empresa escolhida.
-                     */
-                    ?>
                     <div class="collapse mb-3" id="licenseFormCollapse">
                     <form id="licenseForm" class="row g-2 p-3 border rounded-3">
                         <input type="hidden" id="licenseId">
@@ -393,13 +318,6 @@ ob_start();
                     </div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
-                    <?php
-                    /**
-                     * Criar sai da lista. Cinco campos abertos no topo — incluindo uma
-                     * password — eram o primeiro que se via ao abrir um separador que se
-                     * vem ler. O formulário aparece quando se pede.
-                     */
-                    ?>
                     <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
                         <div>
                             <div class="fw-semibold">Utilizadores API</div>

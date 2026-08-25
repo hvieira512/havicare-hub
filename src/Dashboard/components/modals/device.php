@@ -4,16 +4,6 @@ declare(strict_types=1);
 
 ob_start();
 ?>
-<?php
-/**
- * Os separadores ficam colados ao conteúdo que comandam, sob o cabeçalho.
- *
- * Eram pills verticais numa coluna de duas unidades, alinhados ao centro vertical de um
- * modal de ecrã inteiro — longe do cabeçalho e a meia altura do nada. O ecrã inteiro
- * também saiu: um formulário de 400px centrado em 900px de janela deixava metade do ecrã
- * em branco e o rodapé a 400px do último campo.
- */
-?>
 <div class="device-modal-shell">
     <div class="nav nav-underline mb-4" id="deviceModalNav" role="tablist">
         <button class="nav-link active" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
@@ -110,12 +100,8 @@ $body = (string) ob_get_clean();
 
 $footer = '<button type="button" class="btn btn-outline-danger d-none" id="deleteDeviceBtn"><i class="fa-solid fa-trash me-1"></i>Eliminar</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
 
-// A identidade do dispositivo vive no cabeçalho e é escrita pelo JavaScript, porque só
-// depois de carregar é que se sabe o modelo e se está ligado.
 $header = '<div class="modal-device-identity" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
     . '</div>';
 
-// Folha de ecrã inteiro em telefone: é o único sítio onde o ecrã inteiro é a resposta
-// certa, com o cabeçalho e o rodapé fixos e a acção principal ao alcance do polegar.
 render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-fullscreen-md-down modal-dialog-scrollable', $header);

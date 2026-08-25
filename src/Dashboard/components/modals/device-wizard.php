@@ -2,26 +2,9 @@
 
 declare(strict_types=1);
 
-/**
- * O assistente de adicionar um dispositivo.
- *
- * Separado do modal de edição de propósito: o antigo fazia os dois trabalhos, escondendo
- * e revelando metade da sua própria estrutura conforme o caso, e a pessoa via o formulário
- * a mudar de forma debaixo dos pés.
- *
- * O corpo é praticamente vazio porque quase tudo é desenhado pelo JavaScript a partir da
- * pergunta activa — o que fica aqui é só a moldura, a barra de progresso e a trilha.
- */
-
 ob_start();
 ?>
 <div class="device-wizard">
-    <?php
-    /**
-     * A trilha é a barra de progresso: os badges dizem onde se está e o passo, no fim da
-     * linha, diz quanto falta. Eram duas linhas seguidas a dizer a mesma coisa.
-     */
-    ?>
     <div class="wizard-trail" id="wizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1"></div>
 
     <div class="wizard-stage">
