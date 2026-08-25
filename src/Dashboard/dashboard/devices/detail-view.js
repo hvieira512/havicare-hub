@@ -85,12 +85,6 @@ function renderSelection() {
         state.selectedDetail.linkedDevices || [],
     );
 
-    if (!state.detailFilters.from) {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        state.detailFilters.from = sevenDaysAgo.toISOString().slice(0, 16);
-    }
-
     populateDetailFilterTypes();
     syncDetailFilterControls();
 
