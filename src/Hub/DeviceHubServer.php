@@ -363,10 +363,16 @@ class DeviceHubServer
             $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
             $company = $this->currentCompany($session->imei, $session->company);
             $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
-            $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
-                $event,
-                ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
-            ));
+            // O heartbeat continua a sair no MQTT, para quem o subscreve, mas nao
+            // entra no historico do dashboard: a lista de cada dispositivo guarda
+            // cem eventos e um terco deles seriam keep-alives que repetem a bateria
+            // e os passos que ja chegam como eventos proprios no mesmo instante.
+            if (($event['type'] ?? null) !== 'heartbeat') {
+                $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
+                    $event,
+                    ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
+                ));
+            }
             return true;
         } catch (\Throwable $e) {
             $this->mqtt->logPublishFailure('hub', $session->imei, $e);

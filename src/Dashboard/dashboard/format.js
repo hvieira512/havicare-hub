@@ -74,7 +74,6 @@ export const featureLabel = (type) =>
         activity: "Atividade",
         location: "Localização",
         alarm: "Alarme",
-        heartbeat: "Sinal de rede",
         sleep: "Sono",
         ecg: "ECG",
         hrv: "VFC",

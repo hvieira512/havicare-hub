@@ -241,7 +241,10 @@ function allDetailItems() {
     const recent = state.selectedDetail.recent || {};
     for (const row of recent.telemetry || []) {
         const payload = rowPayload(row);
-        if (payload && !payload.debug)
+        // O heartbeat e o envelope de manutencao de ligacao, nao uma leitura: a
+        // bateria, os passos e o sinal que traz saem dele como eventos proprios
+        // com o mesmo instante, e o "esta vivo" ja esta no estado de ligacao.
+        if (payload && !payload.debug && payload.type !== "heartbeat")
             items.push({ _source: "telemetry", raw: row, payload });
     }
     for (const row of recent.events || []) {
