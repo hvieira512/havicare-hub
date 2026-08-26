@@ -1,5 +1,5 @@
-import { esc } from "../format.js";
-import { normalizePhoneControl } from "../phone.js";
+import { esc } from "../../format.js";
+import { normalizePhoneControl } from "../../phone.js";
 import { protocolPhonebookConstraints } from "./protocol-catalog.js";
 import {
     formatFourPTouchAlarmTime,

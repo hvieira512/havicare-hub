@@ -7,7 +7,7 @@ import {
     renderConfigInputs,
     readConfigPayload,
     defaultConfigPayload,
-} from "../../src/Dashboard/dashboard/config.js";
+} from "../../src/Dashboard/dashboard/devices/config/index.js";
 import {configSection} from "./support/dom.js";
 
 /**

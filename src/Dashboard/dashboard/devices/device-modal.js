@@ -17,11 +17,11 @@ import {
 } from "./edit-wizard.js";
 import {
     catalogForProtocol,
-} from "../config.js";
+} from "./config/index.js";
 import {
     renderDeviceConfigurationModal,
     resetConfigUiState,
-} from "./config-panel.js";
+} from "./config/panel.js";
 import {
     renderSelection,
 } from "./detail-view.js";

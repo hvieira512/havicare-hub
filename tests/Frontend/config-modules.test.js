@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
     takePillsInput,
     takePillsReminderGroup,
-} from "../../src/Dashboard/dashboard/config/four-p-touch-take-pills.js";
+} from "../../src/Dashboard/dashboard/devices/config/four-p-touch-take-pills.js";
 
 test("4P Touch medication UI escapes values and respects the reminder limit", () => {
     const html = takePillsInput({

@@ -1,11 +1,11 @@
-import { esc, titleize } from "./format.js";
-import { emptyPanel } from "./widgets.js";
-import {takePillsInput, takePillsReminderGroup} from "./config/four-p-touch-take-pills.js";
+import { esc, titleize } from "../../format.js";
+import { emptyPanel } from "../../widgets.js";
+import {takePillsInput, takePillsReminderGroup} from "./four-p-touch-take-pills.js";
 import {
     defaultWonlexMedicationPlan,
     numericValue,
     WONLEX_MEDICATION_PERIODS,
-} from "./config/normalizers.js";
+} from "./normalizers.js";
 import {
     alarmClockInput,
     alarmsInput,
@@ -37,7 +37,7 @@ import {
     wonlexReminderThresholdInput,
     wonlexSleepSettingsInput,
     workingModeInput,
-} from "./config/inputs.js";
+} from "./inputs.js";
 import {
     firstFieldName,
     readAlarmClock,
@@ -53,12 +53,12 @@ import {
     readTextArray,
     readUniquePhoneArray,
     jsonInput,
-} from "./config/readers.js";
+} from "./readers.js";
 import {
     catalogForProtocol,
     protocolFieldConstraints,
     protocolGroupedCapabilities,
-} from "./config/protocol-catalog.js";
+} from "./protocol-catalog.js";
 
 export {takePillsReminderGroup, catalogForProtocol};
 

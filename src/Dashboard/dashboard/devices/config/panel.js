@@ -2,12 +2,12 @@ import {
     getDevice as apiGetDevice,
     requestCapability as apiRequestCapability,
     saveConfiguration as apiSaveConfiguration,
-} from "../api/index.js";
-import {readConfigPayload, renderDeviceConfigurationRoot} from "../config.js";
-import {emptyPanel} from "../widgets.js";
-import {resetPhoneControls} from "../phone.js";
-import {hasHubRules, renderHubRules} from "./hub-rules/index.js";
-import {state} from "../state.js";
+} from "../../api/index.js";
+import {readConfigPayload, renderDeviceConfigurationRoot} from "./index.js";
+import {emptyPanel} from "../../widgets.js";
+import {resetPhoneControls} from "../../phone.js";
+import {hasHubRules, renderHubRules} from "../hub-rules/index.js";
+import {state} from "../../state.js";
 
 /**
  * The configuration panel inside the device modal: saving a section,

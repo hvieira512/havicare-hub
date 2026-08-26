@@ -1,5 +1,5 @@
-import { requestJson } from "../api/http.js";
-import { state } from "../state.js";
+import { requestJson } from "../../api/http.js";
+import { state } from "../../state.js";
 
 /**
  * The per-protocol configuration catalog and the dashboard metadata that comes

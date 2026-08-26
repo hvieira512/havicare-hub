@@ -11,7 +11,7 @@ import {
     ruleFor,
     selectHubRuleValue,
 } from "../../src/Dashboard/dashboard/devices/hub-rules/index.js";
-import {renderDeviceConfigurationRoot} from "../../src/Dashboard/dashboard/config.js";
+import {renderDeviceConfigurationRoot} from "../../src/Dashboard/dashboard/devices/config/index.js";
 
 /**
  * As regras do hub: configuracoes que nao viajam para o dispositivo.

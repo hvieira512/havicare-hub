@@ -1,5 +1,5 @@
-import {esc, fieldLabel} from "../format.js";
-import {renderPhoneControl} from "../phone.js";
+import {esc, fieldLabel} from "../../format.js";
+import {renderPhoneControl} from "../../phone.js";
 import {protocolPhonebookConstraints} from "./protocol-catalog.js";
 import {formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind} from "./alarm-fields.js";
 import {

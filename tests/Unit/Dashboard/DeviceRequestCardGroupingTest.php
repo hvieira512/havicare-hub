@@ -107,19 +107,19 @@ final class DeviceRequestCardGroupingTest extends TestCase
 
     public function testFourPTouchSettingsModalUsesNativeEditors(): void
     {
+        // A dispatch table lives in the index and the renderers it points at live in
+        // their own modules, so the assertions below span both.
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/index.js'
         );
         $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
-        );
-        // The input renderers moved out of config.js; the assertions below span
-        // the dispatch table and the renderers it points at.
-        $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/inputs.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/four-p-touch-take-pills.js'
         );
         $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/normalizers.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/inputs.js'
+        );
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/normalizers.js'
         );
 
         self::assertIsString($source);
@@ -170,30 +170,30 @@ final class DeviceRequestCardGroupingTest extends TestCase
 
     public function testWonlexComplexSettingsUseGuidedFormsInsteadOfJson(): void
     {
+        // A dispatch table lives in the index and the renderers it points at live in
+        // their own modules, so the assertions below span both.
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/index.js'
         );
         $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/four-p-touch-take-pills.js'
-        );
-        // The input renderers moved out of config.js; the assertions below span
-        // the dispatch table and the renderers it points at.
-        $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/inputs.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/four-p-touch-take-pills.js'
         );
         $source .= file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/config/normalizers.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/inputs.js'
         );
-        // Os handlers do painel de configuracao sairam do bootstrap.js para o seu proprio
-        // modulo; as afirmacoes que olham para eles seguem-no.
+        $source .= file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/normalizers.js'
+        );
+        // A ligacao dos eventos esta repartida entre a raiz de composicao, os handlers do
+        // painel e os dois modulos do modal, e as afirmacoes seguintes atravessam-nos.
         $bootstrap = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'
         ) . file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/handlers/device-config.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/handlers.js'
         ) . file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/device-modal.js'
         ) . file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config-panel.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/panel.js'
         );
 
         self::assertIsString($source);

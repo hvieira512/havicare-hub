@@ -1,7 +1,7 @@
-import {renderPhoneControl, resetPhoneControls} from "../phone.js";
-import {takePillsReminderGroup} from "../config.js";
+import {renderPhoneControl, resetPhoneControls} from "../../phone.js";
+import {takePillsReminderGroup} from "./index.js";
 import {wonlexMedicationPlanRow} from "./inputs.js";
-import {syncTakePillsCustomVisibility} from "../devices/take-pills-audio.js";
+import {syncTakePillsCustomVisibility} from "./take-pills-audio.js";
 
 /**
  * Adding, removing and renumbering the repeatable rows in a configuration

@@ -1,11 +1,11 @@
 import {state} from "../../state.js";
 import {syncPhoneControl} from "../../phone.js";
-import {ruleFor, selectHubRuleValue} from "../../devices/hub-rules/index.js";
+import {ruleFor, selectHubRuleValue} from "../hub-rules/index.js";
 import {
     dismissConfigFeedback,
     renderDeviceConfigurationModal,
     saveDeviceConfiguration,
-} from "../../devices/config-panel.js";
+} from "./panel.js";
 import {
     appendAlarmClockRow,
     appendContactRow,
@@ -16,7 +16,7 @@ import {
     removeTakePillsReminder,
     removeWonlexMedicationPlan,
     syncAlarmClockCustomVisibility,
-} from "../../config/row-editing.js";
+} from "./row-editing.js";
 import {
     clearTakePillsRecording,
     loadTakePillsAudio,
@@ -24,7 +24,7 @@ import {
     stopTakePillsRecording,
     syncTakePillsCustomVisibility,
     syncTakePillsVoiceVisibility,
-} from "../../devices/take-pills-audio.js";
+} from "./take-pills-audio.js";
 
 /**
  * Os handlers do painel de configuracao de um dispositivo.

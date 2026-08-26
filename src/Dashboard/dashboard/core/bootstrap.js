@@ -9,7 +9,7 @@ import {
     handleDeviceConfigClick,
     handleDeviceConfigInput,
     initDeviceConfigHandlers,
-} from "./handlers/device-config.js";
+} from "../devices/config/handlers.js";
 import {
     handleApiUserListClick,
     handleCapabilityDeviceTypeClick,
@@ -83,7 +83,7 @@ import {
     renderDeviceConfigurationModal,
     syncConfigSectionDirty,
     syncDeviceModalCommandStates,
-} from "../devices/config-panel.js";
+} from "../devices/config/panel.js";
 import {initCreateWizard} from "../devices/create-wizard.js";
 import {
     initGatewayLinksUi,

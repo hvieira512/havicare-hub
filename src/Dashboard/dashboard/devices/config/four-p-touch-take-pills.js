@@ -1,4 +1,4 @@
-import {esc} from "../format.js";
+import {esc} from "../../format.js";
 
 export function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");

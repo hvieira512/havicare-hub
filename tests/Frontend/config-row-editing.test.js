@@ -6,7 +6,7 @@ import "./support/browser-env.js";
 import {
     appendPhoneListRow,
     removeConfigRow,
-} from "../../src/Dashboard/dashboard/config/row-editing.js";
+} from "../../src/Dashboard/dashboard/devices/config/row-editing.js";
 import {parseFragment} from "./support/dom.js";
 
 /**
