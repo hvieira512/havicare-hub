@@ -132,8 +132,30 @@ final class WhitelistRepository
         $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $imei]);
     }
 
+    /**
+     * Tira um dispositivo do registo, e com ele as suas configurações.
+     *
+     * As linhas do ciclo de vida das configurações não desapareciam: apagar um dispositivo
+     * era só este `DELETE`, mais uma limpeza do Redis. Um IMEI registado outra vez -- o
+     * mesmo aparelho a mudar de cliente, ou um número reaproveitado -- herdava os valores
+     * desejados do dono anterior, e o painel mostrava-os como se fossem dele.
+     *
+     * Feito aqui e não com uma chave estrangeira `ON DELETE CASCADE`, ao contrário da
+     * `diaper_sensor_settings` e da `gateway_device_links`: o `DeviceEventStore` escreve
+     * uma configuração reportada direto do caminho de ingestão sempre que chega um
+     * `device_config`, e uma chave estrangeira transformava uma mensagem em voo no
+     * instante da remoção -- ou nos segundos em que a cache de whitelist do worker ainda
+     * não expirou -- numa excepção no caminho quente do MQTT. Este é o único sítio por
+     * onde um dispositivo sai do registo, por isso uma linha aqui chega.
+     *
+     * As operações não precisam de menção: já cascateiam a partir das alterações.
+     */
     public function unregister(string $imei): void
     {
+        foreach (['device_configurations', 'device_configuration_changes'] as $table) {
+            $this->pdo->prepare("DELETE FROM `{$table}` WHERE imei = ?")->execute([$imei]);
+        }
+
         $stmt = $this->pdo->prepare('DELETE FROM whitelist WHERE imei = ?');
         $stmt->execute([$imei]);
     }
