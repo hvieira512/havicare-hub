@@ -94,39 +94,46 @@ import {
     updateGatewayLinkSelection,
 } from "./devices/gateway-links-ui.js";
 import {initNotifications} from "./notifications.js";
+import {initSettings, loadSettingsModal} from "./settings/index.js";
+import {handleSettingsPaginationClick} from "./settings/shell.js";
+import {
+    loadSettingsApiUsersSection,
+    resetApiUserForm,
+    saveApiUser,
+    syncApiUserRoleFields,
+} from "./settings/api-users.js";
 import {
     handleCompanyListClick,
-    handleModelsListSearchInput,
-    handleSettingsPaginationClick,
-    initSettings,
-    loadSettingsApiUsersSection,
     loadSettingsCompanySection,
-    loadSettingsModal,
-    loadSettingsModelsSection,
-    resetApiUserForm,
     resetCompanyForm,
     resetLicenseForm,
-    resetModelForm,
-    saveApiUser,
     saveCompany,
     saveLicense,
-    saveModel,
-    syncApiUserRoleFields,
-    updateModelProtocolAndPreview,
-} from "./settings/index.js";
+} from "./settings/companies.js";
+import {
+    handleCapabilityCatalogSearch,
+    handleCapabilitySupplierClick,
+    loadSettingsCapabilitiesSection,
+} from "./settings/capabilities.js";
 import {
     backToModelList,
+    handleModelsListSearchInput,
+    loadSettingsModelsSection,
+} from "./settings/models/list.js";
+import {
+    openNewModelForm,
+    resetModelForm,
+    revokeModelPreviewUrl,
+    saveModel,
+    updateModelProtocolAndPreview,
+} from "./settings/models/form.js";
+import {
     deleteCurrentModel,
+    resetModelDetailFields,
+    saveCapabilities,
     saveModelDetail,
     syncModelDetailDirty,
-    resetModelDetailFields,
-    handleCapabilitySupplierClick,
-    handleCapabilityCatalogSearch,
-    loadSettingsCapabilitiesSection,
-    openNewModelForm,
-    revokeModelPreviewUrl,
-    saveCapabilities,
-} from "./settings/capabilities.js";
+} from "./settings/models/detail.js";
 
 let els = {};
 let deviceModal = null;

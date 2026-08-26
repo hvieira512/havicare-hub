@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 
 const {state} = await import("../../src/Dashboard/dashboard/state.js");
-const {initSettingsModelsRuntime} = await import(
-    "../../src/Dashboard/dashboard/settings/models/runtime.js"
+const {initSettingsModels} = await import(
+    "../../src/Dashboard/dashboard/settings/models/shell.js"
 );
 const {renderModelsSection} = await import(
     "../../src/Dashboard/dashboard/settings/models/list.js"
@@ -70,7 +70,7 @@ const CATALOG = [
 function render(catalog = CATALOG, query = "") {
     const root = document.createElement("div");
     const summary = document.createElement("div");
-    initSettingsModelsRuntime({els: {modelCatalog: root, modelsTabSummary: summary}});
+    initSettingsModels({els: {modelCatalog: root, modelsTabSummary: summary}});
     state.settingsModal.modelCatalog = catalog;
     state.settingsModal.modelsSearchQuery = query;
     renderModelsSection();

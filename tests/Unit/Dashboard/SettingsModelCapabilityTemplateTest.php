@@ -8,8 +8,13 @@ final class SettingsModelCapabilityTemplateTest extends TestCase
 {
     public function testModelCapabilitiesAreBoundToSupplierTemplateInTheSettingsEditor(): void
     {
+        // O catalogo por tipo de dispositivo esta no separador das Capacidades e os
+        // interruptores de um modelo estao na ficha dele; as afirmacoes abaixo cobrem a
+        // ligacao entre os dois, por isso atravessam ambos.
         $source = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/capabilities.js'
+        ) . file_get_contents(
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/models/detail.js'
         );
 
         self::assertIsString($source);

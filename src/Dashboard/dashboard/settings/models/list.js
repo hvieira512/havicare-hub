@@ -12,9 +12,9 @@ import {
     modelInternalName,
     normalizeDeviceType,
 } from "../../domain.js";
-import {setSettingsNavCount} from "../index.js";
+import {setSettingsNavCount} from "../shell.js";
 import {resetModelForm} from "./form.js";
-import {getSettingsModelsRuntime} from "./runtime.js";
+import {getSettingsModelsRuntime, modelsCarousel} from "./shell.js";
 
 /**
  * O catalogo: tipo de dispositivo, fornecedor, modelo.
@@ -237,9 +237,62 @@ function handleModelsListSearchInput() {
     renderModelsSection();
 }
 
+/**
+ * Volta ao primeiro slide, que e a lista.
+ *
+ * Vive aqui e nao no `shell.js` porque o que faz e recarregar a lista: pos-la outra vez a
+ * vista sem a ir buscar mostrava o catalogo anterior a uma gravacao que acabou de mudar.
+ */
+function backToModelList() {
+    const {els} = getSettingsModelsRuntime();
+    const carousel = state.settingsModal.modelsCarousel;
+    if (!carousel) return;
+
+    // Ja na lista nao ha nada a fazer: o rasto e o carrossel ja estao onde deviam.
+    if (
+        carousel._element.querySelector(".carousel-item.active") ===
+        carousel._element.firstElementChild?.firstElementChild
+    ) {
+        return;
+    }
+
+    // Na lista o rasto tinha um so degrau e repetia o titulo logo por baixo.
+    els.modelsBreadcrumb.classList.add("d-none");
+    els.modelsBreadcrumbModels.classList.add("active");
+    els.modelsBreadcrumbNew.classList.add("d-none");
+    els.modelsBreadcrumbNew.classList.remove("active");
+    els.modelsBreadcrumbCurrent.classList.add("d-none");
+    els.modelsBreadcrumbCurrent.classList.remove("active");
+    els.modelsBreadcrumbCurrent.textContent = "";
+
+    carousel.to(0);
+
+    state.settingsModal.currentCapabilitiesModel = null;
+    state.settingsModal.capabilityModelTemplateKeys = [];
+    state.settingsModal.sectionLoaded.models = false;
+    state.settingsModal.sectionLoaded.modelFilters = false;
+    void loadSettingsModelsSection();
+}
+
+/** O rasto e o slide do formulario de um modelo novo. */
+function showNewModelSlide() {
+    const {els} = getSettingsModelsRuntime();
+    els.modelsBreadcrumb.classList.remove("d-none");
+    els.modelsBreadcrumbModels.classList.remove("active");
+    els.modelsBreadcrumbNew.textContent = "Novo modelo";
+    els.modelsBreadcrumbNew.classList.remove("d-none");
+    els.modelsBreadcrumbNew.classList.add("active");
+    els.modelsBreadcrumbCurrent.classList.add("d-none");
+    els.modelsBreadcrumbCurrent.classList.remove("active");
+
+    modelsCarousel()?.to(1);
+}
+
 export {
+    backToModelList,
     handleModelsListSearchInput,
     loadSettingsModelFilters,
     loadSettingsModelsSection,
     renderModelsSection,
+    showNewModelSlide,
 };

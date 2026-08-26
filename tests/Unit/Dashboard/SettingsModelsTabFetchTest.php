@@ -52,13 +52,8 @@ final class SettingsModelsTabFetchTest extends TestCase
         $formSource = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/models/form.js'
         );
-        $capabilitiesSource = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/capabilities.js'
-        );
-
         self::assertIsString($listSource);
         self::assertIsString($formSource);
-        self::assertIsString($capabilitiesSource);
 
         self::assertStringNotContainsString(
             'await callbacks.loadSettingsSuppliersSection();',
@@ -76,13 +71,15 @@ final class SettingsModelsTabFetchTest extends TestCase
             'state.modelModal.enabledCapabilities = [];',
             $formSource,
         );
+        // Abrir o formulário é o que vai buscar o template e os fornecedores: até lá, o
+        // separador do catálogo não pede nenhum dos dois.
         self::assertStringContainsString(
             'await refreshNewModelCapabilityTemplate();',
-            $capabilitiesSource,
+            $formSource,
         );
         self::assertStringContainsString(
             'await loadSettingsModelFilters();',
-            $capabilitiesSource,
+            $formSource,
         );
     }
 }

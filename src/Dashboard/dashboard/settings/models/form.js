@@ -1,11 +1,30 @@
+import {
+    getModelTemplate as apiGetModelTemplate,
+    saveModel as apiSaveModel,
+} from "../../api/index.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
 import {renderButtonGroup, renderDeviceTypeTiles} from "../../widgets.js";
 import {
+    deviceTypeLabel,
     deviceTypeOptions,
     normalizeDeviceType,
 } from "../../domain.js";
-import {getSettingsModelsRuntime} from "./runtime.js";
+import {getSettingsModelsRuntime} from "./shell.js";
+import {
+    backToModelList,
+    loadSettingsModelFilters,
+    showNewModelSlide,
+} from "./list.js";
+
+/**
+ * O formulario de um modelo novo: o segundo slide do carrossel do catalogo.
+ *
+ * Um modelo nasce com as capacidades que o fornecedor declara para aquele tipo de
+ * dispositivo -- o template --, e nao em branco: e por isso que escolher fornecedor ou
+ * tipo vai buscar o template outra vez. Alterar um modelo que ja existe faz-se na ficha
+ * dele, e nao aqui.
+ */
 
 function modelSupplierOptions(deviceType = "watch") {
     return modelSuppliersForDeviceType(deviceType).map((supplier) => ({
@@ -162,10 +181,129 @@ function selectModelDeviceType(deviceType) {
     void callbacks.refreshNewModelCapabilityTemplate?.();
 }
 
+/** Abre o slide do formulario, com o template do fornecedor já carregado. */
+async function openNewModelForm() {
+    if (!state.settingsModal.sectionLoaded.modelFilters) {
+        await loadSettingsModelFilters();
+    }
+    resetModelForm();
+    await refreshNewModelCapabilityTemplate();
+    showNewModelSlide();
+}
+
+/**
+ * As capacidades predefinidas do fornecedor para este tipo de dispositivo.
+ *
+ * Só corre para um modelo novo: num que já existe as capacidades são as dele, e vivem na
+ * ficha.
+ */
+async function refreshNewModelCapabilityTemplate() {
+    const {els} = getSettingsModelsRuntime();
+    if (!els?.modelForm || els.modelForm.dataset.modelId) {
+        return;
+    }
+
+    const supplierId = parseInt(els.modelForm.dataset.supplierId || "0", 10);
+    const deviceType = normalizeDeviceType(
+        els.modelForm.dataset.deviceType || "watch",
+    );
+
+    state.modelModal.enabledCapabilities = [];
+    state.modelModal.templateDeviceType = deviceType;
+    state.modelModal.templateSupplier = els.modelForm.dataset.supplier || "";
+
+    if (!supplierId) {
+        state.modelModal.templateSummary =
+            "Selecione um fornecedor para carregar o template de capacidades.";
+        if (els.modelTemplateSummary) {
+            els.modelTemplateSummary.textContent =
+                state.modelModal.templateSummary;
+        }
+        return;
+    }
+
+    if (els.modelTemplateSummary) {
+        els.modelTemplateSummary.textContent =
+            "A carregar template de capacidades do fornecedor.";
+    }
+
+    const response = await apiGetModelTemplate({
+        supplierId,
+        deviceType,
+    });
+    if (response.error) {
+        state.modelModal.templateSummary =
+            response.error.message ||
+            response.error.code ||
+            "Erro ao carregar template.";
+        if (els.modelTemplateSummary) {
+            els.modelTemplateSummary.textContent =
+                state.modelModal.templateSummary;
+        }
+        return;
+    }
+
+    const enabledCapabilities = Array.isArray(response.enabledCapabilities)
+        ? response.enabledCapabilities.map(String)
+        : [];
+    state.modelModal.enabledCapabilities = enabledCapabilities;
+    state.modelModal.templateSupplier = String(response.supplier || "");
+    state.modelModal.templateDeviceType = String(
+        response.deviceType || deviceType,
+    );
+    state.modelModal.templateSummary = `${enabledCapabilities.length} capacidades predefinidas para ${state.modelModal.templateSupplier} (${deviceTypeLabel(deviceType)}).`;
+    if (els.modelTemplateSummary) {
+        els.modelTemplateSummary.textContent = state.modelModal.templateSummary;
+    }
+}
+
+async function saveModel() {
+    const {els} = getSettingsModelsRuntime();
+    const supplierId = parseInt(els.modelForm.dataset.supplierId || "0");
+    const internalModel = els.modelInternalModel.value.trim();
+    const commercialName = els.modelCommercialName.value.trim();
+    const deviceType = normalizeDeviceType(
+        els.modelForm.dataset.deviceType || "watch",
+    );
+    if (!supplierId || !internalModel || !commercialName) {
+        alert("Fornecedor, modelo interno e nome comercial são obrigatórios");
+        return;
+    }
+
+    const body = new FormData();
+    body.append("supplier_id", String(supplierId));
+    body.append("internalModel", internalModel);
+    body.append("commercialName", commercialName);
+    body.append("deviceType", deviceType);
+    if (els.modelImage.files[0]) {
+        body.append("image", els.modelImage.files[0]);
+    }
+    if (!els.modelForm.dataset.modelId) {
+        body.append("capabilitiesConfigured", "1");
+        for (const feature of state.modelModal.enabledCapabilities || []) {
+            body.append("capabilities[]", String(feature));
+        }
+    }
+
+    const result = await apiSaveModel(
+        els.modelForm.dataset.modelId || "",
+        body,
+    );
+    if (result.error) {
+        alert(result.error.message || result.error.code);
+        return;
+    }
+
+    backToModelList();
+}
+
 export {
     editModel,
+    openNewModelForm,
+    refreshNewModelCapabilityTemplate,
     resetModelForm,
     revokeModelPreviewUrl,
+    saveModel,
     selectModelDeviceType,
     selectModelSupplier,
     updateModelProtocolAndPreview,
