@@ -148,6 +148,19 @@ function openCreateWizard(licenseList = [], seed = {}) {
     for (const [key, value] of Object.entries(seed)) {
         if (value) wizard.answer(key, value);
     }
+    // O assistente abre onde a pessoa tem alguma coisa para fazer.
+    //
+    // O `answer` responde e fica quieto -- e o que se quer quando se clica numa opcao,
+    // porque avancar e uma accao deliberada. Mas um seed responde a tudo de uma vez, e
+    // sem isto uma notificacao abria no passo 1 a dizer que o passo 1 estava completo,
+    // com um "Seguinte" pelo meio para chegar ao que faltava. Nao ha nada que faltasse:
+    // o hub ja tinha dito tudo.
+    //
+    // Para no primeiro passo com uma pergunta por responder, e nunca salta o ultimo --
+    // criar o dispositivo continua a ser um clique de quem esta a ler o que vai criar.
+    while (wizard.current() === null && wizard.canAdvance()) {
+        wizard.advance();
+    }
     setError("");
     render();
 }

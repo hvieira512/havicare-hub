@@ -360,3 +360,46 @@ test("o Anterior leva a um passo completo e nao ressalta para a frente", () => {
     assert.equal(w.step(), 1);
     assert.equal(w.current(), null, "completo, mas sem avancar sozinho");
 });
+
+/**
+ * Um seed que responde a tudo deixa o assistente no ultimo passo.
+ *
+ * O `answer` responde e fica quieto, que e o que se quer quando alguem clica numa opcao:
+ * avancar e uma accao deliberada. Mas uma notificacao de dispositivo nao autorizado
+ * responde a tudo de uma vez -- o hub ja sabe o tipo, o modelo, a licenca e a identidade
+ * --, e sem avancar o assistente abria no passo 1 a dizer que o passo 1 estava completo.
+ *
+ * O `openCreateWizard` avanca enquanto nao houver nada por perguntar. Isto prende o
+ * contrato do motor de que ele depende.
+ */
+test("responder a tudo e avancar enquanto nao ha pergunta leva ao ultimo passo", () => {
+    const w = wizard();
+
+    w.answer("type", "radar");
+    w.answer("model", "RD-V1");
+    w.answer("owner", {company: "hitcare", license: "2004"});
+    w.answer("identity", "594B3CB301AB");
+
+    assert.equal(w.step(), 1, "responder nao avanca por si");
+
+    while (w.current() === null && w.canAdvance()) w.advance();
+
+    assert.equal(w.step(), 2);
+    assert.equal(w.isLastStep(), true);
+    assert.equal(w.isComplete(), true);
+    assert.equal(w.current(), null, "nao sobra nada para perguntar");
+});
+
+/** Um seed incompleto para onde faltar, e nao salta por cima da pergunta que falta. */
+test("um seed sem licenca fica no passo em que a pergunta esta", () => {
+    const w = wizard();
+
+    w.answer("type", "radar");
+    w.answer("model", "RD-V1");
+    w.answer("identity", "594B3CB301AB");
+
+    while (w.current() === null && w.canAdvance()) w.advance();
+
+    assert.equal(w.step(), 1);
+    assert.equal(w.current().key, "owner");
+});
