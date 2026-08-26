@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 
 final class SubscriberFactoryTest extends TestCase
 {
-    private function factory(bool $stableClientId = true): SubscriberFactory
+    private function factory(): SubscriberFactory
     {
         return new SubscriberFactory(
             new RecordingConnectionFactory(new BrokerSettings(
@@ -28,7 +28,6 @@ final class SubscriberFactoryTest extends TestCase
                 connectTimeout: 5,
                 socketTimeout: 5,
             )),
-            $stableClientId,
         );
     }
 
@@ -100,26 +99,72 @@ final class SubscriberFactoryTest extends TestCase
         self::assertSame([['/voerka/x', 'payload']], $ingress->received);
     }
 
-    public function testNonStableClientIdsAppendThePid(): void
+    /**
+     * O id de um subscritor não pode levar pid.
+     *
+     * O ingress do radar levava, e era o único dos quatro. Como o `bind` liga sempre com
+     * `cleanSession = false`, cada reinício do hub abria uma sessão nova e deixava a
+     * anterior órfã no broker -- a segurar a subscrição de `radar/1001/#` e a encher fila
+     * de QoS 1 para um cliente que nunca voltava. O broker de produção não tem
+     * `persistence` nem `persistent_client_expiration`, por isso só as largava ao
+     * reiniciar. Havia ainda um segundo efeito: `qinglanst-radar-sub-` gasta 20 dos 23
+     * caracteres do id, sobravam três dígitos de pid, e dois pids diferentes chegaram a
+     * truncar para o mesmo id e a expulsar-se um ao outro.
+     */
+    public function testSubscriberClientIdsNeverCarryThePid(): void
     {
         $connections = new RecordingConnectionFactory(new BrokerSettings(
             'radar.internal',
             1883,
             '',
             '',
-            'radar',
+            'qinglanst-radar',
             keepalive: 60,
             connectTimeout: 5,
             socketTimeout: 5,
         ));
 
-        (new SubscriberFactory($connections, stableClientId: false))->bind(
+        (new SubscriberFactory($connections))->bind(
             'sub',
             'radar/1001/#',
             static fn (): MqttIngress => new RecordingIngress(),
         );
 
-        self::assertSame('radar-sub-' . getmypid(), $connections->created[0]->getClientId());
+        self::assertSame('qinglanst-radar-sub', $connections->created[0]->getClientId());
+        self::assertSame([false], $connections->cleanSessions);
+    }
+
+    /** A reconexão tem de reutilizar o mesmo id, ou o recuo trocava a sessão a cada tentativa. */
+    public function testReconnectingKeepsTheSameClientId(): void
+    {
+        $connections = new RecordingConnectionFactory(new BrokerSettings(
+            'radar.internal',
+            1883,
+            '',
+            '',
+            'qinglanst-radar',
+            keepalive: 60,
+            connectTimeout: 5,
+            socketTimeout: 5,
+        ));
+
+        $reconnect = null;
+        (new SubscriberFactory($connections))->bind(
+            'sub',
+            'radar/1001/#',
+            static function (MqttClient $client, callable $makeClient) use (&$reconnect): MqttIngress {
+                $reconnect = $makeClient;
+                return new RecordingIngress();
+            },
+        );
+
+        $reconnect();
+
+        self::assertCount(2, $connections->created);
+        self::assertSame(
+            $connections->created[0]->getClientId(),
+            $connections->created[1]->getClientId(),
+        );
     }
 }
 

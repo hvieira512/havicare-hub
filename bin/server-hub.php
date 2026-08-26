@@ -95,7 +95,6 @@ if ($config['qinglanst']['enabled']) {
     $qinglanstTopicFilter = trim((string)$config['qinglanst']['topic_filter']);
     $qinglanstSubscribers = new SubscriberFactory(
         new ConnectionFactory(BrokerSettings::fromQinglanstConfig($config['qinglanst'])),
-        stableClientId: false,
     );
     $runner->add('Qinglanst ingress', $qinglanstSubscribers->bind(
         'sub',

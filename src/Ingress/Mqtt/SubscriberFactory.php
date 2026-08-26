@@ -16,12 +16,18 @@ use PhpMqtt\Client\Subscription;
  * ingress exists, because the ingress needs the connected client in its
  * constructor. That circularity is resolved with a by-reference holder, which
  * this class keeps in one place instead of at every call site.
+ *
+ * Every subscriber here resumes its broker-side session (`cleanSession = false`,
+ * fixed below), so the client id has to be stable -- sem pid. Um id com pid muda
+ * a cada reinício do processo, o que faz o broker abrir uma sessão nova e deixar
+ * a anterior órfã, a segurar a subscrição e a encher fila de QoS 1 para um
+ * cliente que nunca volta. Não é uma opção: as duas coisas só estão certas
+ * juntas, e por isso não há flag para as separar.
  */
 final class SubscriberFactory
 {
     public function __construct(
         private readonly ConnectionFactory $connections,
-        private readonly bool $stableClientId = true,
     ) {
     }
 
@@ -47,10 +53,10 @@ final class SubscriberFactory
             return $repository;
         };
 
-        $subscriber = $this->connections->create($clientSuffix, $this->stableClientId, $repository());
+        $subscriber = $this->connections->create($clientSuffix, true, $repository());
         $reconnect = function () use ($clientSuffix, $repository): MqttClient {
             return $this->connections->connect(
-                $this->connections->create($clientSuffix, $this->stableClientId, $repository()),
+                $this->connections->create($clientSuffix, true, $repository()),
                 false,
             );
         };
