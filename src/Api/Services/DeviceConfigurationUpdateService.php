@@ -112,6 +112,17 @@ final class DeviceConfigurationUpdateService
 
             $payload = $this->capabilities->sanitizeInput($protocol, $genericKey, $payload);
 
+            // Uma capacidade que o hub aplica sozinho nao tem comandos para entregar: o
+            // valor desejado guarda-se e da-se por aplicado. O `stage` ja sabe o que fazer
+            // com uma alteracao sem operacoes -- marca-a `confirmed` e a linha `acked` --,
+            // por isso o resto do ciclo de vida e o mesmo das outras.
+            if (!$this->capabilities->travelsToDevice($genericKey)) {
+                $results[] = $this->stageHubApplied(
+                    $imei, $genericKey, $payload, $protocol, $supplier, $model
+                );
+                continue;
+            }
+
             try {
                 $nativeUpdates = $this->capabilities->toNative($protocol, $genericKey, $payload);
             } catch (\InvalidArgumentException $e) {
@@ -181,6 +192,44 @@ final class DeviceConfigurationUpdateService
      * @param array<string, mixed> $device
      * @return array<string, mixed>
      */
+    /**
+     * Guarda o valor de uma capacidade que nao viaja, e da-a por aplicada.
+     *
+     * A chave nativa e a generica: nao ha comando nativo nenhum de que ela seja tradução,
+     * e o `native_key` faz parte da chave primaria da `device_configurations`, por isso
+     * tem de ser alguma coisa. O `confirmation_mode` diz `local`, que e o que distingue
+     * estas linhas de uma que foi confirmada por um dispositivo.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private function stageHubApplied(
+        string $imei,
+        string $genericKey,
+        array $payload,
+        string $protocol,
+        string $supplier,
+        string $model,
+    ): array {
+        $staged = $this->db->configurationLifecycle->stage($imei, $genericKey, $payload, [[
+            'nativeKey' => $genericKey,
+            'protocol' => $protocol,
+            'supplier' => $supplier,
+            'model' => $model,
+            'command' => '',
+            'payload' => $payload,
+            'confirmationMode' => 'local',
+            'operationId' => '',
+        ]], []);
+
+        return [
+            'key' => $genericKey,
+            'changeId' => $staged['changeId'],
+            'desiredRevision' => $staged['revision'],
+            'operations' => [],
+        ];
+    }
+
     private function prepareNative(
         string $imei,
         string $nativeKey,

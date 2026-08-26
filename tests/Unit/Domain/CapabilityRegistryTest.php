@@ -7,6 +7,21 @@ use PHPUnit\Framework\TestCase;
 
 final class CapabilityRegistryTest extends TestCase
 {
+    /**
+     * Uma configuração é um downlink à espera de acontecer, e é assim que fica por
+     * omissão: só quem se marca com o `HubAppliedCapability` é que o hub aplica sozinho.
+     */
+    public function testACapabilityTravelsToTheDeviceUnlessItSaysOtherwise(): void
+    {
+        $registry = new CapabilityRegistry();
+
+        self::assertTrue($registry->travelsToDevice('alarm_clock'));
+        self::assertTrue($registry->travelsToDevice('push_message'));
+        // Sem contrato registado também viaja: as capacidades simples resolvem-se pelos
+        // metadados do catálogo e saem num comando na mesma.
+        self::assertTrue($registry->travelsToDevice('uma_capacidade_que_nao_existe'));
+    }
+
     public function testWonlexPushMessageMapsToMessageNoticePayload(): void
     {
         $registry = new CapabilityRegistry();

@@ -65,6 +65,17 @@ final class CapabilityRegistry
         return isset($this->contracts[$genericKey]);
     }
 
+    /**
+     * Se a alteração tem de viajar para o dispositivo, ou se o hub a aplica sozinho.
+     *
+     * Por omissão viaja: uma configuração é um downlink à espera de acontecer, e uma
+     * capacidade só sai dessa regra dizendo-o com o `HubAppliedCapability`.
+     */
+    public function travelsToDevice(string $genericKey): bool
+    {
+        return !(($this->contracts[$genericKey] ?? null) instanceof HubAppliedCapability);
+    }
+
     public function supportsProtocol(string $genericKey, string $protocol): bool
     {
         $contract = $this->contracts[$genericKey] ?? null;
