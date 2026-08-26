@@ -465,18 +465,42 @@ function connectivityValue(data) {
     return parts.length > 0 ? parts.join(" · ") : featureLabel("connectivity");
 }
 
-// Mirrors the thresholds in Hub\Ingress\Mqtt\Moko\MonitNormalizer so the strip
-// can never disagree with the condition card beside it.
-const DIAPER_DAMP_DELTA = 4;
-const DIAPER_AFFECTED_DELTA = 12;
-// Deltas are 6-bit (0-63) but the decision happens at 12, and a dry channel
-// reads 0-3. Scaling to the full range would flatten every real reading, so the
-// bars scale to twice the threshold and taller readings clamp to full height.
-const DIAPER_SCALE_DELTA = 24;
+/**
+ * O limiar por canal que decidiu esta leitura, tirado da propria leitura.
+ *
+ * Os limiares sao configuraveis por sensor e o normalizador publica o `wetDelta` no
+ * payload exactamente para que ninguem os escreva aqui. O 12 e o preset normal e serve so
+ * as leituras que ficaram no historico antes de os limiares viajarem com elas: a lista de
+ * cada dispositivo guarda cem eventos, e os mais antigos nao trazem o campo.
+ */
+const DIAPER_WET_DELTA_FALLBACK = 12;
 
-function diaperMoistureBand(delta) {
-    if (delta >= DIAPER_AFFECTED_DELTA) return "wet";
-    if (delta >= DIAPER_DAMP_DELTA) return "damp";
+function diaperWetDelta(data) {
+    const wetDelta = Number(data?.wetDelta);
+    return Number.isFinite(wetDelta) && wetDelta > 0 ? wetDelta : DIAPER_WET_DELTA_FALLBACK;
+}
+
+/**
+ * Quantos canais molhados obrigam a muda, tambem da leitura.
+ *
+ * Numa leitura antiga, que nao o traz, o resumo volta a contar sobre o total de canais --
+ * que e o que dizia enquanto o limiar era o mesmo para todos os sensores.
+ */
+function diaperRequiredChannels(data, channelCount) {
+    const required = Number(data?.requiredChannelCount);
+    return Number.isFinite(required) && required > 0 ? required : channelCount;
+}
+
+// Espelha o `DiaperSensitivity::cleanMaxDelta`: abaixo disto em todos os canais a fralda
+// esta seca. A divisao por 4 tem de ser a mesma dos dois lados, senao a tira pinta de
+// ambar um canal que o cartao ao lado ainda conta como seco.
+function diaperDampDelta(wetDelta) {
+    return Math.floor(wetDelta / 4) + 1;
+}
+
+function diaperMoistureBand(delta, wetDelta) {
+    if (delta >= wetDelta) return "wet";
+    if (delta >= diaperDampDelta(wetDelta)) return "damp";
     return "dry";
 }
 
@@ -486,14 +510,21 @@ function diaperMoistureBody(data) {
         return "";
     }
 
+    const wetDelta = diaperWetDelta(data);
+    // Deltas are 6-bit (0-63) but the decision happens at the threshold, and a dry
+    // channel reads far below it. Scaling to the full range would flatten every real
+    // reading, so the bars scale to twice the threshold and taller readings clamp to
+    // full height.
+    const scaleDelta = wetDelta * 2;
+
     const columns = channels
         .map((channel, position) => {
             // Baselines differ by an order of magnitude between channels, so
             // only the delta is comparable across the strip.
             const delta = Math.max(0, Number(channel?.delta ?? 0) || 0);
             const index = channel?.index ?? position + 1;
-            const band = diaperMoistureBand(delta);
-            const height = Math.min(100, (delta / DIAPER_SCALE_DELTA) * 100);
+            const band = diaperMoistureBand(delta, wetDelta);
+            const height = Math.min(100, (delta / scaleDelta) * 100);
             const tooltip = `Canal ${index} · delta ${delta} (base ${channel?.baseline ?? "-"}, leitura ${channel?.value ?? "-"})`;
 
             return `<div class="diaper-channel" title="${esc(tooltip)}">
@@ -508,12 +539,13 @@ function diaperMoistureBody(data) {
 
     const maximum = Math.max(0, Number(data?.maximumDelta ?? 0) || 0);
     const affected = Math.max(0, Number(data?.affectedChannelCount ?? 0) || 0);
-    const thresholdOffset = (DIAPER_AFFECTED_DELTA / DIAPER_SCALE_DELTA) * 100;
+    const required = diaperRequiredChannels(data, channels.length);
+    const thresholdOffset = (wetDelta / scaleDelta) * 100;
 
     return `<div class="diaper-moisture mt-3">
         <div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${columns}</div>
         <div class="diaper-moisture-summary small text-secondary mt-2">
-            Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-body">${esc(affected)}</strong> de ${channels.length} canais acima do limiar (${DIAPER_AFFECTED_DELTA})
+            Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-body">${esc(affected)}</strong> de ${esc(required)} canais acima do limiar (${esc(wetDelta)})
         </div>
     </div>`;
 }
@@ -567,7 +599,7 @@ function diaperMoistureRowValue(data) {
 
     const maximum = Math.max(0, Number(data?.maximumDelta ?? 0) || 0);
     const affected = Math.max(0, Number(data?.affectedChannelCount ?? 0) || 0);
-    return `máx. ${maximum} · ${affected} de ${channels.length} acima do limiar`;
+    return `máx. ${maximum} · ${affected} de ${diaperRequiredChannels(data, channels.length)} acima do limiar`;
 }
 
 function batteryDetails(data) {

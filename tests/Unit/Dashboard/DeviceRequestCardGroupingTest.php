@@ -78,6 +78,11 @@ final class DeviceRequestCardGroupingTest extends TestCase
         // A marca de alerta sai do payload. Se alguem escrever o 40 aqui, e uma segunda copia
         // do limiar dos 4 canais que decide o estado no normalizador.
         self::assertStringContainsString('Number(data?.alertIndex)', $renderersSource);
+        // Os limiares por canal saem do mesmo payload e pela mesma razao: sao configuraveis
+        // por sensor, e escritos aqui a tira pintava as barras e anunciava um limiar que nao
+        // foi o que decidiu a leitura.
+        self::assertStringContainsString('Number(data?.wetDelta)', $renderersSource);
+        self::assertStringContainsString('Number(data?.requiredChannelCount)', $renderersSource);
         self::assertStringContainsString('change_required: "Mudança necessária"', $renderersSource);
         self::assertStringContainsString('activity: {icon: "fa-person-walking"', $renderersSource);
         self::assertStringContainsString('blood_sugar: {icon: "fa-vial"', $renderersSource);

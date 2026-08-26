@@ -327,32 +327,35 @@ Voltar de `clean` ou `attention` a `change_required` dispara outra vez.
 O cliente não precisa de reimplementar nada disto — está documentado para que os
 números sejam explicáveis, não para serem copiados.
 
-Três limiares governam tudo:
+Três limiares governam tudo, e dois deles vêm na própria leitura:
 
-| Limiar | Valor | Papel |
-|---|---|---|
-| canal molhado | 12 | um canal com este `delta` conta como molhado |
-| máximo de seco | 4 | abaixo disto em *todos* os canais a fralda está seca |
-| canais para muda | 4 | tantos canais molhados obrigam a muda |
+| Limiar | De onde vem | No preset Normal | Papel |
+|---|---|---|---|
+| canal molhado | `wetDelta` | 12 | um canal com este `delta` conta como molhado |
+| máximo de seco | derivado: `intdiv(wetDelta, 4) + 1` | 4 | abaixo disto em *todos* os canais a fralda está seca |
+| canais para muda | `requiredChannelCount` | 4 | tantos canais molhados obrigam a muda |
 
-São política do hub e podem ser afinados — ver a secção 6.
+São política do hub, configuráveis por sensor, e viajam com a leitura precisamente para
+não serem copiados — ver a secção 6. A coluna do meio é só o preset Normal, com o qual
+corre um sensor a que ninguém mexeu.
 
 Estado:
 
 ```
-maximumDelta < 4                → clean
-affectedChannelCount >= 4       → change_required
-caso contrário                  → attention
+maximumDelta < intdiv(wetDelta, 4) + 1        → clean
+affectedChannelCount >= requiredChannelCount  → change_required
+caso contrário                                → attention
 ```
 
-A assimetria é deliberada e vale a pena compreender: um canal com `delta` entre 4 e 11
-não é "afectado", mas é suficiente para deixar de ser `clean`. A amostra real acima tem
+A assimetria é deliberada e vale a pena compreender: um canal com `delta` entre o máximo
+de seco e o `wetDelta` menos um — 4 e 11 no preset Normal — não é "afectado", mas é
+suficiente para deixar de ser `clean`. A amostra real acima tem
 `maximumDelta: 4` e `affectedChannelCount: 0`, e é por isso que o estado é `attention`
 e não `clean`.
 
 Nível (`diaper_moisture_level.index`):
 
-1. A saturação é a média, sobre os dez canais, de `min(delta / 12, 1)` — na prática
+1. A saturação é a média, sobre os dez canais, de `min(delta / wetDelta, 1)` — na prática
    "quantos dos dez canais valem por um canal molhado", em fracção.
 2. Essa saturação é colocada dentro da banda que pertence ao estado já decidido acima,
    e é isso que garante que o número e o badge nunca se contradizem no ecrã.
@@ -363,17 +366,23 @@ Nível (`diaper_moisture_level.index`):
 | `attention` | 25–39 |
 | `change_required` | 40–100 |
 
-Em `clean` e em `change_required` a aritmética já cai dentro da banda, e o índice é
-simplesmente `saturação * 100`:
+Em `clean` a aritmética cai dentro da banda para qualquer `wetDelta` configurado, e é
+exactamente para isso que serve a divisão por 4 no máximo de seco:
 
-- `clean` — todos os deltas ≤ 3, cada termo ≤ 3/12, média ≤ 0,25 → ≤ 25
-- `change_required` — pelo menos 4 canais a 1,0, média ≥ 4/10 → ≥ 40
+- `clean` — todos os deltas ≤ `intdiv(wetDelta, 4)`, cada termo ≤ 0,25, média ≤ 0,25 → ≤ 25
+- `change_required` — pelo menos `requiredChannelCount` canais a 1,0, média ≥
+  `requiredChannelCount / 10`; no preset Normal isso aterra nos 40, e com um
+  `requiredChannelCount` menor é o piso da banda que o sobe aos 40
 
-O `attention` é a única banda reescalada. Ali a saturação vai de quase 0 até 11/12
-(todos os canais um ponto abaixo de molhado), portanto cortar em 39 empilhava metade do
-dia no mesmo valor — e uma fralda em atenção passa lá a maior parte do tempo, que é
-justamente quando o número tem de se mexer. Reescalada, dez canais a rondar o delta 6
-dão 32 em vez de bater no tecto.
+O `attention` é a única banda reescalada. Ali a saturação vai de quase 0 até
+`(wetDelta - 1) / wetDelta` (todos os canais um ponto abaixo de molhado), portanto cortar
+em 39 empilhava metade do dia no mesmo valor — e uma fralda em atenção passa lá a maior
+parte do tempo, que é justamente quando o número tem de se mexer. Reescalada, dez canais
+a rondar o delta 6 dão 32 em vez de bater no tecto.
+
+O custo, dito com clareza: longe do preset Normal o índice comprime-se nos extremos e
+várias leituras distintas encostam ao 25 ou ao 40. Perde-se resolução, não correcção — os
+dois invariantes que o ecrã vê mantêm-se em qualquer configuração alcançável.
 
 O `attention` acaba em 39 e não em 40 de propósito: o 40 é a marca de alerta no ecrã e
 pertence só ao `change_required`.
