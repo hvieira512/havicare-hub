@@ -23,10 +23,10 @@ final class MessageNormalizerTest extends TestCase
             'sleep_state' => 'Light Sleep',
         ], $topic, $this->device());
 
-        self::assertSame('vitals', $result['telemetry']['type']);
-        self::assertSame('radar-topic-uid', $result['telemetry']['device']['id']);
-        self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['device']['commercialName']);
-        self::assertSame('heartbreath', $result['telemetry']['source']['nativeType']);
+        self::assertSame('vitals', $result['telemetry']['vitals']['type']);
+        self::assertSame('radar-topic-uid', $result['telemetry']['vitals']['device']['id']);
+        self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['vitals']['device']['commercialName']);
+        self::assertSame('heartbreath', $result['telemetry']['vitals']['source']['nativeType']);
     }
 
     public function testNormalizesPosStaticsTelemetryUsingRawNativeType(): void
@@ -48,9 +48,10 @@ final class MessageNormalizerTest extends TestCase
             'breathing_active' => true,
         ], $topic, $this->device());
 
-        self::assertSame('minute_stats', $result['telemetry']['type']);
-        self::assertSame('posstatics', $result['telemetry']['source']['nativeType']);
-        self::assertSame(42, $result['telemetry']['data']['walking_distance']);
+        $telemetry = $result['telemetry']['position_minute_stats'];
+        self::assertSame('minute_stats', $telemetry['type']);
+        self::assertSame('posstatics', $telemetry['source']['nativeType']);
+        self::assertSame(42, $telemetry['data']['walking_distance']);
     }
 
     public function testPositionDetectionIncludesDeviceAndSourceMetadata(): void
@@ -73,10 +74,11 @@ final class MessageNormalizerTest extends TestCase
             ]],
         ], $topic, $this->device());
 
-        self::assertSame('detection', $result['event']['type']);
-        self::assertSame('radar-topic-uid', $result['event']['device']['id']);
-        self::assertSame('position', $result['event']['source']['nativeType']);
-        self::assertSame('fall_confirmed', $result['event']['data']['detectionType']);
+        $event = $result['events'][0];
+        self::assertSame('detection', $event['type']);
+        self::assertSame('radar-topic-uid', $event['device']['id']);
+        self::assertSame('position', $event['source']['nativeType']);
+        self::assertSame('fall_confirmed', $event['data']['detectionType']);
     }
 
     public function testPositionNormalizationDropsSentinelPersonIndex88(): void
@@ -99,8 +101,8 @@ final class MessageNormalizerTest extends TestCase
             ]],
         ], $topic, $this->device());
 
-        self::assertSame([], $result['telemetry']['data']['people']);
-        self::assertArrayNotHasKey('event', $result);
+        self::assertSame([], $result['telemetry']['positions']['data']['people']);
+        self::assertSame([], $result['events']);
     }
 
     public function testPositionNormalizationKeepsRealPeopleWhenSentinelIsPresent(): void
@@ -135,11 +137,43 @@ final class MessageNormalizerTest extends TestCase
             ],
         ], $topic, $this->device());
 
-        self::assertCount(1, $result['telemetry']['data']['people']);
-        self::assertSame(2, $result['telemetry']['data']['people'][0]['person_index']);
-        self::assertSame('detection', $result['event']['type']);
-        self::assertSame('fall_confirmed', $result['event']['data']['detectionType']);
-        self::assertSame(2, $result['event']['data']['details']['person_index']);
+        $people = $result['telemetry']['positions']['data']['people'];
+        self::assertCount(1, $people);
+        self::assertSame(2, $people[0]['person_index']);
+        self::assertSame('detection', $result['events'][0]['type']);
+        self::assertSame('fall_confirmed', $result['events'][0]['data']['detectionType']);
+        self::assertSame(2, $result['events'][0]['data']['details']['person_index']);
+    }
+
+    /**
+     * Dois alarmes na mesma mensagem saem os dois.
+     *
+     * O normalizador juntava-os numa lista e depois fazia `$result['event'] = $events[0]`.
+     * Uma apneia e uma bradicardia no mesmo minuto -- que é precisamente quando alguém está
+     * pior, não melhor -- e o segundo desaparecia sem deixar rasto no log nem no Redis.
+     */
+    public function testEveryAlarmInOneMessageSurvives(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'hbstatics',
+            'device_code' => 'radar-topic-uid',
+            'real_time_breathing' => 0,
+            'real_time_heart_rate' => 0,
+            'avg_breathing_per_minute' => 0,
+            'avg_heart_rate_per_minute' => 30,
+            'breathing_status_per_minute' => 'Apnea',
+            'heart_rate_status_per_minute' => 'Low',
+            'vital_signs_status' => 'Weak',
+            'sleep_state_status' => 'Undefined',
+        ], $topic, $this->device());
+
+        self::assertSame(
+            ['apnea', 'heart_rate_low', 'vitals_signal_lost'],
+            array_column(array_column($result['events'], 'data'), 'detectionType'),
+        );
     }
 
     /**

@@ -31,14 +31,20 @@ final class DashboardWritePolicy
         return true;
     }
 
-    public function shouldStoreTelemetry(string $deviceKey, string $telemetryType, int $nowMs): bool
+    /**
+     * `$capability` é a chave da capacidade, não o tipo do envelope do fabricante.
+     *
+     * Só a posição é amostrada: chega uma vez por segundo e o histórico não precisa de
+     * cada leitura. As outras passam sempre.
+     */
+    public function shouldStoreTelemetry(string $deviceKey, string $capability, int $nowMs): bool
     {
-        if ($telemetryType !== 'position' || $this->positionHistorySampleMs <= 0) {
-            $this->lastTelemetryMs[$deviceKey . '|' . $telemetryType] = $nowMs;
+        if ($capability !== 'positions' || $this->positionHistorySampleMs <= 0) {
+            $this->lastTelemetryMs[$deviceKey . '|' . $capability] = $nowMs;
             return true;
         }
 
-        $key = $deviceKey . '|' . $telemetryType;
+        $key = $deviceKey . '|' . $capability;
         $last = $this->lastTelemetryMs[$key] ?? null;
         if ($last !== null && ($nowMs - $last) < $this->positionHistorySampleMs) {
             return false;

@@ -23,9 +23,19 @@ final class MessageNormalizer
     ];
 
     /**
+     * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes.
+     *
+     * As telemetrias vêm num mapa de capacidade para leitura, e não uma só, porque uma
+     * mensagem mede mais do que uma coisa: o `heartbreath` traz frequência cardíaca,
+     * respiratória e estado de sono. É a forma que o `Moko\W6rNormalizer` já usa, e que o
+     * `Moko\Bridge` já sabe percorrer com estrangulamento por capacidade.
+     *
+     * Os alarmes vêm em lista pelo mesmo motivo. Antes saía só o primeiro -- uma apneia e
+     * uma taquicardia no mesmo minuto e uma delas desaparecia sem deixar rasto.
+     *
      * @param array{type: string, device_code: string, ...} $decoded
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string} $device
-     * @return array{telemetry?: array, event?: array}
+     * @return array{telemetry: array<string, array>, events: list<array>}
      */
     public function normalize(array $decoded, Topic $topic, array $device): array
     {
@@ -34,14 +44,14 @@ final class MessageNormalizer
             'heartbreath' => $this->normalizeVitals($decoded, $topic, $device),
             'posstatics' => $this->normalizeMinuteStats($decoded, $topic, $device),
             'hbstatics' => $this->normalizeHbStatics($decoded, $topic, $device),
-            default => [],
+            default => ['telemetry' => [], 'events' => []],
         };
     }
 
     /**
      * @param array $decoded
      * @param array $device
-     * @return array{telemetry: array, event?: array}
+     * @return array{telemetry: array<string, array>, events: list<array>}
      */
     private function normalizePosition(array $decoded, Topic $topic, array $device): array
     {
@@ -68,14 +78,12 @@ final class MessageNormalizer
             ],
         ];
 
-        $result = ['telemetry' => $telemetry];
-
         $event = $this->detectPositionEvent($topic, $device, $people);
-        if ($event !== null) {
-            $result['event'] = $event;
-        }
 
-        return $result;
+        return [
+            'telemetry' => ['positions' => $telemetry],
+            'events' => $event === null ? [] : [$event],
+        ];
     }
 
     /**
@@ -170,7 +178,7 @@ final class MessageNormalizer
     }
 
     /**
-     * @return array{telemetry: array, event?: array}
+     * @return array{telemetry: array<string, array>, events: list<array>}
      */
     private function normalizeVitals(array $decoded, Topic $topic, array $device): array
     {
@@ -190,8 +198,6 @@ final class MessageNormalizer
                 'sleep_state' => $decoded['sleep_state'] ?? 'Undefined',
             ],
         ];
-
-        $result = ['telemetry' => $telemetry];
 
         $events = [];
 
@@ -246,42 +252,41 @@ final class MessageNormalizer
             );
         }
 
-        if ($events !== []) {
-            $result['event'] = $events[0];
-        }
-
-        return $result;
+        return ['telemetry' => ['vitals' => $telemetry], 'events' => $events];
     }
 
     /**
-     * @return array{telemetry: array}
+     * @return array{telemetry: array<string, array>, events: list<array>}
      */
     private function normalizeMinuteStats(array $decoded, Topic $topic, array $device): array
     {
         return [
             'telemetry' => [
-                'schemaVersion' => 2,
-                'type' => 'minute_stats',
-                'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                'device' => $this->deviceInfo($topic, $device),
-                'source' => $this->source($topic, 'posstatics'),
-                'data' => [
-                    'version' => $decoded['version'],
-                    'people' => $decoded['people'],
-                    'walking_distance' => $decoded['walking_distance'],
-                    'walking_time' => $decoded['walking_time'],
-                    'meditation_time' => $decoded['meditation_time'],
-                    'in_bed_time' => $decoded['in_bed_time'],
-                    'standing_time' => $decoded['standing_time'],
-                    'multiplayer_time' => $decoded['multiplayer_time'],
-                    'breathing_active' => $decoded['breathing_active'],
+                'position_minute_stats' => [
+                    'schemaVersion' => 2,
+                    'type' => 'minute_stats',
+                    'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+                    'device' => $this->deviceInfo($topic, $device),
+                    'source' => $this->source($topic, 'posstatics'),
+                    'data' => [
+                        'version' => $decoded['version'],
+                        'people' => $decoded['people'],
+                        'walking_distance' => $decoded['walking_distance'],
+                        'walking_time' => $decoded['walking_time'],
+                        'meditation_time' => $decoded['meditation_time'],
+                        'in_bed_time' => $decoded['in_bed_time'],
+                        'standing_time' => $decoded['standing_time'],
+                        'multiplayer_time' => $decoded['multiplayer_time'],
+                        'breathing_active' => $decoded['breathing_active'],
+                    ],
                 ],
             ],
+            'events' => [],
         ];
     }
 
     /**
-     * @return array{telemetry: array, event?: array}
+     * @return array{telemetry: array<string, array>, events: list<array>}
      */
     private function normalizeHbStatics(array $decoded, Topic $topic, array $device): array
     {
@@ -305,7 +310,6 @@ final class MessageNormalizer
             ],
         ];
 
-        $result = ['telemetry' => $telemetry];
         $events = [];
 
         $breathingStatus = (string)($decoded['breathing_status_per_minute'] ?? '');
@@ -356,11 +360,7 @@ final class MessageNormalizer
             );
         }
 
-        if ($events !== []) {
-            $result['event'] = $events[0];
-        }
-
-        return $result;
+        return ['telemetry' => ['vitals_minute_stats' => $telemetry], 'events' => $events];
     }
 
     /**

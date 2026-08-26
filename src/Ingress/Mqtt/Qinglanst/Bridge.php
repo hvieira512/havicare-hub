@@ -156,36 +156,40 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $publishedTelemetry = false;
         $publishedEvent = false;
 
-        if (isset($normalized['telemetry']) && is_array($normalized['telemetry'])) {
+        // Uma mensagem mede mais do que uma coisa, por isso o normalizador devolve um mapa
+        // de capacidade para leitura e uma lista de alarmes. O estrangulamento da escrita
+        // no Redis é por capacidade: a frequência cardíaca e o estado de sono chegam na
+        // mesma mensagem mas mudam a ritmos diferentes.
+        foreach ($normalized['telemetry'] as $capability => $telemetry) {
             $mqttTelemetryStart = hrtime(true);
-            $this->mqttBridge->publishTelemetry($topicDeviceKey, $normalized['telemetry'], $deviceType, $licenseId, $company);
-            $mqttTelemetryDuration = hrtime(true) - $mqttTelemetryStart;
+            $this->mqttBridge->publishTelemetry($topicDeviceKey, $telemetry, $deviceType, $licenseId, $company);
+            $mqttTelemetryDuration += hrtime(true) - $mqttTelemetryStart;
 
             if (
                 $this->dashboardStore !== null
-                && $this->dashboardWritePolicy->shouldStoreTelemetry($dashboardKey, (string)($normalized['telemetry']['type'] ?? ''), $nowMs)
+                && $this->dashboardWritePolicy->shouldStoreTelemetry($dashboardKey, (string)$capability, $nowMs)
             ) {
                 $redisTelemetryStart = hrtime(true);
-                $this->dashboardStore->append($dashboardKey, 'telemetry', array_merge($normalized['telemetry'], [
+                $this->dashboardStore->append($dashboardKey, 'telemetry', array_merge($telemetry, [
                     'deviceType' => $deviceType,
                     'licenseId' => $licenseId,
                 ]));
-                $redisTelemetryDuration = hrtime(true) - $redisTelemetryStart;
+                $redisTelemetryDuration += hrtime(true) - $redisTelemetryStart;
             }
             $publishedTelemetry = true;
         }
 
-        if (isset($normalized['event']) && is_array($normalized['event'])) {
+        foreach ($normalized['events'] as $event) {
             $mqttEventStart = hrtime(true);
-            $this->mqttBridge->publishEvent($topicDeviceKey, $normalized['event'], $deviceType, $licenseId, $company);
-            $mqttEventDuration = hrtime(true) - $mqttEventStart;
+            $this->mqttBridge->publishEvent($topicDeviceKey, $event, $deviceType, $licenseId, $company);
+            $mqttEventDuration += hrtime(true) - $mqttEventStart;
 
             $redisEventStart = hrtime(true);
-            $this->dashboardStore?->append($dashboardKey, 'events', array_merge($normalized['event'], [
+            $this->dashboardStore?->append($dashboardKey, 'events', array_merge($event, [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
             ]));
-            $redisEventDuration = hrtime(true) - $redisEventStart;
+            $redisEventDuration += hrtime(true) - $redisEventStart;
             $publishedEvent = true;
         }
 
