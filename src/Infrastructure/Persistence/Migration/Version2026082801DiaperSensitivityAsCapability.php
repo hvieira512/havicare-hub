@@ -10,7 +10,7 @@ use PDO;
 /**
  * A sensibilidade dos alertas passa a ser uma capacidade como as outras.
  *
- * Três passos, e a ordem importa.
+ * Dois passos, e a ordem importa.
  *
  * O `syncCapabilities` cria a linha em `capabilities`, que é o que faz a capacidade
  * existir. Sem ela o `INSERT` seguinte não encontra o que ligar.
@@ -21,15 +21,10 @@ use PDO;
  * existem deixava simplesmente de gravar. `INSERT IGNORE` e sem `UPDATE`: se alguém a
  * desligar à mão um dia, fica desligada.
  *
- * Por fim, os valores que estavam na `diaper_sensor_settings` viram linhas do ciclo de
- * vida das configurações. `last_status = 'acked'` com `reported_payload` vazio é o que o
- * `ConfigurationSyncStatus` lê como `applied`, que é a verdade: está guardado e a ingestão
- * já o usa. O `confirmation_mode = 'local'` é o que distingue estas linhas de uma que foi
- * mesmo confirmada por um dispositivo.
- *
- * A tabela antiga não é apagada aqui. Fica para um passo à parte, depois de isto correr em
- * produção e de se confirmar que a ingestão lê os valores novos: uma migração que apaga
- * dados não deve ser a mesma que os copia.
+ * **Sem cópia de dados.** A `diaper_sensor_settings` de produção tem um sensor, no preset
+ * normal, e a ausência de linha JÁ significa normal -- copiá-la escreveria uma linha a
+ * dizer o que o silêncio já diz. Um sensor configurado à mão que existisse voltaria ao
+ * preset e nada mais; não é o caso, e é por isso que a tabela se larga a seguir sem rede.
  */
 final class Version2026082801DiaperSensitivityAsCapability implements Migration
 {
@@ -50,31 +45,6 @@ final class Version2026082801DiaperSensitivityAsCapability implements Migration
               ON c.device_type = m.device_type
              AND c.capability_key = 'diaper_sensitivity'
             WHERE m.device_type = 'diaper_sensor'
-        ");
-
-        if (!(new MysqlSchema($pdo))->hasTable('diaper_sensor_settings')) {
-            return;
-        }
-
-        $pdo->exec("
-            INSERT IGNORE INTO device_configurations (
-                imei, config_key, native_key, protocol, supplier, model, command,
-                desired_payload, reported_payload, desired_revision, confirmed_revision,
-                current_change_id, confirmation_mode, last_status, last_error,
-                last_command_id, desired_updated_at, reported_at, applied_at
-            )
-            SELECT
-                settings.imei, 'diaper_sensitivity', 'diaper_sensitivity',
-                'monit-mecs-pro-ble',
-                COALESCE(whitelist.supplier, ''), COALESCE(whitelist.model, ''), '',
-                JSON_OBJECT(
-                    'pollutionRange', settings.pollution_range,
-                    'pollutionValue', settings.pollution_value
-                ),
-                '{}', 1, 0, '', 'local', 'acked', '', '',
-                DATE_FORMAT(settings.updated_at, '%Y-%m-%dT%H:%i:%sZ'), '', ''
-            FROM diaper_sensor_settings settings
-            LEFT JOIN whitelist ON whitelist.imei = settings.imei
         ");
     }
 }
