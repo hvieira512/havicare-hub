@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 ob_start();
 ?>
-<div class="settings-modal-shell d-flex flex-column h-100">
-    <div class="row g-4 h-100 align-items-lg-center">
+<?php /* O padding e a goteira andam a par: a `row` do Bootstrap tem margens negativas de
+       * metade da goteira e conta com o padding do pai para as absorver. `p-2` com `g-3`
+       * da 8px contra 8px, `p-lg-3` com `g-lg-4` da 16 contra 12. Ter padding zero em
+       * telefone, como estava no CSS, deixava a linha 24px mais larga que o modal. */ ?>
+<div class="settings-modal-shell d-flex flex-column h-100 p-2 p-lg-3">
+    <div class="row g-3 g-lg-4 h-100 align-items-lg-center">
         <div class="col-12 col-lg-2 d-flex align-items-lg-center h-100">
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
                 <?php /* Os identificadores mantem o nome `Models`: a seccao e a dos modelos, e as

@@ -109,9 +109,12 @@ function data_table(
         $cells .= '<th>' . h($header) . '</th>';
     }
 
+    // Em telefone as celulas empilham (`d-block d-sm-table-cell` em cada linha) e cada uma
+    // leva a etiqueta do campo ao lado do valor, por isso o cabecalho passaria a nomear
+    // colunas que ja nao existem.
     return '<div class="table-responsive' . ($wrapperClass !== '' ? ' ' . h($wrapperClass) : '') . '">'
         . '<table class="table table-sm align-middle' . ($tableClass !== '' ? ' ' . h($tableClass) : '') . '">'
-        . '<thead><tr>' . $cells . '</tr></thead>'
+        . '<thead class="d-none d-sm-table-header-group"><tr>' . $cells . '</tr></thead>'
         . '<tbody id="' . h($tbodyId) . '"></tbody>'
         . '</table>'
         . '</div>';

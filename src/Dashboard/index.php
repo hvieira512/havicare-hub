@@ -126,7 +126,10 @@ require_once __DIR__ . '/components/modal.php';
                                 <button id="emptyStateSelectDeviceBtn" class="btn btn-primary" type="button"><?= icon('fa-list', 'me-1') ?>Escolher dispositivo</button>
                             </div>
                             <div id="selectedDevicePanel" class="d-none">
-                                <div class="d-flex align-items-start gap-3 pt-3">
+                                <?php /* O `card-body` ja da 16px em volta; isto so separa do
+                                       * cabecalho com o "Escolher". Em telefone chega
+                                       * metade, e os botoes de 44px ja afastam por si. */ ?>
+                                <div class="d-flex align-items-start gap-3 pt-2 pt-sm-3">
                                     <div id="selectedDevicePreview" class="selected-device-preview"></div>
                                     <div class="min-width-0 flex-grow-1">
                                         <div class="mb-1"><span id="selectedDeviceBadge" class="config-state"></span></div>
@@ -134,16 +137,23 @@ require_once __DIR__ . '/components/modal.php';
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
                                     </div>
                                 </div>
-                                <dl id="selectedDeviceFacts" class="selected-device-facts row g-3 mb-0 border-top mt-3 pt-3"></dl>
-                                <div class="border-top mt-3 pt-3 d-flex justify-content-end">
+                                <?php /* Cada separador custava 32px -- 16 de margem mais 16 de
+                                       * padding -- e sao dois. Em telefone valem metade. */ ?>
+                                <dl id="selectedDeviceFacts" class="selected-device-facts row g-2 g-sm-3 mb-0 border-top mt-2 pt-2 mt-sm-3 pt-sm-3"></dl>
+                                <div class="border-top mt-2 pt-2 mt-sm-3 pt-sm-3 d-flex justify-content-end">
                                     <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary row-action" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card" id="requestCardsCard">
-                        <div class="card-body">
-                            <div class="row g-3" id="requestGrid"></div>
+                    <?php /* Em telefone a moldura de fora desaparece: os mosaicos ja sao
+                           * cartoes, e cartao dentro de cartao gastava 32px de largura numa
+                           * moldura que nao separa nada. O padding e as goteiras saem por
+                           * utilitario; a borda e o fundo precisam da regra `.card-flush-sm`
+                           * no CSS, porque o Bootstrap nao tem `border-sm` nem `bg-sm-*`. */ ?>
+                    <div class="card card-flush-sm" id="requestCardsCard">
+                        <div class="card-body p-0 p-sm-3">
+                            <div class="row g-2 g-sm-3" id="requestGrid"></div>
                         </div>
                     </div>
                     <div class="card d-none" id="ncsEventSection">

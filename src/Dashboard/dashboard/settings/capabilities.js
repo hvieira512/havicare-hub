@@ -207,13 +207,30 @@ function renderCapabilitiesCatalogSection() {
                 })
                 .join("");
 
+            // As cinco seccoes somavam 4905px de lista corrida -- mais de seis ecras de
+            // telefone para um separador que se percorre a procura de uma linha. Em
+            // telefone cada uma fecha; o `d-sm-block` ganha ao `display: none` do collapse,
+            // por isso a partir de `sm` estao todas abertas e nao ha nada para clicar.
+            const bodyId = `${catalogSectionId(section)}Body`;
+            const count = supported === entries.length
+                ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}`
+                : `${supported} de ${entries.length}`;
+
             return `
         <section id="${esc(catalogSectionId(section))}" class="capability-catalog-section">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="section-label">${esc(label)}</div>
-                <span class="small text-secondary">${supported === entries.length ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}` : `${supported} de ${entries.length}`}</span>
+            <button type="button"
+                class="d-flex justify-content-between align-items-center gap-2 w-100 mb-2 p-0 py-1 border-0 bg-transparent text-start"
+                data-bs-toggle="collapse" data-bs-target="#${esc(bodyId)}"
+                aria-expanded="false" aria-controls="${esc(bodyId)}">
+                <span class="section-label">${esc(label)}</span>
+                <span class="d-flex align-items-center gap-2">
+                    <span class="small text-secondary">${count}</span>
+                    <i class="fa-solid fa-chevron-down small text-secondary d-sm-none" aria-hidden="true"></i>
+                </span>
+            </button>
+            <div class="collapse d-sm-block" id="${esc(bodyId)}">
+                <div class="vstack gap-2">${rows}</div>
             </div>
-            <div class="vstack gap-2">${rows}</div>
         </section>
     `;
         })

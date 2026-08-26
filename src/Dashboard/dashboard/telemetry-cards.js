@@ -386,11 +386,15 @@ export function telemetryCard({
         ? `<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details"${detailsTitle ? ` title="${esc(detailsTitle)}"` : ""}>${details}</div>`
         : "";
 
+    // Linha toda por omissao, metade so em ecra grande. Um mosaico com 172px punha o icone,
+    // o padding e o intervalo a comer metade da largura e sobravam 86 para o texto.
+    const columns = span === 12 ? "col-12" : `col-12 col-lg-${span}`;
+
     return `
-        <div class="col-12 col-md-${span}">
+        <div class="${columns}">
         <${tag}${attrs}>
-        <div class="card-body telemetry-card-body">
-        <div class="d-flex align-items-center gap-3">
+        <div class="card-body telemetry-card-body p-2 p-sm-3">
+        <div class="d-flex align-items-center gap-2 gap-sm-3">
         <div class="telemetry-card-icon">
         <i class="fa-solid ${esc(icon)}"></i>
         </div>
@@ -666,10 +670,11 @@ const CHIP_CLASS = "badge rounded-pill fw-normal d-inline-flex align-items-cente
 function postureChip(posture) {
     const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
     const tone = esc(style.tone);
+    const label = esc(fieldValue("posture", posture));
 
-    return `<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis">`
+    return `<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis" title="${label}">`
         + `<i class="fa-solid ${esc(style.icon)}" aria-hidden="true"></i>`
-        + `${esc(fieldValue("posture", posture))}</span>`;
+        + `${label}</span>`;
 }
 
 /** Quantas pastilhas cabem antes de o mosaico crescer de mais. */

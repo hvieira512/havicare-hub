@@ -61,6 +61,39 @@
     --bs-btn-disabled-border-color: #0b163f;
 }
 
+/* ===== a base do telemovel =====
+   Duas regras, e sao as unicas coisas desta pagina que os utilitarios do Bootstrap nao
+   sabem fazer: nao ha `fs-sm-*` nem tamanho de botao por breakpoint. Tudo o resto -- o
+   espacamento, as colunas, as goteiras, o que aparece e o que desaparece -- esta na
+   marcacao, onde se ve ao lado do elemento a que se aplica. */
+@media (max-width: 575.98px) {
+    /* Um campo com menos de 16px faz o Safari do iPhone dar zoom a pagina ao focar, e nao
+       volta atras. Os campos do login ja estavam a 16 -- isto poe os outros onze la.
+       O par com `input-group-sm` esta ca porque o Bootstrap serve esse caso com dois
+       seletores e ganhava ao de um so. */
+    .form-control,
+    .form-select,
+    .input-group-sm > .form-control,
+    .input-group-sm > .form-select {
+        font-size: 1rem;
+    }
+
+    /* 44px e o alvo de toque minimo. Os botoes desta pagina sao quase todos `btn-sm`, que
+       da 31, e um dedo nao tem a precisao de um rato. O texto continua pequeno; o que
+       cresce e a area de toque. */
+    .btn {
+        min-height: 44px;
+    }
+
+    /* Um cartao que so serve de moldura em ecra largo. O padding sai por `p-0 p-sm-3` na
+       marcacao; a borda e o fundo vem ca ter porque nao ha `border-sm` nem `bg-sm-*`. */
+    .card-flush-sm {
+        border: 0;
+        background: transparent;
+    }
+
+}
+
 .btn-outline-primary {
     --bs-btn-color: #0b163f;
     --bs-btn-border-color: #0b163f;
@@ -1504,9 +1537,6 @@ body {
     max-height: 26px;
 }
 
-.settings-modal-shell {
-    padding: 1rem;
-}
 
 .selected-device-preview {
     width: 72px;
@@ -1758,12 +1788,18 @@ body {
     max-height: min(28rem, calc(100vh - 8rem));
 }
 
-#deviceModal .modal-dialog.modal-fullscreen,
-#settingsModal .modal-dialog.modal-fullscreen {
-    margin: 1rem;
-    width: calc(100vw - 2rem);
-    max-width: none;
-    height: calc(100% - 2rem);
+/* O encaixe de 1rem e para ecra largo, onde a moldura separa o modal do que esta por tras.
+   Num telefone nao ha "por tras" nenhum que valha 16px de cada lado, e o
+   `.modal-fullscreen` do Bootstrap ja poe o modal de bordo a bordo -- por isso a regra
+   comeca em `sm` em vez de existir e ser anulada logo a seguir. */
+@media (min-width: 576px) {
+    #deviceModal .modal-dialog.modal-fullscreen,
+    #settingsModal .modal-dialog.modal-fullscreen {
+        margin: 1rem;
+        width: calc(100vw - 2rem);
+        max-width: none;
+        height: calc(100% - 2rem);
+    }
 }
 
 /* O modal de definicoes continua de ecra inteiro: e um painel de administracao com cinco
@@ -1784,21 +1820,9 @@ body {
     min-height: 100%;
 }
 
+/* O Bootstrap nao tem utilitario de altura por breakpoint -- nao existe `h-lg-100` --, por
+   isso este e um dos poucos sitios onde a marcacao nao chega. */
 @media (max-width: 575.98px) {
-
-    #settingsModal .modal-dialog.modal-fullscreen {
-        margin: 0;
-        width: 100vw;
-        height: 100%;
-    }
-
-    .settings-modal-shell {
-        padding: 0;
-    }
-
-    .settings-modal-shell .nav-pills {
-        width: 100%;
-    }
 
     /* O `h-100` das folhas e do conteudo estica o separador a altura toda do modal de ecra
        inteiro: sete fornecedores deixavam meio ecra em branco por baixo da tabela. Em

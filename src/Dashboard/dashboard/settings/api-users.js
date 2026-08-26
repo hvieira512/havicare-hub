@@ -64,21 +64,25 @@ function renderApiUsersSection(users) {
     els.apiUserListBody.innerHTML = (users || [])
         .map(
             (user) => `
-        <tr>
-        <td class="fw-semibold">${esc(user.username)}</td>
-        <td class="section-label">${esc(apiRoleLabel(user.role))}</td>
-        <td>${user.role === "hub_admin"
+        <tr class="d-block d-sm-table-row">
+        <td class="fw-semibold d-block d-sm-table-cell border-0 pb-0 py-sm-2">${esc(user.username)}</td>
+        <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
+            <span class="section-label d-sm-none me-2">Perfil</span>
+            <span class="section-label">${esc(apiRoleLabel(user.role))}</span>
+        </td>
+        <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
+        <span class="section-label d-sm-none me-2">Âmbito</span>${user.role === "hub_admin"
             // O âmbito é a informação com mais consequência da tabela -- quem vê os dados
             // de que licença. "Todas" estava em cinzento mais fraco que o resto da linha,
             // como se fosse um valor por omissão sem importância. É um privilégio.
             ? '<span class="config-state"><span class="config-state-dot"></span>Todas as licenças</span>'
             : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
-        <td>
+        <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
             <span class="config-state ${Number(user.enabled) === 1 ? "config-state-success" : "config-state-secondary"}">
                 <span class="config-state-dot"></span>${Number(user.enabled) === 1 ? "Ativo" : "Inativo"}
             </span>
         </td>
-        <td class="text-end text-nowrap">
+        <td class="text-end text-nowrap d-block d-sm-table-cell pt-2">
         <button class="btn btn-outline-secondary btn-sm row-action" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-outline-secondary btn-sm row-action" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="${Number(user.enabled) === 1 ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? "pause" : "play"}"></i></button>
         <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${user.id}" data-action="deleteApiUser" title="Apagar"><i class="fa-solid fa-trash"></i></button>
