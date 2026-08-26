@@ -122,24 +122,12 @@ export function cacheElements() {
         deviceGeneralTabBtn: document.getElementById("deviceGeneralTabBtn"),
         deviceGeneralPane: document.getElementById("deviceGeneralPane"),
         manageSettingsBtn: document.getElementById("manageSettingsBtn"),
-        settingsSuppliersTabBtn: document.getElementById(
-            "settingsSuppliersTabBtn",
-        ),
         settingsModelsTabBtn: document.getElementById("settingsModelsTabBtn"),
         settingsCapabilitiesTabBtn: document.getElementById(
             "settingsCapabilitiesTabBtn",
         ),
         settingsApiUsersTabBtn: document.getElementById(
             "settingsApiUsersTabBtn",
-        ),
-        supplierListBody: document.getElementById("supplierListBody"),
-        settingsSuppliersPagination:
-            document.getElementById("settingsSuppliers"),
-        settingsSuppliersPaginationSummary: document.getElementById(
-            "settingsSuppliersSummary",
-        ),
-        settingsSuppliersPaginationControls: document.getElementById(
-            "settingsSuppliersControls",
         ),
         modelForm: document.getElementById("modelForm"),
         modelPreview: document.getElementById("modelPreview"),
@@ -151,28 +139,14 @@ export function cacheElements() {
         ),
         modelImage: document.getElementById("modelImage"),
         modelPreviewContent: document.getElementById("modelPreviewContent"),
-        modelListBody: document.getElementById("modelListBody"),
-        modelsDeviceTypeButtons: document.getElementById(
-            "modelsDeviceTypeButtons",
-        ),
-        modelsSupplierButtons: document.getElementById("modelsSupplierButtons"),
-        modelsActiveFilters: document.getElementById("modelsActiveFilters"),
-        modelsFilterCount: document.getElementById("modelsFilterCount"),
+        modelCatalog: document.getElementById("modelCatalog"),
         modelsTabSummary: document.getElementById("modelsTabSummary"),
-        modelsListLimit: document.getElementById("modelsListLimit"),
         modelsListSearch: document.getElementById("modelsListSearch"),
-        clearModelsFiltersBtn: document.getElementById("clearModelsFiltersBtn"),
-        settingsModelsPagination: document.getElementById("settingsModels"),
-        settingsModelsPaginationSummary: document.getElementById(
-            "settingsModelsSummary",
-        ),
-        settingsModelsPaginationControls: document.getElementById(
-            "settingsModelsControls",
-        ),
         resetModelBtn: document.getElementById("resetModelBtn"),
         deleteDeviceBtn: document.getElementById("deleteDeviceBtn"),
         saveModelBtn: document.getElementById("saveModelBtn"),
         modelTemplateSummary: document.getElementById("modelTemplateSummary"),
+        modelsBreadcrumb: document.getElementById("modelsBreadcrumb"),
         modelsBreadcrumbModels: document.getElementById(
             "modelsBreadcrumbModels",
         ),
@@ -246,7 +220,6 @@ export function cacheElements() {
         apiUserForm: document.getElementById("apiUserForm"),
         apiUserFormCollapse: document.getElementById("apiUserFormCollapse"),
         apiUsersTabSummary: document.getElementById("apiUsersTabSummary"),
-        settingsSuppliersCount: document.getElementById("settingsSuppliersCount"),
         settingsModelsCount: document.getElementById("settingsModelsCount"),
         settingsCompanyCount: document.getElementById("settingsCompanyCount"),
         settingsApiUsersCount: document.getElementById("settingsApiUsersCount"),

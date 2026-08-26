@@ -275,7 +275,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $pdo = $database->pdo();
         $supplierName = 'AutoTimestamp ' . bin2hex(random_bytes(3));
 
-        $pdo->prepare('INSERT INTO suppliers (name, enabled) VALUES (?, 1)')->execute([$supplierName]);
+        $pdo->prepare('INSERT INTO suppliers (name) VALUES (?)')->execute([$supplierName]);
         $created = $pdo->prepare('SELECT created_at, updated_at FROM suppliers WHERE name = ?');
         $created->execute([$supplierName]);
         $row = $created->fetch();
@@ -285,10 +285,13 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($row['created_at'] ?? null, $row['updated_at'] ?? null);
 
         sleep(1);
-        $pdo->prepare('UPDATE suppliers SET enabled = 0 WHERE name = ?')->execute([$supplierName]);
+        // Renomear e nao tocar: o `ON UPDATE CURRENT_TIMESTAMP` so dispara se algum valor
+        // mudar mesmo, e o nome e a unica coluna de um fornecedor que nao e uma data.
+        $renamed = $supplierName . ' renomeado';
+        $pdo->prepare('UPDATE suppliers SET name = ? WHERE name = ?')->execute([$renamed, $supplierName]);
 
         $updated = $pdo->prepare('SELECT created_at, updated_at FROM suppliers WHERE name = ?');
-        $updated->execute([$supplierName]);
+        $updated->execute([$renamed]);
         $rowAfterUpdate = $updated->fetch();
 
         self::assertIsArray($rowAfterUpdate);
@@ -296,7 +299,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertNotSame($row['updated_at'] ?? null, $rowAfterUpdate['updated_at'] ?? null);
 
         $db = ApiDataAccess::fromDatabase($database);
-        $supplier = $db->suppliers->findByName($supplierName);
+        $supplier = $db->suppliers->findByName($renamed);
         self::assertIsArray($supplier);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($supplier['created_at'] ?? ''));
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', (string)($supplier['updated_at'] ?? ''));

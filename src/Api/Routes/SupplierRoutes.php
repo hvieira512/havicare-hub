@@ -7,9 +7,7 @@ return static function (
     SupplierController $suppliers,
 ): array {
     return [
-        // Suppliers are defined in code; the only supported write is the
-        // enabled toggle, so there is no create or delete route.
+        // Suppliers are defined in code, so this collection is read-only.
         new ApiRoute('GET', '/api/suppliers', [$suppliers, 'list']),
-        new ApiRoute('PUT', '/api/suppliers/{id:\d+}', [$suppliers, 'update']),
     ];
 };

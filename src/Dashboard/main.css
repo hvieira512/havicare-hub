@@ -208,22 +208,29 @@ body {
     --bs-btn-active-border-color: var(--bs-danger);
 }
 
-/* Uma licenca pertence a uma empresa, e le-se indentada sob ela. A linha vertical e o que
-   diz que pertence, sem precisar de uma segunda tabela a dizer o mesmo. */
-.company-license-row {
+/* Um filho pertence ao cabecalho acima dele, e le-se indentado sob ele. A linha vertical e
+   o que diz que pertence, sem precisar de uma segunda tabela a dizer o mesmo.
+
+   Serve as licencas dentro de uma empresa e o catalogo -- fornecedores dentro de um tipo,
+   modelos dentro de um fornecedor. As margens negativas sao para a linha atravessar o
+   cartao de lado a lado, e valem o `p-3` do `card-body` que os dois usam. */
+.tree-row {
     margin: .75rem -1rem 0;
     padding: .75rem 1rem 0 2rem;
     border-top: 1px solid var(--bs-border-color-translucent);
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
 }
 
-.company-license-row+.company-license-row {
+.tree-row+.tree-row {
     margin-top: .5rem;
     padding-top: .5rem;
 }
 
-/* A curva que liga a licenca a empresa acima dela. */
-.company-license-row::before {
+/* A curva que liga o filho ao cabecalho acima dele. */
+.tree-row::before {
     content: "";
     position: absolute;
     left: 1rem;
@@ -233,7 +240,7 @@ body {
     background: var(--bs-border-color);
 }
 
-.company-license-row::after {
+.tree-row::after {
     content: "";
     position: absolute;
     left: 1rem;
@@ -241,6 +248,71 @@ body {
     width: .5rem;
     height: 1px;
     background: var(--bs-border-color);
+}
+
+/* O terceiro nivel: um modelo dentro de um fornecedor dentro de um tipo. */
+.tree-row-nested {
+    padding-left: 3.25rem;
+}
+
+.tree-row-nested::before,
+.tree-row-nested::after {
+    left: 2.25rem;
+}
+
+/* A 375px a indentacao dupla comia o nome: um modelo com nome comercial e codigo interno
+   comeca a 3.25rem e sobra-lhe menos de metade da largura. */
+@media (max-width: 575.98px) {
+    .tree-row {
+        padding-left: 1.5rem;
+    }
+
+    .tree-row::before,
+    .tree-row::after {
+        left: .625rem;
+    }
+
+    .tree-row-nested {
+        padding-left: 2.5rem;
+    }
+
+    .tree-row-nested::before,
+    .tree-row-nested::after {
+        left: 1.625rem;
+    }
+}
+
+/* A folha do catalogo abre a ficha do modelo, e por isso reage ao rato. */
+.catalog-model {
+    cursor: pointer;
+}
+
+.catalog-model:hover,
+.catalog-model:focus-visible {
+    background: var(--bs-tertiary-bg);
+}
+
+.catalog-model-image {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.catalog-caret {
+    font-size: .75rem;
+    transition: transform .15s ease;
+}
+
+[aria-expanded="false"] .catalog-caret {
+    transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .catalog-caret {
+        transition: none;
+    }
 }
 
 /* Identificadores e valores em coluna alinham digito a digito. Um IMEI de 15 digitos numa

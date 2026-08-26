@@ -14,7 +14,7 @@ final class SupplierRepository
     public function all(): array
     {
         return TimestampFormatter::normalizeRows($this->pdo
-            ->query("SELECT id, name, enabled, created_at, updated_at, (SELECT COUNT(*) FROM models WHERE supplier_id = suppliers.id) AS model_count FROM suppliers ORDER BY name")
+            ->query("SELECT id, name, created_at, updated_at, (SELECT COUNT(*) FROM models WHERE supplier_id = suppliers.id) AS model_count FROM suppliers ORDER BY name")
             ->fetchAll());
     }
 
@@ -36,22 +36,16 @@ final class SupplierRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
-    public function create(string $name, bool $enabled = true): int
+    public function create(string $name): int
     {
         $existing = $this->findByName($name);
         if ($existing !== null) {
             return (int)($existing['id'] ?? 0);
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO suppliers (name, enabled) VALUES (?, ?)');
-        $stmt->execute([$name, $enabled ? 1 : 0]);
+        $stmt = $this->pdo->prepare('INSERT INTO suppliers (name) VALUES (?)');
+        $stmt->execute([$name]);
         return (int)$this->pdo->lastInsertId();
-    }
-
-    public function setEnabled(int $id, bool $enabled): void
-    {
-        $stmt = $this->pdo->prepare('UPDATE suppliers SET enabled = ? WHERE id = ?');
-        $stmt->execute([$enabled ? 1 : 0, $id]);
     }
 
     public function delete(int $id): void

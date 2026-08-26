@@ -66,6 +66,13 @@ final class MysqlSchema
         }
     }
 
+    public function dropColumn(string $table, string $column): void
+    {
+        if ($this->hasColumn($table, $column)) {
+            $this->pdo->exec("ALTER TABLE `{$table}` DROP COLUMN `{$column}`");
+        }
+    }
+
     public function addIndex(string $table, string $index, string $columns): void
     {
         if (!$this->hasIndex($table, $index)) {

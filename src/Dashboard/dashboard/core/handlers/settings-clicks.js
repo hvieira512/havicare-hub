@@ -4,10 +4,7 @@ import {
     editApiUser,
     selectModelDeviceType,
     selectModelSupplier,
-    selectModelsDeviceType,
-    selectModelsSupplier,
     toggleApiUser,
-    toggleSupplier,
 } from "../../settings/index.js";
 import {
     loadSettingsCapabilitiesSection,
@@ -38,18 +35,6 @@ export function handleModelDeviceTypeClick(event) {
         '[data-action="selectModelDeviceType"]',
     );
     if (button) selectModelDeviceType(button.dataset.value);
-}
-
-export function handleModelsDeviceTypeClick(event) {
-    const button = event.target.closest(
-        '[data-action="selectModelsDeviceType"]',
-    );
-    if (button) selectModelsDeviceType(button.dataset.value);
-}
-
-export function handleModelsSupplierClick(event) {
-    const button = event.target.closest('[data-action="selectModelsSupplier"]');
-    if (button) selectModelsSupplier(button.dataset.value);
 }
 
 export function handleCapabilityDeviceTypeClick(event) {
@@ -133,33 +118,23 @@ export function jumpCapabilitySection(event) {
     renderCapabilitiesSection();
 }
 
-export function handleSupplierListClick(event) {
-    const button = event.target.closest("[data-action]");
-    if (!button) return;
-    const { id, action, enabled, supplier } = button.dataset;
-    if (action === "toggleSupplier") toggleSupplier(parseInt(id), !!enabled);
-    if (action === "openSupplierModels") openSupplierModels(supplier || "");
-}
-
 /**
- * A contagem de modelos de um fornecedor leva ao separador dos modelos, já filtrado.
+ * Um clique numa folha do catalogo abre a ficha do modelo.
  *
- * Marcar a secção como não carregada é o que faz o `shown.bs.tab` do separador ir buscar
- * a lista com o filtro novo -- não se chama o load aqui para não ir duas vezes.
+ * A linha e um `div` com `role="button"`, e nao um `<button>`: leva dentro a imagem, dois
+ * nomes e a seta, e um botao com aquilo la dentro herdava o `text-align` e o reset de
+ * tipografia do Bootstrap em todos eles. Por isso o teclado tem de ser tratado a mao --
+ * um `div` accionavel nao responde ao Enter nem ao espaco de graca.
  */
-function openSupplierModels(supplier) {
-    state.settingsModal.modelsSupplier = supplier;
-    state.settingsModal.modelsPage = 1;
-    state.settingsModal.sectionLoaded.models = false;
-    bootstrap.Tab.getOrCreateInstance(els.settingsModelsTabBtn).show();
-}
-
 export function handleModelListClick(event) {
-    const button = event.target.closest("[data-action]");
-    if (!button) return;
-    if (button.dataset.action === "modelCapabilities") {
-        void openModelDetail(parseInt(button.dataset.id));
+    const row = event.target.closest('[data-action="modelCapabilities"]');
+    if (!row) return;
+    if (event.type === "keydown") {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        // O espaco numa linha accionavel rola a pagina se ninguem o travar.
+        event.preventDefault();
     }
+    void openModelDetail(parseInt(row.dataset.id));
 }
 
 export function handleApiUserListClick(event) {

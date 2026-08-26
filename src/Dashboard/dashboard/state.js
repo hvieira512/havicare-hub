@@ -111,20 +111,17 @@ export const state = {
         discoveryRun: null,
         discoveryLoading: false,
         discoveryError: "",
-        modelsDeviceType: "",
-        modelsSupplier: "",
+        // A arvore do catalogo, inteira: tipos, fornecedores e modelos numa chamada. Nao ha
+        // pagina nem filtros porque nao ha paginacao -- a busca corre sobre isto em memoria.
+        modelCatalog: [],
         modelsSearchQuery: "",
-        modelsPageSize: 20,
         sectionLoaded: {
-            suppliers: false,
             models: false,
             modelFilters: false,
             capabilities: false,
             company: false,
             apiUsers: false,
         },
-        suppliersPagination: null,
-        modelsPagination: null,
         companyPagination: null,
         licensesPagination: null,
         apiUsersPagination: null,

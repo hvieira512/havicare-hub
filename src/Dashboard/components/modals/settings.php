@@ -8,8 +8,9 @@ ob_start();
     <div class="row g-4 h-100 align-items-lg-center">
         <div class="col-12 col-lg-2 d-flex align-items-lg-center h-100">
             <div class="nav nav-pills settings-modal-nav flex-row flex-lg-column flex-nowrap justify-content-lg-start gap-2 w-100" id="settingsModalNav" role="tablist">
-                <button class="nav-link active text-start d-flex align-items-center justify-content-between gap-2" id="settingsSuppliersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsSuppliersPane" type="button" role="tab" aria-controls="settingsSuppliersPane" aria-selected="true">Fornecedores<span class="settings-nav-count d-none" id="settingsSuppliersCount"></span></button>
-                <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="false">Modelos<span class="settings-nav-count d-none" id="settingsModelsCount"></span></button>
+                <?php /* Os identificadores mantem o nome `Models`: a seccao e a dos modelos, e as
+                       * chaves atravessam o `dom.js`, o `bootstrap.js` e o estado. */ ?>
+                <button class="nav-link active text-start d-flex align-items-center justify-content-between gap-2" id="settingsModelsTabBtn" data-bs-toggle="pill" data-bs-target="#settingsModelsPane" type="button" role="tab" aria-controls="settingsModelsPane" aria-selected="true">Catálogo<span class="settings-nav-count d-none" id="settingsModelsCount"></span></button>
                 <button class="nav-link text-start" id="settingsCapabilitiesTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCapabilitiesPane" type="button" role="tab" aria-controls="settingsCapabilitiesPane" aria-selected="false">Capacidades</button>
                 <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsCompanyTabBtn" data-bs-toggle="pill" data-bs-target="#settingsCompanyPane" type="button" role="tab" aria-controls="settingsCompanyPane" aria-selected="false">Empresas<span class="settings-nav-count d-none" id="settingsCompanyCount"></span></button>
                 <button class="nav-link text-start d-flex align-items-center justify-content-between gap-2" id="settingsApiUsersTabBtn" data-bs-toggle="pill" data-bs-target="#settingsApiUsersPane" type="button" role="tab" aria-controls="settingsApiUsersPane" aria-selected="false">Utilizadores API<span class="settings-nav-count d-none" id="settingsApiUsersCount"></span></button>
@@ -17,21 +18,12 @@ ob_start();
         </div>
         <div class="col-12 col-lg-10 d-flex flex-column h-100">
             <div class="tab-content flex-grow-1">
-                <div class="tab-pane fade show active h-100" id="settingsSuppliersPane" role="tabpanel" aria-labelledby="settingsSuppliersTabBtn">
-                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-3">
-                        <div>
-                            <div class="fw-semibold">Fornecedores</div>
-                            <div class="small text-secondary" style="max-width:52ch">Definidos em código. Não se acrescentam nem removem pelo painel — aparecem quando um modelo novo os traz.</div>
-                        </div>
-                        <span class="config-state config-state-secondary flex-shrink-0"><span class="config-state-dot"></span>Só leitura</span>
-                    </div>
-                    <?= data_table(['Nome', 'Modelos', 'Estado', ''], 'supplierListBody') ?>
-                    <?= pagination_component('settingsSuppliers') ?>
-                </div>
-                <div class="tab-pane fade h-100" id="settingsModelsPane" role="tabpanel" aria-labelledby="settingsModelsTabBtn">
-                    <nav aria-label="breadcrumb">
+                <div class="tab-pane fade show active h-100" id="settingsModelsPane" role="tabpanel" aria-labelledby="settingsModelsTabBtn">
+                    <?php /* So aparece dentro do formulario e da ficha. No "Novo modelo" e a unica
+                           * saida: o botao ao lado e um "Cancelar" que limpa sem navegar. */ ?>
+                    <nav aria-label="breadcrumb" id="modelsBreadcrumb" class="d-none">
                         <ol class="breadcrumb mb-3">
-                            <li class="breadcrumb-item" id="modelsBreadcrumbModels">Modelos</li>
+                            <li class="breadcrumb-item" id="modelsBreadcrumbModels">Catálogo</li>
                             <li class="breadcrumb-item d-none" id="modelsBreadcrumbNew">Novo modelo</li>
                             <li class="breadcrumb-item d-none" id="modelsBreadcrumbCurrent"></li>
                         </ol>
@@ -40,35 +32,15 @@ ob_start();
                         <div class="carousel-inner">
                             <div class="carousel-item active">
                                 <?= tab_pane_header(
-                                    'Modelos',
+                                    'Catálogo',
                                     'modelsTabSummary',
                                     '<button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn">' . icon('fa-plus', 'me-1') . 'Novo modelo</button>'
                                 ) ?>
-                                <div class="d-flex align-items-center gap-2">
-                                    <?= search_input('modelsListSearch', 'Procurar modelo', 'flex-grow-1') ?>
-                                    <?= filter_toggle_button('modelsFiltersCollapse', 'modelsFilterCount', 'flex-shrink-0') ?>
-                                </div>
-                                <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-                                    <div id="modelsActiveFilters" class="d-flex flex-wrap gap-2"></div>
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" id="clearModelsFiltersBtn">Limpar</button>
-                                </div>
-                                <div class="collapse" id="modelsFiltersCollapse">
-                                    <div class="row g-3 pt-3">
-                                        <div class="col-12 col-md-6">
-                                            <div class="section-label mb-1">Tipo de dispositivo</div>
-                                            <div id="modelsDeviceTypeButtons" class="device-type-grid is-wide w-100" role="group"></div>
-                                        </div>
-                                        <div class="col-12 col-md-6">
-                                            <div class="section-label mb-1">Fornecedor</div>
-                                            <div id="modelsSupplierButtons" class="btn-group flex-wrap w-100" role="group"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?= data_table(['', 'Modelo', 'Fornecedor', 'Tipo', ''], 'modelListBody', 'table-hover', 'mt-3') ?>
-                                <div class="d-flex justify-content-end align-items-center gap-2 mt-3">
-                                    <?= page_size_select('modelsListLimit') ?>
-                                </div>
-                                <?= pagination_component('settingsModels') ?>
+                                <?= search_input('modelsListSearch', 'Procurar modelo, fornecedor ou tipo', 'mt-3') ?>
+                                <?php /* O tipo e o fornecedor SAO a arvore, por isso nao ha filtros por cima
+                                       * dela; e a arvore vem inteira numa chamada, por isso nao ha paginacao
+                                       * -- um grupo cortado entre paginas e a pior das duas leituras. */ ?>
+                                <div id="modelCatalog" class="mt-3"></div>
                             </div>
                             <div class="carousel-item">
                                 <form id="modelForm" class="row g-4 align-items-stretch mb-4">

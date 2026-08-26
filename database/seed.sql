@@ -15,14 +15,14 @@
 -- make every device look like it has pending changes it cannot confirm),
 -- private_radio_map_access_points (learned at runtime), dashboard_notifications.
 
-INSERT IGNORE INTO suppliers (name, enabled) VALUES
-    ('4P Touch', 1),
-    ('MOKO', 1),
-    ('MONIT', 1),
-    ('Qinglanst', 1),
-    ('Vivistar', 1),
-    ('Voerka', 1),
-    ('Wonlex', 1);
+INSERT IGNORE INTO suppliers (name) VALUES
+    ('4P Touch'),
+    ('MOKO'),
+    ('MONIT'),
+    ('Qinglanst'),
+    ('Vivistar'),
+    ('Voerka'),
+    ('Wonlex');
 
 INSERT IGNORE INTO companies (name) VALUES
     ('havicare'),

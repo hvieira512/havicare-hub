@@ -32,6 +32,7 @@ export {
 } from './licenses.js';
 export {
     deleteModel,
+    getDeviceTypeSuppliersModels,
     getModel,
     getModelFilters,
     getModelTemplate,
@@ -40,7 +41,6 @@ export {
 } from './models.js';
 export {
     getSuppliers,
-    updateSupplier,
 } from './suppliers.js';
 export {
     deleteApiUser,

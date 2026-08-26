@@ -24,32 +24,14 @@ final class CatalogPaths
 
     private static function suppliers(): array
     {
-        $id = Parameters::id('Supplier ID');
-
         return [
             '/api/suppliers' => [
                 'get' => [
                     'tags' => ['Suppliers'],
                     'summary' => 'List suppliers',
-                    'parameters' => array_merge(Parameters::pagination(), [
-                        Parameters::query('enabled', ['type' => 'string', 'enum' => ['true', 'false']]),
-                    ]),
+                    'parameters' => Parameters::pagination(),
                     'responses' => [
                         '200' => Responses::json('Paginated supplier collection', 'SupplierListResponse'),
-                    ],
-                ],
-            ],
-            '/api/suppliers/{id}' => [
-                'put' => [
-                    'tags' => ['Suppliers'],
-                    'summary' => 'Toggle whether a supplier is enabled',
-                    'description' => 'Suppliers themselves are defined in code, so enabled is the only property the API can change. A body without enabled is rejected.',
-                    'parameters' => [$id],
-                    'requestBody' => Requests::json('SupplierUpdateRequest'),
-                    'responses' => [
-                        '200' => Responses::json('Supplier updated', 'StatusResponse'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
                     ],
                 ],
             ],

@@ -17,9 +17,6 @@ import {
     handleModelDeviceTypeClick,
     handleModelListClick,
     handleModelSupplierClick,
-    handleModelsDeviceTypeClick,
-    handleModelsSupplierClick,
-    handleSupplierListClick,
     initSettingsClickHandlers,
     jumpCapabilitySection,
     scrollCapabilityCatalogSection,
@@ -94,10 +91,7 @@ import {
 } from "../devices/gateway-links-ui.js";
 import {initNotifications} from "../notifications.js";
 import {
-    clearModelsFilters,
-    handleActiveModelsFiltersClick,
     handleCompanyListClick,
-    handleModelsListLimitChange,
     handleModelsListSearchInput,
     handleSettingsPaginationClick,
     initSettings,
@@ -105,7 +99,6 @@ import {
     loadSettingsCompanySection,
     loadSettingsModal,
     loadSettingsModelsSection,
-    loadSettingsSuppliersSection,
     resetApiUserForm,
     resetCompanyForm,
     resetLicenseForm,
@@ -214,7 +207,7 @@ function bindEvents() {
     els.deviceForm.addEventListener("input", handleDeviceFormInput);
     els.deviceForm.addEventListener("change", handleDeviceFormChange);
     els.manageSettingsBtn.addEventListener("click", () => {
-        void loadSettingsModal("suppliers");
+        void loadSettingsModal("models");
     });
 
     els.saveModelBtn.addEventListener("click", saveModel);
@@ -321,7 +314,6 @@ function bindEvents() {
     });
     els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
     els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
-    els.clearModelsFiltersBtn.addEventListener("click", clearModelsFilters);
     els.modelDetailSaveBtn.addEventListener("click", saveModelDetail);
     els.modelDetailResetBtn.addEventListener("click", resetModelDetailFields);
     els.modelDetailFields.addEventListener("input", syncModelDetailDirty);
@@ -333,30 +325,10 @@ function bindEvents() {
         const button = event.target.closest('[data-action="backToModelList"]');
         if (button) backToModelList();
     });
-    els.modelsActiveFilters.addEventListener(
-        "click",
-        handleActiveModelsFiltersClick,
-    );
-    els.settingsSuppliersTabBtn.addEventListener("shown.bs.tab", () => {
-        state.settingsModal.section = "suppliers";
-        if (!state.settingsModal.sectionLoaded.suppliers) {
-            void loadSettingsSuppliersSection();
-        }
-    });
     els.settingsModelsTabBtn.addEventListener("shown.bs.tab", () => {
         state.settingsModal.section = "models";
         if (!state.settingsModal.sectionLoaded.models) {
             void loadSettingsModelsSection();
-        }
-        if (!state.settingsModal.modelsCarousel && els.modelsCarousel) {
-            state.settingsModal.modelsCarousel = new bootstrap.Carousel(
-                els.modelsCarousel,
-                {
-                    interval: false,
-                    wrap: false,
-                    touch: false,
-                },
-            );
         }
     });
     els.settingsCapabilitiesTabBtn.addEventListener("shown.bs.tab", () => {
@@ -403,20 +375,6 @@ function bindEvents() {
         event.preventDefault();
         saveLicense();
     });
-    els.settingsSuppliersPagination?.addEventListener("click", (event) =>
-        handleSettingsPaginationClick(
-            event,
-            "suppliersPagination",
-            loadSettingsSuppliersSection,
-        ),
-    );
-    els.settingsModelsPagination?.addEventListener("click", (event) =>
-        handleSettingsPaginationClick(
-            event,
-            "modelsPagination",
-            loadSettingsModelsSection,
-        ),
-    );
     els.settingsApiUsersPagination?.addEventListener("click", (event) =>
         handleSettingsPaginationClick(
             event,
@@ -435,17 +393,11 @@ function bindEvents() {
         handleDevicePaginationClick,
     );
     els.requestGrid.addEventListener("click", handleRequestGridClick);
-    els.supplierListBody.addEventListener("click", handleSupplierListClick);
-    els.modelListBody.addEventListener("click", handleModelListClick);
-    els.modelsDeviceTypeButtons.addEventListener(
-        "click",
-        handleModelsDeviceTypeClick,
-    );
-    els.modelsSupplierButtons.addEventListener(
-        "click",
-        handleModelsSupplierClick,
-    );
-    els.modelsListLimit.addEventListener("change", handleModelsListLimitChange);
+    // A arvore do catalogo abre e fecha pelo `collapse` do Bootstrap, sem JS nosso: aqui
+    // escuta-se so o que leva a algum lado, que e a folha. O `keydown` esta ao lado do
+    // `click` porque a folha e uma linha accionavel e nao um `<button>`.
+    els.modelCatalog.addEventListener("click", handleModelListClick);
+    els.modelCatalog.addEventListener("keydown", handleModelListClick);
     els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
     els.apiUserListBody.addEventListener("click", handleApiUserListClick);
     els.companyListBody.addEventListener("click", handleCompanyListClick);

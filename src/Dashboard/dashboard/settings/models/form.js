@@ -14,13 +14,14 @@ function modelSupplierOptions(deviceType = "watch") {
     }));
 }
 
+/** Os fornecedores que servem este tipo de dispositivo. */
 function modelSuppliersForDeviceType(deviceType = "watch") {
     const group = (state.settingsModal.modelFilters || []).find(
         (entry) =>
             normalizeDeviceType(entry?.deviceType || entry?.device_type || "watch") ===
             normalizeDeviceType(deviceType),
     );
-    return (group?.suppliers || []).filter((supplier) => supplier?.enabled);
+    return group?.suppliers || [];
 }
 
 function modelSupplierEntry(deviceType, supplierId) {

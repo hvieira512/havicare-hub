@@ -27,20 +27,12 @@ final class CatalogSchemas
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
                     'name' => ['type' => 'string', 'example' => 'Wonlex'],
-                    'enabled' => ['type' => 'boolean', 'example' => true],
                     'model_count' => ['type' => 'integer', 'example' => 2],
                     'created_at' => ['type' => 'string'],
                     'updated_at' => ['type' => 'string'],
                 ],
             ],
             'SupplierListResponse' => CommonSchemas::collection('SupplierItem'),
-            'SupplierUpdateRequest' => [
-                'type' => 'object',
-                'required' => ['enabled'],
-                'properties' => [
-                    'enabled' => ['type' => 'boolean', 'example' => true],
-                ],
-            ],
         ];
     }
 
@@ -144,7 +136,6 @@ final class CatalogSchemas
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
                     'name' => ['type' => 'string', 'example' => 'Wonlex'],
-                    'enabled' => ['type' => 'boolean', 'example' => true],
                 ],
             ],
             'DeviceTypeSupplierGroup' => [
@@ -173,7 +164,6 @@ final class CatalogSchemas
                 'properties' => [
                     'id' => ['type' => 'integer', 'example' => 1],
                     'name' => ['type' => 'string', 'example' => 'Wonlex'],
-                    'enabled' => ['type' => 'boolean', 'example' => true],
                     'models' => ['type' => 'array', 'items' => Responses::ref('DeviceTypeSupplierModelSummaryItem')],
                 ],
             ],

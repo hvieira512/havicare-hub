@@ -1,7 +1,6 @@
 let els;
 let ui;
 let callbacks = {};
-let modelsSearchTimer = null;
 
 export function initSettingsModelsRuntime(context) {
     els = context.els;
@@ -11,11 +10,4 @@ export function initSettingsModelsRuntime(context) {
 
 export function getSettingsModelsRuntime() {
     return { els, ui, callbacks };
-}
-
-export function scheduleModelsSearch(callback, delayMs = 250) {
-    if (modelsSearchTimer) {
-        clearTimeout(modelsSearchTimer);
-    }
-    modelsSearchTimer = setTimeout(callback, delayMs);
 }

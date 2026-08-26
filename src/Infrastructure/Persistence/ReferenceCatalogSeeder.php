@@ -55,7 +55,7 @@ final class ReferenceCatalogSeeder
 
     private function seedSuppliersAndModels(PDO $pdo): void
     {
-        $supplier = $pdo->prepare('INSERT IGNORE INTO suppliers (name, enabled) VALUES (?, 1)');
+        $supplier = $pdo->prepare('INSERT IGNORE INTO suppliers (name) VALUES (?)');
         foreach (self::SUPPLIERS as $name) {
             $supplier->execute([$name]);
         }

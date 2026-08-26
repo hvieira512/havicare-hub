@@ -12,7 +12,9 @@ final class SupplierDeviceTypeRepository
     }
 
     /**
-     * @return list<array{supplier_id: int, supplier: string, enabled: int, device_type: string, created_at: string, updated_at: string}>
+     * Os pares fornecedor x tipo de dispositivo que existem.
+     *
+     * @return list<array{supplier_id: int, supplier: string, device_type: string, created_at: string, updated_at: string}>
      */
     public function all(): array
     {
@@ -21,7 +23,6 @@ final class SupplierDeviceTypeRepository
                 SELECT
                     sdt.supplier_id,
                     s.name AS supplier,
-                    s.enabled,
                     sdt.device_type,
                     sdt.created_at,
                     sdt.updated_at

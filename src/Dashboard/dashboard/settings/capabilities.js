@@ -640,6 +640,7 @@ async function openModelDetail(modelId) {
             (key) => enabledSet.has(key),
         );
 
+    els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
     els.modelsBreadcrumbCurrent.textContent = modelCommercialName(model);
@@ -652,9 +653,7 @@ async function openModelDetail(modelId) {
     renderDiscoverySection();
     void loadDiscoveryDevices();
 
-    if (state.settingsModal.modelsCarousel) {
-        state.settingsModal.modelsCarousel.to(2);
-    }
+    modelsCarousel()?.to(2);
 }
 
 function renderModelDetailInfo(model) {
@@ -798,6 +797,24 @@ async function saveModelDetail() {
     state.settingsModal.sectionLoaded.models = false;
 }
 
+/**
+ * O carrossel dos tres slides do catalogo -- lista, formulario, ficha --, criado a
+ * primeira vez que alguem precisa dele.
+ *
+ * Preguicoso e nao preso ao `shown.bs.tab` do separador: o catalogo e o separador de
+ * entrada, e esse evento nao dispara em quem ja esta activo.
+ */
+function modelsCarousel() {
+    if (!state.settingsModal.modelsCarousel && els.modelsCarousel) {
+        state.settingsModal.modelsCarousel = new bootstrap.Carousel(
+            els.modelsCarousel,
+            {interval: false, wrap: false, touch: false},
+        );
+    }
+
+    return state.settingsModal.modelsCarousel;
+}
+
 function backToModelList() {
     if (!state.settingsModal.modelsCarousel) return;
 
@@ -811,6 +828,8 @@ function backToModelList() {
         return;
     }
 
+    // Na lista o rasto tinha um so degrau e repetia o titulo logo por baixo.
+    els.modelsBreadcrumb.classList.add("d-none");
     els.modelsBreadcrumbModels.classList.add("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
     els.modelsBreadcrumbNew.classList.remove("active");
@@ -839,6 +858,7 @@ async function openNewModelForm() {
     resetModelForm();
     await refreshNewModelCapabilityTemplate();
 
+    els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.textContent = "Novo modelo";
     els.modelsBreadcrumbNew.classList.remove("d-none");
@@ -846,9 +866,7 @@ async function openNewModelForm() {
     els.modelsBreadcrumbCurrent.classList.add("d-none");
     els.modelsBreadcrumbCurrent.classList.remove("active");
 
-    if (state.settingsModal.modelsCarousel) {
-        state.settingsModal.modelsCarousel.to(1);
-    }
+    modelsCarousel()?.to(1);
 }
 
 async function refreshNewModelCapabilityTemplate() {

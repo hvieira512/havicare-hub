@@ -133,7 +133,8 @@ final class ApiKernel
         $models = new ModelController($this->models, $this->json, $this->statusMapper);
         $capabilities = new CapabilityController($this->capabilities, $this->json, $this->statusMapper);
         $capabilityDiscovery = new CapabilityDiscoveryController($this->capabilityDiscovery, $this->json, $this->statusMapper);
-        $suppliers = new SupplierController($this->suppliers, $this->json, $this->statusMapper);
+        // Sem `statusMapper`: a coleccao e so de leitura e o `list` nao devolve erros.
+        $suppliers = new SupplierController($this->suppliers, $this->json);
         $apiUsers = new ApiUserController($this->apiUsers, $this->json, $this->statusMapper);
         $company = new CompanyController($this->company, $this->json, $this->statusMapper);
         $licenses = new LicenseController($this->licenses, $this->json, $this->statusMapper);

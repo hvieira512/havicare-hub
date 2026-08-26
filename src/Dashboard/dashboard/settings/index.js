@@ -7,12 +7,10 @@ import {
     getCompanies as apiGetCompanies,
     getLicenses as apiGetLicenses,
     getModels as apiGetModels,
-    getSuppliers as apiGetSuppliers,
     saveApiUser as apiSaveApiUser,
     saveLicense as apiSaveLicense,
     saveModel as apiSaveModel,
     updateCompany as apiUpdateCompany,
-    updateSupplier as apiUpdateSupplier,
 } from "../api/index.js";
 import { state } from "../state.js";
 import { esc } from "../format.js";
@@ -22,17 +20,12 @@ import {
     resolvePaginationPage,
 } from "../pagination.js";
 import {
-    clearModelsFilters,
-    handleActiveModelsFiltersClick,
-    handleModelsListLimitChange,
     handleModelsListSearchInput,
     initSettingsModels,
     loadSettingsModelsSection,
     resetModelForm,
     selectModelDeviceType,
     selectModelSupplier,
-    selectModelsDeviceType,
-    selectModelsSupplier,
     updateModelProtocolAndPreview,
 } from "./models/index.js";
 import {
@@ -61,26 +54,22 @@ export function initSettings(context) {
         ui,
         callbacks: {
             ensureCapabilityCatalog,
-            loadSettingsSuppliersSection,
             refreshNewModelCapabilityTemplate,
-            renderSettingsPagination,
         },
     });
 }
 
 async function loadSettingsModal(
-    section = state.settingsModal.section || "suppliers",
+    section = state.settingsModal.section || "models",
 ) {
     state.settingsModal.sectionLoaded = {
-        suppliers: false,
         models: false,
         modelFilters: false,
         capabilities: false,
         company: false,
         apiUsers: false,
     };
-    state.settingsModal.suppliersPagination = null;
-    state.settingsModal.modelsPagination = null;
+    state.settingsModal.modelCatalog = [];
     state.settingsModal.companyPagination = null;
     state.settingsModal.licensesPagination = null;
     state.settingsModal.apiUsersPagination = null;
@@ -104,9 +93,7 @@ async function loadSettingsModal(
     activateSettingsSection(section);
     ui.settingsModal.show();
     void loadSettingsNavCounts();
-    if (section === "suppliers") {
-        void loadSettingsSuppliersSection();
-    } else if (section === "models") {
+    if (section === "models") {
         void loadSettingsModelsSection();
     } else if (section === "capabilities") {
         void loadSettingsCapabilitiesSectionModule();
@@ -146,29 +133,10 @@ function handleSettingsPaginationClick(event, paginationKey, loadFn) {
 function paginationActionPrefix(paginationKey) {
     return (
         {
-            suppliersPagination: "settingsSuppliersPage",
-            modelsPagination: "settingsModelsPage",
             apiUsersPagination: "settingsApiUsersPage",
             companyPagination: "settingsCompanyPage",
             licensesPagination: "settingsLicensesPage",
         }[paginationKey] || ""
-    );
-}
-
-async function loadSettingsSuppliersSection(page = 1) {
-    const response = await apiGetSuppliers({ page });
-    const suppliers = response.data || [];
-    state.settingsModal.suppliersPagination = response.pagination || null;
-    state.modelModalSuppliers = suppliers;
-    setSettingsNavCount("Suppliers", response.pagination?.total ?? suppliers.length);
-    state.settingsModal.sectionLoaded.suppliers = true;
-    renderSuppliersSection(suppliers);
-    renderSettingsPagination(
-        state.settingsModal.suppliersPagination,
-        els.settingsSuppliersPagination,
-        els.settingsSuppliersPaginationSummary,
-        els.settingsSuppliersPaginationControls,
-        "settingsSuppliersPage",
     );
 }
 
@@ -190,40 +158,6 @@ async function loadSettingsApiUsersSection(page = 1) {
         els.settingsApiUsersPaginationControls,
         "settingsApiUsersPage",
     );
-}
-
-function renderSuppliersSection(suppliers) {
-    els.supplierListBody.innerHTML = (suppliers || [])
-        .map(
-            (supplier) => `
-        <tr>
-        <td class="fw-semibold">${esc(supplier.name)}</td>
-        <td class="tabular-nums">${Number(supplier.model_count) > 0
-            // A contagem é um valor e leva a algum lado: ao separador dos modelos já
-            // filtrado por este fornecedor, que é a pergunta seguinte de quem a lê.
-            ? `<button type="button" class="btn btn-link btn-sm p-0 text-decoration-none tabular-nums" data-action="openSupplierModels" data-supplier="${esc(supplier.name)}">${supplier.model_count}</button>`
-            : '<span class="text-secondary">0</span>'}</td>
-        <td>
-            <span class="config-state ${supplier.enabled ? "config-state-success" : "config-state-secondary"}">
-                <span class="config-state-dot"></span>${supplier.enabled ? "Ativo" : "Inativo"}
-            </span>
-        </td>
-        <td class="text-end">
-        <button class="btn btn-outline-secondary btn-sm row-action" data-id="${supplier.id}" data-enabled="${supplier.enabled ? "1" : ""}" data-action="toggleSupplier" title="${supplier.enabled ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${supplier.enabled ? "pause" : "play"}"></i></button>
-        </td>
-        </tr>`,
-        )
-        .join("");
-}
-
-async function toggleSupplier(id, enabled) {
-    const result = await apiUpdateSupplier(id, { enabled: !enabled });
-    if (result.error) {
-        alert(result.error.message || result.error.code);
-        return;
-    }
-    state.settingsModal.sectionLoaded.suppliers = false;
-    await loadSettingsSuppliersSection();
 }
 
 async function saveModel() {
@@ -344,7 +278,6 @@ function editApiUser(button) {
  */
 async function loadSettingsNavCounts() {
     const asks = [
-        ["Suppliers", apiGetSuppliers],
         ["Models", apiGetModels],
         ["Company", apiGetCompanies],
         ["ApiUsers", apiGetApiUsers],
@@ -364,7 +297,9 @@ async function loadSettingsNavCounts() {
  * tudo -- so quem foi buscar a lista e que sabe quantos sao.
  */
 export function setSettingsNavCount(key, total) {
-    const element = els[`settings${key}Count`];
+    // `els?.` e nao `els.`: quem desenha uma seccao nao tem de saber se o modal ja foi
+    // inicializado, e sem isto a primeira contagem antes do `initSettings` rebentava.
+    const element = els?.[`settings${key}Count`];
     if (!element) return;
     const known = Number.isFinite(Number(total));
     element.textContent = known ? String(total) : "";
@@ -478,7 +413,7 @@ function renderCompanySection(companies, licenses) {
             </div>
         </div>
         ${owned.map((license) => `
-        <div class="company-license-row d-flex align-items-center justify-content-between gap-3">
+        <div class="tree-row justify-content-between">
             <div class="d-flex align-items-center gap-2 min-w-0">
                 <span class="section-label tabular-nums" style="letter-spacing:0">ID ${esc(license.license_id)}</span>
                 <span class="text-truncate">${esc(license.name || "sem nome")}</span>
@@ -649,34 +584,29 @@ function activateSettingsSection(section) {
     state.settingsModal.section = section;
     const button =
         {
-            suppliers: els.settingsSuppliersTabBtn,
             models: els.settingsModelsTabBtn,
             capabilities: els.settingsCapabilitiesTabBtn,
             company: els.settingsCompanyTabBtn,
             apiUsers: els.settingsApiUsersTabBtn,
-        }[section] || els.settingsSuppliersTabBtn;
+        }[section] || els.settingsModelsTabBtn;
     bootstrap.Tab.getOrCreateInstance(button).show();
 }
 
 export {
     activateSettingsSection,
-    clearModelsFilters,
     deleteCompany,
     deleteLicense,
     deleteApiUser,
     editApiUser,
     editCompany,
     editLicense,
-    handleActiveModelsFiltersClick,
     handleCompanyListClick,
-    handleModelsListLimitChange,
     handleModelsListSearchInput,
     handleSettingsPaginationClick,
     loadSettingsApiUsersSection,
     loadSettingsCompanySection,
     loadSettingsModal,
     loadSettingsModelsSection,
-    loadSettingsSuppliersSection,
     paginationActionPrefix,
     resetApiUserForm,
     resetCompanyForm,
@@ -688,10 +618,7 @@ export {
     saveModel,
     selectModelDeviceType,
     selectModelSupplier,
-    selectModelsDeviceType,
-    selectModelsSupplier,
     syncApiUserRoleFields,
     toggleApiUser,
-    toggleSupplier,
     updateModelProtocolAndPreview,
 };

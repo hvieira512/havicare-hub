@@ -37,6 +37,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026081401DiaperMoistureLeve
 use Hub\Infrastructure\Persistence\Migration\Version2026081901RemoveBraceletMotionCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026081902RestoreBraceletMotionCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026082101DiaperSensorSettings;
+use Hub\Infrastructure\Persistence\Migration\Version2026082601DropSupplierEnabled;
 
 final class DatabaseMigrationPlan
 {
@@ -76,6 +77,7 @@ final class DatabaseMigrationPlan
             new Version2026081901RemoveBraceletMotionCapability(),
             new Version2026081902RestoreBraceletMotionCapability(),
             new Version2026082101DiaperSensorSettings(),
+            new Version2026082601DropSupplierEnabled(),
         ];
     }
 

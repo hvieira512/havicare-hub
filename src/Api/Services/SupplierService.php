@@ -27,37 +27,9 @@ class SupplierService
         $params = $this->query->params($query);
         $page = $this->query->page($params);
         $limit = $this->query->limit($params, self::DEFAULT_COLLECTION_LIMIT);
-        $filters = [
-            'enabled' => $this->query->filter($params, 'enabled'),
-        ];
-        $suppliers = array_values(array_filter($this->db->suppliers->all(), static function (array $supplier) use ($filters): bool {
-            $enabled = ((int)($supplier['enabled'] ?? 0)) === 1 ? 'true' : 'false';
 
-            return (($filters['enabled'] ?? null) === null || $enabled === $filters['enabled']);
-        }));
-        $available = [
-            'enabled' => ['true', 'false'],
-        ];
-
-        return $this->collection->respond($suppliers, $page, $limit, $filters, $available);
-    }
-
-    public function update(int $id, string $body): array
-    {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-        $enabled = array_key_exists('enabled', $decoded) ? (bool)$decoded['enabled'] : null;
-        if ($this->db->suppliers->findById($id) === null) {
-            return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier not found']];
-        }
-        if ($enabled !== null) {
-            $this->db->suppliers->setEnabled($id, $enabled);
-        } else {
-            return ['error' => ['code' => 'read_only', 'message' => 'Only toggling enabled is allowed; supplier properties are defined in code']];
-        }
-
-        return ['status' => 'ok'];
+        // Sem filtros: um fornecedor tem nome e contagem de modelos, e mais nada por onde
+        // filtrar.
+        return $this->collection->respond($this->db->suppliers->all(), $page, $limit, [], []);
     }
 }

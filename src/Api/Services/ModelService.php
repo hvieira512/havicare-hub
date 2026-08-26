@@ -154,7 +154,6 @@ class ModelService
             $groups[$deviceType]['suppliers'][] = [
                 'id' => (int)($row['supplier_id'] ?? 0),
                 'name' => (string)($row['supplier'] ?? ''),
-                'enabled' => ((int)($row['enabled'] ?? 0)) === 1,
             ];
         }
 
@@ -171,13 +170,6 @@ class ModelService
                 'deviceType' => $deviceType,
                 'suppliers' => [],
             ];
-        }
-
-        $enabledMap = [];
-        foreach ($this->db->supplierDeviceTypes->all() as $row) {
-            $deviceType = DeviceMetadata::normalizeDeviceType((string)($row['device_type'] ?? 'watch'));
-            $supplierName = (string)($row['supplier'] ?? '');
-            $enabledMap[$supplierName][$deviceType] = ((int)($row['enabled'] ?? 0)) === 1;
         }
 
         $modelsByDeviceTypeAndSupplier = [];
@@ -203,7 +195,6 @@ class ModelService
                 $group['suppliers'][] = [
                     'id' => (int)($firstModel['supplier_id'] ?? 0),
                     'name' => $supplierName,
-                    'enabled' => $enabledMap[$supplierName][$deviceType] ?? false,
                     'models' => $models,
                 ];
             }

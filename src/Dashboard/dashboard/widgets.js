@@ -99,7 +99,7 @@ const DEVICE_TYPE_ICON = {
     ncs: "fa-bell-concierge",
 };
 
-function deviceTypeIcon(deviceType) {
+export function deviceTypeIcon(deviceType) {
     return DEVICE_TYPE_ICON[normalizeDeviceType(deviceType)] || "fa-microchip";
 }
 
