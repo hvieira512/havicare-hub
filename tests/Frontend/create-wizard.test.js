@@ -65,8 +65,8 @@ test("cada badge da trilha volta a sua pergunta, e nao so a ultima", () => {
     );
 
     // O "alterar" reabria sempre a ultima resposta, o que obrigava a refazer tudo o que
-    // vinha depois para se voltar ao tipo.
-    assert.match(wizardJs, /data-wizard-reopen="\$\{esc\(badge\.key\)\}"/);
+    // vinha depois para se voltar ao tipo. O desenho da trilha esta no
+    // classification-ui.test.js; aqui prende-se so o que o assistente faz com o clique.
     assert.match(wizardJs, /wizard\.reopen\(badge\.dataset\.wizardReopen\)/);
     assert.doesNotMatch(wizardJs, /data-wizard-reopen="last"/);
 });
@@ -103,34 +103,6 @@ test("o passo 2 de cada tipo vem da tabela e nao do assistente", () => {
     // E a tabela e que diz o que cada um mostra.
     assert.equal(deviceTypeFields("watch").sim, true);
     assert.equal(deviceTypeFields("diaper_sensor").gatewayLinks, true);
-});
-
-test("o tipo e o modelo partilham a grelha de cards", () => {
-    const wizardJs = readFileSync(
-        new URL("../../src/Dashboard/dashboard/devices/create-wizard.js", import.meta.url),
-        "utf8",
-    );
-
-    // Uma so funcao desenha as duas grelhas. Duplica-la duplicava tambem os estados de
-    // foco e de selecao, que vivem no CSS de uma classe.
-    assert.match(wizardJs, /function cardGrid\(/);
-    assert.match(wizardJs, /renderTypeGrid[\s\S]*?return cardGrid\(/);
-    assert.match(wizardJs, /renderModelGrid[\s\S]*?return cardGrid\(/);
-});
-
-test("os cards de modelo levam fotografia, nome comercial e modelo interno", () => {
-    const wizardJs = readFileSync(
-        new URL("../../src/Dashboard/dashboard/devices/create-wizard.js", import.meta.url),
-        "utf8",
-    );
-
-    // A fotografia vem do mesmo desenho que o modal de edicao usa; nao ha aqui um
-    // segundo caminho para a imagem de um modelo.
-    assert.match(wizardJs, /wizard-card-thumb[\s\S]*?modelPreviewHtml\(model/);
-    // O comercial e o titulo, porque e o que se reconhece da caixa; o interno e o
-    // subtitulo, porque e o que aparece depois nos topicos e na base de dados.
-    assert.match(wizardJs, /label: commercial \|\| internal/);
-    assert.match(wizardJs, /sub: commercial && commercial !== internal \? internal : ""/);
 });
 
 test("a grelha de cards tem uma classe so, e nao uma por tipo de escolha", () => {

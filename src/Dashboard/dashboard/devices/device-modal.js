@@ -1,11 +1,20 @@
 import {
     deleteDevice as apiDeleteDevice,
     getCapabilities as apiGetCapabilities,
-    getCompanies as apiGetCompanies,
     getDevice as apiGetDevice,
     getLicenses as apiGetLicenses,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
+import {
+    deviceTypeCardsHtml,
+    licenseTree,
+    modelCardsHtml,
+    supplierPillsHtml,
+} from "./classification-ui.js";
+import {
+    renderEditWizard,
+    resetEditWizard,
+} from "./edit-wizard.js";
 import {
     catalogForProtocol,
 } from "../config.js";
@@ -28,7 +37,6 @@ import {
 import {
     clearSelection,
     deriveFourPTouchDeviceId,
-    deviceTypeOptions,
     ensureDeviceTypeSuppliersModelsLoaded,
     findModelInfo,
     isDeviceSelectorOpen,
@@ -38,7 +46,6 @@ import {
     loadDevice,
     loadSummary,
     modelCommercialName,
-    modelDisplayLabel,
     modelInternalName,
     modelsForSupplierAndType,
     normalizeDeviceType,
@@ -59,8 +66,6 @@ import {
 import {
     modelImageHtml,
     modelPreviewHtml,
-    renderButtonGroup,
-    renderDeviceTypeTiles,
 } from "../widgets.js";
 import {companyLabel, deviceTypeLabel} from "../domain.js";
 import {
@@ -89,88 +94,19 @@ export function initDeviceModal(context) {
     deviceModal = context.deviceModal;
 }
 
-export async function populateCompanySelect() {
-    if (state.companies.length === 0) {
-        const data = await apiGetCompanies({ limit: 500 });
-        state.companies = data?.error ? [] : data.data || [];
-    }
-    if (state.companies.length === 0) {
-        els.deviceCompanySelect.innerHTML =
-            '<option value="">Sem empresa</option>';
-        return false;
-    }
-    els.deviceCompanySelect.innerHTML =
-        '<option value="">Sem empresa</option>' +
-        state.companies
-            .map(
-                (s) =>
-                    `<option value="${esc(s.name)}">${esc(s.name)}</option>`,
-            )
-            .join("");
-    return true;
-}
-
-export async function populateLicenseSelectForCompany(companyName) {
-    const select = els.deviceLicenseSelect;
-    if (!companyName) {
-        select.innerHTML = '<option value="0">Nenhuma</option>';
-        select.disabled = true;
-        els.deviceLicenseId.value = "0";
-        return;
-    }
-    let company = state.companies.find((s) => s.name === companyName);
-    if (!company) {
-        const fallback = await apiGetCompanies({ limit: 500 });
-        state.companies = fallback?.error ? [] : fallback.data || [];
-        company = state.companies.find((s) => s.name === companyName);
-    }
-    if (!company) {
-        select.innerHTML = '<option value="0">Nenhuma</option>';
-        select.disabled = true;
-        els.deviceLicenseId.value = "0";
-        return false;
-    }
-    const licData = await apiGetLicenses({
-        limit: 500,
-        companyId: company.id,
-    });
-    if (licData?.error) {
-        select.innerHTML = '<option value="0">Nenhuma</option>';
-        select.disabled = true;
-        els.deviceLicenseId.value = "0";
-        return false;
-    }
-    const licenses = licData.data || [];
-    select.innerHTML =
-        '<option value="0">Nenhuma</option>' +
-        licenses
-            .map(
-                (l) =>
-                    `<option value="${esc(l.license_id)}">${esc(l.license_id)}${l.name ? ` — ${esc(l.name)}` : ""}</option>`,
-            )
-            .join("");
-    select.disabled = false;
-    return true;
-}
-
-export async function handleCompanySelect() {
-    const companyName = els.deviceCompanySelect.value;
-    els.deviceCompany.value = companyName || "";
-    els.deviceLicenseId.value = "0";
-    if (companyName) {
-        await populateLicenseSelectForCompany(companyName);
-    } else {
-        els.deviceLicenseSelect.innerHTML =
-            '<option value="0">Nenhuma</option>';
-        els.deviceLicenseSelect.disabled = true;
-        els.deviceLicenseId.value = "0";
-    }
-    await refreshGatewayOptions([]);
-}
-
-export function handleLicenseSelect() {
-    els.deviceLicenseId.value = els.deviceLicenseSelect.value || "0";
-    void refreshGatewayOptions([]);
+/**
+ * As licencas, agrupadas pela empresa que as detem, para a arvore da classificacao.
+ *
+ * Todas de uma vez e nao as da empresa do dispositivo: a arvore mostra-as todas, e mudar
+ * de cliente e precisamente uma das razoes para abrir isto.
+ *
+ * Devolve `null` quando o pedido falha, para o modal poder distinguir "o servidor nao
+ * respondeu" de "nao ha licencas nenhumas", que sao coisas diferentes de dizer a quem esta
+ * a olhar para uma arvore vazia.
+ */
+async function loadLicenseGroups() {
+    const response = await apiGetLicenses({limit: 500});
+    return response?.error ? null : licenseTree(response.data || []);
 }
 
 export function setDeviceFormError(message = "") {
@@ -230,17 +166,22 @@ export async function editDevice(imei, supplier, model) {
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove("d-none");
     renderDeviceTypeSelector("watch");
-    const companiesLoaded = await populateCompanySelect();
     els.deviceCompany.value = "";
-    els.deviceLicenseSelect.innerHTML = '<option value="0">Nenhuma</option>';
-    els.deviceLicenseSelect.disabled = true;
     els.deviceLicenseId.value = "0";
+    resetEditWizard([]);
     await renderDeviceSelectors(supplier, model);
     renderDeviceSimNumberField("");
+    renderEditWizard();
     deviceModal.show();
 
+    let licensesLoaded = true;
     try {
-        const detail = await apiGetDevice(imei);
+        const [detail, licenseGroups] = await Promise.all([
+            apiGetDevice(imei),
+            loadLicenseGroups(),
+        ]);
+        licensesLoaded = licenseGroups !== null;
+        resetEditWizard(licenseGroups || []);
         if (detail?.error) {
             setDeviceFormError(detail.error.message || "Nao foi possivel carregar o dispositivo.");
             return;
@@ -256,30 +197,9 @@ export async function editDevice(imei, supplier, model) {
             String(deviceModel?.internalModel || model),
             deviceType,
         );
-        if (deviceCompany !== "" && deviceCompany !== "null") {
-            const optExists = [...els.deviceCompanySelect.options].some(
-                (o) => o.value === deviceCompany,
-            );
-            if (!optExists) {
-                const opt = document.createElement("option");
-                opt.value = deviceCompany;
-                opt.textContent = deviceCompany;
-                els.deviceCompanySelect.appendChild(opt);
-            }
-            els.deviceCompanySelect.value = deviceCompany;
-            els.deviceCompany.value = deviceCompany;
-            const licensesLoaded =
-                await populateLicenseSelectForCompany(deviceCompany);
-            if (licensesLoaded && licenseId !== "0" && licenseId !== "") {
-                const licOptExists = [...els.deviceLicenseSelect.options].some(
-                    (o) => o.value === licenseId,
-                );
-                if (licOptExists) {
-                    els.deviceLicenseSelect.value = licenseId;
-                    els.deviceLicenseId.value = licenseId;
-                }
-            }
-        }
+        // `null` e como a base de dados escreve "sem empresa": nao e um nome.
+        els.deviceCompany.value = deviceCompany === "null" ? "" : deviceCompany;
+        els.deviceLicenseId.value = licenseId;
         state.deviceModal.deviceType = normalizeDeviceType(deviceType);
         state.deviceModal.licenseId = licenseId;
         renderDeviceSimNumberField(String(device.simNumber || ""));
@@ -304,11 +224,12 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
         renderDeviceModalIdentity(device, deviceModel, deviceType);
     } finally {
-        if (!companiesLoaded && state.deviceModal.errorMessage === "") {
-            setDeviceFormError("Ligacao ao servidor indisponivel.");
+        if (!licensesLoaded && state.deviceModal.errorMessage === "") {
+            setDeviceFormError("Ligação ao servidor indisponível.");
         }
         state.deviceModal.loading = false;
         await syncDeviceModalContext();
+        renderEditWizard();
         renderDeviceConfigurationModal();
     }
 }
@@ -382,22 +303,22 @@ export async function renderDeviceSelectors(
     els.deviceForm.dataset.supplier = supplier;
     els.deviceForm.dataset.model = model;
 
-    renderButtonGroup(
-        els.deviceSupplierButtons,
-        suppliers.map((value) => ({ value, label: value })),
-        supplier,
-        "selectDeviceSupplier",
-    );
-    renderButtonGroup(
-        els.deviceModelButtons,
-        availableModels.map((entry) => ({
-            value: modelInternalName(entry),
-            label: modelDisplayLabel(entry),
-        })),
-        model,
-        "selectDeviceModel",
-    );
+    els.deviceSupplierButtons.innerHTML = supplierPillsHtml({
+        suppliers,
+        selected: supplier,
+        attrsFor: (name) =>
+            `data-action="selectDeviceSupplier" data-value="${esc(name)}"`,
+    });
+    els.deviceModelButtons.innerHTML = availableModels.length
+        ? modelCardsHtml({
+            models: availableModels,
+            selected: model,
+            attrsFor: (internal) =>
+                `data-action="selectDeviceModel" data-value="${esc(internal)}"`,
+        })
+        : '<div class="text-secondary small py-2">Sem modelos deste fornecedor.</div>';
     updateDevicePreview();
+    renderEditWizard();
     await syncDeviceModalContext();
     renderDeviceConfigurationModal();
 }
@@ -405,9 +326,10 @@ export async function renderDeviceSelectors(
 export function renderDeviceTypeSelector(selectedType = "watch") {
     const deviceType = normalizeDeviceType(selectedType);
     els.deviceForm.dataset.deviceType = deviceType;
-    renderDeviceTypeTiles(els.deviceTypeButtons, deviceTypeOptions, {
+    els.deviceTypeButtons.innerHTML = deviceTypeCardsHtml({
         selected: deviceType,
-        action: "selectDeviceType",
+        attrsFor: (value) =>
+            `data-action="selectDeviceType" data-value="${esc(value)}"`,
     });
 
     // Uma linha da tabela em vez de quatro cadeias de `if` e cinco toggles decididos aqui.

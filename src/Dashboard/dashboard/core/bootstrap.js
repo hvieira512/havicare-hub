@@ -64,11 +64,13 @@ import {
 } from "../devices/detail-view.js";
 import {initDeviceStream} from "../devices/stream.js";
 import {
+    editWizardAnswered,
+    initEditWizard,
+} from "../devices/edit-wizard.js";
+import {
     editDevice,
     ensureDeviceConfigurationCatalogLoaded,
-    handleCompanySelect,
     handleDeleteDeviceBtnClick,
-    handleLicenseSelect,
     renderDeviceSelectors,
     renderDeviceTypeSelector,
     saveDevice,
@@ -162,8 +164,6 @@ function bindEvents() {
         event.preventDefault();
         saveDevice();
     });
-    els.deviceCompanySelect.addEventListener("change", handleCompanySelect);
-    els.deviceLicenseSelect.addEventListener("change", handleLicenseSelect);
     els.deviceGatewayLinksSelectAllBtn.addEventListener("click", () => {
         els.deviceGatewayLinksList
             ?.querySelectorAll("input[data-gateway-key]")
@@ -458,6 +458,8 @@ function handleDeviceFormChange(event) {
 
 function handleDeviceSupplierClick(event) {
     const button = event.target.closest('[data-action="selectDeviceSupplier"]');
+    // Escolher o fornecedor nao responde a pergunta do modelo: e o par que identifica, e
+    // a pergunta so fecha quando houver modelo.
     if (button) renderDeviceSelectors(button.dataset.value, "");
 }
 
@@ -469,6 +471,7 @@ async function handleDeviceTypeClick(event) {
     renderDeviceTypeSelector(deviceType);
     await renderDeviceSelectors("", "", deviceType);
     await refreshGatewayOptions([]);
+    editWizardAnswered("type");
 }
 
 function handleDeviceModelClick(event) {
@@ -479,6 +482,7 @@ function handleDeviceModelClick(event) {
         els.deviceForm.dataset.supplier,
         button.dataset.value,
     );
+    editWizardAnswered("model");
 }
 
 function handleDeviceListClick(event) {
@@ -508,6 +512,12 @@ export async function startDashboard() {
         document.getElementById("settingsModal"),
     );
     initDeviceModal({els, deviceModal, deviceSelectorModal, settingsModal});
+    initEditWizard({
+        els,
+        // A autorizacao de um gateway e por empresa e licenca: mudar de licenca muda quais
+        // sao os elegiveis, e os que estavam marcados eram de outro cliente.
+        onLicenseChange: () => void refreshGatewayOptions([]),
+    });
     initCreateWizard({
         els,
         onCreate: createDeviceFromWizard,

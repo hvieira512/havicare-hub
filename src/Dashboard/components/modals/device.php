@@ -5,80 +5,82 @@ declare(strict_types=1);
 ob_start();
 ?>
 <div class="device-modal-shell">
-    <div class="nav nav-underline mb-4" id="deviceModalNav" role="tablist">
-        <button class="nav-link active" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
-            Geral
-        </button>
-        <button class="nav-link d-none" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
-            Configurações
-        </button>
-    </div>
-    <div>
-        <div>
+    <div class="row g-4">
+        <div class="col-12 col-lg-2">
+            <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" id="deviceModalNav" role="tablist">
+                <button class="nav-link active text-start" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
+                    Geral
+                </button>
+                <button class="nav-link text-start d-none" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
+                    Configurações
+                </button>
+            </div>
+        </div>
+        <div class="col-12 col-lg-10">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
                         <div class="col-lg-8 order-lg-1">
-                            <div class="vstack gap-3">
-                                <div>
-                                    <div class="form-label">Tipo de dispositivo</div>
-                                    <div id="deviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
+                            <div class="device-wizard">
+                                <?php /* A mesma trilha do assistente de adicionar: as respostas ja dadas
+                                       * em etiquetas, e cada uma um botao para voltar aquela pergunta. */ ?>
+                                <div class="wizard-trail" id="deviceTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="2"></div>
+
+                                <div class="wizard-ask" id="deviceStep1">
+                                    <div data-device-question="type">
+                                        <label class="form-label form-label-sm">Tipo de dispositivo</label>
+                                        <div id="deviceTypeButtons" role="group"></div>
+                                    </div>
+                                    <div data-device-question="model">
+                                        <label class="form-label form-label-sm">Fornecedor</label>
+                                        <div id="deviceSupplierButtons" role="group"></div>
+                                        <label class="form-label form-label-sm mt-3">Modelo</label>
+                                        <div id="deviceModelButtons" role="group"></div>
+                                    </div>
+                                    <div data-device-question="owner">
+                                        <label class="form-label form-label-sm">Licença</label>
+                                        <div id="deviceLicensePicker"></div>
+                                    </div>
+                                    <p data-device-question="none" class="text-secondary small mb-0">Toque numa etiqueta acima para alterar uma resposta.</p>
                                 </div>
-                                <div>
-                                    <div class="form-label">Fornecedor</div>
-                                    <div id="deviceSupplierButtons" class="btn-group flex-wrap" role="group"></div>
-                                </div>
-                                <div>
-                                    <div class="form-label">Modelo</div>
-                                    <div id="deviceModelButtons" class="btn-group flex-wrap" role="group"></div>
-                                </div>
-                                <div id="deviceDeviceIdRow" class="d-none">
-                                    <label for="deviceDeviceId" class="form-label" id="deviceDeviceIdLabel">Device ID</label>
-                                    <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
-                                    <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-12 col-md-6">
-                                        <div>
-                                            <label for="deviceCompanySelect" class="form-label">Empresa</label>
-                                            <select class="form-select" id="deviceCompanySelect">
-                                                <option value="">Sem empresa</option>
-                                            </select>
+
+                                <?php /* A empresa e a licenca sao duas colunas na base de dados, mas uma
+                                       * so escolha no ecra: a arvore escreve as duas aqui. */ ?>
+                                <input type="hidden" id="deviceCompany" value="">
+                                <input type="hidden" id="deviceLicenseId" value="0">
+
+                                <div class="wizard-ask" id="deviceStep2">
+                                    <div id="deviceDeviceIdRow" class="d-none">
+                                        <label for="deviceDeviceId" class="form-label form-label-sm" id="deviceDeviceIdLabel">Device ID</label>
+                                        <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
+                                        <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
+                                    </div>
+                                    <div id="deviceImeiRow">
+                                        <label for="deviceImei" class="form-label form-label-sm">IMEI</label>
+                                        <input type="text" class="form-control" id="deviceImei" required>
+                                    </div>
+                                    <div id="deviceSimRow">
+                                        <label class="form-label form-label-sm">Número do SIM</label>
+                                        <div id="deviceSimNumberRoot"></div>
+                                    </div>
+                                    <div id="deviceGatewayLinksRow" class="d-none">
+                                        <div class="d-flex justify-content-between align-items-center gap-2">
+                                            <span class="form-label form-label-sm mb-0">Gateways autorizados</span>
+                                            <span class="badge text-bg-primary rounded-pill" id="deviceGatewayLinksCount">0</span>
                                         </div>
-                                        <input type="hidden" id="deviceCompany" value="">
-                                    </div>
-                                    <div class="col-12 col-md-6">
-                                        <div>
-                                            <label for="deviceLicenseSelect" class="form-label">Licença</label>
-                                            <select class="form-select" id="deviceLicenseSelect" disabled>
-                                                <option value="0">Nenhuma</option>
-                                            </select>
+                                        <div class="gateway-picker mt-1" id="deviceGatewayLinksList" role="group" aria-label="Gateways autorizados" aria-describedby="deviceGatewayLinksHelp"></div>
+                                        <div class="d-flex gap-2 mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" id="deviceGatewayLinksSelectAllBtn">Selecionar todos</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deviceGatewayLinksClearBtn">Limpar</button>
                                         </div>
-                                        <input type="hidden" id="deviceLicenseId" value="0">
+                                        <div class="form-text" id="deviceGatewayLinksHelp">Selecione os gateways autorizados a reportar dados deste sensor.</div>
                                     </div>
                                 </div>
-                                <div id="deviceGatewayLinksRow" class="d-none">
-                                    <div class="d-flex justify-content-between align-items-center gap-2">
-                                        <span class="form-label mb-0">Gateways autorizados</span>
-                                        <span class="badge text-bg-primary rounded-pill" id="deviceGatewayLinksCount">0</span>
-                                    </div>
-                                    <div class="gateway-picker mt-1" id="deviceGatewayLinksList" role="group" aria-label="Gateways autorizados" aria-describedby="deviceGatewayLinksHelp"></div>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <button type="button" class="btn btn-sm btn-outline-primary" id="deviceGatewayLinksSelectAllBtn">Selecionar todos</button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deviceGatewayLinksClearBtn">Limpar</button>
-                                    </div>
-                                    <div class="form-text" id="deviceGatewayLinksHelp">Selecione os gateways autorizados a reportar dados deste sensor.</div>
-                                </div>
-                                <div id="deviceImeiRow">
-                                    <label for="deviceImei" class="form-label">IMEI</label>
-                                    <input type="text" class="form-control" id="deviceImei" required>
-                                </div>
-                                <div id="deviceSimRow">
-                                    <label class="form-label">Número do SIM</label>
-                                    <div id="deviceSimNumberRoot"></div>
-                                </div>
+
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
-                                <div class="d-flex justify-content-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-outline-secondary d-none" id="deviceBackBtn"><?= icon('fa-arrow-left', 'me-2') ?>Anterior</button>
+                                    <button type="button" class="btn btn-primary d-none" id="deviceNextBtn">Seguinte<?= icon('fa-arrow-right', 'ms-2') ?></button>
                                     <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
                                 </div>
                             </div>

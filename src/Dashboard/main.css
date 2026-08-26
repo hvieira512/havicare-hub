@@ -1881,19 +1881,26 @@ body {
     border-bottom: 1px solid var(--bs-border-color);
 }
 
+/* A etiqueta por cima do valor, e nao ao lado: lado a lado, tres respostas com nomes
+   compridos nao cabiam na linha e a terceira caia sozinha para baixo. Empilhadas, cada
+   badge mede o mais largo dos seus dois textos e as tres cabem. */
 .wizard-trail .wizard-badge {
     display: inline-flex;
-    align-items: center;
-    gap: .45rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: .05rem;
+    min-height: 2.5rem;
     font-size: .8rem;
     font-weight: 500;
-    padding: .25rem .7rem .25rem .55rem;
+    padding: .25rem .7rem;
     border: 1px solid transparent;
-    border-radius: 20px;
+    border-radius: .625rem;
     background: var(--bs-primary-bg-subtle);
     color: var(--bs-emphasis-color);
     animation: wizard-badge-in .32s cubic-bezier(.2, .8, .3, 1) both;
     cursor: pointer;
+    text-align: left;
 }
 
 .wizard-trail .wizard-badge:hover,
@@ -1920,6 +1927,7 @@ body {
 
 .wizard-trail .wizard-badge-key {
     white-space: nowrap;
+    line-height: 1.2;
 }
 
 .wizard-trail .wizard-trail-step {
@@ -1931,7 +1939,7 @@ body {
 
 .wizard-trail .wizard-trail-sep {
     color: var(--bs-secondary-color);
-    font-size: .7rem;
+    font-size: .8rem;
 }
 
 @keyframes wizard-badge-in {
@@ -2037,6 +2045,13 @@ body {
 .wizard-card:focus-visible {
     outline: 2px solid var(--bs-primary);
     outline-offset: 2px;
+}
+
+/* O que ja esta escolhido. So o modal de edicao o usa: no assistente responder colapsa a
+   pergunta numa badge, e nao ha grelha por onde ver a escolha. */
+.wizard-card.selected {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
 }
 
 .wizard-card-icon {

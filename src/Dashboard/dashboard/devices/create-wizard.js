@@ -4,17 +4,18 @@ import {modelPreviewHtml} from "../widgets.js";
 import {
     deviceTypeFields,
     deviceTypeLabel,
-    deviceTypeOptions,
     findModelInfo,
-    modelCommercialName,
-    modelInternalName,
     modelsForSupplierAndType,
     suppliersForDeviceType,
 } from "../domain.js";
 import {createWizard} from "./wizard.js";
 import {
+    deviceTypeCardsHtml,
     licenseBadgeValue,
     licensePickerHtml,
+    modelCardsHtml,
+    supplierPillsHtml,
+    wizardTrailHtml,
 } from "./classification-ui.js";
 import {gatewayCardMarkup} from "./gateway-links-ui.js";
 
@@ -34,15 +35,6 @@ let els;
 let wizard;
 let onCreate;
 let licenseGroups = [];
-
-const ICONS = {
-    watch: "fa-clock",
-    ncs: "fa-bell-concierge",
-    radar: "fa-wifi",
-    gateway: "fa-tower-broadcast",
-    diaper_sensor: "fa-droplet",
-    bracelet: "fa-ring",
-};
 
 const STEPS = ["Classificação", "Este aparelho"];
 
@@ -168,34 +160,15 @@ function render() {
  * contornada; a respondida fica cheia e e um botao para voltar aquela pergunta.
  */
 function renderTrail() {
-    const answered = new Map(
-        wizard.badges().map((badge) => [badge.key, badge]),
-    );
-    const currentKey = wizard.current()?.key || "";
     const step = wizard.step();
-
     els.wizardTrail.setAttribute("aria-valuenow", String(step));
-    els.wizardTrail.innerHTML = TRAIL_QUESTIONS
-        .map((question, index) => {
-            const badge = answered.get(question.key);
-            const sep = index > 0 ? '<span class="wizard-trail-sep">›</span>' : "";
-            if (badge) {
-                return `${sep}
-            <button type="button" class="wizard-badge" data-wizard-reopen="${esc(badge.key)}"
-                title="Voltar a esta pergunta">
-                <span class="wizard-badge-key">${esc(badge.label)}</span>${esc(String(badge.value))}
-            </button>`;
-            }
-            const pendingClass = question.key === currentKey
-                ? "wizard-badge wizard-badge-now"
-                : "wizard-badge wizard-badge-pending";
-            return `${sep}
-            <span class="${pendingClass}">
-                <span class="wizard-badge-key">${esc(question.label)}</span>
-            </span>`;
-        })
-        .join("")
-        + `<span class="wizard-trail-step">Passo ${step} de ${STEPS.length} · ${esc(STEPS[step - 1])}</span>`;
+    els.wizardTrail.innerHTML = wizardTrailHtml({
+        questions: TRAIL_QUESTIONS,
+        badges: wizard.badges(),
+        currentKey: wizard.current()?.key || "",
+        step,
+        steps: STEPS,
+    });
 }
 
 /**
@@ -269,64 +242,19 @@ function modelCountFor(type) {
     ).length;
 }
 
-/**
- * A grelha de escolhas em cards, partilhada pelo tipo de dispositivo e pelo modelo.
- *
- * `visual` e um icone ou uma miniatura: um tipo de dispositivo e uma ideia e leva icone,
- * um modelo e um objecto que existe e leva a fotografia. O resto da forma e a mesma, e
- * duplica-la para o modelo era duplicar tambem os estados de foco e de selecao.
- */
-function cardGrid(label, cards) {
-    return `
-        <div class="wizard-card-grid" role="group" aria-label="${esc(label)}">
-            ${cards
-                .map(
-                    (card) => `
-                <button type="button" class="wizard-card" ${card.attrs}>
-                    ${card.visual}
-                    <span class="wizard-card-label">${esc(card.label)}</span>
-                    ${card.sub ? `<span class="wizard-card-sub">${esc(card.sub)}</span>` : ""}
-                </button>`,
-                )
-                .join("")}
-        </div>`;
-}
-
 function renderTypeGrid() {
-    return cardGrid(
-        "Tipo de dispositivo",
-        deviceTypeOptions.map((option) => {
-            const count = modelCountFor(option.value);
-            return {
-                attrs: `data-wizard-type="${esc(option.value)}"`,
-                visual: `<i class="fa-solid ${esc(ICONS[option.value] || "fa-microchip")} wizard-card-icon"></i>`,
-                label: option.label,
-                sub: `${count} ${count === 1 ? "modelo" : "modelos"}`,
-            };
-        }),
-    );
+    return deviceTypeCardsHtml({
+        attrsFor: (value) => `data-wizard-type="${esc(value)}"`,
+        countFor: modelCountFor,
+    });
 }
 
-/**
- * Os modelos do fornecedor escolhido, com fotografia.
- *
- * O nome comercial e o titulo e o modelo interno o subtitulo: e o comercial que a pessoa
- * reconhece da caixa, e o interno que aparece depois nos tópicos e na base de dados.
- */
 function renderModelGrid(supplier, models) {
-    return cardGrid(
-        "Modelo",
-        models.map((model) => {
-            const internal = modelInternalName(model);
-            const commercial = modelCommercialName(model);
-            return {
-                attrs: `data-wizard-model="${esc(internal)}" data-wizard-model-supplier="${esc(supplier)}"`,
-                visual: `<span class="wizard-card-thumb">${modelPreviewHtml(model, internal)}</span>`,
-                label: commercial || internal,
-                sub: commercial && commercial !== internal ? internal : "",
-            };
-        }),
-    );
+    return modelCardsHtml({
+        models,
+        attrsFor: (internal) =>
+            `data-wizard-model="${esc(internal)}" data-wizard-model-supplier="${esc(supplier)}"`,
+    });
 }
 
 function renderModel(type) {
@@ -343,15 +271,11 @@ function renderModel(type) {
     return `
         <div>
             <label class="form-label form-label-sm">Fornecedor</label>
-            <div class="d-flex flex-wrap gap-2">
-                ${suppliers
-                    .map(
-                        (name) => `
-                    <button type="button" class="btn btn-sm ${name === supplier ? "btn-primary" : "btn-outline-secondary"}"
-                        data-wizard-supplier="${esc(name)}">${esc(name)}</button>`,
-                    )
-                    .join("")}
-            </div>
+            ${supplierPillsHtml({
+                suppliers,
+                selected: supplier,
+                attrsFor: (name) => `data-wizard-supplier="${esc(name)}"`,
+            })}
             ${suppliers.length === 1
                 ? '<div class="form-text">Só um fornecedor tem modelos deste tipo.</div>'
                 : ""}

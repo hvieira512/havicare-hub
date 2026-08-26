@@ -1,5 +1,12 @@
 import {esc} from "../format.js";
-import {companyLabel} from "../domain.js";
+import {
+    companyLabel,
+    deviceTypeLabel,
+    deviceTypeOptions,
+    modelCommercialName,
+    modelInternalName,
+} from "../domain.js";
+import {deviceTypeIcon, modelPreviewHtml} from "../widgets.js";
 
 /**
  * O desenho da classificacao de um dispositivo -- tipo, modelo e licenca -- partilhado
@@ -111,3 +118,139 @@ export function licenseBadgeValue(owner, tree = []) {
         ?.licenses.find((license) => license.licenseId === licenseId);
     return match?.name ? `${match.name} (${licenseId})` : licenseId;
 }
+
+/* ---------- a trilha ---------- */
+
+/**
+ * A trilha: as perguntas da classificacao em fila, e o passo no fim da linha.
+ *
+ * Uma respondida fica cheia e e um botao para voltar aquela pergunta; a activa fica
+ * contornada; as que faltam ficam esbatidas, para se ver quantas sao sem parecerem
+ * clicaveis. Mostrar so as respondidas deixava a linha vazia ao abrir e nao dizia quanto
+ * faltava.
+ */
+export function wizardTrailHtml({
+    questions,
+    badges = [],
+    currentKey = "",
+    step = 1,
+    steps = [],
+}) {
+    const answered = new Map(badges.map((badge) => [badge.key, badge]));
+
+    return questions
+        .map((question, index) => {
+            const badge = answered.get(question.key);
+            const sep = index > 0
+                ? '<i class="fa-solid fa-caret-right wizard-trail-sep"></i>'
+                : "";
+            if (badge) {
+                return `${sep}
+            <button type="button" class="wizard-badge" data-wizard-reopen="${esc(badge.key)}"
+                title="Voltar a esta pergunta">
+                <span class="wizard-badge-key">${esc(badge.label)}</span>${esc(String(badge.value))}
+            </button>`;
+            }
+            const pendingClass = question.key === currentKey
+                ? "wizard-badge wizard-badge-now"
+                : "wizard-badge wizard-badge-pending";
+            return `${sep}
+            <span class="${pendingClass}">
+                <span class="wizard-badge-key">${esc(question.label)}</span>
+            </span>`;
+        })
+        .join("")
+        + `<span class="wizard-trail-step">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`;
+}
+
+/* ---------- o tipo e o modelo ---------- */
+
+/**
+ * A grelha de escolhas em cards, partilhada pelo tipo de dispositivo e pelo modelo.
+ *
+ * `visual` e um icone ou uma miniatura: um tipo de dispositivo e uma ideia e leva icone,
+ * um modelo e um objecto que existe e leva a fotografia. O resto da forma e o mesmo, e
+ * duplica-la para o modelo era duplicar tambem os estados de foco e de selecao.
+ */
+export function cardGrid(label, cards) {
+    return `
+        <div class="wizard-card-grid" role="group" aria-label="${esc(label)}">
+            ${cards
+                .map(
+                    (card) => `
+                <button type="button" class="wizard-card${card.selected ? " selected" : ""}"
+                    ${card.selected ? 'aria-pressed="true"' : ""} ${card.attrs}>
+                    ${card.visual}
+                    <span class="wizard-card-label">${esc(card.label)}</span>
+                    ${card.sub ? `<span class="wizard-card-sub">${esc(card.sub)}</span>` : ""}
+                </button>`,
+                )
+                .join("")}
+        </div>`;
+}
+
+/**
+ * Os tipos de dispositivo em cards.
+ *
+ * `attrsFor` e `countFor` sao de quem chama porque e ai que diferem: o assistente marca
+ * os cards com os seus proprios atributos e conta os modelos de cada tipo, o modal de
+ * edicao usa as accoes que ja tinha e nao conta nada -- o tipo ja esta escolhido.
+ */
+export function deviceTypeCardsHtml({attrsFor, selected = "", countFor = null}) {
+    return cardGrid(
+        "Tipo de dispositivo",
+        deviceTypeOptions.map((option) => {
+            const count = countFor ? countFor(option.value) : null;
+            return {
+                attrs: attrsFor(option.value),
+                selected: option.value === selected,
+                visual: `<i class="fa-solid ${esc(deviceTypeIcon(option.value))} wizard-card-icon"></i>`,
+                label: option.label,
+                sub: count === null
+                    ? ""
+                    : `${count} ${count === 1 ? "modelo" : "modelos"}`,
+            };
+        }),
+    );
+}
+
+/**
+ * Os modelos em cards, com fotografia.
+ *
+ * O nome comercial e o titulo e o modelo interno o subtitulo: e o comercial que a pessoa
+ * reconhece da caixa, e o interno que aparece depois nos topicos e na base de dados.
+ */
+export function modelCardsHtml({models, attrsFor, selected = ""}) {
+    return cardGrid(
+        "Modelo",
+        models.map((model) => {
+            const internal = modelInternalName(model);
+            const commercial = modelCommercialName(model);
+            return {
+                attrs: attrsFor(internal),
+                selected: internal === selected,
+                visual: `<span class="wizard-card-thumb">${modelPreviewHtml(model, internal)}</span>`,
+                label: commercial || internal,
+                sub: commercial && commercial !== internal ? internal : "",
+            };
+        }),
+    );
+}
+
+/** Os fornecedores em pastilhas: sao poucos e nao tem imagem que justifique um card. */
+export function supplierPillsHtml({suppliers, attrsFor, selected = ""}) {
+    return `
+        <div class="d-flex flex-wrap gap-2" role="group" aria-label="Fornecedor">
+            ${suppliers
+                .map(
+                    (name) => `
+                <button type="button" ${attrsFor(name)}
+                    class="btn btn-sm ${name === selected ? "btn-primary" : "btn-outline-secondary"}"
+                    aria-pressed="${name === selected ? "true" : "false"}">${esc(name)}</button>`,
+                )
+                .join("")}
+        </div>`;
+}
+
+/** O que o tipo de dispositivo se chama, para quem so precisa da etiqueta. */
+export {deviceTypeLabel};
