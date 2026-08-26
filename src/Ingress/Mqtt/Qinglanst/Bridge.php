@@ -220,10 +220,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return $resolved;
         }
 
+        // O `ident` é o campo livre da notificação -- desenhado como `protocol · ident`
+        // quando não há modelo. Passava aqui o UID, que já está na linha de cima, e a
+        // notificação repetia-o. A licença é o que o UID não diz: o tópico é
+        // `radar/{licenca}/{uid}` e sem isto quem lê a notificação não sabe a que licença
+        // registar o radar que apareceu.
         $this->recordUnauthorizedDevice(
             $deviceUid,
             'qinglanst-radar',
-            ident: $deviceUid
+            ident: 'licença ' . $topic->licenseId
         );
         Logger::channel('hub')->warning("Ignoring unregistered Qinglanst device uid={$deviceUid}");
         return null;

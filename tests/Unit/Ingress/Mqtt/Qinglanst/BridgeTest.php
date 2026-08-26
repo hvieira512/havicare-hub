@@ -15,7 +15,16 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {
-    public function testUnregisteredRadarCreatesDashboardNotification(): void
+    /**
+     * A notificação de um radar desconhecido leva a licença do tópico.
+     *
+     * O `ident` é o campo livre que a dashboard desenha como `protocol · ident` quando não
+     * há modelo. Levava o UID, que já é a linha de cima da notificação, e por isso o UID
+     * aparecia duas vezes e a licença não aparecia de todo. Quem lê a notificação para
+     * registar o radar precisa exactamente da licença: é o único campo do formulário que
+     * não se deduz do que lá está.
+     */
+    public function testUnregisteredRadarNotificationCarriesTheTopicLicense(): void
     {
         $whitelistPath = tempnam(sys_get_temp_dir(), 'qinglanst-whitelist-');
         file_put_contents($whitelistPath, '{}');
@@ -26,7 +35,7 @@ final class BridgeTest extends TestCase
                 '9D8A3204F853',
                 'qinglanst-radar',
                 '',
-                '9D8A3204F853',
+                'licença 2103',
                 'device_not_authorized'
             );
         $bridge = new Bridge(
@@ -36,7 +45,7 @@ final class BridgeTest extends TestCase
             dashboardStore: $dashboardStore,
         );
 
-        $bridge->handleReceivedMessage('radar/1001/9D8A3204F853', '{}');
+        $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
 
         @unlink($whitelistPath);
     }
