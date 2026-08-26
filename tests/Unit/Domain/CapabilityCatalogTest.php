@@ -13,7 +13,7 @@ final class CapabilityCatalogTest extends TestCase
         $expected = [
             'watch' => [68, 'e7a6cb2efba6184bd788d8ed3d25180cc4508989d4b9751e426e1d8ce7b431b1'],
             'ncs' => [1, 'bf0447cade6d4ed25110a537a4536f2d5ee9ac195e467d114a10b4ac6e9b2c0b'],
-            'radar' => [10, 'c254a4d654b3f520ee89689649993bbe15d689a1c2d72eca3584b245ab23678b'],
+            'radar' => [9, '8e53e4ec25c3f8b9cdf8f9b70187c8e9496138f6badc199993ac4b5d5c972891'],
             'gateway' => [3, '0da2bdcb67a191f32fdf9ae47f0e9b9339bd49dd026d4d41e616b52ed430c07a'],
             'diaper_sensor' => [6, '2b270399764bbeb1a8254a86a08e006f4208c080a6b99173caa94cd602ed059d'],
             'bracelet' => [3, '16ca71291d05ec6c08e98d889b0bed4453725b1e6481fa5d1d02f807f76c2e28'],

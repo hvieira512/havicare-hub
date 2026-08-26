@@ -17,6 +17,10 @@ namespace Hub\Domain\Capability\Definition;
  * duração, este é o estado no instante em que se mede. O `presence` também não é o
  * `location`, que é geográfico -- o radar dá x/y/z em decímetros relativos a si próprio.
  *
+ * A postura não é capacidade nenhuma: é de cada pessoa, tal como a posição, e vive dentro
+ * do `presence` ao lado dela. Uma divisão com duas pessoas tem duas posturas, e não há
+ * leitura do aparelho que as represente sem escolher uma e deitar a outra fora.
+ *
  * Os dois envelopes por minuto ficam como estavam: são agregados, não leituras, e misturar
  * uma média de sessenta segundos com uma leitura de um na mesma série não ajudava ninguém.
  */
@@ -32,7 +36,6 @@ final class RadarCapabilityDefinitions
             ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'breath_rate', 'label' => 'Frequência respiratória', 'sortOrder' => 20, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'sleep_state', 'label' => 'Estado do sono', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'presence', 'label' => 'Presença', 'sortOrder' => 40, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
-            ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'posture', 'label' => 'Postura', 'sortOrder' => 50, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'position_minute_stats', 'label' => 'Estatísticas de posições por minuto', 'sortOrder' => 60, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'radar', 'section' => 'telemetry', 'key' => 'vitals_minute_stats', 'label' => 'Estatísticas de sinais vitais por minuto', 'sortOrder' => 70, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'radar', 'section' => 'alarms', 'key' => 'fall', 'label' => 'Queda', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],

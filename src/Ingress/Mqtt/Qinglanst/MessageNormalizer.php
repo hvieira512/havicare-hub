@@ -52,18 +52,6 @@ final class MessageNormalizer
     ];
 
     /**
-     * Quão grave é cada postura, para escolher a que manda quando há mais do que uma
-     * pessoa na divisão. As que não estão aqui valem zero.
-     */
-    private const POSTURE_SEVERITY = [
-        'Fall Confirmation' => 5,
-        'Suspected Fall' => 4,
-        'Confirmed Sitting on Ground' => 3,
-        'Suspected Sitting on Ground' => 2,
-        'Lying Down' => 1,
-    ];
-
-    /**
      * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes.
      *
      * As telemetrias vêm num mapa de capacidade para leitura, e não uma só, porque uma
@@ -98,11 +86,16 @@ final class MessageNormalizer
     {
         $people = $this->occupiedPeople($decoded['people']);
 
-        // Duas grandezas na mesma mensagem: quem está na divisão, e como está.
+        // Uma mensagem `position` responde a uma pergunta só: quem está na divisão, e como.
         //
-        // A presença não é o `location` canónico -- esse é geográfico, com GPS e células.
-        // O radar dá x/y/z em decímetros relativos a si próprio, que só faz sentido dentro
-        // da divisão onde está montado.
+        // A postura e o último evento são de cada pessoa, tal como o x/y/z, e por isso
+        // ficam dentro dela. Tirá-los para uma leitura do aparelho obrigava a escolher uma
+        // pessoa entre as presentes -- e o que sobrasse dessa escolha era a postura de toda
+        // a gente menos uma, desligada de quem a tinha.
+        //
+        // Isto não é o `location` canónico: esse é geográfico, com GPS e células. O radar
+        // dá coordenadas em decímetros relativas a si próprio, que só significam alguma
+        // coisa dentro da divisão onde está montado.
         $telemetry = [
             'presence' => $this->telemetry($topic, $device, 'presence', 'position', [
                 'count' => count($people),
@@ -114,18 +107,12 @@ final class MessageNormalizer
                         'zPositionCm' => $person['z_position_cm'],
                         'timeLeftS' => $person['time_left_s'],
                         'regionId' => $person['region_id'],
+                        'posture' => RadarValueMapper::toEnum((string)($person['posture_state'] ?? '')),
+                        'lastEvent' => RadarValueMapper::toEnum((string)($person['last_event'] ?? '')),
                     ];
                 }, $people),
             ]),
         ];
-
-        // A postura é por pessoa, mas a leitura é do aparelho: quem tem a postura mais
-        // grave manda no cartão. Uma queda confirmada não pode ficar escondida atrás de
-        // outra pessoa de pé na mesma divisão.
-        $posture = $this->mostSeverePosture($people);
-        if ($posture !== null) {
-            $telemetry['posture'] = $this->telemetry($topic, $device, 'posture', 'position', $posture);
-        }
 
         $event = $this->detectPositionEvent($topic, $device, $people);
 
@@ -133,35 +120,6 @@ final class MessageNormalizer
             'telemetry' => $telemetry,
             'events' => $event === null ? [] : [$event],
         ];
-    }
-
-    /**
-     * A postura que manda: a mais grave das pessoas presentes.
-     *
-     * @param array<int, array> $people
-     * @return array{state: string, personIndex: int, lastEvent: string}|null
-     */
-    private function mostSeverePosture(array $people): ?array
-    {
-        $ranked = null;
-        $rankedSeverity = -1;
-
-        foreach ($people as $person) {
-            $state = (string)($person['posture_state'] ?? '');
-            $severity = self::POSTURE_SEVERITY[$state] ?? 0;
-            if ($severity <= $rankedSeverity) {
-                continue;
-            }
-
-            $rankedSeverity = $severity;
-            $ranked = [
-                'state' => RadarValueMapper::toEnum($state),
-                'personIndex' => (int)($person['person_index'] ?? 0),
-                'lastEvent' => RadarValueMapper::toEnum((string)($person['last_event'] ?? '')),
-            ];
-        }
-
-        return $ranked;
     }
 
     /**

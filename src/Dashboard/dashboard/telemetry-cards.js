@@ -3,6 +3,7 @@ import {
     esc,
     eventTime,
     fieldLabel,
+    fieldValue,
     rowPayload,
     titleize,
     when,
@@ -62,6 +63,8 @@ const CARD_TONE_BY_TYPE = {
     breath_rate: "info",
     rr_interval: "info",
     sleep: "primary",
+    sleep_state: "primary",
+    presence: "success",
     help_call: "danger",
     reset: "warning",
     heart_rate: "danger",
@@ -99,6 +102,8 @@ const REQUEST_CARD_ICON_BY_TYPE = {
     activity: "fa-person-walking",
     location: "fa-location-dot",
     sleep: "fa-bed",
+    sleep_state: "fa-bed",
+    presence: "fa-location-crosshairs",
     ecg: "fa-wave-square",
     hrv: "fa-chart-line",
     breath_rate: "fa-lungs",
@@ -112,25 +117,16 @@ const REQUEST_CARD_ICON_BY_TYPE = {
 };
 
 const UPLINK_CARD_RENDERERS = {
-    positions: (data) => ({
+    // O radar já não tem cartões de frequência cardíaca nem respiratória: manda as mesmas
+    // chaves e as mesmas formas que um relógio, e usa os cartões dele mais abaixo.
+    presence: (data) => ({
         icon: "fa-location-crosshairs",
-        value: radarPositionsValue(data),
-        details: radarPositionsDetails(data),
+        value: presenceValue(data),
+        details: presenceDetails(data),
     }),
-    position: (data) => ({
-        icon: "fa-location-crosshairs",
-        value: radarPositionsValue(data),
-        details: radarPositionsDetails(data),
-    }),
-    vitals: (data) => ({
-        icon: "fa-heart-pulse",
-        value: radarVitalsValue(data),
-        details: radarVitalsDetails(data),
-    }),
-    heartbreath: (data) => ({
-        icon: "fa-heart-pulse",
-        value: radarVitalsValue(data),
-        details: radarVitalsDetails(data),
+    sleep_state: (data) => ({
+        icon: "fa-bed",
+        value: fieldValue("sleep_state", data?.state),
     }),
     position_minute_stats: (data) => ({
         icon: "fa-chart-column",
@@ -229,9 +225,13 @@ const UPLINK_CARD_RENDERERS = {
     sleep: () => ({icon: "fa-bed", value: "Dados de sono"}),
     ecg: () => ({icon: "fa-wave-square", value: "Dados de ECG"}),
     hrv: () => ({icon: "fa-chart-line", value: "Dados de VFC"}),
-    breath_rate: () => ({
+    // Um escalar, ao contrario do sono, do ECG e da PPG, que sao series e por isso se
+    // anunciam em vez de se resumirem a um numero. Dizia "Dados de frequencia
+    // respiratoria" e nunca mostrava a leitura -- nem a de um relogio, que produz a mesma
+    // forma `{breathsPerMinute}` desde sempre.
+    breath_rate: (data) => ({
         icon: "fa-lungs",
-        value: "Dados de frequência respiratória",
+        value: `${data.breathsPerMinute ?? "-"} rpm`,
     }),
     ppg: () => ({icon: "fa-circle-nodes", value: "Dados de PPG"}),
     rr_interval: (data) => ({
@@ -316,6 +316,7 @@ export function telemetryCard({
     icon,
     title,
     value = "",
+    details = "",
     tooltip = "",
     body = "",
     feature = "",
@@ -367,6 +368,7 @@ export function telemetryCard({
         <div class="flex-grow-1 min-w-0">
         <div class="telemetry-card-title">${esc(title)}</div>
         ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
+        ${details ? `<span class="telemetry-row-details d-block text-truncate" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</span>` : ""}
         </div>
         ${requestHint}
         </div>
@@ -577,47 +579,43 @@ function batteryDetails(data) {
     return compactDetails(data, ["batteryType"]);
 }
 
-function radarPositionsValue(data) {
-    const people = Array.isArray(data?.people) ? data.people : [];
-    if (!people.length) {
-        return "Sem posições";
+/**
+ * Quantas pessoas o radar vê.
+ *
+ * O `count` vem do hub e não se conta o array aqui: uma leitura sem ninguém tem de dizer
+ * "Ninguém" e não "Sem leituras", que é o que o cartão diria se o array vazio passasse por
+ * ausência de dados. Um radar que não vê ninguém está a funcionar.
+ */
+function presenceValue(data) {
+    const count = Number(data?.count ?? 0) || 0;
+    if (count === 0) {
+        return "Ninguém";
     }
 
-    return `${people.length} pessoa${people.length === 1 ? "" : "s"}`;
+    return `${count} pessoa${count === 1 ? "" : "s"}`;
 }
 
-function radarPositionsDetails(data) {
+/**
+ * Uma linha por pessoa: como está e onde está.
+ *
+ * A postura vem primeiro porque é o que se quer saber -- alguém caído importa mais do que
+ * as coordenadas de quem está de pé. E é por pessoa, não do aparelho: numa divisão com
+ * duas, uma pode estar deitada e a outra a andar.
+ */
+function presenceDetails(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
-    if (!people.length) {
-        return "";
-    }
 
     return people
         .slice(0, 3)
         .map((person, index) => {
-            const personIndex = displayPersonIndex(
-                person?.person_index ?? index + 1,
-            );
-            const x = dataPointValue(person?.x_position_dm);
-            const y = dataPointValue(person?.y_position_dm);
-            const z = dataPointValue(person?.z_position_cm);
-            return `Pessoa ${esc(personIndex)} · x ${esc(x)} dm · y ${esc(y)} dm · z ${esc(z)} cm`;
+            const personIndex = displayPersonIndex(person?.personIndex ?? index + 1);
+            const posture = fieldValue("posture", person?.posture);
+            const x = dataPointValue(person?.xPositionDm);
+            const y = dataPointValue(person?.yPositionDm);
+            const z = dataPointValue(person?.zPositionCm);
+            return `Pessoa ${esc(personIndex)}: ${esc(posture)} · x ${esc(x)} dm · y ${esc(y)} dm · z ${esc(z)} cm`;
         })
         .join("<br>");
-}
-
-function radarVitalsValue(data) {
-    const heartRate = dataPointValue(data?.heart_rate);
-    const breathing = dataPointValue(data?.breathing);
-    if (heartRate === "-" && breathing === "-") {
-        return "Sem leituras";
-    }
-
-    return `${heartRate !== "-" ? `${heartRate} bpm` : "-"} · ${breathing !== "-" ? `${breathing} rpm` : "-"}`;
-}
-
-function radarVitalsDetails(data) {
-    return compactDetails(data, ["sleep_state"]);
 }
 
 function radarPositionMinuteStatsValue(data) {
@@ -796,6 +794,10 @@ export function renderRequestCardShell(
         title,
         // O valor so aparece quando diz algo que o titulo nao diga.
         value: value && value !== title ? value : "",
+        // O `details` era calculado e deitado fora: a linha da lista de eventos desenhava-o
+        // e o mosaico ignorava-o. Era por isso que o estado de sono nunca aparecia no
+        // cartao dos sinais vitais, apesar de o hub o mandar desde sempre.
+        details: isSystemRequestCard ? "" : lastContent?.details || "",
         tooltip,
         body: bodyHtml,
         // Um cartao que nao se pode pedir nao e clicavel: o que nao responde ao clique
@@ -855,7 +857,10 @@ function compactDetails(data, keys) {
             data[key] !== null &&
             data[key] !== "",
         )
-        .map((key) => `${esc(fieldLabel(key))}: ${esc(data[key])}`)
+        // O `fieldValue` traduz o que for enumeracao e deixa passar numeros e texto livre.
+        // Sem ele o cartao punha "Estado do sono: awake" -- a etiqueta em portugues e o
+        // valor cru ao lado dela.
+        .map((key) => `${esc(fieldLabel(key))}: ${esc(fieldValue(key, data[key]))}`)
         .join(" · ");
 }
 

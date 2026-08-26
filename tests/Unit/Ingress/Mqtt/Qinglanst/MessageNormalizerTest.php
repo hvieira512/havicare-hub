@@ -198,8 +198,6 @@ final class MessageNormalizerTest extends TestCase
 
         self::assertSame(0, $result['telemetry']['presence']['data']['count']);
         self::assertSame([], $result['telemetry']['presence']['data']['people']);
-        // Sem ninguém não há postura: o cartão fica sem leitura em vez de dizer "desconhecida".
-        self::assertArrayNotHasKey('posture', $result['telemetry']);
         self::assertSame([], $result['events']);
     }
 
@@ -239,11 +237,8 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(1, $presence['count']);
         self::assertCount(1, $presence['people']);
         self::assertSame(2, $presence['people'][0]['personIndex']);
-
-        self::assertSame(
-            ['state' => 'fall_confirmation', 'personIndex' => 2, 'lastEvent' => 'leave_room'],
-            $result['telemetry']['posture']['data'],
-        );
+        self::assertSame('fall_confirmation', $presence['people'][0]['posture']);
+        self::assertSame('leave_room', $presence['people'][0]['lastEvent']);
 
         self::assertSame('fall', $result['events'][0]['type']);
         self::assertSame('fall_confirmed', $result['events'][0]['data']['detectionType']);
@@ -251,12 +246,14 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Com duas pessoas na divisão, a postura que manda é a mais grave.
+     * Cada pessoa mantém a sua postura.
      *
-     * A leitura é do aparelho e não da pessoa, por isso só cabe uma. Escolher a primeira
-     * da lista deixava uma queda confirmada escondida atrás de alguém de pé ao lado.
+     * A postura é da pessoa, tal como a posição: numa divisão com três, uma pode estar de
+     * pé, outra caída e outra a andar. Uma leitura do aparelho com uma postura só obrigava
+     * a escolher entre elas, e o que sobrava dessa escolha era a postura de toda a gente
+     * menos uma, desligada de quem a tinha.
      */
-    public function testThePostureCardShowsTheMostSevereOfThePeoplePresent(): void
+    public function testEveryPersonKeepsTheirOwnPosture(): void
     {
         $normalizer = new MessageNormalizer();
         $topic = Topic::parse('radar/1001/radar-topic-uid');
@@ -271,9 +268,17 @@ final class MessageNormalizerTest extends TestCase
             ],
         ], $topic, $this->device());
 
-        self::assertSame(3, $result['telemetry']['presence']['data']['count']);
-        self::assertSame('fall_confirmation', $result['telemetry']['posture']['data']['state']);
-        self::assertSame(2, $result['telemetry']['posture']['data']['personIndex']);
+        $presence = $result['telemetry']['presence']['data'];
+        self::assertSame(3, $presence['count']);
+        self::assertSame(
+            ['standing', 'fall_confirmation', 'walking'],
+            array_column($presence['people'], 'posture'),
+        );
+        self::assertSame([1, 2, 3], array_column($presence['people'], 'personIndex'));
+
+        // A queda continua a ser alarme: é isso que a põe à frente de quem olha, sem a
+        // telemetria ter de escolher uma pessoa entre as presentes.
+        self::assertSame('fall', $result['events'][0]['type']);
     }
 
     /**

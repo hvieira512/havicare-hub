@@ -143,7 +143,66 @@ export const fieldLabel = (key) =>
         from: "Gateway",
         transparent: "Transparente",
         key: "Tecla",
+        lastEvent: "Último evento",
+        personIndex: "Pessoa",
     })[key] || titleize(key);
+
+/**
+ * O valor de um campo cujo conteudo e uma enumeracao, em portugues.
+ *
+ * O `fieldLabel` acima traduz o nome do campo; isto traduz o que la esta dentro. Faltava, e
+ * via-se: o cartao dizia "Estado do sono" ao lado de "Awake", porque o descodificador do
+ * radar devolvia as etiquetas do documento do fabricante e ninguem as convertia. O hub
+ * passou a enviar enumeracoes -- `awake`, `lying_down` -- e a traducao e deste lado.
+ *
+ * Por chave de campo e nao um dicionario global: `low` e `high` querem dizer coisas
+ * diferentes conforme se fale de uma frequencia cardiaca ou de um nivel de bateria.
+ */
+const FIELD_VALUE_LABELS = {
+    sleep_state: {
+        awake: "Acordado",
+        light_sleep: "Sono leve",
+        deep_sleep: "Sono profundo",
+        undefined: "Indefinido",
+    },
+    posture: {
+        initialization: "A iniciar",
+        walking: "A andar",
+        suspected_fall: "Suspeita de queda",
+        squatting: "Agachado",
+        standing: "De pé",
+        fall_confirmation: "Queda confirmada",
+        lying_down: "Deitado",
+        suspected_sitting_on_ground: "Suspeita de estar sentado no chão",
+        confirmed_sitting_on_ground: "Sentado no chão",
+        sitting_up_bed: "Sentado na cama",
+        suspected_sitting_up_bed: "Suspeita de estar sentado na cama",
+        confirmed_sitting_up_bed: "Sentado na cama",
+        unknown: "Desconhecida",
+    },
+    lastEvent: {
+        no_event: "Sem eventos",
+        enter_room: "Entrou na divisão",
+        leave_room: "Saiu da divisão",
+        enter_area: "Entrou na área",
+        leave_area: "Saiu da área",
+        unknown: "Desconhecido",
+    },
+};
+
+export const fieldValue = (key, value) => {
+    if (value === undefined || value === null || value === "") return "-";
+
+    const raw = String(value);
+    const translated = FIELD_VALUE_LABELS[key]?.[raw];
+    if (translated) return translated;
+
+    // So o que parece uma enumeracao e que se embeleza. Um numero, uma percentagem ou um
+    // texto livre passam intactos: o `titleize` transformava `78` em `78` mas
+    // `2026-08-26T19:00:00Z` em `2026-08-26T19:00:00Z` com as maiusculas trocadas, e nao e
+    // trabalho dele arriscar isso.
+    return /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(raw) ? titleize(raw) : raw;
+};
 
 export const commandLabel = (command) =>
     ({

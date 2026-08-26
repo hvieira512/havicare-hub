@@ -46,7 +46,6 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
             'breath_rate',
             'sleep_state',
             'presence',
-            'posture',
             'position_minute_stats',
             'vitals_minute_stats',
             'fall',
