@@ -13,11 +13,10 @@ final class NotificationSourceTest extends TestCase
         $root = dirname(__DIR__, 3);
         $page = file_get_contents($root . '/src/Dashboard/index.php');
         $notifications = file_get_contents($root . '/src/Dashboard/dashboard/notifications.js');
-        // Adicionar um dispositivo passou a ser o assistente, num modal proprio; a
-        // ligacao que arranca as notificacoes continua no bootstrap, mas o que o assistente
-        // faz com o aviso mudou-se para o modulo dos seus handlers.
-        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/core/bootstrap.js')
-            . file_get_contents($root . '/src/Dashboard/dashboard/core/handlers/create-wizard.js');
+        // A raiz de composicao liga o sino ao assistente, e e o assistente que sabe o que
+        // fazer com o aviso: as afirmacoes seguintes atravessam os dois.
+        $bootstrap = file_get_contents($root . '/src/Dashboard/dashboard/app.js')
+            . file_get_contents($root . '/src/Dashboard/dashboard/devices/create-wizard.js');
 
         self::assertIsString($page);
         self::assertIsString($notifications);

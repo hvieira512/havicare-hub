@@ -28,8 +28,8 @@ import {
     uplinkCardContent,
 } from "../telemetry-cards.js";
 import {renderPagination} from "../pagination.js";
-import {clearStorageKey, saveTextStorage} from "../core/storage.js";
-import {disposeTooltips, refreshTooltips} from "../core/tooltips.js";
+import {clearStorageKey, saveTextStorage} from "../storage.js";
+import {disposeTooltips, refreshTooltips} from "../tooltips.js";
 import {gatewaySignalRows} from "./gateway-signal.js";
 
 const DETAIL_ITEM_TYPES = {

@@ -16,7 +16,7 @@ const {
  * Existe para uma consolidação contra `renderPagination` poder ser provada como
  * mudança de sítio e não de comportamento: se estas cadeias mudarem, alguma coisa
  * mudou no ecrã. Repara nos nomes das acções -- `telemetryPageGo`, e não
- * `telemetryGo` -- porque é neles que os handlers em `core/bootstrap.js` estão
+ * `telemetryGo` -- porque é neles que os handlers em `app.js` estão
  * registados, e é a diferença que uma troca ingénua quebraria em silêncio.
  */
 function fakeElement() {

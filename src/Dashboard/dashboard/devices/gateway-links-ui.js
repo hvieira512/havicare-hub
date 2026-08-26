@@ -7,7 +7,7 @@ import {esc} from "../format.js";
 import {state} from "../state.js";
 import {linksToGateway, normalizeDeviceType} from "./list-detail.js";
 import {eligibleGateways, gatewayLinkChanges} from "./gateway-links.js";
-import {disposeTooltips, refreshTooltips} from "../core/tooltips.js";
+import {disposeTooltips, refreshTooltips} from "../tooltips.js";
 import {linkSignal, signalMeter} from "./gateway-signal.js";
 
 /**

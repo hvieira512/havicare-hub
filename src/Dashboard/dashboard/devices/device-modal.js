@@ -76,7 +76,7 @@ import {
     SELECTED_DEVICE_STORAGE_KEY,
     clearStorageKey,
     saveTextStorage,
-} from "../core/storage.js";
+} from "../storage.js";
 
 /**
  * The add/edit device modal: its selectors, its form, and saving or deleting

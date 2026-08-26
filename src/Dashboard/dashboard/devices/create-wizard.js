@@ -1,3 +1,9 @@
+import {
+    createDeviceLink as apiCreateDeviceLink,
+    getDevices as apiGetDevices,
+    getLicenses as apiGetLicenses,
+    saveDevice as apiSaveDevice,
+} from "../api/index.js";
 import {esc} from "../format.js";
 import {state} from "../state.js";
 import {modelPreviewHtml} from "../widgets.js";
@@ -5,6 +11,9 @@ import {
     deviceTypeFields,
     deviceTypeLabel,
     findModelInfo,
+    modelCommercialName,
+    modelDeviceType,
+    modelInternalName,
     modelsForSupplierAndType,
     suppliersForDeviceType,
 } from "../domain.js";
@@ -13,11 +22,16 @@ import {
     deviceTypeCardsHtml,
     licenseBadgeValue,
     licensePickerHtml,
+    licenseTree,
     modelCardsHtml,
     supplierPillsHtml,
     wizardTrailHtml,
 } from "./classification-ui.js";
 import {gatewayCardMarkup} from "./gateway-links-ui.js";
+import {
+    ensureDeviceTypeSuppliersModelsLoaded,
+    loadSummary,
+} from "./list-detail.js";
 
 /**
  * O assistente de adicionar um dispositivo: quatro perguntas, duas em cada ecra.
@@ -29,11 +43,15 @@ import {gatewayCardMarkup} from "./gateway-links-ui.js";
  * O que e por tipo de dispositivo vem da tabela `DEVICE_TYPES`, e nao de ramificacoes
  * aqui. O passo 2 de um relogio tem IMEI e SIM; o de um medidor de fraldas tem MAC e
  * gateways; e nenhum dos dois esta escrito neste ficheiro.
+ *
+ * A meio do ficheiro comeca o que o assistente precisa do resto da aplicacao: abrir,
+ * carregar as licencas e os gateways, e criar o dispositivo no fim. Estava num modulo a
+ * parte com este mesmo nome noutra pasta, o que dava dois ficheiros `create-wizard.js`.
  */
 
 let els;
 let wizard;
-let onCreate;
+let wizardModal = null;
 let licenseGroups = [];
 
 const STEPS = ["Classificação", "Este aparelho"];
@@ -93,7 +111,7 @@ const QUESTIONS = [
 
 export function initCreateWizard(context) {
     els = context.els;
-    onCreate = context.onCreate;
+    wizardModal = context.wizardModal;
     wizard = createWizard({questions: QUESTIONS, steps: STEPS});
 
     els.wizardAsk?.addEventListener("click", handleClick);
@@ -452,7 +470,119 @@ function setError(message) {
 async function create() {
     setError("");
     els.wizardNextBtn.disabled = true;
-    const error = await onCreate(wizard.answers());
+    const error = await createDeviceFromWizard(wizard.answers());
     els.wizardNextBtn.disabled = false;
     if (error) setError(error);
+}
+
+/* ---------- o que o assistente precisa do resto da aplicacao ---------- */
+
+/**
+ * Abre o assistente.
+ *
+ * Carrega as licencas e os gateways antes de mostrar, para a primeira pergunta ja poder
+ * dizer quantos modelos existem por tipo e a terceira ja ter a arvore de licencas.
+ *
+ * As licencas vem todas de uma vez e nao empresa a empresa: a arvore mostra-as todas ao
+ * mesmo tempo, e uma licenca acabada de criar tem de estar la -- e a que se quer usar.
+ */
+export async function openWizard(source = "") {
+    await ensureDeviceTypeSuppliersModelsLoaded();
+    const licenses = await apiGetLicenses({limit: 500});
+    await loadWizardGateways();
+    openCreateWizard(
+        licenseTree(licenses?.error ? [] : licenses.data || []),
+        seedFromNotification(source),
+    );
+    wizardModal.show();
+}
+
+/**
+ * As respostas que uma notificacao de dispositivo nao autorizado ja permite dar.
+ *
+ * O hub viu o dispositivo e disse o protocolo, o modelo reportado e a identidade. Isso
+ * chega para o tipo e o modelo, e evita escrever a mao o que ele acabou de dizer. Sem
+ * notificacao devolve nada, e o assistente comeca do zero.
+ */
+function seedFromNotification(source) {
+    const notification = source && typeof source === "object" ? source : null;
+    const identity = String(notification?.imei || source || "").trim();
+    if (identity === "") return {};
+
+    const protocol = String(notification?.protocol || "").trim();
+    const reported = String(notification?.model || "").trim();
+    const candidates = (state.deviceTypeSuppliersModels || []).filter(
+        (model) => String(model.protocol || "") === protocol,
+    );
+    const detected = candidates.find(
+        (model) =>
+            modelInternalName(model) === reported
+            || modelCommercialName(model) === reported,
+    ) || candidates[0] || null;
+
+    if (!detected) return {identity};
+
+    return {
+        type: modelDeviceType(detected),
+        model: {
+            supplier: String(detected.supplier || ""),
+            model: modelInternalName(detected),
+        },
+        identity,
+    };
+}
+
+/** Os gateways registados, para o assistente poder oferecer os da mesma empresa. */
+async function loadWizardGateways() {
+    const result = await apiGetDevices({deviceType: "gateway", limit: 500});
+    state.wizardGateways = result?.error
+        ? []
+        : (result.data || []).map((device) => ({
+            imei: String(device.imei || "").toLowerCase(),
+            model: device.model || "",
+            image: device.image || "",
+            company: device.company || "",
+            licenseId: device.licenseId ?? device.license_id ?? "",
+        }));
+}
+
+/**
+ * Cria o dispositivo e, se for retransmitido, autoriza os gateways escolhidos.
+ *
+ * Devolve a mensagem de erro ou null: o erro desenha-se no lugar do assistente, em vez de
+ * o modal ter de saber onde.
+ */
+async function createDeviceFromWizard(answers) {
+    const fields = deviceTypeFields(answers.type);
+    const identity = String(answers.identity || "").trim();
+    const byImei = fields.identity.field === "imei";
+
+    const result = await apiSaveDevice(
+        identity,
+        answers.model.supplier,
+        answers.model.model,
+        answers.type,
+        // Sem empresa nao ha licenca: e o "0" que a whitelist ja usa para dizer isso.
+        String(answers.owner?.licenseId || "0"),
+        fields.sim ? String(answers.sim || "") : "",
+        byImei ? "" : identity,
+        "",
+        answers.owner?.company || "",
+    );
+    if (result?.error) {
+        return result._httpStatus === 409
+            ? "Já existe um dispositivo com esta identidade."
+            : result.error.message || result.error.code;
+    }
+
+    for (const gatewayKey of answers.gateways || []) {
+        const linked = await apiCreateDeviceLink(gatewayKey, identity);
+        if (linked?.error) {
+            return `Dispositivo criado, mas não foi possível autorizar o gateway ${gatewayKey}.`;
+        }
+    }
+
+    wizardModal.hide();
+    await loadSummary();
+    return null;
 }

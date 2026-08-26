@@ -187,7 +187,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         // A ligacao dos eventos esta repartida entre a raiz de composicao, os handlers do
         // painel e os dois modulos do modal, e as afirmacoes seguintes atravessam-nos.
         $bootstrap = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/core/bootstrap.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/app.js'
         ) . file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/handlers.js'
         ) . file_get_contents(

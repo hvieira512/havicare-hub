@@ -1,16 +1,16 @@
-import {state} from "../../state.js";
+import {state} from "../state.js";
 import {
     deleteApiUser,
     editApiUser,
     selectModelDeviceType,
     selectModelSupplier,
     toggleApiUser,
-} from "../../settings/index.js";
+} from "./index.js";
 import {
     loadSettingsCapabilitiesSection,
     openModelDetail,
     renderCapabilitiesSection,
-} from "../../settings/capabilities.js";
+} from "./capabilities.js";
 
 /**
  * Os cliques dentro do modal de definicoes: escolher fornecedor ou tipo, ligar e desligar

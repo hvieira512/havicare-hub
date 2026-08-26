@@ -2,7 +2,7 @@ import {
     setDownlinkPage,
     setTelemetryPage,
     state,
-} from "../../state.js";
+} from "../state.js";
 import {
     FILTERS_STORAGE_KEY,
     clearStorageKey,
@@ -12,13 +12,13 @@ import {
     loadSummary,
     normalizeFilterValue,
     renderDeviceSelector,
-} from "../../devices/list-detail.js";
+} from "./list-detail.js";
 import {
     allDetailItems,
     filterDetailItems,
     renderDownlinkRequests,
     renderTelemetryList,
-} from "../../devices/detail-view.js";
+} from "./detail-view.js";
 
 /**
  * Os filtros da listagem de dispositivos e os paginadores dos dois painéis do escolhido.
