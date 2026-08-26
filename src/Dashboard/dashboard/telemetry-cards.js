@@ -128,6 +128,23 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-bed",
         value: fieldValue("sleep_state", data?.state),
     }),
+    // Os tres alarmes do radar. Cada um leva o tipo especifico dentro, que e o que a linha
+    // mostra -- "Queda" sozinho nao distingue uma queda confirmada de alguem no chao.
+    fall: (data) => ({
+        icon: "fa-person-falling",
+        value: detectionValue(data),
+        details: detectionDetails(data),
+    }),
+    vitals_alarm: (data) => ({
+        icon: "fa-heart-crack",
+        value: detectionValue(data),
+        details: detectionDetails(data),
+    }),
+    presence_event: (data) => ({
+        icon: "fa-door-open",
+        value: detectionValue(data),
+        details: detectionDetails(data),
+    }),
     position_minute_stats: (data) => ({
         icon: "fa-chart-column",
         value: radarPositionMinuteStatsValue(data),
@@ -608,7 +625,7 @@ function presenceDetails(data) {
     return people
         .slice(0, 3)
         .map((person, index) => {
-            const personIndex = displayPersonIndex(person?.personIndex ?? index + 1);
+            const personIndex = displayPersonIndex(person?.personIndex ?? index);
             const posture = fieldValue("posture", person?.posture);
             const x = dataPointValue(person?.xPositionDm);
             const y = dataPointValue(person?.yPositionDm);
@@ -661,8 +678,15 @@ function dataPointValue(value) {
     return value === undefined || value === null || value === "" ? "-" : String(value);
 }
 
+/**
+ * O numero da pessoa como se conta, e nao como o radar indexa.
+ *
+ * O aparelho numera a partir do zero e o cartao dizia "Pessoa 0". O indice fica intacto no
+ * payload -- e o que se compara com os logs do fabricante --, so a etiqueta soma um.
+ */
 function displayPersonIndex(value) {
-    return value === undefined || value === null || value === "" ? "-" : String(value);
+    const index = Number(value);
+    return Number.isInteger(index) ? String(index + 1) : "-";
 }
 
 /**
@@ -933,6 +957,83 @@ export function helpCallSummaryCard(events = []) {
         <div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
         </div>
         <div class="row g-2">${columns}</div>
+        </div>
+        </div>
+        </div>`;
+}
+
+/** O que cada detecção do radar diz, em português. */
+const DETECTION_TYPE_LABEL = {
+    fall_confirmed: "Queda confirmada",
+    on_floor: "No chão",
+    sitting_confirmed: "Sentado no chão",
+    apnea: "Apneia",
+    heart_rate_high: "Frequência cardíaca alta",
+    heart_rate_high_critical: "Frequência cardíaca muito alta",
+    heart_rate_low: "Frequência cardíaca baixa",
+    heart_rate_low_critical: "Frequência cardíaca muito baixa",
+    breathing_high: "Respiração acelerada",
+    breathing_low: "Respiração lenta",
+    vitals_signal_lost: "Sem sinais vitais",
+    room_entry: "Entrou na divisão",
+    room_exit: "Saiu da divisão",
+    area_entry: "Entrou na área",
+    area_exit: "Saiu da área",
+};
+
+const FALL_TYPE_LABEL = DETECTION_TYPE_LABEL;
+
+function detectionValue(data) {
+    return DETECTION_TYPE_LABEL[String(data?.detectionType || "")]
+        || fieldLabel(String(data?.detectionType || "unknown"));
+}
+
+/** O grau e o que separa um aviso de um perigo, e vem do hub ja em portugues. */
+function detectionDetails(data) {
+    const level = String(data?.detectionLevel || "");
+    return level === "" || level === "info" ? "" : titleize(level);
+}
+
+/**
+ * A ultima queda que o radar viu.
+ *
+ * Desenhado a partir do historico de eventos e nao de uma capacidade, como o
+ * `helpCallSummaryCard` da pulseira: aparece exactamente quando houve uma queda, e nao
+ * ocupa o mosaico com um cartao vazio nos dias -- a esmagadora maioria -- em que nao houve.
+ *
+ * E o alarme que poe uma queda a frente de quem olha. A telemetria da presenca diz a
+ * postura de cada pessoa, mas ninguem esta a olhar para o ecra no instante em que alguem
+ * cai; o que fica e o registo de que caiu.
+ */
+export function fallSummaryCard(events = []) {
+    const falls = (Array.isArray(events) ? events : [])
+        .map(rowPayload)
+        .filter((payload) => String(payload?.type || "") === "fall")
+        .sort((a, b) => eventTime(b) - eventTime(a));
+
+    const latest = falls[0];
+    if (latest === undefined) {
+        return "";
+    }
+
+    const occurredAt = latest.occurredAt || latest.recordedAt || "";
+    const detectionType = String(latest?.data?.detectionType || "");
+    const label = FALL_TYPE_LABEL[detectionType] || fieldLabel(detectionType);
+    const person = latest?.data?.details?.person_index;
+    const who = person === undefined || person === null
+        ? ""
+        : ` · Pessoa ${esc(displayPersonIndex(person))}`;
+
+    return `<div class="col-12">
+        <div class="card h-100 border-danger">
+        <div class="card-body d-flex align-items-center gap-3 min-w-0">
+        <div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
+        <i class="fa-solid fa-person-falling"></i>
+        </div>
+        <div class="min-w-0 flex-grow-1">
+        <div class="fw-bold text-danger">Última queda</div>
+        <div class="small text-body-secondary text-truncate" title="${esc(when(occurredAt))}">${esc(ago(occurredAt))} · ${esc(label)}${who}</div>
+        </div>
         </div>
         </div>
         </div>`;

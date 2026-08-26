@@ -84,10 +84,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
             'return ["diaper_moisture", "diaper_moisture_level"];',
             $renderersSource
         );
-        self::assertStringContainsString(
-            'const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set(["diaper_moisture_level"]);',
-            $source
-        );
+        self::assertStringContainsString('"diaper_moisture_level",', $source);
         // Os limiares por canal saem do mesmo payload e pela mesma razao: sao configuraveis
         // por sensor, e escritos aqui a tira pintava as barras e anunciava um limiar que nao
         // foi o que decidiu a leitura.
@@ -99,8 +96,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('superseded: "substituído"', $renderersSource);
 
         self::assertStringContainsString('const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];', $source);
-        self::assertStringContainsString('renderTelemetryList([...telemetry, ...ncsEvents]);', $source);
-        self::assertStringContainsString('renderNcsEventCards(ncsEvents);', $source);
+        self::assertStringContainsString('renderTelemetryList([...telemetry, ...alarmEvents]);', $source);
+        self::assertStringContainsString('renderNcsEventCards(alarmEvents);', $source);
         self::assertStringContainsString('renderNcsEventCard({type, latest})', $source);
         self::assertStringContainsString('Eventos NCS recentes', file_get_contents(dirname(__DIR__, 3) . '/src/Dashboard/index.php'));
     }

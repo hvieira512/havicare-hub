@@ -21,6 +21,7 @@ import {deviceLicenseHtml, emptyPanel, filterChips} from "../widgets.js";
 import {
     cardTone,
     telemetryCard,
+    fallSummaryCard,
     helpCallSummaryCard,
     renderRequestCardShell,
     requestCardContent,
@@ -38,6 +39,21 @@ const DETAIL_ITEM_TYPES = {
 };
 
 const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];
+
+/**
+ * Os alarmes que a lista de actividade mostra.
+ *
+ * Era uma condicao a mao com `help_call` e `reset`, e tudo o resto que chegasse por
+ * `events` era descartado em silencio. Os tres do radar -- que sao a razao de haver um
+ * radar -- eram ingeridos, guardados no Redis e nunca desenhados em lado nenhum.
+ */
+const ALARM_EVENT_TYPES = new Set([
+    "help_call",
+    "reset",
+    "fall",
+    "vitals_alarm",
+    "presence_event",
+]);
 
 let els;
 let loadDeviceFn = async () => false;
@@ -89,13 +105,8 @@ function renderSelection() {
     const allItems = allDetailItems();
     const filtered = filterDetailItems(allItems);
     const deviceType = normalizeDeviceType(deviceModel?.deviceType || "watch");
-    const ncsEvents = filtered
-        .filter(
-        (item) =>
-            item._source === "event" &&
-            (item.payload?.type === "help_call" ||
-                item.payload?.type === "reset"),
-        )
+    const alarmEvents = filtered
+        .filter((item) => item._source === "event")
         .map((item) => item.raw);
     const telemetry = filtered
         .filter((item) => item._source === "telemetry")
@@ -107,17 +118,17 @@ function renderSelection() {
         .filter((item) => item._source === "connection")
         .map((item) => item.raw);
 
-    renderTelemetryList([...telemetry, ...ncsEvents]);
+    renderTelemetryList([...telemetry, ...alarmEvents]);
     renderRequestCards(
         telemetryRequestCards(
             state.selectedDetail?.capabilities?.telemetry || {},
         ),
         telemetry,
-        ncsEvents,
+        alarmEvents,
         commands,
     );
     if (deviceType === "ncs") {
-        renderNcsEventCards(ncsEvents);
+        renderNcsEventCards(alarmEvents);
     } else {
         els.ncsEventCardCount.textContent = "";
         els.ncsEventGrid.innerHTML = "";
@@ -151,7 +162,20 @@ const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
  * era um segundo cartão a dizer da mesma leitura o que o primeiro já dizia, por isso
  * passou a ser o valor do cartão dos canais.
  */
-const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set(["diaper_moisture_level"]);
+/**
+ * Capacidades que o dispositivo tem mas que o mosaico de resumo nao mostra.
+ *
+ * O resumo diz o estado agora. Os dois agregados do radar sao medias do ultimo minuto, e
+ * ao lado dos instantaneos ficavam a dizer quase a mesma coisa com outro numero -- "67
+ * bpm" ao lado de "64 bpm · 18 rpm", e "1 pessoa" ao lado de "0 pessoas · 0 m". Continuam
+ * a ser ingeridos e aparecem na lista de eventos ao lado, onde a coluna do tempo lhes da o
+ * sentido que um mosaico sem tempo nao da.
+ */
+const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set([
+    "diaper_moisture_level",
+    "position_minute_stats",
+    "vitals_minute_stats",
+]);
 
 function telemetryRequestCards(telemetryCapabilities = {}) {
     const cards = Object.entries(telemetryCapabilities || {})
@@ -251,10 +275,7 @@ function allDetailItems() {
     for (const row of recent.events || []) {
         const payload = rowPayload(row);
         if (!payload) continue;
-        if (
-            payload.type === "help_call" ||
-            payload.type === "reset"
-        )
+        if (ALARM_EVENT_TYPES.has(payload.type))
             items.push({ _source: "event", raw: row, payload });
         if (
             payload.type === "device.connected" ||
@@ -573,6 +594,7 @@ function renderRequestCards(
     // Rendered from the event history rather than a capability, so it appears
     // exactly when the device has actually called for help.
     const helpCalls = helpCallSummaryCard(events);
+    const falls = fallSummaryCard(events);
 
     disposeTooltips(els.requestGrid);
 
@@ -590,7 +612,7 @@ function renderRequestCards(
               )
               .join("")
         : "";
-    els.requestGrid.innerHTML = helpCalls + cards || `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
+    els.requestGrid.innerHTML = falls + helpCalls + cards || `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
     refreshTooltips(els.requestGrid);
 }
 

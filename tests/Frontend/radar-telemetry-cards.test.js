@@ -57,15 +57,32 @@ test("um radar que não vê ninguém está a funcionar", () => {
 test("a presença mostra a postura de cada pessoa, não uma só do aparelho", () => {
     const card = uplinkCardContent("presence", {
         count: 2,
+        // O radar indexa a partir de zero; a etiqueta e que conta a partir de um.
         people: [
-            {personIndex: 1, posture: "standing", xPositionDm: 3, yPositionDm: -2, zPositionCm: 0},
-            {personIndex: 2, posture: "fall_confirmation", xPositionDm: 5, yPositionDm: 1, zPositionCm: 4},
+            {personIndex: 0, posture: "standing", xPositionDm: 3, yPositionDm: -2, zPositionCm: 0},
+            {personIndex: 1, posture: "fall_confirmation", xPositionDm: 5, yPositionDm: 1, zPositionCm: 4},
         ],
     });
 
     assert.equal(card.value, "2 pessoas");
     assert.match(card.details, /Pessoa 1: De pé · x 3 dm · y -2 dm · z 0 cm/);
     assert.match(card.details, /Pessoa 2: Queda confirmada · x 5 dm/);
+});
+
+test("os alarmes dizem o que aconteceu, não só a categoria", () => {
+    // "Queda" sozinho nao distingue uma queda confirmada de alguem no chao.
+    assert.equal(
+        uplinkCardContent("fall", {detectionType: "fall_confirmed", detectionLevel: "perigo"}).value,
+        "Queda confirmada",
+    );
+    assert.equal(
+        uplinkCardContent("vitals_alarm", {detectionType: "apnea", detectionLevel: "perigo"}).details,
+        "Perigo",
+    );
+    assert.equal(
+        uplinkCardContent("presence_event", {detectionType: "room_exit", detectionLevel: "info"}).value,
+        "Saiu da divisão",
+    );
 });
 
 /**
