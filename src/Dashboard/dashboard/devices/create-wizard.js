@@ -224,8 +224,23 @@ function renderArt() {
         <div class="wizard-art-sub">${esc(deviceTypeLabel(answers.type))}</div>`;
 }
 
+/**
+ * O ultimo passo nao e uma pergunta a revelar: e o formulario a rever antes de criar.
+ *
+ * Nos passos anteriores uma resposta colapsa numa badge da trilha e da lugar a seguinte.
+ * Aqui nao ha seguinte, e os campos ficam a vista respondidos ou nao -- que e o que ja
+ * acontecia a escrever, porque o `handleInput` responde sem redesenhar de proposito, para
+ * nao tirar o cursor de baixo dos dedos.
+ *
+ * O que faltava era entrar no passo ja preenchido. Uma notificacao traz a identidade, e o
+ * ecra que aparecia era um "tudo preenchido" sem campo nenhum -- nao se via o UID que ia
+ * ser gravado, nem havia como corrigi-lo sem voltar atras.
+ */
+const LAST_STEP_QUESTIONS = QUESTIONS.filter((question) => question.step === STEPS.length);
+
 function renderAsk() {
-    const question = wizard.current();
+    const question = wizard.current()
+        ?? (wizard.isLastStep() ? LAST_STEP_QUESTIONS[0] : null);
     els.wizardAsk.innerHTML = question ? renderQuestion(question.key) : renderStepDone();
     // Reinicia a animacao de entrada a cada pergunta nova.
     els.wizardAsk.style.animation = "none";
@@ -260,11 +275,10 @@ function answerAndRender(key, value) {
  * No passo 1 so se chega aqui pelo "Anterior", e o que ha para fazer e mudar uma resposta
  * -- que se faz nas etiquetas da trilha, mesmo por cima.
  */
+/** Um passo intermedio sem nada por perguntar: a trilha e o unico sitio onde ha o que fazer. */
 function renderStepDone() {
     return `<p class="text-secondary small mb-0">
-        ${wizard.isLastStep()
-            ? "Tudo preenchido. Crie o dispositivo."
-            : "Toque numa etiqueta acima para alterar uma resposta."}
+        Toque numa etiqueta acima para alterar uma resposta.
     </p>`;
 }
 
