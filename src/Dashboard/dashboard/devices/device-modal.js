@@ -24,7 +24,7 @@ import {
 } from "./config/panel.js";
 import {
     renderSelection,
-} from "./detail-view.js";
+} from "./detail.js";
 import {loadHubRules} from "./hub-rules/index.js";
 import {
     refreshGatewayOptions,
@@ -35,23 +35,26 @@ import {
     gatewayKeysFromLinks,
 } from "./gateway-links.js";
 import {
-    clearSelection,
+    companyLabel,
     deriveFourPTouchDeviceId,
-    ensureDeviceTypeSuppliersModelsLoaded,
-    findModelInfo,
-    isDeviceSelectorOpen,
-    isFourPTouchSelection,
     deviceTypeFields,
+    deviceTypeLabel,
+    findModelInfo,
+    isFourPTouchSelection,
     linksToGateway,
-    loadDevice,
-    loadSummary,
     modelCommercialName,
     modelInternalName,
     modelsForSupplierAndType,
     normalizeDeviceType,
     supplierProtocol,
     suppliersForDeviceType,
-} from "./list-detail.js";
+} from "../domain.js";
+import {
+    ensureDeviceTypeSuppliersModelsLoaded,
+    isDeviceSelectorOpen,
+    loadDevice,
+    loadSummary,
+} from "./list.js";
 import {
     disconnectDeviceStream,
 } from "./stream.js";
@@ -67,8 +70,8 @@ import {
     modelImageHtml,
     modelPreviewHtml,
 } from "../widgets.js";
-import {companyLabel, deviceTypeLabel} from "../domain.js";
 import {
+    clearSelection,
     selectImei,
     state,
 } from "../state.js";

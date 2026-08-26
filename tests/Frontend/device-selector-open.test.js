@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
 import "./support/browser-env.js";
 import {
-    initDeviceListDetail,
+    initDeviceList,
     openDeviceSelector,
-} from "../../src/Dashboard/dashboard/devices/list-detail.js";
+} from "../../src/Dashboard/dashboard/devices/list.js";
 
 /**
  * O modal de escolha abre antes de a resposta chegar.
@@ -33,7 +33,7 @@ function setUpSelector() {
 
     let shown = false;
     globalThis.fetch = () => new Promise(() => {});
-    initDeviceListDetail({
+    initDeviceList({
         els,
         ui: {deviceSelectorModal: {show: () => {shown = true;}}},
         services: {},

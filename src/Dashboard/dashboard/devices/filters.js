@@ -12,13 +12,13 @@ import {
     loadSummary,
     normalizeFilterValue,
     renderDeviceSelector,
-} from "./list-detail.js";
+} from "./list.js";
 import {
     allDetailItems,
     filterDetailItems,
     renderDownlinkRequests,
     renderTelemetryList,
-} from "./detail-view.js";
+} from "./detail.js";
 
 /**
  * Os filtros da listagem de dispositivos e os paginadores dos dois painéis do escolhido.

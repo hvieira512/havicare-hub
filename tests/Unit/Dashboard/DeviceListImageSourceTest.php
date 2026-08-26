@@ -9,10 +9,10 @@ final class DeviceListImageSourceTest extends TestCase
     public function testDeviceListRendersFromDeviceImageWithoutModelCatalogLookup(): void
     {
         $listSource = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/list-detail.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/list.js'
         );
         $detailSource = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail.js'
         );
 
         self::assertIsString($listSource);

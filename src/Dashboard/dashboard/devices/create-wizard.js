@@ -31,7 +31,7 @@ import {gatewayCardMarkup} from "./gateway-links-ui.js";
 import {
     ensureDeviceTypeSuppliersModelsLoaded,
     loadSummary,
-} from "./list-detail.js";
+} from "./list.js";
 
 /**
  * O assistente de adicionar um dispositivo: quatro perguntas, duas em cada ecra.

@@ -16,52 +16,36 @@ import {
 } from "../widgets.js";
 import {renderPagination, resolvePaginationPage} from "../pagination.js";
 import {
-    capabilitiesForSupplier,
-    capabilitiesGroupedBySection,
-    capabilityCatalogEntryByKey,
-    capabilityLabelByKey,
-    capabilitySectionLabel,
     companyLabel,
-    deriveFourPTouchDeviceId,
     deviceTypeLabel,
     deviceTypeOptions,
-    isFourPTouchSelection,
-    findModelInfo,
-    flattenedCapabilityKeys,
-    humanizeCapabilityKey,
     licenseDisplayLabel,
-    licenseLabel,
-    deviceTypeFields,
-    linksToGateway,
-    modelCommercialName,
-    modelDeviceType,
-    modelDisplayLabel,
     modelDisplayName,
-    modelInternalName,
-    modelsForSupplier,
-    modelsForSupplierAndType,
     normalizeDeviceType,
-    normalizeLicenseId,
-    supplierProtocol,
-    suppliersForDeviceType,
-    suppliersFromModels,
-    usesMacAddress,
 } from "../domain.js";
 import {
     initDeviceDetailView,
     clearSelectedDeviceFromStorage,
     renderSelection as renderSelectionDetail,
     saveSelectedDeviceToStorage,
-} from "./detail-view.js";
+} from "./detail.js";
 import {connectDeviceStream, disconnectDeviceStream} from "./stream.js";
 
+/**
+ * A coluna da esquerda: a lista de dispositivos, a sua paginação e busca, o modal de
+ * escolher dispositivo, e o carregamento do que a lista precisa (modelos, fornecedores,
+ * licenças, protocolos).
+ *
+ * Escolher uma linha é o que liga esta coluna à da direita, e por isso é daqui que se
+ * chama o `detail.js`.
+ */
 let els;
 let ui;
 let deviceSearchTimer = null;
 // Quantas linhas de esqueleto no máximo: a moldura mais alta (46rem) leva doze cartões, e
 // acima disso seriam linhas cortadas a custo zero de informação.
 const SKELETON_MAX_ROWS = 12;
-export function initDeviceListDetail(context) {
+export function initDeviceList(context) {
     els = context.els;
     ui = context.ui;
     initDeviceDetailView(context);
@@ -659,52 +643,21 @@ async function loadDevice(imei) {
 }
 
 export {
-    capabilitiesForSupplier,
-    capabilitiesGroupedBySection,
-    capabilityCatalogEntryByKey,
-    capabilityLabelByKey,
-    capabilitySectionLabel,
-    clearSelection,
-    companyLabel,
-    deriveFourPTouchDeviceId,
-    deviceTypeLabel,
-    deviceTypeOptions,
-    ensureLicensesLoaded,
     ensureDeviceTypeSuppliersModelsLoaded,
+    ensureLicensesLoaded,
     ensureModelsLoaded,
     ensureProtocolsLoaded,
     ensureSuppliersLoaded,
-    findModelInfo,
-    flattenedCapabilityKeys,
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
     handleDevicePaginationClick,
-    humanizeCapabilityKey,
     isDeviceSelectorOpen,
-    isFourPTouchSelection,
-    licenseDisplayLabel,
-    licenseLabel,
-    deviceTypeFields,
-    linksToGateway,
     loadDevice,
     loadSummary,
-    modelCommercialName,
-    modelDeviceType,
-    modelDisplayLabel,
-    modelDisplayName,
-    modelInternalName,
-    modelsForSupplier,
-    modelsForSupplierAndType,
-    normalizeDeviceType,
     normalizeFilterValue,
-    normalizeLicenseId,
     openDeviceSelector,
     renderDeviceFilterControls,
     renderDevicePagination,
     renderDeviceSelector,
     selectDevice,
-    supplierProtocol,
-    suppliersForDeviceType,
-    suppliersFromModels,
-    usesMacAddress,
 };

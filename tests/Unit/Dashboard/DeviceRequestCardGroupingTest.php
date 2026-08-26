@@ -9,7 +9,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
     public function testDeviceRequestCardsAreGroupedIntoTelemetryAndSystemSections(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail.js'
         );
 
         self::assertIsString($source);
@@ -308,7 +308,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
     public function testDeviceDetailFilterTypesAreDerivedFromObservedItems(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail.js'
         );
 
         self::assertIsString($source);
@@ -321,7 +321,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
     public function testDeviceDetailFiltersCommandsByGenericFeatureBeforeNativeType(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail-view.js'
+            dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/detail.js'
         );
 
         self::assertIsString($source);

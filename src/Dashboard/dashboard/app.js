@@ -45,17 +45,17 @@ import {
     loadJsonStorage,
     loadTextStorage,
 } from "./storage.js";
+import {normalizeDeviceType} from "./domain.js";
 import {
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
     handleDevicePaginationClick,
-    initDeviceListDetail,
+    initDeviceList,
     loadDevice,
     ensureProtocolsLoaded,
-    normalizeDeviceType,
     openDeviceSelector,
     selectDevice,
-} from "./devices/list-detail.js";
+} from "./devices/list.js";
 import {
     applyDetailFilters,
     clearDetailFilters,
@@ -64,7 +64,7 @@ import {
     removeDetailFilter,
     requestTelemetryFeature,
     renderSelection,
-} from "./devices/detail-view.js";
+} from "./devices/detail.js";
 import {initDeviceStream} from "./devices/stream.js";
 import {
     editWizardAnswered,
@@ -499,7 +499,7 @@ export async function startDashboard() {
     initDeviceConfigHandlers({els});
     initDeviceFilterHandlers({els});
     initSettingsClickHandlers({els});
-    initDeviceListDetail({
+    initDeviceList({
         els,
         ui: {deviceModal, deviceSelectorModal, settingsModal},
     });

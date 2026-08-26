@@ -8,7 +8,7 @@ const {
     initDeviceDetailView,
     renderTelemetryList,
     renderDownlinkRequests,
-} = await import("../../src/Dashboard/dashboard/devices/detail-view.js");
+} = await import("../../src/Dashboard/dashboard/devices/detail.js");
 
 /**
  * Caracteriza a marcação que os dois paginadores produzem HOJE.
