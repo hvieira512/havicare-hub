@@ -23,6 +23,35 @@ final class MessageNormalizer
     ];
 
     /**
+     * A capacidade a que cada detecção pertence.
+     *
+     * Os quinze tipos saíam todos como um evento `detection`, com o tipo real escondido em
+     * `data.detectionType`. Uma queda vista por um radar e um SOS de uma pulseira não se
+     * conseguiam listar nem alertar pela mesma regra, porque um era `detection` e o outro
+     * `help_call`.
+     *
+     * Três capacidades e não quinze: cada evento continua a levar o tipo específico, e o
+     * separador das Capacidades não ganha quinze linhas para se ligarem uma a uma.
+     */
+    private const DETECTION_CAPABILITY = [
+        'fall_confirmed' => 'fall',
+        'sitting_confirmed' => 'fall',
+        'on_floor' => 'fall',
+        'heart_rate_high_critical' => 'vitals_alarm',
+        'heart_rate_high' => 'vitals_alarm',
+        'heart_rate_low_critical' => 'vitals_alarm',
+        'heart_rate_low' => 'vitals_alarm',
+        'apnea' => 'vitals_alarm',
+        'breathing_high' => 'vitals_alarm',
+        'breathing_low' => 'vitals_alarm',
+        'vitals_signal_lost' => 'vitals_alarm',
+        'room_entry' => 'presence_event',
+        'room_exit' => 'presence_event',
+        'area_entry' => 'presence_event',
+        'area_exit' => 'presence_event',
+    ];
+
+    /**
      * Quão grave é cada postura, para escolher a que manda quando há mais do que uma
      * pessoa na divisão. As que não estão aqui valem zero.
      */
@@ -455,8 +484,9 @@ final class MessageNormalizer
             : RadarValueMapper::DETECTION_CATEGORY_EVENT;
 
         return [
-            'schemaVersion' => 1,
-            'type' => 'detection',
+            // Era 1 enquanto a telemetria já ia em 2: o mesmo protocolo emitia as duas.
+            'schemaVersion' => 2,
+            'type' => self::DETECTION_CAPABILITY[$type] ?? 'vitals_alarm',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->deviceInfo($topic, $device),
             'source' => $this->source($topic, RadarValueMapper::decodeDetectionSource($source)),

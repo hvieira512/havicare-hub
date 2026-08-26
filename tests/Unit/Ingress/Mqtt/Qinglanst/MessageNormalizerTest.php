@@ -116,10 +116,64 @@ final class MessageNormalizerTest extends TestCase
         ], $topic, $this->device());
 
         $event = $result['events'][0];
-        self::assertSame('detection', $event['type']);
+        self::assertSame('fall', $event['type']);
         self::assertSame('radar-topic-uid', $event['device']['id']);
         self::assertSame('position', $event['source']['nativeType']);
         self::assertSame('fall_confirmed', $event['data']['detectionType']);
+    }
+
+    /**
+     * Cada detecção sai na capacidade a que pertence, com o tipo específico dentro.
+     *
+     * As quinze saíam todas como `detection`, e o tipo real ficava escondido no payload.
+     * Uma queda vista por um radar e um SOS de uma pulseira não se conseguiam listar nem
+     * alertar pela mesma regra.
+     */
+    public function testDetectionsCarryTheCapabilityTheyBelongTo(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $vitals = $normalizer->normalize([
+            'type' => 'hbstatics',
+            'device_code' => 'radar-topic-uid',
+            'real_time_breathing' => 0,
+            'real_time_heart_rate' => 0,
+            'avg_breathing_per_minute' => 0,
+            'avg_heart_rate_per_minute' => 30,
+            'breathing_status_per_minute' => 'Apnea',
+            'heart_rate_status_per_minute' => 'Normal',
+            'vital_signs_status' => 'Normal',
+            'sleep_state_status' => 'Undefined',
+        ], $topic, $this->device());
+
+        self::assertSame('vitals_alarm', $vitals['events'][0]['type']);
+        self::assertSame('apnea', $vitals['events'][0]['data']['detectionType']);
+
+        $presence = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [$this->person(1, 'Walking', 'Leave Room')],
+        ], $topic, $this->device());
+
+        self::assertSame('presence_event', $presence['events'][0]['type']);
+        self::assertSame('room_exit', $presence['events'][0]['data']['detectionType']);
+    }
+
+    /** A telemetria já ia em 2 e as detecções ficaram em 1: o mesmo protocolo, duas versões. */
+    public function testDetectionsUseTheSameSchemaVersionAsTelemetry(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [$this->person(1, 'Fall Confirmation')],
+        ], $topic, $this->device());
+
+        self::assertSame(2, $result['events'][0]['schemaVersion']);
+        self::assertSame(2, $result['telemetry']['presence']['schemaVersion']);
     }
 
     public function testPositionNormalizationDropsSentinelPersonIndex88(): void
@@ -191,7 +245,7 @@ final class MessageNormalizerTest extends TestCase
             $result['telemetry']['posture']['data'],
         );
 
-        self::assertSame('detection', $result['events'][0]['type']);
+        self::assertSame('fall', $result['events'][0]['type']);
         self::assertSame('fall_confirmed', $result['events'][0]['data']['detectionType']);
         self::assertSame(2, $result['events'][0]['data']['details']['person_index']);
     }
@@ -225,7 +279,7 @@ final class MessageNormalizerTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function person(int $index, string $posture): array
+    private function person(int $index, string $posture, string $lastEvent = 'No Event'): array
     {
         return [
             'person_index' => $index,
@@ -234,7 +288,7 @@ final class MessageNormalizerTest extends TestCase
             'z_position_cm' => 3,
             'time_left_s' => 4,
             'posture_state' => $posture,
-            'last_event' => 'No Event',
+            'last_event' => $lastEvent,
             'region_id' => 5,
         ];
     }
