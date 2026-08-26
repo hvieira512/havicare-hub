@@ -148,28 +148,6 @@ final class DeviceController
         return $this->json->respond($result, $this->status->map($result));
     }
 
-    public function diaperSensitivity(array $params, ServerRequestInterface $request): Response
-    {
-        $result = $this->service->diaperSensitivity($params['imei'], RequestContext::auth($request));
-        return $this->json->respond($result, $this->status->map($result));
-    }
-
-    public function updateDiaperSensitivity(array $params, ServerRequestInterface $request): Response
-    {
-        $result = $this->service->updateDiaperSensitivity(
-            $params['imei'],
-            RequestContext::requestBody($request),
-            RequestContext::auth($request),
-        );
-        return $this->json->respond($result, $this->status->map($result));
-    }
-
-    public function deleteDiaperSensitivity(array $params, ServerRequestInterface $request): Response
-    {
-        $result = $this->service->deleteDiaperSensitivity($params['imei'], RequestContext::auth($request));
-        return $this->json->respond($result, $this->status->map($result));
-    }
-
     public function patchAssociation(array $params, ServerRequestInterface $request): Response
     {
         $result = $this->service->patchAssociation($params['imei'], RequestContext::requestBody($request), RequestContext::auth($request));

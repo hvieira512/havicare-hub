@@ -23,8 +23,7 @@ const MAC_IDENTITY = {
  *
  * `identity` é o campo que identifica a unidade e o que se lhe escreve ao lado. `sim`
  * diz se há número de SIM. `gatewayLinks` diz se o dispositivo é retransmitido por um
- * gateway em vez de falar por conta própria. `hubRules` são as configurações decididas
- * no hub, sem downlink -- lista vazia é o caso comum.
+ * gateway em vez de falar por conta própria.
  *
  * ponytail: isto duplica o que o hub já sabe nas definições de capacidades por tipo, em
  * PHP. A saída certa é a API servir o descritor, como já serve as capacidades; consolidar
@@ -41,7 +40,6 @@ const DEVICE_TYPES = {
         },
         sim: true,
         gatewayLinks: false,
-        hubRules: [],
     },
     ncs: {
         identity: {
@@ -52,7 +50,6 @@ const DEVICE_TYPES = {
         },
         sim: false,
         gatewayLinks: false,
-        hubRules: [],
     },
     radar: {
         identity: {
@@ -63,25 +60,21 @@ const DEVICE_TYPES = {
         },
         sim: false,
         gatewayLinks: false,
-        hubRules: [],
     },
     gateway: {
         identity: MAC_IDENTITY,
         sim: false,
         gatewayLinks: false,
-        hubRules: [],
     },
     diaper_sensor: {
         identity: MAC_IDENTITY,
         sim: false,
         gatewayLinks: true,
-        hubRules: ["diaper_sensitivity"],
     },
     bracelet: {
         identity: MAC_IDENTITY,
         sim: false,
         gatewayLinks: true,
-        hubRules: [],
     },
 };
 
@@ -97,10 +90,6 @@ export function deviceTypeFields(deviceType) {
 
 export function linksToGateway(deviceType) {
     return deviceTypeFields(deviceType).gatewayLinks;
-}
-
-export function hubRulesFor(deviceType) {
-    return deviceTypeFields(deviceType).hubRules;
 }
 
 export function normalizeDeviceType(deviceType) {

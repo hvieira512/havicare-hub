@@ -52,7 +52,10 @@ final class ProtocolRegistryTest extends TestCase
         self::assertNotContains('qinglanst-radar', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('moko-mkgw3', ProtocolRegistry::protocolsWithConfigCatalog());
         self::assertNotContains('moko-mkgw4', ProtocolRegistry::protocolsWithConfigCatalog());
-        self::assertNotContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());
+        // O MONIT tem catálogo sem ter downlink: a sensibilidade dos alertas é uma
+        // configuração aplicada pelo hub. O flag diz se há o que configurar, e não se a
+        // alteração viaja -- isso é de cada capacidade, pelo `HubAppliedCapability`.
+        self::assertContains('monit-mecs-pro-ble', ProtocolRegistry::protocolsWithConfigCatalog());
     }
 
     public function testForSupplierIsDerivedFromTheRegistryTable(): void

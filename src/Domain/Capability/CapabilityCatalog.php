@@ -329,6 +329,9 @@ final class CapabilityCatalog
             'powerOffCommand' => 'power_off',
             'findDeviceCommand' => 'find_device',
             'pushMessage' => 'push_message',
+            // A chave nativa e a generica: nao ha comando nativo de que esta seja traducao,
+            // porque o hub aplica-a sozinho.
+            'diaper_sensitivity' => 'diaper_sensitivity',
             default => null,
         };
     }

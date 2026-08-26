@@ -82,9 +82,8 @@ dashboard/
 │   │   ├── row-editing.js  adicionar e remover linhas (contactos, alarmes, planos)
 │   │   ├── protocol-catalog.js  o que cada protocolo aceita
 │   │   ├── alarm-fields.js      horas e recorrências dos alarmes
-│   │   ├── four-p-touch-take-pills.js  o lembrete de comprimidos da 4P Touch
-│   │   └── take-pills-audio.js         a gravação de voz desse lembrete
-│   └── hub-rules/          configuração que fica no hub e não viaja para o dispositivo
+│       ├── four-p-touch-take-pills.js  o lembrete de comprimidos da 4P Touch
+│       └── take-pills-audio.js         a gravação de voz desse lembrete
 │
 └── settings/               o modal de definições
     ├── index.js            a raiz de composição do modal: conhece as quatro secções
@@ -153,6 +152,24 @@ por isso um grep pelo `id="..."` não os encontra todos -- procura pelo nome soz
 **Nada verifica que os dois lados concordam:** uma gralha dá `null` silencioso no `els`.
 Ao mexer num `id`, mexe-se nos três sítios.
 
+## Configurações que não viajam
+
+Uma configuração é normalmente um downlink à espera de acontecer: vira comandos nativos,
+sai para o dispositivo, e o bloco mostra o estado da entrega. Nem todas -- a sensibilidade
+dos alertas de um medidor de fraldas não tem para onde ir, porque o sensor é um beacon BLE
+que só transmite, e o que ela muda é a regra com que o hub deriva o estado da fralda.
+
+**O frontend não sabe disto, e é de propósito.** Quem decide é a capacidade em PHP, marcada
+com `HubAppliedCapability`: o `DeviceConfigurationUpdateService` guarda o valor e dá-o por
+aplicado sem comandos, o bloco recebe `command: ""` no catálogo, e o painel lê disso as duas
+únicas diferenças que se vêem -- o botão diz "Guardar" em vez de "Enviar", e não se mostra
+vocabulário de protocolo que não existe.
+
+Isto já teve um caminho paralelo no frontend: uma pasta `hub-rules/`, estado próprio,
+handlers próprios, e um estado de UI a dizer "Aplicada no hub" para exprimir o que a via
+genérica já dizia com "Aplicado". Se aparecer a tentação de repetir esse padrão para uma
+regra nova, a resposta é uma capacidade nova em PHP.
+
 ## Onde ponho isto?
 
 | o que estou a escrever | onde vai |
@@ -163,6 +180,7 @@ Ao mexer num `id`, mexe-se nos três sítios.
 | HTML que um ecrã desenha | o ficheiro desse ecrã |
 | um handler de clique | ao lado do módulo que desenha o que ele trata |
 | um campo novo de configuração | `devices/config/inputs.js` + `readers.js` |
+| uma configuração que o hub aplica sem downlink | nada de especial no frontend: é a capacidade em PHP que se marca com `HubAppliedCapability` |
 | um ecrã novo nas definições | `settings/<nome>.js`, ligado no `settings/index.js` |
 | estado que sobrevive a um render | `state.js`, no sub-objeto do ecrã |
 

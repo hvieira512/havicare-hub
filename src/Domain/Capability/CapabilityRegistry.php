@@ -48,6 +48,7 @@ final class CapabilityRegistry
         $this->register(new PhonebookCapability());
         $this->register(new SosSmsAlertCapability());
         $this->register(new MedicationRemindersCapability());
+        $this->register(new DiaperSensitivityCapability());
     }
 
     public function register(CapabilityContract $capability): void

@@ -134,41 +134,6 @@ final class DevicePaths
                     ],
                 ],
             ],
-            '/api/devices/{imei}/diaper-sensitivity' => [
-                'get' => [
-                    'tags' => [self::TAG],
-                    'summary' => 'Read the alert sensitivity of a diaper sensor',
-                    'parameters' => [$imei],
-                    'responses' => [
-                        '200' => Responses::json('Diaper sensor sensitivity', 'DiaperSensitivityResponse'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
-                    ],
-                ],
-                'put' => [
-                    'tags' => [self::TAG],
-                    'summary' => 'Set the alert sensitivity of a diaper sensor',
-                    'description' => 'Applied by the hub when deriving the diaper condition. Nothing is sent to '
-                        . 'the sensor, which is a non-connectable BLE beacon, so there is no delivery to confirm.',
-                    'parameters' => [$imei],
-                    'requestBody' => Requests::json('DiaperSensitivityRequest'),
-                    'responses' => [
-                        '200' => Responses::json('Diaper sensor sensitivity', 'DiaperSensitivityResponse'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
-                    ],
-                ],
-                'delete' => [
-                    'tags' => [self::TAG],
-                    'summary' => 'Reset a diaper sensor to the default sensitivity',
-                    'parameters' => [$imei],
-                    'responses' => [
-                        '200' => Responses::json('Diaper sensor sensitivity', 'DiaperSensitivityResponse'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
-                    ],
-                ],
-            ],
             '/api/devices/{imei}/requests' => [
                 'post' => [
                     'tags' => [self::TAG],

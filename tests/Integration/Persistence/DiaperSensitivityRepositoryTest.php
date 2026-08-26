@@ -51,32 +51,22 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
         self::assertSame(DiaperSensitivity::normal(), $repository->forDevice('nao-existe'));
     }
 
-    public function testUpsertStoresAndReadsBack(): void
+    public function testAWrittenValueIsReadBack(): void
     {
-        $repository = new DiaperSensitivityRepository($this->pdoWithSensor());
+        // A escrita e do `PATCH /configurations`, que passa pelo ciclo de vida das
+        // configuracoes. O que este repositorio faz e a leitura no caminho quente.
+        $pdo = $this->pdoWithSensor();
+        $this->storeSensitivity($pdo, 3, 7);
 
-        $repository->upsert(self::SENSOR, 3, 7);
-        self::assertSame(['pollutionRange' => 3, 'pollutionValue' => 7], $repository->forDevice(self::SENSOR));
-
-        $repository->upsert(self::SENSOR, 7, 15);
-        self::assertSame(['pollutionRange' => 7, 'pollutionValue' => 15], $repository->forDevice(self::SENSOR));
-    }
-
-    public function testUpsertInvalidatesTheCacheImmediately(): void
-    {
-        // Uma escrita pela API tem de ser visivel de imediato no mesmo processo, sem esperar
-        // pelo TTL -- e no dashboard a API e a ingestao vivem no mesmo processo.
-        $repository = new DiaperSensitivityRepository($this->pdoWithSensor(), 3600);
-
-        $repository->forDevice(self::SENSOR);
-        $repository->upsert(self::SENSOR, 3, 7);
-
-        self::assertSame(['pollutionRange' => 3, 'pollutionValue' => 7], $repository->forDevice(self::SENSOR));
+        self::assertSame(
+            ['pollutionRange' => 3, 'pollutionValue' => 7],
+            (new DiaperSensitivityRepository($pdo))->forDevice(self::SENSOR)
+        );
     }
 
     public function testTheCacheHoldsForItsTtlAndTheDatabaseIsTheSourceOfTruth(): void
     {
-        // Duas metades do mesmo contrato, com uma escrita feita por FORA do repositorio --
+        // Duas metades do mesmo contrato, com a escrita feita por FORA do repositorio --
         // que e o caso real da API num processo a escrever e da ingestao noutro a ler.
         //
         // Uma instancia com TTL longo nao ve a escrita, e e essa a latencia que o TTL de 5s
@@ -89,9 +79,7 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
         $cached = new DiaperSensitivityRepository($pdo, 3600);
 
         $cached->forDevice(self::SENSOR);
-        $pdo->prepare('
-            INSERT INTO diaper_sensor_settings (imei, pollution_range, pollution_value) VALUES (?, ?, ?)
-        ')->execute([self::SENSOR, 3, 7]);
+        $this->storeSensitivity($pdo, 3, 7);
 
         self::assertSame(DiaperSensitivity::normal(), $cached->forDevice(self::SENSOR));
         self::assertSame(
@@ -100,27 +88,20 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
         );
     }
 
-    public function testDeleteReturnsTheSensorToTheDefault(): void
+    /** A linha que o ciclo de vida das configuracoes deixa, escrita a mao. */
+    private function storeSensitivity(PDO $pdo, int $range, int $value): void
     {
-        $repository = new DiaperSensitivityRepository($this->pdoWithSensor());
-
-        $repository->upsert(self::SENSOR, 3, 7);
-        $repository->delete(self::SENSOR);
-
-        self::assertSame(DiaperSensitivity::normal(), $repository->forDevice(self::SENSOR));
-    }
-
-    public function testRemovingTheDeviceRemovesItsSettings(): void
-    {
-        // Cascata da chave estrangeira: uma configuracao orfa sobreviveria a um IMEI reutilizado
-        // e passava limiares de outro utente ao sensor seguinte.
-        $pdo = $this->pdoWithSensor();
-        (new DiaperSensitivityRepository($pdo))->upsert(self::SENSOR, 3, 7);
-
-        $pdo->prepare('DELETE FROM whitelist WHERE imei = ?')->execute([self::SENSOR]);
-
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM diaper_sensor_settings WHERE imei = ?');
-        $stmt->execute([self::SENSOR]);
-        self::assertSame(0, (int)$stmt->fetchColumn());
+        $pdo->prepare('
+            INSERT INTO device_configurations (
+                imei, config_key, native_key, protocol, desired_payload, reported_payload,
+                confirmation_mode, last_status
+            ) VALUES (?, ?, ?, ?, ?, \'{}\', \'local\', \'acked\')
+        ')->execute([
+            self::SENSOR,
+            'diaper_sensitivity',
+            'diaper_sensitivity',
+            'monit-mecs-pro-ble',
+            json_encode(['pollutionRange' => $range, 'pollutionValue' => $value]),
+        ]);
     }
 }

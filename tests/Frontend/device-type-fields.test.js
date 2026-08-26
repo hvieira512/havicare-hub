@@ -93,13 +93,6 @@ test("o rotulo, a ajuda e o placeholder da identidade por tipo", () => {
     }
 });
 
-test("so o medidor de fraldas tem regras do hub, e e a sensibilidade", () => {
-    assert.deepEqual(deviceTypeFields("diaper_sensor").hubRules, ["diaper_sensitivity"]);
-    for (const type of TYPES.filter((t) => t !== "diaper_sensor")) {
-        assert.deepEqual(deviceTypeFields(type).hubRules, [], type);
-    }
-});
-
 test("um tipo desconhecido cai no relogio, como o normalizeDeviceType", () => {
     // O modal chamava sempre normalizeDeviceType antes de decidir, e a tabela mantem
     // esse contrato para nenhum chamador ter de o repetir.

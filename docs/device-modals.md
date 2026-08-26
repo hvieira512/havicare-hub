@@ -189,19 +189,20 @@ porque havia uma regra encostada por cima dele, o que era um remendo.
 
 ### No código
 
-```
-src/Dashboard/dashboard/devices/hub-rules/
-    index.js                registo: lê `hubRules` do tipo e monta os blocos
-    diaper-sensitivity.js   a primeira regra
-```
-
-Cada regra exporta a mesma forma pequena — `load`, `render`, `read`, `validate`, `save`,
-`resetProfile` — e o `index.js` não sabe nada de fraldas. Os blocos são desenhados dentro
-do `deviceConfigRoot`, antes dos downlinks, porque valem de imediato e não há nada a
-aguardar entrega.
-
-Os limiares da deteção de queda, quando chegarem, são um segundo ficheiro nesta pasta e
-uma entrada no `hubRules` da pulseira.
+> **Actualizado.** Havia aqui uma pasta `devices/hub-rules/` com um registo de regras, cada
+> uma a exportar `load`/`render`/`read`/`validate`/`save`, desenhadas antes dos downlinks e
+> com um estado de UI próprio, "Aplicada no hub". A conclusão desta secção -- que a
+> diferença é de cada regra e não do separador -- estava certa; o que estava errado era o
+> sítio onde ela vivia.
+>
+> A distinção passou para o backend, onde já tinha casa: uma capacidade marca-se com
+> `Hub\Domain\Capability\HubAppliedCapability` e o pipeline das configurações guarda o valor
+> sem comandos a entregar. O frontend deixou de ter caminho paralelo -- a pasta, o estado,
+> os handlers e o vocabulário próprio desapareceram, e um bloco destes desenha-se como
+> qualquer outro. Ver `docs/diaper-sensitivity.md` §6 e `src/Dashboard/README.md`.
+>
+> Os limiares da deteção de queda, quando chegarem, são uma capacidade nova em PHP com
+> `travelsToDevice` a `false` -- e nada no frontend.
 
 ### No backend
 
@@ -220,12 +221,9 @@ com a segunda regra que se decide se vale uma rota genérica.
 src/Dashboard/components/modals/device-wizard.php    a moldura do assistente
 src/Dashboard/dashboard/devices/wizard.js            o motor, ~110 linhas
 src/Dashboard/dashboard/devices/create-wizard.js     as perguntas e as grelhas
-src/Dashboard/dashboard/devices/hub-rules/index.js
-src/Dashboard/dashboard/devices/hub-rules/diaper-sensitivity.js
 tests/Frontend/device-type-fields.test.js            a rede de segurança
 tests/Frontend/wizard.test.js
 tests/Frontend/create-wizard.test.js
-tests/Frontend/hub-rules.test.js
 ```
 
 **Alterados**

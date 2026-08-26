@@ -10,17 +10,6 @@ export const deleteDeviceLink = (gatewayImei, linkedImei) => requestJson(
     `/api/devices/${encodeURIComponent(gatewayImei)}/links/${encodeURIComponent(linkedImei)}`,
     {method: 'DELETE'},
 );
-export const getDiaperSensitivity = (imei) => requestJson(
-    `/api/devices/${encodeURIComponent(imei)}/diaper-sensitivity`,
-);
-export const saveDiaperSensitivity = (imei, payload) => requestJson(
-    `/api/devices/${encodeURIComponent(imei)}/diaper-sensitivity`,
-    {method: 'PUT', body: JSON.stringify(payload)},
-);
-export const resetDiaperSensitivity = (imei) => requestJson(
-    `/api/devices/${encodeURIComponent(imei)}/diaper-sensitivity`,
-    {method: 'DELETE'},
-);
 export const saveConfiguration = (imei, payload) => requestJson(`/api/devices/${encodeURIComponent(imei)}/configurations`, {
     method: 'PATCH',
     body: JSON.stringify(payload),

@@ -25,7 +25,6 @@ import {
 import {
     renderSelection,
 } from "./detail.js";
-import {loadHubRules} from "./hub-rules/index.js";
 import {
     refreshGatewayOptions,
     selectedGatewayKeys,
@@ -216,11 +215,6 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.linkedGatewayKeys = linkedGatewayKeys;
         state.deviceModal.selectedGatewayKeys = linkedGatewayKeys;
         await refreshGatewayOptions(linkedGatewayKeys);
-        state.deviceModal.hubRules = await loadHubRules(
-            String(device.imei || ""),
-            state.deviceModal.deviceType,
-        );
-        state.deviceModal.hubRuleFeedback = {};
         state.deviceModal.configurations = detail.configurations || {};
         state.deviceModal.configurationSync = detail.configurationSync || {entries: {}};
         state.deviceModal.capabilities = detail.capabilities || {};

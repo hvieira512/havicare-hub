@@ -1,6 +1,5 @@
 import {state} from "../../state.js";
 import {syncPhoneControl} from "../../phone.js";
-import {ruleFor, selectHubRuleValue} from "../hub-rules/index.js";
 import {
     dismissConfigFeedback,
     renderDeviceConfigurationModal,
@@ -30,99 +29,16 @@ import {
  * Os handlers do painel de configuracao de um dispositivo.
  *
  * Tres eventos delegados na raiz do painel -- clique, `change` e `input` -- mais o fecho do
- * aviso de resultado, e as regras do hub, que vivem no mesmo painel mas gravam de imediato
- * em vez de entrarem no ciclo de vida dos downlinks.
- *
- * Do estado do `bootstrap.js` isto so precisa do `els`, e so em dois sitios: a raiz do
- * painel e o campo do IMEI.
+ * aviso de resultado. Tudo o que precisam vem do evento, por isso este modulo nao guarda
+ * `els` nenhum: as regras do hub eram o unico que ia buscar elementos por conta propria, e
+ * sairam quando a sensibilidade das fraldas passou a ser uma configuracao como as outras.
  */
-let els = {};
-
-export function initDeviceConfigHandlers(context) {
-    els = context.els;
-}
-
-/**
- * Grava uma regra do hub. Sem estado de entrega: nao ha nada a caminho de um dispositivo,
- * por isso o resultado e "Guardado" ou o erro, e nao "Enviado" nem "A espera".
- */
-async function saveHubRule(key) {
-    const rule = ruleFor(key);
-    const block = els.deviceConfigRoot.querySelector(`[data-hub-rule="${key}"]`);
-    if (!rule || !block) return;
-
-    const data = (state.deviceModal.hubRules || {})[key] || {};
-    const selection = rule.read(block, data);
-    const invalid = rule.validate?.(selection);
-    if (invalid) {
-        setHubRuleFeedback(key, invalid, "danger");
-        return;
-    }
-
-    const imei = String(state.deviceModal.imei || els.deviceImei?.value || "").trim();
-    const error = await rule.save(imei, selection);
-    if (error) {
-        setHubRuleFeedback(key, error, "danger");
-        return;
-    }
-    // Recarrega para o perfil derivado e as gamas vierem do servidor, e nao do que o
-    // ecra supos: e o servidor que decide o nome do perfil a partir dos dois inteiros.
-    state.deviceModal.hubRules = {
-        ...(state.deviceModal.hubRules || {}),
-        [key]: await rule.load(imei),
-    };
-    setHubRuleFeedback(key, "Guardado.", "success");
-}
-
-function setHubRuleFeedback(key, message, tone) {
-    state.deviceModal.hubRuleFeedback = {
-        ...(state.deviceModal.hubRuleFeedback || {}),
-        [key]: {message, tone},
-    };
-    renderDeviceConfigurationModal();
-}
-
-function clearHubRuleFeedback(key) {
-    if (!key || !state.deviceModal.hubRuleFeedback?.[key]) return;
-    const next = {...state.deviceModal.hubRuleFeedback};
-    delete next[key];
-    state.deviceModal.hubRuleFeedback = next;
-}
-
 export function handleDeviceConfigClick(event) {
-    // As regras do hub vivem no mesmo painel mas nao no ciclo de vida dos downlinks:
-    // gravam de imediato e nao tem seccao de configuracao nem estado de entrega.
-    const hubChoice = event.target.closest("[data-hub-rule-value]");
-    if (hubChoice) {
-        event.preventDefault();
-        selectHubRuleValue(hubChoice.closest("[data-hub-rule]"), hubChoice.dataset.hubRuleValue);
-        clearHubRuleFeedback(hubChoice.closest("[data-hub-rule]")?.dataset.hubRule);
-        return;
-    }
-
     const button = event.target.closest(
         "[data-config-category], [data-action]",
     );
     if (!button) return;
 
-    if (button.dataset.action === "saveHubRule") {
-        event.preventDefault();
-        void saveHubRule(button.dataset.hubRuleKey);
-        return;
-    }
-    if (button.dataset.action === "resetHubRule") {
-        event.preventDefault();
-        const key = button.dataset.hubRuleKey;
-        const rule = ruleFor(key);
-        if (rule) {
-            selectHubRuleValue(
-                els.deviceConfigRoot.querySelector(`[data-hub-rule="${key}"]`),
-                rule.resetProfile,
-            );
-            clearHubRuleFeedback(key);
-        }
-        return;
-    }
 
     if (button.dataset.configCategory) {
         event.preventDefault();
@@ -223,7 +139,38 @@ export function handleDeviceConfigClick(event) {
     }
 }
 
+/** Escreve cada campo do preset e recalcula qual dos botoes fica aceso. */
+function applyConfigPreset(section, button) {
+    let preset;
+    try {
+        preset = JSON.parse(button.dataset.configPreset);
+    } catch {
+        return;
+    }
+
+    for (const [field, value] of Object.entries(preset || {})) {
+        const input = section.querySelector(`[data-config-field="${field}"]`);
+        if (input) input.value = String(value);
+    }
+
+    const group = button.closest("[data-config-choice-group]");
+    for (const choice of group?.querySelectorAll("[data-config-preset]") || []) {
+        const active = choice === button;
+        choice.classList.toggle("active", active);
+        choice.setAttribute("aria-pressed", active ? "true" : "false");
+    }
+}
+
 function updateConfigChoice(section, button) {
+    // Um preset preenche mais do que um campo de uma vez -- a sensibilidade das fraldas
+    // sao dois inteiros --, e o botao carrega o par em vez de um valor so. O estado activo
+    // le-se dos campos e nao de uma quarta escolha guardada a parte: nenhum preset activo
+    // ja diz que os valores nao sao de nenhum deles.
+    if (button.dataset.configPreset) {
+        applyConfigPreset(section, button);
+        return;
+    }
+
     const field = String(button.dataset.configField || "");
     if (!field) return;
 

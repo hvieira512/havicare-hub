@@ -15,6 +15,10 @@ final class DiaperSensorCapabilityDefinitions
             ['deviceType' => 'diaper_sensor', 'section' => 'telemetry', 'key' => 'diaper_moisture_level', 'label' => 'Nível de humidade', 'sortOrder' => 25, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'diaper_sensor', 'section' => 'telemetry', 'key' => 'diaper_condition', 'label' => 'Estado da fralda', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'diaper_sensor', 'section' => 'alarms', 'key' => 'change_required', 'label' => 'Mudança necessária', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
+            // Configuravel sem downlink: o sensor e um beacon BLE que so transmite, e o que
+            // ela muda e a regra com que o hub deriva o estado da fralda. Viveu fora do
+            // catalogo, com tabela e rotas proprias, ate o pipeline saber exprimir isso.
+            ['deviceType' => 'diaper_sensor', 'section' => 'settings_system', 'key' => 'diaper_sensitivity', 'label' => 'Sensibilidade dos alertas', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
         ];
     }
 }

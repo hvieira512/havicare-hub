@@ -110,20 +110,23 @@ final class DeviceConfigurationUpdateService
                 ];
             }
 
-            $payload = $this->capabilities->sanitizeInput($protocol, $genericKey, $payload);
-
-            // Uma capacidade que o hub aplica sozinho nao tem comandos para entregar: o
-            // valor desejado guarda-se e da-se por aplicado. O `stage` ja sabe o que fazer
-            // com uma alteracao sem operacoes -- marca-a `confirmed` e a linha `acked` --,
-            // por isso o resto do ciclo de vida e o mesmo das outras.
-            if (!$this->capabilities->travelsToDevice($genericKey)) {
-                $results[] = $this->stageHubApplied(
-                    $imei, $genericKey, $payload, $protocol, $supplier, $model
-                );
-                continue;
-            }
-
+            // O `sanitizeInput` entra no mesmo `try` que o `toNative`: uma capacidade que
+            // valida a entrada ali rejeita-a com a mesma excecao, e fora do `try` isso era
+            // um 500 em vez de um `invalid_config` com a razao.
             try {
+                $payload = $this->capabilities->sanitizeInput($protocol, $genericKey, $payload);
+
+                // Uma capacidade que o hub aplica sozinho nao tem comandos para entregar: o
+                // valor desejado guarda-se e da-se por aplicado. O `stage` ja sabe o que
+                // fazer com uma alteracao sem operacoes -- marca-a `confirmed` e a linha
+                // `acked` --, por isso o resto do ciclo de vida e o mesmo das outras.
+                if (!$this->capabilities->travelsToDevice($genericKey)) {
+                    $results[] = $this->stageHubApplied(
+                        $imei, $genericKey, $payload, $protocol, $supplier, $model
+                    );
+                    continue;
+                }
+
                 $nativeUpdates = $this->capabilities->toNative($protocol, $genericKey, $payload);
             } catch (\InvalidArgumentException $e) {
                 return $this->reject($requestId, $imei, $genericKey, $e->getMessage());

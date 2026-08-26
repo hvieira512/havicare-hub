@@ -3,6 +3,7 @@
 namespace Hub\Command;
 
 use Hub\Command\Configuration\Definition\FourPTouchConfigurationDefinitions;
+use Hub\Command\Configuration\Definition\MonitConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\VivistarConfigurationDefinitions;
 use Hub\Command\Configuration\Definition\WonlexConfigurationDefinitions;
 use Hub\Command\Configuration\Payload\FourPTouchPayloadBuilder;
@@ -21,6 +22,7 @@ final class DeviceConfigurationCatalog
             'wonlex-json' => WonlexConfigurationDefinitions::all(),
             'vivistar-iw' => VivistarConfigurationDefinitions::all(),
             'four-p-touch' => FourPTouchConfigurationDefinitions::all(),
+            'monit-mecs-pro-ble' => MonitConfigurationDefinitions::all(),
             default => [],
         };
 

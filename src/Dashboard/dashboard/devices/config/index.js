@@ -13,6 +13,7 @@ import {
     callWhitelistInput,
     contactsInput,
     dualToggleInput,
+    diaperSensitivityInput,
     fallSensitivityInput,
     fallSensitivityLevelsInput,
     intervalHoursToggleInput,
@@ -155,6 +156,7 @@ const CONFIGURATION_FAILURE_LABELS = {
 const CONFIG_INPUT_RENDERERS = {
     toggle: (entry, desired, meta) => toggleInput(entry, desired, meta?.protocol),
     fallSensitivity: (_entry, desired) => fallSensitivityInput(desired),
+    diaperSensitivity: (_entry, desired, meta) => diaperSensitivityInput(desired, meta),
     number: (entry, desired) => numberInput(entry, desired),
     phone: (entry, desired) => phoneInput(entry, desired),
     text: (entry, desired) => textInput(entry, desired),
@@ -197,6 +199,10 @@ const CONFIG_INPUT_READERS = {
         return { [field]: readCheckbox(section, field) };
     },
     fallSensitivity: (section) => ({sensitivity: readNumber(section, "sensitivity")}),
+    diaperSensitivity: (section) => ({
+        pollutionRange: readNumber(section, "pollutionRange"),
+        pollutionValue: readNumber(section, "pollutionValue"),
+    }),
     number: (section) => {
         const field = firstFieldName(section);
         return { [field]: readNumber(section, field) };
@@ -636,7 +642,10 @@ function renderConfigSection(
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const showConfigurationBadge = !entry.requestOnly;
     const deliveryMeta = configurationDeliveryMeta(isStored, delivery);
-    const hideNativeCommand = entry.configKind === "capability" && entry.key === "alarm_clock";
+    // Sem comando nativo, o hub aplica-a sozinho -- e entao nao ha vocabulario de
+    // protocolo para mostrar: o comando nao existe, e o tipo de campo sozinho e ruido.
+    const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock")
+        || String(entry.command || "") === "";
     const configSectionName = entry.configSectionName || entry.configSection || "";
     const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
     const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
@@ -672,7 +681,7 @@ function renderConfigSection(
             <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ""}>
                 ${renderConfigInputs(entry, desired, {...meta, protocol})}
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                    ${renderConfigActionButton(entry.key, row, uiState, disabled)}
+                    ${renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand)}
                     <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? "disabled" : ""}>
                         <i class="fa-solid fa-rotate-left"></i>
                     </button>
@@ -682,9 +691,14 @@ function renderConfigSection(
         </section>`;
 }
 
-function renderConfigActionButton(key, row, uiState, disabled = false) {
+function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false) {
     const state = configButtonState(row, uiState);
-    const idleLabel = ["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar";
+    // "Guardar" e nao "Enviar" quando nao ha nada a caminho do dispositivo. E o mesmo
+    // cuidado do estado que diz "Aplicado": o botao nao deve prometer um envio que nao
+    // acontece.
+    const idleLabel = appliedByHub
+        ? "Guardar"
+        : (["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar");
     const isDisabled =
         disabled || ["submitting", "sent", "queued", "waiting"].includes(state);
     const meta = CONFIG_ACTION_BUTTON_META[state] || CONFIG_ACTION_BUTTON_META.idle;

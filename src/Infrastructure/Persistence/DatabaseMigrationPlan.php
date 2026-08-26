@@ -39,6 +39,8 @@ use Hub\Infrastructure\Persistence\Migration\Version2026081902RestoreBraceletMot
 use Hub\Infrastructure\Persistence\Migration\Version2026082101DiaperSensorSettings;
 use Hub\Infrastructure\Persistence\Migration\Version2026082601DropSupplierEnabled;
 use Hub\Infrastructure\Persistence\Migration\Version2026082701DropSupplierDeviceTypeEnabled;
+use Hub\Infrastructure\Persistence\Migration\Version2026082801DiaperSensitivityAsCapability;
+use Hub\Infrastructure\Persistence\Migration\Version2026082802DropDiaperSensorSettings;
 
 final class DatabaseMigrationPlan
 {
@@ -80,6 +82,8 @@ final class DatabaseMigrationPlan
             new Version2026082101DiaperSensorSettings(),
             new Version2026082601DropSupplierEnabled(),
             new Version2026082701DropSupplierDeviceTypeEnabled(),
+            new Version2026082801DiaperSensitivityAsCapability(),
+            new Version2026082802DropDiaperSensorSettings(),
         ];
     }
 

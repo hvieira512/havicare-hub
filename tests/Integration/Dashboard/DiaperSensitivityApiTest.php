@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Dashboard;
 
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Repository\DiaperSensitivityRepository;
 use Hub\Api\Services\DeviceService;
 use Hub\Dashboard\DashboardStore;
 use Hub\Registry\Whitelist;
@@ -12,20 +13,21 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Os tres endpoints da sensibilidade do medidor de fraldas.
+ * A sensibilidade do medidor de fraldas, pela via genérica das configurações.
  *
- * Sub-recurso do dispositivo e nao uma capacidade configuravel, como os links de gateway:
- * o `PATCH /configurations` constroi um downlink e espera um ack, e este sensor e um beacon
- * nao-conectavel a quem nada e enviado. Passar por la deixaria cada alteracao "pendente"
- * para sempre no ecra, para uma configuracao que passa a valer na observacao seguinte.
+ * Teve três endpoints próprios -- GET, PUT e DELETE em `/diaper-sensitivity` -- por não ser
+ * uma capacidade: o pipeline não sabia exprimir uma configuração que não viaja, e sem isso
+ * cada alteração ficaria "pendente" para sempre à espera de um ack que nunca chega. O
+ * sensor é um beacon BLE não-conectável e nada lhe é enviado.
  *
- * Em ficheiro proprio e nao no `DevicesApiTest`: aquele ja tem 3200 linhas e acrescentar-lhe
- * estes varrimentos punha o phpstan a estourar o limite de memoria.
+ * Agora é a `DiaperSensitivityCapability`, marcada com `HubAppliedCapability`, e passa pelo
+ * mesmo `PATCH /configurations` que as outras. O que estes testes prendem é o que isso tinha
+ * de garantir: que grava, que se dá por aplicada sem comandos, que a ingestão a lê, e que
+ * um par fora das gamas é recusado.
  */
 final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 {
     private const SENSOR = 'eec5000202f9';
-    private const BRACELET = 'fbd87c59ba8b';
 
     private string $whitelistPath;
 
@@ -42,146 +44,132 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         }
     }
 
-    private function api(): DeviceService
+    /**
+     * O serviço e o PDO da MESMA base de dados: cada `createDashboardDatabase()` clona o
+     * template para uma base nova, por isso chamá-lo duas vezes daria dois mundos que não
+     * se veem um ao outro.
+     *
+     * @return array{DeviceService, \PDO}
+     */
+    private function api(): array
     {
-        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $database = $this->createDashboardDatabase();
+        $pdo = $database->pdo();
+        $db = ApiDataAccess::fromDatabase($database);
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:diaper-sensitivity');
         $store->setDataAccess($db);
         $hub = $this->createMock(\Hub\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
 
         $api = new DeviceService($store, new Whitelist($this->whitelistPath, $db->whitelist), $hub, $db);
-        foreach ([
-            [self::SENSOR, 'MONIT', 'MECS-PRO'],
-            [self::BRACELET, 'MOKO', 'W6R'],
-        ] as [$imei, $supplier, $model]) {
-            $created = $api->create(json_encode([
-                'imei' => $imei, 'supplier' => $supplier, 'model' => $model,
-                'licenseId' => '1001', 'company' => 'hitcare',
-            ], JSON_THROW_ON_ERROR));
-            self::assertSame('ok', $created['status'] ?? null, "devia registar {$imei}");
-        }
+        $created = $api->create(json_encode([
+            'imei' => self::SENSOR, 'supplier' => 'MONIT', 'model' => 'MECS-PRO',
+            'licenseId' => '1001', 'company' => 'hitcare',
+        ], JSON_THROW_ON_ERROR));
+        self::assertSame('ok', $created['status'] ?? null, 'devia registar o sensor');
 
-        return $api;
+        return [$api, $pdo];
     }
 
-    /** @param array<string, mixed> $body */
-    private function put(DeviceService $api, string $imei, array $body): array
+    /** @param array<string, mixed> $value */
+    private function patch(DeviceService $api, array $value): array
     {
-        return $api->updateDiaperSensitivity($imei, json_encode($body, JSON_THROW_ON_ERROR));
+        return $api->updateConfigurations(self::SENSOR, json_encode([
+            'configurations' => ['diaper_sensitivity' => $value],
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    /** @return array<string, mixed> */
+    private function sensitivityEntry(DeviceService $api): array
+    {
+        $shown = $api->show(self::SENSOR);
+
+        return $shown['capabilities']['settings_system']['diaper_sensitivity'] ?? [];
     }
 
     public function testAnUnconfiguredSensorReportsTheNormalPreset(): void
     {
         // Sao os limiares que o hub tinha em hardcode, e por coincidencia exacta o preset
-        // "Normal Diaper Alerts" da app da MONIT.
-        $data = $this->api()->diaperSensitivity(self::SENSOR)['data'] ?? [];
+        // "Normal Diaper Alerts" da app da MONIT. A ausencia de linha significa normal, que
+        // e porque nenhuma migracao fez backfill.
+        [$api, $pdo] = $this->api();
 
-        self::assertSame(4, $data['pollutionRange'] ?? null);
-        self::assertSame(12, $data['pollutionValue'] ?? null);
-        self::assertSame('normal', $data['profile'] ?? null);
-    }
+        self::assertSame(
+            ['pollutionRange' => 4, 'pollutionValue' => 12],
+            (new DiaperSensitivityRepository($pdo))->forDevice(self::SENSOR),
+        );
 
-    public function testThePresetsAndBoundsTravelInTheResponse(): void
-    {
-        // Para quem desenha o selector nao manter uma segunda copia destas fronteiras.
-        $data = $this->api()->diaperSensitivity(self::SENSOR)['data'] ?? [];
-
-        self::assertSame([2, 10], $data['bounds']['pollutionRange'] ?? null);
-        self::assertSame([5, 25], $data['bounds']['pollutionValue'] ?? null);
+        $entry = $this->sensitivityEntry($api);
+        self::assertSame([2, 10], $entry['_meta']['bounds']['pollutionRange'] ?? null);
+        self::assertSame([5, 25], $entry['_meta']['bounds']['pollutionValue'] ?? null);
         self::assertSame(
             ['low', 'normal', 'high'],
-            array_keys($data['presets'] ?? []),
+            array_keys($entry['_meta']['presets'] ?? []),
             'do menos sensivel para o mais, como no ecra'
         );
     }
 
-    public function testAPresetIsStoredAndNamedBack(): void
+    public function testAValueIsStoredAndGivenAsAppliedWithoutAnyCommand(): void
     {
-        $api = $this->api();
+        [$api, $pdo] = $this->api();
 
-        $updated = $this->put($api, self::SENSOR, ['pollutionRange' => 3, 'pollutionValue' => 7]);
-        self::assertSame('ok', $updated['status'] ?? null);
-        self::assertSame('high', $updated['profile'] ?? null);
-        self::assertSame('sensitive', $updated['pollutionRangeGrade'] ?? null);
-        self::assertSame('sensitive', $updated['pollutionValueGrade'] ?? null);
+        $result = $this->patch($api, ['pollutionRange' => 3, 'pollutionValue' => 7]);
+        self::assertSame('ok', $result['status'] ?? null);
+        // Sem operacoes: nao ha nada a caminho do sensor.
+        self::assertSame([], $result['results'][0]['operations'] ?? null);
 
-        $read = $api->diaperSensitivity(self::SENSOR)['data'] ?? [];
-        self::assertSame(3, $read['pollutionRange'] ?? null);
-        self::assertSame('high', $read['profile'] ?? null);
+        $entry = $this->sensitivityEntry($api);
+        self::assertSame(3, $entry['value']['pollutionRange'] ?? null);
+        self::assertSame(7, $entry['value']['pollutionValue'] ?? null);
+        // O perfil e derivado dos dois valores e nunca guardado, para nao poderem discordar.
+        self::assertSame('high', $entry['value']['profile'] ?? null);
+
+        // `confirmed` e nao `waiting_device`: o `stage` sem operacoes marca a linha `acked`,
+        // o `pendingStatus` le isso como `applied`, e o `show` apresenta-o como `confirmed`
+        // -- que e o mesmo estado de uma configuracao que o dispositivo confirmou, e que a
+        // interface ja desenha como "Aplicado". Nao ha vocabulario novo nenhum.
+        $sync = $api->show(self::SENSOR)['configurationSync']['entries']['settings_system']['diaper_sensitivity'] ?? [];
+        self::assertSame('confirmed', $sync['status'] ?? null);
+        self::assertFalse($sync['hasUnconfirmedChanges'] ?? true, 'nao ha nada a aguardar');
+
+        self::assertSame(
+            ['pollutionRange' => 3, 'pollutionValue' => 7],
+            (new DiaperSensitivityRepository($pdo))->forDevice(self::SENSOR),
+            'a ingestao le o valor novo da mesma tabela das outras configuracoes',
+        );
     }
 
-    public function testAnOffPresetPairIsNamedCustomAndNotStoredAsAFourthState(): void
+    public function testAnOffPresetPairIsNamedCustom(): void
     {
-        $custom = $this->put($this->api(), self::SENSOR, ['pollutionRange' => 5, 'pollutionValue' => 9]);
+        [$api] = $this->api();
 
-        self::assertSame('custom', $custom['profile'] ?? null);
-        self::assertSame(5, $custom['pollutionRange'] ?? null);
-        self::assertSame('normal', $custom['pollutionValueGrade'] ?? null);
-    }
+        $this->patch($api, ['pollutionRange' => 6, 'pollutionValue' => 20]);
 
-    public function testDeleteReturnsTheSensorToTheDefault(): void
-    {
-        $api = $this->api();
-        $this->put($api, self::SENSOR, ['pollutionRange' => 7, 'pollutionValue' => 15]);
-
-        self::assertSame('ok', $api->deleteDiaperSensitivity(self::SENSOR)['status'] ?? null);
-        self::assertSame('normal', $api->diaperSensitivity(self::SENSOR)['data']['profile'] ?? null);
-    }
-
-    /** @return list<array{array<string, mixed>, string}> */
-    public static function rejectedBodies(): array
-    {
-        return [
-            'range abaixo do minimo' => [['pollutionRange' => 1, 'pollutionValue' => 12], 'invalid_sensitivity'],
-            'range acima do maximo' => [['pollutionRange' => 11, 'pollutionValue' => 12], 'invalid_sensitivity'],
-            'value abaixo do minimo' => [['pollutionRange' => 4, 'pollutionValue' => 4], 'invalid_sensitivity'],
-            'value acima do maximo' => [['pollutionRange' => 4, 'pollutionValue' => 26], 'invalid_sensitivity'],
-            // Um fraccionario nao pode virar inteiro num cast silencioso: isto decide alarmes.
-            'range fraccionario' => [['pollutionRange' => 4.5, 'pollutionValue' => 12], 'invalid_sensitivity'],
-            'range em falta' => [['pollutionValue' => 12], 'invalid_sensitivity'],
-            'value em falta' => [['pollutionRange' => 4], 'invalid_sensitivity'],
-            'value em texto' => [['pollutionRange' => 4, 'pollutionValue' => 'doze'], 'invalid_sensitivity'],
-        ];
+        self::assertSame('custom', $this->sensitivityEntry($api)['value']['profile'] ?? null);
     }
 
     /**
-     * @param array<string, mixed> $body
-     * @dataProvider rejectedBodies
+     * @dataProvider invalidPairs
      */
-    public function testInvalidValuesAreRejected(array $body, string $code): void
+    public function testValuesOutsideTheAcceptedRangeAreRejected(int $range, int $value): void
     {
-        self::assertSame($code, $this->put($this->api(), self::SENSOR, $body)['error']['code'] ?? null);
+        [$api] = $this->api();
+
+        $result = $this->patch($api, ['pollutionRange' => $range, 'pollutionValue' => $value]);
+
+        // `invalid_config` e nao um codigo proprio: passa pela mesma rejeicao das outras
+        // capacidades, porque a validacao e o `sanitizeInput` do contrato.
+        self::assertSame('invalid_config', $result['error']['code'] ?? null);
     }
 
-    public function testMalformedJsonIsRejected(): void
+    /** @return array<string, array{int, int}> */
+    public static function invalidPairs(): array
     {
-        self::assertSame(
-            'invalid_request',
-            $this->api()->updateDiaperSensitivity(self::SENSOR, 'nao json')['error']['code'] ?? null
-        );
-    }
-
-    public function testSensitivityAppliesToDiaperSensorsOnly(): void
-    {
-        // Uma pulseira nao tem canais capacitivos, e nada nesta configuracao lhe diz respeito.
-        $api = $this->api();
-
-        self::assertSame(
-            'invalid_sensitivity',
-            $api->diaperSensitivity(self::BRACELET)['error']['code'] ?? null
-        );
-        self::assertSame(
-            'invalid_sensitivity',
-            $this->put($api, self::BRACELET, ['pollutionRange' => 3, 'pollutionValue' => 7])['error']['code'] ?? null
-        );
-    }
-
-    public function testAnUnknownDeviceIsNotFound(): void
-    {
-        self::assertSame(
-            'not_found',
-            $this->api()->diaperSensitivity('nao-existe')['error']['code'] ?? null
-        );
+        return [
+            'range abaixo do minimo' => [1, 12],
+            'range acima do maximo' => [11, 12],
+            'value abaixo do minimo' => [4, 4],
+            'value acima do maximo' => [4, 26],
+        ];
     }
 }

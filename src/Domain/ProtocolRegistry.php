@@ -117,10 +117,15 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => false,
                 'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
             ],
+            // `true` e nao `false`: o que o hub queria dizer com o `false` era que o sensor
+            // nao aceita downlink, e o que ficou escrito era que nao tem configuracoes
+            // nenhumas -- foi por causa dessa linha que a sensibilidade dos alertas nao
+            // teve por onde entrar no catalogo. Quem decide se algo viaja e cada
+            // capacidade, pelo `HubAppliedCapability`, e nao o protocolo inteiro.
             'monit-mecs-pro-ble' => [
                 'label' => 'MONIT',
                 'deviceType' => 'diaper_sensor',
-                'supportsConfigCatalog' => false,
+                'supportsConfigCatalog' => true,
                 'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
             ],
             'moko-w6r' => [

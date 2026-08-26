@@ -191,6 +191,67 @@ export function fallSensitivityInput(desired) {
         </div>`;
 }
 
+/**
+ * A sensibilidade dos alertas de um medidor de fraldas: dois inteiros e três atalhos.
+ *
+ * Os dois números estão sempre à vista e os presets são botões que os preenchem -- no
+ * bloco anterior a esta capacidade os números escondiam-se atrás de um quarto botão
+ * "Personalizado", e esse estado passa a ler-se sozinho: nenhum preset activo quer dizer
+ * que os valores não são de nenhum deles.
+ *
+ * Os presets e as gamas vêm no `_meta` da capacidade, servidos pelo hub, para não haver
+ * aqui uma segunda cópia destas fronteiras.
+ */
+export function diaperSensitivityInput(desired, meta = {}) {
+    const presets = meta.presets || {};
+    const bounds = meta.bounds || {};
+    const [rangeMin, rangeMax] = bounds.pollutionRange || [2, 10];
+    const [valueMin, valueMax] = bounds.pollutionValue || [5, 25];
+    const range = desired.pollutionRange ?? "";
+    const value = desired.pollutionValue ?? "";
+
+    const levels = [
+        {profile: "low", label: "Baixa", icon: "fa-feather-pointed", className: "btn-outline-success"},
+        {profile: "normal", label: "Normal", icon: "fa-shield-heart", className: "btn-outline-warning"},
+        {profile: "high", label: "Alta", icon: "fa-triangle-exclamation", className: "btn-outline-danger"},
+    ].filter((level) => presets[level.profile]);
+
+    const buttons = levels
+        .map((level) => {
+            const preset = presets[level.profile];
+            const active = Number(preset.pollutionRange) === Number(range)
+                && Number(preset.pollutionValue) === Number(value);
+            return `
+            <button type="button" class="btn ${level.className}${active ? " active" : ""}"
+                data-action="selectConfigChoice"
+                data-config-preset="${esc(JSON.stringify(preset))}"
+                aria-pressed="${active ? "true" : "false"}">
+                <i class="fa-solid ${esc(level.icon)} me-2"></i>${esc(level.label)}
+            </button>`;
+        })
+        .join("");
+
+    return `
+        <div>
+            ${buttons === "" ? "" : `<div class="btn-group w-100 mb-2" role="group" aria-label="Sensibilidade dos alertas" data-config-choice-group="diaperSensitivity">${buttons}</div>`}
+            <div class="row g-2">
+                <div class="col">
+                    <label class="form-label form-label-sm mb-1" for="diaperPollutionRange">Canais afetados</label>
+                    <input type="number" class="form-control" id="diaperPollutionRange" data-config-field="pollutionRange"
+                        min="${esc(String(rangeMin))}" max="${esc(String(rangeMax))}" step="1" value="${esc(String(range))}">
+                    <div class="form-text">Quantos canais molhados obrigam a uma muda.</div>
+                </div>
+                <div class="col">
+                    <label class="form-label form-label-sm mb-1" for="diaperPollutionValue">Limiar por canal</label>
+                    <input type="number" class="form-control" id="diaperPollutionValue" data-config-field="pollutionValue"
+                        min="${esc(String(valueMin))}" max="${esc(String(valueMax))}" step="1" value="${esc(String(value))}">
+                    <div class="form-text">A partir de quanto um canal conta como molhado.</div>
+                </div>
+            </div>
+            <div class="form-text">O sensor apenas transmite e nada lhe é enviado. Passa a valer na leitura seguinte.</div>
+        </div>`;
+}
+
 export function numberInput(entry, desired) {
     const field = entry.fields?.[0] || "value";
     const isWonlexMeasurementInterval =

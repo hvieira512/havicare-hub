@@ -5,7 +5,6 @@ import {
 import {readConfigPayload, renderDeviceConfigurationRoot} from "./index.js";
 import {emptyPanel} from "../../widgets.js";
 import {resetPhoneControls} from "../../phone.js";
-import {hasHubRules, renderHubRules} from "../hub-rules/index.js";
 import {state} from "../../state.js";
 
 /**
@@ -289,18 +288,7 @@ export function renderDeviceConfigurationModal() {
           )
         : state.deviceModal.catalog.filter((entry) => entry.capabilityKey);
 
-    // As regras do hub sao configuracoes como as outras e vivem no mesmo separador. Vem
-    // primeiro porque valem de imediato: nao ha nada a aguardar entrega.
-    const deviceType = state.deviceModal.deviceType;
-    const hubRules = renderHubRules(
-        deviceType,
-        state.deviceModal.hubRules || {},
-        state.deviceModal.hubRuleFeedback || {},
-    );
-
-    els.deviceConfigRoot.innerHTML = hubRules + renderDeviceConfigurationRoot({
-        // Sem downlinks E sem regras do hub e que o separador esta vazio.
-        quietWhenEmpty: hasHubRules(deviceType),
+    els.deviceConfigRoot.innerHTML = renderDeviceConfigurationRoot({
         protocol: state.deviceModal.protocol,
         catalog: filteredCatalog,
         capabilityCatalog: state.deviceModal.capabilityCatalog,

@@ -190,10 +190,12 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026082101_diaper_sensor_settings',
             '2026082601_drop_supplier_enabled',
             '2026082701_drop_supplier_device_type_enabled',
+            '2026082801_diaper_sensitivity_as_capability',
+            '2026082802_drop_diaper_sensor_settings',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(34, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(36, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
@@ -229,7 +231,7 @@ final class MigrationTest extends MysqlDashboardTestCase
             $db->modelCapabilities->enabledFeaturesForModelId((int)$cellularGatewayModel['id'])
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level'],
+            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$sensorModel['id'])
         );
         self::assertContains('gateway_device_links', $pdo->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN));
@@ -238,7 +240,7 @@ final class MigrationTest extends MysqlDashboardTestCase
             array_values(array_unique(array_map('strval', $pdo->query("SELECT capability_key FROM capabilities WHERE device_type = 'gateway' ORDER BY capability_key")->fetchAll(\PDO::FETCH_COLUMN))))
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level'],
+            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity'],
             array_values(array_unique(array_map('strval', $pdo->query("SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' ORDER BY capability_key")->fetchAll(\PDO::FETCH_COLUMN))))
         );
         self::assertSame(

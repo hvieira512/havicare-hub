@@ -228,24 +228,33 @@ vai em todas as mensagens: `battery`, `diaper_condition` e `proximity` ficam int
 
 ## 6. API
 
-Sub-recurso por dispositivo, exactamente como os `links`, e **fora** do ciclo de vida
-de `device_configurations`:
+> **Actualizado.** Esta secção descrevia três endpoints dedicados --
+> `GET`/`PUT`/`DELETE` em `/api/devices/{imei}/diaper-sensitivity` -- e uma tabela
+> própria, `diaper_sensor_settings`. Os três foram apagados e a tabela largada: a
+> sensibilidade é agora uma capacidade como as outras. O resto do documento -- os limiares,
+> os presets, a aritmética das bandas -- continua a valer.
+
+É a capacidade `diaper_sensitivity`, gravada pela via genérica:
 
 ```
-GET    /api/devices/{imei}/diaper-sensitivity
-PUT    /api/devices/{imei}/diaper-sensitivity     {"pollutionRange": 3, "pollutionValue": 7}
-DELETE /api/devices/{imei}/diaper-sensitivity     volta ao preset normal
+PATCH /api/devices/{imei}/configurations
+      {"configurations": {"diaper_sensitivity": {"pollutionRange": 3, "pollutionValue": 7}}}
 ```
 
-O `GET` devolve os dois valores, o nome do perfil derivado, e os presets disponíveis
-com as gamas válidas, para o cliente construir o selector sem duplicar tabelas.
+O `GET /api/devices/{imei}` devolve-a em `capabilities.settings_system.diaper_sensitivity`,
+com o perfil derivado no valor e os presets, gamas e graduações no `_meta` -- para o cliente
+construir o selector sem duplicar tabelas.
 
-**Não é declarada como capacidade.** O catálogo de capacidades configuráveis é hoje
-inteiramente `watch`, e `isConfigurable: true` encaminha para o
-`DeviceConfigurationUpdateService`, que chama `DeviceCommandCatalog::buildDownlink()`
-sem condição. Uma configuração que nunca sai do hub teria de inventar um comando falso
-e um terceiro `confirmation_mode`. Os `links` também não são capacidade, pela mesma
-razão, e são o precedente certo.
+**O que faltava para isto ser possível.** O
+`DeviceConfigurationUpdateService` guardava tudo atrás de `if ($nativeRows !== [])` e uma
+configuração sem comandos caía fora sem deixar rasto: o pipeline não sabia exprimir uma
+alteração que não viaja. Agora sabe, por uma interface opcional --
+`Hub\Domain\Capability\HubAppliedCapability` --, e a `DiaperSensitivityCapability` marca-se
+com ela. O valor é guardado com `confirmation_mode = 'local'` e uma alteração sem operações,
+que o `stage` já marcava `confirmed`; o painel mostra "Aplicado" e o botão diz "Guardar".
+
+Nenhum comando falso e nenhum `confirmation_mode` a mais: o que se acrescentou foi a
+distinção que faltava, e ela é da capacidade × protocolo, não do tipo de dispositivo.
 
 ---
 

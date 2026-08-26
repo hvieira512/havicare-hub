@@ -16,7 +16,6 @@ import {
     handleDeviceConfigChange,
     handleDeviceConfigClick,
     handleDeviceConfigInput,
-    initDeviceConfigHandlers,
 } from "./devices/config/handlers.js";
 import {
     handleApiUserListClick,
@@ -503,7 +502,6 @@ export async function startDashboard() {
         onLicenseChange: () => void refreshGatewayOptions([]),
     });
     initCreateWizard({els, wizardModal: deviceWizardModal});
-    initDeviceConfigHandlers({els});
     initDeviceFilterHandlers({els});
     initSettingsClickHandlers({els});
     initDeviceList({
