@@ -292,3 +292,71 @@ test("uma pergunta opcional nao trava o passo, mas continua a ser feita", () => 
     w.answer("identity", "i");
     assert.equal(w.isComplete(), true, "criar nao espera pela opcional");
 });
+
+test("responder a ultima pergunta do passo avanca-o", () => {
+    // O ecra que dizia "este passo esta completo" nao perguntava nada: era um clique no
+    // "Seguinte" entre a ultima resposta e o campo seguinte.
+    const w = wizard();
+    w.answerAndAdvance("type", "x");
+    assert.equal(w.step(), 1, "ainda faltam perguntas neste passo");
+
+    w.answerAndAdvance("model", "y");
+    assert.equal(w.step(), 1);
+
+    w.answerAndAdvance("owner", {company: "c", license: "l"});
+    assert.equal(w.step(), 2, "a ultima do passo 1 leva ao passo 2");
+    assert.equal(w.current().key, "identity");
+});
+
+test("nao avanca por cima de uma pergunta opcional por responder", () => {
+    // Uma opcional nao trava o passo, mas continua a ser feita: avancar assim que o passo
+    // ficasse completo era saltar-lhe por cima sem a mostrar.
+    const w = createWizard({
+        steps: STEPS,
+        questions: [
+            {
+                key: "type",
+                step: 1,
+                clears: [],
+                isAnswered: (a) => Boolean(a.type),
+                badges: () => [],
+            },
+            {
+                key: "owner",
+                step: 1,
+                clears: [],
+                optional: true,
+                isAnswered: (a) => Boolean(a.owner),
+                badges: () => [],
+            },
+            {
+                key: "identity",
+                step: 2,
+                clears: [],
+                isAnswered: (a) => Boolean(a.identity),
+                badges: () => [],
+            },
+        ],
+    });
+
+    w.answerAndAdvance("type", "x");
+    assert.equal(w.step(), 1, "a opcional ainda esta por fazer");
+    assert.equal(w.current().key, "owner");
+
+    w.answerAndAdvance("owner", {});
+    assert.equal(w.step(), 2);
+});
+
+test("o Anterior leva a um passo completo e nao ressalta para a frente", () => {
+    // O avanco automatico e consequencia de responder, e nao de o passo estar completo:
+    // se fosse do segundo, voltar atras era impossivel.
+    const w = wizard();
+    w.answerAndAdvance("type", "x");
+    w.answerAndAdvance("model", "y");
+    w.answerAndAdvance("owner", {company: "c", license: "l"});
+    assert.equal(w.step(), 2);
+
+    w.back();
+    assert.equal(w.step(), 1);
+    assert.equal(w.current(), null, "completo, mas sem avancar sozinho");
+});

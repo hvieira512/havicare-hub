@@ -62,6 +62,15 @@ export function createWizard({questions, steps}) {
         return questions.filter(isAnswered);
     }
 
+    function applyAnswer(key, value) {
+        answers = {...answers, [key]: value};
+        const question = questions.find((q) => q.key === key);
+        for (const cleared of question?.clears ?? []) {
+            delete answers[cleared];
+        }
+        return answers;
+    }
+
     return {
         current,
         answered,
@@ -87,11 +96,27 @@ export function createWizard({questions, steps}) {
             return step;
         },
 
-        answer(key, value) {
-            answers = {...answers, [key]: value};
-            const question = questions.find((q) => q.key === key);
-            for (const cleared of question?.clears ?? []) {
-                delete answers[cleared];
+        answer: applyAnswer,
+
+        /**
+         * Responde e, se essa era a ultima pergunta do passo, avanca.
+         *
+         * Sem isto, responder a ultima deixava um ecra que nao perguntava nada -- so
+         * dizia que o passo estava completo -- e obrigava a um clique no "Seguinte" entre
+         * a ultima resposta e o campo seguinte.
+         *
+         * "Ultima" e nao ter nenhuma aberta, e nao o passo estar completo: uma pergunta
+         * opcional nao trava o passo mas continua a ser feita, e avancar por cima dela era
+         * saltar uma pergunta sem a mostrar.
+         *
+         * Nao e o mesmo que avancar sempre que o passo esta completo. O "Anterior" leva de
+         * volta a um passo completo por definicao, e la nao se avanca -- senao nao havia
+         * como voltar atras.
+         */
+        answerAndAdvance(key, value) {
+            applyAnswer(key, value);
+            if (current() === null && isStepComplete(step) && step < steps.length) {
+                step += 1;
             }
             return answers;
         },

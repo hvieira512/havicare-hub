@@ -244,11 +244,22 @@ function renderQuestion(key) {
     }
 }
 
+function answerAndRender(key, value) {
+    wizard.answerAndAdvance(key, value);
+    render();
+}
+
+/**
+ * O que fica no lugar da pergunta quando o passo nao tem nenhuma aberta.
+ *
+ * No passo 1 so se chega aqui pelo "Anterior", e o que ha para fazer e mudar uma resposta
+ * -- que se faz nas etiquetas da trilha, mesmo por cima.
+ */
 function renderStepDone() {
     return `<p class="text-secondary small mb-0">
         ${wizard.isLastStep()
             ? "Tudo preenchido. Crie o dispositivo."
-            : "Este passo está completo. Siga para o próximo."}
+            : "Toque numa etiqueta acima para alterar uma resposta."}
     </p>`;
 }
 
@@ -449,8 +460,7 @@ function handleClick(event) {
     const type = event.target.closest("[data-wizard-type]");
     if (type) {
         pendingSupplier = null;
-        wizard.answer("type", type.dataset.wizardType);
-        render();
+        answerAndRender("type", type.dataset.wizardType);
         return;
     }
 
@@ -463,21 +473,19 @@ function handleClick(event) {
 
     const model = event.target.closest("[data-wizard-model]");
     if (model) {
-        wizard.answer("model", {
+        answerAndRender("model", {
             supplier: model.dataset.wizardModelSupplier,
             model: model.dataset.wizardModel,
         });
-        render();
         return;
     }
 
     const license = event.target.closest("[data-license-pick]");
     if (license) {
-        wizard.answer("owner", {
+        answerAndRender("owner", {
             company: license.dataset.licenseCompany || "",
             licenseId: license.dataset.licenseId || "0",
         });
-        render();
     }
 }
 
