@@ -202,25 +202,9 @@ export function cacheElements() {
         capabilitySupplierSummary: document.getElementById(
             "capabilitySupplierSummary",
         ),
-        capabilitySupplierClear: document.getElementById(
-            "capabilitySupplierClear",
-        ),
-        capabilityActiveFilters: document.getElementById(
-            "capabilityActiveFilters",
-        ),
-        capabilityFilterCount: document.getElementById("capabilityFilterCount"),
         capabilityCatalogSearch: document.getElementById(
             "capabilityCatalogSearch",
         ),
-        discoveryModelSummary: document.getElementById("discoveryModelSummary"),
-        discoveryDeviceSelect: document.getElementById("discoveryDeviceSelect"),
-        discoveryRefreshDevicesBtn: document.getElementById(
-            "discoveryRefreshDevicesBtn",
-        ),
-        discoveryGenerateBtn: document.getElementById("discoveryGenerateBtn"),
-        discoveryApplyBtn: document.getElementById("discoveryApplyBtn"),
-        discoveryStatus: document.getElementById("discoveryStatus"),
-        discoveryEvidence: document.getElementById("discoveryEvidence"),
         apiUserForm: document.getElementById("apiUserForm"),
         apiUserFormCollapse: document.getElementById("apiUserFormCollapse"),
         apiUsersTabSummary: document.getElementById("apiUsersTabSummary"),

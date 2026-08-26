@@ -106,11 +106,6 @@ export const state = {
         capabilityRequestableCapabilities: [],
         currentCapabilitiesModel: null,
         modelFilters: [],
-        discoveryDeviceImei: "",
-        discoveryDeviceOptions: [],
-        discoveryRun: null,
-        discoveryLoading: false,
-        discoveryError: "",
         // A arvore do catalogo, inteira: tipos, fornecedores e modelos numa chamada. Nao ha
         // pagina nem filtros porque nao ha paginacao -- a busca corre sobre isto em memoria.
         modelCatalog: [],

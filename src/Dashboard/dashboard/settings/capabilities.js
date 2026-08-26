@@ -2,8 +2,6 @@ import {
     getDevices as apiGetDevices,
     deleteModel as apiDeleteModel,
     getCapabilities as apiGetCapabilities,
-    applyCapabilityDiscoveryRun as apiApplyCapabilityDiscoveryRun,
-    previewCapabilityDiscovery as apiPreviewCapabilityDiscovery,
     getModel as apiGetModel,
     getModelFilters as apiGetModelFilters,
     getModelTemplate as apiGetModelTemplate,
@@ -13,7 +11,6 @@ import {
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {
-    filterChips,
     modelPreviewHtml,
     renderButtonGroup,
     renderDeviceTypeTiles,
@@ -37,10 +34,6 @@ import {
     revokeModelPreviewUrl,
     loadSettingsModelsSection,
 } from "./models/index.js";
-
-// A descoberta guiada está por acabar: fica visível e desligada até o caminho de
-// gerar e aplicar a proposta estar pronto de ponta a ponta.
-const DISCOVERY_ENABLED = false;
 
 let els;
 
@@ -84,8 +77,7 @@ function resolveCapabilitySuppliersForDeviceType(deviceType) {
     const group = state.settingsModal.modelFilters.find(
         (g) => normalizeDeviceType(g.deviceType || "") === deviceType,
     );
-    state.settingsModal.capabilitySuppliersForDeviceType =
-        group?.suppliers?.filter((s) => s.enabled) || [];
+    state.settingsModal.capabilitySuppliersForDeviceType = group?.suppliers || [];
 }
 
 async function loadCapabilityTemplate(supplierId, deviceType) {
@@ -127,10 +119,6 @@ async function loadSettingsCapabilitiesSection(
     }
     state.settingsModal.sectionLoaded.capabilities = true;
     renderCapabilitiesCatalogSection();
-    renderDiscoverySection();
-    if (state.settingsModal.currentCapabilitiesModel) {
-        void loadDiscoveryDevices();
-    }
 }
 
 function handleCapabilitySupplierClick(event) {
@@ -169,7 +157,7 @@ function renderCapabilitiesCatalogSection() {
         : null;
 
     renderCapabilitySupplierButtons();
-    updateCapabilitySupplierSummary(hasSupplierFilter);
+    updateCapabilitySupplierSummary();
 
     const sections = capabilitiesGroupedBySection(
         state.settingsModal.capabilityCatalog,
@@ -338,16 +326,14 @@ function renderCapabilitySupplierButtons() {
     );
 }
 
-function updateCapabilitySupplierSummary(hasFilter) {
-    if (!els.capabilitySupplierClear || !els.capabilitySupplierSummary) return;
+function updateCapabilitySupplierSummary() {
+    if (!els.capabilitySupplierSummary) return;
 
     const supplierId = state.settingsModal.capabilitySupplier;
     const suppliers = state.settingsModal.capabilitySuppliersForDeviceType;
     const supplier = supplierId
         ? suppliers.find((s) => String(s.id) === String(supplierId))
         : null;
-
-    els.capabilitySupplierClear.classList.toggle("d-none", !supplierId);
 
     const total = state.settingsModal.capabilityCatalog.length;
     if (supplier) {
@@ -358,242 +344,6 @@ function updateCapabilitySupplierSummary(hasFilter) {
         els.capabilitySupplierSummary.textContent =
             `${total} ${total === 1 ? "capacidade" : "capacidades"} no tipo escolhido.`;
     }
-
-    // O filtro activo le-se na pastilha, e o contador no botao diz que ha um sem os
-    // botoes de fornecedor estarem abertos.
-    if (els.capabilityActiveFilters) {
-        els.capabilityActiveFilters.innerHTML = supplier
-            ? filterChips([{key: "supplier", label: String(supplier.name)}], "removeCapabilityFilter")
-            : "";
-    }
-    if (els.capabilityFilterCount) {
-        els.capabilityFilterCount.textContent = supplier ? "1" : "";
-        els.capabilityFilterCount.classList.toggle("d-none", !supplier);
-    }
-}
-
-async function loadDiscoveryDevices() {
-    const model = state.settingsModal.currentCapabilitiesModel;
-    if (!model) {
-        state.settingsModal.discoveryDeviceOptions = [];
-        state.settingsModal.discoveryDeviceImei = "";
-        state.settingsModal.discoveryError = "";
-        renderDiscoverySection();
-        return [];
-    }
-
-    state.settingsModal.discoveryError = "";
-
-    const response = await apiGetDevices({
-        deviceType: model.device_type || model.deviceType || "watch",
-        supplier: model.supplier || "",
-        model:
-            model.internal_model ||
-            model.internalModel ||
-            model.commercial_name ||
-            model.commercialName ||
-            "",
-        limit: 100,
-    });
-    if (response.error) {
-        state.settingsModal.discoveryError =
-            response.error.message ||
-            response.error.code ||
-            "Erro ao carregar os dispositivos online.";
-        state.settingsModal.discoveryDeviceOptions = [];
-        state.settingsModal.discoveryDeviceImei = "";
-        renderDiscoverySection();
-        return [];
-    }
-
-    const devices = (response.data || []).filter(
-        (device) => device.online && String(device.deviceType || "watch") === String(model.device_type || model.deviceType || "watch"),
-    );
-    state.settingsModal.discoveryDeviceOptions = devices;
-    if (
-        !devices.some(
-            (device) =>
-                String(device.imei) === String(state.settingsModal.discoveryDeviceImei || ""),
-        )
-    ) {
-        state.settingsModal.discoveryDeviceImei = String(devices[0]?.imei || "");
-    }
-    renderDiscoverySection();
-    return devices;
-}
-
-function renderDiscoveryEvidence() {
-    const run = state.settingsModal.discoveryRun;
-    if (!els.discoveryEvidence) return;
-    if (!run) {
-        els.discoveryEvidence.innerHTML = '<div class="small text-secondary">Gerar uma proposta para ver a evidência recolhida.</div>';
-        return;
-    }
-
-    const changes = run.changes || { add: [], remove: [] };
-    const evidence = Array.isArray(run.evidence) ? run.evidence : [];
-    els.discoveryEvidence.innerHTML = `
-        <div class="border rounded bg-white p-3">
-            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                <div>
-                    <div class="fw-semibold">${esc(run.model?.commercialName || "Proposta")}</div>
-                    <div class="small text-secondary">IMEI ${esc(run.device?.imei || "")} · ${esc(run.device?.supplier || "")} ${esc(run.device?.model || "")}</div>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <span class="config-state config-state-success"><span class="config-state-dot"></span>+${(changes.add || []).length}</span>
-                    <span class="config-state config-state-secondary"><span class="config-state-dot"></span>−${(changes.remove || []).length}</span>
-                    <span class="config-state ${run.status === "applied" ? "" : "config-state-warning"}"><span class="config-state-dot"></span>${esc(run.status || "draft")}</span>
-                </div>
-            </div>
-            <div class="small text-secondary mt-2">${esc((run.currentEnabledCapabilityKeys || []).length)} capacidades atuais · ${(run.suggestedEnabledCapabilityKeys || []).length} sugeridas</div>
-        </div>
-        <div class="vstack gap-2">
-            ${evidence.slice(0, 12).map((entry) => `
-                <div class="d-flex justify-content-between align-items-center gap-3 border rounded-3 px-3 py-2">
-                    <div>
-                        <div class="fw-semibold">${esc(entry.label || entry.key || "")}</div>
-                        <div class="section-label" style="letter-spacing:0;text-transform:none">${esc(entry.key || "")} · ${esc(entry.section || "")}</div>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <span class="config-state ${entry.supported ? "config-state-success" : "config-state-secondary"}"><span class="config-state-dot"></span>${entry.supported ? "suportado" : "não suportado"}</span>
-                        <span class="config-state ${entry.configured ? "" : "config-state-secondary"}"><span class="config-state-dot"></span>${entry.configured ? "no modelo" : "não configurado"}</span>
-                    </div>
-                </div>
-            `).join("")}
-        </div>
-    `;
-}
-
-function renderDiscoverySection() {
-    if (!els.discoveryModelSummary || !els.discoveryDeviceSelect || !els.discoveryStatus || !els.discoveryApplyBtn || !els.discoveryGenerateBtn) {
-        return;
-    }
-
-    // A descoberta guiada ainda não está pronta. Os controlos ficam à vista mas
-    // desligados, para se perceber o que vem a seguir em vez de a secção desaparecer.
-    // A guarda vive aqui porque é por esta função que todo o desenho da secção passa.
-    if (!DISCOVERY_ENABLED) {
-        els.discoveryModelSummary.textContent =
-            "Em breve: o hub propõe as capacidades a partir de um dispositivo online, em vez de se escreverem à mão.";
-        els.discoveryDeviceSelect.innerHTML = '<option value="">Em breve</option>';
-        els.discoveryDeviceSelect.disabled = true;
-        els.discoveryGenerateBtn.disabled = true;
-        els.discoveryApplyBtn.disabled = true;
-        if (els.discoveryRefreshDevicesBtn) {
-            els.discoveryRefreshDevicesBtn.disabled = true;
-        }
-        els.discoveryStatus.textContent = "";
-        if (els.discoveryEvidence) {
-            els.discoveryEvidence.innerHTML = "";
-        }
-        return;
-    }
-
-    const model = state.settingsModal.currentCapabilitiesModel;
-    if (!model) {
-        els.discoveryModelSummary.textContent = "Selecione um modelo no separador de modelos para iniciar uma descoberta.";
-        els.discoveryDeviceSelect.innerHTML = '<option value="">Sem modelo selecionado</option>';
-        els.discoveryDeviceSelect.disabled = true;
-        els.discoveryGenerateBtn.disabled = true;
-        els.discoveryApplyBtn.disabled = true;
-        els.discoveryStatus.textContent = "";
-        renderDiscoveryEvidence();
-        return;
-    }
-
-    const label = modelCommercialName(model);
-    els.discoveryModelSummary.textContent = `${label} · ${model.supplier || ""} · ${deviceTypeLabel(modelDeviceType(model))}`;
-    const devices = state.settingsModal.discoveryDeviceOptions || [];
-    els.discoveryDeviceSelect.innerHTML = devices.length
-        ? devices.map((device) => `<option value="${esc(device.imei)}">${esc(device.imei)}${device.lastSeenAt ? ` · ${esc(device.lastSeenAt)}` : ""}</option>`).join("")
-        : '<option value="">Nenhum dispositivo online encontrado</option>';
-    els.discoveryDeviceSelect.disabled = devices.length === 0;
-    els.discoveryDeviceSelect.value = state.settingsModal.discoveryDeviceImei || "";
-    const selectedImei = state.settingsModal.discoveryDeviceImei || "";
-    els.discoveryGenerateBtn.disabled = state.settingsModal.discoveryLoading || selectedImei === "";
-    els.discoveryApplyBtn.disabled = state.settingsModal.discoveryLoading || !state.settingsModal.discoveryRun || state.settingsModal.discoveryRun.status !== "draft";
-
-    if (state.settingsModal.discoveryLoading) {
-        els.discoveryStatus.textContent = "A gerar proposta de capacidades...";
-    } else if (state.settingsModal.discoveryError) {
-        els.discoveryStatus.textContent = state.settingsModal.discoveryError;
-    } else if (state.settingsModal.discoveryRun) {
-        const changes = state.settingsModal.discoveryRun.changes || { add: [], remove: [] };
-        els.discoveryStatus.textContent = `Proposta pronta: +${(changes.add || []).length} / -${(changes.remove || []).length}`;
-    } else {
-        els.discoveryStatus.textContent = "Selecione um dispositivo online e gere uma proposta.";
-    }
-
-    renderDiscoveryEvidence();
-}
-
-async function generateDiscoveryPreview() {
-    const model = state.settingsModal.currentCapabilitiesModel;
-    const imei = state.settingsModal.discoveryDeviceImei || "";
-    if (!model || !imei) {
-        state.settingsModal.discoveryError = "Selecione um modelo e um dispositivo online.";
-        renderDiscoverySection();
-        return;
-    }
-
-    state.settingsModal.discoveryError = "";
-    state.settingsModal.discoveryLoading = true;
-    renderDiscoverySection();
-
-    const response = await apiPreviewCapabilityDiscovery({
-        modelId: Number(model.id || 0),
-        imei,
-    });
-    state.settingsModal.discoveryLoading = false;
-    if (response.error) {
-        state.settingsModal.discoveryRun = null;
-        state.settingsModal.discoveryError = response.error.message || response.error.code || "Erro ao gerar a proposta.";
-        renderDiscoverySection();
-        return;
-    }
-
-    state.settingsModal.discoveryRun = response;
-    state.settingsModal.discoveryError = "";
-    renderDiscoverySection();
-}
-
-async function applyDiscoveryPreview() {
-    const model = state.settingsModal.currentCapabilitiesModel;
-    const run = state.settingsModal.discoveryRun;
-    if (!model || !run?.id) {
-        return;
-    }
-
-    state.settingsModal.discoveryLoading = true;
-    renderDiscoverySection();
-
-    const response = await apiApplyCapabilityDiscoveryRun(run.id);
-    state.settingsModal.discoveryLoading = false;
-    if (response.error) {
-        state.settingsModal.discoveryError = response.error.message || response.error.code || "Erro ao aplicar a proposta.";
-        renderDiscoverySection();
-        return;
-    }
-
-    state.settingsModal.discoveryRun = response;
-    state.settingsModal.discoveryError = "";
-    const refreshed = await apiGetModel(model.id);
-    state.settingsModal.currentCapabilitiesModel = refreshed.data || refreshed;
-    state.settingsModal.capabilityEnabledCapabilities = flattenedCapabilityKeys(
-        state.settingsModal.currentCapabilitiesModel.capabilities || {},
-    );
-    state.settingsModal.capabilityRequestableCapabilities = Array.isArray(
-        state.settingsModal.currentCapabilitiesModel.requestableCapabilities,
-    )
-        ? state.settingsModal.currentCapabilitiesModel.requestableCapabilities.map(String)
-        : [];
-    renderCapabilitiesSection();
-    renderDiscoverySection();
-}
-
-function handleDiscoveryDeviceChange(event) {
-    state.settingsModal.discoveryDeviceImei = String(event.target.value || "");
-    renderDiscoverySection();
 }
 
 async function openModelDetail(modelId) {
@@ -613,10 +363,6 @@ async function openModelDetail(modelId) {
     )
         ? model.requestableCapabilities.map(String)
         : [];
-    state.settingsModal.discoveryRun = null;
-    state.settingsModal.discoveryError = "";
-    state.settingsModal.discoveryDeviceOptions = [];
-    state.settingsModal.discoveryDeviceImei = "";
 
     const supplierId = Number(model.supplier_id || model.supplierId || 0);
     const deviceType = model.device_type || model.deviceType || "watch";
@@ -650,8 +396,6 @@ async function openModelDetail(modelId) {
     await ensureModelDetailSuppliers();
     renderModelDetailInfo(model);
     renderCapabilitiesSection();
-    renderDiscoverySection();
-    void loadDiscoveryDevices();
 
     modelsCarousel()?.to(2);
 }
@@ -841,14 +585,9 @@ function backToModelList() {
 
     state.settingsModal.currentCapabilitiesModel = null;
     state.settingsModal.capabilityModelTemplateKeys = [];
-    state.settingsModal.discoveryDeviceOptions = [];
-    state.settingsModal.discoveryDeviceImei = "";
-    state.settingsModal.discoveryRun = null;
-    state.settingsModal.discoveryError = "";
     state.settingsModal.sectionLoaded.models = false;
     state.settingsModal.sectionLoaded.modelFilters = false;
     void loadSettingsModelsSection();
-    renderDiscoverySection();
 }
 
 async function openNewModelForm() {
@@ -1129,11 +868,6 @@ export {
     loadSettingsCapabilitiesSection,
     handleCapabilitySupplierClick,
     handleCapabilityCatalogSearch,
-    handleDiscoveryDeviceChange,
-    loadDiscoveryDevices,
-    generateDiscoveryPreview,
-    applyDiscoveryPreview,
-    renderDiscoverySection,
     selectCapabilitySupplier,
     openModelDetail,
     backToModelList,

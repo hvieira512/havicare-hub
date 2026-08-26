@@ -113,21 +113,16 @@ import {
 } from "../settings/index.js";
 import {
     backToModelList,
-    applyDiscoveryPreview,
     deleteCurrentModel,
     saveModelDetail,
     syncModelDetailDirty,
     resetModelDetailFields,
     handleCapabilitySupplierClick,
     handleCapabilityCatalogSearch,
-    handleDiscoveryDeviceChange,
-    generateDiscoveryPreview,
     loadSettingsCapabilitiesSection,
-    loadDiscoveryDevices,
     openNewModelForm,
     revokeModelPreviewUrl,
     saveCapabilities,
-    selectCapabilitySupplier,
 } from "../settings/capabilities.js";
 
 let els = {};
@@ -286,31 +281,10 @@ function bindEvents() {
         "click",
         handleCapabilitySupplierClick,
     );
-    els.capabilitySupplierClear.addEventListener(
-        "click",
-        () => selectCapabilitySupplier(""),
-    );
     els.capabilityCatalogSearch?.addEventListener(
         "input",
         handleCapabilityCatalogSearch,
     );
-    els.capabilityActiveFilters?.addEventListener("click", (event) => {
-        if (!event.target.closest('[data-action="removeCapabilityFilter"]')) return;
-        selectCapabilitySupplier("");
-    });
-    els.discoveryDeviceSelect?.addEventListener(
-        "change",
-        handleDiscoveryDeviceChange,
-    );
-    els.discoveryRefreshDevicesBtn?.addEventListener("click", () => {
-        void loadDiscoveryDevices();
-    });
-    els.discoveryGenerateBtn?.addEventListener("click", () => {
-        void generateDiscoveryPreview();
-    });
-    els.discoveryApplyBtn?.addEventListener("click", () => {
-        void applyDiscoveryPreview();
-    });
     els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
     els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
     els.modelDetailSaveBtn.addEventListener("click", saveModelDetail);

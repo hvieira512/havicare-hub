@@ -50,7 +50,3 @@ export {
 export {
     getCapabilities,
 } from './capabilities.js';
-export {
-    applyCapabilityDiscoveryRun,
-    previewCapabilityDiscovery,
-} from './capability-discovery.js';

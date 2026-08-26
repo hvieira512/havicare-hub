@@ -149,46 +149,16 @@ ob_start();
                         <div class="fw-semibold">Capacidades</div>
                         <div class="small text-secondary" id="capabilitySupplierSummary"></div>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <?= search_input('capabilityCatalogSearch', 'Procurar capacidade ou chave', 'flex-grow-1') ?>
-                        <?= filter_toggle_button('capabilityFiltersCollapse', 'capabilityFilterCount', 'flex-shrink-0') ?>
-                    </div>
-                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
-                        <div id="capabilityActiveFilters" class="d-flex flex-wrap gap-2"></div>
-                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-secondary small d-none" id="capabilitySupplierClear" data-action="clearCapabilitySupplier">Limpar</button>
-                    </div>
-                    <div class="collapse" id="capabilityFiltersCollapse">
-                        <div class="row g-3 pt-3">
-                            <div class="col-md-8">
-                                <div class="section-label mb-1">Tipo de dispositivo</div>
-                                <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="section-label mb-1">Fornecedor</div>
-                                <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
-                            </div>
+                    <?= search_input('capabilityCatalogSearch', 'Procurar capacidade ou chave') ?>
+                    <div class="row g-3 py-3">
+                        <div class="col-md-8">
+                            <div class="section-label mb-1">Tipo de dispositivo</div>
+                            <div id="capabilityDeviceTypeButtons" class="device-type-grid is-wide" role="group"></div>
                         </div>
-                    </div>
-                    <div class="border border-secondary-subtle rounded-3 p-3 my-3">
-                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                            <div>
-                                <div class="fw-semibold">Descoberta guiada</div>
-                                <div id="discoveryModelSummary" class="small text-secondary" style="max-width:56ch">Selecione um modelo para gerar uma proposta a partir de um dispositivo online.</div>
-                            </div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm row-action flex-shrink-0" id="discoveryRefreshDevicesBtn">Atualizar dispositivos</button>
+                        <div class="col-md-4">
+                            <div class="section-label mb-1">Fornecedor</div>
+                            <div id="capabilitySupplierButtons" class="btn-group flex-wrap" role="group"></div>
                         </div>
-                        <div class="d-flex align-items-end gap-2 flex-wrap mt-3">
-                            <div style="min-width:240px;flex:1">
-                                <label for="discoveryDeviceSelect" class="section-label d-block mb-1">Dispositivo online</label>
-                                <select id="discoveryDeviceSelect" class="form-select form-select-sm">
-                                    <option value="">Sem dispositivos disponíveis</option>
-                                </select>
-                            </div>
-                            <button type="button" class="btn btn-primary btn-sm" id="discoveryGenerateBtn">Gerar proposta</button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm row-action" id="discoveryApplyBtn" disabled>Aplicar</button>
-                        </div>
-                        <div id="discoveryStatus" class="small text-secondary mt-3"></div>
-                        <div id="discoveryEvidence" class="vstack gap-2 mt-3"></div>
                     </div>
                     <div id="capabilityCatalogEmpty" class="text-secondary p-4 text-center d-none">
                         <?= icon('fa-sliders', 'fs-1 opacity-25') ?>
