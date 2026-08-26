@@ -447,10 +447,60 @@ body {
     padding-right: 0;
 }
 
+/* Uma linha por evento, sempre a mesma altura.
+   Metade dos tipos declara detalhes e a outra metade nao, e como esses detalhes iam para
+   uma segunda linha a lista alternava entre alturas conforme o tipo de cada evento -- o
+   ritmo quebrava a cada duas ou tres linhas. Os detalhes passam a seguir ao valor, na mesma
+   linha, e o que nao cabe corta-se com reticencias. O texto completo fica no `title` da
+   celula, que e onde ja estava a versao integral. */
+.telemetry-table {
+    table-layout: fixed;
+}
+
+/* Colunas fixas, iguais nos dois paineis: o icone, o nome, o valor com o que sobra, e a
+   hora. Sem isto cada pagina media as suas colunas pelo conteudo que lhe tocou, e as duas
+   listas lado a lado nunca alinhavam entre si nem de uma pagina para a outra. */
+.telemetry-table > tbody > tr > td:nth-child(1) {
+    width: 2.125rem;
+}
+
+.telemetry-table > tbody > tr > td:nth-child(2) {
+    width: 34%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* A hora mede o que a hora precisa e nunca se corta: e a coluna que se usa para comparar
+   dois eventos, e "25/08, 12:47:5..." nao serve para comparar nada. */
+.telemetry-table > tbody > tr > td:nth-child(4) {
+    width: 7.5rem;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+/* Metade dos tipos declara detalhes e a outra metade nao, e a segunda linha de uns fazia a
+   lista alternar entre duas alturas. A altura de duas linhas fica reservada aqui, no
+   contentor, e nao numa linha vazia: assim uma linha sem detalhes centra o valor no meio da
+   altura reservada em vez de o encostar ao topo. */
+.telemetry-row-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 2.4rem;
+    min-width: 0;
+}
+
 /* Num telefone as quatro colunas dividem os ~310px uteis do cartao entre nome, valor e
    hora, e o nome ainda leva uma largura fixa no proprio `td`. A linha passa a duas: o
    icone, o nome e a hora em cima, o valor com a largura toda em baixo. Serve as duas
-   tabelas do painel, os eventos recebidos e os pedidos ao dispositivo. */
+   tabelas do painel, os eventos recebidos e os pedidos ao dispositivo.
+
+   Depois das regras que anula, e nao antes. Uma media query nao acrescenta especificidade:
+   o `width: auto` daqui e o `width: 34%` do nome tem a mesma, e enquanto este bloco estava
+   em cima era o outro que ganhava por vir mais abaixo no ficheiro. O nome ficava com 34%
+   da faixa da grelha -- 120px de 354 -- e cortava-se em "Esta..." com o resto da linha
+   vazio ao lado. */
 @media (max-width: 575.98px) {
     .telemetry-table > tbody > tr {
         display: grid;
@@ -497,50 +547,6 @@ body {
         padding: .125rem 0 0 0;
         width: auto;
     }
-}
-
-/* Uma linha por evento, sempre a mesma altura.
-   Metade dos tipos declara detalhes e a outra metade nao, e como esses detalhes iam para
-   uma segunda linha a lista alternava entre alturas conforme o tipo de cada evento -- o
-   ritmo quebrava a cada duas ou tres linhas. Os detalhes passam a seguir ao valor, na mesma
-   linha, e o que nao cabe corta-se com reticencias. O texto completo fica no `title` da
-   celula, que e onde ja estava a versao integral. */
-.telemetry-table {
-    table-layout: fixed;
-}
-
-/* Colunas fixas, iguais nos dois paineis: o icone, o nome, o valor com o que sobra, e a
-   hora. Sem isto cada pagina media as suas colunas pelo conteudo que lhe tocou, e as duas
-   listas lado a lado nunca alinhavam entre si nem de uma pagina para a outra. */
-.telemetry-table > tbody > tr > td:nth-child(1) {
-    width: 2.125rem;
-}
-
-.telemetry-table > tbody > tr > td:nth-child(2) {
-    width: 34%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* A hora mede o que a hora precisa e nunca se corta: e a coluna que se usa para comparar
-   dois eventos, e "25/08, 12:47:5..." nao serve para comparar nada. */
-.telemetry-table > tbody > tr > td:nth-child(4) {
-    width: 7.5rem;
-    white-space: nowrap;
-    overflow: visible;
-}
-
-/* Metade dos tipos declara detalhes e a outra metade nao, e a segunda linha de uns fazia a
-   lista alternar entre duas alturas. A altura de duas linhas fica reservada aqui, no
-   contentor, e nao numa linha vazia: assim uma linha sem detalhes centra o valor no meio da
-   altura reservada em vez de o encostar ao topo. */
-.telemetry-row-stack {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 2.4rem;
-    min-width: 0;
 }
 
 /* A truncagem destas duas vive na marcacao, em `d-block text-truncate`: o `d-block` tem de
