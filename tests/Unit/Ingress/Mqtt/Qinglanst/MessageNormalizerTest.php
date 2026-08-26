@@ -10,7 +10,16 @@ use PHPUnit\Framework\TestCase;
 
 final class MessageNormalizerTest extends TestCase
 {
-    public function testNormalizesHeartBreathTelemetryUsingTopicUidAndNativeType(): void
+    /**
+     * Uma mensagem `heartbreath` dá três leituras, cada uma com a sua capacidade.
+     *
+     * A frequência cardíaca e a respiratória usam as formas do `Hub\FeatureNormalizer` --
+     * `{bpm}` e `{breathsPerMinute}` --, as mesmas de um relógio, e é isso que lhes dá os
+     * cartões que já existem. Antes eram um envelope `vitals` com `heart_rate` e
+     * `breathing` lá dentro, e o estado de sono ficava a viver como sub-campo de um cartão
+     * feito à mão só para o radar.
+     */
+    public function testHeartBreathBecomesThreeCanonicalReadings(): void
     {
         $normalizer = new MessageNormalizer();
         $topic = Topic::parse('radar/1001/radar-topic-uid');
@@ -23,10 +32,42 @@ final class MessageNormalizerTest extends TestCase
             'sleep_state' => 'Light Sleep',
         ], $topic, $this->device());
 
-        self::assertSame('vitals', $result['telemetry']['vitals']['type']);
-        self::assertSame('radar-topic-uid', $result['telemetry']['vitals']['device']['id']);
-        self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['vitals']['device']['commercialName']);
-        self::assertSame('heartbreath', $result['telemetry']['vitals']['source']['nativeType']);
+        self::assertSame(
+            ['heart_rate', 'breath_rate', 'sleep_state'],
+            array_keys($result['telemetry']),
+        );
+        self::assertSame(['bpm' => 72], $result['telemetry']['heart_rate']['data']);
+        self::assertSame(['breathsPerMinute' => 12], $result['telemetry']['breath_rate']['data']);
+        self::assertSame(['state' => 'light_sleep'], $result['telemetry']['sleep_state']['data']);
+
+        self::assertSame('radar-topic-uid', $result['telemetry']['heart_rate']['device']['id']);
+        self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['heart_rate']['device']['commercialName']);
+        self::assertSame('heartbreath', $result['telemetry']['heart_rate']['source']['nativeType']);
+    }
+
+    /**
+     * Um zero não é uma leitura: é o radar a dizer que não mediu ninguém.
+     *
+     * Publicá-lo punha o cartão a dizer "0 bpm", que se lê como um coração parado. O
+     * `Undefined` do estado de sono é o mesmo caso -- é a ausência de medição, e o mapper
+     * devolve-o também quando o código não é nenhum dos conhecidos.
+     */
+    public function testAbsentMeasurementsDoNotBecomeReadings(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'heartbreath',
+            'device_code' => 'radar-topic-uid',
+            'breathing' => 0,
+            'heart_rate' => 0,
+            'sleep_state' => 'Undefined',
+        ], $topic, $this->device());
+
+        self::assertSame([], $result['telemetry']);
+        // Sem sinal nenhum é alarme, que é coisa diferente de leitura.
+        self::assertSame('vitals_signal_lost', $result['events'][0]['data']['detectionType']);
     }
 
     public function testNormalizesPosStaticsTelemetryUsingRawNativeType(): void
@@ -101,7 +142,10 @@ final class MessageNormalizerTest extends TestCase
             ]],
         ], $topic, $this->device());
 
-        self::assertSame([], $result['telemetry']['positions']['data']['people']);
+        self::assertSame(0, $result['telemetry']['presence']['data']['count']);
+        self::assertSame([], $result['telemetry']['presence']['data']['people']);
+        // Sem ninguém não há postura: o cartão fica sem leitura em vez de dizer "desconhecida".
+        self::assertArrayNotHasKey('posture', $result['telemetry']);
         self::assertSame([], $result['events']);
     }
 
@@ -137,12 +181,62 @@ final class MessageNormalizerTest extends TestCase
             ],
         ], $topic, $this->device());
 
-        $people = $result['telemetry']['positions']['data']['people'];
-        self::assertCount(1, $people);
-        self::assertSame(2, $people[0]['person_index']);
+        $presence = $result['telemetry']['presence']['data'];
+        self::assertSame(1, $presence['count']);
+        self::assertCount(1, $presence['people']);
+        self::assertSame(2, $presence['people'][0]['personIndex']);
+
+        self::assertSame(
+            ['state' => 'fall_confirmation', 'personIndex' => 2, 'lastEvent' => 'leave_room'],
+            $result['telemetry']['posture']['data'],
+        );
+
         self::assertSame('detection', $result['events'][0]['type']);
         self::assertSame('fall_confirmed', $result['events'][0]['data']['detectionType']);
         self::assertSame(2, $result['events'][0]['data']['details']['person_index']);
+    }
+
+    /**
+     * Com duas pessoas na divisão, a postura que manda é a mais grave.
+     *
+     * A leitura é do aparelho e não da pessoa, por isso só cabe uma. Escolher a primeira
+     * da lista deixava uma queda confirmada escondida atrás de alguém de pé ao lado.
+     */
+    public function testThePostureCardShowsTheMostSevereOfThePeoplePresent(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'position',
+            'device_code' => 'radar-topic-uid',
+            'people' => [
+                $this->person(1, 'Standing'),
+                $this->person(2, 'Fall Confirmation'),
+                $this->person(3, 'Walking'),
+            ],
+        ], $topic, $this->device());
+
+        self::assertSame(3, $result['telemetry']['presence']['data']['count']);
+        self::assertSame('fall_confirmation', $result['telemetry']['posture']['data']['state']);
+        self::assertSame(2, $result['telemetry']['posture']['data']['personIndex']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function person(int $index, string $posture): array
+    {
+        return [
+            'person_index' => $index,
+            'x_position_dm' => 1,
+            'y_position_dm' => 2,
+            'z_position_cm' => 3,
+            'time_left_s' => 4,
+            'posture_state' => $posture,
+            'last_event' => 'No Event',
+            'region_id' => 5,
+        ];
     }
 
     /**

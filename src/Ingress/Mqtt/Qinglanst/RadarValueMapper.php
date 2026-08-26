@@ -149,6 +149,48 @@ final class RadarValueMapper
         11 => true,
     ];
 
+    /**
+     * As etiquetas do documento do fabricante, em enumerações.
+     *
+     * O que sai dos mapas acima é o que o documento diz -- `Awake`, `Lying Down`,
+     * `Hypopnea` -- e é assim que se verifica o codec contra a especificação. Mas era
+     * também assim que chegava à interface: a etiqueta do campo estava traduzida
+     * ("Estado do sono") e o valor ao lado dela vinha em inglês.
+     *
+     * O que viaja passa a ser a enumeração; traduzir é trabalho de quem desenha.
+     */
+    private const LABEL_TO_ENUM = [
+        'Undefined' => 'undefined',
+        'Unknown' => 'unknown',
+        'Light Sleep' => 'light_sleep',
+        'Deep Sleep' => 'deep_sleep',
+        'Awake' => 'awake',
+        'Initialization' => 'initialization',
+        'Walking' => 'walking',
+        'Suspected Fall' => 'suspected_fall',
+        'Squatting' => 'squatting',
+        'Standing' => 'standing',
+        'Fall Confirmation' => 'fall_confirmation',
+        'Lying Down' => 'lying_down',
+        'Suspected Sitting on Ground' => 'suspected_sitting_on_ground',
+        'Confirmed Sitting on Ground' => 'confirmed_sitting_on_ground',
+        'Sitting Up Bed' => 'sitting_up_bed',
+        'Suspected Sitting Up Bed' => 'suspected_sitting_up_bed',
+        'Confirmed Sitting Up Bed' => 'confirmed_sitting_up_bed',
+        'No Event' => 'no_event',
+        'Enter Room' => 'enter_room',
+        'Leave Room' => 'leave_room',
+        'Enter Area' => 'enter_area',
+        'Leave Area' => 'leave_area',
+        'Normal' => 'normal',
+        'Hypopnea' => 'hypopnea',
+        'Hyperpnea' => 'hyperpnea',
+        'Apnea' => 'apnea',
+        'Low' => 'low',
+        'High' => 'high',
+        'Weak' => 'weak',
+    ];
+
     private static ?array $detectionCategoryLabelToCode = null;
     private static ?array $detectionTypeLabelToCode = null;
     private static ?array $detectionLevelLabelToCode = null;
@@ -290,6 +332,19 @@ final class RadarValueMapper
             self::DETECTION_TYPE_AREA_ENTRY,
             self::DETECTION_TYPE_AREA_EXIT,
         ];
+    }
+
+    /**
+     * A enumeração correspondente a uma etiqueta do fabricante.
+     *
+     * Uma etiqueta que o mapa não conheça devolve-se em minúsculas com underscores, o que
+     * mantém a forma mesmo que o fabricante acrescente estados numa versão nova do
+     * firmware -- é preferível a `unknown`, que deitava fora o que ele nos disse.
+     */
+    public static function toEnum(string $label): string
+    {
+        return self::LABEL_TO_ENUM[$label]
+            ?? strtolower(str_replace(' ', '_', trim($label)));
     }
 
     public static function isFallConfirmation(int|string|null $value): bool

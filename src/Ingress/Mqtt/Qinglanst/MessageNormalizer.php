@@ -23,6 +23,18 @@ final class MessageNormalizer
     ];
 
     /**
+     * Quão grave é cada postura, para escolher a que manda quando há mais do que uma
+     * pessoa na divisão. As que não estão aqui valem zero.
+     */
+    private const POSTURE_SEVERITY = [
+        'Fall Confirmation' => 5,
+        'Suspected Fall' => 4,
+        'Confirmed Sitting on Ground' => 3,
+        'Suspected Sitting on Ground' => 2,
+        'Lying Down' => 1,
+    ];
+
+    /**
      * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes.
      *
      * As telemetrias vêm num mapa de capacidade para leitura, e não uma só, porque uma
@@ -56,34 +68,71 @@ final class MessageNormalizer
     private function normalizePosition(array $decoded, Topic $topic, array $device): array
     {
         $people = $this->occupiedPeople($decoded['people']);
+
+        // Duas grandezas na mesma mensagem: quem está na divisão, e como está.
+        //
+        // A presença não é o `location` canónico -- esse é geográfico, com GPS e células.
+        // O radar dá x/y/z em decímetros relativos a si próprio, que só faz sentido dentro
+        // da divisão onde está montado.
         $telemetry = [
-            'schemaVersion' => 2,
-            'type' => 'position',
-            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-            'device' => $this->deviceInfo($topic, $device),
-            'source' => $this->source($topic, 'position'),
-            'data' => [
-                'people' => array_map(function (array $person): array {
+            'presence' => $this->telemetry($topic, $device, 'presence', 'position', [
+                'count' => count($people),
+                'people' => array_map(static function (array $person): array {
                     return [
-                        'person_index' => $person['person_index'],
-                        'x_position_dm' => $person['x_position_dm'],
-                        'y_position_dm' => $person['y_position_dm'],
-                        'z_position_cm' => $person['z_position_cm'],
-                        'time_left_s' => $person['time_left_s'],
-                        'posture_state' => $person['posture_state'],
-                        'last_event' => $person['last_event'],
-                        'region_id' => $person['region_id'],
+                        'personIndex' => $person['person_index'],
+                        'xPositionDm' => $person['x_position_dm'],
+                        'yPositionDm' => $person['y_position_dm'],
+                        'zPositionCm' => $person['z_position_cm'],
+                        'timeLeftS' => $person['time_left_s'],
+                        'regionId' => $person['region_id'],
                     ];
                 }, $people),
-            ],
+            ]),
         ];
+
+        // A postura é por pessoa, mas a leitura é do aparelho: quem tem a postura mais
+        // grave manda no cartão. Uma queda confirmada não pode ficar escondida atrás de
+        // outra pessoa de pé na mesma divisão.
+        $posture = $this->mostSeverePosture($people);
+        if ($posture !== null) {
+            $telemetry['posture'] = $this->telemetry($topic, $device, 'posture', 'position', $posture);
+        }
 
         $event = $this->detectPositionEvent($topic, $device, $people);
 
         return [
-            'telemetry' => ['positions' => $telemetry],
+            'telemetry' => $telemetry,
             'events' => $event === null ? [] : [$event],
         ];
+    }
+
+    /**
+     * A postura que manda: a mais grave das pessoas presentes.
+     *
+     * @param array<int, array> $people
+     * @return array{state: string, personIndex: int, lastEvent: string}|null
+     */
+    private function mostSeverePosture(array $people): ?array
+    {
+        $ranked = null;
+        $rankedSeverity = -1;
+
+        foreach ($people as $person) {
+            $state = (string)($person['posture_state'] ?? '');
+            $severity = self::POSTURE_SEVERITY[$state] ?? 0;
+            if ($severity <= $rankedSeverity) {
+                continue;
+            }
+
+            $rankedSeverity = $severity;
+            $ranked = [
+                'state' => RadarValueMapper::toEnum($state),
+                'personIndex' => (int)($person['person_index'] ?? 0),
+                'lastEvent' => RadarValueMapper::toEnum((string)($person['last_event'] ?? '')),
+            ];
+        }
+
+        return $ranked;
     }
 
     /**
@@ -182,22 +231,34 @@ final class MessageNormalizer
      */
     private function normalizeVitals(array $decoded, Topic $topic, array $device): array
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
         $breathing = (int)($decoded['breathing'] ?? 0);
         $heartRate = (int)($decoded['heart_rate'] ?? 0);
 
-        $telemetry = [
-            'schemaVersion' => 2,
-            'type' => 'vitals',
-            'occurredAt' => $now,
-            'device' => $this->deviceInfo($topic, $device),
-            'source' => $this->source($topic, 'heartbreath'),
-            'data' => [
-                'breathing' => $breathing,
-                'heart_rate' => $heartRate,
-                'sleep_state' => $decoded['sleep_state'] ?? 'Undefined',
-            ],
-        ];
+        // Três grandezas numa mensagem, três leituras. As formas da frequência cardíaca e
+        // da respiratória são as do `Hub\FeatureNormalizer` -- `{bpm}` e
+        // `{breathsPerMinute}` --, as mesmas que um relógio produz, para partilharem os
+        // cartões em vez de terem os seus.
+        //
+        // Um zero não é uma leitura: é o radar a dizer que não mediu ninguém. Publicá-lo
+        // punha o cartão a dizer "0 bpm", que se lê como um coração parado.
+        $telemetry = [];
+        if ($heartRate > 0) {
+            $telemetry['heart_rate'] = $this->telemetry($topic, $device, 'heart_rate', 'heartbreath', [
+                'bpm' => $heartRate,
+            ]);
+        }
+        if ($breathing > 0) {
+            $telemetry['breath_rate'] = $this->telemetry($topic, $device, 'breath_rate', 'heartbreath', [
+                'breathsPerMinute' => $breathing,
+            ]);
+        }
+
+        $sleepState = (string)($decoded['sleep_state'] ?? 'Undefined');
+        if ($sleepState !== 'Undefined') {
+            $telemetry['sleep_state'] = $this->telemetry($topic, $device, 'sleep_state', 'heartbreath', [
+                'state' => RadarValueMapper::toEnum($sleepState),
+            ]);
+        }
 
         $events = [];
 
@@ -252,7 +313,25 @@ final class MessageNormalizer
             );
         }
 
-        return ['telemetry' => ['vitals' => $telemetry], 'events' => $events];
+        return ['telemetry' => $telemetry, 'events' => $events];
+    }
+
+    /**
+     * O envelope comum de uma leitura: só o `type` e o `data` mudam entre capacidades.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function telemetry(Topic $topic, array $device, string $capability, string $nativeType, array $data): array
+    {
+        return [
+            'schemaVersion' => 2,
+            'type' => $capability,
+            'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+            'device' => $this->deviceInfo($topic, $device),
+            'source' => $this->source($topic, $nativeType),
+            'data' => $data,
+        ];
     }
 
     /**
