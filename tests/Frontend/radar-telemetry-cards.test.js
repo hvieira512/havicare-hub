@@ -54,19 +54,87 @@ test("um radar que não vê ninguém está a funcionar", () => {
  * Nao ha cartao de postura: a postura e da pessoa, tal como as coordenadas, e uma divisao
  * com duas pessoas tem duas posturas. Um cartao do aparelho obrigava a escolher uma delas.
  */
+const person = (index, posture) => ({
+    personIndex: index,
+    posture,
+    xPositionDm: index + 3,
+    yPositionDm: index,
+    zPositionCm: 0,
+});
+
 test("a presença mostra a postura de cada pessoa, não uma só do aparelho", () => {
     const card = uplinkCardContent("presence", {
         count: 2,
-        // O radar indexa a partir de zero; a etiqueta e que conta a partir de um.
-        people: [
-            {personIndex: 0, posture: "standing", xPositionDm: 3, yPositionDm: -2, zPositionCm: 0},
-            {personIndex: 1, posture: "fall_confirmation", xPositionDm: 5, yPositionDm: 1, zPositionCm: 4},
-        ],
+        people: [person(0, "standing"), person(1, "fall_confirmation")],
     });
 
     assert.equal(card.value, "2 pessoas");
-    assert.match(card.details, /Pessoa 1: De pé · x 3 dm · y -2 dm · z 0 cm/);
-    assert.match(card.details, /Pessoa 2: Queda confirmada · x 5 dm/);
+
+    const chips = parseFragment(`<div>${card.details}</div>`).querySelectorAll(".badge");
+    assert.equal(chips.length, 2);
+    assert.equal(chips[0].textContent, "De pé");
+    assert.equal(chips[1].textContent, "Queda confirmada");
+});
+
+test("o tom da pastilha diz a gravidade, e o ícone a categoria", () => {
+    const card = uplinkCardContent("presence", {
+        count: 3,
+        people: [person(0, "lying_down"), person(1, "suspected_fall"), person(2, "fall_confirmation")],
+    });
+
+    const chips = [...parseFragment(`<div>${card.details}</div>`).querySelectorAll(".badge")];
+
+    // Repouso, suspeita, confirmação — a mesma escala do resto da dashboard.
+    assert.deepEqual(
+        chips.map((c) => [...c.classList].find((n) => n.startsWith("bg-"))),
+        ["bg-info-subtle", "bg-warning-subtle", "bg-danger-subtle"],
+    );
+
+    // A suspeita e a confirmação partilham o triângulo e separam-se pela cor.
+    assert.deepEqual(
+        chips.map((c) => c.querySelector("i").className),
+        [
+            "fa-solid fa-bed",
+            "fa-solid fa-triangle-exclamation",
+            "fa-solid fa-triangle-exclamation",
+        ],
+    );
+});
+
+/**
+ * O corte as tres primeiras ja existia e era mudo: a quarta pessoa desaparecia do ecra sem
+ * aviso nenhum. As coordenadas e quem nao coube ficam na tooltip, que nao corta.
+ */
+test("a quarta pessoa vira contador em vez de desaparecer", () => {
+    const card = uplinkCardContent("presence", {
+        count: 5,
+        people: [
+            person(0, "lying_down"),
+            person(1, "standing"),
+            person(2, "fall_confirmation"),
+            person(3, "walking"),
+            person(4, "walking"),
+        ],
+    });
+
+    const chips = [...parseFragment(`<div>${card.details}</div>`).querySelectorAll(".badge")];
+    assert.equal(chips.length, 4);
+    assert.equal(chips[3].textContent, "+2");
+
+    assert.match(card.detailsTitle, /Pessoa 4: A andar/);
+    assert.match(card.detailsTitle, /Pessoa 5: A andar/);
+    assert.match(card.detailsTitle, /Pessoa 1: Deitado · x 3 dm · y 0 dm · z 0 cm/);
+});
+
+test("uma postura que o firmware invente não escreve atributos", () => {
+    const card = uplinkCardContent("presence", {
+        count: 1,
+        people: [{personIndex: 0, posture: '"><script>alert(1)</script>'}],
+    });
+
+    assert.equal(card.details.includes("<script>"), false);
+    const chip = parseFragment(`<div>${card.details}</div>`).querySelector(".badge");
+    assert.equal(chip.querySelector("i").className, "fa-solid fa-question");
 });
 
 test("os alarmes dizem o que aconteceu, não só a categoria", () => {

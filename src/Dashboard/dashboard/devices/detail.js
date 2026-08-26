@@ -561,6 +561,11 @@ function renderTelemetryRow(payload) {
     // humidade da fralda despejava dez campos internos -- "RequiredChannelCount: 4" --
     // debaixo do proprio nome. Cada renderizador ja declara o que vale a pena mostrar.
     const details = card.details || "";
+    // O `detailsTitle` existe quando a linha visivel e um resumo do que ha: a presenca
+    // mostra as posturas e guarda as coordenadas e as pessoas que nao couberam para aqui.
+    // Sem ele, a tooltip repetia o que ja estava no ecra.
+    const detailsTitle = card.detailsTitle
+        || details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "");
 
     const tone = cardTone(type);
     return `
@@ -574,7 +579,7 @@ function renderTelemetryRow(payload) {
         <td class="tabular-nums">
             <span class="telemetry-row-stack">
                 <span class="d-block text-truncate">${esc(card.rowValue || card.value)}</span>
-                ${details ? `<span class="telemetry-row-details d-block text-truncate" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</span>` : ""}
+                ${details ? `<span class="telemetry-row-details d-flex flex-wrap gap-1" title="${esc(detailsTitle)}">${details}</span>` : ""}
             </span>
         </td>
         <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(payload.occurredAt || payload.recordedAt))}">${esc(whenShort(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>

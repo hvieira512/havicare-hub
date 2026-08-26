@@ -123,6 +123,7 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-location-crosshairs",
         value: presenceValue(data),
         details: presenceDetails(data),
+        detailsTitle: presenceDetailsTitle(data),
     }),
     sleep_state: (data) => ({
         icon: "fa-bed",
@@ -334,6 +335,9 @@ export function telemetryCard({
     title,
     value = "",
     details = "",
+    // O texto que a tooltip mostra quando diz mais do que a linha truncada. Sem ele, a
+    // tooltip repete o que ja esta no ecra.
+    detailsTitle = "",
     tooltip = "",
     body = "",
     feature = "",
@@ -374,6 +378,14 @@ export function telemetryCard({
         ? '<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-paper-plane"></i></span>'
         : "";
 
+    // O detalhe fica fora da linha do icone, ao lado do `body`, e nao dentro da coluna do
+    // texto. Num mosaico de 206px o icone e o espacamento levam 76, e o que sobrava eram
+    // 130 -- estreito de mais para duas pastilhas lado a lado. Fora dessa linha tem a
+    // largura toda do cartao.
+    const detailsHtml = details
+        ? `<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details"${detailsTitle ? ` title="${esc(detailsTitle)}"` : ""}>${details}</div>`
+        : "";
+
     return `
         <div class="col-12 col-md-${span}">
         <${tag}${attrs}>
@@ -385,11 +397,11 @@ export function telemetryCard({
         <div class="flex-grow-1 min-w-0">
         <div class="telemetry-card-title">${esc(title)}</div>
         ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
-        ${details ? `<span class="telemetry-row-details d-block text-truncate" title="${details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "")}">${details}</span>` : ""}
         </div>
         ${requestHint}
         </div>
         ${state}
+        ${detailsHtml}
         ${body}
         </div>
         </${tag}>
@@ -613,26 +625,101 @@ function presenceValue(data) {
 }
 
 /**
- * Uma linha por pessoa: como está e onde está.
+ * O icone e o tom de cada postura.
  *
- * A postura vem primeiro porque é o que se quer saber -- alguém caído importa mais do que
- * as coordenadas de quem está de pé. E é por pessoa, não do aparelho: numa divisão com
- * duas, uma pode estar deitada e a outra a andar.
+ * A etiqueta nao esta aqui: vive no `FIELD_VALUE_LABELS.posture` do `format.js`, e
+ * duplica-la era refazer os tres mapas de etiquetas que esta serie de commits acabou de
+ * juntar num so.
+ *
+ * O icone diz a categoria -- cama, cadeira, pessoa, aviso -- e o tom diz a gravidade, com
+ * uma regra que se diz numa frase: verde e estar bem, azul e repouso, amarelo e suspeita,
+ * vermelho e confirmacao, cinzento e nao saber. O modulo dos radares do gucc.dev pinta cada
+ * postura com a sua cor, oito ao todo; aqui sao cinco tons que o CSS ja tinha, e uma queda
+ * confirmada distingue-se de uma suspeita pelo vermelho e nao por outro simbolo.
+ */
+const POSTURE_STYLE = {
+    standing: {icon: "fa-person", tone: "success"},
+    walking: {icon: "fa-person-walking", tone: "success"},
+    confirmed_sitting_up_bed: {icon: "fa-bed", tone: "success"},
+    lying_down: {icon: "fa-bed", tone: "info"},
+    sitting_up_bed: {icon: "fa-bed", tone: "info"},
+    suspected_sitting_up_bed: {icon: "fa-bed", tone: "warning"},
+    squatting: {icon: "fa-chair", tone: "warning"},
+    suspected_sitting_on_ground: {icon: "fa-chair", tone: "warning"},
+    suspected_fall: {icon: "fa-triangle-exclamation", tone: "warning"},
+    confirmed_sitting_on_ground: {icon: "fa-chair", tone: "danger"},
+    fall_confirmation: {icon: "fa-triangle-exclamation", tone: "danger"},
+    initialization: {icon: "fa-question", tone: "secondary"},
+    unknown: {icon: "fa-question", tone: "secondary"},
+};
+
+/** A pastilha e um `badge` do Bootstrap com o par de utilitarios subtis do tom. */
+const CHIP_CLASS = "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
+
+/**
+ * Uma postura como pastilha: icone, etiqueta e o tom por tras.
+ *
+ * A enumeracao vem do payload e vai parar a um atributo `class`, por isso passa pelo `esc`
+ * -- o detalhe e injectado sem escapar, que e o que permite o `<br>` de outros cartoes, e
+ * um estado novo do firmware nao pode escrever atributos.
+ */
+function postureChip(posture) {
+    const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
+    const tone = esc(style.tone);
+
+    return `<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis">`
+        + `<i class="fa-solid ${esc(style.icon)}" aria-hidden="true"></i>`
+        + `${esc(fieldValue("posture", posture))}</span>`;
+}
+
+/** Quantas pastilhas cabem antes de o mosaico crescer de mais. */
+const PRESENCE_CHIP_LIMIT = 3;
+
+/**
+ * A postura de cada pessoa, em pastilhas.
+ *
+ * As coordenadas estavam nesta linha e enchiam-na: num mosaico estreito,
+ * `Pessoa 1: Deitado · x 1 dm · y 0 dm · z 0 cm` cortava em "y 0 dm ·" e a postura -- a
+ * unica parte que se le de relance -- competia por espaco com tres numeros relativos ao
+ * aparelho, que nao significam nada sem uma planta da divisao. Passam para a tooltip.
+ *
+ * O corte as tres primeiras ja existia e era mudo: a quarta pessoa desaparecia sem aviso.
+ * Passa a haver contador.
  */
 function presenceDetails(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
+    const chips = people.slice(0, PRESENCE_CHIP_LIMIT).map((person) => postureChip(person?.posture));
+    const hidden = people.length - chips.length;
+
+    if (hidden > 0) {
+        chips.push(
+            `<span class="${CHIP_CLASS} bg-secondary-subtle text-secondary-emphasis">+${hidden}</span>`,
+        );
+    }
+
+    return chips.join("");
+}
+
+/**
+ * As pessoas todas, com onde estao: o texto que espera atras do rato.
+ *
+ * Sem corte, ao contrario das pastilhas. E aqui que as coordenadas e a quarta pessoa em
+ * diante continuam a existir, para quem esteja a comparar com a especificacao do
+ * fabricante.
+ */
+function presenceDetailsTitle(data) {
+    const people = Array.isArray(data?.people) ? data.people : [];
 
     return people
-        .slice(0, 3)
         .map((person, index) => {
             const personIndex = displayPersonIndex(person?.personIndex ?? index);
             const posture = fieldValue("posture", person?.posture);
             const x = dataPointValue(person?.xPositionDm);
             const y = dataPointValue(person?.yPositionDm);
             const z = dataPointValue(person?.zPositionCm);
-            return `Pessoa ${esc(personIndex)}: ${esc(posture)} · x ${esc(x)} dm · y ${esc(y)} dm · z ${esc(z)} cm`;
+            return `Pessoa ${personIndex}: ${posture} · x ${x} dm · y ${y} dm · z ${z} cm`;
         })
-        .join("<br>");
+        .join(" · ");
 }
 
 function radarPositionMinuteStatsValue(data) {
@@ -822,6 +909,7 @@ export function renderRequestCardShell(
         // e o mosaico ignorava-o. Era por isso que o estado de sono nunca aparecia no
         // cartao dos sinais vitais, apesar de o hub o mandar desde sempre.
         details: isSystemRequestCard ? "" : lastContent?.details || "",
+        detailsTitle: isSystemRequestCard ? "" : lastContent?.detailsTitle || "",
         tooltip,
         body: bodyHtml,
         // Um cartao que nao se pode pedir nao e clicavel: o que nao responde ao clique
