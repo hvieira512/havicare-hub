@@ -12,6 +12,10 @@ import {
     suppliersForDeviceType,
 } from "../domain.js";
 import {createWizard} from "./wizard.js";
+import {
+    licenseBadgeValue,
+    licensePickerHtml,
+} from "./classification-ui.js";
 import {gatewayCardMarkup} from "./gateway-links-ui.js";
 
 /**
@@ -29,9 +33,7 @@ import {gatewayCardMarkup} from "./gateway-links-ui.js";
 let els;
 let wizard;
 let onCreate;
-let companies = [];
-let licenses = [];
-let loadLicenses;
+let licenseGroups = [];
 
 const ICONS = {
     watch: "fa-clock",
@@ -56,7 +58,7 @@ const STEPS = ["Classificação", "Este aparelho"];
 const TRAIL_QUESTIONS = [
     {key: "type", label: "Tipo"},
     {key: "model", label: "Modelo"},
-    {key: "owner", label: "Empresa"},
+    {key: "owner", label: "Licença"},
 ];
 
 const QUESTIONS = [
@@ -77,15 +79,15 @@ const QUESTIONS = [
     {
         key: "owner",
         step: 1,
-        clears: [],
-        // Um dispositivo pode nao ter empresa, e sem empresa nao ha licenca para
-        // escolher. "Sem empresa" e o que esta escolhido a partida, e enquanto for a
-        // escolha a pergunta fica aberta -- so colapsa em badges quando ha mesmo empresa.
+        // Os gateways que se podem autorizar sao os da mesma empresa e licenca: trocar de
+        // licenca depois de os escolher deixava-os la, vindos de outro cliente.
+        clears: ["gateways"],
+        // Um dispositivo pode nao ter licenca, e "Sem licença" e uma resposta como as
+        // outras -- por isso a pergunta nao trava o avanco enquanto ninguem lhe tocar.
         optional: true,
-        isAnswered: (a) => Boolean(a.owner?.company && a.owner?.licenseId),
+        isAnswered: (a) => Boolean(a.owner),
         badges: (a) => [
-            {label: "Empresa", value: a.owner.company},
-            {label: "Licença", value: a.owner.licenseId},
+            {label: "Licença", value: licenseBadgeValue(a.owner, licenseGroups)},
         ],
     },
     {
@@ -100,7 +102,6 @@ const QUESTIONS = [
 export function initCreateWizard(context) {
     els = context.els;
     onCreate = context.onCreate;
-    loadLicenses = context.loadLicenses;
     wizard = createWizard({questions: QUESTIONS, steps: STEPS});
 
     els.wizardAsk?.addEventListener("click", handleClick);
@@ -130,9 +131,8 @@ export function initCreateWizard(context) {
  * acabou de dizer. Sao respostas normais e nao um modo especial -- o utilizador pode
  * alterar qualquer uma pela trilha.
  */
-export function openCreateWizard(companyList = [], seed = {}) {
-    companies = companyList;
-    licenses = [];
+export function openCreateWizard(licenseList = [], seed = {}) {
+    licenseGroups = licenseList;
     wizard.reset();
     for (const [key, value] of Object.entries(seed)) {
         if (value) wizard.answer(key, value);
@@ -356,34 +356,9 @@ function renderModel(type) {
 }
 
 function renderOwner(owner) {
-    // As licencas carregadas so valem enquanto houver empresa escolhida: reabrir a
-    // pergunta apaga a resposta, e a lista da empresa anterior nao pode ficar de pe.
-    const available = owner?.company ? licenses : [];
     return `
-        <div class="row g-3">
-            <div class="col-sm-6">
-                <label class="form-label form-label-sm" for="wizardCompany">Empresa</label>
-                <select class="form-select" id="wizardCompany" data-wizard-company>
-                    <option value=""${owner?.company ? "" : " selected"}>Sem empresa</option>
-                    ${companies
-                        .map(
-                            (name) => `<option value="${esc(name)}"${name === owner?.company ? " selected" : ""}>${esc(name)}</option>`,
-                        )
-                        .join("")}
-                </select>
-            </div>
-            <div class="col-sm-6">
-                <label class="form-label form-label-sm" for="wizardLicense">Licença</label>
-                <select class="form-select" id="wizardLicense" data-wizard-license ${available.length ? "" : "disabled"}>
-                    <option value="">${available.length ? "Selecione..." : "Nenhuma"}</option>
-                    ${available
-                        .map(
-                            (license) => `<option value="${esc(String(license.value))}">${esc(license.label)}</option>`,
-                        )
-                        .join("")}
-                </select>
-            </div>
-        </div>`;
+        <label class="form-label form-label-sm">Licença</label>
+        ${licensePickerHtml(licenseGroups, owner)}`;
 }
 
 function renderIdentity(answers) {
@@ -426,14 +401,30 @@ function renderIdentity(answers) {
             : ""}`;
 }
 
-/** Os gateways da mesma empresa e licença: a autorização é por par, não global. */
+/**
+ * Os gateways da mesma empresa e licença: a autorização é por par, não global.
+ *
+ * A ausência escreve-se de duas maneiras conforme quem a escreveu -- a base de dados
+ * guarda a empresa vazia como `null` e a licença como `0`, e o assistente diz "" e "0".
+ * Sem as normalizar, um gateway sem dono nunca aparecia a um sensor sem dono.
+ */
 function eligibleGatewayList(answers) {
     const owner = answers.owner || {};
     return (state.wizardGateways || []).filter(
         (gateway) =>
-            String(gateway.company || "") === String(owner.company || "")
-            && String(gateway.licenseId || "") === String(owner.licenseId || ""),
+            companyKey(gateway.company) === companyKey(owner.company)
+            && licenseIdKey(gateway.licenseId) === licenseIdKey(owner.licenseId),
     );
+}
+
+function companyKey(value) {
+    const name = String(value ?? "").trim();
+    return name === "null" ? "" : name;
+}
+
+function licenseIdKey(value) {
+    const id = String(value ?? "").trim();
+    return id === "" ? "0" : id;
 }
 
 function renderFooter() {
@@ -477,6 +468,16 @@ function handleClick(event) {
             model: model.dataset.wizardModel,
         });
         render();
+        return;
+    }
+
+    const license = event.target.closest("[data-license-pick]");
+    if (license) {
+        wizard.answer("owner", {
+            company: license.dataset.licenseCompany || "",
+            licenseId: license.dataset.licenseId || "0",
+        });
+        render();
     }
 }
 
@@ -487,27 +488,7 @@ function handleTrailClick(event) {
     render();
 }
 
-async function handleChange(event) {
-    const company = event.target.closest("[data-wizard-company]");
-    if (company) {
-        licenses = company.value ? await loadLicenses(company.value) : [];
-        wizard.answer("owner", {company: company.value, licenseId: ""});
-        renderAsk();
-        renderFooter();
-        return;
-    }
-
-    const license = event.target.closest("[data-wizard-license]");
-    if (license) {
-        const answers = wizard.answers();
-        wizard.answer("owner", {
-            company: answers.owner?.company || "",
-            licenseId: license.value,
-        });
-        render();
-        return;
-    }
-
+function handleChange(event) {
     const gateway = event.target.closest("[data-gateway-key]");
     if (gateway) {
         const chosen = [

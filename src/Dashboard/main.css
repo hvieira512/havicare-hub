@@ -998,6 +998,18 @@ body {
     background: var(--bs-border-color);
 }
 
+/* O mesmo desenho dos filtros, mas de escolha unica: a marca e redonda para nao prometer
+   que se podem marcar varias, e a empresa e so o cabecalho do grupo. */
+.license-picker .filter-option-box {
+    border-radius: 50%;
+}
+
+.license-picker-company {
+    padding: .5rem .4375rem .125rem 1.875rem;
+    font-weight: 500;
+    color: var(--bs-secondary-color);
+}
+
 /* Um dispositivo por linha, e a linha toda. Cada campo cai sempre na mesma abcissa e a
    lista le-se a descer por coluna, como uma tabela -- mas cada dispositivo continua a ser
    um objecto com contorno proprio, e nao uma linha de grelha. */

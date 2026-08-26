@@ -279,7 +279,8 @@ function editApiUser(button) {
 async function loadSettingsNavCounts() {
     const asks = [
         ["Models", apiGetModels],
-        ["Company", apiGetCompanies],
+        // O separador chama-se "Licenças" e conta licenças, não as empresas que as detêm.
+        ["Company", apiGetLicenses],
         ["ApiUsers", apiGetApiUsers],
     ];
     await Promise.all(asks.map(async ([key, ask]) => {
@@ -390,7 +391,7 @@ function renderCompanySection(companies, licenses) {
         const owned = (licenses || []).length;
         els.companiesTabSummary.textContent =
             `${total} ${total === 1 ? "empresa" : "empresas"} · ${owned} ${owned === 1 ? "licença" : "licenças"}`;
-        setSettingsNavCount("Company", total);
+        setSettingsNavCount("Company", owned);
     }
     // Uma linha por empresa, e as suas licenças indentadas por baixo. Eram duas tabelas
     // lado a lado com o mesmo peso, e a relação -- uma licença pertence a uma empresa --

@@ -1,11 +1,11 @@
 import {
     createDeviceLink as apiCreateDeviceLink,
-    getCompanies as apiGetCompanies,
     getDevices as apiGetDevices,
     getLicenses as apiGetLicenses,
     saveDevice as apiSaveDevice,
 } from "../../api/index.js";
 import {state} from "../../state.js";
+import {licenseTree} from "../../devices/classification-ui.js";
 import {openCreateWizard} from "../../devices/create-wizard.js";
 import {
     deviceTypeFields,
@@ -30,45 +30,20 @@ export function initWizardHandlers(context) {
 }
 
 /**
- * As licencas de uma empresa, para o assistente.
- *
- * Nao reutiliza o `populateLicenseSelectForCompany` do modal de edicao porque esse
- * escreve directamente nos elementos daquele formulario. O assistente desenha os seus
- * proprios, e o que precisa e dos dados.
- */
-export async function wizardLicensesFor(companyName) {
-    if (state.companies.length === 0) {
-        const data = await apiGetCompanies({limit: 500});
-        state.companies = data?.error ? [] : data.data || [];
-    }
-    const company = state.companies.find((entry) => entry.name === companyName);
-    if (!company) return [];
-    const result = await apiGetLicenses({limit: 500, companyId: company.id});
-    if (result?.error) return [];
-
-    return (result.data || []).map((license) => ({
-        value: license.license_id,
-        label: license.name
-            ? `${license.license_id} — ${license.name}`
-            : String(license.license_id),
-    }));
-}
-
-/**
  * Abre o assistente.
  *
- * Carrega as empresas e os gateways antes de mostrar, para a primeira pergunta ja poder
- * dizer quantos modelos existem por tipo e a terceira ja ter as empresas.
+ * Carrega as licencas e os gateways antes de mostrar, para a primeira pergunta ja poder
+ * dizer quantos modelos existem por tipo e a terceira ja ter a arvore de licencas.
+ *
+ * As licencas vem todas de uma vez e nao empresa a empresa: a arvore mostra-as todas ao
+ * mesmo tempo, e uma licenca acabada de criar tem de estar la -- e a que se quer usar.
  */
 export async function openWizard(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
-    if (state.companies.length === 0) {
-        const data = await apiGetCompanies({limit: 500});
-        state.companies = data?.error ? [] : data.data || [];
-    }
+    const licenses = await apiGetLicenses({limit: 500});
     await loadWizardGateways();
     openCreateWizard(
-        state.companies.map((company) => company.name),
+        licenseTree(licenses?.error ? [] : licenses.data || []),
         seedFromNotification(source),
     );
     wizardModal.show();

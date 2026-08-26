@@ -25,7 +25,6 @@ import {
     createDeviceFromWizard,
     initWizardHandlers,
     openWizard,
-    wizardLicensesFor,
 } from "./handlers/create-wizard.js";
 import {
     clearDeviceFilters,
@@ -511,7 +510,6 @@ export async function startDashboard() {
     initDeviceModal({els, deviceModal, deviceSelectorModal, settingsModal});
     initCreateWizard({
         els,
-        loadLicenses: wizardLicensesFor,
         onCreate: createDeviceFromWizard,
     });
     initDeviceConfigHandlers({els});
