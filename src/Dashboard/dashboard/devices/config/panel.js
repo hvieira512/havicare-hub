@@ -1,5 +1,4 @@
 import {
-    getDevice as apiGetDevice,
     requestCapability as apiRequestCapability,
     saveConfiguration as apiSaveConfiguration,
 } from "../../api/index.js";
@@ -21,7 +20,6 @@ let els;
 
 const configFeedbackTimers = new Map();
 const configPhaseTimers = new Map();
-let deviceConfigRefreshPromise = null;
 
 export function initDeviceConfigPanel(context) {
     els = context.els;
@@ -112,52 +110,6 @@ export async function saveDeviceConfiguration(section) {
     }
 }
 
-export async function refreshDeviceModalConfigurations(shouldRender = true) {
-    if (
-        !state.deviceModal.imei ||
-        !state.deviceModal.supplier ||
-        !state.deviceModal.model
-    ) {
-        return null;
-    }
-
-    if (deviceConfigRefreshPromise) {
-        return deviceConfigRefreshPromise;
-    }
-
-    const snapshot = [
-        state.deviceModal.imei,
-        state.deviceModal.supplier,
-        state.deviceModal.model,
-    ].join("|");
-
-    deviceConfigRefreshPromise = apiGetDevice(state.deviceModal.imei)
-        .then((result) => {
-            const current = [
-                state.deviceModal.imei,
-                state.deviceModal.supplier,
-                state.deviceModal.model,
-            ].join("|");
-            if (snapshot !== current) {
-                return result;
-            }
-
-            state.deviceModal.configurations = result?.configurations || {};
-            state.deviceModal.configurationSync =
-                result?.configurationSync || {entries: {}};
-            state.deviceModal.capabilities = result?.capabilities || {};
-            if (shouldRender) {
-                renderDeviceConfigurationModal();
-            }
-            return result;
-        })
-        .finally(() => {
-            deviceConfigRefreshPromise = null;
-        });
-
-    return deviceConfigRefreshPromise;
-}
-
 export function syncDeviceModalCommandStates(imei, commands) {
     if (String(state.deviceModal.imei || "") !== String(imei || "")) {
         return;
@@ -212,7 +164,7 @@ export function syncDeviceModalCommandStates(imei, commands) {
     }
 }
 
-export function setConfigUi(key, updates) {
+function setConfigUi(key, updates) {
     state.deviceModal.configUi[key] = {
         ...(state.deviceModal.configUi[key] || {}),
         ...updates,
@@ -263,7 +215,7 @@ function transitionConfigPhase(key, phase, delayMs, callback) {
     );
 }
 
-export function armConfigFeedbackAutoClose() {
+function armConfigFeedbackAutoClose() {
     const alerts = Array.from(
         els.deviceConfigRoot.querySelectorAll("[data-config-feedback-key]"),
     );
@@ -300,8 +252,6 @@ export function resetConfigUiState() {
         clearTimeout(timer);
     }
     configPhaseTimers.clear();
-
-    deviceConfigRefreshPromise = null;
 }
 
 export function renderDeviceConfigurationModal() {

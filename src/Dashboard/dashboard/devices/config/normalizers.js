@@ -97,7 +97,7 @@ export function normalizeFourPTouchAlarms(desired) {
     return [];
 }
 
-export function normalizeFourPTouchAlarmItem(item) {
+function normalizeFourPTouchAlarmItem(item) {
     if (typeof item === "string") {
         return parseFourPTouchAlarmString(item);
     }
@@ -129,7 +129,7 @@ export function normalizeFourPTouchAlarmItem(item) {
     };
 }
 
-export function parseFourPTouchAlarmString(value) {
+function parseFourPTouchAlarmString(value) {
     const parts = String(value || "").trim().split("-");
     if (parts.length < 3) {
         return { time: "", enabled: true, mode: 1, custom: "" };
@@ -186,7 +186,7 @@ export function normalizeAlarmClockItems(desired) {
         .map((item) => normalizeAlarmClockItem(item));
 }
 
-export function normalizeAlarmClockItem(item) {
+function normalizeAlarmClockItem(item) {
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
         item.recurrence?.kind ?? item.kind ?? "once",
     );

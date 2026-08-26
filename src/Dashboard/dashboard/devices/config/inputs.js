@@ -770,7 +770,7 @@ export function contactsInput(entry, desired, meta = {}) {
         </div>`;
 }
 
-export function phoneRepeaterInput(entry, desired, options) {
+function phoneRepeaterInput(entry, desired, options) {
     const limit = Math.max(1, parseInt(String(options.limit ?? entry.limit ?? 3), 10) || 3);
     const values = Array.isArray(desired)
         ? desired
@@ -1004,7 +1004,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
         </div>`;
 }
 
-export function fourPTouchAlarmRow(alarm, index) {
+function fourPTouchAlarmRow(alarm, index) {
     const mode = parseInt(String(alarm.mode ?? 1), 10) || 1;
     const customVisible = mode === 3;
     const rowId = nextUid("fourptouch-alarm");
@@ -1074,7 +1074,7 @@ export function fourPTouchAlarmRow(alarm, index) {
         </div>`;
 }
 
-export function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}) {
+function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonlexFields = {}) {
     const rowId = nextUid("alarm-clock");
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(
         item.recurrence?.kind ?? item.kind ?? recurrenceOptions[0]?.value ?? "once",

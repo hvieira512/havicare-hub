@@ -342,5 +342,4 @@ export {
     loadSettingsCapabilitiesSection,
     handleCapabilitySupplierClick,
     handleCapabilityCatalogSearch,
-    selectCapabilitySupplier,
 };

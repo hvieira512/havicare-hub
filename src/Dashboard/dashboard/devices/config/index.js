@@ -614,7 +614,7 @@ export function renderDeviceConfigurationRoot(context) {
         </div>`;
 }
 
-export function renderConfigSection(
+function renderConfigSection(
     protocol,
     entry,
     row,

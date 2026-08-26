@@ -2,9 +2,7 @@ import {
     getDevice as apiGetDevice,
     getDevices as apiGetDevices,
     getLicenses as apiGetLicenses,
-    getModels as apiGetModels,
     getProtocols as apiGetProtocols,
-    getSuppliers as apiGetSuppliers,
 } from "../api/index.js";
 import {getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels} from "../api/models.js";
 import {state, clearSelection, selectImei} from "../state.js";
@@ -120,19 +118,6 @@ async function fetchSummary() {
     }
 }
 
-async function ensureModelsLoaded(force = false) {
-    if (
-        !force &&
-        Array.isArray(state.summary.models) &&
-        state.summary.models.length > 0
-    ) {
-        return state.summary.models;
-    }
-
-    const modelsResponse = await apiGetModels({ limit: 500 });
-    state.summary.models = modelsResponse.data || [];
-    return state.summary.models;
-}
 
 function flattenDeviceTypeSuppliersModels(groups = []) {
     const models = [];
@@ -184,19 +169,6 @@ async function ensureLicensesLoaded(force = false) {
     return state.settingsModal.licenses;
 }
 
-async function ensureSuppliersLoaded(force = false) {
-    if (
-        !force &&
-        Array.isArray(state.modelModalSuppliers) &&
-        state.modelModalSuppliers.length > 0
-    ) {
-        return state.modelModalSuppliers;
-    }
-
-    const suppliersResponse = await apiGetSuppliers({ limit: 500 });
-    state.modelModalSuppliers = suppliersResponse.data || [];
-    return state.modelModalSuppliers;
-}
 
 async function ensureProtocolsLoaded(force = false) {
     if (!force && Array.isArray(state.protocols) && state.protocols.length > 0) {
@@ -644,10 +616,7 @@ async function loadDevice(imei) {
 
 export {
     ensureDeviceTypeSuppliersModelsLoaded,
-    ensureLicensesLoaded,
-    ensureModelsLoaded,
     ensureProtocolsLoaded,
-    ensureSuppliersLoaded,
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
     handleDevicePaginationClick,
@@ -656,8 +625,6 @@ export {
     loadSummary,
     normalizeFilterValue,
     openDeviceSelector,
-    renderDeviceFilterControls,
-    renderDevicePagination,
     renderDeviceSelector,
     selectDevice,
 };

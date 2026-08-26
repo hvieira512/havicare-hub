@@ -124,7 +124,7 @@ export function setDeviceFormError(message = "") {
     );
 }
 
-export function activeDeviceModalTab() {
+function activeDeviceModalTab() {
     return els.deviceConfigTabBtn?.classList.contains("active")
         || els.deviceConfigPane?.classList.contains("active")
         ? "config"
@@ -350,7 +350,7 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
     }
 }
 
-export function updateDevicePreview() {
+function updateDevicePreview() {
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
     const modelInfo = findModelInfo(
@@ -417,7 +417,7 @@ export async function ensureDeviceConfigurationCatalogLoaded() {
     }
 }
 
-export function applyFourPTouchDeviceIdUi() {
+function applyFourPTouchDeviceIdUi() {
     if (!els.deviceDeviceId) {
         return;
     }
@@ -586,7 +586,7 @@ export function handleDeleteDeviceBtnClick() {
     });
 }
 
-export function renderDeviceSimNumberField(value = "") {
+function renderDeviceSimNumberField(value = "") {
     if (!els.deviceSimNumberRoot) {
         return;
     }
@@ -598,7 +598,7 @@ export function renderDeviceSimNumberField(value = "") {
     resetPhoneControls(els.deviceSimNumberRoot);
 }
 
-export function getDeviceSimNumberValue(strict = false) {
+function getDeviceSimNumberValue(strict = false) {
     const control =
         els.deviceSimNumberRoot?.querySelector("[data-phone-control]") || null;
     if (!control) {

@@ -125,37 +125,6 @@ function resetModelForm(selectedSupplierId = "") {
     updateModelProtocolAndPreview();
 }
 
-function editModel(
-    id,
-    supplierId,
-    supplier,
-    internalModel,
-    commercialName,
-    deviceType,
-    image,
-) {
-    const {els} = getSettingsModelsRuntime();
-    revokeModelPreviewUrl();
-    els.modelForm.dataset.modelId = String(id);
-    els.modelForm.dataset.supplierId = String(supplierId);
-    els.modelForm.dataset.supplier = supplier;
-    els.modelForm.dataset.image = image || "";
-    els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
-    els.modelInternalModel.value = internalModel;
-    els.modelCommercialName.value = commercialName;
-    els.modelImage.value = "";
-    els.saveModelBtn.innerHTML =
-        '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
-    if (els.modelTemplateSummary) {
-        els.modelTemplateSummary.textContent =
-            "A edição deste formulário não altera as capacidades do modelo.";
-    }
-
-    renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
-    renderModelSupplierButtons(supplierId);
-    updateModelProtocolAndPreview();
-}
-
 function selectModelSupplier(supplierId) {
     const {els, callbacks} = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
@@ -298,7 +267,6 @@ async function saveModel() {
 }
 
 export {
-    editModel,
     openNewModelForm,
     refreshNewModelCapabilityTemplate,
     resetModelForm,

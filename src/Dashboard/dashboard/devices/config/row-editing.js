@@ -164,7 +164,7 @@ export function removeTakePillsReminder(row) {
     syncTakePillsRows(section);
 }
 
-export function syncTakePillsRows(section) {
+function syncTakePillsRows(section) {
     const list = section.querySelector("[data-takepills-reminders-list]");
     if (!list) return;
 
@@ -202,7 +202,7 @@ export function removeWonlexMedicationPlan(row) {
     renumberWonlexMedicationPlans(list);
 }
 
-export function renumberWonlexMedicationPlans(list) {
+function renumberWonlexMedicationPlans(list) {
     list.querySelectorAll(
         '[data-repeat-row="wonlexMedicationPlan"]',
     ).forEach((row, index) => {
@@ -264,12 +264,12 @@ export function syncAlarmClockCustomVisibility(row) {
     );
 }
 
-export function isFourPTouchPhonebookSection(section) {
+function isFourPTouchPhonebookSection(section) {
     return String(section?.dataset?.configProtocol || "") === "four-p-touch"
         && String(section?.dataset?.configKey || "") === "phonebook";
 }
 
-export function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength = 0 } = {}) {
+function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength = 0 } = {}) {
     const wrapper = document.createElement("div");
     wrapper.className = "row g-2 align-items-end";
     wrapper.dataset.repeatRow = "contacts";

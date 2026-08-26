@@ -206,13 +206,6 @@ export const commandLabel = (command) =>
     command.label ||
     command.command;
 
-export const displayValue = (value) => {
-    if (Array.isArray(value)) return String(value.length);
-    if (value && typeof value === "object") return JSON.stringify(value);
-    if (typeof value === "boolean") return value ? "Sim" : "Não";
-    return String(value);
-};
-
 export const eventTime = (payload) => {
     const time = Date.parse(payload?.occurredAt || payload?.recordedAt || "");
     return Number.isNaN(time) ? 0 : time;

@@ -14,7 +14,7 @@ import { state } from "../../state.js";
 // a single fetch rather than racing each other.
 const protocolCatalogRequests = {};
 
-export function isPlainObject(value) {
+function isPlainObject(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -50,7 +50,7 @@ export async function catalogForProtocol(protocol) {
     return protocolCatalogRequests[protocol];
 }
 
-export function protocolDefinition(protocol) {
+function protocolDefinition(protocol) {
     return (state.protocols || []).find((entry) => entry.protocol === protocol) || null;
 }
 

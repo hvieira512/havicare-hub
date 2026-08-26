@@ -121,7 +121,7 @@ export function readContacts(section) {
     return contacts;
 }
 
-export function findDuplicateValues(values) {
+function findDuplicateValues(values) {
     const seen = new Set();
     const duplicates = new Set();
     for (const value of values) {

@@ -38,7 +38,7 @@ export function licenseTree(licenses = []) {
 }
 
 /** A chave de uma escolha: o `licenseId` sozinho nao chega, so e unico dentro da empresa. */
-export function licenseKey(company, licenseId) {
+function licenseKey(company, licenseId) {
     return `${String(company ?? "")}:${String(licenseId ?? "0")}`;
 }
 

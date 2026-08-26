@@ -141,7 +141,7 @@ export function initCreateWizard(context) {
  * acabou de dizer. Sao respostas normais e nao um modo especial -- o utilizador pode
  * alterar qualquer uma pela trilha.
  */
-export function openCreateWizard(licenseList = [], seed = {}) {
+function openCreateWizard(licenseList = [], seed = {}) {
     licenseGroups = licenseList;
     wizard.reset();
     for (const [key, value] of Object.entries(seed)) {

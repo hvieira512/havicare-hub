@@ -31,7 +31,7 @@ const MAC_IDENTITY = {
  * primeiro num só sítio no frontend é o que torna essa migração numa substituição de
  * tabela por chamada, em vez de uma caça a ramificações.
  */
-export const DEVICE_TYPES = {
+const DEVICE_TYPES = {
     watch: {
         identity: {
             field: "imei",
@@ -99,11 +99,6 @@ export function linksToGateway(deviceType) {
     return deviceTypeFields(deviceType).gatewayLinks;
 }
 
-// Identified by a canonical MAC rather than an IMEI.
-export function usesMacAddress(deviceType) {
-    return deviceTypeFields(deviceType).identity.label === "MAC";
-}
-
 export function hubRulesFor(deviceType) {
     return deviceTypeFields(deviceType).hubRules;
 }
@@ -124,12 +119,6 @@ export function deviceTypeLabel(deviceType) {
 export function normalizeLicenseId(licenseId) {
     const value = String(licenseId ?? "0").trim();
     return value === "" ? "0" : value;
-}
-
-export function licenseLabel(licenseId) {
-    return normalizeLicenseId(licenseId) === "0"
-        ? "Sem Licença"
-        : normalizeLicenseId(licenseId);
 }
 
 export function companyLabel(company) {
@@ -188,11 +177,11 @@ export function modelDeviceType(model) {
     );
 }
 
-export function suppliersFromModels(models = []) {
+function suppliersFromModels(models = []) {
     return [...new Set((models || []).map((model) => model.supplier).filter(Boolean))];
 }
 
-export function modelsForSupplier(supplier, models = []) {
+function modelsForSupplier(supplier, models = []) {
     return (models || []).filter((model) => model.supplier === supplier);
 }
 
@@ -219,14 +208,6 @@ export function modelsForSupplierAndType(
     return modelsForSupplier(supplier, models).filter(
         (model) => modelDeviceType(model) === normalizeDeviceType(deviceType),
     );
-}
-
-export function modelDisplayLabel(model) {
-    const commercialName = modelCommercialName(model);
-    const internalName = modelInternalName(model);
-    return commercialName === internalName
-        ? commercialName
-        : `${commercialName} (${internalName})`;
 }
 
 export function deriveFourPTouchDeviceId(imei) {
@@ -270,16 +251,6 @@ export function flattenedCapabilityKeys(capabilities) {
     return enabled;
 }
 
-export function capabilitiesForSupplier(supplier, models = []) {
-    const entry = (models || []).find(
-        (model) =>
-            model.supplier === supplier &&
-            model?.capabilities &&
-            typeof model.capabilities === "object",
-    );
-    return flattenedCapabilityKeys(entry?.capabilities || {});
-}
-
 export function suppliersForDeviceType(deviceType, models = []) {
     const normalizedDeviceType = normalizeDeviceType(deviceType);
     const allSuppliers = suppliersFromModels(models);
@@ -293,7 +264,7 @@ export function suppliersForDeviceType(deviceType, models = []) {
     return allSuppliers.filter((name) => deviceTypeSuppliers.includes(name));
 }
 
-export function capabilityCatalogEntryByKey(
+function capabilityCatalogEntryByKey(
     key,
     catalog = [],
 ) {
@@ -304,7 +275,7 @@ export function capabilityLabelByKey(key, catalog = []) {
     return capabilityCatalogEntryByKey(key, catalog)?.label || humanizeCapabilityKey(key);
 }
 
-export function capabilitySectionLabel(section, catalog = []) {
+function capabilitySectionLabel(section, catalog = []) {
     const label = (catalog || []).find((entry) => entry.section === section)?.sectionLabel;
     return label || humanizeCapabilityKey(section);
 }
