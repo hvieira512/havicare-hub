@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import "./support/browser-env.js";
 import {parseFragment} from "./support/dom.js";
 
+const stateModule = await import("../../src/Dashboard/dashboard/state.js");
 const {
     editWizardAnswered,
     initEditWizard,
@@ -172,4 +173,20 @@ test("o Anterior volta à classificação sem abrir pergunta nenhuma", () => {
 
     els.deviceNextBtn.click();
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
+});
+
+test("enquanto o dispositivo não chegou, a trilha não inventa uma classificação", () => {
+    // O formulario ainda tem o que la estava por omissao -- Relogio, o primeiro modelo,
+    // sem licenca -- e isso e a classificacao de outro aparelho.
+    const {state} = stateModule;
+    const {root} = harness();
+    state.deviceModal.loading = true;
+    renderEditWizard();
+
+    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 0);
+    assert.equal(root.querySelectorAll(".wizard-badge").length, 3);
+
+    state.deviceModal.loading = false;
+    renderEditWizard();
+    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
 });

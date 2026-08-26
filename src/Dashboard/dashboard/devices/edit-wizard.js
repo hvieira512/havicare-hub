@@ -1,4 +1,5 @@
 import {deviceTypeLabel} from "../domain.js";
+import {state} from "../state.js";
 import {
     licenseBadgeValue,
     licensePickerHtml,
@@ -120,6 +121,10 @@ function answerValues() {
 
 function renderTrail() {
     const values = answerValues();
+    // Enquanto o dispositivo nao chegou, o formulario ainda tem o que la estava por
+    // omissao: mostrar isso era escrever a classificacao de outro aparelho. Sem badges, a
+    // trilha fica com as tres perguntas esbatidas, que e o que se sabe -- nada.
+    const known = !state.deviceModal.loading;
 
     els.deviceTrail.setAttribute("aria-valuenow", String(step));
     els.deviceTrail.innerHTML = wizardTrailHtml({
@@ -127,7 +132,7 @@ function renderTrail() {
         // A pergunta aberta nao leva badge: e a que se esta a responder, e o valor antigo
         // esta na grelha por baixo, marcado.
         badges: TRAIL_QUESTIONS
-            .filter((question) => question.key !== openQuestion)
+            .filter((question) => known && question.key !== openQuestion)
             .map((question) => ({
                 key: question.key,
                 label: question.label,
