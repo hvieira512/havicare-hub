@@ -35,7 +35,8 @@ final class NotificationSourceTest extends TestCase
         // reportou -- protocolo para o modelo, modelo para o tipo, e a identidade -- para
         // nao se escrever a mao o que ele acabou de dizer.
         self::assertStringContainsString('async function openWizard(source = "")', $bootstrap);
-        self::assertStringContainsString('function seedFromNotification(source)', $bootstrap);
+        self::assertStringContainsString('function seedFromNotification(source, tree = [])', $bootstrap);
+        self::assertStringContainsString('ownerFromLicense(notification?.licenseId, tree)', $bootstrap);
         self::assertStringContainsString('String(model.protocol || "") === protocol', $bootstrap);
         self::assertStringContainsString('type: modelDeviceType(detected)', $bootstrap);
         self::assertStringContainsString('openAddDevice: openWizard', $bootstrap);

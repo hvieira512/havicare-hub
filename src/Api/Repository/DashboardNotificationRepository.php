@@ -20,21 +20,23 @@ final class DashboardNotificationRepository
         string $model,
         string $ident,
         string $reason,
+        int $licenseId = 0,
     ): void {
         $stmt = $this->pdo->prepare('
             INSERT INTO dashboard_notifications (
-                type, imei, protocol, model, ident, reason
+                type, imei, protocol, model, ident, reason, license_id
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 model = VALUES(model),
                 ident = VALUES(ident),
                 reason = VALUES(reason),
+                license_id = VALUES(license_id),
                 occurrence_count = occurrence_count + 1,
                 last_seen_at = CURRENT_TIMESTAMP,
                 read_at = NULL
         ');
-        $stmt->execute([$type, $imei, $protocol, $model, $ident, $reason]);
+        $stmt->execute([$type, $imei, $protocol, $model, $ident, $reason, $licenseId]);
     }
 
     /**
@@ -44,7 +46,7 @@ final class DashboardNotificationRepository
     {
         $stmt = $this->pdo->prepare('
             SELECT
-                id, type, imei, protocol, model, ident, reason,
+                id, type, imei, protocol, model, ident, reason, license_id,
                 occurrence_count, first_seen_at, last_seen_at, read_at
             FROM dashboard_notifications
             ORDER BY last_seen_at DESC, id DESC
@@ -102,6 +104,7 @@ final class DashboardNotificationRepository
             'model' => (string)($row['model'] ?? ''),
             'ident' => (string)($row['ident'] ?? ''),
             'reason' => (string)($row['reason'] ?? ''),
+            'licenseId' => (int)($row['license_id'] ?? 0),
             'occurrenceCount' => (int)($row['occurrence_count'] ?? 0),
             'firstSeenAt' => TimestampFormatter::toIso((string)($row['first_seen_at'] ?? '')),
             'lastSeenAt' => TimestampFormatter::toIso((string)($row['last_seen_at'] ?? '')),

@@ -18,11 +18,10 @@ final class BridgeTest extends TestCase
     /**
      * A notificação de um radar desconhecido leva a licença do tópico.
      *
-     * O `ident` é o campo livre que a dashboard desenha como `protocol · ident` quando não
-     * há modelo. Levava o UID, que já é a linha de cima da notificação, e por isso o UID
-     * aparecia duas vezes e a licença não aparecia de todo. Quem lê a notificação para
-     * registar o radar precisa exactamente da licença: é o único campo do formulário que
-     * não se deduz do que lá está.
+     * O tópico é `radar/{licenca}/{uid}` e a licença é o único campo do assistente de
+     * registo que não se deduz do protocolo -- o tipo e o modelo já vinham. Vai como
+     * número e não dentro do `ident`, para a dashboard a poder pré-seleccionar em vez de
+     * ter de interpretar uma frase.
      */
     public function testUnregisteredRadarNotificationCarriesTheTopicLicense(): void
     {
@@ -35,8 +34,9 @@ final class BridgeTest extends TestCase
                 '9D8A3204F853',
                 'qinglanst-radar',
                 '',
-                'licença 2103',
-                'device_not_authorized'
+                '9D8A3204F853',
+                'device_not_authorized',
+                2103
             );
         $bridge = new Bridge(
             new FakeMqttSubscriber(),

@@ -52,11 +52,18 @@ abstract class Bridge implements MqttIngress
         $this->handleMessage($topic, $payload);
     }
 
+    /**
+     * `$licenseId` só é conhecido por quem o consegue tirar do que recebeu. O radar
+     * consegue -- publica em `radar/{licenca}/{uid}` --, e é o que permite à dashboard
+     * pré-seleccionar a licença ao registar. Quem se identifica só por MAC ou por endereço
+     * deixa ficar a zero.
+     */
     protected function recordUnauthorizedDevice(
         string $identity,
         string $protocol,
         string $model = '',
         string $ident = '',
+        int $licenseId = 0,
     ): void {
         try {
             $this->dashboardStore?->recordRejectedDevice(
@@ -64,7 +71,8 @@ abstract class Bridge implements MqttIngress
                 $protocol,
                 $model,
                 $ident,
-                'device_not_authorized'
+                'device_not_authorized',
+                $licenseId
             );
         } catch (\Throwable $e) {
             Logger::channel('hub')->error(

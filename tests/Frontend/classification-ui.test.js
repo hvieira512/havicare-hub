@@ -8,6 +8,7 @@ const {
     cardGrid,
     deviceTypeCardsHtml,
     modelCardsHtml,
+    ownerFromLicense,
     supplierPillsHtml,
     wizardTrailHtml,
 } = await import("../../src/Dashboard/dashboard/devices/classification-ui.js");
@@ -144,4 +145,40 @@ test("o fornecedor escolhido é a pastilha cheia", () => {
         root.querySelector('[data-supplier="4P Touch"]').classList.contains("btn-outline-secondary"),
         true,
     );
+});
+
+/**
+ * A licenca que uma notificacao traz, resolvida na arvore.
+ *
+ * O radar publica em `radar/{licenca}/{uid}`, por isso o hub sabe a licenca de um radar
+ * que ainda nao esta registado e a notificacao leva-a. O assistente pre-selecciona-a --
+ * mas a escolha e o par empresa+licenca, e o numero sozinho pode nao chegar.
+ */
+test("a licença da notificação ganha a empresa a que pertence", () => {
+    const tree = [
+        {company: "havicare", licenses: [{licenseId: "1", name: "hc.dev"}]},
+        {company: "hitcare", licenses: [{licenseId: "1001", name: "gucc.dev"}, {licenseId: "2103", name: ""}]},
+    ];
+
+    assert.deepEqual(ownerFromLicense(2103, tree), {company: "hitcare", licenseId: "2103"});
+    assert.deepEqual(ownerFromLicense("1001", tree), {company: "hitcare", licenseId: "1001"});
+});
+
+test("uma licença que não existe na árvore não pré-seleciona nada", () => {
+    const tree = [{company: "hitcare", licenses: [{licenseId: "1001", name: "gucc.dev"}]}];
+
+    // A 2051 existe no broker e nao na base de dados: ninguem a criou ainda.
+    assert.equal(ownerFromLicense(2051, tree), null);
+    assert.equal(ownerFromLicense(0, tree), null);
+    assert.equal(ownerFromLicense(null, tree), null);
+});
+
+test("o mesmo número em duas empresas fica por escolher", () => {
+    const tree = [
+        {company: "havicare", licenses: [{licenseId: "22", name: "hc.simplificado"}]},
+        {company: "hitcare", licenses: [{licenseId: "22", name: "outra"}]},
+    ];
+
+    // Escolher mal aqui poe o dispositivo na empresa errada sem ninguem reparar.
+    assert.equal(ownerFromLicense(22, tree), null);
 });

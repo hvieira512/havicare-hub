@@ -24,6 +24,7 @@ import {
     licensePickerHtml,
     licenseTree,
     modelCardsHtml,
+    ownerFromLicense,
     supplierPillsHtml,
     wizardTrailHtml,
 } from "./classification-ui.js";
@@ -490,10 +491,8 @@ export async function openWizard(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
     const licenses = await apiGetLicenses({limit: 500});
     await loadWizardGateways();
-    openCreateWizard(
-        licenseTree(licenses?.error ? [] : licenses.data || []),
-        seedFromNotification(source),
-    );
+    const tree = licenseTree(licenses?.error ? [] : licenses.data || []);
+    openCreateWizard(tree, seedFromNotification(source, tree));
     wizardModal.show();
 }
 
@@ -504,7 +503,7 @@ export async function openWizard(source = "") {
  * chega para o tipo e o modelo, e evita escrever a mao o que ele acabou de dizer. Sem
  * notificacao devolve nada, e o assistente comeca do zero.
  */
-function seedFromNotification(source) {
+function seedFromNotification(source, tree = []) {
     const notification = source && typeof source === "object" ? source : null;
     const identity = String(notification?.imei || source || "").trim();
     if (identity === "") return {};
@@ -520,7 +519,8 @@ function seedFromNotification(source) {
             || modelCommercialName(model) === reported,
     ) || candidates[0] || null;
 
-    if (!detected) return {identity};
+    const owner = ownerFromLicense(notification?.licenseId, tree);
+    if (!detected) return owner ? {identity, owner} : {identity};
 
     return {
         type: modelDeviceType(detected),
@@ -529,6 +529,7 @@ function seedFromNotification(source) {
             model: modelInternalName(detected),
         },
         identity,
+        ...(owner ? {owner} : {}),
     };
 }
 

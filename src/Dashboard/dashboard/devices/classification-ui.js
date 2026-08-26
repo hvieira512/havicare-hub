@@ -43,6 +43,28 @@ function licenseKey(company, licenseId) {
 }
 
 /**
+ * Um `licenseId` sozinho, resolvido na arvore para ganhar a empresa que lhe falta.
+ *
+ * Existe porque a notificacao de um radar nao autorizado traz a licenca do topico
+ * `radar/{licenca}/{uid}` e o assistente quer pre-selecciona-la -- mas a escolha e o par
+ * empresa+licenca, pela mesma razao que o `licenseKey` acima. Se o mesmo numero existir em
+ * duas empresas nao ha como saber qual e, e devolve nada: por escolher e melhor do que
+ * escolhido mal sem ninguem reparar.
+ */
+export function ownerFromLicense(licenseId, tree = []) {
+    const wanted = String(licenseId ?? "");
+    if (wanted === "" || wanted === "0") return null;
+
+    const matches = (tree || []).flatMap((group) =>
+        (group.licenses || [])
+            .filter((license) => String(license.licenseId) === wanted)
+            .map(() => ({company: group.company, licenseId: wanted})),
+    );
+
+    return matches.length === 1 ? matches[0] : null;
+}
+
+/**
  * A arvore de licencas por onde se escolhe o dono de um dispositivo.
  *
  * A empresa e so o cabecalho do grupo: escolhe-se uma licenca, e a empresa vem dela. O

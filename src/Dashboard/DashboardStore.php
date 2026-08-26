@@ -50,7 +50,8 @@ final class DashboardStore implements DashboardStoreContract
         string $protocol,
         string $model,
         string $ident,
-        string $reason
+        string $reason,
+        int $licenseId = 0
     ): void {
         $this->db?->dashboardNotifications->record(
             'device_not_authorized',
@@ -58,7 +59,8 @@ final class DashboardStore implements DashboardStoreContract
             $protocol,
             $model,
             $ident,
-            $reason
+            $reason,
+            $licenseId
         );
     }
 

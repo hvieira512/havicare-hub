@@ -30,9 +30,13 @@ const render = () => {
 
     elements.list.innerHTML = notifications.map((notification) => {
         const attempts = Number(notification.occurrenceCount) || 1;
+        // A licença ganha ao modelo e à identidade: quando o hub a sabe, é a informação que
+        // falta a quem vai registar o dispositivo. A identidade já é a linha de cima.
         const details = [
             notification.protocol,
-            notification.model || notification.ident,
+            Number(notification.licenseId) > 0
+                ? `licença ${notification.licenseId}`
+                : notification.model || notification.ident,
         ].filter(Boolean).map(esc).join(" · ");
         const unreadClass = notification.readAt
             ? ""
