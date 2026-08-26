@@ -8,13 +8,11 @@ import {
 import {initSettingsApiUsers, loadSettingsApiUsersSection} from "./api-users.js";
 import {initSettingsCompanies, loadSettingsCompanySection} from "./companies.js";
 import {
-    ensureCapabilityCatalog,
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
 } from "./capabilities.js";
 import {initSettingsModels} from "./models/shell.js";
 import {loadSettingsModelsSection} from "./models/list.js";
-import {refreshNewModelCapabilityTemplate} from "./models/form.js";
 
 /**
  * A raiz de composicao do modal de definicoes.
@@ -31,13 +29,7 @@ export function initSettings(context) {
     initSettingsApiUsers(context);
     initSettingsCompanies(context);
     initSettingsCapabilities(context);
-    initSettingsModels({
-        ...context,
-        callbacks: {
-            ensureCapabilityCatalog,
-            refreshNewModelCapabilityTemplate,
-        },
-    });
+    initSettingsModels(context);
 }
 
 /**

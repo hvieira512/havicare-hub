@@ -18,7 +18,7 @@ import {
     modelDeviceType,
     modelInternalName,
 } from "../../domain.js";
-import {CAPABILITY_SECTION_ICONS, ensureCapabilityCatalog} from "../capabilities.js";
+import {CAPABILITY_SECTION_ICONS, loadCapabilityCatalog} from "../capabilities.js";
 import {getSettingsModelsRuntime, modelsCarousel} from "./shell.js";
 import {backToModelList} from "./list.js";
 
@@ -38,7 +38,7 @@ async function openModelDetail(modelId) {
     const {els} = getSettingsModelsRuntime();
     const response = await apiGetModel(modelId);
     const model = response.data || response;
-    await ensureCapabilityCatalog(
+    await loadCapabilityCatalog(
         model.device_type || model.deviceType || "watch",
     );
 

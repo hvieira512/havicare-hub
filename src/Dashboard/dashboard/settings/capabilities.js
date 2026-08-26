@@ -1,5 +1,4 @@
 import {
-    getCapabilities as apiGetCapabilities,
     getModelFilters as apiGetModelFilters,
     getModelTemplate as apiGetModelTemplate,
 } from "../api/index.js";
@@ -7,6 +6,7 @@ import {state} from "../state.js";
 import {esc} from "../format.js";
 import {renderButtonGroup, renderDeviceTypeTiles} from "../widgets.js";
 import {requestCardContent} from "../telemetry-cards.js";
+import {ensureCapabilityCatalog} from "../capability-catalog.js";
 import {
     capabilitiesGroupedBySection,
     deviceTypeOptions,
@@ -22,8 +22,8 @@ import {
  * capacidades existem para este tipo, e quais delas e que este fornecedor traz. Por isso e
  * que as que ele nao declara continuam na lista, esbatidas, em vez de desaparecerem.
  *
- * O `ensureCapabilityCatalog` e o catalogo por tipo, com cache, e e daqui que a ficha de
- * um modelo o vai buscar.
+ * O catalogo por tipo, com a sua cache, vive no `capability-catalog.js` da raiz -- a
+ * coluna de detalhe tambem o le, para dar nome as capacidades nos cartoes.
  */
 let els;
 
@@ -31,22 +31,16 @@ async function initSettingsCapabilities(context) {
     els = context.els;
 }
 
-async function ensureCapabilityCatalog(deviceType) {
-    const normalized = normalizeDeviceType(
+/**
+ * O catálogo do tipo escolhido, guardado onde este separador o desenha.
+ *
+ * A cache e o pedido vivem no `capability-catalog.js` da raiz, que a coluna de detalhe
+ * também usa; aqui só se escolhe qual dos catálogos é o que está à vista.
+ */
+async function loadCapabilityCatalog(deviceType) {
+    const catalog = await ensureCapabilityCatalog(
         deviceType || state.settingsModal.capabilityDeviceType || "watch",
     );
-    const cached = state.settingsModal.capabilityCatalogByType?.[normalized];
-    if (cached) {
-        state.settingsModal.capabilityCatalog = cached;
-        return cached;
-    }
-
-    const response = await apiGetCapabilities({ deviceType: normalized });
-    const catalog = response.data || [];
-    state.settingsModal.capabilityCatalogByType = {
-        ...(state.settingsModal.capabilityCatalogByType || {}),
-        [normalized]: catalog,
-    };
     state.settingsModal.capabilityCatalog = catalog;
     return catalog;
 }
@@ -98,7 +92,7 @@ async function loadSettingsCapabilitiesSection(
         state.settingsModal.capabilitySupplier = "";
         state.settingsModal.capabilityTemplateEnabledKeys = [];
     }
-    await ensureCapabilityCatalog(normalized);
+    await loadCapabilityCatalog(normalized);
     await ensureCapabilityModelFilters();
     resolveCapabilitySuppliersForDeviceType(normalized);
     if (state.settingsModal.capabilitySupplier) {
@@ -337,7 +331,7 @@ function updateCapabilitySupplierSummary() {
 }
 
 export {
-    ensureCapabilityCatalog,
+    loadCapabilityCatalog,
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
     handleCapabilitySupplierClick,

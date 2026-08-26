@@ -2,12 +2,12 @@ import {
     ago,
     esc,
     eventTime,
-    featureLabel,
     fieldLabel,
     rowPayload,
     titleize,
     when,
 } from "./format.js";
+import {capabilityLabel} from "./capability-catalog.js";
 
 /**
  * A maquina dos cartoes de telemetria: o que cada evento recebido mostra, o que cada
@@ -72,41 +72,43 @@ const CARD_TONE_BY_TYPE = {
     "device.disconnected": "danger",
 };
 
-const REQUEST_CARD_CONTENT_BY_TYPE = {
-    positions: {icon: "fa-location-crosshairs", value: "Posições"},
-    vitals: {icon: "fa-heart-pulse", value: "Sinais vitais"},
-    position_minute_stats: {
-        icon: "fa-chart-column",
-        value: "Estatísticas de posições por minuto",
-    },
-    vitals_minute_stats: {
-        icon: "fa-chart-line",
-        value: "Estatísticas de sinais vitais por minuto",
-    },
-    heart_rate: {icon: "fa-heart-pulse", value: "Frequência cardíaca"},
-    blood_pressure: {icon: "fa-stethoscope", value: "Tensão arterial"},
-    blood_oxygen: {icon: "fa-droplet", value: "Oxigénio no sangue"},
-    blood_sugar: {icon: "fa-vial", value: "Glicemia"},
-    temperature: {icon: "fa-temperature-half", value: "Temperatura"},
-    battery: {icon: "fa-battery-three-quarters", value: "Bateria"},
-    connectivity: {icon: "fa-wifi", value: "Conectividade"},
-    motion: {icon: "fa-person-running", value: "Movimento"},
-    diaper_moisture: {icon: "fa-droplet", value: "Humidade da fralda"},
-    diaper_moisture_level: {icon: "fa-percent", value: "Nível de humidade"},
-    diaper_condition: {icon: "fa-baby", value: "Estado da fralda"},
-    activity: {icon: "fa-person-walking", value: "Atividade"},
-    location: {icon: "fa-location-dot", value: "Localização"},
-    sleep: {icon: "fa-bed", value: "Sono"},
-    ecg: {icon: "fa-wave-square", value: "ECG"},
-    hrv: {icon: "fa-chart-line", value: "VFC"},
-    breath_rate: {icon: "fa-lungs", value: "Frequência respiratória"},
-    ppg: {icon: "fa-circle-nodes", value: "PPG"},
-    rr_interval: {icon: "fa-stopwatch", value: "Intervalo RR"},
-    "device.connected": {icon: "fa-plug-circle-check", value: "Ligado"},
-    "device.disconnected": {icon: "fa-plug-circle-xmark", value: "Desligado"},
-    help_call: {icon: "fa-triangle-exclamation", value: "Chamada de ajuda"},
-    reset: {icon: "fa-bell-slash", value: "Cancelado"},
-    unknown: {icon: "fa-bell", value: "Desconhecido"},
+/**
+ * O icone de cada capacidade.
+ *
+ * So o icone: o nome vem do catalogo, pelo `capabilityLabel`. Este mapa tinha tambem uma
+ * `value` com o nome escrito a mao, e era a terceira copia dos mesmos nomes na aplicacao
+ * -- a que fazia um mosaico dizer "Pressão arterial" no titulo e "Tensão arterial" no
+ * valor, ao mesmo tempo.
+ */
+const REQUEST_CARD_ICON_BY_TYPE = {
+    positions: "fa-location-crosshairs",
+    vitals: "fa-heart-pulse",
+    position_minute_stats: "fa-chart-column",
+    vitals_minute_stats: "fa-chart-line",
+    heart_rate: "fa-heart-pulse",
+    blood_pressure: "fa-stethoscope",
+    blood_oxygen: "fa-droplet",
+    blood_sugar: "fa-vial",
+    temperature: "fa-temperature-half",
+    battery: "fa-battery-three-quarters",
+    connectivity: "fa-wifi",
+    motion: "fa-person-running",
+    diaper_moisture: "fa-droplet",
+    diaper_moisture_level: "fa-percent",
+    diaper_condition: "fa-baby",
+    activity: "fa-person-walking",
+    location: "fa-location-dot",
+    sleep: "fa-bed",
+    ecg: "fa-wave-square",
+    hrv: "fa-chart-line",
+    breath_rate: "fa-lungs",
+    ppg: "fa-circle-nodes",
+    rr_interval: "fa-stopwatch",
+    "device.connected": "fa-plug-circle-check",
+    "device.disconnected": "fa-plug-circle-xmark",
+    help_call: "fa-triangle-exclamation",
+    reset: "fa-bell-slash",
+    unknown: "fa-bell",
 };
 
 const UPLINK_CARD_RENDERERS = {
@@ -178,7 +180,7 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-droplet",
         // O indice 0-100 e uma capacidade propria e chega noutra mensagem, mas nao tem
         // cartao proprio: e o valor deste, por cima da tira dos canais que o explica.
-        value: data?.index != null ? `${data.index}%` : featureLabel("diaper_moisture"),
+        value: data?.index != null ? `${data.index}%` : capabilityLabel("diaper_moisture"),
         // Numa linha de lista nao ha espaco para a tira dos dez canais, e o mosaico do
         // cartao ja a mostra. O que resta e o resumo: quantos canais passaram o limiar.
         rowValue: diaperMoistureRowValue(data),
@@ -240,7 +242,7 @@ const UPLINK_CARD_RENDERERS = {
     help_call: (data) => helpCallContent(data),
     motion: (data) => ({
         icon: "fa-person-running",
-        value: data?.magnitudeMg != null ? `${data.magnitudeMg} mg` : featureLabel("motion"),
+        value: data?.magnitudeMg != null ? `${data.magnitudeMg} mg` : capabilityLabel("motion"),
         details: compactDetails(data, ["xMg", "yMg", "zMg"]),
     }),
     reset: () => ncsPagerContent("reset"),
@@ -376,9 +378,9 @@ export function telemetryCard({
 }
 
 export function requestCardContent(type) {
-    return REQUEST_CARD_CONTENT_BY_TYPE[type] || {
-        icon: "fa-circle-info",
-        value: featureLabel(type),
+    return {
+        icon: REQUEST_CARD_ICON_BY_TYPE[type] || "fa-circle-info",
+        value: capabilityLabel(type),
     };
 }
 
@@ -386,7 +388,7 @@ export function uplinkCardContent(type, data) {
     return (
         UPLINK_CARD_RENDERERS[type]?.(data) || {
             icon: "fa-circle-info",
-            value: featureLabel(type),
+            value: capabilityLabel(type),
             details: compactDetails(data, Object.keys(data).slice(0, 4)),
         }
     );
@@ -419,7 +421,7 @@ function helpCallContent(data) {
 }
 
 function ncsPagerContent(type) {
-    const value = NCS_PAGER_EVENT_VALUE[type] || featureLabel(type);
+    const value = NCS_PAGER_EVENT_VALUE[type] || capabilityLabel(type);
     const icon = NCS_PAGER_EVENT_ICON[type] || "fa-bell";
     return { icon, value };
 }
@@ -462,7 +464,7 @@ function connectivityValue(data) {
         parts.push(`${Number(dbm)} dBm`);
     }
 
-    return parts.length > 0 ? parts.join(" · ") : featureLabel("connectivity");
+    return parts.length > 0 ? parts.join(" · ") : capabilityLabel("connectivity");
 }
 
 /**
@@ -728,7 +730,7 @@ export function renderRequestCardShell(
 ) {
     const type = commandFeature(command);
     const card = requestCardContent(type);
-    const tooltip = featureLabel(type) || card.value || type;
+    const tooltip = capabilityLabel(type) || card.value || type;
     const requestable = command.requestable !== false;
     const isSystemRequestCard = [
         "firmware_version",
@@ -760,14 +762,16 @@ export function renderRequestCardShell(
     );
 
     const lastContent = lastTelemetry ? uplinkCardContent(type, lastData) : null;
-    const lastValue = lastContent ? lastContent.value : card.value;
+    // Sem leitura nao ha valor: o titulo ja diz o nome da capacidade, e repeti-lo por
+    // baixo em corpo maior dava dois nomes no mesmo mosaico.
+    const lastValue = lastContent ? lastContent.value : "";
     // The card shows the latest telemetry, so an icon derived from that reading
     // wins over the static one -- a wired gateway must not show a Wi-Fi icon.
     const icon = command.icon || lastContent?.icon || card.icon;
     // O titulo e sempre o nome da categoria. A leitura mais recente substituia-o, o que
     // dava mosaicos a dizer "78%" e "Atencao" sem dizer 78% de que: num dispositivo com
     // telemetria a chegar, o cartao perdia o nome exactamente quando tinha o que mostrar.
-    const title = featureLabel(type) || card.value || type;
+    const title = capabilityLabel(type) || card.value || type;
     const value = isSystemRequestCard ? card.value : lastValue;
     // A card may ask for the full row and supply its own body, so richer
     // telemetry does not need a special case in this shell.

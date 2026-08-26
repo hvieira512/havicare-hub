@@ -5,6 +5,7 @@ import {
     getProtocols as apiGetProtocols,
 } from "../api/index.js";
 import {getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels} from "../api/models.js";
+import {ensureCapabilityCatalog} from "../capability-catalog.js";
 import {state, clearSelection, selectImei} from "../state.js";
 import {esc} from "../format.js";
 import {
@@ -609,6 +610,11 @@ async function loadDevice(imei) {
     state.selectedDetail = detail;
     state.selectedDetail.recent = null;
     state.detailFiltersDraft = { ...state.detailFilters };
+    // Antes de desenhar: os nomes das capacidades nos cartões e na lista de eventos vêm do
+    // catálogo deste tipo de dispositivo. É aqui e não no `renderSelection` porque este é o
+    // único sítio por onde entra um dispositivo novo -- os redesenhos seguintes são do
+    // mesmo, e a cache já está quente.
+    await ensureCapabilityCatalog(detail.model?.deviceType || "watch");
     renderSelectionDetail();
     connectDeviceStream(imei);
     return true;

@@ -1,7 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
+// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+import "./support/browser-env.js";
 import {renderRequestCardShell} from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import {state} from "../../src/Dashboard/dashboard/state.js";
+
+// O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
+// mapa escrito no frontend. Um cartão desenhado sem catálogo mostra a chave humanizada,
+// por isso o teste põe o gateway em cima da mesa antes de desenhar.
+state.capabilityCatalogByType.gateway = [
+    {key: "connectivity", label: "Conectividade"},
+];
+state.selectedDetail = {model: {deviceType: "gateway"}};
 
 const connectivityCard = (data) => renderRequestCardShell(
     {feature: "connectivity", requestable: false},

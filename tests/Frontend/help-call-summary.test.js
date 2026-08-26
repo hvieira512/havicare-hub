@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
+// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+import "./support/browser-env.js";
 import {helpCallSummaryCard} from "../../src/Dashboard/dashboard/telemetry-cards.js";
 
 const call = (pressType, occurredAt) => ({

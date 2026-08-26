@@ -126,7 +126,7 @@ function resetModelForm(selectedSupplierId = "") {
 }
 
 function selectModelSupplier(supplierId) {
-    const {els, callbacks} = getSettingsModelsRuntime();
+    const {els} = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelImage.value = "";
     const deviceType = normalizeDeviceType(
@@ -139,15 +139,15 @@ function selectModelSupplier(supplierId) {
     delete els.modelForm.dataset.image;
     renderModelSupplierButtons(supplierId);
     updateModelProtocolAndPreview();
-    void callbacks.refreshNewModelCapabilityTemplate?.();
+    void refreshNewModelCapabilityTemplate();
 }
 
 function selectModelDeviceType(deviceType) {
-    const {els, callbacks} = getSettingsModelsRuntime();
+    const {els} = getSettingsModelsRuntime();
     els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
     state.modelModal.enabledCapabilities = [];
     renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
-    void callbacks.refreshNewModelCapabilityTemplate?.();
+    void refreshNewModelCapabilityTemplate();
 }
 
 /** Abre o slide do formulario, com o template do fornecedor já carregado. */

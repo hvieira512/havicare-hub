@@ -11,12 +11,12 @@ import {
     commandLabel,
     esc,
     eventTime,
-    featureLabel,
     fieldLabel,
     rowPayload,
     when,
     whenShort,
 } from "../format.js";
+import {capabilityLabel} from "../capability-catalog.js";
 import {deviceLicenseHtml, emptyPanel, filterChips} from "../widgets.js";
 import {
     cardTone,
@@ -170,8 +170,8 @@ function telemetryRequestCards(telemetryCapabilities = {}) {
                 return a.group === "telemetry" ? -1 : 1;
             }
 
-            return String(featureLabel(a.feature || "")).localeCompare(
-                String(featureLabel(b.feature || "")),
+            return String(capabilityLabel(a.feature || "")).localeCompare(
+                String(capabilityLabel(b.feature || "")),
                 "pt-PT",
             );
         });
@@ -384,7 +384,7 @@ function populateDetailFilterTypes() {
 }
 
 function telemetryFilterLabel(type) {
-    return featureLabel(type) || type;
+    return capabilityLabel(type) || type;
 }
 
 function syncDetailFilterControls() {
@@ -549,7 +549,7 @@ function renderTelemetryRow(payload) {
                 <i class="fa-solid ${esc(card.icon)}"></i>
             </span>
         </td>
-        <td class="fw-medium" title="${esc(featureLabel(type))}">${esc(featureLabel(type))}</td>
+        <td class="fw-medium" title="${esc(capabilityLabel(type))}">${esc(capabilityLabel(type))}</td>
         <td class="tabular-nums">
             <span class="telemetry-row-stack">
                 <span class="d-block text-truncate">${esc(card.rowValue || card.value)}</span>

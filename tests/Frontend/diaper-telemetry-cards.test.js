@@ -1,7 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
+// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+import "./support/browser-env.js";
 import {renderRequestCardShell} from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import {state} from "../../src/Dashboard/dashboard/state.js";
+
+// O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
+// mapa escrito no frontend. Um cartão desenhado sem catálogo mostra a chave humanizada,
+// por isso o teste põe o medidor de fraldas em cima da mesa antes de desenhar.
+state.capabilityCatalogByType.diaper_sensor = [
+    {key: "diaper_moisture", label: "Humidade da fralda"},
+    {key: "diaper_moisture_level", label: "Nível de humidade"},
+    {key: "diaper_condition", label: "Estado da fralda"},
+];
+state.selectedDetail = {model: {deviceType: "diaper_sensor"}};
 
 const channel = (index, delta, baseline = 1) => ({
     index,

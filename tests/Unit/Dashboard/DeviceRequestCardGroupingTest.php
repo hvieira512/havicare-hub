@@ -53,7 +53,7 @@ final class DeviceRequestCardGroupingTest extends TestCase
         // O título é sempre o nome da categoria; a leitura mais recente é um valor por
         // baixo. Substituí-lo pela leitura dava mosaicos a dizer "78%" e "Atenção" sem
         // dizer 78% de quê — perdia-se o nome exactamente quando havia o que mostrar.
-        self::assertStringContainsString('const title = featureLabel(type) || card.value || type;', $renderersSource);
+        self::assertStringContainsString('const title = capabilityLabel(type) || card.value || type;', $renderersSource);
         self::assertStringContainsString('const value = isSystemRequestCard ? card.value : lastValue;', $renderersSource);
         // O estado do pedido em curso é a pastilha do sistema, não um spinner dentro de
         // um botão que já não existe.
@@ -71,10 +71,10 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('stateLabel: loading ? "a pedir" : requestState?.label || ""', $renderersSource);
         self::assertStringNotContainsString('spinner-border spinner-border-sm me-2', $renderersSource);
         self::assertStringNotContainsString('mb-2 min-w-0', $renderersSource);
-        self::assertStringContainsString('battery: {icon: "fa-battery-three-quarters"', $renderersSource);
-        self::assertStringContainsString('diaper_moisture: {icon: "fa-droplet"', $renderersSource);
-        self::assertStringContainsString('diaper_moisture_level: {icon: "fa-percent"', $renderersSource);
-        self::assertStringContainsString('diaper_condition: {icon: "fa-baby"', $renderersSource);
+        self::assertStringContainsString('battery: "fa-battery-three-quarters"', $renderersSource);
+        self::assertStringContainsString('diaper_moisture: "fa-droplet"', $renderersSource);
+        self::assertStringContainsString('diaper_moisture_level: "fa-percent"', $renderersSource);
+        self::assertStringContainsString('diaper_condition: "fa-baby"', $renderersSource);
         // O indice de humidade nao tem cartao proprio: e o valor do cartao dos canais, e o
         // cartao junta as duas capacidades porque chegam em mensagens separadas. A barra
         // de 0 a 100 que ele tinha, e com ela a marca do `alertIndex`, deixou de existir.
@@ -94,8 +94,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('Number(data?.wetDelta)', $renderersSource);
         self::assertStringContainsString('Number(data?.requiredChannelCount)', $renderersSource);
         self::assertStringContainsString('change_required: "Mudança necessária"', $renderersSource);
-        self::assertStringContainsString('activity: {icon: "fa-person-walking"', $renderersSource);
-        self::assertStringContainsString('blood_sugar: {icon: "fa-vial"', $renderersSource);
+        self::assertStringContainsString('activity: "fa-person-walking"', $renderersSource);
+        self::assertStringContainsString('blood_sugar: "fa-vial"', $renderersSource);
         self::assertStringContainsString('superseded: "substituído"', $renderersSource);
 
         self::assertStringContainsString('const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];', $source);

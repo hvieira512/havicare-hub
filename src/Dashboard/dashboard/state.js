@@ -56,6 +56,10 @@ export const state = {
     deviceSearchQuery: "",
     selectedImei: null,
     selectedDetail: null,
+    // O catálogo de capacidades por tipo de dispositivo, com cache. Vive aqui e não no
+    // `settingsModal` porque a coluna de detalhe também o lê -- é dela que saem os nomes
+    // das capacidades nos cartões e na lista de eventos.
+    capabilityCatalogByType: {},
     deviceModal: {
         mode: "create",
         activeTab: "general",

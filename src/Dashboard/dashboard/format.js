@@ -50,45 +50,6 @@ export const whenShort = (value) => {
     return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}, ${date.toLocaleTimeString("pt-PT")}`;
 };
 
-export const featureLabel = (type) =>
-    ({
-        positions: "Posições",
-        vitals: "Sinais vitais",
-        position_minute_stats: "Estatísticas de posições por minuto",
-        vitals_minute_stats: "Estatísticas de sinais vitais por minuto",
-        position: "Posições",
-        minute_stats: "Estatísticas de posições por minuto",
-        hbstatics: "Estatísticas de sinais vitais por minuto",
-        heartbreath: "Sinais vitais",
-        heart_rate: "Frequência cardíaca",
-        blood_pressure: "Tensão arterial",
-        blood_oxygen: "Oxigénio no sangue",
-        blood_sugar: "Glicemia",
-        temperature: "Temperatura",
-        battery: "Bateria",
-        connectivity: "Conectividade",
-        motion: "Movimento",
-        diaper_moisture: "Humidade da fralda",
-        diaper_moisture_level: "Nível de humidade",
-        diaper_condition: "Estado da fralda",
-        activity: "Atividade",
-        location: "Localização",
-        alarm: "Alarme",
-        sleep: "Sono",
-        ecg: "ECG",
-        hrv: "VFC",
-        breath_rate: "Frequência respiratória",
-        ppg: "PPG",
-        rr_interval: "Intervalo RR",
-        "device.connected": "Ligado",
-        "device.disconnected": "Desligado",
-        pager_call: "Chamada de ajuda",
-        help_call: "Chamada de ajuda",
-        reset: "Cancelada",
-        unknown: "Desconhecida",
-        device_config: "Configuração",
-    })[type] || titleize(type);
-
 export const fieldLabel = (key) =>
     ({
         distanceMeters: "Distância",

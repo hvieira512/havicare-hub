@@ -64,7 +64,7 @@ final class SettingsModelsTabFetchTest extends TestCase
             $formSource,
         );
         self::assertStringContainsString(
-            'void callbacks.refreshNewModelCapabilityTemplate?.();',
+            'void refreshNewModelCapabilityTemplate();',
             $formSource,
         );
         self::assertStringContainsString(
