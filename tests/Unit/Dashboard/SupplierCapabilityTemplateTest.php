@@ -103,7 +103,18 @@ final class SupplierCapabilityTemplateTest extends TestCase
         $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('Qinglanst', 'radar');
 
         self::assertSame(
-            ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'],
+            [
+                'fall',
+                'vitals_alarm',
+                'presence_event',
+                'heart_rate',
+                'breath_rate',
+                'sleep_state',
+                'presence',
+                'posture',
+                'position_minute_stats',
+                'vitals_minute_stats',
+            ],
             $actual
         );
     }

@@ -42,6 +42,7 @@ use Hub\Infrastructure\Persistence\Migration\Version2026082701DropSupplierDevice
 use Hub\Infrastructure\Persistence\Migration\Version2026082801DiaperSensitivityAsCapability;
 use Hub\Infrastructure\Persistence\Migration\Version2026082802DropDiaperSensorSettings;
 use Hub\Infrastructure\Persistence\Migration\Version2026082803AddNotificationLicense;
+use Hub\Infrastructure\Persistence\Migration\Version2026082804RadarCapabilityVocabulary;
 
 final class DatabaseMigrationPlan
 {
@@ -86,6 +87,7 @@ final class DatabaseMigrationPlan
             new Version2026082801DiaperSensitivityAsCapability(),
             new Version2026082802DropDiaperSensorSettings(),
             new Version2026082803AddNotificationLicense(),
+            new Version2026082804RadarCapabilityVocabulary(),
         ];
     }
 

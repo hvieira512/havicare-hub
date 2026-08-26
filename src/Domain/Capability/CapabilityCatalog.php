@@ -133,6 +133,7 @@ final class CapabilityCatalog
             'voerka-ncs' => ['pager_call'],
             'monit-mecs-pro-ble' => ['change_required'],
             'moko-w6r' => ['help_call'],
+            'qinglanst-radar' => ['fall', 'vitals_alarm', 'presence_event'],
             default => [],
         };
     }
@@ -179,8 +180,11 @@ final class CapabilityCatalog
                 'location',
             ],
             'qinglanst-radar' => [
-                'positions',
-                'vitals',
+                'heart_rate',
+                'breath_rate',
+                'sleep_state',
+                'presence',
+                'posture',
                 'position_minute_stats',
                 'vitals_minute_stats',
             ],

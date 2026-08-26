@@ -380,7 +380,9 @@ final class ModelsApiTest extends MysqlDashboardTestCase
                 'commercialName' => (string)$model['commercial_name'],
                 'deviceType' => (string)$model['device_type'],
                 'capabilitiesConfigured' => '1',
-                'capabilities' => ['heart_rate'],
+                // Uma capacidade real, mas de outro tipo de dispositivo. Era `heart_rate`,
+                // que deixou de servir aqui: o radar mede-a, e passou a tê-la no catálogo.
+                'capabilities' => ['blood_pressure'],
             ]);
 
         $result = $api->update((int)$model['id'], $request);

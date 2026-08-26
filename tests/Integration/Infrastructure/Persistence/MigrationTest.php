@@ -93,7 +93,7 @@ final class MigrationTest extends MysqlDashboardTestCase
             FROM capabilities
         ")->fetchAll(\PDO::FETCH_KEY_PAIR);
         self::assertSame('Frequência cardíaca', $labels['watch:heart_rate'] ?? null);
-        self::assertSame('Posições', $labels['radar:positions'] ?? null);
+        self::assertSame('Presença', $labels['radar:presence'] ?? null);
         self::assertSame('Chamada de ajuda', $labels['ncs:pager_call'] ?? null);
     }
 
@@ -193,10 +193,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026082801_diaper_sensitivity_as_capability',
             '2026082802_drop_diaper_sensor_settings',
             '2026082803_add_notification_license',
+            '2026082804_radar_capability_vocabulary',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(37, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(38, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()

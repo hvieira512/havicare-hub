@@ -41,7 +41,18 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $qinglanst = $db->models->find('Qinglanst', 'RD-V1');
         self::assertIsArray($qinglanst);
         self::assertSame('radar', $qinglanst['device_type'] ?? null);
-        $expectedRadar = ['positions', 'vitals', 'position_minute_stats', 'vitals_minute_stats'];
+        $expectedRadar = [
+            'heart_rate',
+            'breath_rate',
+            'sleep_state',
+            'presence',
+            'posture',
+            'position_minute_stats',
+            'vitals_minute_stats',
+            'fall',
+            'vitals_alarm',
+            'presence_event',
+        ];
         $actualRadar = $db->modelCapabilities->enabledFeaturesForModelId((int)$qinglanst['id']);
         sort($expectedRadar);
         sort($actualRadar);
