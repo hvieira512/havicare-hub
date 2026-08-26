@@ -75,9 +75,19 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('diaper_moisture: {icon: "fa-droplet"', $renderersSource);
         self::assertStringContainsString('diaper_moisture_level: {icon: "fa-percent"', $renderersSource);
         self::assertStringContainsString('diaper_condition: {icon: "fa-baby"', $renderersSource);
-        // A marca de alerta sai do payload. Se alguem escrever o 40 aqui, e uma segunda copia
-        // do limiar dos 4 canais que decide o estado no normalizador.
-        self::assertStringContainsString('Number(data?.alertIndex)', $renderersSource);
+        // O indice de humidade nao tem cartao proprio: e o valor do cartao dos canais, e o
+        // cartao junta as duas capacidades porque chegam em mensagens separadas. A barra
+        // de 0 a 100 que ele tinha, e com ela a marca do `alertIndex`, deixou de existir.
+        self::assertStringNotContainsString('alertIndex', $renderersSource);
+        self::assertStringNotContainsString('diaper-level', $renderersSource);
+        self::assertStringContainsString(
+            'return ["diaper_moisture", "diaper_moisture_level"];',
+            $renderersSource
+        );
+        self::assertStringContainsString(
+            'const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set(["diaper_moisture_level"]);',
+            $source
+        );
         // Os limiares por canal saem do mesmo payload e pela mesma razao: sao configuraveis
         // por sensor, e escritos aqui a tira pintava as barras e anunciava um limiar que nao
         // foi o que decidiu a leitura.

@@ -143,9 +143,20 @@ const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
     "device_status",
 ]);
 
+/**
+ * Capacidades que existem, mas não como mosaico próprio.
+ *
+ * O `diaper_moisture_level` é o índice 0-100 da humidade e continua a ser capacidade
+ * própria — é o campo genérico que um segundo medidor de fraldas também teria. No ecrã
+ * era um segundo cartão a dizer da mesma leitura o que o primeiro já dizia, por isso
+ * passou a ser o valor do cartão dos canais.
+ */
+const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set(["diaper_moisture_level"]);
+
 function telemetryRequestCards(telemetryCapabilities = {}) {
     const cards = Object.entries(telemetryCapabilities || {})
         .filter(([, entry]) => entry?.supported)
+        .filter(([feature]) => !TELEMETRY_REQUEST_HIDDEN_FEATURES.has(feature))
         .map(([feature, entry]) => ({
             id: feature,
             feature,

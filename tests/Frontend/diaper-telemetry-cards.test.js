@@ -130,6 +130,33 @@ test("MONIT moisture exposes the baseline and raw reading per channel", () => {
     assert.match(html, /Canal 5 · delta 3 \(base 32, leitura 35\)/);
 });
 
+test("MONIT moisture shows the level index as its value, from the message that carries it", () => {
+    // O índice é capacidade própria e chega menos vezes do que os canais: o cartão junta a
+    // leitura mais recente de cada tipo, senão a dos canais apagava o número.
+    const html = renderRequestCardShell(
+        {feature: "diaper_moisture", requestable: false},
+        false,
+        [
+            {
+                type: "diaper_moisture",
+                occurredAt: "2026-08-06T13:05:00Z",
+                data: {channels: [channel(1, 12)], affectedChannelCount: 1, maximumDelta: 12},
+            },
+            {
+                type: "diaper_moisture_level",
+                occurredAt: "2026-08-06T13:00:00Z",
+                data: {index: 29, alertIndex: 40},
+            },
+        ],
+    );
+
+    assert.match(html, />29%</);
+    assert.match(html, /diaper-strip/);
+    // A barra de 0 a 100 e a marca de alerta desapareceram com o segundo cartão.
+    assert.doesNotMatch(html, /diaper-level/);
+    assert.doesNotMatch(html, /alerta a partir de/);
+});
+
 test("MONIT moisture degrades to a plain card when no channels are reported", () => {
     const html = moistureCard({affectedChannelCount: 0, maximumDelta: 0});
 

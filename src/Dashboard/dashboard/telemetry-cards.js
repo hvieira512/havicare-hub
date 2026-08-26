@@ -176,7 +176,9 @@ const UPLINK_CARD_RENDERERS = {
     }),
     diaper_moisture: (data) => ({
         icon: "fa-droplet",
-        value: featureLabel("diaper_moisture"),
+        // O indice 0-100 e uma capacidade propria e chega noutra mensagem, mas nao tem
+        // cartao proprio: e o valor deste, por cima da tira dos canais que o explica.
+        value: data?.index != null ? `${data.index}%` : featureLabel("diaper_moisture"),
         // Numa linha de lista nao ha espaco para a tira dos dez canais, e o mosaico do
         // cartao ja a mostra. O que resta e o resumo: quantos canais passaram o limiar.
         rowValue: diaperMoistureRowValue(data),
@@ -185,9 +187,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
     diaper_moisture_level: (data) => ({
         icon: "fa-percent",
-        value: data?.index != null ? `${data.index}` : "-",
-        span: 12,
-        body: diaperMoistureLevelBody(data),
+        value: data?.index != null ? `${data.index}%` : "-",
     }),
     diaper_condition: (data) => ({
         icon: "fa-baby",
@@ -550,40 +550,6 @@ function diaperMoistureBody(data) {
     </div>`;
 }
 
-// The alert mark comes from the payload, never from a constant here. Hardcoding
-// the 40 would be a second copy of the four-affected-channels threshold that
-// decides the condition, and the normalizer publishes alertIndex precisely so
-// this file does not have to know it.
-//
-// Two tones only, split on that threshold, and deliberately not three: the
-// clean/attention distinction is already on the diaper_condition card beside
-// this one, so repeating it here would add nothing and could disagree with it.
-function diaperMoistureLevelBody(data) {
-    const index = Number(data?.index);
-    if (!Number.isFinite(index)) {
-        return "";
-    }
-
-    const alertIndex = Number(data?.alertIndex);
-    const hasAlert = Number.isFinite(alertIndex);
-    const band = hasAlert && index >= alertIndex ? "wet" : "damp";
-    const width = Math.max(0, Math.min(100, index));
-    const mark = hasAlert
-        ? `style="--diaper-threshold:${Math.max(0, Math.min(100, alertIndex))}%"`
-        : "";
-
-    return `<div class="diaper-level mt-3">
-        <div class="diaper-level-track" ${mark}>
-            <div class="diaper-level-fill diaper-level-fill--${band}" style="width:${width}%"></div>
-        </div>
-        <div class="diaper-moisture-summary small text-secondary mt-2">
-            Índice <strong class="text-body">${esc(index)}</strong> de 100${
-                hasAlert ? ` · alerta a partir de <strong class="text-body">${esc(alertIndex)}</strong>` : ""
-            }
-        </div>
-    </div>`;
-}
-
 /**
  * O valor de uma leitura de humidade da fralda, para uma linha de lista.
  *
@@ -770,17 +736,30 @@ export function renderRequestCardShell(
     ].includes(type);
 
     const telemetryTypes = requestTelemetryTypes(type);
-    const lastTelemetry = telemetry
+    const payloads = telemetry
         .map(rowPayload)
         .filter(
             (payload) =>
             payload && telemetryTypes.includes(String(payload.type || "")),
         )
-        .sort((a, b) => eventTime(b) - eventTime(a))[0];
+        .sort((a, b) => eventTime(b) - eventTime(a));
+    const lastTelemetry = payloads[0];
 
-    const lastContent = lastTelemetry
-        ? uplinkCardContent(type, lastTelemetry.data)
-        : null;
+    // Um cartao pode mostrar mais do que uma capacidade -- a humidade da fralda tem os
+    // canais numa mensagem e o indice noutra, que chega menos vezes -- e por isso junta a
+    // leitura mais recente de CADA tipo. Ficar so com a mais recente das duas apagava a
+    // outra: o indice desaparecia a cada leitura de canais que nao o trouxesse.
+    const lastData = Object.assign(
+        {},
+        ...telemetryTypes
+            .map((wanted) =>
+                payloads.find((payload) => String(payload.type || "") === wanted),
+            )
+            .reverse()
+            .map((payload) => payload?.data || {}),
+    );
+
+    const lastContent = lastTelemetry ? uplinkCardContent(type, lastData) : null;
     const lastValue = lastContent ? lastContent.value : card.value;
     // The card shows the latest telemetry, so an icon derived from that reading
     // wins over the static one -- a wired gateway must not show a Wi-Fi icon.
@@ -842,6 +821,11 @@ function requestTelemetryTypes(type) {
     }
     if (type === "vitals_minute_stats") {
         return ["hbstatics"];
+    }
+    // O indice de humidade e uma capacidade a parte, mas nao um cartao a parte: o cartao
+    // dos canais mostra-o como valor, e sozinho era um segundo cartao a dizer o mesmo.
+    if (type === "diaper_moisture") {
+        return ["diaper_moisture", "diaper_moisture_level"];
     }
     return [type];
 }
