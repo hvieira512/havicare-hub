@@ -234,11 +234,11 @@ tests/Frontend/hub-rules.test.js
 src/Dashboard/dashboard/domain.js                    a tabela, e os predicados a lê-la
 src/Dashboard/dashboard/devices/device-modal.js      769 -> 658 linhas, sem criação
 src/Dashboard/components/modals/device.php           título estático, sem a sensibilidade
-src/Dashboard/dashboard/devices/config-panel.js      desenha as regras do hub
+src/Dashboard/dashboard/devices/config/panel.js      desenha as regras do hub
 src/Dashboard/dashboard/devices/gateway-links-ui.js  exporta o card do gateway
-src/Dashboard/dashboard/devices/list-detail.js       reexporta o deviceTypeFields
-src/Dashboard/dashboard/core/bootstrap.js            liga o assistente e as regras
-src/Dashboard/dashboard/core/dom.js                  elementos do assistente
+src/Dashboard/dashboard/devices/list.js              a coluna da lista
+src/Dashboard/dashboard/app.js                       liga o assistente e as regras
+src/Dashboard/dashboard/dom.js                       elementos do assistente
 src/Dashboard/main.css                               grelha de cards, trilha, animações
 src/Dashboard/index.php                              inclui o assistente
 tests/Unit/Dashboard/NotificationSourceTest.php      o mesmo comportamento, nomes novos
