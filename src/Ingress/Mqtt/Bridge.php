@@ -5,14 +5,15 @@ namespace Hub\Ingress\Mqtt;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\HubMqttBridge;
 use Hub\Log\Logger;
+use Hub\Mqtt\ReconnectsOnLoopFailure;
 use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 
 abstract class Bridge implements MqttIngress
 {
+    use ReconnectsOnLoopFailure;
+
     private MqttClient $subscriber;
-    private float $nextReconnectAt = 0.0;
-    private int $reconnectDelay = 2;
 
     /** @var null|callable(): MqttClient */
     private $reconnectSubscriber;
@@ -78,6 +79,7 @@ abstract class Bridge implements MqttIngress
             $this->handleMessage($topic, $payload);
         }, MqttClient::QOS_AT_LEAST_ONCE);
 
+        $this->markConnected();
         $source = $this->sourceName ?? $this->topicFilter;
         Logger::channel('hub')->info("MQTT ingress {$source} subscribed to {$this->topicFilter} qos=1");
     }
@@ -88,30 +90,22 @@ abstract class Bridge implements MqttIngress
             throw $e;
         }
 
-        $now = microtime(true);
-        if ($now < $this->nextReconnectAt) {
-            return;
-        }
+        $this->reconnectAfterLoopFailure(
+            $e,
+            'MQTT ingress ' . ($this->sourceName ?? $this->topicFilter),
+            function (): void {
+                try {
+                    if ($this->subscriber->isConnected()) {
+                        $this->subscriber->disconnect();
+                    }
+                } catch (\Throwable) {
+                }
 
-        $source = $this->sourceName ?? $this->topicFilter;
-        Logger::channel('hub')->warning("MQTT ingress {$source} connection lost: {$e->getMessage()}; reconnecting");
-        $this->nextReconnectAt = $now + $this->reconnectDelay;
-        $this->reconnectDelay = min($this->reconnectDelay * 2, 60);
-
-        try {
-            if ($this->subscriber->isConnected()) {
-                $this->subscriber->disconnect();
-            }
-        } catch (\Throwable) {
-        }
-
-        try {
-            $this->subscriber = ($this->reconnectSubscriber)();
-            $this->subscribe();
-            $this->reconnectDelay = 2;
-            $this->nextReconnectAt = 0.0;
-        } catch (\Throwable $reconnectError) {
-            Logger::channel('hub')->error("MQTT ingress {$source} reconnect failed: {$reconnectError->getMessage()}");
-        }
+                $this->subscriber = ($this->reconnectSubscriber)();
+            },
+            function (): void {
+                $this->subscribe();
+            },
+        );
     }
 }

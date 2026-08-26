@@ -4,19 +4,20 @@ namespace Hub;
 
 use Hub\Ingress\Mqtt\MqttIngress;
 use Hub\Log\Logger;
+use Hub\Mqtt\ReconnectsOnLoopFailure;
 use PhpMqtt\Client\MqttClient;
 
 class HubDownlinkSubscriber implements MqttIngress
 {
     private const DEFAULT_DEVICE_TYPE = 'watch';
 
+    use ReconnectsOnLoopFailure;
+
     private MqttClient $subscriber;
     private DeviceHubServer $hubServer;
     private string $topicPrefix;
     /** @var null|callable(): MqttClient */
     private $reconnectSubscriber;
-    private float $nextReconnectAt = 0.0;
-    private int $reconnectDelay = 2;
 
     public function __construct(MqttClient $subscriber, DeviceHubServer $hubServer, string $topicPrefix = '', ?callable $reconnectSubscriber = null)
     {
@@ -46,6 +47,7 @@ class HubDownlinkSubscriber implements MqttIngress
         $this->subscriber->subscribe($filter, function (string $topic, string $payload): void {
             $this->handle($topic, $payload);
         }, MqttClient::QOS_AT_LEAST_ONCE);
+        $this->markConnected();
         Logger::channel('hub')->info("MQTT downlink subscribed to {$filter} qos=1");
     }
 
@@ -60,30 +62,23 @@ class HubDownlinkSubscriber implements MqttIngress
             throw $e;
         }
 
-        $now = microtime(true);
-        if ($now < $this->nextReconnectAt) {
-            return;
-        }
+        $this->reconnectAfterLoopFailure(
+            $e,
+            'MQTT downlink',
+            function (): void {
+                try {
+                    if ($this->subscriber->isConnected()) {
+                        $this->subscriber->disconnect();
+                    }
+                } catch (\Throwable) {
+                }
 
-        Logger::channel('hub')->warning("MQTT downlink connection lost: {$e->getMessage()}; reconnecting");
-        $this->nextReconnectAt = $now + $this->reconnectDelay;
-        $this->reconnectDelay = min($this->reconnectDelay * 2, 60);
-
-        try {
-            if ($this->subscriber->isConnected()) {
-                $this->subscriber->disconnect();
-            }
-        } catch (\Throwable) {
-        }
-
-        try {
-            $this->subscriber = ($this->reconnectSubscriber)();
-            $this->subscribe();
-            $this->reconnectDelay = 2;
-            $this->nextReconnectAt = 0.0;
-        } catch (\Throwable $reconnectError) {
-            Logger::channel('hub')->error("MQTT downlink reconnect failed: {$reconnectError->getMessage()}");
-        }
+                $this->subscriber = ($this->reconnectSubscriber)();
+            },
+            function (): void {
+                $this->subscribe();
+            },
+        );
     }
 
     private function handle(string $topic, string $payload): void
