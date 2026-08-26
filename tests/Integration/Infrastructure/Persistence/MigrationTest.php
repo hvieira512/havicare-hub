@@ -189,10 +189,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026081902_restore_bracelet_motion_capability',
             '2026082101_diaper_sensor_settings',
             '2026082601_drop_supplier_enabled',
+            '2026082701_drop_supplier_device_type_enabled',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(33, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(34, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
