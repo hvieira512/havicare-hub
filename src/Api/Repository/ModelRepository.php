@@ -8,33 +8,46 @@ use PDO;
 
 final class ModelRepository
 {
+    /** @var list<array<string, mixed>>|null */
+    private ?array $rows = null;
+
     public function __construct(private PDO $pdo)
     {
     }
 
+    // A linha é o superset das três leituras, para o `find` e o `findById` saírem daqui.
     public function all(): array
     {
-        return TimestampFormatter::normalizeRows($this->pdo
-            ->query('SELECT m.id, m.supplier_id, s.name AS supplier, m.internal_model, m.commercial_name, m.device_type, m.image_path AS image FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.commercial_name, m.internal_model')
+        return $this->rows ??= TimestampFormatter::normalizeRows($this->pdo
+            ->query('SELECT m.*, s.name AS supplier, s.name AS supplier_name, m.image_path AS image FROM models m JOIN suppliers s ON s.id = m.supplier_id ORDER BY s.name, m.commercial_name, m.internal_model')
             ->fetchAll());
     }
 
     public function find(string $supplier, string $internalModel): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT m.*, s.name AS supplier_name FROM models m JOIN suppliers s ON s.id = m.supplier_id WHERE lower(s.name) = lower(?) AND lower(m.internal_model) = lower(?)');
-        $stmt->execute([$supplier, $internalModel]);
+        $supplier = mb_strtolower($supplier);
+        $internalModel = mb_strtolower($internalModel);
+        foreach ($this->all() as $row) {
+            if (
+                mb_strtolower((string)($row['supplier'] ?? '')) === $supplier
+                && mb_strtolower((string)($row['internal_model'] ?? '')) === $internalModel
+            ) {
+                return $row;
+            }
+        }
 
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return null;
     }
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT m.*, s.name AS supplier_name FROM models m JOIN suppliers s ON s.id = m.supplier_id WHERE m.id = ?');
-        $stmt->execute([$id]);
+        foreach ($this->all() as $row) {
+            if ((int)($row['id'] ?? 0) === $id) {
+                return $row;
+            }
+        }
 
-        $row = $stmt->fetch();
-        return $row === false ? null : TimestampFormatter::normalizeRow($row);
+        return null;
     }
 
     public function protocolForModel(string $supplier, string $internalModel): string
@@ -52,6 +65,7 @@ final class ModelRepository
                 VALUES (?, ?, ?, ?, ?)
             ');
             $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath]);
+            $this->rows = null;
             $this->ensureSupplierDeviceType($supplierId, $deviceType);
             return;
         }
@@ -62,6 +76,7 @@ final class ModelRepository
             WHERE supplier_id = ? AND lower(internal_model) = lower(?)
         ');
         $stmt->execute([$commercialName, $deviceType, $storedImagePath, $supplierId, $internalModel]);
+        $this->rows = null;
         $this->ensureSupplierDeviceType($supplierId, $deviceType);
     }
 
@@ -75,6 +90,7 @@ final class ModelRepository
         $storedImagePath = $imagePath ?? (string)($existing['image_path'] ?? '');
         $stmt = $this->pdo->prepare('UPDATE models SET supplier_id = ?, internal_model = ?, commercial_name = ?, device_type = ?, image_path = ? WHERE id = ?');
         $stmt->execute([$supplierId, $internalModel, $commercialName, $deviceType, $storedImagePath, $id]);
+        $this->rows = null;
         $this->ensureSupplierDeviceType($supplierId, $deviceType);
 
         return $stmt->rowCount() > 0;
@@ -92,6 +108,7 @@ final class ModelRepository
     {
         $stmt = $this->pdo->prepare('DELETE FROM models WHERE id = ?');
         $stmt->execute([$id]);
+        $this->rows = null;
     }
 
     private function findBySupplierId(int $supplierId, string $internalModel): ?array

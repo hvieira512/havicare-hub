@@ -169,18 +169,13 @@ class DeviceService
      */
     private function deviceSummary(?int $licenseScope, ?string $companyScope): array
     {
-        $unfiltered = $this->db->whitelist->listPage([], 1, 1, $licenseScope, $companyScope);
-        $online = $this->db->whitelist->listPage(
-            ['imeiIn' => $this->store->onlineDeviceImeis()],
-            1,
-            1,
-            $licenseScope,
-            $companyScope
-        );
-
         return [
-            'total' => (int)$unfiltered['total'],
-            'online' => (int)$online['total'],
+            'total' => $this->db->whitelist->countDevices([], $licenseScope, $companyScope),
+            'online' => $this->db->whitelist->countDevices(
+                ['imeiIn' => $this->store->onlineDeviceImeis()],
+                $licenseScope,
+                $companyScope
+            ),
         ];
     }
 

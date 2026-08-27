@@ -42,7 +42,25 @@ final class ApiKernel
 {
     private const LOG_REDACTION = '********';
 
+    // Só catálogos: o estado de ligação de um dispositivo muda de segundos a segundos e é
+    // precisamente o que a dashboard existe para mostrar.
+    private const REVALIDATED_ROUTES = [
+        '/api/models',
+        '/api/models/{id:\d+}',
+        '/api/models/template',
+        '/api/capabilities',
+        '/api/device-types/suppliers/models',
+        '/api/device-types/suppliers',
+        '/api/protocols',
+        '/api/protocols/{protocol}/config-catalog',
+        '/api/suppliers',
+        '/api/companies',
+        '/api/licenses',
+    ];
+
     private ApiRouter $router;
+    private int $logBodyMaxBytes;
+    private int $logBodyScanMaxBytes;
 
     public function __construct(
         private bool $apiAuthRequired,
@@ -65,6 +83,8 @@ final class ApiKernel
         private RouteAccessPolicy $routeAccessPolicy,
     ) {
         $this->router = new ApiRouter($this->apiRoutes());
+        $this->logBodyMaxBytes = max(0, (int)(getenv('LOG_BODY_MAX_BYTES') ?: 16384));
+        $this->logBodyScanMaxBytes = max(0, (int)(getenv('LOG_BODY_SCAN_MAX_BYTES') ?: 1048576));
     }
 
     public function handle(ServerRequestInterface $request): Response
@@ -99,6 +119,7 @@ final class ApiKernel
         try {
             $response = $this->cors->apply($this->dispatch($request, $authContext, $match));
             $response = $response->withHeader('X-Request-Id', $requestId);
+            $response = $this->revalidatedCatalogResponse($request, $response, $method, $routePattern);
             $this->safeLogApiRequest($request, $response, $startedAt, $routePattern, $authContext, $authState);
             return $response;
         } catch (\Throwable $e) {
@@ -277,6 +298,42 @@ final class ApiKernel
         ]);
     }
 
+    // O `ETag` sai do corpo já serializado: um contador por tabela exigia escrituração em
+    // cada escrita, e é isso que envelhece mal.
+    private function revalidatedCatalogResponse(
+        ServerRequestInterface $request,
+        Response $response,
+        string $method,
+        ?string $routePattern
+    ): Response {
+        if (
+            $method !== 'GET'
+            || $response->getStatusCode() !== 200
+            || $routePattern === null
+            || !in_array($routePattern, self::REVALIDATED_ROUTES, true)
+        ) {
+            return $response;
+        }
+
+        $body = $response->getBody();
+        if (!$body->isSeekable()) {
+            return $response;
+        }
+
+        $position = $body->tell();
+        $body->rewind();
+        $contents = $body->getContents();
+        $body->seek($position);
+
+        $etag = '"' . md5($contents) . '"';
+        $response = $response->withHeader('ETag', $etag)->withHeader('Cache-Control', 'no-cache');
+        if ($request->getHeaderLine('If-None-Match') !== $etag) {
+            return $response;
+        }
+
+        return new Response(304, $response->withoutHeader('Content-Type')->getHeaders());
+    }
+
     private function responseBodyForLog(Response $response, bool $redactUnstructured = false): mixed
     {
         $body = $response->getBody();
@@ -303,11 +360,34 @@ final class ApiKernel
             return null;
         }
 
-        try {
-            return $this->sanitizeLogValue(json_decode($body, true, 512, JSON_THROW_ON_ERROR));
-        } catch (\JsonException) {
-            return $redactUnstructured ? self::LOG_REDACTION : $body;
+        // Um corpo desta dimensão nem chega a ser descodificado: a descodificação e as
+        // recursões que se lhe seguem correm no laço que também serve o TCP e as pontes MQTT.
+        if (strlen($body) > $this->logBodyScanMaxBytes) {
+            return sprintf('[corpo não registado: %d bytes]', strlen($body));
         }
+
+        try {
+            $sanitized = $this->sanitizeLogValue(json_decode($body, true, 512, JSON_THROW_ON_ERROR));
+        } catch (\JsonException) {
+            return $this->cappedLogBody($redactUnstructured ? self::LOG_REDACTION : $body);
+        }
+
+        $encoded = json_encode($sanitized);
+
+        return $encoded === false || strlen($encoded) <= $this->logBodyMaxBytes
+            ? $sanitized
+            : $this->cappedLogBody($encoded);
+    }
+
+    // O corte vem sempre depois da rasura: cortar o texto cru deixava credenciais por rasurar.
+    private function cappedLogBody(string $value): string
+    {
+        $size = strlen($value);
+        if ($size <= $this->logBodyMaxBytes) {
+            return $value;
+        }
+
+        return substr($value, 0, $this->logBodyMaxBytes) . sprintf('…[truncado, %d bytes no total]', $size);
     }
 
     private function sanitizeLogValue(mixed $value): mixed

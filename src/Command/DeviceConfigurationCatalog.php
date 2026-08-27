@@ -18,6 +18,11 @@ final class DeviceConfigurationCatalog
      */
     public static function configsForProtocol(string $protocol): array
     {
+        static $cache = [];
+        if (isset($cache[$protocol])) {
+            return $cache[$protocol];
+        }
+
         $configs = match ($protocol) {
             'wonlex-json' => WonlexConfigurationDefinitions::all(),
             'vivistar-iw' => VivistarConfigurationDefinitions::all(),
@@ -42,7 +47,7 @@ final class DeviceConfigurationCatalog
             return strcmp((string)($a['label'] ?? ''), (string)($b['label'] ?? ''));
         });
 
-        return $configs;
+        return $cache[$protocol] = $configs;
     }
 
     public static function configForProtocol(string $protocol, string $key): ?array

@@ -22,7 +22,9 @@ final class ProtocolRegistry
      */
     public static function all(): array
     {
-        return [
+        static $cache = null;
+
+        return $cache ??= [
             'wonlex-json' => [
                 'label' => 'Wonlex',
                 'deviceType' => 'watch',

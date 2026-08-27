@@ -25,15 +25,18 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     private string $whitelistPath;
     private string $apiLogPath;
     private string|false $originalLogFile;
+    private string|false $originalLogFileApi;
     private string|false $originalLogLevel;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->originalLogFile = getenv('LOG_FILE');
+        $this->originalLogFileApi = getenv('LOG_FILE_API');
         $this->originalLogLevel = getenv('LOG_LEVEL');
         $this->apiLogPath = sys_get_temp_dir() . '/hub-dashboard-api-log-' . bin2hex(random_bytes(4)) . '.log';
         putenv('LOG_FILE=' . $this->apiLogPath);
+        putenv('LOG_FILE_API=' . $this->apiLogPath);
         putenv('LOG_LEVEL=info');
         Logger::reset();
         $this->whitelistPath = IngressFixtures::whitelistPath([
@@ -49,6 +52,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             unlink($this->apiLogPath);
         }
         putenv($this->originalLogFile === false ? 'LOG_FILE' : 'LOG_FILE=' . $this->originalLogFile);
+        putenv($this->originalLogFileApi === false ? 'LOG_FILE_API' : 'LOG_FILE_API=' . $this->originalLogFileApi);
         putenv($this->originalLogLevel === false ? 'LOG_LEVEL' : 'LOG_LEVEL=' . $this->originalLogLevel);
         Logger::reset();
         parent::tearDown();
@@ -97,6 +101,25 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $logo = $server(new ServerRequest('GET', '/assets/logo.svg'));
         self::assertSame(200, $logo->getStatusCode());
         self::assertSame('image/svg+xml', $logo->getHeaderLine('Content-Type'));
+    }
+
+    public function testOwnAssetsRevalidateWhileVendorAssetsAreImmutable(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+
+        $stylesheet = $server(new ServerRequest('GET', '/main.css'));
+        $etag = $stylesheet->getHeaderLine('ETag');
+        self::assertNotSame('', $etag);
+        self::assertSame('no-cache', $stylesheet->getHeaderLine('Cache-Control'));
+
+        $revalidated = $server(new ServerRequest('GET', '/main.css', ['If-None-Match' => $etag]));
+        self::assertSame(304, $revalidated->getStatusCode());
+        self::assertSame('', (string)$revalidated->getBody());
+
+        $vendor = $server(new ServerRequest('GET', '/assets/vendor/sweetalert2/sweetalert2.all.min.js'));
+        self::assertSame(200, $vendor->getStatusCode());
+        self::assertSame('public, max-age=31536000, immutable', $vendor->getHeaderLine('Cache-Control'));
+        self::assertSame('', $vendor->getHeaderLine('ETag'));
     }
 
     public function testDashboardDoesNotExposeSourceOrFilesOutsidePublicAssetRoots(): void
@@ -287,6 +310,53 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('"refresh_token":"********"', $log);
     }
 
+    public function testCatalogRoutesRevalidateWhileDeviceRoutesDoNot(): void
+    {
+        $server = $this->makeServer();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $models = $server(new ServerRequest('GET', '/api/models', ['Authorization' => 'Bearer ' . $token]));
+        self::assertSame(200, $models->getStatusCode(), (string)$models->getBody());
+        $etag = $models->getHeaderLine('ETag');
+        self::assertNotSame('', $etag);
+        self::assertSame('no-cache', $models->getHeaderLine('Cache-Control'));
+
+        $revalidated = $server(new ServerRequest(
+            'GET',
+            '/api/models',
+            ['Authorization' => 'Bearer ' . $token, 'If-None-Match' => $etag]
+        ));
+        self::assertSame(304, $revalidated->getStatusCode());
+        self::assertSame('', (string)$revalidated->getBody());
+
+        $devices = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => 'Bearer ' . $token]));
+        self::assertSame(200, $devices->getStatusCode(), (string)$devices->getBody());
+        self::assertSame('', $devices->getHeaderLine('ETag'));
+    }
+
+    public function testApiLoggingRedactsBeforeCappingAnOversizedBody(): void
+    {
+        $server = $this->makeServer();
+        $body = json_encode([
+            'username' => 'admin',
+            'password' => 'secret',
+            'filler' => str_repeat('a', 40000),
+        ], JSON_THROW_ON_ERROR);
+
+        $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            $body
+        ));
+
+        $log = $this->apiLogContents();
+        // O corpo cortado viaja como texto dentro do registo, e por isso com as aspas escapadas.
+        self::assertStringContainsString('bytes no total]', $log);
+        self::assertStringContainsString('password\":\"********', $log);
+        self::assertStringNotContainsString('secret', $log);
+    }
+
     public function testApiLoggingKeepsFullBodiesWithoutEllipsis(): void
     {
         $payload = str_repeat('abc123', 800);
@@ -298,14 +368,28 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertGreaterThan(4096, strlen($log));
     }
 
-    public function testLoggerDoesNotTruncateDeepStructuredContext(): void
+    public function testLoggerStopsNormalizingUnboundedlyDeepContext(): void
     {
         $value = ['leaf' => 'complete'];
-        for ($depth = 0; $depth < 20; $depth++) {
+        for ($depth = 0; $depth < 40; $depth++) {
             $value = ['nested' => $value];
         }
 
         Logger::channel('api')->info('deep context', ['body' => $value]);
+
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('levels deep, aborting normalization', $log);
+        self::assertStringNotContainsString('"leaf":"complete"', $log);
+    }
+
+    public function testLoggerKeepsTheDepthOfARealDeviceResponse(): void
+    {
+        $value = ['leaf' => 'complete'];
+        for ($depth = 0; $depth < 12; $depth++) {
+            $value = ['nested' => $value];
+        }
+
+        Logger::channel('api')->info('device response', ['body' => $value]);
 
         $log = $this->apiLogContents();
         self::assertStringContainsString('"leaf":"complete"', $log);

@@ -8,11 +8,23 @@ use PDO;
 
 final class GenericCapabilityRepository
 {
+    /** @var array<string, list<array<string, mixed>>> */
+    private array $catalogs = [];
+
     public function __construct(private PDO $pdo)
     {
     }
 
+    // Memo permanente: o único escritor destas linhas é o semeador, noutro processo.
     public function all(?string $deviceType = null): array
+    {
+        return $this->catalogs[(string)$deviceType] ??= $this->load($deviceType);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function load(?string $deviceType): array
     {
         if ($deviceType === null || trim($deviceType) === '') {
             $rows = TimestampFormatter::normalizeRows($this->pdo

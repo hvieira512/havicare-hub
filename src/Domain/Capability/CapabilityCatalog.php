@@ -50,7 +50,9 @@ final class CapabilityCatalog
      */
     public static function definitions(): array
     {
-        return array_merge(
+        static $cache = null;
+
+        return $cache ??= array_merge(
             WatchCapabilityDefinitions::all(),
             NcsCapabilityDefinitions::all(),
             RadarCapabilityDefinitions::all(),
