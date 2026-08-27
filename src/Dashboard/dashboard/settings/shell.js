@@ -1,8 +1,8 @@
 import {
     getApiUsers as apiGetApiUsers,
-    getLicenses as apiGetLicenses,
     getModels as apiGetModels,
 } from "../api/index.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {state} from "../state.js";
 import {renderPagination, resolvePaginationPage} from "../pagination.js";
 
@@ -48,16 +48,20 @@ export function activateSettingsSection(section) {
 export async function loadSettingsNavCounts() {
     const asks = [
         ["Models", apiGetModels],
-        // O separador chama-se "Licenças" e conta licenças, não as empresas que as detêm.
-        ["Company", apiGetLicenses],
         ["ApiUsers", apiGetApiUsers],
     ];
-    await Promise.all(asks.map(async ([key, ask]) => {
-        const response = await ask({page: 1, limit: 1});
-        if (response?.error) return;
-        const total = response?.pagination?.total;
-        if (Number.isFinite(Number(total))) setSettingsNavCount(key, total);
-    }));
+    await Promise.all([
+        ...asks.map(async ([key, ask]) => {
+            const response = await ask({page: 1, limit: 1});
+            if (response?.error) return;
+            const total = response?.pagination?.total;
+            if (Number.isFinite(Number(total))) setSettingsNavCount(key, total);
+        }),
+        // O separador chama-se "Licenças" e conta licenças, não as empresas que as detêm.
+        ensureLicensesLoaded().then((licenses) => {
+            if (licenses !== null) setSettingsNavCount("Company", licenses.length);
+        }),
+    ]);
 }
 
 /**

@@ -490,12 +490,16 @@ function renderTelemetryList(telemetryRows) {
 
     // Na pastilha do contador cabe o número e mais nada: o título já diz de quê.
     els.telemetryCount.textContent = telemetry.length ? String(telemetry.length) : "";
+    // A lista rola por dentro: sem repor a posição, cada mensagem do stream e cada sondagem
+    // atiravam para o topo uma lista que estava a ser lida.
+    const scrollTop = els.telemetryList.scrollTop;
     // Uma linha por evento, em colunas: pastilha do ícone, nome, valor, hora.
     els.telemetryList.innerHTML = pageRows.length
         ? `<table class="table table-sm align-middle mb-0 telemetry-table">
             <tbody>${pageRows.map(renderTelemetryRow).join("")}</tbody>
            </table>`
         : emptyPanel("Ainda não há eventos recebidos.");
+    els.telemetryList.scrollTop = scrollTop;
     renderClientPager("telemetry", telemetry.length, totalPages);
 }
 
@@ -683,6 +687,7 @@ function renderDownlinkRequests(commands) {
     const start = (state.downlinkPage - 1) * state.downlinkPageSize;
     const pageRows = commands.slice(start, start + state.downlinkPageSize);
 
+    const scrollTop = els.downlinkRequests.scrollTop;
     // A mesma linha dos eventos recebidos, do outro lado: pastilha do ícone, nome, estado,
     // hora. A resposta cabe no `title` da pastilha, e o erro na segunda linha do nome.
     els.downlinkRequests.innerHTML = pageRows.length
@@ -690,6 +695,7 @@ function renderDownlinkRequests(commands) {
             <tbody>${pageRows.map(renderDownlinkRow).join("")}</tbody>
            </table>`
         : emptyPanel("Ainda não há pedidos ao dispositivo.");
+    els.downlinkRequests.scrollTop = scrollTop;
 
     renderClientPager("downlink", commands.length, totalPages);
 }
@@ -736,6 +742,17 @@ function renderConnectionTimeline(rows) {
     // Um evento só não é uma série, e a pastilha do dispositivo já diz se está ligado: a
     // secção fica escondida até haver o que desenhar.
     els.connectionSection.classList.toggle("d-none", events.length < 2);
+
+    // Redesenhar isto é deitar o gráfico abaixo e construir outro. Passa por aqui cada tecla
+    // da pesquisa, cada mensagem do stream e a sondagem dos 30 s: sem a série mudar, não há
+    // nada para fazer.
+    const signature = events
+        .map((event) => `${event.type}@${eventTime(event)}`)
+        .join("|");
+    if (els.connectionTimeline.dataset.connectionSignature === signature) {
+        return;
+    }
+    els.connectionTimeline.dataset.connectionSignature = signature;
 
     if (events.length < 2) {
         if (connectionChartRoot) {

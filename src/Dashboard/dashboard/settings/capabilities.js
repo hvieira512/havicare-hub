@@ -1,12 +1,11 @@
 import {
     getModelFilters as apiGetModelFilters,
-    getModelTemplate as apiGetModelTemplate,
 } from "../api/index.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {renderButtonGroup, renderDeviceTypeTiles} from "../widgets.js";
 import {requestCardContent} from "../telemetry-cards.js";
-import {ensureCapabilityCatalog} from "../capability-catalog.js";
+import {ensureCapabilityCatalog, ensureModelTemplate} from "../capability-catalog.js";
 import {
     capabilitiesGroupedBySection,
     deviceTypeOptions,
@@ -64,7 +63,7 @@ async function loadCapabilityTemplate(supplierId, deviceType) {
         state.settingsModal.capabilityTemplateEnabledKeys = [];
         return;
     }
-    const response = await apiGetModelTemplate({ supplierId, deviceType });
+    const response = await ensureModelTemplate(supplierId, deviceType);
     if (response.error) {
         state.settingsModal.capabilityTemplateEnabledKeys = [];
         return;
@@ -173,6 +172,13 @@ function renderCapabilitiesCatalogSection() {
     // protocolo, e o ícone -- o mesmo dos cartões de pedido -- é o que se reconhece.
     const supplierName = supplier ? supplier.name : "";
 
+    // Em telefone cada secção abre e fecha, e o catálogo é reconstruído a cada tecla da
+    // pesquisa: sem isto, escrever uma letra fechava tudo o que estivesse aberto.
+    const openBodies = new Set(
+        Array.from(els.capabilityCatalogViewer.querySelectorAll(".collapse.show"))
+            .map((body) => body.id),
+    );
+
     els.capabilityCatalogViewer.innerHTML = visibleSections
         .map(({ section, label, entries }) => {
             const supported = entries.filter((entry) => entry.supported).length;
@@ -229,6 +235,14 @@ function renderCapabilitiesCatalogSection() {
         })
         .join("");
 
+    for (const body of els.capabilityCatalogViewer.querySelectorAll(".collapse")) {
+        if (!openBodies.has(body.id)) continue;
+        body.classList.add("show");
+        els.capabilityCatalogViewer
+            .querySelector(`[data-bs-target="#${CSS.escape(body.id)}"]`)
+            ?.setAttribute("aria-expanded", "true");
+    }
+
     renderCapabilityCatalogSectionNav(visibleSections);
 }
 
@@ -267,12 +281,17 @@ function catalogSectionId(section) {
 function renderCapabilityCatalogSectionNav(sections) {
     if (!els.capabilityCatalogSectionNav) return;
 
+    // A pastilha acesa sai do estado e não de uma classe escrita à mão no DOM: a tira é
+    // reconstruída pela pesquisa, e o realce escrito à mão não sobrevivia a isso.
+    const active = state.settingsModal.activeCapabilityCatalogSection;
+
     els.capabilityCatalogSectionNav.innerHTML = sections.length > 1
         ? sections
             .map(({ section, label, entries }) => {
                 const supported = entries.filter((entry) => entry.supported).length;
+                const target = catalogSectionId(section);
                 return `
-            <button type="button" class="capability-section-chip" data-action="scrollCapabilityCatalogSection" data-target="${esc(catalogSectionId(section))}">
+            <button type="button" class="capability-section-chip${target === active ? " selected" : ""}" data-action="scrollCapabilityCatalogSection" data-target="${esc(target)}">
                 ${esc(label)}<span class="count">${supported}</span>
             </button>`;
             })

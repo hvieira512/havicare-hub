@@ -2,10 +2,10 @@ import {
     getDevices as apiGetDevices,
     deleteModel as apiDeleteModel,
     getModel as apiGetModel,
-    getModelTemplate as apiGetModelTemplate,
     getSuppliers as apiGetSuppliers,
     saveModel as apiSaveModel,
 } from "../../api/index.js";
+import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
 import {modelPreviewHtml} from "../../widgets.js";
@@ -53,7 +53,7 @@ async function openModelDetail(modelId) {
     const deviceType = model.device_type || model.deviceType || "watch";
     state.settingsModal.capabilityModelTemplateKeys = [];
     if (supplierId) {
-        const tmpl = await apiGetModelTemplate({ supplierId, deviceType });
+        const tmpl = await ensureModelTemplate(supplierId, deviceType);
         if (!tmpl.error && Array.isArray(tmpl.enabledCapabilities)) {
             state.settingsModal.capabilityModelTemplateKeys =
                 tmpl.enabledCapabilities.map(String);
@@ -205,12 +205,24 @@ async function saveModelDetail() {
         return;
     }
 
-    const refreshed = await apiGetModel(model.id);
-    if (!refreshed?.error && refreshed?.model) {
-        state.settingsModal.currentCapabilitiesModel = refreshed.model;
-        renderModelDetailInfo(refreshed.model);
-    }
+    // O PUT responde `{status: "ok"}`: o modelo actualizado é o que se acabou de enviar.
+    const saved = {
+        ...model,
+        supplier_id: supplier?.id ?? model.supplier_id,
+        supplier: fields.supplier,
+        internalModel: fields.internalModel,
+        internal_model: fields.internalModel,
+        commercialName: fields.commercialName,
+        commercial_name: fields.commercialName,
+        deviceType: fields.deviceType,
+        device_type: fields.deviceType,
+    };
+    state.settingsModal.currentCapabilitiesModel = saved;
+    renderModelDetailInfo(saved);
+    // O nome, o fornecedor e o tipo são o que a árvore mostra, e o que o resto da dashboard
+    // usa para reconhecer o modelo: as duas listas em memória deixam de valer.
     state.settingsModal.sectionLoaded.models = false;
+    state.deviceTypeSuppliersModels = [];
 }
 
 /**
@@ -242,51 +254,34 @@ async function deleteCurrentModel() {
         return;
 
     await apiDeleteModel(model.id);
+    removeModelFromCatalog(model.id);
+    state.deviceTypeSuppliersModels = [];
     backToModelList();
+}
+
+/** Tira o modelo da árvore em memória, para a lista não ter de ser pedida outra vez. */
+function removeModelFromCatalog(modelId) {
+    for (const group of state.settingsModal.modelCatalog || []) {
+        for (const supplier of group?.suppliers || []) {
+            supplier.models = (supplier.models || []).filter(
+                (entry) => String(entry.id) !== String(modelId),
+            );
+        }
+    }
 }
 
 /* ---------- as capacidades do modelo ---------- */
 
-function renderCapabilitiesSection() {
-    const {els} = getSettingsModelsRuntime();
-    const model = state.settingsModal.currentCapabilitiesModel;
-    const enabled = new Set(
-        state.settingsModal.capabilityEnabledCapabilities || [],
-    );
-    const requestable = new Set(
-        state.settingsModal.capabilityRequestableCapabilities || [],
-    );
-    const protocolRequestable = new Set(
-        Array.isArray(model?.requestableCapabilityKeys)
-            ? model.requestableCapabilityKeys.map(String)
-            : [],
-    );
-    const catalogSections = capabilitiesGroupedBySection(
-        state.settingsModal.capabilityCatalog,
-    );
-
-    const detailLabel = model ? modelCommercialName(model) : "Modelo";
-    els.modelDetailImage.innerHTML = modelPreviewHtml(model, detailLabel);
-    els.modelDetailName.textContent = detailLabel;
-
-    const capabilities =
-        model?.capabilities && typeof model.capabilities === "object"
-            ? model.capabilities
-            : {};
-
-    els.capabilityTitle.textContent = model
-        ? modelCommercialName(model)
-        : "Capacidades";
+/**
+ * As secções que a ficha mostra e as chaves de cada uma. O template do fornecedor manda
+ * quando existe; sem ele, a lista é a das capacidades que o modelo tem ligadas -- e então
+ * desligar uma tira-lhe a linha, que é o que obriga a redesenhar em vez de acertar no sítio.
+ */
+function capabilitySections(enabled) {
     const templateKeys = state.settingsModal.capabilityModelTemplateKeys || [];
     const templateSet = new Set(templateKeys);
 
-    els.capabilitySubtitle.textContent =
-        String(model?.supplier || "") +
-        (templateKeys.length > 0
-            ? ` — ${templateKeys.length} capacidades do template`
-            : "");
-
-    const sections = catalogSections
+    return capabilitiesGroupedBySection(state.settingsModal.capabilityCatalog)
         .map(({ section, label, entries }) => {
             const sectionEntries = entries
                 .filter(
@@ -307,6 +302,101 @@ function renderCapabilitiesSection() {
             return { section, label, entries: sectionEntries };
         })
         .filter(Boolean);
+}
+
+/**
+ * Acerta no sítio o que um interruptor mexe -- o "Solicitável" da mesma linha e as três
+ * contagens --, em vez de redesenhar a secção: redesenhá-la tirava o foco ao interruptor que
+ * se acabou de premir e deixava a lista impossível de percorrer com o teclado.
+ *
+ * Sem template do fornecedor a linha desaparece ao desligar, e aí não há como acertar: quem
+ * chama redesenha.
+ */
+function syncCapabilitySwitches(feature) {
+    const {els} = getSettingsModelsRuntime();
+    const model = state.settingsModal.currentCapabilitiesModel;
+    const enabled = new Set(
+        state.settingsModal.capabilityEnabledCapabilities || [],
+    );
+    const requestable = new Set(
+        state.settingsModal.capabilityRequestableCapabilities || [],
+    );
+    const canBeRequested = (
+        Array.isArray(model?.requestableCapabilityKeys)
+            ? model.requestableCapabilityKeys.map(String)
+            : []
+    ).includes(feature);
+
+    const requestableInput = document.getElementById(`requestable-${feature}`);
+    if (requestableInput) {
+        requestableInput.checked = canBeRequested && requestable.has(feature);
+        requestableInput.disabled = !(canBeRequested && enabled.has(feature));
+    }
+
+    const sections = capabilitySections(enabled);
+    const countOf = (entries) => entries.filter((key) => enabled.has(key)).length;
+
+    els.capabilitySummary.textContent =
+        `${sections.reduce((total, item) => total + countOf(item.entries), 0)}`
+        + `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
+
+    for (const {section, entries} of sections) {
+        const badge = els.capabilitySectionNav.querySelector(
+            `[data-section="${CSS.escape(section)}"] [data-section-count]`,
+        );
+        if (badge) badge.textContent = String(countOf(entries));
+    }
+
+    const visible = sections.find(
+        (item) => item.section === state.settingsModal.activeCapabilitySection,
+    );
+    const groupCount = els.capabilityGroups.querySelector("[data-section-count]");
+    if (visible && groupCount) {
+        groupCount.textContent = `${countOf(visible.entries)}/${visible.entries.length} ativos`;
+    }
+}
+
+/** Diz se desligar uma capacidade lhe tira a linha, e obriga por isso a redesenhar. */
+function capabilityRowsDependOnSelection() {
+    return (state.settingsModal.capabilityModelTemplateKeys || []).length === 0;
+}
+
+function renderCapabilitiesSection() {
+    const {els} = getSettingsModelsRuntime();
+    const model = state.settingsModal.currentCapabilitiesModel;
+    const enabled = new Set(
+        state.settingsModal.capabilityEnabledCapabilities || [],
+    );
+    const requestable = new Set(
+        state.settingsModal.capabilityRequestableCapabilities || [],
+    );
+    const protocolRequestable = new Set(
+        Array.isArray(model?.requestableCapabilityKeys)
+            ? model.requestableCapabilityKeys.map(String)
+            : [],
+    );
+
+    const detailLabel = model ? modelCommercialName(model) : "Modelo";
+    els.modelDetailImage.innerHTML = modelPreviewHtml(model, detailLabel);
+    els.modelDetailName.textContent = detailLabel;
+
+    const capabilities =
+        model?.capabilities && typeof model.capabilities === "object"
+            ? model.capabilities
+            : {};
+
+    els.capabilityTitle.textContent = model
+        ? modelCommercialName(model)
+        : "Capacidades";
+    const templateKeys = state.settingsModal.capabilityModelTemplateKeys || [];
+
+    els.capabilitySubtitle.textContent =
+        String(model?.supplier || "") +
+        (templateKeys.length > 0
+            ? ` — ${templateKeys.length} capacidades do template`
+            : "");
+
+    const sections = capabilitySections(enabled);
 
     const totalCapabilities = sections.reduce(
         (count, item) => count + item.entries.length,
@@ -333,7 +423,7 @@ function renderCapabilitiesSection() {
             return `
         <button type="button" class="btn btn-sm ${isActive ? "btn-primary" : "btn-outline-secondary"} d-inline-flex align-items-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
             <i class="fa-solid ${icon}"></i>${esc(label)}
-            <span class="badge rounded-pill ${isActive ? "text-bg-light" : "text-bg-secondary"}">${active}</span>
+            <span class="badge rounded-pill ${isActive ? "text-bg-light" : "text-bg-secondary"}" data-section-count>${active}</span>
         </button>`;
         })
         .join("");
@@ -344,7 +434,7 @@ function renderCapabilitiesSection() {
         <section class="border rounded-3 p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="section-label">${esc(section.label)}</div>
-                <span class="small text-secondary">${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
+                <span class="small text-secondary" data-section-count>${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
             </div>
             <div class="d-flex flex-column gap-2">
                 ${section.entries
@@ -425,11 +515,13 @@ async function saveCapabilities() {
 }
 
 export {
+    capabilityRowsDependOnSelection,
     deleteCurrentModel,
     openModelDetail,
     renderCapabilitiesSection,
     resetModelDetailFields,
     saveCapabilities,
     saveModelDetail,
+    syncCapabilitySwitches,
     syncModelDetailDirty,
 };

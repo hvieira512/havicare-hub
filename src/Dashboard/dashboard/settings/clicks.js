@@ -2,7 +2,12 @@ import {state} from "../state.js";
 import {deleteApiUser, editApiUser, toggleApiUser} from "./api-users.js";
 import {loadSettingsCapabilitiesSection} from "./capabilities.js";
 import {selectModelDeviceType, selectModelSupplier} from "./models/form.js";
-import {openModelDetail, renderCapabilitiesSection} from "./models/detail.js";
+import {
+    capabilityRowsDependOnSelection,
+    openModelDetail,
+    renderCapabilitiesSection,
+    syncCapabilitySwitches,
+} from "./models/detail.js";
 
 /**
  * Os cliques dentro do modal de definições: escolher fornecedor ou tipo, ligar e desligar
@@ -67,7 +72,11 @@ export function handleCapabilityGroupsChange(event) {
     }
     state.settingsModal.capabilityEnabledCapabilities = [...enabled];
     state.settingsModal.capabilityRequestableCapabilities = [...requestable];
-    renderCapabilitiesSection();
+    if (capabilityRowsDependOnSelection()) {
+        renderCapabilitiesSection();
+        return;
+    }
+    syncCapabilitySwitches(feature);
 }
 
 /**
@@ -83,6 +92,7 @@ export function scrollCapabilityCatalogSection(event) {
     const target = document.getElementById(chip.dataset.target || "");
     if (!target) return;
 
+    state.settingsModal.activeCapabilityCatalogSection = chip.dataset.target || "";
     els.capabilityCatalogSectionNav
         .querySelectorAll(".capability-section-chip")
         .forEach((other) => other.classList.toggle("selected", other === chip));

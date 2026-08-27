@@ -1,10 +1,10 @@
 import {
     deleteDevice as apiDeleteDevice,
-    getCapabilities as apiGetCapabilities,
     getDevice as apiGetDevice,
-    getLicenses as apiGetLicenses,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
+import {ensureCapabilityCatalog} from "../capability-catalog.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {
     deviceTypeCardsHtml,
     licenseTree,
@@ -103,8 +103,8 @@ export function initDeviceModal(context) {
  * de "não há licenças nenhumas" a quem está a olhar para uma árvore vazia.
  */
 async function loadLicenseGroups() {
-    const response = await apiGetLicenses({limit: 500});
-    return response?.error ? null : licenseTree(response.data || []);
+    const licenses = await ensureLicensesLoaded();
+    return licenses === null ? null : licenseTree(licenses);
 }
 
 export function setDeviceFormError(message = "") {
@@ -368,21 +368,9 @@ export async function syncDeviceModalContext(loadCatalog = false) {
     state.deviceModal.deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
     );
-    const cachedCapabilityCatalog =
-        state.settingsModal.capabilityCatalogByType?.[state.deviceModal.deviceType];
-    if (cachedCapabilityCatalog) {
-        state.deviceModal.capabilityCatalog = cachedCapabilityCatalog;
-    } else {
-        const response = await apiGetCapabilities({
-            deviceType: state.deviceModal.deviceType,
-        });
-        const capabilityCatalog = response?.error ? [] : response.data || [];
-        state.settingsModal.capabilityCatalogByType = {
-            ...(state.settingsModal.capabilityCatalogByType || {}),
-            [state.deviceModal.deviceType]: capabilityCatalog,
-        };
-        state.deviceModal.capabilityCatalog = capabilityCatalog;
-    }
+    state.deviceModal.capabilityCatalog = await ensureCapabilityCatalog(
+        state.deviceModal.deviceType,
+    );
     state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || "0";
     state.deviceModal.simNumber = getDeviceSimNumberValue(false);
     state.deviceModal.deviceId = els.deviceDeviceId?.value.trim() || "";

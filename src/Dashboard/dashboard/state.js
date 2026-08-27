@@ -98,9 +98,14 @@ export const state = {
     protocolCatalogs: {},
     settingsModal: {
         section: "suppliers",
+        // As licenças, uma vez por sessão: são a árvore do filtro, a do assistente e as
+        // opções de três formulários. Quem as muda limpa-as.
+        licenses: [],
         capabilityDeviceType: "",
         capabilityCatalog: [],
-        capabilityCatalogByType: {},
+        // A secção do catálogo para onde a tira de pastilhas levou, para o realce sobreviver
+        // a uma reconstrução da tira.
+        activeCapabilityCatalogSection: "",
         capabilitySupplier: "",
         capabilityTemplateEnabledKeys: [],
         capabilitySuppliersForDeviceType: [],

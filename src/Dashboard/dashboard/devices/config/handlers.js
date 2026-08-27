@@ -8,6 +8,7 @@ import {
 import {
     appendAlarmClockRow,
     appendContactRow,
+    appendFourPTouchAlarmRow,
     appendPhoneListRow,
     appendTakePillsReminder,
     appendWonlexMedicationPlan,
@@ -15,6 +16,7 @@ import {
     removeTakePillsReminder,
     removeWonlexMedicationPlan,
     syncAlarmClockCustomVisibility,
+    syncFourPTouchAlarmAddButton,
 } from "./row-editing.js";
 import {
     clearTakePillsRecording,
@@ -94,6 +96,17 @@ export function handleDeviceConfigClick(event) {
 
     if (button.dataset.action === "removeAlarmClockRow") {
         removeConfigRow(button.closest('[data-repeat-row="alarm_clock"]'));
+        return;
+    }
+
+    if (button.dataset.action === "addFourPTouchAlarmRow") {
+        appendFourPTouchAlarmRow(section);
+        return;
+    }
+
+    if (button.dataset.action === "removeFourPTouchAlarmRow") {
+        removeConfigRow(button.closest('[data-repeat-row="fourPTouchAlarm"]'));
+        syncFourPTouchAlarmAddButton(section);
         return;
     }
 

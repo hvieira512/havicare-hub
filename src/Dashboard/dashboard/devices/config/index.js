@@ -664,7 +664,7 @@ function renderConfigSection(
     ].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
+        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
             <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
                 <div>
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -829,6 +829,46 @@ function configurationDeliveryMeta(isStored, delivery) {
     const status = String(delivery?.status || "applied");
     return CONFIGURATION_DELIVERY_META[status]
         || CONFIGURATION_DELIVERY_META.failed;
+}
+
+/**
+ * Acerta no sítio a pastilha de estado e o aviso de entrega de cada bloco.
+ *
+ * Uma mudança de estado de entrega chega pelo stream a qualquer momento, e redesenhar a raiz
+ * por causa dela deitava fora o número de telefone, o nome ou a hora que estivessem a meio de
+ * ser escritos noutro bloco -- precisamente enquanto se espera pelo envio de um.
+ */
+export function patchConfigurationDeliveryStates(root, configurationSync) {
+    for (const section of root.querySelectorAll("[data-config-section]")) {
+        const key = section.dataset.capabilityKey || section.dataset.configKey || "";
+        if (key === "") continue;
+
+        const delivery = resolveConfigDelivery({capabilityKey: key}, configurationSync);
+        const meta = configurationDeliveryMeta(
+            section.dataset.configStored === "1",
+            delivery,
+        );
+
+        const badge = section.querySelector(".config-state");
+        if (badge) {
+            badge.className = `config-state config-state-${meta.tone}`;
+            badge.innerHTML = `<span class="config-state-dot"></span>${esc(meta.label)}`;
+        }
+
+        const notice = section.querySelector('[role="status"]');
+        const noticeHtml = renderConfigurationDeliveryNotice(meta, delivery);
+        if (notice) {
+            if (noticeHtml === "") {
+                notice.remove();
+            } else {
+                notice.outerHTML = noticeHtml;
+            }
+        } else if (noticeHtml !== "") {
+            section
+                .querySelector("[data-config-form]")
+                ?.insertAdjacentHTML("beforebegin", noticeHtml);
+        }
+    }
 }
 
 function renderConfigurationDeliveryNotice(meta, delivery) {

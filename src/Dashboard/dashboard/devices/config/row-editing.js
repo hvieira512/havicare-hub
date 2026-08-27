@@ -1,6 +1,6 @@
 import {renderPhoneControl, resetPhoneControls} from "../../phone.js";
 import {takePillsReminderGroup} from "./index.js";
-import {wonlexMedicationPlanRow} from "./inputs.js";
+import {fourPTouchAlarmRow, wonlexMedicationPlanRow} from "./inputs.js";
 import {syncTakePillsCustomVisibility} from "./take-pills-audio.js";
 
 /**
@@ -114,6 +114,37 @@ export function appendAlarmClockRow(section) {
     }
 
     list.appendChild(clone);
+}
+
+/**
+ * Desenha a linha em vez de a clonar: cada linha traz caixas de dias com `id` próprio, e um
+ * clone repetia-os -- clicar num dia da linha nova mexia na primeira.
+ */
+export function appendFourPTouchAlarmRow(section) {
+    const list = section.querySelector("[data-fourptouch-alarm-list]");
+    if (!list) return;
+
+    const limit = parseInt(list.dataset.repeatLimit || "3", 10) || 3;
+    const index = list.querySelectorAll('[data-repeat-row="fourPTouchAlarm"]').length;
+    if (index >= limit) return;
+
+    list.insertAdjacentHTML(
+        "beforeend",
+        fourPTouchAlarmRow({time: "", enabled: true, mode: 1, custom: ""}, index),
+    );
+    syncFourPTouchAlarmAddButton(section);
+}
+
+export function syncFourPTouchAlarmAddButton(section) {
+    const list = section?.querySelector("[data-fourptouch-alarm-list]");
+    const addButton = section?.querySelector(
+        '[data-action="addFourPTouchAlarmRow"]',
+    );
+    if (!list || !addButton) return;
+
+    const limit = parseInt(list.dataset.repeatLimit || "3", 10) || 3;
+    addButton.disabled =
+        list.querySelectorAll('[data-repeat-row="fourPTouchAlarm"]').length >= limit;
 }
 
 export function appendWonlexMedicationPlan(section) {

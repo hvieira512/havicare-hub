@@ -1,11 +1,11 @@
 import {
     getDevice as apiGetDevice,
     getDevices as apiGetDevices,
-    getLicenses as apiGetLicenses,
     getProtocols as apiGetProtocols,
 } from "../api/index.js";
 import {getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels} from "../api/models.js";
 import {ensureCapabilityCatalog} from "../capability-catalog.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {state, clearSelection, selectImei} from "../state.js";
 import {esc} from "../format.js";
 import {
@@ -154,21 +154,6 @@ async function ensureDeviceTypeSuppliersModelsLoaded(force = false) {
     state.deviceTypeSuppliersModels = flattenDeviceTypeSuppliersModels(groups);
     return state.deviceTypeSuppliersModels;
 }
-
-async function ensureLicensesLoaded(force = false) {
-    if (
-        !force &&
-        Array.isArray(state.settingsModal.licenses) &&
-        state.settingsModal.licenses.length > 0
-    ) {
-        return state.settingsModal.licenses;
-    }
-
-    const licensesResponse = await apiGetLicenses({ limit: 500 });
-    state.settingsModal.licenses = licensesResponse.data || [];
-    return state.settingsModal.licenses;
-}
-
 
 async function ensureProtocolsLoaded(force = false) {
     if (!force && Array.isArray(state.protocols) && state.protocols.length > 0) {

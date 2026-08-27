@@ -1,9 +1,9 @@
 import {
     deleteApiUser as apiDeleteApiUser,
     getApiUsers as apiGetApiUsers,
-    getLicenses as apiGetLicenses,
     saveApiUser as apiSaveApiUser,
 } from "../api/index.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {
@@ -30,12 +30,14 @@ function apiRoleLabel(role) {
 }
 
 export async function loadSettingsApiUsersSection(page = 1) {
-    const [response, licensesResponse] = await Promise.all([
+    // As licenças não mudam por se gravar um utilizador: vêm da cache partilhada, e é só a
+    // lista de utilizadores que se vai buscar outra vez.
+    const [response, licenses] = await Promise.all([
         apiGetApiUsers({ page }),
-        apiGetLicenses({ page: 1, limit: 1000 }),
+        ensureLicensesLoaded(),
     ]);
     const users = response.data || [];
-    apiUserLicenses = licensesResponse.data || [];
+    apiUserLicenses = licenses ?? [];
     renderApiUserLicenseOptions();
     state.settingsModal.apiUsersPagination = response.pagination || null;
     state.settingsModal.sectionLoaded.apiUsers = true;

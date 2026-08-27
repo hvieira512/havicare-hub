@@ -231,8 +231,9 @@ function handleModelsListSearchInput() {
 }
 
 /**
- * Volta ao primeiro slide, que é a lista, e recarrega-a: pô-la outra vez à vista sem a ir
- * buscar mostrava o catálogo anterior a uma gravação que acabou de mudar.
+ * Volta ao primeiro slide, que é a lista. Só a vai buscar outra vez quando alguma coisa que
+ * a árvore mostra -- nome, fornecedor, tipo, imagem -- mudou; quem a mudou di-lo baixando o
+ * `sectionLoaded.models`. Ligar capacidades não mexe em nada disso.
  */
 function backToModelList() {
     const {els} = getSettingsModelsRuntime();
@@ -260,8 +261,10 @@ function backToModelList() {
 
     state.settingsModal.currentCapabilitiesModel = null;
     state.settingsModal.capabilityModelTemplateKeys = [];
-    state.settingsModal.sectionLoaded.models = false;
-    state.settingsModal.sectionLoaded.modelFilters = false;
+    if (state.settingsModal.sectionLoaded.models) {
+        renderModelsSection();
+        return;
+    }
     void loadSettingsModelsSection();
 }
 

@@ -1,9 +1,9 @@
 import {
     createDeviceLink as apiCreateDeviceLink,
     getDevices as apiGetDevices,
-    getLicenses as apiGetLicenses,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {esc} from "../format.js";
 import {state} from "../state.js";
 import {modelPreviewHtml} from "../widgets.js";
@@ -452,9 +452,9 @@ async function create() {
  */
 export async function openWizard(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
-    const licenses = await apiGetLicenses({limit: 500});
+    const licenses = await ensureLicensesLoaded();
     await loadWizardGateways();
-    const tree = licenseTree(licenses?.error ? [] : licenses.data || []);
+    const tree = licenseTree(licenses ?? []);
     openCreateWizard(tree, seedFromNotification(source, tree));
     wizardModal.show();
 }

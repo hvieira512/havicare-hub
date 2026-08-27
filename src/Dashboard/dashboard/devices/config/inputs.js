@@ -920,16 +920,18 @@ export function alarmsInput(desired, meta = {}) {
         });
     }
 
+    const rows = alarms.slice(0, limit);
+
     return `
         <div class="vstack gap-3">
             <div class="small text-secondary">
                 Até ${esc(String(limit))} alarmes. A recorrência personalizada usa uma máscara de 7 dias, de Segunda a Domingo.
             </div>
-            <div class="vstack gap-2">
-                ${alarms
-                    .slice(0, limit)
-                    .map((alarm, index) => fourPTouchAlarmRow(alarm, index))
-                    .join("")}
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addFourPTouchAlarmRow" ${rows.length >= limit ? "disabled" : ""}>Adicionar item</button>
+            </div>
+            <div class="vstack gap-2" data-repeat-limit="${esc(String(limit))}" data-fourptouch-alarm-list>
+                ${rows.map((alarm, index) => fourPTouchAlarmRow(alarm, index)).join("")}
             </div>
         </div>`;
 }
@@ -1060,7 +1062,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
         </div>`;
 }
 
-function fourPTouchAlarmRow(alarm, index) {
+export function fourPTouchAlarmRow(alarm, index) {
     const mode = parseInt(String(alarm.mode ?? 1), 10) || 1;
     const customVisible = mode === 3;
     const rowId = nextUid("fourptouch-alarm");
@@ -1083,7 +1085,7 @@ function fourPTouchAlarmRow(alarm, index) {
     const customDays = normalizeFourPTouchAlarmDays(alarm.custom || "");
 
     return `
-        <div class="border rounded p-3 bg-body" data-fourptouch-alarm-row="${index}">
+        <div class="border rounded p-3 bg-body" data-repeat-row="fourPTouchAlarm" data-fourptouch-alarm-row="${index}">
             <div class="row g-3 align-items-end">
                 <div class="col-sm-6 col-lg-2">
                     <label class="form-label form-label-sm">Hora</label>
@@ -1125,6 +1127,11 @@ function fourPTouchAlarmRow(alarm, index) {
                             )
                             .join("")}
                     </div>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeFourPTouchAlarmRow" title="Remover alarme" aria-label="Remover alarme">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
                 </div>
             </div>
         </div>`;
