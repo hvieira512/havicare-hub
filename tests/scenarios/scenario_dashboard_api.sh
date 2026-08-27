@@ -6,16 +6,6 @@ source "$(cd "$(dirname "$0")" && pwd)/lib/common.sh"
 scenario_begin "dashboard_api"
 trap scenario_cleanup EXIT
 
-export MQTT_PUBLISHER_USERNAME="${MQTT_PUBLISHER_USERNAME:-hub_publisher}"
-export MQTT_PUBLISHER_PASSWORD="${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}"
-export MQTT_SMOKE_USERNAME="${MQTT_SMOKE_USERNAME:-hub_smoke}"
-export MQTT_SMOKE_PASSWORD="${MQTT_SMOKE_PASSWORD:-hub_smoke_pass}"
-export MQTT_HOST="mosquitto"
-export MQTT_PORT="1883"
-export MQTT_USERNAME="$MQTT_PUBLISHER_USERNAME"
-export MQTT_PASSWORD="$MQTT_PUBLISHER_PASSWORD"
-export MQTT_TOPIC_PREFIX=""
-export WHITELIST_FILE="config/whitelist.example.json"
 export DASHBOARD_API_AUTH_REQUIRED="true"
 
 IMEI="868705080300697"

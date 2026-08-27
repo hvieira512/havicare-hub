@@ -6,16 +6,6 @@ source "$(cd "$(dirname "$0")" && pwd)/lib/common.sh"
 scenario_begin "ncs_mqtt_ingress"
 trap scenario_cleanup EXIT
 
-export MQTT_PUBLISHER_USERNAME="${MQTT_PUBLISHER_USERNAME:-hub_publisher}"
-export MQTT_PUBLISHER_PASSWORD="${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}"
-export MQTT_SMOKE_USERNAME="${MQTT_SMOKE_USERNAME:-hub_smoke}"
-export MQTT_SMOKE_PASSWORD="${MQTT_SMOKE_PASSWORD:-hub_smoke_pass}"
-export MQTT_HOST="mosquitto"
-export MQTT_PORT="1883"
-export MQTT_USERNAME="$MQTT_PUBLISHER_USERNAME"
-export MQTT_PASSWORD="$MQTT_PUBLISHER_PASSWORD"
-export MQTT_TOPIC_PREFIX=""
-export WHITELIST_FILE="config/whitelist.example.json"
 
 EVENT_PAYLOAD='{"from":"bea6c3dd8e02","type":6,"timestamp":1718700000,"payload":{"id":"button-07","key":"8","transparent":{"raw":"0A01"},"location":{"lat":41.1579,"lon":-8.6291,"accuracy":12}}}'
 STATUS_PAYLOAD='{"from":"bea6c3dd8e02","payload":{"status":{"online":false}}}'

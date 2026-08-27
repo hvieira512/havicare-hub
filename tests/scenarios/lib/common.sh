@@ -11,6 +11,36 @@ if [ -f "$ROOT_DIR/.env" ]; then
   set +a
 fi
 
+# Um cenário fala sempre com o mosquitto do compose, aconteça o que acontecer ao `.env`.
+#
+# O nome que conta é o `HUB_MQTT_HOST`, e não o `MQTT_HOST`: é esse que o
+# `docker-compose.yml` lê para o contentor do hub, de propósito, para apontar ao broker
+# remoto ser um pedido explícito. Cada cenário fixava só o `MQTT_HOST` -- que serve os
+# `mosquitto_pub` e mais nada -- e por isso o hub que eles levantavam ficava ligado ao
+# broker que o `.env` mandasse. Numa máquina com `HUB_MQTT_HOST` apontado a produção, era
+# a produção.
+#
+# Fica aqui e não em cada cenário porque seis cópias de uma guarda é uma guarda que o
+# sétimo cenário se esquece de trazer.
+export HUB_MQTT_HOST="mosquitto"
+export HUB_MQTT_PORT="1883"
+export MQTT_HOST="mosquitto"
+export MQTT_PORT="1883"
+export MQTT_TOPIC_PREFIX=""
+# Sem ingress da Qinglanst: nenhum cenário exercita o radar, e um host herdado do `.env`
+# punha o hub subscrito nos tópicos de outra pessoa. Desligar é pelo `QINGLANST_ENABLED` --
+# esvaziar só o host deixa o validador a recusar arrancar, que é o que ele deve fazer.
+export QINGLANST_ENABLED="false"
+export QINGLANST_MQTT_HOST=""
+
+export MQTT_PUBLISHER_USERNAME="${MQTT_PUBLISHER_USERNAME:-hub_publisher}"
+export MQTT_PUBLISHER_PASSWORD="${MQTT_PUBLISHER_PASSWORD:-hub_publisher_pass}"
+export MQTT_SMOKE_USERNAME="${MQTT_SMOKE_USERNAME:-hub_smoke}"
+export MQTT_SMOKE_PASSWORD="${MQTT_SMOKE_PASSWORD:-hub_smoke_pass}"
+export MQTT_USERNAME="$MQTT_PUBLISHER_USERNAME"
+export MQTT_PASSWORD="$MQTT_PUBLISHER_PASSWORD"
+export WHITELIST_FILE="${WHITELIST_FILE:-config/whitelist.example.json}"
+
 SCENARIO_NAME=""
 SCENARIO_DIR=""
 MQTT_LOG_FILE=""
