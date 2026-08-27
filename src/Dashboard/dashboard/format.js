@@ -193,6 +193,10 @@ const FIELD_VALUE_LABELS = {
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";
 
+    // Um booleano chegava aqui como texto e saia titleizado do inglês: o cartão de alarme
+    // dizia "Queda: False" e "Bateria fraca: False", e o de localização "GPS válido: False".
+    if (typeof value === "boolean") return value ? "Sim" : "Não";
+
     const raw = String(value);
     const translated = FIELD_VALUE_LABELS[key]?.[raw];
     if (translated) return translated;

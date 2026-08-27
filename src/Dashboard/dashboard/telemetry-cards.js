@@ -224,16 +224,10 @@ const UPLINK_CARD_RENDERERS = {
             "standMinutes",
         ]),
     }),
-    location: (data) => ({
+    location: (data, meta) => ({
         icon: "fa-location-dot",
-        value:
-        data.lat && data.lon ? `${data.lat}, ${data.lon}` : "Atualização de localização",
-        details: compactDetails(data, [
-            "source",
-            "gpsValid",
-            "speedKmh",
-            "accuracyMeters",
-        ]),
+        value: locationValue(data),
+        details: locationDetails(data, meta),
     }),
     alarm: (data) => ({
         icon: "fa-triangle-exclamation",
@@ -412,6 +406,16 @@ export function telemetryCard({
         </div>`;
 }
 
+/**
+ * Que leituras servem para o valor de um mosaico, para os tipos onde chegar não basta.
+ *
+ * Só a localização precisa disto: um relatório sem coordenadas chegou, é válido e não diz
+ * onde o aparelho está. Todos os outros tipos usam a mais recente, ponto.
+ */
+const USABLE_PAYLOAD = {
+    location: (payload) => locationCoordinates(payload?.data) !== null,
+};
+
 export function requestCardContent(type) {
     return {
         icon: REQUEST_CARD_ICON_BY_TYPE[type] || "fa-circle-info",
@@ -419,9 +423,14 @@ export function requestCardContent(type) {
     };
 }
 
-export function uplinkCardContent(type, data) {
+/**
+ * `meta` é o que se sabe sobre a leitura e não está dentro dela -- por agora, quando
+ * chegou. Só o mosaico o passa: na lista cronológica a hora tem coluna própria, e um
+ * renderizador que precise dela numa e não na outra recebe-a de quem o chama.
+ */
+export function uplinkCardContent(type, data, meta = {}) {
     return (
-        UPLINK_CARD_RENDERERS[type]?.(data) || {
+        UPLINK_CARD_RENDERERS[type]?.(data, meta) || {
             icon: "fa-circle-info",
             value: capabilityLabel(type),
             details: compactDetails(data, Object.keys(data).slice(0, 4)),
@@ -610,6 +619,102 @@ function batteryDetails(data) {
         return BATTERY_CHARGING_STATE_LABEL[data.chargingState];
     }
     return compactDetails(data, ["batteryType"]);
+}
+
+/**
+ * As coordenadas de uma leitura de localização, ou null quando não há posição.
+ *
+ * Lê o `lat`/`lon` e não o `hasCoordinates`: o histórico do Redis guarda cem eventos por
+ * dispositivo e os mais antigos são anteriores a esse campo, por isso confiar nele fazia
+ * uma posição boa desaparecer. O par 0,0 é a forma que os protocolos usam para dizer "sem
+ * fixo" -- o normalizador do hub já o anula, mas nem sempre o fez.
+ */
+export function locationCoordinates(data) {
+    const lat = Number(data?.lat);
+    const lon = Number(data?.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (lat === 0 && lon === 0) return null;
+    return {lat, lon};
+}
+
+/**
+ * O valor do cartão de localização: onde está, ou um travessão.
+ *
+ * Dizia "Atualização de localização" quando não havia coordenadas, que é o que o evento é
+ * e não onde o aparelho está -- e o título do cartão já diz LOCALIZAÇÃO. O slot grande
+ * responde a uma pergunta só, e sem posição não há resposta: o travessão diz isso, e a
+ * linha de detalhes diz porquê.
+ *
+ * Cinco decimais são ~1 m, que é a precisão do melhor fixo que o mapa de rádio privado
+ * produz. O sexto decimal são dez centímetros num mosaico de 206px.
+ */
+function locationValue(data) {
+    const fix = locationCoordinates(data);
+    return fix ? `${fix.lat.toFixed(5)}, ${fix.lon.toFixed(5)}` : "—";
+}
+
+/**
+ * Como se obteve a posição: GPS, ou rádio.
+ *
+ * Só estes dois, e não a origem crua. `cell`, `wifi` e `cell_wifi` são todos triangulação
+ * a partir do ambiente de rádio, resolvida pelo mapa privado ou pela BeaconDB, e o que
+ * distingue uma posição destas de uma de GPS é a proveniência, não qual das antenas
+ * entrou na conta -- isso está nos detalhes de quem não conseguiu resolver.
+ */
+function locationFixLabel(data) {
+    const source = String(data?.source || "").toLowerCase();
+    if (source === "") return "";
+    return source === "gps" ? "GPS" : "Rádio";
+}
+
+function locationAccuracy(data) {
+    const meters = Number(data?.accuracyMeters);
+    if (!Number.isFinite(meters) || meters <= 0) return "";
+    return `±${Math.max(1, Math.round(meters))} m`;
+}
+
+/**
+ * A prova de rádio que a leitura trazia, para quando não resultou em posição.
+ *
+ * As contagens dizem mais do que a etiqueta da origem: `cell_wifi` diz por que meio se
+ * tentou, `3 antenas · 4 redes WiFi` diz isso e ainda quanta evidência havia -- e é essa
+ * quantidade que explica porque é que um fixo resolve a ±1 m e o seguinte não resolve.
+ *
+ * Sem antenas nem redes é outra falha, e não a mesma mais fraca: o aparelho reportou e não
+ * viu nada, o que aponta para ele e não para a cobertura.
+ */
+function locationRadioEvidence(data) {
+    const cells = Array.isArray(data?.baseStations) ? data.baseStations.length : 0;
+    const wifi = Array.isArray(data?.wifiAccessPoints) ? data.wifiAccessPoints.length : 0;
+    if (cells === 0 && wifi === 0) return "Sem dados de rádio";
+
+    return [
+        cells ? `${cells} ${cells === 1 ? "antena" : "antenas"}` : "",
+        wifi ? `${wifi} ${wifi === 1 ? "rede WiFi" : "redes WiFi"}` : "",
+    ]
+        .filter(Boolean)
+        .join(" · ");
+}
+
+/**
+ * Com posição, como e com que precisão; sem posição, com que evidência se tentou.
+ *
+ * Dizia `Origem: Cell Wifi · GPS válido: False · Velocidade: 0` -- jargão sem tradução, um
+ * booleano em inglês que só repetia o que a origem já dizia, e a velocidade de um relógio
+ * parado sem unidade.
+ *
+ * A idade vem do `meta` e não do payload, e é por isso que só aparece no mosaico: na lista
+ * cronológica a hora do evento já tem coluna própria.
+ */
+function locationDetails(data, meta = {}) {
+    const parts = locationCoordinates(data)
+        ? [locationFixLabel(data), locationAccuracy(data)]
+        : [locationRadioEvidence(data)];
+
+    return [...parts, meta?.occurredAt ? ago(meta.occurredAt) : ""]
+        .filter(Boolean)
+        .map((part) => esc(part))
+        .join(" · ");
 }
 
 /**
@@ -859,7 +964,20 @@ export function renderRequestCardShell(
             payload && telemetryTypes.includes(String(payload.type || "")),
         )
         .sort((a, b) => eventTime(b) - eventTime(a));
-    const lastTelemetry = payloads[0];
+
+    // A leitura mais recente que serve, quando "servir" e mais do que ter chegado: um
+    // relatorio de localizacao que nao resolveu nao e uma leitura de onde o aparelho esta,
+    // e mostra-lo apagava a posicao boa de dois minutos antes. Num HW20PRO sao 8 de 29
+    // relatorios; num VL17 nunca resolve nenhum, e ai o cartao mostra o ultimo mesmo assim,
+    // porque a hora e a prova de radio sao o que ha para dizer.
+    const usable = USABLE_PAYLOAD[type];
+    const pickOfType = (wanted) => {
+        const ofType = payloads.filter(
+            (payload) => String(payload.type || "") === wanted,
+        );
+        return (usable ? ofType.find(usable) : null) ?? ofType[0];
+    };
+    const lastTelemetry = (usable ? payloads.find(usable) : null) ?? payloads[0];
 
     // Um cartao pode mostrar mais do que uma capacidade -- a humidade da fralda tem os
     // canais numa mensagem e o indice noutra, que chega menos vezes -- e por isso junta a
@@ -868,14 +986,16 @@ export function renderRequestCardShell(
     const lastData = Object.assign(
         {},
         ...telemetryTypes
-            .map((wanted) =>
-                payloads.find((payload) => String(payload.type || "") === wanted),
-            )
+            .map(pickOfType)
             .reverse()
             .map((payload) => payload?.data || {}),
     );
 
-    const lastContent = lastTelemetry ? uplinkCardContent(type, lastData) : null;
+    const lastContent = lastTelemetry
+        ? uplinkCardContent(type, lastData, {
+            occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
+        })
+        : null;
     // Sem leitura nao ha valor: o titulo ja diz o nome da capacidade, e repeti-lo por
     // baixo em corpo maior dava dois nomes no mesmo mosaico.
     const lastValue = lastContent ? lastContent.value : "";
