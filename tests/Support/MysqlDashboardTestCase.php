@@ -8,6 +8,7 @@ use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Infrastructure\Persistence\DatabaseMigrator;
 use PDO;
 use PDOException;
+use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\TestCase;
 
 abstract class MysqlDashboardTestCase extends TestCase
@@ -167,7 +168,16 @@ abstract class MysqlDashboardTestCase extends TestCase
         );
     }
 
-    protected function tearDown(): void
+    /**
+     * Larga as bases que este teste criou.
+     *
+     * Em `#[After]` e não no `tearDown`, porque um `tearDown` numa subclasse que se esqueça
+     * do `parent::tearDown()` deixava as bases todas para trás em silêncio -- foi o que o
+     * `DevicesApiTest` e o `DiaperSensitivityApiTest` fizeram durante meses, e cada corrida
+     * deixava umas noventa. O `#[After]` corre além do `tearDown` e não se sobrepõe.
+     */
+    #[After]
+    protected function dropTemporaryDatabases(): void
     {
         foreach (array_reverse($this->temporaryDatabaseNames) as $databaseName) {
             try {
@@ -180,7 +190,6 @@ abstract class MysqlDashboardTestCase extends TestCase
 
         $this->temporaryDatabaseNames = [];
         $this->adminPdo = null;
-        parent::tearDown();
     }
 
     private function adminPdo(): PDO
