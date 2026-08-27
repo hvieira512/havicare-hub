@@ -21,6 +21,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         'bracelet' => 'moko-w6r',
         'diaper_sensor' => 'monit-mecs-pro-ble',
     ];
+    // ponytail: uma pulseira aqui é sempre uma W6R, por isso um par W6 que se cale sai com
+    // o protocolo errado. Chave por modelo quando houver mais do que duas pulseiras.
 
     /** @var array<string, array<string, mixed>> */
     private array $onlineGateways = [];
@@ -47,6 +49,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly ?GatewayNormalizer $gatewayNormalizer = null,
         private readonly ?W6rDecoder $w6rDecoder = null,
         private readonly ?W6rNormalizer $w6rNormalizer = null,
+        private readonly ?W6Decoder $w6Decoder = null,
         ?callable $clock = null,
         private readonly ?ProximityTracker $proximityTracker = null,
         private readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
@@ -205,6 +208,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $w6r = ($this->w6rDecoder ?? new W6rDecoder())->decode($observation);
         if ($w6r !== null) {
             $this->handleW6rObservation($gateway, $w6r);
+            return;
+        }
+
+        $w6 = ($this->w6Decoder ?? new W6Decoder())->decode($observation);
+        if ($w6 !== null) {
+            $this->handleW6Observation($gateway, $w6);
         }
     }
 
@@ -214,11 +223,16 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      * @param array<string, mixed> $gateway
      * @return array<string, mixed>|null
      */
-    private function linkedDevice(array $gateway, string $deviceKey, string $deviceType, string $protocol): ?array
-    {
+    private function linkedDevice(
+        array $gateway,
+        string $deviceKey,
+        string $deviceType,
+        string $protocol,
+        string $model = '',
+    ): ?array {
         $device = $this->whitelist->resolve($deviceKey);
         if ($device === null || ($device['deviceType'] ?? '') !== $deviceType) {
-            $this->recordUnauthorizedDevice($deviceKey, $protocol, ident: $deviceKey);
+            $this->recordUnauthorizedDevice($deviceKey, $protocol, $model, ident: $deviceKey);
             return null;
         }
 
@@ -296,6 +310,32 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
             $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
+    }
+
+    /**
+     * A W6 não traz alarme nem telemetria que saibamos ler, por isso só há duas coisas a
+     * fazer com ela: dar por ela enquanto ainda não está registada -- é o que põe a
+     * notificação na dashboard, para alguém a adicionar -- e, depois de registada,
+     * mantê-la online e alimentar a proximidade com o sinal que o gateway mediu.
+     *
+     * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
+     */
+    private function handleW6Observation(array $gateway, array $decoded): void
+    {
+        $deviceKey = (string)$decoded['mac'];
+        $device = $this->linkedDevice($gateway, $deviceKey, 'bracelet', 'moko-w6', 'W6');
+        if ($device === null) {
+            return;
+        }
+
+        $this->dashboardStore?->deviceSeen($deviceKey, [
+            'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
+            'deviceType' => (string)$device['deviceType'],
+            'licenseId' => DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
+            'company' => (string)($device['company'] ?? 'null'),
+            'protocol' => 'moko-w6', 'transport' => 'ble_gateway', 'online' => '1',
+        ]);
+        $this->recordSignal($device, $gateway, 'moko-w6', $decoded['rssiDbm'] ?? null);
     }
 
     /**
