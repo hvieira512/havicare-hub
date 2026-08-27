@@ -331,7 +331,7 @@ function renderCapabilitiesSection() {
             const isActive = section === activeSection;
             const active = (entries || []).filter((feature) => enabled.has(feature)).length;
             return `
-        <button type="button" class="btn btn-sm ${isActive ? "btn-primary" : "btn-outline-secondary row-action"} d-inline-flex align-items-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
+        <button type="button" class="btn btn-sm ${isActive ? "btn-primary" : "btn-outline-secondary"} d-inline-flex align-items-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
             <i class="fa-solid ${icon}"></i>${esc(label)}
             <span class="badge rounded-pill ${isActive ? "text-bg-light" : "text-bg-secondary"}">${active}</span>
         </button>`;

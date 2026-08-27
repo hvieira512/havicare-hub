@@ -115,8 +115,11 @@ require_once __DIR__ . '/components/modal.php';
                             <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                 <span class="section-label">Dispositivo</span>
                                 <div class="d-flex align-items-center gap-2">
-                                    <button id="openDeviceSelectorBtn" class="btn btn-sm btn-outline-secondary row-action" type="button">Escolher</button>
-                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary row-action" type="button" title="Adicionar dispositivo" aria-label="Adicionar dispositivo"><?= icon('fa-plus') ?></button>
+                                        <button id="openDeviceSelectorBtn" class="btn btn-sm btn-primary" type="button">
+                                            <i class="fa-solid fa-list me-1"></i>
+                                            Escolher
+                                        </button>
+                                    <button id="addDeviceBtn" class="btn btn-sm btn-outline-secondary" type="button" title="Adicionar dispositivo" aria-label="Adicionar dispositivo"><?= icon('fa-plus') ?></button>
                                 </div>
                             </div>
                             <div id="deviceSelectionEmptyState" class="text-center text-secondary py-5">
@@ -141,7 +144,7 @@ require_once __DIR__ . '/components/modal.php';
                                        * padding -- e são dois. Em telefone valem metade. */ ?>
                                 <dl id="selectedDeviceFacts" class="selected-device-facts row g-2 g-sm-3 mb-0 border-top mt-2 pt-2 mt-sm-3 pt-sm-3"></dl>
                                 <div class="border-top mt-2 pt-2 mt-sm-3 pt-sm-3 d-flex justify-content-end">
-                                    <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary row-action" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
+                                    <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
                                 </div>
                             </div>
                         </div>

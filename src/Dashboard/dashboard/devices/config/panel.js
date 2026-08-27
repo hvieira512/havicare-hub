@@ -341,6 +341,5 @@ export function syncConfigSectionDirty(section) {
 
     button.classList.toggle("btn-primary", dirty);
     button.classList.toggle("btn-outline-secondary", !dirty);
-    button.classList.toggle("row-action", !dirty);
     button.disabled = !dirty;
 }

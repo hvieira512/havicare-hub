@@ -142,7 +142,7 @@ ob_start();
                                         <div class="fw-semibold">Apagar este modelo</div>
                                         <div class="small text-secondary" id="modelDetailDeleteHint">Os dispositivos que o usam ficam sem template de capacidades.</div>
                                     </div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm row-action row-action-danger flex-shrink-0" id="modelDetailDeleteBtn"><?= icon('fa-trash', 'me-1') ?>Apagar modelo</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm flex-shrink-0" id="modelDetailDeleteBtn"><?= icon('fa-trash', 'me-1') ?>Apagar modelo</button>
                                 </div>
                             </div>
                         </div>

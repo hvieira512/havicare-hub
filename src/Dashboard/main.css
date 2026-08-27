@@ -212,29 +212,6 @@ body {
     --bs-card-border-color: #e9ecef;
 }
 
-/* As acções de uma linha de tabela, todas neutras e do mesmo peso: três cores de aviso na
-   mesma linha não indicam gravidade nenhuma. Só a destrutiva se pinta, e só sob o rato, que
-   é quando a gravidade importa. */
-.row-action {
-    --bs-btn-color: var(--bs-secondary-color);
-    --bs-btn-border-color: var(--bs-border-color);
-    --bs-btn-hover-color: var(--bs-body-color);
-    --bs-btn-hover-bg: var(--bs-tertiary-bg);
-    --bs-btn-hover-border-color: var(--bs-border-color);
-    --bs-btn-active-color: var(--bs-body-color);
-    --bs-btn-active-bg: var(--bs-secondary-bg);
-    --bs-btn-active-border-color: var(--bs-border-color);
-}
-
-.row-action-danger {
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: var(--bs-danger);
-    --bs-btn-hover-border-color: var(--bs-danger);
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: var(--bs-danger);
-    --bs-btn-active-border-color: var(--bs-danger);
-}
-
 /* Um filho pertence ao cabecalho acima dele, e le-se indentado sob ele. A linha vertical e
    o que diz que pertence, sem precisar de uma segunda tabela a dizer o mesmo.
 

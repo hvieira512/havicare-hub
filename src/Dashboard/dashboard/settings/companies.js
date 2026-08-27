@@ -73,8 +73,8 @@ function renderCompanySection(companies, licenses) {
             <div class="d-flex align-items-center gap-2">
                 <span class="config-state config-state-secondary"><span class="config-state-dot"></span>${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</span>
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" data-action="newLicenseForCompany" data-company-id="${item.id}">Nova licença</button>
-                <button class="btn btn-outline-secondary btn-sm row-action" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>
         ${owned.map((license) => `
@@ -84,8 +84,8 @@ function renderCompanySection(companies, licenses) {
                 <span class="text-truncate">${esc(license.name || "sem nome")}</span>
             </div>
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                <button class="btn btn-outline-secondary btn-sm row-action" data-action="editLicense" data-id="${license.id}" data-company-id="${license.company_id}" data-company-name="${esc(license.company_name || "")}" data-license-id="${esc(license.license_id)}" data-name="${esc(license.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn btn-outline-secondary btn-sm row-action row-action-danger" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${license.id}" data-company-id="${license.company_id}" data-company-name="${esc(license.company_name || "")}" data-license-id="${esc(license.license_id)}" data-name="${esc(license.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-danger btn-sm" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`).join("")}
         </div>
