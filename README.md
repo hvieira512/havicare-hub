@@ -42,7 +42,7 @@ database/schema.sql
 
 Database connections never mutate the schema. Run `php bin/migrate.php` as an explicit deployment step before starting or restarting the hub. The command applies the idempotent base schema and versioned migrations from `src/Infrastructure/Persistence/Migration/`; applied versions are recorded in `schema_migrations` under a MySQL advisory lock. The runtime refuses to start when the schema is missing or behind.
 
-Reference suppliers, models, capabilities, and initial model capability selections are seeded by one-time migrations. Restarting the hub does not recreate deleted catalog rows or overwrite administrator-managed model capability selections.
+Reference suppliers, models, capabilities, and initial model capability selections are seeded by `ReferenceCatalogSeeder` on an empty database only. Restarting the hub does not recreate deleted catalog rows or overwrite administrator-managed model capability selections. A migration is what evolves the catalog of a database that already exists; a migration whose destination the baseline already reaches is deleted, and `DatabaseMigrationPlan` is empty whenever nothing is pending.
 
 Docker:
 

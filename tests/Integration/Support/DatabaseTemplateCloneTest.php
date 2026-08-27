@@ -34,14 +34,17 @@ final class DatabaseTemplateCloneTest extends MysqlDashboardTestCase
         ], $constraints);
     }
 
-    public function testCloneCarriesTheSeededReferenceCatalogAndMigrationHistory(): void
+    public function testCloneCarriesTheSeededReferenceCatalog(): void
     {
         $db = $this->createDashboardDatabase();
         $pdo = $db->pdo();
 
         self::assertGreaterThan(0, (int)$pdo->query('SELECT COUNT(*) FROM models')->fetchColumn());
         self::assertGreaterThan(0, (int)$pdo->query('SELECT COUNT(*) FROM capabilities')->fetchColumn());
-        self::assertGreaterThan(0, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+
+        // A `schema_migrations` sobrevive ao clone mesmo vazia, que é como está quando o plano
+        // não tem nada pendente: sem a tabela o `DatabaseSchemaGuard` recusa arrancar o hub.
+        self::assertNotFalse($pdo->query("SHOW TABLES LIKE 'schema_migrations'")->fetchColumn());
     }
 
     public function testEachTestGetsAnIsolatedDatabase(): void

@@ -5,10 +5,6 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
-use Hub\Infrastructure\Persistence\Migration\Version2026082805DropDiaperSensorSettingsAgain;
-use Hub\Infrastructure\Persistence\Migration\Version2026082807LicenseAbsenceAsNull;
-use Hub\Infrastructure\Persistence\Migration\Version2026082806SeedMokoW6CatalogModel;
-use Hub\Infrastructure\Persistence\Migration\Version2026082808RenameMokoW6rToW6b;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo de
@@ -18,20 +14,20 @@ use Hub\Infrastructure\Persistence\Migration\Version2026082808RenameMokoW6rToW6b
  * aplicar e que o `schema.sql` sozinho não consegue fazer: largar uma coluna, renomear,
  * converter linhas. Uma instalação nova não replica nada disto -- nasce na baseline.
  *
- * Não há caminho de actualização a partir de uma base anterior à baseline. As duas que
- * existem, produção e local, estão ambas para lá dela.
+ * E o que sai daqui é o que já não tem trabalho para fazer: uma migração aplicada nas duas
+ * bases que existem, produção e local, e cujo destino uma base nova já alcança pela baseline.
+ * Nesse ponto a classe é só o caminho até um estado que o `schema.sql` e o
+ * `ReferenceCatalogSeeder` já descrevem, e o registo dela fica em `schema_migrations` sem
+ * consumidor. Está vazio porque nenhuma das anteriores tinha ainda trabalho pendente.
+ *
+ * Não há caminho de actualização a partir de uma base anterior à baseline.
  */
 final class DatabaseMigrationPlan
 {
     /** @return list<Migration> */
     public function migrations(): array
     {
-        return [
-            new Version2026082805DropDiaperSensorSettingsAgain(),
-            new Version2026082806SeedMokoW6CatalogModel(),
-            new Version2026082807LicenseAbsenceAsNull(),
-            new Version2026082808RenameMokoW6rToW6b(),
-        ];
+        return [];
     }
 
     /** @return list<string> */
