@@ -24,6 +24,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     // ponytail: uma pulseira aqui é sempre uma W6R, por isso um par W6 que se cale sai com
     // o protocolo errado. Chave por modelo quando houver mais do que duas pulseiras.
 
+    /**
+     * Quanto tempo um toque da W6 cala os que vierem depois. Um pouco mais do que os 30
+     * segundos que o slot anuncia, para a frame repetida dar um alarme e não trinta.
+     *
+     * ponytail: dois toques do mesmo modo dentro da mesma janela contam como um. A frame não
+     * traz contador, e por isso não há como distingui-los.
+     */
+    private const W6_PRESS_WINDOW_SECONDS = 35;
+
     /** @var array<string, array<string, mixed>> */
     private array $onlineGateways = [];
     /** @var array<string, float> */
@@ -50,6 +59,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly ?W6rDecoder $w6rDecoder = null,
         private readonly ?W6rNormalizer $w6rNormalizer = null,
         private readonly ?W6Decoder $w6Decoder = null,
+        private readonly ?W6Normalizer $w6Normalizer = null,
         ?callable $clock = null,
         private readonly ?ProximityTracker $proximityTracker = null,
         private readonly ?DiaperSensitivityLookup $diaperSensitivity = null,
@@ -313,12 +323,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * A frame do acelerómetro não traz toque nem telemetria que saibamos ler, por isso só
-     * há duas coisas a fazer com ela: dar pela pulseira enquanto ainda não está registada
-     * -- é o que põe a notificação na dashboard, para alguém a adicionar -- e, depois de
-     * registada, mantê-la online e alimentar a proximidade com o sinal do gateway.
-     *
-     * Os toques da W6 entram pelo handler da W6R, que é quem reclama a frame de alarme.
+     * Uma W6 premida põe o slot daquele modo a anunciar durante 30 segundos, e todos os
+     * gateways em alcance repetem a frame. Como não há contador cumulativo por onde ver o
+     * que é novo, o toque é estrangulado por tempo: o primeiro avistamento de um modo dá o
+     * alarme e os seguintes calam-se até a janela fechar.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
      */
@@ -330,14 +338,40 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
+        $pressMode = (string)($decoded['alarm']['pressMode'] ?? '');
+        if ($pressMode !== '' && !$this->state->acceptObservation(
+            $deviceKey . ':press:' . $pressMode,
+            'w6-press',
+            self::W6_PRESS_WINDOW_SECONDS,
+        )) {
+            unset($decoded['alarm']);
+        }
+
+        $normalized = ($this->w6Normalizer ?? new W6Normalizer())
+            ->normalize($decoded, $device, (string)$gateway['imei']);
+
+        $deviceType = (string)$device['deviceType'];
+        $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
+        $company = (string)($device['company'] ?? 'null');
         $this->dashboardStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
-            'deviceType' => (string)$device['deviceType'],
-            'licenseId' => DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0),
-            'company' => (string)($device['company'] ?? 'null'),
+            'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => 'moko-w6', 'transport' => 'ble_gateway', 'online' => '1',
         ]);
         $this->recordSignal($device, $gateway, 'moko-w6', $decoded['rssiDbm'] ?? null);
+
+        foreach ($normalized['telemetry'] as $capability => $telemetry) {
+            if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {
+                continue;
+            }
+            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
+            $this->dashboardStore?->append($deviceKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
+
+        foreach ($normalized['events'] as $event) {
+            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
+            $this->dashboardStore?->append($deviceKey, 'events', $event + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
     }
 
     /**

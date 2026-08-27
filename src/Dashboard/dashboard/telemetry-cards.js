@@ -404,11 +404,21 @@ export function uplinkCardContent(type, data, meta = {}) {
 }
 
 // Uma pulseira W6R diz que tipo de toque foi; um pager NCS não.
-const HELP_CALL_PRESS_MODES = ["single", "double", "long"];
+// Todos os modos que um dispositivo pode reportar. Serve para filtrar eventos, não para
+// desenhar: nenhum dispositivo consegue os quatro.
+const HELP_CALL_PRESS_MODES = ["single", "double", "triple", "long"];
+
+/**
+ * Quando o protocolo não declara os seus modos. Que modos um dispositivo consegue emitir é
+ * um facto sobre o dispositivo, e vem do registry de protocolos no backend -- este cartão
+ * desenha os que lhe derem.
+ */
+const DEFAULT_PRESS_MODES = ["single", "double", "long"];
 
 const PRESS_TYPE_LABEL = {
     single: "toque simples",
     double: "toque duplo",
+    triple: "toque triplo",
     long: "toque longo",
 };
 
@@ -416,6 +426,7 @@ const PRESS_TYPE_LABEL = {
 const HELP_CALL_PRESS_ICON = {
     single: "fa-1",
     double: "fa-2",
+    triple: "fa-3",
     long: "fa-stopwatch",
 };
 
@@ -1009,7 +1020,7 @@ function compactDetails(data, keys) {
  * não há como saber que uma chamada foi cancelada. O que se reporta é quando cada toque
  * aconteceu, que é um facto observável.
  */
-export function helpCallSummaryCard(events = []) {
+export function helpCallSummaryCard(events = [], pressModes = []) {
     const calls = (Array.isArray(events) ? events : [])
         .map(rowPayload)
         .filter((payload) => String(payload?.type || "") === "help_call");
@@ -1033,7 +1044,8 @@ export function helpCallSummaryCard(events = []) {
     }
 
     // Três lado a lado num ecrã grande, empilhadas no telemóvel.
-    const columns = HELP_CALL_PRESS_MODES.map((mode) => {
+    const modes = pressModes.length > 0 ? pressModes : DEFAULT_PRESS_MODES;
+    const columns = modes.map((mode) => {
         const call = latest[mode];
         // A etiqueta partilhada lê-se como sufixo ("... (toque simples)"); aqui titula uma
         // coluna, por isso vai capitalizada.

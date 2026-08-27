@@ -57,6 +57,7 @@ function protocolDashboardMeta(protocol) {
     return {
         groupedCapabilities: isPlainObject(meta.groupedCapabilities) ? meta.groupedCapabilities : null,
         fieldConstraints: isPlainObject(meta.fieldConstraints) ? meta.fieldConstraints : null,
+        helpCallPressModes: Array.isArray(meta.helpCallPressModes) ? meta.helpCallPressModes : null,
     };
 }
 
@@ -66,6 +67,14 @@ export function protocolGroupedCapabilities(protocol) {
 
 export function protocolFieldConstraints(protocol) {
     return protocolDashboardMeta(protocol).fieldConstraints || {};
+}
+
+/**
+ * Que modos de toque este protocolo consegue emitir. Vazio quando o protocolo não o declara,
+ * e nesse caso quem desenha fica com o seu padrão.
+ */
+export function protocolHelpCallPressModes(protocol) {
+    return protocolDashboardMeta(protocol).helpCallPressModes || [];
 }
 
 export function protocolPhonebookConstraints(protocol) {

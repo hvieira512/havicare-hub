@@ -200,6 +200,9 @@ class DeviceService
                 'internalModel' => (string)($modelRow['internal_model'] ?? ''),
                 'commercialName' => (string)($modelRow['commercial_name'] ?? ''),
                 'deviceType' => (string)($modelRow['device_type'] ?? ''),
+                // O que o modelo sabe fazer é declarado por protocolo no registry, e a
+                // dashboard precisa de saber qual é para o ler em vez de o adivinhar.
+                'protocol' => $protocol,
                 'image' => $this->presentation->modelImage($modelRow, $baseUrl),
             ];
         }

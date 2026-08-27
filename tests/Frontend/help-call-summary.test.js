@@ -27,6 +27,29 @@ test("every press mode is listed, including ones never used", () => {
     assert.equal(html.match(/help-call-never/g).length, 2);
 });
 
+test("the modes drawn are the ones the protocol declares", () => {
+    // Uma W6 não tem toque longo, e dizer "toque longo -- nunca" leria como um modo por
+    // usar em vez de um que a pulseira não sabe fazer.
+    const w6 = helpCallSummaryCard(
+        [call("triple", "2026-08-10T12:26:49Z")],
+        ["single", "double", "triple"],
+    );
+
+    assert.match(w6, /Toque triplo/);
+    assert.doesNotMatch(w6, /Toque longo/);
+    assert.match(w6, /fa-solid fa-3 /);
+    assert.equal(w6.match(/help-call-never/g).length, 2);
+
+    // E a W6R é o contrário.
+    const w6r = helpCallSummaryCard(
+        [call("long", "2026-08-10T12:26:49Z")],
+        ["single", "double", "long"],
+    );
+
+    assert.match(w6r, /Toque longo/);
+    assert.doesNotMatch(w6r, /Toque triplo/);
+});
+
 test("only the most recent call of each mode is shown", () => {
     const html = helpCallSummaryCard([
         call("single", "2026-08-10T12:20:00Z"),

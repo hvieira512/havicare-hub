@@ -15,7 +15,8 @@ final class ProtocolRegistry
      *     supportsConfigCatalog: bool,
      *     dashboard: array{
      *         groupedCapabilities: array<string, array{label: string, limit: int}>,
-     *         fieldConstraints: array<string, array<string, mixed>>
+     *         fieldConstraints: array<string, array<string, mixed>>,
+     *         helpCallPressModes?: list<string>
      *     }
      * }>
      */
@@ -130,13 +131,23 @@ final class ProtocolRegistry
                 'label' => 'MOKO W6R',
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
-                'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
+                'dashboard' => [
+                    'groupedCapabilities' => [],
+                    'fieldConstraints' => [],
+                    'helpCallPressModes' => ['single', 'double', 'long'],
+                ],
             ],
             'moko-w6' => [
                 'label' => 'MOKO W6',
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
-                'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
+                // Não tem toque longo: o firmware BXP Nordic dá cliques simples, duplos e
+                // triplos, e é por triplo que o longo da W6R é substituído.
+                'dashboard' => [
+                    'groupedCapabilities' => [],
+                    'fieldConstraints' => [],
+                    'helpCallPressModes' => ['single', 'double', 'triple'],
+                ],
             ],
         ];
     }
@@ -178,7 +189,8 @@ final class ProtocolRegistry
     /**
      * @return array{
      *     groupedCapabilities: array<string, array{label: string, limit: int}>,
-     *     fieldConstraints: array<string, array<string, mixed>>
+     *     fieldConstraints: array<string, array<string, mixed>>,
+     *     helpCallPressModes: list<string>
      * }
      */
     public static function dashboardMeta(string $protocol): array
@@ -188,11 +200,12 @@ final class ProtocolRegistry
         return [
             'groupedCapabilities' => is_array($meta['groupedCapabilities'] ?? null) ? $meta['groupedCapabilities'] : [],
             'fieldConstraints' => is_array($meta['fieldConstraints'] ?? null) ? $meta['fieldConstraints'] : [],
+            'helpCallPressModes' => is_array($meta['helpCallPressModes'] ?? null) ? $meta['helpCallPressModes'] : [],
         ];
     }
 
     /**
-     * @return array{protocol: string, label: string, deviceType: string, supportsConfigCatalog: bool, dashboard: array{groupedCapabilities: array<string, array{label: string, limit: int}>, fieldConstraints: array<string, array<string, mixed>>}}
+     * @return array{protocol: string, label: string, deviceType: string, supportsConfigCatalog: bool, dashboard: array{groupedCapabilities: array<string, array{label: string, limit: int}>, fieldConstraints: array<string, array<string, mixed>>, helpCallPressModes: list<string>}}
      */
     public static function describe(string $protocol): array
     {

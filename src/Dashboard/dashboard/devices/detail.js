@@ -28,6 +28,7 @@ import {
     statusBadge,
     uplinkCardContent,
 } from "../telemetry-cards.js";
+import {protocolHelpCallPressModes} from "./config/protocol-catalog.js";
 import {renderPagination} from "../pagination.js";
 import {clearStorageKey, saveTextStorage} from "../storage.js";
 import {disposeTooltips, refreshTooltips} from "../tooltips.js";
@@ -566,8 +567,12 @@ function renderRequestCards(
         0,
     );
     // Tirado do histórico de eventos e não de uma capacidade, para aparecer exactamente
-    // quando o dispositivo pediu ajuda.
-    const helpCalls = helpCallSummaryCard(events);
+    // quando o dispositivo pediu ajuda. Que modos de toque desenhar é um facto sobre o
+    // dispositivo, e por isso vem declarado pelo protocolo em vez de assumido aqui.
+    const helpCalls = helpCallSummaryCard(
+        events,
+        protocolHelpCallPressModes(state.selectedDetail?.model?.protocol || ""),
+    );
     const falls = fallSummaryCard(events);
 
     disposeTooltips(els.requestGrid);
