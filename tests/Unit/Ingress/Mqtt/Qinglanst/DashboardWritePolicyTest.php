@@ -10,10 +10,9 @@ use PHPUnit\Framework\TestCase;
 /**
  * O estrangulamento da escrita do histórico no Redis.
  *
- * A política é chamada com a chave da capacidade. Antes recebia o tipo do envelope do
- * fabricante (`position`), e quando o normalizador passou a devolver um mapa por capacidade
- * o argumento mudou para `positions` sem ninguém dar por isso -- a amostragem deixava de
- * actuar e cada leitura ia para o Redis. Nada estoirava; só se via na factura.
+ * A política é chamada com a chave da capacidade e não com o tipo do envelope do fabricante.
+ * Trocar as duas não estoira nada: a amostragem deixa de actuar, cada leitura vai para o
+ * Redis, e só se vê na factura.
  */
 final class DashboardWritePolicyTest extends TestCase
 {

@@ -24,21 +24,20 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringNotContainsString('"ecg_analysis"', $source);
         self::assertStringContainsString('filter(([, entry]) => entry?.supported)', $source);
         // A faixa com o nome do grupo só existe quando há mais do que um grupo: num relógio,
-        // que só tem "Telemetria", era uma moldura com um título por cima dos mosaicos,
-        // dentro de um cartão que já se chama "Pedir dados".
+        // que só tem "Telemetria", era uma moldura dentro de um cartão que já se chama
+        // "Pedir dados".
         self::assertStringContainsString('groups.length > 1,', $source);
         self::assertStringContainsString('if (!showLabel) {', $source);
         self::assertStringContainsString('group.cards.length', $source);
 
-        // Era o renderers.js, que se dividiu: as pecas genericas ficaram no widgets.js e a
-        // maquina dos cartoes de telemetria, que e o que estas afirmacoes olham, ficou aqui.
+        // Os cartões de telemetria, que é o que as afirmações seguintes olham. As peças
+        // genéricas de interface estão no `widgets.js`.
         $renderersSource = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/telemetry-cards.js'
         );
         self::assertIsString($renderersSource);
-        // O cartão é o pedido: a acção vive na casca do cartão e não num botão dentro
-        // dele. Oito cartões davam oito botões primários escuros no mesmo painel, e o
-        // alvo de clique era a parte mais pequena de uma área que já era toda clicável.
+        // O cartão é o pedido: a acção vive na casca do cartão e não num botão dentro dele,
+        // que seria o alvo mais pequeno de uma área já toda clicável.
         self::assertStringContainsString('data-action="requestFeature" data-feature=', $renderersSource);
         self::assertStringContainsString('feature: requestable ? type : ""', $renderersSource);
         self::assertStringNotContainsString('btn btn-primary btn-sm w-100', $renderersSource);
@@ -55,12 +54,9 @@ final class DeviceRequestCardGroupingTest extends TestCase
         // dizer 78% de quê — perdia-se o nome exactamente quando havia o que mostrar.
         self::assertStringContainsString('const title = capabilityLabel(type) || card.value || type;', $renderersSource);
         self::assertStringContainsString('const value = isSystemRequestCard ? card.value : lastValue;', $renderersSource);
-        // O estado do pedido em curso é a pastilha do sistema, não um spinner dentro de
-        // um botão que já não existe.
-        // A pastilha segue o estado do pedido, e não a chamada HTTP que o põe na fila.
-        // "A pedir" durava o que durava essa chamada e desaparecia no instante em que o
-        // pedido passava a existir: o mosaico esquecia-o exactamente quando havia algo para
-        // dizer, e o único sítio que ainda sabia era a lista ao lado.
+        // O estado do pedido em curso é a pastilha do sistema, e segue o estado do pedido e
+        // não a chamada HTTP que o põe na fila -- essa acaba exactamente quando há algo para
+        // dizer.
         self::assertStringContainsString('const REQUEST_CARD_STATE = {', $renderersSource);
         self::assertStringContainsString('function latestRequestState(', $renderersSource);
         // A hora de um pedido é `requestedAt`; ordená-los pelo `eventTime` dos eventos dava
@@ -75,9 +71,9 @@ final class DeviceRequestCardGroupingTest extends TestCase
         self::assertStringContainsString('diaper_moisture: "fa-droplet"', $renderersSource);
         self::assertStringContainsString('diaper_moisture_level: "fa-percent"', $renderersSource);
         self::assertStringContainsString('diaper_condition: "fa-baby"', $renderersSource);
-        // O indice de humidade nao tem cartao proprio: e o valor do cartao dos canais, e o
-        // cartao junta as duas capacidades porque chegam em mensagens separadas. A barra
-        // de 0 a 100 que ele tinha, e com ela a marca do `alertIndex`, deixou de existir.
+        // O índice de humidade não tem cartão próprio: é o valor do cartão dos canais, que
+        // junta as duas capacidades porque chegam em mensagens separadas. Sem barra de 0 a
+        // 100, e por isso sem marca de `alertIndex`.
         self::assertStringNotContainsString('alertIndex', $renderersSource);
         self::assertStringNotContainsString('diaper-level', $renderersSource);
         self::assertStringContainsString(
@@ -85,9 +81,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
             $renderersSource
         );
         self::assertStringContainsString('"diaper_moisture_level",', $source);
-        // Os limiares por canal saem do mesmo payload e pela mesma razao: sao configuraveis
-        // por sensor, e escritos aqui a tira pintava as barras e anunciava um limiar que nao
-        // foi o que decidiu a leitura.
+        // Os limiares por canal saem do mesmo payload: são configuráveis por sensor, e
+        // escritos aqui a tira anunciava um limiar que não foi o que decidiu a leitura.
         self::assertStringContainsString('Number(data?.wetDelta)', $renderersSource);
         self::assertStringContainsString('Number(data?.requiredChannelCount)', $renderersSource);
         self::assertStringContainsString('change_required: "Mudança necessária"', $renderersSource);
@@ -104,8 +99,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
 
     public function testFourPTouchSettingsModalUsesNativeEditors(): void
     {
-        // A dispatch table lives in the index and the renderers it points at live in
-        // their own modules, so the assertions below span both.
+        // A tabela de despacho vive no índice e os renderizadores para que ela aponta vivem
+        // nos seus módulos, por isso as afirmações abaixo atravessam os dois.
         $source = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/index.js'
         );
@@ -167,8 +162,8 @@ final class DeviceRequestCardGroupingTest extends TestCase
 
     public function testWonlexComplexSettingsUseGuidedFormsInsteadOfJson(): void
     {
-        // A dispatch table lives in the index and the renderers it points at live in
-        // their own modules, so the assertions below span both.
+        // A tabela de despacho vive no índice e os renderizadores para que ela aponta vivem
+        // nos seus módulos, por isso as afirmações abaixo atravessam os dois.
         $source = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/devices/config/index.js'
         );

@@ -15,12 +15,10 @@ use Tests\Support\MysqlDashboardTestCase;
  * as consequências são silenciosas nos dois sentidos:
  *
  * - O `schema.sql` a declarar algo que uma migração larga: a migração corre uma vez, e a
- *   execução seguinte recria o que ela apagou. Foi o que aconteceu à
- *   `diaper_sensor_settings`, que ressuscitava a cada `bin/migrate.php` durante uma semana.
- * - O `schema.sql` a não declarar algo que uma migração acrescenta: uma base nova nasce
- *   sem a coluna e só a ganha porque a migração ainda existe. Era o caso do
- *   `dashboard_notifications.license_id`. No dia em que essa migração for apagada, uma
- *   instalação nova fica sem ela.
+ *   execução seguinte recria o que ela apagou.
+ * - O `schema.sql` a não declarar algo que uma migração acrescenta: uma base nova nasce sem
+ *   a coluna e só a ganha porque a migração ainda existe. No dia em que essa migração for
+ *   apagada, uma instalação nova fica sem ela.
  *
  * Por estrutura e não por dados: o catálogo de referência é semeado a partir do
  * `CapabilityCatalog` em código e o inventário tem um passo próprio, por isso nem um nem

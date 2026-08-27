@@ -35,8 +35,8 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 
     public function testAnUnconfiguredSensorReadsTheNormalPreset(): void
     {
-        // A migracao nao faz backfill: a ausencia de linha significa o preset normal, que e o
-        // comportamento com que todos os sensores em producao ja corriam.
+        // Não há backfill: a ausência de linha significa o preset normal, que é o
+        // comportamento com que todos os sensores em produção correm.
         $repository = new DiaperSensitivityRepository($this->pdoWithSensor());
 
         self::assertSame(DiaperSensitivity::normal(), $repository->forDevice(self::SENSOR));
@@ -45,7 +45,7 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
     public function testAnUnknownSensorAlsoReadsTheNormalPreset(): void
     {
         // A ingestao chama isto antes de qualquer garantia de que a linha existe. Devolver
-        // null obrigaria o Bridge a decidir limiares, que e onde eles nao devem viver.
+        // null obrigaria o `Bridge` a decidir limiares, que é onde eles não devem viver.
         $repository = new DiaperSensitivityRepository($this->createDashboardDatabase()->pdo());
 
         self::assertSame(DiaperSensitivity::normal(), $repository->forDevice('nao-existe'));
@@ -54,7 +54,7 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
     public function testAWrittenValueIsReadBack(): void
     {
         // A escrita e do `PATCH /configurations`, que passa pelo ciclo de vida das
-        // configuracoes. O que este repositorio faz e a leitura no caminho quente.
+        // configurações. O que este repositório faz é a leitura no caminho quente.
         $pdo = $this->pdoWithSensor();
         $this->storeSensitivity($pdo, 3, 7);
 
@@ -69,9 +69,9 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
         // Duas metades do mesmo contrato, com a escrita feita por FORA do repositorio --
         // que e o caso real da API num processo a escrever e da ingestao noutro a ler.
         //
-        // Uma instancia com TTL longo nao ve a escrita, e e essa a latencia que o TTL de 5s
+        // Uma instância com TTL longo não vê a escrita, e é essa a latência que o TTL de 5s
         // define em producao. Uma instancia nova ve-a, e e por isso que um reinicio do
-        // `health-hub` nao perde nada: a cache nasce vazia e reenche da base de dados.
+        // `health-hub` não perde nada: a cache nasce vazia e reenche da base de dados.
         //
         // Nao se testa aqui um TTL de zero: a comparacao e `<=`, como no repositorio dos
         // links, portanto zero ainda guarda em cache o resto do segundo em curso.
@@ -88,7 +88,7 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
         );
     }
 
-    /** A linha que o ciclo de vida das configuracoes deixa, escrita a mao. */
+    /** A linha que o ciclo de vida das configurações deixa, escrita à mão. */
     private function storeSensitivity(PDO $pdo, int $range, int $value): void
     {
         $pdo->prepare('

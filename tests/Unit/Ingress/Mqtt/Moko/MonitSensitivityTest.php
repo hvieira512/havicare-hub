@@ -9,13 +9,12 @@ use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A sensibilidade por sensor: os dois limiares que a app da MONIT expoe.
+ * A sensibilidade por sensor: os dois limiares que a app da MONIT expõe.
  *
- * O `MonitMoistureIndexTest` cobre o preset normal em detalhe e nenhuma das suas asseroes
- * mudou quando isto passou a ser configuravel. O que este ficheiro protege e o que sai da
- * configuracao: que o preset normal reproduz os limiares antigos, que os invariantes do
- * ecra sobrevivem a QUALQUER configuracao alcancavel, e que uma configuracao mais sensivel
- * nunca produz um estado menos grave para a mesma leitura.
+ * O `MonitMoistureIndexTest` cobre o preset normal em detalhe. O que este ficheiro protege é
+ * o que sai da configuração: que os invariantes do ecrã sobrevivem a QUALQUER configuração
+ * alcançável, e que uma configuração mais sensível nunca produz um estado menos grave para a
+ * mesma leitura.
  */
 final class MonitSensitivityTest extends TestCase
 {
@@ -28,12 +27,12 @@ final class MonitSensitivityTest extends TestCase
 
     private const BASELINE = 10;
 
-    /** Gravidade crescente, para comparar estados entre configuracoes. */
+    /** Gravidade crescente, para comparar estados entre configurações. */
     private const SEVERITY = ['clean' => 0, 'attention' => 1, 'change_required' => 2];
 
     /**
      * Vectores de canais que cobrem as fronteiras: seco, saturado, um canal quente, e a
-     * leitura real capturada do sensor em producao.
+     * leitura real capturada do sensor em produção.
      *
      * @var list<list<int>>
      */
@@ -88,17 +87,16 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheNormalPresetIsWhatTheHubHadHardcoded(): void
     {
-        // O 4 e o 12 estavam em constantes no normalizador, e sao exactamente o preset
-        // "Normal Diaper Alerts" da app da MONIT. O terceiro limiar, o que separa `clean` de
-        // `attention`, era um 4 absoluto -- e a formula derivada tem de o reproduzir, senao
-        // todos os sensores em producao mudavam de comportamento em silencio.
+        // O 4 e o 12 são exactamente o preset "Normal Diaper Alerts" da app da MONIT, e o
+        // terceiro limiar -- o que separa `clean` de `attention` -- tem de sair a 4 pela
+        // fórmula derivada, senão os sensores em produção mudam de comportamento em silêncio.
         self::assertSame(['pollutionRange' => 4, 'pollutionValue' => 12], DiaperSensitivity::normal());
         self::assertSame(4, DiaperSensitivity::cleanMaxDelta(12));
     }
 
     public function testTheCleanThresholdFollowsTheWetThreshold(): void
     {
-        // Proporcional e nao absoluto: com o valor de molhado a 25, um delta de 4 nao pode
+        // Proporcional e não absoluto: com o valor de molhado a 25, um delta de 4 não pode
         // tirar a fralda de `clean` faltando-lhe 21 para contar como molhada.
         self::assertSame(2, DiaperSensitivity::cleanMaxDelta(5));
         self::assertSame(2, DiaperSensitivity::cleanMaxDelta(7));
@@ -108,9 +106,9 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheSameReadingChangesConditionAcrossPresets(): void
     {
-        // A razao de ser da feature. Tres canais a 13 acima da linha de base: no preset
-        // normal e `attention`, e com "mais alertas" passa a exigir muda. A leitura fisica
-        // e identica; o que muda e a regra.
+        // A razão de ser da funcionalidade. Três canais a 13 acima da linha de base: no
+        // preset normal é `attention`, e com "mais alertas" exige muda. A leitura física é
+        // idêntica; o que muda é a regra.
         $deltas = [13, 13, 13, 0, 0, 0, 0, 0, 0, 0];
 
         self::assertSame('change_required', $this->read($deltas, 3, 7)['condition']);
@@ -120,8 +118,8 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheThresholdsTravelWithTheReading(): void
     {
-        // Quem mostra "3 de 4 canais afectados" precisa do 4, e com os limiares
-        // configuraveis por sensor ja nao os pode escrever em hardcode.
+        // Quem mostra "3 de 4 canais afectados" precisa do 4, e com os limiares configuráveis
+        // por sensor não os pode escrever em hardcode.
         $reading = $this->read([12, 12, 12, 0, 0, 0, 0, 0, 0, 0], 3, 7);
 
         self::assertSame(3, $reading['required']);
@@ -130,10 +128,9 @@ final class MonitSensitivityTest extends TestCase
 
     public function testTheScreenInvariantsHoldForEverySetting(): void
     {
-        // A propriedade que importa, varrida sobre todas as configuracoes alcancaveis pela
-        // API. O numero e o badge aparecem lado a lado no mesmo ecra, e nunca se podem
-        // contradizer -- foi para isso que as bandas do indice existem, e e isto que garante
-        // que continuam a servir depois de os limiares deixarem de ser constantes.
+        // A propriedade que importa, varrida sobre todas as configurações alcançáveis pela
+        // API. O número e o badge aparecem lado a lado no mesmo ecrã e nunca se podem
+        // contradizer -- é para isso que as bandas do índice existem.
         [$rangeMin, $rangeMax] = DiaperSensitivity::RANGE_BOUNDS;
         [$valueMin, $valueMax] = DiaperSensitivity::VALUE_BOUNDS;
         $checked = 0;
@@ -170,11 +167,10 @@ final class MonitSensitivityTest extends TestCase
 
     public function testALowerThresholdIsNeverLessSevere(): void
     {
-        // Monotonia, que e o que faz os presets significarem o que dizem. Baixar o numero de
-        // canais exigidos, ou baixar o delta que conta como molhado, so pode manter ou agravar
-        // o estado da mesma leitura. Se algum dia isto se invertesse, "mais alertas" passava a
-        // dar menos alertas do que "normal" para alguma leitura -- e ninguem descobria olhando
-        // para um caso de cada vez.
+        // Monotonia, que é o que faz os presets significarem o que dizem. Baixar o número de
+        // canais exigidos, ou o delta que conta como molhado, só pode manter ou agravar o
+        // estado da mesma leitura. Invertido, "mais alertas" dava menos alertas do que
+        // "normal" para alguma leitura -- e ninguém descobria olhando para um caso de cada vez.
         [$rangeMin, $rangeMax] = DiaperSensitivity::RANGE_BOUNDS;
         [$valueMin, $valueMax] = DiaperSensitivity::VALUE_BOUNDS;
 

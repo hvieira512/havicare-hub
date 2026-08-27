@@ -6,27 +6,19 @@ import {parseFragment} from "./support/dom.js";
 import {telemetryCard, uplinkCardContent} from "../../src/Dashboard/dashboard/telemetry-cards.js";
 
 /**
- * Os cartoes do radar, depois de ele passar a falar o vocabulario do hub.
- *
- * A frequencia cardiaca e a respiratoria nao aparecem aqui de proposito: o radar manda
- * `heart_rate {bpm}` e `breath_rate {breathsPerMinute}`, as mesmas chaves e formas de um
- * relogio, e por isso usa os cartoes que ja existiam. O que e novo e o que so o radar mede.
+ * Os cartões do radar. A frequência cardíaca e a respiratória não aparecem aqui de propósito:
+ * o radar manda `heart_rate {bpm}` e `breath_rate {breathsPerMinute}`, as mesmas chaves e
+ * formas de um relógio, e por isso usa os cartões dele. Aqui está o que só o radar mede.
  */
 
-/**
- * A frequencia respiratoria mostra a leitura.
- *
- * Dizia "Dados de frequencia respiratoria" e nunca mostrava o numero -- nem para um
- * relogio, que produz a mesma forma `{breathsPerMinute}` desde sempre. So se viu quando o
- * radar passou a usar este cartao em vez de ter o seu.
- */
+/** A frequência respiratória mostra a leitura, e não um "há dados de". */
 test("a frequência respiratória mostra a leitura e não um texto fixo", () => {
     assert.equal(uplinkCardContent("breath_rate", {breathsPerMinute: 17}).value, "17 rpm");
     assert.equal(uplinkCardContent("breath_rate", {}).value, "- rpm");
 });
 
 test("a frequência cardíaca do radar usa o cartão do relógio", () => {
-    // Mesma chave, mesma forma `{bpm}`: o radar nao tem cartao proprio de proposito.
+    // Mesma chave, mesma forma `{bpm}`: o radar não tem cartão próprio, de propósito.
     assert.equal(uplinkCardContent("heart_rate", {bpm: 69}).value, "69 bpm");
 });
 
@@ -49,10 +41,8 @@ test("um radar que não vê ninguém está a funcionar", () => {
 });
 
 /**
- * Cada pessoa leva a sua postura.
- *
- * Nao ha cartao de postura: a postura e da pessoa, tal como as coordenadas, e uma divisao
- * com duas pessoas tem duas posturas. Um cartao do aparelho obrigava a escolher uma delas.
+ * Cada pessoa leva a sua postura, e não há cartão de postura: uma divisão com duas pessoas
+ * tem duas posturas, e um cartão do aparelho obrigava a escolher uma delas.
  */
 const person = (index, posture) => ({
     personIndex: index,
@@ -102,8 +92,8 @@ test("o tom da pastilha diz a gravidade, e o ícone a categoria", () => {
 });
 
 /**
- * O corte as tres primeiras ja existia e era mudo: a quarta pessoa desaparecia do ecra sem
- * aviso nenhum. As coordenadas e quem nao coube ficam na tooltip, que nao corta.
+ * O corte às três primeiras tem contador, para a quarta pessoa não desaparecer sem aviso. As
+ * coordenadas e quem não coube ficam na tooltip, que não corta.
  */
 test("a quarta pessoa vira contador em vez de desaparecer", () => {
     const card = uplinkCardContent("presence", {
@@ -138,7 +128,7 @@ test("uma postura que o firmware invente não escreve atributos", () => {
 });
 
 test("os alarmes dizem o que aconteceu, não só a categoria", () => {
-    // "Queda" sozinho nao distingue uma queda confirmada de alguem no chao.
+    // "Queda" sozinho não distingue uma queda confirmada de alguém no chão.
     assert.equal(
         uplinkCardContent("fall", {detectionType: "fall_confirmed", detectionLevel: "perigo"}).value,
         "Queda confirmada",
@@ -154,12 +144,8 @@ test("os alarmes dizem o que aconteceu, não só a categoria", () => {
 });
 
 /**
- * O mosaico desenha o `details`.
- *
- * Era o defeito que comecou tudo isto: o `uplinkCardContent` devolve
- * `{icon, value, details}`, a linha da lista de eventos lia o `details` e o mosaico
- * ignorava-o. O estado de sono era calculado a cada leitura e deitado fora antes de chegar
- * ao ecra.
+ * O mosaico desenha o `details` que o `uplinkCardContent` devolve, e não só o `value`: sem
+ * isto, o estado de sono era calculado a cada leitura e deitado fora antes de chegar ao ecrã.
  */
 test("o mosaico mostra o detalhe em vez de o deitar fora", () => {
     const root = parseFragment(

@@ -295,8 +295,8 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($row['created_at'] ?? null, $row['updated_at'] ?? null);
 
         sleep(1);
-        // Renomear e nao tocar: o `ON UPDATE CURRENT_TIMESTAMP` so dispara se algum valor
-        // mudar mesmo, e o nome e a unica coluna de um fornecedor que nao e uma data.
+        // Renomear e não tocar: o `ON UPDATE CURRENT_TIMESTAMP` só dispara se algum valor
+        // mudar mesmo, e o nome é a única coluna de um fornecedor que não é uma data.
         $renamed = $supplierName . ' renomeado';
         $pdo->prepare('UPDATE suppliers SET name = ? WHERE name = ?')->execute([$renamed, $supplierName]);
 

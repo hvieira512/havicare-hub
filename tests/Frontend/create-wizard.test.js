@@ -2,16 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
-// Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
 import {deviceTypeFields} from "../../src/Dashboard/dashboard/domain.js";
 
 /**
- * O assistente de adicionar um dispositivo.
- *
- * O motor esta coberto no wizard.test.js. O que se prende aqui e a moldura: que existe um
- * modal proprio, separado do de edicao, e que o de edicao deixou de fazer os dois
- * trabalhos.
+ * O assistente de adicionar um dispositivo. O motor está coberto no `wizard.test.js`; o que
+ * se prende aqui é a moldura, e que o modal é próprio e separado do de edição.
  */
 
 const WIZARD = readFileSync(
@@ -31,48 +28,45 @@ const INDEX = readFileSync(
     "utf8",
 );
 
-test("adicionar e editar sao dois modais", () => {
+test("adicionar e editar são dois modais", () => {
     assert.match(WIZARD, /render_modal\('deviceWizardModal'/);
     assert.match(EDIT, /render_modal\('deviceModal'/);
     assert.match(INDEX, /modals\/device-wizard\.php/, "o assistente esta incluido");
 });
 
 test("o modal de edicao deixou de saber criar", () => {
-    // Era ele que fazia os dois trabalhos, escondendo e revelando metade da sua estrutura.
+    // O modal de edição não faz os dois trabalhos: são dois modais.
     assert.doesNotMatch(MODAL_JS, /openAddDevice/);
     assert.doesNotMatch(MODAL_JS, /mode: "create"/);
 });
 
 test("o titulo do modal de edicao e estatico", () => {
-    // Antes era escrito por JavaScript porque dependia do trabalho que ia fazer.
+    // Fixo no markup: não depende do trabalho que o modal vai fazer.
     assert.match(EDIT, /render_modal\('deviceModal', 'Editar dispositivo'/);
     assert.doesNotMatch(MODAL_JS, /deviceModalLabel\.textContent/);
 });
 
-test("a trilha e a barra de progresso, e tem lugar para a imagem", () => {
-    // Eram duas linhas seguidas a dizer a mesma coisa: uma barra de passos e, debaixo
-    // dela, os badges das respostas. A trilha ficou com as duas funcoes, incluindo a
-    // semantica de progresso.
+test("a trilha é a barra de progresso, e tem lugar para a imagem", () => {
+    // A trilha faz as duas funções numa linha só: as respostas e o progresso.
     assert.match(WIZARD, /id="wizardTrail"[^>]*role="progressbar"/);
     assert.doesNotMatch(WIZARD, /id="wizardSteps"/);
     assert.match(WIZARD, /id="wizardArt"/);
 });
 
-test("cada badge da trilha volta a sua pergunta, e nao so a ultima", () => {
+test("cada badge da trilha volta à sua pergunta, e não só à última", () => {
     const wizardJs = readFileSync(
         new URL("../../src/Dashboard/dashboard/devices/create-wizard.js", import.meta.url),
         "utf8",
     );
 
-    // O "alterar" reabria sempre a ultima resposta, o que obrigava a refazer tudo o que
-    // vinha depois para se voltar ao tipo. O desenho da trilha esta no
-    // classification-ui.test.js; aqui prende-se so o que o assistente faz com o clique.
+    // Cada badge volta à sua pergunta, sem obrigar a refazer as seguintes. O desenho da
+    // trilha está no `classification-ui.test.js`; aqui prende-se o que o clique faz.
     assert.match(wizardJs, /wizard\.reopen\(badge\.dataset\.wizardReopen\)/);
     assert.doesNotMatch(wizardJs, /data-wizard-reopen="last"/);
 });
 
 test("o assistente comeca com o passo seguinte e sem separadores", () => {
-    // Sem separador de configuracoes: um dispositivo por criar nao pode ter configuracao
+    // Sem separador de configurações: um dispositivo por criar não pode ter configuração
     // guardada, porque a tabela tem chave estrangeira para a whitelist.
     assert.doesNotMatch(WIZARD, /nav-link|tab-pane/);
     assert.match(WIZARD, /id="wizardNextBtn"/);
@@ -80,19 +74,19 @@ test("o assistente comeca com o passo seguinte e sem separadores", () => {
 });
 
 test("o corpo do assistente e quase vazio, porque e desenhado a partir da pergunta", () => {
-    // Se isto crescer, e sinal de que voltaram campos estaticos para o markup e que a
-    // revelacao progressiva passou a ser esconder e mostrar, como no modal antigo.
+    // Se isto crescer, é sinal de que voltaram campos estáticos para o markup e que a
+    // revelação progressiva passou a ser esconder e mostrar.
     const fields = WIZARD.match(/<input|<select/g) || [];
     assert.equal(fields.length, 0, "nenhum campo estatico no markup do assistente");
 });
 
-test("o passo 2 de cada tipo vem da tabela e nao do assistente", () => {
+test("o passo 2 de cada tipo vem da tabela e não do assistente", () => {
     const wizardJs = readFileSync(
         new URL("../../src/Dashboard/dashboard/devices/create-wizard.js", import.meta.url),
         "utf8",
     );
 
-    // Nenhum tipo de dispositivo esta escrito em condicoes dentro do assistente.
+    // Nenhum tipo de dispositivo está escrito em condições dentro do assistente.
     for (const type of ["watch", "ncs", "radar", "gateway", "diaper_sensor", "bracelet"]) {
         assert.doesNotMatch(
             wizardJs,
@@ -100,12 +94,12 @@ test("o passo 2 de cada tipo vem da tabela e nao do assistente", () => {
             `o assistente nao pode ramificar em ${type}`,
         );
     }
-    // E a tabela e que diz o que cada um mostra.
+    // É a tabela que diz o que cada um mostra.
     assert.equal(deviceTypeFields("watch").sim, true);
     assert.equal(deviceTypeFields("diaper_sensor").gatewayLinks, true);
 });
 
-test("a grelha de cards tem uma classe so, e nao uma por tipo de escolha", () => {
+test("a grelha de cards tem uma classe só, e não uma por tipo de escolha", () => {
     const css = readFileSync(
         new URL("../../src/Dashboard/main.css", import.meta.url),
         "utf8",
@@ -123,13 +117,13 @@ test("o Anterior esconde-se no primeiro passo em vez de ficar cinzento", () => {
         "utf8",
     );
 
-    // Um botao desactivado que nunca serve ocupa espaco e convida a ser premido. Voltar a
-    // uma resposta ja dada faz-se pelo "alterar" na trilha.
+    // Um botão desactivado que nunca serve convida a ser premido. Voltar a uma resposta já
+    // dada faz-se pela trilha.
     assert.match(wizardJs, /wizardBackBtn\.classList\.toggle\("d-none", !wizard\.canGoBack\(\)\)/);
     assert.doesNotMatch(wizardJs, /wizardBackBtn\.disabled/);
 });
 
-test("a licenca nao trava o passo: um dispositivo pode nao ter nenhuma", () => {
+test("a licença não trava o passo: um dispositivo pode não ter nenhuma", () => {
     const wizardJs = readFileSync(
         new URL("../../src/Dashboard/dashboard/devices/create-wizard.js", import.meta.url),
         "utf8",

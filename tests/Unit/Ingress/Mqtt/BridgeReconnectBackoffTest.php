@@ -16,15 +16,13 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
  * O recuo entre reconexões, quando o broker aceita a ligação e a larga logo a seguir.
  *
  * É o caso que um `client_id` duplicado produz -- o segundo cliente a chegar expulsa o
- * primeiro, os dois reconectam, e expulsam-se um ao outro sem fim. O `connect` devolvia
- * sempre sucesso, o recuo era reposto antes de alguma vez crescer, e saíam mais de uma
- * reconexão por segundo.
+ * primeiro, os dois reconectam, e expulsam-se um ao outro sem fim. Como o `connect` devolve
+ * sucesso, um recuo reposto a cada tentativa nunca cresce.
  *
  * Isso não seria mais do que ruído no log se o MQTT tivesse loop próprio. Não tem: o
  * `IngressRunner` agenda os ticks no mesmo event loop que serve o HTTP, e o `connect` é
- * bloqueante. Cada tentativa parava a dashboard, o que se via em pedidos de 88 a 400 ms
- * com `duration_ms: 0` registado pelo próprio hub -- tempo passado à espera do loop, não
- * a trabalhar.
+ * bloqueante -- cada tentativa pára a dashboard, o que se vê em pedidos de 88 a 400 ms com
+ * `duration_ms: 0` registado pelo próprio hub.
  */
 final class BridgeReconnectBackoffTest extends TestCase
 {
@@ -64,10 +62,9 @@ final class BridgeReconnectBackoffTest extends TestCase
     /**
      * O mesmo, no `HubDownlinkSubscriber`.
      *
-     * A lógica de reconexão estava escrita duas vezes, linha por linha, e as duas cópias
-     * tinham o defeito. Passou a ser uma só -- o `ReconnectsOnLoopFailure` --, e este teste
-     * existe para a segunda utilizadora não voltar a divergir em silêncio: era ela que
-     * fazia 148 das 158 reconexões por minuto depois de o `Bridge` já estar corrigido.
+     * A lógica de reconexão é uma só, no `ReconnectsOnLoopFailure`, e este teste existe para
+     * a segunda utilizadora não divergir em silêncio: escrita duas vezes, era ela que fazia
+     * 148 das 158 reconexões por minuto com o `Bridge` já corrigido.
      */
     public function testTheDownlinkSubscriberBacksOffTheSameWay(): void
     {

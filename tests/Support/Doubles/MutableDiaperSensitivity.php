@@ -10,7 +10,7 @@ use Hub\Domain\DiaperSensitivityLookup;
 /**
  * Um lookup de sensibilidade cujo valor se muda a meio de um teste, como a API faria.
  *
- * Classe com nome e nao anonima porque o que interessa testar e mudar `$settings` entre
+ * Classe com nome e não anónima porque o que interessa testar é mudar `$settings` entre
  * observacoes, e uma classe anonima devolvida como a interface esconde essa propriedade.
  */
 final class MutableDiaperSensitivity implements DiaperSensitivityLookup

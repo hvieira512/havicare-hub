@@ -13,9 +13,8 @@ use PHPUnit\Framework\TestCase;
 abstract class MysqlDashboardTestCase extends TestCase
 {
     /**
-     * Replaying every migration per test costs ~820ms and dominates the suite,
-     * so the schema is built once per process into a template database and each
-     * test clones it instead (~180ms).
+     * Construir o esquema a cada teste custa ~820ms e domina a suite, por isso constrói-se
+     * uma vez por processo numa base-modelo e cada teste clona-a (~180ms).
      */
     private static ?string $templateDatabaseName = null;
 
@@ -39,10 +38,10 @@ abstract class MysqlDashboardTestCase extends TestCase
     }
 
     /**
-     * Builds the migrated template once and copies it into a fresh database.
+     * Constrói a base-modelo uma vez e copia-a para uma base nova.
      *
-     * The clone is a plain structure + data copy, so a test still gets its own
-     * isolated database and can run DDL or open extra connections against it.
+     * O clone é uma cópia de estrutura e dados, por isso cada teste continua a ter a sua
+     * base isolada e pode correr DDL ou abrir mais ligações contra ela.
      */
     private function cloneTemplateInto(string $databaseName): void
     {
@@ -69,8 +68,8 @@ abstract class MysqlDashboardTestCase extends TestCase
                 ))
                 ->fetchAll(PDO::FETCH_COLUMN);
 
-            // The template outlives every test, so drop it when the process ends
-            // rather than in tearDown.
+            // A base-modelo sobrevive a todos os testes, por isso larga-se no fim do
+            // processo e não no `tearDown`.
             register_shutdown_function(static function () use ($config, $templateName): void {
                 try {
                     (new PDO(
@@ -83,8 +82,8 @@ abstract class MysqlDashboardTestCase extends TestCase
             });
         }
 
-        // CREATE TABLE ... LIKE drops foreign keys, and gateway_device_links
-        // depends on ON DELETE CASCADE, so replay the real DDL instead.
+        // O `CREATE TABLE ... LIKE` larga as chaves estrangeiras, e a `gateway_device_links`
+        // depende do `ON DELETE CASCADE`: daí repetir o DDL a sério.
         $admin->exec('SET FOREIGN_KEY_CHECKS = 0');
         try {
             $admin->exec(sprintf('USE `%s`', $databaseName));

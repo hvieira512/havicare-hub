@@ -31,9 +31,9 @@ final class NotificationSourceTest extends TestCase
         self::assertStringContainsString('data-notification-id=', $notifications);
         self::assertStringContainsString('data-notification-dismiss=', $notifications);
         self::assertStringContainsString('void addDevice(notification)', $notifications);
-        // O aviso de um dispositivo nao autorizado abre o assistente ja com o que o hub
+        // O aviso de um dispositivo não autorizado abre o assistente já com o que o hub
         // reportou -- protocolo para o modelo, modelo para o tipo, e a identidade -- para
-        // nao se escrever a mao o que ele acabou de dizer.
+        // não se escrever à mão o que ele acabou de dizer.
         self::assertStringContainsString('async function openWizard(source = "")', $bootstrap);
         self::assertStringContainsString('function seedFromNotification(source, tree = [])', $bootstrap);
         self::assertStringContainsString('ownerFromLicense(notification?.licenseId, tree)', $bootstrap);

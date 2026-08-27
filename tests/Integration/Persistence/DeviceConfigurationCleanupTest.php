@@ -11,9 +11,8 @@ use Tests\Support\MysqlDashboardTestCase;
 /**
  * As configurações de um dispositivo desaparecem com ele.
  *
- * Apagar um dispositivo era um `DELETE FROM whitelist` mais uma limpeza do Redis, e mais
- * nada: as linhas do ciclo de vida das configurações ficavam para trás, e um IMEI
- * registado outra vez herdava os valores desejados do dono anterior.
+ * Sem isto, as linhas do ciclo de vida das configurações ficam para trás e um IMEI registado
+ * outra vez herda os valores desejados do dono anterior.
  *
  * O teste passa pelo `unregister`, que é por onde um dispositivo sai do registo, e não por
  * um `DELETE` à mão: o que se garante é o comportamento do caminho, não a existência de

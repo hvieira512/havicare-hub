@@ -115,19 +115,19 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 
         $result = $this->patch($api, ['pollutionRange' => 3, 'pollutionValue' => 7]);
         self::assertSame('ok', $result['status'] ?? null);
-        // Sem operacoes: nao ha nada a caminho do sensor.
+        // Sem operações: não há nada a caminho do sensor.
         self::assertSame([], $result['results'][0]['operations'] ?? null);
 
         $entry = $this->sensitivityEntry($api);
         self::assertSame(3, $entry['value']['pollutionRange'] ?? null);
         self::assertSame(7, $entry['value']['pollutionValue'] ?? null);
-        // O perfil e derivado dos dois valores e nunca guardado, para nao poderem discordar.
+        // O perfil é derivado dos dois valores e nunca guardado, para não poderem discordar.
         self::assertSame('high', $entry['value']['profile'] ?? null);
 
-        // `confirmed` e nao `waiting_device`: o `stage` sem operacoes marca a linha `acked`,
+        // `confirmed` e não `waiting_device`: o `stage` sem operações marca a linha `acked`,
         // o `pendingStatus` le isso como `applied`, e o `show` apresenta-o como `confirmed`
-        // -- que e o mesmo estado de uma configuracao que o dispositivo confirmou, e que a
-        // interface ja desenha como "Aplicado". Nao ha vocabulario novo nenhum.
+        // -- que é o mesmo estado de uma configuração que o dispositivo confirmou, e que a
+        // interface já desenha como "Aplicado". Não há vocabulário novo nenhum.
         $sync = $api->show(self::SENSOR)['configurationSync']['entries']['settings_system']['diaper_sensitivity'] ?? [];
         self::assertSame('confirmed', $sync['status'] ?? null);
         self::assertFalse($sync['hasUnconfirmedChanges'] ?? true, 'nao ha nada a aguardar');
@@ -157,7 +157,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 
         $result = $this->patch($api, ['pollutionRange' => $range, 'pollutionValue' => $value]);
 
-        // `invalid_config` e nao um codigo proprio: passa pela mesma rejeicao das outras
+        // `invalid_config` e não um código próprio: passa pela mesma rejeição das outras
         // capacidades, porque a validacao e o `sanitizeInput` do contrato.
         self::assertSame('invalid_config', $result['error']['code'] ?? null);
     }

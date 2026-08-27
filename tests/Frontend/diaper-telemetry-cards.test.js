@@ -49,8 +49,8 @@ test("MONIT moisture takes the full row and renders one column per channel", () 
         maximumDelta: 28,
     });
 
-    // Um mosaico de linha inteira e `col-12` e mais nada: os outros sao `col-12 col-lg-6`,
-    // que e linha toda por omissao e metade so em ecra grande.
+    // Um mosaico de linha inteira é `col-12` e mais nada: os outros são `col-12 col-lg-6`,
+    // que é linha toda por omissão e metade só em ecrã grande.
     assert.match(html, /class="col-12"/);
     assert.equal(html.match(/class="diaper-channel"/g).length, 3);
     assert.match(html, /fa-droplet/);
@@ -58,7 +58,7 @@ test("MONIT moisture takes the full row and renders one column per channel", () 
 });
 
 test("MONIT moisture bands each channel against the normalizer thresholds", () => {
-    // 3 is dry (<4), 4 and 11 are damp, 12 is the affected threshold.
+    // O 3 é seco (<4), o 4 e o 11 são húmidos, e o 12 é o limiar de afectado.
     const html = moistureCard({
         channels: [channel(1, 3), channel(2, 4), channel(3, 11), channel(4, 12)],
         affectedChannelCount: 1,
@@ -141,7 +141,7 @@ test("MONIT moisture exposes the baseline and raw reading per channel", () => {
         maximumDelta: 3,
     });
 
-    // Baselines differ wildly between channels, so the raw reading is only
+    // As bases diferem muito entre canais, e por isso a leitura crua só é
     // meaningful next to its baseline.
     assert.match(html, /Canal 5 · delta 3 \(base 32, leitura 35\)/);
 });

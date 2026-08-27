@@ -9,7 +9,7 @@ final class SettingsModelCapabilityTemplateTest extends TestCase
     public function testModelCapabilitiesAreBoundToSupplierTemplateInTheSettingsEditor(): void
     {
         // O catalogo por tipo de dispositivo esta no separador das Capacidades e os
-        // interruptores de um modelo estao na ficha dele; as afirmacoes abaixo cobrem a
+        // interruptores de um modelo estão na ficha dele; as afirmações abaixo cobrem a
         // ligacao entre os dois, por isso atravessam ambos.
         $source = file_get_contents(
             dirname(__DIR__, 3) . '/src/Dashboard/dashboard/settings/capabilities.js'
@@ -67,10 +67,8 @@ final class SettingsModelCapabilityTemplateTest extends TestCase
             'state.settingsModal.capabilityCatalog,',
             $source,
         );
-        // Um controlo por eixo. «Apenas receção» era um badge e «Solicitável neste
-        // modelo» um interruptor, para a mesma pergunta -- o modelo aceita pedido? --
-        // e só uma das duas formas se podia mudar. São sempre dois interruptores, e
-        // quando o protocolo não suporta pedido é a etiqueta que diz a razão.
+        // Um controlo por eixo, e sempre dois interruptores: quando o protocolo não suporta
+        // pedido é a etiqueta que diz a razão, e não um controlo de outro tipo.
         self::assertStringContainsString(
             'for="requestable-${esc(feature)}">Solicitável</label>',
             $source,

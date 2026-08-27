@@ -21,7 +21,7 @@ state.selectedDetail = {model: {deviceType: "watch"}};
  * prova nenhuma. O cartão dizia "Atualização de localização" nas três.
  */
 
-// A idade e relativa a agora, e nao uma data fixa: o `ago` conta a partir do `Date.now()`.
+// A idade é relativa a agora e não a uma data fixa: o `ago` conta a partir do `Date.now()`.
 // Dois minutos dao "há 2m" com quase um minuto de margem em qualquer sentido.
 const minutesAgo = (minutes) =>
     new Date(Date.now() - minutes * 60_000).toISOString();

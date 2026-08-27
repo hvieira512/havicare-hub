@@ -3,9 +3,7 @@ import assert from "node:assert/strict";
 
 import {createWizard} from "../../src/Dashboard/dashboard/devices/wizard.js";
 
-/**
- * O motor do assistente, sem DOM: e logica pura e testa-se como tal.
- */
+/** O motor do assistente, sem DOM: é lógica pura e testa-se como tal. */
 
 const STEPS = ["Classificação", "Este aparelho"];
 
@@ -48,7 +46,7 @@ function wizard() {
     });
 }
 
-test("a pergunta activa e a primeira sem resposta", () => {
+test("a pergunta activa é a primeira sem resposta", () => {
     const w = wizard();
     assert.equal(w.current().key, "type");
 
@@ -71,7 +69,7 @@ test("responder tudo deixa de ter pergunta activa", () => {
     assert.equal(w.isComplete(), true);
 });
 
-test("nao avanca com o passo incompleto", () => {
+test("não avança com o passo incompleto", () => {
     const w = wizard();
     assert.equal(w.canAdvance(), false, "sem nada respondido");
 
@@ -83,7 +81,7 @@ test("nao avanca com o passo incompleto", () => {
     assert.equal(w.canAdvance(), true);
 });
 
-test("nao avanca para alem do ultimo passo", () => {
+test("não avança para além do último passo", () => {
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
@@ -96,10 +94,9 @@ test("nao avanca para alem do ultimo passo", () => {
     assert.equal(w.canAdvance(), false);
 });
 
-test("o passo so muda ao avancar, e nao ao responder", () => {
-    // O que a primeira versao do motor fazia mal: derivava o passo da pergunta activa, e
-    // a barra saltava para o 2 no instante em que a ultima resposta do 1 entrava -- antes
-    // de a pessoa premir Seguinte, que e uma acao deliberada.
+test("o passo só muda ao avançar, e não ao responder", () => {
+    // Derivar o passo da pergunta activa fazia a barra saltar para o 2 no instante em que a
+    // última resposta do 1 entrava, antes de alguém premir Seguinte.
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
@@ -120,11 +117,11 @@ test("a pergunta activa nunca e de outro passo", () => {
     w.answer("model", "y");
     w.answer("owner", {company: "c", license: "l"});
 
-    // A identidade esta sem resposta, mas e do passo 2 e o assistente esta no 1.
+    // A identidade está sem resposta, mas é do passo 2 e o assistente está no 1.
     assert.equal(w.current(), null);
 });
 
-test("voltar atras e depois avancar preserva as respostas", () => {
+test("voltar atrás e depois avançar preserva as respostas", () => {
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
@@ -141,8 +138,8 @@ test("voltar atras e depois avancar preserva as respostas", () => {
 });
 
 test("mudar o tipo limpa o modelo e a identidade", () => {
-    // Um modelo escolhido pode nao existir no tipo novo, e uma identidade escrita pode
-    // ter o formato errado. Declarado no `clears` e nao espalhado por quem trata o clique.
+    // Um modelo escolhido pode não existir no tipo novo, e uma identidade escrita pode ter o
+    // formato errado. Declarado no `clears` e não espalhado por quem trata o clique.
     const w = wizard();
     w.answer("type", "diaper_sensor");
     w.answer("model", "MECS-PRO");
@@ -155,7 +152,7 @@ test("mudar o tipo limpa o modelo e a identidade", () => {
     assert.equal(w.current().key, "model");
 });
 
-test("mudar o modelo limpa a identidade mas nao o tipo", () => {
+test("mudar o modelo limpa a identidade mas não o tipo", () => {
     const w = wizard();
     w.answer("type", "diaper_sensor");
     w.answer("model", "MECS-PRO");
@@ -182,8 +179,8 @@ test("reabrir uma resposta de um passo anterior recua o passo", () => {
 });
 
 test("reabrir uma resposta apaga-a e o que dela dependia", () => {
-    // E o que o \"alterar\" ao lado de uma badge faz: volta aquela pergunta sem obrigar a
-    // refazer as anteriores.
+    // É o que o clique numa badge faz: volta àquela pergunta sem obrigar a refazer as
+    // anteriores.
     const w = wizard();
     w.answer("type", "diaper_sensor");
     w.answer("model", "MECS-PRO");
@@ -210,7 +207,7 @@ test("as badges saem na ordem das perguntas, e uma pergunta pode dar duas", () =
     ]);
 });
 
-test("uma pergunta sem resposta nao produz badges", () => {
+test("uma pergunta sem resposta não produz badges", () => {
     const w = wizard();
     w.answer("type", "x");
 
@@ -228,8 +225,8 @@ test("reset volta ao inicio", () => {
     assert.deepEqual(w.badges(), []);
 });
 
-test("as respostas devolvidas sao uma copia", () => {
-    // Quem as le nao pode alterar o estado interno por acidente.
+test("as respostas devolvidas são uma cópia", () => {
+    // Quem as lê não pode alterar o estado interno por acidente.
     const w = wizard();
     w.answer("type", "x");
 
@@ -239,7 +236,7 @@ test("as respostas devolvidas sao uma copia", () => {
     assert.equal(w.answers().type, "x");
 });
 
-test("o passo 1 completa-se com as suas tres perguntas e nao com a do passo 2", () => {
+test("o passo 1 completa-se com as suas três perguntas e não com a do passo 2", () => {
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
@@ -250,10 +247,10 @@ test("o passo 1 completa-se com as suas tres perguntas e nao com a do passo 2", 
     assert.equal(w.isStepComplete(2), false);
 });
 
-test("uma pergunta opcional nao trava o passo, mas continua a ser feita", () => {
-    // A empresa e assim: um dispositivo pode nao ter nenhuma, e por isso nao lhe
-    // responder tem de deixar avancar -- sem que a pergunta desapareca do ecra, que e o
-    // que aconteceria se a omissao contasse como resposta.
+test("uma pergunta opcional não trava o passo, mas continua a ser feita", () => {
+    // A licença é assim: um dispositivo pode não ter nenhuma, e por isso não lhe responder
+    // tem de deixar avançar -- sem que a pergunta desapareça do ecrã, que é o que
+    // aconteceria se a omissão contasse como resposta.
     const w = createWizard({
         steps: STEPS,
         questions: [
@@ -293,9 +290,9 @@ test("uma pergunta opcional nao trava o passo, mas continua a ser feita", () => 
     assert.equal(w.isComplete(), true, "criar nao espera pela opcional");
 });
 
-test("responder a ultima pergunta do passo avanca-o", () => {
-    // O ecra que dizia "este passo esta completo" nao perguntava nada: era um clique no
-    // "Seguinte" entre a ultima resposta e o campo seguinte.
+test("responder à última pergunta do passo avança-o", () => {
+    // Um ecrã a dizer "este passo está completo" não pergunta nada: era um clique no
+    // "Seguinte" entre a última resposta e o campo seguinte.
     const w = wizard();
     w.answerAndAdvance("type", "x");
     assert.equal(w.step(), 1, "ainda faltam perguntas neste passo");
@@ -308,8 +305,8 @@ test("responder a ultima pergunta do passo avanca-o", () => {
     assert.equal(w.current().key, "identity");
 });
 
-test("nao avanca por cima de uma pergunta opcional por responder", () => {
-    // Uma opcional nao trava o passo, mas continua a ser feita: avancar assim que o passo
+test("não avança por cima de uma pergunta opcional por responder", () => {
+    // Uma opcional não trava o passo, mas continua a ser feita: avançar assim que o passo
     // ficasse completo era saltar-lhe por cima sem a mostrar.
     const w = createWizard({
         steps: STEPS,
@@ -347,9 +344,9 @@ test("nao avanca por cima de uma pergunta opcional por responder", () => {
     assert.equal(w.step(), 2);
 });
 
-test("o Anterior leva a um passo completo e nao ressalta para a frente", () => {
-    // O avanco automatico e consequencia de responder, e nao de o passo estar completo:
-    // se fosse do segundo, voltar atras era impossivel.
+test("o Anterior leva a um passo completo e não ressalta para a frente", () => {
+    // O avanço automático é consequência de responder e não de o passo estar completo: se
+    // fosse do segundo, voltar atrás era impossível.
     const w = wizard();
     w.answerAndAdvance("type", "x");
     w.answerAndAdvance("model", "y");
@@ -362,17 +359,14 @@ test("o Anterior leva a um passo completo e nao ressalta para a frente", () => {
 });
 
 /**
- * Um seed que responde a tudo deixa o assistente no ultimo passo.
+ * Um seed que responde a tudo deixa o assistente no último passo.
  *
- * O `answer` responde e fica quieto, que e o que se quer quando alguem clica numa opcao:
- * avancar e uma accao deliberada. Mas uma notificacao de dispositivo nao autorizado
- * responde a tudo de uma vez -- o hub ja sabe o tipo, o modelo, a licenca e a identidade
- * --, e sem avancar o assistente abria no passo 1 a dizer que o passo 1 estava completo.
- *
- * O `openCreateWizard` avanca enquanto nao houver nada por perguntar. Isto prende o
- * contrato do motor de que ele depende.
+ * O `answer` responde e fica quieto, que é o que se quer quando alguém clica numa opção. Mas
+ * uma notificação de dispositivo não autorizado responde a tudo de uma vez, e o
+ * `openCreateWizard` avança enquanto não houver nada por perguntar -- é esse contrato do
+ * motor que isto prende.
  */
-test("responder a tudo e avancar enquanto nao ha pergunta leva ao ultimo passo", () => {
+test("responder a tudo e avançar enquanto não há pergunta leva ao último passo", () => {
     const w = wizard();
 
     w.answer("type", "radar");
@@ -390,8 +384,8 @@ test("responder a tudo e avancar enquanto nao ha pergunta leva ao ultimo passo",
     assert.equal(w.current(), null, "nao sobra nada para perguntar");
 });
 
-/** Um seed incompleto para onde faltar, e nao salta por cima da pergunta que falta. */
-test("um seed sem licenca fica no passo em que a pergunta esta", () => {
+/** Um seed incompleto pára onde faltar, e não salta por cima da pergunta que falta. */
+test("um seed sem licença fica no passo em que a pergunta está", () => {
     const w = wizard();
 
     w.answer("type", "radar");

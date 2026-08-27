@@ -15,9 +15,7 @@ final class MessageNormalizerTest extends TestCase
      *
      * A frequência cardíaca e a respiratória usam as formas do `Hub\FeatureNormalizer` --
      * `{bpm}` e `{breathsPerMinute}` --, as mesmas de um relógio, e é isso que lhes dá os
-     * cartões que já existem. Antes eram um envelope `vitals` com `heart_rate` e
-     * `breathing` lá dentro, e o estado de sono ficava a viver como sub-campo de um cartão
-     * feito à mão só para o radar.
+     * cartões que já existem em vez de um cartão feito à mão só para o radar.
      */
     public function testHeartBreathBecomesThreeCanonicalReadings(): void
     {
@@ -123,11 +121,9 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Cada detecção sai na capacidade a que pertence, com o tipo específico dentro.
-     *
-     * As quinze saíam todas como `detection`, e o tipo real ficava escondido no payload.
-     * Uma queda vista por um radar e um SOS de uma pulseira não se conseguiam listar nem
-     * alertar pela mesma regra.
+     * Cada detecção sai na capacidade a que pertence, com o tipo específico dentro: com as
+     * quinze a saírem como `detection`, uma queda vista por um radar e um SOS de uma pulseira
+     * não se conseguiam listar nem alertar pela mesma regra.
      */
     public function testDetectionsCarryTheCapabilityTheyBelongTo(): void
     {
@@ -160,7 +156,7 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame('room_exit', $presence['events'][0]['data']['detectionType']);
     }
 
-    /** A telemetria já ia em 2 e as detecções ficaram em 1: o mesmo protocolo, duas versões. */
+    /** A telemetria e as detecções vão na mesma versão: é o mesmo protocolo. */
     public function testDetectionsUseTheSameSchemaVersionAsTelemetry(): void
     {
         $normalizer = new MessageNormalizer();
@@ -248,10 +244,9 @@ final class MessageNormalizerTest extends TestCase
     /**
      * Cada pessoa mantém a sua postura.
      *
-     * A postura é da pessoa, tal como a posição: numa divisão com três, uma pode estar de
-     * pé, outra caída e outra a andar. Uma leitura do aparelho com uma postura só obrigava
-     * a escolher entre elas, e o que sobrava dessa escolha era a postura de toda a gente
-     * menos uma, desligada de quem a tinha.
+     * A postura é da pessoa, tal como a posição: numa divisão com três, uma pode estar de pé,
+     * outra caída e outra a andar. Uma leitura do aparelho com uma postura só obrigava a
+     * escolher entre elas e a deitar fora as outras.
      */
     public function testEveryPersonKeepsTheirOwnPosture(): void
     {
@@ -299,11 +294,9 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Dois alarmes na mesma mensagem saem os dois.
-     *
-     * O normalizador juntava-os numa lista e depois fazia `$result['event'] = $events[0]`.
-     * Uma apneia e uma bradicardia no mesmo minuto -- que é precisamente quando alguém está
-     * pior, não melhor -- e o segundo desaparecia sem deixar rasto no log nem no Redis.
+     * Dois alarmes na mesma mensagem saem os dois: uma apneia e uma bradicardia no mesmo
+     * minuto é precisamente quando alguém está pior, e com um campo só o segundo desaparecia
+     * sem deixar rasto no log nem no Redis.
      */
     public function testEveryAlarmInOneMessageSurvives(): void
     {

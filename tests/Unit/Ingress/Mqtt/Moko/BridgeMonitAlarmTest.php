@@ -46,8 +46,8 @@ final class BridgeMonitAlarmTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        // Three distinct wet readings: the dedupe of raw observations is keyed on the
-        // payload, so these are three real observations and not a replay.
+        // Três leituras molhadas distintas: a deduplicação de observações cruas é por
+        // payload, por isso estas são três observações reais e não uma repetição.
         $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required'));
         $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required', battery: 79));
         $bridge->handleReceivedMessage($this->topic(), $this->scan('change_required', battery: 78));
@@ -97,10 +97,10 @@ final class BridgeMonitAlarmTest extends TestCase
 
     public function testTighteningTheSensitivityRaisesTheAlarmForTheSameReading(): void
     {
-        // Tres canais molhados: no preset normal sao 3 de 4 exigidos, portanto `attention`.
+        // Três canais molhados: no preset normal são 3 de 4 exigidos, portanto `attention`.
         // Apertar para "mais alertas" (3 canais, delta 7) torna a MESMA leitura numa muda
         // necessaria -- e o alarme tem de tocar, senao apertar a sensibilidade numa fralda
-        // ja suja nao produz nada.
+        // já suja não produz nada.
         $mqtt = new RecordingHubMqttBridge();
         $sensitivity = new MutableDiaperSensitivity();
         $bridge = $this->bridge($mqtt, $sensitivity);
@@ -118,9 +118,9 @@ final class BridgeMonitAlarmTest extends TestCase
 
     public function testLooseningAndTighteningAgainDoesNotSwallowTheAlarm(): void
     {
-        // O caso que a primeira versao desta feature falhava. Com a sensibilidade na CHAVE do
-        // estado em vez de no valor, voltar a um preset ja usado reencontrava o
-        // `change_required` antigo, nao via transicao, e a fralda suja ficava sem alarme.
+        // Com a sensibilidade na CHAVE do estado em vez de no valor, voltar a um preset já
+        // usado reencontrava o `change_required` antigo, não via transição, e a fralda suja
+        // ficava sem alarme.
         $mqtt = new RecordingHubMqttBridge();
         $sensitivity = new MutableDiaperSensitivity();
         $bridge = $this->bridge($mqtt, $sensitivity);
@@ -142,8 +142,8 @@ final class BridgeMonitAlarmTest extends TestCase
 
     public function testTheSensitivityNeverLeaksIntoThePublishedEvent(): void
     {
-        // A sensibilidade vive dentro do estado guardado para que uma alteracao conte como
-        // transicao. O `previousState` e contrato publicado e continua a ser um dos tres
+        // A sensibilidade vive dentro do estado guardado para que uma alteração conte como
+        // transição. O `previousState` é contrato publicado e continua a ser um dos três
         // estados, ou nulo -- nunca "attention@7-15".
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt, new MutableDiaperSensitivity());
@@ -159,8 +159,8 @@ final class BridgeMonitAlarmTest extends TestCase
     public function testWithoutALookupTheHubKeepsItsHistoricalThresholds(): void
     {
         // Sem lookup ligado -- que e como todos os outros testes deste ficheiro constroem o
-        // bridge -- a sensibilidade e a do preset normal, que sao os limiares que o hub tinha
-        // em hardcode. Isto e o que garante que ligar a feature nao mexeu em producao.
+        // bridge -- a sensibilidade é a do preset normal. É o que garante que um sensor que
+        // ninguém configurou continua a comportar-se como sempre se comportou.
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 

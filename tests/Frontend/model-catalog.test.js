@@ -13,7 +13,7 @@ const {renderModelsSection} = await import(
 
 /**
  * O catalogo desenha-se a partir da resposta de `/api/device-types/suppliers/models`, que
- * traz um grupo por cada tipo de dispositivo que existe -- tenha ou nao modelos.
+ * traz um grupo por cada tipo de dispositivo que existe -- tenha ou não modelos.
  */
 const model = (id, commercialName, internalModel, supplier, deviceType) => ({
     id,

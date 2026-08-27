@@ -11,13 +11,11 @@ use Tests\Support\MysqlDashboardTestCase;
  * O catálogo de referência de uma base de dados acabada de construir.
  *
  * Estes factos -- que etiqueta tem cada capacidade, que capacidades tem cada tipo de
- * aparelho, o que o template de cada modelo liga -- eram afirmados um a um contra a
- * migração que os produziu. Eram trinta e oito passos a convergir para o que o
- * `CapabilityCatalog` e o `SupplierCapabilityTemplate` já dizem, e o que interessa é o
- * destino: uma base nova tem de nascer aqui, sem replicar o caminho.
+ * aparelho, o que o template de cada modelo liga -- são o destino, e não o caminho: uma base
+ * nova tem de nascer aqui a partir do `CapabilityCatalog` e do `SupplierCapabilityTemplate`.
  *
- * É também o que protege o squash. Se alguém mudar o catálogo em código e partir uma
- * destas afirmações, parte-se aqui e não em produção passado um deploy.
+ * Se alguém mudar o catálogo em código e partir uma destas afirmações, parte-se aqui e não
+ * em produção passado um deploy.
  */
 final class ReferenceCatalogTest extends MysqlDashboardTestCase
 {

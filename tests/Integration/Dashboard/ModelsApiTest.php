@@ -389,8 +389,8 @@ final class ModelsApiTest extends MysqlDashboardTestCase
                 'commercialName' => (string)$model['commercial_name'],
                 'deviceType' => (string)$model['device_type'],
                 'capabilitiesConfigured' => '1',
-                // Uma capacidade real, mas de outro tipo de dispositivo. Era `heart_rate`,
-                // que deixou de servir aqui: o radar mede-a, e passou a tê-la no catálogo.
+                // Uma capacidade real, mas de outro tipo de dispositivo. Não pode ser
+                // `heart_rate`: o radar mede-a, e tem-na no catálogo.
                 'capabilities' => ['blood_pressure'],
             ]);
 

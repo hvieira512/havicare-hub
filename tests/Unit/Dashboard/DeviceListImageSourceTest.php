@@ -37,9 +37,9 @@ final class DeviceListImageSourceTest extends TestCase
 
         self::assertStringContainsString('renderSelectedDeviceSummary(', $detailSource);
         self::assertStringContainsString('deviceModel?.image', $detailSource);
-        // A empresa e a licenca sao um campo so, `empresa · numero` ou "Sem licenca": a
-        // licenca pertence a empresa e um dispositivo tem as duas ou nenhuma, logo dois
-        // campos separados podiam mostrar uma empresa sem licenca, que nao existe.
+        // A empresa e a licença são um campo só, `empresa · número` ou "Sem licença": a
+        // licença pertence à empresa e um dispositivo tem as duas ou nenhuma, logo dois
+        // campos separados podiam mostrar uma empresa sem licença, que não existe.
         self::assertStringContainsString('deviceLicenseHtml(device)', $summarySource);
         self::assertStringNotContainsString('label: "Empresa"', $summarySource);
         self::assertStringContainsString('deviceTypeLabel(', $summarySource);

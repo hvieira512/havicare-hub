@@ -63,8 +63,8 @@ function harness({company = "hitcare", licenseId = "1001"} = {}) {
 }
 
 test("abre no passo do aparelho, com a classificação em etiquetas", () => {
-    // O que se vem alterar e o numero de serie ou os gateways: a classificacao ja esta
-    // feita, e um dispositivo registado nao tem perguntas por responder.
+    // O que se vem alterar é o número de série ou os gateways: a classificação já está
+    // feita, e um dispositivo registado não tem perguntas por responder.
     const {root, els, openQuestion} = harness();
 
     assert.deepEqual(
@@ -106,7 +106,7 @@ test("tocar numa etiqueta abre aquela pergunta, e só aquela", () => {
     // A pergunta aberta perde o valor da etiqueta: esta na grelha por baixo, marcada.
     assert.equal(root.querySelector('[data-wizard-reopen="model"]'), null);
     assert.equal(root.querySelectorAll(".wizard-badge-now").length, 1);
-    // E guardar so no passo do aparelho, que e onde ha campos por validar.
+    // E guardar só no passo do aparelho, que é onde há campos por validar.
     assert.equal(els.saveDeviceBtn.classList.contains("d-none"), true);
 });
 
@@ -138,8 +138,8 @@ test("a árvore abre com a licença actual marcada", () => {
 });
 
 test("escolher uma licença escreve a empresa e o número, e refaz os gateways", () => {
-    // Sao duas colunas na base de dados e uma so escolha no ecra; e a autorizacao de um
-    // gateway e por empresa e licenca, por isso os que estavam marcados eram de outro.
+    // São duas colunas na base de dados e uma só escolha no ecrã; e a autorização de um
+    // gateway é por empresa e licença, por isso os que estavam marcados eram de outro.
     const {root, els, changes} = harness();
 
     root.querySelector('[data-wizard-reopen="owner"]').click();
@@ -168,7 +168,7 @@ test("o Anterior volta à classificação sem abrir pergunta nenhuma", () => {
 
     assert.deepEqual(openQuestion(), ["none"]);
     assert.match(root.querySelector(".wizard-trail-step").textContent, /Passo 1 de 2/);
-    // As tres continuam respondidas: voltar atras nao apaga nada.
+    // As três continuam respondidas: voltar atrás não apaga nada.
     assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
 
     els.deviceNextBtn.click();
@@ -177,7 +177,7 @@ test("o Anterior volta à classificação sem abrir pergunta nenhuma", () => {
 
 test("enquanto o dispositivo não chegou, a trilha não inventa uma classificação", () => {
     // O formulario ainda tem o que la estava por omissao -- Relogio, o primeiro modelo,
-    // sem licenca -- e isso e a classificacao de outro aparelho.
+    // sem licença -- e isso é a classificação de outro aparelho.
     const {state} = stateModule;
     const {root} = harness();
     state.deviceModal.loading = true;

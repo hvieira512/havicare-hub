@@ -9,10 +9,9 @@ import {deviceTypeFields} from "../../src/Dashboard/dashboard/domain.js";
  * REDE DE SEGURANCA, escrita antes de tocar no modal.
  *
  * O `renderDeviceTypeSelector` decidia isto com quatro cadeias de `if` e cinco
- * `classList.toggle`, num modulo de 769 linhas sem um unico teste. Estas expectativas
- * sao o comportamento que estava em producao, copiado de la sem alteracoes -- e por
- * isso este ficheiro nao muda quando a tabela de tipos passa a servi-lo. Se for preciso
- * mudar uma expectativa aqui, a tabela mudou comportamento e nao so a forma.
+ * `classList.toggle`. Estas expectativas são o comportamento que está em produção, e por
+ * isso este ficheiro não muda quando a tabela de tipos passa a servi-lo: se for preciso mudar
+ * uma expectativa aqui, a tabela mudou comportamento e não só a forma.
  *
  * O que se fixa: que campos aparecem por tipo, e que rotulo, ajuda e placeholder tem o
  * campo de identidade -- que era a parte espalhada por mais sitios.
@@ -34,7 +33,7 @@ test("o relogio identifica-se por IMEI e tem SIM", () => {
     assert.equal(fields.gatewayLinks, false);
 });
 
-test("os outros tipos identificam-se por deviceId e nao tem SIM", () => {
+test("os outros tipos identificam-se por deviceId e não têm SIM", () => {
     for (const type of TYPES.filter((t) => t !== "watch")) {
         const fields = deviceTypeFields(type);
         assert.equal(fields.identity.field, "deviceId", type);
@@ -42,7 +41,7 @@ test("os outros tipos identificam-se por deviceId e nao tem SIM", () => {
     }
 });
 
-test("so o medidor de fraldas e a pulseira ligam a gateways", () => {
+test("só o medidor de fraldas e a pulseira ligam a gateways", () => {
     assert.equal(deviceTypeFields("diaper_sensor").gatewayLinks, true);
     assert.equal(deviceTypeFields("bracelet").gatewayLinks, true);
     for (const type of ["watch", "ncs", "radar", "gateway"]) {
@@ -50,7 +49,7 @@ test("so o medidor de fraldas e a pulseira ligam a gateways", () => {
     }
 });
 
-test("o rotulo, a ajuda e o placeholder da identidade por tipo", () => {
+test("o rótulo, a ajuda e o placeholder da identidade por tipo", () => {
     // Copiado literalmente do renderDeviceTypeSelector antes da mudanca.
     const expected = {
         watch: {

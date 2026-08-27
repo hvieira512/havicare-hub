@@ -16,7 +16,7 @@ const {
 /**
  * O desenho da classificacao -- trilha, tipo, fornecedor, modelo -- que o assistente de
  * adicionar e o modal de editar partilham. Sao construtores de HTML puros: testam-se pelo
- * que produzem, e nao por como o produzem.
+ * que produzem, e não por como o produzem.
  */
 
 const TRAIL_QUESTIONS = [
@@ -33,7 +33,7 @@ function trail(badges, currentKey = "", step = 1) {
 }
 
 test("uma resposta na trilha é um botão que volta àquela pergunta", () => {
-    // O "alterar" reabria sempre a ultima resposta, o que obrigava a refazer tudo o que
+    // Cada badge volta à sua pergunta, o que evita refazer tudo o que
     // vinha depois para se voltar ao tipo.
     const root = trail([{key: "type", label: "Tipo", value: "Relógio"}], "model");
 
@@ -45,7 +45,7 @@ test("uma resposta na trilha é um botão que volta àquela pergunta", () => {
 });
 
 test("as perguntas por responder ficam na trilha, e a activa distingue-se", () => {
-    // Mostrar so as respondidas deixava a linha vazia ao abrir e nao dizia quanto faltava.
+    // Mostrar só as respondidas deixava a linha vazia ao abrir e não dizia quanto faltava.
     const root = trail([], "type");
 
     assert.equal(root.querySelectorAll(".wizard-badge").length, 3);
@@ -148,11 +148,11 @@ test("o fornecedor escolhido é a pastilha cheia", () => {
 });
 
 /**
- * A licenca que uma notificacao traz, resolvida na arvore.
+ * A licença que uma notificação traz, resolvida na árvore.
  *
- * O radar publica em `radar/{licenca}/{uid}`, por isso o hub sabe a licenca de um radar
- * que ainda nao esta registado e a notificacao leva-a. O assistente pre-selecciona-a --
- * mas a escolha e o par empresa+licenca, e o numero sozinho pode nao chegar.
+ * O radar publica em `radar/{licenseId}/{uid}`, por isso o hub sabe a licença de um radar
+ * que ainda não está registado e a notificação leva-a. O assistente pré-selecciona-a -- mas
+ * a escolha é o par empresa+licença, e o número sozinho pode não chegar.
  */
 test("a licença da notificação ganha a empresa a que pertence", () => {
     const tree = [
@@ -167,7 +167,7 @@ test("a licença da notificação ganha a empresa a que pertence", () => {
 test("uma licença que não existe na árvore não pré-seleciona nada", () => {
     const tree = [{company: "hitcare", licenses: [{licenseId: "1001", name: "gucc.dev"}]}];
 
-    // A 2051 existe no broker e nao na base de dados: ninguem a criou ainda.
+    // A 2051 existe no broker e não na base de dados: ninguém a criou ainda.
     assert.equal(ownerFromLicense(2051, tree), null);
     assert.equal(ownerFromLicense(0, tree), null);
     assert.equal(ownerFromLicense(null, tree), null);

@@ -18,7 +18,7 @@ final class BridgeTest extends TestCase
     /**
      * A notificação de um radar desconhecido leva a licença do tópico.
      *
-     * O tópico é `radar/{licenca}/{uid}` e a licença é o único campo do assistente de
+     * O tópico é `radar/{licenseId}/{uid}` e a licença é o único campo do assistente de
      * registo que não se deduz do protocolo -- o tipo e o modelo já vinham. Vai como
      * número e não dentro do `ident`, para a dashboard a poder pré-seleccionar em vez de
      * ter de interpretar uma frase.

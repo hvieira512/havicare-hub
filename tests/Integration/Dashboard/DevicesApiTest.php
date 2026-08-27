@@ -3214,7 +3214,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayHasKey('diaper_moisture_level', $sensor['capabilities']['telemetry'] ?? []);
         self::assertFalse($sensor['capabilities']['telemetry']['diaper_moisture']['requestable'] ?? true);
         self::assertFalse($sensor['capabilities']['telemetry']['diaper_condition']['requestable'] ?? true);
-        // Sem botao de pedido: o sensor e BLE passivo e nao aceita pedidos, como os outros dois.
+        // Sem botão de pedido: o sensor é BLE passivo e não aceita pedidos, como os outros dois.
         self::assertFalse($sensor['capabilities']['telemetry']['diaper_moisture_level']['requestable'] ?? true);
 
         self::assertSame('ok', $api->deleteLink('d48c49f7909c', 'eec5000202f9')['status'] ?? null);
@@ -3236,7 +3236,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('ok', $api->createLink('c5e390f30bce', 'fbd87c59ba8b')['status'] ?? null);
         self::assertSame('bracelet', $api->links('c5e390f30bce')['data'][0]['deviceType'] ?? null);
 
-        // Um relogio nao e relaido por BLE, por isso continua a ser recusado.
+        // Um relógio não é retransmitido por BLE, por isso é recusado.
         $invalid = $api->createLink('c5e390f30bce', '861265061009823');
         self::assertSame('invalid_link', $invalid['error']['code'] ?? null);
 
@@ -3270,8 +3270,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'deviceKey'
         )['dc1603ecf1f7']);
 
-        // The same sighting, read from the gateway's own page: it is stored against
-        // the relayed device, so the link resolves it from either direction.
+        // O mesmo avistamento, lido da página do gateway: fica guardado contra o dispositivo
+        // retransmitido, e a ligação resolve-o dos dois lados.
         $onTheGateway = $api->show('c5e390f30bce')['linkedDevices'][0] ?? [];
         self::assertSame('fbd87c59ba8b', $onTheGateway['deviceKey'] ?? null);
         self::assertSame(-71, $onTheGateway['rssiDbm'] ?? null);

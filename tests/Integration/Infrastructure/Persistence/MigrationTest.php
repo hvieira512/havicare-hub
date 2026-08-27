@@ -13,11 +13,9 @@ use Tests\Support\MysqlDashboardTestCase;
  * A mecânica das migrações: correm uma vez, ficam registadas, e o guarda sabe dizer se
  * falta alguma.
  *
- * O que cada migração fez à base de dados deixou de se testar aqui. Trinta e oito delas
- * foram absorvidas na baseline -- o `schema.sql` mais o catálogo semeado a partir do
- * código -- e o estado que produziam é agora afirmado onde ele vive: a estrutura no
- * `SchemaCompletenessTest`, o catálogo no `ReferenceCatalogTest`. Testar a migração era
- * testar o caminho; o que interessa é o destino.
+ * O que cada migração faz à base de dados não se testa aqui. O estado que a baseline produz
+ * é afirmado onde ele vive: a estrutura no `SchemaCompletenessTest`, o catálogo no
+ * `ReferenceCatalogTest`. Testar a migração é testar o caminho; o que interessa é o destino.
  */
 final class MigrationTest extends MysqlDashboardTestCase
 {
