@@ -25,15 +25,18 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     private string $whitelistPath;
     private string $apiLogPath;
     private string|false $originalLogFile;
+    private string|false $originalLogFileApi;
     private string|false $originalLogLevel;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->originalLogFile = getenv('LOG_FILE');
+        $this->originalLogFileApi = getenv('LOG_FILE_API');
         $this->originalLogLevel = getenv('LOG_LEVEL');
         $this->apiLogPath = sys_get_temp_dir() . '/hub-dashboard-api-log-' . bin2hex(random_bytes(4)) . '.log';
         putenv('LOG_FILE=' . $this->apiLogPath);
+        putenv('LOG_FILE_API=' . $this->apiLogPath);
         putenv('LOG_LEVEL=info');
         Logger::reset();
         $this->whitelistPath = IngressFixtures::whitelistPath([
@@ -49,6 +52,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             unlink($this->apiLogPath);
         }
         putenv($this->originalLogFile === false ? 'LOG_FILE' : 'LOG_FILE=' . $this->originalLogFile);
+        putenv($this->originalLogFileApi === false ? 'LOG_FILE_API' : 'LOG_FILE_API=' . $this->originalLogFileApi);
         putenv($this->originalLogLevel === false ? 'LOG_LEVEL' : 'LOG_LEVEL=' . $this->originalLogLevel);
         Logger::reset();
         parent::tearDown();
@@ -287,6 +291,29 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('"refresh_token":"********"', $log);
     }
 
+    public function testApiLoggingRedactsBeforeCappingAnOversizedBody(): void
+    {
+        $server = $this->makeServer();
+        $body = json_encode([
+            'username' => 'admin',
+            'password' => 'secret',
+            'filler' => str_repeat('a', 40000),
+        ], JSON_THROW_ON_ERROR);
+
+        $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            $body
+        ));
+
+        $log = $this->apiLogContents();
+        // O corpo cortado viaja como texto dentro do registo, e por isso com as aspas escapadas.
+        self::assertStringContainsString('bytes no total]', $log);
+        self::assertStringContainsString('password\":\"********', $log);
+        self::assertStringNotContainsString('secret', $log);
+    }
+
     public function testApiLoggingKeepsFullBodiesWithoutEllipsis(): void
     {
         $payload = str_repeat('abc123', 800);
@@ -298,7 +325,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertGreaterThan(4096, strlen($log));
     }
 
-    public function testLoggerDoesNotTruncateDeepStructuredContext(): void
+    public function testLoggerStopsNormalizingUnboundedlyDeepContext(): void
     {
         $value = ['leaf' => 'complete'];
         for ($depth = 0; $depth < 20; $depth++) {
@@ -308,8 +335,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         Logger::channel('api')->info('deep context', ['body' => $value]);
 
         $log = $this->apiLogContents();
-        self::assertStringContainsString('"leaf":"complete"', $log);
-        self::assertStringNotContainsString('aborting normalization', $log);
+        self::assertStringContainsString('levels deep, aborting normalization', $log);
+        self::assertStringNotContainsString('"leaf":"complete"', $log);
     }
 
     public function testUnauthorizedApiRequestIsStillLogged(): void

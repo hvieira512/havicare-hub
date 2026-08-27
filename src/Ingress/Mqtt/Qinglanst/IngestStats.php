@@ -111,7 +111,7 @@ final class IngestStats
             return;
         }
 
-        $this->flush(true);
+        $this->flush();
     }
 
     /**

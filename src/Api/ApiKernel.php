@@ -43,6 +43,8 @@ final class ApiKernel
     private const LOG_REDACTION = '********';
 
     private ApiRouter $router;
+    private int $logBodyMaxBytes;
+    private int $logBodyScanMaxBytes;
 
     public function __construct(
         private bool $apiAuthRequired,
@@ -65,6 +67,8 @@ final class ApiKernel
         private RouteAccessPolicy $routeAccessPolicy,
     ) {
         $this->router = new ApiRouter($this->apiRoutes());
+        $this->logBodyMaxBytes = max(0, (int)(getenv('LOG_BODY_MAX_BYTES') ?: 16384));
+        $this->logBodyScanMaxBytes = max(0, (int)(getenv('LOG_BODY_SCAN_MAX_BYTES') ?: 1048576));
     }
 
     public function handle(ServerRequestInterface $request): Response
@@ -303,11 +307,34 @@ final class ApiKernel
             return null;
         }
 
-        try {
-            return $this->sanitizeLogValue(json_decode($body, true, 512, JSON_THROW_ON_ERROR));
-        } catch (\JsonException) {
-            return $redactUnstructured ? self::LOG_REDACTION : $body;
+        // Um corpo desta dimensão nem chega a ser descodificado: a descodificação e as
+        // recursões que se lhe seguem correm no laço que também serve o TCP e as pontes MQTT.
+        if (strlen($body) > $this->logBodyScanMaxBytes) {
+            return sprintf('[corpo não registado: %d bytes]', strlen($body));
         }
+
+        try {
+            $sanitized = $this->sanitizeLogValue(json_decode($body, true, 512, JSON_THROW_ON_ERROR));
+        } catch (\JsonException) {
+            return $this->cappedLogBody($redactUnstructured ? self::LOG_REDACTION : $body);
+        }
+
+        $encoded = json_encode($sanitized);
+
+        return $encoded === false || strlen($encoded) <= $this->logBodyMaxBytes
+            ? $sanitized
+            : $this->cappedLogBody($encoded);
+    }
+
+    // O corte vem sempre depois da rasura: cortar o texto cru deixava credenciais por rasurar.
+    private function cappedLogBody(string $value): string
+    {
+        $size = strlen($value);
+        if ($size <= $this->logBodyMaxBytes) {
+            return $value;
+        }
+
+        return substr($value, 0, $this->logBodyMaxBytes) . sprintf('…[truncado, %d bytes no total]', $size);
     }
 
     private function sanitizeLogValue(mixed $value): mixed

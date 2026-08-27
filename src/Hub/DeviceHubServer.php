@@ -57,8 +57,6 @@ class DeviceHubServer
     public function onOpen(ConnectionInterface $conn): void
     {
         $this->connections->open($conn);
-
-        Logger::channel('hub')->info("Connection open id={$conn->resourceId}");
     }
 
     public function onMessage(ConnectionInterface $from, string $msg): void
@@ -81,7 +79,6 @@ class DeviceHubServer
         $session = $this->connections->close($conn);
 
         if ($session === null || !$session->authenticated) {
-            Logger::channel('hub')->info("Connection closed id={$conn->resourceId}");
             return;
         }
 
@@ -245,7 +242,10 @@ class DeviceHubServer
     {
         $identity = $this->identityExtractor->identify($raw, $session->identityContext());
         if ($identity === null) {
-            Logger::channel('hub')->warning("Connection id={$conn->resourceId} sent data before identifiable login");
+            if (!$session->unidentifiedWarningLogged) {
+                $session->unidentifiedWarningLogged = true;
+                Logger::channel('hub')->warning("Connection id={$conn->resourceId} sent data before identifiable login");
+            }
             return;
         }
 

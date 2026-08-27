@@ -4,6 +4,9 @@ namespace Hub;
 
 class DeviceSession
 {
+    // Uma ligação que nunca autentica manda tramas para sempre: o aviso sai uma vez só.
+    public bool $unidentifiedWarningLogged = false;
+
     public function __construct(
         public readonly ConnectionInterface $connection,
         public readonly string $transport,

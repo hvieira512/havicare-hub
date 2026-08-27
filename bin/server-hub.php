@@ -13,6 +13,7 @@ use Hub\Ingress\Mqtt\Moko\RedisObservationStateStore;
 use Hub\Ingress\Mqtt\Ncs\Bridge as NcsBridge;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge as QinglanstBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy as QinglanstDashboardWritePolicy;
+use Hub\Ingress\Mqtt\Qinglanst\IngestStats as QinglanstIngestStats;
 use Hub\Ingress\Mqtt\SubscriberFactory;
 use Hub\Log\Logger;
 use Hub\Mqtt\BrokerSettings;
@@ -106,6 +107,10 @@ if ($config['qinglanst']['enabled']) {
             $qinglanstTopicFilter,
             $reconnect,
             $services->dashboardStore,
+            stats: new QinglanstIngestStats(
+                $qinglanstTopicFilter,
+                (int)$config['qinglanst']['stats_flush_seconds'],
+            ),
             dashboardWritePolicy: new QinglanstDashboardWritePolicy(
                 (int)$config['qinglanst']['dashboard_seen_min_interval_ms'],
                 (int)$config['qinglanst']['position_history_sample_ms'],
