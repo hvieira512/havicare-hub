@@ -17,7 +17,7 @@ import {
     whenShort,
 } from "../format.js";
 import {capabilityLabel} from "../capability-catalog.js";
-import {deviceLicenseHtml, emptyPanel, filterChips} from "../widgets.js";
+import {deviceLicenseHtml, emptyPanel, filterChips, onlineBadge} from "../widgets.js";
 import {
     cardTone,
     telemetryCard,
@@ -52,7 +52,6 @@ const ALARM_EVENT_TYPES = new Set([
 
 let els;
 let loadDeviceFn = async () => false;
-let connectionChartRoot = null;
 
 function initDeviceDetailView(context) {
     els = context.els;
@@ -227,9 +226,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     els.selectedDeviceTitle.textContent = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
     // antes do identificador.
-    els.selectedDeviceBadge.className = `config-state ${device.online ? "config-state-success" : "config-state-secondary"}`;
-    els.selectedDeviceBadge.innerHTML =
-        `<span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}`;
+    els.selectedDeviceBadge.innerHTML = onlineBadge(device.online);
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
     disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts
@@ -490,12 +487,11 @@ function renderTelemetryList(telemetryRows) {
 
     // Na pastilha do contador cabe o número e mais nada: o título já diz de quê.
     els.telemetryCount.textContent = telemetry.length ? String(telemetry.length) : "";
-    // Uma linha por evento, em colunas: pastilha do ícone, nome, valor, hora.
-    els.telemetryList.innerHTML = pageRows.length
-        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${pageRows.map(renderTelemetryRow).join("")}</tbody>
-           </table>`
-        : emptyPanel("Ainda não há eventos recebidos.");
+    activityTable(
+        els.telemetryList,
+        pageRows.map(telemetryActivityRow),
+        "Ainda não há eventos recebidos.",
+    );
     renderClientPager("telemetry", telemetry.length, totalPages);
 }
 
@@ -525,35 +521,86 @@ function renderClientPager(prefix, totalRows, totalPages) {
     });
 }
 
-function renderTelemetryRow(payload) {
+/**
+ * As duas listas de actividade são a mesma tabela de quatro colunas -- pastilha do ícone,
+ * nome, valor e hora --, com substantivos diferentes. As larguras são fixas e iguais nas
+ * duas (`main.css`, `.telemetry-table`), de propósito: lado a lado, têm de alinhar.
+ *
+ * Contrato de escape: `name`, `time` e os `*Title` entram como texto e saem escapados;
+ * `value` e as duas segundas linhas entram como HTML já pronto, porque de um lado são texto
+ * e do outro uma pastilha ou uma tira de pastilhas.
+ */
+function activityTable(rootEl, rows, emptyText) {
+    // A lista rola por dentro: sem repor a posição, cada mensagem do stream e cada sondagem
+    // atiravam para o topo uma lista que estava a ser lida.
+    const scrollTop = rootEl.scrollTop;
+    rootEl.innerHTML = rows.length
+        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
+            <tbody>${rows.map(activityRow).join("")}</tbody>
+           </table>`
+        : emptyPanel(emptyText);
+    rootEl.scrollTop = scrollTop;
+}
+
+function activityRow({
+    icon,
+    tone = "",
+    name,
+    nameTitle = "",
+    sub = "",
+    subTitle = "",
+    value = "",
+    valueTitle = "",
+    detail = "",
+    detailTitle = "",
+    time,
+    timeTitle = "",
+}) {
+    return `
+        <tr>
+        <td>
+            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
+                <i class="fa-solid ${esc(icon)}"></i>
+            </span>
+        </td>
+        <td class="fw-medium">
+            <span class="telemetry-row-stack">
+                <span class="d-block text-truncate" title="${esc(nameTitle || name)}">${esc(name)}</span>
+                ${sub ? `<span class="telemetry-row-details fw-normal d-block text-truncate"${subTitle ? ` title="${esc(subTitle)}"` : ""}>${sub}</span>` : ""}
+            </span>
+        </td>
+        <td class="tabular-nums"${valueTitle ? ` title="${esc(valueTitle)}"` : ""}>
+            <span class="telemetry-row-stack">
+                <span class="d-block text-truncate">${value}</span>
+                ${detail ? `<span class="telemetry-row-details d-flex flex-wrap gap-1"${detailTitle ? ` title="${esc(detailTitle)}"` : ""}>${detail}</span>` : ""}
+            </span>
+        </td>
+        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(timeTitle)}">${esc(time)}</td>
+        </tr>`;
+}
+
+function telemetryActivityRow(payload) {
     const type = payload?.type || "telemetry";
     const data =
         payload?.data && typeof payload.data === "object" ? payload.data : {};
     const card = uplinkCardContent(type, data);
     // Os detalhes são os que cada renderizador declara, e não todos os campos do payload.
-    const details = card.details || "";
+    const detail = card.details || "";
     // O `detailsTitle` existe quando a linha visível é um resumo: a presença mostra as
     // posturas e guarda para aqui as coordenadas e as pessoas que não couberam.
-    const detailsTitle = card.detailsTitle
-        || details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "");
+    const at = payload.occurredAt || payload.recordedAt;
 
-    const tone = cardTone(type);
-    return `
-        <tr>
-        <td>
-            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
-                <i class="fa-solid ${esc(card.icon)}"></i>
-            </span>
-        </td>
-        <td class="fw-medium" title="${esc(capabilityLabel(type))}">${esc(capabilityLabel(type))}</td>
-        <td class="tabular-nums">
-            <span class="telemetry-row-stack">
-                <span class="d-block text-truncate">${esc(card.rowValue || card.value)}</span>
-                ${details ? `<span class="telemetry-row-details d-flex flex-wrap gap-1" title="${esc(detailsTitle)}">${details}</span>` : ""}
-            </span>
-        </td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(payload.occurredAt || payload.recordedAt))}">${esc(whenShort(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
-        </tr>`;
+    return {
+        icon: card.icon,
+        tone: cardTone(type),
+        name: capabilityLabel(type),
+        value: esc(card.rowValue || card.value),
+        detail,
+        detailTitle: card.detailsTitle
+            || detail.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, ""),
+        time: whenShort(at) || "hora desconhecida",
+        timeTitle: when(at),
+    };
 }
 
 function renderRequestCards(
@@ -683,44 +730,36 @@ function renderDownlinkRequests(commands) {
     const start = (state.downlinkPage - 1) * state.downlinkPageSize;
     const pageRows = commands.slice(start, start + state.downlinkPageSize);
 
-    // A mesma linha dos eventos recebidos, do outro lado: pastilha do ícone, nome, estado,
-    // hora. A resposta cabe no `title` da pastilha, e o erro na segunda linha do nome.
-    els.downlinkRequests.innerHTML = pageRows.length
-        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${pageRows.map(renderDownlinkRow).join("")}</tbody>
-           </table>`
-        : emptyPanel("Ainda não há pedidos ao dispositivo.");
+    activityTable(
+        els.downlinkRequests,
+        pageRows.map(downlinkActivityRow),
+        "Ainda não há pedidos ao dispositivo.",
+    );
 
     renderClientPager("downlink", commands.length, totalPages);
 }
 
-function renderDownlinkRow(command) {
-    const status = String(command.status || "unknown");
+function downlinkActivityRow(command) {
     const feature = String(command.feature || "");
-    const content = requestCardContent(feature);
-    const tone = cardTone(feature);
+    // A resposta cabe no `title` do estado, e o erro na segunda linha do nome.
     const replied = command.ackedAt
         ? `Resposta ${when(command.ackedAt)}`
         : command.sentAt
           ? `Enviado ${when(command.sentAt)}`
           : expectedReplies(command);
     const note = command.error || "";
-    return `
-        <tr>
-        <td>
-            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
-                <i class="fa-solid ${esc(content.icon)}"></i>
-            </span>
-        </td>
-        <td class="fw-medium">
-            <span class="telemetry-row-stack">
-                <span class="d-block text-truncate" title="${esc(commandLabel(command) || content.value || "Pedido")}">${esc(commandLabel(command) || content.value || "Pedido")}</span>
-                ${note ? `<span class="telemetry-row-details fw-normal d-block text-truncate" title="${esc(note)}">${esc(note)}</span>` : ""}
-            </span>
-        </td>
-        <td${replied ? ` title="${esc(replied)}"` : ""}>${statusBadge(status)}</td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(command.requestedAt))}">${esc(whenShort(command.requestedAt) || "-")}</td>
-        </tr>`;
+
+    return {
+        icon: requestCardContent(feature).icon,
+        tone: cardTone(feature),
+        name: commandLabel(command) || requestCardContent(feature).value || "Pedido",
+        sub: note ? esc(note) : "",
+        subTitle: note,
+        value: statusBadge(String(command.status || "unknown")),
+        valueTitle: replied,
+        time: whenShort(command.requestedAt) || "-",
+        timeTitle: when(command.requestedAt),
+    };
 }
 
 function renderConnectionTimeline(rows) {
@@ -737,115 +776,65 @@ function renderConnectionTimeline(rows) {
     // secção fica escondida até haver o que desenhar.
     els.connectionSection.classList.toggle("d-none", events.length < 2);
 
+    // Redesenhar isto é deitar o gráfico abaixo e construir outro. Passa por aqui cada tecla
+    // da pesquisa, cada mensagem do stream e a sondagem dos 30 s: sem a série mudar, não há
+    // nada para fazer.
+    const signature = events
+        .map((event) => `${event.type}@${eventTime(event)}`)
+        .join("|");
+    if (els.connectionTimeline.dataset.connectionSignature === signature) {
+        return;
+    }
+    els.connectionTimeline.dataset.connectionSignature = signature;
+
     if (events.length < 2) {
-        if (connectionChartRoot) {
-            connectionChartRoot.dispose();
-            connectionChartRoot = null;
-        }
         els.connectionTimeline.innerHTML = "";
         return;
     }
 
-    if (connectionChartRoot) {
-        connectionChartRoot.dispose();
-    }
-
-    connectionChartRoot = am5.Root.new(els.connectionTimeline);
-    connectionChartRoot._logo?.dispose();
-
-    connectionChartRoot.setThemes([
-        am5themes_Animated.new(connectionChartRoot),
-    ]);
-
-    const chart = connectionChartRoot.container.children.push(
-        am5xy.XYChart.new(connectionChartRoot, {
-            panX: false,
-            panY: false,
-            wheelX: "none",
-            wheelY: "none",
-            paddingTop: 8,
-            paddingBottom: 8,
-            paddingLeft: 0,
-            paddingRight: 0,
-        }),
-    );
-
-    const dateAxis = chart.xAxes.push(
-        am5xy.DateAxis.new(connectionChartRoot, {
-            baseInterval: { timeUnit: "minute", count: 1 },
-            renderer: am5xy.AxisRendererX.new(connectionChartRoot, {
-                minGridDistance: 60,
-            }),
-            tooltip: am5.Tooltip.new(connectionChartRoot, {}),
-        }),
-    );
-    dateAxis.get("renderer").grid.template.set("visible", false);
-
-    const valueAxis = chart.yAxes.push(
-        am5xy.ValueAxis.new(connectionChartRoot, {
-            renderer: am5xy.AxisRendererY.new(connectionChartRoot, {}),
-            min: -0.2,
-            max: 0.2,
-            strictMinMax: true,
-        }),
-    );
-    valueAxis.get("renderer").grid.template.set("visible", false);
-    valueAxis.get("renderer").labels.template.set("forceHidden", true);
-    valueAxis.get("renderer").set("visible", false);
-
-    const data = connectionTimelineData(events);
-    const series = chart.series.push(
-        am5xy.LineSeries.new(connectionChartRoot, {
-            name: "Ligação",
-            xAxis: dateAxis,
-            yAxis: valueAxis,
-            valueYField: "value",
-            valueXField: "date",
-            stroke: am5.color(0x6c757d),
-            strokeWidth: 2,
-            tooltip: am5.Tooltip.new(connectionChartRoot, {
-                labelText: '{label} em {valueX.formatDate("dd/MM/yyyy HH:mm")}',
-            }),
-        }),
-    );
-    series.data.setAll(data);
-
-    series.bullets.push(function (_root, _series, dataItem) {
-        const color = dataItem.dataContext?.bulletColor || "#6c757d";
-        return am5.Bullet.new(connectionChartRoot, {
-            sprite: am5.Circle.new(connectionChartRoot, {
-                radius: 5,
-                fill: am5.color(color),
-                stroke: am5.color(0xffffff),
-                strokeWidth: 1,
-            }),
-        });
-    });
-
-    dateAxis.start = 0;
-    dateAxis.end = 1;
-
-    chart.set(
-        "cursor",
-        am5xy.XYCursor.new(connectionChartRoot, {
-            behavior: "none",
-            xAxis: dateAxis,
-        }),
-    );
+    els.connectionTimeline.innerHTML = connectionTimelineHtml(events);
 }
 
-function connectionTimelineData(events) {
-    return events
-        .map((event) => {
-            const isConnected = event.type === "device.connected";
-            return {
-                date: eventTime(event),
-                value: 0,
-                label: isConnected ? "Ligado" : "Desligado",
-                bulletColor: isConnected ? "#198754" : "#dc3545",
-            };
-        })
-        .filter((point) => point.date > 0);
+/**
+ * A série de ligações: uma linha do tempo com um ponto por evento, verde a ligar e vermelho
+ * a desligar, e as duas pontas datadas por baixo.
+ *
+ * Era um gráfico de biblioteca com o eixo vertical escondido, o zoom desligado e um valor
+ * fixo em y -- ou seja, um gráfico de pontos sobre um eixo de tempo. As cores saem das
+ * variáveis do tema, para acompanhar o modo claro e o escuro.
+ */
+function connectionTimelineHtml(events) {
+    const points = events
+        .map((event) => ({
+            time: eventTime(event),
+            at: event.occurredAt || event.recordedAt || "",
+            connected: event.type === "device.connected",
+        }))
+        .filter((point) => point.time > 0);
+    if (points.length < 2) {
+        return "";
+    }
+
+    const first = points[0].time;
+    // Nunca zero: dois eventos no mesmo milissegundo dividiriam por zero.
+    const span = Math.max(1, points[points.length - 1].time - first);
+
+    return `
+        <div class="connection-timeline">
+            <div class="connection-timeline-track"></div>
+            ${points
+                .map((point) => {
+                    const label = point.connected ? "Ligado" : "Desligado";
+                    return `<span class="connection-timeline-dot${point.connected ? "" : " off"}"
+                        style="left:${((point.time - first) / span) * 100}%"
+                        title="${esc(`${label} em ${when(point.at)}`)}"></span>`;
+                })
+                .join("")}
+        </div>
+        <div class="connection-timeline-scale">
+            <span>${esc(when(points[0].at))}</span>
+            <span>${esc(when(points[points.length - 1].at))}</span>
+        </div>`;
 }
 
 function expectedReplies(command) {

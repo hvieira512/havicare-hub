@@ -30,6 +30,58 @@ export function deviceLicenseHtml(device, valueClass = "") {
     return `<span${attribute}>${esc(company)}<span class="license-separator">·</span><span class="license-number">${esc(licenseId)}</span></span>`;
 }
 
+/**
+ * Uma etiqueta com o seu controlo, que é o bloco de que os formulários de configuração são
+ * feitos. O controlo entra como HTML já pronto -- é a regra da casa --, e a etiqueta e a
+ * ajuda entram como texto, que sai escapado.
+ *
+ * `cls` são as classes da coluna: os sítios que usam isto trazem vinte e sete valores
+ * diferentes, e isso é dado, não uma variante.
+ */
+export function field(label, control, {help = "", cls = "", required = false} = {}) {
+    return `
+        <div${cls ? ` class="${esc(cls)}"` : ""}>
+            <label class="form-label-sm${required ? " required" : ""}">${esc(label)}</label>
+            ${control}
+            ${help ? `<div class="form-text">${esc(help)}</div>` : ""}
+        </div>`;
+}
+
+/**
+ * Uma tira de pastilhas de secção, cada uma com a sua contagem. É o mesmo controlo nos dois
+ * separadores do modal de definições -- num salta-se para a secção, no outro rola-se até ela
+ * --, e estava desenhado de duas maneiras a dois separadores de distância.
+ *
+ * A pastilha acesa vem do estado e não de uma classe escrita no DOM: a tira é redesenhada, e
+ * um realce escrito à mão não sobrevive a isso.
+ */
+export function sectionStrip(sections, action, activeKey = "") {
+    return sections
+        .map(({key, label, count, icon = ""}) => `
+        <button type="button" class="capability-section-chip${key === activeKey ? " selected" : ""}"
+            data-action="${esc(action)}" data-section="${esc(key)}">
+            ${icon ? `<i class="fa-solid ${esc(icon)}"></i>` : ""}${esc(label)}<span class="count count-number" data-section-count>${esc(count)}</span>
+        </button>`)
+        .join("");
+}
+
+/**
+ * A pastilha de estado: o ponto e a etiqueta. `tone` é a classe do tom
+ * (`config-state-success`, `config-state-danger`, …) e vazio deixa-a no tom neutro.
+ */
+export function stateBadge(label, tone = "", extraClass = "") {
+    const classes = ["config-state", tone, extraClass].filter(Boolean).join(" ");
+    return `<span class="${classes}"><span class="config-state-dot"></span>${esc(label)}</span>`;
+}
+
+/** Ligado ou desligado: a mesma expressão em três ecrãs, com um parâmetro só. */
+export function onlineBadge(online) {
+    return stateBadge(
+        online ? "Ligado" : "Desligado",
+        online ? "config-state-success" : "config-state-secondary",
+    );
+}
+
 export function modelImageHtml(modelInfo, size = 40) {
     const label =
         modelInfo?.commercial_name ||
@@ -137,7 +189,7 @@ export function renderDeviceTypeTiles(
             ${multiple ? '<span class="device-type-tile-check"><i class="fa-solid fa-check"></i></span>' : ""}
             <span class="device-type-tile-icon"><i class="fa-solid ${esc(deviceTypeIcon(value))}"></i></span>
             <span class="device-type-tile-name">${esc(deviceTypeLabel(value))}</span>
-            ${counts ? `<span class="device-type-tile-count">${count === 0 ? "nenhum" : count}</span>` : ""}
+            ${counts ? `<span class="count-number">${count === 0 ? "nenhum" : count}</span>` : ""}
             </button>`;
         })
         .join("");

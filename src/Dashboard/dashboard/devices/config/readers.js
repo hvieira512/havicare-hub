@@ -297,7 +297,7 @@ export function readFourPTouchAlarms(section) {
 export function jsonInput(desired) {
     return `
         <div>
-            <label class="form-label form-label-sm">JSON</label>
+            <label class="form-label-sm">JSON</label>
             <textarea class="form-control font-monospace" rows="4" data-config-field="json">${esc(JSON.stringify(desired, null, 2))}</textarea>
         </div>`;
 }

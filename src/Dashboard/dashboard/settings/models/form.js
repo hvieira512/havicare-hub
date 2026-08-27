@@ -1,7 +1,7 @@
 import {
-    getModelTemplate as apiGetModelTemplate,
     saveModel as apiSaveModel,
 } from "../../api/index.js";
+import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
 import {renderButtonGroup, renderDeviceTypeTiles} from "../../widgets.js";
@@ -193,10 +193,7 @@ async function refreshNewModelCapabilityTemplate() {
             "A carregar template de capacidades do fornecedor.";
     }
 
-    const response = await apiGetModelTemplate({
-        supplierId,
-        deviceType,
-    });
+    const response = await ensureModelTemplate(supplierId, deviceType);
     if (response.error) {
         state.modelModal.templateSummary =
             response.error.message ||
@@ -260,6 +257,11 @@ async function saveModel() {
         return;
     }
 
+    // Um modelo novo entra na árvore e pode trazer um par fornecedor×tipo que ainda não
+    // existia: as três listas em memória deixam de valer.
+    state.settingsModal.sectionLoaded.models = false;
+    state.settingsModal.sectionLoaded.modelFilters = false;
+    state.deviceTypeSuppliersModels = [];
     backToModelList();
 }
 

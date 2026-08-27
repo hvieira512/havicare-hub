@@ -2,7 +2,11 @@ import {
     requestCapability as apiRequestCapability,
     saveConfiguration as apiSaveConfiguration,
 } from "../../api/index.js";
-import {readConfigPayload, renderDeviceConfigurationRoot} from "./index.js";
+import {
+    patchConfigurationDeliveryStates,
+    readConfigPayload,
+    renderDeviceConfigurationRoot,
+} from "./index.js";
 import {emptyPanel} from "../../widgets.js";
 import {resetPhoneControls} from "../../phone.js";
 import {state} from "../../state.js";
@@ -156,10 +160,16 @@ export function syncDeviceModalCommandStates(imei, commands) {
 
     if (
         changed
+        && els?.deviceConfigRoot
         && state.deviceModal.activeTab === "config"
         && document.getElementById("deviceModal")?.classList.contains("show")
     ) {
-        renderDeviceConfigurationModal();
+        // Só o estado de entrega mudou: acerta-se a pastilha de cada bloco no sítio, para não
+        // se deitar fora o que estiver a ser escrito nos outros.
+        patchConfigurationDeliveryStates(
+            els.deviceConfigRoot,
+            state.deviceModal.configurationSync,
+        );
     }
 }
 
@@ -258,14 +268,7 @@ export function renderDeviceConfigurationModal() {
         return;
     }
 
-    if (state.deviceModal.loading) {
-        els.deviceConfigRoot.innerHTML = emptyPanel(
-            "A carregar configurações...",
-        );
-        return;
-    }
-
-    if (state.deviceModal.catalogLoading) {
+    if (state.deviceModal.loading || state.deviceModal.catalogLoading) {
         els.deviceConfigRoot.innerHTML = emptyPanel(
             "A carregar configurações...",
         );

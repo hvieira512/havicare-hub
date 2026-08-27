@@ -1,4 +1,5 @@
 import {esc, fieldLabel} from "../../format.js";
+import {field} from "../../widgets.js";
 import {renderPhoneControl} from "../../phone.js";
 import {protocolPhonebookConstraints} from "./protocol-catalog.js";
 import {formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind} from "./alarm-fields.js";
@@ -37,7 +38,7 @@ const languageTimezonePresetOptions = [
 export function makeCallInput(entry, desired) {
     return `
         <div>
-            <label class="form-label form-label-sm">Número de telefone</label>
+            <label class="form-label-sm">Número de telefone</label>
             <div class="d-flex gap-2">
                 <div class="flex-grow-1">
                     ${renderPhoneControl({
@@ -54,7 +55,7 @@ export function makeCallInput(entry, desired) {
 export function resetActionInput(_entry, _desired) {
     return `
         <div>
-            <div class="alert alert-warning mb-3 py-2 px-3 small">
+            <div class="alert alert-warning alert-compact mb-3">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i>
                 Esta ação é enviada imediatamente para o dispositivo e não pode ser desfeita.
             </div>
@@ -64,7 +65,7 @@ export function resetActionInput(_entry, _desired) {
 export function requestActionInput(entry) {
     return `
         <div>
-            <div class="alert alert-info mb-3 py-2 px-3 small">
+            <div class="alert alert-info alert-compact mb-3">
                 <i class="fa-solid fa-circle-info me-2"></i>
                 ${esc(entry.label || "Ação")} é enviada sem parâmetros adicionais.
             </div>
@@ -167,7 +168,7 @@ export function fallSensitivityInput(desired) {
 
     return `
         <div>
-            <label class="form-label form-label-sm">Sensibilidade</label>
+            <label class="form-label-sm">Sensibilidade</label>
             <input type="hidden" data-config-field="sensitivity" value="${esc(String(current))}">
             <div class="btn-group w-100" role="group" aria-label="Sensibilidade de queda" data-config-choice-group="sensitivity">
                 ${options
@@ -231,13 +232,13 @@ export function diaperSensitivityInput(desired, meta = {}) {
             ${buttons === "" ? "" : `<div class="btn-group w-100 mb-2" role="group" aria-label="Sensibilidade dos alertas" data-config-choice-group="diaperSensitivity">${buttons}</div>`}
             <div class="row g-2">
                 <div class="col">
-                    <label class="form-label form-label-sm mb-1" for="diaperPollutionRange">Canais afetados</label>
+                    <label class="form-label-sm mb-1" for="diaperPollutionRange">Canais afetados</label>
                     <input type="number" class="form-control" id="diaperPollutionRange" data-config-field="pollutionRange"
                         min="${esc(String(rangeMin))}" max="${esc(String(rangeMax))}" step="1" value="${esc(String(range))}">
                     <div class="form-text">Quantos canais molhados obrigam a uma muda.</div>
                 </div>
                 <div class="col">
-                    <label class="form-label form-label-sm mb-1" for="diaperPollutionValue">Limiar por canal</label>
+                    <label class="form-label-sm mb-1" for="diaperPollutionValue">Limiar por canal</label>
                     <input type="number" class="form-control" id="diaperPollutionValue" data-config-field="pollutionValue"
                         min="${esc(String(valueMin))}" max="${esc(String(valueMax))}" step="1" value="${esc(String(value))}">
                     <div class="form-text">A partir de quanto um canal conta como molhado.</div>
@@ -248,81 +249,80 @@ export function diaperSensitivityInput(desired, meta = {}) {
 }
 
 export function numberInput(entry, desired) {
-    const field = entry.fields?.[0] || "value";
+    const key = entry.fields?.[0] || "value";
     const isWonlexMeasurementInterval =
-        entry.command === "deviceMeasuringFrequency" && field === "interval";
-    const value = desired[field] ?? (isWonlexMeasurementInterval ? 60 : 0);
-    return `
-        <div>
-            <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
-            <input class="form-control" type="number" min="0" step="1" data-config-field="${esc(field)}" value="${esc(String(value))}">
-            ${isWonlexMeasurementInterval ? '<div class="form-text">Periodicidade de envio desta medição, em minutos. Use 0 para desativar.</div>' : ""}
-        </div>`;
+        entry.command === "deviceMeasuringFrequency" && key === "interval";
+    const value = desired[key] ?? (isWonlexMeasurementInterval ? 60 : 0);
+    return field(
+        fieldLabel(key),
+        `<input class="form-control" type="number" min="0" step="1" data-config-field="${esc(key)}" value="${esc(String(value))}">`,
+        {
+            help: isWonlexMeasurementInterval
+                ? "Periodicidade de envio desta medição, em minutos. Use 0 para desativar."
+                : "",
+        },
+    );
 }
 
 export function phoneInput(entry, desired) {
-    const field = entry.fields?.[0] || "phone";
-    return `
-        <div>
-            <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
-            ${renderPhoneControl({
-                value: String(desired[field] || ""),
-                configField: field,
-                placeholder: entry.label || fieldLabel(field),
-            })}
-        </div>`;
+    const key = entry.fields?.[0] || "phone";
+    return field(
+        fieldLabel(key),
+        renderPhoneControl({
+            value: String(desired[key] || ""),
+            configField: key,
+            placeholder: entry.label || fieldLabel(key),
+        }),
+    );
 }
 
 export function textInput(entry, desired) {
-    const field = entry.fields?.[0] || "value";
-    const value = desired[field] ?? "";
-    return `
-        <div>
-            <label class="form-label form-label-sm">${esc(fieldLabel(field))}</label>
-            <input class="form-control" type="text" data-config-field="${esc(field)}" value="${esc(String(value))}">
-        </div>`;
+    const key = entry.fields?.[0] || "value";
+    return field(
+        fieldLabel(key),
+        `<input class="form-control" type="text" data-config-field="${esc(key)}" value="${esc(String(desired[key] ?? ""))}">`,
+    );
 }
 
 export function pushMessageInput(_entry, desired) {
-    return `
-        <div>
-            <label class="form-label form-label-sm">Mensagem</label>
-            <input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">
-            <div class="form-text">Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada.</div>
-        </div>`;
+    return field(
+        "Mensagem",
+        `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">`,
+        {help: "Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada."},
+    );
 }
 
 export function intervalToggleInput(entry, desired) {
-    const enabled = boolValue(desired.enabled, true);
     return `
         <div class="row g-3">
-            <div class="col-md-4">
-                <div class="form-check form-switch mt-4">
-                    <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
-                    <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <label class="form-label form-label-sm">Intervalo (minutos)</label>
-                <input class="form-control" type="number" min="0" step="1" data-config-field="intervalMinutes" value="${esc(String(desired.intervalMinutes ?? 60))}">
-            </div>
+            <div class="col-md-4">${enabledSwitch(desired)}</div>
+            ${field(
+                "Intervalo (minutos)",
+                `<input class="form-control" type="number" min="0" step="1" data-config-field="intervalMinutes" value="${esc(String(desired.intervalMinutes ?? 60))}">`,
+                {cls: "col-md-8"},
+            )}
         </div>`;
 }
 
 export function intervalHoursToggleInput(desired) {
-    const enabled = boolValue(desired.enabled, true);
     return `
         <div class="row g-3">
-            <div class="col-md-4">
-                <div class="form-check form-switch mt-4">
-                    <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
-                    <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <label class="form-label form-label-sm">Intervalo (horas)</label>
-                <input class="form-control" type="number" min="1" max="12" step="1" data-config-field="intervalHours" value="${esc(String(desired.intervalHours ?? 2))}">
-            </div>
+            <div class="col-md-4">${enabledSwitch(desired)}</div>
+            ${field(
+                "Intervalo (horas)",
+                `<input class="form-control" type="number" min="1" max="12" step="1" data-config-field="intervalHours" value="${esc(String(desired.intervalHours ?? 2))}">`,
+                {cls: "col-md-8"},
+            )}
+        </div>`;
+}
+
+/** O interruptor de ligado ao lado de um campo com etiqueta, alinhado por baixo com ele. */
+function enabledSwitch(desired) {
+    const enabled = boolValue(desired.enabled, true);
+    return `
+        <div class="form-check form-switch form-switch-aligned">
+            <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
+            <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
         </div>`;
 }
 
@@ -366,7 +366,7 @@ export function workingModeInput(desired) {
     return `
         <div class="vstack gap-3" data-working-mode-root>
             <div>
-                <label class="form-label form-label-sm">Modo</label>
+                <label class="form-label-sm">Modo</label>
                 <div class="row g-2" data-working-mode-select>
                     ${options
                         .map(
@@ -395,12 +395,13 @@ export function workingModeInput(desired) {
             </div>
             <div class="${mode === 8 ? "" : "d-none"}" data-working-mode-extra>
                 <div class="row g-3">
+                    ${field(
+                        "Intervalo de envio (segundos)",
+                        `<input class="form-control" type="number" min="30" step="1" data-config-field="intervalSeconds" value="${esc(String(intervalSeconds))}">`,
+                        {cls: "col-md-6"},
+                    )}
                     <div class="col-md-6">
-                        <label class="form-label form-label-sm">Intervalo de envio (segundos)</label>
-                        <input class="form-control" type="number" min="30" step="1" data-config-field="intervalSeconds" value="${esc(String(intervalSeconds))}">
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-check form-switch mt-4">
+                        <div class="form-check form-switch form-switch-aligned">
                             <input class="form-check-input" type="checkbox" role="switch" data-config-field="gpsEnabled" ${gpsEnabled ? "checked" : ""}>
                             <label class="form-check-label">GPS ativo</label>
                         </div>
@@ -413,14 +414,16 @@ export function workingModeInput(desired) {
 export function bloodPressureInput(desired) {
     return `
         <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label form-label-sm">Sistólica</label>
-                <input class="form-control" type="number" min="0" step="1" data-config-field="systolic" value="${esc(String(desired.systolic ?? 120))}">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label form-label-sm">Diastólica</label>
-                <input class="form-control" type="number" min="0" step="1" data-config-field="diastolic" value="${esc(String(desired.diastolic ?? 80))}">
-            </div>
+            ${field(
+                "Sistólica",
+                `<input class="form-control" type="number" min="0" step="1" data-config-field="systolic" value="${esc(String(desired.systolic ?? 120))}">`,
+                {cls: "col-md-6"},
+            )}
+            ${field(
+                "Diastólica",
+                `<input class="form-control" type="number" min="0" step="1" data-config-field="diastolic" value="${esc(String(desired.diastolic ?? 80))}">`,
+                {cls: "col-md-6"},
+            )}
         </div>`;
 }
 
@@ -433,14 +436,16 @@ export function wonlexBloodPressureWarningInput(desired) {
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
             <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label form-label-sm">Sistólica máxima</label>
-                    <input class="form-control" type="number" min="0" step="1" data-config-field="hpWarn" value="${esc(String(desired.hpWarn ?? 135))}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label form-label-sm">Diastólica máxima</label>
-                    <input class="form-control" type="number" min="0" step="1" data-config-field="LPWarn" value="${esc(String(desired.LPWarn ?? 90))}">
-                </div>
+                ${field(
+                    "Sistólica máxima",
+                    `<input class="form-control" type="number" min="0" step="1" data-config-field="hpWarn" value="${esc(String(desired.hpWarn ?? 135))}">`,
+                    {cls: "col-md-6"},
+                )}
+                ${field(
+                    "Diastólica máxima",
+                    `<input class="form-control" type="number" min="0" step="1" data-config-field="LPWarn" value="${esc(String(desired.LPWarn ?? 90))}">`,
+                    {cls: "col-md-6"},
+                )}
             </div>
         </div>`;
 }
@@ -454,7 +459,7 @@ export function languageTimezoneInput(desired) {
 
     return `
         <div class="vstack gap-2">
-            <label class="form-label form-label-sm">Idioma e fuso horário</label>
+            <label class="form-label-sm">Idioma e fuso horário</label>
             <select class="form-select" data-config-field="preset">
                 ${languageTimezonePresetOptions
                     .map(
@@ -511,7 +516,7 @@ export function fallSensitivityLevelsInput(desired) {
     return `
         <div class="row g-3">
             <div class="col-12 col-md-9">
-                <label class="form-label form-label-sm">Nível de sensibilidade</label>
+                <label class="form-label-sm">Nível de sensibilidade</label>
                 <input type="hidden" data-config-field="sensitivity" value="${esc(String(sensitivityLevel))}">
                 <div class="d-flex flex-wrap gap-1 w-100 sens-level-group" role="group" aria-label="Nível de sensibilidade" data-config-choice-group="sensitivity">
                     ${levels
@@ -541,7 +546,7 @@ export function fallSensitivityLevelsInput(desired) {
                 </div>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label form-label-sm">Escala do firmware</label>
+                <label class="form-label-sm">Escala do firmware</label>
                 <select class="form-select" data-config-field="levels" data-action="fallTotalLevels" required>
                     <option value="" ${totalLevels === null ? "selected" : ""} disabled>Selecione…</option>
                     <option value="6" ${totalLevels === 6 ? "selected" : ""}>6 níveis</option>
@@ -566,7 +571,7 @@ export function timeRangesInput(entry, desired) {
                 .map(
                     (value, index) => `
                 <div>
-                    <label class="form-label form-label-sm">Intervalo ${index + 1}</label>
+                    <label class="form-label-sm">Intervalo ${index + 1}</label>
                     <input class="form-control" type="text" data-config-field="ranges" value="${esc(String(value))}" placeholder="08:10-09:30">
                 </div>
             `,
@@ -576,11 +581,10 @@ export function timeRangesInput(entry, desired) {
 }
 
 export function timeRangeInput(desired) {
-    return `
-        <div>
-            <label class="form-label form-label-sm">Intervalo</label>
-            <input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30">
-        </div>`;
+    return field(
+        "Intervalo",
+        `<input class="form-control" type="text" data-config-field="range" value="${esc(String(desired.range ?? "21:10-07:30"))}" placeholder="21:10-07:30">`,
+    );
 }
 
 export function wonlexSleepSettingsInput(desired) {
@@ -592,18 +596,21 @@ export function wonlexSleepSettingsInput(desired) {
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Início (HHmmss)</label>
-                    <input class="form-control" type="text" data-config-field="sleepStartTime" value="${esc(String(desired.sleepStartTime ?? "220000"))}" placeholder="220000">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Fim (HHmmss)</label>
-                    <input class="form-control" type="text" data-config-field="sleepEndTime" value="${esc(String(desired.sleepEndTime ?? "100000"))}" placeholder="100000">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Meta (minutos)</label>
-                    <input class="form-control" type="number" min="0" step="1" data-config-field="sleepTarget" value="${esc(String(desired.sleepTarget ?? 480))}">
-                </div>
+                ${field(
+                    "Início (HHmmss)",
+                    `<input class="form-control" type="text" data-config-field="sleepStartTime" value="${esc(String(desired.sleepStartTime ?? "220000"))}" placeholder="220000">`,
+                    {cls: "col-md-4"},
+                )}
+                ${field(
+                    "Fim (HHmmss)",
+                    `<input class="form-control" type="text" data-config-field="sleepEndTime" value="${esc(String(desired.sleepEndTime ?? "100000"))}" placeholder="100000">`,
+                    {cls: "col-md-4"},
+                )}
+                ${field(
+                    "Meta (minutos)",
+                    `<input class="form-control" type="number" min="0" step="1" data-config-field="sleepTarget" value="${esc(String(desired.sleepTarget ?? 480))}">`,
+                    {cls: "col-md-4"},
+                )}
             </div>
         </div>`;
 }
@@ -624,10 +631,10 @@ export function wonlexReminderThresholdInput(entry, desired) {
                 <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
-            <div>
-                <label class="form-label form-label-sm">${esc(fieldLabel(valueField))}</label>
-                <input class="form-control" type="number" min="0" step="1" data-config-field="${esc(valueField)}" value="${esc(String(value))}">
-            </div>
+            ${field(
+                fieldLabel(valueField),
+                `<input class="form-control" type="number" min="0" step="1" data-config-field="${esc(valueField)}" value="${esc(String(value))}">`,
+            )}
         </div>`;
 }
 
@@ -644,35 +651,39 @@ export function wonlexHeartRateRangeInput(desired) {
                 <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
             </div>
             <div class="row g-3">
+                ${field(
+                    "Limite principal",
+                    `<input class="form-control" type="number" min="0" step="1" data-config-field="remindValue" value="${esc(String(desired.remindValue ?? 120))}">`,
+                    {cls: "col-md-6"},
+                )}
                 <div class="col-md-6">
-                    <label class="form-label form-label-sm">Limite principal</label>
-                    <input class="form-control" type="number" min="0" step="1" data-config-field="remindValue" value="${esc(String(desired.remindValue ?? 120))}">
-                </div>
-                <div class="col-md-6">
-                    <div class="form-check form-switch mt-4">
+                    <div class="form-check form-switch form-switch-aligned">
                         <input class="form-check-input" type="checkbox" role="switch" data-config-field="exerciseEnabled" ${exerciseEnabled ? "checked" : ""}>
                         <label class="form-check-label">Usar limites de exercício</label>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Mínimo exercício</label>
-                    <input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMin" value="${esc(String(desired.exerciseHRMin ?? 100))}">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Máximo exercício</label>
-                    <input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMax" value="${esc(String(desired.exerciseHRMax ?? 140))}">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Alerta em exercício</label>
-                    <input class="form-control" type="number" min="0" step="1" data-config-field="exerciseRemindValue" value="${esc(String(desired.exerciseRemindValue ?? 140))}">
-                </div>
+                ${field(
+                    "Mínimo exercício",
+                    `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMin" value="${esc(String(desired.exerciseHRMin ?? 100))}">`,
+                    {cls: "col-md-4"},
+                )}
+                ${field(
+                    "Máximo exercício",
+                    `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMax" value="${esc(String(desired.exerciseHRMax ?? 140))}">`,
+                    {cls: "col-md-4"},
+                )}
+                ${field(
+                    "Alerta em exercício",
+                    `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseRemindValue" value="${esc(String(desired.exerciseRemindValue ?? 140))}">`,
+                    {cls: "col-md-4"},
+                )}
             </div>
         </div>`;
 }
 
-export function listInput(entry, desired, field, label) {
+export function listInput(entry, desired, key, label) {
     const limit = Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3);
-    const values = Array.isArray(desired[field]) ? desired[field] : [];
+    const values = Array.isArray(desired[key]) ? desired[key] : [];
     const rows = Array.from(
         { length: limit },
         (_, index) => values[index] ?? "",
@@ -680,7 +691,7 @@ export function listInput(entry, desired, field, label) {
     return `
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label form-label-sm mb-0">${esc(label)}</label>
+                <label class="form-label-sm mb-0">${esc(label)}</label>
                 <span class="small text-secondary">${limit} itens</span>
             </div>
             <div class="vstack gap-2">
@@ -689,7 +700,7 @@ export function listInput(entry, desired, field, label) {
                         (value, index) => `
                     ${renderPhoneControl({
                         value,
-                        configField: field,
+                        configField: key,
                         placeholder: `${label} ${index + 1}`,
                     })}
                 `,
@@ -714,7 +725,7 @@ export function sosContactsInput(entry, desired, meta = {}) {
 
         return `
             <div>
-                <div class="form-label form-label-sm">Selecionar da lista telefónica</div>
+                <div class="form-label-sm">Selecionar da lista telefónica</div>
                 <div class="vstack gap-2">
                     ${contacts.map((contact, index) => {
                         const phone = String(contact.phone || "");
@@ -745,8 +756,6 @@ export function sosContactsInput(entry, desired, meta = {}) {
         kind: "sos_contacts",
         limit: Math.max(1, parseInt(String(entry.limit ?? 3), 10) || 3),
         label: "Contactos SOS",
-        addAction: "addSosContactRow",
-        removeAction: "removeSosContactRow",
         emptyLabel: "Adicionar contacto SOS",
         placeholderPrefix: "SOS",
         helpText: "Até 3 números. A ordem define a posição nos comandos SOS do dispositivo.",
@@ -763,8 +772,6 @@ export function callWhitelistInput(entry, desired, meta = {}) {
         kind: "call_whitelist",
         limit: Math.max(1, parseInt(String(entry.limit ?? 10), 10) || 10),
         label: "Lista branca",
-        addAction: "addWhitelistRow",
-        removeAction: "removeWhitelistRow",
         emptyLabel: "Adicionar número",
         placeholderPrefix: "Número",
         helpText: "Até 10 números permitidos.",
@@ -793,11 +800,11 @@ export function contactsInput(entry, desired, meta = {}) {
     return `
         <div>
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label form-label-sm mb-0">Contactos</label>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addContactRow">Adicionar</button>
+                <label class="form-label-sm mb-0">Contactos</label>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="contacts">Adicionar</button>
             </div>
             <div class="small text-secondary mb-2">${limit} contactos máximos</div>
-            <div class="vstack gap-2" data-repeat-limit="${limit}"${isPhonebookLike && nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${isPhonebookLike && phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
+            <div class="vstack gap-2" data-repeat-list="contacts" data-repeat-limit="${limit}"${isPhonebookLike && nameMaxLengthValue > 0 ? ` data-phonebook-name-max-length="${esc(String(nameMaxLengthValue))}"` : ""}${isPhonebookLike && phoneMaxLengthValue > 0 ? ` data-phonebook-phone-max-length="${esc(String(phoneMaxLengthValue))}"` : ""}>
                 ${rows
                     .map(
                         (contact, index) => `
@@ -815,7 +822,7 @@ export function contactsInput(entry, desired, meta = {}) {
                                         maxLength: phoneMaxLengthValue,
                                     })}
                                 </div>
-                                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow">-</button>
                             </div>
                         </div>
                     </div>
@@ -835,8 +842,6 @@ function phoneRepeaterInput(entry, desired, options) {
             : [];
     const rows = values.length ? values.slice(0, limit) : [""];
     const kind = String(options.kind || "numbers");
-    const addAction = String(options.addAction || "addPhoneRow");
-    const removeAction = String(options.removeAction || "removePhoneRow");
     const label = String(options.label || entry.label || "Lista");
     const helpText = String(options.helpText || "");
     const emptyLabel = String(options.emptyLabel || "Adicionar");
@@ -846,11 +851,11 @@ function phoneRepeaterInput(entry, desired, options) {
     return `
         <div class="vstack gap-3">
             <div class="d-flex justify-content-between align-items-center gap-2">
-                <label class="form-label form-label-sm mb-0">${esc(label)}</label>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(addAction)}">${esc(emptyLabel)}</button>
+                <label class="form-label-sm mb-0">${esc(label)}</label>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="${esc(kind)}">${esc(emptyLabel)}</button>
             </div>
             ${helpText !== "" ? `<div class="small text-secondary">${esc(helpText)}</div>` : ""}
-            <div class="vstack gap-2" data-repeat-limit="${limit}" data-repeat-kind="${esc(kind)}">
+            <div class="vstack gap-2" data-repeat-list="${esc(kind)}" data-repeat-limit="${limit}">
                 ${rows
                     .map(
                         (value, index) => `
@@ -864,7 +869,7 @@ function phoneRepeaterInput(entry, desired, options) {
                             })}
                         </div>
                         <div class="col-auto">
-                            <button type="button" class="btn btn-outline-danger btn-sm" data-action="${esc(removeAction)}">-</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow">-</button>
                         </div>
                     </div>
                 `,
@@ -900,9 +905,9 @@ export function alarmClockInput(desired, meta = {}) {
         <div class="vstack gap-3">
             <div class="small text-secondary">Até ${esc(String(limit))} alarmes. A recorrência personalizada usa dias de Segunda a Domingo.</div>
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addAlarmClockRow">Adicionar item</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="alarm_clock">Adicionar item</button>
             </div>
-            <div class="vstack gap-2" data-alarm-clock-list>
+            <div class="vstack gap-2" data-repeat-list="alarm_clock">
                 ${items.slice(0, limit).map((item) => alarmClockRow(item, typeOptions, recurrenceOptions, wonlexFields)).join("")}
             </div>
         </div>`;
@@ -920,16 +925,18 @@ export function alarmsInput(desired, meta = {}) {
         });
     }
 
+    const rows = alarms.slice(0, limit);
+
     return `
         <div class="vstack gap-3">
             <div class="small text-secondary">
                 Até ${esc(String(limit))} alarmes. A recorrência personalizada usa uma máscara de 7 dias, de Segunda a Domingo.
             </div>
-            <div class="vstack gap-2">
-                ${alarms
-                    .slice(0, limit)
-                    .map((alarm, index) => fourPTouchAlarmRow(alarm, index))
-                    .join("")}
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="fourPTouchAlarm" ${rows.length >= limit ? "disabled" : ""}>Adicionar item</button>
+            </div>
+            <div class="vstack gap-2" data-repeat-list="fourPTouchAlarm" data-repeat-limit="${esc(String(limit))}">
+                ${rows.map((alarm, index) => fourPTouchAlarmRow(alarm, index)).join("")}
             </div>
         </div>`;
 }
@@ -947,11 +954,11 @@ export function wonlexMedicationPlansInput(desired) {
             </div>
             <div class="small"><span class="text-danger" aria-hidden="true">*</span> Campo obrigatório</div>
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addWonlexMedicationPlan">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="addRepeatRow" data-repeat-kind="wonlexMedicationPlan">
                     <i class="fa-solid fa-plus me-2"></i>Adicionar medicamento
                 </button>
             </div>
-            <div class="vstack gap-3" data-wonlex-medication-list>
+            <div class="vstack gap-3" data-repeat-list="wonlexMedicationPlan">
                 ${plans.map((plan, index) => wonlexMedicationPlanRow(plan, index)).join("")}
             </div>
         </div>`;
@@ -965,14 +972,14 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
         <div class="border rounded p-3 bg-body" data-repeat-row="wonlexMedicationPlan">
             <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
                 <div class="fw-semibold">Medicamento <span data-medication-plan-number>${index + 1}</span></div>
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeWonlexMedicationPlan" title="Remover medicamento" aria-label="Remover medicamento">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow" title="Remover medicamento" aria-label="Remover medicamento">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             </div>
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label form-label-sm">Tipo <span class="text-danger" aria-hidden="true">*</span></label>
-                    <select class="form-select" data-medication-field="drugType" required>
+                ${field(
+                    "Tipo",
+                    `<select class="form-select" data-medication-field="drugType" required>
                         ${[
                             [0, "Hipertensão"],
                             [1, "Diabetes"],
@@ -981,19 +988,22 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                         ].map(([value, label]) => `
                             <option value="${value}" ${normalized.drugType === value ? "selected" : ""}>${esc(label)}</option>
                         `).join("")}
-                    </select>
-                </div>
-                <div class="col-md-8">
-                    <label class="form-label form-label-sm">Nome do medicamento <span class="text-danger" aria-hidden="true">*</span></label>
-                    <input class="form-control" type="text" data-medication-field="drugName" value="${esc(normalized.drugName)}" placeholder="Ex.: Losartan" required>
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <label class="form-label form-label-sm">Dose</label>
-                    <input class="form-control" type="number" min="0" step="0.1" data-medication-field="drugDose" value="${esc(String(normalized.drugDose))}">
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <label class="form-label form-label-sm">Unidade</label>
-                    <select class="form-select" data-medication-field="drugUnit">
+                    </select>`,
+                    {cls: "col-md-4", required: true},
+                )}
+                ${field(
+                    "Nome do medicamento",
+                    `<input class="form-control" type="text" data-medication-field="drugName" value="${esc(normalized.drugName)}" placeholder="Ex.: Losartan" required>`,
+                    {cls: "col-md-8", required: true},
+                )}
+                ${field(
+                    "Dose",
+                    `<input class="form-control" type="number" min="0" step="0.1" data-medication-field="drugDose" value="${esc(String(normalized.drugDose))}">`,
+                    {cls: "col-sm-6 col-md-3"},
+                )}
+                ${field(
+                    "Unidade",
+                    `<select class="form-select" data-medication-field="drugUnit">
                         ${[
                             ["0", "Comprimido / unidade"],
                             ["1", "Ampola"],
@@ -1004,26 +1014,30 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                         ].map(([value, label]) => `
                             <option value="${value}" ${normalized.drugUnit === value ? "selected" : ""}>${esc(label)}</option>
                         `).join("")}
-                    </select>
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <label class="form-label form-label-sm">Data inicial <span class="text-danger" aria-hidden="true">*</span></label>
-                    <input class="form-control" type="date" data-medication-field="drugStartTime" value="${esc(normalized.drugStartTime)}" required>
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <label class="form-label form-label-sm">Data final <span class="text-danger" aria-hidden="true">*</span></label>
-                    <input class="form-control" type="date" data-medication-field="drugEndTime" value="${esc(normalized.drugEndTime)}" required>
-                </div>
-                <div class="col-sm-6 col-md-4">
-                    <label class="form-label form-label-sm">Intervalo <span class="text-danger" aria-hidden="true">*</span></label>
-                    <div class="input-group">
+                    </select>`,
+                    {cls: "col-sm-6 col-md-3"},
+                )}
+                ${field(
+                    "Data inicial",
+                    `<input class="form-control" type="date" data-medication-field="drugStartTime" value="${esc(normalized.drugStartTime)}" required>`,
+                    {cls: "col-sm-6 col-md-3", required: true},
+                )}
+                ${field(
+                    "Data final",
+                    `<input class="form-control" type="date" data-medication-field="drugEndTime" value="${esc(normalized.drugEndTime)}" required>`,
+                    {cls: "col-sm-6 col-md-3", required: true},
+                )}
+                ${field(
+                    "Intervalo",
+                    `<div class="input-group">
                         <input class="form-control" type="number" min="0" step="0.5" data-medication-field="drugInterval" value="${esc(String(normalized.drugInterval))}" required>
                         <span class="input-group-text">dias</span>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-md-8">
-                    <label class="form-label form-label-sm d-block">Tomar <span class="text-danger" aria-hidden="true">*</span></label>
-                    <div class="btn-group" role="group" aria-label="Relação com a refeição">
+                    </div>`,
+                    {cls: "col-sm-6 col-md-4", required: true},
+                )}
+                ${field(
+                    "Tomar",
+                    `<div class="btn-group" role="group" aria-label="Relação com a refeição">
                         ${[
                             [0, "Antes da refeição"],
                             [1, "Depois da refeição"],
@@ -1034,11 +1048,12 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                                 <label class="btn btn-outline-secondary" for="${id}">${esc(label)}</label>
                             `;
                         }).join("")}
-                    </div>
-                </div>
+                    </div>`,
+                    {cls: "col-sm-6 col-md-8", required: true},
+                )}
             </div>
             <div class="mt-3">
-                <label class="form-label form-label-sm">Períodos e horários <span class="text-danger" aria-hidden="true">*</span></label>
+                <label class="form-label-sm required">Períodos e horários</label>
                 <div class="row g-2">
                     ${WONLEX_MEDICATION_PERIODS.map((period) => {
                         const selected = normalized.periods.includes(period.index);
@@ -1060,7 +1075,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
         </div>`;
 }
 
-function fourPTouchAlarmRow(alarm, index) {
+export function fourPTouchAlarmRow(alarm, index) {
     const mode = parseInt(String(alarm.mode ?? 1), 10) || 1;
     const customVisible = mode === 3;
     const rowId = nextUid("fourptouch-alarm");
@@ -1083,21 +1098,22 @@ function fourPTouchAlarmRow(alarm, index) {
     const customDays = normalizeFourPTouchAlarmDays(alarm.custom || "");
 
     return `
-        <div class="border rounded p-3 bg-body" data-fourptouch-alarm-row="${index}">
+        <div class="border rounded p-3 bg-body" data-repeat-row="fourPTouchAlarm" data-fourptouch-alarm-row="${index}">
             <div class="row g-3 align-items-end">
+                ${field(
+                    "Hora",
+                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}">`,
+                    {cls: "col-sm-6 col-lg-2"},
+                )}
                 <div class="col-sm-6 col-lg-2">
-                    <label class="form-label form-label-sm">Hora</label>
-                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}">
-                </div>
-                <div class="col-sm-6 col-lg-2">
-                    <div class="form-check form-switch mt-4">
+                    <div class="form-check form-switch form-switch-aligned">
                         <input class="form-check-input" type="checkbox" role="switch" data-fourptouch-field="enabled" ${boolValue(alarm.enabled, true) ? "checked" : ""}>
                         <label class="form-check-label" data-switch-label>${boolValue(alarm.enabled, true) ? "Ligado" : "Desligado"}</label>
                     </div>
                 </div>
-                <div class="col-12 col-lg-3">
-                    <label class="form-label form-label-sm">Modo</label>
-                    <select class="form-select" data-config-field="mode" data-fourptouch-field="mode">
+                ${field(
+                    "Modo",
+                    `<select class="form-select" data-config-field="mode" data-fourptouch-field="mode">
                         ${modeOptions
                             .map(
                                 (option) => `
@@ -1105,10 +1121,11 @@ function fourPTouchAlarmRow(alarm, index) {
                         `,
                             )
                             .join("")}
-                    </select>
-                </div>
+                    </select>`,
+                    {cls: "col-12 col-lg-3"},
+                )}
                 <div class="col-12 col-lg-5 ${customVisible ? "" : "d-none"}" data-fourptouch-custom-wrapper>
-                    <label class="form-label form-label-sm d-block">Dias personalizados</label>
+                    <label class="form-label-sm">Dias personalizados</label>
                     <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias personalizados">
                         ${dayButtons
                             .map(
@@ -1125,6 +1142,11 @@ function fourPTouchAlarmRow(alarm, index) {
                             )
                             .join("")}
                     </div>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow" title="Remover alarme" aria-label="Remover alarme">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
                 </div>
             </div>
         </div>`;
@@ -1165,27 +1187,27 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
         <div class="border rounded p-3 bg-body" data-repeat-row="alarm_clock">
             <div class="row g-3 align-items-end">
                 ${wonlexFields.label
-                    ? `
-                <div class="col-12 col-lg-4">
-                    <label class="form-label form-label-sm">Nome do alarme</label>
-                    <input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">
-                </div>`
+                    ? field(
+                        "Nome do alarme",
+                        `<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">`,
+                        {cls: "col-12 col-lg-4"},
+                    )
                     : ""}
+                ${field(
+                    "Hora",
+                    `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}" required>`,
+                    {cls: `col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}`, required: true},
+                )}
                 <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
-                    <label class="form-label form-label-sm">Hora <span class="text-danger">*</span></label>
-                    <input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}" required>
-                </div>
-                <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
-                    <div class="form-check form-switch mt-4">
+                    <div class="form-check form-switch form-switch-aligned">
                         <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
                         <label class="form-check-label" data-switch-label>${boolValue(item.enabled, true) ? "Ligado" : "Desligado"}</label>
                     </div>
                 </div>
                 ${hasTypeSelector
-                    ? `
-                <div class="col-12 col-lg-3">
-                    <label class="form-label form-label-sm">Tipo</label>
-                    <div class="btn-group w-100" role="group" aria-label="Tipo de alarme">
+                    ? field(
+                        "Tipo",
+                        `<div class="btn-group w-100" role="group" aria-label="Tipo de alarme">
                         ${typeOptions.map((option) => {
                             const optionValue = parseInt(String(option.value), 10) || 1;
                             const inputId = `${rowId}-type-${optionValue}`;
@@ -1201,12 +1223,13 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             <label class="btn btn-outline-primary btn-sm" for="${inputId}">${esc(String(option.label || option.value))}</label>
                         `;
                         }).join("")}
-                    </div>
-                </div>`
+                    </div>`,
+                        {cls: "col-12 col-lg-3"},
+                    )
                     : ""}
-                <div class="col-12 col-lg-${hasTypeSelector ? "3" : "4"}">
-                    <label class="form-label form-label-sm">Recorrência <span class="text-danger">*</span></label>
-                    <div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
+                ${field(
+                    "Recorrência",
+                    `<div class="btn-group w-100" role="group" aria-label="Recorrência do alarme">
                         ${recurrenceButtonOptions
                             .map((option) => {
                                 const optionValue = normalizeAlarmClockRecurrenceKind(option.value);
@@ -1224,10 +1247,11 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                         `;
                             })
                             .join("")}
-                    </div>
-                </div>
+                    </div>`,
+                    {cls: `col-12 col-lg-${hasTypeSelector ? "3" : "4"}`, required: true},
+                )}
                 <div class="col-12 col-lg-3 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
-                    <label class="form-label form-label-sm d-block">Dias personalizados <span class="text-danger">*</span></label>
+                    <label class="form-label-sm required">Dias personalizados</label>
                     <div class="d-flex flex-wrap gap-1" role="group" aria-label="Dias personalizados">
                         ${dayButtons
                             .map(
@@ -1246,17 +1270,19 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                     </div>
                 </div>
                 <div class="col-12 col-lg-1 d-flex justify-content-lg-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeAlarmClockRow" title="Remover" aria-label="Remover">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-lg-4" data-action="removeRepeatRow" title="Remover" aria-label="Remover">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
                 ${wonlexFields.url
-                    ? `
-                <div class="col-12">
-                    <label class="form-label form-label-sm">URL do áudio</label>
-                    <input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">
-                    <div class="form-text">Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.</div>
-                </div>`
+                    ? field(
+                        "URL do áudio",
+                        `<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">`,
+                        {
+                            cls: "col-12",
+                            help: "Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.",
+                        },
+                    )
                     : ""}
             </div>
         </div>`;

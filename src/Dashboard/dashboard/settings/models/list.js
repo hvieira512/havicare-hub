@@ -4,7 +4,7 @@ import {
 } from "../../api/index.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
-import {deviceTypeIcon, modelImageHtml} from "../../widgets.js";
+import {deviceTypeIcon, modelImageHtml, stateBadge} from "../../widgets.js";
 import {
     deviceTypeLabel,
     modelCommercialName,
@@ -110,7 +110,11 @@ function typeCard(group) {
             data-bs-toggle="collapse" data-bs-target="#${id}" aria-expanded="true" aria-controls="${id}">
         <i class="fa-solid ${esc(deviceTypeIcon(group.deviceType))} text-secondary" aria-hidden="true"></i>
         <span class="fw-semibold">${esc(deviceTypeLabel(group.deviceType))}</span>
-        <span class="config-state config-state-secondary ms-auto"><span class="config-state-dot"></span>${plural(models, "modelo", "modelos")} · ${plural(group.suppliers.length, "fornecedor", "fornecedores")}</span>
+        ${stateBadge(
+            `${plural(models, "modelo", "modelos")} · ${plural(group.suppliers.length, "fornecedor", "fornecedores")}`,
+            "config-state-secondary",
+            "ms-auto",
+        )}
         <i class="fa-solid fa-chevron-down catalog-caret text-secondary" aria-hidden="true"></i>
         </button>
         <div class="collapse show" id="${id}">
@@ -231,8 +235,9 @@ function handleModelsListSearchInput() {
 }
 
 /**
- * Volta ao primeiro slide, que é a lista, e recarrega-a: pô-la outra vez à vista sem a ir
- * buscar mostrava o catálogo anterior a uma gravação que acabou de mudar.
+ * Volta ao primeiro slide, que é a lista. Só a vai buscar outra vez quando alguma coisa que
+ * a árvore mostra -- nome, fornecedor, tipo, imagem -- mudou; quem a mudou di-lo baixando o
+ * `sectionLoaded.models`. Ligar capacidades não mexe em nada disso.
  */
 function backToModelList() {
     const {els} = getSettingsModelsRuntime();
@@ -260,8 +265,10 @@ function backToModelList() {
 
     state.settingsModal.currentCapabilitiesModel = null;
     state.settingsModal.capabilityModelTemplateKeys = [];
-    state.settingsModal.sectionLoaded.models = false;
-    state.settingsModal.sectionLoaded.modelFilters = false;
+    if (state.settingsModal.sectionLoaded.models) {
+        renderModelsSection();
+        return;
+    }
     void loadSettingsModelsSection();
 }
 

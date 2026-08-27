@@ -1,5 +1,5 @@
 import { esc, titleize } from "../../format.js";
-import { emptyPanel } from "../../widgets.js";
+import { emptyPanel, stateBadge } from "../../widgets.js";
 import {takePillsInput, takePillsReminderGroup} from "./four-p-touch-take-pills.js";
 import {
     defaultWonlexMedicationPlan,
@@ -664,16 +664,14 @@ function renderConfigSection(
     ].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
+        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
             <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
                 <div>
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
                     ${details.length > 0 ? `<div class="small text-secondary">${details.map((part) => esc(part)).join(" · ")}</div>` : ""}
                 </div>
                 ${showConfigurationBadge
-                    ? `<span class="config-state config-state-${esc(deliveryMeta.tone)}">
-                        <span class="config-state-dot"></span>${esc(deliveryMeta.label)}
-                       </span>`
+                    ? stateBadge(deliveryMeta.label, `config-state-${deliveryMeta.tone}`)
                     : ""}
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
@@ -715,7 +713,7 @@ function renderConfigFeedback(key, uiState) {
     const tone = uiState.feedback.tone === "danger" ? "danger" : "success";
 
     return `
-        <div class="alert alert-${tone} alert-dismissible fade show small mt-3 mb-0 py-2 px-3" role="alert" data-config-feedback-key="${esc(key)}">
+        <div class="alert alert-${tone} alert-compact alert-dismissible fade show mt-3 mb-0" role="alert" data-config-feedback-key="${esc(key)}">
             ${esc(uiState.feedback.message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
         </div>`;
@@ -831,6 +829,46 @@ function configurationDeliveryMeta(isStored, delivery) {
         || CONFIGURATION_DELIVERY_META.failed;
 }
 
+/**
+ * Acerta no sítio a pastilha de estado e o aviso de entrega de cada bloco.
+ *
+ * Uma mudança de estado de entrega chega pelo stream a qualquer momento, e redesenhar a raiz
+ * por causa dela deitava fora o número de telefone, o nome ou a hora que estivessem a meio de
+ * ser escritos noutro bloco -- precisamente enquanto se espera pelo envio de um.
+ */
+export function patchConfigurationDeliveryStates(root, configurationSync) {
+    for (const section of root.querySelectorAll("[data-config-section]")) {
+        const key = section.dataset.capabilityKey || section.dataset.configKey || "";
+        if (key === "") continue;
+
+        const delivery = resolveConfigDelivery({capabilityKey: key}, configurationSync);
+        const meta = configurationDeliveryMeta(
+            section.dataset.configStored === "1",
+            delivery,
+        );
+
+        const badge = section.querySelector(".config-state");
+        if (badge) {
+            badge.className = `config-state config-state-${meta.tone}`;
+            badge.innerHTML = `<span class="config-state-dot"></span>${esc(meta.label)}`;
+        }
+
+        const notice = section.querySelector('[role="status"]');
+        const noticeHtml = renderConfigurationDeliveryNotice(meta, delivery);
+        if (notice) {
+            if (noticeHtml === "") {
+                notice.remove();
+            } else {
+                notice.outerHTML = noticeHtml;
+            }
+        } else if (noticeHtml !== "") {
+            section
+                .querySelector("[data-config-form]")
+                ?.insertAdjacentHTML("beforebegin", noticeHtml);
+        }
+    }
+}
+
 function renderConfigurationDeliveryNotice(meta, delivery) {
     if (!meta.message) {
         return "";
@@ -839,7 +877,7 @@ function renderConfigurationDeliveryNotice(meta, delivery) {
     const error = String(delivery?.error || "");
     const errorMessage = CONFIGURATION_FAILURE_LABELS[error] || "";
     return `
-        <div class="alert alert-${esc(meta.tone)} small py-2 px-3 mt-3 mb-0" role="status">
+        <div class="alert alert-${esc(meta.tone)} alert-compact mt-3 mb-0" role="status">
             <i class="fa-solid fa-circle-info me-2"></i>${esc(meta.message)}
             ${errorMessage ? `<span class="d-block mt-1">${esc(errorMessage)}</span>` : ""}
         </div>`;

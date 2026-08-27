@@ -1,16 +1,17 @@
 import {
     getDevice as apiGetDevice,
     getDevices as apiGetDevices,
-    getLicenses as apiGetLicenses,
     getProtocols as apiGetProtocols,
 } from "../api/index.js";
 import {getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels} from "../api/models.js";
 import {ensureCapabilityCatalog} from "../capability-catalog.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {state, clearSelection, selectImei} from "../state.js";
 import {esc} from "../format.js";
 import {
     deviceLicenseHtml,
     emptyPanel,
+    onlineBadge,
     renderDeviceTypeTiles,
 } from "../widgets.js";
 import {renderPagination, resolvePaginationPage} from "../pagination.js";
@@ -155,21 +156,6 @@ async function ensureDeviceTypeSuppliersModelsLoaded(force = false) {
     return state.deviceTypeSuppliersModels;
 }
 
-async function ensureLicensesLoaded(force = false) {
-    if (
-        !force &&
-        Array.isArray(state.settingsModal.licenses) &&
-        state.settingsModal.licenses.length > 0
-    ) {
-        return state.settingsModal.licenses;
-    }
-
-    const licensesResponse = await apiGetLicenses({ limit: 500 });
-    state.settingsModal.licenses = licensesResponse.data || [];
-    return state.settingsModal.licenses;
-}
-
-
 async function ensureProtocolsLoaded(force = false) {
     if (!force && Array.isArray(state.protocols) && state.protocols.length > 0) {
         return state.protocols;
@@ -290,9 +276,7 @@ function renderDeviceCard(device) {
         <button type="button" class="device-card${selected ? " selected" : ""}${device.online ? "" : " offline"}"
             data-imei="${esc(device.imei)}" data-action="select"${selected ? ' aria-current="true"' : ""}>
         <span class="device-card-thumb">${image}</span>
-        <span class="config-state ${device.online ? "config-state-success" : "config-state-secondary"}">
-            <span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}
-        </span>
+        ${onlineBadge(device.online)}
         <span class="device-card-identity">
             <span class="min-width-0">
                 <span class="device-card-imei d-block text-truncate">${esc(device.imei)}</span>
@@ -387,7 +371,7 @@ function filterOptionMarkup({key, value, label, count, selected, partial = false
             data-filter-key="${esc(key)}" data-filter-value="${esc(value)}" aria-pressed="${selected ? "true" : "false"}">
         <span class="filter-option-box"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
         <span class="filter-option-name">${esc(label)}</span>
-        <span class="filter-option-count">${esc(count)}</span>
+        <span class="filter-option-count count-number">${esc(count)}</span>
         </button>`;
 }
 

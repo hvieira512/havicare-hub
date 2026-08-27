@@ -379,13 +379,15 @@ function bindEvents() {
     els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
     els.apiUserListBody.addEventListener("click", handleApiUserListClick);
     els.companyListBody.addEventListener("click", handleCompanyListClick);
-    els.deviceConfigRoot.addEventListener("click", handleDeviceConfigClick);
-    els.deviceConfigRoot.addEventListener("input", handleDeviceConfigInput);
-    els.deviceConfigRoot.addEventListener("change", handleDeviceConfigChange);
-    // O "Enviar" de cada bloco acende por diferença, num ouvinte na raiz para os dois
-    // eventos, depois de quem trata o campo ter feito o seu trabalho.
-    for (const type of ["input", "change", "click"]) {
+    // Um ouvinte por evento, e não dois: o "Enviar" de cada bloco acende por diferença,
+    // depois de quem trata o campo ter feito o seu trabalho.
+    for (const [type, handle] of [
+        ["click", handleDeviceConfigClick],
+        ["input", handleDeviceConfigInput],
+        ["change", handleDeviceConfigChange],
+    ]) {
         els.deviceConfigRoot.addEventListener(type, (event) => {
+            handle(event);
             const section = event.target.closest("[data-config-section]");
             if (section) syncConfigSectionDirty(section);
         });

@@ -1,10 +1,10 @@
 import {
     getApiUsers as apiGetApiUsers,
-    getLicenses as apiGetLicenses,
     getModels as apiGetModels,
 } from "../api/index.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {state} from "../state.js";
-import {renderPagination, resolvePaginationPage} from "../pagination.js";
+import {resolvePaginationPage} from "../pagination.js";
 
 /**
  * A casca do modal de definições: o menu da esquerda com as suas contagens, a troca de
@@ -48,16 +48,20 @@ export function activateSettingsSection(section) {
 export async function loadSettingsNavCounts() {
     const asks = [
         ["Models", apiGetModels],
-        // O separador chama-se "Licenças" e conta licenças, não as empresas que as detêm.
-        ["Company", apiGetLicenses],
         ["ApiUsers", apiGetApiUsers],
     ];
-    await Promise.all(asks.map(async ([key, ask]) => {
-        const response = await ask({page: 1, limit: 1});
-        if (response?.error) return;
-        const total = response?.pagination?.total;
-        if (Number.isFinite(Number(total))) setSettingsNavCount(key, total);
-    }));
+    await Promise.all([
+        ...asks.map(async ([key, ask]) => {
+            const response = await ask({page: 1, limit: 1});
+            if (response?.error) return;
+            const total = response?.pagination?.total;
+            if (Number.isFinite(Number(total))) setSettingsNavCount(key, total);
+        }),
+        // O separador chama-se "Licenças" e conta licenças, não as empresas que as detêm.
+        ensureLicensesLoaded().then((licenses) => {
+            if (licenses !== null) setSettingsNavCount("Company", licenses.length);
+        }),
+    ]);
 }
 
 /**
@@ -72,22 +76,6 @@ export function setSettingsNavCount(key, total) {
     const known = Number.isFinite(Number(total));
     element.textContent = known ? String(total) : "";
     element.classList.toggle("d-none", !known);
-}
-
-export function renderSettingsPagination(
-    pagination,
-    rootEl,
-    summaryEl,
-    controlsEl,
-    action,
-) {
-    renderPagination({
-        pagination,
-        rootEl,
-        summaryEl,
-        controlsEl,
-        actionPrefix: action,
-    });
 }
 
 export function handleSettingsPaginationClick(event, paginationKey, loadFn) {
@@ -105,7 +93,6 @@ function paginationActionPrefix(paginationKey) {
         {
             apiUsersPagination: "settingsApiUsersPage",
             companyPagination: "settingsCompanyPage",
-            licensesPagination: "settingsLicensesPage",
         }[paginationKey] || ""
     );
 }

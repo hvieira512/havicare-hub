@@ -1,12 +1,12 @@
 import {
     createDeviceLink as apiCreateDeviceLink,
     getDevices as apiGetDevices,
-    getLicenses as apiGetLicenses,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {esc} from "../format.js";
 import {state} from "../state.js";
-import {modelPreviewHtml} from "../widgets.js";
+import {field, modelPreviewHtml} from "../widgets.js";
 import {
     deviceTypeFields,
     deviceTypeLabel,
@@ -256,30 +256,28 @@ function renderModel(type) {
         : [];
 
     return `
-        <div>
-            <label class="form-label form-label-sm">Fornecedor</label>
-            ${supplierPillsHtml({
+        ${field(
+            "Fornecedor",
+            supplierPillsHtml({
                 suppliers,
                 selected: supplier,
                 attrsFor: (name) => `data-wizard-supplier="${esc(name)}"`,
-            })}
-            ${suppliers.length === 1
-                ? '<div class="form-text">Só um fornecedor tem modelos deste tipo.</div>'
-                : ""}
-        </div>
+            }),
+            {help: suppliers.length === 1 ? "Só um fornecedor tem modelos deste tipo." : ""},
+        )}
         ${supplier
-            ? `<div>
-                <label class="form-label form-label-sm">Modelo</label>
-                ${models.length
+            ? field(
+                "Modelo",
+                models.length
                     ? renderModelGrid(supplier, models)
-                    : '<p class="text-secondary small mb-0">Este fornecedor não tem modelos deste tipo.</p>'}
-               </div>`
+                    : '<p class="text-secondary small mb-0">Este fornecedor não tem modelos deste tipo.</p>',
+            )
             : ""}`;
 }
 
 function renderOwner(owner) {
     return `
-        <label class="form-label form-label-sm">Licença</label>
+        <label class="form-label-sm">Licença</label>
         ${licensePickerHtml(licenseGroups, owner)}`;
 }
 
@@ -289,21 +287,21 @@ function renderIdentity(answers) {
 
     return `
         <div>
-            <label class="form-label form-label-sm" for="wizardIdentity">${esc(fields.identity.label)}</label>
+            <label class="form-label-sm" for="wizardIdentity">${esc(fields.identity.label)}</label>
             <input type="text" class="form-control" id="wizardIdentity" data-wizard-identity
                 placeholder="${esc(fields.identity.placeholder)}" value="${esc(answers.identity || "")}">
             <div class="form-text">${esc(fields.identity.help)}</div>
         </div>
         ${fields.sim
             ? `<div>
-                <label class="form-label form-label-sm" for="wizardSim">Número do SIM</label>
+                <label class="form-label-sm" for="wizardSim">Número do SIM</label>
                 <input type="text" class="form-control" id="wizardSim" data-wizard-sim
                     placeholder="+351 9xx xxx xxx" value="${esc(answers.sim || "")}">
                </div>`
             : ""}
         ${fields.gatewayLinks
             ? `<div>
-                <label class="form-label form-label-sm">Gateways autorizados</label>
+                <label class="form-label-sm">Gateways autorizados</label>
                 <div class="gateway-picker">
                     ${gateways.length
                         ? gateways
@@ -452,9 +450,9 @@ async function create() {
  */
 export async function openWizard(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
-    const licenses = await apiGetLicenses({limit: 500});
+    const licenses = await ensureLicensesLoaded();
     await loadWizardGateways();
-    const tree = licenseTree(licenses?.error ? [] : licenses.data || []);
+    const tree = licenseTree(licenses ?? []);
     openCreateWizard(tree, seedFromNotification(source, tree));
     wizardModal.show();
 }

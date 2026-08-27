@@ -1,148 +1,46 @@
 import {renderPhoneControl, resetPhoneControls} from "../../phone.js";
 import {takePillsReminderGroup} from "./index.js";
-import {wonlexMedicationPlanRow} from "./inputs.js";
+import {fourPTouchAlarmRow, wonlexMedicationPlanRow} from "./inputs.js";
 import {syncTakePillsCustomVisibility} from "./take-pills-audio.js";
 
 /**
- * Acrescentar, remover e renumerar as linhas repetíveis de uma secção de configuração:
- * contactos, listas telefónicas, alarmes, planos de medicação, lembretes.
+ * Acrescentar e remover as linhas repetíveis de uma secção de configuração: contactos,
+ * listas telefónicas, alarmes, planos de medicação, lembretes.
+ *
+ * Um contrato só para as sete listas: `data-repeat-list="<tipo>"` no contentor,
+ * `data-repeat-row="<tipo>"` em cada linha, e o limite opcional em `data-repeat-limit`.
+ * O que difere de tipo para tipo é só o que está na tabela abaixo.
  *
  * Nada disto toca no estado dos módulos da dashboard, e é isso que o torna testável à parte.
  */
 
-export function appendContactRow(section) {
-    const list = section.querySelector("[data-repeat-limit]");
-    if (!list) return;
-
-    const limit = parseInt(list.dataset.repeatLimit || "10", 10);
-    const rows = list.querySelectorAll('[data-repeat-row="contacts"]');
-    if (rows.length >= limit) return;
-
-    const isFourPTouchPhonebook = isFourPTouchPhonebookSection(section);
-    const template = rows[rows.length - 1] || createContactRow({
-        phonebook: isFourPTouchPhonebook,
-        nameMaxLength: parseInt(section.dataset.phonebookNameMaxLength || (isFourPTouchPhonebook ? "10" : "0"), 10) || 0,
-        phoneMaxLength: parseInt(section.dataset.phonebookPhoneMaxLength || (isFourPTouchPhonebook ? "20" : "0"), 10) || 0,
-    });
-    const clone = template.cloneNode(true);
-    clone.querySelectorAll("input").forEach((input) => {
-        if (input.matches("[data-phone-local]")) {
-            input.value = "";
-            return;
-        }
-        input.value = "";
-    });
-    const countrySelect = clone.querySelector("[data-phone-country]");
-    if (countrySelect) {
-        countrySelect.value = "PT";
-    }
-    resetPhoneControls(clone);
-    list.appendChild(clone);
-}
-
-export function appendPhoneListRow(section, rowType) {
-    const list = section.querySelector(`[data-repeat-kind="${rowType}"]`);
-    if (!list) return;
-
-    const limit = parseInt(list.dataset.repeatLimit || "10", 10);
-    const rows = list.querySelectorAll(`[data-repeat-row="${rowType}"]`);
-    if (rows.length >= limit) return;
-
-    const template = rows[rows.length - 1] || null;
-    if (!template) return;
-
-    const clone = template.cloneNode(true);
-    clone.querySelectorAll("input").forEach((input) => {
-        if (input.matches("[data-phone-local]")) {
-            input.value = "";
-            return;
-        }
-        input.value = "";
-    });
-    const countrySelect = clone.querySelector("[data-phone-country]");
-    if (countrySelect) {
-        countrySelect.value = "PT";
-    }
-    resetPhoneControls(clone);
-    list.appendChild(clone);
-}
-
-export function appendAlarmClockRow(section) {
-    const list = section.querySelector("[data-alarm-clock-list]");
-    if (!list) return;
-
-    const template = list.querySelector('[data-repeat-row="alarm_clock"]');
-    if (!template) return;
-
-    const clone = template.cloneNode(true);
-    clone.querySelectorAll("input, select").forEach((input) => {
-        if (input.matches('[data-alarm-clock-field="enabled"]')) {
-            input.checked = true;
-            return;
-        }
-
-        if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
-            input.checked = false;
-            return;
-        }
-
-        if (input.matches('[data-alarm-clock-field="type"]')) {
-            input.checked = input.value === "1";
-            return;
-        }
-
-        if (input.type === "checkbox") {
-            input.checked = false;
-            return;
-        }
-
-        input.value = "";
-    });
-    const recurrenceInputs = Array.from(
-        clone.querySelectorAll('[data-alarm-clock-field="recurrenceKind"]'),
-    );
-    const defaultRecurrence = recurrenceInputs.find(
-        (input) => String(input.value || "").trim().toLowerCase() === "once",
-    ) || recurrenceInputs[0];
-    if (defaultRecurrence) defaultRecurrence.checked = true;
-
-    syncAlarmClockCustomVisibility(clone);
-    const switchLabel = clone.querySelector('[data-alarm-clock-field="enabled"]')
-        ?.parentElement?.querySelector("[data-switch-label]");
-    if (switchLabel) {
-        switchLabel.textContent = "Ligado";
-    }
-
-    list.appendChild(clone);
-}
-
-export function appendWonlexMedicationPlan(section) {
-    const list = section.querySelector("[data-wonlex-medication-list]");
-    if (!list) return;
-
-    const index = list.querySelectorAll(
-        '[data-repeat-row="wonlexMedicationPlan"]',
-    ).length;
-    list.insertAdjacentHTML(
-        "beforeend",
-        wonlexMedicationPlanRow({}, index),
-    );
-    renumberWonlexMedicationPlans(list);
-}
-
-export function appendTakePillsReminder(section) {
-    const list = section.querySelector("[data-takepills-reminders-list]");
-    if (!list) return;
-
-    const limit = parseInt(list.dataset.repeatLimit || "3", 10) || 3;
-    const index = list.querySelectorAll(
-        "[data-takepills-reminder-group]",
-    ).length;
-    if (index >= limit) return;
-
-    list.insertAdjacentHTML(
-        "beforeend",
-        takePillsReminderGroup(
+/**
+ * Como nasce e como morre a linha de cada tipo.
+ *
+ * `render` desenha-a de novo, que é o que é preciso quando a linha traz `id` próprios -- um
+ * clone repetia-os, e clicar num dia da linha nova mexia na primeira. Sem `render`, clona-se
+ * a última e limpa-se, que é o que preserva o que a marcação trouxe da secção (os
+ * comprimentos máximos da lista telefónica, por exemplo).
+ *
+ * `keepLast` diz se a última linha se limpa em vez de se apagar: uma lista que fica sem
+ * linha nenhuma fica também sem molde de onde clonar a seguinte.
+ */
+const REPEAT_ROW_KINDS = {
+    contacts: {keepLast: true, template: createContactRow},
+    sos_contacts: {keepLast: true},
+    call_whitelist: {keepLast: true},
+    numbers: {keepLast: true},
+    alarm_clock: {keepLast: true},
+    fourPTouchAlarm: {
+        render: (index) => fourPTouchAlarmRow({time: "", enabled: true, mode: 1, custom: ""}, index),
+        after: syncFourPTouchAlarmRows,
+    },
+    wonlexMedicationPlan: {
+        render: (index) => wonlexMedicationPlanRow({}, index),
+        after: renumberWonlexMedicationPlans,
+    },
+    takePillsReminder: {
+        render: (index) => takePillsReminderGroup(
             {time: "08:00", enabled: true, frequency: 1, custom: ""},
             index,
             [
@@ -151,24 +49,115 @@ export function appendTakePillsReminder(section) {
                 {value: 3, label: "Personalizado"},
             ],
         ),
+        after: syncTakePillsRows,
+    },
+};
+
+export function appendRepeatRow(section, kind) {
+    const spec = REPEAT_ROW_KINDS[kind];
+    const list = section?.querySelector(`[data-repeat-list="${kind}"]`);
+    if (!spec || !list) return;
+
+    const rows = list.querySelectorAll(`[data-repeat-row="${kind}"]`);
+    // Sem `data-repeat-limit` não há limite: os alarmes do relógio nunca tiveram um.
+    const limit = parseInt(list.dataset.repeatLimit || "", 10);
+    if (Number.isFinite(limit) && rows.length >= limit) return;
+
+    if (spec.render) {
+        list.insertAdjacentHTML("beforeend", spec.render(rows.length));
+    } else {
+        const template = rows[rows.length - 1] || spec.template?.(section);
+        if (!template) return;
+        const clone = template.cloneNode(true);
+        resetRowFields(clone);
+        list.appendChild(clone);
+    }
+
+    spec.after?.(section);
+}
+
+export function removeRepeatRow(button) {
+    const row = button?.closest("[data-repeat-row]");
+    const kind = row?.dataset.repeatRow || "";
+    const spec = REPEAT_ROW_KINDS[kind];
+    if (!row || !spec) return;
+
+    const section = row.closest("[data-config-section]");
+    if (spec.keepLast && row.parentElement?.children.length <= 1) {
+        resetRowFields(row);
+    } else {
+        row.remove();
+    }
+
+    spec.after?.(section);
+}
+
+/**
+ * Limpa uma linha: os valores saem, e o que tem um estado inicial próprio -- o interruptor
+ * de ligado, a recorrência, o indicativo do telefone -- volta a ele.
+ */
+function resetRowFields(row) {
+    row.querySelectorAll("input, select").forEach((input) => {
+        if (input.matches('[data-alarm-clock-field="enabled"]')) {
+            input.checked = true;
+            return;
+        }
+        if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
+            input.checked = false;
+            return;
+        }
+        if (input.matches('[data-alarm-clock-field="type"]')) {
+            input.checked = input.value === "1";
+            return;
+        }
+        if (input.type === "checkbox") {
+            input.checked = false;
+        } else if (input.matches("[data-phone-country]")) {
+            input.value = "PT";
+        } else {
+            input.value = "";
+        }
+    });
+
+    const recurrenceInputs = Array.from(
+        row.querySelectorAll('[data-alarm-clock-field="recurrenceKind"]'),
     );
-    syncTakePillsRows(section);
+    const defaultRecurrence = recurrenceInputs.find(
+        (input) => String(input.value || "").trim().toLowerCase() === "once",
+    ) || recurrenceInputs[0];
+    if (defaultRecurrence) defaultRecurrence.checked = true;
+
+    const switchLabel = row.querySelector('[data-alarm-clock-field="enabled"]')
+        ?.parentElement?.querySelector("[data-switch-label]");
+    if (switchLabel) {
+        switchLabel.textContent = "Ligado";
+    }
+
+    syncAlarmClockCustomVisibility(row);
+    resetPhoneControls(row);
 }
 
-export function removeTakePillsReminder(row) {
-    const section = row?.closest("[data-config-section]");
-    if (!row || !section) return;
+/** O botão de acrescentar apaga-se no limite. */
+function syncAddButton(section, kind, action) {
+    const list = section?.querySelector(`[data-repeat-list="${kind}"]`);
+    const addButton = section?.querySelector(`[data-action="${action}"]`);
+    if (!list || !addButton) return;
 
-    row.remove();
-    syncTakePillsRows(section);
+    const limit = parseInt(list.dataset.repeatLimit || "", 10);
+    addButton.disabled = Number.isFinite(limit)
+        && list.querySelectorAll(`[data-repeat-row="${kind}"]`).length >= limit;
 }
 
+function syncFourPTouchAlarmRows(section) {
+    syncAddButton(section, "fourPTouchAlarm", "addFourPTouchAlarmRow");
+}
+
+/** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
 function syncTakePillsRows(section) {
-    const list = section.querySelector("[data-takepills-reminders-list]");
+    const list = section?.querySelector('[data-repeat-list="takePillsReminder"]');
     if (!list) return;
 
-    const rows = list.querySelectorAll("[data-takepills-reminder-group]");
-    rows.forEach((row, index) => {
+    list.querySelectorAll('[data-repeat-row="takePillsReminder"]').forEach((row, index) => {
         row.dataset.takepillsReminderGroup = String(index);
         const number = row.querySelector("[data-takepills-reminder-number]");
         if (number) {
@@ -183,73 +172,19 @@ function syncTakePillsRows(section) {
         }
     });
 
-    const limit = parseInt(list.dataset.repeatLimit || "3", 10) || 3;
-    const addButton = section.querySelector(
-        '[data-action="addTakePillsReminder"]',
-    );
-    if (addButton) {
-        addButton.disabled = rows.length >= limit;
-    }
+    syncAddButton(section, "takePillsReminder", "addTakePillsReminder");
     syncTakePillsCustomVisibility(section);
 }
 
-export function removeWonlexMedicationPlan(row) {
-    const list = row?.closest("[data-wonlex-medication-list]");
-    if (!row || !list) return;
-
-    row.remove();
-    renumberWonlexMedicationPlans(list);
-}
-
-function renumberWonlexMedicationPlans(list) {
-    list.querySelectorAll(
-        '[data-repeat-row="wonlexMedicationPlan"]',
-    ).forEach((row, index) => {
-        const number = row.querySelector("[data-medication-plan-number]");
-        if (number) {
-            number.textContent = String(index + 1);
-        }
-    });
-}
-
-export function removeConfigRow(row) {
-    if (!row) return;
-    const parent = row.parentElement;
-    if (!parent) return;
-    if (parent.children.length <= 1) {
-        row.querySelectorAll("input, select").forEach((input) => {
-            if (input.matches('[data-alarm-clock-field="enabled"]')) {
-                input.checked = true;
-                return;
-            }
-            if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
-                input.checked = false;
-                return;
-            }
-            if (input.matches('[data-alarm-clock-field="type"]')) {
-                input.checked = input.value === "1";
-                return;
-            }
-            if (input.type === "checkbox") {
-                input.checked = false;
-            } else if (input.matches("[data-phone-country]")) {
-                input.value = "PT";
-            } else {
-                input.value = "";
+function renumberWonlexMedicationPlans(section) {
+    section
+        ?.querySelectorAll('[data-repeat-row="wonlexMedicationPlan"]')
+        .forEach((row, index) => {
+            const number = row.querySelector("[data-medication-plan-number]");
+            if (number) {
+                number.textContent = String(index + 1);
             }
         });
-        const recurrenceInputs = Array.from(
-            row.querySelectorAll('[data-alarm-clock-field="recurrenceKind"]'),
-        );
-        const defaultRecurrence = recurrenceInputs.find(
-            (input) => String(input.value || "").trim().toLowerCase() === "once",
-        ) || recurrenceInputs[0];
-        if (defaultRecurrence) defaultRecurrence.checked = true;
-        syncAlarmClockCustomVisibility(row);
-        resetPhoneControls(row);
-        return;
-    }
-    row.remove();
 }
 
 export function syncAlarmClockCustomVisibility(row) {
@@ -268,7 +203,16 @@ function isFourPTouchPhonebookSection(section) {
         && String(section?.dataset?.configKey || "") === "phonebook";
 }
 
-function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength = 0 } = {}) {
+/** A primeira linha de contactos, quando a lista veio vazia e não há de onde clonar. */
+function createContactRow(section) {
+    const phonebook = isFourPTouchPhonebookSection(section);
+    const nameMaxLength = parseInt(
+        section?.dataset.phonebookNameMaxLength || (phonebook ? "10" : "0"), 10,
+    ) || 0;
+    const phoneMaxLength = parseInt(
+        section?.dataset.phonebookPhoneMaxLength || (phonebook ? "20" : "0"), 10,
+    ) || 0;
+
     const wrapper = document.createElement("div");
     wrapper.className = "row g-2 align-items-end";
     wrapper.dataset.repeatRow = "contacts";
@@ -281,7 +225,7 @@ function createContactRow({ phonebook = false, nameMaxLength = 0, phoneMaxLength
                 <div class="flex-grow-1">
                     ${renderPhoneControl({ repeatField: "phone", placeholder: "Telefone", maxLength: phoneMaxLength })}
                 </div>
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeContactRow">-</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow">-</button>
             </div>
         </div>`;
     resetPhoneControls(wrapper);

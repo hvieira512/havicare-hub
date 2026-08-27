@@ -3,17 +3,15 @@ import {
     deleteCompany as apiDeleteCompany,
     deleteLicense as apiDeleteLicense,
     getCompanies as apiGetCompanies,
-    getLicenses as apiGetLicenses,
     saveLicense as apiSaveLicense,
     updateCompany as apiUpdateCompany,
 } from "../api/index.js";
+import {ensureLicensesLoaded, invalidateLicenses} from "../licenses.js";
+import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {
-    renderSettingsPagination,
-    setSettingsNavCount,
-    toggleCollapse,
-} from "./shell.js";
+import {setSettingsNavCount, toggleCollapse} from "./shell.js";
+import {renderPagination} from "../pagination.js";
 
 /**
  * O separador das empresas, com as licenças de cada uma dentro dela. São dois formulários e
@@ -21,6 +19,9 @@ import {
  * de mostrar, e é por isso que os dois vivem no mesmo módulo.
  */
 let els;
+// A página de empresas que está à vista, para uma alteração numa licença a poder redesenhar
+// sem ir buscar as empresas outra vez.
+let currentCompanies = [];
 
 export function initSettingsCompanies(context) {
     els = context.els;
@@ -29,25 +30,37 @@ export function initSettingsCompanies(context) {
 export async function loadSettingsCompanySection(companiesPage = 1) {
     // As licenças vêm todas de uma vez porque são desenhadas dentro da empresa a que
     // pertencem: paginá-las à parte deixava uma licença fora da página da sua empresa.
-    // ponytail: limite de 1000, que é muito acima do real; se um dia passar disso, a
-    // resposta é buscar as licenças por empresa e não aumentar o número.
-    const [companyData, licensesData] = await Promise.all([
+    const [companyData, licenses] = await Promise.all([
         apiGetCompanies({ page: companiesPage }),
-        apiGetLicenses({ page: 1, limit: 1000 }),
+        ensureLicensesLoaded(),
     ]);
-    const companies = companyData.data || [];
-    const licenses = licensesData.data || [];
+    currentCompanies = companyData.data || [];
     state.settingsModal.sectionLoaded.company = true;
     state.settingsModal.companyPagination = companyData.pagination || null;
-    renderCompanySection(companies, licenses);
-    renderLicensesSection(licenses, companies);
-    renderSettingsPagination(
-        state.settingsModal.companyPagination,
-        els.settingsCompanyPagination,
-        els.settingsCompanyPaginationSummary,
-        els.settingsCompanyPaginationControls,
-        "settingsCompanyPage",
+    renderCompanySection(currentCompanies, licenses ?? []);
+    renderLicensesSection(licenses ?? [], currentCompanies);
+    renderPagination({
+        pagination: state.settingsModal.companyPagination,
+        rootEl: els.settingsCompanyPagination,
+        summaryEl: els.settingsCompanyPaginationSummary,
+        controlsEl: els.settingsCompanyPaginationControls,
+        actionPrefix: "settingsCompanyPage",
+    });
+}
+
+/** Depois de mexer numa empresa: as licenças em cache continuam a servir. */
+function reloadCompanies() {
+    return loadSettingsCompanySection(
+        Number(state.settingsModal.companyPagination?.page || 1) || 1,
     );
+}
+
+/** Depois de mexer numa licença: as empresas não mudaram e não se vão buscar de novo. */
+async function reloadLicenses() {
+    invalidateLicenses();
+    const licenses = (await ensureLicensesLoaded()) ?? [];
+    renderCompanySection(currentCompanies, licenses);
+    renderLicensesSection(licenses, currentCompanies);
 }
 
 function renderCompanySection(companies, licenses) {
@@ -71,7 +84,7 @@ function renderCompanySection(companies, licenses) {
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="fw-semibold">${esc(item.name)}</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="config-state config-state-secondary"><span class="config-state-dot"></span>${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</span>
+                ${stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "config-state-secondary")}
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" data-action="newLicenseForCompany" data-company-id="${item.id}">Nova licença</button>
                 <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
@@ -120,8 +133,7 @@ export async function saveCompany() {
         alert(result.error.message || result.error.code);
         return;
     }
-    state.settingsModal.sectionLoaded.company = false;
-    await loadSettingsCompanySection();
+    await reloadCompanies();
 }
 
 async function deleteCompany(id) {
@@ -134,8 +146,9 @@ async function deleteCompany(id) {
         alert(result.error.message || result.error.code);
         return;
     }
-    state.settingsModal.sectionLoaded.company = false;
-    await loadSettingsCompanySection();
+    // Apagar a empresa apaga as licenças dela: a cache das licenças deixa de valer.
+    invalidateLicenses();
+    await reloadCompanies();
 }
 
 /**
@@ -184,8 +197,7 @@ export async function saveLicense() {
         alert(result.error.message || result.error.code);
         return;
     }
-    state.settingsModal.sectionLoaded.company = false;
-    await loadSettingsCompanySection();
+    await reloadLicenses();
 }
 
 async function deleteLicense(id) {
@@ -195,8 +207,7 @@ async function deleteLicense(id) {
         alert(result.error.message || result.error.code);
         return;
     }
-    state.settingsModal.sectionLoaded.company = false;
-    await loadSettingsCompanySection();
+    await reloadLicenses();
 }
 
 /** Os cliques da lista: as linhas das licenças estão dentro da empresa a que pertencem. */

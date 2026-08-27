@@ -1,10 +1,10 @@
 import {
     deleteDevice as apiDeleteDevice,
-    getCapabilities as apiGetCapabilities,
     getDevice as apiGetDevice,
-    getLicenses as apiGetLicenses,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
+import {ensureCapabilityCatalog} from "../capability-catalog.js";
+import {ensureLicensesLoaded} from "../licenses.js";
 import {
     deviceTypeCardsHtml,
     licenseTree,
@@ -68,6 +68,7 @@ import {
 import {
     modelImageHtml,
     modelPreviewHtml,
+    onlineBadge,
 } from "../widgets.js";
 import {
     clearSelection,
@@ -103,8 +104,8 @@ export function initDeviceModal(context) {
  * de "não há licenças nenhumas" a quem está a olhar para uma árvore vazia.
  */
 async function loadLicenseGroups() {
-    const response = await apiGetLicenses({limit: 500});
-    return response?.error ? null : licenseTree(response.data || []);
+    const licenses = await ensureLicensesLoaded();
+    return licenses === null ? null : licenseTree(licenses);
 }
 
 export function setDeviceFormError(message = "") {
@@ -253,9 +254,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
         <span class="min-w-0">
             <span class="d-flex align-items-center gap-2 flex-wrap">
                 <h5 class="modal-title mb-0 tabular-nums" id="deviceModalLabel">${esc(imei)}</h5>
-                <span class="config-state ${online ? "config-state-success" : "config-state-secondary"}">
-                    <span class="config-state-dot"></span>${online ? "Ligado" : "Desligado"}
-                </span>
+                ${onlineBadge(online)}
             </span>
             <span class="d-block small text-secondary">${esc(meta.join(" · "))}</span>
         </span>`;
@@ -368,21 +367,9 @@ export async function syncDeviceModalContext(loadCatalog = false) {
     state.deviceModal.deviceType = normalizeDeviceType(
         els.deviceForm.dataset.deviceType || "watch",
     );
-    const cachedCapabilityCatalog =
-        state.settingsModal.capabilityCatalogByType?.[state.deviceModal.deviceType];
-    if (cachedCapabilityCatalog) {
-        state.deviceModal.capabilityCatalog = cachedCapabilityCatalog;
-    } else {
-        const response = await apiGetCapabilities({
-            deviceType: state.deviceModal.deviceType,
-        });
-        const capabilityCatalog = response?.error ? [] : response.data || [];
-        state.settingsModal.capabilityCatalogByType = {
-            ...(state.settingsModal.capabilityCatalogByType || {}),
-            [state.deviceModal.deviceType]: capabilityCatalog,
-        };
-        state.deviceModal.capabilityCatalog = capabilityCatalog;
-    }
+    state.deviceModal.capabilityCatalog = await ensureCapabilityCatalog(
+        state.deviceModal.deviceType,
+    );
     state.deviceModal.licenseId = els.deviceLicenseId.value.trim() || "0";
     state.deviceModal.simNumber = getDeviceSimNumberValue(false);
     state.deviceModal.deviceId = els.deviceDeviceId?.value.trim() || "";
@@ -536,21 +523,6 @@ export async function saveDevice() {
     deviceModal.hide();
     if (isDeviceSelectorOpen()) {
         await loadSummary();
-    }
-}
-
-export async function deleteDevice(imei) {
-    if (!confirm(`Apagar o dispositivo ${imei}?`)) return;
-    await apiDeleteDevice(imei);
-    if (state.selectedImei === imei) {
-        disconnectDeviceStream();
-        clearSelection();
-        clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
-    }
-    if (isDeviceSelectorOpen()) {
-        await loadSummary();
-    } else {
-        renderSelection();
     }
 }
 
