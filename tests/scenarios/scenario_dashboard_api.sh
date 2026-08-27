@@ -8,7 +8,9 @@ trap scenario_cleanup EXIT
 
 export DASHBOARD_API_AUTH_REQUIRED="true"
 
-IMEI="868705080300697"
+# Um dispositivo do inventário semeado por `bin/seed-inventory.php`, para o cenário não
+# depender de nenhum registo feito à mão.
+IMEI="868705080304889"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto redis hub >/dev/null
 

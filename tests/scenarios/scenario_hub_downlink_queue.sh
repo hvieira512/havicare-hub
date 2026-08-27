@@ -7,9 +7,12 @@ scenario_begin "hub_downlink_queue"
 trap scenario_cleanup EXIT
 
 
-IMEI="865028000000308"
-DEVICE_TOPIC_PREFIX="null/42/watch/$IMEI"
-DOWNLINK='{"encoding":"text","payload":"IWBPXL,865028000000308,654321,1,2#"}'
+# Um dispositivo do inventário semeado, e distinto do dos outros cenários: uma fila que
+# fique por drenar não segue para a corrida seguinte.
+IMEI="861265062544868"
+MODEL="VL16P"
+DEVICE_TOPIC_PREFIX="havicare/1/watch/$IMEI"
+DOWNLINK="{\"encoding\":\"text\",\"payload\":\"IWBPXL,$IMEI,654321,1,2#\"}"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto redis hub >/dev/null
 
@@ -27,7 +30,7 @@ if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m,
   scenario_fail "routing_failure" "hub TCP listener did not become ready"
 fi
 
-docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t 'null/42/watch/$IMEI/downlink' -f /tmp/hub-downlink.json"
+docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '$DEVICE_TOPIC_PREFIX/downlink' -f /tmp/hub-downlink.json"
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
@@ -43,7 +46,7 @@ if ! grep -q '"type":"device.downlink.queued"' "$MQTT_LOG_FILE"; then
 fi
 
 docker compose exec -T hub sh -lc 'rm -f /tmp/hub-vivistar-listener.log /tmp/hub-vivistar-listener.pid'
-docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --model VIVISTAR-CARE --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
+docker compose exec -T hub sh -lc "php simulator/simulate.php --server tcp://127.0.0.1:9000 --model $MODEL --imei $IMEI --listen > /tmp/hub-vivistar-listener.log 2>&1 & echo \$! > /tmp/hub-vivistar-listener.pid"
 
 for _ in $(seq 1 20); do
   if docker compose exec -T hub sh -lc "grep -q '\\[COMMAND\\] BPXL' /tmp/hub-vivistar-listener.log"; then

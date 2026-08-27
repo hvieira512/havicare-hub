@@ -60,13 +60,13 @@ $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
     "type" => "login",
-    "imei" => "868705080300697",
+    "imei" => "868705080304962",
     "data" => ["deviceModel" => "HW20PRO"],
 ]));
 usleep(200000);
 fwrite($socket, $adapter->encodeOutgoing([
     "type" => "upLocation",
-    "imei" => "868705080300697",
+    "imei" => "868705080304962",
     "data" => [
         "baseStationType" => 0,
         "positionDataType" => 1,
@@ -83,7 +83,7 @@ fclose($socket);
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" && grep -q '"lat":41.706841' "$MQTT_LOG_FILE"; then
+  if grep -q '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" && grep -q '"lat":41.706841' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
@@ -91,10 +91,10 @@ done
 
 capture_mqtt_log
 docker compose exec -T hub sh -lc "cat /tmp/beacondb-requests.log 2>/dev/null || true" > "$SCENARIO_DIR/beacondb-requests.log"
-if ! grep -q '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE"; then
+if ! grep -q '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE"; then
   scenario_fail "publish_failure" "hub did not publish the resolved Wonlex location"
 fi
-LOCATION_JSON="$(grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | tail -n 1 | cut -d' ' -f2-)"
+LOCATION_JSON="$(grep '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" | tail -n 1 | cut -d' ' -f2-)"
 if ! printf '%s' "$LOCATION_JSON" | jq -e '.data.source == "cell_wifi" and .data.hasCoordinates == true and .data.lat == 41.706841 and .data.lon == -8.793279 and .data.accuracyMeters == 120' >/dev/null; then
   scenario_fail "contract_failure" "resolved coordinates were not merged inside telemetry.data"
 fi
@@ -111,11 +111,11 @@ $adapter = new Hub\Protocol\Adapter\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+    "type" => "login", "imei" => "868705080304962", "data" => ["deviceModel" => "HW20PRO"],
 ]));
 usleep(200000);
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "upLocation", "imei" => "868705080300697",
+    "type" => "upLocation", "imei" => "868705080304962",
     "data" => [
         "gpsValid" => true, "lat" => 41.710001, "lon" => -8.790002,
         "accuracy" => 20, "satellites" => 7,
@@ -133,12 +133,12 @@ fclose($socket);
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep -q '"lat":41.710001'; then
+  if grep '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" | grep -q '"lat":41.710001'; then
     break
   fi
   sleep 1
 done
-GPS_JSON="$(grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep '"lat":41.710001' | tail -n 1 | cut -d' ' -f2-)"
+GPS_JSON="$(grep '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" | grep '"lat":41.710001' | tail -n 1 | cut -d' ' -f2-)"
 if ! printf '%s' "$GPS_JSON" | jq -e '.data.source == "gps" and .data.hasCoordinates == true and .data.accuracyMeters == 20' >/dev/null; then
   scenario_fail "radio_map_learning_failure" "trusted GPS fix was not published unchanged"
 fi
@@ -157,11 +157,11 @@ $adapter = new Hub\Protocol\Adapter\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+    "type" => "login", "imei" => "868705080304962", "data" => ["deviceModel" => "HW20PRO"],
 ]));
 usleep(200000);
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "upLocation", "imei" => "868705080300697",
+    "type" => "upLocation", "imei" => "868705080304962",
     "data" => [
         "baseStationType" => 0, "positionDataType" => 1,
         "baseStation" => [["mcc" => 268, "mnc" => 3, "lac" => 180, "cellId" => 194809015]],
@@ -177,12 +177,12 @@ fclose($socket);
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep -q '"accuracyMeters":25'; then
+  if grep '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" | grep -q '"accuracyMeters":25'; then
     break
   fi
   sleep 1
 done
-PRIVATE_JSON="$(grep '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" | grep '"accuracyMeters":25' | tail -n 1 | cut -d' ' -f2-)"
+PRIVATE_JSON="$(grep '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" | grep '"accuracyMeters":25' | tail -n 1 | cut -d' ' -f2-)"
 if ! printf '%s' "$PRIVATE_JSON" | jq -e '.data.source == "cell_wifi" and .data.hasCoordinates == true and .data.lat == 41.710001 and .data.lon == -8.790002 and .data.accuracyMeters == 25' >/dev/null; then
   scenario_fail "radio_map_resolution_failure" "private radio map did not resolve non-GPS evidence"
 fi
@@ -214,11 +214,11 @@ $adapter = new Hub\Protocol\Adapter\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+    "type" => "login", "imei" => "868705080304962", "data" => ["deviceModel" => "HW20PRO"],
 ]));
 usleep(200000);
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "upLocation", "imei" => "868705080300697",
+    "type" => "upLocation", "imei" => "868705080304962",
     "data" => [
         "baseStationType" => 0, "positionDataType" => 1,
         "baseStation" => [["mcc" => 268, "mnc" => 3, "lac" => 180, "cellId" => 194809015]],
@@ -234,13 +234,13 @@ fclose($socket);
 
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if [ "$(grep -c '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" || true)" -ge 2 ]; then
+  if [ "$(grep -c '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" || true)" -ge 2 ]; then
     break
   fi
   sleep 1
 done
 REQUEST_COUNT_AFTER="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
-if [ "$(grep -c '^null/0/watch/868705080300697/telemetry ' "$MQTT_LOG_FILE" || true)" -lt 2 ]; then
+if [ "$(grep -c '^havicare/1/watch/868705080304962/telemetry ' "$MQTT_LOG_FILE" || true)" -lt 2 ]; then
   scenario_fail "cache_failure" "hub restart did not resolve repeated evidence from Redis"
 fi
 if [ "$REQUEST_COUNT_AFTER" != "$REQUEST_COUNT_BEFORE" ]; then
@@ -254,11 +254,11 @@ $adapter = new Hub\Protocol\Adapter\WonlexAdapter();
 $socket = fsockopen("127.0.0.1", 9000, $errno, $error, 3);
 if (!$socket) { fwrite(STDERR, "$error\n"); exit(1); }
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "login", "imei" => "868705080300697", "data" => ["deviceModel" => "HW20PRO"],
+    "type" => "login", "imei" => "868705080304962", "data" => ["deviceModel" => "HW20PRO"],
 ]));
 usleep(200000);
 fwrite($socket, $adapter->encodeOutgoing([
-    "type" => "upLocation", "imei" => "868705080300697",
+    "type" => "upLocation", "imei" => "868705080304962",
     "data" => [
         "baseStationType" => 0, "positionDataType" => 1,
         "Wifi" => [
