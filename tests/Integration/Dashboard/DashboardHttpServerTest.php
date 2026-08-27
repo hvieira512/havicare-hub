@@ -371,7 +371,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     public function testLoggerStopsNormalizingUnboundedlyDeepContext(): void
     {
         $value = ['leaf' => 'complete'];
-        for ($depth = 0; $depth < 20; $depth++) {
+        for ($depth = 0; $depth < 40; $depth++) {
             $value = ['nested' => $value];
         }
 
@@ -380,6 +380,20 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $log = $this->apiLogContents();
         self::assertStringContainsString('levels deep, aborting normalization', $log);
         self::assertStringNotContainsString('"leaf":"complete"', $log);
+    }
+
+    public function testLoggerKeepsTheDepthOfARealDeviceResponse(): void
+    {
+        $value = ['leaf' => 'complete'];
+        for ($depth = 0; $depth < 12; $depth++) {
+            $value = ['nested' => $value];
+        }
+
+        Logger::channel('api')->info('device response', ['body' => $value]);
+
+        $log = $this->apiLogContents();
+        self::assertStringContainsString('"leaf":"complete"', $log);
+        self::assertStringNotContainsString('aborting normalization', $log);
     }
 
     public function testUnauthorizedApiRequestIsStillLogged(): void

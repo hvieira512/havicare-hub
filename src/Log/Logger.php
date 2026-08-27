@@ -25,6 +25,8 @@ class Logger
             "[%datetime%] %channel%.%level_name%: %message% %context%\n",
             'Y-m-d H:i:s'
         );
+        // Guarda calibrada pelas respostas reais: a mais funda tem 10 níveis, o limite do Monolog tem 9.
+        $formatter->setMaxNormalizeDepth(32);
         $handler = new StreamHandler('php://stdout', $level);
         $handler->setFormatter($formatter);
 
