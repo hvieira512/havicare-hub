@@ -29,9 +29,9 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     }
 
     /**
-     * A device needs both a company and a license to count as bound. The
-     * company check alone used to carry this, so a licenseId compared against
-     * the wrong type went unnoticed.
+     * Um dispositivo precisa de empresa E de licença para contar como ligado. Só com a
+     * verificação da empresa, um `licenseId` comparado contra o tipo errado passava
+     * despercebido.
      */
     public function testWonlexLoginIsUnboundWhenACompanyHasNoLicense(): void
     {

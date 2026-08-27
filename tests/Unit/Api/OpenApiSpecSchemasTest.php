@@ -8,11 +8,10 @@ use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The spec is assembled from separate per-domain files, so a schema and the
- * path that references it are edited far apart. This pins the two together: a
- * mistyped or deleted schema name breaks the build instead of shipping a
- * document whose $refs do not resolve, and a schema nobody references cannot
- * accumulate as dead documentation.
+ * A especificação é montada a partir de ficheiros por domínio, e por isso um esquema e a rota
+ * que o referencia editam-se longe um do outro. Isto prende os dois: um nome de esquema mal
+ * escrito ou apagado parte a build em vez de sair um documento cujos `$ref` não resolvem, e
+ * um esquema que ninguém referencia não se acumula como documentação morta.
  */
 final class OpenApiSpecSchemasTest extends TestCase
 {

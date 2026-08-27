@@ -10,9 +10,9 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * The rules the capability projection follows, asserted against the projection
- * itself. This replaces a test that asserted on the presenter's source text and
- * so broke on a refactor that provably changed no output.
+ * As regras que a projecção de capacidades segue, afirmadas contra a própria projecção e não
+ * contra o texto-fonte do apresentador -- que se partia em refactors sem alteração nenhuma
+ * na saída.
  */
 final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
 {

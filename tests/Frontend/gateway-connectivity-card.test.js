@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
-// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
+// caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import {renderRequestCardShell} from "../../src/Dashboard/dashboard/telemetry-cards.js";
 import {state} from "../../src/Dashboard/dashboard/state.js";
@@ -22,7 +22,7 @@ const connectivityCard = (data) => renderRequestCardShell(
 );
 
 test("MKGW3 wifi connectivity shows the interface and signal strength", () => {
-    // Exactly the payload GatewayNormalizer emits for a MOKO 3004 message.
+    // Exactamente o payload que o `GatewayNormalizer` emite para uma mensagem MOKO 3004.
     const html = connectivityCard({interface: "wifi", signalStrengthDbm: -50});
 
     assert.match(html, /Wi-Fi · -50 dBm/);
@@ -59,7 +59,7 @@ test("connectivity falls back to its label when the payload carries nothing", ()
     const html = connectivityCard({});
 
     assert.match(html, /Conectividade/);
-    // Never the titleized English key that the missing label map produced.
+    // Nunca a chave inglesa titleizada, que é o que sai sem etiqueta no catálogo.
     assert.doesNotMatch(html, /Connectivity/);
 });
 

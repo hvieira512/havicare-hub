@@ -8,12 +8,12 @@ use Hub\Ingress\Mqtt\Moko\W6rDecoder;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The gateway-field vectors are verbatim observations captured from a MKGW3
- * relaying a real W6R (fb:d8:7c:59:ba:8b) while its button was pressed.
+ * Os vectores de campos do gateway são observações capturadas tal e qual de um MKGW3 a
+ * retransmitir uma W6R real (fb:d8:7c:59:ba:8b) com o botão premido.
  */
 final class W6rDecoderTest extends TestCase
 {
-    /** Single press, with the scan response fields present. */
+    /** Toque simples, com os campos da resposta ao scan presentes. */
     private const SINGLE_PRESS = [
         'timestamp' => 1786359514903,
         'timezone' => 0,
@@ -39,7 +39,7 @@ final class W6rDecoderTest extends TestCase
         'txpower' => 0,
     ];
 
-    /** Double press, captured without the scan response. */
+    /** Toque duplo, capturado sem a resposta ao scan. */
     private const DOUBLE_PRESS_ALARM_ONLY = [
         'type_code' => 7,
         'type' => 'bxp-button',
@@ -67,8 +67,8 @@ final class W6rDecoderTest extends TestCase
 
     public function testCarriesTheGatewayMeasuredRssiThrough(): void
     {
-        // Proximity work needs this: only the gateway can measure it, so it exists
-        // on the observation and nowhere in the advertisement itself.
+        // A proximidade precisa disto: só o gateway o consegue medir, e por isso existe na
+        // observação e em sítio nenhum do anúncio.
         self::assertSame(-82, (new W6rDecoder())->decode(self::SINGLE_PRESS)['rssiDbm'] ?? null);
     }
 
@@ -82,9 +82,9 @@ final class W6rDecoderTest extends TestCase
 
     public function testFrameTypeIsReportedWithoutTheSpecBaseOffset(): void
     {
-        // The sheet numbers the modes 0x20/0x21/0x22, the gateway 0/1/2. Each
-        // mode carries its own counter, which is how the mapping was confirmed
-        // against a device pressed single, double and long in turn.
+        // A folha do fabricante numera os modos 0x20/0x21/0x22 e o gateway 0/1/2. Cada modo
+        // leva o seu contador, e foi assim que o mapeamento se confirmou contra um aparelho
+        // premido em simples, duplo e longo, um a um.
         $decoder = new W6rDecoder();
         $modes = [];
         foreach ([0, 1, 2, 3] as $frameType) {
@@ -108,7 +108,7 @@ final class W6rDecoderTest extends TestCase
         $decoded = (new W6rDecoder())->decode(self::SINGLE_PRESS);
 
         self::assertSame(['x' => -4, 'y' => -20, 'z' => 1052], $decoded['info']['accelerationMg']);
-        // The app reported 98% for this device at the time of capture.
+        // A app deles reportava 98% para este aparelho na hora da captura.
         self::assertSame(98, $decoded['info']['batteryPercent']);
     }
 
@@ -141,13 +141,13 @@ final class W6rDecoderTest extends TestCase
     {
         $decoder = new W6rDecoder();
 
-        // A real capture of an Apple device from the same gateway.
+        // Uma captura real de um aparelho Apple, do mesmo gateway.
         self::assertNull($decoder->decode([
             'mac' => '4e9f3ec3cfc6',
             'type' => 'other',
             'adv_data' => '02011a020a0c0bff4c001006061988d14808',
         ]));
-        // The W6R before its advertising slots were configured.
+        // A W6R antes de os seus slots de anúncio estarem configurados.
         self::assertNull($decoder->decode([
             'mac' => 'fbd87c59ba8b',
             'type' => 'bxp-button',
@@ -155,14 +155,14 @@ final class W6rDecoderTest extends TestCase
             'rsp_data' => '',
         ]));
         self::assertNull($decoder->decode(['type' => 'bxp-button', 'mac' => 'not-a-mac', 'frame_type' => 0, 'trigger_count' => 1]));
-        // Reserved frame types must not be guessed at.
+        // Os tipos de frame reservados não se adivinham.
         self::assertNull($decoder->decode(['mac' => 'fbd87c59ba8b', 'type' => 'bxp-button', 'frame_type' => 9, 'trigger_count' => 1]));
     }
 
     public function testStillDecodesRawAdvertisingDataFromGatewaysThatSendIt(): void
     {
-        // A MKGW3 pre-decodes MOKO frames, but nothing guarantees every gateway
-        // model does, so the BXP-B layout stays supported.
+        // Um MKGW3 pré-descodifica os frames MOKO, mas nada garante que todos os modelos de
+        // gateway o façam, e por isso o formato BXP-B continua suportado.
         $adv = '020106'
             . sprintf('%02x', 1 + 2 + 12) . '16' . 'e0fe'
             . '22'            // 0x22 -> long press

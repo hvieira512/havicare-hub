@@ -1,19 +1,19 @@
--- Device inventory seed, captured from the production hub (sockets.hitcare.net).
+-- O inventário de dispositivos, capturado do hub de produção (sockets.hitcare.net).
 --
--- Every statement is idempotent and resolves surrogate ids by natural key, so this
--- file never hardcodes an auto-increment value: suppliers and companies match on
--- their UNIQUE name, models on uq_models_supplier_internal_model, licenses on
--- uq_licenses_company_license, and devices on whitelist.imei.
+-- Cada instrução é idempotente e resolve os ids por chave natural, para este ficheiro nunca
+-- fixar um valor de auto-increment: os fornecedores e as empresas casam pelo nome UNIQUE, os
+-- modelos pelo uq_models_supplier_internal_model, as licenças pelo
+-- uq_licenses_company_license, e os dispositivos pelo whitelist.imei.
 --
--- Devices and gateway links use INSERT IGNORE: a fresh database gets the full
--- inventory, and a database you have since edited by hand keeps your edits.
--- Models upsert instead, because ReferenceCatalogSeeder creates a subset of them
--- first with an empty image_path and a placeholder commercial_name.
+-- Os dispositivos e as ligações a gateways usam INSERT IGNORE: uma base nova recebe o
+-- inventário todo, e uma base já editada à mão fica com as tuas edições. Os modelos fazem
+-- upsert, porque o ReferenceCatalogSeeder cria um subconjunto deles primeiro, com o
+-- image_path vazio e um commercial_name provisório.
 --
--- Deliberately NOT seeded: api_users (password hashes), device_configurations and
--- device_configuration_changes/operations (live per-device sync state, which would
--- make every device look like it has pending changes it cannot confirm),
--- private_radio_map_access_points (learned at runtime), dashboard_notifications.
+-- Deliberadamente NÃO semeados: api_users (hashes de password), device_configurations e
+-- device_configuration_changes/operations (estado de sincronização vivo por dispositivo, que
+-- punha cada um a parecer ter alterações pendentes que não consegue confirmar),
+-- private_radio_map_access_points (aprendidos em execução) e dashboard_notifications.
 
 INSERT IGNORE INTO suppliers (name) VALUES
     ('4P Touch'),
@@ -183,11 +183,9 @@ INSERT IGNORE INTO gateway_device_links (gateway_device_key, linked_device_key, 
     ('d48c49f7909c', 'fbd87c59ba8b', 1),
     ('dc1603ecf1f7', 'fbd87c59ba8b', 1);
 
--- The HW20PRO capability overrides, which are the one place production disagrees with
--- what the migrations alone produce. 2026072903_restrict_hw20pro_health_requests marked
--- all seven health capabilities non-requestable; three of them were turned back on by
--- hand afterwards, `location` was set explicitly, and two were switched off entirely.
--- These statements reproduce that final state rather than the blanket rule.
+-- Os overrides de capacidades do HW20PRO: o único sítio em que produção discorda do que o
+-- catálogo semeado produz. São escolhas feitas à mão no separador das Capacidades, e estas
+-- instruções reproduzem o estado final delas.
 UPDATE model_capabilities mc
 JOIN models m ON m.id = mc.model_id
 JOIN suppliers s ON s.id = m.supplier_id

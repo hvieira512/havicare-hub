@@ -9,8 +9,8 @@ use Predis\Client as RedisClient;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * The device stream is push-based, so it only sees a change if the store
- * announces it. These pin which writes announce and which stay quiet.
+ * O stream de um dispositivo é por push, e por isso só vê uma mudança se o store a anunciar.
+ * Isto prende quais as escritas que anunciam e quais é que ficam caladas.
  */
 final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
 {
@@ -41,7 +41,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
             $count++;
         });
 
-        // By reference: an arrow function would capture the count by value and
+        // Por referência: uma arrow function capturava a contagem por valor e
         // always report zero.
         return [$store, static function () use (&$count): int {
             return $count;
@@ -62,8 +62,8 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
     {
         [$store, $count] = $this->storeCountingNotifications();
 
-        // Written on every gateway message and never streamed, so announcing it
-        // would wake every open stream for data nobody reads.
+        // Escrita a cada mensagem de gateway e nunca enviada no stream: anunciá-la acordava
+        // todos os streams abertos para dados que ninguém lê.
         $store->append(self::DEVICE, 'raw', ['type' => 'raw', 'data' => []]);
 
         self::assertSame(0, $count());
@@ -73,8 +73,8 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
     {
         [$store, $count] = $this->storeCountingNotifications();
 
-        // Called for every observation, and it does not change what the stream
-        // serves, so it must not defeat the coalescing.
+        // Chamado a cada observação, e não muda o que o stream serve: não pode derrotar a
+        // coalescência.
         $store->deviceSeen(self::DEVICE, ['supplier' => 'MOKO', 'model' => 'W6R', 'online' => '1']);
 
         self::assertSame(0, $count());

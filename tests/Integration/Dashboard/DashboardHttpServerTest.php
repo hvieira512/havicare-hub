@@ -443,8 +443,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
-     * licenseId reaches registration as an int from the API and as a string
-     * from the whitelist file, and tenant isolation must not depend on which.
+     * O `licenseId` chega ao registo como inteiro pela API e como texto pelo ficheiro da
+     * whitelist, e o isolamento entre clientes não pode depender de qual dos dois.
      */
     public function testTenantIsolationHoldsWhateverTypeTheLicenseIdArrivesAs(): void
     {
@@ -491,10 +491,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
-     * The inverse of the test below, and the one that actually exercises
-     * license scoping: same company, different license. Company scoping alone
-     * cannot catch this, so without it the license clause could be removed
-     * entirely and every other tenant test would still pass.
+     * O inverso do teste abaixo, e o que exercita de facto o âmbito por licença: mesma
+     * empresa, licença diferente. O âmbito por empresa não apanha isto, e sem este teste a
+     * cláusula da licença podia desaparecer inteira com todos os outros a passar.
      */
     public function testTenantClientCannotAccessAnotherLicenseWithinItsOwnCompany(): void
     {
@@ -502,7 +501,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $hitcareId = $db->companies->create('hitcare-extra-holder');
         $db->licenses->create($hitcareId, '3003', 'hitcare-second-license');
 
-        // Same company as the tenant, a license the tenant does not hold.
+        // A mesma empresa do cliente, e uma licença que ele não tem.
         $store->registerDevice('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');
         $db->whitelist->register('861265061009899', 'Vivistar', 'L08 Pro', 'watch', 3003, '', '', 'hitcare');
 
@@ -1035,7 +1034,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
         self::assertSame(200, $response->getStatusCode());
 
-        // A single stream holds a single listener.
+        // Um stream tem um ouvinte só.
         self::assertSame(1, $store->updates()->listenerCount());
 
         $frames = $this->collectSseFramesUntilUpdate($response, function () use ($store): void {
@@ -1053,13 +1052,13 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             ]);
         });
 
-        // Arriving at all inside the deadline proves the push path: the periodic
-        // fallback only fires after STREAM_FALLBACK_SECONDS.
+        // Chegar dentro do prazo prova o caminho de push: o recurso periódico só dispara
+        // depois de `STREAM_FALLBACK_SECONDS`.
         self::assertStringContainsString("event: snapshot\n", $frames);
         self::assertStringContainsString("event: update\n", $frames);
 
         $update = $this->decodeSseFrame(substr($frames, (int)strpos($frames, 'event: update')));
-        // The burst of writes coalesces into one frame carrying both.
+        // A rajada de escritas colapsa num frame que leva as duas.
         self::assertSame('heart_rate', $update['telemetry'][0]['type'] ?? null);
         self::assertSame('BPXL', $update['commands'][0]['requestId'] ?? null);
 
@@ -1079,14 +1078,14 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertSame(1, $store->updates()->listenerCount());
 
-        // Schedule a flush, then disconnect before its coalescing window ends.
+        // Agenda um envio e desliga antes de a janela de coalescência dele acabar.
         $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 70]);
         $response->getBody()->close();
 
         self::assertSame(0, $store->updates()->listenerCount());
 
-        // The pending flush must not survive the close: run the loop past the
-        // coalescing window and confirm nothing is left holding it open.
+        // O envio pendente não pode sobreviver ao fecho: corre-se o loop para além da janela
+        // de coalescência para confirmar que nada ficou a segurá-lo aberto.
         $loop = Loop::get();
         $ticks = 0;
         $loop->addPeriodicTimer(0.05, static function ($timer) use ($loop, &$ticks): void {
@@ -1097,7 +1096,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         });
         $loop->run();
 
-        // A write after the close must reach nobody at all.
+        // Uma escrita depois do fecho não pode chegar a ninguém.
         $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 71]);
         self::assertSame(0, $store->updates()->listenerCount());
     }
@@ -1326,9 +1325,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
-     * Reads the snapshot, runs $write, and keeps reading until the pushed update
-     * arrives. The deadline is far below the stream's periodic fallback, so a
-     * frame here can only have come from the store announcing the write.
+     * Lê o instantâneo, corre o `$write`, e continua a ler até a actualização chegar. O prazo
+     * está muito abaixo do recurso periódico do stream, e por isso um frame aqui só pode ter
+     * vindo do store a anunciar a escrita.
      */
     private function collectSseFramesUntilUpdate(
         \Psr\Http\Message\ResponseInterface $response,

@@ -40,8 +40,8 @@ final class DashboardStoreTest extends TestCase
         $store = new DashboardStore($redis, prefix: 'test:dashboard');
         $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
-        // No sentAt: nothing else would ever move this out of "waiting", so it
-        // would sit pending on the dashboard forever.
+        // Sem `sentAt`: nada mais o tiraria de "à espera", e ficava pendente na dashboard
+        // para sempre.
         $store->recordCommand('861265061009822', 'cmd-1', [
             'status' => 'waiting',
             'requestedAt' => gmdate('Y-m-d\\TH:i:s\\Z', time() - 7200),
@@ -58,7 +58,7 @@ final class DashboardStoreTest extends TestCase
         $store = new DashboardStore($redis, prefix: 'test:dashboard');
         $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
-        // The retry sweep skips anything not retryable, so without this the
+        // A varredura de repetição salta o que não é repetível, e por isso sem isto o
         // command has no path to a terminal state at all.
         $store->recordCommand('861265061009822', 'cmd-1', [
             'status' => 'queued',
@@ -77,8 +77,8 @@ final class DashboardStoreTest extends TestCase
         $store = new DashboardStore($redis, prefix: 'test:dashboard');
         $store->registerDevice('861265061009822', 'Vivistar', 'VIVISTAR-CARE');
 
-        // Queued-and-retryable means "waiting for the device to come back",
-        // which is deliberate and must survive the sweep.
+        // Em fila e repetível quer dizer "à espera de o dispositivo voltar", o que é
+        // deliberado e tem de sobreviver à varredura.
         $store->recordCommand('861265061009822', 'cmd-1', [
             'status' => 'queued',
             'retryable' => true,

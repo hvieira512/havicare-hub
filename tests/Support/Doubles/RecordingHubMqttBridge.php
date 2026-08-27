@@ -9,8 +9,8 @@ use Hub\HubMqttBridge;
 /**
  * Captures what an ingress publishes instead of talking to a broker.
  *
- * Every publish is recorded in the same shape, so a change to HubMqttBridge's
- * signatures only has to be reflected here rather than in a copy per test.
+ * Cada publicação é registada na mesma forma, para uma alteração às assinaturas do
+ * `HubMqttBridge` só ter de ser reflectida aqui e não numa cópia por teste.
  */
 final class RecordingHubMqttBridge extends HubMqttBridge
 {
@@ -31,7 +31,7 @@ final class RecordingHubMqttBridge extends HubMqttBridge
 
     public function __construct()
     {
-        // Deliberately does not call parent: there is no broker to connect to.
+        // Não chama o pai de propósito: não há broker a que ligar.
     }
 
     public function publishRaw(string $imei, array $payload, string $deviceType = 'watch', int $licenseId = 0, string $company = 'null'): void

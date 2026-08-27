@@ -1,5 +1,5 @@
 <?php
 
-// Test support classes autoload via the Tests\ PSR-4 mapping in composer.json
-// (autoload-dev), so nothing needs requiring by hand here.
+// As classes de apoio aos testes carregam pelo mapeamento PSR-4 de `Tests\` no
+// composer.json (`autoload-dev`), e por isso não há nada a exigir à mão aqui.
 require __DIR__ . '/../vendor/autoload.php';

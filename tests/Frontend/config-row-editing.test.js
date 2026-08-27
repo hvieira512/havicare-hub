@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Must come before the dashboard modules: they touch window while loading.
+// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
 import "./support/browser-env.js";
 import {
     appendPhoneListRow,
@@ -10,10 +10,9 @@ import {
 import {parseFragment} from "./support/dom.js";
 
 /**
- * These behaviours were unreachable from a test until row editing came out of
- * bootstrap.js -- nothing was exported. The interesting cases are the two edge
- * conditions a user hits constantly: the repeat limit, and removing the only
- * remaining row.
+ * As linhas repetíveis de uma secção de configuração. Os casos que interessam são as duas
+ * fronteiras em que se bate constantemente: o limite de repetições, e remover a única linha
+ * que resta.
  */
 const phoneList = (rowCount, limit) =>
     parseFragment(`
@@ -72,8 +71,7 @@ test("removing one of several rows deletes it", () => {
 });
 
 test("removing the last remaining row clears it instead of deleting it", () => {
-    // Deleting it would leave the section with no row to clone from, so the
-    // user could never add one back.
+    // Apagá-la deixava a secção sem linha de onde clonar, e nunca mais se acrescentava uma.
     const section = phoneList(1, 3);
 
     removeConfigRow(rowsIn(section)[0]);

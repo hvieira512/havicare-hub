@@ -5,20 +5,20 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 
 /**
- * Guards against a broken ES module graph.
+ * Guarda contra um grafo de módulos ES partido.
  *
- * Linking resolves every import across the whole graph before any code runs,
- * so a name that a module imports but no module exports takes the entire
- * dashboard down with a blank page -- no script executes at all. `node --check`
- * cannot catch it because each file is individually valid syntax.
+ * A ligação resolve todos os imports do grafo antes de qualquer código correr, e por isso um
+ * nome que um módulo importa e nenhum exporta derruba a dashboard inteira numa página branca
+ * -- nenhum script executa. O `node --check` não o apanha, porque cada ficheiro é
+ * individualmente válido.
  *
- * The entry point is main.js because that is what index.php loads. Checking
- * anything else leaves the modules closest to the entry unguarded, which is
- * where a blank page hurts most.
+ * O ponto de entrada é o `main.js`, que é o que o `index.php` carrega. Verificar outro
+ * qualquer deixava os módulos mais próximos da entrada sem guarda, que é onde uma página
+ * branca dói mais.
  *
- * The modules are browser code, so evaluating them in node fails on globals
- * like `window`. That is expected and ignored: only a link-time SyntaxError
- * means a genuinely broken import.
+ * Os módulos são código de browser, e por isso avaliá-los em node falha em globais como o
+ * `window`. Isso é esperado e ignorado: só um `SyntaxError` na ligação é que quer dizer um
+ * import genuinamente partido.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");
@@ -59,8 +59,8 @@ test("every dashboard module is reachable from the entry point", () => {
     const reachable = reachableFrom(ENTRY);
     const orphans = listModules(MODULE_ROOT).filter((file) => !reachable.has(file));
 
-    // An orphan is either dead code or a module the link check above never
-    // sees -- both worth knowing about the moment it appears.
+    // Um órfão é código morto ou um módulo que a verificação de ligação acima nunca vê -- e
+    // vale a pena saber das duas coisas no instante em que aparecem.
     assert.deepEqual(
         orphans.map((file) => path.relative(MODULE_ROOT, file)),
         [],

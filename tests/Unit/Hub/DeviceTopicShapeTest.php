@@ -9,9 +9,9 @@ use Hub\HubMqttBridge;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Published topics are an external contract -- consumers subscribe to these
- * strings. licenseId is an int in the domain and only becomes text here, so
- * this pins the rendering across that boundary.
+ * Os tópicos publicados são um contrato externo -- quem consome subscreve estas strings. O
+ * `licenseId` é um inteiro no domínio e só se torna texto aqui, e por isso isto prende a
+ * escrita dele nessa fronteira.
  */
 final class DeviceTopicShapeTest extends TestCase
 {
@@ -46,8 +46,8 @@ final class DeviceTopicShapeTest extends TestCase
 
     public function testCompanyCasingIsNormalisedSoOneTenantIsOneTopicSpace(): void
     {
-        // Topics are case sensitive: "hitCare" and "hitcare" would be two
-        // different tenants to a subscriber.
+        // Os tópicos distinguem maiúsculas: para quem subscreve, "hitCare" e "hitcare" eram
+        // dois clientes diferentes.
         self::assertSame('hitcare', DeviceMetadata::normalizeCompany('hitCare'));
         self::assertSame('havicare', DeviceMetadata::normalizeCompany(' haviCare '));
         self::assertSame('null', DeviceMetadata::normalizeCompany(''));
@@ -56,8 +56,8 @@ final class DeviceTopicShapeTest extends TestCase
 
     public function testAMixedCaseCompanyCannotReachATopic(): void
     {
-        // The whitelist file is hand-editable, so the entry normaliser is the
-        // last gate before a company name becomes part of a topic.
+        // O ficheiro da whitelist é editável à mão, e por isso o normalizador de entradas é o
+        // último portão antes de um nome de empresa fazer parte de um tópico.
         $whitelistPath = sys_get_temp_dir() . '/casing-' . bin2hex(random_bytes(4)) . '.json';
         file_put_contents($whitelistPath, json_encode([
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'HitCare'],

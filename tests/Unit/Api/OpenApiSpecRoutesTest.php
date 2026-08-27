@@ -8,9 +8,9 @@ use Hub\Api\OpenApiSpec;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The spec is hand-maintained, so nothing stops it drifting from the routes it
- * documents. This pins the two together: a new route is undocumented until it
- * appears in the spec, and a removed one cannot linger there.
+ * A especificação é mantida à mão, e por isso nada a impede de divergir das rotas que
+ * documenta. Isto prende as duas: uma rota nova fica indocumentada até aparecer na
+ * especificação, e uma removida não pode ficar lá a arrastar-se.
  */
 final class OpenApiSpecRoutesTest extends TestCase
 {
@@ -44,8 +44,8 @@ final class OpenApiSpecRoutesTest extends TestCase
                 $matches
             );
             foreach ($matches[1] as $pattern) {
-                // '/api/models/{id:\d+}' and '/api/models/{id}' are the same
-                // path as far as the spec is concerned.
+                // Para a especificação, `/api/models/{id:\d+}` e `/api/models/{id}` são a
+                // mesma rota.
                 $paths[] = preg_replace('/\{([A-Za-z]+):[^}]*\}/', '{$1}', $pattern);
             }
         }
@@ -53,8 +53,8 @@ final class OpenApiSpecRoutesTest extends TestCase
         $paths = array_values(array_unique($paths));
         sort($paths);
 
-        // If the pattern above ever stops matching, the diffs would both be
-        // empty and the test would pass while checking nothing.
+        // Se o padrão acima deixar de casar, as duas diferenças ficam vazias e o teste passa
+        // sem verificar nada.
         self::assertGreaterThan(20, count($paths), 'route extraction found suspiciously few routes');
 
         return $paths;

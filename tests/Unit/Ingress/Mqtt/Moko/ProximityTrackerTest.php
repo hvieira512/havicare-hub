@@ -6,13 +6,13 @@ use Hub\Ingress\Mqtt\Moko\ProximityTracker;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The window statistics a client thresholds on. The series used here are real
- * readings captured from bracelet fb:d8:7c:59:ba:8b relayed by MKGW4
- * c5:e3:90:f3:0b:ce while the bracelet lay motionless on a desk.
+ * As estatísticas da janela sobre as quais um cliente põe limiares. As séries usadas aqui são
+ * leituras reais, capturadas da pulseira fb:d8:7c:59:ba:8b retransmitida pelo MKGW4
+ * c5:e3:90:f3:0b:ce, com a pulseira imóvel sobre uma mesa.
  */
 final class ProximityTrackerTest extends TestCase
 {
-    /** Real readings: 15 dB of spread from a device that never moved. */
+    /** Leituras reais: 15 dB de dispersão num aparelho que nunca se mexeu. */
     private const MOTIONLESS = [-66, -77, -77, -69, -69, -69, -66, -78, -69, -66];
 
     public function testTheFirstReadingIsItsOwnWindow(): void
@@ -38,15 +38,15 @@ final class ProximityTrackerTest extends TestCase
         self::assertSame(10, $stats['samples']);
         self::assertSame(-66, $stats['rssiMaxDbm']);
         self::assertSame(-78, $stats['rssiMinDbm']);
-        // Sorted: -78 -77 -77 -69 -69 -69 -69 -66 -66 -66. Even count takes the
-        // lower middle, so the value is one the radio actually saw.
+        // Ordenado: -78 -77 -77 -69 -69 -69 -69 -66 -66 -66. Com contagem par fica a menor
+        // das duas do meio, para o valor ser um que a rádio viu de facto.
         self::assertSame(-69, $stats['rssiMedianDbm']);
     }
 
     public function testAStrongSampleMovesTheMaximumButNotTheMedian(): void
     {
-        // The property a door alarm depends on: a brisk walk past a gateway is
-        // one or two readings, far too few to move a median.
+        // A propriedade de que um alarme de porta depende: passar a andar por um gateway são
+        // uma ou duas leituras, longe das que uma mediana precisa para se mexer.
         $tracker = new ProximityTracker(windowSeconds: 60);
         foreach ([-77, -78, -77, -76] as $index => $rssi) {
             $tracker->record('device', 'gateway', $rssi, 1000.0 + $index);
@@ -82,8 +82,8 @@ final class ProximityTrackerTest extends TestCase
 
     public function testEachPairKeepsItsOwnWindow(): void
     {
-        // The same bracelet heard by two gateways reads differently on each, and
-        // one door's window must never be fed by another's.
+        // A mesma pulseira ouvida por dois gateways lê diferente em cada um, e a janela de
+        // uma porta não pode ser alimentada pela de outra.
         $tracker = new ProximityTracker(windowSeconds: 60);
         $tracker->record('bracelet', 'gateway-near', -52, 1000.0);
         $stats = $tracker->record('bracelet', 'gateway-far', -85, 1001.0);
@@ -102,7 +102,7 @@ final class ProximityTrackerTest extends TestCase
             [['deviceKey' => 'bracelet', 'gatewayKey' => 'gateway']],
             $tracker->takeStale(1031.0),
         );
-        // Silence stays silent: the client is told once, not every tick.
+        // O silêncio fica silencioso: diz-se ao cliente uma vez, e não a cada tick.
         self::assertSame([], $tracker->takeStale(9999.0));
     }
 

@@ -7,10 +7,10 @@ namespace Tests\Integration\Support;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * Guards the test harness itself.
+ * Guarda o próprio arnês de testes.
  *
- * Tests get a database cloned from a template rather than a freshly migrated
- * one, so the clone has to be indistinguishable from the real schema.
+ * Os testes recebem uma base clonada de um modelo e não uma acabada de migrar, e por isso o
+ * clone tem de ser indistinguível do esquema a sério.
  */
 final class DatabaseTemplateCloneTest extends MysqlDashboardTestCase
 {
@@ -27,7 +27,7 @@ final class DatabaseTemplateCloneTest extends MysqlDashboardTestCase
             ORDER BY rc.constraint_name
         ")->fetchAll(\PDO::FETCH_KEY_PAIR);
 
-        // CREATE TABLE ... LIKE would silently drop these.
+        // O `CREATE TABLE ... LIKE` largava estas em silêncio.
         self::assertSame([
             'fk_gateway_device_links_device' => 'CASCADE',
             'fk_gateway_device_links_gateway' => 'CASCADE',

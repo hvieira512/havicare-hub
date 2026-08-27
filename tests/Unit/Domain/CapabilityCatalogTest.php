@@ -19,8 +19,8 @@ final class CapabilityCatalogTest extends TestCase
             'bracelet' => [3, '16ca71291d05ec6c08e98d889b0bed4453725b1e6481fa5d1d02f807f76c2e28'],
         ];
 
-        // A device type added without a hash here would otherwise go unguarded,
-        // which is how bracelet was first missed.
+        // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim
+        // que a pulseira passou despercebida à primeira.
         self::assertSame(CapabilityCatalog::deviceTypes(), array_keys($expected));
 
         foreach ($expected as $deviceType => [$count, $hash]) {

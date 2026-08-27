@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Must come before the dashboard modules: they touch window while loading.
+// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
 import "./support/browser-env.js";
 import {
     renderConfigInputs,
@@ -11,12 +11,11 @@ import {
 import {configSection} from "./support/dom.js";
 
 /**
- * Characterisation tests for the configuration payload round trip.
+ * A ida e volta do payload de configuração.
  *
- * These payloads are written to real devices, so what matters is that what the
- * form renders is exactly what the reader gives back. They describe today's
- * behaviour rather than an ideal, so that config.js can be split apart with
- * something to check the pieces against.
+ * Estes payloads são escritos em dispositivos reais, e por isso o que interessa é que o que o
+ * formulário desenha seja exactamente o que o leitor devolve. Descrevem o comportamento de
+ * hoje e não um ideal, para haver contra o que verificar as peças em que o código se divida.
  */
 const roundTrip = (entry, desired, meta = {}) =>
     readConfigPayload(configSection(renderConfigInputs, entry, desired, meta));
@@ -35,8 +34,8 @@ test("toggle uses the entry's own field name", () => {
 });
 
 test("wonlex switchState is presented and read back as enabled", () => {
-    // The native field is renamed for this protocol only; the reader has to
-    // agree with the renderer or the payload silently loses the value.
+    // O campo nativo é renomeado só neste protocolo: o leitor tem de concordar com quem
+    // desenha, senão o payload perde o valor em silêncio.
     const entry = {input: "toggle", key: "x", fields: ["switchState"]};
 
     assert.deepEqual(
@@ -86,8 +85,8 @@ test("push message reads its fixed field name", () => {
 });
 
 test("a national phone number comes back in E.164", () => {
-    // The phone control applies the default country code on the way through,
-    // so what the device receives is not what the caller passed in.
+    // O campo de telefone aplica o indicativo por omissão de passagem, e por isso o que o
+    // dispositivo recebe não é o que quem chamou passou.
     assert.deepEqual(
         roundTrip({input: "makeCall", key: "call"}, {phone: "912345678"}),
         {phone: "+351912345678"},
@@ -102,7 +101,7 @@ test("a phone number that already has a country code keeps it", () => {
 });
 
 test("a number with the wrong digit count for its country is rejected, not truncated", () => {
-    // Reading throws so the caller never sends a malformed number to a device.
+    // A leitura estoira, para nunca sair um número mal formado para um dispositivo.
     assert.throws(
         () => roundTrip({input: "makeCall", key: "call"}, {phone: "+44770090012345"}),
         /Reino Unido/,
@@ -116,8 +115,8 @@ test("an unknown input type falls back to the json reader rather than throwing",
 });
 
 test("defaults are readable payloads for every input type the renderer knows", () => {
-    // A default that the reader cannot round trip would send the wrong thing
-    // the first time a user saves a section they never touched.
+    // Um valor por omissão que o leitor não consiga devolver enviava a coisa errada à
+    // primeira gravação de uma secção que ninguém tocou.
     for (const input of ["toggle", "number", "text", "intervalToggle", "pushMessage"]) {
         const entry = {input, key: input, fields: ["enabled"]};
         const defaults = defaultConfigPayload(entry, "");
@@ -137,7 +136,7 @@ test("a list keeps its numbers and honours the entry limit", () => {
 });
 
 test("SOS contacts reject duplicates rather than silently collapsing them", () => {
-    // Two identical numbers would look accepted but leave one slot unused.
+    // Dois números iguais pareciam aceites mas deixavam um slot sem uso.
     assert.throws(
         () => roundTrip(
             {input: "sos_contacts", key: "sos", limit: 3},
@@ -189,8 +188,8 @@ test("a custom-recurrence alarm keeps the days it selected", () => {
 });
 
 test("an untouched default alarm row is not saved as a blank alarm", () => {
-    // The renderer always emits one row so there is something to clone from,
-    // but a row with no time set must not reach the device.
+    // Quem desenha emite sempre uma linha para haver de onde clonar, mas uma linha sem hora
+    // não pode chegar ao dispositivo.
     assert.deepEqual(roundTrip({input: "alarm_clock", key: "alarm_clock", limit: 3}, []), {items: []});
 });
 

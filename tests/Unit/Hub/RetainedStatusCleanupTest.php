@@ -9,13 +9,13 @@ use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Device status is published retained, so a device that changes tenant keeps
- * announcing itself on the topic it left. A subscriber to the old tenant goes
- * on receiving a device that is no longer theirs -- which is a cross-tenant
- * leak, not just stale data.
+ * O estado de um dispositivo é publicado como retido, e por isso um dispositivo que muda de
+ * cliente continua a anunciar-se no tópico que deixou. Quem subscreve o cliente antigo
+ * continua a receber um dispositivo que já não é dele -- o que é uma fuga entre clientes, e
+ * não só dados velhos.
  *
- * MQTT deletes a retained message with a zero-length payload. An empty JSON
- * document would replace it with "[]" and the leak would remain.
+ * O MQTT apaga uma mensagem retida com um payload de comprimento zero. Um documento JSON
+ * vazio substituía-a por "[]" e a fuga mantinha-se.
  */
 final class RetainedStatusCleanupTest extends TestCase
 {

@@ -4,13 +4,12 @@
 declare(strict_types=1);
 
 /**
- * Finds a BLE device by what *changes* when you interact with it, instead of by
- * a known advertising signature.
+ * Encontra um dispositivo BLE pelo que *muda* quando se interage com ele, em vez de por uma
+ * assinatura de anúncio conhecida.
  *
- * It records a baseline of everything the gateway can already see, then reports
- * any address that is new, and any address whose advertising payload changes.
- * The payload check matters: a button that already advertises at rest will not
- * show up as a new address, only as a changed one.
+ * Regista uma linha de base de tudo o que o gateway já vê e depois reporta cada endereço
+ * novo, e cada endereço cujo payload de anúncio mude. A verificação do payload é o que conta:
+ * um botão que já anuncia em repouso não aparece como endereço novo, só como alterado.
  *
  * Usage:
  *   php simulator/ble-scan-diff.php                  # 30s baseline, then watch
@@ -142,7 +141,7 @@ $handler = function (string $topic, string $message) use (&$baseline, &$reported
             continue;
         }
 
-        // Report each distinct payload once so a chatty device cannot flood.
+        // Cada payload distinto é reportado uma vez, para um aparelho falador não inundar.
         $key = $mac . '|' . $fingerprint;
         if (isset($reported[$key])) {
             continue;

@@ -16,9 +16,8 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * Signal reporting for a relayed device: one message per sighting per gateway.
  *
- * The contract these tests pin down is in docs/proximity-alarms.md. The hub
- * reports the signal and says when it has gone quiet; thresholds and alarms are
- * the client's.
+ * O contrato que estes testes prendem está em `docs/proximity-alarms.md`: o hub reporta o
+ * sinal e diz quando ele se calou; os limiares e os alarmes são do cliente.
  */
 final class BridgeProximityTest extends TestCase
 {
@@ -108,10 +107,10 @@ final class BridgeProximityTest extends TestCase
     {
         [$bridge, $mqtt] = $this->bridge();
 
-        // The identical payload three times: battery and motion are unchanged, so
-        // the fingerprint throttle suppresses them after the first. The signal must
-        // still be reported every time, or the client's series has holes it cannot
-        // see and any statistic it computes is quietly wrong.
+        // O mesmo payload três vezes: a bateria e o movimento não mudam, e por isso o
+        // estrangulamento por impressão digital suprime-os depois do primeiro. O sinal tem de
+        // ser reportado todas as vezes, senão a série do cliente fica com buracos que ele não
+        // vê e qualquer estatística que calcule está errada em silêncio.
         $this->deliver($bridge, $this->scanPayload(['rssi' => -70]));
         $this->deliver($bridge, $this->scanPayload(['rssi' => -55]));
         $this->deliver($bridge, $this->scanPayload(['rssi' => -80]));
@@ -137,7 +136,7 @@ final class BridgeProximityTest extends TestCase
             $this->deliver($bridge, $this->scanPayload(['rssi' => $rssi]));
             $this->now += 1.0;
         }
-        // A brisk walk past the gateway: a single close reading.
+        // Passar a andar pelo gateway: uma leitura próxima só.
         $this->deliver($bridge, $this->scanPayload(['rssi' => -52]));
 
         $proximity = $this->proximity($mqtt->telemetry);
@@ -205,7 +204,7 @@ final class BridgeProximityTest extends TestCase
         self::assertSame('unknown', $unknown['state']);
         self::assertSame(0, $unknown['samples']);
         self::assertSame(self::GATEWAY, $unknown['gatewayId']);
-        // Unknown must never be mistaken for a reading, so it carries no signal.
+        // O desconhecido não pode passar por leitura, e por isso não leva sinal nenhum.
         self::assertArrayNotHasKey('rssiMedianDbm', $unknown);
     }
 

@@ -4,14 +4,14 @@
 declare(strict_types=1);
 
 /**
- * Watches one BLE device until it broadcasts something.
+ * Observa um dispositivo BLE até ele anunciar alguma coisa.
  *
- * A W6R with no advertising slot configured is visible to the gateway but
- * carries no advertising data at all, so this reports the empty state as a
- * heartbeat and shouts as soon as a real payload appears -- then decodes it, so
- * you can see immediately whether the frame is what we expect.
+ * Uma W6R sem slot de anúncio configurado é visível ao gateway mas não traz dados de anúncio
+ * nenhuns, e por isso isto reporta o estado vazio como um heartbeat e grita assim que um
+ * payload a sério aparece -- e descodifica-o logo, para se ver de imediato se o frame é o que
+ * esperamos.
  *
- * Runs until Ctrl-C.
+ * Corre até Ctrl-C.
  *
  * Usage:
  *   php simulator/w6r-watch.php
@@ -116,8 +116,8 @@ $client->subscribe($topicFilter, function (string $unusedTopic, string $message)
         $state['lastRssi'] = (int)($observation['rssi'] ?? 0);
         $state['lastGateway'] = $gateway;
 
-        // A MKGW3 reports MOKO beacons already parsed, so there is usually no
-        // raw hex at all: ask the decoder rather than looking for bytes.
+        // Um MKGW3 reporta os beacons MOKO já interpretados, e por isso normalmente não há
+        // hex cru nenhum: pergunta-se ao descodificador em vez de procurar bytes.
         $result = $decoder->decode($observation);
         if ($result === null) {
             $state['empty']++;

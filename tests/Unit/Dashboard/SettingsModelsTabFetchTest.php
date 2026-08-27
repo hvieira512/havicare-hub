@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 final class SettingsModelsTabFetchTest extends TestCase
 {
     /**
-     * O catalogo e uma superficie so: tipo de dispositivo, fornecedor, modelo.
+     * O catálogo é uma superfície só: tipo de dispositivo, fornecedor, modelo.
      *
      * Os fornecedores não têm separador próprio porque não há nada para lhes fazer -- são
      * definidos em codigo, e o que se sabe deles e o nome e os modelos que trazem.

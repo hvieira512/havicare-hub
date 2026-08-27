@@ -9,8 +9,8 @@ import {
     signalMeter,
 } from "../../src/Dashboard/dashboard/devices/gateway-signal.js";
 
-// Shaped like the linkedDevices rows /api/devices/{imei} serves, where the hub
-// adds the last sighting recorded for the (device, gateway) pair.
+// Com a forma das linhas `linkedDevices` que o `/api/devices/{imei}` serve, onde o hub
+// acrescenta o último avistamento registado do par (dispositivo, gateway).
 const link = (deviceKey, model, extra = {}) => ({deviceKey, model, ...extra});
 
 test("a link row carries the signal recorded for that pair", () => {
@@ -66,8 +66,8 @@ test("every band boundary lands in the documented category", () => {
 });
 
 test("no two neighbouring bands share both bar count and colour", () => {
-    // The meter must not depend on hue alone: a reader who cannot separate the
-    // colours still has the filled-bar count, and vice versa.
+    // O medidor não pode depender só do tom: quem não separa as cores continua a ter a
+    // contagem de barras cheias, e vice-versa.
     const bands = [-55, -64, -69, -75, -85, -95].map((rssiDbm) => signalBand({rssiDbm, at: ""}));
     const fingerprints = bands.map((band) => `${band.bars}:${band.tone}`);
 
@@ -80,7 +80,7 @@ test("the meter carries the reading as a tooltip and an aria-label", () => {
     assert.match(html, /data-bs-toggle="tooltip"/);
     assert.match(html, /data-bs-title="Bom · -64 dBm"/);
     assert.match(html, /aria-label="Bom · -64 dBm"/);
-    // Three of four bars filled for this band.
+    // Três de quatro barras cheias, nesta banda.
     assert.equal((html.match(/signal-meter-bar-on/g) || []).length, 3);
     assert.match(html, /text-success/);
 });
@@ -101,15 +101,15 @@ test("every link gets a row, heard or not", () => {
 
     assert.match(html, /c5e390f30bce/);
     assert.match(html, /Fraco · -71 dBm/);
-    // The gateway that never reported must still be listed, showing the gap.
+    // O gateway que nunca reportou tem de ficar listado, a mostrar a falta.
     assert.match(html, /dc1603ecf1f7/);
     assert.match(html, /Sem sinal/);
 });
 
 test("a gateway's own page shows the sensors it relays", () => {
-    // The same rows seen from the other side of the link: this is what the
-    // browser-side derivation could not do, because a gateway's telemetry
-    // carries no reading for the sensors it relays.
+    // As mesmas linhas vistas do outro lado da ligação: é isto que uma derivação do lado do
+    // browser não consegue fazer, porque a telemetria de um gateway não traz leitura nenhuma
+    // dos sensores que ele retransmite.
     const html = gatewaySignalRows([
         link("fbd87c59ba8b", "W6R", {rssiDbm: -75, signalSeenAt: new Date().toISOString()}),
     ]);

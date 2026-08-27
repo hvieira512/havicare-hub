@@ -13,10 +13,10 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * Routing a W6R bracelet through the MOKO gateway ingress.
+ * O encaminhamento de uma pulseira W6R pelo ingress do gateway MOKO.
  *
- * The observation shape is what a MKGW3 actually publishes: MOKO beacons
- * arrive already parsed, with no advertising bytes.
+ * A forma da observação é a que um MKGW3 publica de facto: os beacons MOKO chegam já
+ * interpretados, sem bytes de anúncio.
  */
 final class BridgeW6rTest extends TestCase
 {
@@ -84,8 +84,8 @@ final class BridgeW6rTest extends TestCase
     }
 
     /**
-     * The gateway reports itself as well, so assertions look only at what was
-     * published for the bracelet.
+     * O gateway também se reporta a si próprio, por isso as afirmações olham só para o que
+     * foi publicado para a pulseira.
      *
      * @param list<array<string, mixed>> $published
      * @return list<array<string, mixed>>
@@ -103,11 +103,11 @@ final class BridgeW6rTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $this->deliver($this->bridge($mqtt), $this->scanPayload());
 
-        // The trigger count is a running total, so the first sighting is only
-        // a baseline -- it must not replay the device's press history.
+        // A contagem de toques é cumulativa, e por isso o primeiro avistamento é só uma
+        // linha de base -- não pode repetir o histórico de toques do dispositivo.
         self::assertSame([], array_column($this->forBracelet($mqtt->events), 'type'));
-        // Proximity leads: it is reported per sighting, before the throttled
-        // telemetry the normalizer produces.
+        // A proximidade vem à frente: é reportada por avistamento, antes da telemetria
+        // estrangulada que o normalizador produz.
         self::assertSame(['proximity', 'battery', 'motion'], array_column($this->forBracelet($mqtt->telemetry), 'type'));
         self::assertSame(98, $this->forBracelet($mqtt->telemetry)[1]['payload']['data']['percent']);
         self::assertSame('bracelet', $this->forBracelet($mqtt->telemetry)[1]['deviceType']);
@@ -134,7 +134,7 @@ final class BridgeW6rTest extends TestCase
         $bridge = $this->bridge($mqtt);
 
         $this->deliver($bridge, $this->scanPayload(['trigger_count' => 69]));
-        // One press is broadcast for 30s at a 1s interval.
+        // Um toque é anunciado durante 30s, com intervalo de 1s.
         for ($i = 0; $i < 30; $i++) {
             $this->deliver($bridge, $this->scanPayload(['trigger_count' => 70]));
         }
@@ -147,10 +147,10 @@ final class BridgeW6rTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        // Baselines for single and long.
+        // As linhas de base do toque simples e do longo.
         $this->deliver($bridge, $this->scanPayload(['frame_type' => 0, 'trigger_count' => 69]));
         $this->deliver($bridge, $this->scanPayload(['frame_type' => 2, 'trigger_count' => 5]));
-        // A long press moves only its own counter; single stays where it was.
+        // Um toque longo mexe só o contador dele; o simples fica onde estava.
         $this->deliver($bridge, $this->scanPayload(['frame_type' => 2, 'trigger_count' => 6]));
         $this->deliver($bridge, $this->scanPayload(['frame_type' => 0, 'trigger_count' => 69]));
 
@@ -187,7 +187,7 @@ final class BridgeW6rTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $this->deliver($this->bridge($mqtt), $this->scanPayload());
 
-        // Routing a bracelet must not stop the gateway's own raw/status output.
+        // Encaminhar uma pulseira não pode travar o `raw` e o `status` do próprio gateway.
         self::assertNotSame([], $mqtt->raw);
         self::assertSame(self::GATEWAY, $mqtt->raw[0]['imei']);
     }
@@ -197,10 +197,10 @@ final class BridgeW6rTest extends TestCase
         $mqtt = new RecordingHubMqttBridge();
         $bridge = $this->bridge($mqtt);
 
-        // Same device, same values, two gateways -- but different RSSI, because that
-        // is measured by the receiver. Throttling per device alone collapsed these
-        // into one publish and whichever gateway won the race owned the payload,
-        // which made source.gatewayId arbitrary and hid the other gateway entirely.
+        // O mesmo dispositivo, os mesmos valores, dois gateways -- mas RSSI diferente, porque
+        // quem o mede é o receptor. Estrangular só por dispositivo colapsava isto numa
+        // publicação, e o gateway que ganhasse a corrida ficava com o payload: o
+        // `source.gatewayId` saía arbitrário e o outro gateway desaparecia.
         $this->deliver($bridge, $this->scanPayload(['rssi' => -82], self::GATEWAY), self::GATEWAY);
         $this->deliver($bridge, $this->scanPayload(['rssi' => -66], self::GATEWAY2), self::GATEWAY2);
 

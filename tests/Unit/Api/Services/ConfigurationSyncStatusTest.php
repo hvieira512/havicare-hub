@@ -8,13 +8,10 @@ use Hub\Api\Services\ConfigurationSyncStatus;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Pins the behaviour that decides whether a device has applied what the hub
- * asked for: flattening the capability tree into comparable paths, deciding
- * when a desired and a reported value count as equal, and turning the last
- * command status into the lifecycle status the API serves.
- *
- * These were written against DeviceCapabilityPresenter before the behaviour
- * moved here, and pass unchanged against both.
+ * Prende o comportamento que decide se um dispositivo aplicou o que o hub lhe pediu: achatar
+ * a árvore de capacidades em caminhos comparáveis, decidir quando é que um valor pretendido e
+ * um reportado contam como iguais, e transformar o estado do último comando no estado de
+ * ciclo de vida que a API serve.
  */
 final class ConfigurationSyncStatusTest extends TestCase
 {

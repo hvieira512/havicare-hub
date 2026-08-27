@@ -43,7 +43,7 @@ final class DeviceUpdateNotifierTest extends TestCase
     {
         $notifier = new DeviceUpdateNotifier();
         $calls = 0;
-        // Two browser tabs on the same device.
+        // Duas abas do browser no mesmo dispositivo.
         $notifier->subscribe('aaa', static function () use (&$calls): void {
             $calls++;
         });
@@ -67,7 +67,7 @@ final class DeviceUpdateNotifierTest extends TestCase
             $calls[] = 'bbb';
         });
 
-        // Sweeps such as expiring commands do not name the devices they touch.
+        // Varreduras como expirar comandos não nomeiam os dispositivos que tocam.
         $notifier->notifyAll();
 
         sort($calls);
@@ -87,8 +87,8 @@ final class DeviceUpdateNotifierTest extends TestCase
         $notifier->notifyAll();
 
         self::assertSame(0, $calls);
-        // A closed stream must not leave its device behind, or the map grows
-        // for the lifetime of the process.
+        // Um stream fechado não pode deixar o dispositivo dele atrás, senão o mapa cresce
+        // durante toda a vida do processo.
         self::assertSame(0, $notifier->listenerCount());
     }
 

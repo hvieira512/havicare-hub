@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Must come before the dashboard modules: they touch window while loading.
+// Tem de vir antes dos módulos do dashboard: eles tocam em `window` ao carregar.
 import "./support/browser-env.js";
 import {
     renderConfigInputs,
@@ -10,13 +10,12 @@ import {
 import {configSection} from "./support/dom.js";
 
 /**
- * Round trips for the configuration inputs the original characterisation file
- * left uncovered. What the form renders has to be what the reader gives back,
- * because that payload is what gets written to the device.
+ * A ida e volta dos tipos de campo de configuração que o outro ficheiro não cobre. O que o
+ * formulário desenha tem de ser o que o leitor devolve, porque é esse payload que vai escrito
+ * para o dispositivo.
  *
- * Where the reader deliberately renames a field, the test says so: the
- * dashboard speaks the generic dialect and the hub maps it to the protocol's
- * native names.
+ * Onde o leitor renomeia um campo de propósito, o teste di-lo: a dashboard fala o dialecto
+ * genérico e o hub mapeia-o nos nomes nativos do protocolo.
  */
 const roundTrip = (entry, desired, meta = {}) =>
     readConfigPayload(configSection(renderConfigInputs, entry, desired, meta));
@@ -42,8 +41,8 @@ test("fall sensitivity levels keep the scale alongside the level", () => {
 });
 
 test("a stored sensitivity scale the firmware cannot use is offered as the default one", () => {
-    // The form only offers 6 and 8, so a stored 7 renders as 8 rather than
-    // presenting a scale that would be rejected on save.
+    // O formulário só oferece 6 e 8, e por isso um 7 guardado desenha-se como 8 em vez de
+    // apresentar uma escala que seria rejeitada ao gravar.
     assert.deepEqual(
         roundTrip(entryFor("fallSensitivityLevels"), {sensitivity: 4, levels: 7}),
         {sensitivity: 4, levels: 8},
@@ -70,9 +69,9 @@ test("blood pressure keeps both readings", () => {
 });
 
 test("the wonlex blood pressure alert keeps both thresholds", () => {
-    // The renderer offers hpWarn and LPWarn, the Wonlex definition declares
-    // them, and WonlexPayloadBuilder requires them. A reader that returns
-    // anything else means the thresholds the user typed never reach the device.
+    // Quem desenha oferece o `hpWarn` e o `LPWarn`, a definição da Wonlex declara-os, e o
+    // `WonlexPayloadBuilder` exige-os. Um leitor que devolva outra coisa faz com que os
+    // limiares escritos nunca cheguem ao dispositivo.
     assert.deepEqual(
         roundTrip(entryFor("wonlexBloodPressureWarning", ["switchState", "hpWarn", "LPWarn"]), {
             switchState: true,
@@ -91,7 +90,7 @@ test("language and timezone survive the round trip as a preset pair", () => {
 });
 
 test("a language and timezone combination with no preset falls back to the first one", () => {
-    // Deliberate: the form only offers the presets the firmware supports.
+    // Deliberado: o formulário só oferece os presets que o firmware suporta.
     assert.deepEqual(
         roundTrip(entryFor("languageTimezone"), {language: 2, timeZone: "9"}),
         {language: 0, timeZone: "0"},
@@ -199,8 +198,8 @@ test("alarm clock items survive the round trip", () => {
 });
 
 test("take pills keeps its reminders and drops the mime type of unchanged audio", () => {
-    // voiceMimeType only travels with newly recorded audio, so the reader has
-    // no reason to send it back for an unchanged plan.
+    // O `voiceMimeType` só viaja com áudio acabado de gravar, e por isso o leitor não tem
+    // razão para o devolver num plano que não mudou.
     assert.deepEqual(
         roundTrip(
             entryFor("takePills", [], {limit: 3}),

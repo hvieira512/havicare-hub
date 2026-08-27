@@ -83,9 +83,9 @@ final class DecoderTest extends TestCase
     }
 
     /**
-     * A real 0x30A0 entry captured from MKGW4 c5e390f30bce relaying the W6R
-     * fbd87c59ba8b. A MKGW4 never sends advertising raw data for a bxp-button,
-     * only the parsed fields, so this is the only path that can reach W6rDecoder.
+     * Uma entrada 0x30A0 real, capturada do MKGW4 c5e390f30bce a retransmitir a W6R
+     * fbd87c59ba8b. Um MKGW4 nunca envia dados de anúncio crus de um `bxp-button`, só os
+     * campos interpretados, e por isso é este o único caminho que chega ao `W6rDecoder`.
      */
     public function testDecodesMkgw4ButtonScanEntryTheSameWayAsAMkgw3(): void
     {
@@ -98,7 +98,7 @@ final class DecoderTest extends TestCase
         self::assertSame('bxp-button', $device['type'] ?? null);
         self::assertSame('fbd87c59ba8b', $device['mac'] ?? null);
         self::assertSame(-72, $device['rssi'] ?? null);
-        // 0x20 single press mode arrives with the base stripped, as a MKGW3 sends it.
+        // O modo de toque simples 0x20 chega com a base tirada, como um MKGW3 o envia.
         self::assertSame(0, $device['frame_type'] ?? null);
         self::assertSame(299, $device['trigger_count'] ?? null);
         self::assertSame(1, $device['alarm_status'] ?? null);

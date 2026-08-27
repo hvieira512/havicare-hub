@@ -4,11 +4,11 @@
 declare(strict_types=1);
 
 /**
- * Watches the BLE devices a MOKO gateway is scanning and reports the ones we
- * can identify from their advertising payload.
+ * Observa os dispositivos BLE que um gateway MOKO está a ver e reporta os que se conseguem
+ * identificar pelo payload de anúncio.
  *
- * Identification is always payload-based: most phones use random addresses that
- * rotate every few minutes, so the MAC alone means nothing.
+ * A identificação é sempre pelo payload: a maioria dos telefones usa endereços aleatórios que
+ * rodam a cada poucos minutos, e por isso o MAC sozinho não quer dizer nada.
  *
  * Usage:
  *   php simulator/ble-scan-probe.php                     # run until Ctrl-C
@@ -41,11 +41,10 @@ $config = CliBootstrap::config(__DIR__ . '/..');
 $topicFilter = trim((string)($options['topic'] ?? $config['moko']['topic_filter']));
 
 /**
- * Signatures we can positively identify. Service-data UUIDs are written as they
- * appear on the wire (little endian), which is how they are matched.
+ * As assinaturas que se conseguem identificar com certeza. Os UUID de service-data estão
+ * escritos como aparecem no fio (little endian), que é como são comparados.
  *
- * BXP-B / MK Button comes from the "MOKO Beacon - ADV Format Summary Sheet",
- * BXP-B Series tab.
+ * O BXP-B / MK Button vem do "MOKO Beacon - ADV Format Summary Sheet", separador BXP-B Series.
  */
 const SERVICE_SIGNATURES = [
     'e0fe' => 'MOKO BXP-B (MK Button) — alarm frame',

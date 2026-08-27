@@ -67,7 +67,7 @@ final class SubscriberFactoryTest extends TestCase
         self::assertSame('/voerka/#', $subscriptions[0]->getTopicFilter());
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $subscriptions[0]->getQualityOfServiceLevel());
 
-        // The initial connection must resume the broker-side session.
+        // A ligação inicial tem de retomar a sessão do lado do broker.
         self::assertSame([false], $connections->cleanSessions);
     }
 
@@ -91,8 +91,8 @@ final class SubscriberFactoryTest extends TestCase
             static fn (): MqttIngress => $ingress,
         );
 
-        // The subscription closure is registered before the ingress exists, so
-        // this asserts the by-reference back-reference was resolved.
+        // A closure da subscrição é registada antes de o ingress existir, e isto afirma que a
+        // referência para trás ficou resolvida.
         $subscription = $connections->repositories[0]->getSubscriptionsMatchingTopic('/voerka/x')[0];
         $subscription->getCallback()('/voerka/x', 'payload');
 

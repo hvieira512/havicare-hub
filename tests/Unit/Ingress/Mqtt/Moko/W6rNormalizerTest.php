@@ -57,8 +57,8 @@ final class W6rNormalizerTest extends TestCase
 
     public function testTheFirstSightingEstablishesTheBaselineInsteadOfReplayingHistory(): void
     {
-        // The counter is broadcast continuously, so a device already at 42
-        // presses must not produce an alarm the moment the hub restarts.
+        // O contador é anunciado continuamente, e por isso um aparelho já com 42 toques não
+        // pode dar alarme no instante em que o hub reinicia.
         $result = (new W6rNormalizer())->normalize(
             $this->decoded('single', 42),
             self::DEVICE,
@@ -95,7 +95,7 @@ final class W6rNormalizerTest extends TestCase
 
     public function testACounterResetIsOnePressRatherThanANegativeDelta(): void
     {
-        // Replacing the battery restarts the device and zeroes its counters.
+        // Trocar a bateria reinicia o aparelho e põe os contadores a zero.
         $result = (new W6rNormalizer())->normalize(
             $this->decoded('single', 1),
             self::DEVICE,
@@ -108,8 +108,8 @@ final class W6rNormalizerTest extends TestCase
 
     public function testInactivityIsNotAHelpCall(): void
     {
-        // The mode is decoded but deliberately not alarmed on: a calm sleeper
-        // would trip it every night.
+        // O modo é descodificado mas não dá alarme, de propósito: quem dorme calmo
+        // dispará-lo-ia todas as noites.
         $result = (new W6rNormalizer())->normalize(
             $this->decoded('inactivity', 3),
             self::DEVICE,

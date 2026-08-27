@@ -62,7 +62,7 @@ if ! grep -q '"considerIp": false' "$SCENARIO_DIR/location-probe.log"; then
   scenario_fail "contract_failure" "BeaconDB request did not explicitly disable IP positioning"
 fi
 
-# A trusted GPS fix accompanied by Wi-Fi teaches the private radio map.
+# Um fixo de GPS de confiança acompanhado de Wi-Fi ensina o mapa de rádio privado.
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
 $adapter = new Hub\Protocol\Adapter\WonlexAdapter();
@@ -159,8 +159,8 @@ if [ "$RADIO_ROWS" != "2" ]; then
 fi
 REQUEST_COUNT_BEFORE_PRIVATE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
 
-# The next report has no GPS. It must resolve locally, before both the public
-# provider and its resolution cache.
+# O relatório seguinte não traz GPS. Tem de resolver localmente, antes do fornecedor público
+# e antes da cache de resolução dele.
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
 $adapter = new Hub\Protocol\Adapter\WonlexAdapter();
@@ -207,8 +207,9 @@ if [ -z "$CACHE_KEYS" ]; then
 fi
 REQUEST_COUNT_BEFORE="$(docker compose exec -T hub sh -lc "wc -l < /tmp/beacondb-requests.log" | tr -d '[:space:]')"
 
-# Restarting the hub also stops the mock provider. The same evidence must still
-# resolve from Redis without a provider request, proving cache persistence.
+# Reiniciar o hub também pára o fornecedor simulado. A mesma evidência tem de continuar a
+# resolver a partir do Redis, sem pedido nenhum ao fornecedor: é a prova de que a cache
+# persiste.
 docker compose restart hub >/dev/null
 for _ in $(seq 1 20); do
   if docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1",9000,$e,$m,1); if ($s) { fclose($s); exit(0); } exit(1);'; then
@@ -256,7 +257,7 @@ if [ "$REQUEST_COUNT_AFTER" != "$REQUEST_COUNT_BEFORE" ]; then
   scenario_fail "cache_failure" "hub contacted the provider for radio evidence already cached in Redis"
 fi
 
-# The private map is durable MySQL state, not an ephemeral Redis cache.
+# O mapa privado é estado durável em MySQL, e não uma cache efémera no Redis.
 docker compose exec -T hub php -r '
 require "vendor/autoload.php";
 $adapter = new Hub\Protocol\Adapter\WonlexAdapter();

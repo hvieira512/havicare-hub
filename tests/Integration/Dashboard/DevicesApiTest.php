@@ -3257,13 +3257,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $api->createLink('c5e390f30bce', 'fbd87c59ba8b');
         $api->createLink('dc1603ecf1f7', 'fbd87c59ba8b');
 
-        // Only one of the two gateways ever hears the bracelet.
+        // Só um dos dois gateways ouve a pulseira.
         $store->recordGatewaySighting('fbd87c59ba8b', 'c5e390f30bce', -71);
 
         $onTheBracelet = array_column($api->show('fbd87c59ba8b')['linkedDevices'], 'rssiDbm', 'deviceKey');
         self::assertSame(-71, $onTheBracelet['c5e390f30bce'] ?? null);
-        // A gateway that never heard it must stay empty rather than read as 0 dBm,
-        // which would be the strongest signal there is.
+        // Um gateway que nunca a ouviu tem de ficar vazio em vez de ler 0 dBm, que seria o
+        // sinal mais forte que há.
         self::assertArrayNotHasKey('rssiDbm', array_column(
             $api->show('fbd87c59ba8b')['linkedDevices'],
             null,

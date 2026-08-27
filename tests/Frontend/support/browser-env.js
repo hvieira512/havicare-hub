@@ -1,17 +1,16 @@
 import {JSDOM} from "jsdom";
 
 /**
- * Installs a DOM before any dashboard module is imported.
+ * Instala um DOM antes de qualquer módulo do dashboard ser importado.
  *
- * Some modules touch `window` at load time -- api/http.js schedules a token
- * refresh as a side effect of being imported -- so this has to be evaluated
- * first. ES modules evaluate dependencies in import order, so importing this
- * above the module under test is enough.
+ * Alguns módulos tocam em `window` ao carregar -- o `api/http.js` agenda um refresh de token
+ * só por ser importado --, e por isso isto tem de ser avaliado primeiro. Os módulos ES
+ * avaliam as dependências por ordem de import, e importar isto acima do módulo em teste basta.
  */
 const dom = new JSDOM("<!doctype html><body></body>", {url: "http://localhost/"});
 
-// node defines some of these as getter-only on globalThis, so assign through
-// defineProperty rather than plain assignment.
+// O node define alguns destes como só-leitura no `globalThis`, e por isso a atribuição passa
+// pelo `defineProperty` em vez de ser directa.
 for (const name of [
     "window",
     "document",

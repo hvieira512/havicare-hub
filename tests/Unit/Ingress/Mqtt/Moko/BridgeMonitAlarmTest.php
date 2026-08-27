@@ -16,10 +16,10 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
 /**
- * The `change_required` alarm of the MONIT MECS-PRO diaper sensor.
+ * O alarme `change_required` do medidor de fraldas MONIT MECS-PRO.
  *
- * The telemetry path was covered by BridgeTest, but the event path was not, which is
- * how a first-observation alarm could be swallowed unnoticed.
+ * O caminho da telemetria está coberto pelo `BridgeTest`; este cobre o dos eventos, que é
+ * onde um alarme de primeira observação se pode perder sem ninguém dar por isso.
  */
 final class BridgeMonitAlarmTest extends TestCase
 {
@@ -172,8 +172,8 @@ final class BridgeMonitAlarmTest extends TestCase
     }
 
     /**
-     * The diaper alarms only. The gateway publishes its own `device.connected` on the
-     * first message it is seen on, and that is not what these tests measure.
+     * Só os alarmes da fralda. O gateway publica o seu `device.connected` na primeira
+     * mensagem em que é visto, e não é isso que estes testes medem.
      *
      * @return list<array<string, mixed>>
      */
@@ -190,7 +190,7 @@ final class BridgeMonitAlarmTest extends TestCase
         return 'havicare-hub/null/0/gw/' . self::GATEWAY . '/raw';
     }
 
-    /** Builds the gateway BLE-scan message that carries one MECS-PRO advertisement. */
+    /** Constrói a mensagem de scan BLE do gateway que leva um anúncio MECS-PRO. */
     private function scan(string $condition, int $battery = 80): string
     {
         return json_encode([
@@ -206,10 +206,10 @@ final class BridgeMonitAlarmTest extends TestCase
     }
 
     /**
-     * The 20-byte manufacturer payload, built for a wanted condition.
+     * O payload de 20 bytes do fabricante, construído para uma condição pretendida.
      *
-     * The normalizer decides: maximum delta < 4 is clean, four or more channels at
-     * delta >= 12 is change_required, anything between is attention.
+     * Quem decide é o normalizador: delta máximo < 4 é `clean`, quatro ou mais canais com
+     * delta >= 12 é `change_required`, e o que fica entre os dois é `attention`.
      */
     private function advertisement(string $condition, int $battery): string
     {
@@ -228,7 +228,7 @@ final class BridgeMonitAlarmTest extends TestCase
         foreach ([...$baseline, ...$raw] as $value) {
             $bits .= str_pad(decbin($value), 6, '0', STR_PAD_LEFT);
         }
-        // The decoder requires the last three bytes to repeat the tail of the MAC.
+        // O descodificador exige que os últimos três bytes repitam a cauda do MAC.
         foreach ([0x02, 0x02, 0xf9] as $byte) {
             $bits .= str_pad(decbin($byte), 8, '0', STR_PAD_LEFT);
         }

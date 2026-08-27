@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-// Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
-// esse caminho passa pelo api/http.js, que toca em window ao carregar.
+// Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
+// caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
 import {helpCallSummaryCard} from "../../src/Dashboard/dashboard/telemetry-cards.js";
 
@@ -23,7 +23,7 @@ test("every press mode is listed, including ones never used", () => {
     assert.match(html, /Toque simples/);
     assert.match(html, /Toque duplo/);
     assert.match(html, /Toque longo/);
-    // Two modes have never fired, and saying so is more useful than hiding them.
+    // Dois modos nunca dispararam, e dizê-lo é mais útil do que escondê-los.
     assert.equal(html.match(/help-call-never/g).length, 2);
 });
 
@@ -34,8 +34,8 @@ test("only the most recent call of each mode is shown", () => {
         call("double", "2026-08-10T12:26:18Z"),
     ]);
 
-    // Asserted on the ISO timestamp rather than the rendered local time, which
-    // depends on the machine's timezone.
+    // Afirmado sobre a hora em ISO e não sobre a hora local desenhada, que depende do fuso
+    // da máquina.
     assert.match(html, /data-occurred-at="2026-08-10T12:26:49Z"/);
     assert.doesNotMatch(html, /2026-08-10T12:20:00Z/);
     assert.equal(html.match(/help-call-never/g).length, 1);
@@ -54,7 +54,7 @@ test("order of the events does not matter", () => {
 test("unknown press types are ignored rather than rendered raw", () => {
     const html = helpCallSummaryCard([call("inactivity", "2026-08-10T12:26:49Z")]);
 
-    // Inactivity is decoded but deliberately never alarms.
+    // A inactividade é descodificada mas nunca dá alarme, de propósito.
     assert.doesNotMatch(html, /inactivity/);
     assert.equal(html.match(/help-call-never/g).length, 3);
 });
@@ -62,8 +62,8 @@ test("unknown press types are ignored rather than rendered raw", () => {
 test("the card states no alarm status, only when each press last happened", () => {
     const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
 
-    // The device cannot tell us a call was cancelled, so the card must not
-    // imply an active or cleared alarm.
+    // O dispositivo não nos consegue dizer que uma chamada foi cancelada, e por isso o cartão
+    // não pode sugerir um alarme activo nem limpo.
     assert.match(html, /Últimas chamadas de ajuda/);
     assert.doesNotMatch(html, /ativ[oa]|em curso|cancelad/i);
 });
@@ -87,16 +87,16 @@ test("a mode that has fired carries a tooltip with the exact timestamp", () => {
     const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
 
     assert.match(html, /data-bs-toggle="tooltip"/);
-    // The rendered time is locale dependent, so only its presence is asserted.
+    // A hora desenhada depende da locale, e por isso só se afirma a presença dela.
     assert.match(html, /data-bs-title="[^"]+"/);
-    // Reachable by keyboard, since hover alone would hide it from some users.
+    // Alcançável pelo teclado: só com o rato, ficava escondido de alguns utilizadores.
     assert.match(html, /tabindex="0"/);
 });
 
 test("a mode that never fired has no tooltip, having no timestamp to show", () => {
     const html = helpCallSummaryCard([call("single", "2026-08-10T12:26:49Z")]);
 
-    // One call, so exactly one of the three columns is hoverable.
+    // Uma chamada, e por isso exactamente uma das três colunas responde ao rato.
     assert.equal(html.match(/data-bs-toggle="tooltip"/g).length, 1);
     assert.equal(html.match(/data-occurred-at=/g).length, 1);
 });

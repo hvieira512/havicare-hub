@@ -10,17 +10,16 @@ use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A capability the device has never configured is served with a default
- * payload, and the dashboard offers that payload as the starting point of the
- * form. If the protocol's payload builder rejects it, the capability cannot be
- * saved from a fresh device at all.
+ * Uma capacidade que o dispositivo nunca configurou é servida com um payload por omissão, e
+ * a dashboard oferece-o como ponto de partida do formulário. Se o construtor de payloads do
+ * protocolo o rejeitar, a capacidade não se consegue gravar num dispositivo novo.
  */
 final class ConfigurationDefaultPayloadTest extends TestCase
 {
     /**
-     * Inputs whose default is deliberately a blank the user has to fill in: a
-     * phone number, a message, a name. Their defaults are not meant to be
-     * sendable as they stand.
+     * Campos cujo valor por omissão é deliberadamente um vazio que o utilizador tem de
+     * preencher: um número, uma mensagem, um nome. Não se espera que sejam enviáveis como
+     * estão.
      */
     private const INPUTS_AWAITING_USER_INPUT = [
         'contacts',
@@ -33,10 +32,9 @@ final class ConfigurationDefaultPayloadTest extends TestCase
     ];
 
     /**
-     * four-p-touch uploadInterval defaults to 0 while its builder demands a
-     * positive interval, so saving the untouched form reports an error. It
-     * fails loudly rather than sending something wrong, so it is recorded here
-     * rather than fixed blind.
+     * O `uploadInterval` do four-p-touch tem 0 por omissão e o construtor dele exige um
+     * intervalo positivo, por isso gravar o formulário intocado dá erro. Falha alto em vez de
+     * enviar coisa errada, e por isso fica registado aqui em vez de corrigido às cegas.
      */
     private const KNOWN_UNSENDABLE_DEFAULTS = [
         'four-p-touch.uploadInterval',
@@ -75,8 +73,8 @@ final class ConfigurationDefaultPayloadTest extends TestCase
 
     public function testTheWonlexBloodPressureAlertDefaultCarriesBothThresholds(): void
     {
-        // Regression: the default used to carry a single reminderValue, so the
-        // builder rejected it for the two thresholds it actually needs.
+        // O valor por omissão leva os dois limiares que o construtor precisa, e não um
+        // `reminderValue` só.
         $entry = $this->entry('wonlex-json', 'wonlexBPEarlyWarning');
 
         self::assertSame(
@@ -87,8 +85,8 @@ final class ConfigurationDefaultPayloadTest extends TestCase
 
     public function testTheWonlexBloodPressureAlertAcceptsTheDashboardsEnabledFlag(): void
     {
-        // The dashboard reads switches back as 'enabled' for every capability;
-        // this one used to be the exception that could not be saved.
+        // A dashboard lê os interruptores como `enabled` em todas as capacidades, e esta não
+        // é excepção.
         $payload = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'wonlexBPEarlyWarning', [
             'enabled' => true,
             'hpWarn' => 140,

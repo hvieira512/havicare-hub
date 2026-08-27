@@ -29,8 +29,8 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $payload);
 
         self::assertCount(2, $mqtt->raw);
-        // Proximity is reported once per accepted sighting, ahead of the
-        // normalized telemetry; the replayed message is deduplicated before it.
+        // A proximidade é reportada uma vez por avistamento aceite, à frente da telemetria
+        // normalizada; a mensagem repetida é deduplicada antes dela.
         self::assertSame(['proximity', 'battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'], array_column($mqtt->telemetry, 'type'));
         self::assertSame(['device.connected'], array_column($mqtt->events, 'type'));
         self::assertSame('hitcare', $mqtt->telemetry[0]['company']);
