@@ -8,7 +8,7 @@ require __DIR__ . '/../vendor/autoload.php';
 use Hub\Location\PrivateRadioMapFactory;
 use Hub\Runtime\CliBootstrap;
 
-// $argv only exists when register_argc_argv is on; $_SERVER always carries it.
+// O `$argv` só existe com o `register_argc_argv` ligado; o `$_SERVER` traz-no sempre.
 /** @var list<string> $arguments */
 $arguments = (array)($_SERVER['argv'] ?? []);
 

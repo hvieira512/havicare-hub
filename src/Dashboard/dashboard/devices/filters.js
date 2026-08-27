@@ -24,7 +24,7 @@ import {
  * Os filtros da listagem de dispositivos e os paginadores dos dois painéis do escolhido.
  *
  * Estão juntos porque partilham a mesma ideia: leem o estado, mexem-lhe, e voltam a pedir
- * a lista -- nenhum deles constroi marcacao.
+ * a lista -- nenhum deles constrói marcação.
  */
 let els = {};
 

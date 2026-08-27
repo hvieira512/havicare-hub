@@ -61,16 +61,14 @@
     --bs-btn-disabled-border-color: #0b163f;
 }
 
-/* ===== a base do telemovel =====
-   Duas regras, e sao as unicas coisas desta pagina que os utilitarios do Bootstrap nao
-   sabem fazer: nao ha `fs-sm-*` nem tamanho de botao por breakpoint. Tudo o resto -- o
-   espacamento, as colunas, as goteiras, o que aparece e o que desaparece -- esta na
-   marcacao, onde se ve ao lado do elemento a que se aplica. */
+/* ===== a base do telemóvel =====
+   As únicas coisas desta página que os utilitários do Bootstrap não sabem fazer: não há
+   `fs-sm-*` nem tamanho de botão por breakpoint. Todo o resto está na marcação, onde se vê
+   ao lado do elemento a que se aplica. */
 @media (max-width: 575.98px) {
-    /* Um campo com menos de 16px faz o Safari do iPhone dar zoom a pagina ao focar, e nao
-       volta atras. Os campos do login ja estavam a 16 -- isto poe os outros onze la.
-       O par com `input-group-sm` esta ca porque o Bootstrap serve esse caso com dois
-       seletores e ganhava ao de um so. */
+    /* Um campo com menos de 16px faz o Safari do iPhone dar zoom à página ao focar, e não
+       volta atrás. O par com `input-group-sm` está cá porque o Bootstrap serve esse caso
+       com dois selectores, e ganharia ao de um só. */
     .form-control,
     .form-select,
     .input-group-sm > .form-control,
@@ -78,15 +76,14 @@
         font-size: 1rem;
     }
 
-    /* 44px e o alvo de toque minimo. Os botoes desta pagina sao quase todos `btn-sm`, que
-       da 31, e um dedo nao tem a precisao de um rato. O texto continua pequeno; o que
-       cresce e a area de toque. */
+    /* 44px é o alvo de toque mínimo, e os botões desta página são quase todos `btn-sm`,
+       que dá 31. O texto continua pequeno; o que cresce é a área de toque. */
     .btn {
         min-height: 44px;
     }
 
-    /* Um cartao que so serve de moldura em ecra largo. O padding sai por `p-0 p-sm-3` na
-       marcacao; a borda e o fundo vem ca ter porque nao ha `border-sm` nem `bg-sm-*`. */
+    /* Um cartão que só serve de moldura em ecrã largo. O padding sai por `p-0 p-sm-3` na
+       marcação; a borda e o fundo vêm cá ter porque não há `border-sm` nem `bg-sm-*`. */
     .card-flush-sm {
         border: 0;
         background: transparent;
@@ -162,10 +159,8 @@ body {
     font-family: 'Poppins', sans-serif;
 }
 
-/* As duas colunas do ecra principal chegam ao fundo do ecra. A altura das duas vinha do
-   conteudo, e a mais curta acabava a meio do ecra com o cinzento da pagina por baixo --
-   duas listas com espaco para crescer e nenhuma a usa-lo. `min-height` e nao `height`:
-   quando o conteudo passa do ecra, a pagina cresce como sempre. */
+/* As duas colunas do ecrã principal chegam ao fundo, para as duas listas terem espaço para
+   crescer. `min-height` e não `height`: quando o conteúdo passa do ecrã, a página cresce. */
 #dashboardApp {
     display: flex;
     flex-direction: column;
@@ -183,21 +178,21 @@ body {
     flex: 1 1 auto;
 }
 
-/* Na coluna da esquerda, e o cartao dos mosaicos que absorve o resto: o da identidade tem
-   a altura dos factos que mostra, e esticar esse deixava o `Editar` a flutuar sozinho. */
+/* Na coluna da esquerda, é o cartão dos mosaicos que absorve o resto: o da identidade tem a
+   altura dos factos que mostra, e esticá-lo deixava o `Editar` a flutuar sozinho. */
 #requestCardsCard {
     flex: 1 1 auto;
 }
 
 /* ===== primitivas do sistema ===== */
 
-/* A barra de navegacao e o navy da marca. */
+/* A barra de navegação é o navy da marca. */
 .dashboard-navbar {
     background-color: var(--bs-primary);
 }
 
-/* Os botoes da barra eram btn-dark, o quase-preto do Bootstrap, que sobre o navy da marca
-   se le como um segundo escuro. Dentro da barra passam a pedir a cor a propria barra. */
+/* Dentro da barra, os `btn-dark` pedem a cor à própria barra: o quase-preto do Bootstrap
+   sobre o navy da marca lê-se como um segundo escuro. */
 .dashboard-navbar .btn-dark {
     --bs-btn-color: #fff;
     --bs-btn-bg: rgba(255, 255, 255, 0.08);
@@ -210,17 +205,16 @@ body {
     --bs-btn-active-border-color: rgba(255, 255, 255, 0.32);
 }
 
-/* Uma elevacao so: a pagina e cinzenta, o cartao e branco, e dentro do cartao separa-se
-   com linha e espaco. O contorno do cartao e mais claro que o das linhas interiores, para
-   a moldura exterior nao competir com as divisorias que estruturam o conteudo. */
+/* Uma elevação só: a página é cinzenta, o cartão é branco, e dentro do cartão separa-se com
+   linha e espaço. O contorno do cartão é mais claro que o das linhas interiores, para a
+   moldura exterior não competir com as divisórias que estruturam o conteúdo. */
 .card {
     --bs-card-border-color: #e9ecef;
 }
 
-/* As accoes de uma linha de tabela. Eram contornos em amarelo, azul e vermelho na mesma
-   linha -- tres cores de aviso por linha, nenhuma delas a indicar gravidade real. Ficam
-   todas neutras e do mesmo peso; so a destrutiva se pinta, e so quando o rato esta em
-   cima dela, que e quando a gravidade importa. */
+/* As acções de uma linha de tabela, todas neutras e do mesmo peso: três cores de aviso na
+   mesma linha não indicam gravidade nenhuma. Só a destrutiva se pinta, e só sob o rato, que
+   é quando a gravidade importa. */
 .row-action {
     --bs-btn-color: var(--bs-secondary-color);
     --bs-btn-border-color: var(--bs-border-color);
@@ -244,9 +238,9 @@ body {
 /* Um filho pertence ao cabecalho acima dele, e le-se indentado sob ele. A linha vertical e
    o que diz que pertence, sem precisar de uma segunda tabela a dizer o mesmo.
 
-   Serve as licencas dentro de uma empresa e o catalogo -- fornecedores dentro de um tipo,
-   modelos dentro de um fornecedor. As margens negativas sao para a linha atravessar o
-   cartao de lado a lado, e valem o `p-3` do `card-body` que os dois usam. */
+   Serve as licenças dentro de uma empresa e o catálogo -- fornecedores dentro de um tipo,
+   modelos dentro de um fornecedor. As margens negativas são para a linha atravessar o
+   cartão de lado a lado, e valem o `p-3` do `card-body` que os dois usam. */
 .tree-row {
     margin: .75rem -1rem 0;
     padding: .75rem 1rem 0 2rem;
@@ -262,7 +256,7 @@ body {
     padding-top: .5rem;
 }
 
-/* A curva que liga o filho ao cabecalho acima dele. */
+/* A curva que liga o filho ao cabeçalho acima dele. */
 .tree-row::before {
     content: "";
     position: absolute;
@@ -283,7 +277,7 @@ body {
     background: var(--bs-border-color);
 }
 
-/* O terceiro nivel: um modelo dentro de um fornecedor dentro de um tipo. */
+/* O terceiro nível: um modelo dentro de um fornecedor dentro de um tipo. */
 .tree-row-nested {
     padding-left: 3.25rem;
 }
@@ -293,8 +287,8 @@ body {
     left: 2.25rem;
 }
 
-/* A 375px a indentacao dupla comia o nome: um modelo com nome comercial e codigo interno
-   comeca a 3.25rem e sobra-lhe menos de metade da largura. */
+/* A 375px a indentação dupla come o nome: um modelo com nome comercial e código interno
+   começa a 3.25rem e sobra-lhe menos de metade da largura. */
 @media (max-width: 575.98px) {
     .tree-row {
         padding-left: 1.5rem;
@@ -315,7 +309,7 @@ body {
     }
 }
 
-/* A folha do catalogo abre a ficha do modelo, e por isso reage ao rato. */
+/* A folha do catálogo abre a ficha do modelo, e por isso reage ao rato. */
 .catalog-model {
     cursor: pointer;
 }
@@ -348,15 +342,15 @@ body {
     }
 }
 
-/* Identificadores e valores em coluna alinham digito a digito. Um IMEI de 15 digitos numa
-   tabela de vinte linhas le-se por comparacao, e sem isto cada linha comeca noutro sitio. */
+/* Identificadores e valores em coluna alinham dígito a dígito. Um IMEI de 15 dígitos numa
+   tabela de vinte linhas lê-se por comparação, e sem isto cada linha começa noutro sítio. */
 .tabular-nums {
     font-variant-numeric: tabular-nums;
 }
 
-/* A divisoria entre blocos de um cartao vai de bordo a bordo. Encolhida a largura do
-   conteudo, lia-se como a moldura de mais uma caixa dentro do cartao; a sangrar ate ao
-   contorno, e a mesma linha que separa duas linhas de uma tabela -- e o cartao continua um. */
+/* A divisória entre blocos de um cartão vai de bordo a bordo. Encolhida à largura do
+   conteúdo lê-se como a moldura de outra caixa dentro do cartão; a sangrar até ao contorno é
+   a mesma linha que separa duas linhas de uma tabela, e o cartão continua um. */
 .card-section {
     margin-top: 1rem;
     margin-inline: calc(-1 * var(--bs-card-spacer-x, 1rem));
@@ -365,8 +359,8 @@ body {
     border-top: 1px solid var(--bs-border-color);
 }
 
-/* O contador ao lado da etiqueta, e nao no extremo oposto do cartao. "Eventos recebidos"
-   e "12" sao a mesma informacao, e a meio metro de distancia um do outro deixavam de o ser. */
+/* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Eventos recebidos" e
+   "12" são a mesma informação, e a meio metro de distância deixam de o ser. */
 .count-chip {
     font-size: .6875rem;
     font-weight: 600;
@@ -378,22 +372,21 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* Sem contagem nao ha pastilha: vazia, ficava um retangulo cinzento de 6px ao lado do titulo. */
+/* Sem contagem não há pastilha: vazia, é um rectângulo cinzento de 6px ao lado do título. */
 .count-chip:empty {
     display: none;
 }
 
-/* No botao de filtros a pastilha diz quantos estao ligados, e essa e a unica cor do painel:
-   sobre o cinzento das outras nao se distinguia de uma contagem qualquer. */
+/* No botão de filtros a pastilha diz quantos estão ligados, e essa é a única cor do painel:
+   sobre o cinzento das outras não se distinguia de uma contagem qualquer. */
 .count-chip-strong {
     background: var(--bs-primary);
     color: #fff;
 }
 
-/* A pastilha de um filtro aplicado. Neutra: o filtro nao e um estado do sistema, e a
-   unica cor do painel de filtros e o contador do botao, que diz quantos estao ligados.
-   A forma e a das pastilhas de estado -- ponto, maiusculas, mesma altura -- porque um
-   filtro aplicado tambem e uma condicao ligada, e le-se na mesma passagem de olhos. */
+/* A pastilha de um filtro aplicado, neutra: o filtro não é um estado do sistema, e a única
+   cor do painel é o contador do botão. A forma é a das pastilhas de estado -- ponto,
+   maiúsculas, mesma altura -- porque um filtro aplicado também é uma condição ligada. */
 .filter-chip {
     display: inline-flex;
     align-items: center;
@@ -405,8 +398,8 @@ body {
     white-space: nowrap;
     padding: .15rem .3rem .15rem .55rem;
     border-radius: 20px;
-    /* O cinzento da maqueta e nao o `tertiary-bg`: a um tom do branco do cartao a pastilha
-       nao se lia como pastilha, era texto em maiusculas com um ponto a frente. */
+    /* O cinzento da maqueta e não o `tertiary-bg`: a um tom do branco do cartão a pastilha
+       não se lê como pastilha, é texto em maiúsculas com um ponto à frente. */
     background: var(--bs-secondary-bg);
     color: var(--bs-secondary-color);
 }
@@ -434,7 +427,7 @@ body {
     font-size: .625rem;
 }
 
-/* O fundo do realce e mais escuro que o da pastilha, senao nao se via: a pastilha ja e o
+/* O fundo do realce é mais escuro que o da pastilha, senão não se via: a pastilha já é o
    `secondary-bg`, que era tambem o realce. */
 .filter-chip-remove:hover,
 .filter-chip-remove:focus-visible {
@@ -442,8 +435,8 @@ body {
     color: var(--bs-body-bg);
 }
 
-/* O painel de detalhe enche o cartao, para as duas listas terem altura para crescer. Nao
-   se usa `d-flex` aqui porque o `d-none` que o esconde e do mesmo peso e perdia. */
+/* O painel de detalhe enche o cartão, para as duas listas terem altura para crescer. Não se
+   usa `d-flex` aqui porque o `d-none` que o esconde é do mesmo peso e perdia. */
 .device-detail-open {
     display: flex;
     flex-direction: column;
@@ -456,7 +449,7 @@ body {
     min-height: 0;
 }
 
-/* A divisoria entre as duas listas so existe quando estao mesmo lado a lado. */
+/* A divisória entre as duas listas só existe quando estão mesmo lado a lado. */
 @media (min-width: 1200px) {
     .border-start-xl {
         border-left: 1px solid var(--bs-border-color);
@@ -464,9 +457,9 @@ body {
 }
 
 /* As duas listas do painel de detalhe -- eventos recebidos e pedidos ao dispositivo.
-   O `table-sm` do Bootstrap aperta as linhas a .25rem, e uma pastilha de 26px dentro de
-   uma linha de 8px de altura util toca na de cima e na de baixo. A ultima linha nao leva
-   divisoria: por baixo dela vem logo o contorno do cartao ou o paginador. */
+   O `table-sm` do Bootstrap aperta as linhas a .25rem, e uma pastilha de 26px dentro de uma
+   linha de 8px de altura útil toca na de cima e na de baixo. A última linha não leva
+   divisória: por baixo dela vem logo o contorno do cartão ou o paginador. */
 .telemetry-table > :not(caption) > * > * {
     padding: .625rem .75rem .625rem 0;
     background: transparent;
@@ -480,19 +473,18 @@ body {
     padding-right: 0;
 }
 
-/* Uma linha por evento, sempre a mesma altura.
-   Metade dos tipos declara detalhes e a outra metade nao, e como esses detalhes iam para
-   uma segunda linha a lista alternava entre alturas conforme o tipo de cada evento -- o
-   ritmo quebrava a cada duas ou tres linhas. Os detalhes passam a seguir ao valor, na mesma
-   linha, e o que nao cabe corta-se com reticencias. O texto completo fica no `title` da
-   celula, que e onde ja estava a versao integral. */
+/* Uma linha por evento, sempre a mesma altura. Metade dos tipos declara detalhes e a outra
+   metade não, e com esses detalhes numa segunda linha a lista alternava entre alturas
+   conforme o tipo de cada evento. Os detalhes vão a seguir ao valor, na mesma
+   linha, e o que não cabe corta-se com reticências. O texto completo fica no `title` da
+   célula. */
 .telemetry-table {
     table-layout: fixed;
 }
 
-/* Colunas fixas, iguais nos dois paineis: o icone, o nome, o valor com o que sobra, e a
-   hora. Sem isto cada pagina media as suas colunas pelo conteudo que lhe tocou, e as duas
-   listas lado a lado nunca alinhavam entre si nem de uma pagina para a outra. */
+/* Colunas fixas, iguais nos dois painéis: o ícone, o nome, o valor com o que sobra, e a
+   hora. Sem isto cada página media as suas colunas pelo conteúdo que lhe tocou, e as duas
+   listas lado a lado nunca alinhavam entre si nem de uma página para a outra. */
 .telemetry-table > tbody > tr > td:nth-child(1) {
     width: 2.125rem;
 }
@@ -504,17 +496,17 @@ body {
     white-space: nowrap;
 }
 
-/* A hora mede o que a hora precisa e nunca se corta: e a coluna que se usa para comparar
-   dois eventos, e "25/08, 12:47:5..." nao serve para comparar nada. */
+/* A hora mede o que a hora precisa e nunca se corta: é a coluna que se usa para comparar
+   dois eventos, e "25/08, 12:47:5..." não serve para comparar nada. */
 .telemetry-table > tbody > tr > td:nth-child(4) {
     width: 7.5rem;
     white-space: nowrap;
     overflow: visible;
 }
 
-/* Metade dos tipos declara detalhes e a outra metade nao, e a segunda linha de uns fazia a
+/* Metade dos tipos declara detalhes e a outra metade não, e a segunda linha de uns fazia a
    lista alternar entre duas alturas. A altura de duas linhas fica reservada aqui, no
-   contentor, e nao numa linha vazia: assim uma linha sem detalhes centra o valor no meio da
+   contentor, e não numa linha vazia: assim uma linha sem detalhes centra o valor no meio da
    altura reservada em vez de o encostar ao topo. */
 .telemetry-row-stack {
     display: flex;
@@ -524,16 +516,14 @@ body {
     min-width: 0;
 }
 
-/* Num telefone as quatro colunas dividem os ~310px uteis do cartao entre nome, valor e
-   hora, e o nome ainda leva uma largura fixa no proprio `td`. A linha passa a duas: o
-   icone, o nome e a hora em cima, o valor com a largura toda em baixo. Serve as duas
+/* Num telefone as quatro colunas dividem os ~310px úteis do cartão entre nome, valor e
+   hora, e o nome ainda leva uma largura fixa no próprio `td`. A linha passa a duas: o
+   ícone, o nome e a hora em cima, o valor com a largura toda em baixo. Serve as duas
    tabelas do painel, os eventos recebidos e os pedidos ao dispositivo.
 
-   Depois das regras que anula, e nao antes. Uma media query nao acrescenta especificidade:
-   o `width: auto` daqui e o `width: 34%` do nome tem a mesma, e enquanto este bloco estava
-   em cima era o outro que ganhava por vir mais abaixo no ficheiro. O nome ficava com 34%
-   da faixa da grelha -- 120px de 354 -- e cortava-se em "Esta..." com o resto da linha
-   vazio ao lado. */
+   TEM de vir depois das regras que anula. Uma media query não acrescenta especificidade: o
+   `width: auto` daqui e o `width: 34%` do nome têm a mesma, e quem ganha é quem vier mais
+   abaixo no ficheiro. */
 @media (max-width: 575.98px) {
     .telemetry-table > tbody > tr {
         display: grid;
@@ -553,7 +543,7 @@ body {
         padding: 0 .5rem 0 0;
     }
 
-    /* As larguras fixas das colunas nao se aplicam a uma grelha: aqui quem manda sao as
+    /* As larguras fixas das colunas não se aplicam a uma grelha: aqui quem manda são as
        faixas do `tr`, e cada celula volta a medir o que a sua faixa lhe der. */
     .telemetry-table > tbody > tr > td:nth-child(1) {
         grid-column: 1;
@@ -582,16 +572,16 @@ body {
     }
 }
 
-/* A truncagem destas duas vive na marcacao, em `d-block text-truncate`: o `d-block` tem de
-   ir junto porque `overflow` e `text-overflow` nao fazem nada num elemento inline, e estes
-   sao `span`. Aqui fica so o que o Bootstrap nao da. */
+/* A truncagem destas duas vive na marcação, em `d-block text-truncate`: o `d-block` tem de
+   ir junto porque `overflow` e `text-overflow` não fazem nada num elemento inline, e estes
+   são `span`. Aqui fica só o que o Bootstrap não dá. */
 .telemetry-row-details {
     color: var(--bs-secondary-color);
     font-size: .8125rem;
     line-height: 1.3;
 }
 
-/* A pastilha do icone numa linha de evento: a mesma ideia do cartao, em 26px. */
+/* A pastilha do ícone numa linha de evento: a mesma ideia do cartão, em 26px. */
 .telemetry-row-icon {
     width: 26px;
     height: 26px;
@@ -605,20 +595,20 @@ body {
     font-size: .75rem;
 }
 
-/* O cartao que e o proprio pedido. Sem sombra: o que responde ao clique diz-se em repouso
-   pelo aviao de papel no canto, e ao passar o rato pelo tom da categoria a acender. */
+/* O cartão que é o próprio pedido. Sem sombra: o que responde ao clique diz-se em repouso
+   pelo avião de papel no canto, e sob o rato pelo tom da categoria a acender. */
 .telemetry-card-action {
-    /* Um `button` encolhe para o conteudo, e um `div.card` nao: sem isto, o mosaico de
-       "Atividade" ficava mais estreito que o de "Oxigenio no sangue" na mesma coluna. */
+    /* Um `button` encolhe para o conteúdo, e um `div.card` não: sem isto, o mosaico de
+       "Atividade" fica mais estreito que o de "Oxigénio no sangue" na mesma coluna. */
     width: 100%;
     cursor: pointer;
     text-align: left;
     transition: border-color .12s ease, background-color .12s ease;
 }
 
-/* O tom da categoria a acender, e nao o cinzento. Isto escrevia `--bs-primary-border-subtle`
-   e `--bs-tertiary-bg` por cima do tom, por isso um mosaico de bateria verde e um de
-   frequencia cardiaca vermelho ficavam os dois cinzentos ao passar o rato -- a cor que o
+/* O tom da categoria a acender, e não o cinzento. Escrever `--bs-primary-border-subtle` e
+   `--bs-tertiary-bg` por cima do tom punha um mosaico de bateria verde e um de frequência
+   cardíaca vermelho os dois cinzentos sob o rato -- a cor que o
    identificava desaparecia exactamente no momento em que se ia clicar nele. */
 .telemetry-card-action:hover:not(:disabled),
 .telemetry-card-action:focus-visible {
@@ -626,15 +616,15 @@ body {
     background: var(--tone-bg, var(--bs-tertiary-bg));
 }
 
-/* A pastilha do icone inverte: sobre o cartao agora tingido, o branco destaca-a. */
+/* A pastilha do ícone inverte: sobre o cartão tingido, o branco destaca-a. */
 .telemetry-card-action:hover:not(:disabled) .telemetry-card-icon,
 .telemetry-card-action:focus-visible .telemetry-card-icon {
     background: var(--bs-body-bg);
     color: var(--tone-fg, var(--bs-body-color));
 }
 
-/* O aviao de papel: presente em repouso, mas quase apagado -- oito mosaicos com um icone
-   nitido no canto liam-se como oito avisos. Ao passar o rato ganha o tom da categoria. */
+/* O avião de papel: presente em repouso, mas quase apagado -- oito mosaicos com um ícone
+   nítido no canto leem-se como oito avisos. Sob o rato ganha o tom da categoria. */
 .telemetry-card-hint {
     font-size: .6875rem;
     line-height: 1.6;
@@ -664,20 +654,20 @@ body {
 
 /* ===== escolher dispositivo ===== */
 
-/* O modal tem uma altura fixa, e e isso que resolve o problema real: em producao ha muitos
-   relogios e uma pulseira, e com a altura a vir do conteudo cada filtro que se aplicava
-   fazia a caixa colapsar de dez linhas para uma debaixo do rato -- o botao que se ia clicar
-   mudava de sitio no momento em que se clicava. Aqui a lista rola dentro de uma moldura que
-   nao se mexe. A altura e uma fraccao do ecra e nao um numero de pixeis, para nao ser mais
-   alta do que o ecra em portateis pequenos. */
-/* Altura definida e nao um minimo com um maximo: uma coluna so sabe onde rolar se a altura
-   do pai for um comprimento resolvido, e com `min-height`/`max-height` a altura continua a
-   vir do conteudo -- a lista crescia 1132px dentro de uma moldura de 691 e transbordava por
-   baixo do rodape em vez de rolar.
+/* O modal tem altura fixa: com a altura a vir do conteúdo, cada filtro aplicado colapsava a
+   caixa de dez linhas para uma debaixo do rato, e o botão que se ia clicar mudava de sítio
+   no momento do clique. Aqui a lista rola dentro de uma moldura que não se mexe.
 
-   Os limites do `clamp` sao os dois lados do problema: o minimo garante que a caixa nao
-   colapsa quando um filtro deixa um dispositivo, e o maximo evita um modal absurdamente
-   alto num ecra grande. */
+   A altura é uma fracção do ecrã e não um número de pixéis, para não ser mais alta do que o
+   ecrã em portáteis pequenos. */
+/* Altura definida e não um mínimo com um máximo: uma coluna só sabe onde rolar se a altura
+   do pai for um comprimento resolvido, e com `min-height`/`max-height` a altura continua a
+   vir do conteúdo -- a lista cresce 1132px dentro de uma moldura de 691 e transborda por
+   baixo do rodapé em vez de rolar.
+
+   Os limites do `clamp` são os dois lados do problema: o mínimo garante que a caixa não
+   colapsa quando um filtro deixa um dispositivo, e o máximo evita um modal absurdamente alto
+   num ecrã grande. */
 .device-selector-body {
     height: clamp(26rem, 62vh, 46rem);
 }
@@ -688,13 +678,13 @@ body {
     height: 100%;
     min-height: 0;
     overflow-y: auto;
-    /* A margem negativa das listas de opcoes chega ao limite da caixa e dava uma barra
+    /* A margem negativa das listas de opções chega ao limite da caixa e dava uma barra
        horizontal por baixo dos filtros. Nada aqui rola de lado. */
     overflow-x: hidden;
 }
 
-/* Cada coluna rola por si. Presas ao mesmo scroll, chegar ao ultimo filtro obrigava a
-   descer a lista de dispositivos -- duas coisas independentes num movimento so. */
+/* Cada coluna rola por si. Presas ao mesmo scroll, chegar ao último filtro obrigava a descer
+   a lista de dispositivos -- duas coisas independentes num movimento só. */
 .device-filter-column {
     gap: 1.25rem;
     border-right: 1px solid var(--bs-border-color);
@@ -704,7 +694,7 @@ body {
 /* A coluna e um `collapse`, para os filtros se esconderem atras de um botao no telefone. A
    partir de lg tem de estar sempre aberta, e o `d-lg-block` do Bootstrap fa-lo com um
    `display: block !important` que apagava a coluna flex daqui. Este `!important` existe para
-   responder a esse, e nao por preguica de especificidade. */
+   responder a esse, e não por preguiça de especificidade. */
 @media (min-width: 992px) {
     .device-filter-column.collapse {
         display: flex !important;
@@ -712,8 +702,8 @@ body {
 }
 
 @media (max-width: 991.98px) {
-    /* Abaixo de lg o modal e o ecra inteiro e as colunas empilham: a coluna dos filtros
-       deixa de ter contorno lateral e passa a rolar com a pagina, nao por dentro. */
+    /* Abaixo de lg o modal é o ecrã inteiro e as colunas empilham: a coluna dos filtros
+       deixa de ter contorno lateral e rola com a página, e não por dentro. */
     .device-selector-body {
         height: auto;
     }
@@ -737,17 +727,17 @@ body {
     gap: .5rem;
 }
 
-/* A mesma grelha fora da coluna estreita do selector: nos modais ha largura para mais do
+/* A mesma grelha fora da coluna estreita do selector: nos modais há largura para mais do
    que duas colunas, e duas deixavam metade da linha vazia. */
 .device-type-grid.is-wide {
     grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
 }
 
-/* ===== catalogo de capacidades ===== */
+/* ===== catálogo de capacidades ===== */
 
-/* A tira das seccoes fica colada ao topo enquanto a lista corre por baixo, e cada pastilha
-   aponta para o `id` da sua seccao. Com cinco cabecalhos dentro de milhares de pixeis de
-   scroll, saber onde esta uma seccao exigia procura-la. */
+/* A tira das secções fica colada ao topo enquanto a lista corre por baixo, e cada pastilha
+   aponta para o `id` da sua secção. Com cinco cabeçalhos dentro de milhares de pixéis de
+   scroll, saber onde está uma secção exigia procurá-la. */
 .capability-section-nav {
     position: sticky;
     top: 0;
@@ -798,15 +788,14 @@ body {
     color: var(--bs-primary);
 }
 
-/* A seccao passa a ser um destino de scroll, e o desvio e a altura da tira, para o
-   cabecalho nao ficar debaixo dela ao chegar. */
+/* A secção é um destino de scroll, e o desvio é a altura da tira, para o cabeçalho não
+   ficar debaixo dela ao chegar. */
 .capability-catalog-section {
     scroll-margin-top: 3.25rem;
 }
 
-/* Uma linha por capacidade: o numero, o icone que a capacidade ja tem nos cartoes de
-   pedido, o nome, e os factos que sobram depois de tirar o tipo -- que era a seccao
-   repetida em cada linha. Nada leva largura fixa. */
+/* Uma linha por capacidade: o número, o ícone que a capacidade já tem nos cartões de pedido,
+   o nome, e os factos. Nada leva largura fixa. */
 .capability-row {
     display: grid;
     grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr) auto;
@@ -817,8 +806,8 @@ body {
     border-radius: .375rem;
 }
 
-/* O numero conta o que o fornecedor suporta, em negrito e apagado: enumera sem competir
-   com o nome que esta ao lado. */
+/* O número conta o que o fornecedor suporta, em negrito e apagado: enumera sem competir
+   com o nome que está ao lado. */
 .capability-index {
     font-weight: 700;
     font-size: 1.0625rem;
@@ -842,8 +831,8 @@ body {
     white-space: nowrap;
 }
 
-/* Existe para o tipo de dispositivo, mas o fornecedor escolhido nao a declara. Fica
-   apagada e no fundo afundado: e contexto, e nao uma linha que se possa accionar. */
+/* Existe para o tipo de dispositivo, mas o fornecedor escolhido não a declara. Fica
+   apagada e no fundo afundado: é contexto, e não uma linha que se possa accionar. */
 .capability-row.is-unsupported {
     opacity: .42;
     background: var(--bs-tertiary-bg);
@@ -893,8 +882,8 @@ body {
     background: var(--bs-primary-bg-subtle);
 }
 
-/* Um tipo sem dispositivos fica a vista e apagado: saber que a frota nao tem pulseiras e
-   informacao, e esconde-lo deixava a pergunta sem resposta. */
+/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é
+   informação, e escondê-lo deixava a pergunta sem resposta. */
 .device-type-tile:disabled {
     opacity: .45;
     cursor: default;
@@ -935,20 +924,20 @@ body {
     color: #fff;
 }
 
-/* Uma lista de opcoes de escolha multipla. Sem altura maxima nem rolamento proprio: dar a
-   cada grupo o seu dava seis barras de dez pixeis dentro da barra da coluna, e nenhuma
-   delas se agarra bem. Quem rola e a coluna. */
+/* Uma lista de opções de escolha múltipla. Sem altura máxima nem rolamento próprio: dar a
+   cada grupo o seu dava seis barras de dez pixéis dentro da barra da coluna, e nenhuma
+   delas se agarra bem. Quem rola é a coluna. */
 .filter-list {
     display: flex;
     flex-direction: column;
     gap: 1px;
-    /* As caixas de seleccao alinham a esquerda com a etiqueta do grupo e com o campo de
-       pesquisa. O `padding` da linha existe para o realce da seleccao respirar, e sem esta
-       margem empurrava-as para dentro -- a etiqueta a 0 e as opcoes a 7. */
+    /* As caixas de selecção alinham à esquerda com a etiqueta do grupo e com o campo de
+       pesquisa. O `padding` da linha existe para o realce respirar, e sem esta margem
+       empurrava-as para dentro -- a etiqueta a 0 e as opções a 7. */
     margin-inline: -.4375rem;
 }
 
-/* Sem `width: 100%`: numa coluna flex a linha ja estica sozinha, e a largura fixa somada a
+/* Sem `width: 100%`: numa coluna flex a linha já estica sozinha, e a largura fixa somada à
    margem de indentacao das licencas empurrava a contagem para fora da coluna. */
 .filter-option {
     display: flex;
@@ -1009,7 +998,7 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* A licenca por baixo da empresa a que pertence, com o traco que as liga. */
+/* A licença por baixo da empresa a que pertence, com o traço que as liga. */
 .filter-option-nested {
     margin-left: 1.25rem;
     font-size: .78125rem;
@@ -1037,8 +1026,8 @@ body {
     background: var(--bs-border-color);
 }
 
-/* O mesmo desenho dos filtros, mas de escolha unica: a marca e redonda para nao prometer
-   que se podem marcar varias, e a empresa e so o cabecalho do grupo. */
+/* O mesmo desenho dos filtros, mas de escolha única: a marca é redonda para não prometer
+   que se podem marcar várias, e a empresa é só o cabeçalho do grupo. */
 .license-picker .filter-option-box {
     border-radius: 50%;
 }
@@ -1049,9 +1038,9 @@ body {
     color: var(--bs-secondary-color);
 }
 
-/* Um dispositivo por linha, e a linha toda. Cada campo cai sempre na mesma abcissa e a
-   lista le-se a descer por coluna, como uma tabela -- mas cada dispositivo continua a ser
-   um objecto com contorno proprio, e nao uma linha de grelha. */
+/* Um dispositivo por linha, e a linha toda. Cada campo cai sempre na mesma abcissa e a lista
+   lê-se a descer por coluna, como uma tabela -- mas cada dispositivo continua a ser um
+   objecto com contorno próprio, e não uma linha de grelha. */
 .device-card-list {
     display: flex;
     flex-direction: column;
@@ -1073,8 +1062,8 @@ body {
     transition: border-color .12s ease, background-color .12s ease;
 }
 
-/* O esqueleto empresta a geometria do cartao, mas nao e um alvo: sem isto reagia ao rato e
-   dava a entender que se podia escolher um dispositivo que ainda nao chegou. */
+/* O esqueleto empresta a geometria do cartão, mas não é um alvo: sem isto reagia ao rato e
+   dava a entender que se podia escolher um dispositivo que ainda não chegou. */
 .device-card-skeleton {
     cursor: default;
     pointer-events: none;
@@ -1087,8 +1076,8 @@ body {
     background-color: currentcolor;
 }
 
-/* A pastilha de estado do cartao a serio tem a largura do seu texto. A barra que a substitui
-   nao tem texto, e sem medida ficava um risco de 1em. */
+/* A pastilha de estado do cartão a sério tem a largura do seu texto. A barra que a substitui
+   não tem texto, e sem medida ficava um risco de 1em. */
 .device-card-skeleton-pill {
     width: 5.25rem;
     height: 1.25rem;
@@ -1096,8 +1085,8 @@ body {
 }
 
 /* As linhas enchem a moldura, em vez de serem um bloco no topo com espaco vazio por baixo.
-   `flex: 1` estica a caixa ate a paginacao e `overflow: hidden` corta as que nao cabem, o que
-   deixa o numero de linhas ser generoso sem medir a altura da moldura em JavaScript. */
+   `flex: 1` estica a caixa até à paginação e `overflow: hidden` corta as que não cabem, o
+   que deixa o número de linhas ser generoso sem medir a altura da moldura em JavaScript. */
 .device-card-skeleton-list {
     display: flex;
     flex-direction: column;
@@ -1107,16 +1096,16 @@ body {
     overflow: hidden;
 }
 
-/* A lista so estica enquanto tem o esqueleto dentro. Esticada sempre, uma lista de tres
-   dispositivos empurrava a paginacao para o fundo da moldura. O `:has` desliga-se sozinho
-   quando os cartoes verdadeiros substituem o esqueleto -- nao ha classe para limpar. */
+/* A lista só estica enquanto tem o esqueleto dentro. Esticada sempre, uma lista de três
+   dispositivos empurrava a paginação para o fundo da moldura. O `:has` desliga-se sozinho
+   quando os cartões verdadeiros substituem o esqueleto -- não há classe para limpar. */
 .device-card-list:has(.device-card-skeleton-list) {
     flex: 1 1 auto;
     min-height: 0;
 }
 
-/* Ao pedir de novo, o que esta no ecra e o resultado anterior. Esbatido diz que ainda esta a
-   mudar, e deixa-o legivel -- trocar a lista por um esqueleto a cada filtro custava mais. */
+/* Ao pedir de novo, o que está no ecrã é o resultado anterior. Esbatido diz que ainda está a
+   mudar, e deixa-o legível -- trocar a lista por um esqueleto a cada filtro custa mais. */
 .device-card-list[aria-busy="true"] {
     opacity: .55;
 }
@@ -1138,10 +1127,10 @@ body {
     justify-self: start;
 }
 
-/* Os dois campos sao celulas da grelha do cartao, e nao uma celula com dois campos dentro.
-   Como contentor, empilhava a licenca sobre o SIM numa coluna so -- e o alinhamento a
-   descer, que e a razao de ser desta grelha, perdia-se. `display: contents` promove-os a
-   itens da grelha de cima; em telefone volta a ser um contentor, com a sua propria grelha. */
+/* Os dois campos são células da grelha do cartão, e não uma célula com dois campos dentro:
+   como contentor, empilhava a licença sobre o SIM numa coluna só e perdia o alinhamento a
+   descer, que é a razão de ser desta grelha. O `display: contents` promove-os a itens da
+   grelha de cima; em telefone volta a ser um contentor, com a sua própria grelha. */
 .device-card-fields {
     display: contents;
 }
@@ -1190,8 +1179,8 @@ body {
     line-height: 1.5;
 }
 
-/* Bloco, e nao inline: `overflow` e `text-overflow` nao fazem nada numa caixa inline, e
-   sem isso o numero do SIM saia do cartao em vez de ser cortado. */
+/* Bloco, e não inline: `overflow` e `text-overflow` não fazem nada numa caixa inline, e sem
+   isso o número do SIM sai do cartão em vez de ser cortado. */
 .device-card-field-value {
     display: block;
     min-width: 0;
@@ -1202,8 +1191,8 @@ body {
     white-space: nowrap;
 }
 
-/* Sem o prefixo do cartao: o mesmo par empresa/licenca aparece no painel do dispositivo
-   escolhido, onde o valor nao esta dentro de um .device-card-field-value. */
+/* Sem o prefixo do cartão: o mesmo par empresa/licença aparece no painel do dispositivo
+   escolhido, onde o valor não está dentro de um `.device-card-field-value`. */
 .license-number {
     color: var(--bs-secondary-color);
     font-variant-numeric: tabular-nums;
@@ -1217,10 +1206,10 @@ body {
 .license-empty,
 .device-card-field-value.empty { color: var(--bs-secondary-color); }
 
-/* Num telefone as cinco colunas nao cabem, mas o cartao continua uma grelha e nao uma
-   coluna: a miniatura fica a esquerda com a pastilha e o identificador ao lado dela, e os
-   campos de atribuicao passam a uma fila por baixo da divisoria. Em coluna simples a
-   miniatura ficava numa linha sozinha e a pastilha esticava a largura do cartao. */
+/* Num telefone as cinco colunas não cabem, mas o cartão continua uma grelha e não uma
+   coluna: a miniatura fica à esquerda com a pastilha e o identificador ao lado dela, e os
+   campos de atribuição passam a uma fila por baixo da divisória. Em coluna simples a
+   miniatura ficava numa linha sozinha e a pastilha esticava à largura do cartão. */
 @media (max-width: 767.98px) {
     .device-card {
         grid-template-columns: 40px minmax(0, 1fr);
@@ -1237,9 +1226,9 @@ body {
     .device-card > .config-state { grid-area: state; }
     .device-card-identity { grid-area: identity; min-width: 0; }
 
-    /* O SIM pede a largura que precisa em vez de levar 5.25rem fixos: um numero portugues
-       com indicativo mede mais do que isso e transbordava. A licenca fica com o resto e
-       encolhe, que e o que `minmax(0, 1fr)` garante. */
+    /* O SIM pede a largura que precisa em vez de levar 5.25rem fixos: um número português
+       com indicativo mede mais do que isso e transborda. A licença fica com o resto e
+       encolhe, que é o que o `minmax(0, 1fr)` garante. */
     .device-card-fields {
         grid-area: fields;
         display: grid;
@@ -1262,13 +1251,13 @@ body {
     }
 }
 
-/* O icone a esquerda, o nome e o valor ao lado dele, e a pastilha de estado no extremo. A
-   coluna interna e so para separar esta linha do corpo que alguns mosaicos trazem -- a
-   barra de humidade da fralda, por exemplo.
+/* O ícone à esquerda, o nome e o valor ao lado dele, e a pastilha de estado no extremo. A
+   coluna interna é só para separar esta linha do corpo que alguns mosaicos trazem -- a barra
+   de humidade da fralda, por exemplo.
 
-   O nome quebra em duas linhas em vez de ser truncado: a 375px, com dois mosaicos por
-   linha, "Oxigénio no sangue" ficava "Oxigénio no sa" e o `title` que o completava era uma
-   tooltip a dizer o que ja estava escrito no ecra. */
+   O nome quebra em duas linhas em vez de ser truncado: a 375px, com dois mosaicos por linha,
+   "Oxigénio no sangue" ficava "Oxigénio no sa" e o `title` que o completava era uma tooltip
+   a dizer o que já estava escrito no ecrã. */
 .telemetry-card-body {
     display: flex;
     flex-direction: column;
@@ -1288,9 +1277,8 @@ body {
     color: var(--tone-fg, inherit);
 }
 
-/* O icone de um cartao de telemetria. Era pintado com a cor contextual da categoria --
-   quatro cores num painel, em contorno, texto e fundo -- e a categoria le-se no icone,
-   nao na cor. Cinzento, para a cor ficar disponivel para o estado. */
+/* O ícone de um cartão de telemetria, cinzento por omissão: a categoria lê-se no ícone e não
+   na cor, e a cor fica disponível para o estado. */
 .telemetry-card-icon {
     width: 36px;
     height: 36px;
@@ -1303,8 +1291,8 @@ body {
     color: var(--tone-fg, var(--bs-secondary-color));
 }
 
-/* O nome da categoria e uma etiqueta, nao um titulo: pequeno, maiusculas, peso normal.
-   O que se le primeiro no cartao e o valor, e era o nome que estava em negrito. */
+/* O nome da categoria é uma etiqueta e não um título: pequeno, maiúsculas, peso normal. O
+   que se lê primeiro no cartão é o valor. */
 .telemetry-card-title {
     font-size: .6875rem;
     font-weight: 400;
@@ -1313,9 +1301,8 @@ body {
     color: var(--bs-secondary-color);
 }
 
-/* A cor da categoria e definida uma vez por tom, e o icone, a borda e o valor bebem dela.
-   Definir a mesma cor em tres sitios era o que fazia a borda ficar para tras quando o
-   icone mudava. */
+/* A cor da categoria é definida uma vez por tom, e o ícone, a borda e o valor bebem dela:
+   definida em três sítios, a borda ficava para trás quando o ícone mudava. */
 .telemetry-card-tone-info { --tone-bg: rgba(var(--bs-info-rgb), .12); --tone-fg: #0a6c85; --tone-border: var(--bs-info-border-subtle); }
 .telemetry-card-tone-success { --tone-bg: rgba(var(--bs-success-rgb), .12); --tone-fg: var(--bs-success-text-emphasis); --tone-border: var(--bs-success-border-subtle); }
 .telemetry-card-tone-warning { --tone-bg: rgba(var(--bs-warning-rgb), .18); --tone-fg: #8a6a04; --tone-border: var(--bs-warning-border-subtle); }
@@ -1323,16 +1310,15 @@ body {
 .telemetry-card-tone-primary { --tone-bg: var(--bs-primary-bg-subtle); --tone-fg: var(--bs-primary-text-emphasis); --tone-border: var(--bs-primary-border-subtle); }
 .telemetry-card-tone-secondary { --tone-bg: var(--bs-secondary-bg); --tone-fg: var(--bs-secondary-color); --tone-border: var(--bs-border-color); }
 
-/* A borda do cartao acompanha o tom. */
+/* A borda do cartão acompanha o tom. */
 .card[class*="telemetry-card-tone-"] {
     border-color: var(--tone-border);
 }
 
-/* A etiqueta em maiusculas e o unico cabecalho de seccao dentro de um cartao: o titulo do
-   ecra nao pode competir com um h5 em cada bloco. Existia em quatro variantes -- os factos
-   do dispositivo, a chave da badge da trilha, o nome do passo do assistente e a pastilha
-   de estado -- com tres tamanhos e tres espacamentos diferentes. E a mesma coisa, e passa
-   a ter uma medida so. */
+/* A etiqueta em maiúsculas é o único cabeçalho de secção dentro de um cartão: o título do
+   ecrã não pode competir com um h5 em cada bloco. Uma medida só para os quatro sítios onde
+   aparece -- os factos do dispositivo, a chave da badge da trilha, o nome do passo do
+   assistente e a pastilha de estado. */
 .section-label,
 .selected-device-facts dt,
 .wizard-trail .wizard-badge-key {
@@ -1349,8 +1335,8 @@ body {
         #f4f5f7;
 }
 
-/* O cinzento claro da maqueta, e nao branco: os campos sao brancos, e sobre branco puro
-   desapareciam -- o lado direito lia-se como uma folha vazia com texto solto. */
+/* O cinzento claro da maqueta, e não branco: os campos são brancos, e sobre branco puro
+   desapareciam -- o lado direito lê-se como uma folha vazia com texto solto. */
 .dashboard-login-panel {
     background: #f4f5f7;
     box-shadow: -1.5rem 0 4rem rgba(18, 28, 45, .08);
@@ -1616,8 +1602,8 @@ body {
     overflow: hidden;
 }
 
-/* Model photos are already on a white plate; the tint is only there to give the
-   placeholder icon a surface to sit on. */
+/* As fotografias dos modelos já vêm sobre branco; o tom só existe para dar superfície ao
+   ícone que aparece quando não há fotografia. */
 .gateway-card-thumb:has(img) {
     background: transparent;
 }
@@ -1660,9 +1646,9 @@ body {
 }
 
 /*
- * Signal strength as four rising bars. The filled count carries the reading as
- * well as the colour does, so the meter still reads without hue perception, and
- * the exact dBm lives in its tooltip.
+ * A intensidade de sinal em quatro barras crescentes. A contagem de barras cheias diz a
+ * leitura tão bem como a cor, para o medidor continuar legível sem percepção de tom, e o
+ * dBm exacto vive na tooltip.
  */
 .signal-meter {
     display: inline-flex;
@@ -1732,7 +1718,7 @@ body {
     overflow: hidden;
 }
 
-/* The "needs changing" threshold, so it is obvious which bars crossed it. */
+/* O limiar de "precisa de muda", para se ver quais as barras que o passaram. */
 .diaper-channel-track::after {
     content: "";
     position: absolute;
@@ -1788,10 +1774,10 @@ body {
     max-height: min(28rem, calc(100vh - 8rem));
 }
 
-/* O encaixe de 1rem e para ecra largo, onde a moldura separa o modal do que esta por tras.
-   Num telefone nao ha "por tras" nenhum que valha 16px de cada lado, e o
-   `.modal-fullscreen` do Bootstrap ja poe o modal de bordo a bordo -- por isso a regra
-   comeca em `sm` em vez de existir e ser anulada logo a seguir. */
+/* O encaixe de 1rem é para ecrã largo, onde a moldura separa o modal do que está por trás.
+   Num telefone não há "por trás" nenhum que valha 16px de cada lado, e o
+   `.modal-fullscreen` do Bootstrap já põe o modal de bordo a bordo -- por isso a regra
+   começa em `sm` em vez de existir e ser anulada logo a seguir. */
 @media (min-width: 576px) {
     #deviceModal .modal-dialog.modal-fullscreen,
     #settingsModal .modal-dialog.modal-fullscreen {
@@ -1802,8 +1788,8 @@ body {
     }
 }
 
-/* O modal de definicoes continua de ecra inteiro: e um painel de administracao com cinco
-   listas, nao um formulario. O de editar um dispositivo deixou de o ser. */
+/* O modal de definições é de ecrã inteiro: é um painel de administração com cinco listas, e
+   não um formulário. */
 #settingsModal .modal-dialog.modal-fullscreen .modal-content {
     height: 100%;
 }
@@ -1820,13 +1806,13 @@ body {
     min-height: 100%;
 }
 
-/* O Bootstrap nao tem utilitario de altura por breakpoint -- nao existe `h-lg-100` --, por
-   isso este e um dos poucos sitios onde a marcacao nao chega. */
+/* O Bootstrap não tem utilitário de altura por breakpoint -- não existe `h-lg-100` --, por
+   isso este é um dos poucos sítios onde a marcação não chega. */
 @media (max-width: 575.98px) {
 
-    /* O `h-100` das folhas e do conteudo estica o separador a altura toda do modal de ecra
-       inteiro: sete fornecedores deixavam meio ecra em branco por baixo da tabela. Em
-       telefone cada folha mede o que o seu conteudo mede. */
+    /* O `h-100` das folhas e do conteúdo estica o separador à altura toda do modal de ecrã
+       inteiro, e sete fornecedores deixam meio ecrã em branco por baixo da tabela. Em
+       telefone cada folha mede o que o seu conteúdo mede. */
     .settings-modal-shell,
     .settings-modal-shell .tab-content,
     .settings-modal-shell .tab-pane {
@@ -1834,8 +1820,8 @@ body {
     }
 }
 
-/* A contagem de cada seccao no menu das definicoes. No separador activo o fundo e do
-   proprio branco a 20%, para nao abrir um terceiro tom dentro do navy. */
+/* A contagem de cada secção no menu das definições. No separador activo o fundo é do próprio
+   branco a 20%, para não abrir um terceiro tom dentro do navy. */
 .settings-nav-count {
     flex: none;
     min-width: 1.5rem;
@@ -1854,7 +1840,7 @@ body {
     color: #fff;
 }
 
-/* Abaixo do ecra largo, o menu das definicoes e uma tira que desliza. O `align-items`
+/* Abaixo do ecrã largo, o menu das definições é uma tira que desliza. O `align-items`
    centrado da linha esticava as pills a altura toda da coluna, o que dava um bloco navy
    de 700px em telefone. */
 @media (max-width: 991.98px) {
@@ -1896,11 +1882,11 @@ body {
     gap: 1.25rem;
 }
 
-/* A barra mostra os passos com nome, e nao uma percentagem: quem esta no primeiro tem de
+/* A barra mostra os passos com nome, e não uma percentagem: quem está no primeiro tem de
    conseguir ver o que falta. */
-/* A trilha das respostas ja dadas, e o passo no fim da linha. Cada badge colapsa uma
-   pergunta respondida, o que faz o ecra nunca acumular controlos -- e cada um e um botao
-   para voltar aquela pergunta. */
+/* A trilha das respostas já dadas, e o passo no fim da linha. Cada badge colapsa uma
+   pergunta respondida, o que faz o ecrã nunca acumular controlos -- e cada uma é um botão
+   para voltar àquela pergunta. */
 .wizard-trail {
     display: flex;
     align-items: center;
@@ -1911,9 +1897,9 @@ body {
     border-bottom: 1px solid var(--bs-border-color);
 }
 
-/* A etiqueta por cima do valor, e nao ao lado: lado a lado, tres respostas com nomes
-   compridos nao cabiam na linha e a terceira caia sozinha para baixo. Empilhadas, cada
-   badge mede o mais largo dos seus dois textos e as tres cabem. */
+/* A etiqueta por cima do valor, e não ao lado: lado a lado, três respostas com nomes
+   compridos não cabem na linha e a terceira cai sozinha para baixo. Empilhadas, cada badge
+   mede o mais largo dos seus dois textos e as três cabem. */
 .wizard-trail .wizard-badge {
     display: inline-flex;
     flex-direction: column;
@@ -1945,7 +1931,7 @@ body {
     cursor: default;
 }
 
-/* As que faltam: esbatidas, para se ver quantas sao sem parecerem clicaveis. */
+/* As que faltam: esbatidas, para se ver quantas são sem parecerem clicáveis. */
 .wizard-trail .wizard-badge-pending {
     background: var(--bs-tertiary-bg);
     cursor: default;
@@ -2042,7 +2028,7 @@ body {
 }
 
 /* A grelha de escolhas em cards, partilhada pelo tipo de dispositivo e pelo modelo: um
-   leva icone, o outro leva a fotografia, e o resto da forma e o mesmo. */
+   leva ícone, o outro leva a fotografia, e o resto da forma é o mesmo. */
 .wizard-card-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2078,7 +2064,7 @@ body {
 }
 
 /* O que ja esta escolhido. So o modal de edicao o usa: no assistente responder colapsa a
-   pergunta numa badge, e nao ha grelha por onde ver a escolha. */
+   pergunta numa badge, e não há grelha por onde ver a escolha. */
 .wizard-card.selected {
     border-color: var(--bs-primary);
     background: var(--bs-primary-bg-subtle);
@@ -2117,15 +2103,15 @@ body {
     color: var(--bs-secondary-color);
 }
 
-/* ===== estado de um bloco de configuracao ===== */
+/* ===== estado de um bloco de configuração ===== */
 
-/* O estado vive no bloco e nao no separador: umas configuracoes viajam para o
-   dispositivo e podem ficar pendentes, outras valem de imediato. Nomear separadores por
-   essa diferenca era nomear pela implementacao.
+/* O estado vive no bloco e não no separador: umas configurações viajam para o
+   dispositivo e podem ficar pendentes, outras valem de imediato. Nomear separadores por essa
+   diferença era nomear pela implementação.
 
-   A mesma pastilha serve as duas familias -- a regra do hub, que so tem um estado, e a
-   configuracao por downlink, que tem varios. O tom e que muda, e so o fundo: a leitura
-   nao pode depender da cor, por isso o texto diz sempre qual e o estado. */
+   A mesma pastilha serve as duas famílias -- a regra do hub, que só tem um estado, e a
+   configuração por downlink, que tem vários. O que muda é o tom, e só o fundo: a leitura não
+   pode depender da cor, por isso o texto diz sempre qual é o estado. */
 .config-state {
     display: inline-flex;
     align-items: center;
@@ -2143,7 +2129,7 @@ body {
 
 /* O texto acompanha a cor da pastilha, e o ponto com ele porque e `currentColor`. So o
    fundo estava definido, o que deixava todas as pastilhas com texto quase preto -- e uma
-   pastilha vermelha com texto preto nao le como perigo, le como um fundo colorido. */
+   pastilha vermelha com texto preto não lê como perigo, lê como um fundo colorido. */
 .config-state-secondary {
     background: var(--bs-secondary-bg-subtle);
     color: var(--bs-secondary-color);
