@@ -11,6 +11,7 @@ import {esc} from "../format.js";
 import {
     deviceLicenseHtml,
     emptyPanel,
+    onlineBadge,
     renderDeviceTypeTiles,
 } from "../widgets.js";
 import {renderPagination, resolvePaginationPage} from "../pagination.js";
@@ -275,9 +276,7 @@ function renderDeviceCard(device) {
         <button type="button" class="device-card${selected ? " selected" : ""}${device.online ? "" : " offline"}"
             data-imei="${esc(device.imei)}" data-action="select"${selected ? ' aria-current="true"' : ""}>
         <span class="device-card-thumb">${image}</span>
-        <span class="config-state ${device.online ? "config-state-success" : "config-state-secondary"}">
-            <span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}
-        </span>
+        ${onlineBadge(device.online)}
         <span class="device-card-identity">
             <span class="min-width-0">
                 <span class="device-card-imei d-block text-truncate">${esc(device.imei)}</span>
@@ -372,7 +371,7 @@ function filterOptionMarkup({key, value, label, count, selected, partial = false
             data-filter-key="${esc(key)}" data-filter-value="${esc(value)}" aria-pressed="${selected ? "true" : "false"}">
         <span class="filter-option-box"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
         <span class="filter-option-name">${esc(label)}</span>
-        <span class="filter-option-count">${esc(count)}</span>
+        <span class="filter-option-count count-number">${esc(count)}</span>
         </button>`;
 }
 

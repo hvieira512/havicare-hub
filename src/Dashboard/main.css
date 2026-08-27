@@ -342,6 +342,21 @@ body {
     display: none;
 }
 
+/* Um número ao lado de uma etiqueta, sem pastilha à volta: o mosaico de tipos, as opções de
+   filtro e as pastilhas de secção escreviam as mesmas três declarações cada um. */
+.count-number {
+    font-size: .6875rem;
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Um aviso dentro de um bloco de configuração. As classes eram as mesmas em quatro sítios,
+   por duas ordens diferentes. As margens ficam de fora: variam com o sítio. */
+.alert-compact {
+    padding: .5rem 1rem;
+    font-size: .875em;
+}
+
 /* No botão de filtros a pastilha diz quantos estão ligados, e essa é a única cor do painel:
    sobre o cinzento das outras não se distinguia de uma contagem qualquer. */
 .count-chip-strong {
@@ -544,6 +559,29 @@ body {
     color: var(--bs-secondary-color);
     font-size: .8125rem;
     line-height: 1.3;
+}
+
+/* A etiqueta de um campo. Escrevia-se `form-label form-label-sm` em setenta e um sítios, e o
+   segundo nome não existia em lado nenhum -- o espaçamento vinha todo do primeiro. */
+.form-label-sm {
+    /* `block` porque metade destes campos escrevia `d-block` à mão: sem isso, um controlo
+       que não seja de bloco -- um grupo de botões -- sobe para o lado da etiqueta. */
+    display: block;
+    margin-bottom: .5rem;
+}
+
+/* Um interruptor ao lado de campos com etiqueta: desce o que a etiqueta ocupa, para as duas
+   colunas assentarem na mesma linha. Era um `mt-4` à mão em seis sítios. */
+.form-switch-aligned {
+    margin-top: 1.5rem;
+}
+
+/* O asterisco de obrigatório, no CSS e não em nove `<span>` à mão -- seis dos quais estavam
+   escondidos dos leitores de ecrã e três não, que os fazia anunciar "asterisco" em três
+   campos e em seis não. Assim não é anunciado em nenhum. */
+.form-label-sm.required::after {
+    content: " *";
+    color: var(--bs-danger);
 }
 
 /* A série de ligações: uma linha do tempo com um ponto por evento. As cores são as do tema,
@@ -776,10 +814,7 @@ body {
 }
 
 .capability-section-chip .count {
-    font-size: .6875rem;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--bs-secondary-color);
 }
 
 .capability-section-chip:hover {
@@ -904,11 +939,6 @@ body {
     line-height: 1.2;
 }
 
-.device-type-tile-count {
-    font-size: .6875rem;
-    color: var(--bs-secondary-color);
-    font-variant-numeric: tabular-nums;
-}
 
 .device-type-tile-check {
     position: absolute;
@@ -1000,9 +1030,6 @@ body {
 
 .filter-option-count {
     flex: none;
-    font-size: .6875rem;
-    color: var(--bs-secondary-color);
-    font-variant-numeric: tabular-nums;
 }
 
 /* A licença por baixo da empresa a que pertence, com o traço que as liga. */
@@ -1556,8 +1583,14 @@ body {
     overflow-y: auto;
 }
 
+/* A mesma lista vazia de gateways aparece no assistente e no modal de edição, e estava
+   escrita de duas maneiras: uma preta e normal, a outra cinzenta e pequena. O aspecto passa
+   a viver aqui, e os dois sítios escrevem só a classe. */
 .gateway-picker-empty {
     grid-column: 1 / -1;
+    margin-bottom: 0;
+    color: var(--bs-secondary-color);
+    font-size: .875em;
 }
 
 .gateway-card {

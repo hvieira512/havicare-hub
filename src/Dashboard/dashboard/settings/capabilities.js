@@ -3,7 +3,7 @@ import {
 } from "../api/index.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {renderButtonGroup, renderDeviceTypeTiles} from "../widgets.js";
+import {renderButtonGroup, renderDeviceTypeTiles, sectionStrip} from "../widgets.js";
 import {cardIcon} from "../telemetry-cards.js";
 import {ensureCapabilityCatalog, ensureModelTemplate} from "../capability-catalog.js";
 import {
@@ -281,21 +281,17 @@ function catalogSectionId(section) {
 function renderCapabilityCatalogSectionNav(sections) {
     if (!els.capabilityCatalogSectionNav) return;
 
-    // A pastilha acesa sai do estado e não de uma classe escrita à mão no DOM: a tira é
-    // reconstruída pela pesquisa, e o realce escrito à mão não sobrevivia a isso.
-    const active = state.settingsModal.activeCapabilityCatalogSection;
-
+    // Com uma secção só, uma tira para saltar para ela não leva a lado nenhum.
     els.capabilityCatalogSectionNav.innerHTML = sections.length > 1
-        ? sections
-            .map(({ section, label, entries }) => {
-                const supported = entries.filter((entry) => entry.supported).length;
-                const target = catalogSectionId(section);
-                return `
-            <button type="button" class="capability-section-chip${target === active ? " selected" : ""}" data-action="scrollCapabilityCatalogSection" data-target="${esc(target)}">
-                ${esc(label)}<span class="count">${supported}</span>
-            </button>`;
-            })
-            .join("")
+        ? sectionStrip(
+            sections.map(({ section, label, entries }) => ({
+                key: catalogSectionId(section),
+                label,
+                count: entries.filter((entry) => entry.supported).length,
+            })),
+            "scrollCapabilityCatalogSection",
+            state.settingsModal.activeCapabilityCatalogSection,
+        )
         : "";
 }
 

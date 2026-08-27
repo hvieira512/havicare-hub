@@ -6,17 +6,9 @@ import {
     saveDeviceConfiguration,
 } from "./panel.js";
 import {
-    appendAlarmClockRow,
-    appendContactRow,
-    appendFourPTouchAlarmRow,
-    appendPhoneListRow,
-    appendTakePillsReminder,
-    appendWonlexMedicationPlan,
-    removeConfigRow,
-    removeTakePillsReminder,
-    removeWonlexMedicationPlan,
+    appendRepeatRow,
+    removeRepeatRow,
     syncAlarmClockCustomVisibility,
-    syncFourPTouchAlarmAddButton,
 } from "./row-editing.js";
 import {
     clearTakePillsRecording,
@@ -59,78 +51,15 @@ export function handleDeviceConfigClick(event) {
         return;
     }
 
-    if (button.dataset.action === "addContactRow") {
-        appendContactRow(section);
+    // As sete listas repetíveis passam pelo mesmo par: o tipo vem no botão ao acrescentar, e
+    // da linha em que se está ao remover.
+    if (button.dataset.action === "addRepeatRow") {
+        appendRepeatRow(section, button.dataset.repeatKind || "");
         return;
     }
 
-    if (button.dataset.action === "removeContactRow") {
-        removeConfigRow(button.closest('[data-repeat-row="contacts"]'));
-        return;
-    }
-
-    if (button.dataset.action === "addSosContactRow") {
-        appendPhoneListRow(section, "sos_contacts");
-        return;
-    }
-
-    if (button.dataset.action === "removeSosContactRow") {
-        removeConfigRow(button.closest('[data-repeat-row="sos_contacts"]'));
-        return;
-    }
-
-    if (button.dataset.action === "addWhitelistRow") {
-        appendPhoneListRow(section, "call_whitelist");
-        return;
-    }
-
-    if (button.dataset.action === "removeWhitelistRow") {
-        removeConfigRow(button.closest('[data-repeat-row="call_whitelist"]'));
-        return;
-    }
-
-    if (button.dataset.action === "addAlarmClockRow") {
-        appendAlarmClockRow(section);
-        return;
-    }
-
-    if (button.dataset.action === "removeAlarmClockRow") {
-        removeConfigRow(button.closest('[data-repeat-row="alarm_clock"]'));
-        return;
-    }
-
-    if (button.dataset.action === "addFourPTouchAlarmRow") {
-        appendFourPTouchAlarmRow(section);
-        return;
-    }
-
-    if (button.dataset.action === "removeFourPTouchAlarmRow") {
-        removeConfigRow(button.closest('[data-repeat-row="fourPTouchAlarm"]'));
-        syncFourPTouchAlarmAddButton(section);
-        return;
-    }
-
-    if (button.dataset.action === "addWonlexMedicationPlan") {
-        appendWonlexMedicationPlan(section);
-        return;
-    }
-
-    if (button.dataset.action === "addTakePillsReminder") {
-        appendTakePillsReminder(section);
-        return;
-    }
-
-    if (button.dataset.action === "removeTakePillsReminder") {
-        removeTakePillsReminder(
-            button.closest("[data-takepills-reminder-group]"),
-        );
-        return;
-    }
-
-    if (button.dataset.action === "removeWonlexMedicationPlan") {
-        removeWonlexMedicationPlan(
-            button.closest('[data-repeat-row="wonlexMedicationPlan"]'),
-        );
+    if (button.dataset.action === "removeRepeatRow") {
+        removeRepeatRow(button);
         return;
     }
 

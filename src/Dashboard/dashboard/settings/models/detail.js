@@ -8,7 +8,7 @@ import {
 import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
-import {modelPreviewHtml} from "../../widgets.js";
+import {modelPreviewHtml, sectionStrip} from "../../widgets.js";
 import {
     capabilitiesGroupedBySection,
     capabilityLabelByKey,
@@ -415,18 +415,16 @@ function renderCapabilitiesSection() {
         state.settingsModal.activeCapabilitySection = activeSection;
     }
 
-    els.capabilitySectionNav.innerHTML = sections
-        .map(({ section, label, entries }) => {
-            const icon = CAPABILITY_SECTION_ICONS[section] || "fa-gear";
-            const isActive = section === activeSection;
-            const active = (entries || []).filter((feature) => enabled.has(feature)).length;
-            return `
-        <button type="button" class="btn btn-sm ${isActive ? "btn-primary" : "btn-outline-secondary"} d-inline-flex align-items-center gap-2" data-action="jumpCapabilitySection" data-section="${esc(section)}">
-            <i class="fa-solid ${icon}"></i>${esc(label)}
-            <span class="badge rounded-pill ${isActive ? "text-bg-light" : "text-bg-secondary"}" data-section-count>${active}</span>
-        </button>`;
-        })
-        .join("");
+    els.capabilitySectionNav.innerHTML = sectionStrip(
+        sections.map(({ section, label, entries }) => ({
+            key: section,
+            label,
+            count: (entries || []).filter((feature) => enabled.has(feature)).length,
+            icon: CAPABILITY_SECTION_ICONS[section] || "fa-gear",
+        })),
+        "jumpCapabilitySection",
+        activeSection,
+    );
 
     const section = sections.find((s) => s.section === activeSection);
     if (section) {

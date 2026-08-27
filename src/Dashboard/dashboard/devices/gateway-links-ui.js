@@ -139,7 +139,7 @@ function renderGatewayOptions(gateways = [], selectedKeys = [], emptyText = "") 
     disposeTooltips(list);
     if (gateways.length === 0) {
         list.innerHTML = emptyText
-            ? `<p class="gateway-picker-empty small text-secondary mb-0">${esc(emptyText)}</p>`
+            ? `<p class="gateway-picker-empty">${esc(emptyText)}</p>`
             : "";
     } else {
         const signals = signalsForEditedDevice();

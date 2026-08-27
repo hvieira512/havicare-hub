@@ -89,10 +89,10 @@ export function scrollCapabilityCatalogSection(event) {
     );
     if (!chip) return;
 
-    const target = document.getElementById(chip.dataset.target || "");
+    const target = document.getElementById(chip.dataset.section || "");
     if (!target) return;
 
-    state.settingsModal.activeCapabilityCatalogSection = chip.dataset.target || "";
+    state.settingsModal.activeCapabilityCatalogSection = chip.dataset.section || "";
     els.capabilityCatalogSectionNav
         .querySelectorAll(".capability-section-chip")
         .forEach((other) => other.classList.toggle("selected", other === chip));

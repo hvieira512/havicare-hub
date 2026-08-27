@@ -17,7 +17,7 @@ test("4P Touch medication UI escapes values and respects the reminder limit", ()
 
     assert.match(html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
     assert.equal((html.match(/data-takepills-reminder-group=/g) || []).length, 1);
-    assert.match(html, /data-action="addTakePillsReminder" disabled/);
+    assert.match(html, /data-action="addRepeatRow" data-repeat-kind="takePillsReminder" disabled/);
 });
 
 test("4P Touch custom-frequency reminder renders the custom field", () => {

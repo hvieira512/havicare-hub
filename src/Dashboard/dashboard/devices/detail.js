@@ -17,7 +17,7 @@ import {
     whenShort,
 } from "../format.js";
 import {capabilityLabel} from "../capability-catalog.js";
-import {deviceLicenseHtml, emptyPanel, filterChips} from "../widgets.js";
+import {deviceLicenseHtml, emptyPanel, filterChips, onlineBadge} from "../widgets.js";
 import {
     cardTone,
     telemetryCard,
@@ -226,9 +226,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     els.selectedDeviceTitle.textContent = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
     // antes do identificador.
-    els.selectedDeviceBadge.className = `config-state ${device.online ? "config-state-success" : "config-state-secondary"}`;
-    els.selectedDeviceBadge.innerHTML =
-        `<span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}`;
+    els.selectedDeviceBadge.innerHTML = onlineBadge(device.online);
     els.selectedDeviceMeta.textContent = `${typeLabel} · ${supplier || "Sem fornecedor"} · ${model || "Sem modelo interno"}`;
     disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts
@@ -489,16 +487,11 @@ function renderTelemetryList(telemetryRows) {
 
     // Na pastilha do contador cabe o número e mais nada: o título já diz de quê.
     els.telemetryCount.textContent = telemetry.length ? String(telemetry.length) : "";
-    // A lista rola por dentro: sem repor a posição, cada mensagem do stream e cada sondagem
-    // atiravam para o topo uma lista que estava a ser lida.
-    const scrollTop = els.telemetryList.scrollTop;
-    // Uma linha por evento, em colunas: pastilha do ícone, nome, valor, hora.
-    els.telemetryList.innerHTML = pageRows.length
-        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${pageRows.map(renderTelemetryRow).join("")}</tbody>
-           </table>`
-        : emptyPanel("Ainda não há eventos recebidos.");
-    els.telemetryList.scrollTop = scrollTop;
+    activityTable(
+        els.telemetryList,
+        pageRows.map(telemetryActivityRow),
+        "Ainda não há eventos recebidos.",
+    );
     renderClientPager("telemetry", telemetry.length, totalPages);
 }
 
@@ -528,35 +521,86 @@ function renderClientPager(prefix, totalRows, totalPages) {
     });
 }
 
-function renderTelemetryRow(payload) {
+/**
+ * As duas listas de actividade são a mesma tabela de quatro colunas -- pastilha do ícone,
+ * nome, valor e hora --, com substantivos diferentes. As larguras são fixas e iguais nas
+ * duas (`main.css`, `.telemetry-table`), de propósito: lado a lado, têm de alinhar.
+ *
+ * Contrato de escape: `name`, `time` e os `*Title` entram como texto e saem escapados;
+ * `value` e as duas segundas linhas entram como HTML já pronto, porque de um lado são texto
+ * e do outro uma pastilha ou uma tira de pastilhas.
+ */
+function activityTable(rootEl, rows, emptyText) {
+    // A lista rola por dentro: sem repor a posição, cada mensagem do stream e cada sondagem
+    // atiravam para o topo uma lista que estava a ser lida.
+    const scrollTop = rootEl.scrollTop;
+    rootEl.innerHTML = rows.length
+        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
+            <tbody>${rows.map(activityRow).join("")}</tbody>
+           </table>`
+        : emptyPanel(emptyText);
+    rootEl.scrollTop = scrollTop;
+}
+
+function activityRow({
+    icon,
+    tone = "",
+    name,
+    nameTitle = "",
+    sub = "",
+    subTitle = "",
+    value = "",
+    valueTitle = "",
+    detail = "",
+    detailTitle = "",
+    time,
+    timeTitle = "",
+}) {
+    return `
+        <tr>
+        <td>
+            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
+                <i class="fa-solid ${esc(icon)}"></i>
+            </span>
+        </td>
+        <td class="fw-medium">
+            <span class="telemetry-row-stack">
+                <span class="d-block text-truncate" title="${esc(nameTitle || name)}">${esc(name)}</span>
+                ${sub ? `<span class="telemetry-row-details fw-normal d-block text-truncate"${subTitle ? ` title="${esc(subTitle)}"` : ""}>${sub}</span>` : ""}
+            </span>
+        </td>
+        <td class="tabular-nums"${valueTitle ? ` title="${esc(valueTitle)}"` : ""}>
+            <span class="telemetry-row-stack">
+                <span class="d-block text-truncate">${value}</span>
+                ${detail ? `<span class="telemetry-row-details d-flex flex-wrap gap-1"${detailTitle ? ` title="${esc(detailTitle)}"` : ""}>${detail}</span>` : ""}
+            </span>
+        </td>
+        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(timeTitle)}">${esc(time)}</td>
+        </tr>`;
+}
+
+function telemetryActivityRow(payload) {
     const type = payload?.type || "telemetry";
     const data =
         payload?.data && typeof payload.data === "object" ? payload.data : {};
     const card = uplinkCardContent(type, data);
     // Os detalhes são os que cada renderizador declara, e não todos os campos do payload.
-    const details = card.details || "";
+    const detail = card.details || "";
     // O `detailsTitle` existe quando a linha visível é um resumo: a presença mostra as
     // posturas e guarda para aqui as coordenadas e as pessoas que não couberam.
-    const detailsTitle = card.detailsTitle
-        || details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "");
+    const at = payload.occurredAt || payload.recordedAt;
 
-    const tone = cardTone(type);
-    return `
-        <tr>
-        <td>
-            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
-                <i class="fa-solid ${esc(card.icon)}"></i>
-            </span>
-        </td>
-        <td class="fw-medium" title="${esc(capabilityLabel(type))}">${esc(capabilityLabel(type))}</td>
-        <td class="tabular-nums">
-            <span class="telemetry-row-stack">
-                <span class="d-block text-truncate">${esc(card.rowValue || card.value)}</span>
-                ${details ? `<span class="telemetry-row-details d-flex flex-wrap gap-1" title="${esc(detailsTitle)}">${details}</span>` : ""}
-            </span>
-        </td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(payload.occurredAt || payload.recordedAt))}">${esc(whenShort(payload.occurredAt || payload.recordedAt) || "hora desconhecida")}</td>
-        </tr>`;
+    return {
+        icon: card.icon,
+        tone: cardTone(type),
+        name: capabilityLabel(type),
+        value: esc(card.rowValue || card.value),
+        detail,
+        detailTitle: card.detailsTitle
+            || detail.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, ""),
+        time: whenShort(at) || "hora desconhecida",
+        timeTitle: when(at),
+    };
 }
 
 function renderRequestCards(
@@ -686,46 +730,36 @@ function renderDownlinkRequests(commands) {
     const start = (state.downlinkPage - 1) * state.downlinkPageSize;
     const pageRows = commands.slice(start, start + state.downlinkPageSize);
 
-    const scrollTop = els.downlinkRequests.scrollTop;
-    // A mesma linha dos eventos recebidos, do outro lado: pastilha do ícone, nome, estado,
-    // hora. A resposta cabe no `title` da pastilha, e o erro na segunda linha do nome.
-    els.downlinkRequests.innerHTML = pageRows.length
-        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${pageRows.map(renderDownlinkRow).join("")}</tbody>
-           </table>`
-        : emptyPanel("Ainda não há pedidos ao dispositivo.");
-    els.downlinkRequests.scrollTop = scrollTop;
+    activityTable(
+        els.downlinkRequests,
+        pageRows.map(downlinkActivityRow),
+        "Ainda não há pedidos ao dispositivo.",
+    );
 
     renderClientPager("downlink", commands.length, totalPages);
 }
 
-function renderDownlinkRow(command) {
-    const status = String(command.status || "unknown");
+function downlinkActivityRow(command) {
     const feature = String(command.feature || "");
-    const content = requestCardContent(feature);
-    const tone = cardTone(feature);
+    // A resposta cabe no `title` do estado, e o erro na segunda linha do nome.
     const replied = command.ackedAt
         ? `Resposta ${when(command.ackedAt)}`
         : command.sentAt
           ? `Enviado ${when(command.sentAt)}`
           : expectedReplies(command);
     const note = command.error || "";
-    return `
-        <tr>
-        <td>
-            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
-                <i class="fa-solid ${esc(content.icon)}"></i>
-            </span>
-        </td>
-        <td class="fw-medium">
-            <span class="telemetry-row-stack">
-                <span class="d-block text-truncate" title="${esc(commandLabel(command) || content.value || "Pedido")}">${esc(commandLabel(command) || content.value || "Pedido")}</span>
-                ${note ? `<span class="telemetry-row-details fw-normal d-block text-truncate" title="${esc(note)}">${esc(note)}</span>` : ""}
-            </span>
-        </td>
-        <td${replied ? ` title="${esc(replied)}"` : ""}>${statusBadge(status)}</td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(when(command.requestedAt))}">${esc(whenShort(command.requestedAt) || "-")}</td>
-        </tr>`;
+
+    return {
+        icon: requestCardContent(feature).icon,
+        tone: cardTone(feature),
+        name: commandLabel(command) || requestCardContent(feature).value || "Pedido",
+        sub: note ? esc(note) : "",
+        subTitle: note,
+        value: statusBadge(String(command.status || "unknown")),
+        valueTitle: replied,
+        time: whenShort(command.requestedAt) || "-",
+        timeTitle: when(command.requestedAt),
+    };
 }
 
 function renderConnectionTimeline(rows) {

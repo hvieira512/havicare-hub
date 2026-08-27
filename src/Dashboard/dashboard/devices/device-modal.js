@@ -68,6 +68,7 @@ import {
 import {
     modelImageHtml,
     modelPreviewHtml,
+    onlineBadge,
 } from "../widgets.js";
 import {
     clearSelection,
@@ -253,9 +254,7 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
         <span class="min-w-0">
             <span class="d-flex align-items-center gap-2 flex-wrap">
                 <h5 class="modal-title mb-0 tabular-nums" id="deviceModalLabel">${esc(imei)}</h5>
-                <span class="config-state ${online ? "config-state-success" : "config-state-secondary"}">
-                    <span class="config-state-dot"></span>${online ? "Ligado" : "Desligado"}
-                </span>
+                ${onlineBadge(online)}
             </span>
             <span class="d-block small text-secondary">${esc(meta.join(" · "))}</span>
         </span>`;

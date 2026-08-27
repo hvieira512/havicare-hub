@@ -4,6 +4,7 @@ import {
     saveApiUser as apiSaveApiUser,
 } from "../api/index.js";
 import {ensureLicensesLoaded} from "../licenses.js";
+import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
@@ -72,12 +73,13 @@ function renderApiUsersSection(users) {
         <span class="section-label d-sm-none me-2">Âmbito</span>${user.role === "hub_admin"
             // O âmbito é a informação com mais consequência da tabela -- quem vê os dados
             // de que licença --, e "Todas" é um privilégio e não um valor por omissão.
-            ? '<span class="config-state"><span class="config-state-dot"></span>Todas as licenças</span>'
+            ? stateBadge("Todas as licenças")
             : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
         <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
-            <span class="config-state ${Number(user.enabled) === 1 ? "config-state-success" : "config-state-secondary"}">
-                <span class="config-state-dot"></span>${Number(user.enabled) === 1 ? "Ativo" : "Inativo"}
-            </span>
+            ${stateBadge(
+                Number(user.enabled) === 1 ? "Ativo" : "Inativo",
+                Number(user.enabled) === 1 ? "config-state-success" : "config-state-secondary",
+            )}
         </td>
         <td class="text-end text-nowrap d-block d-sm-table-cell pt-2">
         <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>

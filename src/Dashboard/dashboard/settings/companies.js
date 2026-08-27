@@ -7,6 +7,7 @@ import {
     updateCompany as apiUpdateCompany,
 } from "../api/index.js";
 import {ensureLicensesLoaded, invalidateLicenses} from "../licenses.js";
+import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
@@ -83,7 +84,7 @@ function renderCompanySection(companies, licenses) {
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="fw-semibold">${esc(item.name)}</div>
             <div class="d-flex align-items-center gap-2">
-                <span class="config-state config-state-secondary"><span class="config-state-dot"></span>${owned.length} ${owned.length === 1 ? "licença" : "licenças"}</span>
+                ${stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "config-state-secondary")}
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" data-action="newLicenseForCompany" data-company-id="${item.id}">Nova licença</button>
                 <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>

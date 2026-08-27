@@ -28,17 +28,17 @@ ob_start();
 
                                 <div class="wizard-ask" id="deviceStep1">
                                     <div data-device-question="type">
-                                        <label class="form-label form-label-sm">Tipo de dispositivo</label>
+                                        <label class="form-label-sm">Tipo de dispositivo</label>
                                         <div id="deviceTypeButtons" role="group"></div>
                                     </div>
                                     <div data-device-question="model">
-                                        <label class="form-label form-label-sm">Fornecedor</label>
+                                        <label class="form-label-sm">Fornecedor</label>
                                         <div id="deviceSupplierButtons" role="group"></div>
-                                        <label class="form-label form-label-sm mt-3">Modelo</label>
+                                        <label class="form-label-sm mt-3">Modelo</label>
                                         <div id="deviceModelButtons" role="group"></div>
                                     </div>
                                     <div data-device-question="owner">
-                                        <label class="form-label form-label-sm">Licença</label>
+                                        <label class="form-label-sm">Licença</label>
                                         <div id="deviceLicensePicker"></div>
                                     </div>
                                     <p data-device-question="none" class="text-secondary small mb-0">Toque numa etiqueta acima para alterar uma resposta.</p>
@@ -51,21 +51,21 @@ ob_start();
 
                                 <div class="wizard-ask" id="deviceStep2">
                                     <div id="deviceDeviceIdRow" class="d-none">
-                                        <label for="deviceDeviceId" class="form-label form-label-sm" id="deviceDeviceIdLabel">Device ID</label>
+                                        <label for="deviceDeviceId" class="form-label-sm" id="deviceDeviceIdLabel">Device ID</label>
                                         <input type="text" class="form-control" id="deviceDeviceId" placeholder="ID do dispositivo no protocolo">
                                         <div class="form-text" id="deviceDeviceIdHelp">Identificador do dispositivo no protocolo (IMEI, MAC, etc.).</div>
                                     </div>
                                     <div id="deviceImeiRow">
-                                        <label for="deviceImei" class="form-label form-label-sm">IMEI</label>
+                                        <label for="deviceImei" class="form-label-sm">IMEI</label>
                                         <input type="text" class="form-control" id="deviceImei" required>
                                     </div>
                                     <div id="deviceSimRow">
-                                        <label class="form-label form-label-sm">Número do SIM</label>
+                                        <label class="form-label-sm">Número do SIM</label>
                                         <div id="deviceSimNumberRoot"></div>
                                     </div>
                                     <div id="deviceGatewayLinksRow" class="d-none">
                                         <div class="d-flex justify-content-between align-items-center gap-2">
-                                            <span class="form-label form-label-sm mb-0">Gateways autorizados</span>
+                                            <span class="form-label-sm mb-0">Gateways autorizados</span>
                                             <span class="badge text-bg-primary rounded-pill" id="deviceGatewayLinksCount">0</span>
                                         </div>
                                         <div class="gateway-picker mt-1" id="deviceGatewayLinksList" role="group" aria-label="Gateways autorizados" aria-describedby="deviceGatewayLinksHelp"></div>

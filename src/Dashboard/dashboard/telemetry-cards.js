@@ -9,6 +9,7 @@ import {
     when,
 } from "./format.js";
 import { capabilityLabel } from "./capability-catalog.js";
+import { stateBadge } from "./widgets.js";
 
 /** Os cartões de telemetria. As peças genéricas de interface estão em `widgets.js`. */
 
@@ -297,8 +298,11 @@ export function telemetryCard({
         : ` class="card h-100${toneClass}"`;
     // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
-        ? `<span class="config-state ${esc(stateTone || (pending ? "config-state-warning" : "config-state-secondary"))} align-self-start">` +
-          `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
+        ? stateBadge(
+            stateLabel,
+            stateTone || (pending ? "config-state-warning" : "config-state-secondary"),
+            "align-self-start",
+        )
         : "";
     // Em repouso o avião de papel diz que o mosaico se pode pedir; a correr, a pastilha
     // diz em que estado está. Um mosaico que não se pode pedir não tem nada ali.
@@ -942,9 +946,10 @@ function requestTelemetryTypes(type) {
 }
 
 export function statusBadge(status) {
-    const tone = STATUS_BADGE_TONE[status] ?? "config-state-secondary";
-    const label = STATUS_BADGE_LABEL[status] || titleize(status).toLowerCase();
-    return `<span class="config-state ${tone}"><span class="config-state-dot"></span>${esc(label)}</span>`;
+    return stateBadge(
+        STATUS_BADGE_LABEL[status] || titleize(status).toLowerCase(),
+        STATUS_BADGE_TONE[status] ?? "config-state-secondary",
+    );
 }
 
 function alarmValue(data) {

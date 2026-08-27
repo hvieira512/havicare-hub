@@ -135,7 +135,7 @@ require_once __DIR__ . '/components/modal.php';
                                 <div class="d-flex align-items-start gap-3 pt-2 pt-sm-3">
                                     <div id="selectedDevicePreview" class="selected-device-preview"></div>
                                     <div class="min-width-0 flex-grow-1">
-                                        <div class="mb-1"><span id="selectedDeviceBadge" class="config-state"></span></div>
+                                        <div class="mb-1" id="selectedDeviceBadge"></div>
                                         <h1 class="h4 mb-1 text-break tabular-nums lh-sm" id="selectedDeviceTitle"></h1>
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
                                     </div>
