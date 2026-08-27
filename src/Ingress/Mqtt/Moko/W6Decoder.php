@@ -7,17 +7,24 @@ namespace Hub\Ingress\Mqtt\Moko;
 /**
  * Reconhece uma MOKO W6 retransmitida por um gateway.
  *
- * A W6 é a irmã sem botão da W6R: em vez da frame de alarme anuncia uma frame BXP
- * com acelerómetro, que o gateway já classifica como `bxp-acc`:
+ * A W6 tem botão como a W6R -- só mais duro --, mas em repouso o que anuncia é a
+ * frame BXP do acelerómetro, que o gateway classifica como `bxp-acc`:
  *
  *   {"type":"bxp-acc","rssi":-33,"mac":"fa05c2c70fc6",
  *    "adv_data":"020106020a031816abfe60000a0100013e40edc007c00b2800fa05c2c70fc6"}
+ *
+ * Os toques não passam por aqui: chegam na frame de alarme, que o gateway classifica
+ * `bxp-button` e que o W6rDecoder já reclama.
  *
  * O corpo da frame não é lido. A folha "MOKO Beacon - ADV Format Summary Sheet" que
  * documenta o formato 0xFEAB não está no repositório, e inferir os campos a partir de
  * amostras daria uma bateria e um acelerómetro plausíveis mas por confirmar. O que o
  * hub precisa desta observação -- saber que a pulseira existe, e com que sinal chega --
  * lê-se do que o gateway já entrega.
+ *
+ * ponytail: `bxp-acc` diz que frame chegou, não que modelo a mandou -- uma W6R com o
+ * slot do acelerómetro ativo entraria por aqui como W6. Chega para esta frota, onde a
+ * única pulseira sem registo é a W6; distinguir a sério exige ler o modelo da frame.
  */
 final class W6Decoder
 {

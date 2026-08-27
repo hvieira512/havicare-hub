@@ -313,10 +313,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * A W6 não traz alarme nem telemetria que saibamos ler, por isso só há duas coisas a
-     * fazer com ela: dar por ela enquanto ainda não está registada -- é o que põe a
-     * notificação na dashboard, para alguém a adicionar -- e, depois de registada,
-     * mantê-la online e alimentar a proximidade com o sinal que o gateway mediu.
+     * A frame do acelerómetro não traz toque nem telemetria que saibamos ler, por isso só
+     * há duas coisas a fazer com ela: dar pela pulseira enquanto ainda não está registada
+     * -- é o que põe a notificação na dashboard, para alguém a adicionar -- e, depois de
+     * registada, mantê-la online e alimentar a proximidade com o sinal do gateway.
+     *
+     * Os toques da W6 entram pelo handler da W6R, que é quem reclama a frame de alarme.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
      */

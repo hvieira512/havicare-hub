@@ -16,9 +16,10 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * Routing a W6 bracelet through the MOKO gateway ingress.
  *
- * The W6 has no button, so the gateway types it `bxp-acc` instead of
- * `bxp-button`. Until someone registers it, every sighting has to surface as a
- * dashboard notification -- that is the only way anyone learns it is there.
+ * At rest a W6 advertises its accelerometer frame, which the gateway types
+ * `bxp-acc` rather than the `bxp-button` its presses arrive on. Until someone
+ * registers it, every sighting has to surface as a dashboard notification --
+ * that is the only way anyone learns it is there.
  */
 final class BridgeW6Test extends TestCase
 {
