@@ -35,12 +35,21 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertFalse($response['capabilities']['settings_system']['language_timezone'] ?? false);
     }
 
-    public function testHw20ProShowSeparatesSupportedFromRequestableTelemetry(): void
+    public function testShowSeparatesSupportedFromRequestableTelemetry(): void
     {
+        // `requestableCapabilityKeys` é o que a capacidade permite pedir em geral; o
+        // `requestableCapabilities` é o que este modelo em concreto responde. A distinção
+        // existe porque um firmware pode anunciar uma leitura e ignorar o pedido dela, e
+        // quem sabe disso é quem tem o aparelho na mão -- por isso é uma decisão guardada
+        // por modelo e não uma constante no hub.
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Wonlex', 'HW20PRO');
-
         self::assertIsArray($model);
+        $db->modelCapabilities->replaceTelemetryRequestabilityForModelId(
+            (int)$model['id'],
+            ['blood_pressure']
+        );
+
         $response = $api->show((int)$model['id']);
 
         self::assertTrue($response['capabilities']['telemetry']['heart_rate'] ?? false);

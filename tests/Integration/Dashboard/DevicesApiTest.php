@@ -3031,6 +3031,15 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ], JSON_THROW_ON_ERROR));
         self::assertSame('ok', $created['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], array_keys($features));
+        // O que se pode pedir a um modelo é uma decisão por modelo, guardada no
+        // `model_capabilities.is_requestable` e escrita pelo separador Capacidades. Este
+        // relógio anuncia sete leituras de saúde e não responde ao pedido de nenhuma, e é
+        // isso que aqui se declara -- antes vinha semeado por uma migração, que era o único
+        // sítio onde este facto existia.
+        $db->modelCapabilities->replaceTelemetryRequestabilityForModelId(
+            (int)$model['id'],
+            array_keys($requestableFeatures)
+        );
         $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
         $detail = $api->show($imei);

@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Persistence;
 
-use Hub\Infrastructure\Persistence\Migration\Version2026081102BackfillMissingModelCapabilities;
+use Hub\Infrastructure\Persistence\ReferenceCatalogSeeder;
 use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * A capability added to a protocol after a model was seeded never reached that
- * model, because the seeder skips models that already have rows. The device
- * then supports something the API refuses to configure.
+ * Uma capacidade acrescentada ao catálogo depois de um modelo ser semeado tem de lhe
+ * chegar. Enquanto o seeder saltava os modelos que já tinham linhas, não chegava: o
+ * aparelho suportava a coisa e a API recusava-se a configurá-la.
+ *
+ * Isto foi uma migração (`2026081102_backfill_missing_model_capabilities`), escrita
+ * porque na altura a semeadura só sabia encher modelos vazios. Agora enche lacunas e corre
+ * a cada `migrate`, por isso o mesmo problema deixa de precisar de uma migração de cada
+ * vez que acontece -- e o teste passa a apontar para onde o comportamento vive.
  */
 final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
 {
@@ -44,6 +49,11 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_KEY_PAIR));
     }
 
+    private function fillGaps(PDO $pdo): void
+    {
+        (new ReferenceCatalogSeeder())->seedMissingModelCapabilities($pdo);
+    }
+
     public function testAModelGainsACapabilityItsProtocolSupports(): void
     {
         [$pdo, $modelId] = $this->vivistarWatch();
@@ -54,7 +64,7 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
         ')->execute([$modelId, 'fall_sensitivity']);
         self::assertArrayNotHasKey('fall_sensitivity', $this->capabilities($pdo, $modelId));
 
-        (new Version2026081102BackfillMissingModelCapabilities())->up($pdo);
+        $this->fillGaps($pdo);
 
         // Vivistar watches have BP77; refusing to configure it was the bug.
         self::assertSame(1, $this->capabilities($pdo, $modelId)['fall_sensitivity'] ?? null);
@@ -71,7 +81,7 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
         ')->execute([$modelId, 'blood_pressure']);
         self::assertSame(0, $this->capabilities($pdo, $modelId)['blood_pressure'] ?? null);
 
-        (new Version2026081102BackfillMissingModelCapabilities())->up($pdo);
+        $this->fillGaps($pdo);
 
         // Filling gaps must not undo a deliberate decision.
         self::assertSame(0, $this->capabilities($pdo, $modelId)['blood_pressure'] ?? null);
@@ -80,12 +90,30 @@ final class BackfillModelCapabilitiesTest extends MysqlDashboardTestCase
     public function testRunningItTwiceChangesNothingFurther(): void
     {
         [$pdo, $modelId] = $this->vivistarWatch();
-        $migration = new Version2026081102BackfillMissingModelCapabilities();
 
-        $migration->up($pdo);
+        $this->fillGaps($pdo);
         $first = $this->capabilities($pdo, $modelId);
-        $migration->up($pdo);
+        $this->fillGaps($pdo);
 
         self::assertSame($first, $this->capabilities($pdo, $modelId));
+    }
+
+    public function testAModelThatWasNeverSeededGetsItsWholeTemplate(): void
+    {
+        // O outro lado da mesma função: um modelo criado no separador Catálogo entra sem
+        // capacidade nenhuma, e os cartões dele ficavam vazios até alguém as ligar à mão.
+        $pdo = $this->createDashboardDatabase()->pdo();
+        $supplier = $pdo->query("SELECT id FROM suppliers WHERE name = 'Vivistar'")->fetchColumn();
+        $pdo->prepare('
+            INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
+            VALUES (?, ?, ?, ?, \'\')
+        ')->execute([(int)$supplier, 'VL99', 'Vivistar VL99', 'watch']);
+        $modelId = (int)$pdo->lastInsertId();
+        self::assertSame([], $this->capabilities($pdo, $modelId));
+
+        $this->fillGaps($pdo);
+
+        self::assertNotSame([], $this->capabilities($pdo, $modelId));
+        self::assertSame(1, $this->capabilities($pdo, $modelId)['heart_rate'] ?? null);
     }
 }

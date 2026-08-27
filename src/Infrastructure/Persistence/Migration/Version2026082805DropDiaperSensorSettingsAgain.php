@@ -18,8 +18,11 @@ use PDO;
  * tabela está lá e nada a apaga. Daí esta, que é a segunda metade do arranjo.
  *
  * A classe de defeito não é sobre fraldas: uma migração que larga algo que o `schema.sql`
- * continua a declarar é desfeita na execução seguinte. O
- * `SchemaCompletenessTest` passou a provar que os dois descrevem a mesma base.
+ * continua a declarar é desfeita na execução seguinte. O `SchemaCompletenessTest` passou a
+ * provar que os dois descrevem a mesma base.
+ *
+ * É a primeira migração depois da baseline, e por isso a única que resta no plano: as
+ * trinta e oito anteriores foram absorvidas no `schema.sql` e no catálogo semeado.
  */
 final class Version2026082805DropDiaperSensorSettingsAgain implements Migration
 {

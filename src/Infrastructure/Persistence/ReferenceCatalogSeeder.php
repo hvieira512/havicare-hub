@@ -138,6 +138,20 @@ final class ReferenceCatalogSeeder
         }
     }
 
+    /**
+     * Dá a cada modelo as capacidades que o protocolo dele suporta e que ainda não tem.
+     *
+     * Preenche lacuna a lacuna e não modelo a modelo. Saltar os modelos que já tinham
+     * linhas -- que era o que isto fazia -- deixava uma capacidade acrescentada ao catálogo
+     * depois da semeadura nunca chegar aos modelos já semeados: o aparelho suporta
+     * claramente a coisa e a API recusa-se a configurá-la porque a matriz diz que o modelo
+     * não a tem. Era preciso escrever uma migração de cada vez que isso acontecia.
+     *
+     * Só insere o que falta. Uma capacidade desligada à mão fica com a linha dela e
+     * continua desligada, porque o `setEnabledCapabilities` põe `enabled = 0` em vez de
+     * apagar a linha, e o `INSERT IGNORE` não lhe toca. Isto preenche buracos; não volta a
+     * ligar nada.
+     */
     private function seedModelCapabilities(PDO $pdo): void
     {
         $models = $pdo->query('
@@ -145,21 +159,28 @@ final class ReferenceCatalogSeeder
             FROM models m
             JOIN suppliers s ON s.id = m.supplier_id
         ')->fetchAll(PDO::FETCH_ASSOC);
-        $count = $pdo->prepare('SELECT COUNT(*) FROM model_capabilities WHERE model_id = ?');
+        $existing = $pdo->prepare('
+            SELECT c.capability_key
+            FROM model_capabilities mc
+            JOIN capabilities c ON c.id = mc.capability_id
+            WHERE mc.model_id = ?
+        ');
         $capability = $pdo->prepare('SELECT id FROM capabilities WHERE device_type = ? AND capability_key = ?');
         $insert = $pdo->prepare('INSERT IGNORE INTO model_capabilities (model_id, capability_id, enabled) VALUES (?, ?, 1)');
 
         foreach ($models as $model) {
             $modelId = (int)$model['id'];
-            $count->execute([$modelId]);
-            if ((int)$count->fetchColumn() > 0) {
-                continue;
-            }
+            $existing->execute([$modelId]);
+            $have = array_flip($existing->fetchAll(PDO::FETCH_COLUMN));
+
             foreach (SupplierCapabilityTemplate::keysForModel(
                 (string)$model['supplier_name'],
                 (string)$model['internal_model'],
                 (string)$model['device_type']
             ) as $key) {
+                if (isset($have[$key])) {
+                    continue;
+                }
                 $capability->execute([(string)$model['device_type'], $key]);
                 $capabilityId = (int)($capability->fetchColumn() ?: 0);
                 if ($capabilityId > 0) {
