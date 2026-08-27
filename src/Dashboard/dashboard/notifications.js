@@ -4,6 +4,7 @@ import {
     markNotificationsRead,
 } from "./api/index.js";
 import {ago, esc} from "./format.js";
+import {toast} from "./dialogs.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -125,17 +126,11 @@ const dismissNotification = async (id, button) => {
     if (result?.error) {
         button.disabled = false;
         button.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>';
-        void Swal.fire({
-            icon: "error",
-            title: "Não foi possível eliminar a notificação",
-            text: result.error.message || "Por favor, volte a tentar.",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            showCloseButton: true,
-            timer: 1800,
-            timerProgressBar: true,
-        });
+        toast(
+            "error",
+            "Não foi possível eliminar a notificação",
+            result.error.message || "Por favor, volte a tentar.",
+        );
         return;
     }
 

@@ -4,6 +4,8 @@ import {
 import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
+import {apiError, toast} from "../../dialogs.js";
+import {clearInvalid, markInvalid} from "../../validation.js";
 import {renderButtonGroup, renderDeviceTypeTiles} from "../../widgets.js";
 import {
     deviceTypeLabel,
@@ -95,6 +97,7 @@ function resetModelForm(selectedSupplierId = "") {
     const {els} = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelForm.reset();
+    clearInvalid(els.modelForm);
     delete els.modelForm.dataset.modelId;
     delete els.modelForm.dataset.image;
     els.modelForm.dataset.deviceType = "watch";
@@ -228,10 +231,17 @@ async function saveModel() {
     const deviceType = normalizeDeviceType(
         els.modelForm.dataset.deviceType || "watch",
     );
-    if (!supplierId || !internalModel || !commercialName) {
-        alert("Fornecedor, modelo interno e nome comercial são obrigatórios");
-        return;
+    clearInvalid(els.modelForm);
+    if (!supplierId) {
+        markInvalid(els.modelSupplierButtons, "O fornecedor é obrigatório");
     }
+    if (!internalModel) {
+        markInvalid(els.modelInternalModel, "O modelo interno é obrigatório");
+    }
+    if (!commercialName) {
+        markInvalid(els.modelCommercialName, "O nome comercial é obrigatório");
+    }
+    if (els.modelForm.querySelector(".is-invalid")) return;
 
     const body = new FormData();
     body.append("supplier_id", String(supplierId));
@@ -253,7 +263,7 @@ async function saveModel() {
         body,
     );
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
 

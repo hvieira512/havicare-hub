@@ -4,6 +4,8 @@ import {
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import {ensureCapabilityCatalog} from "../capability-catalog.js";
+import {apiError, confirmDestructive} from "../dialogs.js";
+import {clearInvalid, markInvalid} from "../validation.js";
 import {ensureLicensesLoaded} from "../licenses.js";
 import {
     deviceTypeCardsHtml,
@@ -108,6 +110,20 @@ async function loadLicenseGroups() {
     return licenses === null ? null : licenseTree(licenses);
 }
 
+/**
+ * O fornecedor e o modelo respondem-se no passo 1, que está escondido quando se grava: o
+ * aviso deles tem de ser o do formulário, ao lado do botão, e não uma marca no campo.
+ */
+function classificationIsMissing(supplier, model) {
+    if (supplier && model) return false;
+    setDeviceFormError(
+        supplier
+            ? "Escolha o modelo na classificação."
+            : "Escolha o fornecedor na classificação.",
+    );
+    return true;
+}
+
 export function setDeviceFormError(message = "") {
     state.deviceModal.errorMessage = String(message || "");
     if (!els.deviceFormError) {
@@ -161,6 +177,7 @@ export async function editDevice(imei, supplier, model) {
         loading: true,
     };
     setDeviceFormError("");
+    clearInvalid(els.deviceForm);
     els.deviceConfigTabBtn?.classList.remove("d-none");
     els.deleteDeviceBtn.dataset.imei = imei;
     els.deleteDeviceBtn.classList.remove("d-none");
@@ -416,6 +433,7 @@ function applyFourPTouchDeviceIdUi() {
 
 export async function saveDevice() {
     setDeviceFormError("");
+    clearInvalid(els.deviceForm);
     let imei = els.deviceImei.value.trim();
     let simNumber = "";
     const deviceType = normalizeDeviceType(
@@ -435,8 +453,9 @@ export async function saveDevice() {
             : els.deviceDeviceId.value.trim();
 
     if (deviceType !== "watch") {
-        if (!deviceId || !supplier || !model) {
-            alert("Device ID, fornecedor e modelo são obrigatórios");
+        if (classificationIsMissing(supplier, model)) return;
+        if (!deviceId) {
+            markInvalid(els.deviceDeviceId, "O Device ID é obrigatório");
             return;
         }
         imei = deviceId;
@@ -444,16 +463,16 @@ export async function saveDevice() {
     } else {
         try {
             simNumber = getDeviceSimNumberValue(true);
-        } catch (error) {
-            alert(
-                error instanceof Error
-                    ? error.message
-                    : "Número do SIM inválido",
-            );
+        } catch {
+            // O próprio controlo do número já marca o campo e diz o que está errado.
+            els.deviceSimNumberRoot
+                ?.querySelector("[data-phone-local]")
+                ?.focus();
             return;
         }
-        if (!imei || !supplier || !model) {
-            alert("IMEI, fornecedor e modelo são obrigatórios");
+        if (classificationIsMissing(supplier, model)) return;
+        if (!imei) {
+            markInvalid(els.deviceImei, "O IMEI é obrigatório");
             return;
         }
     }
@@ -464,7 +483,8 @@ export async function saveDevice() {
         ? selectedGatewayKeys()
         : [];
     if (deviceType !== "watch" && (licenseId === "" || licenseId === "0")) {
-        alert(
+        // A licença também é do passo 1: mesma razão, mesmo sítio para o aviso.
+        setDeviceFormError(
             "É necessário selecionar uma licença para este tipo de dispositivo",
         );
         return;
@@ -486,7 +506,7 @@ export async function saveDevice() {
             setDeviceFormError("Este IMEI já existe.");
             return;
         }
-        setDeviceFormError(result.error.message || result.error.code);
+        setDeviceFormError(apiError(result));
         return;
     }
 
@@ -526,23 +546,23 @@ export async function saveDevice() {
     }
 }
 
-export function handleDeleteDeviceBtnClick() {
+export async function handleDeleteDeviceBtnClick() {
     const imei = els.deleteDeviceBtn.dataset.imei;
     if (!imei) return;
-    if (!confirm(`Apagar o dispositivo ${imei}?`)) return;
-    apiDeleteDevice(imei).then(() => {
-        deviceModal.hide();
-        if (state.selectedImei === imei) {
-            disconnectDeviceStream();
-            clearSelection();
-            clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
-        }
-        if (isDeviceSelectorOpen()) {
-            loadSummary();
-        } else {
-            renderSelection();
-        }
-    });
+    const {isConfirmed} = await confirmDestructive(`Apagar o dispositivo ${imei}?`);
+    if (!isConfirmed) return;
+    await apiDeleteDevice(imei);
+    deviceModal.hide();
+    if (state.selectedImei === imei) {
+        disconnectDeviceStream();
+        clearSelection();
+        clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
+    }
+    if (isDeviceSelectorOpen()) {
+        await loadSummary();
+    } else {
+        renderSelection();
+    }
 }
 
 function renderDeviceSimNumberField(value = "") {

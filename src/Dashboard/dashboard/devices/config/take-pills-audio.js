@@ -1,10 +1,12 @@
+import {toast} from "../../dialogs.js";
+
 const recordingState = new WeakMap();
 
 export async function startTakePillsRecording(section) {
     const current = recordingState.get(section);
     if (current?.recorder?.state === "recording") return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-        alert("Este navegador não suporta gravação de áudio.");
+        toast("error", "Este navegador não suporta gravação de áudio.");
         return;
     }
 
@@ -33,7 +35,7 @@ export async function startTakePillsRecording(section) {
     } catch (error) {
         stopStream(current?.stream || null);
         recordingState.delete(section);
-        alert(error instanceof Error ? error.message : "Não foi possível iniciar a gravação.");
+        toast("error", error instanceof Error ? error.message : "Não foi possível iniciar a gravação.");
         updateRecorderUi(section, "Sem áudio", false);
     }
 }
@@ -73,7 +75,7 @@ export async function loadTakePillsAudio(section, file) {
         syncTakePillsVoiceVisibility(section);
         updateRecorderUi(section, "Áudio carregado", false);
     } catch (error) {
-        alert(error instanceof Error ? error.message : "Não foi possível carregar o áudio.");
+        toast("error", error instanceof Error ? error.message : "Não foi possível carregar o áudio.");
     }
 }
 

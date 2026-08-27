@@ -584,6 +584,12 @@ body {
     color: var(--bs-danger);
 }
 
+/* O bootstrap só mostra o `.invalid-feedback` a seguir aos seus próprios controlos, e o
+   fornecedor de um modelo escolhe-se num grupo de botões e não num campo. */
+.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
 /* A série de ligações: uma linha do tempo com um ponto por evento. As cores são as do tema,
    e por isso acompanham o modo claro e o escuro. */
 .connection-timeline {

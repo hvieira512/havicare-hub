@@ -90,6 +90,7 @@ import {
     updateGatewayLinkSelection,
 } from "./devices/gateway-links-ui.js";
 import {initNotifications} from "./notifications.js";
+import {bindInvalidClearing} from "./validation.js";
 import {initSettings, loadSettingsModal} from "./settings/index.js";
 import {handleSettingsPaginationClick} from "./settings/shell.js";
 import {
@@ -138,6 +139,9 @@ let deviceSelectorModal = null;
 let settingsModal = null;
 
 function bindEvents() {
+    // Um ouvinte só e não um por formulário: os campos marcados vivem em cinco formulários,
+    // uns servidos pelo PHP e outros desenhados em JS.
+    bindInvalidClearing(document);
     els.addDeviceBtn.addEventListener("click", () => {
         void openWizard();
     });

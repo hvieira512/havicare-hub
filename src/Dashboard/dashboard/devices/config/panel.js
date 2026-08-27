@@ -8,6 +8,7 @@ import {
     renderDeviceConfigurationRoot,
 } from "./index.js";
 import {emptyPanel} from "../../widgets.js";
+import {toast} from "../../dialogs.js";
 import {resetPhoneControls} from "../../phone.js";
 import {state} from "../../state.js";
 
@@ -43,7 +44,7 @@ export async function saveDeviceConfiguration(section) {
     try {
         payload = readConfigPayload(section);
     } catch (error) {
-        alert(error instanceof Error ? error.message : "Configuração inválida");
+        toast("error", error instanceof Error ? error.message : "Configuração inválida");
         return;
     }
 

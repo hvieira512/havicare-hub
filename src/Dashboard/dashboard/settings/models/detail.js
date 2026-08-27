@@ -8,6 +8,8 @@ import {
 import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
+import {apiError, confirmDestructive, toast} from "../../dialogs.js";
+import {clearInvalid, markInvalid} from "../../validation.js";
 import {modelPreviewHtml, sectionStrip} from "../../widgets.js";
 import {
     capabilitiesGroupedBySection,
@@ -173,6 +175,7 @@ function resetModelDetailFields() {
     const {els} = getSettingsModelsRuntime();
     const pristine = state.settingsModal.modelDetailPristine;
     if (!pristine) return;
+    clearInvalid(els.modelDetailFields);
     els.modelDetailCommercialName.value = pristine.commercialName;
     els.modelDetailInternalModel.value = pristine.internalModel;
     els.modelDetailSupplierSelect.value = pristine.supplier;
@@ -181,13 +184,18 @@ function resetModelDetailFields() {
 }
 
 async function saveModelDetail() {
+    const {els} = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
     const fields = readModelDetailFields();
-    if (fields.commercialName === "" || fields.internalModel === "") {
-        alert("O nome comercial e o modelo interno são obrigatórios.");
-        return;
+    clearInvalid(els.modelDetailFields);
+    if (fields.commercialName === "") {
+        markInvalid(els.modelDetailCommercialName, "O nome comercial é obrigatório");
     }
+    if (fields.internalModel === "") {
+        markInvalid(els.modelDetailInternalModel, "O modelo interno é obrigatório");
+    }
+    if (els.modelDetailFields?.querySelector(".is-invalid")) return;
 
     const supplier = modelDetailSuppliers().find(
         (item) => String(item.name) === fields.supplier,
@@ -201,7 +209,7 @@ async function saveModelDetail() {
 
     const result = await apiSaveModel(model.id, body);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
 
@@ -246,12 +254,10 @@ async function renderModelDetailDeleteHint(model) {
 async function deleteCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
-    if (
-        !window.confirm(
-            `Tem a certeza que deseja apagar o modelo "${modelCommercialName(model)}"?`,
-        )
-    )
-        return;
+    const {isConfirmed} = await confirmDestructive(
+        `Tem a certeza que deseja apagar o modelo "${modelCommercialName(model)}"?`,
+    );
+    if (!isConfirmed) return;
 
     await apiDeleteModel(model.id);
     removeModelFromCatalog(model.id);
@@ -484,7 +490,7 @@ function renderCapabilitiesSection() {
 async function saveCapabilities() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) {
-        alert("Selecione um modelo");
+        toast("error", "Selecione um modelo");
         return;
     }
 
@@ -505,7 +511,7 @@ async function saveCapabilities() {
 
     const result = await apiSaveModel(model.id, body);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
 

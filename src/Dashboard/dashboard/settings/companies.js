@@ -10,6 +10,8 @@ import {ensureLicensesLoaded, invalidateLicenses} from "../licenses.js";
 import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
+import {apiError, confirmDestructive, toast} from "../dialogs.js";
+import {clearInvalid, markInvalid} from "../validation.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
 import {renderPagination} from "../pagination.js";
 
@@ -109,6 +111,7 @@ function renderCompanySection(companies, licenses) {
 
 export function resetCompanyForm() {
     els.companyForm.reset();
+    clearInvalid(els.companyForm);
     els.companyId.value = "";
     toggleCollapse(els.companyFormCollapse, false);
 }
@@ -122,28 +125,30 @@ function editCompany(button) {
 export async function saveCompany() {
     const id = els.companyId.value.trim();
     const name = els.companyName.value.trim();
+    clearInvalid(els.companyForm);
     if (!name) {
-        alert("O nome é obrigatório");
+        markInvalid(els.companyName, "O nome é obrigatório");
         return;
     }
     const result = await (id
         ? apiUpdateCompany(id, name)
         : apiCreateCompany(name));
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     await reloadCompanies();
 }
 
 async function deleteCompany(id) {
-    if (
-        !confirm("Apagar empresa? Todas as licenças associadas serão apagadas.")
-    )
-        return;
+    const {isConfirmed} = await confirmDestructive(
+        "Apagar empresa?",
+        "Todas as licenças associadas serão apagadas.",
+    );
+    if (!isConfirmed) return;
     const result = await apiDeleteCompany(id);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     // Apagar a empresa apaga as licenças dela: a cache das licenças deixa de valer.
@@ -166,6 +171,7 @@ function renderLicensesSection(licenses, companies) {
 
 export function resetLicenseForm() {
     els.licenseForm.reset();
+    clearInvalid(els.licenseForm);
     els.licenseId.value = "";
     toggleCollapse(els.licenseFormCollapse, false);
 }
@@ -183,28 +189,29 @@ export async function saveLicense() {
     const companyId = els.licenseCompanySelect.value;
     const licenseId = els.licenseLicenseId.value.trim();
     const name = els.licenseName.value.trim();
+    clearInvalid(els.licenseForm);
     if (!companyId) {
-        alert("Selecione uma empresa");
-        return;
+        markInvalid(els.licenseCompanySelect, "Selecione uma empresa");
     }
     if (!licenseId) {
-        alert("O ID da licença é obrigatório");
-        return;
+        markInvalid(els.licenseLicenseId, "O ID da licença é obrigatório");
     }
+    if (els.licenseForm.querySelector(".is-invalid")) return;
     const body = { companyId: Number(companyId), licenseId, name };
     const result = await apiSaveLicense(id, body);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     await reloadLicenses();
 }
 
 async function deleteLicense(id) {
-    if (!confirm("Apagar licença?")) return;
+    const {isConfirmed} = await confirmDestructive("Apagar licença?");
+    if (!isConfirmed) return;
     const result = await apiDeleteLicense(id);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     await reloadLicenses();
