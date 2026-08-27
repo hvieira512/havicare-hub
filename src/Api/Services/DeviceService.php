@@ -427,9 +427,6 @@ class DeviceService
         if ($this->whitelist->getMetadata($imei) !== null) {
             return ['error' => ['code' => 'device_exists', 'message' => 'Device with this IMEI already exists']];
         }
-        if ($licenseId === 0 && $deviceType !== 'watch') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
-        }
         $deviceId = $this->directory->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
         $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
@@ -508,15 +505,6 @@ class DeviceService
                 'error_code' => 'device_exists',
             ]);
             return ['error' => ['code' => 'device_exists', 'message' => 'Device with this IMEI already exists']];
-        }
-        if ($licenseId === 0 && $deviceType !== 'watch') {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'missing_license_id',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
         }
         // O dispositivo pode estar a sair de um cliente, a mudar de tipo ou a mudar de IMEI,
         // e cada uma dessas deixa um estado retido no tópico antigo.
