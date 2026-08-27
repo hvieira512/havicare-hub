@@ -1,4 +1,4 @@
-import {esc} from "../../format.js";
+import { esc } from "../../format.js";
 
 export function takePillsInput(desired, meta = {}) {
     const reminderText = String(desired.reminderText || "");
@@ -26,7 +26,7 @@ export function takePillsReminderGroup(settings, index, frequencyOptions) {
     return `<div class="border rounded p-3 bg-body" data-repeat-row="takePillsReminder" data-takepills-reminder-group="${index}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="small fw-semibold" data-takepills-reminder-number>Lembrete ${index + 1}</span><button type="button" class="btn btn-outline-danger btn-sm" data-action="removeRepeatRow" aria-label="Remover lembrete"><i class="fa-solid fa-trash-can"></i></button></div><div class="row g-3 align-items-end">
         <div class="col-md-3"><label class="form-label-sm">Hora</label><input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-takepills-field="reminderTime" data-takepills-index="${index}" value="${esc(settings.time)}"></div>
         <div class="col-md-3"><label class="form-label-sm d-block">Estado</label><div class="form-check form-switch mt-2"><input class="form-check-input" type="checkbox" role="switch" data-takepills-field="reminderEnabled" data-takepills-index="${index}" ${settings.enabled ? "checked" : ""}><label class="form-check-label" data-switch-label data-switch-on="Ligado" data-switch-off="Desligado">${settings.enabled ? "Ligado" : "Desligado"}</label></div></div>
-        <div class="col-md-2"><label class="form-label-sm">Frequência</label><select class="form-select" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency>${frequencyOptions.map(option => `<option value="${esc(String(option.value))}" ${parseInt(String(option.value), 10) === frequency ? "selected" : ""}>${esc(String(option.label))}</option>`).join("")}</select></div>
+        <div class="col-md-2"><label class="form-label-sm">Frequência</label><select class="form-select" data-takepills-field="reminderFrequency" data-takepills-index="${index}" data-takepills-frequency>${frequencyOptions.map((option) => `<option value="${esc(String(option.value))}" ${parseInt(String(option.value), 10) === frequency ? "selected" : ""}>${esc(String(option.label))}</option>`).join("")}</select></div>
         <div class="col-md-4 ${frequency === 3 ? "" : "d-none"}" data-takepills-custom-wrapper="${index}"><label class="form-label-sm">Custom</label><input class="form-control" type="text" inputmode="numeric" maxlength="7" pattern="[01]{7}" placeholder="0111110" data-takepills-field="reminderCustom" data-takepills-index="${index}" value="${esc(settings.custom)}"></div></div></div>`;
 }
 
@@ -41,16 +41,16 @@ function normalizeReminderSettings(desired) {
     if (Array.isArray(base)) return base.map(normalizeReminder);
     if (typeof base === "string" && base.trim() !== "") return parseReminderString(base);
     if (base && typeof base === "object") return [normalizeReminder(base)];
-    const legacy = ["reminderTime", "reminderEnabled", "reminderFrequency", "reminderCustom"].some(key => Object.prototype.hasOwnProperty.call(desired || {}, key));
-    return legacy ? [{time: String(desired?.reminderTime ?? "08:00"), enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true), frequency: parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1, custom: String(desired?.reminderCustom ?? desired?.custom ?? "")}] : [];
+    const legacy = ["reminderTime", "reminderEnabled", "reminderFrequency", "reminderCustom"].some((key) => Object.prototype.hasOwnProperty.call(desired || {}, key));
+    return legacy ? [{ time: String(desired?.reminderTime ?? "08:00"), enabled: boolValue(desired?.reminderEnabled ?? desired?.enabled ?? true, true), frequency: parseInt(String(desired?.reminderFrequency ?? desired?.frequency ?? 1), 10) || 1, custom: String(desired?.reminderCustom ?? desired?.custom ?? "") }] : [];
 }
 
 function normalizeReminder(item) {
     if (typeof item === "string") {
         const parts = item.split("-");
-        return {time: String(parts[0] ?? "08:00"), enabled: boolValue(parts[1] ?? true, true), frequency: parseInt(String(parts[2] ?? 1), 10) || 1, custom: String(parts.slice(3).join("-") ?? "")};
+        return { time: String(parts[0] ?? "08:00"), enabled: boolValue(parts[1] ?? true, true), frequency: parseInt(String(parts[2] ?? 1), 10) || 1, custom: String(parts.slice(3).join("-") ?? "") };
     }
-    return {time: String(item.time ?? item.reminderTime ?? "08:00"), enabled: boolValue(item.enabled ?? item.switchState, true), frequency: parseInt(String(item.frequency ?? item.frequencies ?? 1), 10) || 1, custom: String(item.custom ?? item.reminderCustom ?? "")};
+    return { time: String(item.time ?? item.reminderTime ?? "08:00"), enabled: boolValue(item.enabled ?? item.switchState, true), frequency: parseInt(String(item.frequency ?? item.frequencies ?? 1), 10) || 1, custom: String(item.custom ?? item.reminderCustom ?? "") };
 }
 
 function parseReminderString(value) {
@@ -60,7 +60,7 @@ function parseReminderString(value) {
         const time = parts[index++] ?? "08:00";
         const enabled = boolValue(parts[index++] ?? true, true);
         const frequency = parseInt(parts[index++] ?? "1", 10) || 1;
-        reminders.push({time, enabled, frequency, custom: frequency === 3 && index < parts.length ? parts[index++] : ""});
+        reminders.push({ time, enabled, frequency, custom: frequency === 3 && index < parts.length ? parts[index++] : "" });
     }
     return reminders;
 }
@@ -74,7 +74,7 @@ function voicePreviewSrc(voiceData, voiceMimeType) {
 function frequencyOptionsFor(meta) {
     return Array.isArray(meta?.frequency?.options) && meta.frequency.options.length
         ? meta.frequency.options
-        : [{value: 1, label: "Uma vez"}, {value: 2, label: "Diariamente"}, {value: 3, label: "Personalizado"}];
+        : [{ value: 1, label: "Uma vez" }, { value: 2, label: "Diariamente" }, { value: 3, label: "Personalizado" }];
 }
 
 function boolValue(value, fallback = false) {

@@ -1,18 +1,18 @@
-import {state} from "../state.js";
+import { state } from "../state.js";
 import {
     activateSettingsSection,
     initSettingsShell,
     loadSettingsNavCounts,
     showSettingsModal,
 } from "./shell.js";
-import {initSettingsApiUsers, loadSettingsApiUsersSection} from "./api-users.js";
-import {initSettingsCompanies, loadSettingsCompanySection} from "./companies.js";
+import { initSettingsApiUsers, loadSettingsApiUsersSection } from "./api-users.js";
+import { initSettingsCompanies, loadSettingsCompanySection } from "./companies.js";
 import {
     initSettingsCapabilities,
     loadSettingsCapabilitiesSection,
 } from "./capabilities.js";
-import {initSettingsModels} from "./models/shell.js";
-import {loadSettingsModelsSection} from "./models/list.js";
+import { initSettingsModels } from "./models/shell.js";
+import { loadSettingsModelsSection } from "./models/list.js";
 
 /**
  * A raiz de composição do modal de definições, e o único módulo que conhece as quatro

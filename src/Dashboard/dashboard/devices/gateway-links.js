@@ -15,9 +15,9 @@ export function eligibleGateways(devices = [], company = "", licenseId = "0") {
 
     return (Array.isArray(devices) ? devices : [])
         .filter((device) =>
-            String(device?.deviceType || "") === "gateway"
-            && String(device?.company || "") === expectedCompany
-            && String(device?.licenseId || "0") === expectedLicense,
+            String(device?.deviceType || "") === "gateway" &&
+            String(device?.company || "") === expectedCompany &&
+            String(device?.licenseId || "0") === expectedLicense,
         )
         .sort((a, b) => normalizeKey(a?.imei).localeCompare(normalizeKey(b?.imei)));
 }

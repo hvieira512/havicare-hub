@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
 
-const {closeDashboardOverlays} = await import(
-    "../../src/Dashboard/dashboard/auth/session.js"
+const { closeDashboardOverlays } = await import(
+    "../../src/Dashboard/dashboard/auth/session.js",
 );
 
 /**

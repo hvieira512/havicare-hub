@@ -32,15 +32,15 @@ function setUpSelector() {
     globalThis.fetch = () => new Promise(() => {});
     initDeviceList({
         els,
-        ui: {deviceSelectorModal: {show: () => {shown = true;}}},
+        ui: { deviceSelectorModal: { show: () => { shown = true; } } },
         services: {},
     });
 
-    return {els, wasShown: () => shown};
+    return { els, wasShown: () => shown };
 }
 
 test("o modal aparece antes de a lista chegar, com esqueleto no lugar dela", async () => {
-    const {els, wasShown} = setUpSelector();
+    const { els, wasShown } = setUpSelector();
 
     void openDeviceSelector();
 
@@ -52,7 +52,7 @@ test("o modal aparece antes de a lista chegar, com esqueleto no lugar dela", asy
 });
 
 test("o esqueleto tem a geometria do cartão, para a lista não saltar quando chega", async () => {
-    const {els} = setUpSelector();
+    const { els } = setUpSelector();
 
     void openDeviceSelector();
 

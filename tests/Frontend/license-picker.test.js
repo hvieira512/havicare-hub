@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {parseFragment} from "./support/dom.js";
+import { parseFragment } from "./support/dom.js";
 import {
     licenseBadgeValue,
     licensePickerHtml,
@@ -15,9 +15,9 @@ import {
  * com o nome dela em cada uma.
  */
 const ROWS = [
-    {id: 1, company_id: 2, company_name: "havicare", license_id: 1, name: "hc.dev"},
-    {id: 2, company_id: 2, company_name: "havicare", license_id: 2, name: ""},
-    {id: 3, company_id: 1, company_name: "hitcare", license_id: 1001, name: "gucc.dev"},
+    { id: 1, company_id: 2, company_name: "havicare", license_id: 1, name: "hc.dev" },
+    { id: 2, company_id: 2, company_name: "havicare", license_id: 2, name: "" },
+    { id: 3, company_id: 1, company_name: "hitcare", license_id: 1001, name: "gucc.dev" },
 ];
 
 test("as licencas agrupam-se pela empresa que as detem", () => {
@@ -25,15 +25,15 @@ test("as licencas agrupam-se pela empresa que as detem", () => {
         {
             company: "havicare",
             licenses: [
-                {licenseId: "1", name: "hc.dev"},
-                {licenseId: "2", name: ""},
+                { licenseId: "1", name: "hc.dev" },
+                { licenseId: "2", name: "" },
             ],
         },
-        {company: "hitcare", licenses: [{licenseId: "1001", name: "gucc.dev"}]},
+        { company: "hitcare", licenses: [{ licenseId: "1001", name: "gucc.dev" }] },
     ]);
 });
 
-test('"Sem licença" é a primeira linha, e é a única fora de uma empresa', () => {
+test("\"Sem licença\" é a primeira linha, e é a única fora de uma empresa", () => {
     const root = parseFragment(licensePickerHtml(licenseTree(ROWS)));
 
     const options = [...root.querySelectorAll("[data-license-pick]")];
@@ -59,11 +59,11 @@ test("a empresa é um cabeçalho e não se escolhe", () => {
 
 test("é de escolha única, e só a escolhida fica marcada", () => {
     const root = parseFragment(
-        licensePickerHtml(licenseTree(ROWS), {company: "hitcare", licenseId: "1001"}),
+        licensePickerHtml(licenseTree(ROWS), { company: "hitcare", licenseId: "1001" }),
     );
 
-    assert.equal(root.querySelector('[role="radiogroup"]') !== null, true);
-    const checked = [...root.querySelectorAll('[aria-checked="true"]')];
+    assert.equal(root.querySelector("[role=\"radiogroup\"]") !== null, true);
+    const checked = [...root.querySelectorAll("[aria-checked=\"true\"]")];
     assert.equal(checked.length, 1);
     assert.equal(checked[0].dataset.licenseId, "1001");
     assert.equal(checked[0].dataset.licenseCompany, "hitcare");
@@ -72,14 +72,14 @@ test("é de escolha única, e só a escolhida fica marcada", () => {
 test("duas empresas podem ter a mesma licença, e a escolha distingue-as", () => {
     // `uq_licenses_company_license` é por empresa: o `license_id` sozinho não identifica.
     const shared = [
-        {company_name: "havicare", license_id: 1, name: "hc.dev"},
-        {company_name: "hitcare", license_id: 1, name: "gucc.dev"},
+        { company_name: "havicare", license_id: 1, name: "hc.dev" },
+        { company_name: "hitcare", license_id: 1, name: "gucc.dev" },
     ];
     const root = parseFragment(
-        licensePickerHtml(licenseTree(shared), {company: "hitcare", licenseId: "1"}),
+        licensePickerHtml(licenseTree(shared), { company: "hitcare", licenseId: "1" }),
     );
 
-    const checked = [...root.querySelectorAll('[aria-checked="true"]')];
+    const checked = [...root.querySelectorAll("[aria-checked=\"true\"]")];
     assert.equal(checked.length, 1);
     assert.equal(checked[0].dataset.licenseCompany, "hitcare");
 });
@@ -87,11 +87,11 @@ test("duas empresas podem ter a mesma licença, e a escolha distingue-as", () =>
 test("a badge da trilha diz a licença por palavras", () => {
     const tree = licenseTree(ROWS);
     assert.equal(licenseBadgeValue(null, tree), "Sem licença");
-    assert.equal(licenseBadgeValue({company: "", licenseId: "0"}, tree), "Sem licença");
+    assert.equal(licenseBadgeValue({ company: "", licenseId: "0" }, tree), "Sem licença");
     assert.equal(
-        licenseBadgeValue({company: "hitcare", licenseId: "1001"}, tree),
+        licenseBadgeValue({ company: "hitcare", licenseId: "1001" }, tree),
         "gucc.dev (1001)",
     );
     // Sem nome, o número é tudo o que há para mostrar.
-    assert.equal(licenseBadgeValue({company: "havicare", licenseId: "2"}, tree), "2");
+    assert.equal(licenseBadgeValue({ company: "havicare", licenseId: "2" }, tree), "2");
 });

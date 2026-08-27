@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
 
-const {telemetryRequestCards, renderRequestCardGroup} = await import(
-    "../../src/Dashboard/dashboard/devices/detail.js"
+const { telemetryRequestCards, renderRequestCardGroup } = await import(
+    "../../src/Dashboard/dashboard/devices/detail.js",
 );
 
 /**
@@ -14,7 +14,7 @@ const {telemetryRequestCards, renderRequestCardGroup} = await import(
  * diferente e por isso não se misturam na mesma grelha.
  */
 
-const supported = (requestable = true) => ({supported: true, requestable});
+const supported = (requestable = true) => ({ supported: true, requestable });
 
 test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", () => {
     const [telemetry] = telemetryRequestCards({
@@ -40,7 +40,7 @@ test("um dispositivo só com telemetria dá um grupo, e um radar dá os dois", (
 
 test("uma capacidade que o modelo não tem não dá cartão", () => {
     const groups = telemetryRequestCards({
-        heart_rate: {supported: false, requestable: true},
+        heart_rate: { supported: false, requestable: true },
         battery: supported(),
     });
 
@@ -51,7 +51,7 @@ test("uma capacidade que o modelo não tem não dá cartão", () => {
 });
 
 test("a faixa com o nome do grupo só existe quando há mais do que um grupo", () => {
-    const [group] = telemetryRequestCards({heart_rate: supported()});
+    const [group] = telemetryRequestCards({ heart_rate: supported() });
 
     // Num relógio, que só tem "Telemetria", a faixa era uma moldura dentro de um cartão que
     // já se chama "Pedir dados".

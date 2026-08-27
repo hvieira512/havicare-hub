@@ -1,3 +1,3 @@
-import {requestJson} from './http.js';
+import { requestJson } from "./http.js";
 
-export const getProtocols = () => requestJson('/api/protocols');
+export const getProtocols = () => requestJson("/api/protocols");

@@ -3,7 +3,7 @@ import {
     refreshAccessToken,
     setDashboardApiToken,
 } from "../api/http.js";
-import {toast} from "../dialogs.js";
+import { toast } from "../dialogs.js";
 
 const TOKEN_STORAGE_KEY = "hub-dashboard-api-token";
 const LAST_ACTIVITY_STORAGE_KEY = "hub-dashboard-last-activity";
@@ -36,13 +36,13 @@ const elements = () => ({
 
 const authRequired = () => document.body.dataset.dashboardAuthRequired === "true";
 
-const renderAuthenticatedUsername = token => {
-    const {authenticatedUsername} = elements();
+const renderAuthenticatedUsername = (token) => {
+    const { authenticatedUsername } = elements();
     if (!authenticatedUsername) return;
     authenticatedUsername.textContent = String(token?.username || "Administrador");
 };
 
-const validAdminToken = token => {
+const validAdminToken = (token) => {
     if (!token || typeof token !== "object" || token.role !== ADMIN_ROLE) {
         return false;
     }
@@ -50,13 +50,13 @@ const validAdminToken = token => {
     const accessToken = String(token.access_token || "");
     const refreshToken = String(token.refresh_token || "");
     const refreshExpiresAt = Date.parse(String(token.refresh_expires_at || ""));
-    return accessToken !== ""
-        && refreshToken !== ""
-        && Number.isFinite(refreshExpiresAt)
-        && refreshExpiresAt > Date.now();
+    return accessToken !== "" &&
+        refreshToken !== "" &&
+        Number.isFinite(refreshExpiresAt) &&
+        refreshExpiresAt > Date.now();
 };
 
-const storeToken = token => {
+const storeToken = (token) => {
     if (!validAdminToken(token)) {
         sessionStorage.removeItem(TOKEN_STORAGE_KEY);
         return;
@@ -74,7 +74,7 @@ const restoreToken = () => {
 };
 
 const clearTimers = () => {
-    [warningTimer, logoutTimer].forEach(timer => {
+    [warningTimer, logoutTimer].forEach((timer) => {
         if (timer !== null) {
             window.clearTimeout(timer);
         }
@@ -99,7 +99,7 @@ const showTimeoutWarning = () => {
         allowOutsideClick: false,
         allowEscapeKey: false,
         reverseButtons: true,
-    }).then(result => {
+    }).then((result) => {
         warningVisible = false;
         if (result.isConfirmed) {
             registerActivity(true);
@@ -119,7 +119,7 @@ const hideTimeoutWarning = () => {
 };
 
 export const closeDashboardOverlays = () => {
-    document.querySelectorAll("#dashboardApp .modal.show").forEach(modal => {
+    document.querySelectorAll("#dashboardApp .modal.show").forEach((modal) => {
         const instance = window.bootstrap?.Modal?.getInstance(modal);
         instance?.hide();
         modal.classList.remove("show");
@@ -131,14 +131,14 @@ export const closeDashboardOverlays = () => {
 
     document
         .querySelectorAll(".modal-backdrop, .offcanvas-backdrop")
-        .forEach(backdrop => backdrop.remove());
+        .forEach((backdrop) => backdrop.remove());
     document.body.classList.remove("modal-open");
     document.body.style.removeProperty("overflow");
     document.body.style.removeProperty("padding-right");
 };
 
-const setLoginBusy = busy => {
-    const {loginSubmit, loginSubmitLabel, loginSubmitLoading} = elements();
+const setLoginBusy = (busy) => {
+    const { loginSubmit, loginSubmitLabel, loginSubmitLoading } = elements();
     if (loginSubmit) {
         loginSubmit.disabled = busy;
         loginSubmit.setAttribute("aria-busy", String(busy));
@@ -147,8 +147,8 @@ const setLoginBusy = busy => {
     loginSubmitLoading?.classList.toggle("d-none", !busy);
 };
 
-const showLogin = message => {
-    const {app, login, loginForm, loginUsername} = elements();
+const showLogin = (message) => {
+    const { app, login, loginForm, loginUsername } = elements();
     closeDashboardOverlays();
     if (app) {
         app.hidden = true;
@@ -166,7 +166,7 @@ const showLogin = message => {
 };
 
 const startDashboard = async () => {
-    const {app, login} = elements();
+    const { app, login } = elements();
     if (login) {
         login.hidden = true;
         login.classList.add("d-none");
@@ -225,15 +225,15 @@ const registerActivity = (force = false) => {
 };
 
 const bindActivityTracking = () => {
-    ACTIVITY_EVENTS.forEach(eventName => {
-        window.addEventListener(eventName, () => registerActivity(), {passive: true});
+    ACTIVITY_EVENTS.forEach((eventName) => {
+        window.addEventListener(eventName, () => registerActivity(), { passive: true });
     });
     window.addEventListener("focus", () => registerActivity());
     document.addEventListener("visibilitychange", () => {
         if (
-            document.visibilityState !== "visible"
-            || !authRequired()
-            || !window.hubDashboardApiToken?.access_token
+            document.visibilityState !== "visible" ||
+            !authRequired() ||
+            !window.hubDashboardApiToken?.access_token
         ) {
             return;
         }
@@ -246,9 +246,9 @@ const bindActivityTracking = () => {
     });
 };
 
-const login = async event => {
+const login = async (event) => {
     event.preventDefault();
-    const {loginUsername, loginPassword} = elements();
+    const { loginUsername, loginPassword } = elements();
     const username = String(loginUsername?.value || "").trim();
     const password = String(loginPassword?.value || "");
     if (username === "" || password === "") {
@@ -260,8 +260,8 @@ const login = async event => {
     try {
         const response = await fetch("/api/auth/login", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({username, password}),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
         });
         const payload = await response.json();
         const token = payload?.token;
@@ -328,7 +328,7 @@ const restoreSession = async () => {
 
 export async function initializeDashboardSession(startAuthenticatedDashboard) {
     onAuthenticated = startAuthenticatedDashboard;
-    const {loginForm, logoutButton} = elements();
+    const { loginForm, logoutButton } = elements();
 
     loginForm?.addEventListener("submit", login);
     logoutButton?.addEventListener("click", () => logout(""));

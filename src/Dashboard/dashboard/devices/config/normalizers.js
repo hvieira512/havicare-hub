@@ -1,10 +1,10 @@
-import {formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind} from "./alarm-fields.js";
+import { formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind } from "./alarm-fields.js";
 
 export const WONLEX_MEDICATION_PERIODS = [
-    {index: 0, key: "Morning", label: "Manhã", defaultTime: "08:00"},
-    {index: 1, key: "Midday", label: "Meio-dia", defaultTime: "12:00"},
-    {index: 2, key: "Night", label: "Noite", defaultTime: "19:00"},
-    {index: 3, key: "Before sleep", label: "Antes de dormir", defaultTime: "22:00"},
+    { index: 0, key: "Morning", label: "Manhã", defaultTime: "08:00" },
+    { index: 1, key: "Midday", label: "Meio-dia", defaultTime: "12:00" },
+    { index: 2, key: "Night", label: "Noite", defaultTime: "19:00" },
+    { index: 3, key: "Before sleep", label: "Antes de dormir", defaultTime: "22:00" },
 ];
 
 /**
@@ -35,8 +35,8 @@ export function normalizeWonlexMedicationPlan(plan = {}) {
         : {};
     let periods = Array.isArray(drugTime.checkboxes)
         ? drugTime.checkboxes
-            .map((value) => parseInt(String(value), 10))
-            .filter((value) => Number.isFinite(value) && value >= 0 && value <= 3)
+                .map((value) => parseInt(String(value), 10))
+                .filter((value) => Number.isFinite(value) && value >= 0 && value <= 3)
         : [];
     if (periods.length === 0) {
         periods = WONLEX_MEDICATION_PERIODS
@@ -68,7 +68,7 @@ export function defaultWonlexMedicationPlan() {
         drugEndTime: "",
         drugInterval: 1,
         drugTime: {
-            alarmClock: {Morning: "08:00"},
+            alarmClock: { Morning: "08:00" },
             checkboxes: [0],
             radio: 0,
         },
@@ -110,9 +110,9 @@ function normalizeFourPTouchAlarmItem(item) {
     const mode = recurrenceKind
         ? ({ once: 1, daily: 2, custom: 3 }[recurrenceKind] || 1)
         : (parseInt(
-            String(item.mode ?? item.frequency ?? item.reminderFrequency ?? 1),
-            10,
-        ) || 1);
+                String(item.mode ?? item.frequency ?? item.reminderFrequency ?? 1),
+                10,
+            ) || 1);
 
     return {
         time: formatFourPTouchAlarmTime(
@@ -123,8 +123,8 @@ function normalizeFourPTouchAlarmItem(item) {
         custom:
             mode === 3
                 ? normalizeFourPTouchAlarmDays(
-                      item.recurrence?.days ?? item.custom ?? item.days ?? item.reminderCustom ?? "",
-                  )
+                        item.recurrence?.days ?? item.custom ?? item.days ?? item.reminderCustom ?? "",
+                    )
                 : "",
     };
 }
@@ -201,9 +201,9 @@ function normalizeAlarmClockItem(item) {
             : (parseInt(String(item.type), 10) || 1),
         recurrence: recurrenceKind === "custom"
             ? {
-                  kind: "custom",
-                  days: normalizeAlarmClockDaySelection(item.recurrence?.days ?? ""),
-              }
+                    kind: "custom",
+                    days: normalizeAlarmClockDaySelection(item.recurrence?.days ?? ""),
+                }
             : { kind: recurrenceKind },
     };
 }
@@ -212,16 +212,16 @@ export function defaultAlarmClockItem(withType = false, recurrence = "once") {
     const recurrenceKind = normalizeAlarmClockRecurrenceKind(recurrence);
     return withType
         ? {
-              time: "",
-              enabled: true,
-              type: 1,
-              recurrence: {kind: recurrenceKind},
-          }
+                time: "",
+                enabled: true,
+                type: 1,
+                recurrence: { kind: recurrenceKind },
+            }
         : {
-              time: "",
-              enabled: true,
-              recurrence: {kind: recurrenceKind},
-          };
+                time: "",
+                enabled: true,
+                recurrence: { kind: recurrenceKind },
+            };
 }
 
 export function normalizeAlarmClockDaySelection(value) {

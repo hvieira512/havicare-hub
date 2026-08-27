@@ -7,10 +7,10 @@ import {
     readConfigPayload,
     renderDeviceConfigurationRoot,
 } from "./index.js";
-import {emptyPanel} from "../../widgets.js";
-import {toast} from "../../dialogs.js";
-import {resetPhoneControls} from "../../phone.js";
-import {state} from "../../state.js";
+import { emptyPanel } from "../../widgets.js";
+import { toast } from "../../dialogs.js";
+import { resetPhoneControls } from "../../phone.js";
+import { state } from "../../state.js";
 
 /**
  * O painel de configuração dentro do modal do dispositivo: gravar uma secção, refrescar o
@@ -57,10 +57,10 @@ export async function saveDeviceConfiguration(section) {
         const result = isTransientAction
             ? await apiRequestCapability(state.deviceModal.imei, capabilityKey, payload)
             : await apiSaveConfiguration(state.deviceModal.imei, {
-                configurations: {
-                    [key]: payload,
-                },
-            });
+                    configurations: {
+                        [key]: payload,
+                    },
+                });
         if (result.error) {
             setConfigUi(key, {
                 phase: "idle",
@@ -140,17 +140,17 @@ export function syncDeviceModalCommandStates(imei, commands) {
                 ? "failed"
                 : commandStatus === "acked"
                     ? (String(operation?.confirmationMode || "") === "ack_only"
-                        ? "confirmation_unavailable"
-                        : "confirmed")
+                            ? "confirmation_unavailable"
+                            : "confirmed")
                     : ["queued", "waiting", "sent"].includes(commandStatus)
-                        ? (commandStatus === "queued" ? "pending_delivery" : "awaiting_ack")
-                        : String(delivery.status || "");
+                            ? (commandStatus === "queued" ? "pending_delivery" : "awaiting_ack")
+                            : String(delivery.status || "");
             const nextError = ["failed", "dropped"].includes(commandStatus)
                 ? String(command.lastError || command.error || commandStatus)
                 : "";
             if (
-                nextStatus !== String(delivery.status || "")
-                || nextError !== String(delivery.error || "")
+                nextStatus !== String(delivery.status || "") ||
+                nextError !== String(delivery.error || "")
             ) {
                 delivery.status = nextStatus;
                 delivery.error = nextError;
@@ -160,10 +160,10 @@ export function syncDeviceModalCommandStates(imei, commands) {
     }
 
     if (
-        changed
-        && els?.deviceConfigRoot
-        && state.deviceModal.activeTab === "config"
-        && document.getElementById("deviceModal")?.classList.contains("show")
+        changed &&
+        els?.deviceConfigRoot &&
+        state.deviceModal.activeTab === "config" &&
+        document.getElementById("deviceModal")?.classList.contains("show")
     ) {
         // Só o estado de entrega mudou: acerta-se a pastilha de cada bloco no sítio, para não
         // se deitar fora o que estiver a ser escrito nos outros.
@@ -286,10 +286,10 @@ export function renderDeviceConfigurationModal() {
     const enabledCapKeys = state.deviceModal.enabledCapabilityKeys;
     const filteredCatalog = enabledCapKeys.length
         ? state.deviceModal.catalog.filter(
-              (entry) =>
-                  entry.capabilityKey
-                  && enabledCapKeys.includes(entry.capabilityKey),
-          )
+                (entry) =>
+                    entry.capabilityKey &&
+                    enabledCapKeys.includes(entry.capabilityKey),
+            )
         : state.deviceModal.catalog.filter((entry) => entry.capabilityKey);
 
     els.deviceConfigRoot.innerHTML = renderDeviceConfigurationRoot({
@@ -330,7 +330,7 @@ function captureConfigSectionPristine() {
 
 /** Acende o "Enviar" do bloco quando o valor difere do que estava desenhado. */
 export function syncConfigSectionDirty(section) {
-    const button = section.querySelector('[data-action="saveConfig"]');
+    const button = section.querySelector("[data-action=\"saveConfig\"]");
     // Só o estado inactivo é que se gere por diferença: a enviar, enviado ou falhado, o
     // botão está a dizer outra coisa e não se lhe mexe.
     if (!button || button.dataset.configPhase !== "idle") return;

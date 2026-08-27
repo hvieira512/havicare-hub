@@ -1,4 +1,4 @@
-import {esc} from "../format.js";
+import { esc } from "../format.js";
 import {
     companyLabel,
     deviceTypeLabel,
@@ -6,7 +6,7 @@ import {
     modelCommercialName,
     modelInternalName,
 } from "../domain.js";
-import {deviceTypeIcon, modelPreviewHtml} from "../widgets.js";
+import { deviceTypeIcon, modelPreviewHtml } from "../widgets.js";
 
 /**
  * O desenho da classificação de um dispositivo -- tipo, modelo e licença -- partilhado
@@ -30,7 +30,7 @@ export function licenseTree(licenses = []) {
             name: String(license.name || ""),
         });
     }
-    return [...groups].map(([company, entries]) => ({company, licenses: entries}));
+    return [...groups].map(([company, entries]) => ({ company, licenses: entries }));
 }
 
 /** A chave de uma escolha: o `licenseId` só é único dentro da empresa. */
@@ -54,9 +54,9 @@ export function ownerFromLicense(licenseId, tree = [], company = "") {
     const matches = (tree || []).flatMap((group) =>
         (group.licenses || [])
             .filter((license) => String(license.licenseId) === wanted)
-            .filter(() => wantedCompany === ""
-                || String(group.company ?? "").trim().toLowerCase() === wantedCompany)
-            .map(() => ({company: group.company, licenseId: wanted})),
+            .filter(() => wantedCompany === "" ||
+                String(group.company ?? "").trim().toLowerCase() === wantedCompany)
+            .map(() => ({ company: group.company, licenseId: wanted })),
     );
 
     return matches.length === 1 ? matches[0] : null;
@@ -108,7 +108,7 @@ export function licensePickerHtml(tree, selected = null) {
     </div>`;
 }
 
-function licenseRow({company, licenseId, label, selected, nested = false}) {
+function licenseRow({ company, licenseId, label, selected, nested = false }) {
     const classes = [
         "filter-option",
         nested ? "filter-option-nested" : "",
@@ -157,7 +157,7 @@ export function wizardTrailHtml({
         .map((question, index) => {
             const badge = answered.get(question.key);
             const sep = index > 0
-                ? '<i class="fa-solid fa-caret-right wizard-trail-sep"></i>'
+                ? "<i class=\"fa-solid fa-caret-right wizard-trail-sep\"></i>"
                 : "";
             if (badge) {
                 return `${sep}
@@ -174,8 +174,8 @@ export function wizardTrailHtml({
                 <span class="wizard-badge-key">${esc(question.label)}</span>
             </span>`;
         })
-        .join("")
-        + `<span class="wizard-trail-step">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`;
+        .join("") +
+        `<span class="wizard-trail-step">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`;
 }
 
 /* ---------- o tipo e o modelo ---------- */
@@ -192,7 +192,7 @@ export function cardGrid(label, cards) {
                 .map(
                     (card) => `
                 <button type="button" class="wizard-card${card.selected ? " selected" : ""}"
-                    ${card.selected ? 'aria-pressed="true"' : ""} ${card.attrs}>
+                    ${card.selected ? "aria-pressed=\"true\"" : ""} ${card.attrs}>
                     ${card.visual}
                     <span class="wizard-card-label">${esc(card.label)}</span>
                     ${card.sub ? `<span class="wizard-card-sub">${esc(card.sub)}</span>` : ""}
@@ -206,7 +206,7 @@ export function cardGrid(label, cards) {
  * Os tipos de dispositivo em cards. O `attrsFor` e o `countFor` são de quem chama porque é
  * aí que diferem: o assistente conta os modelos de cada tipo, o modal de edição não conta.
  */
-export function deviceTypeCardsHtml({attrsFor, selected = "", countFor = null}) {
+export function deviceTypeCardsHtml({ attrsFor, selected = "", countFor = null }) {
     return cardGrid(
         "Tipo de dispositivo",
         deviceTypeOptions.map((option) => {
@@ -228,7 +228,7 @@ export function deviceTypeCardsHtml({attrsFor, selected = "", countFor = null}) 
  * Os modelos em cards. O nome comercial é o título e o modelo interno o subtítulo: é o
  * comercial que se reconhece da caixa, e o interno que aparece nos tópicos e na base.
  */
-export function modelCardsHtml({models, attrsFor, selected = ""}) {
+export function modelCardsHtml({ models, attrsFor, selected = "" }) {
     return cardGrid(
         "Modelo",
         models.map((model) => {
@@ -246,7 +246,7 @@ export function modelCardsHtml({models, attrsFor, selected = ""}) {
 }
 
 /** Os fornecedores em pastilhas: são poucos e não têm imagem que justifique um card. */
-export function supplierPillsHtml({suppliers, attrsFor, selected = ""}) {
+export function supplierPillsHtml({ suppliers, attrsFor, selected = "" }) {
     return `
         <div class="d-flex flex-wrap gap-2" role="group" aria-label="Fornecedor">
             ${suppliers
@@ -261,4 +261,4 @@ export function supplierPillsHtml({suppliers, attrsFor, selected = ""}) {
 }
 
 /** O que o tipo de dispositivo se chama, para quem só precisa da etiqueta. */
-export {deviceTypeLabel};
+export { deviceTypeLabel };

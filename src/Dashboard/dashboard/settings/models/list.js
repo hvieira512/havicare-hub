@@ -2,9 +2,9 @@ import {
     getDeviceTypeSuppliersModels as apiGetCatalog,
     getModelFilters as apiGetModelFilters,
 } from "../../api/index.js";
-import {state} from "../../state.js";
-import {esc} from "../../format.js";
-import {deviceTypeIcon, modelImageHtml, stateBadge} from "../../widgets.js";
+import { state } from "../../state.js";
+import { esc } from "../../format.js";
+import { deviceTypeIcon, modelImageHtml, stateBadge } from "../../widgets.js";
 import {
     deviceTypeLabel,
     modelCommercialName,
@@ -12,9 +12,9 @@ import {
     modelInternalName,
     normalizeDeviceType,
 } from "../../domain.js";
-import {setSettingsNavCount} from "../shell.js";
-import {resetModelForm} from "./form.js";
-import {getSettingsModelsRuntime, modelsCarousel} from "./shell.js";
+import { setSettingsNavCount } from "../shell.js";
+import { resetModelForm } from "./form.js";
+import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
 
 /**
  * O catálogo: tipo de dispositivo, fornecedor, modelo. Três níveis porque a forma dos dados
@@ -58,7 +58,7 @@ function catalogGroups() {
         .filter((group) => group.suppliers.length > 0);
 }
 
-function modelRow(model, {showOrigin = false} = {}) {
+function modelRow(model, { showOrigin = false } = {}) {
     const commercial = modelCommercialName(model);
     const internal = modelInternalName(model);
     // O nome interno é o código do fabricante e repete-se muitas vezes com o comercial
@@ -149,7 +149,7 @@ function searchResults(query) {
 }
 
 function renderModelsSection() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const query = state.settingsModal.modelsSearchQuery || "";
     const groups = catalogGroups();
     const models = groups.reduce(
@@ -174,7 +174,7 @@ function renderModelsSection() {
         els.modelCatalog.innerHTML = results.length === 0
             ? `<div class="text-secondary py-4 text-center">Nenhum modelo encontrado para “${esc(query)}”.</div>`
             : `<div class="card"><div class="card-body p-3">
-                ${results.map((model) => modelRow(model, {showOrigin: true})).join("")}
+                ${results.map((model) => modelRow(model, { showOrigin: true })).join("")}
                 </div></div>`;
         if (els.modelsTabSummary) {
             els.modelsTabSummary.textContent = results.length === 0
@@ -220,14 +220,14 @@ async function loadSettingsModelsSection() {
     resetModelForm();
     renderModelsSection();
 
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     if (els.modelsListSearch) {
         els.modelsListSearch.value = state.settingsModal.modelsSearchQuery || "";
     }
 }
 
 function handleModelsListSearchInput() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     state.settingsModal.modelsSearchQuery = els.modelsListSearch.value.trim();
     // Sem espera: o filtro é local, e um debounce sobre uma lista em memória era atraso a
     // fingir de rede.
@@ -240,7 +240,7 @@ function handleModelsListSearchInput() {
  * `sectionLoaded.models`. Ligar capacidades não mexe em nada disso.
  */
 function backToModelList() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const carousel = state.settingsModal.modelsCarousel;
     if (!carousel) return;
 
@@ -274,7 +274,7 @@ function backToModelList() {
 
 /** O rasto e o slide do formulário de um modelo novo. */
 function showNewModelSlide() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     els.modelsBreadcrumb.classList.remove("d-none");
     els.modelsBreadcrumbModels.classList.remove("active");
     els.modelsBreadcrumbNew.textContent = "Novo modelo";

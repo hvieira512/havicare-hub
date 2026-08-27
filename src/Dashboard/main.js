@@ -1,6 +1,6 @@
-import { startDashboard } from './dashboard/app.js';
-import { initializeDashboardSession } from './dashboard/auth/session.js';
+import { startDashboard } from "./dashboard/app.js";
+import { initializeDashboardSession } from "./dashboard/auth/session.js";
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
     void initializeDashboardSession(startDashboard);
 });

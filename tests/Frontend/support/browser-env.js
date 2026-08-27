@@ -1,4 +1,4 @@
-import {JSDOM} from "jsdom";
+import { JSDOM } from "jsdom";
 
 /**
  * Instala um DOM antes de qualquer módulo do dashboard ser importado.
@@ -7,7 +7,7 @@ import {JSDOM} from "jsdom";
  * só por ser importado --, e por isso isto tem de ser avaliado primeiro. Os módulos ES
  * avaliam as dependências por ordem de import, e importar isto acima do módulo em teste basta.
  */
-const dom = new JSDOM("<!doctype html><body></body>", {url: "http://localhost/"});
+const dom = new JSDOM("<!doctype html><body></body>", { url: "http://localhost/" });
 
 // O node define alguns destes como só-leitura no `globalThis`, e por isso a atribuição passa
 // pelo `defineProperty` em vez de ser directa.
@@ -28,4 +28,4 @@ for (const name of [
     });
 }
 
-export {dom};
+export { dom };

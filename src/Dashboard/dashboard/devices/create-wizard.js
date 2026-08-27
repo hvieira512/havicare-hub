@@ -3,10 +3,10 @@ import {
     getDevices as apiGetDevices,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
-import {ensureLicensesLoaded} from "../licenses.js";
-import {esc} from "../format.js";
-import {state} from "../state.js";
-import {field, modelPreviewHtml} from "../widgets.js";
+import { ensureLicensesLoaded } from "../licenses.js";
+import { esc } from "../format.js";
+import { state } from "../state.js";
+import { field, modelPreviewHtml } from "../widgets.js";
 import {
     deviceTypeFields,
     deviceTypeLabel,
@@ -17,7 +17,7 @@ import {
     modelsForSupplierAndType,
     suppliersForDeviceType,
 } from "../domain.js";
-import {createWizard} from "./wizard.js";
+import { createWizard } from "./wizard.js";
 import {
     deviceTypeCardsHtml,
     licenseBadgeValue,
@@ -28,7 +28,7 @@ import {
     supplierPillsHtml,
     wizardTrailHtml,
 } from "./classification-ui.js";
-import {gatewayCardMarkup} from "./gateway-links-ui.js";
+import { gatewayCardMarkup } from "./gateway-links-ui.js";
 import {
     ensureDeviceTypeSuppliersModelsLoaded,
     loadSummary,
@@ -50,9 +50,9 @@ const STEPS = ["Classificação", "Este aparelho"];
 /** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
 /** A pergunta do passo 2 não entra: a trilha é a classificação, o passo 2 é este aparelho. */
 const TRAIL_QUESTIONS = [
-    {key: "type", label: "Tipo"},
-    {key: "model", label: "Modelo"},
-    {key: "owner", label: "Licença"},
+    { key: "type", label: "Tipo" },
+    { key: "model", label: "Modelo" },
+    { key: "owner", label: "Licença" },
 ];
 
 const QUESTIONS = [
@@ -61,14 +61,14 @@ const QUESTIONS = [
         step: 1,
         clears: ["model", "identity", "gateways"],
         isAnswered: (a) => Boolean(a.type),
-        badges: (a) => [{label: "Tipo", value: deviceTypeLabel(a.type)}],
+        badges: (a) => [{ label: "Tipo", value: deviceTypeLabel(a.type) }],
     },
     {
         key: "model",
         step: 1,
         clears: ["identity"],
         isAnswered: (a) => Boolean(a.model?.supplier && a.model?.model),
-        badges: (a) => [{label: "Modelo", value: a.model.model}],
+        badges: (a) => [{ label: "Modelo", value: a.model.model }],
     },
     {
         key: "owner",
@@ -80,7 +80,7 @@ const QUESTIONS = [
         optional: true,
         isAnswered: (a) => Boolean(a.owner),
         badges: (a) => [
-            {label: "Licença", value: licenseBadgeValue(a.owner, licenseGroups)},
+            { label: "Licença", value: licenseBadgeValue(a.owner, licenseGroups) },
         ],
     },
     {
@@ -95,7 +95,7 @@ const QUESTIONS = [
 export function initCreateWizard(context) {
     els = context.els;
     wizardModal = context.wizardModal;
-    wizard = createWizard({questions: QUESTIONS, steps: STEPS});
+    wizard = createWizard({ questions: QUESTIONS, steps: STEPS });
 
     els.wizardAsk?.addEventListener("click", handleClick);
     els.wizardAsk?.addEventListener("change", handleChange);
@@ -185,8 +185,8 @@ function renderArt() {
 const LAST_STEP_QUESTIONS = QUESTIONS.filter((question) => question.step === STEPS.length);
 
 function renderAsk() {
-    const question = wizard.current()
-        ?? (wizard.isLastStep() ? LAST_STEP_QUESTIONS[0] : null);
+    const question = wizard.current() ??
+        (wizard.isLastStep() ? LAST_STEP_QUESTIONS[0] : null);
     els.wizardAsk.innerHTML = question ? renderQuestion(question.key) : renderStepDone();
     // Reinicia a animação de entrada a cada pergunta nova.
     els.wizardAsk.style.animation = "none";
@@ -263,15 +263,15 @@ function renderModel(type) {
                 selected: supplier,
                 attrsFor: (name) => `data-wizard-supplier="${esc(name)}"`,
             }),
-            {help: suppliers.length === 1 ? "Só um fornecedor tem modelos deste tipo." : ""},
+            { help: suppliers.length === 1 ? "Só um fornecedor tem modelos deste tipo." : "" },
         )}
         ${supplier
             ? field(
-                "Modelo",
-                models.length
-                    ? renderModelGrid(supplier, models)
-                    : '<p class="text-secondary small mb-0">Este fornecedor não tem modelos deste tipo.</p>',
-            )
+                    "Modelo",
+                    models.length
+                        ? renderModelGrid(supplier, models)
+                        : "<p class=\"text-secondary small mb-0\">Este fornecedor não tem modelos deste tipo.</p>",
+                )
             : ""}`;
 }
 
@@ -305,16 +305,16 @@ function renderIdentity(answers) {
                 <div class="gateway-picker">
                     ${gateways.length
                         ? gateways
-                            .map((gateway) =>
-                                gatewayCardMarkup(
-                                    gateway,
-                                    (answers.gateways || []).includes(
-                                        String(gateway.imei || "").toLowerCase(),
+                                .map((gateway) =>
+                                    gatewayCardMarkup(
+                                        gateway,
+                                        (answers.gateways || []).includes(
+                                            String(gateway.imei || "").toLowerCase(),
+                                        ),
                                     ),
-                                ),
-                            )
-                            .join("")
-                        : '<div class="gateway-picker-empty">Nenhum gateway nesta empresa e licença.</div>'}
+                                )
+                                .join("")
+                        : "<div class=\"gateway-picker-empty\">Nenhum gateway nesta empresa e licença.</div>"}
                 </div>
                 <div class="form-text">Só os selecionados podem reportar dados deste sensor.</div>
                </div>`
@@ -332,8 +332,8 @@ function eligibleGatewayList(answers) {
     const owner = answers.owner || {};
     return (state.wizardGateways || []).filter(
         (gateway) =>
-            companyKey(gateway.company) === companyKey(owner.company)
-            && licenseIdKey(gateway.licenseId) === licenseIdKey(owner.licenseId),
+            companyKey(gateway.company) === companyKey(owner.company) &&
+            licenseIdKey(gateway.licenseId) === licenseIdKey(owner.licenseId),
     );
 }
 
@@ -353,8 +353,8 @@ function renderFooter() {
     els.wizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
     const last = wizard.isLastStep();
     els.wizardNextBtn.innerHTML = last
-        ? '<i class="fa-solid fa-plus me-2"></i>Criar dispositivo'
-        : 'Seguinte<i class="fa-solid fa-arrow-right ms-2"></i>';
+        ? "<i class=\"fa-solid fa-plus me-2\"></i>Criar dispositivo"
+        : "Seguinte<i class=\"fa-solid fa-arrow-right ms-2\"></i>";
     els.wizardNextBtn.disabled = last ? !wizard.isComplete() : !wizard.canAdvance();
 }
 
@@ -473,12 +473,12 @@ function seedFromNotification(source, tree = []) {
     );
     const detected = candidates.find(
         (model) =>
-            modelInternalName(model) === reported
-            || modelCommercialName(model) === reported,
+            modelInternalName(model) === reported ||
+            modelCommercialName(model) === reported,
     ) || candidates[0] || null;
 
     const owner = ownerFromLicense(notification?.licenseId, tree, notification?.company);
-    if (!detected) return owner ? {identity, owner} : {identity};
+    if (!detected) return owner ? { identity, owner } : { identity };
 
     return {
         type: modelDeviceType(detected),
@@ -487,22 +487,22 @@ function seedFromNotification(source, tree = []) {
             model: modelInternalName(detected),
         },
         identity,
-        ...(owner ? {owner} : {}),
+        ...(owner ? { owner } : {}),
     };
 }
 
 /** Os gateways registados, para o assistente poder oferecer os da mesma empresa. */
 async function loadWizardGateways() {
-    const result = await apiGetDevices({deviceType: "gateway", limit: 500});
+    const result = await apiGetDevices({ deviceType: "gateway", limit: 500 });
     state.wizardGateways = result?.error
         ? []
         : (result.data || []).map((device) => ({
-            imei: String(device.imei || "").toLowerCase(),
-            model: device.model || "",
-            image: device.image || "",
-            company: device.company || "",
-            licenseId: device.licenseId ?? device.license_id ?? "",
-        }));
+                imei: String(device.imei || "").toLowerCase(),
+                model: device.model || "",
+                image: device.image || "",
+                company: device.company || "",
+                licenseId: device.licenseId ?? device.license_id ?? "",
+            }));
 }
 
 /**

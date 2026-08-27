@@ -1,7 +1,7 @@
-import {renderPhoneControl, resetPhoneControls} from "../../phone.js";
-import {takePillsReminderGroup} from "./index.js";
-import {fourPTouchAlarmRow, wonlexMedicationPlanRow} from "./inputs.js";
-import {syncTakePillsCustomVisibility} from "./take-pills-audio.js";
+import { renderPhoneControl, resetPhoneControls } from "../../phone.js";
+import { takePillsReminderGroup } from "./index.js";
+import { fourPTouchAlarmRow, wonlexMedicationPlanRow } from "./inputs.js";
+import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
 
 /**
  * Acrescentar e remover as linhas repetíveis de uma secção de configuração: contactos,
@@ -26,13 +26,13 @@ import {syncTakePillsCustomVisibility} from "./take-pills-audio.js";
  * linha nenhuma fica também sem molde de onde clonar a seguinte.
  */
 const REPEAT_ROW_KINDS = {
-    contacts: {keepLast: true, template: createContactRow},
-    sos_contacts: {keepLast: true},
-    call_whitelist: {keepLast: true},
-    numbers: {keepLast: true},
-    alarm_clock: {keepLast: true},
+    contacts: { keepLast: true, template: createContactRow },
+    sos_contacts: { keepLast: true },
+    call_whitelist: { keepLast: true },
+    numbers: { keepLast: true },
+    alarm_clock: { keepLast: true },
     fourPTouchAlarm: {
-        render: (index) => fourPTouchAlarmRow({time: "", enabled: true, mode: 1, custom: ""}, index),
+        render: (index) => fourPTouchAlarmRow({ time: "", enabled: true, mode: 1, custom: "" }, index),
         after: syncFourPTouchAlarmRows,
     },
     wonlexMedicationPlan: {
@@ -41,12 +41,12 @@ const REPEAT_ROW_KINDS = {
     },
     takePillsReminder: {
         render: (index) => takePillsReminderGroup(
-            {time: "08:00", enabled: true, frequency: 1, custom: ""},
+            { time: "08:00", enabled: true, frequency: 1, custom: "" },
             index,
             [
-                {value: 1, label: "Uma vez"},
-                {value: 2, label: "Diariamente"},
-                {value: 3, label: "Personalizado"},
+                { value: 1, label: "Uma vez" },
+                { value: 2, label: "Diariamente" },
+                { value: 3, label: "Personalizado" },
             ],
         ),
         after: syncTakePillsRows,
@@ -98,15 +98,15 @@ export function removeRepeatRow(button) {
  */
 function resetRowFields(row) {
     row.querySelectorAll("input, select").forEach((input) => {
-        if (input.matches('[data-alarm-clock-field="enabled"]')) {
+        if (input.matches("[data-alarm-clock-field=\"enabled\"]")) {
             input.checked = true;
             return;
         }
-        if (input.matches('[data-alarm-clock-field="recurrenceKind"]')) {
+        if (input.matches("[data-alarm-clock-field=\"recurrenceKind\"]")) {
             input.checked = false;
             return;
         }
-        if (input.matches('[data-alarm-clock-field="type"]')) {
+        if (input.matches("[data-alarm-clock-field=\"type\"]")) {
             input.checked = input.value === "1";
             return;
         }
@@ -120,14 +120,14 @@ function resetRowFields(row) {
     });
 
     const recurrenceInputs = Array.from(
-        row.querySelectorAll('[data-alarm-clock-field="recurrenceKind"]'),
+        row.querySelectorAll("[data-alarm-clock-field=\"recurrenceKind\"]"),
     );
     const defaultRecurrence = recurrenceInputs.find(
         (input) => String(input.value || "").trim().toLowerCase() === "once",
     ) || recurrenceInputs[0];
     if (defaultRecurrence) defaultRecurrence.checked = true;
 
-    const switchLabel = row.querySelector('[data-alarm-clock-field="enabled"]')
+    const switchLabel = row.querySelector("[data-alarm-clock-field=\"enabled\"]")
         ?.parentElement?.querySelector("[data-switch-label]");
     if (switchLabel) {
         switchLabel.textContent = "Ligado";
@@ -144,8 +144,8 @@ function syncAddButton(section, kind, action) {
     if (!list || !addButton) return;
 
     const limit = parseInt(list.dataset.repeatLimit || "", 10);
-    addButton.disabled = Number.isFinite(limit)
-        && list.querySelectorAll(`[data-repeat-row="${kind}"]`).length >= limit;
+    addButton.disabled = Number.isFinite(limit) &&
+        list.querySelectorAll(`[data-repeat-row="${kind}"]`).length >= limit;
 }
 
 function syncFourPTouchAlarmRows(section) {
@@ -154,10 +154,10 @@ function syncFourPTouchAlarmRows(section) {
 
 /** Os lembretes levam o seu número em cinco sítios, e removê-los desalinha-os todos. */
 function syncTakePillsRows(section) {
-    const list = section?.querySelector('[data-repeat-list="takePillsReminder"]');
+    const list = section?.querySelector("[data-repeat-list=\"takePillsReminder\"]");
     if (!list) return;
 
-    list.querySelectorAll('[data-repeat-row="takePillsReminder"]').forEach((row, index) => {
+    list.querySelectorAll("[data-repeat-row=\"takePillsReminder\"]").forEach((row, index) => {
         row.dataset.takepillsReminderGroup = String(index);
         const number = row.querySelector("[data-takepills-reminder-number]");
         if (number) {
@@ -178,7 +178,7 @@ function syncTakePillsRows(section) {
 
 function renumberWonlexMedicationPlans(section) {
     section
-        ?.querySelectorAll('[data-repeat-row="wonlexMedicationPlan"]')
+        ?.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]")
         .forEach((row, index) => {
             const number = row.querySelector("[data-medication-plan-number]");
             if (number) {
@@ -191,7 +191,7 @@ export function syncAlarmClockCustomVisibility(row) {
     const customWrapper = row?.querySelector("[data-alarm-clock-custom-wrapper]");
     if (!customWrapper) return;
 
-    const recurrence = row.querySelector('[data-alarm-clock-field="recurrenceKind"]:checked');
+    const recurrence = row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked");
     customWrapper.classList.toggle(
         "d-none",
         String(recurrence?.value || "").trim().toLowerCase() !== "custom",
@@ -199,8 +199,8 @@ export function syncAlarmClockCustomVisibility(row) {
 }
 
 function isFourPTouchPhonebookSection(section) {
-    return String(section?.dataset?.configProtocol || "") === "four-p-touch"
-        && String(section?.dataset?.configKey || "") === "phonebook";
+    return String(section?.dataset?.configProtocol || "") === "four-p-touch" &&
+        String(section?.dataset?.configKey || "") === "phonebook";
 }
 
 /** A primeira linha de contactos, quando a lista veio vazia e não há de onde clonar. */

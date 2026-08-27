@@ -1,11 +1,11 @@
 import {
     getModelFilters as apiGetModelFilters,
 } from "../api/index.js";
-import {state} from "../state.js";
-import {esc} from "../format.js";
-import {renderButtonGroup, renderDeviceTypeTiles, sectionStrip} from "../widgets.js";
-import {cardIcon} from "../telemetry-cards.js";
-import {ensureCapabilityCatalog, ensureModelTemplate} from "../capability-catalog.js";
+import { state } from "../state.js";
+import { esc } from "../format.js";
+import { renderButtonGroup, renderDeviceTypeTiles, sectionStrip } from "../widgets.js";
+import { cardIcon } from "../telemetry-cards.js";
+import { ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
 import {
     capabilitiesGroupedBySection,
     deviceTypeOptions,
@@ -101,7 +101,7 @@ async function loadSettingsCapabilitiesSection(
 
 function handleCapabilitySupplierClick(event) {
     const button = event.target.closest(
-        '[data-action="selectCapabilitySupplier"]',
+        "[data-action=\"selectCapabilitySupplier\"]",
     );
     if (!button) return;
     selectCapabilitySupplier(button.dataset.value);
@@ -130,8 +130,8 @@ function renderCapabilitiesCatalogSection() {
     const hasSupplierFilter = !!supplierId && enabledKeys.length > 0;
     const supplier = supplierId
         ? state.settingsModal.capabilitySuppliersForDeviceType.find(
-            (candidate) => String(candidate.id) === String(supplierId),
-        )
+                (candidate) => String(candidate.id) === String(supplierId),
+            )
         : null;
 
     renderCapabilitySupplierButtons();
@@ -188,9 +188,9 @@ function renderCapabilitiesCatalogSection() {
                 .map((entry) => {
                     const facts = entry.supported
                         ? [
-                            entry.isConfigurable ? "Configurável" : null,
-                            entry.isRequestable ? "Solicitável" : null,
-                        ].filter(Boolean)
+                                entry.isConfigurable ? "Configurável" : null,
+                                entry.isRequestable ? "Solicitável" : null,
+                            ].filter(Boolean)
                         : [supplierName ? `não oferecido pela ${supplierName}` : "não oferecido"];
                     // Numera o que é suportado, para o último número da secção dizer
                     // quantas capacidades o dispositivo tem de facto.
@@ -284,14 +284,14 @@ function renderCapabilityCatalogSectionNav(sections) {
     // Com uma secção só, uma tira para saltar para ela não leva a lado nenhum.
     els.capabilityCatalogSectionNav.innerHTML = sections.length > 1
         ? sectionStrip(
-            sections.map(({ section, label, entries }) => ({
-                key: catalogSectionId(section),
-                label,
-                count: entries.filter((entry) => entry.supported).length,
-            })),
-            "scrollCapabilityCatalogSection",
-            state.settingsModal.activeCapabilityCatalogSection,
-        )
+                sections.map(({ section, label, entries }) => ({
+                    key: catalogSectionId(section),
+                    label,
+                    count: entries.filter((entry) => entry.supported).length,
+                })),
+                "scrollCapabilityCatalogSection",
+                state.settingsModal.activeCapabilityCatalogSection,
+            )
         : "";
 }
 
@@ -314,7 +314,7 @@ function renderCapabilitySupplierButtons() {
 
     if (!suppliers.length) {
         els.capabilitySupplierButtons.innerHTML =
-            '<div class="small text-secondary">Sem fornecedores para este tipo de dispositivo.</div>';
+            "<div class=\"small text-secondary\">Sem fornecedores para este tipo de dispositivo.</div>";
         return;
     }
 

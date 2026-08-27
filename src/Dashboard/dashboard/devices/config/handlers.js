@@ -1,5 +1,5 @@
-import {state} from "../../state.js";
-import {syncPhoneControl} from "../../phone.js";
+import { state } from "../../state.js";
+import { syncPhoneControl } from "../../phone.js";
 import {
     dismissConfigFeedback,
     renderDeviceConfigurationModal,
@@ -29,7 +29,6 @@ export function handleDeviceConfigClick(event) {
         "[data-config-category], [data-action]",
     );
     if (!button) return;
-
 
     if (button.dataset.configCategory) {
         event.preventDefault();
@@ -122,7 +121,7 @@ function updateConfigChoice(section, button) {
     if (!group) return;
 
     const buttons = group.querySelectorAll(
-        '[data-action="selectConfigChoice"]',
+        "[data-action=\"selectConfigChoice\"]",
     );
     buttons.forEach((choice) => {
         const selected =
@@ -139,11 +138,11 @@ export function handleDeviceConfigChange(event) {
         return;
     }
 
-    if (event.target.matches('[data-time-format="24h"]')) {
+    if (event.target.matches("[data-time-format=\"24h\"]")) {
         normalizeTwentyFourHourTimeInput(event.target);
     }
 
-    if (event.target.matches('[data-action="takePillsFile"]')) {
+    if (event.target.matches("[data-action=\"takePillsFile\"]")) {
         const section = event.target.closest("[data-config-section]");
         if (!section) return;
         const file = event.target.files?.[0] || null;
@@ -154,17 +153,17 @@ export function handleDeviceConfigChange(event) {
     const section = event.target.closest("[data-config-section]");
     if (!section) return;
 
-    if (event.target.matches('[data-config-field="voiceEnabled"]')) {
+    if (event.target.matches("[data-config-field=\"voiceEnabled\"]")) {
         syncTakePillsVoiceVisibility(section);
     }
 
-    if (event.target.matches('[data-takepills-field="reminderFrequency"]')) {
+    if (event.target.matches("[data-takepills-field=\"reminderFrequency\"]")) {
         syncTakePillsCustomVisibility(section);
     }
 
     if (event.target.matches("[data-medication-period]")) {
         const row = event.target.closest(
-            '[data-repeat-row="wonlexMedicationPlan"]',
+            "[data-repeat-row=\"wonlexMedicationPlan\"]",
         );
         const periodTime = row?.querySelector(
             `[data-medication-period-time="${event.target.value}"]`,
@@ -177,7 +176,7 @@ export function handleDeviceConfigChange(event) {
         }
     }
 
-    if (event.target.matches('[data-config-field="mode"]')) {
+    if (event.target.matches("[data-config-field=\"mode\"]")) {
         const extra = section.querySelector("[data-working-mode-extra]");
         if (extra) {
             extra.classList.toggle(
@@ -191,8 +190,8 @@ export function handleDeviceConfigChange(event) {
         }
     }
 
-    if (event.target.matches('[data-alarm-clock-field="recurrenceKind"]')) {
-        const row = event.target.closest('[data-repeat-row="alarm_clock"]');
+    if (event.target.matches("[data-alarm-clock-field=\"recurrenceKind\"]")) {
+        const row = event.target.closest("[data-repeat-row=\"alarm_clock\"]");
         if (row) {
             syncAlarmClockCustomVisibility(row);
         }
@@ -200,7 +199,7 @@ export function handleDeviceConfigChange(event) {
 
     if (
         event.target.matches(
-            '.form-check-input[type="checkbox"][role="switch"]',
+            ".form-check-input[type=\"checkbox\"][role=\"switch\"]",
         )
     ) {
         const label = event.target.parentElement?.querySelector(
@@ -213,15 +212,15 @@ export function handleDeviceConfigChange(event) {
         }
     }
 
-    if (event.target.matches('[data-action="fallTotalLevels"]')) {
+    if (event.target.matches("[data-action=\"fallTotalLevels\"]")) {
         const section = event.target.closest("[data-config-section]");
         if (!section) return;
         const total = parseInt(event.target.value, 10);
         const btns = section.querySelectorAll(
-            '[data-config-choice-group="sensitivity"] .sens-level-btn',
+            "[data-config-choice-group=\"sensitivity\"] .sens-level-btn",
         );
         const currentInput = section.querySelector(
-            '[data-config-field="sensitivity"]',
+            "[data-config-field=\"sensitivity\"]",
         );
         btns.forEach((btn, i) => {
             const visible = i + 1 <= total;
@@ -255,7 +254,7 @@ export function handleDeviceConfigInput(event) {
         syncPhoneControl(event.target);
     }
 
-    if (event.target.matches('[data-time-format="24h"]')) {
+    if (event.target.matches("[data-time-format=\"24h\"]")) {
         normalizeTwentyFourHourTimeInput(event.target);
     }
 }
@@ -266,7 +265,7 @@ function syncFourPTouchAlarmCustomVisibility(row) {
     }
 
     const mode = parseInt(
-        String(row.querySelector('[data-fourptouch-field="mode"]')?.value ?? "1"),
+        String(row.querySelector("[data-fourptouch-field=\"mode\"]")?.value ?? "1"),
         10,
     ) || 1;
     const custom = row.querySelector("[data-fourptouch-custom-wrapper]");

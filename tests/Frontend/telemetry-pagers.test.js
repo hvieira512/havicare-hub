@@ -1,9 +1,9 @@
-import test, {beforeEach} from "node:test";
+import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-const {state} = await import("../../src/Dashboard/dashboard/state.js");
+const { state } = await import("../../src/Dashboard/dashboard/state.js");
 const {
     initDeviceDetailView,
     renderTelemetryList,
@@ -67,9 +67,9 @@ function telemetryEvent(index) {
         schemaVersion: 2,
         type: "battery",
         occurredAt: `2026-08-25T10:${minute}:00Z`,
-        device: {id: "868705080304889", supplier: "Wonlex", model: "HW20PRO"},
-        data: {percent: 90 - index},
-        source: {protocol: "wonlex-json", nativeType: "upBattery"},
+        device: { id: "868705080304889", supplier: "Wonlex", model: "HW20PRO" },
+        data: { percent: 90 - index },
+        source: { protocol: "wonlex-json", nativeType: "upBattery" },
     };
 }
 
@@ -85,7 +85,7 @@ function downlinkRequest(index) {
 
 test("o paginador de telemetria esconde-se quando tudo cabe numa página", () => {
     const els = telemetryEls();
-    initDeviceDetailView({els});
+    initDeviceDetailView({ els });
 
     renderTelemetryList([telemetryEvent(0), telemetryEvent(1)]);
 
@@ -96,10 +96,10 @@ test("o paginador de telemetria esconde-se quando tudo cabe numa página", () =>
 
 test("três páginas dão três botões, com a actual marcada e o anterior travado", () => {
     const els = telemetryEls();
-    initDeviceDetailView({els});
+    initDeviceDetailView({ els });
 
     // 30 eventos com um tamanho de página de 12 dão três páginas.
-    renderTelemetryList(Array.from({length: 30}, (_, index) => telemetryEvent(index)));
+    renderTelemetryList(Array.from({ length: 30 }, (_, index) => telemetryEvent(index)));
 
     assert.equal(els.telemetryPager.classList.contains("d-none"), false);
     assert.equal(els.telemetryPagerSummary.textContent, "1–12 de 30");
@@ -127,10 +127,10 @@ test("três páginas dão três botões, com a actual marcada e o anterior trava
 
 test("na última página o resumo conta só o que resta e o seguinte fica travado", () => {
     const els = telemetryEls();
-    initDeviceDetailView({els});
+    initDeviceDetailView({ els });
     state.telemetryPage = 3;
 
-    renderTelemetryList(Array.from({length: 30}, (_, index) => telemetryEvent(index)));
+    renderTelemetryList(Array.from({ length: 30 }, (_, index) => telemetryEvent(index)));
 
     assert.equal(els.telemetryPagerSummary.textContent, "25–30 de 30");
     assert.equal(pagerButton(els.telemetryPagerControls, "telemetryNext").disabled, true);
@@ -139,9 +139,9 @@ test("na última página o resumo conta só o que resta e o seguinte fica travad
 
 test("o paginador dos pedidos leva o seu prefixo nas acções", () => {
     const els = downlinkEls();
-    initDeviceDetailView({els});
+    initDeviceDetailView({ els });
 
-    renderDownlinkRequests(Array.from({length: 30}, (_, index) => downlinkRequest(index)));
+    renderDownlinkRequests(Array.from({ length: 30 }, (_, index) => downlinkRequest(index)));
 
     assert.equal(els.downlinkPagerSummary.textContent, "1–12 de 30");
     assert.equal(pagerButton(els.downlinkPagerControls, "downlinkPrev").disabled, true);

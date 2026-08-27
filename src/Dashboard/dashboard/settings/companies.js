@@ -6,14 +6,14 @@ import {
     saveLicense as apiSaveLicense,
     updateCompany as apiUpdateCompany,
 } from "../api/index.js";
-import {ensureLicensesLoaded, invalidateLicenses} from "../licenses.js";
-import {stateBadge} from "../widgets.js";
-import {state} from "../state.js";
-import {esc} from "../format.js";
-import {apiError, confirmDestructive, toast} from "../dialogs.js";
-import {clearInvalid, markInvalid} from "../validation.js";
-import {setSettingsNavCount, toggleCollapse} from "./shell.js";
-import {renderPagination} from "../pagination.js";
+import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
+import { stateBadge } from "../widgets.js";
+import { state } from "../state.js";
+import { esc } from "../format.js";
+import { apiError, confirmDestructive, toast } from "../dialogs.js";
+import { clearInvalid, markInvalid } from "../validation.js";
+import { setSettingsNavCount, toggleCollapse } from "./shell.js";
+import { renderPagination } from "../pagination.js";
 
 /**
  * O separador das empresas, com as licenças de cada uma dentro dela. São dois formulários e
@@ -141,7 +141,7 @@ export async function saveCompany() {
 }
 
 async function deleteCompany(id) {
-    const {isConfirmed} = await confirmDestructive(
+    const { isConfirmed } = await confirmDestructive(
         "Apagar empresa?",
         "Todas as licenças associadas serão apagadas.",
     );
@@ -166,7 +166,7 @@ function renderLicensesSection(licenses, companies) {
         .map((s) => `<option value="${s.id}">${esc(s.name)}</option>`)
         .join("");
     els.licenseCompanySelect.innerHTML =
-        '<option value="">Selecionar empresa</option>' + companyOptions;
+        "<option value=\"\">Selecionar empresa</option>" + companyOptions;
 }
 
 export function resetLicenseForm() {
@@ -207,7 +207,7 @@ export async function saveLicense() {
 }
 
 async function deleteLicense(id) {
-    const {isConfirmed} = await confirmDestructive("Apagar licença?");
+    const { isConfirmed } = await confirmDestructive("Apagar licença?");
     if (!isConfirmed) return;
     const result = await apiDeleteLicense(id);
     if (result.error) {

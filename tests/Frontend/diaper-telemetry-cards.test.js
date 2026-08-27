@@ -4,18 +4,18 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos modulos do dashboard: o nome de uma capacidade vem do catalogo, e
 // esse caminho passa pelo api/http.js, que toca em window ao carregar.
 import "./support/browser-env.js";
-import {renderRequestCardShell} from "../../src/Dashboard/dashboard/telemetry-cards.js";
-import {state} from "../../src/Dashboard/dashboard/state.js";
+import { renderRequestCardShell } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { state } from "../../src/Dashboard/dashboard/state.js";
 
 // O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
 // mapa escrito no frontend. Um cartão desenhado sem catálogo mostra a chave humanizada,
 // por isso o teste põe o medidor de fraldas em cima da mesa antes de desenhar.
 state.capabilityCatalogByType.diaper_sensor = [
-    {key: "diaper_moisture", label: "Humidade da fralda"},
-    {key: "diaper_moisture_level", label: "Nível de humidade"},
-    {key: "diaper_condition", label: "Estado da fralda"},
+    { key: "diaper_moisture", label: "Humidade da fralda" },
+    { key: "diaper_moisture_level", label: "Nível de humidade" },
+    { key: "diaper_condition", label: "Estado da fralda" },
 ];
-state.selectedDetail = {model: {deviceType: "diaper_sensor"}};
+state.selectedDetail = { model: { deviceType: "diaper_sensor" } };
 
 const channel = (index, delta, baseline = 1) => ({
     index,
@@ -25,16 +25,16 @@ const channel = (index, delta, baseline = 1) => ({
 });
 
 const moistureCard = (data) => renderRequestCardShell(
-    {feature: "diaper_moisture", requestable: false},
+    { feature: "diaper_moisture", requestable: false },
     false,
-    [{type: "diaper_moisture", occurredAt: "2026-08-06T13:00:00Z", data}],
+    [{ type: "diaper_moisture", occurredAt: "2026-08-06T13:00:00Z", data }],
 );
 
 test("MONIT condition renders as a status card without a request button", () => {
     const html = renderRequestCardShell(
-        {feature: "diaper_condition", requestable: false},
+        { feature: "diaper_condition", requestable: false },
         false,
-        [{type: "diaper_condition", occurredAt: "2026-08-06T13:00:00Z", data: {state: "clean"}}],
+        [{ type: "diaper_condition", occurredAt: "2026-08-06T13:00:00Z", data: { state: "clean" } }],
     );
 
     assert.match(html, /Fralda limpa/);
@@ -150,18 +150,18 @@ test("MONIT moisture shows the level index as its value, from the message that c
     // O índice é capacidade própria e chega menos vezes do que os canais: o cartão junta a
     // leitura mais recente de cada tipo, senão a dos canais apagava o número.
     const html = renderRequestCardShell(
-        {feature: "diaper_moisture", requestable: false},
+        { feature: "diaper_moisture", requestable: false },
         false,
         [
             {
                 type: "diaper_moisture",
                 occurredAt: "2026-08-06T13:05:00Z",
-                data: {channels: [channel(1, 12)], affectedChannelCount: 1, maximumDelta: 12},
+                data: { channels: [channel(1, 12)], affectedChannelCount: 1, maximumDelta: 12 },
             },
             {
                 type: "diaper_moisture_level",
                 occurredAt: "2026-08-06T13:00:00Z",
-                data: {index: 29, alertIndex: 40},
+                data: { index: 29, alertIndex: 40 },
             },
         ],
     );
@@ -174,7 +174,7 @@ test("MONIT moisture shows the level index as its value, from the message that c
 });
 
 test("MONIT moisture degrades to a plain card when no channels are reported", () => {
-    const html = moistureCard({affectedChannelCount: 0, maximumDelta: 0});
+    const html = moistureCard({ affectedChannelCount: 0, maximumDelta: 0 });
 
     assert.match(html, /Humidade da fralda/);
     assert.doesNotMatch(html, /diaper-strip/);

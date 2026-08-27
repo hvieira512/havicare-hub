@@ -19,7 +19,7 @@ export function normalizeAlarmClockRecurrenceKind(value) {
 
 export function readAlarmClockDays(row) {
     return Array.from(
-        row.querySelectorAll('[data-alarm-clock-day="customDays"]:checked'),
+        row.querySelectorAll("[data-alarm-clock-day=\"customDays\"]:checked"),
     )
         .map((input) => parseInt(String(input.value || ""), 10))
         .filter((day) => Number.isFinite(day) && day >= 1 && day <= 7);
@@ -46,7 +46,7 @@ export function formatFourPTouchAlarmTime(value) {
 
 export function readFourPTouchAlarmDays(row) {
     const selected = new Set(
-        Array.from(row.querySelectorAll('[data-fourptouch-day="customDays"]:checked'))
+        Array.from(row.querySelectorAll("[data-fourptouch-day=\"customDays\"]:checked"))
             .map((input) => String(input.value || ""))
             .filter(Boolean),
     );

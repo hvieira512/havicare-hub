@@ -1,3 +1,3 @@
-import {requestJson, withQuery} from './http.js';
+import { requestJson, withQuery } from "./http.js";
 
-export const getCapabilities = (params = {}) => requestJson(withQuery('/api/capabilities', params));
+export const getCapabilities = (params = {}) => requestJson(withQuery("/api/capabilities", params));

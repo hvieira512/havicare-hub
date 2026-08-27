@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-const {state} = await import("../../src/Dashboard/dashboard/state.js");
-const {initSettingsModels} = await import(
-    "../../src/Dashboard/dashboard/settings/models/shell.js"
+const { state } = await import("../../src/Dashboard/dashboard/state.js");
+const { initSettingsModels } = await import(
+    "../../src/Dashboard/dashboard/settings/models/shell.js",
 );
-const {renderModelsSection} = await import(
-    "../../src/Dashboard/dashboard/settings/models/list.js"
+const { renderModelsSection } = await import(
+    "../../src/Dashboard/dashboard/settings/models/list.js",
 );
 
 /**
@@ -64,21 +64,21 @@ const CATALOG = [
         ],
     },
     // Um tipo sem fornecedores: a API devolve-o na mesma, para quem monta selectores.
-    {deviceType: "radar", suppliers: []},
+    { deviceType: "radar", suppliers: [] },
 ];
 
 function render(catalog = CATALOG, query = "") {
     const root = document.createElement("div");
     const summary = document.createElement("div");
-    initSettingsModels({els: {modelCatalog: root, modelsTabSummary: summary}});
+    initSettingsModels({ els: { modelCatalog: root, modelsTabSummary: summary } });
     state.settingsModal.modelCatalog = catalog;
     state.settingsModal.modelsSearchQuery = query;
     renderModelsSection();
-    return {root, summary};
+    return { root, summary };
 }
 
 test("a árvore agrupa por tipo e, dentro dele, por fornecedor", () => {
-    const {root} = render();
+    const { root } = render();
 
     const types = [...root.querySelectorAll(".card > .card-body > button")].map(
         (button) => button.textContent.replace(/\s+/g, " ").trim(),
@@ -95,14 +95,14 @@ test("a árvore agrupa por tipo e, dentro dele, por fornecedor", () => {
 });
 
 test("um tipo sem modelos não desenha uma moldura vazia", () => {
-    const {root} = render();
+    const { root } = render();
 
     assert.equal(root.querySelectorAll(".card").length, 3);
     assert.doesNotMatch(root.innerHTML, /Radar/);
 });
 
 test("um fornecedor que serve dois tipos aparece nos dois, e conta uma vez no resumo", () => {
-    const {root, summary} = render();
+    const { root, summary } = render();
 
     // A MOKO faz gateways e pulseiras: são duas coisas diferentes de suportar, e é por
     // isso que a tabela `supplier_device_types` existe. Dois nós, um fornecedor.
@@ -114,7 +114,7 @@ test("um fornecedor que serve dois tipos aparece nos dois, e conta uma vez no re
 });
 
 test("a folha leva o id do modelo e o nome interno só quando diz algo a mais", () => {
-    const {root} = render();
+    const { root } = render();
 
     const leaves = [...root.querySelectorAll(".catalog-model")];
     assert.equal(leaves.length, 5);
@@ -128,11 +128,11 @@ test("a folha leva o id do modelo e o nome interno só quando diz algo a mais", 
 });
 
 test("a busca achata a árvore e devolve a origem a cada linha", () => {
-    const {root, summary} = render(CATALOG, "moko");
+    const { root, summary } = render(CATALOG, "moko");
 
     assert.equal(root.querySelectorAll(".card").length, 1);
     // Nenhum cabeçalho de grupo: um resultado dentro de um grupo fechado não é resultado.
-    assert.equal(root.querySelectorAll('[data-bs-toggle="collapse"]').length, 0);
+    assert.equal(root.querySelectorAll("[data-bs-toggle=\"collapse\"]").length, 0);
     assert.deepEqual(
         [...root.querySelectorAll(".catalog-model .section-label")].map(
             (label) => label.textContent,
@@ -149,17 +149,17 @@ test("a busca encontra pelo tipo e pelo modelo interno, não só pelo nome comer
 });
 
 test("uma busca sem resultados diz que não encontrou, e não fica em branco", () => {
-    const {root, summary} = render(CATALOG, "nao-existe");
+    const { root, summary } = render(CATALOG, "nao-existe");
 
     assert.match(root.textContent, /Nenhum modelo encontrado/);
     assert.equal(summary.textContent, "Sem resultados");
 });
 
 test("os identificadores de collapse sobrevivem a nomes com espaços", () => {
-    const {root} = render();
+    const { root } = render();
 
     const target = root
-        .querySelector('.tree-row button[data-bs-target]')
+        .querySelector(".tree-row button[data-bs-target]")
         .getAttribute("data-bs-target");
     assert.equal(target, "#catalogSupplier-watch-4p-touch");
     assert.notEqual(root.querySelector(target), null);

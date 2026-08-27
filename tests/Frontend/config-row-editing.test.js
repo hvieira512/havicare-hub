@@ -7,7 +7,7 @@ import {
     appendRepeatRow,
     removeRepeatRow,
 } from "../../src/Dashboard/dashboard/devices/config/row-editing.js";
-import {parseFragment} from "./support/dom.js";
+import { parseFragment } from "./support/dom.js";
 
 /**
  * O motor das linhas repetíveis, nas duas estratégias que ele tem de servir: clonar a última
@@ -21,7 +21,7 @@ const phoneList = (rowCount, limit) =>
     parseFragment(`
         <section data-config-section>
             <div data-repeat-list="numbers" data-repeat-limit="${limit}">
-                ${Array.from({length: rowCount}, (_, index) => `
+                ${Array.from({ length: rowCount }, (_, index) => `
                     <div data-repeat-row="numbers">
                         <select data-phone-country><option value="PT">PT</option><option value="GB">GB</option></select>
                         <input data-phone-local value="91234567${index}">
@@ -34,7 +34,7 @@ const medicationList = (rowCount) =>
     parseFragment(`
         <section data-config-section>
             <div data-repeat-list="wonlexMedicationPlan">
-                ${Array.from({length: rowCount}, () => `
+                ${Array.from({ length: rowCount }, () => `
                     <div data-repeat-row="wonlexMedicationPlan">
                         <span data-medication-plan-number>?</span>
                         <button data-action="removeRepeatRow"></button>
@@ -45,7 +45,7 @@ const medicationList = (rowCount) =>
 const rowsIn = (section, kind) =>
     section.querySelectorAll(`[data-repeat-row="${kind}"]`);
 
-const removeButtonIn = (row) => row.querySelector('[data-action="removeRepeatRow"]');
+const removeButtonIn = (row) => row.querySelector("[data-action=\"removeRepeatRow\"]");
 
 test("clonar: a linha nova sai da última, sem o valor dela", () => {
     const section = phoneList(1, 3);

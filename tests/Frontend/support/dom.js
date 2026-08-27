@@ -1,4 +1,4 @@
-import {JSDOM} from "jsdom";
+import { JSDOM } from "jsdom";
 
 /**
  * Os leitores de configuração percorrem nós de DOM a sério, e por isso testá-los precisa de
@@ -21,6 +21,6 @@ export function configSection(renderConfigInputs, entry, desired = {}, meta = {}
     // O `data-config-protocol` conta: alguns leitores ramificam nele, e uma secção sem ele
     // exercita o caminho errado em silêncio.
     return parseFragment(
-        `<section data-config-input="${input}" data-config-protocol="${meta.protocol ?? ""}" data-config-limit="${entry.limit ?? ""}">${html}</section>`
+        `<section data-config-input="${input}" data-config-protocol="${meta.protocol ?? ""}" data-config-limit="${entry.limit ?? ""}">${html}</section>`,
     ).firstElementChild;
 }

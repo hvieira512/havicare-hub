@@ -1,4 +1,4 @@
-import {ago, esc} from "../format.js";
+import { ago, esc } from "../format.js";
 
 /**
  * O último sinal em que cada lado de uma ligação a um gateway foi ouvido.
@@ -20,7 +20,7 @@ export function linkSignal(linked) {
     const rssiDbm = Number(linked.rssiDbm);
     if (!Number.isFinite(rssiDbm)) return null;
 
-    return {rssiDbm, at: String(linked.signalSeenAt || "")};
+    return { rssiDbm, at: String(linked.signalSeenAt || "") };
 }
 
 /**
@@ -32,15 +32,15 @@ export function linkSignal(linked) {
  * porque isto reporta um estado e não uma série.
  */
 const SIGNAL_BANDS = [
-    {atLeast: -60, label: "Excelente", bars: 4, tone: "success"},
-    {atLeast: -67, label: "Bom", bars: 3, tone: "success"},
-    {atLeast: -70, label: "Razoável", bars: 3, tone: "warning"},
-    {atLeast: -80, label: "Fraco", bars: 2, tone: "warning"},
-    {atLeast: -90, label: "Muito fraco", bars: 1, tone: "danger"},
-    {atLeast: -Infinity, label: "Inutilizável", bars: 0, tone: "danger"},
+    { atLeast: -60, label: "Excelente", bars: 4, tone: "success" },
+    { atLeast: -67, label: "Bom", bars: 3, tone: "success" },
+    { atLeast: -70, label: "Razoável", bars: 3, tone: "warning" },
+    { atLeast: -80, label: "Fraco", bars: 2, tone: "warning" },
+    { atLeast: -90, label: "Muito fraco", bars: 1, tone: "danger" },
+    { atLeast: -Infinity, label: "Inutilizável", bars: 0, tone: "danger" },
 ];
 
-const NO_SIGNAL = {label: "Sem sinal", bars: 0, tone: "secondary"};
+const NO_SIGNAL = { label: "Sem sinal", bars: 0, tone: "secondary" };
 
 /** A banda em que uma leitura cai, ou a banda do "nunca ouvido" quando não há leitura. */
 export function signalBand(signal) {

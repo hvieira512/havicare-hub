@@ -96,7 +96,7 @@ export function readContacts(section) {
     const contacts = [];
     let sawIncompleteRow = false;
 
-    for (const row of section.querySelectorAll('[data-repeat-row="contacts"]')) {
+    for (const row of section.querySelectorAll("[data-repeat-row=\"contacts\"]")) {
         const name = readContactName(row, nameMaxLength);
         const phone = readContactPhone(row);
         if (name === "" && phone === "") {
@@ -110,7 +110,7 @@ export function readContacts(section) {
             continue;
         }
 
-        contacts.push({name, phone});
+        contacts.push({ name, phone });
     }
 
     if (phonebookConstraints.allowPartialRows && contacts.length === 0 && sawIncompleteRow) {
@@ -135,7 +135,7 @@ function findDuplicateValues(values) {
 }
 
 function readContactName(row, maxLength) {
-    const input = row.querySelector('[data-repeat-field="name"]');
+    const input = row.querySelector("[data-repeat-field=\"name\"]");
     const value = String(input?.value || "").trim();
     if (maxLength > 0 && unicodeLength(value) > maxLength) {
         throw new Error(`O nome deve ter no máximo ${maxLength} caracteres`);
@@ -146,7 +146,7 @@ function readContactName(row, maxLength) {
 
 function readContactPhone(row) {
     return normalizePhoneControl(
-        row.querySelector('[data-phone-control][data-repeat-field="phone"]'),
+        row.querySelector("[data-phone-control][data-repeat-field=\"phone\"]"),
     );
 }
 
@@ -156,23 +156,23 @@ function unicodeLength(value) {
 
 export function readAlarmClock(section) {
     const items = Array.from(
-        section.querySelectorAll('[data-repeat-row="alarm_clock"]'),
+        section.querySelectorAll("[data-repeat-row=\"alarm_clock\"]"),
     )
         .map((row) => {
             const recurrenceKind = normalizeAlarmClockRecurrenceKind(
-                row.querySelector('[data-alarm-clock-field="recurrenceKind"]:checked')?.value || "once",
+                row.querySelector("[data-alarm-clock-field=\"recurrenceKind\"]:checked")?.value || "once",
             );
             const item = {
                 time: String(
-                    row.querySelector('[data-alarm-clock-field="time"]')?.value || "",
+                    row.querySelector("[data-alarm-clock-field=\"time\"]")?.value || "",
                 ).trim(),
                 enabled:
-                    row.querySelector('[data-alarm-clock-field="enabled"]')?.checked ||
+                    row.querySelector("[data-alarm-clock-field=\"enabled\"]")?.checked ||
                     false,
-                recurrence: {kind: recurrenceKind},
+                recurrence: { kind: recurrenceKind },
             };
 
-            const labelField = row.querySelector('[data-alarm-clock-field="label"]');
+            const labelField = row.querySelector("[data-alarm-clock-field=\"label\"]");
             if (labelField) {
                 const label = String(labelField.value || "").trim();
                 if (label !== "") {
@@ -180,7 +180,7 @@ export function readAlarmClock(section) {
                 }
             }
 
-            const urlField = row.querySelector('[data-alarm-clock-field="url"]');
+            const urlField = row.querySelector("[data-alarm-clock-field=\"url\"]");
             if (urlField) {
                 const url = String(urlField.value || "").trim();
                 if (url !== "") {
@@ -188,7 +188,7 @@ export function readAlarmClock(section) {
                 }
             }
 
-            const typeField = row.querySelector('[data-alarm-clock-field="type"]:checked');
+            const typeField = row.querySelector("[data-alarm-clock-field=\"type\"]:checked");
             if (typeField) {
                 const type = parseInt(String(typeField.value || "1"), 10);
                 if (Number.isFinite(type)) {
@@ -208,7 +208,7 @@ export function readAlarmClock(section) {
         })
         .filter((item) => item.time !== "");
 
-    return {items};
+    return { items };
 }
 
 export function readTakePills(section) {
@@ -221,30 +221,30 @@ export function readTakePills(section) {
     const voiceMimeType = readText(section, "voiceMimeType");
 
     const reminderSettings = groups.map((group) => {
-            const frequency =
-                parseInt(
-                    String(
-                        group.querySelector(
-                            '[data-takepills-field="reminderFrequency"]',
-                        )?.value ?? "1",
-                    ),
-                    10,
-                ) || 1;
-            return {
-                time:
+        const frequency =
+            parseInt(
+                String(
                     group.querySelector(
-                        '[data-takepills-field="reminderTime"]',
+                        "[data-takepills-field=\"reminderFrequency\"]",
+                    )?.value ?? "1",
+                ),
+                10,
+            ) || 1;
+        return {
+            time:
+                    group.querySelector(
+                        "[data-takepills-field=\"reminderTime\"]",
                     )?.value || "",
-                enabled:
+            enabled:
                     group.querySelector(
-                        '[data-takepills-field="reminderEnabled"]',
+                        "[data-takepills-field=\"reminderEnabled\"]",
                     )?.checked || false,
-                frequency,
-                custom:
+            frequency,
+            custom:
                     frequency === 3
                         ? group.querySelector(
-                              '[data-takepills-field="reminderCustom"]',
-                          )?.value || ""
+                            "[data-takepills-field=\"reminderCustom\"]",
+                        )?.value || ""
                         : "",
         };
     });
@@ -271,15 +271,15 @@ export function readFourPTouchAlarms(section) {
     return Array.from(section.querySelectorAll("[data-fourptouch-alarm-row]"))
         .map((row) => {
             const mode = parseInt(
-                String(row.querySelector('[data-fourptouch-field="mode"]')?.value || "1"),
+                String(row.querySelector("[data-fourptouch-field=\"mode\"]")?.value || "1"),
                 10,
             ) || 1;
             const alarm = {
                 time: formatFourPTouchAlarmTime(
-                    row.querySelector('[data-fourptouch-field="time"]')?.value || "",
+                    row.querySelector("[data-fourptouch-field=\"time\"]")?.value || "",
                 ),
                 enabled:
-                    row.querySelector('[data-fourptouch-field="enabled"]')?.checked ||
+                    row.querySelector("[data-fourptouch-field=\"enabled\"]")?.checked ||
                     false,
                 mode,
                 custom: mode === 3 ? readFourPTouchAlarmDays(row) : "",
@@ -303,7 +303,7 @@ export function jsonInput(desired) {
 }
 
 export function readJson(section) {
-    const textarea = section.querySelector('[data-config-field="json"]');
+    const textarea = section.querySelector("[data-config-field=\"json\"]");
     if (!textarea) {
         return {};
     }

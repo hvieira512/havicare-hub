@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {createWizard} from "../../src/Dashboard/dashboard/devices/wizard.js";
+import { createWizard } from "../../src/Dashboard/dashboard/devices/wizard.js";
 
 /** O motor do assistente, sem DOM: é lógica pura e testa-se como tal. */
 
@@ -16,14 +16,14 @@ function wizard() {
                 step: 1,
                 clears: ["model", "identity"],
                 isAnswered: (a) => Boolean(a.type),
-                badges: (a) => [{label: "Tipo", value: a.type}],
+                badges: (a) => [{ label: "Tipo", value: a.type }],
             },
             {
                 key: "model",
                 step: 1,
                 clears: ["identity"],
                 isAnswered: (a) => Boolean(a.model),
-                badges: (a) => [{label: "Modelo", value: a.model}],
+                badges: (a) => [{ label: "Modelo", value: a.model }],
             },
             {
                 key: "owner",
@@ -31,8 +31,8 @@ function wizard() {
                 clears: [],
                 isAnswered: (a) => Boolean(a.owner),
                 badges: (a) => [
-                    {label: "Empresa", value: a.owner.company},
-                    {label: "Licença", value: a.owner.license},
+                    { label: "Empresa", value: a.owner.company },
+                    { label: "Licença", value: a.owner.license },
                 ],
             },
             {
@@ -61,7 +61,7 @@ test("responder tudo deixa de ter pergunta activa", () => {
     const w = wizard();
     w.answer("type", "diaper_sensor");
     w.answer("model", "MECS-PRO");
-    w.answer("owner", {company: "hitcare", license: "1001"});
+    w.answer("owner", { company: "hitcare", license: "1001" });
     w.advance();
     w.answer("identity", "eec5000202f9");
 
@@ -77,7 +77,7 @@ test("não avança com o passo incompleto", () => {
     w.answer("model", "MECS-PRO");
     assert.equal(w.canAdvance(), false, "falta a empresa");
 
-    w.answer("owner", {company: "hitcare", license: "1001"});
+    w.answer("owner", { company: "hitcare", license: "1001" });
     assert.equal(w.canAdvance(), true);
 });
 
@@ -85,7 +85,7 @@ test("não avança para além do último passo", () => {
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
-    w.answer("owner", {company: "c", license: "l"});
+    w.answer("owner", { company: "c", license: "l" });
     w.advance();
     w.answer("identity", "i");
 
@@ -100,7 +100,7 @@ test("o passo só muda ao avançar, e não ao responder", () => {
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
-    w.answer("owner", {company: "c", license: "l"});
+    w.answer("owner", { company: "c", license: "l" });
 
     assert.equal(w.step(), 1, "responder nao avanca");
     assert.equal(w.current(), null, "mas o passo esta completo");
@@ -115,7 +115,7 @@ test("a pergunta activa nunca e de outro passo", () => {
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
-    w.answer("owner", {company: "c", license: "l"});
+    w.answer("owner", { company: "c", license: "l" });
 
     // A identidade está sem resposta, mas é do passo 2 e o assistente está no 1.
     assert.equal(w.current(), null);
@@ -125,7 +125,7 @@ test("voltar atrás e depois avançar preserva as respostas", () => {
     const w = wizard();
     w.answer("type", "x");
     w.answer("model", "y");
-    w.answer("owner", {company: "c", license: "l"});
+    w.answer("owner", { company: "c", license: "l" });
     w.advance();
     w.answer("identity", "i");
 
@@ -168,7 +168,7 @@ test("reabrir uma resposta de um passo anterior recua o passo", () => {
     const w = wizard();
     w.answer("type", "diaper_sensor");
     w.answer("model", "MECS-PRO");
-    w.answer("owner", {company: "hitcare", license: "1001"});
+    w.answer("owner", { company: "hitcare", license: "1001" });
     w.advance();
     assert.equal(w.step(), 2);
 
@@ -184,26 +184,26 @@ test("reabrir uma resposta apaga-a e o que dela dependia", () => {
     const w = wizard();
     w.answer("type", "diaper_sensor");
     w.answer("model", "MECS-PRO");
-    w.answer("owner", {company: "hitcare", license: "1001"});
+    w.answer("owner", { company: "hitcare", license: "1001" });
 
     w.reopen("model");
 
     assert.equal(w.current().key, "model");
     assert.equal(w.answers().type, "diaper_sensor", "a anterior fica");
-    assert.deepEqual(w.answers().owner, {company: "hitcare", license: "1001"});
+    assert.deepEqual(w.answers().owner, { company: "hitcare", license: "1001" });
 });
 
 test("as badges saem na ordem das perguntas, e uma pergunta pode dar duas", () => {
     const w = wizard();
     w.answer("type", "Medidor de fraldas");
     w.answer("model", "MECS Pro");
-    w.answer("owner", {company: "hitcare", license: "1001"});
+    w.answer("owner", { company: "hitcare", license: "1001" });
 
     assert.deepEqual(w.badges(), [
-        {key: "type", label: "Tipo", value: "Medidor de fraldas"},
-        {key: "model", label: "Modelo", value: "MECS Pro"},
-        {key: "owner", label: "Empresa", value: "hitcare"},
-        {key: "owner", label: "Licença", value: "1001"},
+        { key: "type", label: "Tipo", value: "Medidor de fraldas" },
+        { key: "model", label: "Modelo", value: "MECS Pro" },
+        { key: "owner", label: "Empresa", value: "hitcare" },
+        { key: "owner", label: "Licença", value: "1001" },
     ]);
 });
 
@@ -242,7 +242,7 @@ test("o passo 1 completa-se com as suas três perguntas e não com a do passo 2"
     w.answer("model", "y");
     assert.equal(w.isStepComplete(1), false);
 
-    w.answer("owner", {company: "c", license: "l"});
+    w.answer("owner", { company: "c", license: "l" });
     assert.equal(w.isStepComplete(1), true);
     assert.equal(w.isStepComplete(2), false);
 });
@@ -300,7 +300,7 @@ test("responder à última pergunta do passo avança-o", () => {
     w.answerAndAdvance("model", "y");
     assert.equal(w.step(), 1);
 
-    w.answerAndAdvance("owner", {company: "c", license: "l"});
+    w.answerAndAdvance("owner", { company: "c", license: "l" });
     assert.equal(w.step(), 2, "a ultima do passo 1 leva ao passo 2");
     assert.equal(w.current().key, "identity");
 });
@@ -350,7 +350,7 @@ test("o Anterior leva a um passo completo e não ressalta para a frente", () => 
     const w = wizard();
     w.answerAndAdvance("type", "x");
     w.answerAndAdvance("model", "y");
-    w.answerAndAdvance("owner", {company: "c", license: "l"});
+    w.answerAndAdvance("owner", { company: "c", license: "l" });
     assert.equal(w.step(), 2);
 
     w.back();
@@ -371,7 +371,7 @@ test("responder a tudo e avançar enquanto não há pergunta leva ao último pas
 
     w.answer("type", "radar");
     w.answer("model", "RD-V1");
-    w.answer("owner", {company: "hitcare", license: "2004"});
+    w.answer("owner", { company: "hitcare", license: "2004" });
     w.answer("identity", "594B3CB301AB");
 
     assert.equal(w.step(), 1, "responder nao avanca por si");

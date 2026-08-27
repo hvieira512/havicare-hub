@@ -5,12 +5,12 @@ import {
     getSuppliers as apiGetSuppliers,
     saveModel as apiSaveModel,
 } from "../../api/index.js";
-import {ensureModelTemplate} from "../../capability-catalog.js";
-import {state} from "../../state.js";
-import {esc} from "../../format.js";
-import {apiError, confirmDestructive, toast} from "../../dialogs.js";
-import {clearInvalid, markInvalid} from "../../validation.js";
-import {modelPreviewHtml, sectionStrip} from "../../widgets.js";
+import { ensureModelTemplate } from "../../capability-catalog.js";
+import { state } from "../../state.js";
+import { esc } from "../../format.js";
+import { apiError, confirmDestructive, toast } from "../../dialogs.js";
+import { clearInvalid, markInvalid } from "../../validation.js";
+import { modelPreviewHtml, sectionStrip } from "../../widgets.js";
 import {
     capabilitiesGroupedBySection,
     capabilityLabelByKey,
@@ -20,9 +20,9 @@ import {
     modelDeviceType,
     modelInternalName,
 } from "../../domain.js";
-import {CAPABILITY_SECTION_ICONS, loadCapabilityCatalog} from "../capabilities.js";
-import {getSettingsModelsRuntime, modelsCarousel} from "./shell.js";
-import {backToModelList} from "./list.js";
+import { CAPABILITY_SECTION_ICONS, loadCapabilityCatalog } from "../capabilities.js";
+import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
+import { backToModelList } from "./list.js";
 
 /**
  * A ficha de um modelo: o terceiro slide do carrossel do catálogo.
@@ -36,7 +36,7 @@ import {backToModelList} from "./list.js";
  */
 
 async function openModelDetail(modelId) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const response = await apiGetModel(modelId);
     const model = response.data || response;
     await loadCapabilityCatalog(
@@ -92,7 +92,7 @@ async function openModelDetail(modelId) {
 /* ---------- a identidade ---------- */
 
 function renderModelDetailInfo(model) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const label = modelCommercialName(model);
     els.modelDetailImage.innerHTML = modelPreviewHtml(model, label);
     els.modelDetailName.textContent = label;
@@ -133,7 +133,7 @@ function modelDetailSuppliers() {
 
 async function ensureModelDetailSuppliers() {
     if ((state.modelModalSuppliers || []).length > 0) return;
-    const response = await apiGetSuppliers({limit: 200});
+    const response = await apiGetSuppliers({ limit: 200 });
     state.modelModalSuppliers = response?.error ? [] : response.data || [];
 }
 
@@ -149,7 +149,7 @@ function renderModelDetailSelect(select, options, selected) {
 }
 
 function readModelDetailFields() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     return {
         commercialName: String(els.modelDetailCommercialName?.value || "").trim(),
         internalModel: String(els.modelDetailInternalModel?.value || "").trim(),
@@ -160,7 +160,7 @@ function readModelDetailFields() {
 
 /** O "Guardar" aparece por diferença: sem alteração não há botão para premir. */
 function syncModelDetailDirty() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const pristine = state.settingsModal.modelDetailPristine;
     if (!pristine || !els.modelDetailSaveBtn) return;
     const current = readModelDetailFields();
@@ -172,7 +172,7 @@ function syncModelDetailDirty() {
 }
 
 function resetModelDetailFields() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const pristine = state.settingsModal.modelDetailPristine;
     if (!pristine) return;
     clearInvalid(els.modelDetailFields);
@@ -184,7 +184,7 @@ function resetModelDetailFields() {
 }
 
 async function saveModelDetail() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
     const fields = readModelDetailFields();
@@ -238,23 +238,23 @@ async function saveModelDetail() {
  * e não depois de se premir. O total vem da paginação do endpoint de dispositivos.
  */
 async function renderModelDetailDeleteHint(model) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     if (!els.modelDetailDeleteHint) return;
     const internal = modelInternalName(model);
-    const result = await apiGetDevices({model: internal, limit: 1});
+    const result = await apiGetDevices({ model: internal, limit: 1 });
     const total = result?.error ? null : (result?.pagination?.total ?? null);
     els.modelDetailDeleteHint.textContent = total === null
         ? "Os dispositivos que o usam ficam sem template de capacidades."
         : total === 0
             ? "Nenhum dispositivo usa este modelo."
-            : `${total} ${total === 1 ? "dispositivo usa" : "dispositivos usam"} o ${internal}.`
-              + " Apagar o modelo deixa-os sem template de capacidades.";
+            : `${total} ${total === 1 ? "dispositivo usa" : "dispositivos usam"} o ${internal}.` +
+                " Apagar o modelo deixa-os sem template de capacidades.";
 }
 
 async function deleteCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
-    const {isConfirmed} = await confirmDestructive(
+    const { isConfirmed } = await confirmDestructive(
         `Tem a certeza que deseja apagar o modelo "${modelCommercialName(model)}"?`,
     );
     if (!isConfirmed) return;
@@ -319,7 +319,7 @@ function capabilitySections(enabled) {
  * chama redesenha.
  */
 function syncCapabilitySwitches(feature) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     const enabled = new Set(
         state.settingsModal.capabilityEnabledCapabilities || [],
@@ -343,10 +343,10 @@ function syncCapabilitySwitches(feature) {
     const countOf = (entries) => entries.filter((key) => enabled.has(key)).length;
 
     els.capabilitySummary.textContent =
-        `${sections.reduce((total, item) => total + countOf(item.entries), 0)}`
-        + `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
+        `${sections.reduce((total, item) => total + countOf(item.entries), 0)}` +
+        `/${sections.reduce((total, item) => total + item.entries.length, 0)} ativos`;
 
-    for (const {section, entries} of sections) {
+    for (const { section, entries } of sections) {
         const badge = els.capabilitySectionNav.querySelector(
             `[data-section="${CSS.escape(section)}"] [data-section-count]`,
         );
@@ -368,7 +368,7 @@ function capabilityRowsDependOnSelection() {
 }
 
 function renderCapabilitiesSection() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const model = state.settingsModal.currentCapabilitiesModel;
     const enabled = new Set(
         state.settingsModal.capabilityEnabledCapabilities || [],

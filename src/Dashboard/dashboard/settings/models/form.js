@@ -1,18 +1,18 @@
 import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
-import {ensureModelTemplate} from "../../capability-catalog.js";
-import {state} from "../../state.js";
-import {esc} from "../../format.js";
-import {apiError, toast} from "../../dialogs.js";
-import {clearInvalid, markInvalid} from "../../validation.js";
-import {renderButtonGroup, renderDeviceTypeTiles} from "../../widgets.js";
+import { ensureModelTemplate } from "../../capability-catalog.js";
+import { state } from "../../state.js";
+import { esc } from "../../format.js";
+import { apiError, toast } from "../../dialogs.js";
+import { clearInvalid, markInvalid } from "../../validation.js";
+import { renderButtonGroup, renderDeviceTypeTiles } from "../../widgets.js";
 import {
     deviceTypeLabel,
     deviceTypeOptions,
     normalizeDeviceType,
 } from "../../domain.js";
-import {getSettingsModelsRuntime} from "./shell.js";
+import { getSettingsModelsRuntime } from "./shell.js";
 import {
     backToModelList,
     loadSettingsModelFilters,
@@ -51,7 +51,7 @@ function modelSupplierEntry(deviceType, supplierId) {
 }
 
 function renderModelSupplierButtons(selectedSupplierId) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const deviceType = normalizeDeviceType(
         els.modelForm?.dataset.deviceType || "watch",
     );
@@ -64,7 +64,7 @@ function renderModelSupplierButtons(selectedSupplierId) {
 }
 
 function renderModelDeviceTypeButtons(selectedDeviceType) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     renderDeviceTypeTiles(els.modelDeviceTypeButtons, deviceTypeOptions, {
         selected: selectedDeviceType,
         action: "selectModelDeviceType",
@@ -79,7 +79,7 @@ function revokeModelPreviewUrl() {
 }
 
 function updateModelProtocolAndPreview() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const supplier = els.modelForm.dataset.supplier || "";
     const internalModel = els.modelInternalModel.value.trim();
     const commercialName = els.modelCommercialName.value.trim();
@@ -94,7 +94,7 @@ function updateModelProtocolAndPreview() {
 }
 
 function resetModelForm(selectedSupplierId = "") {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelForm.reset();
     clearInvalid(els.modelForm);
@@ -103,7 +103,7 @@ function resetModelForm(selectedSupplierId = "") {
     els.modelForm.dataset.deviceType = "watch";
     state.modelModal.enabledCapabilities = [];
     els.saveModelBtn.innerHTML =
-        '<i class="fa-solid fa-floppy-disk me-1"></i>Guardar';
+        "<i class=\"fa-solid fa-floppy-disk me-1\"></i>Guardar";
     els.modelImage.value = "";
     if (els.modelTemplateSummary) {
         els.modelTemplateSummary.textContent =
@@ -128,7 +128,7 @@ function resetModelForm(selectedSupplierId = "") {
 }
 
 function selectModelSupplier(supplierId) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     revokeModelPreviewUrl();
     els.modelImage.value = "";
     const deviceType = normalizeDeviceType(
@@ -145,7 +145,7 @@ function selectModelSupplier(supplierId) {
 }
 
 function selectModelDeviceType(deviceType) {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     els.modelForm.dataset.deviceType = normalizeDeviceType(deviceType);
     state.modelModal.enabledCapabilities = [];
     renderModelDeviceTypeButtons(els.modelForm.dataset.deviceType);
@@ -167,7 +167,7 @@ async function openNewModelForm() {
  * num que já existe as capacidades são as dele, e vivem na ficha.
  */
 async function refreshNewModelCapabilityTemplate() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     if (!els?.modelForm || els.modelForm.dataset.modelId) {
         return;
     }
@@ -224,7 +224,7 @@ async function refreshNewModelCapabilityTemplate() {
 }
 
 async function saveModel() {
-    const {els} = getSettingsModelsRuntime();
+    const { els } = getSettingsModelsRuntime();
     const supplierId = parseInt(els.modelForm.dataset.supplierId || "0");
     const internalModel = els.modelInternalModel.value.trim();
     const commercialName = els.modelCommercialName.value.trim();

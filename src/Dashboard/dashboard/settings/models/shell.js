@@ -1,4 +1,4 @@
-import {state} from "../../state.js";
+import { state } from "../../state.js";
 
 /**
  * O contexto e a navegação do separador do catálogo: três slides de um carrossel -- a lista,
@@ -25,7 +25,7 @@ export function modelsCarousel() {
     if (!state.settingsModal.modelsCarousel && els?.modelsCarousel) {
         state.settingsModal.modelsCarousel = new bootstrap.Carousel(
             els.modelsCarousel,
-            {interval: false, wrap: false, touch: false},
+            { interval: false, wrap: false, touch: false },
         );
     }
 

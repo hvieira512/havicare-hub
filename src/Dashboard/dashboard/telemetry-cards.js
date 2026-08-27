@@ -140,8 +140,8 @@ const UPLINK_CARD_RENDERERS = {
             data.percent != null
                 ? `${data.percent}%`
                 : data.voltageMv != null
-                  ? `${data.voltageMv} mV`
-                  : "-",
+                    ? `${data.voltageMv} mV`
+                    : "-",
         details: batteryDetails(data),
     }),
     connectivity: (data) => ({
@@ -293,22 +293,22 @@ export function telemetryCard({
     const toneClass = tone ? ` telemetry-card-tone-${esc(tone)}` : "";
     const attrs = clickable
         ? ` type="button" class="card h-100 telemetry-card-action text-start${toneClass}"` +
-          ` data-action="requestFeature" data-feature="${esc(feature)}"` +
-          `${pending ? " disabled" : ""}`
+        ` data-action="requestFeature" data-feature="${esc(feature)}"` +
+        `${pending ? " disabled" : ""}`
         : ` class="card h-100${toneClass}"`;
     // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
         ? stateBadge(
-            stateLabel,
-            stateTone || (pending ? "config-state-warning" : "config-state-secondary"),
-            "align-self-start",
-        )
+                stateLabel,
+                stateTone || (pending ? "config-state-warning" : "config-state-secondary"),
+                "align-self-start",
+            )
         : "";
     // Em repouso o avião de papel diz que o mosaico se pode pedir; a correr, a pastilha
     // diz em que estado está. Um mosaico que não se pode pedir não tem nada ali.
     const requestHint =
         clickable && !stateLabel
-            ? '<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-paper-plane"></i></span>'
+            ? "<span class=\"telemetry-card-hint flex-shrink-0\" aria-hidden=\"true\"><i class=\"fa-solid fa-paper-plane\"></i></span>"
             : "";
 
     // Fora da linha do ícone, para ter a largura toda do cartão.
@@ -365,7 +365,7 @@ export function uplinkCardContent(type, data, meta = {}) {
         details: compactDetails(data, Object.keys(data).slice(0, 4)),
     };
 
-    return {icon: cardIcon(type), ...rendered};
+    return { icon: cardIcon(type), ...rendered };
 }
 
 // Uma pulseira W6B diz que tipo de toque foi; um pager NCS não.
@@ -877,8 +877,8 @@ export function renderRequestCardShell(
 
     const lastContent = lastTelemetry
         ? uplinkCardContent(type, lastData, {
-              occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
-          })
+                occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
+            })
         : null;
     // Sem leitura não há valor: o título já diz o nome da capacidade.
     const lastValue = lastContent ? lastContent.value : "";
@@ -893,10 +893,10 @@ export function renderRequestCardShell(
     // A pastilha segue o estado do pedido, e não a chamada HTTP que o pôs na fila.
     const requestState = requestable
         ? latestRequestState(
-              type,
-              commands,
-              lastTelemetry ? eventTime(lastTelemetry) : 0,
-          )
+                type,
+                commands,
+                lastTelemetry ? eventTime(lastTelemetry) : 0,
+            )
         : null;
 
     return telemetryCard({
@@ -1030,7 +1030,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
 <i class="fa-solid ${icon} ${called ? "text-danger" : "text-body-secondary"}" style="width:1.25rem;text-align:center;flex-shrink:0;"></i>
 <div class="min-w-0">
 <div class="fw-semibold text-truncate">${label}</div>
-<div class="small text-body-secondary">${called ? esc(ago(occurredAt)) : '<span class="help-call-never">nunca</span>'}</div>
+<div class="small text-body-secondary">${called ? esc(ago(occurredAt)) : "<span class=\"help-call-never\">nunca</span>"}</div>
 </div>
 </div>
 </div>`;

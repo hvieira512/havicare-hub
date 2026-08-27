@@ -6,8 +6,8 @@ import {
     modelPreviewHtml,
 } from "../../src/Dashboard/dashboard/widgets.js";
 
-const withImage = {commercialName: "HW20PRO", image: "/assets/models/hw20pro.png"};
-const withoutImage = {commercialName: "HW20PRO"};
+const withImage = { commercialName: "HW20PRO", image: "/assets/models/hw20pro.png" };
+const withoutImage = { commercialName: "HW20PRO" };
 
 test("a miniatura leva o tamanho que lhe pedem, nos dois estados", () => {
     assert.match(modelImageHtml(withImage, 32), /style="width:32px;height:32px;"/);
@@ -33,13 +33,13 @@ test("a pré-visualização grande não fixa tamanho: quem manda é o contentor"
 test("sem imagem, a pré-visualização grande é o ícone com a etiqueta", () => {
     assert.equal(
         modelPreviewHtml(withoutImage, "HW20PRO"),
-        '<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">HW20PRO</div></div>',
+        "<div class=\"text-center text-secondary\"><i class=\"fa-solid fa-microchip fs-1 opacity-50\"></i><div class=\"small mt-2\">HW20PRO</div></div>",
     );
 });
 
 test("a etiqueta escapa o que vem do modelo", () => {
     assert.match(
-        modelPreviewHtml({}, '<script>alert("x")</script>'),
+        modelPreviewHtml({}, "<script>alert(\"x\")</script>"),
         /&lt;script&gt;/,
     );
 });

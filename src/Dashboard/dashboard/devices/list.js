@@ -3,18 +3,18 @@ import {
     getDevices as apiGetDevices,
     getProtocols as apiGetProtocols,
 } from "../api/index.js";
-import {getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels} from "../api/models.js";
-import {ensureCapabilityCatalog} from "../capability-catalog.js";
-import {ensureLicensesLoaded} from "../licenses.js";
-import {state, clearSelection, selectImei} from "../state.js";
-import {esc} from "../format.js";
+import { getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels } from "../api/models.js";
+import { ensureCapabilityCatalog } from "../capability-catalog.js";
+import { ensureLicensesLoaded } from "../licenses.js";
+import { state, clearSelection, selectImei } from "../state.js";
+import { esc } from "../format.js";
 import {
     deviceLicenseHtml,
     emptyPanel,
     onlineBadge,
     renderDeviceTypeTiles,
 } from "../widgets.js";
-import {renderPagination, resolvePaginationPage} from "../pagination.js";
+import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import {
     companyLabel,
     deviceTypeLabel,
@@ -29,7 +29,7 @@ import {
     renderSelection as renderSelectionDetail,
     saveSelectedDeviceToStorage,
 } from "./detail.js";
-import {connectDeviceStream, disconnectDeviceStream} from "./stream.js";
+import { connectDeviceStream, disconnectDeviceStream } from "./stream.js";
 
 /**
  * A coluna da esquerda: a lista de dispositivos, a sua paginação e busca, o modal de
@@ -70,7 +70,7 @@ async function loadSummary() {
 }
 
 async function fetchSummary() {
-    const {online} = state.deviceFilters;
+    const { online } = state.deviceFilters;
     const [devicesResponse] = await Promise.all([
         apiGetDevices({
             page: state.deviceListPage,
@@ -104,9 +104,9 @@ async function fetchSummary() {
             deviceType: [],
             supplier: [],
             model: [],
-            license: {companies: [], none: 0},
+            license: { companies: [], none: 0 },
         },
-        deviceTotals: devicesResponse.summary || {total: 0, online: 0},
+        deviceTotals: devicesResponse.summary || { total: 0, online: 0 },
     };
     state.deviceListPageSize =
         state.summary.devicePagination.limit || state.deviceListPageSize;
@@ -118,7 +118,6 @@ async function fetchSummary() {
         renderSelectionDetail();
     }
 }
-
 
 function flattenDeviceTypeSuppliersModels(groups = []) {
     const models = [];
@@ -190,7 +189,7 @@ async function openDeviceSelector() {
  * sobre a lista toda.
  */
 function renderDeviceSelectorSkeleton() {
-    const repeat = (count, markup) => Array.from({length: count}, () => markup).join("");
+    const repeat = (count, markup) => Array.from({ length: count }, () => markup).join("");
     const row = `
         <div class="device-card device-card-skeleton" aria-hidden="true">
         <span class="device-card-thumb placeholder"></span>
@@ -249,7 +248,7 @@ function renderDeviceSelector() {
 
 function renderDeviceSelectorSummary() {
     if (!els.deviceSelectorSummary) return;
-    const {total, online} = state.summary.deviceTotals || {total: 0, online: 0};
+    const { total, online } = state.summary.deviceTotals || { total: 0, online: 0 };
     els.deviceSelectorSummary.textContent = total
         ? `${total} ${total === 1 ? "dispositivo" : "dispositivos"} · ${online} ligado${online === 1 ? "" : "s"}`
         : "";
@@ -264,7 +263,7 @@ function renderDeviceCard(device) {
     const selected = state.selectedImei === device.imei;
     const image = device.image
         ? `<img src="${esc(device.image)}" alt="${esc(device.model || device.imei)}">`
-        : '<i class="fa-solid fa-microchip"></i>';
+        : "<i class=\"fa-solid fa-microchip\"></i>";
     const meta = [
         deviceTypeLabel(normalizeDeviceType(device.deviceType)),
         [device.supplier, device.model].filter(Boolean).join(" "),
@@ -274,7 +273,7 @@ function renderDeviceCard(device) {
 
     return `
         <button type="button" class="device-card${selected ? " selected" : ""}${device.online ? "" : " offline"}"
-            data-imei="${esc(device.imei)}" data-action="select"${selected ? ' aria-current="true"' : ""}>
+            data-imei="${esc(device.imei)}" data-action="select"${selected ? " aria-current=\"true\"" : ""}>
         <span class="device-card-thumb">${image}</span>
         ${onlineBadge(device.online)}
         <span class="device-card-identity">
@@ -342,21 +341,21 @@ function renderFilterOptionList(rootEl, key, options, labelForValue, search = ""
 
     rootEl.innerHTML = visible.length
         ? visible
-              .map((option) => {
-                  const value = String(option.value);
-                  return filterOptionMarkup({
-                      key,
-                      value,
-                      label: labelForValue(value),
-                      count: option.count,
-                      selected: selected.includes(value),
-                  });
-              })
-              .join("")
+                .map((option) => {
+                    const value = String(option.value);
+                    return filterOptionMarkup({
+                        key,
+                        value,
+                        label: labelForValue(value),
+                        count: option.count,
+                        selected: selected.includes(value),
+                    });
+                })
+                .join("")
         : `<div class="small text-secondary px-1 py-2">Nada corresponde à procura.</div>`;
 }
 
-function filterOptionMarkup({key, value, label, count, selected, partial = false, nested = false}) {
+function filterOptionMarkup({ key, value, label, count, selected, partial = false, nested = false }) {
     const classes = [
         "filter-option",
         nested ? "filter-option-nested" : "",
@@ -383,7 +382,7 @@ function filterOptionMarkup({key, value, label, count, selected, partial = false
  * fim ficaria atrás de uma lista que pode crescer.
  */
 function renderDeviceLicenseFilter() {
-    const tree = state.summary.deviceFilterCounts?.license || {companies: [], none: 0};
+    const tree = state.summary.deviceFilterCounts?.license || { companies: [], none: 0 };
     const selected = state.deviceFilters.license;
     const rows = [];
 
@@ -443,7 +442,7 @@ function renderDeviceLicenseFilter() {
 
     els.deviceLicenseFilter.innerHTML = rows.length
         ? rows.join("")
-        : '<div class="small text-secondary px-1 py-2">Não há licenças para mostrar.</div>';
+        : "<div class=\"small text-secondary px-1 py-2\">Não há licenças para mostrar.</div>";
 }
 
 function renderDeviceFilterControls() {
@@ -451,7 +450,7 @@ function renderDeviceFilterControls() {
         deviceType: [],
         supplier: [],
         model: [],
-        license: {companies: [], none: 0},
+        license: { companies: [], none: 0 },
     };
 
     renderDeviceTypeFilter();
@@ -473,8 +472,8 @@ function renderDeviceFilterControls() {
     if (els.deviceModelFilterSearch) {
         els.deviceModelFilterSearch.value = state.deviceModelFilterSearch;
     }
-    for (const input of document.querySelectorAll('input[name="deviceOnlineFilter"]')) {
-        const {online} = state.deviceFilters;
+    for (const input of document.querySelectorAll("input[name=\"deviceOnlineFilter\"]")) {
+        const { online } = state.deviceFilters;
         const value = online === null ? "all" : online ? "online" : "offline";
         input.checked = input.value === value;
     }

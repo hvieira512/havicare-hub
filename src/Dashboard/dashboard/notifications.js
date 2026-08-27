@@ -3,8 +3,8 @@ import {
     getNotifications,
     markNotificationsRead,
 } from "./api/index.js";
-import {ago, esc} from "./format.js";
-import {toast} from "./dialogs.js";
+import { ago, esc } from "./format.js";
+import { toast } from "./dialogs.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -25,7 +25,7 @@ const renderBadge = (count) => {
 const render = () => {
     if (notifications.length === 0) {
         elements.list.innerHTML =
-            '<div class="list-group-item text-center text-secondary small p-4">Sem notificações.</div>';
+            "<div class=\"list-group-item text-center text-secondary small p-4\">Sem notificações.</div>";
         return;
     }
 
@@ -70,8 +70,8 @@ const render = () => {
 
 const load = async () => {
     if (
-        document.body.dataset.dashboardAuthRequired === "true"
-        && !window.hubDashboardApiToken?.access_token
+        document.body.dataset.dashboardAuthRequired === "true" &&
+        !window.hubDashboardApiToken?.access_token
     ) {
         return false;
     }
@@ -80,7 +80,7 @@ const load = async () => {
     if (result?.error) {
         if (notifications.length === 0) {
             elements.list.innerHTML =
-                '<div class="list-group-item text-center text-danger small p-4">Não foi possível carregar as notificações.</div>';
+                "<div class=\"list-group-item text-center text-danger small p-4\">Não foi possível carregar as notificações.</div>";
         }
         return false;
     }
@@ -112,8 +112,8 @@ const handleDropdownShown = async () => {
     const readAt = new Date().toISOString();
     notifications = notifications.map((notification) =>
         unreadIds.includes(Number(notification.id))
-            ? {...notification, readAt}
-            : notification
+            ? { ...notification, readAt }
+            : notification,
     );
     render();
     renderBadge(result?.unreadCount);
@@ -121,11 +121,11 @@ const handleDropdownShown = async () => {
 
 const dismissNotification = async (id, button) => {
     button.disabled = true;
-    button.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>';
+    button.innerHTML = "<span class=\"spinner-border spinner-border-sm\" aria-hidden=\"true\"></span>";
     const result = await deleteNotification(id);
     if (result?.error) {
         button.disabled = false;
-        button.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>';
+        button.innerHTML = "<i class=\"fa-solid fa-trash-can\" aria-hidden=\"true\"></i>";
         toast(
             "error",
             "Não foi possível eliminar a notificação",
@@ -166,12 +166,12 @@ const handleNotificationClick = (event) => {
     }
 
     bootstrap.Dropdown.getOrCreateInstance(
-        elements.dropdown.querySelector('[data-bs-toggle="dropdown"]'),
+        elements.dropdown.querySelector("[data-bs-toggle=\"dropdown\"]"),
     ).hide();
     void addDevice(notification);
 };
 
-export function initNotifications({els, openAddDevice}) {
+export function initNotifications({ els, openAddDevice }) {
     elements = {
         dropdown: els.dashboardNotificationsDropdown,
         badge: els.dashboardNotificationsBadge,

@@ -1,5 +1,5 @@
-import {deviceTypeLabel} from "../domain.js";
-import {state} from "../state.js";
+import { deviceTypeLabel } from "../domain.js";
+import { state } from "../state.js";
 import {
     licenseBadgeValue,
     licensePickerHtml,
@@ -20,9 +20,9 @@ import {
 const STEPS = ["Classificação", "Este aparelho"];
 
 const TRAIL_QUESTIONS = [
-    {key: "type", label: "Tipo"},
-    {key: "model", label: "Modelo"},
-    {key: "owner", label: "Licença"},
+    { key: "type", label: "Tipo" },
+    { key: "model", label: "Modelo" },
+    { key: "owner", label: "Licença" },
 ];
 
 let els;

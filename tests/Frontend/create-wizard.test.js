@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import { readFileSync } from "node:fs";
 
 // Tem de vir antes dos módulos do dashboard: o `api/http.js` toca em `window` ao carregar.
 import "./support/browser-env.js";
-import {deviceTypeFields} from "../../src/Dashboard/dashboard/domain.js";
+import { deviceTypeFields } from "../../src/Dashboard/dashboard/domain.js";
 
 /**
  * A moldura do assistente de adicionar um dispositivo. O motor está no `wizard.test.js` e o

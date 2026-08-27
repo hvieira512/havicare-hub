@@ -1,4 +1,4 @@
-import {esc} from "./format.js";
+import { esc } from "./format.js";
 
 /** O resumo das listagens servidas pela API, que dizem quantos registos existem em total. */
 const defaultSummary = (start, end, total) => `A mostrar de ${start} até ${end} | ${total}`;
@@ -42,9 +42,9 @@ export function renderPagination({
     summaryEl.textContent = summary(pageStart, pageEnd, total);
     controlsEl.innerHTML = [
         `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(actionPrefix)}Prev" ${currentPage <= 1 ? "disabled" : ""} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
-        ...Array.from({length: totalPages}, (_, index) => {
+        ...Array.from({ length: totalPages }, (_, index) => {
             const page = index + 1;
-            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="${esc(goAction)}" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ""}>${page}</button>`;
+            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="${esc(goAction)}" data-page="${page}" ${page === currentPage ? "aria-current=\"page\"" : ""}>${page}</button>`;
         }),
         `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(actionPrefix)}Next" ${currentPage >= totalPages ? "disabled" : ""} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
     ].join("");

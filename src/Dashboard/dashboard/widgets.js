@@ -1,4 +1,4 @@
-import {esc} from "./format.js";
+import { esc } from "./format.js";
 import {
     deviceTypeLabel,
     normalizeDeviceType,
@@ -38,7 +38,7 @@ export function deviceLicenseHtml(device, valueClass = "") {
  * `cls` são as classes da coluna: os sítios que usam isto trazem vinte e sete valores
  * diferentes, e isso é dado, não uma variante.
  */
-export function field(label, control, {help = "", cls = "", required = false} = {}) {
+export function field(label, control, { help = "", cls = "", required = false } = {}) {
     return `
         <div${cls ? ` class="${esc(cls)}"` : ""}>
             <label class="form-label-sm${required ? " required" : ""}">${esc(label)}</label>
@@ -57,7 +57,7 @@ export function field(label, control, {help = "", cls = "", required = false} = 
  */
 export function sectionStrip(sections, action, activeKey = "") {
     return sections
-        .map(({key, label, count, icon = ""}) => `
+        .map(({ key, label, count, icon = "" }) => `
         <button type="button" class="capability-section-chip${key === activeKey ? " selected" : ""}"
             data-action="${esc(action)}" data-section="${esc(key)}">
             ${icon ? `<i class="fa-solid ${esc(icon)}"></i>` : ""}${esc(label)}<span class="count count-number" data-section-count>${esc(count)}</span>
@@ -122,13 +122,13 @@ export function renderButtonGroup(
 ) {
     container.innerHTML = items.length
         ? items
-        .map((item) => {
-            const value = String(item[valueKey] ?? "");
-            const label = String(item[labelKey] ?? value);
-            return `<button type="button" class="btn btn-sm ${value === selected ? "btn-primary" : "btn-outline-primary"}" data-action="${esc(action)}" data-value="${esc(value)}">${esc(label)}</button>`;
-        })
-        .join("")
-        : '<div class="text-secondary small py-2">Sem opções disponíveis</div>';
+                .map((item) => {
+                    const value = String(item[valueKey] ?? "");
+                    const label = String(item[labelKey] ?? value);
+                    return `<button type="button" class="btn btn-sm ${value === selected ? "btn-primary" : "btn-outline-primary"}" data-action="${esc(action)}" data-value="${esc(value)}">${esc(label)}</button>`;
+                })
+                .join("")
+        : "<div class=\"text-secondary small py-2\">Sem opções disponíveis</div>";
 }
 
 /** O ícone de cada tipo de dispositivo, o mesmo do assistente de criação. */
@@ -186,7 +186,7 @@ export function renderDeviceTypeTiles(
             <button type="button" class="device-type-tile${on ? " selected" : ""}"
                 data-action="${esc(action)}" data-value="${esc(value)}"${filterAttrs}
                 ${count === 0 && !on ? "disabled" : ""} aria-pressed="${on ? "true" : "false"}">
-            ${multiple ? '<span class="device-type-tile-check"><i class="fa-solid fa-check"></i></span>' : ""}
+            ${multiple ? "<span class=\"device-type-tile-check\"><i class=\"fa-solid fa-check\"></i></span>" : ""}
             <span class="device-type-tile-icon"><i class="fa-solid ${esc(deviceTypeIcon(value))}"></i></span>
             <span class="device-type-tile-name">${esc(deviceTypeLabel(value))}</span>
             ${counts ? `<span class="count-number">${count === 0 ? "nenhum" : count}</span>` : ""}

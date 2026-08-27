@@ -3,14 +3,14 @@ import {
     getApiUsers as apiGetApiUsers,
     saveApiUser as apiSaveApiUser,
 } from "../api/index.js";
-import {ensureLicensesLoaded} from "../licenses.js";
-import {stateBadge} from "../widgets.js";
-import {state} from "../state.js";
-import {esc} from "../format.js";
-import {apiError, confirmDestructive, toast} from "../dialogs.js";
-import {clearInvalid, markInvalid} from "../validation.js";
-import {setSettingsNavCount, toggleCollapse} from "./shell.js";
-import {renderPagination} from "../pagination.js";
+import { ensureLicensesLoaded } from "../licenses.js";
+import { stateBadge } from "../widgets.js";
+import { state } from "../state.js";
+import { esc } from "../format.js";
+import { apiError, confirmDestructive, toast } from "../dialogs.js";
+import { clearInvalid, markInvalid } from "../validation.js";
+import { setSettingsNavCount, toggleCollapse } from "./shell.js";
+import { renderPagination } from "../pagination.js";
 
 /**
  * O separador dos utilizadores da API: a tabela, o formulário, e ligar ou desligar um. As
@@ -59,8 +59,8 @@ function renderApiUsersSection(users) {
         setSettingsNavCount("ApiUsers", total);
         els.apiUsersTabSummary.textContent = total === 0
             ? "Nenhum utilizador"
-            : `${total} ${total === 1 ? "utilizador" : "utilizadores"}`
-              + (admins ? ` · ${admins} com acesso a todas as licenças` : "");
+            : `${total} ${total === 1 ? "utilizador" : "utilizadores"}` +
+                (admins ? ` · ${admins} com acesso a todas as licenças` : "");
     }
     els.apiUserListBody.innerHTML = (users || [])
         .map(
@@ -94,8 +94,8 @@ function renderApiUsersSection(users) {
 }
 
 function renderApiUserLicenseOptions() {
-    els.apiUserLicenseRefId.innerHTML = '<option value="">Selecionar licença</option>'
-        + apiUserLicenses.map((license) => `<option value="${esc(license.id)}">${esc(`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`)}</option>`).join("");
+    els.apiUserLicenseRefId.innerHTML = "<option value=\"\">Selecionar licença</option>" +
+        apiUserLicenses.map((license) => `<option value="${esc(license.id)}">${esc(`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`)}</option>`).join("");
 }
 
 export function resetApiUserForm() {
@@ -178,7 +178,7 @@ export async function toggleApiUser(button) {
 }
 
 export async function deleteApiUser(id) {
-    const {isConfirmed} = await confirmDestructive("Apagar utilizador API?");
+    const { isConfirmed } = await confirmDestructive("Apagar utilizador API?");
     if (!isConfirmed) return;
     const result = await apiDeleteApiUser(id);
     if (result.error) {

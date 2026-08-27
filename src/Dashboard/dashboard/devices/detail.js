@@ -6,7 +6,7 @@ import {
     setTelemetryPage,
     state,
 } from "../state.js";
-import {deviceTypeLabel, normalizeDeviceType} from "../domain.js";
+import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import {
     commandLabel,
     esc,
@@ -16,9 +16,9 @@ import {
     when,
     whenShort,
 } from "../format.js";
-import {capabilityLabel} from "../capability-catalog.js";
-import {apiError, toast} from "../dialogs.js";
-import {deviceLicenseHtml, emptyPanel, filterChips, onlineBadge} from "../widgets.js";
+import { capabilityLabel } from "../capability-catalog.js";
+import { apiError, toast } from "../dialogs.js";
+import { deviceLicenseHtml, emptyPanel, filterChips, onlineBadge } from "../widgets.js";
 import {
     cardTone,
     telemetryCard,
@@ -29,11 +29,11 @@ import {
     statusBadge,
     uplinkCardContent,
 } from "../telemetry-cards.js";
-import {protocolHelpCallPressModes} from "./config/protocol-catalog.js";
-import {renderPagination} from "../pagination.js";
-import {clearStorageKey, saveTextStorage} from "../storage.js";
-import {disposeTooltips, refreshTooltips} from "../tooltips.js";
-import {gatewaySignalRows} from "./gateway-signal.js";
+import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
+import { renderPagination } from "../pagination.js";
+import { clearStorageKey, saveTextStorage } from "../storage.js";
+import { disposeTooltips, refreshTooltips } from "../tooltips.js";
+import { gatewaySignalRows } from "./gateway-signal.js";
 
 const DETAIL_ITEM_TYPES = {
     "device.connected": () => "device.connected",
@@ -223,7 +223,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
 
     els.selectedDevicePreview.innerHTML = image
         ? `<img src="${esc(image)}" class="object-fit-contain" alt="${esc(model || device.imei)}" style="max-width:56px;max-height:56px;">`
-        : '<i class="fa-solid fa-microchip fa-xl text-secondary"></i>';
+        : "<i class=\"fa-solid fa-microchip fa-xl text-secondary\"></i>";
     els.selectedDeviceTitle.textContent = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
     // antes do identificador.
@@ -359,7 +359,7 @@ function populateDetailFilterTypes() {
             }
         } else {
             select.innerHTML = [
-                '<option value="all">Todos</option>',
+                "<option value=\"all\">Todos</option>",
                 ...observedTypes.map(
                     (type) =>
                         `<option value="${esc(type)}">${esc(telemetryFilterLabel(type))}</option>`,
@@ -449,10 +449,10 @@ function renderDetailActiveFilters() {
         });
     }
     if (type && type !== "all") {
-        labels.push({key: "type", label: fieldLabel(type) || type});
+        labels.push({ key: "type", label: fieldLabel(type) || type });
     }
     if (String(q || "").trim() !== "") {
-        labels.push({key: "q", label: `"${q.trim()}"`});
+        labels.push({ key: "q", label: `"${q.trim()}"` });
     }
 
     els.detailActiveFilters.innerHTML = filterChips(labels, "removeDetailFilter");
@@ -597,8 +597,8 @@ function telemetryActivityRow(payload) {
         name: capabilityLabel(type),
         value: esc(card.rowValue || card.value),
         detail,
-        detailTitle: card.detailsTitle
-            || detail.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, ""),
+        detailTitle: card.detailsTitle ||
+            detail.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, ""),
         time: whenShort(at) || "hora desconhecida",
         timeTitle: when(at),
     };
@@ -628,15 +628,15 @@ function renderRequestCards(
     // Com um grupo só, a faixa com o nome do grupo não separa nada.
     const cards = totalCards
         ? groups
-              .map((group) =>
-                  renderRequestCardGroup(
-                      group,
-                      telemetry,
-                      groups.length > 1,
-                      commands,
-                  ),
-              )
-              .join("")
+                .map((group) =>
+                    renderRequestCardGroup(
+                        group,
+                        telemetry,
+                        groups.length > 1,
+                        commands,
+                    ),
+                )
+                .join("")
         : "";
     els.requestGrid.innerHTML = falls + helpCalls + cards || `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
     refreshTooltips(els.requestGrid);
@@ -699,7 +699,7 @@ function renderNcsEventCards(rows = []) {
         : `<div class="col-12">${emptyPanel("Ainda não há eventos NCS recebidos.")}</div>`;
 }
 
-function renderNcsEventCard({type, latest}) {
+function renderNcsEventCard({ type, latest }) {
     const content = uplinkCardContent(type, latest.data || {});
     const timestamp = when(latest.occurredAt || latest.recordedAt) || "hora desconhecida";
     const pagerId =
@@ -746,8 +746,8 @@ function downlinkActivityRow(command) {
     const replied = command.ackedAt
         ? `Resposta ${when(command.ackedAt)}`
         : command.sentAt
-          ? `Enviado ${when(command.sentAt)}`
-          : expectedReplies(command);
+            ? `Enviado ${when(command.sentAt)}`
+            : expectedReplies(command);
     const note = command.error || "";
 
     return {

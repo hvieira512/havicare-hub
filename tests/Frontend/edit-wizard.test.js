@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import {parseFragment} from "./support/dom.js";
+import { parseFragment } from "./support/dom.js";
 
 const stateModule = await import("../../src/Dashboard/dashboard/state.js");
 const {
@@ -18,11 +18,11 @@ const {
  */
 
 const LICENSES = [
-    {company: "havicare", licenses: [{licenseId: "1", name: "hc.dev"}]},
-    {company: "hitcare", licenses: [{licenseId: "1001", name: "gucc.dev"}]},
+    { company: "havicare", licenses: [{ licenseId: "1", name: "hc.dev" }] },
+    { company: "hitcare", licenses: [{ licenseId: "1001", name: "gucc.dev" }] },
 ];
 
-function harness({company = "hitcare", licenseId = "1001"} = {}) {
+function harness({ company = "hitcare", licenseId = "1001" } = {}) {
     const root = parseFragment(`
         <form id="deviceForm" data-device-type="diaper_sensor" data-supplier="MONIT" data-model="MECS-PRO">
             <div class="wizard-trail" id="deviceTrail"></div>
@@ -50,7 +50,7 @@ function harness({company = "hitcare", licenseId = "1001"} = {}) {
     }
 
     const changes = [];
-    initEditWizard({els, onLicenseChange: () => changes.push(true)});
+    initEditWizard({ els, onLicenseChange: () => changes.push(true) });
     resetEditWizard(LICENSES);
     renderEditWizard();
 
@@ -59,13 +59,13 @@ function harness({company = "hitcare", licenseId = "1001"} = {}) {
             .filter((block) => !block.classList.contains("d-none"))
             .map((block) => block.dataset.deviceQuestion);
 
-    return {root, els, changes, openQuestion};
+    return { root, els, changes, openQuestion };
 }
 
 test("abre no passo do aparelho, com a classificação em etiquetas", () => {
     // O que se vem alterar é o número de série ou os gateways: a classificação já está
     // feita, e um dispositivo registado não tem perguntas por responder.
-    const {root, els, openQuestion} = harness();
+    const { root, els, openQuestion } = harness();
 
     assert.deepEqual(
         [...root.querySelectorAll("[data-wizard-reopen]")].map((b) => b.dataset.wizardReopen),
@@ -80,7 +80,7 @@ test("abre no passo do aparelho, com a classificação em etiquetas", () => {
 });
 
 test("as etiquetas dizem o que está escolhido", () => {
-    const {root} = harness();
+    const { root } = harness();
 
     assert.deepEqual(
         [...root.querySelectorAll("[data-wizard-reopen]")].map((badge) => [
@@ -96,22 +96,22 @@ test("as etiquetas dizem o que está escolhido", () => {
 });
 
 test("tocar numa etiqueta abre aquela pergunta, e só aquela", () => {
-    const {root, els, openQuestion} = harness();
+    const { root, els, openQuestion } = harness();
 
-    root.querySelector('[data-wizard-reopen="model"]').click();
+    root.querySelector("[data-wizard-reopen=\"model\"]").click();
 
     assert.deepEqual(openQuestion(), ["model"]);
     assert.equal(els.deviceStep2.classList.contains("d-none"), true);
     assert.match(root.querySelector(".wizard-trail-step").textContent, /Passo 1 de 2/);
     // A pergunta aberta perde o valor da etiqueta: esta na grelha por baixo, marcada.
-    assert.equal(root.querySelector('[data-wizard-reopen="model"]'), null);
+    assert.equal(root.querySelector("[data-wizard-reopen=\"model\"]"), null);
     assert.equal(root.querySelectorAll(".wizard-badge-now").length, 1);
     // E guardar só no passo do aparelho, que é onde há campos por validar.
     assert.equal(els.saveDeviceBtn.classList.contains("d-none"), true);
 });
 
 test("escolher o tipo leva ao modelo, porque o anterior deixou de existir", () => {
-    const {openQuestion} = harness();
+    const { openQuestion } = harness();
 
     editWizardAnswered("type");
 
@@ -119,7 +119,7 @@ test("escolher o tipo leva ao modelo, porque o anterior deixou de existir", () =
 });
 
 test("escolher o modelo ou a licença fecha o passo", () => {
-    const {els, openQuestion} = harness();
+    const { els, openQuestion } = harness();
 
     editWizardAnswered("model");
     assert.deepEqual(openQuestion(), []);
@@ -127,11 +127,11 @@ test("escolher o modelo ou a licença fecha o passo", () => {
 });
 
 test("a árvore abre com a licença actual marcada", () => {
-    const {root} = harness({company: "havicare", licenseId: "1"});
+    const { root } = harness({ company: "havicare", licenseId: "1" });
 
-    root.querySelector('[data-wizard-reopen="owner"]').click();
+    root.querySelector("[data-wizard-reopen=\"owner\"]").click();
 
-    const checked = [...root.querySelectorAll('#deviceLicensePicker [aria-checked="true"]')];
+    const checked = [...root.querySelectorAll("#deviceLicensePicker [aria-checked=\"true\"]")];
     assert.equal(checked.length, 1);
     assert.equal(checked[0].dataset.licenseId, "1");
     assert.equal(checked[0].dataset.licenseCompany, "havicare");
@@ -140,10 +140,10 @@ test("a árvore abre com a licença actual marcada", () => {
 test("escolher uma licença escreve a empresa e o número, e refaz os gateways", () => {
     // São duas colunas na base de dados e uma só escolha no ecrã; e a autorização de um
     // gateway é por empresa e licença, por isso os que estavam marcados eram de outro.
-    const {root, els, changes} = harness();
+    const { root, els, changes } = harness();
 
-    root.querySelector('[data-wizard-reopen="owner"]').click();
-    root.querySelector('#deviceLicensePicker [data-license-id="1"]').click();
+    root.querySelector("[data-wizard-reopen=\"owner\"]").click();
+    root.querySelector("#deviceLicensePicker [data-license-id=\"1\"]").click();
 
     assert.equal(els.deviceCompany.value, "havicare");
     assert.equal(els.deviceLicenseId.value, "1");
@@ -151,18 +151,18 @@ test("escolher uma licença escreve a empresa e o número, e refaz os gateways",
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
 });
 
-test('"Sem licença" limpa a empresa e não deixa o número anterior', () => {
-    const {root, els} = harness();
+test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
+    const { root, els } = harness();
 
-    root.querySelector('[data-wizard-reopen="owner"]').click();
-    root.querySelector('#deviceLicensePicker [data-license-id="0"]').click();
+    root.querySelector("[data-wizard-reopen=\"owner\"]").click();
+    root.querySelector("#deviceLicensePicker [data-license-id=\"0\"]").click();
 
     assert.equal(els.deviceCompany.value, "");
     assert.equal(els.deviceLicenseId.value, "0");
 });
 
 test("o Anterior volta à classificação sem abrir pergunta nenhuma", () => {
-    const {root, els, openQuestion} = harness();
+    const { root, els, openQuestion } = harness();
 
     els.deviceBackBtn.click();
 
@@ -178,8 +178,8 @@ test("o Anterior volta à classificação sem abrir pergunta nenhuma", () => {
 test("enquanto o dispositivo não chegou, a trilha não inventa uma classificação", () => {
     // O formulario ainda tem o que la estava por omissao -- Relogio, o primeiro modelo,
     // sem licença -- e isso é a classificação de outro aparelho.
-    const {state} = stateModule;
-    const {root} = harness();
+    const { state } = stateModule;
+    const { root } = harness();
     state.deviceModal.loading = true;
     renderEditWizard();
 

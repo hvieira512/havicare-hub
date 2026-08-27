@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 // Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
 import "./support/browser-env.js";
-import {deviceTypeFields} from "../../src/Dashboard/dashboard/domain.js";
+import { deviceTypeFields } from "../../src/Dashboard/dashboard/domain.js";
 
 /**
  * REDE DE SEGURANCA, escrita antes de tocar no modal.

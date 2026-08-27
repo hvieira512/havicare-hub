@@ -3,11 +3,11 @@
  * elementos, cria os modais do Bootstrap, entrega o `els` a cada funcionalidade pelo seu
  * `init`, e liga os ouvintes. Uma funcionalidade nunca importa outra.
  */
-import {getDevice as apiGetDevice} from "./api/index.js";
-import {esc} from "./format.js";
-import {syncPhoneControl} from "./phone.js";
-import {state} from "./state.js";
-import {cacheElements} from "./dom.js";
+import { getDevice as apiGetDevice } from "./api/index.js";
+import { esc } from "./format.js";
+import { syncPhoneControl } from "./phone.js";
+import { state } from "./state.js";
+import { cacheElements } from "./dom.js";
 import {
     handleConfigFeedbackClosed,
     handleDeviceConfigChange,
@@ -41,7 +41,7 @@ import {
     loadJsonStorage,
     loadTextStorage,
 } from "./storage.js";
-import {normalizeDeviceType} from "./domain.js";
+import { normalizeDeviceType } from "./domain.js";
 import {
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
@@ -61,7 +61,7 @@ import {
     requestTelemetryFeature,
     renderSelection,
 } from "./devices/detail.js";
-import {initDeviceStream} from "./devices/stream.js";
+import { initDeviceStream } from "./devices/stream.js";
 import {
     editWizardAnswered,
     initEditWizard,
@@ -83,16 +83,16 @@ import {
     syncConfigSectionDirty,
     syncDeviceModalCommandStates,
 } from "./devices/config/panel.js";
-import {initCreateWizard, openWizard} from "./devices/create-wizard.js";
+import { initCreateWizard, openWizard } from "./devices/create-wizard.js";
 import {
     initGatewayLinksUi,
     refreshGatewayOptions,
     updateGatewayLinkSelection,
 } from "./devices/gateway-links-ui.js";
-import {initNotifications} from "./notifications.js";
-import {bindInvalidClearing} from "./validation.js";
-import {initSettings, loadSettingsModal} from "./settings/index.js";
-import {handleSettingsPaginationClick} from "./settings/shell.js";
+import { initNotifications } from "./notifications.js";
+import { bindInvalidClearing } from "./validation.js";
+import { initSettings, loadSettingsModal } from "./settings/index.js";
+import { handleSettingsPaginationClick } from "./settings/shell.js";
 import {
     loadSettingsApiUsersSection,
     resetApiUserForm,
@@ -201,7 +201,7 @@ function bindEvents() {
         "input",
         handleDeviceModelFilterSearch,
     );
-    for (const input of document.querySelectorAll('input[name="deviceOnlineFilter"]')) {
+    for (const input of document.querySelectorAll("input[name=\"deviceOnlineFilter\"]")) {
         input.addEventListener("change", handleDeviceOnlineFilterChange);
     }
     els.clearDeviceFiltersBtn.addEventListener("click", clearDeviceFilters);
@@ -248,7 +248,7 @@ function bindEvents() {
     els.detailFilterType.addEventListener("change", updateDetailFilterDraft);
     els.detailSearch.addEventListener("input", applyDetailSearch);
     els.detailActiveFilters.addEventListener("click", (event) => {
-        const button = event.target.closest('[data-action="removeDetailFilter"]');
+        const button = event.target.closest("[data-action=\"removeDetailFilter\"]");
         if (!button) return;
         const key = button.dataset.filterKey;
         // A pastilha do intervalo cobre as duas datas, por isso limpa as duas.
@@ -305,7 +305,7 @@ function bindEvents() {
         void deleteCurrentModel();
     });
     els.modelsCarousel.addEventListener("click", (event) => {
-        const button = event.target.closest('[data-action="backToModelList"]');
+        const button = event.target.closest("[data-action=\"backToModelList\"]");
         if (button) backToModelList();
     });
     els.settingsModelsTabBtn.addEventListener("shown.bs.tab", () => {
@@ -442,14 +442,14 @@ function handleDeviceFormChange(event) {
 }
 
 function handleDeviceSupplierClick(event) {
-    const button = event.target.closest('[data-action="selectDeviceSupplier"]');
+    const button = event.target.closest("[data-action=\"selectDeviceSupplier\"]");
     // Escolher o fornecedor não responde à pergunta do modelo: é o par que identifica, e a
     // pergunta só fecha quando houver modelo.
     if (button) renderDeviceSelectors(button.dataset.value, "");
 }
 
 async function handleDeviceTypeClick(event) {
-    const button = event.target.closest('[data-action="selectDeviceType"]');
+    const button = event.target.closest("[data-action=\"selectDeviceType\"]");
     if (!button) return;
 
     const deviceType = normalizeDeviceType(button.dataset.value);
@@ -460,7 +460,7 @@ async function handleDeviceTypeClick(event) {
 }
 
 function handleDeviceModelClick(event) {
-    const button = event.target.closest('[data-action="selectDeviceModel"]');
+    const button = event.target.closest("[data-action=\"selectDeviceModel\"]");
     if (!button) return;
     els.deviceForm.dataset.model = button.dataset.value;
     renderDeviceSelectors(
@@ -478,14 +478,14 @@ function handleDeviceListClick(event) {
 }
 
 function handleRequestGridClick(event) {
-    const button = event.target.closest('[data-action="requestFeature"]');
+    const button = event.target.closest("[data-action=\"requestFeature\"]");
     if (button) requestTelemetryFeature(String(button.dataset.feature || ""));
 }
 
 export async function startDashboard() {
     els = cacheElements();
-    initGatewayLinksUi({els});
-    initDeviceConfigPanel({els});
+    initGatewayLinksUi({ els });
+    initDeviceConfigPanel({ els });
     deviceModal = new bootstrap.Modal(document.getElementById("deviceModal"));
     deviceWizardModal = new bootstrap.Modal(
         document.getElementById("deviceWizardModal"),
@@ -496,23 +496,23 @@ export async function startDashboard() {
     settingsModal = new bootstrap.Modal(
         document.getElementById("settingsModal"),
     );
-    initDeviceModal({els, deviceModal, deviceSelectorModal, settingsModal});
+    initDeviceModal({ els, deviceModal, deviceSelectorModal, settingsModal });
     initEditWizard({
         els,
         // A autorização de um gateway é por empresa e licença: mudar de licença muda quais
         // são os elegíveis, e os que estavam marcados eram de outro cliente.
         onLicenseChange: () => void refreshGatewayOptions([]),
     });
-    initCreateWizard({els, wizardModal: deviceWizardModal});
-    initDeviceFilterHandlers({els});
-    initSettingsClickHandlers({els});
+    initCreateWizard({ els, wizardModal: deviceWizardModal });
+    initDeviceFilterHandlers({ els });
+    initSettingsClickHandlers({ els });
     initDeviceList({
         els,
-        ui: {deviceModal, deviceSelectorModal, settingsModal},
+        ui: { deviceModal, deviceSelectorModal, settingsModal },
     });
     initSettings({
         els,
-        ui: {deviceModal, deviceSelectorModal, settingsModal},
+        ui: { deviceModal, deviceSelectorModal, settingsModal },
     });
     initDeviceStream({
         state,
@@ -548,8 +548,8 @@ export async function startDashboard() {
 
     setInterval(() => {
         if (
-            document.body.dataset.dashboardAuthRequired === "true"
-            && !window.hubDashboardApiToken?.access_token
+            document.body.dataset.dashboardAuthRequired === "true" &&
+            !window.hubDashboardApiToken?.access_token
         ) {
             return;
         }

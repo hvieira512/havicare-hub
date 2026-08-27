@@ -1,6 +1,6 @@
 import { esc, titleize } from "../../format.js";
 import { emptyPanel, stateBadge } from "../../widgets.js";
-import {takePillsInput, takePillsReminderGroup} from "./four-p-touch-take-pills.js";
+import { takePillsInput, takePillsReminderGroup } from "./four-p-touch-take-pills.js";
 import {
     defaultWonlexMedicationPlan,
     numericValue,
@@ -61,7 +61,7 @@ import {
     protocolGroupedCapabilities,
 } from "./protocol-catalog.js";
 
-export {takePillsReminderGroup, catalogForProtocol};
+export { takePillsReminderGroup, catalogForProtocol };
 
 const CONFIG_ACTION_BUTTON_META = {
     idle: {
@@ -74,10 +74,10 @@ const CONFIG_ACTION_BUTTON_META = {
         label: "A enviar",
         className: "btn-primary",
     },
-    sent: {icon: "fa-check", label: "Enviado", className: "btn-info"},
-    queued: {icon: "fa-list-check", label: "Em fila", className: "btn-secondary"},
-    waiting: {icon: "fa-hourglass-half", label: "À espera", className: "btn-warning"},
-    acked: {icon: "fa-circle-check", label: "Confirmado", className: "btn-success"},
+    sent: { icon: "fa-check", label: "Enviado", className: "btn-info" },
+    queued: { icon: "fa-list-check", label: "Em fila", className: "btn-secondary" },
+    waiting: { icon: "fa-hourglass-half", label: "À espera", className: "btn-warning" },
+    acked: { icon: "fa-circle-check", label: "Confirmado", className: "btn-success" },
     failed: {
         icon: "fa-triangle-exclamation",
         label: "Falhou",
@@ -183,7 +183,7 @@ const CONFIG_INPUT_RENDERERS = {
     sos_contacts: (entry, desired, meta) => sosContactsInput(entry, desired, meta),
     call_whitelist: (entry, desired, meta) => callWhitelistInput(entry, desired, meta),
     whitelist_enabled: (entry, desired) =>
-        toggleInput({...entry, fields: ["enabled"]}, desired),
+        toggleInput({ ...entry, fields: ["enabled"] }, desired),
     phonebook: (entry, desired, meta) => contactsInput(entry, desired, meta),
     contacts: (entry, desired, meta) => contactsInput(entry, desired, meta),
     alarm_clock: (_entry, desired, meta) => alarmClockInput(desired, meta),
@@ -198,7 +198,7 @@ const CONFIG_INPUT_READERS = {
         const field = firstFieldName(section);
         return { [field]: readCheckbox(section, field) };
     },
-    fallSensitivity: (section) => ({sensitivity: readNumber(section, "sensitivity")}),
+    fallSensitivity: (section) => ({ sensitivity: readNumber(section, "sensitivity") }),
     diaperSensitivity: (section) => ({
         pollutionRange: readNumber(section, "pollutionRange"),
         pollutionValue: readNumber(section, "pollutionValue"),
@@ -215,8 +215,8 @@ const CONFIG_INPUT_READERS = {
         const field = firstFieldName(section);
         return { [field]: readText(section, field) };
     },
-    pushMessage: (section) => ({message: readText(section, "message")}),
-    makeCall: (section) => ({phone: readPhone(section, "phone")}),
+    pushMessage: (section) => ({ message: readText(section, "message") }),
+    makeCall: (section) => ({ phone: readPhone(section, "phone") }),
     resetAction: () => ({}),
     requestAction: () => ({}),
     intervalToggle: (section) => ({
@@ -229,7 +229,7 @@ const CONFIG_INPUT_READERS = {
     }),
     workingMode: (section) => {
         const mode = readNumber(section, "mode");
-        const payload = {mode};
+        const payload = { mode };
         if (mode === 8) {
             payload.intervalSeconds = readNumber(section, "intervalSeconds");
             payload.gpsEnabled = readCheckbox(section, "gpsEnabled");
@@ -269,8 +269,8 @@ const CONFIG_INPUT_READERS = {
             levels,
         };
     },
-    timeRanges: (section) => ({ranges: readTextArray(section, "ranges")}),
-    timeRange: (section) => ({range: readText(section, "range")}),
+    timeRanges: (section) => ({ ranges: readTextArray(section, "ranges") }),
+    timeRange: (section) => ({ range: readText(section, "range") }),
     wonlexSleepSettings: (section) => ({
         enabled: readCheckbox(section, "enabled"),
         sleepStartTime: readText(section, "sleepStartTime"),
@@ -279,7 +279,7 @@ const CONFIG_INPUT_READERS = {
     }),
     wonlexReminderThreshold: (section) => {
         const valueField = section.querySelector(
-            '[data-config-field="RemindValue"]',
+            "[data-config-field=\"RemindValue\"]",
         )
             ? "RemindValue"
             : "reminderValue";
@@ -298,7 +298,7 @@ const CONFIG_INPUT_READERS = {
     }),
     list: (section) => {
         const limit = parseInt(section.dataset.configLimit || "3", 10) || 3;
-        return {numbers: readPhoneArray(section, "numbers").slice(0, limit)};
+        return { numbers: readPhoneArray(section, "numbers").slice(0, limit) };
     },
     sos_contacts: (section) => {
         const selector = section.querySelectorAll("[data-sos-contact-phone]");
@@ -314,20 +314,20 @@ const CONFIG_INPUT_READERS = {
     call_whitelist: (section) => {
         const limit = parseInt(section.dataset.configLimit || "10", 10) || 10;
         if ((section.dataset.configProtocol || "") === "vivistar-iw") {
-            return {contacts: readContacts(section).slice(0, limit)};
+            return { contacts: readContacts(section).slice(0, limit) };
         }
         return readUniquePhoneArray(section, "numbers", "Lista branca").slice(0, limit);
     },
     whitelist_enabled: (section) => ({
         enabled: readCheckbox(section, "enabled"),
     }),
-    phonebook: (section) => ({contacts: readContacts(section)}),
-    contacts: (section) => ({contacts: readContacts(section)}),
+    phonebook: (section) => ({ contacts: readContacts(section) }),
+    contacts: (section) => ({ contacts: readContacts(section) }),
     alarm_clock: (section) => readAlarmClock(section),
-    alarms: (section) => ({alarms: readFourPTouchAlarms(section)}),
+    alarms: (section) => ({ alarms: readFourPTouchAlarms(section) }),
     takePills: (section) => readTakePills(section),
     wonlexMedicationPlans: (section) => readWonlexMedicationPlans(section),
-    soundProfile: (section) => ({mode: readNumber(section, "mode")}),
+    soundProfile: (section) => ({ mode: readNumber(section, "mode") }),
 };
 
 const CONFIG_INPUT_DEFAULTS = {
@@ -336,27 +336,27 @@ const CONFIG_INPUT_DEFAULTS = {
             ? "enabled"
             : entry.fields?.[0] || "value"]: true,
     }),
-    fallSensitivity: () => ({sensitivity: 2}),
-    number: (entry) => ({[entry.fields?.[0] || "value"]: 0}),
-    phone: (entry) => ({[entry.fields?.[0] || "value"]: ""}),
-    text: (entry) => ({[entry.fields?.[0] || "value"]: ""}),
-    intervalToggle: () => ({enabled: true, intervalMinutes: 60}),
-    intervalHoursToggle: () => ({enabled: true, intervalHours: 2}),
-    workingMode: () => ({mode: 1}),
-    bloodPressure: () => ({systolic: 120, diastolic: 80}),
-    wonlexBloodPressureWarning: () => ({enabled: true, hpWarn: 135, LPWarn: 90}),
-    languageTimezone: () => ({preset: "0|0"}),
-    dualToggle: () => ({enabled: true, callCenterOnFall: false}),
-    fallSensitivityLevels: () => ({sensitivity: 5, levels: 8}),
-    timeRanges: () => ({ranges: ["08:10-09:30"]}),
-    timeRange: () => ({range: "21:10-07:30"}),
+    fallSensitivity: () => ({ sensitivity: 2 }),
+    number: (entry) => ({ [entry.fields?.[0] || "value"]: 0 }),
+    phone: (entry) => ({ [entry.fields?.[0] || "value"]: "" }),
+    text: (entry) => ({ [entry.fields?.[0] || "value"]: "" }),
+    intervalToggle: () => ({ enabled: true, intervalMinutes: 60 }),
+    intervalHoursToggle: () => ({ enabled: true, intervalHours: 2 }),
+    workingMode: () => ({ mode: 1 }),
+    bloodPressure: () => ({ systolic: 120, diastolic: 80 }),
+    wonlexBloodPressureWarning: () => ({ enabled: true, hpWarn: 135, LPWarn: 90 }),
+    languageTimezone: () => ({ preset: "0|0" }),
+    dualToggle: () => ({ enabled: true, callCenterOnFall: false }),
+    fallSensitivityLevels: () => ({ sensitivity: 5, levels: 8 }),
+    timeRanges: () => ({ ranges: ["08:10-09:30"] }),
+    timeRange: () => ({ range: "21:10-07:30" }),
     wonlexSleepSettings: () => ({
         enabled: true,
         sleepStartTime: "220000",
         sleepEndTime: "100000",
         sleepTarget: 480,
     }),
-    wonlexReminderThreshold: () => ({enabled: true, reminderValue: 90}),
+    wonlexReminderThreshold: () => ({ enabled: true, reminderValue: 90 }),
     wonlexHeartRateRange: () => ({
         enabled: true,
         remindValue: 120,
@@ -365,16 +365,16 @@ const CONFIG_INPUT_DEFAULTS = {
         exerciseHRMax: 140,
         exerciseRemindValue: 140,
     }),
-    list: () => ({numbers: ["", "", ""]}),
+    list: () => ({ numbers: ["", "", ""] }),
     sos_contacts: () => [],
     call_whitelist: (entry, protocol) => protocol === "vivistar-iw"
-        ? {contacts: [{name: "", phone: ""}]}
+        ? { contacts: [{ name: "", phone: "" }] }
         : ["", "", "", "", "", "", "", "", "", ""],
-    whitelist_enabled: () => ({enabled: true}),
-    phonebook: () => ({contacts: []}),
-    contacts: () => ({contacts: [{name: "", phone: ""}]}),
-    alarm_clock: () => ({items: []}),
-    alarms: () => ({alarms: []}),
+    whitelist_enabled: () => ({ enabled: true }),
+    phonebook: () => ({ contacts: [] }),
+    contacts: () => ({ contacts: [{ name: "", phone: "" }] }),
+    alarm_clock: () => ({ items: [] }),
+    alarms: () => ({ alarms: [] }),
     takePills: () => ({
         reminderSettings: [],
         number: 0,
@@ -382,8 +382,8 @@ const CONFIG_INPUT_DEFAULTS = {
         voiceData: "",
         voiceMimeType: "audio/webm",
     }),
-    wonlexMedicationPlans: () => ({plans: [defaultWonlexMedicationPlan()]}),
-    soundProfile: () => ({mode: 1}),
+    wonlexMedicationPlans: () => ({ plans: [defaultWonlexMedicationPlan()] }),
+    soundProfile: () => ({ mode: 1 }),
 };
 
 const CONFIG_INPUT_HELP = {
@@ -486,8 +486,8 @@ function assignCapabilitySection(entry, capabilityCatalog) {
     );
     const section = String(definition?.section || "");
     if (
-        (!definition?.isConfigurable && !definition?.isRequestable)
-        || !CONFIG_SECTION_ORDER.includes(section)
+        (!definition?.isConfigurable && !definition?.isRequestable) ||
+        !CONFIG_SECTION_ORDER.includes(section)
     ) {
         return null;
     }
@@ -518,7 +518,7 @@ export function renderDeviceConfigurationRoot(context) {
         configurations = {},
         capabilities = {},
         capabilityCatalog = [],
-        configurationSync = {entries: {}},
+        configurationSync = { entries: {} },
         supplier = "",
         model = "",
         disabled = false,
@@ -643,8 +643,8 @@ function renderConfigSection(
     const deliveryMeta = configurationDeliveryMeta(isStored, delivery);
     // Sem comando nativo, o hub aplica-a sozinho, e então não há vocabulário de protocolo
     // para mostrar: o comando não existe, e o tipo de campo sozinho é ruído.
-    const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock")
-        || String(entry.command || "") === "";
+    const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock") ||
+        String(entry.command || "") === "";
     const configSectionName = entry.configSectionName || entry.configSection || "";
     const phonebookConstraints = protocolFieldConstraints(protocol).phonebook || {};
     const isPhonebookLike = String(entry.key || "") === "phonebook" || String(entry.key || "") === "call_whitelist";
@@ -664,7 +664,7 @@ function renderConfigSection(
     ].filter((part) => part !== "");
 
     return `
-        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? ' data-config-transient="1"' : ""}>
+        <section class="border rounded-3 p-3 mb-3" data-config-section data-config-kind="${esc(entry.configKind || "configuration")}" data-config-stored="${isStored ? "1" : "0"}" data-config-key="${esc(entry.key)}" data-capability-key="${esc(entry.capabilityKey || entry.key)}"${configSectionName !== "" ? ` data-config-section-name="${esc(configSectionName)}"` : ""}${phonebookMetaAttrs} data-config-input="${esc(entry.input || "json")}" data-config-protocol="${esc(protocol)}" data-config-limit="${esc(String(entry.limit ?? ""))}"${entry.transient ? " data-config-transient=\"1\"" : ""}>
             <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
                 <div>
                     <div class="fw-semibold">${esc(entry.label || entry.key)}</div>
@@ -675,8 +675,8 @@ function renderConfigSection(
                     : ""}
             </div>
             ${renderConfigurationDeliveryNotice(deliveryMeta, delivery)}
-            <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? 'data-config-disabled="1"' : ""}>
-                ${renderConfigInputs(entry, desired, {...meta, protocol})}
+            <form class="mt-3" data-config-form data-config-key="${esc(entry.key)}" ${disabled ? "data-config-disabled=\"1\"" : ""}>
+                ${renderConfigInputs(entry, desired, { ...meta, protocol })}
                 <div class="d-flex justify-content-end gap-2 mt-3">
                     ${renderConfigActionButton(entry.key, row, uiState, disabled, hideNativeCommand)}
                     <button type="reset" class="btn btn-outline-secondary btn-sm" title="Repor" aria-label="Repor" ${disabled ? "disabled" : ""}>
@@ -803,10 +803,10 @@ function resolveConfigDelivery(entry, configurationSync) {
 
     for (const section of Object.values(configurationSync?.entries || {})) {
         if (
-            section
-            && typeof section === "object"
-            && section[key]
-            && typeof section[key] === "object"
+            section &&
+            typeof section === "object" &&
+            section[key] &&
+            typeof section[key] === "object"
         ) {
             return section[key];
         }
@@ -825,8 +825,8 @@ function configurationDeliveryMeta(isStored, delivery) {
     }
 
     const status = String(delivery?.status || "applied");
-    return CONFIGURATION_DELIVERY_META[status]
-        || CONFIGURATION_DELIVERY_META.failed;
+    return CONFIGURATION_DELIVERY_META[status] ||
+        CONFIGURATION_DELIVERY_META.failed;
 }
 
 /**
@@ -841,7 +841,7 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
         const key = section.dataset.capabilityKey || section.dataset.configKey || "";
         if (key === "") continue;
 
-        const delivery = resolveConfigDelivery({capabilityKey: key}, configurationSync);
+        const delivery = resolveConfigDelivery({ capabilityKey: key }, configurationSync);
         const meta = configurationDeliveryMeta(
             section.dataset.configStored === "1",
             delivery,
@@ -853,7 +853,7 @@ export function patchConfigurationDeliveryStates(root, configurationSync) {
             badge.innerHTML = `<span class="config-state-dot"></span>${esc(meta.label)}`;
         }
 
-        const notice = section.querySelector('[role="status"]');
+        const notice = section.querySelector("[role=\"status\"]");
         const noticeHtml = renderConfigurationDeliveryNotice(meta, delivery);
         if (notice) {
             if (noticeHtml === "") {
@@ -898,7 +898,7 @@ function configInputLabel(input) {
 
 function readWonlexMedicationPlans(section) {
     const plans = Array.from(
-        section.querySelectorAll('[data-repeat-row="wonlexMedicationPlan"]'),
+        section.querySelectorAll("[data-repeat-row=\"wonlexMedicationPlan\"]"),
     ).map((row, index) => {
         const value = (field) => String(
             row.querySelector(`[data-medication-field="${field}"]`)?.value || "",
@@ -955,16 +955,18 @@ function readWonlexMedicationPlans(section) {
                 alarmClock,
                 checkboxes: selected,
                 radio: parseInt(String(
-                    row.querySelector('[data-medication-field="mealTiming"]:checked')?.value || "0",
-                ), 10) === 1 ? 1 : 0,
+                    row.querySelector("[data-medication-field=\"mealTiming\"]:checked")?.value || "0",
+                ), 10) === 1
+                    ? 1
+                    : 0,
             },
         };
     });
 
-    return {plans};
+    return { plans };
 }
 
- function capabilityForEntry(entry, capabilities) {
+function capabilityForEntry(entry, capabilities) {
     const key = entry.capabilityKey || entry.key;
     if (!key) {
         return null;
@@ -1029,4 +1031,3 @@ function extractCapabilityValue(value) {
 
     return value;
 }
-

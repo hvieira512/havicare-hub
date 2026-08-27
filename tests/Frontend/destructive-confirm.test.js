@@ -10,25 +10,25 @@ import "./support/browser-env.js";
  * directo, e é isso que estes testes trancam: cancelar não pode chegar à API.
  */
 const calls = [];
-let answer = {isConfirmed: false};
+let answer = { isConfirmed: false };
 
-globalThis.Swal = {fire: () => Promise.resolve(answer)};
+globalThis.Swal = { fire: () => Promise.resolve(answer) };
 globalThis.fetch = (url, options) => {
-    calls.push({url, method: options?.method || "GET"});
+    calls.push({ url, method: options?.method || "GET" });
     return Promise.resolve({
         ok: false,
         status: 500,
-        text: () => Promise.resolve('{"error":{"code":"boom"}}'),
+        text: () => Promise.resolve("{\"error\":{\"code\":\"boom\"}}"),
     });
 };
 
-const {deleteApiUser} = await import(
-    "../../src/Dashboard/dashboard/settings/api-users.js"
+const { deleteApiUser } = await import(
+    "../../src/Dashboard/dashboard/settings/api-users.js",
 );
 
 test("cancelar a confirmação não chega a chamar a API", async () => {
     calls.length = 0;
-    answer = {isConfirmed: false, dismiss: "cancel"};
+    answer = { isConfirmed: false, dismiss: "cancel" };
 
     await deleteApiUser(7);
 
@@ -37,9 +37,9 @@ test("cancelar a confirmação não chega a chamar a API", async () => {
 
 test("confirmar apaga, e apaga o que se pediu", async () => {
     calls.length = 0;
-    answer = {isConfirmed: true};
+    answer = { isConfirmed: true };
 
     await deleteApiUser(7);
 
-    assert.deepEqual(calls, [{url: "/api/users/7", method: "DELETE"}]);
+    assert.deepEqual(calls, [{ url: "/api/users/7", method: "DELETE" }]);
 });

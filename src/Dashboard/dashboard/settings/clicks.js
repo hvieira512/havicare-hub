@@ -1,7 +1,7 @@
-import {state} from "../state.js";
-import {deleteApiUser, editApiUser, toggleApiUser} from "./api-users.js";
-import {loadSettingsCapabilitiesSection} from "./capabilities.js";
-import {selectModelDeviceType, selectModelSupplier} from "./models/form.js";
+import { state } from "../state.js";
+import { deleteApiUser, editApiUser, toggleApiUser } from "./api-users.js";
+import { loadSettingsCapabilitiesSection } from "./capabilities.js";
+import { selectModelDeviceType, selectModelSupplier } from "./models/form.js";
 import {
     capabilityRowsDependOnSelection,
     openModelDetail,
@@ -21,20 +21,20 @@ export function initSettingsClickHandlers(context) {
 }
 
 export function handleModelSupplierClick(event) {
-    const button = event.target.closest('[data-action="selectModelSupplier"]');
+    const button = event.target.closest("[data-action=\"selectModelSupplier\"]");
     if (button) selectModelSupplier(button.dataset.value);
 }
 
 export function handleModelDeviceTypeClick(event) {
     const button = event.target.closest(
-        '[data-action="selectModelDeviceType"]',
+        "[data-action=\"selectModelDeviceType\"]",
     );
     if (button) selectModelDeviceType(button.dataset.value);
 }
 
 export function handleCapabilityDeviceTypeClick(event) {
     const button = event.target.closest(
-        '[data-action="selectCapabilityDeviceType"]',
+        "[data-action=\"selectCapabilityDeviceType\"]",
     );
     if (!button) return;
     void loadSettingsCapabilitiesSection(button.dataset.value);
@@ -42,8 +42,8 @@ export function handleCapabilityDeviceTypeClick(event) {
 
 export function handleCapabilityGroupsChange(event) {
     const checkbox = event.target.closest([
-        '[data-action="toggleCapabilitySupport"]',
-        '[data-action="toggleCapabilityRequestability"]',
+        "[data-action=\"toggleCapabilitySupport\"]",
+        "[data-action=\"toggleCapabilityRequestability\"]",
     ].join(","));
     if (!checkbox) return;
 
@@ -85,7 +85,7 @@ export function handleCapabilityGroupsChange(event) {
  */
 export function scrollCapabilityCatalogSection(event) {
     const chip = event.target.closest(
-        '[data-action="scrollCapabilityCatalogSection"]',
+        "[data-action=\"scrollCapabilityCatalogSection\"]",
     );
     if (!chip) return;
 
@@ -107,7 +107,7 @@ export function scrollCapabilityCatalogSection(event) {
 
 export function jumpCapabilitySection(event) {
     const button = event.target.closest(
-        '[data-action="jumpCapabilitySection"]',
+        "[data-action=\"jumpCapabilitySection\"]",
     );
     if (!button) return;
 
@@ -124,7 +124,7 @@ export function jumpCapabilitySection(event) {
  * herdariam o reset de tipografia do Bootstrap -- em troca, o teclado é tratado à mão.
  */
 export function handleModelListClick(event) {
-    const row = event.target.closest('[data-action="modelCapabilities"]');
+    const row = event.target.closest("[data-action=\"modelCapabilities\"]");
     if (!row) return;
     if (event.type === "keydown") {
         if (event.key !== "Enter" && event.key !== " ") return;

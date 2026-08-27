@@ -148,11 +148,11 @@ export function modelInternalName(model) {
 export function modelCommercialName(model) {
     return String(
         model?.commercial_name ||
-            model?.commercialName ||
-            model?.internal_model ||
-            model?.internalModel ||
-            model?.model ||
-            "",
+        model?.commercialName ||
+        model?.internal_model ||
+        model?.internalModel ||
+        model?.model ||
+        "",
     );
 }
 

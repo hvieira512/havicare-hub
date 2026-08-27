@@ -2,9 +2,9 @@ import {
     getApiUsers as apiGetApiUsers,
     getModels as apiGetModels,
 } from "../api/index.js";
-import {ensureLicensesLoaded} from "../licenses.js";
-import {state} from "../state.js";
-import {resolvePaginationPage} from "../pagination.js";
+import { ensureLicensesLoaded } from "../licenses.js";
+import { state } from "../state.js";
+import { resolvePaginationPage } from "../pagination.js";
 
 /**
  * A casca do modal de definições: o menu da esquerda com as suas contagens, a troca de
@@ -52,7 +52,7 @@ export async function loadSettingsNavCounts() {
     ];
     await Promise.all([
         ...asks.map(async ([key, ask]) => {
-            const response = await ask({page: 1, limit: 1});
+            const response = await ask({ page: 1, limit: 1 });
             if (response?.error) return;
             const total = response?.pagination?.total;
             if (Number.isFinite(Number(total))) setSettingsNavCount(key, total);
@@ -100,7 +100,7 @@ function paginationActionPrefix(paginationKey) {
 /** Abre ou fecha um `collapse` do Bootstrap sem depender do botão que o comanda. */
 export function toggleCollapse(element, show) {
     if (!element || typeof bootstrap === "undefined") return;
-    const instance = bootstrap.Collapse.getOrCreateInstance(element, {toggle: false});
+    const instance = bootstrap.Collapse.getOrCreateInstance(element, { toggle: false });
     if (show) {
         instance.show();
     } else {

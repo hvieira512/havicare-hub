@@ -8,12 +8,12 @@ import {
 
 test("4P Touch medication UI escapes values and respects the reminder limit", () => {
     const html = takePillsInput({
-        reminderText: '<script>alert("x")</script>',
+        reminderText: "<script>alert(\"x\")</script>",
         reminderSettings: [
-            {time: "08:00", enabled: true, frequency: 1},
-            {time: "20:00", enabled: false, frequency: 2},
+            { time: "08:00", enabled: true, frequency: 1 },
+            { time: "20:00", enabled: false, frequency: 2 },
         ],
-    }, {limit: 1});
+    }, { limit: 1 });
 
     assert.match(html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
     assert.equal((html.match(/data-takepills-reminder-group=/g) || []).length, 1);
@@ -22,9 +22,9 @@ test("4P Touch medication UI escapes values and respects the reminder limit", ()
 
 test("4P Touch custom-frequency reminder renders the custom field", () => {
     const html = takePillsReminderGroup(
-        {time: "09:30", enabled: true, frequency: 3, custom: "0111110"},
+        { time: "09:30", enabled: true, frequency: 3, custom: "0111110" },
         0,
-        [{value: 3, label: "Personalizado"}],
+        [{ value: 3, label: "Personalizado" }],
     );
 
     assert.match(html, /data-takepills-custom-wrapper="0"/);

@@ -1,8 +1,8 @@
-import {esc, fieldLabel} from "../../format.js";
-import {field} from "../../widgets.js";
-import {renderPhoneControl} from "../../phone.js";
-import {protocolPhonebookConstraints} from "./protocol-catalog.js";
-import {formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind} from "./alarm-fields.js";
+import { esc, fieldLabel } from "../../format.js";
+import { field } from "../../widgets.js";
+import { renderPhoneControl } from "../../phone.js";
+import { protocolPhonebookConstraints } from "./protocol-catalog.js";
+import { formatFourPTouchAlarmTime, normalizeAlarmClockRecurrenceKind } from "./alarm-fields.js";
 import {
     WONLEX_MEDICATION_PERIODS,
     boolValue,
@@ -207,16 +207,16 @@ export function diaperSensitivityInput(desired, meta = {}) {
     const value = desired.pollutionValue ?? "";
 
     const levels = [
-        {profile: "low", label: "Baixa", icon: "fa-feather-pointed", className: "btn-outline-success"},
-        {profile: "normal", label: "Normal", icon: "fa-shield-heart", className: "btn-outline-warning"},
-        {profile: "high", label: "Alta", icon: "fa-triangle-exclamation", className: "btn-outline-danger"},
+        { profile: "low", label: "Baixa", icon: "fa-feather-pointed", className: "btn-outline-success" },
+        { profile: "normal", label: "Normal", icon: "fa-shield-heart", className: "btn-outline-warning" },
+        { profile: "high", label: "Alta", icon: "fa-triangle-exclamation", className: "btn-outline-danger" },
     ].filter((level) => presets[level.profile]);
 
     const buttons = levels
         .map((level) => {
             const preset = presets[level.profile];
-            const active = Number(preset.pollutionRange) === Number(range)
-                && Number(preset.pollutionValue) === Number(value);
+            const active = Number(preset.pollutionRange) === Number(range) &&
+                Number(preset.pollutionValue) === Number(value);
             return `
             <button type="button" class="btn ${level.className}${active ? " active" : ""}"
                 data-action="selectConfigChoice"
@@ -288,7 +288,7 @@ export function pushMessageInput(_entry, desired) {
     return field(
         "Mensagem",
         `<input class="form-control" type="text" data-config-field="message" value="${esc(String(desired.message ?? ""))}" placeholder="Mensagem a mostrar no relógio">`,
-        {help: "Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada."},
+        { help: "Envia uma mensagem imediata para o relógio. Não fica guardada como configuração desejada." },
     );
 }
 
@@ -299,7 +299,7 @@ export function intervalToggleInput(entry, desired) {
             ${field(
                 "Intervalo (minutos)",
                 `<input class="form-control" type="number" min="0" step="1" data-config-field="intervalMinutes" value="${esc(String(desired.intervalMinutes ?? 60))}">`,
-                {cls: "col-md-8"},
+                { cls: "col-md-8" },
             )}
         </div>`;
 }
@@ -311,7 +311,7 @@ export function intervalHoursToggleInput(desired) {
             ${field(
                 "Intervalo (horas)",
                 `<input class="form-control" type="number" min="1" max="12" step="1" data-config-field="intervalHours" value="${esc(String(desired.intervalHours ?? 2))}">`,
-                {cls: "col-md-8"},
+                { cls: "col-md-8" },
             )}
         </div>`;
 }
@@ -398,7 +398,7 @@ export function workingModeInput(desired) {
                     ${field(
                         "Intervalo de envio (segundos)",
                         `<input class="form-control" type="number" min="30" step="1" data-config-field="intervalSeconds" value="${esc(String(intervalSeconds))}">`,
-                        {cls: "col-md-6"},
+                        { cls: "col-md-6" },
                     )}
                     <div class="col-md-6">
                         <div class="form-check form-switch form-switch-aligned">
@@ -417,12 +417,12 @@ export function bloodPressureInput(desired) {
             ${field(
                 "Sistólica",
                 `<input class="form-control" type="number" min="0" step="1" data-config-field="systolic" value="${esc(String(desired.systolic ?? 120))}">`,
-                {cls: "col-md-6"},
+                { cls: "col-md-6" },
             )}
             ${field(
                 "Diastólica",
                 `<input class="form-control" type="number" min="0" step="1" data-config-field="diastolic" value="${esc(String(desired.diastolic ?? 80))}">`,
-                {cls: "col-md-6"},
+                { cls: "col-md-6" },
             )}
         </div>`;
 }
@@ -439,12 +439,12 @@ export function wonlexBloodPressureWarningInput(desired) {
                 ${field(
                     "Sistólica máxima",
                     `<input class="form-control" type="number" min="0" step="1" data-config-field="hpWarn" value="${esc(String(desired.hpWarn ?? 135))}">`,
-                    {cls: "col-md-6"},
+                    { cls: "col-md-6" },
                 )}
                 ${field(
                     "Diastólica máxima",
                     `<input class="form-control" type="number" min="0" step="1" data-config-field="LPWarn" value="${esc(String(desired.LPWarn ?? 90))}">`,
-                    {cls: "col-md-6"},
+                    { cls: "col-md-6" },
                 )}
             </div>
         </div>`;
@@ -599,17 +599,17 @@ export function wonlexSleepSettingsInput(desired) {
                 ${field(
                     "Início (HHmmss)",
                     `<input class="form-control" type="text" data-config-field="sleepStartTime" value="${esc(String(desired.sleepStartTime ?? "220000"))}" placeholder="220000">`,
-                    {cls: "col-md-4"},
+                    { cls: "col-md-4" },
                 )}
                 ${field(
                     "Fim (HHmmss)",
                     `<input class="form-control" type="text" data-config-field="sleepEndTime" value="${esc(String(desired.sleepEndTime ?? "100000"))}" placeholder="100000">`,
-                    {cls: "col-md-4"},
+                    { cls: "col-md-4" },
                 )}
                 ${field(
                     "Meta (minutos)",
                     `<input class="form-control" type="number" min="0" step="1" data-config-field="sleepTarget" value="${esc(String(desired.sleepTarget ?? 480))}">`,
-                    {cls: "col-md-4"},
+                    { cls: "col-md-4" },
                 )}
             </div>
         </div>`;
@@ -654,7 +654,7 @@ export function wonlexHeartRateRangeInput(desired) {
                 ${field(
                     "Limite principal",
                     `<input class="form-control" type="number" min="0" step="1" data-config-field="remindValue" value="${esc(String(desired.remindValue ?? 120))}">`,
-                    {cls: "col-md-6"},
+                    { cls: "col-md-6" },
                 )}
                 <div class="col-md-6">
                     <div class="form-check form-switch form-switch-aligned">
@@ -665,17 +665,17 @@ export function wonlexHeartRateRangeInput(desired) {
                 ${field(
                     "Mínimo exercício",
                     `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMin" value="${esc(String(desired.exerciseHRMin ?? 100))}">`,
-                    {cls: "col-md-4"},
+                    { cls: "col-md-4" },
                 )}
                 ${field(
                     "Máximo exercício",
                     `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseHRMax" value="${esc(String(desired.exerciseHRMax ?? 140))}">`,
-                    {cls: "col-md-4"},
+                    { cls: "col-md-4" },
                 )}
                 ${field(
                     "Alerta em exercício",
                     `<input class="form-control" type="number" min="0" step="1" data-config-field="exerciseRemindValue" value="${esc(String(desired.exerciseRemindValue ?? 140))}">`,
-                    {cls: "col-md-4"},
+                    { cls: "col-md-4" },
                 )}
             </div>
         </div>`;
@@ -886,10 +886,10 @@ export function alarmClockInput(desired, meta = {}) {
     const recurrenceOptions = Array.isArray(meta.recurrence?.options) && meta.recurrence.options.length
         ? meta.recurrence.options
         : [
-              { value: "once", label: "Uma vez" },
-              { value: "daily", label: "Todos os dias" },
-              { value: "custom", label: "Personalizado" },
-          ];
+                { value: "once", label: "Uma vez" },
+                { value: "daily", label: "Todos os dias" },
+                { value: "custom", label: "Personalizado" },
+            ];
     const wonlexFields = {
         label: meta.label?.supported === true,
         url: meta.url?.supported === true,
@@ -989,17 +989,17 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                             <option value="${value}" ${normalized.drugType === value ? "selected" : ""}>${esc(label)}</option>
                         `).join("")}
                     </select>`,
-                    {cls: "col-md-4", required: true},
+                    { cls: "col-md-4", required: true },
                 )}
                 ${field(
                     "Nome do medicamento",
                     `<input class="form-control" type="text" data-medication-field="drugName" value="${esc(normalized.drugName)}" placeholder="Ex.: Losartan" required>`,
-                    {cls: "col-md-8", required: true},
+                    { cls: "col-md-8", required: true },
                 )}
                 ${field(
                     "Dose",
                     `<input class="form-control" type="number" min="0" step="0.1" data-medication-field="drugDose" value="${esc(String(normalized.drugDose))}">`,
-                    {cls: "col-sm-6 col-md-3"},
+                    { cls: "col-sm-6 col-md-3" },
                 )}
                 ${field(
                     "Unidade",
@@ -1015,17 +1015,17 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                             <option value="${value}" ${normalized.drugUnit === value ? "selected" : ""}>${esc(label)}</option>
                         `).join("")}
                     </select>`,
-                    {cls: "col-sm-6 col-md-3"},
+                    { cls: "col-sm-6 col-md-3" },
                 )}
                 ${field(
                     "Data inicial",
                     `<input class="form-control" type="date" data-medication-field="drugStartTime" value="${esc(normalized.drugStartTime)}" required>`,
-                    {cls: "col-sm-6 col-md-3", required: true},
+                    { cls: "col-sm-6 col-md-3", required: true },
                 )}
                 ${field(
                     "Data final",
                     `<input class="form-control" type="date" data-medication-field="drugEndTime" value="${esc(normalized.drugEndTime)}" required>`,
-                    {cls: "col-sm-6 col-md-3", required: true},
+                    { cls: "col-sm-6 col-md-3", required: true },
                 )}
                 ${field(
                     "Intervalo",
@@ -1033,7 +1033,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                         <input class="form-control" type="number" min="0" step="0.5" data-medication-field="drugInterval" value="${esc(String(normalized.drugInterval))}" required>
                         <span class="input-group-text">dias</span>
                     </div>`,
-                    {cls: "col-sm-6 col-md-4", required: true},
+                    { cls: "col-sm-6 col-md-4", required: true },
                 )}
                 ${field(
                     "Tomar",
@@ -1049,7 +1049,7 @@ export function wonlexMedicationPlanRow(plan = {}, index = 0) {
                             `;
                         }).join("")}
                     </div>`,
-                    {cls: "col-sm-6 col-md-8", required: true},
+                    { cls: "col-sm-6 col-md-8", required: true },
                 )}
             </div>
             <div class="mt-3">
@@ -1103,7 +1103,7 @@ export function fourPTouchAlarmRow(alarm, index) {
                 ${field(
                     "Hora",
                     `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-fourptouch-field="time" value="${esc(formatFourPTouchAlarmTime(alarm.time))}">`,
-                    {cls: "col-sm-6 col-lg-2"},
+                    { cls: "col-sm-6 col-lg-2" },
                 )}
                 <div class="col-sm-6 col-lg-2">
                     <div class="form-check form-switch form-switch-aligned">
@@ -1122,7 +1122,7 @@ export function fourPTouchAlarmRow(alarm, index) {
                             )
                             .join("")}
                     </select>`,
-                    {cls: "col-12 col-lg-3"},
+                    { cls: "col-12 col-lg-3" },
                 )}
                 <div class="col-12 col-lg-5 ${customVisible ? "" : "d-none"}" data-fourptouch-custom-wrapper>
                     <label class="form-label-sm">Dias personalizados</label>
@@ -1169,10 +1169,10 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
     const recurrenceButtonOptions = Array.isArray(recurrenceOptions) && recurrenceOptions.length
         ? recurrenceOptions
         : [
-              { value: "once", label: "Uma vez" },
-              { value: "daily", label: "Todos os dias" },
-              { value: "custom", label: "Personalizado" },
-          ];
+                { value: "once", label: "Uma vez" },
+                { value: "daily", label: "Todos os dias" },
+                { value: "custom", label: "Personalizado" },
+            ];
     const dayButtons = [
         { value: "1", label: "Seg" },
         { value: "2", label: "Ter" },
@@ -1188,15 +1188,15 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
             <div class="row g-3 align-items-end">
                 ${wonlexFields.label
                     ? field(
-                        "Nome do alarme",
-                        `<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">`,
-                        {cls: "col-12 col-lg-4"},
-                    )
+                            "Nome do alarme",
+                            `<input class="form-control" type="text" placeholder="Ex.: Tomar medicação" data-alarm-clock-field="label" value="${esc(String(item.label || ""))}">`,
+                            { cls: "col-12 col-lg-4" },
+                        )
                     : ""}
                 ${field(
                     "Hora",
                     `<input class="form-control" type="text" inputmode="numeric" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" data-time-format="24h" data-alarm-clock-field="time" value="${esc(formatReminderTime(item.time))}" required>`,
-                    {cls: `col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}`, required: true},
+                    { cls: `col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}`, required: true },
                 )}
                 <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
                     <div class="form-check form-switch form-switch-aligned">
@@ -1206,8 +1206,8 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 </div>
                 ${hasTypeSelector
                     ? field(
-                        "Tipo",
-                        `<div class="btn-group w-100" role="group" aria-label="Tipo de alarme">
+                            "Tipo",
+                            `<div class="btn-group w-100" role="group" aria-label="Tipo de alarme">
                         ${typeOptions.map((option) => {
                             const optionValue = parseInt(String(option.value), 10) || 1;
                             const inputId = `${rowId}-type-${optionValue}`;
@@ -1224,8 +1224,8 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                         `;
                         }).join("")}
                     </div>`,
-                        {cls: "col-12 col-lg-3"},
-                    )
+                            { cls: "col-12 col-lg-3" },
+                        )
                     : ""}
                 ${field(
                     "Recorrência",
@@ -1248,7 +1248,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                             })
                             .join("")}
                     </div>`,
-                    {cls: `col-12 col-lg-${hasTypeSelector ? "3" : "4"}`, required: true},
+                    { cls: `col-12 col-lg-${hasTypeSelector ? "3" : "4"}`, required: true },
                 )}
                 <div class="col-12 col-lg-3 ${customVisible ? "" : "d-none"}" data-alarm-clock-custom-wrapper>
                     <label class="form-label-sm required">Dias personalizados</label>
@@ -1276,13 +1276,13 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                 </div>
                 ${wonlexFields.url
                     ? field(
-                        "URL do áudio",
-                        `<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">`,
-                        {
-                            cls: "col-12",
-                            help: "Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.",
-                        },
-                    )
+                            "URL do áudio",
+                            `<input class="form-control" type="url" inputmode="url" placeholder="https://exemplo.pt/lembrete.mp3" data-alarm-clock-field="url" value="${esc(String(item.url || ""))}">`,
+                            {
+                                cls: "col-12",
+                                help: "Endereço HTTP ou HTTPS opcional para o ficheiro de voz do lembrete.",
+                            },
+                        )
                     : ""}
             </div>
         </div>`;

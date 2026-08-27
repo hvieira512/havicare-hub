@@ -8,7 +8,7 @@ import {
     clearStorageKey,
     saveJsonStorage,
 } from "../storage.js";
-import {resolvePaginationPage} from "../pagination.js";
+import { resolvePaginationPage } from "../pagination.js";
 import {
     loadSummary,
     normalizeFilterValue,
@@ -82,7 +82,7 @@ export function storedFilterList(value) {
 }
 
 function licenseValuesForCompany(company) {
-    const tree = state.summary.deviceFilterCounts?.license || {companies: []};
+    const tree = state.summary.deviceFilterCounts?.license || { companies: [] };
     const entry = (tree.companies || []).find(
         (candidate) => String(candidate.company) === company,
     );
@@ -90,7 +90,7 @@ function licenseValuesForCompany(company) {
 }
 
 export async function handleDeviceFilterClick(event) {
-    const button = event.target.closest('[data-action="toggleDeviceFilter"]');
+    const button = event.target.closest("[data-action=\"toggleDeviceFilter\"]");
     if (!button || button.disabled) return;
     const key = button.dataset.filterKey;
     const value = button.dataset.filterValue;
@@ -140,7 +140,7 @@ export function handleDownlinkPagerClick(event) {
     );
     const nextPage = resolvePaginationPage(
         event,
-        {page: state.downlinkPage, total_pages: totalPages},
+        { page: state.downlinkPage, total_pages: totalPages },
         "downlink",
         "downlinkPageGo",
     );
@@ -162,7 +162,7 @@ export function handleTelemetryPagerClick(event) {
     );
     const nextPage = resolvePaginationPage(
         event,
-        {page: state.telemetryPage, total_pages: totalPages},
+        { page: state.telemetryPage, total_pages: totalPages },
         "telemetry",
         "telemetryPageGo",
     );

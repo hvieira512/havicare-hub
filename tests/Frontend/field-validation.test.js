@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
 
-const {bindInvalidClearing, clearInvalid, markInvalid} = await import(
-    "../../src/Dashboard/dashboard/validation.js"
+const { bindInvalidClearing, clearInvalid, markInvalid } = await import(
+    "../../src/Dashboard/dashboard/validation.js",
 );
 
 /**
@@ -20,7 +20,7 @@ function form(html) {
 const feedbackAfter = (field) => field.nextElementSibling;
 
 test("marcar um campo escreve a mensagem ao lado dele", () => {
-    const f = form('<input id="a">');
+    const f = form("<input id=\"a\">");
     const a = document.getElementById("a");
 
     markInvalid(a, "O nome é obrigatório");
@@ -35,7 +35,7 @@ test("marcar um campo escreve a mensagem ao lado dele", () => {
 });
 
 test("o foco vai para o primeiro campo marcado e não para o último", () => {
-    form('<input id="a"><input id="b">');
+    form("<input id=\"a\"><input id=\"b\">");
     const a = document.getElementById("a");
     const b = document.getElementById("b");
 
@@ -46,7 +46,7 @@ test("o foco vai para o primeiro campo marcado e não para o último", () => {
 });
 
 test("limpar aceita o formulário inteiro ou um campo só", () => {
-    const f = form('<input id="a"><input id="b">');
+    const f = form("<input id=\"a\"><input id=\"b\">");
     const a = document.getElementById("a");
     const b = document.getElementById("b");
     markInvalid(a, "x");
@@ -61,27 +61,27 @@ test("limpar aceita o formulário inteiro ou um campo só", () => {
 });
 
 test("escrever no campo marcado limpa-o, e clicar nele não", () => {
-    form('<input id="a">');
+    form("<input id=\"a\">");
     const a = document.getElementById("a");
     bindInvalidClearing(document);
     markInvalid(a, "O nome é obrigatório");
 
-    a.dispatchEvent(new window.Event("click", {bubbles: true}));
+    a.dispatchEvent(new window.Event("click", { bubbles: true }));
     assert.equal(a.classList.contains("is-invalid"), true);
 
-    a.dispatchEvent(new window.Event("input", {bubbles: true}));
+    a.dispatchEvent(new window.Event("input", { bubbles: true }));
     assert.equal(a.classList.contains("is-invalid"), false);
 });
 
 test("escolher dentro de um grupo de botões limpa a marca do grupo", () => {
-    form('<div id="g"><button id="opt" type="button">Opção</button></div>');
+    form("<div id=\"g\"><button id=\"opt\" type=\"button\">Opção</button></div>");
     const g = document.getElementById("g");
     bindInvalidClearing(document);
     markInvalid(g, "O fornecedor é obrigatório");
 
     document
         .getElementById("opt")
-        .dispatchEvent(new window.Event("click", {bubbles: true}));
+        .dispatchEvent(new window.Event("click", { bubbles: true }));
 
     assert.equal(g.classList.contains("is-invalid"), false);
 });

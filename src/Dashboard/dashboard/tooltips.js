@@ -15,8 +15,8 @@ export function refreshTooltips(root) {
     const bootstrap = window.bootstrap;
     if (!bootstrap?.Tooltip || !root) return;
 
-    root.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
-        bootstrap.Tooltip.getOrCreateInstance(element, {animation: false});
+    root.querySelectorAll("[data-bs-toggle=\"tooltip\"]").forEach((element) => {
+        bootstrap.Tooltip.getOrCreateInstance(element, { animation: false });
     });
 }
 
@@ -25,7 +25,7 @@ export function disposeTooltips(root) {
     const bootstrap = window.bootstrap;
     if (!bootstrap?.Tooltip || !root) return;
 
-    root.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
+    root.querySelectorAll("[data-bs-toggle=\"tooltip\"]").forEach((element) => {
         bootstrap.Tooltip.getInstance(element)?.dispose();
     });
 }

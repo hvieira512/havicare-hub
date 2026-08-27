@@ -3,12 +3,12 @@ import {
     deleteDeviceLink as apiDeleteDeviceLink,
     getDevices as apiGetDevices,
 } from "../api/index.js";
-import {esc} from "../format.js";
-import {state} from "../state.js";
-import {linksToGateway, normalizeDeviceType} from "../domain.js";
-import {eligibleGateways, gatewayLinkChanges} from "./gateway-links.js";
-import {disposeTooltips, refreshTooltips} from "../tooltips.js";
-import {linkSignal, signalMeter} from "./gateway-signal.js";
+import { esc } from "../format.js";
+import { state } from "../state.js";
+import { linksToGateway, normalizeDeviceType } from "../domain.js";
+import { eligibleGateways, gatewayLinkChanges } from "./gateway-links.js";
+import { disposeTooltips, refreshTooltips } from "../tooltips.js";
+import { linkSignal, signalMeter } from "./gateway-signal.js";
 
 /**
  * O escolhedor de gateways no modal do dispositivo: com que gateways um sensor pode falar,
@@ -199,7 +199,7 @@ export async function refreshGatewayOptions(selectedKeys = null) {
     });
     if (response?.error) {
         renderGatewayOptions(
-            preserved.map((imei) => ({imei})),
+            preserved.map((imei) => ({ imei })),
             preserved,
         );
         setGatewayLinksDisabled(true);

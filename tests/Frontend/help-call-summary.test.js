@@ -4,17 +4,17 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
 // caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
-import {helpCallSummaryCard} from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { helpCallSummaryCard } from "../../src/Dashboard/dashboard/telemetry-cards.js";
 
 const call = (pressType, occurredAt) => ({
     type: "help_call",
     occurredAt,
-    data: {pressType, triggerCount: 10, presses: 1},
+    data: { pressType, triggerCount: 10, presses: 1 },
 });
 
 test("a device that never called for help gets no card", () => {
     assert.equal(helpCallSummaryCard([]), "");
-    assert.equal(helpCallSummaryCard([{type: "battery", data: {percent: 90}}]), "");
+    assert.equal(helpCallSummaryCard([{ type: "battery", data: { percent: 90 } }]), "");
 });
 
 test("every press mode is listed, including ones never used", () => {
@@ -126,7 +126,7 @@ test("a mode that never fired has no tooltip, having no timestamp to show", () =
 
 test("payload rows wrapped by the store are unwrapped", () => {
     const html = helpCallSummaryCard([
-        {payload: call("double", "2026-08-10T12:26:18Z")},
+        { payload: call("double", "2026-08-10T12:26:18Z") },
     ]);
 
     assert.match(html, /Toque duplo/);

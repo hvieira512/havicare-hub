@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
-import {JSDOM} from "jsdom";
+import { readFileSync } from "node:fs";
+import { JSDOM } from "jsdom";
 
 // Tem de vir antes dos modulos do dashboard: o api/http.js toca em window ao carregar.
 import "./support/browser-env.js";
@@ -36,11 +36,11 @@ const ENTRY = {
 
 const META = {
     presets: {
-        low: {pollutionRange: 7, pollutionValue: 15},
-        normal: {pollutionRange: 4, pollutionValue: 12},
-        high: {pollutionRange: 3, pollutionValue: 7},
+        low: { pollutionRange: 7, pollutionValue: 15 },
+        normal: { pollutionRange: 4, pollutionValue: 12 },
+        high: { pollutionRange: 3, pollutionValue: 7 },
     },
-    bounds: {pollutionRange: [2, 10], pollutionValue: [5, 25]},
+    bounds: { pollutionRange: [2, 10], pollutionValue: [5, 25] },
 };
 
 function sectionFor(desired) {
@@ -62,7 +62,7 @@ test("não há separador nem marcação estática de regras do hub", () => {
 });
 
 test("os três presets aparecem, e o que bate certo com os valores fica aceso", () => {
-    const {section} = sectionFor({pollutionRange: 4, pollutionValue: 12});
+    const { section } = sectionFor({ pollutionRange: 4, pollutionValue: 12 });
     const buttons = [...section.querySelectorAll("[data-config-preset]")];
 
     assert.equal(buttons.length, 3);
@@ -74,15 +74,15 @@ test("os três presets aparecem, e o que bate certo com os valores fica aceso", 
 test("valores que não são de nenhum preset não acendem nenhum botão", () => {
     // O quarto botão "Personalizado" do bloco anterior deixa de ser preciso: o estado
     // lê-se dos números, e nenhum preset activo já diz que são à medida.
-    const {section} = sectionFor({pollutionRange: 6, pollutionValue: 20});
+    const { section } = sectionFor({ pollutionRange: 6, pollutionValue: 20 });
 
     assert.equal(section.querySelectorAll("[data-config-preset].active").length, 0);
 });
 
 test("as gamas vêm do servidor e não de uma cópia no frontend", () => {
-    const {section} = sectionFor({pollutionRange: 4, pollutionValue: 12});
-    const range = section.querySelector('[data-config-field="pollutionRange"]');
-    const value = section.querySelector('[data-config-field="pollutionValue"]');
+    const { section } = sectionFor({ pollutionRange: 4, pollutionValue: 12 });
+    const range = section.querySelector("[data-config-field=\"pollutionRange\"]");
+    const value = section.querySelector("[data-config-field=\"pollutionValue\"]");
 
     assert.equal(range.getAttribute("min"), "2");
     assert.equal(range.getAttribute("max"), "10");
@@ -91,7 +91,7 @@ test("as gamas vêm do servidor e não de uma cópia no frontend", () => {
 });
 
 test("o bloco lê-se de volta como o par que a API espera", () => {
-    const {section} = sectionFor({pollutionRange: 3, pollutionValue: 7});
+    const { section } = sectionFor({ pollutionRange: 3, pollutionValue: 7 });
 
     assert.deepEqual(readConfigPayload(section), {
         pollutionRange: 3,

@@ -10,7 +10,7 @@
  * conjunto novo. Declara-se, em vez de se espalhar por quem trata cada clique.
  */
 
-export function createWizard({questions, steps}) {
+export function createWizard({ questions, steps }) {
     let answers = {};
     let step = 1;
 
@@ -52,7 +52,7 @@ export function createWizard({questions, steps}) {
     }
 
     function applyAnswer(key, value) {
-        answers = {...answers, [key]: value};
+        answers = { ...answers, [key]: value };
         const question = questions.find((q) => q.key === key);
         for (const cleared of question?.clears ?? []) {
             delete answers[cleared];
@@ -66,7 +66,7 @@ export function createWizard({questions, steps}) {
         isStepComplete,
         step: () => step,
         steps: () => steps,
-        answers: () => ({...answers}),
+        answers: () => ({ ...answers }),
 
         canAdvance: () => isStepComplete(step) && step < steps.length,
         canGoBack: () => step > 1,
@@ -128,7 +128,7 @@ export function createWizard({questions, steps}) {
         /** As badges de todas as respostas, na ordem das perguntas. */
         badges() {
             return answered().flatMap((question) =>
-                question.badges(answers).map((badge) => ({...badge, key: question.key})),
+                question.badges(answers).map((badge) => ({ ...badge, key: question.key })),
             );
         },
     };

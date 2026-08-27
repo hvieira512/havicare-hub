@@ -4,33 +4,33 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
 // caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
-import {renderRequestCardShell} from "../../src/Dashboard/dashboard/telemetry-cards.js";
-import {state} from "../../src/Dashboard/dashboard/state.js";
+import { renderRequestCardShell } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { state } from "../../src/Dashboard/dashboard/state.js";
 
 // O nome de uma capacidade vem do catálogo do tipo do dispositivo escolhido, e não de um
 // mapa escrito no frontend. Um cartão desenhado sem catálogo mostra a chave humanizada,
 // por isso o teste põe o gateway em cima da mesa antes de desenhar.
 state.capabilityCatalogByType.gateway = [
-    {key: "connectivity", label: "Conectividade"},
+    { key: "connectivity", label: "Conectividade" },
 ];
-state.selectedDetail = {model: {deviceType: "gateway"}};
+state.selectedDetail = { model: { deviceType: "gateway" } };
 
 const connectivityCard = (data) => renderRequestCardShell(
-    {feature: "connectivity", requestable: false},
+    { feature: "connectivity", requestable: false },
     false,
-    [{type: "connectivity", occurredAt: "2026-08-07T13:00:00Z", data}],
+    [{ type: "connectivity", occurredAt: "2026-08-07T13:00:00Z", data }],
 );
 
 test("MKGW3 wifi connectivity shows the interface and signal strength", () => {
     // Exactamente o payload que o `GatewayNormalizer` emite para uma mensagem MOKO 3004.
-    const html = connectivityCard({interface: "wifi", signalStrengthDbm: -50});
+    const html = connectivityCard({ interface: "wifi", signalStrengthDbm: -50 });
 
     assert.match(html, /Wi-Fi · -50 dBm/);
     assert.match(html, /fa-wifi/);
 });
 
 test("wired gateways render without a signal reading", () => {
-    const html = connectivityCard({interface: "ethernet"});
+    const html = connectivityCard({ interface: "ethernet" });
 
     assert.match(html, /Ethernet/);
     assert.match(html, /fa-ethernet/);
@@ -50,7 +50,7 @@ test("MKGW4 cellular connectivity includes the network type", () => {
 });
 
 test("a zero dBm reading is rendered rather than treated as missing", () => {
-    const html = connectivityCard({interface: "wifi", signalStrengthDbm: 0});
+    const html = connectivityCard({ interface: "wifi", signalStrengthDbm: 0 });
 
     assert.match(html, /Wi-Fi · 0 dBm/);
 });
@@ -64,7 +64,7 @@ test("connectivity falls back to its label when the payload carries nothing", ()
 });
 
 test("connectivity is labelled in Portuguese, not titleized", () => {
-    const html = renderRequestCardShell({feature: "connectivity", requestable: false}, false, []);
+    const html = renderRequestCardShell({ feature: "connectivity", requestable: false }, false, []);
 
     assert.match(html, /Conectividade/);
     assert.doesNotMatch(html, /Connectivity/);

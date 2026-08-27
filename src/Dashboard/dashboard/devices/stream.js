@@ -2,13 +2,13 @@ let state;
 let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
 let eventSource = null;
-let currentImei = '';
+let currentImei = "";
 
 export function initDeviceStream(context) {
     state = context.state;
     onRenderSelection = context.renderSelection;
     onCommandsUpdated = context.onCommandsUpdated || (() => {});
-    window.addEventListener('hub-dashboard-api-token-updated', handleTokenUpdated);
+    window.addEventListener("hub-dashboard-api-token-updated", handleTokenUpdated);
 }
 
 export function connectDeviceStream(imei) {
@@ -38,7 +38,7 @@ export function connectDeviceStream(imei) {
 }
 
 export function disconnectDeviceStream() {
-    currentImei = '';
+    currentImei = "";
     closeDeviceStream();
 }
 
@@ -54,8 +54,8 @@ function handleTokenUpdated() {
         return;
     }
     if (
-        document.body.dataset.dashboardAuthRequired === "true"
-        && !window.hubDashboardApiToken?.access_token
+        document.body.dataset.dashboardAuthRequired === "true" &&
+        !window.hubDashboardApiToken?.access_token
     ) {
         closeDeviceStream();
         return;

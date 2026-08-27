@@ -39,8 +39,8 @@ export function confirmDestructive(title, text = "") {
 /** A mensagem de um erro da API; o código serve de texto quando não há mensagem. */
 export function apiError(result) {
     return (
-        result?.error?.message
-        || result?.error?.code
-        || "Não foi possível concluir a operação."
+        result?.error?.message ||
+        result?.error?.code ||
+        "Não foi possível concluir a operação."
     );
 }

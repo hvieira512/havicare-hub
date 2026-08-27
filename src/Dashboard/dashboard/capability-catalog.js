@@ -2,8 +2,8 @@ import {
     getCapabilities as apiGetCapabilities,
     getModelTemplate as apiGetModelTemplate,
 } from "./api/index.js";
-import {state} from "./state.js";
-import {capabilityLabelByKey, normalizeDeviceType} from "./domain.js";
+import { state } from "./state.js";
+import { capabilityLabelByKey, normalizeDeviceType } from "./domain.js";
 
 /**
  * O catálogo de capacidades de cada tipo de dispositivo, e o nome por que se chama cada uma.
@@ -44,7 +44,7 @@ export async function ensureCapabilityCatalog(deviceType) {
     if (!inFlightByType.has(normalized)) {
         inFlightByType.set(
             normalized,
-            apiGetCapabilities({deviceType: normalized})
+            apiGetCapabilities({ deviceType: normalized })
                 .then((response) => {
                     // Um erro não fica em cache: o pedido seguinte volta a tentar.
                     if (response?.error) return [];
@@ -69,7 +69,7 @@ export async function ensureModelTemplate(supplierId, deviceType) {
     const key = `${supplierId}|${normalized}`;
     let pending = modelTemplates.get(key);
     if (!pending) {
-        pending = apiGetModelTemplate({supplierId, deviceType: normalized});
+        pending = apiGetModelTemplate({ supplierId, deviceType: normalized });
         modelTemplates.set(key, pending);
         // Um erro não fica em cache: o pedido seguinte volta a tentar.
         void pending.then((response) => {

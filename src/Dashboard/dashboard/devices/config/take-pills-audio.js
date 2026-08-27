@@ -1,4 +1,4 @@
-import {toast} from "../../dialogs.js";
+import { toast } from "../../dialogs.js";
 
 const recordingState = new WeakMap();
 
@@ -11,19 +11,19 @@ export async function startTakePillsRecording(section) {
     }
 
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mimeType = pickMimeType();
-        const recorder = new MediaRecorder(stream, mimeType ? {mimeType} : undefined);
-        const next = {stream, recorder, chunks: [], mimeType: recorder.mimeType || mimeType || "audio/webm", cancelled: false};
+        const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        const next = { stream, recorder, chunks: [], mimeType: recorder.mimeType || mimeType || "audio/webm", cancelled: false };
         recordingState.set(section, next);
         updateRecorderUi(section, "A gravar...", true);
-        recorder.addEventListener("dataavailable", event => {
+        recorder.addEventListener("dataavailable", (event) => {
             if (event.data && event.data.size > 0) next.chunks.push(event.data);
         });
         recorder.addEventListener("stop", async () => {
             try {
                 if (!next.cancelled) {
-                    await setAudioFromBlob(section, new Blob(next.chunks, {type: next.mimeType}), next.mimeType);
+                    await setAudioFromBlob(section, new Blob(next.chunks, { type: next.mimeType }), next.mimeType);
                 }
             } finally {
                 stopStream(next.stream);
@@ -53,9 +53,9 @@ export function clearTakePillsRecording(section) {
     }
     stopStream(current?.stream || null);
     recordingState.delete(section);
-    const input = section.querySelector('[data-config-field="voiceData"]');
-    const mimeInput = section.querySelector('[data-config-field="voiceMimeType"]');
-    const fileInput = section.querySelector('[data-action="takePillsFile"]');
+    const input = section.querySelector("[data-config-field=\"voiceData\"]");
+    const mimeInput = section.querySelector("[data-config-field=\"voiceMimeType\"]");
+    const fileInput = section.querySelector("[data-action=\"takePillsFile\"]");
     const preview = section.querySelector("[data-takepills-preview]");
     if (input) input.value = "";
     if (mimeInput) mimeInput.value = "";
@@ -70,7 +70,7 @@ export async function loadTakePillsAudio(section, file) {
     if (!file) return;
     try {
         await setAudioFromBlob(section, file, file.type || "audio/*");
-        const fileInput = section.querySelector('[data-action="takePillsFile"]');
+        const fileInput = section.querySelector("[data-action=\"takePillsFile\"]");
         if (fileInput) fileInput.value = "";
         syncTakePillsVoiceVisibility(section);
         updateRecorderUi(section, "Áudio carregado", false);
@@ -80,19 +80,19 @@ export async function loadTakePillsAudio(section, file) {
 }
 
 export function syncTakePillsCustomVisibility(section) {
-    section.querySelectorAll("[data-takepills-reminder-group]").forEach(group => {
+    section.querySelectorAll("[data-takepills-reminder-group]").forEach((group) => {
         const index = group.dataset.takepillsReminderGroup;
-        const frequency = parseInt(group.querySelector('[data-takepills-field="reminderFrequency"]')?.value ?? "1", 10) || 1;
+        const frequency = parseInt(group.querySelector("[data-takepills-field=\"reminderFrequency\"]")?.value ?? "1", 10) || 1;
         section.querySelector(`[data-takepills-custom-wrapper="${index}"]`)?.classList.toggle("d-none", frequency !== 3);
     });
 }
 
 export function syncTakePillsVoiceVisibility(section) {
-    const enabled = section.querySelector('[data-config-field="voiceEnabled"]')?.checked || false;
+    const enabled = section.querySelector("[data-config-field=\"voiceEnabled\"]")?.checked || false;
     section.querySelector("[data-takepills-audio-controls]")?.toggleAttribute("disabled", !enabled);
     const status = section.querySelector("[data-takepills-status]");
     if (status) {
-        const hasAudio = String(section.querySelector('[data-config-field="voiceData"]')?.value || "").trim() !== "";
+        const hasAudio = String(section.querySelector("[data-config-field=\"voiceData\"]")?.value || "").trim() !== "";
         status.textContent = enabled ? (hasAudio ? "Áudio carregado" : "Sem áudio") : "Áudio desligado";
     }
 }
@@ -100,8 +100,8 @@ export function syncTakePillsVoiceVisibility(section) {
 async function setAudioFromBlob(section, blob, mimeType) {
     const base64 = await blobToBase64(blob);
     const normalizedMimeType = mimeType || blob.type || "audio/webm";
-    const input = section.querySelector('[data-config-field="voiceData"]');
-    const mimeInput = section.querySelector('[data-config-field="voiceMimeType"]');
+    const input = section.querySelector("[data-config-field=\"voiceData\"]");
+    const mimeInput = section.querySelector("[data-config-field=\"voiceMimeType\"]");
     const preview = section.querySelector("[data-takepills-preview]");
     if (input) input.value = base64;
     if (mimeInput) mimeInput.value = normalizedMimeType;
@@ -112,9 +112,9 @@ async function setAudioFromBlob(section, blob, mimeType) {
 }
 
 function updateRecorderUi(section, status, recording) {
-    const enabled = section.querySelector('[data-config-field="voiceEnabled"]')?.checked || false;
-    section.querySelector('[data-action="takePillsRecord"]')?.classList.toggle("d-none", !!recording);
-    section.querySelector('[data-action="takePillsStop"]')?.classList.toggle("d-none", !recording);
+    const enabled = section.querySelector("[data-config-field=\"voiceEnabled\"]")?.checked || false;
+    section.querySelector("[data-action=\"takePillsRecord\"]")?.classList.toggle("d-none", !!recording);
+    section.querySelector("[data-action=\"takePillsStop\"]")?.classList.toggle("d-none", !recording);
     section.querySelector("[data-takepills-audio-controls]")?.toggleAttribute("disabled", !enabled);
     const statusElement = section.querySelector("[data-takepills-status]");
     if (statusElement) statusElement.textContent = enabled ? status : "Áudio desligado";
@@ -128,7 +128,7 @@ function stopStream(stream) {
 function pickMimeType() {
     if (typeof MediaRecorder === "undefined") return "";
     return ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/ogg"]
-        .find(mimeType => MediaRecorder.isTypeSupported(mimeType)) || "";
+        .find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) || "";
 }
 
 function blobToBase64(blob) {

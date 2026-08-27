@@ -3,10 +3,10 @@ import {
     getDevice as apiGetDevice,
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
-import {ensureCapabilityCatalog} from "../capability-catalog.js";
-import {apiError, confirmDestructive} from "../dialogs.js";
-import {clearInvalid, markInvalid} from "../validation.js";
-import {ensureLicensesLoaded} from "../licenses.js";
+import { ensureCapabilityCatalog } from "../capability-catalog.js";
+import { apiError, confirmDestructive } from "../dialogs.js";
+import { clearInvalid, markInvalid } from "../validation.js";
+import { ensureLicensesLoaded } from "../licenses.js";
 import {
     deviceTypeCardsHtml,
     licenseTree,
@@ -137,8 +137,8 @@ export function setDeviceFormError(message = "") {
 }
 
 function activeDeviceModalTab() {
-    return els.deviceConfigTabBtn?.classList.contains("active")
-        || els.deviceConfigPane?.classList.contains("active")
+    return els.deviceConfigTabBtn?.classList.contains("active") ||
+        els.deviceConfigPane?.classList.contains("active")
         ? "config"
         : "general";
 }
@@ -169,7 +169,7 @@ export async function editDevice(imei, supplier, model) {
         capabilityCatalog: [],
         catalogLoading: false,
         configurations: [],
-        configurationSync: {entries: {}},
+        configurationSync: { entries: {} },
         capabilities: {},
         enabledCapabilityKeys: [],
         configUi: {},
@@ -230,7 +230,7 @@ export async function editDevice(imei, supplier, model) {
         state.deviceModal.selectedGatewayKeys = linkedGatewayKeys;
         await refreshGatewayOptions(linkedGatewayKeys);
         state.deviceModal.configurations = detail.configurations || {};
-        state.deviceModal.configurationSync = detail.configurationSync || {entries: {}};
+        state.deviceModal.configurationSync = detail.configurationSync || { entries: {} };
         state.deviceModal.capabilities = detail.capabilities || {};
         state.deviceModal.enabledCapabilityKeys = detail.enabledCapabilityKeys || [];
         renderDeviceModalIdentity(device, deviceModel, deviceType);
@@ -317,12 +317,12 @@ export async function renderDeviceSelectors(
     });
     els.deviceModelButtons.innerHTML = availableModels.length
         ? modelCardsHtml({
-            models: availableModels,
-            selected: model,
-            attrsFor: (internal) =>
-                `data-action="selectDeviceModel" data-value="${esc(internal)}"`,
-        })
-        : '<div class="text-secondary small py-2">Sem modelos deste fornecedor.</div>';
+                models: availableModels,
+                selected: model,
+                attrsFor: (internal) =>
+                    `data-action="selectDeviceModel" data-value="${esc(internal)}"`,
+            })
+        : "<div class=\"text-secondary small py-2\">Sem modelos deste fornecedor.</div>";
     updateDevicePreview();
     renderEditWizard();
     await syncDeviceModalContext();
@@ -549,7 +549,7 @@ export async function saveDevice() {
 export async function handleDeleteDeviceBtnClick() {
     const imei = els.deleteDeviceBtn.dataset.imei;
     if (!imei) return;
-    const {isConfirmed} = await confirmDestructive(`Apagar o dispositivo ${imei}?`);
+    const { isConfirmed } = await confirmDestructive(`Apagar o dispositivo ${imei}?`);
     if (!isConfirmed) return;
     await apiDeleteDevice(imei);
     deviceModal.hide();

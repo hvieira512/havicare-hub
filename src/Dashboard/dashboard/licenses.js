@@ -1,5 +1,5 @@
-import {getLicenses as apiGetLicenses} from "./api/index.js";
-import {state} from "./state.js";
+import { getLicenses as apiGetLicenses } from "./api/index.js";
+import { state } from "./state.js";
 
 /**
  * As licenças, uma vez por sessão. Vive na raiz e não numa funcionalidade porque são seis os
@@ -17,7 +17,7 @@ export async function ensureLicensesLoaded() {
     }
 
     // Uma promessa partilhada: duas colunas a pedir ao mesmo tempo pediam duas vezes o mesmo.
-    inFlight ??= apiGetLicenses({limit: 1000})
+    inFlight ??= apiGetLicenses({ limit: 1000 })
         .then((response) => {
             if (response?.error) return null;
             state.settingsModal.licenses = response.data || [];

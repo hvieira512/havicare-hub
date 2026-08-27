@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import {fileURLToPath} from "node:url";
+import { fileURLToPath } from "node:url";
 
 /**
  * Guarda contra um grafo de módulos ES partido.
@@ -37,7 +37,7 @@ test("module graph links: main.js", async () => {
 });
 
 const listModules = (dir) =>
-    fs.readdirSync(dir, {withFileTypes: true}).flatMap((entry) => {
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) return listModules(full);
         return entry.name.endsWith(".js") ? [full] : [];

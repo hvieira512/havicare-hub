@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
-import {parseFragment} from "./support/dom.js";
-import {telemetryCard, uplinkCardContent} from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { parseFragment } from "./support/dom.js";
+import { telemetryCard, uplinkCardContent } from "../../src/Dashboard/dashboard/telemetry-cards.js";
 
 /**
  * Os cartões do radar. A frequência cardíaca e a respiratória não aparecem aqui de propósito:
@@ -13,17 +13,17 @@ import {telemetryCard, uplinkCardContent} from "../../src/Dashboard/dashboard/te
 
 /** A frequência respiratória mostra a leitura, e não um "há dados de". */
 test("a frequência respiratória mostra a leitura e não um texto fixo", () => {
-    assert.equal(uplinkCardContent("breath_rate", {breathsPerMinute: 17}).value, "17 rpm");
+    assert.equal(uplinkCardContent("breath_rate", { breathsPerMinute: 17 }).value, "17 rpm");
     assert.equal(uplinkCardContent("breath_rate", {}).value, "- rpm");
 });
 
 test("a frequência cardíaca do radar usa o cartão do relógio", () => {
     // Mesma chave, mesma forma `{bpm}`: o radar não tem cartão próprio, de propósito.
-    assert.equal(uplinkCardContent("heart_rate", {bpm: 69}).value, "69 bpm");
+    assert.equal(uplinkCardContent("heart_rate", { bpm: 69 }).value, "69 bpm");
 });
 
 test("o estado de sono e um cartão com o valor em português", () => {
-    const card = uplinkCardContent("sleep_state", {state: "deep_sleep"});
+    const card = uplinkCardContent("sleep_state", { state: "deep_sleep" });
 
     assert.equal(card.value, "Sono profundo");
     assert.equal(card.icon, "fa-bed");
@@ -32,12 +32,12 @@ test("o estado de sono e um cartão com o valor em português", () => {
 test("um estado que o mapa não conhece mostra-se como veio, não desaparece", () => {
     // O fabricante pode acrescentar estados numa versão nova do firmware. O hub manda a
     // enumeração à mesma, e mostrar "Rem Sleep" é melhor do que mostrar "-".
-    assert.equal(uplinkCardContent("sleep_state", {state: "rem_sleep"}).value, "Rem Sleep");
+    assert.equal(uplinkCardContent("sleep_state", { state: "rem_sleep" }).value, "Rem Sleep");
 });
 
 test("um radar que não vê ninguém está a funcionar", () => {
     // "Ninguém" e não "Sem leituras": a diferença entre uma divisão vazia e um radar mudo.
-    assert.equal(uplinkCardContent("presence", {count: 0, people: []}).value, "Ninguém");
+    assert.equal(uplinkCardContent("presence", { count: 0, people: [] }).value, "Ninguém");
 });
 
 /**
@@ -119,7 +119,7 @@ test("a quarta pessoa vira contador em vez de desaparecer", () => {
 test("uma postura que o firmware invente não escreve atributos", () => {
     const card = uplinkCardContent("presence", {
         count: 1,
-        people: [{personIndex: 0, posture: '"><script>alert(1)</script>'}],
+        people: [{ personIndex: 0, posture: "\"><script>alert(1)</script>" }],
     });
 
     assert.equal(card.details.includes("<script>"), false);
@@ -130,15 +130,15 @@ test("uma postura que o firmware invente não escreve atributos", () => {
 test("os alarmes dizem o que aconteceu, não só a categoria", () => {
     // "Queda" sozinho não distingue uma queda confirmada de alguém no chão.
     assert.equal(
-        uplinkCardContent("fall", {detectionType: "fall_confirmed", detectionLevel: "perigo"}).value,
+        uplinkCardContent("fall", { detectionType: "fall_confirmed", detectionLevel: "perigo" }).value,
         "Queda confirmada",
     );
     assert.equal(
-        uplinkCardContent("vitals_alarm", {detectionType: "apnea", detectionLevel: "perigo"}).details,
+        uplinkCardContent("vitals_alarm", { detectionType: "apnea", detectionLevel: "perigo" }).details,
         "Perigo",
     );
     assert.equal(
-        uplinkCardContent("presence_event", {detectionType: "room_exit", detectionLevel: "info"}).value,
+        uplinkCardContent("presence_event", { detectionType: "room_exit", detectionLevel: "info" }).value,
         "Saiu da divisão",
     );
 });
@@ -149,14 +149,14 @@ test("os alarmes dizem o que aconteceu, não só a categoria", () => {
  */
 test("o mosaico mostra o detalhe em vez de o deitar fora", () => {
     const root = parseFragment(
-        telemetryCard({icon: "fa-bed", title: "Presença", value: "2 pessoas", details: "Pessoa 1 · x 3 dm"}),
+        telemetryCard({ icon: "fa-bed", title: "Presença", value: "2 pessoas", details: "Pessoa 1 · x 3 dm" }),
     );
 
     assert.equal(root.querySelector(".telemetry-row-details").textContent, "Pessoa 1 · x 3 dm");
 });
 
 test("um mosaico sem detalhe não desenha a linha vazia", () => {
-    const root = parseFragment(telemetryCard({icon: "fa-bed", title: "Sono", value: "Acordado"}));
+    const root = parseFragment(telemetryCard({ icon: "fa-bed", title: "Sono", value: "Acordado" }));
 
     assert.equal(root.querySelector(".telemetry-row-details"), null);
 });
