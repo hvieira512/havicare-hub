@@ -45,8 +45,7 @@ class ConnectionRegistry
         string $deviceType = 'watch',
         int $licenseId = 0,
         string $company = 'null',
-    ): DeviceSession
-    {
+    ): DeviceSession {
         $current = $this->get($connection) ?? $this->open($connection);
         $session = $current->authenticate($identity, $supplier, $model, $commercialName, $deviceType, $licenseId, $company);
 
@@ -113,5 +112,4 @@ class ConnectionRegistry
 
         return $expired;
     }
-
 }

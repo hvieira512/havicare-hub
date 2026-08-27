@@ -138,4 +138,3 @@ function tab_pane_header(string $title, string $summaryId, string $trailingHtml 
         . $trailingHtml
         . '</div>';
 }
-

@@ -111,7 +111,8 @@ final class DeviceCommandCatalog
         }
 
         $nativeType = (string)($decoded['type'] ?? '');
-        if (!in_array($nativeType, [
+        if (
+            !in_array($nativeType, [
             'dnHeartRate',
             'dnBP',
             'dnBO',
@@ -121,7 +122,8 @@ final class DeviceCommandCatalog
             'dnHRV',
             'dnPPG',
             'dnRR',
-        ], true)) {
+            ], true)
+        ) {
             return $bytes;
         }
 

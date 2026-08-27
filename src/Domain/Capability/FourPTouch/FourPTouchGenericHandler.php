@@ -145,5 +145,4 @@ final class FourPTouchGenericHandler
 
         return $payload;
     }
-
 }

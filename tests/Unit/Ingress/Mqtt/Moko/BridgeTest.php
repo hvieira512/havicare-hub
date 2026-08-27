@@ -105,7 +105,9 @@ final class BridgeTest extends TestCase
     {
         $mqtt = new RecordingHubMqttBridge();
         $now = 1000.0;
-        $bridge = $this->bridge($mqtt, true, static function () use (&$now): float { return $now; }, 1);
+        $bridge = $this->bridge($mqtt, true, static function () use (&$now): float {
+            return $now;
+        }, 1);
         $bridge->handleReceivedMessage('havicare-hub/null/0/gw/d48c49f7909c/raw', $this->scanPayload());
         $now = 1002.0;
         $bridge->expireIdleGateways();
@@ -122,7 +124,10 @@ final class BridgeTest extends TestCase
             'eec5000202f9' => IngressFixtures::diaperSensor(),
         ]);
         return new Bridge(
-            new FakeMqttSubscriber(), $whitelist, $mqtt, IngressFixtures::links($linked),
+            new FakeMqttSubscriber(),
+            $whitelist,
+            $mqtt,
+            IngressFixtures::links($linked),
             new ArrayObservationStateStore(),
             gatewayIdleTimeoutSeconds: $idleTimeout,
             clock: $clock,
@@ -142,5 +147,3 @@ final class BridgeTest extends TestCase
         ], JSON_THROW_ON_ERROR);
     }
 }
-
-

@@ -54,5 +54,4 @@ final class SupplierRepository
         $stmt = $this->pdo->prepare('DELETE FROM suppliers WHERE id = ?');
         $stmt->execute([$id]);
     }
-
 }

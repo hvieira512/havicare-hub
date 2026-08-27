@@ -221,5 +221,4 @@ final class CallWhitelistCapability implements CapabilityContract
 
         return ['name' => $name, 'phone' => $phone];
     }
-
 }

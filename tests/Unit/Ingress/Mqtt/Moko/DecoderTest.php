@@ -67,7 +67,8 @@ final class DecoderTest extends TestCase
 
     public function testDecodesMkgw4AsciiHexAndBleScanForExistingMonitDecoder(): void
     {
-        $scanPayload = $this->mkgw4Frame('30a0',
+        $scanPayload = $this->mkgw4Frame(
+            '30a0',
             $this->tlv(0, chr(10))
             . $this->tlv(1, hex2bin('eec5000202f9'))
             . $this->tlv(2, chr(1))

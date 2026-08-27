@@ -30,7 +30,8 @@ final class CircuitBreakingLocationProviderTest extends TestCase
         );
 
         for ($i = 0; $i < 4; $i++) {
-            $provider->resolve([])->then(null, static function (): void {});
+            $provider->resolve([])->then(null, static function (): void {
+            });
         }
 
         self::assertSame(3, $calls);
@@ -49,8 +50,10 @@ final class CircuitBreakingLocationProviderTest extends TestCase
             $store,
         );
 
-        $provider->resolve([])->then(null, static function (): void {});
-        $provider->resolve([])->then(null, static function (): void {});
+        $provider->resolve([])->then(null, static function (): void {
+        });
+        $provider->resolve([])->then(null, static function (): void {
+        });
 
         self::assertSame(1, $calls);
         self::assertGreaterThanOrEqual(time() + 119, $store->get('test')['openUntil']);
@@ -69,8 +72,10 @@ final class CircuitBreakingLocationProviderTest extends TestCase
             failureThreshold: 1,
         );
 
-        $provider->resolve([])->then(null, static function (): void {});
-        $provider->resolve([])->then(null, static function (): void {});
+        $provider->resolve([])->then(null, static function (): void {
+        });
+        $provider->resolve([])->then(null, static function (): void {
+        });
 
         self::assertSame(2, $calls);
         self::assertSame(0, $store->get('test')['openUntil']);
@@ -90,7 +95,8 @@ final class CircuitBreakingLocationProviderTest extends TestCase
             $store,
         );
 
-        $provider->resolve([])->then(null, static function (): void {});
+        $provider->resolve([])->then(null, static function (): void {
+        });
         $provider->resolve([]);
 
         self::assertSame(['consecutiveFailures' => 0, 'openUntil' => 0], $store->get('test'));

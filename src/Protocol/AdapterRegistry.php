@@ -61,5 +61,4 @@ class AdapterRegistry
     {
         return array_keys($this->adapters);
     }
-
 }

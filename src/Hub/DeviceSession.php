@@ -50,8 +50,7 @@ class DeviceSession
         string $deviceType = 'watch',
         int $licenseId = 0,
         string $company = 'null',
-    ): self
-    {
+    ): self {
         return new self(
             connection: $this->connection,
             transport: $this->transport,

@@ -25,8 +25,7 @@ final class ApiTokenStore
         ?int $licenseRefId = null,
         ?int $companyId = null,
         ?string $company = null,
-    ): array
-    {
+    ): array {
         [$token, $payload] = $this->issueStoredToken(
             $username,
             $role,

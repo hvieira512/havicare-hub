@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 require_once __DIR__ . '/components/helpers.php';
 
 // Fornecido pelo `DashboardHttpServer::page()`, que faz `require` deste ficheiro. Declarado

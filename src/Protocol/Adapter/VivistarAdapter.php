@@ -341,11 +341,13 @@ class VivistarAdapter implements DeviceAdapterInterface
      */
     private function parseCompactLocation(string $compact, bool $allowRest): ?array
     {
-        if (preg_match(
-            '/^(?<date>\d{6})(?<valid>[AV])(?<lat>\d{4}\.\d+)(?<latDir>[NS])(?<lon>\d{5}\.\d+)(?<lonDir>[EW])(?<speed>\d{3}\.\d)(?<time>\d{6})(?<tail>.+)$/',
-            $compact,
-            $m
-        ) !== 1) {
+        if (
+            preg_match(
+                '/^(?<date>\d{6})(?<valid>[AV])(?<lat>\d{4}\.\d+)(?<latDir>[NS])(?<lon>\d{5}\.\d+)(?<lonDir>[EW])(?<speed>\d{3}\.\d)(?<time>\d{6})(?<tail>.+)$/',
+                $compact,
+                $m
+            ) !== 1
+        ) {
             return null;
         }
 

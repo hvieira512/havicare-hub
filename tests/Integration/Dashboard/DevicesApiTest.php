@@ -985,11 +985,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->show('868017032159118');
 
-        foreach ([
+        foreach (
+            [
             $response['configurations']['medication_reminders'] ?? [],
             $response['capabilities']['alarms']['medication_reminders']['value'] ?? [],
             $response['configurationSync']['entries']['alarms']['medication_reminders']['desired'] ?? [],
-        ] as $value) {
+            ] as $value
+        ) {
             self::assertArrayNotHasKey('voiceData', $value);
             self::assertTrue($value['voiceDataAvailable'] ?? false);
             self::assertSame(100000, $value['voiceDataBytes'] ?? null);
@@ -3019,10 +3021,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testDeviceGroupedRoutesCanLinkGatewayAndDiaperSensor(): void
     {
         [$api] = $this->makeApi();
-        foreach ([
+        foreach (
+            [
             ['imei' => 'd48c49f7909c', 'supplier' => 'MOKO', 'model' => 'MKGW3'],
             ['imei' => 'eec5000202f9', 'supplier' => 'MONIT', 'model' => 'MECS-PRO'],
-        ] as $device) {
+            ] as $device
+        ) {
             $result = $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
             self::assertSame('ok', $result['status'] ?? null);
         }
@@ -3049,11 +3053,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testDeviceGroupedRoutesCanLinkGatewayAndBracelet(): void
     {
         [$api] = $this->makeApi();
-        foreach ([
+        foreach (
+            [
             ['imei' => 'c5e390f30bce', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
             ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6B'],
             ['imei' => '861265061009823', 'supplier' => 'Vivistar', 'model' => 'L08 Pro'],
-        ] as $device) {
+            ] as $device
+        ) {
             $result = $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
             self::assertSame('ok', $result['status'] ?? null);
         }
@@ -3072,11 +3078,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testBothSidesOfALinkSeeTheSignalThatPairWasHeardOn(): void
     {
         [$api, , $store] = $this->makeApi();
-        foreach ([
+        foreach (
+            [
             ['imei' => 'c5e390f30bce', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
             ['imei' => 'dc1603ecf1f7', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
             ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6B'],
-        ] as $device) {
+            ] as $device
+        ) {
             $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
         }
         $api->createLink('c5e390f30bce', 'fbd87c59ba8b');
@@ -3152,5 +3160,4 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         return $hub;
     }
-
 }

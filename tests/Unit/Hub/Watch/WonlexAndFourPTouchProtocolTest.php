@@ -126,7 +126,6 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
             'type' => 'upSleepFind', 'ident' => 345678, 'ref' => 'w:update', 'data' => ['upDayStr' => '2026-07-27'],
         ]));
         self::assertSame('200/48/152/0', $adapter->decodeIncoming($sleep->responses[0]->bytes)['data']['value']);
-
     }
 
     public function testFourPTouchProducesProtocolAck(): void

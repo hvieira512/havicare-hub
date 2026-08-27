@@ -127,8 +127,16 @@ fwrite(STDOUT, str_repeat('-', 78) . "\n");
 
 $gatewayDecoder = new MokoMessageDecoder();
 
-$client->subscribe($topicFilter, function (string $topic, string $message) use (
-    &$seen, &$hits, $monitDecoder, $showAll, $onlyMac, $gatewayDecoder
+$client->subscribe($topicFilter, function (
+    string $topic,
+    string $message
+) use (
+    &$seen,
+    &$hits,
+    $monitDecoder,
+    $showAll,
+    $onlyMac,
+    $gatewayDecoder
 ): void {
     $decoded = $gatewayDecoder->decode($message);
     if (!in_array($decoded['messageId'] ?? null, SCAN_MESSAGES, true) || !is_array($decoded['data'] ?? null)) {

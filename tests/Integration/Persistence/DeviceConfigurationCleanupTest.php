@@ -62,11 +62,13 @@ final class DeviceConfigurationCleanupTest extends MysqlDashboardTestCase
     private function rowCounts(PDO $pdo): array
     {
         $counts = [];
-        foreach ([
+        foreach (
+            [
             'device_configurations',
             'device_configuration_changes',
             'device_configuration_operations',
-        ] as $table) {
+            ] as $table
+        ) {
             $statement = $pdo->prepare("SELECT COUNT(*) FROM `{$table}` WHERE imei = ?");
             $statement->execute([self::IMEI]);
             $counts[$table] = (int)$statement->fetchColumn();

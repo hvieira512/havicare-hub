@@ -94,5 +94,3 @@ final class BridgeTest extends TestCase
         return implode('', array_map(static fn (int $byte): string => chr($byte), $bytes));
     }
 }
-
-

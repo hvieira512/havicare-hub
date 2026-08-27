@@ -9,9 +9,9 @@ use PhpMqtt\Client\MqttClient;
 
 class HubDownlinkSubscriber implements MqttIngress
 {
-    private const DEFAULT_DEVICE_TYPE = 'watch';
-
     use ReconnectsOnLoopFailure;
+
+    private const DEFAULT_DEVICE_TYPE = 'watch';
 
     private MqttClient $subscriber;
     private DeviceHubServer $hubServer;
@@ -118,7 +118,8 @@ class HubDownlinkSubscriber implements MqttIngress
         }
 
         $parts = explode('/', trim($base, '/'));
-        if (count($parts) !== 5
+        if (
+            count($parts) !== 5
             || $parts[2] !== self::DEFAULT_DEVICE_TYPE
             || $parts[4] !== 'downlink'
         ) {

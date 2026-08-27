@@ -48,10 +48,12 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testSupplierSosPayloadsRejectMoreThanTheirDeclaredLimit(): void
     {
-        foreach ([
+        foreach (
+            [
             ['protocol' => 'vivistar-iw', 'key' => 'sosContacts'],
             ['protocol' => 'wonlex-json', 'key' => 'SOSNumber'],
-        ] as $supplierConfig) {
+            ] as $supplierConfig
+        ) {
             $config = DeviceConfigurationCatalog::configForProtocol(
                 $supplierConfig['protocol'],
                 $supplierConfig['key']
@@ -228,14 +230,16 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testWonlexScalarHealthRequestsUseOnlyDocumentedRequiredFields(): void
     {
-        foreach ([
+        foreach (
+            [
             'dnHeartRate',
             'dnBP',
             'dnBO',
             'dnTemperature',
             'dnBreathe',
             'dnRR',
-        ] as $nativeType) {
+            ] as $nativeType
+        ) {
             $wire = DeviceCommandCatalog::buildDownlink(
                 'wonlex-json',
                 '868705080300697',
@@ -259,11 +263,13 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testWonlexRequestedWaveformsUseExplicitShortSamplingParameters(): void
     {
-        foreach ([
+        foreach (
+            [
             'dnECG' => '500',
             'dnHRV' => '100',
             'dnPPG' => '200',
-        ] as $nativeType => $frequency) {
+            ] as $nativeType => $frequency
+        ) {
             $wire = DeviceCommandCatalog::buildDownlink(
                 'wonlex-json',
                 '868705080300697',
@@ -772,11 +778,13 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testFourPTouchTakePillsRejectsInvalidReminderSettings(): void
     {
-        foreach ([
+        foreach (
+            [
             ['time' => '25:00', 'enabled' => true, 'frequency' => 1, 'custom' => ''],
             ['time' => '11:25', 'enabled' => true, 'frequency' => 4, 'custom' => ''],
             ['time' => '11:25', 'enabled' => true, 'frequency' => 3, 'custom' => '1010'],
-        ] as $settings) {
+            ] as $settings
+        ) {
             $error = DeviceConfigurationCatalog::validate('four-p-touch', 'takePills', [
                 'reminderSettings' => [$settings],
                 'reminderText' => 'meds',

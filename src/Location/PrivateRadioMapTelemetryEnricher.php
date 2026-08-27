@@ -25,8 +25,10 @@ final class PrivateRadioMapTelemetryEnricher implements LocationTelemetryEnriche
         try {
             $this->radioMap->learnFromTelemetry($telemetry);
             $data = isset($telemetry['data']) && is_array($telemetry['data']) ? $telemetry['data'] : [];
-            if (strtolower(trim((string)($data['source'] ?? ''))) === 'gps'
-                && ($data['gpsValid'] ?? true) !== false) {
+            if (
+                strtolower(trim((string)($data['source'] ?? ''))) === 'gps'
+                && ($data['gpsValid'] ?? true) !== false
+            ) {
                 return $this->publicFallback->enrich($telemetry);
             }
             $coordinates = $this->radioMap->resolveTelemetry($telemetry);

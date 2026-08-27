@@ -250,5 +250,4 @@ final class DashboardHttpServer
         }
         return new Response(200, ['Content-Type' => 'image/jpeg', 'Cache-Control' => 'public, max-age=31536000, immutable'], (string)file_get_contents($path));
     }
-
 }

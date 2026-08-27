@@ -161,14 +161,16 @@ final class DeviceDirectory
         }
 
         $runtime = $runtimeStates[$imei];
-        foreach ([
+        foreach (
+            [
             'online',
             'lastSeenAt',
             'lastStateAt',
             'protocol',
             'transport',
             'lastConnectionId',
-        ] as $field) {
+            ] as $field
+        ) {
             if (array_key_exists($field, $runtime)) {
                 $device[$field] = $runtime[$field];
             }

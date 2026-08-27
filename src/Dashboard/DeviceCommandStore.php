@@ -199,8 +199,7 @@ final class DeviceCommandStore
         string|int|null $ident = null,
         string $ref = '',
         ?bool $accepted = null,
-    ): void
-    {
+    ): void {
         $uncorrelatedMatch = null;
         $wonlexSemanticMatch = null;
 

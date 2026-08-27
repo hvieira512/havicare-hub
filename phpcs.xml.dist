@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!--
+    Sem este ficheiro o phpcs não encontra ruleset nenhum e cai no seu próprio
+    default, que no phpcs 4 é o PSR12. Isso dava 1068 avisos, 875 dos quais uma
+    só regra: LineLength.
+
+    O limite de 120 não é excluído por preguiça — é que o projeto nunca o
+    observou. Das 880 linhas longas a mediana tem 141 caracteres e o p90 tem
+    222, portanto nem um limite de 200 as calaria. E o PSR12 mede todas as
+    linhas do ficheiro, incluindo o HTML dos templates do Dashboard, onde uma
+    linha é um <button> com classes Bootstrap e não código PHP.
+
+    Repor a regra no dia em que as linhas forem encurtadas, não antes.
+-->
+<ruleset name="hub">
+    <description>PSR-12 sem o limite de comprimento de linha.</description>
+
+    <rule ref="PSR12">
+        <exclude name="Generic.Files.LineLength"/>
+    </rule>
+</ruleset>

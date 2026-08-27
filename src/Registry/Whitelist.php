@@ -17,8 +17,7 @@ class Whitelist
         ?string $filePath = null,
         ?WhitelistRepository $db = null,
         private int $databaseCacheTtlSeconds = 5,
-    )
-    {
+    ) {
         $this->filePath = $filePath ?? __DIR__ . '/../../config/whitelist.json';
         $this->db = $db;
         $this->databaseCacheTtlSeconds = max(0, $this->databaseCacheTtlSeconds);
@@ -120,8 +119,7 @@ class Whitelist
         string $simNumber = '',
         string $deviceId = '',
         string $company = 'null',
-    ): void
-    {
+    ): void {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
         $company = DeviceMetadata::normalizeCompany($company);
@@ -158,8 +156,7 @@ class Whitelist
         string $simNumber = '',
         string $deviceId = '',
         string $company = 'null',
-    ): bool
-    {
+    ): bool {
         if ($this->getMetadata($imei) === null) {
             return false;
         }

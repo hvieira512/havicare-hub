@@ -3,7 +3,6 @@
 namespace Hub;
 
 use Hub\Domain\DeviceMetadata;
-
 use Hub\Registry\Whitelist;
 
 class DeviceAuthorizer

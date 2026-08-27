@@ -7,7 +7,8 @@ final class MokoMessageDecoder implements MessageDecoder
     public function __construct(
         private readonly ?Mkgw3MessageDecoder $mkgw3 = null,
         private readonly ?Mkgw4MessageDecoder $mkgw4 = null,
-    ) {}
+    ) {
+    }
 
     /** @return array<string, mixed>|null */
     public function decode(string $payload): ?array

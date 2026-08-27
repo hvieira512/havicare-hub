@@ -3,7 +3,6 @@
 namespace Hub;
 
 use Hub\Domain\DeviceMetadata;
-
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Dashboard\DashboardStoreContract;
@@ -542,8 +541,7 @@ class DeviceHubServer
         string $deviceType = 'watch',
         int $licenseId = 0,
         string $commercialName = ''
-    ): void
-    {
+    ): void {
         $this->dashboardStore?->append($imei, 'events', array_merge(
             RawPayload::event($imei, $supplier, $model, $type, null, $command, $commercialName),
             ['deviceType' => $deviceType, 'licenseId' => $licenseId]
@@ -560,8 +558,7 @@ class DeviceHubServer
         int $licenseId = 0,
         ?array $command = null,
         string $commercialName = ''
-    ): void
-    {
+    ): void {
         $this->recordEvent($imei, $supplier, $model, $type, $command ?? $this->commandMetadata($bytes), $deviceType, $licenseId, $commercialName);
     }
 

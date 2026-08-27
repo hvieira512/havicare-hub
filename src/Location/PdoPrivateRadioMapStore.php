@@ -112,8 +112,7 @@ final class PdoPrivateRadioMapStore implements PrivateRadioMapStoreContract
             . 'ON DUPLICATE KEY UPDATE latitude = VALUES(latitude), longitude = VALUES(longitude), '
             . 'accuracy_meters = VALUES(accuracy_meters), observation_count = VALUES(observation_count), '
             . 'source = VALUES(source), conflicted = VALUES(conflicted), first_seen_at = VALUES(first_seen_at), '
-            . 'last_seen_at = VALUES(last_seen_at)'
-        );
+            . 'last_seen_at = VALUES(last_seen_at)');
         $stmt->execute($parameters);
         $expiresAt = microtime(true) + max(0, $this->cacheTtlSeconds);
         foreach ($normalizedEntries as $bssidHash => $normalized) {

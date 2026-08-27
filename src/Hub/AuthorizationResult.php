@@ -25,8 +25,7 @@ class AuthorizationResult
         string $deviceType = 'watch',
         int $licenseId = 0,
         string $company = 'null',
-    ): self
-    {
+    ): self {
         return new self(true, null, $imei, $supplier, $model, $commercialName, $deviceType, $licenseId, $company);
     }
 

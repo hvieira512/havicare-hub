@@ -3,7 +3,6 @@
 namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DeviceMetadata;
-
 use Hub\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
@@ -339,11 +338,13 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         }
 
         $pressMode = (string)($decoded['alarm']['pressMode'] ?? '');
-        if ($pressMode !== '' && !$this->state->acceptObservation(
-            $deviceKey . ':press:' . $pressMode,
-            'w6-press',
-            self::W6_PRESS_WINDOW_SECONDS,
-        )) {
+        if (
+            $pressMode !== '' && !$this->state->acceptObservation(
+                $deviceKey . ':press:' . $pressMode,
+                'w6-press',
+                self::W6_PRESS_WINDOW_SECONDS,
+            )
+        ) {
             unset($decoded['alarm']);
         }
 

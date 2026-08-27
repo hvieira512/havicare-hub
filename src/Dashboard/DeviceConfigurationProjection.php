@@ -49,8 +49,7 @@ final class DeviceConfigurationProjection
         string $status,
         string $commandId = '',
         string $error = ''
-    ): void
-    {
+    ): void {
         if ($this->db === null) {
             return;
         }

@@ -255,5 +255,4 @@ final class BridgeMonitAlarmTest extends TestCase
             diaperSensitivity: $sensitivity,
         );
     }
-
 }

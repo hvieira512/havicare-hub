@@ -105,7 +105,6 @@ final class WonlexTcpHandshakeTest extends TestCase
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
         self::assertSame('base64', $mqtt->raw[0][1]['debug']['encoding']);
     }
-
 }
 
 final class WonlexRecordingHubMqttBridge extends HubMqttBridge

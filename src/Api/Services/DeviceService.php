@@ -509,7 +509,8 @@ class DeviceService
         $previousCompany = DeviceMetadata::normalizeCompany((string)($previous['company'] ?? 'null'));
         $previousLicenseId = DeviceMetadata::normalizeLicenseId($previous['licenseId'] ?? 0);
         $previousDeviceType = DeviceMetadata::normalizeDeviceType((string)($previous['deviceType'] ?? 'watch'));
-        if ($newImei !== $imei
+        if (
+            $newImei !== $imei
             || $previousCompany !== $company
             || $previousLicenseId !== $licenseId
             || $previousDeviceType !== $deviceType
@@ -676,11 +677,9 @@ class DeviceService
             array_push($flat, ...array_values($section));
         }
         $pendingCount = count(array_filter($flat, static fn(array $entry): bool =>
-            !in_array($entry['status'], ['confirmed', 'failed'], true)
-        ));
+            !in_array($entry['status'], ['confirmed', 'failed'], true)));
         $failedCount = count(array_filter($flat, static fn(array $entry): bool =>
-            $entry['status'] === 'failed'
-        ));
+            $entry['status'] === 'failed'));
 
         return [
             'effectiveConfigurations' => $effective,
@@ -754,5 +753,4 @@ class DeviceService
             'acked',
         ], true);
     }
-
 }

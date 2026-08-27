@@ -3,7 +3,6 @@
 namespace Hub\Ingress\Mqtt\Ncs;
 
 use Hub\Domain\DeviceMetadata;
-
 use Hub\Log\Logger;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge

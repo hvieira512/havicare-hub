@@ -122,7 +122,12 @@ final class DeviceConfigurationUpdateService
                 // `acked` --, por isso o resto do ciclo de vida e o mesmo das outras.
                 if (!$this->capabilities->travelsToDevice($genericKey)) {
                     $results[] = $this->stageHubApplied(
-                        $imei, $genericKey, $payload, $protocol, $supplier, $model
+                        $imei,
+                        $genericKey,
+                        $payload,
+                        $protocol,
+                        $supplier,
+                        $model
                     );
                     continue;
                 }
@@ -149,7 +154,14 @@ final class DeviceConfigurationUpdateService
                 }
 
                 $prepared = $this->prepareNative(
-                    $imei, $nativeKey, $nativePayload, $supplier, $model, $protocol, $metadata, $device
+                    $imei,
+                    $nativeKey,
+                    $nativePayload,
+                    $supplier,
+                    $model,
+                    $protocol,
+                    $metadata,
+                    $device
                 );
                 if (isset($prepared['error'])) {
                     Logger::channel('api')->warning('API device configuration rejected', [
@@ -171,7 +183,11 @@ final class DeviceConfigurationUpdateService
 
             if ($nativeRows !== []) {
                 $staged = $this->db->configurationLifecycle->stage(
-                    $imei, $genericKey, $payload, $nativeRows, $operations
+                    $imei,
+                    $genericKey,
+                    $payload,
+                    $nativeRows,
+                    $operations
                 );
                 $dispatched = [];
                 foreach ($staged['operations'] as $operation) {

@@ -56,7 +56,9 @@ final class PrivateRadioMapTelemetryEnricherTest extends TestCase
         };
         $result = null;
         (new PrivateRadioMapTelemetryEnricher($map, $fallback))->enrich($this->telemetry())->then(
-            static function (array $value) use (&$result): void { $result = $value; }
+            static function (array $value) use (&$result): void {
+                $result = $value;
+            }
         );
 
         self::assertSame(1, $fallback->calls);
@@ -81,7 +83,9 @@ final class PrivateRadioMapTelemetryEnricherTest extends TestCase
         ]);
         $result = null;
         (new PrivateRadioMapTelemetryEnricher($map, $fallback))->enrich($gps)->then(
-            static function (array $value) use (&$result): void { $result = $value; }
+            static function (array $value) use (&$result): void {
+                $result = $value;
+            }
         );
 
         self::assertSame(1, $fallback->calls);

@@ -542,8 +542,7 @@ final class FeatureNormalizer
         ?string $fallbackMcc = null,
         ?string $fallbackMnc = null,
         ?string $fallbackRadioType = null,
-    ): array
-    {
+    ): array {
         $normalized = [];
         foreach ($stations as $station) {
             if (!is_array($station)) {

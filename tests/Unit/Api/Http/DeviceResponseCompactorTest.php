@@ -20,11 +20,13 @@ final class DeviceResponseCompactorTest extends TestCase
 
         $actual = (new DeviceResponseCompactor())->compact($response);
 
-        foreach ([
+        foreach (
+            [
             $actual['configurations']['medication_reminders'],
             $actual['capabilities']['alarms']['medication_reminders']['value'],
             $actual['pending']['alarms']['medication_reminders']['desired'],
-        ] as $value) {
+            ] as $value
+        ) {
             self::assertArrayNotHasKey('voiceData', $value);
             self::assertTrue($value['voiceDataAvailable']);
             self::assertSame(100000, $value['voiceDataBytes']);

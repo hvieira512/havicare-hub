@@ -371,8 +371,10 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     private static function alarmClockTime(string $value): string
     {
         $value = trim($value);
-        if (preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches) === 1
-            || preg_match('/^(\d{2})(\d{2})$/', $value, $matches) === 1) {
+        if (
+            preg_match('/^(\d{1,2}):(\d{2})$/', $value, $matches) === 1
+            || preg_match('/^(\d{2})(\d{2})$/', $value, $matches) === 1
+        ) {
             $hour = (int)$matches[1];
             $minute = (int)$matches[2];
             if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {

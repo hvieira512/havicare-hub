@@ -126,13 +126,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
 
-        foreach ([
+        foreach (
+            [
             '/DashboardHttpServer.php',
             '/index.php',
             '/../../.env',
             '/dashboard/../../../Config.php',
             '/dashboard/%2e%2e/%2e%2e/Config.php',
-        ] as $path) {
+            ] as $path
+        ) {
             $response = $server(new ServerRequest('GET', $path));
             self::assertSame(404, $response->getStatusCode(), $path);
         }
@@ -1326,8 +1328,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         bool $apiAuthRequired = true,
         int $apiTokenTtlSeconds = 3600,
         int $apiRefreshTokenTtlSeconds = 2592000
-    ): DashboardHttpServer
-    {
+    ): DashboardHttpServer {
         return $this->makeServerWithDatabase(
             apiAuthRequired: $apiAuthRequired,
             apiTokenTtlSeconds: $apiTokenTtlSeconds,
@@ -1344,8 +1345,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         bool $apiAuthRequired = true,
         int $apiTokenTtlSeconds = 3600,
         int $apiRefreshTokenTtlSeconds = 2592000
-    ): array
-    {
+    ): array {
         $redis = new InMemoryRedisClient();
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $hitcareId = $db->companies->create('hitcare');

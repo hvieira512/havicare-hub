@@ -171,8 +171,7 @@ final class DashboardStore implements DashboardStoreContract
         string|int|null $ident = null,
         string $ref = '',
         ?bool $accepted = null,
-    ): void
-    {
+    ): void {
         $this->commands->markCommandReply($imei, $replyNativeType, $ident, $ref, $accepted);
         $this->updates->notify($imei);
     }

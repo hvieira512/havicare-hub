@@ -35,8 +35,7 @@ class HubMqttBridge
         string $deviceType = self::DEFAULT_DEVICE_TYPE,
         int $licenseId = self::DEFAULT_LICENSE_ID,
         string $company = self::DEFAULT_COMPANY,
-    ): void
-    {
+    ): void {
         $this->publish($this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status')), $payload, $retain);
     }
 

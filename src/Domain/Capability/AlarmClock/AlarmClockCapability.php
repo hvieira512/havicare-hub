@@ -163,5 +163,4 @@ final class AlarmClockCapability implements CapabilityContract
             ? (string)$entry['key']
             : null;
     }
-
 }

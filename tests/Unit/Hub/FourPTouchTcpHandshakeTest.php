@@ -147,6 +147,4 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertNull($error, $error?->getMessage() ?? '');
         self::assertSame('[3G*7597567372*0002*AL]', $received);
     }
-
 }
-

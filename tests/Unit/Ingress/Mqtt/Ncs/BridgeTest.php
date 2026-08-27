@@ -38,5 +38,3 @@ final class BridgeTest extends TestCase
         );
     }
 }
-
-

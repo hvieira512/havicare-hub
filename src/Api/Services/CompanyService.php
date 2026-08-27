@@ -3,7 +3,6 @@
 namespace Hub\Api\Services;
 
 use Hub\Domain\DeviceMetadata;
-
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;

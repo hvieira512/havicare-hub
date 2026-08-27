@@ -38,6 +38,8 @@
         "test:php": "vendor/bin/phpunit",
         "test:frontend": "npm test",
         "analyse": "php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress --debug",
+        "style": "vendor/bin/phpcs src tests simulator bin",
+        "style:fix": "vendor/bin/phpcbf src tests simulator bin",
         "test:scenarios": "tests/scenarios/run-all.sh",
         "test": [
             "@analyse",
@@ -51,7 +53,8 @@
     "require-dev": {
         "phpunit/phpunit": "^10.5",
         "phpstan/phpstan": "^2.1",
-        "guzzlehttp/psr7": "^2.13"
+        "guzzlehttp/psr7": "^2.13",
+        "squizlabs/php_codesniffer": "^4.0"
     },
     "config": {
         "policy": {

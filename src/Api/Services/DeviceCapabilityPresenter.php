@@ -69,8 +69,7 @@ final class DeviceCapabilityPresenter
         array $configRows,
         string $payloadKey,
         bool $includeDefaults = true,
-    ): array
-    {
+    ): array {
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($model['device_type'] ?? 'watch'));
         $matrix = $this->supportedCapabilityMatrix($model, $protocol, $deviceType);
 
@@ -496,8 +495,7 @@ final class DeviceCapabilityPresenter
         string $genericKey,
         string $nativeKey,
         array $desired
-    ): mixed
-    {
+    ): mixed {
         return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired, $protocol);
     }
 

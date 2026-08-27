@@ -171,11 +171,13 @@ final class ReferenceCatalogSeeder
             $existing->execute([$modelId]);
             $have = array_flip($existing->fetchAll(PDO::FETCH_COLUMN));
 
-            foreach (SupplierCapabilityTemplate::keysForModel(
-                (string)$model['supplier_name'],
-                (string)$model['internal_model'],
-                (string)$model['device_type']
-            ) as $key) {
+            foreach (
+                SupplierCapabilityTemplate::keysForModel(
+                    (string)$model['supplier_name'],
+                    (string)$model['internal_model'],
+                    (string)$model['device_type']
+                ) as $key
+            ) {
                 if (isset($have[$key])) {
                     continue;
                 }

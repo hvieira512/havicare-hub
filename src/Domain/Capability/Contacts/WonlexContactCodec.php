@@ -126,5 +126,4 @@ final class WonlexContactCodec
 
         return ['', $normalized];
     }
-
 }

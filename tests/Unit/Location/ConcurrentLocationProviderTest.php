@@ -27,9 +27,15 @@ final class ConcurrentLocationProviderTest extends TestCase
         );
 
         $results = [];
-        $provider->resolve(['id' => 1])->then(function ($value) use (&$results): void { $results[] = $value; });
-        $provider->resolve(['id' => 2])->then(function ($value) use (&$results): void { $results[] = $value; });
-        $provider->resolve(['id' => 3])->then(function ($value) use (&$results): void { $results[] = $value; });
+        $provider->resolve(['id' => 1])->then(function ($value) use (&$results): void {
+            $results[] = $value;
+        });
+        $provider->resolve(['id' => 2])->then(function ($value) use (&$results): void {
+            $results[] = $value;
+        });
+        $provider->resolve(['id' => 3])->then(function ($value) use (&$results): void {
+            $results[] = $value;
+        });
         self::assertSame(2, $calls);
 
         $deferred[0]->resolve(['httpStatus' => 200, 'body' => ['id' => 1]]);
@@ -51,7 +57,9 @@ final class ConcurrentLocationProviderTest extends TestCase
         $provider->resolve(['id' => 1]);
         $provider->resolve(['id' => 2]);
         $rejected = false;
-        $provider->resolve(['id' => 3])->then(null, function () use (&$rejected): void { $rejected = true; });
+        $provider->resolve(['id' => 3])->then(null, function () use (&$rejected): void {
+            $rejected = true;
+        });
 
         self::assertTrue($rejected);
     }

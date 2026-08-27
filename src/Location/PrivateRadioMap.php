@@ -226,12 +226,14 @@ final class PrivateRadioMap
         foreach ($candidates as $anchor) {
             $cluster = [];
             foreach ($candidates as $candidate) {
-                if ($this->distanceMeters(
-                    (float)$anchor['lat'],
-                    (float)$anchor['lon'],
-                    (float)$candidate['lat'],
-                    (float)$candidate['lon'],
-                ) <= $this->clusterRadiusMeters) {
+                if (
+                    $this->distanceMeters(
+                        (float)$anchor['lat'],
+                        (float)$anchor['lon'],
+                        (float)$candidate['lat'],
+                        (float)$candidate['lon'],
+                    ) <= $this->clusterRadiusMeters
+                ) {
                     $cluster[] = $candidate;
                 }
             }
@@ -261,10 +263,12 @@ final class PrivateRadioMap
     /** @return array{lat: float, lon: float, accuracyMeters: float}|null */
     private function trustedGpsFix(array $data): ?array
     {
-        if (strtolower(trim((string)($data['source'] ?? ''))) !== 'gps'
+        if (
+            strtolower(trim((string)($data['source'] ?? ''))) !== 'gps'
             || ($data['gpsValid'] ?? true) === false
             || !is_numeric($data['lat'] ?? null)
-            || !is_numeric($data['lon'] ?? null)) {
+            || !is_numeric($data['lon'] ?? null)
+        ) {
             return null;
         }
         $lat = (float)$data['lat'];

@@ -174,10 +174,12 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             }
 
             $url = trim((string)($item['url'] ?? ''));
-            if ($url !== '' && (
+            if (
+                $url !== '' && (
                 filter_var($url, FILTER_VALIDATE_URL) === false
                 || !in_array(strtolower((string)parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)
-            )) {
+                )
+            ) {
                 throw new \InvalidArgumentException('alarm url must be a valid HTTP or HTTPS URL');
             }
 
@@ -272,5 +274,4 @@ final class WonlexPayloadBuilder extends ConfigurationPayloadBuilder
             'drugTime' => self::arrayField($plan['drugTime'], 'drugTime'),
         ];
     }
-
 }
