@@ -7,7 +7,7 @@ final class DeviceProtocol
     /**
      * Os fornecedores cujos modelos não partilham um protocolo só.
      *
-     * A MOKO vende gateways e uma pulseira, e por isso resolver só pelo fornecedor dava a uma
+     * A MOKO vende gateways e pulseiras, e por isso resolver só pelo fornecedor dava a uma
      * W6R o protocolo de gateway do MKGW3. As chaves vêm em minúsculas.
      *
      * @var array<string, array<string, string>>
@@ -17,6 +17,7 @@ final class DeviceProtocol
             'mkgw3' => 'moko-mkgw3',
             'mkgw4' => 'moko-mkgw4',
             'w6r' => 'moko-w6r',
+            'w6' => 'moko-w6',
         ],
     ];
 

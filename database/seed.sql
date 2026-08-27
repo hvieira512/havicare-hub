@@ -94,6 +94,13 @@ FROM suppliers s WHERE s.name = 'MOKO'
 ON DUPLICATE KEY UPDATE commercial_name = 'MOKO W6R', device_type = 'bracelet',
     image_path = '/model-images/78888c5376784c64ca05b691c4686ecd.jpg';
 
+-- A W6 e a W6R são a mesma pulseira, com e sem botão macio, por isso partilham a imagem.
+INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
+SELECT s.id, 'W6', 'MOKO W6', 'bracelet', '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
+FROM suppliers s WHERE s.name = 'MOKO'
+ON DUPLICATE KEY UPDATE commercial_name = 'MOKO W6', device_type = 'bracelet',
+    image_path = '/model-images/78888c5376784c64ca05b691c4686ecd.jpg';
+
 INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
 SELECT s.id, 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', '/model-images/c7a8992a69d659ef06e853f6befecd42.jpg'
 FROM suppliers s WHERE s.name = 'MONIT'

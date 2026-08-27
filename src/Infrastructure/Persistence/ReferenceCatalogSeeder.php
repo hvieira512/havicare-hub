@@ -22,6 +22,7 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'MKGW4', 'MOKOSmart MKGW4', 'gateway', ''],
         ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', ''],
         ['MOKO', 'W6R', 'MOKO W6R', 'bracelet', ''],
+        ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
     ];
 
     private const SUPPLIER_DEVICE_TYPES = [

@@ -132,6 +132,12 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => false,
                 'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
             ],
+            'moko-w6' => [
+                'label' => 'MOKO W6',
+                'deviceType' => 'bracelet',
+                'supportsConfigCatalog' => false,
+                'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
+            ],
         ];
     }
 
