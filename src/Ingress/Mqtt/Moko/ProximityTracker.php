@@ -5,25 +5,25 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * A short window of signal readings per (device, gateway) pair.
+ * Uma janela curta de leituras de sinal por par (dispositivo, gateway).
  *
- * The hub reports the signal; the client decides what it means. What the hub owes
- * the client is a series with no invisible gaps and enough summary that a simple
- * consumer does not have to build a windowing engine of its own.
+ * O hub reporta o sinal; o cliente decide o que ele significa. O que o hub lhe deve é uma
+ * série sem buracos invisíveis e resumo bastante para um consumidor simples não ter de
+ * construir um motor de janelas próprio.
  *
- * Three statistics rather than one, because a single one cannot serve both
- * questions a door asks. Measured on a real bracelet at 0.67 samples/s:
+ * Três estatísticas e não uma, porque uma só não serve as duas perguntas que uma porta faz.
+ * Medido numa pulseira real a 0.67 amostras/s:
  *
- *  - A brisk walk past a gateway is only one or two readings, so a median never
- *    moves for it -- it needs about three. Use the maximum to catch a pass.
- *  - Noise is asymmetric: on a motionless device readings sat 5 dB above the
- *    median and 9 dB below it. Bodies and walls attenuate, almost nothing
- *    amplifies, so a strong reading is trustworthy where a weak one is not. Use
- *    the median to judge sustained presence and to decide something has left.
+ *  - Passar a andar por um gateway são uma ou duas leituras, e uma mediana não se mexe com
+ *    isso -- precisa de umas três. O máximo é que apanha a passagem.
+ *  - O ruído é assimétrico: num aparelho imóvel as leituras ficaram 5 dB acima da mediana e
+ *    9 dB abaixo. Corpos e paredes atenuam, quase nada amplifica, por isso uma leitura forte
+ *    é de confiança e uma fraca não é. A mediana é que julga presença sustentada e decide
+ *    que alguma coisa saiu.
  *
- * The window is intentionally small and kept in memory: it exists to describe the
- * last few seconds, and after a restart it refills within `windowSeconds`. The
- * durable last-sighting record for the dashboard lives in the dashboard store.
+ * A janela é pequena de propósito e vive em memória: existe para descrever os últimos
+ * segundos, e depois de um reinício reenche-se em `windowSeconds`. O registo durável do
+ * último avistamento, para a dashboard, vive no store da dashboard.
  */
 final class ProximityTracker
 {
@@ -38,7 +38,7 @@ final class ProximityTracker
     }
 
     /**
-     * Add a reading and describe the window it lands in.
+     * Acrescenta uma leitura e descreve a janela em que ela cai.
      *
      * @return array{state: string, rssiDbm: int, rssiMaxDbm: int, rssiMedianDbm: int, rssiMinDbm: int, samples: int, windowSeconds: int}
      */
@@ -64,8 +64,8 @@ final class ProximityTracker
             'state' => 'measured',
             'rssiDbm' => $rssiDbm,
             'rssiMaxDbm' => $readings[count($readings) - 1],
-            // Even counts take the lower of the two middle readings rather than
-            // averaging them, so the value is always one the radio really saw.
+            // Com contagem par fica a menor das duas leituras do meio em vez da média, para
+            // o valor ser sempre um que a rádio viu de facto.
             'rssiMedianDbm' => $readings[count($readings) % 2 === 1 ? $middle : $middle - 1],
             'rssiMinDbm' => $readings[0],
             'samples' => count($readings),
@@ -74,11 +74,11 @@ final class ProximityTracker
     }
 
     /**
-     * Pairs that have gone quiet, forgotten as they are reported.
+     * Os pares que se calaram, esquecidos à medida que são reportados.
      *
-     * Absence cannot be pushed over MQTT: a client that receives nothing has
-     * nothing to react to, so the hub has to notice on its own. Reported once and
-     * then dropped, which also means a pair reappearing starts a fresh window.
+     * A ausência não se empurra por MQTT: um cliente que não recebe nada não tem a que
+     * reagir, e por isso é o hub que tem de dar por ela. Reportado uma vez e largado, o que
+     * também quer dizer que um par que reapareça começa uma janela nova.
      *
      * @return list<array{deviceKey: string, gatewayKey: string}>
      */

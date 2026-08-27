@@ -16,8 +16,8 @@ use Hub\Api\OpenApi\Schemas\NotificationSchemas;
 use Hub\Api\OpenApi\Schemas\TenancySchemas;
 
 /**
- * Assembles the dashboard OpenAPI document from the per-domain path and schema
- * definitions in Hub\Api\OpenApi.
+ * Monta o documento OpenAPI da dashboard a partir das definições de rotas e de esquemas por
+ * domínio em `Hub\Api\OpenApi`.
  */
 class OpenApiSpec
 {

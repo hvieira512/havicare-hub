@@ -7,9 +7,7 @@ namespace Hub\Ingress\Mqtt;
 use Hub\Log\Logger;
 use React\EventLoop\LoopInterface;
 
-/**
- * Starts the registered MQTT ingresses and drives their loops.
- */
+/** Arranca os ingresses MQTT registados e conduz os seus loops. */
 final class IngressRunner
 {
     /** @var array<string, MqttIngress> */
@@ -20,8 +18,8 @@ final class IngressRunner
     }
 
     /**
-     * A null ingress is ignored, so disabled suppliers need no conditional at
-     * the call site.
+     * Um ingress nulo é ignorado, para um fornecedor desligado não precisar de uma condição
+     * em quem o registou.
      */
     public function add(string $name, ?MqttIngress $ingress): void
     {
@@ -31,8 +29,8 @@ final class IngressRunner
     }
 
     /**
-     * @throws \RuntimeException when an ingress fails to subscribe; the caller
-     *         decides whether that is fatal
+     * @throws \RuntimeException quando um ingress falha a subscrição; quem chama é que decide
+     *         se isso é fatal
      */
     public function start(): void
     {

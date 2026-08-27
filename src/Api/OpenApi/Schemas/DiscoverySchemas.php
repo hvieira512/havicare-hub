@@ -5,7 +5,7 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Capability discovery runs: the draft produced from a live device and the
+ * As descobertas de capacidades: o rascunho produzido a partir de um dispositivo ao vivo e o
  * model capability change it proposes.
  */
 final class DiscoverySchemas

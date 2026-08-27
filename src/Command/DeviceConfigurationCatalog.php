@@ -82,8 +82,8 @@ final class DeviceConfigurationCatalog
     }
 
     /**
-     * Some public configurations expand to several protocol commands. Wonlex
-     * medication plans are one such case: the watch accepts one plan per frame.
+     * Algumas configurações públicas expandem-se em vários comandos de protocolo. Os planos
+     * de medicação da Wonlex são um caso desses: o relógio aceita um plano por frame.
      *
      * @return list<array{command: string, payload: array<string, mixed>}>
      */

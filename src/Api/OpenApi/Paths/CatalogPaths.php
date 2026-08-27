@@ -8,7 +8,7 @@ use Hub\Api\OpenApi\Responses;
 use Hub\Domain\ProtocolRegistry;
 
 /**
- * Suppliers, models, device types and protocols.
+ * Fornecedores, modelos, tipos de dispositivo e protocolos.
  */
 final class CatalogPaths
 {

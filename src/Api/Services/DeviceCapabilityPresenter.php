@@ -12,12 +12,11 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
 
 /**
- * Projects a model's stored configuration into the capability shape the API
- * serves.
+ * Projecta a configuração guardada de um modelo na forma de capacidades que a API serve.
  *
- * Split out of DeviceService, where it was most of the file: it needs only the
- * capability registry and the database, and none of the hub, whitelist, store
- * or downlink queue the rest of that class is built around.
+ * Vive à parte do `DeviceService` porque só precisa do registo de capacidades e da base de
+ * dados: nada do hub, da whitelist, do store ou da fila de downlink em torno dos quais o
+ * resto dessa classe está construído.
  */
 final class DeviceCapabilityPresenter
 {
@@ -98,8 +97,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * What the model declares it supports, or what the protocol supports when
-     * the device has no model on record.
+     * O que o modelo declara suportar, ou o que o protocolo suporta quando o dispositivo não
+     * tem modelo registado.
      *
      * @return array<string, array<string, bool>>
      */
@@ -114,8 +113,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * Supported capabilities are served even when the device has never stored a
-     * value, so the dashboard can offer them.
+     * As capacidades suportadas são servidas mesmo quando o dispositivo nunca guardou valor
+     * nenhum, para a dashboard as poder oferecer.
      *
      * @param array<string, array<string, mixed>> $capabilities
      * @param array<string, array<string, bool>> $matrix
@@ -148,8 +147,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * Folds the stored configuration rows into the capability tree, collecting
-     * the metadata and native keys each generic key was built from.
+     * Dobra as linhas de configuração guardadas na árvore de capacidades, juntando os
+     * metadados e as chaves nativas de que cada chave genérica foi construída.
      *
      * @param array<string, array<string, mixed>> $capabilities
      * @param list<array<string, mixed>> $configRows
@@ -231,8 +230,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * Wraps the capabilities that came from stored rows into their public
-     * {value, _meta} shape.
+     * Embrulha as capacidades que vieram de linhas guardadas na sua forma pública
+     * `{value, _meta}`.
      *
      * @param array<string, array<string, mixed>> $capabilities
      * @param array{meta: array<string, mixed>, nativeKeyForGeneric: array<string, string>, nativeKeysPerGeneric: array<string, array<string, true>>} $stored
@@ -247,8 +246,8 @@ final class DeviceCapabilityPresenter
             }
             $supportsMultiple = $hasContract && $this->capabilityRegistry->get($genericKey)?->supportsMultipleNativeKeys();
 
-            // Several native keys folded into one generic key with no contract
-            // saying how to combine them: leave the raw value alone.
+            // Várias chaves nativas dobradas numa chave genérica sem contrato que diga como
+            // as juntar: o valor cru fica como está.
             if (!$supportsMultiple && count($stored['nativeKeysPerGeneric'][$genericKey] ?? []) > 1) {
                 continue;
             }
@@ -278,8 +277,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * Capabilities with a contract but no stored metadata still advertise the
-     * contract's own metadata.
+     * Uma capacidade com contrato mas sem metadados guardados anuncia os metadados do
+     * próprio contrato.
      *
      * @param array<string, mixed> $meta
      * @param array<string, array<string, mixed>> $capabilities
@@ -304,8 +303,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * Wraps whatever is still a bare value, which is everything seeded from
-     * defaults rather than from a stored row.
+     * Embrulha o que ainda é um valor nu, que é tudo o que veio dos valores por omissão e
+     * não de uma linha guardada.
      *
      * @param array<string, array<string, mixed>> $capabilities
      * @param array<string, mixed> $meta
@@ -353,8 +352,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * NCS devices expose capabilities the hub cannot configure, so a supported
-     * capability with no configuration entry is still advertised.
+     * Os dispositivos NCS expõem capacidades que o hub não consegue configurar, e por isso
+     * uma capacidade suportada sem entrada de configuração continua a ser anunciada.
      *
      * @param array<string, array<string, mixed>> $capabilities
      * @param array<string, array<string, bool>> $matrix
@@ -380,8 +379,8 @@ final class DeviceCapabilityPresenter
     }
 
     /**
-     * A capability with a contract is only served for protocols its contract
-     * supports; one without a contract is always allowed.
+     * Uma capacidade com contrato só é servida para os protocolos que o contrato dela
+     * suporta; uma sem contrato passa sempre.
      */
     private function contractAllowsProtocol(string $genericKey, string $protocol): bool
     {

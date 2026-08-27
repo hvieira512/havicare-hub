@@ -102,10 +102,10 @@ final class DeviceAssociationService
     }
 
     /**
-     * Drops the retained status a device leaves behind on its previous tenant.
+     * Larga o estado retido que um dispositivo deixa atrás de si no cliente anterior.
      *
-     * Without this the old topic keeps serving the device's last status to
-     * anyone subscribed to that tenant, long after it moved.
+     * Sem isto, o tópico antigo continua a servir o último estado do dispositivo a quem
+     * subscreve esse cliente, muito depois de ele ter mudado.
      *
      * @param array<string, mixed> $existing metadata before the change
      */

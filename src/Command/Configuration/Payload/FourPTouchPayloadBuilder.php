@@ -85,8 +85,8 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
         }
 
         if ($number === 0) {
-            // TAKEPILLS only accepts 1-3 slots. Represent an empty generic plan
-            // with one disabled native slot so existing reminders are replaced.
+            // O TAKEPILLS só aceita 1 a 3 slots. Um plano genérico vazio representa-se com um
+            // slot nativo desligado, para os lembretes existentes serem substituídos.
             return ['00:00-0-1', '1', self::utf16Hex('M'), ''];
         }
 
@@ -147,8 +147,8 @@ final class FourPTouchPayloadBuilder extends ConfigurationPayloadBuilder
     }
 
     /**
-     * Voice bytes share the same framed transport as command delimiters. The
-     * device protocol escapes these values before they are placed in a frame.
+     * Os bytes de voz partilham o transporte enquadrado com os delimitadores de comando, e o
+     * protocolo do dispositivo escapa-os antes de os pôr num frame.
      */
     private static function escapeVoiceBinary(string $bytes): string
     {

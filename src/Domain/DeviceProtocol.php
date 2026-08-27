@@ -5,10 +5,10 @@ namespace Hub\Domain;
 final class DeviceProtocol
 {
     /**
-     * Suppliers whose models do not share one protocol.
+     * Os fornecedores cujos modelos não partilham um protocolo só.
      *
-     * MOKO ships gateways and a bracelet, so resolving by supplier alone would
-     * hand a W6R the MKGW3 gateway protocol. Keys are lower-cased.
+     * A MOKO vende gateways e uma pulseira, e por isso resolver só pelo fornecedor dava a uma
+     * W6R o protocolo de gateway do MKGW3. As chaves vêm em minúsculas.
      *
      * @var array<string, array<string, string>>
      */

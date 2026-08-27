@@ -10,9 +10,9 @@ use Predis\ClientInterface;
 use React\Http\Browser;
 
 /**
- * Assembles the location resolution pipeline: a BeaconDB client behind a
- * circuit breaker and a concurrency limiter, fronted by a tiered cache and
- * optionally by the private radio map.
+ * Monta o pipeline de resolução de localização: um cliente da BeaconDB atrás de um disjuntor
+ * e de um limitador de concorrência, à frente dele uma cache em camadas e, opcionalmente, o
+ * mapa de rádio privado.
  */
 final class LocationEnricherFactory
 {
@@ -65,8 +65,8 @@ final class LocationEnricherFactory
             return $enricher;
         }
 
-        // Without a hash key the radio map cannot anonymise access points, so
-        // fall back to plain BeaconDB resolution rather than failing to boot.
+        // Sem chave de hash o mapa de rádio não consegue anonimizar os pontos de acesso, e
+        // por isso recorre-se à resolução directa pela BeaconDB em vez de não arrancar.
         if (trim((string)($config['radio_map_hash_key'] ?? '')) === '') {
             Logger::channel('hub')->error('Private radio map disabled because RADIO_MAP_HASH_KEY is empty');
 

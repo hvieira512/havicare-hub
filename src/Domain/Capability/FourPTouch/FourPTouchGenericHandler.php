@@ -5,8 +5,7 @@ namespace Hub\Domain\Capability\FourPTouch;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Protocol-specific fallback for generic 4P Touch capabilities that do not
- * have their own dedicated contract yet.
+ * O recurso para as capacidades genéricas do 4P Touch que ainda não têm contrato próprio.
  */
 final class FourPTouchGenericHandler
 {
@@ -101,7 +100,7 @@ final class FourPTouchGenericHandler
     }
 
     /**
-     * Convert a generic capability payload to the native 4P Touch payload.
+     * Converte um payload genérico no payload nativo do 4P Touch.
      *
      * @return array<string, array<string, mixed>>
      */

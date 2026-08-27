@@ -2,9 +2,7 @@
 
 namespace Hub\Domain\Capability;
 
-/**
- * Shared validation and normalization helpers for capability implementations.
- */
+/** Os ajudantes de validação e normalização partilhados pelas capacidades. */
 trait CapabilityHelpers
 {
     /** @return list<string> */
@@ -134,7 +132,7 @@ trait CapabilityHelpers
     }
 
     // ------------------------------------------------------------------
-    // Merge helpers
+    // ajudantes de junção
     // ------------------------------------------------------------------
 
     /** @param list<string> $listKeys */

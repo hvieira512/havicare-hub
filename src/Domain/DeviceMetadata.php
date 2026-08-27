@@ -12,9 +12,9 @@ final class DeviceMetadata
     }
 
     /**
-     * Company names are part of the MQTT topic, and topics are case sensitive:
-     * "hitCare" and "hitcare" are two different tenants to a subscriber. One
-     * casing, chosen here, keeps a tenant's devices in one place.
+     * O nome da empresa faz parte do tópico MQTT, e os tópicos distinguem maiúsculas: para
+     * quem subscreve, "hitCare" e "hitcare" são dois clientes diferentes. Uma grafia só,
+     * escolhida aqui, mantém os dispositivos de um cliente num sítio só.
      */
     public static function normalizeCompany(?string $company): string
     {
@@ -24,9 +24,9 @@ final class DeviceMetadata
     }
 
     /**
-     * licenseId arrives as an int from the API and as a string from the
-     * whitelist file and Redis. int is the canonical in-memory form -- it is
-     * what tenant access control compares -- so every edge converges here.
+     * O `licenseId` chega como inteiro pela API e como texto pelo ficheiro da whitelist e
+     * pelo Redis. O inteiro é a forma canónica em memória -- é o que o controlo de acesso por
+     * cliente compara --, e por isso todas as bordas convergem aqui.
      */
     public static function normalizeLicenseId(int|string $licenseId): int
     {

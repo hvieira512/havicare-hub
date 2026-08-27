@@ -224,8 +224,8 @@ final class DeviceCommandCatalog
     }
 
     /**
-     * These values are optional in the generic Wonlex contract, but some
-     * firmwares do not start waveform collection unless they are explicit.
+     * Estes valores são opcionais no contrato genérico da Wonlex, mas alguns firmwares não
+     * começam a recolher a forma de onda sem eles explícitos.
      *
      * @return array{frequency:string,oneTime:int,collectionLogo:string}
      */

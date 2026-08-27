@@ -6,15 +6,16 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Generic call whitelist capability.
+ * A whitelist de chamadas.
  *
- * Public API shape:
- * - GET /api/devices/{imei}: Vivistar returns contacts as [{name, phone}], 4P Touch returns a list of phone numbers.
+ * Forma pública:
+ * - GET /api/devices/{imei}: o Vivistar devolve contactos como `[{name, phone}]`, o 4P Touch
+ *   devolve uma lista de números.
  * - PATCH /api/devices/{imei}/configurations:
- *   - Vivistar accepts {contacts:[{name, phone}]}
- *   - 4P Touch accepts a flat list of phone numbers
+ *   - o Vivistar aceita `{contacts:[{name, phone}]}`
+ *   - o 4P Touch aceita uma lista simples de números
  *
- * The enable/disable switch is exposed separately as whitelist_enabled.
+ * O interruptor que a liga e desliga é exposto à parte, como `whitelist_enabled`.
  */
 final class CallWhitelistCapability implements CapabilityContract
 {
@@ -55,9 +56,8 @@ final class CallWhitelistCapability implements CapabilityContract
     public function toNative(string $protocol, mixed $value): array
     {
         return match ($protocol) {
-            // Keep the persisted native payload structured. The Vivistar payload
-            // builder is the single place that serializes contacts as
-            // UTF-16BE(name)|phone for BP14.
+            // O payload nativo guardado fica estruturado: quem serializa os contactos como
+            // `UTF-16BE(nome)|telefone` para o BP14 é só o construtor de payloads Vivistar.
             'vivistar-iw' => ['call_whitelist' => ['contacts' => self::normalizeContactsList($value)]],
             'four-p-touch' => $this->fourPTouch->toNative($value),
             default => throw new \InvalidArgumentException("Unsupported protocol {$protocol} for call_whitelist"),

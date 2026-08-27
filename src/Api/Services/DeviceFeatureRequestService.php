@@ -15,11 +15,11 @@ use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 
 /**
- * Asking a device to do something: telemetry requests and capability actions,
- * the commands they turn into, and the status of one already sent.
+ * Pedir a um dispositivo que faça algo: pedidos de telemetria e acções de capacidades, os
+ * comandos em que se transformam, e o estado de um já enviado.
  *
- * This is the write side of the device API, and the only part that reaches for
- * the hub. Reading a device does not belong here.
+ * É o lado de escrita da API de dispositivos, e a única parte que vai ao hub. Ler um
+ * dispositivo não pertence aqui.
  */
 final class DeviceFeatureRequestService
 {

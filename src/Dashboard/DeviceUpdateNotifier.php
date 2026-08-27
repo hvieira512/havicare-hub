@@ -7,9 +7,9 @@ namespace Hub\Dashboard;
 /**
  * Diz aos streams abertos que o histórico de um dispositivo mudou.
  *
- * The ingest and the dashboard HTTP server share one process and one
- * DashboardStore, so a write can be announced directly instead of every stream
- * re-reading Redis on a timer to discover it.
+ * A ingestão e o servidor HTTP da dashboard partilham um processo e um `DashboardStore`, e
+ * por isso uma escrita pode ser anunciada directamente, em vez de cada stream reler o Redis
+ * num temporizador para a descobrir.
  *
  * Aos ouvintes só se diz *qual* o dispositivo que mudou, nunca o quê: o stream continua a
  * ler o estado autoritativo por si, e por isso uma notificação perdida ou duplicada custa

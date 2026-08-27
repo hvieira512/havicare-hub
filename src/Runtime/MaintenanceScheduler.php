@@ -7,8 +7,8 @@ namespace Hub\Runtime;
 use React\EventLoop\LoopInterface;
 
 /**
- * Periodic housekeeping: retrying and expiring queued commands, and dropping
- * devices/connections that have gone quiet.
+ * Manutenção periódica: repetir e expirar os comandos em fila, e largar os dispositivos e as
+ * ligações que se calaram.
  */
 final class MaintenanceScheduler
 {

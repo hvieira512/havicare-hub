@@ -224,10 +224,10 @@ final class DeviceCommandStore
                 continue;
             }
 
-            // Some Wonlex firmwares generate a fresh ident for both w:reply and
-            // w:update instead of echoing the downlink ident documented by the
-            // protocol. Preserve exact-ident priority, then fall back to the
-            // newest pending command that semantically expects this reply.
+            // Alguns firmwares Wonlex geram um ident novo tanto no `w:reply` como no
+            // `w:update`, em vez de ecoarem o ident do downlink que o protocolo documenta.
+            // O ident exacto tem prioridade, e depois recorre-se ao comando pendente mais
+            // recente que semanticamente espera esta resposta.
             if (($command['protocol'] ?? '') === 'wonlex-json') {
                 $wonlexSemanticMatch ??= $command;
                 continue;
@@ -253,17 +253,16 @@ final class DeviceCommandStore
                 if (!in_array($status, ['waiting', 'queued'], true)) {
                     continue;
                 }
-                // Queued and retryable means "waiting for the device to come
-                // back"; the retry sweep owns that one and redispatches it for
-                // as long as it takes.
+                // Em fila e repetível quer dizer "à espera de o dispositivo voltar": esse é
+                // da varredura de repetição, que o reenvia o tempo que for preciso.
                 if ($status === 'queued' && ($command['retryable'] ?? false)) {
                     continue;
                 }
                 $startedAt = $this->commandStartedAt($command);
                 if ($startedAt > 0 && $startedAt <= $cutoff) {
                     $this->recordCommand($imei, (string)$command['id'], array_merge($command, [
-                        // Never sent means the device owes us nothing; only a
-                        // command that actually went out timed out waiting.
+                        // Nunca enviado quer dizer que o dispositivo não nos deve nada: só um
+                        // comando que saiu de facto é que esgotou a espera.
                         'status' => 'failed',
                         'error' => $status === 'waiting' ? 'response_timeout' : 'delivery_failed',
                     ]));
@@ -273,10 +272,10 @@ final class DeviceCommandStore
     }
 
     /**
-     * When a command started counting against the timeout.
+     * Quando é que um comando começou a contar para o tempo limite.
      *
-     * sentAt is absent for anything that never reached the device, so falling
-     * back keeps those from ageing forever and sitting pending on the dashboard.
+     * O `sentAt` falta em tudo o que nunca chegou ao dispositivo, e recorrer a outro campo é
+     * o que evita que esses envelheçam para sempre, pendentes na dashboard.
      *
      * @param array<string, mixed> $command
      */
@@ -299,9 +298,9 @@ final class DeviceCommandStore
             return [];
         }
 
-        // One round-trip for the whole page rather than one per id: the device
-        // stream re-reads this on every push, so a hundred round-trips per
-        // read is the difference between cheap and not.
+        // Uma ida e volta para a página toda em vez de uma por id: o stream do dispositivo
+        // volta a ler isto a cada push, e cem idas e voltas por leitura é a diferença entre
+        // ser barato e não ser.
         $raws = $this->redis->hmget($this->commandHashKey($imei), array_map(strval(...), $ids));
 
         $commands = [];

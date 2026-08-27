@@ -7,26 +7,26 @@ interface ObservationStateStore
     public function acceptObservation(string $deviceKey, string $fingerprint, int $ttlSeconds): bool;
 
     /**
-     * `$observedBy` scopes the throttle to whoever made the observation. A relayed
-     * BLE device is seen by every gateway in range, and each sighting is a distinct
-     * measurement -- notably its RSSI, which differs per gateway. Without the scope
-     * the first gateway to publish suppresses the others for `$refreshSeconds` and
-     * which one wins is a race, so the reported gatewayId was effectively arbitrary.
-     * Empty for a device reporting about itself.
+     * O `$observedBy` restringe o estrangulamento a quem fez a observação. Um dispositivo BLE
+     * retransmitido é visto por todos os gateways em alcance, e cada avistamento é uma
+     * medição distinta -- em particular o RSSI, que difere por gateway. Sem esse âmbito, o
+     * primeiro gateway a publicar suprimia os outros durante `$refreshSeconds`, e qual deles
+     * ganhava era uma corrida: o `gatewayId` reportado saía arbitrário.
+     *
+     * Vazio para um dispositivo que reporta sobre si próprio.
      *
      * @param array<string, mixed> $payload
      */
     public function shouldPublish(string $deviceKey, string $capability, array $payload, int $refreshSeconds, string $observedBy = ''): bool;
 
     /**
-     * Returns null when the condition did not change, otherwise the transition.
+     * Devolve null quando a condição não mudou, e a transição caso contrário.
      *
-     * `previous` is null on the first observation of a device, which is a transition
-     * like any other: a sensor whose very first reading already needs attention has
-     * changed from "unknown" to that state, and callers must be able to act on it.
-     * Returning null for both cases -- as this did before -- silently swallowed the
-     * alarm for a device seen for the first time, or seen for the first time after
-     * the store lost its data.
+     * O `previous` é null na primeira observação de um dispositivo, que é uma transição como
+     * outra qualquer: um sensor cuja primeira leitura já pede atenção mudou de "desconhecido"
+     * para esse estado, e quem chama tem de poder agir. Devolver null nos dois casos engolia
+     * em silêncio o alarme de um dispositivo visto pela primeira vez, ou visto pela primeira
+     * vez depois de o store perder os dados.
      *
      * @return array{previous: ?string}|null
      */

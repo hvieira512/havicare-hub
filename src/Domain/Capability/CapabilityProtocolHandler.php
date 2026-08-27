@@ -3,12 +3,11 @@
 namespace Hub\Domain\Capability;
 
 /**
- * Protocol-specific conversion contract for a generic capability.
+ * O contrato de conversão específica de protocolo, para uma capacidade genérica.
  *
- * A generic capability contract can delegate protocol-specific encoding,
- * decoding, defaulting, metadata and response shaping to one or more
- * handlers. The generic API contract stays stable while supplier/protocol
- * fan-out and protocol-specific wire names vary underneath it.
+ * Um contrato genérico pode delegar num ou mais handlers a codificação, a descodificação, os
+ * valores por omissão, os metadados e a forma da resposta. O contrato público da API fica
+ * estável enquanto o leque de fornecedores e os nomes de fio variam por baixo dele.
  */
 interface CapabilityProtocolHandler
 {

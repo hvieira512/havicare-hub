@@ -5,12 +5,12 @@ namespace Hub\Domain\Capability\Medication;
 use Hub\Domain\Capability\CapabilityContract;
 
 /**
- * Capability for medication reminders (take_pills).
+ * Os lembretes de medicação (`take_pills`).
  *
- * Maps to different native shapes per protocol:
- * - wonlex-json: { dnMedicationPlan: { plans: [...] } }
- * - four-p-touch: { takePills: { reminderSettings: [...], reminderText, voiceData } }
- *   The native `number` field is derived from reminderSettings.
+ * Mapeia em formas nativas diferentes por protocolo:
+ * - wonlex-json: `{ dnMedicationPlan: { plans: [...] } }`
+ * - four-p-touch: `{ takePills: { reminderSettings: [...], reminderText, voiceData } }`, com
+ *   o campo nativo `number` derivado do `reminderSettings`.
  */
 final class MedicationRemindersCapability implements CapabilityContract
 {

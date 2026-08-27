@@ -3,8 +3,8 @@
 namespace Hub\Domain\Capability;
 
 /**
- * Optional contract for capabilities that normalize accepted public API input
- * before it is converted, persisted, and sent to a device.
+ * Contrato opcional para as capacidades que normalizam a entrada pública da API antes de ela
+ * ser convertida, guardada e enviada a um dispositivo.
  */
 interface CapabilityInputSanitizer
 {

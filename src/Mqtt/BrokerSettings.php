@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Hub\Mqtt;
 
 /**
- * Connection parameters for a single MQTT broker.
+ * Os parâmetros de ligação de um broker MQTT.
  *
- * The hub talks to two brokers: its own (full TLS support, configured through
- * MQTT_*) and the Qinglanst radar broker (plain TCP, fixed timeouts). Both are
- * described by this object so the connection code stays single-sourced.
+ * O hub fala com dois: o seu (com TLS, configurado pelas `MQTT_*`) e o broker de radares da
+ * Qinglanst (TCP simples, tempos fixos). Os dois são descritos por este objecto, para o
+ * código de ligação ter uma fonte só.
  */
 final class BrokerSettings
 {
@@ -63,9 +63,9 @@ final class BrokerSettings
     }
 
     /**
-     * The radar broker is plain TCP with fixed keepalive/timeouts. Keeping it in
-     * a named constructor makes that a configuration difference rather than a
-     * second copy of the connection code.
+     * O broker dos radares é TCP simples, com keepalive e tempos fixos. Num construtor
+     * nomeado, isso fica uma diferença de configuração em vez de uma segunda cópia do código
+     * de ligação.
      *
      * @param array<string, mixed> $qinglanstConfig the `qinglanst` section of the hub config
      */

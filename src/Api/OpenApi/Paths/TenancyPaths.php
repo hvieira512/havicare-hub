@@ -7,7 +7,7 @@ use Hub\Api\OpenApi\Requests;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * API users, companies and licenses.
+ * Utilizadores da API, empresas e licenças.
  */
 final class TenancyPaths
 {

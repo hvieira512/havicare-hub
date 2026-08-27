@@ -2,9 +2,7 @@
 
 namespace Hub\Api\OpenApi;
 
-/**
- * Response shapes shared by the path definitions.
- */
+/** As formas de resposta partilhadas pelas definições de rotas. */
 final class Responses
 {
     public static function ref(string $schema): array
@@ -12,9 +10,7 @@ final class Responses
         return ['$ref' => '#/components/schemas/' . $schema];
     }
 
-    /**
-     * The shared components/responses/Error payload.
-     */
+    /** O payload partilhado `components/responses/Error`. */
     public static function error(): array
     {
         return ['$ref' => '#/components/responses/Error'];

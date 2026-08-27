@@ -9,10 +9,10 @@ use PhpMqtt\Client\Contracts\Repository;
 use PhpMqtt\Client\MqttClient;
 
 /**
- * Builds and connects MQTT clients for one broker.
+ * Constrói e liga os clientes MQTT de um broker.
  *
- * Not final so tests can substitute a factory that records clients instead of
- * opening sockets.
+ * Não é `final` para os testes poderem substituir por uma fábrica que registe os clientes em
+ * vez de abrir sockets.
  */
 class ConnectionFactory
 {
@@ -28,8 +28,8 @@ class ConnectionFactory
     }
 
     /**
-     * A stable client id omits the pid, so the broker recognises the same
-     * session across process restarts (required for persistent subscriptions).
+     * Um id de cliente estável não leva o pid, para o broker reconhecer a mesma sessão
+     * através dos reinícios do processo -- que é o que as subscrições persistentes exigem.
      */
     public function create(string $suffix, bool $stableClientId = false, ?Repository $repository = null): MqttClient
     {

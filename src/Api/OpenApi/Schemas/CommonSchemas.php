@@ -5,12 +5,12 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Envelope schemas shared across every resource.
+ * Os esquemas de envelope partilhados por todos os recursos.
  */
 final class CommonSchemas
 {
     /**
-     * Paginated collection envelope used by every list endpoint.
+     * O envelope de colecção paginada que todos os endpoints de listagem usam.
      */
     public static function collection(string $itemSchema): array
     {

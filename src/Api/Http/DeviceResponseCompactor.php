@@ -7,7 +7,8 @@ final class DeviceResponseCompactor
     private const MAX_INLINE_VOICE_DATA_BYTES = 65536;
 
     /**
-     * Keep large binary configuration values out of the device detail read model.
+     * Mantém os valores binários grandes de configuração fora do modelo de leitura do
+     * detalhe de um dispositivo.
      *
      * @param array<string, mixed> $response
      * @return array<string, mixed>

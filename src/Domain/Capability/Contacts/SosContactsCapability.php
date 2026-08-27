@@ -6,14 +6,14 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Generic SOS contacts capability.
+ * Os contactos de SOS.
  *
- * Public API shape:
- * - GET /api/devices/{imei}: value is a list of phone numbers, with optional _meta.limit
- * - PATCH /api/devices/{imei}/configurations: send a flat list of phone numbers.
- *   An empty array is valid and clears all saved SOS contacts.
+ * Forma pública:
+ * - GET /api/devices/{imei}: o valor é uma lista de números, com `_meta.limit` opcional
+ * - PATCH /api/devices/{imei}/configurations: envia-se uma lista simples de números. Uma
+ *   lista vazia é válida e limpa os contactos guardados.
  *
- * The hub translates that generic contract to each protocol's wire command(s).
+ * O hub traduz esse contrato genérico nos comandos de fio de cada protocolo.
  */
 final class SosContactsCapability implements CapabilityContract
 {

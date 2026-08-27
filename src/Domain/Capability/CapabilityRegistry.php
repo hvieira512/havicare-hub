@@ -16,12 +16,11 @@ use Hub\Domain\Capability\FourPTouch\FourPTouchGenericHandler;
 use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 
 /**
- * Central registry for capability contracts.
+ * O registo central dos contratos de capacidades.
  *
- * Complex capabilities (alarm_clock, sos_contacts, call_whitelist, etc.)
- * implement CapabilityContract and are registered here. Simple capabilities
- * (toggles, numbers, phones) are handled generically via
- * DeviceConfigurationCatalog metadata.
+ * As capacidades complexas (`alarm_clock`, `sos_contacts`, `call_whitelist`, ...) implementam
+ * o `CapabilityContract` e registam-se aqui. As simples -- interruptores, números, telefones
+ * -- são tratadas genericamente pelos metadados do `DeviceConfigurationCatalog`.
  */
 final class CapabilityRegistry
 {

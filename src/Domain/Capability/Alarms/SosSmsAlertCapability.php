@@ -6,9 +6,9 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Generic on/off switch for sending an SMS when the watch raises an SOS alarm.
+ * O interruptor de enviar um SMS quando o relógio levanta um alarme de SOS.
  *
- * Public API shape: {"enabled": boolean}.
+ * Forma pública: `{"enabled": boolean}`.
  */
 final class SosSmsAlertCapability implements CapabilityContract
 {

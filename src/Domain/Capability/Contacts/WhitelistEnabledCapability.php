@@ -6,13 +6,13 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Generic whitelist enable/disable capability.
+ * O interruptor que liga e desliga a whitelist.
  *
- * Public API shape:
- * - GET /api/devices/{imei}: value is an object with enabled => bool
- * - PATCH /api/devices/{imei}/configurations: send { enabled: bool }
+ * Forma pública:
+ * - GET /api/devices/{imei}: o valor é um objecto com `enabled => bool`
+ * - PATCH /api/devices/{imei}/configurations: envia-se `{ enabled: bool }`
  *
- * This is the transport-side switch that controls the whitelist list.
+ * É o interruptor do lado do transporte que comanda a lista da whitelist.
  */
 final class WhitelistEnabledCapability implements CapabilityContract
 {

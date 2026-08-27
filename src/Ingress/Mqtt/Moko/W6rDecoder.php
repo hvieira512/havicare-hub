@@ -5,27 +5,28 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * Decodes MOKO W6R (BXP-B / "MK Button") observations relayed by a gateway.
+ * Descodifica as observações de uma MOKO W6R (BXP-B / "MK Button") retransmitidas por um
+ * gateway.
  *
- * A MKGW3 recognises MOKO beacons and reports them already parsed, with no raw
- * advertising bytes at all:
+ * Um MKGW3 reconhece os beacons MOKO e reporta-os já interpretados, sem bytes crus de
+ * anúncio nenhuns:
  *
  *   {"type":"bxp-button","frame_type":0,"trigger_count":69,"alarm_status":1,
  *    "batt_vol":98,"x_axis_data":-4,"y_axis_data":-20,"z_axis_data":1052, ...}
  *
- * so that is the primary input. Gateways that hand over raw advertising data
- * instead are still decoded from the BXP-B layout documented in the "MOKO
- * Beacon - ADV Format Summary Sheet", and both paths produce the same result.
+ * e é essa a entrada principal. Os gateways que entregam dados de anúncio crus continuam a
+ * ser descodificados a partir do formato BXP-B documentado no "MOKO Beacon - ADV Format
+ * Summary Sheet", e os dois caminhos produzem o mesmo resultado.
  */
 final class W6rDecoder
 {
-    /** Service UUIDs as they appear on the wire (little endian). */
+    /** Os UUID de serviço como aparecem no fio (little endian). */
     private const ALARM_SERVICE = 'e0fe';
     private const INFO_SERVICE = '00ea';
 
     /**
-     * The gateway reports the alarm frame type with the 0x20 base removed, so
-     * 0x20 "single press mode" arrives as 0.
+     * O gateway reporta o tipo de frame de alarme com a base 0x20 retirada, e por isso o
+     * 0x20 ("modo de toque simples") chega como 0.
      */
     private const PRESS_MODES = [
         0 => 'single',
@@ -52,9 +53,9 @@ final class W6rDecoder
             return null;
         }
 
-        // The gateway measures RSSI, not the beacon, so it only ever arrives on the
-        // observation. Carried through here so proximity consumers see it, exactly
-        // as MonitMecsProDecoder does for the diaper sensor.
+        // Quem mede o RSSI é o gateway e não o beacon, e por isso ele só chega na
+        // observação. Passa por aqui para quem consome a proximidade o ver, tal como o
+        // `MonitMecsProDecoder` faz para o medidor de fraldas.
         return array_filter(
             ['mac' => $mac, 'rssiDbm' => is_numeric($observation['rssi'] ?? null) ? (int)$observation['rssi'] : null] + $decoded,
             static fn(mixed $value): bool => $value !== null,
@@ -85,8 +86,8 @@ final class W6rDecoder
 
         return array_filter([
             'alarm' => $alarm,
-            // The scan response is not always captured, so these arrive only
-            // on some sightings of the same device.
+            // A resposta ao scan não é sempre capturada, e por isso estes só chegam em
+            // alguns avistamentos do mesmo dispositivo.
             'info' => $this->gatewayInfo($observation),
         ], static fn(mixed $value): bool => $value !== null);
     }
@@ -146,7 +147,7 @@ final class W6rDecoder
      */
     private function rawAlarm(?array $data): ?array
     {
-        // frame type, status flag, 2-byte count, 6-byte device id, firmware type
+        // tipo de frame, flag de estado, contagem em 2 bytes, id em 6 bytes, tipo de firmware
         if ($data === null || count($data) < 11) {
             return null;
         }
@@ -159,8 +160,8 @@ final class W6rDecoder
         return [
             'pressMode' => $pressMode,
             'triggerCount' => ($data[2] << 8) | $data[3],
-            // Bit 1 is the main button's alarm state; bit 2 is a sub button that
-            // only BXP-B03-D firmware has.
+            // O bit 1 é o estado de alarme do botão principal; o bit 2 é um botão secundário
+            // que só o firmware BXP-B03-D tem.
             'triggered' => ($data[1] & 0x02) !== 0,
             'deviceId' => implode('', array_map(
                 static fn(int $byte): string => sprintf('%02x', $byte),
@@ -175,7 +176,7 @@ final class W6rDecoder
      */
     private function rawInfo(?array $data): ?array
     {
-        // frame type, full scale, threshold, x, y, z, temperature, ranging, battery
+        // tipo de frame, escala, limiar, x, y, z, temperatura, alcance, bateria
         if ($data === null || count($data) < 15 || $data[0] !== 0x00) {
             return null;
         }
@@ -190,7 +191,7 @@ final class W6rDecoder
     }
 
     /**
-     * Above 100 the field carries millivolts instead of a percentage.
+     * Acima de 100 o campo traz milivolts em vez de percentagem.
      *
      * @return array<string, int>
      */

@@ -6,15 +6,14 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 
 /**
- * Decides whether a device has applied what the hub asked for.
+ * Decide se um dispositivo aplicou o que o hub lhe pediu.
  *
- * The desired and reported capability trees are flattened to comparable
- * section.key paths, compared, and any difference is reported with the
- * lifecycle status of the command that was supposed to deliver it.
+ * As árvores de capacidades pretendida e reportada são achatadas em caminhos comparáveis
+ * `secção.chave`, comparadas, e cada diferença é reportada com o estado do ciclo de vida do
+ * comando que a devia ter entregado.
  *
- * Split out of DeviceCapabilityPresenter, which was projecting capabilities and
- * grading their delivery in one class. This half needs neither the capability
- * registry nor the database.
+ * Vive à parte do `DeviceCapabilityPresenter`, que projectava capacidades e classificava a
+ * entrega delas na mesma classe. Esta metade não precisa do registo nem da base de dados.
  */
 final class ConfigurationSyncStatus
 {
@@ -31,7 +30,7 @@ final class ConfigurationSyncStatus
     ];
 
     /**
-     * Capabilities the device has not confirmed, grouped by section and key.
+     * As capacidades que o dispositivo não confirmou, agrupadas por secção e chave.
      *
      * @param array<string, mixed> $desiredCapabilities
      * @param array<string, mixed> $reportedCapabilities
@@ -104,8 +103,8 @@ final class ConfigurationSyncStatus
     }
 
     /**
-     * The newest lifecycle row per generic key, preferring a failure when two
-     * rows share a timestamp.
+     * A linha de ciclo de vida mais recente por chave genérica, com a falha a ganhar quando
+     * duas linhas partilham a mesma hora.
      *
      * @param list<array<string, mixed>> $configRows
      * @return array<string, array{updated_at: string, last_status: string, last_command_id: string}>
@@ -208,8 +207,8 @@ final class ConfigurationSyncStatus
     }
 
     /**
-     * Vivistar keeps whitelist entries as named contacts; every other protocol
-     * compares plain phone numbers.
+     * O Vivistar guarda as entradas da whitelist como contactos com nome; todos os outros
+     * protocolos comparam números de telefone simples.
      *
      * @param array<string|int, mixed> $value
      */

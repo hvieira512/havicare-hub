@@ -3,7 +3,7 @@
 namespace Hub\Api\OpenApi\Schemas;
 
 /**
- * API users, companies and licenses.
+ * Utilizadores da API, empresas e licenças.
  */
 final class TenancySchemas
 {

@@ -21,11 +21,11 @@ use Predis\Client as RedisClient;
 use Predis\ClientInterface;
 
 /**
- * Composition root for the long-lived hub services.
+ * A raiz de composição dos serviços de vida longa do hub.
  *
- * Everything here is a process-wide singleton shared by reference, including a
- * single Redis connection: every consumer uses a disjoint key prefix and only
- * plain synchronous commands, so one connection serves them all.
+ * Tudo aqui é um singleton do processo, partilhado por referência, incluindo uma ligação
+ * Redis só: cada consumidor usa um prefixo de chaves disjunto e apenas comandos síncronos
+ * simples, e por isso uma ligação serve-os a todos.
  */
 final class HubServices
 {

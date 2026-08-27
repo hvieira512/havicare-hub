@@ -7,7 +7,7 @@ use Hub\Api\OpenApi\Requests;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Device-type capability catalog and capability discovery runs.
+ * O catálogo de capacidades por tipo de dispositivo, e as descobertas de capacidades.
  */
 final class CapabilityPaths
 {

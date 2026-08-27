@@ -11,11 +11,11 @@ use Hub\Domain\DeviceProtocol;
 use Hub\Registry\Whitelist;
 
 /**
- * Looking a device up and deciding who may see it.
+ * Encontrar um dispositivo e decidir quem o pode ver.
  *
- * Every part of the device API needs this -- reading one, requesting a feature
- * from one, projecting its configuration -- so it sits behind a collaborator
- * rather than being reachable only from inside DeviceService.
+ * Todas as partes da API de dispositivos precisam disto -- ler um, pedir-lhe uma
+ * funcionalidade, projectar a sua configuração --, e por isso vive num colaborador em vez de
+ * só se alcançar de dentro do `DeviceService`.
  */
 final class DeviceDirectory
 {

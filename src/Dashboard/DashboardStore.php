@@ -31,8 +31,8 @@ final class DashboardStore implements DashboardStoreContract
     }
 
     /**
-     * Streams subscribe here to be told when a device's history changes, so
-     * they do not have to poll for it.
+     * Os streams subscrevem aqui para saberem quando o histórico de um dispositivo muda, em
+     * vez de o terem de sondar.
      */
     public function updates(): DeviceUpdateNotifier
     {

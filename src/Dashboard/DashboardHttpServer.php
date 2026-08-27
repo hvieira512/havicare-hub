@@ -53,8 +53,8 @@ final class DashboardHttpServer
             );
         }
 
-        // The store announces its own writes, so the stream must subscribe to that
-        // exact notifier rather than one of its own.
+        // O store anuncia as suas próprias escritas, e por isso o stream tem de subscrever
+        // esse notificador exacto, e não um seu.
         $deviceService = new DeviceService(
             $this->store,
             $this->whitelist,
@@ -107,8 +107,8 @@ final class DashboardHttpServer
             if ($method === 'GET' && preg_match('#^' . self::MODEL_IMAGE_ROUTE . '/([a-f0-9]{32}\.jpg)$#', $path, $matches) === 1) {
                 return $this->modelImage($matches[1]);
             }
-            // /api/, / and /dashboard already returned above, so anything
-            // still here and GET is a candidate static asset.
+            // O `/api/`, o `/` e o `/dashboard` já devolveram acima, por isso o que chega
+            // aqui em GET é candidato a recurso estático.
             if ($method === 'GET') {
                 $file = $this->publicAssetPath($path);
                 if ($file !== null) {
@@ -144,9 +144,9 @@ final class DashboardHttpServer
 
     private function page(): string
     {
-        // page() is also reached through newInstanceWithoutConstructor(), where
-        // the promoted property is genuinely uninitialised -- hence isset()
-        // rather than a plain read, which would fatal.
+        // O `page()` também se alcança por `newInstanceWithoutConstructor()`, onde a
+        // propriedade promovida está genuinamente por inicializar -- daí o `isset()` em vez
+        // de uma leitura directa, que dava fatal.
         $dashboardApiAuthRequired = isset($this->apiAuthRequired) ? $this->apiAuthRequired : true;
 
         ob_start();

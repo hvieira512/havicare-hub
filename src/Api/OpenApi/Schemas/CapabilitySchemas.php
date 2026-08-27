@@ -5,7 +5,7 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Capability catalog, device capability matrix and writable capability payloads.
+ * O catálogo de capacidades, a matriz por dispositivo, e os payloads das que se escrevem.
  */
 final class CapabilitySchemas
 {

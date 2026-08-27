@@ -7,7 +7,7 @@ use Hub\Api\OpenApi\Requests;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Authentication, documentation endpoints and dashboard notifications.
+ * Autenticação, endpoints de documentação e notificações da dashboard.
  */
 final class SystemPaths
 {

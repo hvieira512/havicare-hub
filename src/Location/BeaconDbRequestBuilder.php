@@ -5,8 +5,8 @@ namespace Hub\Location;
 final class BeaconDbRequestBuilder
 {
     /**
-     * Build an MLS/Ichnaea-compatible geolocation request from a normalized
-     * schema-v2 location telemetry envelope (or directly from its data object).
+     * Constrói um pedido de geolocalização compatível com MLS/Ichnaea a partir de um envelope
+     * de telemetria de localização normalizado (ou directamente do seu objecto `data`).
      */
     public function build(array $payload): ?array
     {

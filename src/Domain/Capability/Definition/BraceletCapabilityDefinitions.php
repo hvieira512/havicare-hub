@@ -5,10 +5,9 @@ namespace Hub\Domain\Capability\Definition;
 final class BraceletCapabilityDefinitions
 {
     /**
-     * The button is a single capability rather than one per press mode: the
-     * modes are configured on the device, and the press type travels in the
-     * event payload. Splitting them here would put three toggles in the
-     * capability matrix for what is one physical feature.
+     * O botão é uma capacidade só e não uma por modo de toque: os modos configuram-se no
+     * aparelho, e o tipo de toque viaja no payload do evento. Separá-los aqui punha três
+     * interruptores na matriz de capacidades para o que é uma funcionalidade física.
      *
      * @return list<array{deviceType: string, section: string, key: string, label: string, sortOrder: int, isTelemetry: bool, isConfigurable: bool, isRequestable: bool, isEvent?: bool}>
      */

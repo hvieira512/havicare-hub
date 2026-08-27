@@ -5,7 +5,7 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Device resources: summaries, detail, configuration lifecycle and telemetry.
+ * Os recursos de dispositivo: resumos, detalhe, ciclo de vida da configuração e telemetria.
  */
 final class DeviceSchemas
 {

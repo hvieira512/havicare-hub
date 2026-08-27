@@ -10,9 +10,7 @@ use Hub\Configuration\HubConfigurationValidator;
 use Hub\Infrastructure\Persistence\DashboardDatabase;
 use Hub\Infrastructure\Persistence\DatabaseSchemaGuard;
 
-/**
- * Shared preamble for the console entrypoints.
- */
+/** O preâmbulo partilhado pelos pontos de entrada da linha de comandos. */
 final class CliBootstrap
 {
     /**
@@ -31,9 +29,8 @@ final class CliBootstrap
     }
 
     /**
-     * @param array<string, mixed> $config the full hub config
-     * @param bool $assertSchema false for the migrator, which is what brings the
-     *        schema up to date in the first place
+     * @param array<string, mixed> $config a configuração completa do hub
+     * @param bool $assertSchema false para o migrador, que é quem põe o esquema em dia
      */
     public static function database(array $config, bool $assertSchema = true): DashboardDatabase
     {

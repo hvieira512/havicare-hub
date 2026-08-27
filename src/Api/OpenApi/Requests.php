@@ -2,9 +2,7 @@
 
 namespace Hub\Api\OpenApi;
 
-/**
- * Reusable OpenAPI request body builders shared by the path definitions.
- */
+/** Construtores de corpos de pedido OpenAPI, partilhados pelas definições de rotas. */
 final class Requests
 {
     public static function json(string $schema): array
@@ -17,9 +15,7 @@ final class Requests
         return self::content(['application/json' => ['schema' => $schema]]);
     }
 
-    /**
-     * Endpoints that accept the same schema as a multipart upload or as JSON.
-     */
+    /** Endpoints que aceitam o mesmo esquema como upload multipart ou como JSON. */
     public static function multipartOrJson(string $schema): array
     {
         return self::content([

@@ -3,12 +3,12 @@
 namespace Hub\Domain\Capability;
 
 /**
- * The payload a capability starts from when a device has never stored one.
+ * O payload de que uma capacidade parte quando um dispositivo nunca guardou nenhum.
  *
- * Keyed by the input type of the protocol's configuration entry, so the
- * dashboard renders a usable form instead of an empty one. Split out of
- * DeviceCapabilityPresenter and CapabilityRegistry, which each carried their
- * own copy of this table; the copies had already drifted apart.
+ * Indexado pelo tipo de campo da entrada de configuração do protocolo, para a dashboard
+ * desenhar um formulário utilizável em vez de um vazio. Num sítio só: o
+ * `DeviceCapabilityPresenter` e o `CapabilityRegistry` traziam cada um a sua cópia desta
+ * tabela, e as cópias já tinham divergido.
  */
 final class ConfigurationInputDefaults
 {
@@ -33,8 +33,8 @@ final class ConfigurationInputDefaults
             'intervalHoursToggle' => ['enabled' => true, 'intervalHours' => 2],
             'workingMode' => ['mode' => 1],
             'bloodPressure' => ['systolic' => 120, 'diastolic' => 80],
-            // BPEarlyWarning carries a systolic and a diastolic threshold, and
-            // the payload builder requires both.
+            // O `BPEarlyWarning` leva um limiar sistólico e um diastólico, e o construtor de
+            // payloads exige os dois.
             'wonlexBloodPressureWarning' => ['switchState' => true, 'hpWarn' => 135, 'LPWarn' => 90],
             'languageTimezone' => ['language' => 0, 'timeZone' => '0'],
             'dualToggle' => ['enabled' => true, 'callCenterOnFall' => false],

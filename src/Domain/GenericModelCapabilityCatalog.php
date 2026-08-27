@@ -5,8 +5,8 @@ namespace Hub\Domain;
 use Hub\Domain\Capability\CapabilityCatalog;
 
 /**
- * @deprecated Use CapabilityCatalog. Kept as a source-compatible facade while
- * callers outside the core domain migrate to the authoritative registry.
+ * @deprecated Usar o `CapabilityCatalog`. Fica como fachada compatível enquanto os chamadores
+ * fora do domínio migram para o registo autoritativo.
  */
 final class GenericModelCapabilityCatalog
 {

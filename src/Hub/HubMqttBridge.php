@@ -80,21 +80,19 @@ class HubMqttBridge
         return $this->topicPrefix === '' ? $topic : $this->topicPrefix . '/' . $topic;
     }
 
-    /**
-     * The one place licenseId becomes text: it is an int everywhere else.
-     */
+    /** O único sítio onde o `licenseId` se torna texto: em todo o resto é um inteiro. */
     public function deviceTopic(string $company, int $licenseId, string $deviceType, string $deviceKey, string $kind): string
     {
         return trim($company, '/') . '/' . $licenseId . '/' . trim($deviceType, '/') . '/' . trim($deviceKey, '/') . '/' . trim($kind, '/');
     }
 
     /**
-     * Deletes the retained status a device left on a tenant's topic.
+     * Apaga o estado retido que um dispositivo deixou no tópico de um cliente.
      *
-     * Status is published retained, so a device that moves between tenants
-     * keeps announcing itself on every topic it ever used -- a subscriber to
-     * the old tenant still receives it. MQTT deletes a retained message with a
-     * zero-length payload; an empty JSON document would only replace it.
+     * O estado é publicado como retido, e por isso um dispositivo que muda de cliente
+     * continua a anunciar-se em todos os tópicos que já usou -- quem subscreve o cliente
+     * antigo continua a recebê-lo. O MQTT apaga uma mensagem retida com um payload de
+     * comprimento zero; um documento JSON vazio só a substituiria.
      */
     public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
     {

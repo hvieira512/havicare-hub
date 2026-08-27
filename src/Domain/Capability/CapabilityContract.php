@@ -3,86 +3,72 @@
 namespace Hub\Domain\Capability;
 
 /**
- * Defines the contract for a generic capability.
+ * O contrato de uma capacidade genérica.
  *
- * Every capability (alarm_clock, call_whitelist, fall_detection, etc.) implements
- * this interface so that DeviceService and DeviceConfigurationCatalog can
- * delegate to a single object instead of scattering logic across match arms.
+ * Cada capacidade (`alarm_clock`, `call_whitelist`, `fall_detection`, ...) implementa esta
+ * interface para o `DeviceService` e o `DeviceConfigurationCatalog` delegarem num objecto em
+ * vez de espalharem a lógica por braços de `match`.
  */
 interface CapabilityContract
 {
-    /**
-     * The generic key used in API requests and responses (e.g. 'alarm_clock').
-     */
+    /** A chave genérica usada nos pedidos e respostas da API (por exemplo, `alarm_clock`). */
     public function key(): string;
 
-    /**
-     * The section this capability belongs to (e.g. 'alarms', 'contacts').
-     */
+    /** A secção a que esta capacidade pertence (por exemplo, `alarms` ou `contacts`). */
     public function section(): string;
 
-    /**
-     * Whether this capability uses a list-based response shape (items)
-     * instead of the default value-based shape.
-     */
+    /** Se a resposta desta capacidade tem forma de lista (`items`) em vez de valor. */
     public function isList(): bool;
 
     /**
-     * Whether multiple protocol configuration rows may roll up into the same
-     * public capability entry.
+     * Se várias linhas de configuração do protocolo se podem juntar na mesma entrada pública
+     * de capacidade.
      */
     public function supportsMultipleNativeKeys(): bool;
 
     /**
-     * Protocols that this capability supports.
+     * Os protocolos que esta capacidade suporta.
      *
      * @return list<string>
      */
     public function supportedProtocols(): array;
 
     /**
-     * Convert a generic API input value to the protocol key => payload map
-     * that DeviceConfigurationCatalog can consume.
+     * Converte um valor genérico da API no mapa `chave de protocolo => payload` que o
+     * `DeviceConfigurationCatalog` sabe consumir.
      *
      * @return array<string, array<string, mixed>>
      */
     public function toNative(string $protocol, mixed $value): array;
 
     /**
-     * Convert a protocol desired payload stored in device_configurations
-     * back to the public generic form for the API response.
+     * Converte um payload pretendido guardado em `device_configurations` de volta à forma
+     * genérica pública, para a resposta da API.
      */
     public function fromNative(string $nativeKey, array $desired): mixed;
 
-    /**
-     * Default value returned when no configuration row exists for the device.
-     */
+    /** O valor devolvido quando o dispositivo não tem linha de configuração nenhuma. */
     public function defaultValue(string $protocol): mixed;
 
     /**
-     * Build the _meta array for the API response.
+     * Constrói o `_meta` da resposta da API.
      *
      * @param array<string, mixed> $accumulatedMeta  Meta accumulated from config rows
      */
     public function meta(string $protocol, array $accumulatedMeta = []): array;
 
     /**
-     * Merge existing and incoming values when multiple protocol keys map
-     * to the same generic key.
+     * Junta o valor existente com o que chega, quando várias chaves de protocolo mapeiam na
+     * mesma chave genérica.
      */
     public function merge(mixed $existing, mixed $incoming): mixed;
 
-    /**
-     * Build the full capability entry for the API response.
-     */
+    /** Constrói a entrada completa da capacidade, para a resposta da API. */
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array;
 
     /**
-     * Resolve the protocol-specific configuration key used by the transport
-     * persistence/transport layer.
-     *
-     * This is not the public API key; the public key remains the generic
-     * capability name.
+     * A chave de configuração específica do protocolo, usada na camada de persistência e de
+     * transporte. Não é a chave pública da API, que continua a ser o nome genérico.
      */
     public function resolveConfigKey(string $protocol, string $key): ?string;
 }

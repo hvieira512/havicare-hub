@@ -7,7 +7,7 @@ return static function (
     SupplierController $suppliers,
 ): array {
     return [
-        // Suppliers are defined in code, so this collection is read-only.
+        // Os fornecedores estão definidos em código, e por isso esta colecção é só de leitura.
         new ApiRoute('GET', '/api/suppliers', [$suppliers, 'list']),
     ];
 };

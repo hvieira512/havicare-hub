@@ -6,11 +6,11 @@ use Hub\Domain\Capability\CapabilityContract;
 use Hub\Command\DeviceConfigurationCatalog;
 
 /**
- * Capability contract for alarm_clock.
+ * O contrato da capacidade `alarm_clock`.
  *
- * Defines the generic shape (items, meta, merge). An empty items array
- * is valid and clears the saved alarms. Per-supplier conversion is delegated
- * to AlarmClockHandler implementations.
+ * Define a forma genérica (`items`, `meta`, `merge`). Uma lista vazia é válida e limpa os
+ * alarmes guardados. A conversão por fornecedor é delegada nas implementações de
+ * `AlarmClockHandler`.
  */
 final class AlarmClockCapability implements CapabilityContract
 {
@@ -60,7 +60,7 @@ final class AlarmClockCapability implements CapabilityContract
     }
 
     // ------------------------------------------------------------------
-    // Delegation to handlers
+    // delegação nos handlers
     // ------------------------------------------------------------------
 
     public function toNative(string $protocol, mixed $value): array
@@ -99,7 +99,7 @@ final class AlarmClockCapability implements CapabilityContract
     }
 
     // ------------------------------------------------------------------
-    // Response shape
+    // a forma da resposta
     // ------------------------------------------------------------------
 
     public function meta(string $protocol, array $accumulatedMeta = []): array

@@ -5,7 +5,7 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Suppliers, models, device-type hierarchies and protocol catalogs.
+ * Fornecedores, modelos, hierarquias de tipos de dispositivo e catálogos de protocolos.
  */
 final class CatalogSchemas
 {

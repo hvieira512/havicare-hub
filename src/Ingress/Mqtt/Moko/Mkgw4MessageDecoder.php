@@ -174,11 +174,11 @@ final class Mkgw4MessageDecoder implements MessageDecoder
     }
 
     /**
-     * Tags from 0x0a up mean different things per beacon type, so only the types
-     * we actually consume are named. A bxp-button is named the way a MKGW3 names
-     * the same fields -- including stripping the 0x20 frame type base -- so that
-     * W6rDecoder sees one shape regardless of which gateway relayed the button.
-     * Anything else stays an opaque data block, as before.
+     * As tags de 0x0a para cima querem dizer coisas diferentes por tipo de beacon, e por isso
+     * só os tipos que consumimos de facto são nomeados. Um `bxp-button` é nomeado como um
+     * MKGW3 nomeia os mesmos campos -- incluindo tirar a base 0x20 do tipo de frame --, para
+     * o `W6rDecoder` ver uma forma só, independentemente do gateway que retransmitiu o botão.
+     * O resto fica um bloco de dados opaco.
      *
      * @return array<string, mixed>
      */
@@ -195,7 +195,7 @@ final class Mkgw4MessageDecoder implements MessageDecoder
 
         return match ($tag) {
             0x0a => ['frame_type' => $number >= 0x20 ? $number - 0x20 : $number],
-            // Bit 0 is the password verification flag, bit 1 the alarm itself.
+            // O bit 0 é a flag de verificação de password, o bit 1 o alarme em si.
             0x0b => ['passwd_verification' => $number & 0x01, 'alarm_status' => ($number & 0x02) !== 0 ? 1 : 0],
             0x0c => ['trigger_count' => $number],
             0x0d => ['device_id' => bin2hex($value)],
@@ -205,8 +205,8 @@ final class Mkgw4MessageDecoder implements MessageDecoder
                 'y_axis_data' => $this->signed(substr($value, 2, 2)),
                 'z_axis_data' => $this->signed(substr($value, 4, 2)),
             ] : [],
-            // Above 100 this field carries millivolts, below it a percentage;
-            // W6rDecoder already tells those apart.
+            // Acima de 100 este campo traz milivolts, abaixo uma percentagem; o `W6rDecoder`
+            // já sabe distinguir os dois.
             0x15 => ['batt_vol' => $number],
             default => ['data_block_' . ($tag - 9) => bin2hex($value)],
         };

@@ -5,9 +5,9 @@ namespace Hub;
 interface ConnectionInterface
 {
     /**
-     * Every caller already reads this -- the registry, the hub server and the
-     * session all key connections by it -- so the interface should say so.
-     * Without it, an implementation missing the property fails only at runtime.
+     * Toda a gente já lê isto -- o registo, o servidor do hub e a sessão indexam as ligações
+     * por ele --, e por isso a interface tem de o dizer: sem ela, uma implementação a que
+     * falte a propriedade só falha em execução.
      */
     public int $resourceId { get; }
 

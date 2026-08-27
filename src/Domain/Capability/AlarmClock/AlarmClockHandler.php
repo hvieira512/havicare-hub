@@ -4,20 +4,18 @@ namespace Hub\Domain\Capability\AlarmClock;
 
 use Hub\Domain\Capability\CapabilityProtocolHandler;
 
-/**
- * Per-supplier handler for alarm_clock protocol-wire ↔ public conversion.
- */
+/** O handler por fornecedor da conversão fio ↔ público do `alarm_clock`. */
 interface AlarmClockHandler extends CapabilityProtocolHandler
 {
-    /** The protocol key this handler processes (e.g. 'reminders', 'alarmClock'). */
+    /** A chave de protocolo que este handler trata (`reminders`, `alarmClock`, ...). */
     public function nativeKey(): string;
 
-    /** Convert generic API value to protocol key => payload map. */
+    /** Converte o valor genérico da API no mapa `chave de protocolo => payload`. */
     public function toNative(mixed $value): array;
 
-    /** Convert protocol desired payload to list of public items. */
+    /** Converte o payload pretendido do protocolo numa lista de itens públicos. */
     public function fromNative(array $desired): array;
 
-    /** Default desired payload for this protocol. */
+    /** O payload pretendido por omissão, para este protocolo. */
     public function defaultValue(): mixed;
 }
