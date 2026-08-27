@@ -403,7 +403,7 @@ export function uplinkCardContent(type, data, meta = {}) {
     );
 }
 
-// Uma pulseira W6R diz que tipo de toque foi; um pager NCS não.
+// Uma pulseira W6B diz que tipo de toque foi; um pager NCS não.
 // Todos os modos que um dispositivo pode reportar. Serve para filtrar eventos, não para
 // desenhar: nenhum dispositivo consegue os quatro.
 const HELP_CALL_PRESS_MODES = ["single", "double", "triple", "long"];

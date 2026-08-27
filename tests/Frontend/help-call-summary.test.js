@@ -40,14 +40,14 @@ test("the modes drawn are the ones the protocol declares", () => {
     assert.match(w6, /fa-solid fa-3 /);
     assert.equal(w6.match(/help-call-never/g).length, 2);
 
-    // E a W6R é o contrário.
-    const w6r = helpCallSummaryCard(
+    // E a W6B é o contrário.
+    const w6b = helpCallSummaryCard(
         [call("long", "2026-08-10T12:26:49Z")],
         ["single", "double", "long"],
     );
 
-    assert.match(w6r, /Toque longo/);
-    assert.doesNotMatch(w6r, /Toque triplo/);
+    assert.match(w6b, /Toque longo/);
+    assert.doesNotMatch(w6b, /Toque triplo/);
 });
 
 test("only the most recent call of each mode is shown", () => {

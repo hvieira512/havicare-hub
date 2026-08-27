@@ -6,7 +6,7 @@ declare(strict_types=1);
 /**
  * Observa um dispositivo BLE até ele anunciar alguma coisa.
  *
- * Uma W6R sem slot de anúncio configurado é visível ao gateway mas não traz dados de anúncio
+ * Uma W6B sem slot de anúncio configurado é visível ao gateway mas não traz dados de anúncio
  * nenhuns, e por isso isto reporta o estado vazio como um heartbeat e grita assim que um
  * payload a sério aparece -- e descodifica-o logo, para se ver de imediato se o frame é o que
  * esperamos.
@@ -14,14 +14,14 @@ declare(strict_types=1);
  * Corre até Ctrl-C.
  *
  * Usage:
- *   php simulator/w6r-watch.php
- *   php simulator/w6r-watch.php --mac=fbd87c59ba8b --heartbeat=30
+ *   php simulator/w6b-watch.php
+ *   php simulator/w6b-watch.php --mac=fbd87c59ba8b --heartbeat=30
  */
 
 require __DIR__ . '/../vendor/autoload.php';
 
 use Hub\Ingress\Mqtt\Moko\MokoMessageDecoder;
-use Hub\Ingress\Mqtt\Moko\W6rDecoder;
+use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Runtime\CliBootstrap;
@@ -31,7 +31,7 @@ const SCAN_MESSAGES = [3070, '30a0', '30b2'];
 
 $options = getopt('', ['mac::', 'heartbeat::', 'topic::', 'help']);
 if (isset($options['help'])) {
-    fwrite(STDOUT, "Usage: php simulator/w6r-watch.php [--mac=AABBCC...] [--heartbeat=30] [--topic=filter]\n");
+    fwrite(STDOUT, "Usage: php simulator/w6b-watch.php [--mac=AABBCC...] [--heartbeat=30] [--topic=filter]\n");
     exit(0);
 }
 
@@ -86,8 +86,8 @@ function describe(string $label, string $hex): string
 }
 
 $connections = new ConnectionFactory(BrokerSettings::fromHubConfig($config['mqtt']));
-$client = $connections->build('w6r-watch-' . substr(bin2hex(random_bytes(3)), 0, 6));
-$decoder = new W6rDecoder();
+$client = $connections->build('w6b-watch-' . substr(bin2hex(random_bytes(3)), 0, 6));
+$decoder = new W6bDecoder();
 
 $state = ['sightings' => 0, 'empty' => 0, 'lastSeen' => null, 'lastRssi' => null, 'lastGateway' => null, 'payloads' => []];
 
@@ -143,7 +143,7 @@ $client->subscribe($topicFilter, function (string $unusedTopic, string $message)
         }
 
         fwrite(STDOUT, "  observation: " . json_encode($observation) . "\n");
-        fwrite(STDOUT, "\n  W6rDecoder DECODED IT:\n");
+        fwrite(STDOUT, "\n  W6bDecoder DECODED IT:\n");
         fwrite(STDOUT, '    ' . str_replace("\n", "\n    ", trim(print_r($result, true))) . "\n");
         fwrite(STDOUT, str_repeat('=', 72) . "\n\n");
     }

@@ -8,6 +8,7 @@ use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\Version2026082805DropDiaperSensorSettingsAgain;
 use Hub\Infrastructure\Persistence\Migration\Version2026082807LicenseAbsenceAsNull;
 use Hub\Infrastructure\Persistence\Migration\Version2026082806SeedMokoW6CatalogModel;
+use Hub\Infrastructure\Persistence\Migration\Version2026082808RenameMokoW6rToW6b;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo de
@@ -29,6 +30,7 @@ final class DatabaseMigrationPlan
             new Version2026082805DropDiaperSensorSettingsAgain(),
             new Version2026082806SeedMokoW6CatalogModel(),
             new Version2026082807LicenseAbsenceAsNull(),
+            new Version2026082808RenameMokoW6rToW6b(),
         ];
     }
 

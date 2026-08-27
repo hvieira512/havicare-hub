@@ -49,7 +49,7 @@ final class MessageNormalizer
      *
      * As telemetrias vêm num mapa de capacidade para leitura, e não uma só, porque uma
      * mensagem mede mais do que uma coisa: o `heartbreath` traz frequência cardíaca,
-     * respiratória e estado de sono. É a forma que o `Moko\W6rNormalizer` já usa, e que o
+     * respiratória e estado de sono. É a forma que o `Moko\W6bNormalizer` já usa, e que o
      * `Moko\Bridge` já sabe percorrer com estrangulamento por capacidade.
      *
      * Os alarmes vêm em lista pelo mesmo motivo: uma apneia e uma taquicardia no mesmo

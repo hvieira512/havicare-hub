@@ -111,7 +111,7 @@ test("a gateway's own page shows the sensors it relays", () => {
     // browser não consegue fazer, porque a telemetria de um gateway não traz leitura nenhuma
     // dos sensores que ele retransmite.
     const html = gatewaySignalRows([
-        link("fbd87c59ba8b", "W6R", {rssiDbm: -75, signalSeenAt: new Date().toISOString()}),
+        link("fbd87c59ba8b", "W6B", {rssiDbm: -75, signalSeenAt: new Date().toISOString()}),
     ]);
 
     assert.match(html, /fbd87c59ba8b/);

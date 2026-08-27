@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * Descodifica as observações de uma MOKO W6R (BXP-B / "MK Button") retransmitidas por um
+ * Descodifica as observações de uma MOKO W6B (BXP-B / "MK Button") retransmitidas por um
  * gateway.
  *
  * Um MKGW3 reconhece os beacons MOKO e reporta-os já interpretados, sem bytes crus de
@@ -18,7 +18,7 @@ namespace Hub\Ingress\Mqtt\Moko;
  * ser descodificados a partir do formato BXP-B documentado no "MOKO Beacon - ADV Format
  * Summary Sheet", e os dois caminhos produzem o mesmo resultado.
  */
-final class W6rDecoder
+final class W6bDecoder
 {
     /** Os UUID de serviço como aparecem no fio (little endian). */
     private const ALARM_SERVICE = 'e0fe';
@@ -39,7 +39,7 @@ final class W6rDecoder
 
     /**
      * @param array<string, mixed> $observation a single entry of a 3070 scan report
-     * @return array<string, mixed>|null null when the payload is not a W6R
+     * @return array<string, mixed>|null null when the payload is not a W6B
      */
     public function decode(array $observation): ?array
     {

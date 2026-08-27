@@ -13,12 +13,12 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * O encaminhamento de uma pulseira W6R pelo ingress do gateway MOKO.
+ * O encaminhamento de uma pulseira W6B pelo ingress do gateway MOKO.
  *
  * A forma da observação é a que um MKGW3 publica de facto: os beacons MOKO chegam já
  * interpretados, sem bytes de anúncio.
  */
-final class BridgeW6rTest extends TestCase
+final class BridgeW6bTest extends TestCase
 {
     private const GATEWAY = 'd48c49f7909c';
     private const GATEWAY2 = 'c5e390f30bce';
@@ -52,11 +52,11 @@ final class BridgeW6rTest extends TestCase
 
     private function bridge(RecordingHubMqttBridge $mqtt, bool $linked = true): Bridge
     {
-        $path = tempnam(sys_get_temp_dir(), 'moko-w6r-whitelist-');
+        $path = tempnam(sys_get_temp_dir(), 'moko-w6b-whitelist-');
         file_put_contents($path, json_encode([
             self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
             self::GATEWAY2 => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6R', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
+            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6B', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
         ], JSON_THROW_ON_ERROR));
 
         $links = new class($linked) implements GatewayDeviceLinkLookup {

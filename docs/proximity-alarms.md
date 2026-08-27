@@ -98,11 +98,11 @@ Verified in production. No further work needed.
 
 | Piece | Where |
 |---|---|
-| RSSI reaches the hub | `W6rDecoder`, `MonitMecsProDecoder` → `rssiDbm` |
+| RSSI reaches the hub | `W6bDecoder`, `MonitMecsProDecoder` → `rssiDbm` |
 | Honest per-gateway attribution | `source.gatewayId` + per-gateway throttle key |
 | Last sighting per pair | `DashboardStoreContract::recordGatewaySighting()`, written before the throttle |
 | Authorization | `Bridge::linkedDevice()` — link enabled, same company and licence |
-| Continuous beaconing | W6R slot "Stay advertising before triggered" ON → ~40 sightings/min |
+| Continuous beaconing | W6B slot "Stay advertising before triggered" ON → ~40 sightings/min |
 
 ---
 
@@ -129,7 +129,7 @@ three gateways produces three independent streams.
   "schemaVersion": 2,
   "type": "proximity",
   "occurredAt": "2026-08-18T11:33:16Z",
-  "device": { "id": "fbd87c59ba8b", "supplier": "MOKO", "model": "W6R" },
+  "device": { "id": "fbd87c59ba8b", "supplier": "MOKO", "model": "W6B" },
   "data": {
     "gatewayId": "c5e390f30bce",  // inside data: enters the throttle key, and the
                                   // client should not have to read provenance
@@ -141,7 +141,7 @@ three gateways produces three independent streams.
     "samples": 5,                 // how much the statistics rest on
     "windowSeconds": 5
   },
-  "source": { "protocol": "moko-w6r", "gatewayId": "c5e390f30bce", "rssiDbm": -68 }
+  "source": { "protocol": "moko-w6b", "gatewayId": "c5e390f30bce", "rssiDbm": -68 }
 }
 ```
 
@@ -246,8 +246,8 @@ was found by having it silently break something.
 | Gateway scan mode (`0x2040`) | `1` real-time & immediate | periodic modes have a 600 s minimum report interval |
 | Gateway RSSI filter (`0x2051`) | permissive, e.g. `−127` | a `−26` filter made every device in the building invisible |
 | Gateway filtration logic (`0x2050`) | `Only ADV Name` | the MAC filter caps at 10 devices per gateway; the name filter scales and cuts uplink volume |
-| W6R "Stay advertising before triggered" | ON | otherwise the tag is radio-silent until pressed |
-| W6R `Adv interval` | as short as battery allows | **this sets the detection limit.** At 1 s the effective rate was 0.67 samples/s, so a 2 s walk-through yields ~1 sample. No hub-side maths recovers a sample never transmitted. |
+| W6B "Stay advertising before triggered" | ON | otherwise the tag is radio-silent until pressed |
+| W6B `Adv interval` | as short as battery allows | **this sets the detection limit.** At 1 s the effective rate was 0.67 samples/s, so a 2 s walk-through yields ~1 sample. No hub-side maths recovers a sample never transmitted. |
 
 With the filter wide open one MKGW4 relayed ~101 MAC addresses and pushed
 **~9.5 MiB/hour** of cellular data. The ADV-name filter is what keeps that bounded.

@@ -177,7 +177,7 @@ final class Mkgw4MessageDecoder implements MessageDecoder
      * As tags de 0x0a para cima querem dizer coisas diferentes por tipo de beacon, e por isso
      * só os tipos que consumimos de facto são nomeados. Um `bxp-button` é nomeado como um
      * MKGW3 nomeia os mesmos campos -- incluindo tirar a base 0x20 do tipo de frame --, para
-     * o `W6rDecoder` ver uma forma só, independentemente do gateway que retransmitiu o botão.
+     * o `W6bDecoder` ver uma forma só, independentemente do gateway que retransmitiu o botão.
      * O resto fica um bloco de dados opaco.
      *
      * @return array<string, mixed>
@@ -205,7 +205,7 @@ final class Mkgw4MessageDecoder implements MessageDecoder
                 'y_axis_data' => $this->signed(substr($value, 2, 2)),
                 'z_axis_data' => $this->signed(substr($value, 4, 2)),
             ] : [],
-            // Acima de 100 este campo traz milivolts, abaixo uma percentagem; o `W6rDecoder`
+            // Acima de 100 este campo traz milivolts, abaixo uma percentagem; o `W6bDecoder`
             // já sabe distinguir os dois.
             0x15 => ['batt_vol' => $number],
             default => ['data_block_' . ($tag - 9) => bin2hex($value)],

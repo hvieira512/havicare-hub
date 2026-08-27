@@ -113,7 +113,7 @@ final class BridgeW6Test extends TestCase
         ));
     }
 
-    public function testAnUnregisteredW6RaisesADashboardNotification(): void
+    public function testAnUnregisteredW6BaisesADashboardNotification(): void
     {
         $dashboardStore = $this->createMock(DashboardStoreContract::class);
         $dashboardStore->expects(self::once())

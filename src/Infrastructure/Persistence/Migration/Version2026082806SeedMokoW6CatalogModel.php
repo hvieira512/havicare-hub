@@ -20,7 +20,7 @@ use PDO;
  */
 final class Version2026082806SeedMokoW6CatalogModel implements Migration
 {
-    /** A W6 e a W6R são a mesma pulseira, com e sem botão macio, e partilham a imagem. */
+    /** A W6 e a W6B são a mesma pulseira, com e sem botão macio, e partilham a imagem. */
     private const IMAGE = '/model-images/78888c5376784c64ca05b691c4686ecd.jpg';
 
     public function version(): string

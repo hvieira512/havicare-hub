@@ -18,10 +18,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
      * porque não sobra observação nenhuma de onde o ler.
      */
     private const RELAYED_PROTOCOLS = [
-        'bracelet' => 'moko-w6r',
+        'bracelet' => 'moko-w6b',
         'diaper_sensor' => 'monit-mecs-pro-ble',
     ];
-    // ponytail: uma pulseira aqui é sempre uma W6R, por isso um par W6 que se cale sai com
+    // ponytail: uma pulseira aqui é sempre uma W6B, por isso um par W6 que se cale sai com
     // o protocolo errado. Chave por modelo quando houver mais do que duas pulseiras.
 
     /**
@@ -56,8 +56,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         private readonly ?MonitMecsProDecoder $monitDecoder = null,
         private readonly ?MonitNormalizer $monitNormalizer = null,
         private readonly ?GatewayNormalizer $gatewayNormalizer = null,
-        private readonly ?W6rDecoder $w6rDecoder = null,
-        private readonly ?W6rNormalizer $w6rNormalizer = null,
+        private readonly ?W6bDecoder $w6bDecoder = null,
+        private readonly ?W6bNormalizer $w6bNormalizer = null,
         private readonly ?W6Decoder $w6Decoder = null,
         private readonly ?W6Normalizer $w6Normalizer = null,
         ?callable $clock = null,
@@ -215,9 +215,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        $w6r = ($this->w6rDecoder ?? new W6rDecoder())->decode($observation);
-        if ($w6r !== null) {
-            $this->handleW6rObservation($gateway, $w6r);
+        $w6b = ($this->w6bDecoder ?? new W6bDecoder())->decode($observation);
+        if ($w6b !== null) {
+            $this->handleW6bObservation($gateway, $w6b);
             return;
         }
 
@@ -261,15 +261,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Uma W6R premida anuncia durante 30 segundos, e por isso a mesma contagem de toques
+     * Uma W6B premida anuncia durante 30 segundos, e por isso a mesma contagem de toques
      * chega muitas vezes. Cada modo tem o seu contador, e só uma mudança é um toque novo.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
      */
-    private function handleW6rObservation(array $gateway, array $decoded): void
+    private function handleW6bObservation(array $gateway, array $decoded): void
     {
         $deviceKey = (string)$decoded['mac'];
-        $device = $this->linkedDevice($gateway, $deviceKey, 'bracelet', 'moko-w6r');
+        $device = $this->linkedDevice($gateway, $deviceKey, 'bracelet', 'moko-w6b');
         if ($device === null) {
             return;
         }
@@ -291,7 +291,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 : (int)$transition['previous'];
         }
 
-        $normalized = ($this->w6rNormalizer ?? new W6rNormalizer())->normalize(
+        $normalized = ($this->w6bNormalizer ?? new W6bNormalizer())->normalize(
             $decoded,
             $device,
             (string)$gateway['imei'],
@@ -304,9 +304,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $this->dashboardStore?->deviceSeen($deviceKey, [
             'supplier' => (string)$device['supplier'], 'model' => (string)$device['model'],
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
-            'protocol' => 'moko-w6r', 'transport' => 'ble_gateway', 'online' => '1',
+            'protocol' => 'moko-w6b', 'transport' => 'ble_gateway', 'online' => '1',
         ]);
-        $this->recordSignal($device, $gateway, 'moko-w6r', $decoded['rssiDbm'] ?? null);
+        $this->recordSignal($device, $gateway, 'moko-w6b', $decoded['rssiDbm'] ?? null);
 
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             if (!$this->state->shouldPublish($deviceKey, $capability, $telemetry, $this->telemetryRefreshSeconds, (string)$gateway['imei'])) {

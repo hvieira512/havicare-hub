@@ -7,7 +7,7 @@ namespace Hub\Ingress\Mqtt\Moko;
 /**
  * Reconhece uma MOKO W6 retransmitida por um gateway.
  *
- * A W6 tem botão como a W6R -- só mais duro --, mas o firmware que corre é o BXP Nordic, que
+ * A W6 tem botão como a W6B -- só mais duro --, mas o firmware que corre é o BXP Nordic, que
  * não tem frame de alarme. O que tem são seis slots de anúncio, cada um com um trigger
  * opcional, e é daí que sai tudo o que se segue:
  *
@@ -19,7 +19,7 @@ namespace Hub\Ingress\Mqtt\Moko;
  *   SLOT6  UID  ...0013 clique triplo  -> anuncia 30s
  *
  * O toque não vem no payload: o que o identifica é *qual* slot apareceu. Não há contador
- * cumulativo como na W6R, e a frame repete-se durante os 30 segundos, por isso quem chama
+ * cumulativo como na W6B, e a frame repete-se durante os 30 segundos, por isso quem chama
  * tem de estrangular por tempo.
  *
  * ponytail: os Instance ID acima são uma convenção que a pulseira tem de ser configurada
@@ -69,7 +69,7 @@ final class W6Decoder
         }
 
         // O RSSI é medido pelo gateway, não pela pulseira, por isso só existe na observação
-        // -- tal como em W6rDecoder e MonitMecsProDecoder.
+        // -- tal como em W6bDecoder e MonitMecsProDecoder.
         return array_filter(
             [
                 'mac' => $mac,
@@ -102,7 +102,7 @@ final class W6Decoder
         }
         if (isset($observation['batt_vol'])) {
             $voltage = (int)$observation['batt_vol'];
-            // Acima de 100 o campo traz milivolts em vez de percentagem, como na W6R.
+            // Acima de 100 o campo traz milivolts em vez de percentagem, como na W6B.
             $info += $voltage > 100 ? ['batteryVoltageMv' => $voltage] : ['batteryPercent' => $voltage];
         }
 

@@ -59,7 +59,7 @@ const CATALOG = [
             {
                 id: 4,
                 name: "MOKO",
-                models: [model(95, "MOKO W6R", "W6R", "MOKO", "bracelet")],
+                models: [model(95, "MOKO W6B", "W6B", "MOKO", "bracelet")],
             },
         ],
     },

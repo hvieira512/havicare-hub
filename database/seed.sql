@@ -89,12 +89,12 @@ ON DUPLICATE KEY UPDATE commercial_name = 'MOKOSmart MKGW4', device_type = 'gate
     image_path = '/model-images/3bbccf9f4d8e4830480adf834cdfd278.jpg';
 
 INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
-SELECT s.id, 'W6R', 'MOKO W6R', 'bracelet', '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
+SELECT s.id, 'W6B', 'MOKO W6B', 'bracelet', '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
 FROM suppliers s WHERE s.name = 'MOKO'
-ON DUPLICATE KEY UPDATE commercial_name = 'MOKO W6R', device_type = 'bracelet',
+ON DUPLICATE KEY UPDATE commercial_name = 'MOKO W6B', device_type = 'bracelet',
     image_path = '/model-images/78888c5376784c64ca05b691c4686ecd.jpg';
 
--- A W6 e a W6R são a mesma pulseira, com e sem botão macio, por isso partilham a imagem.
+-- A W6 e a W6B são a mesma pulseira, com e sem botão macio, por isso partilham a imagem.
 INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
 SELECT s.id, 'W6', 'MOKO W6', 'bracelet', '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
 FROM suppliers s WHERE s.name = 'MOKO'
@@ -180,7 +180,7 @@ INSERT IGNORE INTO whitelist (imei, supplier, model, device_type, license_id, si
     ('d48c49f7909c', 'MOKO', 'MKGW3', 'gateway', 1001, '', 'd48c49f7909c', 'hitcare'),
     ('dc1603ecf1f7', 'MOKO', 'MKGW4', 'gateway', 1001, '', 'dc1603ecf1f7', 'hitcare'),
     ('eec5000202f9', 'MONIT', 'MECS-PRO', 'diaper_sensor', 1001, '', 'eec5000202f9', 'hitcare'),
-    ('fbd87c59ba8b', 'MOKO', 'W6R', 'bracelet', 1001, '', 'fbd87c59ba8b', 'hitcare');
+    ('fbd87c59ba8b', 'MOKO', 'W6B', 'bracelet', 1001, '', 'fbd87c59ba8b', 'hitcare');
 
 INSERT IGNORE INTO gateway_device_links (gateway_device_key, linked_device_key, enabled) VALUES
     ('c5e390f30bce', 'eec5000202f9', 1),

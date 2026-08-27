@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Moko\W6rNormalizer;
+use Hub\Ingress\Mqtt\Moko\W6bNormalizer;
 use PHPUnit\Framework\TestCase;
 
-final class W6rNormalizerTest extends TestCase
+final class W6bNormalizerTest extends TestCase
 {
     private const DEVICE = [
         'imei' => 'fbd87c59ba8b',
         'supplier' => 'MOKO',
-        'model' => 'W6R',
-        'commercialName' => 'MOKO W6R',
+        'model' => 'W6B',
+        'commercialName' => 'MOKO W6B',
     ];
 
     /** @return array<string, mixed> */
@@ -37,7 +37,7 @@ final class W6rNormalizerTest extends TestCase
 
     public function testRisingTriggerCountEmitsAHelpCallCarryingThePressType(): void
     {
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('long', 6),
             self::DEVICE,
             'd48c49f7909c',
@@ -51,7 +51,7 @@ final class W6rNormalizerTest extends TestCase
         self::assertSame(6, $event['data']['triggerCount']);
         self::assertSame(1, $event['data']['presses']);
         self::assertSame('d48c49f7909c', $event['source']['gatewayId']);
-        self::assertSame('moko-w6r', $event['source']['protocol']);
+        self::assertSame('moko-w6b', $event['source']['protocol']);
         self::assertSame('fbd87c59ba8b', $event['device']['id']);
     }
 
@@ -59,7 +59,7 @@ final class W6rNormalizerTest extends TestCase
     {
         // O contador é anunciado continuamente, e por isso um aparelho já com 42 toques não
         // pode dar alarme no instante em que o hub reinicia.
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('single', 42),
             self::DEVICE,
             'd48c49f7909c',
@@ -71,7 +71,7 @@ final class W6rNormalizerTest extends TestCase
 
     public function testAnUnchangedCounterIsNotAPress(): void
     {
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('single', 5),
             self::DEVICE,
             'd48c49f7909c',
@@ -83,7 +83,7 @@ final class W6rNormalizerTest extends TestCase
 
     public function testSeveralPressesBetweenSightingsAreCounted(): void
     {
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('single', 9),
             self::DEVICE,
             'd48c49f7909c',
@@ -96,7 +96,7 @@ final class W6rNormalizerTest extends TestCase
     public function testACounterResetIsOnePressRatherThanANegativeDelta(): void
     {
         // Trocar a bateria reinicia o aparelho e põe os contadores a zero.
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('single', 1),
             self::DEVICE,
             'd48c49f7909c',
@@ -110,7 +110,7 @@ final class W6rNormalizerTest extends TestCase
     {
         // O modo é descodificado mas não dá alarme, de propósito: quem dorme calmo
         // dispará-lo-ia todas as noites.
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('inactivity', 3),
             self::DEVICE,
             'd48c49f7909c',
@@ -122,7 +122,7 @@ final class W6rNormalizerTest extends TestCase
 
     public function testBatteryAndMotionBecomeTelemetry(): void
     {
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('single', 5, [
                 'accelerationMg' => ['x' => 40, 'y' => -124, 'z' => 984],
                 'batteryPercent' => 80,
@@ -142,7 +142,7 @@ final class W6rNormalizerTest extends TestCase
 
     public function testVoltageIsUsedWhenThereIsNoPercentage(): void
     {
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('single', 5, ['batteryVoltageMv' => 3276]),
             self::DEVICE,
             'd48c49f7909c',
@@ -154,7 +154,7 @@ final class W6rNormalizerTest extends TestCase
 
     public function testAnAlarmOnlyFrameProducesNoTelemetry(): void
     {
-        $result = (new W6rNormalizer())->normalize(
+        $result = (new W6bNormalizer())->normalize(
             $this->decoded('single', 6),
             self::DEVICE,
             'd48c49f7909c',

@@ -21,7 +21,7 @@ final class ReferenceCatalogSeeder
         ['MOKO', 'MKGW3', 'MOKOSmart MKGW3', 'gateway', ''],
         ['MOKO', 'MKGW4', 'MOKOSmart MKGW4', 'gateway', ''],
         ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', ''],
-        ['MOKO', 'W6R', 'MOKO W6R', 'bracelet', ''],
+        ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', ''],
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],
     ];
 

@@ -75,7 +75,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
 
         // Chamado a cada observação, e não muda o que o stream serve: não pode derrotar a
         // coalescência.
-        $store->deviceSeen(self::DEVICE, ['supplier' => 'MOKO', 'model' => 'W6R', 'online' => '1']);
+        $store->deviceSeen(self::DEVICE, ['supplier' => 'MOKO', 'model' => 'W6B', 'online' => '1']);
 
         self::assertSame(0, $count());
     }
@@ -85,7 +85,7 @@ final class DashboardStoreUpdatesTest extends MysqlDashboardTestCase
         [$store, $count] = $this->storeCountingNotifications();
 
         $store->recordCommand(self::DEVICE, 'cmd-1', [
-            'protocol' => 'moko-w6r',
+            'protocol' => 'moko-w6b',
             'command' => 'test',
             'status' => 'queued',
         ]);

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Ingress\Mqtt\Moko\W6rDecoder;
+use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Os vectores de campos do gateway são observações capturadas tal e qual de um MKGW3 a
- * retransmitir uma W6R real (fb:d8:7c:59:ba:8b) com o botão premido.
+ * retransmitir uma W6B real (fb:d8:7c:59:ba:8b) com o botão premido.
  */
-final class W6rDecoderTest extends TestCase
+final class W6bDecoderTest extends TestCase
 {
     /** Toque simples, com os campos da resposta ao scan presentes. */
     private const SINGLE_PRESS = [
@@ -56,7 +56,7 @@ final class W6rDecoderTest extends TestCase
 
     public function testDecodesASinglePressFromTheGatewayFields(): void
     {
-        $decoded = (new W6rDecoder())->decode(self::SINGLE_PRESS);
+        $decoded = (new W6bDecoder())->decode(self::SINGLE_PRESS);
 
         self::assertSame('fbd87c59ba8b', $decoded['mac']);
         self::assertSame('single', $decoded['alarm']['pressMode']);
@@ -69,7 +69,7 @@ final class W6rDecoderTest extends TestCase
     {
         // A proximidade precisa disto: só o gateway o consegue medir, e por isso existe na
         // observação e em sítio nenhum do anúncio.
-        self::assertSame(-82, (new W6rDecoder())->decode(self::SINGLE_PRESS)['rssiDbm'] ?? null);
+        self::assertSame(-82, (new W6bDecoder())->decode(self::SINGLE_PRESS)['rssiDbm'] ?? null);
     }
 
     public function testOmitsRssiWhenTheGatewayDidNotReportIt(): void
@@ -77,7 +77,7 @@ final class W6rDecoderTest extends TestCase
         $observation = self::SINGLE_PRESS;
         unset($observation['rssi']);
 
-        self::assertArrayNotHasKey('rssiDbm', (new W6rDecoder())->decode($observation));
+        self::assertArrayNotHasKey('rssiDbm', (new W6bDecoder())->decode($observation));
     }
 
     public function testFrameTypeIsReportedWithoutTheSpecBaseOffset(): void
@@ -85,7 +85,7 @@ final class W6rDecoderTest extends TestCase
         // A folha do fabricante numera os modos 0x20/0x21/0x22 e o gateway 0/1/2. Cada modo
         // leva o seu contador, e foi assim que o mapeamento se confirmou contra um aparelho
         // premido em simples, duplo e longo, um a um.
-        $decoder = new W6rDecoder();
+        $decoder = new W6bDecoder();
         $modes = [];
         foreach ([0, 1, 2, 3] as $frameType) {
             $decoded = $decoder->decode(['mac' => 'fbd87c59ba8b', 'type' => 'bxp-button', 'frame_type' => $frameType, 'trigger_count' => 1]);
@@ -97,7 +97,7 @@ final class W6rDecoderTest extends TestCase
 
     public function testEachPressModeCarriesItsOwnCounter(): void
     {
-        $decoder = new W6rDecoder();
+        $decoder = new W6bDecoder();
 
         self::assertSame(69, $decoder->decode(self::SINGLE_PRESS)['alarm']['triggerCount']);
         self::assertSame(42, $decoder->decode(self::DOUBLE_PRESS_ALARM_ONLY)['alarm']['triggerCount']);
@@ -105,7 +105,7 @@ final class W6rDecoderTest extends TestCase
 
     public function testDecodesAccelerationAndBatteryPercentage(): void
     {
-        $decoded = (new W6rDecoder())->decode(self::SINGLE_PRESS);
+        $decoded = (new W6bDecoder())->decode(self::SINGLE_PRESS);
 
         self::assertSame(['x' => -4, 'y' => -20, 'z' => 1052], $decoded['info']['accelerationMg']);
         // A app deles reportava 98% para este aparelho na hora da captura.
@@ -114,7 +114,7 @@ final class W6rDecoderTest extends TestCase
 
     public function testAnAlarmWithoutTheScanResponseHasNoInfo(): void
     {
-        $decoded = (new W6rDecoder())->decode(self::DOUBLE_PRESS_ALARM_ONLY);
+        $decoded = (new W6bDecoder())->decode(self::DOUBLE_PRESS_ALARM_ONLY);
 
         self::assertSame('double', $decoded['alarm']['pressMode']);
         self::assertArrayNotHasKey('info', $decoded);
@@ -122,7 +122,7 @@ final class W6rDecoderTest extends TestCase
 
     public function testBatteryAboveOneHundredIsMillivolts(): void
     {
-        $decoded = (new W6rDecoder())->decode(
+        $decoded = (new W6bDecoder())->decode(
             ['batt_vol' => 3009] + self::DOUBLE_PRESS_ALARM_ONLY
         );
 
@@ -132,14 +132,14 @@ final class W6rDecoderTest extends TestCase
 
     public function testAnUntriggeredAlarmStatusIsReported(): void
     {
-        $decoded = (new W6rDecoder())->decode(['alarm_status' => 0] + self::DOUBLE_PRESS_ALARM_ONLY);
+        $decoded = (new W6bDecoder())->decode(['alarm_status' => 0] + self::DOUBLE_PRESS_ALARM_ONLY);
 
         self::assertFalse($decoded['alarm']['triggered']);
     }
 
     public function testIgnoresDevicesThatAreNotMokoButtons(): void
     {
-        $decoder = new W6rDecoder();
+        $decoder = new W6bDecoder();
 
         // Uma captura real de um aparelho Apple, do mesmo gateway.
         self::assertNull($decoder->decode([
@@ -147,7 +147,7 @@ final class W6rDecoderTest extends TestCase
             'type' => 'other',
             'adv_data' => '02011a020a0c0bff4c001006061988d14808',
         ]));
-        // A W6R antes de os seus slots de anúncio estarem configurados.
+        // A W6B antes de os seus slots de anúncio estarem configurados.
         self::assertNull($decoder->decode([
             'mac' => 'fbd87c59ba8b',
             'type' => 'bxp-button',
@@ -172,7 +172,7 @@ final class W6rDecoderTest extends TestCase
             . '00' . '00'     // firmware type, RFU
             . '0a09' . bin2hex('MK Button');
 
-        $decoded = (new W6rDecoder())->decode(['mac' => 'fbd87c59ba8b', 'adv_data' => $adv]);
+        $decoded = (new W6bDecoder())->decode(['mac' => 'fbd87c59ba8b', 'adv_data' => $adv]);
 
         self::assertSame('long', $decoded['alarm']['pressMode']);
         self::assertSame(6, $decoded['alarm']['triggerCount']);

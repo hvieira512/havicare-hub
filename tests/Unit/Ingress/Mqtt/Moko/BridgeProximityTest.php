@@ -60,7 +60,7 @@ final class BridgeProximityTest extends TestCase
         file_put_contents($path, json_encode([
             self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
             self::GATEWAY2 => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6R', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
+            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6B', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
         ], JSON_THROW_ON_ERROR));
 
         $links = new class implements GatewayDeviceLinkLookup {
@@ -213,7 +213,7 @@ final class BridgeProximityTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'moko-proximity-unlinked-');
         file_put_contents($path, json_encode([
             self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6R', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
+            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6B', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
         ], JSON_THROW_ON_ERROR));
         $mqtt = new RecordingHubMqttBridge();
         $bridge = new Bridge(

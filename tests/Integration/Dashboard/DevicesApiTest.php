@@ -3226,7 +3226,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         [$api] = $this->makeApi();
         foreach ([
             ['imei' => 'c5e390f30bce', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
-            ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6R'],
+            ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6B'],
             ['imei' => '861265061009823', 'supplier' => 'Vivistar', 'model' => 'L08 Pro'],
         ] as $device) {
             $result = $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
@@ -3250,7 +3250,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         foreach ([
             ['imei' => 'c5e390f30bce', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
             ['imei' => 'dc1603ecf1f7', 'supplier' => 'MOKO', 'model' => 'MKGW4'],
-            ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6R'],
+            ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6B'],
         ] as $device) {
             $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
         }

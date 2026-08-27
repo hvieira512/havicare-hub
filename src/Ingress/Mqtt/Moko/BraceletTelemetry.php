@@ -7,7 +7,7 @@ namespace Hub\Ingress\Mqtt\Moko;
 /**
  * A bateria e o movimento de uma pulseira MOKO nas formas genéricas do hub.
  *
- * A W6 e a W6R chegam por caminhos diferentes -- uma pela frame de acelerómetro do BXP
+ * A W6 e a W6B chegam por caminhos diferentes -- uma pela frame de acelerómetro do BXP
  * Nordic, a outra pelos campos que o gateway interpreta da BXP-B -- mas descodificam para o
  * mesmo `info`, e daí para a frente não há nada que as distinga. Fica aqui para as duas
  * lerem o mesmo, em vez de cada normalizador ter a sua cópia a divergir.

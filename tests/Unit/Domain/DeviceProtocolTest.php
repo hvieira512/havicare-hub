@@ -11,19 +11,19 @@ final class DeviceProtocolTest extends TestCase
 {
     /**
      * A MOKO vende gateways e uma pulseira, e por isso resolver só pelo fornecedor dava à
-     * W6R um protocolo de gateway.
+     * W6B um protocolo de gateway.
      */
     public function testMokoModelsResolveToTheirOwnProtocol(): void
     {
         self::assertSame('moko-mkgw3', DeviceProtocol::forModel('MOKO', 'MKGW3'));
         self::assertSame('moko-mkgw4', DeviceProtocol::forModel('MOKO', 'MKGW4'));
-        self::assertSame('moko-w6r', DeviceProtocol::forModel('MOKO', 'W6R'));
+        self::assertSame('moko-w6b', DeviceProtocol::forModel('MOKO', 'W6B'));
     }
 
     public function testModelLookupIsCaseAndWhitespaceInsensitive(): void
     {
-        self::assertSame('moko-w6r', DeviceProtocol::forModel(' moko ', ' w6r '));
-        self::assertSame('moko-w6r', DeviceProtocol::forModel('MoKo', 'W6r'));
+        self::assertSame('moko-w6b', DeviceProtocol::forModel(' moko ', ' w6b '));
+        self::assertSame('moko-w6b', DeviceProtocol::forModel('MoKo', 'W6b'));
     }
 
     public function testSingleProtocolSuppliersStillResolveBySupplier(): void

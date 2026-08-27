@@ -127,8 +127,8 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => true,
                 'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
             ],
-            'moko-w6r' => [
-                'label' => 'MOKO W6R',
+            'moko-w6b' => [
+                'label' => 'MOKO W6B',
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
                 'dashboard' => [
@@ -142,7 +142,7 @@ final class ProtocolRegistry
                 'deviceType' => 'bracelet',
                 'supportsConfigCatalog' => false,
                 // Não tem toque longo: o firmware BXP Nordic dá cliques simples, duplos e
-                // triplos, e é por triplo que o longo da W6R é substituído.
+                // triplos, e é por triplo que o longo da W6B é substituído.
                 'dashboard' => [
                     'groupedCapabilities' => [],
                     'fieldConstraints' => [],

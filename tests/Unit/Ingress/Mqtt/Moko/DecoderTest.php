@@ -11,7 +11,7 @@ use Hub\Domain\DiaperSensitivity;
 use Hub\Ingress\Mqtt\Moko\MonitMecsProDecoder;
 use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
 use Hub\Ingress\Mqtt\Moko\Topic;
-use Hub\Ingress\Mqtt\Moko\W6rDecoder;
+use Hub\Ingress\Mqtt\Moko\W6bDecoder;
 use PHPUnit\Framework\TestCase;
 
 final class DecoderTest extends TestCase
@@ -83,9 +83,9 @@ final class DecoderTest extends TestCase
     }
 
     /**
-     * Uma entrada 0x30A0 real, capturada do MKGW4 c5e390f30bce a retransmitir a W6R
+     * Uma entrada 0x30A0 real, capturada do MKGW4 c5e390f30bce a retransmitir a W6B
      * fbd87c59ba8b. Um MKGW4 nunca envia dados de anúncio crus de um `bxp-button`, só os
-     * campos interpretados, e por isso é este o único caminho que chega ao `W6rDecoder`.
+     * campos interpretados, e por isso é este o único caminho que chega ao `W6bDecoder`.
      */
     public function testDecodesMkgw4ButtonScanEntryTheSameWayAsAMkgw3(): void
     {
@@ -105,12 +105,12 @@ final class DecoderTest extends TestCase
         self::assertSame('MK Button', $device['adv_name'] ?? null);
         self::assertArrayNotHasKey('adv_data', $device);
 
-        $w6r = (new W6rDecoder())->decode($device);
-        self::assertSame('single', $w6r['alarm']['pressMode'] ?? null);
-        self::assertSame(299, $w6r['alarm']['triggerCount'] ?? null);
-        self::assertTrue($w6r['alarm']['triggered'] ?? false);
-        self::assertSame(97, $w6r['info']['batteryPercent'] ?? null);
-        self::assertSame(['x' => -432, 'y' => -624, 'z' => 768], $w6r['info']['accelerationMg'] ?? null);
+        $w6b = (new W6bDecoder())->decode($device);
+        self::assertSame('single', $w6b['alarm']['pressMode'] ?? null);
+        self::assertSame(299, $w6b['alarm']['triggerCount'] ?? null);
+        self::assertTrue($w6b['alarm']['triggered'] ?? false);
+        self::assertSame(97, $w6b['info']['batteryPercent'] ?? null);
+        self::assertSame(['x' => -432, 'y' => -624, 'z' => 768], $w6b['info']['accelerationMg'] ?? null);
     }
 
     public function testDecodesVerifiedMecsProBitstream(): void

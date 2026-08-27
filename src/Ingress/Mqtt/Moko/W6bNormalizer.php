@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * Traz um anúncio W6R descodificado para as formas genéricas do hub.
+ * Traz um anúncio W6B descodificado para as formas genéricas do hub.
  *
  * Um toque é reportado como um contador por modo e não como um evento, por isso quem chama
  * traz a contagem anterior e isto só emite um `help_call` quando o contador mexeu.
  */
-final class W6rNormalizer
+final class W6bNormalizer
 {
     /** Os modos que representam alguém a premir o botão. */
     private const HELP_CALL_MODES = ['single', 'double', 'long'];
@@ -32,7 +32,7 @@ final class W6rNormalizer
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->device($device),
             'source' => array_filter([
-                'protocol' => 'moko-w6r',
+                'protocol' => 'moko-w6b',
                 'nativeType' => 'manufacturer_data',
                 'gatewayId' => $gatewayId,
                 'rssiDbm' => $decoded['rssiDbm'] ?? null,
