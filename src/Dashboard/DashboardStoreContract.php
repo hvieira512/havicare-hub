@@ -27,14 +27,15 @@ interface DashboardStoreContract
 
     public function updateDeviceAssociation(string $imei, string $company, int $licenseId): void;
 
-    /** `$licenseId` fica a zero para os protocolos que não sabem a licença de um dispositivo por registar. */
+    /** O dono fica vazio para os protocolos que não o sabem: as duas juntas ou nenhuma. */
     public function recordRejectedDevice(
         string $imei,
         string $protocol,
         string $model,
         string $ident,
         string $reason,
-        int $licenseId = 0
+        int $licenseId = 0,
+        ?string $company = null
     ): void;
 
     public function deviceSeen(string $imei, array $fields): void;

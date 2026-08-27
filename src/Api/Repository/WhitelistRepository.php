@@ -112,8 +112,8 @@ final class WhitelistRepository
         string $company = 'null'
     ): void {
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
-        $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $company = DeviceMetadata::normalizeCompany($company);
+        $licenseId = self::storedLicenseId(DeviceMetadata::normalizeLicenseId($licenseId));
+        $company = self::storedCompany(DeviceMetadata::normalizeCompany($company));
         $existing = $this->get($imei);
         if ($existing === null) {
             $stmt = $this->pdo->prepare('
@@ -130,6 +130,20 @@ final class WhitelistRepository
             WHERE imei = ?
         ');
         $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $imei]);
+    }
+
+    /**
+     * A ausência é NULL na tabela e a sentinela em memória, porque o tópico MQTT é um caminho
+     * de texto: estes dois são a fronteira entre as duas formas.
+     */
+    private static function storedCompany(string $company): ?string
+    {
+        return $company === 'null' ? null : $company;
+    }
+
+    private static function storedLicenseId(int $licenseId): ?int
+    {
+        return $licenseId === 0 ? null : $licenseId;
     }
 
     /**
@@ -158,8 +172,8 @@ final class WhitelistRepository
 
     public function updateAssociation(string $imei, string $company, int $licenseId): bool
     {
-        $company = DeviceMetadata::normalizeCompany($company);
-        $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
+        $company = self::storedCompany(DeviceMetadata::normalizeCompany($company));
+        $licenseId = self::storedLicenseId(DeviceMetadata::normalizeLicenseId($licenseId));
         $stmt = $this->pdo->prepare('
             UPDATE whitelist
             SET company = ?, license_id = ?
@@ -267,7 +281,7 @@ final class WhitelistRepository
             foreach ($pairs as $pair) {
                 if ($pair['company'] === null) {
                     // Sem empresa é sem licença: uma não existe sem a outra.
-                    $pairClauses[] = "(w.company = '' OR w.company IS NULL OR LOWER(w.company) = 'null')";
+                    $pairClauses[] = 'w.company IS NULL';
                     continue;
                 }
                 if ($pair['licenseId'] === null) {
@@ -472,7 +486,7 @@ final class WhitelistRepository
         foreach ($stmt->fetchAll() ?: [] as $row) {
             $company = trim((string)($row['company'] ?? ''));
             $total = (int)($row['total'] ?? 0);
-            if ($company === '' || strtolower($company) === 'null') {
+            if (($row['company'] ?? null) === null || $company === '') {
                 $none += $total;
                 continue;
             }
@@ -486,9 +500,9 @@ final class WhitelistRepository
                 $companies[$key] = ['company' => $company, 'count' => 0, 'licenses' => []];
             }
             $companies[$key]['count'] += $total;
-            // Uma licença 0 é a ausência de licença, e essa não é um nó da árvore: um
-            // dispositivo com empresa e sem licença conta para a empresa e mais nada.
-            if ($licenseId === 0) {
+            // A ausência de licença não é um nó da árvore: um dispositivo com empresa e sem
+            // licença conta para a empresa e mais nada.
+            if (($row['license_id'] ?? null) === null) {
                 continue;
             }
             $companies[$key]['licenses'][] = ['licenseId' => $licenseId, 'count' => $total];
@@ -507,6 +521,7 @@ final class WhitelistRepository
     {
         $row['deviceType'] = DeviceMetadata::normalizeDeviceType((string)($row['deviceType'] ?? 'watch'));
         $row['licenseId'] = DeviceMetadata::normalizeLicenseId((string)($row['licenseId'] ?? '0'));
+        $row['company'] = DeviceMetadata::normalizeCompany($row['company'] ?? null);
         return $row;
     }
 }

@@ -42,7 +42,7 @@ final class ApiUserRepository
             INSERT INTO api_users (username, password_hash, role, license_id, license_ref_id, enabled)
             VALUES (?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$username, $passwordHash, $role, $licenseId, $licenseRefId, $enabled ? 1 : 0]);
+        $stmt->execute([$username, $passwordHash, $role, self::storedLicenseId($licenseId), $licenseRefId, $enabled ? 1 : 0]);
 
         return (int)$this->pdo->lastInsertId();
     }
@@ -55,17 +55,23 @@ final class ApiUserRepository
                 SET username = ?, password_hash = ?, role = ?, license_id = ?, license_ref_id = ?, enabled = ?
                 WHERE id = ?
             ');
-            $stmt->execute([$username, $passwordHash, $role, $licenseId, $licenseRefId, $enabled ? 1 : 0, $id]);
+            $stmt->execute([$username, $passwordHash, $role, self::storedLicenseId($licenseId), $licenseRefId, $enabled ? 1 : 0, $id]);
         } else {
             $stmt = $this->pdo->prepare('
                 UPDATE api_users
                 SET username = ?, role = ?, license_id = ?, license_ref_id = ?, enabled = ?
                 WHERE id = ?
             ');
-            $stmt->execute([$username, $role, $licenseId, $licenseRefId, $enabled ? 1 : 0, $id]);
+            $stmt->execute([$username, $role, self::storedLicenseId($licenseId), $licenseRefId, $enabled ? 1 : 0, $id]);
         }
 
         return $stmt->rowCount() > 0;
+    }
+
+    /** Um `hub_admin` não tem licença, e a ausência é NULL na tabela como já é no `license_ref_id`. */
+    private static function storedLicenseId(int $licenseId): ?int
+    {
+        return $licenseId === 0 ? null : $licenseId;
     }
 
     public function delete(int $id): void

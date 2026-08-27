@@ -182,3 +182,32 @@ test("o mesmo número em duas empresas fica por escolher", () => {
     // Escolher mal aqui poe o dispositivo na empresa errada sem ninguem reparar.
     assert.equal(ownerFromLicense(22, tree), null);
 });
+
+/**
+ * O par é o que desempata, e é por isso que a notificação passou a guardar a empresa: sem
+ * ela o número sozinho desiste, e o assistente deixava de pré-seleccionar no dia em que dois
+ * clientes tivessem o mesmo número.
+ */
+test("a empresa da notificação desempata o número repetido", () => {
+    const tree = [
+        {company: "havicare", licenses: [{licenseId: "1001", name: "hc"}]},
+        {company: "hitcare", licenses: [{licenseId: "1001", name: "gucc.dev"}]},
+    ];
+
+    assert.equal(ownerFromLicense(1001, tree), null);
+    assert.deepEqual(
+        ownerFromLicense(1001, tree, "hitcare"),
+        {company: "hitcare", licenseId: "1001"},
+    );
+    assert.deepEqual(
+        ownerFromLicense(1001, tree, "havicare"),
+        {company: "havicare", licenseId: "1001"},
+    );
+    // A grafia do tópico não tem de ser a da árvore.
+    assert.deepEqual(
+        ownerFromLicense(1001, tree, "HitCare"),
+        {company: "hitcare", licenseId: "1001"},
+    );
+    // Uma empresa que não está na árvore não inventa um dono.
+    assert.equal(ownerFromLicense(1001, tree, "terceira"), null);
+});

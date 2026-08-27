@@ -39,20 +39,23 @@ function licenseKey(company, licenseId) {
 }
 
 /**
- * Um `licenseId` sozinho, resolvido na árvore para ganhar a empresa que lhe falta: a
- * notificação de um radar não autorizado traz a licença do tópico `radar/{licenseId}/{uid}`
- * e o assistente quer pré-selecioná-la.
+ * O dono de uma notificação, confirmado na árvore antes de pré-selecionar o assistente.
  *
- * Se o mesmo número existir em duas empresas não há como saber qual é, e devolve nada: por
- * escolher é melhor do que escolhido mal sem ninguém reparar.
+ * Com empresa, procura o par exacto -- é o que a notificação passou a guardar. Sem ela,
+ * procura só o número, e aí o mesmo número em duas empresas não tem como se desempatar:
+ * devolve nada, porque por escolher é melhor do que escolhido mal sem ninguém reparar. É esse
+ * caminho que serve as notificações gravadas antes de a empresa existir na tabela.
  */
-export function ownerFromLicense(licenseId, tree = []) {
+export function ownerFromLicense(licenseId, tree = [], company = "") {
     const wanted = String(licenseId ?? "");
     if (wanted === "" || wanted === "0") return null;
+    const wantedCompany = String(company ?? "").trim().toLowerCase();
 
     const matches = (tree || []).flatMap((group) =>
         (group.licenses || [])
             .filter((license) => String(license.licenseId) === wanted)
+            .filter(() => wantedCompany === ""
+                || String(group.company ?? "").trim().toLowerCase() === wantedCompany)
             .map(() => ({company: group.company, licenseId: wanted})),
     );
 

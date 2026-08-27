@@ -474,6 +474,30 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         }
     }
 
+    /**
+     * Um `hub_admin` não tem licença, e a tabela di-lo com NULL como já dizia no
+     * `license_ref_id`. O `license_client` ao lado prova que a licença a sério continua lá.
+     */
+    public function testAdminHasNoLicenceInTheTableAndTheClientKeepsItsOwn(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+
+        $rows = [];
+        foreach ($db->apiUsers->all() as $user) {
+            $rows[(string)$user['username']] = $user;
+        }
+        self::assertNull($rows['admin']['license_id']);
+        self::assertNull($rows['admin']['license_ref_id']);
+        self::assertSame(1001, (int)$rows['tenant']['license_id']);
+
+        // E o token emitido a partir disso continua a dizer o mesmo.
+        $admin = $this->loginPayload($server, 'admin', 'secret');
+        self::assertArrayHasKey('license_id', $admin['token']);
+        self::assertNull($admin['token']['license_id']);
+        $tenant = $this->loginPayload($server, 'tenant', 'tenant-secret');
+        self::assertSame(1001, $tenant['token']['license_id']);
+    }
+
     public function testDeviceWithoutALicenseIsInvisibleToATenantClient(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
@@ -1370,6 +1394,14 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
     private function loginToken(DashboardHttpServer $server, string $username, string $password): string
     {
+        $payload = $this->loginPayload($server, $username, $password);
+
+        return (string)($payload['token']['access_token'] ?? '');
+    }
+
+    /** @return array<string, mixed> */
+    private function loginPayload(DashboardHttpServer $server, string $username, string $password): array
+    {
         $login = $server(new ServerRequest(
             'POST',
             '/api/auth/login',
@@ -1378,9 +1410,8 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         ));
 
         self::assertSame(200, $login->getStatusCode(), (string)$login->getBody());
-        $payload = json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
-        return (string)($payload['token']['access_token'] ?? '');
+        return json_decode((string)$login->getBody(), true, 512, JSON_THROW_ON_ERROR);
     }
 
     private function apiLogContents(): string

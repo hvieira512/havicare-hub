@@ -73,6 +73,52 @@ final class DashboardNotificationRepositoryTest extends MysqlDashboardTestCase
         self::assertSame(2, $this->repository->unreadCount());
     }
 
+    public function testOwnerIsStoredWholeOrNotAtAll(): void
+    {
+        // Quem se identifica por IMEI ou MAC não diz de quem é: as duas colunas ficam a NULL.
+        $this->repository->record(
+            'device_not_authorized',
+            '861265062544868',
+            'vivistar-iw',
+            'VL16P',
+            'IW',
+            'device_not_authorized'
+        );
+
+        // O tópico do radar traz a licença, e a empresa vem com ela.
+        $this->repository->record(
+            'device_not_authorized',
+            '9D8A3204F853',
+            'qinglanst-radar',
+            '',
+            '9D8A3204F853',
+            'device_not_authorized',
+            1001,
+            'hitcare'
+        );
+
+        $byImei = [];
+        foreach ($this->repository->latest(20) as $notification) {
+            $byImei[$notification['imei']] = $notification;
+        }
+
+        self::assertSame(0, $byImei['861265062544868']['licenseId']);
+        self::assertNull($byImei['861265062544868']['company']);
+        self::assertSame(1001, $byImei['9D8A3204F853']['licenseId']);
+        self::assertSame('hitcare', $byImei['9D8A3204F853']['company']);
+
+        $rows = $this->createDashboardDatabase()->pdo()
+            ->query('SELECT imei, license_id, company FROM dashboard_notifications ORDER BY imei')
+            ->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($rows as $row) {
+            self::assertSame(
+                $row['license_id'] === null,
+                $row['company'] === null,
+                "A empresa e a licença de {$row['imei']} têm de estar ambas presentes ou ambas ausentes"
+            );
+        }
+    }
+
     public function testDeleteRemovesNotification(): void
     {
         $this->repository->record(

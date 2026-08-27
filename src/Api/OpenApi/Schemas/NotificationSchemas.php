@@ -23,6 +23,9 @@ final class NotificationSchemas
                     'model' => ['type' => 'string', 'example' => 'VL16P'],
                     'ident' => ['type' => 'string', 'example' => ''],
                     'reason' => ['type' => 'string', 'example' => 'device_not_authorized'],
+                    // O dono, quando o protocolo o diz. Vêm os dois ou nenhum.
+                    'licenseId' => ['type' => 'integer', 'example' => 1001],
+                    'company' => ['type' => ['string', 'null'], 'example' => 'hitcare'],
                     'occurrenceCount' => ['type' => 'integer', 'example' => 2],
                     'firstSeenAt' => ['type' => 'string', 'format' => 'date-time'],
                     'lastSeenAt' => ['type' => 'string', 'format' => 'date-time'],

@@ -14,6 +14,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private readonly IngestStats $stats;
     private readonly DashboardWritePolicy $dashboardWritePolicy;
     private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
+    /** O tópico traz a licença e não a empresa, e estes radares só existem para a hitcare. */
+    private const RADAR_COMPANY = 'hitcare';
 
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
@@ -231,7 +233,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $deviceUid,
             'qinglanst-radar',
             ident: $deviceUid,
-            licenseId: (int)$topic->licenseId
+            licenseId: (int)$topic->licenseId,
+            company: self::RADAR_COMPANY
         );
         Logger::channel('hub')->warning("Ignoring unregistered Qinglanst device uid={$deviceUid}");
         return null;

@@ -479,7 +479,7 @@ function seedFromNotification(source, tree = []) {
             || modelCommercialName(model) === reported,
     ) || candidates[0] || null;
 
-    const owner = ownerFromLicense(notification?.licenseId, tree);
+    const owner = ownerFromLicense(notification?.licenseId, tree, notification?.company);
     if (!detected) return owner ? {identity, owner} : {identity};
 
     return {

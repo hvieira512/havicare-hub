@@ -356,7 +356,10 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertIsArray($row);
         self::assertSame('351912345678901', $row['sim_number'] ?? null);
         self::assertSame('watch', $row['device_type'] ?? null);
-        self::assertSame(0, $row['license_id'] ?? null);
+        // Sem cliente é NULL na tabela, e as duas colunas juntas: a sentinela do tópico é
+        // construída na leitura, não guardada.
+        self::assertNull($row['license_id']);
+        self::assertNull($row['company']);
     }
 
     public function testWhitelistDefaultsLegacyDeviceTypeAndLicenseId(): void
@@ -367,6 +370,13 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $row = $db->whitelist->get('861265061009822');
         self::assertIsArray($row);
         self::assertSame('watch', $row['device_type'] ?? null);
-        self::assertSame(0, $row['license_id'] ?? null);
+        self::assertNull($row['license_id']);
+        self::assertNull($row['company']);
+
+        // E o que a API devolve não muda: a sentinela volta na fronteira de leitura.
+        $device = $db->whitelist->getDevice('861265061009822');
+        self::assertIsArray($device);
+        self::assertSame(0, $device['licenseId']);
+        self::assertSame('null', $device['company']);
     }
 }

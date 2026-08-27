@@ -36,7 +36,10 @@ final class NotificationSourceTest extends TestCase
         // não se escrever à mão o que ele acabou de dizer.
         self::assertStringContainsString('async function openWizard(source = "")', $bootstrap);
         self::assertStringContainsString('function seedFromNotification(source, tree = [])', $bootstrap);
-        self::assertStringContainsString('ownerFromLicense(notification?.licenseId, tree)', $bootstrap);
+        self::assertStringContainsString(
+            'ownerFromLicense(notification?.licenseId, tree, notification?.company)',
+            $bootstrap
+        );
         self::assertStringContainsString('String(model.protocol || "") === protocol', $bootstrap);
         self::assertStringContainsString('type: modelDeviceType(detected)', $bootstrap);
         self::assertStringContainsString('openAddDevice: openWizard', $bootstrap);

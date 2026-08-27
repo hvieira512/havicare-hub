@@ -67,10 +67,11 @@ CREATE TABLE IF NOT EXISTS whitelist (
     supplier VARCHAR(191) NOT NULL,
     model VARCHAR(191) NOT NULL,
     device_type ENUM('watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet') NOT NULL DEFAULT 'watch',
-    license_id INT UNSIGNED NOT NULL DEFAULT 0,
+    -- Sem cliente associado são NULL as duas, nunca uma sem a outra.
+    license_id INT UNSIGNED NULL DEFAULT NULL,
     sim_number VARCHAR(64) NOT NULL DEFAULT '',
     device_id VARCHAR(191) NOT NULL DEFAULT '',
-    company VARCHAR(191) NOT NULL DEFAULT 'null',
+    company VARCHAR(191) NULL DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_whitelist_supplier_model (supplier, model),
@@ -182,7 +183,8 @@ CREATE TABLE IF NOT EXISTS api_users (
     username VARCHAR(191) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('hub_admin', 'license_client') NOT NULL,
-    license_id INT UNSIGNED NOT NULL DEFAULT 0,
+    -- Um `hub_admin` não tem licença: NULL, como o `license_ref_id` ao lado.
+    license_id INT UNSIGNED NULL DEFAULT NULL,
     license_ref_id BIGINT UNSIGNED NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -199,7 +201,10 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
     protocol VARCHAR(64) NOT NULL DEFAULT '',
     model VARCHAR(191) NOT NULL DEFAULT '',
     ident VARCHAR(191) NOT NULL DEFAULT '',
-    license_id INT UNSIGNED NOT NULL DEFAULT 0,
+    -- O dono, quando o protocolo o diz: o tópico do radar traz a licença, um MAC não traz
+    -- nada. As duas juntas ou nenhuma.
+    license_id INT UNSIGNED NULL DEFAULT NULL,
+    company VARCHAR(191) NULL DEFAULT NULL,
     reason VARCHAR(191) NOT NULL DEFAULT '',
     occurrence_count INT UNSIGNED NOT NULL DEFAULT 1,
     first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
