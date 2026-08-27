@@ -7,14 +7,26 @@ use PDO;
 
 final class ModelCapabilityRepository
 {
+    /** @var array<int, list<string>> */
+    private array $enabledFeatures = [];
+
     public function __construct(private PDO $pdo)
     {
+    }
+
+    // Um só `/api/devices/{imei}` pede isto sete vezes com o mesmo id.
+    /**
+     * @return list<string>
+     */
+    public function enabledFeaturesForModelId(int $modelId): array
+    {
+        return $this->enabledFeatures[$modelId] ??= $this->loadEnabledFeaturesForModelId($modelId);
     }
 
     /**
      * @return list<string>
      */
-    public function enabledFeaturesForModelId(int $modelId): array
+    private function loadEnabledFeaturesForModelId(int $modelId): array
     {
         $stmt = $this->pdo->prepare('
             SELECT c.capability_key, m.device_type, m.internal_model, s.name AS supplier_name
@@ -127,6 +139,8 @@ final class ModelCapabilityRepository
             $override = $catalogRequestable ? (isset($selected[$id]) ? 1 : 0) : null;
             $update->execute([$override, $modelId, $id]);
         }
+
+        $this->enabledFeatures = [];
     }
 
     /**
@@ -200,6 +214,7 @@ final class ModelCapabilityRepository
         }
 
         $this->pdo->commit();
+        $this->enabledFeatures = [];
     }
 
     /**

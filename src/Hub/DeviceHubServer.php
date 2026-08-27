@@ -15,6 +15,7 @@ use Hub\Watch\WatchResponse;
 
 class DeviceHubServer
 {
+    private Whitelist $whitelist;
     private ConnectionRegistry $connections;
     private DeviceAuthorizer $authorizer;
     private DeviceIdentityExtractor $identityExtractor;
@@ -38,6 +39,7 @@ class DeviceHubServer
         int $downlinkQueueTtlSeconds = 300,
         ?LocationTelemetryEnricherContract $locationTelemetryEnricher = null,
     ) {
+        $this->whitelist = $whitelist;
         $this->connections = $connections ?? new ConnectionRegistry();
         $this->authorizer = $authorizer ?? new DeviceAuthorizer($whitelist, $commercialModelResolver);
         $this->mqtt = $mqtt;
@@ -563,9 +565,11 @@ class DeviceHubServer
         $this->recordEvent($imei, $supplier, $model, $type, $command ?? $this->commandMetadata($bytes), $deviceType, $licenseId, $commercialName);
     }
 
+    // A leitura é da whitelist e não da sessão: reassociar um dispositivo tem de valer já
+    // numa ligação viva, e a sessão guardou os valores do login.
     private function currentLicenseId(string $imei, int $fallback = 0): int
     {
-        $metadata = $this->authorizer->metadataFor($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $licenseId = DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0);
 
         // O 0 quer dizer "sem atribuição", e por isso um valor ausente recorre ao anterior
@@ -575,7 +579,7 @@ class DeviceHubServer
 
     private function currentCompany(string $imei, string $fallback = 'null'): string
     {
-        $metadata = $this->authorizer->metadataFor($imei);
+        $metadata = $this->whitelist->getMetadata($imei) ?? [];
         $company = (string)($metadata['company'] ?? '');
         return $company !== '' ? $company : $fallback;
     }

@@ -36,6 +36,7 @@ final class SupplierRepository
         return $row === false ? null : TimestampFormatter::normalizeRow($row);
     }
 
+    // Quem der rota a isto tem de limpar o memo do `ModelRepository`: o `all()` junta `s.name`.
     public function create(string $name): int
     {
         $existing = $this->findByName($name);

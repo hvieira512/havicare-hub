@@ -423,6 +423,25 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     /**
      * @return array{0: ModelService, 1: ApiDataAccess}
      */
+    public function testModelWriteInvalidatesTheMemoisedRows(): void
+    {
+        [, $db] = $this->makeApi();
+        $model = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($model);
+        self::assertSame($model, $db->models->findById((int)$model['id']));
+
+        $db->models->add(
+            (int)$model['supplier_id'],
+            'L08 Pro',
+            'L08 Pro Renomeado',
+            (string)$model['device_type'],
+        );
+
+        $reloaded = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($reloaded);
+        self::assertSame('L08 Pro Renomeado', $reloaded['commercial_name']);
+    }
+
     private function makeApi(): array
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
