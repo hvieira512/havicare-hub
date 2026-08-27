@@ -8,32 +8,25 @@ use Hub\DeviceAuthorizer;
 use Hub\DeviceIdentity;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
 
 final class DeviceAuthorizerTest extends TestCase
 {
-    private string $whitelistPath;
+    private Whitelist $whitelist;
 
     protected function setUp(): void
     {
-        $this->whitelistPath = sys_get_temp_dir() . '/hub-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($this->whitelistPath, json_encode([
+        $this->whitelist = IngressFixtures::whitelist([
             '865028000000306' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
             '865028000000307' => ['supplier' => 'Wonlex', 'model' => 'WONLEX-HEALTH'],
             '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '7597567372'],
-        ], JSON_THROW_ON_ERROR));
-    }
-
-    protected function tearDown(): void
-    {
-        if (file_exists($this->whitelistPath)) {
-            unlink($this->whitelistPath);
-        }
+        ]);
     }
 
     public function testAllowsAuthorizedDeviceAndReturnsExpectedModel(): void
     {
         $authorizer = new DeviceAuthorizer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $this->commercialResolver()
         );
 
@@ -48,7 +41,7 @@ final class DeviceAuthorizerTest extends TestCase
     public function testRejectsUnknownDevice(): void
     {
         $authorizer = new DeviceAuthorizer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $this->commercialResolver()
         );
 
@@ -61,7 +54,7 @@ final class DeviceAuthorizerTest extends TestCase
     public function testIgnoresDeviceClaimedModelAndReturnsWhitelistMetadata(): void
     {
         $authorizer = new DeviceAuthorizer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $this->commercialResolver()
         );
 
@@ -75,7 +68,7 @@ final class DeviceAuthorizerTest extends TestCase
     public function testResolvesFourPTouchProtocolIdToCanonicalImei(): void
     {
         $authorizer = new DeviceAuthorizer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $this->commercialResolver()
         );
 

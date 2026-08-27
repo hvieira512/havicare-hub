@@ -17,6 +17,8 @@ use Hub\Registry\Whitelist;
 use React\EventLoop\Loop;
 use Tests\Support\MysqlDashboardTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\WavFixture;
 
 final class DashboardHttpServerTest extends MysqlDashboardTestCase
 {
@@ -34,19 +36,15 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         putenv('LOG_FILE=' . $this->apiLogPath);
         putenv('LOG_LEVEL=info');
         Logger::reset();
-        $this->whitelistPath = sys_get_temp_dir() . '/hub-dashboard-http-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($this->whitelistPath, json_encode([
+        $this->whitelistPath = IngressFixtures::whitelistPath([
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'hitcare'],
             '861265061009833' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '2002', 'company' => 'otherCare'],
             '861265061009844' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '0', 'company' => 'null'],
-        ], JSON_THROW_ON_ERROR));
+        ]);
     }
 
     protected function tearDown(): void
     {
-        if (is_file($this->whitelistPath)) {
-            unlink($this->whitelistPath);
-        }
         if (is_file($this->apiLogPath)) {
             unlink($this->apiLogPath);
         }
@@ -68,6 +66,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('id="telemetry"', $first);
         self::assertStringContainsString('type="module" src="main.js"', $first);
         self::assertStringContainsString('id="deviceSelectorModal"', $first);
+        // Adicionar e editar são dois modais, e a página inclui os dois.
+        self::assertStringContainsString('id="deviceWizardModal"', $first);
+        self::assertStringContainsString('id="deviceModal"', $first);
         self::assertStringContainsString('id="deviceSelectionEmptyState"', $first);
         self::assertStringContainsString('id="capabilitySupplierButtons"', $first);
         self::assertStringContainsString('id="capabilityCatalogViewer"', $first);
@@ -956,7 +957,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                 'reminderSettings' => '11:25-1-3-1010101',
                 'number' => 3,
                 'reminderText' => 'meds',
-                'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+                'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
                 'voiceMimeType' => 'audio/wav',
             ]
         );
@@ -982,7 +983,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
                 ],
                 'number' => 1,
                 'reminderText' => 'meds',
-                'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+                'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
                 'voiceMimeType' => 'audio/wav',
             ],
             $body['capabilities']['alarms']['medication_reminders']['value'] ?? null
@@ -1298,31 +1299,6 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         return [$server, $db, $store];
     }
 
-    private function sampleWavBase64(): string
-    {
-        $sampleRate = 8000;
-        $channels = 1;
-        $bitsPerSample = 16;
-        $data = str_repeat(pack('v', 0), 800);
-
-        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
-        $blockAlign = (int)($channels * ($bitsPerSample / 8));
-        $header = 'RIFF'
-            . pack('V', 36 + strlen($data))
-            . 'WAVE'
-            . 'fmt '
-            . pack('V', 16)
-            . pack('v', 1)
-            . pack('v', $channels)
-            . pack('V', $sampleRate)
-            . pack('V', $byteRate)
-            . pack('v', $blockAlign)
-            . pack('v', $bitsPerSample)
-            . 'data'
-            . pack('V', strlen($data));
-
-        return base64_encode($header . $data);
-    }
 
     private function readSseFrame(\Psr\Http\Message\ResponseInterface $response): string
     {

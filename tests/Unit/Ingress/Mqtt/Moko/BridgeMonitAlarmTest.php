@@ -6,11 +6,10 @@ namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
-use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
-use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\MutableDiaperSensitivity;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
@@ -244,24 +243,14 @@ final class BridgeMonitAlarmTest extends TestCase
 
     private function bridge(RecordingHubMqttBridge $mqtt, ?DiaperSensitivityLookup $sensitivity = null): Bridge
     {
-        $path = tempnam(sys_get_temp_dir(), 'moko-whitelist-');
-        file_put_contents($path, json_encode([
-            self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::SENSOR => ['supplier' => 'MONIT', 'model' => 'MECS-PRO', 'deviceType' => 'diaper_sensor', 'licenseId' => '1001', 'company' => 'hitcare'],
-        ], JSON_THROW_ON_ERROR));
-
-        $links = new class implements GatewayDeviceLinkLookup {
-            public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool
-            {
-                return true;
-            }
-        };
-
         return new Bridge(
             new FakeMqttSubscriber(),
-            new Whitelist($path),
+            IngressFixtures::whitelist([
+                self::GATEWAY => IngressFixtures::gateway('MKGW3'),
+                self::SENSOR => IngressFixtures::diaperSensor(),
+            ]),
             $mqtt,
-            $links,
+            IngressFixtures::links(),
             new ArrayObservationStateStore(),
             diaperSensitivity: $sensitivity,
         );

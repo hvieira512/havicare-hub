@@ -7,6 +7,7 @@ namespace Tests\Unit\Hub;
 use Hub\Domain\DeviceMetadata;
 use Hub\HubMqttBridge;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
 
 /**
  * Os tópicos publicados são um contrato externo -- quem consome subscreve estas strings. O
@@ -58,28 +59,23 @@ final class DeviceTopicShapeTest extends TestCase
     {
         // O ficheiro da whitelist é editável à mão, e por isso o normalizador de entradas é o
         // último portão antes de um nome de empresa fazer parte de um tópico.
-        $whitelistPath = sys_get_temp_dir() . '/casing-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($whitelistPath, json_encode([
+        $whitelist = IngressFixtures::whitelist([
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro', 'licenseId' => '1001', 'company' => 'HitCare'],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
-        try {
-            $metadata = (new \Hub\Registry\Whitelist($whitelistPath))->getMetadata('861265061009822');
+        $metadata = $whitelist->getMetadata('861265061009822');
 
-            self::assertSame('hitcare', $metadata['company'] ?? null);
-            self::assertSame(
-                'hitcare/1001/watch/861265061009822/status',
-                $this->bridge()->deviceTopic(
-                    (string)$metadata['company'],
-                    (int)$metadata['licenseId'],
-                    'watch',
-                    '861265061009822',
-                    'status'
-                )
-            );
-        } finally {
-            @unlink($whitelistPath);
-        }
+        self::assertSame('hitcare', $metadata['company'] ?? null);
+        self::assertSame(
+            'hitcare/1001/watch/861265061009822/status',
+            $this->bridge()->deviceTopic(
+                (string)$metadata['company'],
+                (int)$metadata['licenseId'],
+                'watch',
+                '861265061009822',
+                'status'
+            )
+        );
     }
 
     public function testSlashesInTheCompanyCannotSplitTheTopic(): void

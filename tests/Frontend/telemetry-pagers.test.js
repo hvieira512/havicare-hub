@@ -1,4 +1,4 @@
-import test from "node:test";
+import test, {beforeEach} from "node:test";
 import assert from "node:assert/strict";
 
 import "./support/browser-env.js";
@@ -11,16 +11,29 @@ const {
 } = await import("../../src/Dashboard/dashboard/devices/detail.js");
 
 /**
- * Caracteriza a marcação que os dois paginadores produzem HOJE.
+ * Os dois paginadores do detalhe do dispositivo: a telemetria e os pedidos.
  *
- * Existe para uma consolidação contra `renderPagination` poder ser provada como
- * mudança de sítio e não de comportamento: se estas cadeias mudarem, alguma coisa
- * mudou no ecrã. Repara nos nomes das acções -- `telemetryPageGo`, e não
- * `telemetryGo` -- porque é neles que os handlers em `app.js` estão
- * registados, e é a diferença que uma troca ingénua quebraria em silêncio.
+ * Saem os dois do `renderPagination`, e o que se prende aqui é o que essa partilha tem de
+ * respeitar -- que cada um leva o seu prefixo nas acções, porque é por esse nome que os
+ * handlers do `app.js` estão registados: `telemetryPageGo`, e não `telemetryGo`. Uma troca
+ * ingénua deixava os botões a não fazer nada, sem erro nenhum.
+ *
+ * O aspecto dos botões não é assunto destes testes: classes e ícones são do CSS e mudam sem
+ * que nada se parta.
  */
 function fakeElement() {
     return document.createElement("div");
+}
+
+beforeEach(() => {
+    state.telemetryPage = 1;
+    state.downlinkPage = 1;
+});
+
+function pagerButton(controls, action) {
+    const button = controls.querySelector(`[data-action="${action}"]`);
+    assert.ok(button, `nenhum botão com a acção ${action}`);
+    return button;
 }
 
 function pagerEls(prefix) {
@@ -73,7 +86,6 @@ function downlinkRequest(index) {
 test("o paginador de telemetria esconde-se quando tudo cabe numa página", () => {
     const els = telemetryEls();
     initDeviceDetailView({els});
-    state.telemetryPage = 1;
 
     renderTelemetryList([telemetryEvent(0), telemetryEvent(1)]);
 
@@ -82,26 +94,35 @@ test("o paginador de telemetria esconde-se quando tudo cabe numa página", () =>
     assert.equal(els.telemetryPagerControls.innerHTML, "");
 });
 
-test("a marcação do paginador de telemetria, exactamente como está hoje", () => {
+test("três páginas dão três botões, com a actual marcada e o anterior travado", () => {
     const els = telemetryEls();
     initDeviceDetailView({els});
-    state.telemetryPage = 1;
 
     // 30 eventos com um tamanho de página de 12 dão três páginas.
     renderTelemetryList(Array.from({length: 30}, (_, index) => telemetryEvent(index)));
 
     assert.equal(els.telemetryPager.classList.contains("d-none"), false);
     assert.equal(els.telemetryPagerSummary.textContent, "1–12 de 30");
-    assert.equal(
-        els.telemetryPagerControls.innerHTML,
-        [
-            '<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryPrev" disabled="" aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>',
-            '<button type="button" class="btn btn-primary btn-sm" data-action="telemetryPageGo" data-page="1" aria-current="page">1</button>',
-            '<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryPageGo" data-page="2">2</button>',
-            '<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryPageGo" data-page="3">3</button>',
-            '<button type="button" class="btn btn-outline-secondary btn-sm" data-action="telemetryNext" aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>',
-        ].join(""),
+
+    const buttons = [...els.telemetryPagerControls.querySelectorAll("button")];
+    assert.deepEqual(
+        buttons.map((button) => button.dataset.action),
+        ["telemetryPrev", "telemetryPageGo", "telemetryPageGo", "telemetryPageGo", "telemetryNext"],
     );
+    assert.deepEqual(
+        buttons.map((button) => button.dataset.page).filter(Boolean),
+        ["1", "2", "3"],
+    );
+
+    // A página actual distingue-se para quem vê e para quem ouve.
+    assert.equal(buttons[1].getAttribute("aria-current"), "page");
+    assert.equal(buttons[2].hasAttribute("aria-current"), false);
+
+    assert.equal(buttons[0].disabled, true);
+    assert.equal(buttons.at(-1).disabled, false);
+    // As setas são ícones, e por isso o nome delas só existe no rótulo acessível.
+    assert.equal(buttons[0].getAttribute("aria-label"), "Página anterior");
+    assert.equal(buttons.at(-1).getAttribute("aria-label"), "Página seguinte");
 });
 
 test("na última página o resumo conta só o que resta e o seguinte fica travado", () => {
@@ -112,27 +133,21 @@ test("na última página o resumo conta só o que resta e o seguinte fica travad
     renderTelemetryList(Array.from({length: 30}, (_, index) => telemetryEvent(index)));
 
     assert.equal(els.telemetryPagerSummary.textContent, "25–30 de 30");
-    assert.match(
-        els.telemetryPagerControls.innerHTML,
-        /data-action="telemetryNext" disabled=""/,
-    );
-    state.telemetryPage = 1;
+    assert.equal(pagerButton(els.telemetryPagerControls, "telemetryNext").disabled, true);
+    assert.equal(pagerButton(els.telemetryPagerControls, "telemetryPrev").disabled, false);
 });
 
-test("o paginador dos pedidos tem a mesma marcação, com o seu prefixo", () => {
+test("o paginador dos pedidos leva o seu prefixo nas acções", () => {
     const els = downlinkEls();
     initDeviceDetailView({els});
-    state.downlinkPage = 1;
 
     renderDownlinkRequests(Array.from({length: 30}, (_, index) => downlinkRequest(index)));
 
     assert.equal(els.downlinkPagerSummary.textContent, "1–12 de 30");
-    assert.match(
-        els.downlinkPagerControls.innerHTML,
-        /data-action="downlinkPageGo" data-page="2"/,
-    );
-    assert.match(
-        els.downlinkPagerControls.innerHTML,
-        /data-action="downlinkPrev" disabled=""/,
+    assert.equal(pagerButton(els.downlinkPagerControls, "downlinkPrev").disabled, true);
+    assert.deepEqual(
+        [...els.downlinkPagerControls.querySelectorAll("[data-action='downlinkPageGo']")]
+            .map((button) => button.dataset.page),
+        ["1", "2", "3"],
     );
 });

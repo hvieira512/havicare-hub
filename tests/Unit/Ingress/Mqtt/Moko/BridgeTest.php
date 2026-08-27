@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\HubMqttBridge;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
-use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
@@ -117,18 +116,14 @@ final class BridgeTest extends TestCase
 
     private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, int $idleTimeout = 180): Bridge
     {
-        $path = tempnam(sys_get_temp_dir(), 'moko-whitelist-');
-        file_put_contents($path, json_encode([
-            'd48c49f7909c' => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            'c5e390f30bce' => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            'eec5000202f9' => ['supplier' => 'MONIT', 'model' => 'MECS-PRO', 'deviceType' => 'diaper_sensor', 'licenseId' => '1001', 'company' => 'hitcare'],
-        ], JSON_THROW_ON_ERROR));
-        $links = new class($linked) implements GatewayDeviceLinkLookup {
-            public function __construct(private bool $linked) {}
-            public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool { return $this->linked; }
-        };
+        $whitelist = IngressFixtures::whitelist([
+            'd48c49f7909c' => IngressFixtures::gateway('MKGW3'),
+            'c5e390f30bce' => IngressFixtures::gateway('MKGW4'),
+            'eec5000202f9' => IngressFixtures::diaperSensor(),
+        ]);
         return new Bridge(
-            new FakeMqttSubscriber(), new Whitelist($path), $mqtt, $links, new ArrayObservationStateStore(),
+            new FakeMqttSubscriber(), $whitelist, $mqtt, IngressFixtures::links($linked),
+            new ArrayObservationStateStore(),
             gatewayIdleTimeoutSeconds: $idleTimeout,
             clock: $clock,
         );

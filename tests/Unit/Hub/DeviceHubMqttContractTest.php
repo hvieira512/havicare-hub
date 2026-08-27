@@ -15,17 +15,18 @@ use Hub\Dashboard\DashboardStoreContract;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\WavFixture;
 
 use function React\Promise\resolve;
 
 final class DeviceHubMqttContractTest extends TestCase
 {
-    private string $whitelistPath;
+    private Whitelist $whitelist;
 
     protected function setUp(): void
     {
-        $this->whitelistPath = sys_get_temp_dir() . '/hub-contract-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($this->whitelistPath, json_encode([
+        $this->whitelist = IngressFixtures::whitelist([
             '865028000000308' => ['supplier' => 'Vivistar', 'model' => 'VIVISTAR-CARE'],
             '868705080300697' => ['supplier' => 'Wonlex', 'model' => 'HW20PRO'],
             '637507597567372' => [
@@ -35,14 +36,7 @@ final class DeviceHubMqttContractTest extends TestCase
                 'licenseId' => '1001',
                 'company' => 'hitcare',
             ],
-        ], JSON_THROW_ON_ERROR));
-    }
-
-    protected function tearDown(): void
-    {
-        if (is_file($this->whitelistPath)) {
-            unlink($this->whitelistPath);
-        }
+        ]);
     }
 
     public function testRejectedDevicePublishesErrorStatusAndRejectedEvent(): void
@@ -59,7 +53,7 @@ final class DeviceHubMqttContractTest extends TestCase
                 'device_not_authorized'
             );
         $hub = new DeviceHubServer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $mqtt,
             dashboardStore: $store
         );
@@ -87,7 +81,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $store->method('recordRejectedDevice')
             ->willThrowException(new \RuntimeException('Database unavailable'));
         $hub = new DeviceHubServer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $mqtt,
             dashboardStore: $store
         );
@@ -104,7 +98,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testOfflineDownlinkPublishesDroppedEvent(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
 
         self::assertFalse($hub->sendDownlink('865028000000308', 'IWBP03#'));
         $hub->reportDownlinkDropped('865028000000308', 'device_offline');
@@ -123,7 +117,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $mqtt = new ContractRecordingHubMqttBridge();
         $queue = new ContractFakePendingDownlinkQueue();
         $hub = new DeviceHubServer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $mqtt,
             downlinkQueue: $queue,
             downlinkQueueTtlSeconds: 300
@@ -166,7 +160,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $queue = new ContractFakePendingDownlinkQueue();
         $queue->failEnqueue = true;
         $hub = new DeviceHubServer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $mqtt,
             downlinkQueue: $queue
         );
@@ -182,7 +176,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testDeviceClaimedModelIsIgnoredForAuthorizationAndMqttMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         $connection = new ContractFakeConnection(2);
         $adapter = new WonlexAdapter();
 
@@ -208,7 +202,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testFourPTouchAssociationUpdateChangesMqttTopicPrefixOnNextMessage(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $whitelist = new Whitelist($this->whitelistPath);
+        $whitelist = $this->whitelist;
         $hub = new DeviceHubServer($whitelist, $mqtt);
         $connection = new ContractFakeConnection(9);
 
@@ -243,7 +237,7 @@ final class DeviceHubMqttContractTest extends TestCase
         $mqtt = new ContractRecordingHubMqttBridge();
         $queue = new ContractFakePendingDownlinkQueue();
         $hub = new DeviceHubServer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $mqtt,
             downlinkQueue: $queue
         );
@@ -281,7 +275,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testAuthenticatedMeasurementPublishesDecodedEventWithoutDebugFields(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt, $this->commercialResolver());
+        $hub = new DeviceHubServer($this->whitelist, $mqtt, $this->commercialResolver());
         $connection = new ContractFakeConnection(3);
         $adapter = new WonlexAdapter();
 
@@ -326,7 +320,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testWonlexDataListSleepPublishesReliableNormalizedContract(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         $connection = new ContractFakeConnection(13);
         $adapter = new WonlexAdapter();
 
@@ -389,7 +383,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testOnlineDownlinkPublishesCommandMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         $connection = new ContractFakeConnection(4);
         $adapter = new WonlexAdapter();
 
@@ -419,7 +413,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testVivistarOnlineDownlinkPublishesCommandMetadata(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         $connection = new ContractFakeConnection(5);
 
         $hub->onOpen($connection);
@@ -441,7 +435,7 @@ final class DeviceHubMqttContractTest extends TestCase
             self::markTestSkipped('ffmpeg with AMR-NB support is not available');
         }
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         $connection = new ContractFakeConnection(8);
         $adapter = new \Hub\Protocol\Adapter\FourPTouchAdapter();
 
@@ -457,7 +451,7 @@ final class DeviceHubMqttContractTest extends TestCase
             ],
             'number' => 3,
             'reminderText' => 'meds',
-            'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+            'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
             'voiceMimeType' => 'audio/wav',
         ]);
         $bytes = \Hub\Command\DeviceCommandCatalog::buildDownlink(
@@ -490,7 +484,7 @@ final class DeviceHubMqttContractTest extends TestCase
             }
         );
         $hub = new DeviceHubServer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $mqtt,
             dashboardStore: $store,
         );
@@ -508,7 +502,7 @@ final class DeviceHubMqttContractTest extends TestCase
     public function testVivistarTelemetryPacketsReceiveProtocolAck(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         $connection = new ContractFakeConnection(7);
 
         $hub->onOpen($connection);
@@ -535,7 +529,7 @@ final class DeviceHubMqttContractTest extends TestCase
             ]),
         );
         $hub = new DeviceHubServer(
-            new Whitelist($this->whitelistPath),
+            $this->whitelist,
             $mqtt,
             locationTelemetryEnricher: $enricher,
         );
@@ -576,31 +570,6 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame(300.0, $location['data']['accuracyMeters']);
     }
 
-    private function sampleWavBase64(): string
-    {
-        $sampleRate = 8000;
-        $channels = 1;
-        $bitsPerSample = 16;
-        $data = str_repeat(pack('v', 0), 800);
-
-        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
-        $blockAlign = (int)($channels * ($bitsPerSample / 8));
-        $header = 'RIFF'
-            . pack('V', 36 + strlen($data))
-            . 'WAVE'
-            . 'fmt '
-            . pack('V', 16)
-            . pack('v', 1)
-            . pack('v', $channels)
-            . pack('V', $sampleRate)
-            . pack('V', $byteRate)
-            . pack('v', $blockAlign)
-            . pack('v', $bitsPerSample)
-            . 'data'
-            . pack('V', strlen($data));
-
-        return base64_encode($header . $data);
-    }
 
     private function commercialResolver(): \Hub\CommercialModelResolver
     {

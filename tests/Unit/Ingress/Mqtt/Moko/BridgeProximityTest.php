@@ -3,14 +3,13 @@
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStore;
-use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
 use Hub\Ingress\Mqtt\Moko\ProximityTracker;
-use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
@@ -56,27 +55,18 @@ final class BridgeProximityTest extends TestCase
     /** @return array{0: Bridge, 1: RecordingHubMqttBridge, 2: DashboardStore} */
     private function bridge(): array
     {
-        $path = tempnam(sys_get_temp_dir(), 'moko-proximity-whitelist-');
-        file_put_contents($path, json_encode([
-            self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::GATEWAY2 => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6B', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
-        ], JSON_THROW_ON_ERROR));
-
-        $links = new class implements GatewayDeviceLinkLookup {
-            public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool
-            {
-                return true;
-            }
-        };
         $mqtt = new RecordingHubMqttBridge();
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:proximity');
 
         $bridge = new Bridge(
             new FakeMqttSubscriber(),
-            new Whitelist($path),
+            IngressFixtures::whitelist([
+                self::GATEWAY => IngressFixtures::gateway('MKGW3'),
+                self::GATEWAY2 => IngressFixtures::gateway('MKGW4'),
+                self::BRACELET => IngressFixtures::bracelet('W6B'),
+            ]),
             $mqtt,
-            $links,
+            IngressFixtures::links(),
             new ArrayObservationStateStore(),
             dashboardStore: $store,
             clock: fn(): float => $this->now,
@@ -210,22 +200,15 @@ final class BridgeProximityTest extends TestCase
 
     public function testNothingIsReportedForADeviceTheGatewayMayNotRelay(): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'moko-proximity-unlinked-');
-        file_put_contents($path, json_encode([
-            self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6B', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
-        ], JSON_THROW_ON_ERROR));
         $mqtt = new RecordingHubMqttBridge();
         $bridge = new Bridge(
             new FakeMqttSubscriber(),
-            new Whitelist($path),
+            IngressFixtures::whitelist([
+                self::GATEWAY => IngressFixtures::gateway('MKGW3'),
+                self::BRACELET => IngressFixtures::bracelet('W6B'),
+            ]),
             $mqtt,
-            new class implements GatewayDeviceLinkLookup {
-                public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool
-                {
-                    return false;
-                }
-            },
+            IngressFixtures::links(linked: false),
             new ArrayObservationStateStore(),
             clock: fn(): float => $this->now,
         );

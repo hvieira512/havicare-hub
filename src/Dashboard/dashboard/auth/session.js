@@ -130,7 +130,7 @@ const showToast = (type, message) => {
     });
 };
 
-const closeDashboardOverlays = () => {
+export const closeDashboardOverlays = () => {
     document.querySelectorAll("#dashboardApp .modal.show").forEach(modal => {
         const instance = window.bootstrap?.Modal?.getInstance(modal);
         instance?.hide();

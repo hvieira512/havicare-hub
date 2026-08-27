@@ -10,6 +10,7 @@ use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 use Tests\Support\MysqlDashboardTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\IngressFixtures;
 
 final class DevicesApiTest extends MysqlDashboardTestCase
 {
@@ -17,18 +18,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     protected function setUp(): void
     {
-        $this->whitelistPath = sys_get_temp_dir() . '/hub-devices-api-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($this->whitelistPath, json_encode([
+        parent::setUp();
+        $this->whitelistPath = IngressFixtures::whitelistPath([
             '861265061009822' => ['supplier' => 'Vivistar', 'model' => 'L08 Pro'],
             '868017032159118' => ['supplier' => '4P Touch', 'model' => 'D46'],
-        ], JSON_THROW_ON_ERROR));
-    }
-
-    protected function tearDown(): void
-    {
-        if (is_file($this->whitelistPath)) {
-            unlink($this->whitelistPath);
-        }
+        ]);
     }
 
     public function testRequestFeatureRejectsDisabledModelRequest(): void
@@ -705,14 +699,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testWonlexFallDetectionPatchUsesEnabledPubliclyAndSwitchStateOnWire(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(
-            function (string $imei, string $bytes) use (&$submitted): string {
-                $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-                return 'sent';
-            }
-        );
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300697';
         self::assertSame('ok', $api->create(json_encode([
             'imei' => $imei,
@@ -1228,12 +1215,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsGenericAlarmClockForVivistar(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -1276,12 +1258,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsVivistarAlarmClockOnceWithoutDays(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -1323,12 +1300,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsVivistarFallDetectionUsingPublicKey(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -1375,12 +1347,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsVivistarWhitelistEnabledToggleAsBp84(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -1409,12 +1376,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testFourPTouchWhitelistEnabledUsesDocumentedRejectUnknownCallsCommand(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -1494,13 +1456,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testFourPTouchSosContactsCapabilitySavesNativeSplitWithoutArrayCoercion(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
         self::assertIsArray($model);
         $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
@@ -1771,12 +1727,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchSendsDownlinksForGenericKeys(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -1832,12 +1783,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchSendsFourPTouchTakePillsDownlink(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -1868,12 +1814,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchClearsAllFourPTouchTakePillsReminders(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -1903,12 +1844,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             self::markTestSkipped('ffmpeg with AMR-NB support is not available');
         }
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -1955,12 +1891,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsLocationReportingIntervalForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -1985,12 +1916,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsCenterNumberForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2015,12 +1941,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchSendsFourPTouchAlarmClockDownlink(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2051,12 +1972,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsGenericAlarmClockForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2097,12 +2013,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsGenericFallSensitivityForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2128,12 +2039,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchDefaultsMissingFourPTouchFallSensitivityScaleToEight(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2160,12 +2066,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsGenericCallWhitelistForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2204,12 +2105,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsPhonebookContactsWrapperForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2243,12 +2139,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsEmptyPhonebookContactsForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2277,12 +2168,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsEmptyAlarmClockItemsForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2312,12 +2198,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAcceptsEmptySosContactsForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2345,12 +2226,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchClearsExistingSosContactsForFourPTouch(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2412,12 +2288,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchAllowsFourPTouchLanguageZeroForEnglish(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2440,12 +2311,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testConfigurationPatchSendsFourPTouchTakePillsWithMultipleReminders(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2553,12 +2419,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testPushMessageRequestSendsTransientBp40WithoutPersistingConfiguration(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -2584,14 +2445,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testWonlexPushMessageRequestSendsMessageNoticeWithoutWaitingForUndocumentedAck(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(
-            function (string $imei, string $bytes) use (&$submitted): string {
-                $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-                return 'sent';
-            }
-        );
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300698';
         $model = $db->models->find('Wonlex', 'HW20PRO');
 
@@ -2660,12 +2514,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testFourPTouchCallWhitelistConfigurationFansOutToNativeCommands(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2703,12 +2552,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testWonlexGenericConfigurationsEmitDocumentedFramesAndRoundTrip(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300698';
         self::assertSame('ok', $api->create(json_encode([
             'imei' => $imei,
@@ -2807,14 +2651,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testWonlexMedicationRemindersCanBeClearedWithEmptyListDownlink(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(
-            function (string $imei, string $bytes) use (&$submitted): string {
-                $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-                return 'sent';
-            }
-        );
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300698';
         self::assertSame('ok', $api->create(json_encode([
             'imei' => $imei,
@@ -2860,12 +2697,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testFourPTouchAlarmClockConfigurationMapsToNativeCommand(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
@@ -2923,12 +2755,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testRequestFeatureSendsGenericTelemetryRequest(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
-            $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
-            return 'sent';
-        });
-        [$api, $db] = $this->makeApi(hub: $hub);
+        [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -2950,9 +2777,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     public function testRepeatedTelemetryRequestSupersedesThePendingRequest(): void
     {
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
-        $hub->method('submitDownlink')->willReturn('sent');
-        [$api, $db, $store] = $this->makeApi(hub: $hub);
+        [$api, $db, $store] = $this->makeApi();
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
@@ -3309,29 +3134,23 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         return $hub;
     }
 
-    private function sampleWavBase64(): string
+    /**
+     * Um hub que aceita tudo e guarda o que lhe passou pelas mãos: o que estes testes afirmam
+     * é o que foi para o fio, e para isso precisam da lista, não do duplo.
+     *
+     * @param list<array{imei: string, bytes: string}> $submitted
+     */
+    private function recordingHub(array &$submitted, string $result = 'sent'): \Hub\DeviceHubServer
     {
-        $sampleRate = 8000;
-        $channels = 1;
-        $bitsPerSample = 16;
-        $data = str_repeat(pack('v', 0), 800);
+        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub->method('submitDownlink')->willReturnCallback(
+            function (string $imei, string $bytes) use (&$submitted, $result): string {
+                $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
+                return $result;
+            }
+        );
 
-        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
-        $blockAlign = (int)($channels * ($bitsPerSample / 8));
-        $header = 'RIFF'
-            . pack('V', 36 + strlen($data))
-            . 'WAVE'
-            . 'fmt '
-            . pack('V', 16)
-            . pack('v', 1)
-            . pack('v', $channels)
-            . pack('V', $sampleRate)
-            . pack('V', $byteRate)
-            . pack('v', $blockAlign)
-            . pack('v', $bitsPerSample)
-            . 'data'
-            . pack('V', strlen($data));
-
-        return base64_encode($header . $data);
+        return $hub;
     }
+
 }

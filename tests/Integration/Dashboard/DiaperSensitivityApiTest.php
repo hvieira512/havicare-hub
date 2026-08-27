@@ -10,6 +10,7 @@ use Hub\Api\Services\DeviceService;
 use Hub\Dashboard\DashboardStore;
 use Hub\Registry\Whitelist;
 use Tests\Support\Doubles\InMemoryRedisClient;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
@@ -33,15 +34,8 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 
     protected function setUp(): void
     {
-        $this->whitelistPath = sys_get_temp_dir() . '/hub-diaper-sensitivity-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($this->whitelistPath, '{}');
-    }
-
-    protected function tearDown(): void
-    {
-        if (is_file($this->whitelistPath)) {
-            unlink($this->whitelistPath);
-        }
+        parent::setUp();
+        $this->whitelistPath = IngressFixtures::whitelistPath();
     }
 
     /**

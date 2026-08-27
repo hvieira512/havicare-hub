@@ -7,9 +7,10 @@ namespace Tests\Integration\Dashboard;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Registry\Whitelist;
 use Hub\Registry\WhitelistFileImporter;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
-final class DatabaseWhitelistRepositorySourceTest extends MysqlDashboardTestCase
+final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
 {
     public function testWhitelistStoresNcsAliasInDeviceId(): void
     {
@@ -24,22 +25,17 @@ final class DatabaseWhitelistRepositorySourceTest extends MysqlDashboardTestCase
     public function testDatabaseBackedWhitelistDoesNotImplicitlyImportOrRewriteLegacyFile(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $path = sys_get_temp_dir() . '/hub-legacy-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        $legacyContents = json_encode([
+        $path = IngressFixtures::whitelistPath([
             'legacy-device' => ['supplier' => 'Legacy', 'model' => 'Legacy'],
-        ], JSON_THROW_ON_ERROR);
-        file_put_contents($path, $legacyContents);
+        ]);
+        $legacyContents = (string)file_get_contents($path);
 
-        try {
-            $whitelist = new Whitelist($path, $db->whitelist);
-            self::assertFalse($whitelist->isAuthorized('legacy-device'));
+        $whitelist = new Whitelist($path, $db->whitelist);
+        self::assertFalse($whitelist->isAuthorized('legacy-device'));
 
-            $whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
-            self::assertSame($legacyContents, file_get_contents($path));
-            self::assertNotNull($db->whitelist->get('861265061009822'));
-        } finally {
-            @unlink($path);
-        }
+        $whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
+        self::assertSame($legacyContents, file_get_contents($path));
+        self::assertNotNull($db->whitelist->get('861265061009822'));
     }
 
     public function testDatabaseBackedWhitelistObservesChangesMadeByAnotherProcess(): void
@@ -57,8 +53,7 @@ final class DatabaseWhitelistRepositorySourceTest extends MysqlDashboardTestCase
     public function testLegacyWhitelistImportIsExplicit(): void
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
-        $path = sys_get_temp_dir() . '/hub-explicit-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($path, json_encode([
+        $path = IngressFixtures::whitelistPath([
             'canonical-imei' => [
                 'supplier' => 'Voerka',
                 'model' => 'W812',
@@ -68,14 +63,10 @@ final class DatabaseWhitelistRepositorySourceTest extends MysqlDashboardTestCase
                 'deviceId' => 'gateway-uid',
             ],
             'invalid' => ['supplier' => ''],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
-        try {
-            $result = (new WhitelistFileImporter($db->whitelist))->import($path);
-            self::assertSame(['imported' => 1, 'skipped' => 1], $result);
-            self::assertSame('gateway-uid', $db->whitelist->get('canonical-imei')['device_id'] ?? null);
-        } finally {
-            @unlink($path);
-        }
+        $result = (new WhitelistFileImporter($db->whitelist))->import($path);
+        self::assertSame(['imported' => 1, 'skipped' => 1], $result);
+        self::assertSame('gateway-uid', $db->whitelist->get('canonical-imei')['device_id'] ?? null);
     }
 }

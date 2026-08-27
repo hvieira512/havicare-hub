@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
-use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
@@ -52,28 +51,15 @@ final class BridgeW6bTest extends TestCase
 
     private function bridge(RecordingHubMqttBridge $mqtt, bool $linked = true): Bridge
     {
-        $path = tempnam(sys_get_temp_dir(), 'moko-w6b-whitelist-');
-        file_put_contents($path, json_encode([
-            self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW3', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::GATEWAY2 => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6B', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
-        ], JSON_THROW_ON_ERROR));
-
-        $links = new class($linked) implements GatewayDeviceLinkLookup {
-            public function __construct(private bool $linked)
-            {
-            }
-            public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool
-            {
-                return $this->linked;
-            }
-        };
-
         return new Bridge(
             new FakeMqttSubscriber(),
-            new Whitelist($path),
+            IngressFixtures::whitelist([
+                self::GATEWAY => IngressFixtures::gateway('MKGW3'),
+                self::GATEWAY2 => IngressFixtures::gateway('MKGW4'),
+                self::BRACELET => IngressFixtures::bracelet('W6B'),
+            ]),
             $mqtt,
-            $links,
+            IngressFixtures::links($linked),
             new ArrayObservationStateStore(),
         );
     }

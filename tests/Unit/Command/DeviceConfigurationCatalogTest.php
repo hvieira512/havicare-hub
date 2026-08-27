@@ -10,6 +10,7 @@ use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\VivistarAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\WavFixture;
 
 final class DeviceConfigurationCatalogTest extends TestCase
 {
@@ -126,14 +127,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertStringEndsWith(',' . ($payload['payload']['fields'][0] ?? '') . '#', $wire);
     }
 
-    public function testVivistarPushMessageRejectsEmptyMessage(): void
-    {
-        self::assertSame(
-            'message is required',
-            DeviceConfigurationCatalog::validate('vivistar-iw', 'pushMessage', ['message' => ''])
-        );
-    }
-
     public function testVivistarAlarmClockAcceptsPublicRecurrencePayload(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'alarm_clock', [
@@ -151,22 +144,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['1', '1', '0900,2,1,2'], $payload['payload']['fields'] ?? []);
     }
 
-    public function testVivistarAlarmClockRejectsMissingType(): void
-    {
-        self::assertSame(
-            'type is required',
-            DeviceConfigurationCatalog::validate('vivistar-iw', 'alarm_clock', [
-                'items' => [
-                    [
-                        'time' => '09:00',
-                        'enabled' => true,
-                        'recurrence' => ['kind' => 'custom', 'days' => [1]],
-                    ],
-                ],
-            ])
-        );
-    }
-
     public function testVivistarAlarmClockOnceDoesNotRequireDays(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('vivistar-iw', 'alarm_clock', [
@@ -182,23 +159,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         self::assertSame('BP85', $payload['command']);
         self::assertSame(['1', '1', '0900,,1,1'], $payload['payload']['fields'] ?? []);
-    }
-
-    public function testFourPTouchAlarmClockRejectsType(): void
-    {
-        self::assertSame(
-            'type is not supported for four-p-touch alarm_clock',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'alarm_clock', [
-                'items' => [
-                    [
-                        'time' => '09:00',
-                        'enabled' => true,
-                        'type' => 1,
-                        'recurrence' => ['kind' => 'once'],
-                    ],
-                ],
-            ])
-        );
     }
 
     public function testFourPTouchFallSensitivityMetadataIncludesNativeLevelOptions(): void
@@ -658,14 +618,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         ], $bpWarning['payload']);
     }
 
-    public function testInvalidConfigIsRejected(): void
-    {
-        self::assertSame(
-            'intervalSeconds must be at least 30 for mode 8',
-            DeviceConfigurationCatalog::validate('vivistar-iw', 'workingMode', ['mode' => 8, 'intervalSeconds' => 10, 'gpsEnabled' => true])
-        );
-    }
-
     public function testFourPTouchUploadIntervalBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'uploadInterval', ['intervalSeconds' => 600]);
@@ -674,14 +626,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '637507597567372', $payload['command'], $payload['payload'], ['deviceId' => '7597567372']);
         self::assertSame('[3G*7597567372*000A*UPLOAD,600]', $wire);
-    }
-
-    public function testFourPTouchUploadIntervalRequiresProtocolMinimum(): void
-    {
-        self::assertSame(
-            'intervalSeconds must be between 60 and 65535',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'uploadInterval', ['intervalSeconds' => 59])
-        );
     }
 
     public function testFourPTouchFallsBackToCanonicalImeiOnlyWhenNoDeviceIdIsProvided(): void
@@ -731,7 +675,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
             ],
             'number' => 1,
             'reminderText' => 'meds',
-            'voiceData' => $this->sampleWavBase64(),
+            'voiceData' => WavFixture::silenceBase64(),
             'voiceMimeType' => 'audio/wav',
         ]);
 
@@ -761,7 +705,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
             ],
             'number' => 1,
             'reminderText' => 'meds',
-            'voiceData' => 'data:audio/wav;base64,' . $this->sampleWavBase64(),
+            'voiceData' => 'data:audio/wav;base64,' . WavFixture::silenceBase64(),
             'voiceMimeType' => 'audio/wav',
         ]);
 
@@ -816,7 +760,7 @@ final class DeviceConfigurationCatalogTest extends TestCase
                     'custom' => '',
                 ]],
                 'reminderText' => 'meds',
-                'voiceData' => $this->sampleWavBase64(),
+                'voiceData' => WavFixture::silenceBase64(),
                 'voiceMimeType' => 'audio/wav',
             ]);
         } finally {
@@ -1092,14 +1036,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('[3G*8800000015*0004*SOS1]', $wire);
     }
 
-    public function testFourPTouchSosNumber1RejectsArrayPhone(): void
-    {
-        self::assertSame(
-            'phone must be a string',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'sosNumber1', ['phone' => ['123456789']])
-        );
-    }
-
     public function testFourPTouchSosNumber2BuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sosNumber2', ['phone' => '987654321']);
@@ -1138,46 +1074,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertStringContainsString('PW,111111', $wire);
-    }
-
-    public function testFourPTouchSosSmsAlertsBuildsNativeFields(): void
-    {
-        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sosSmsAlerts', ['enabled' => true]);
-        self::assertSame('SOSSMS', $on['command']);
-        self::assertSame(['fields' => ['1']], $on['payload']);
-
-        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sosSmsAlerts', ['enabled' => false]);
-        self::assertSame(['fields' => ['0']], $off['payload']);
-    }
-
-    public function testFourPTouchLowBatterySmsAlertsBuildsNativeFields(): void
-    {
-        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'lowBatterySmsAlerts', ['enabled' => true]);
-        self::assertSame('LOWBAT', $on['command']);
-        self::assertSame(['fields' => ['1']], $on['payload']);
-
-        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'lowBatterySmsAlerts', ['enabled' => false]);
-        self::assertSame(['fields' => ['0']], $off['payload']);
-    }
-
-    public function testFourPTouchRemoveWatchAlarmBuildsNativeFields(): void
-    {
-        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'removeWatchAlarm', ['enabled' => true]);
-        self::assertSame('REMOVE', $on['command']);
-        self::assertSame(['fields' => ['1']], $on['payload']);
-
-        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'removeWatchAlarm', ['enabled' => false]);
-        self::assertSame(['fields' => ['0']], $off['payload']);
-    }
-
-    public function testFourPTouchRemoveWatchSmsAlertsBuildsNativeFields(): void
-    {
-        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'removeWatchSmsAlerts', ['enabled' => true]);
-        self::assertSame('REMOVESMS', $on['command']);
-        self::assertSame(['fields' => ['1']], $on['payload']);
-
-        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'removeWatchSmsAlerts', ['enabled' => false]);
-        self::assertSame(['fields' => ['0']], $off['payload']);
     }
 
     public function testFourPTouchFallDownAlertBuildsNativeFields(): void
@@ -1282,14 +1178,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertStringContainsString('MESSAGE,00680065006C006C006F', $wire);
     }
 
-    public function testFourPTouchPushMessageRejectsEmptyMessage(): void
-    {
-        self::assertSame(
-            'message is required',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'pushMessage', ['message' => ''])
-        );
-    }
-
     public function testFourPTouchResetCommandBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'resetCommand', []);
@@ -1318,30 +1206,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $wire = DeviceCommandCatalog::buildDownlink('four-p-touch', '8800000015', $payload['command'], $payload['payload']);
         self::assertSame('[3G*8800000015*0004*FIND]', $wire);
-    }
-
-    public function testFourPTouchDoNotDisturbBuildsNativeFields(): void
-    {
-        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'doNotDisturb', ['enabled' => true]);
-        self::assertSame('SILENCETIME', $on['command']);
-        self::assertSame(['fields' => ['1']], $on['payload']);
-
-        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'doNotDisturb', ['enabled' => false]);
-        self::assertSame(['fields' => ['0']], $off['payload']);
-    }
-
-    public function testFourPTouchFirmwareVersionBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'firmwareVersion', []);
-        self::assertSame('VERNO', $payload['command']);
-        self::assertSame(['fields' => []], $payload['payload']);
-    }
-
-    public function testFourPTouchDeviceStatusBuildsNativeFields(): void
-    {
-        $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'deviceStatus', []);
-        self::assertSame('TS', $payload['command']);
-        self::assertSame(['fields' => []], $payload['payload']);
     }
 
     public function testFourPTouchAlarmClockBuildsNativeFields(): void
@@ -1394,33 +1258,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame(['fields' => ['08:10-1-3-1100000']], $payload['payload']);
     }
 
-    public function testFourPTouchAlarmClockRejectsInvalidCustomMask(): void
-    {
-        self::assertSame(
-            'alarm custom days must be a 7-digit 0/1 mask',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'alarmClock', [
-                'alarms' => [
-                    ['time' => '08:10', 'enabled' => true, 'frequency' => 3, 'custom' => '111110'],
-                ],
-            ])
-        );
-    }
-
-    public function testFourPTouchAlarmClockRejectsMoreThanThreeAlarms(): void
-    {
-        self::assertSame(
-            'alarms must not contain more than 3 items',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'alarmClock', [
-                'alarms' => [
-                    ['time' => '08:10', 'enabled' => true, 'frequency' => 1],
-                    ['time' => '14:30', 'enabled' => false, 'frequency' => 2],
-                    ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '0111110'],
-                    ['time' => '20:00', 'enabled' => true, 'frequency' => 1],
-                ],
-            ])
-        );
-    }
-
     public function testFourPTouchPhonebookBuildsNativeFields(): void
     {
         $payload = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'phonebook', [
@@ -1443,59 +1280,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
         self::assertSame('[3G*8800000015*0003*PHB]', $wire);
     }
 
-    public function testFourPTouchPhonebookRejectsMoreThanFiveContacts(): void
-    {
-        self::assertSame(
-            'contacts must not contain more than 5 items',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
-                'contacts' => [
-                    ['phone' => '1', 'name' => 'A'],
-                    ['phone' => '2', 'name' => 'B'],
-                    ['phone' => '3', 'name' => 'C'],
-                    ['phone' => '4', 'name' => 'D'],
-                    ['phone' => '5', 'name' => 'E'],
-                    ['phone' => '6', 'name' => 'F'],
-                ],
-            ])
-        );
-    }
-
-    public function testFourPTouchPhonebookRejectsLongAsciiPhone(): void
-    {
-        self::assertSame(
-            'phone must not exceed 20 ASCII characters',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
-                'contacts' => [
-                    ['phone' => '123456789012345678901', 'name' => 'Ana'],
-                ],
-            ])
-        );
-    }
-
-    public function testFourPTouchPhonebookRejectsNonAsciiPhone(): void
-    {
-        self::assertSame(
-            'phone must contain ASCII characters only',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
-                'contacts' => [
-                    ['phone' => '+3519☃', 'name' => 'Ana'],
-                ],
-            ])
-        );
-    }
-
-    public function testFourPTouchPhonebookRejectsLongName(): void
-    {
-        self::assertSame(
-            'name must not exceed 10 Unicode characters',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'phonebook', [
-                'contacts' => [
-                    ['phone' => '123456789', 'name' => 'ABCDEFGHIJK'],
-                ],
-            ])
-        );
-    }
-
     public function testFourPTouchSoundProfileBuildsNativeFields(): void
     {
         $vibrateAndRing = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 1]);
@@ -1510,24 +1294,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
         $silent = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'sound_profile', ['mode' => 4]);
         self::assertSame(['fields' => ['4']], $silent['payload']);
-    }
-
-    public function testFourPTouchSoundProfileRejectsInvalidMode(): void
-    {
-        self::assertSame(
-            'mode must be between 1 and 4',
-            DeviceConfigurationCatalog::validate('four-p-touch', 'sound_profile', ['mode' => 0])
-        );
-    }
-
-    public function testFourPTouchRejectUnknownCallsBuildsNativeFields(): void
-    {
-        $on = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'rejectUnknownCalls', ['enabled' => true]);
-        self::assertSame('DEVREFUSEPHONESWITCH', $on['command']);
-        self::assertSame(['fields' => ['1']], $on['payload']);
-
-        $off = DeviceConfigurationCatalog::commandPayload('four-p-touch', 'rejectUnknownCalls', ['enabled' => false]);
-        self::assertSame(['fields' => ['0']], $off['payload']);
     }
 
     public function testFourPTouchSosNumberRejectsEmptyPhone(): void
@@ -1548,33 +1314,162 @@ final class DeviceConfigurationCatalogTest extends TestCase
         );
     }
 
-    private function sampleWavBase64(): string
+    public static function nativeToggleProvider(): iterable
     {
-        $sampleRate = 8000;
-        $channels = 1;
-        $bitsPerSample = 16;
-        $samples = array_fill(0, 800, 0);
-        $data = '';
-        foreach ($samples as $sample) {
-            $data .= pack('v', $sample);
-        }
+        yield 'sos sms alerts' => ['four-p-touch', 'sosSmsAlerts', 'SOSSMS'];
+        yield 'low battery sms alerts' => ['four-p-touch', 'lowBatterySmsAlerts', 'LOWBAT'];
+        yield 'remove watch alarm' => ['four-p-touch', 'removeWatchAlarm', 'REMOVE'];
+        yield 'remove watch sms alerts' => ['four-p-touch', 'removeWatchSmsAlerts', 'REMOVESMS'];
+        yield 'do not disturb' => ['four-p-touch', 'doNotDisturb', 'SILENCETIME'];
+        yield 'reject unknown calls' => ['four-p-touch', 'rejectUnknownCalls', 'DEVREFUSEPHONESWITCH'];
+    }
 
-        $byteRate = (int)($sampleRate * $channels * ($bitsPerSample / 8));
-        $blockAlign = (int)($channels * ($bitsPerSample / 8));
-        $header = 'RIFF'
-            . pack('V', 36 + strlen($data))
-            . 'WAVE'
-            . 'fmt '
-            . pack('V', 16)
-            . pack('v', 1)
-            . pack('v', $channels)
-            . pack('V', $sampleRate)
-            . pack('V', $byteRate)
-            . pack('v', $blockAlign)
-            . pack('v', $bitsPerSample)
-            . 'data'
-            . pack('V', strlen($data));
+    /**
+     * Um interruptor é o comando dele mais um `1` ou um `0`, e o que distingue estes é só o
+     * nome nativo: a forma é a mesma para todos.
+     *
+     * @dataProvider nativeToggleProvider
+     */
+    public function testATogglePutsItsOwnCommandOnTheWireWithOneOrZero(
+        string $protocol,
+        string $key,
+        string $command,
+    ): void {
+        $on = DeviceConfigurationCatalog::commandPayload($protocol, $key, ['enabled' => true]);
+        self::assertSame($command, $on['command']);
+        self::assertSame(['fields' => ['1']], $on['payload']);
 
-        return base64_encode($header . $data);
+        $off = DeviceConfigurationCatalog::commandPayload($protocol, $key, ['enabled' => false]);
+        self::assertSame($command, $off['command']);
+        self::assertSame(['fields' => ['0']], $off['payload']);
+    }
+
+    public static function fieldlessRequestProvider(): iterable
+    {
+        yield 'firmware version' => ['four-p-touch', 'firmwareVersion', 'VERNO'];
+        yield 'device status' => ['four-p-touch', 'deviceStatus', 'TS'];
+    }
+
+    /**
+     * Perguntar não leva argumentos: o comando vai sozinho e o dispositivo responde.
+     *
+     * @dataProvider fieldlessRequestProvider
+     */
+    public function testARequestGoesOnTheWireWithoutFields(
+        string $protocol,
+        string $key,
+        string $command,
+    ): void {
+        $payload = DeviceConfigurationCatalog::commandPayload($protocol, $key, []);
+
+        self::assertSame($command, $payload['command']);
+        self::assertSame(['fields' => []], $payload['payload']);
+    }
+
+    public static function rejectedConfigurationProvider(): iterable
+    {
+        yield 'vivistar push message without text' => [
+            'vivistar-iw', 'pushMessage', ['message' => ''],
+            'message is required',
+        ];
+        yield 'vivistar alarm without a type' => [
+            'vivistar-iw', 'alarm_clock', ['items' => [[
+                'time' => '09:00',
+                'enabled' => true,
+                'recurrence' => ['kind' => 'custom', 'days' => [1]],
+            ]]],
+            'type is required',
+        ];
+        yield 'vivistar working mode below the interval floor' => [
+            'vivistar-iw', 'workingMode', ['mode' => 8, 'intervalSeconds' => 10, 'gpsEnabled' => true],
+            'intervalSeconds must be at least 30 for mode 8',
+        ];
+        // O contrário do caso da Vivistar acima: aqui o tipo é que não é suportado.
+        yield '4P Touch alarm with a type' => [
+            'four-p-touch', 'alarm_clock', ['items' => [[
+                'time' => '09:00',
+                'enabled' => true,
+                'type' => 1,
+                'recurrence' => ['kind' => 'once'],
+            ]]],
+            'type is not supported for four-p-touch alarm_clock',
+        ];
+        yield '4P Touch upload interval below the protocol minimum' => [
+            'four-p-touch', 'uploadInterval', ['intervalSeconds' => 59],
+            'intervalSeconds must be between 60 and 65535',
+        ];
+        yield '4P Touch sos number given an array' => [
+            'four-p-touch', 'sosNumber1', ['phone' => ['123456789']],
+            'phone must be a string',
+        ];
+        yield '4P Touch push message without text' => [
+            'four-p-touch', 'pushMessage', ['message' => ''],
+            'message is required',
+        ];
+        yield '4P Touch alarm with a six-digit custom mask' => [
+            'four-p-touch', 'alarmClock', ['alarms' => [
+                ['time' => '08:10', 'enabled' => true, 'frequency' => 3, 'custom' => '111110'],
+            ]],
+            'alarm custom days must be a 7-digit 0/1 mask',
+        ];
+        yield '4P Touch with a fourth alarm' => [
+            'four-p-touch', 'alarmClock', ['alarms' => [
+                ['time' => '08:10', 'enabled' => true, 'frequency' => 1],
+                ['time' => '14:30', 'enabled' => false, 'frequency' => 2],
+                ['time' => '18:00', 'enabled' => true, 'frequency' => 3, 'custom' => '0111110'],
+                ['time' => '20:00', 'enabled' => true, 'frequency' => 1],
+            ]],
+            'alarms must not contain more than 3 items',
+        ];
+        yield '4P Touch with a sixth contact' => [
+            'four-p-touch', 'phonebook', ['contacts' => [
+                ['phone' => '1', 'name' => 'A'],
+                ['phone' => '2', 'name' => 'B'],
+                ['phone' => '3', 'name' => 'C'],
+                ['phone' => '4', 'name' => 'D'],
+                ['phone' => '5', 'name' => 'E'],
+                ['phone' => '6', 'name' => 'F'],
+            ]],
+            'contacts must not contain more than 5 items',
+        ];
+        yield '4P Touch contact phone over twenty characters' => [
+            'four-p-touch', 'phonebook', ['contacts' => [
+                ['phone' => '123456789012345678901', 'name' => 'Ana'],
+            ]],
+            'phone must not exceed 20 ASCII characters',
+        ];
+        yield '4P Touch contact phone outside ASCII' => [
+            'four-p-touch', 'phonebook', ['contacts' => [
+                ['phone' => '+3519☃', 'name' => 'Ana'],
+            ]],
+            'phone must contain ASCII characters only',
+        ];
+        yield '4P Touch contact name over ten characters' => [
+            'four-p-touch', 'phonebook', ['contacts' => [
+                ['phone' => '123456789', 'name' => 'ABCDEFGHIJK'],
+            ]],
+            'name must not exceed 10 Unicode characters',
+        ];
+        yield '4P Touch sound profile outside the vendor range' => [
+            'four-p-touch', 'sound_profile', ['mode' => 0],
+            'mode must be between 1 and 4',
+        ];
+    }
+
+    /**
+     * A validação devolve a mensagem, e é a mensagem que chega ao utilizador: por isso é ela
+     * que se afirma, e não só que houve recusa.
+     *
+     * @param array<string, mixed> $desired
+     *
+     * @dataProvider rejectedConfigurationProvider
+     */
+    public function testValidationRefusesTheConfigurationAndSaysWhy(
+        string $protocol,
+        string $key,
+        array $desired,
+        string $message,
+    ): void {
+        self::assertSame($message, DeviceConfigurationCatalog::validate($protocol, $key, $desired));
     }
 }

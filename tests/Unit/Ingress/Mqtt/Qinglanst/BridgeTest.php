@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Qinglanst;
 
-use Hub\HubMqttBridge;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Ingress\Mqtt\Qinglanst\Bridge;
-use Hub\Registry\Whitelist;
-use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 use Tests\Support\Doubles\FakeMqttSubscriber;
 
@@ -25,8 +23,6 @@ final class BridgeTest extends TestCase
      */
     public function testUnregisteredRadarNotificationCarriesTheTopicLicense(): void
     {
-        $whitelistPath = tempnam(sys_get_temp_dir(), 'qinglanst-whitelist-');
-        file_put_contents($whitelistPath, '{}');
         $dashboardStore = $this->createMock(DashboardStoreContract::class);
         $dashboardStore->expects(self::once())
             ->method('recordRejectedDevice')
@@ -40,34 +36,24 @@ final class BridgeTest extends TestCase
             );
         $bridge = new Bridge(
             new FakeMqttSubscriber(),
-            new Whitelist($whitelistPath),
+            IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
             dashboardStore: $dashboardStore,
         );
 
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
-
-        @unlink($whitelistPath);
     }
 
     public function testPublishesUsingUpstreamRadarUidInsteadOfCanonicalWhitelistKey(): void
     {
-        $whitelistPath = tempnam(sys_get_temp_dir(), 'qinglanst-whitelist-');
-        file_put_contents($whitelistPath, json_encode([
-            'radar-canonical-1' => [
-                'supplier' => 'Qinglanst',
-                'model' => 'RD-V1',
-                'deviceType' => 'radar',
-                'licenseId' => '1001',
-                'company' => 'hitcare',
-                'deviceId' => 'radar-topic-uid',
-            ],
-        ], JSON_THROW_ON_ERROR));
-
         $mqttBridge = new RecordingHubMqttBridge();
         $bridge = new Bridge(
             new FakeMqttSubscriber(),
-            new Whitelist($whitelistPath),
+            IngressFixtures::whitelist([
+                // A chave canónica e o UID do tópico são diferentes de propósito: é o que
+                // este teste prende.
+                'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
+            ]),
             $mqttBridge,
             decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
             normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
@@ -98,8 +84,6 @@ final class BridgeTest extends TestCase
         self::assertSame('radar-topic-uid', $mqttBridge->lastTelemetry()['imei']);
         self::assertSame('minute_stats', $mqttBridge->lastTelemetry()['payload']['type'] ?? null);
         self::assertSame('Qinglanst RD-V1 Pro', $mqttBridge->lastTelemetry()['payload']['device']['commercialName'] ?? null);
-
-        @unlink($whitelistPath);
     }
 
     /**

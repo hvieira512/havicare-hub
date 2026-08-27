@@ -7,9 +7,9 @@ namespace Tests\Unit\Ingress\Mqtt;
 use Hub\DeviceHubServer;
 use Hub\HubDownlinkSubscriber;
 use Hub\Ingress\Mqtt\Bridge;
-use Hub\Registry\Whitelist;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
@@ -28,13 +28,10 @@ final class BridgeReconnectBackoffTest extends TestCase
 {
     public function testAConnectionThatDiesOnArrivalDoesNotReconnectOnEveryTick(): void
     {
-        $whitelistPath = tempnam(sys_get_temp_dir(), 'bridge-backoff-');
-        file_put_contents($whitelistPath, '{}');
-
         $attempts = 0;
         $bridge = new AlwaysFailingBridge(
             new DeadOnArrivalSubscriber(),
-            new Whitelist($whitelistPath),
+            IngressFixtures::whitelist(),
             new RecordingHubMqttBridge(),
             'test/topic',
             'test',
@@ -55,8 +52,6 @@ final class BridgeReconnectBackoffTest extends TestCase
             $attempts,
             'uma ligação que morre à chegada não pode repor o recuo e reconectar a cada tick',
         );
-
-        @unlink($whitelistPath);
     }
 
     /**

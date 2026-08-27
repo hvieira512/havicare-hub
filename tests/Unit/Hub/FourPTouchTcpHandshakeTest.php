@@ -13,37 +13,31 @@ use PHPUnit\Framework\TestCase;
 use React\EventLoop\StreamSelectLoop;
 use React\Socket\ConnectionInterface;
 use React\Socket\Connector;
+use Tests\Support\Doubles\IngressFixtures;
+use Tests\Support\Doubles\LocalTcpPort;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 final class FourPTouchTcpHandshakeTest extends TestCase
 {
-    private string $whitelistPath;
+    private Whitelist $whitelist;
 
     protected function setUp(): void
     {
-        $this->whitelistPath = sys_get_temp_dir() . '/hub-4p-touch-whitelist-' . bin2hex(random_bytes(4)) . '.json';
-        file_put_contents($this->whitelistPath, json_encode([
+        $this->whitelist = IngressFixtures::whitelist([
             '637507597567372' => ['supplier' => '4P Touch', 'model' => '4P-TOUCH', 'deviceId' => '7597567372'],
-        ]));
-    }
-
-    protected function tearDown(): void
-    {
-        if (is_file($this->whitelistPath)) {
-            unlink($this->whitelistPath);
-        }
+        ]);
     }
 
     public function testFourPTouchLinkKeepGetsAckOverTcp(): void
     {
         $loop = new StreamSelectLoop();
-        $port = $this->freeTcpPort();
+        $port = LocalTcpPort::free();
         if ($port === null) {
             self::markTestSkipped('Local TCP sockets are not available in this environment');
         }
 
         $mqtt = new RecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         new HubTcpIngress($hub, $loop, '127.0.0.1', $port);
 
         $received = '';
@@ -98,13 +92,13 @@ final class FourPTouchTcpHandshakeTest extends TestCase
     public function testFourPTouchAlarmGetsProtocolAckOverTcp(): void
     {
         $loop = new StreamSelectLoop();
-        $port = $this->freeTcpPort();
+        $port = LocalTcpPort::free();
         if ($port === null) {
             self::markTestSkipped('Local TCP sockets are not available in this environment');
         }
 
         $mqtt = new RecordingHubMqttBridge();
-        $hub = new DeviceHubServer(new Whitelist($this->whitelistPath), $mqtt);
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
         new HubTcpIngress($hub, $loop, '127.0.0.1', $port);
 
         $received = '';
@@ -154,18 +148,5 @@ final class FourPTouchTcpHandshakeTest extends TestCase
         self::assertSame('[3G*7597567372*0002*AL]', $received);
     }
 
-    private function freeTcpPort(): ?int
-    {
-        $socket = @stream_socket_server('tcp://127.0.0.1:0', $errno, $errstr);
-        if (!is_resource($socket)) {
-            return null;
-        }
-
-        $name = stream_socket_get_name($socket, false);
-        fclose($socket);
-
-        $parts = explode(':', (string)$name);
-        return (int)array_pop($parts);
-    }
 }
 

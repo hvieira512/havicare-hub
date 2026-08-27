@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
-use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\FakeMqttSubscriber;
+use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
@@ -69,23 +68,13 @@ final class BridgeW6Test extends TestCase
         ?RecordingHubMqttBridge $mqtt = null,
         array $extraDevices = [],
     ): Bridge {
-        $path = tempnam(sys_get_temp_dir(), 'moko-w6-whitelist-');
-        file_put_contents($path, json_encode([
-            self::GATEWAY => ['supplier' => 'MOKO', 'model' => 'MKGW4', 'deviceType' => 'gateway', 'licenseId' => '1001', 'company' => 'hitcare'],
-        ] + $extraDevices, JSON_THROW_ON_ERROR));
-
-        $links = new class implements GatewayDeviceLinkLookup {
-            public function isEnabled(string $gatewayDeviceKey, string $linkedDeviceKey): bool
-            {
-                return true;
-            }
-        };
-
         return new Bridge(
             new FakeMqttSubscriber(),
-            new Whitelist($path),
+            IngressFixtures::whitelist([
+                self::GATEWAY => IngressFixtures::gateway('MKGW4'),
+            ] + $extraDevices),
             $mqtt ?? new RecordingHubMqttBridge(),
-            $links,
+            IngressFixtures::links(),
             new ArrayObservationStateStore(),
             dashboardStore: $dashboardStore,
         );
@@ -95,7 +84,7 @@ final class BridgeW6Test extends TestCase
     private function registered(): array
     {
         return [
-            self::BRACELET => ['supplier' => 'MOKO', 'model' => 'W6', 'deviceType' => 'bracelet', 'licenseId' => '1001', 'company' => 'hitcare'],
+            self::BRACELET => IngressFixtures::bracelet('W6'),
         ];
     }
 
