@@ -67,7 +67,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $second = $method->invoke($server);
 
         self::assertIsString($first);
-        self::assertStringContainsString('id="telemetry"', $first);
+        self::assertStringContainsString('id="telemetryPager"', $first);
         self::assertStringContainsString('type="module" src="main.js"', $first);
         self::assertStringContainsString('id="deviceSelectorModal"', $first);
         // Adicionar e editar são dois modais, e a página inclui os dois.
