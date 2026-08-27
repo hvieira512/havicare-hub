@@ -4,7 +4,8 @@ A interface do hub: uma página só, servida em PHP, com o comportamento em mód
 o browser carrega tal como estão. **Não há build step** -- nem bundler, nem transpilador,
 nem `node_modules` em produção. Guardar um ficheiro e recarregar a página é o ciclo todo.
 
-Bootstrap 5 e Font Awesome vêm de CDN. O resto é nosso.
+Bootstrap, Font Awesome, amCharts, SweetAlert2 e o Swagger UI estão no repositório, em
+`assets/vendor/`, e são servidos por nós -- ver o `README.md` dessa pasta. O resto é nosso.
 
 ```
 src/Dashboard/
@@ -12,7 +13,7 @@ src/Dashboard/
 ├── main.js            o <script type="module"> que a página carrega
 ├── main.css           todo o CSS
 ├── components/        os partials PHP que produzem a marcação
-├── assets/            o logo e as fontes
+├── assets/            o logo, as fontes e as bibliotecas de terceiros
 ├── dashboard/         todo o JavaScript  ← o resto deste documento
 └── *.php              o servidor HTTP da dashboard e os seus stores
 ```

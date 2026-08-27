@@ -73,7 +73,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringContainsString('id="capabilityCatalogViewer"', $first);
         self::assertStringContainsString('id="dashboardLoginForm"', $first);
         self::assertStringContainsString('id="dashboardLoginSubmit"', $first);
-        self::assertStringContainsString('sweetalert2@11', $first);
+        self::assertStringContainsString('/assets/vendor/sweetalert2/sweetalert2.all.min.js', $first);
+        // Nenhum recurso vem de fora: é o que cai se alguém voltar a colar uma etiqueta de CDN.
+        self::assertDoesNotMatchRegularExpression('#(?:src|href)="(?:https?:)?//#', $first);
         self::assertStringContainsString('data-dashboard-auth-required="true"', $first);
         self::assertStringContainsString('window.hubDashboardApiToken = null;', $first);
         self::assertSame($first, $second);
