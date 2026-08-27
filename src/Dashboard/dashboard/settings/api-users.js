@@ -7,6 +7,7 @@ import {ensureLicensesLoaded} from "../licenses.js";
 import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
+import {apiError, toast} from "../dialogs.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
 import {renderPagination} from "../pagination.js";
 
@@ -152,7 +153,7 @@ export async function saveApiUser() {
 
     const result = await apiSaveApiUser(id, body);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
 
@@ -168,7 +169,7 @@ export async function toggleApiUser(button) {
         enabled: !button.dataset.enabled,
     });
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     state.settingsModal.sectionLoaded.apiUsers = false;
@@ -179,7 +180,7 @@ export async function deleteApiUser(id) {
     if (!confirm("Apagar utilizador API?")) return;
     const result = await apiDeleteApiUser(id);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     state.settingsModal.sectionLoaded.apiUsers = false;

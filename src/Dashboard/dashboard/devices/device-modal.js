@@ -4,6 +4,7 @@ import {
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import {ensureCapabilityCatalog} from "../capability-catalog.js";
+import {apiError} from "../dialogs.js";
 import {ensureLicensesLoaded} from "../licenses.js";
 import {
     deviceTypeCardsHtml,
@@ -486,7 +487,7 @@ export async function saveDevice() {
             setDeviceFormError("Este IMEI já existe.");
             return;
         }
-        setDeviceFormError(result.error.message || result.error.code);
+        setDeviceFormError(apiError(result));
         return;
     }
 

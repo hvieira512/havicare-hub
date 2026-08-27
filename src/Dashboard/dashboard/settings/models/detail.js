@@ -8,6 +8,7 @@ import {
 import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
+import {apiError, toast} from "../../dialogs.js";
 import {modelPreviewHtml, sectionStrip} from "../../widgets.js";
 import {
     capabilitiesGroupedBySection,
@@ -201,7 +202,7 @@ async function saveModelDetail() {
 
     const result = await apiSaveModel(model.id, body);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
 
@@ -484,7 +485,7 @@ function renderCapabilitiesSection() {
 async function saveCapabilities() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) {
-        alert("Selecione um modelo");
+        toast("error", "Selecione um modelo");
         return;
     }
 
@@ -505,7 +506,7 @@ async function saveCapabilities() {
 
     const result = await apiSaveModel(model.id, body);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
 

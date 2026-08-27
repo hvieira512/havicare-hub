@@ -10,6 +10,7 @@ import {ensureLicensesLoaded, invalidateLicenses} from "../licenses.js";
 import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
+import {apiError, toast} from "../dialogs.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
 import {renderPagination} from "../pagination.js";
 
@@ -130,7 +131,7 @@ export async function saveCompany() {
         ? apiUpdateCompany(id, name)
         : apiCreateCompany(name));
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     await reloadCompanies();
@@ -143,7 +144,7 @@ async function deleteCompany(id) {
         return;
     const result = await apiDeleteCompany(id);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     // Apagar a empresa apaga as licenças dela: a cache das licenças deixa de valer.
@@ -194,7 +195,7 @@ export async function saveLicense() {
     const body = { companyId: Number(companyId), licenseId, name };
     const result = await apiSaveLicense(id, body);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     await reloadLicenses();
@@ -204,7 +205,7 @@ async function deleteLicense(id) {
     if (!confirm("Apagar licença?")) return;
     const result = await apiDeleteLicense(id);
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
     await reloadLicenses();

@@ -17,6 +17,7 @@ import {
     whenShort,
 } from "../format.js";
 import {capabilityLabel} from "../capability-catalog.js";
+import {apiError, toast} from "../dialogs.js";
 import {deviceLicenseHtml, emptyPanel, filterChips, onlineBadge} from "../widgets.js";
 import {
     cardTone,
@@ -849,7 +850,7 @@ async function requestTelemetryFeature(feature) {
     renderSelection();
     try {
         const result = await apiRequestFeature(state.selectedImei, feature);
-        if (result.error) alert(result.error.message || result.error.code);
+        if (result.error) toast("error", apiError(result));
         if (state.selectedImei && typeof loadDeviceFn === "function") {
             await loadDeviceFn(state.selectedImei);
         }

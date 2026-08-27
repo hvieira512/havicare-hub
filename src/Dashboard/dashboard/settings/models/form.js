@@ -4,6 +4,7 @@ import {
 import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
+import {apiError, toast} from "../../dialogs.js";
 import {renderButtonGroup, renderDeviceTypeTiles} from "../../widgets.js";
 import {
     deviceTypeLabel,
@@ -253,7 +254,7 @@ async function saveModel() {
         body,
     );
     if (result.error) {
-        alert(result.error.message || result.error.code);
+        toast("error", apiError(result));
         return;
     }
 

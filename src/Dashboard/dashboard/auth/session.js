@@ -3,6 +3,7 @@ import {
     refreshAccessToken,
     setDashboardApiToken,
 } from "../api/http.js";
+import {toast} from "../dialogs.js";
 
 const TOKEN_STORAGE_KEY = "hub-dashboard-api-token";
 const LAST_ACTIVITY_STORAGE_KEY = "hub-dashboard-last-activity";
@@ -117,19 +118,6 @@ const hideTimeoutWarning = () => {
     }
 };
 
-const showToast = (type, message) => {
-    void Swal.fire({
-        toast: true,
-        position: "top-end",
-        icon: type === "danger" ? "error" : type,
-        title: message,
-        showConfirmButton: false,
-        showCloseButton: true,
-        timer: 1800,
-        timerProgressBar: true,
-    });
-};
-
 export const closeDashboardOverlays = () => {
     document.querySelectorAll("#dashboardApp .modal.show").forEach(modal => {
         const instance = window.bootstrap?.Modal?.getInstance(modal);
@@ -172,7 +160,7 @@ const showLogin = message => {
     }
     loginForm?.reset();
     if (message !== "") {
-        showToast("warning", message);
+        toast("warning", message);
     }
     window.setTimeout(() => loginUsername?.focus(), 0);
 };
@@ -264,7 +252,7 @@ const login = async event => {
     const username = String(loginUsername?.value || "").trim();
     const password = String(loginPassword?.value || "");
     if (username === "" || password === "") {
-        showToast("danger", "Preencha o utilizador e a palavra-passe.");
+        toast("danger", "Preencha o utilizador e a palavra-passe.");
         return;
     }
 
@@ -278,11 +266,11 @@ const login = async event => {
         const payload = await response.json();
         const token = payload?.token;
         if (!response.ok || !token?.access_token) {
-            showToast("danger", "Utilizador ou palavra-passe inválidos.");
+            toast("danger", "Utilizador ou palavra-passe inválidos.");
             return;
         }
         if (token.role !== ADMIN_ROLE) {
-            showToast("danger", "Esta conta não tem permissões de administrador do Hub.");
+            toast("danger", "Esta conta não tem permissões de administrador do Hub.");
             return;
         }
 
@@ -293,10 +281,10 @@ const login = async event => {
         lastActivityWriteAt = lastActivityAt;
         sessionStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(lastActivityAt));
         scheduleIdleTimers();
-        showToast("success", "Autenticação concluída. Bem-vindo ao Hub.");
+        toast("success", "Autenticação concluída. Bem-vindo ao Hub.");
         await startDashboard();
     } catch {
-        showToast("danger", "Não foi possível contactar o Hub. Volte a tentar.");
+        toast("danger", "Não foi possível contactar o Hub. Volte a tentar.");
     } finally {
         setLoginBusy(false);
     }
