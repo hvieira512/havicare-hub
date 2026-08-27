@@ -13,7 +13,6 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Dashboard\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
-use Hub\Domain\DiaperSensitivity;
 use Hub\DeviceHubServer;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;

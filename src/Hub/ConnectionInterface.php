@@ -11,7 +11,7 @@ interface ConnectionInterface
      */
     public int $resourceId { get; }
 
-    public function send($data): static;
+    public function send(string $data): static;
 
     public function close(): static;
 }

@@ -16,9 +16,9 @@ class TcpDeviceConnection implements ConnectionInterface
         $this->resourceId = $resourceId;
     }
 
-    public function send($data): static
+    public function send(string $data): static
     {
-        $this->connection->write((string)$data);
+        $this->connection->write($data);
         return $this;
     }
 

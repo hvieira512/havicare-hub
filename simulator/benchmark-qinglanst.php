@@ -204,15 +204,16 @@ for ($loop = 0; $loop < $loops; $loop++) {
             $telemetryPublishes++;
         }
 
-        if (isset($normalized['event']) && is_array($normalized['event'])) {
+        // O normalizador devolve `events` em lista, tal como o `Qinglanst\Bridge` a percorre.
+        foreach ($normalized['events'] as $event) {
             $mqttStart = hrtime(true);
-            $mqttBridge->publishEvent($topicDeviceKey, $normalized['event'], $deviceType, $licenseId, $company);
+            $mqttBridge->publishEvent($topicDeviceKey, $event, $deviceType, $licenseId, $company);
             $duration = hrtime(true) - $mqttStart;
             $timings['mqtt_event'] += $duration;
             $peak['mqtt_event'] = max($peak['mqtt_event'], $duration);
 
             $redisStart = hrtime(true);
-            $dashboardStore->append($dashboardKey, 'events', array_merge($normalized['event'], [
+            $dashboardStore->append($dashboardKey, 'events', array_merge($event, [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
             ]));

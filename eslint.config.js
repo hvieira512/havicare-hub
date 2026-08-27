@@ -3,7 +3,7 @@ import globals from "globals";
 
 export default [
     {
-        files: ["src/Dashboard/dashboard/**/*.js", "tests/Frontend/**/*.js"],
+        files: ["src/Dashboard/main.js", "src/Dashboard/dashboard/**/*.js", "tests/Frontend/**/*.js"],
         languageOptions: {
             ecmaVersion: "latest",
             sourceType: "module",

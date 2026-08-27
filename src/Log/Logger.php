@@ -3,6 +3,7 @@
 namespace Hub\Log;
 
 use Monolog\Logger as MonologLogger;
+use Monolog\Level;
 use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
 
@@ -16,10 +17,12 @@ class Logger
             return self::$instances[$name];
         }
 
-        $levelName = strtoupper(getenv('LOG_LEVEL') ?: 'info');
-        $level = defined("Monolog\Logger::$levelName")
-            ? constant("Monolog\Logger::$levelName")
-            : MonologLogger::INFO;
+        // Um LOG_LEVEL desconhecido não deve derrubar o arranque: cai para info.
+        try {
+            $level = Level::fromName(getenv('LOG_LEVEL') ?: 'info');
+        } catch (\UnhandledMatchError) {
+            $level = Level::Info;
+        }
 
         $formatter = new LineFormatter(
             "[%datetime%] %channel%.%level_name%: %message% %context%\n",

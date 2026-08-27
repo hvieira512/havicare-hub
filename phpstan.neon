@@ -6,6 +6,10 @@ parameters:
     paths:
         - src
         - bin
+        # `simulator/` fica de fora: os 8 scripts são pontos de entrada CLI independentes
+        # que partilham 20 nomes de função globais (`describe`, `waitForMessages`, ...) com
+        # assinaturas diferentes. Analisados no mesmo processo colidem, e o PHPStan verifica
+        # cada chamada contra a definição do ficheiro errado.
     tmpDir: var/phpstan
     parallel:
         maximumNumberOfProcesses: 1
