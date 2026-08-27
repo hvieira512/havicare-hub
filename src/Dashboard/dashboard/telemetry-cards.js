@@ -8,7 +8,7 @@ import {
     titleize,
     when,
 } from "./format.js";
-import {capabilityLabel} from "./capability-catalog.js";
+import { capabilityLabel } from "./capability-catalog.js";
 
 /**
  * A maquina dos cartoes de telemetria: o que cada evento recebido mostra, o que cada
@@ -166,7 +166,10 @@ const UPLINK_CARD_RENDERERS = {
         value: radarVitalsMinuteStatsValue(data),
         details: radarVitalsMinuteStatsDetails(data),
     }),
-    heart_rate: (data) => ({icon: "fa-heart-pulse", value: `${data.bpm ?? "-"} bpm`}),
+    heart_rate: (data) => ({
+        icon: "fa-heart-pulse",
+        value: `${data.bpm ?? "-"} bpm`,
+    }),
     blood_pressure: (data) => ({
         icon: "fa-stethoscope",
         value: `${data.systolicMmHg ?? "-"} / ${data.diastolicMmHg ?? "-"} mmHg`,
@@ -175,14 +178,22 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-droplet",
         value: `${data.spo2Percent ?? "-"}%`,
     }),
-    blood_sugar: (data) => ({icon: "fa-vial", value: `${data.glucoseMgDl ?? "-"} mg/dL`} ),
+    blood_sugar: (data) => ({
+        icon: "fa-vial",
+        value: `${data.glucoseMgDl ?? "-"} mg/dL`,
+    }),
     temperature: (data) => ({
         icon: "fa-temperature-half",
         value: `${data.bodyCelsius ?? "-"} °C`,
     }),
     battery: (data) => ({
         icon: "fa-battery-three-quarters",
-        value: data.percent != null ? `${data.percent}%` : (data.voltageMv != null ? `${data.voltageMv} mV` : "-"),
+        value:
+            data.percent != null
+                ? `${data.percent}%`
+                : data.voltageMv != null
+                  ? `${data.voltageMv} mV`
+                  : "-",
         details: batteryDetails(data),
     }),
     connectivity: (data) => ({
@@ -194,7 +205,10 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-droplet",
         // O indice 0-100 e uma capacidade propria e chega noutra mensagem, mas nao tem
         // cartao proprio: e o valor deste, por cima da tira dos canais que o explica.
-        value: data?.index != null ? `${data.index}%` : capabilityLabel("diaper_moisture"),
+        value:
+            data?.index != null
+                ? `${data.index}%`
+                : capabilityLabel("diaper_moisture"),
         // Numa linha de lista nao ha espaco para a tira dos dez canais, e o mosaico do
         // cartao ja a mostra. O que resta e o resumo: quantos canais passaram o limiar.
         rowValue: diaperMoistureRowValue(data),
@@ -208,11 +222,11 @@ const UPLINK_CARD_RENDERERS = {
     diaper_condition: (data) => ({
         icon: "fa-baby",
         value:
-            ({
+            {
                 clean: "Fralda limpa",
                 attention: "Atenção",
                 change_required: "Mudança necessária",
-            })[data.state] || "Estado desconhecido",
+            }[data.state] || "Estado desconhecido",
     }),
     activity: (data) => ({
         icon: "fa-person-walking",
@@ -232,11 +246,16 @@ const UPLINK_CARD_RENDERERS = {
     alarm: (data) => ({
         icon: "fa-triangle-exclamation",
         value: alarmValue(data),
-        details: compactDetails(data, ["code", "lowBattery", "fall", "wearingNotice"]),
+        details: compactDetails(data, [
+            "code",
+            "lowBattery",
+            "fall",
+            "wearingNotice",
+        ]),
     }),
-    sleep: () => ({icon: "fa-bed", value: "Dados de sono"}),
-    ecg: () => ({icon: "fa-wave-square", value: "Dados de ECG"}),
-    hrv: () => ({icon: "fa-chart-line", value: "Dados de VFC"}),
+    sleep: () => ({ icon: "fa-bed", value: "Dados de sono" }),
+    ecg: () => ({ icon: "fa-wave-square", value: "Dados de ECG" }),
+    hrv: () => ({ icon: "fa-chart-line", value: "Dados de VFC" }),
     // Um escalar, ao contrario do sono, do ECG e da PPG, que sao series e por isso se
     // anunciam em vez de se resumirem a um numero. Dizia "Dados de frequencia
     // respiratoria" e nunca mostrava a leitura -- nem a de um relogio, que produz a mesma
@@ -245,7 +264,7 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-lungs",
         value: `${data.breathsPerMinute ?? "-"} rpm`,
     }),
-    ppg: () => ({icon: "fa-circle-nodes", value: "Dados de PPG"}),
+    ppg: () => ({ icon: "fa-circle-nodes", value: "Dados de PPG" }),
     rr_interval: (data) => ({
         icon: "fa-stopwatch",
         value: "Intervalo RR",
@@ -254,12 +273,21 @@ const UPLINK_CARD_RENDERERS = {
     help_call: (data) => helpCallContent(data),
     motion: (data) => ({
         icon: "fa-person-running",
-        value: data?.magnitudeMg != null ? `${data.magnitudeMg} mg` : capabilityLabel("motion"),
+        value:
+            data?.magnitudeMg != null
+                ? `${data.magnitudeMg} mg`
+                : capabilityLabel("motion"),
         details: compactDetails(data, ["xMg", "yMg", "zMg"]),
     }),
     reset: () => ncsPagerContent("reset"),
-    "device.connected": () => ({icon: "fa-plug-circle-check", value: "Ligado"}),
-    "device.disconnected": () => ({icon: "fa-plug-circle-xmark", value: "Desligado"}),
+    "device.connected": () => ({
+        icon: "fa-plug-circle-check",
+        value: "Ligado",
+    }),
+    "device.disconnected": () => ({
+        icon: "fa-plug-circle-xmark",
+        value: "Desligado",
+    }),
 };
 
 // Uma familia de estado so: e a mesma pastilha das configuracoes e das regras do hub.
@@ -305,7 +333,6 @@ const ALARM_VALUE_BY_PRIORITY = [
     ["lowBattery", "Bateria fraca"],
 ];
 
-
 function commandFeature(command) {
     if (command.feature) return command.feature;
     const haystack =
@@ -350,17 +377,17 @@ export function telemetryCard({
     const tag = clickable ? "button" : "div";
     const toneClass = tone ? ` telemetry-card-tone-${esc(tone)}` : "";
     const attrs = clickable
-        ? ` type="button" class="card h-100 telemetry-card-action text-start${toneClass}"`
-          + ` data-action="requestFeature" data-feature="${esc(feature)}"`
-          + `${pending ? " disabled" : ""}`
+        ? ` type="button" class="card h-100 telemetry-card-action text-start${toneClass}"` +
+          ` data-action="requestFeature" data-feature="${esc(feature)}"` +
+          `${pending ? " disabled" : ""}`
         : ` class="card h-100${toneClass}"`;
     // A pastilha leva a sua linha, e nao o canto da linha do icone. Num mosaico de 206px, o
     // icone (36) mais a largura minima do nome (63) mais a pastilha (72) nao cabem nos 160
     // uteis: "em fila" saia cortado em "em fi" por cima do contorno do cartao. O aviao de
     // papel, com 11px, continua no canto -- esse cabe.
     const state = stateLabel
-        ? `<span class="config-state ${esc(stateTone || (pending ? "config-state-warning" : "config-state-secondary"))} align-self-start">`
-          + `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
+        ? `<span class="config-state ${esc(stateTone || (pending ? "config-state-warning" : "config-state-secondary"))} align-self-start">` +
+          `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
         : "";
     // O canto superior direito e o lugar do pedido: em repouso, o aviao de papel diz que o
     // mosaico se pode pedir; enquanto o pedido corre, a pastilha diz em que estado esta.
@@ -368,9 +395,10 @@ export function telemetryCard({
     // antes so o hover os distinguia, e por isso era preciso passar o rato por cima de oito
     // mosaicos para descobrir quais respondiam ao clique. Decorativo: o nome da categoria e
     // o `aria-label` do botao ja dizem o que ele faz.
-    const requestHint = clickable && !stateLabel
-        ? '<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-paper-plane"></i></span>'
-        : "";
+    const requestHint =
+        clickable && !stateLabel
+            ? '<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-paper-plane"></i></span>'
+            : "";
 
     // O detalhe fica fora da linha do icone, ao lado do `body`, e nao dentro da coluna do
     // texto. Num mosaico de 206px o icone e o espacamento levam 76, e o que sobrava eram
@@ -385,25 +413,25 @@ export function telemetryCard({
     const columns = span === 12 ? "col-12" : `col-12 col-lg-${span}`;
 
     return `
-        <div class="${columns}">
+    <div class="${columns}">
         <${tag}${attrs}>
-        <div class="card-body telemetry-card-body p-2 p-sm-3">
-        <div class="d-flex align-items-center gap-2 gap-sm-3">
-        <div class="telemetry-card-icon">
-        <i class="fa-solid ${esc(icon)}"></i>
-        </div>
-        <div class="flex-grow-1 min-w-0">
-        <div class="telemetry-card-title">${esc(title)}</div>
-        ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
-        </div>
-        ${requestHint}
-        </div>
-        ${state}
-        ${detailsHtml}
-        ${body}
-        </div>
+            <div class="card-body telemetry-card-body p-3">
+                <div class="d-flex align-items-center gap-2 gap-sm-3">
+                    <div class="telemetry-card-icon">
+                        <i class="fa-solid ${esc(icon)}"></i>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="telemetry-card-title">${esc(title)}</div>
+                            ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
+                        </div>
+                        ${requestHint}
+                    </div>
+                    ${state}
+                    ${detailsHtml}
+                ${body}
+            </div>
         </${tag}>
-        </div>`;
+    </div>`;
 }
 
 /**
@@ -461,7 +489,7 @@ function helpCallContent(data) {
 
     return pressType === undefined
         ? base
-        : {...base, value: `${base.value} (${pressType})`};
+        : { ...base, value: `${base.value} (${pressType})` };
 }
 
 function ncsPagerContent(type) {
@@ -486,7 +514,10 @@ const CONNECTIVITY_INTERFACE_ICONS = {
 };
 
 function connectivityIcon(data) {
-    return CONNECTIVITY_INTERFACE_ICONS[String(data?.interface || "").trim()] || "fa-wifi";
+    return (
+        CONNECTIVITY_INTERFACE_ICONS[String(data?.interface || "").trim()] ||
+        "fa-wifi"
+    );
 }
 
 function connectivityValue(data) {
@@ -504,11 +535,18 @@ function connectivityValue(data) {
     // A wired gateway reports no RSSI at all, and 0 dBm is a legitimate
     // reading, so test for null rather than falsiness.
     const dbm = data?.signalStrengthDbm;
-    if (dbm !== null && dbm !== undefined && dbm !== "" && Number.isFinite(Number(dbm))) {
+    if (
+        dbm !== null &&
+        dbm !== undefined &&
+        dbm !== "" &&
+        Number.isFinite(Number(dbm))
+    ) {
         parts.push(`${Number(dbm)} dBm`);
     }
 
-    return parts.length > 0 ? parts.join(" · ") : capabilityLabel("connectivity");
+    return parts.length > 0
+        ? parts.join(" · ")
+        : capabilityLabel("connectivity");
 }
 
 /**
@@ -523,7 +561,9 @@ const DIAPER_WET_DELTA_FALLBACK = 12;
 
 function diaperWetDelta(data) {
     const wetDelta = Number(data?.wetDelta);
-    return Number.isFinite(wetDelta) && wetDelta > 0 ? wetDelta : DIAPER_WET_DELTA_FALLBACK;
+    return Number.isFinite(wetDelta) && wetDelta > 0
+        ? wetDelta
+        : DIAPER_WET_DELTA_FALLBACK;
 }
 
 /**
@@ -574,12 +614,12 @@ function diaperMoistureBody(data) {
             const tooltip = `Canal ${index} · delta ${delta} (base ${channel?.baseline ?? "-"}, leitura ${channel?.value ?? "-"})`;
 
             return `<div class="diaper-channel" title="${esc(tooltip)}">
-                <div class="diaper-channel-value diaper-channel-value--${band}">${esc(delta)}</div>
-                <div class="diaper-channel-track">
-                    <div class="diaper-channel-fill diaper-channel-fill--${band}" style="height:${height}%"></div>
-                </div>
-                <div class="diaper-channel-index">${esc(index)}</div>
-            </div>`;
+<div class="diaper-channel-value diaper-channel-value--${band}">${esc(delta)}</div>
+<div class="diaper-channel-track">
+<div class="diaper-channel-fill diaper-channel-fill--${band}" style="height:${height}%"></div>
+</div>
+<div class="diaper-channel-index">${esc(index)}</div>
+</div>`;
         })
         .join("");
 
@@ -589,11 +629,11 @@ function diaperMoistureBody(data) {
     const thresholdOffset = (wetDelta / scaleDelta) * 100;
 
     return `<div class="diaper-moisture mt-3">
-        <div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${columns}</div>
-        <div class="diaper-moisture-summary small text-secondary mt-2">
-            Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-body">${esc(affected)}</strong> de ${esc(required)} canais acima do limiar (${esc(wetDelta)})
-        </div>
-    </div>`;
+<div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${columns}</div>
+<div class="diaper-moisture-summary small text-secondary mt-2">
+Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-body">${esc(affected)}</strong> de ${esc(required)} canais acima do limiar (${esc(wetDelta)})
+</div>
+</div>`;
 }
 
 /**
@@ -634,7 +674,7 @@ export function locationCoordinates(data) {
     const lon = Number(data?.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
     if (lat === 0 && lon === 0) return null;
-    return {lat, lon};
+    return { lat, lon };
 }
 
 /**
@@ -684,8 +724,12 @@ function locationAccuracy(data) {
  * viu nada, o que aponta para ele e não para a cobertura.
  */
 function locationRadioEvidence(data) {
-    const cells = Array.isArray(data?.baseStations) ? data.baseStations.length : 0;
-    const wifi = Array.isArray(data?.wifiAccessPoints) ? data.wifiAccessPoints.length : 0;
+    const cells = Array.isArray(data?.baseStations)
+        ? data.baseStations.length
+        : 0;
+    const wifi = Array.isArray(data?.wifiAccessPoints)
+        ? data.wifiAccessPoints.length
+        : 0;
     if (cells === 0 && wifi === 0) return "Sem dados de rádio";
 
     return [
@@ -747,23 +791,24 @@ function presenceValue(data) {
  * confirmada distingue-se de uma suspeita pelo vermelho e nao por outro simbolo.
  */
 const POSTURE_STYLE = {
-    standing: {icon: "fa-person", tone: "success"},
-    walking: {icon: "fa-person-walking", tone: "success"},
-    confirmed_sitting_up_bed: {icon: "fa-bed", tone: "success"},
-    lying_down: {icon: "fa-bed", tone: "info"},
-    sitting_up_bed: {icon: "fa-bed", tone: "info"},
-    suspected_sitting_up_bed: {icon: "fa-bed", tone: "warning"},
-    squatting: {icon: "fa-chair", tone: "warning"},
-    suspected_sitting_on_ground: {icon: "fa-chair", tone: "warning"},
-    suspected_fall: {icon: "fa-triangle-exclamation", tone: "warning"},
-    confirmed_sitting_on_ground: {icon: "fa-chair", tone: "danger"},
-    fall_confirmation: {icon: "fa-triangle-exclamation", tone: "danger"},
-    initialization: {icon: "fa-question", tone: "secondary"},
-    unknown: {icon: "fa-question", tone: "secondary"},
+    standing: { icon: "fa-person", tone: "success" },
+    walking: { icon: "fa-person-walking", tone: "success" },
+    confirmed_sitting_up_bed: { icon: "fa-bed", tone: "success" },
+    lying_down: { icon: "fa-bed", tone: "info" },
+    sitting_up_bed: { icon: "fa-bed", tone: "info" },
+    suspected_sitting_up_bed: { icon: "fa-bed", tone: "warning" },
+    squatting: { icon: "fa-chair", tone: "warning" },
+    suspected_sitting_on_ground: { icon: "fa-chair", tone: "warning" },
+    suspected_fall: { icon: "fa-triangle-exclamation", tone: "warning" },
+    confirmed_sitting_on_ground: { icon: "fa-chair", tone: "danger" },
+    fall_confirmation: { icon: "fa-triangle-exclamation", tone: "danger" },
+    initialization: { icon: "fa-question", tone: "secondary" },
+    unknown: { icon: "fa-question", tone: "secondary" },
 };
 
 /** A pastilha e um `badge` do Bootstrap com o par de utilitarios subtis do tom. */
-const CHIP_CLASS = "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
+const CHIP_CLASS =
+    "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
 
 /**
  * Uma postura como pastilha: icone, etiqueta e o tom por tras.
@@ -777,9 +822,11 @@ function postureChip(posture) {
     const tone = esc(style.tone);
     const label = esc(fieldValue("posture", posture));
 
-    return `<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis" title="${label}">`
-        + `<i class="fa-solid ${esc(style.icon)}" aria-hidden="true"></i>`
-        + `${label}</span>`;
+    return (
+        `<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis" title="${label}">` +
+        `<i class="fa-solid ${esc(style.icon)}" aria-hidden="true"></i>` +
+        `${label}</span>`
+    );
 }
 
 /** Quantas pastilhas cabem antes de o mosaico crescer de mais. */
@@ -798,7 +845,9 @@ const PRESENCE_CHIP_LIMIT = 3;
  */
 function presenceDetails(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
-    const chips = people.slice(0, PRESENCE_CHIP_LIMIT).map((person) => postureChip(person?.posture));
+    const chips = people
+        .slice(0, PRESENCE_CHIP_LIMIT)
+        .map((person) => postureChip(person?.posture));
     const hidden = people.length - chips.length;
 
     if (hidden > 0) {
@@ -822,7 +871,9 @@ function presenceDetailsTitle(data) {
 
     return people
         .map((person, index) => {
-            const personIndex = displayPersonIndex(person?.personIndex ?? index);
+            const personIndex = displayPersonIndex(
+                person?.personIndex ?? index,
+            );
             const posture = fieldValue("posture", person?.posture);
             const x = dataPointValue(person?.xPositionDm);
             const y = dataPointValue(person?.yPositionDm);
@@ -872,7 +923,9 @@ function radarVitalsMinuteStatsDetails(data) {
 }
 
 function dataPointValue(value) {
-    return value === undefined || value === null || value === "" ? "-" : String(value);
+    return value === undefined || value === null || value === ""
+        ? "-"
+        : String(value);
 }
 
 /**
@@ -895,11 +948,11 @@ function displayPersonIndex(value) {
  * era indistinguível de um mosaico a que nunca se pediu nada.
  */
 const REQUEST_CARD_STATE = {
-    queued: {label: "em fila", tone: "config-state-secondary"},
-    sent: {label: "enviado", tone: "config-state-secondary"},
-    waiting: {label: "à espera", tone: "config-state-warning"},
-    failed: {label: "falhou", tone: "config-state-danger"},
-    dropped: {label: "descartado", tone: "config-state-danger"},
+    queued: { label: "em fila", tone: "config-state-secondary" },
+    sent: { label: "enviado", tone: "config-state-secondary" },
+    waiting: { label: "à espera", tone: "config-state-warning" },
+    failed: { label: "falhou", tone: "config-state-danger" },
+    dropped: { label: "descartado", tone: "config-state-danger" },
 };
 
 /**
@@ -922,7 +975,11 @@ function latestRequestState(type, commands, lastTelemetryTime) {
     }
 
     const failed = entry.tone === "config-state-danger";
-    if (failed && lastTelemetryTime && lastTelemetryTime > commandTime(latest)) {
+    if (
+        failed &&
+        lastTelemetryTime &&
+        lastTelemetryTime > commandTime(latest)
+    ) {
         return null;
     }
 
@@ -951,17 +1008,16 @@ export function renderRequestCardShell(
     const card = requestCardContent(type);
     const tooltip = capabilityLabel(type) || card.value || type;
     const requestable = command.requestable !== false;
-    const isSystemRequestCard = [
-        "firmware_version",
-        "device_status",
-    ].includes(type);
+    const isSystemRequestCard = ["firmware_version", "device_status"].includes(
+        type,
+    );
 
     const telemetryTypes = requestTelemetryTypes(type);
     const payloads = telemetry
         .map(rowPayload)
         .filter(
             (payload) =>
-            payload && telemetryTypes.includes(String(payload.type || "")),
+                payload && telemetryTypes.includes(String(payload.type || "")),
         )
         .sort((a, b) => eventTime(b) - eventTime(a));
 
@@ -977,7 +1033,8 @@ export function renderRequestCardShell(
         );
         return (usable ? ofType.find(usable) : null) ?? ofType[0];
     };
-    const lastTelemetry = (usable ? payloads.find(usable) : null) ?? payloads[0];
+    const lastTelemetry =
+        (usable ? payloads.find(usable) : null) ?? payloads[0];
 
     // Um cartao pode mostrar mais do que uma capacidade -- a humidade da fralda tem os
     // canais numa mensagem e o indice noutra, que chega menos vezes -- e por isso junta a
@@ -993,8 +1050,8 @@ export function renderRequestCardShell(
 
     const lastContent = lastTelemetry
         ? uplinkCardContent(type, lastData, {
-            occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
-        })
+              occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
+          })
         : null;
     // Sem leitura nao ha valor: o titulo ja diz o nome da capacidade, e repeti-lo por
     // baixo em corpo maior dava dois nomes no mesmo mosaico.
@@ -1034,7 +1091,9 @@ export function renderRequestCardShell(
         // e o mosaico ignorava-o. Era por isso que o estado de sono nunca aparecia no
         // cartao dos sinais vitais, apesar de o hub o mandar desde sempre.
         details: isSystemRequestCard ? "" : lastContent?.details || "",
-        detailsTitle: isSystemRequestCard ? "" : lastContent?.detailsTitle || "",
+        detailsTitle: isSystemRequestCard
+            ? ""
+            : lastContent?.detailsTitle || "",
         tooltip,
         body: bodyHtml,
         // Um cartao que nao se pode pedir nao e clicavel: o que nao responde ao clique
@@ -1087,18 +1146,23 @@ function alarmValue(data) {
 }
 
 function compactDetails(data, keys) {
-    return keys
-        .filter(
-            (key) =>
-            data[key] !== undefined &&
-            data[key] !== null &&
-            data[key] !== "",
-        )
-        // O `fieldValue` traduz o que for enumeracao e deixa passar numeros e texto livre.
-        // Sem ele o cartao punha "Estado do sono: awake" -- a etiqueta em portugues e o
-        // valor cru ao lado dela.
-        .map((key) => `${esc(fieldLabel(key))}: ${esc(fieldValue(key, data[key]))}`)
-        .join(" · ");
+    return (
+        keys
+            .filter(
+                (key) =>
+                    data[key] !== undefined &&
+                    data[key] !== null &&
+                    data[key] !== "",
+            )
+            // O `fieldValue` traduz o que for enumeracao e deixa passar numeros e texto livre.
+            // Sem ele o cartao punha "Estado do sono: awake" -- a etiqueta em portugues e o
+            // valor cru ao lado dela.
+            .map(
+                (key) =>
+                    `${esc(fieldLabel(key))}: ${esc(fieldValue(key, data[key]))}`,
+            )
+            .join(" · ")
+    );
 }
 
 /**
@@ -1128,7 +1192,10 @@ export function helpCallSummaryCard(events = []) {
         if (!HELP_CALL_PRESS_MODES.includes(mode)) {
             continue;
         }
-        if (latest[mode] === undefined || eventTime(call) > eventTime(latest[mode])) {
+        if (
+            latest[mode] === undefined ||
+            eventTime(call) > eventTime(latest[mode])
+        ) {
             latest[mode] = call;
         }
     }
@@ -1142,7 +1209,9 @@ export function helpCallSummaryCard(events = []) {
         const label = esc(suffix.charAt(0).toUpperCase() + suffix.slice(1));
         const icon = HELP_CALL_PRESS_ICON[mode];
         const called = call !== undefined;
-        const occurredAt = called ? call.occurredAt || call.recordedAt || "" : "";
+        const occurredAt = called
+            ? call.occurredAt || call.recordedAt || ""
+            : "";
         // The relative time is the readable one; the exact timestamp is a
         // detail, so it waits behind a tooltip rather than crowding the column.
         const tooltip = called
@@ -1150,29 +1219,29 @@ export function helpCallSummaryCard(events = []) {
             : "";
 
         return `<div class="col-12 col-md-4">
-            <div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${called ? ` data-occurred-at="${esc(occurredAt)}"` : ""}${tooltip}>
-            <i class="fa-solid ${icon} ${called ? "text-danger" : "text-body-secondary"}" style="width:1.25rem;text-align:center;flex-shrink:0;"></i>
-            <div class="min-w-0">
-            <div class="fw-semibold text-truncate">${label}</div>
-            <div class="small text-body-secondary">${called ? esc(ago(occurredAt)) : '<span class="help-call-never">nunca</span>'}</div>
-            </div>
-            </div>
-            </div>`;
+<div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${called ? ` data-occurred-at="${esc(occurredAt)}"` : ""}${tooltip}>
+<i class="fa-solid ${icon} ${called ? "text-danger" : "text-body-secondary"}" style="width:1.25rem;text-align:center;flex-shrink:0;"></i>
+<div class="min-w-0">
+<div class="fw-semibold text-truncate">${label}</div>
+<div class="small text-body-secondary">${called ? esc(ago(occurredAt)) : '<span class="help-call-never">nunca</span>'}</div>
+</div>
+</div>
+</div>`;
     }).join("");
 
     return `<div class="col-12">
-        <div class="card h-100 border-danger">
-        <div class="card-body">
-        <div class="d-flex align-items-center gap-3 min-w-0 mb-3">
-        <div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-        <div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
-        </div>
-        <div class="row g-2">${columns}</div>
-        </div>
-        </div>
-        </div>`;
+<div class="card h-100 border-danger">
+<div class="card-body">
+<div class="d-flex align-items-center gap-3 min-w-0 mb-3">
+<div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
+<i class="fa-solid fa-triangle-exclamation"></i>
+</div>
+<div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
+</div>
+<div class="row g-2">${columns}</div>
+</div>
+</div>
+</div>`;
 }
 
 /** O que cada detecção do radar diz, em português. */
@@ -1197,8 +1266,10 @@ const DETECTION_TYPE_LABEL = {
 const FALL_TYPE_LABEL = DETECTION_TYPE_LABEL;
 
 function detectionValue(data) {
-    return DETECTION_TYPE_LABEL[String(data?.detectionType || "")]
-        || fieldLabel(String(data?.detectionType || "unknown"));
+    return (
+        DETECTION_TYPE_LABEL[String(data?.detectionType || "")] ||
+        fieldLabel(String(data?.detectionType || "unknown"))
+    );
 }
 
 /** O grau e o que separa um aviso de um perigo, e vem do hub ja em portugues. */
@@ -1233,21 +1304,22 @@ export function fallSummaryCard(events = []) {
     const detectionType = String(latest?.data?.detectionType || "");
     const label = FALL_TYPE_LABEL[detectionType] || fieldLabel(detectionType);
     const person = latest?.data?.details?.person_index;
-    const who = person === undefined || person === null
-        ? ""
-        : ` · Pessoa ${esc(displayPersonIndex(person))}`;
+    const who =
+        person === undefined || person === null
+            ? ""
+            : ` · Pessoa ${esc(displayPersonIndex(person))}`;
 
     return `<div class="col-12">
-        <div class="card h-100 border-danger">
-        <div class="card-body d-flex align-items-center gap-3 min-w-0">
-        <div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
-        <i class="fa-solid fa-person-falling"></i>
-        </div>
-        <div class="min-w-0 flex-grow-1">
-        <div class="fw-bold text-danger">Última queda</div>
-        <div class="small text-body-secondary text-truncate" title="${esc(when(occurredAt))}">${esc(ago(occurredAt))} · ${esc(label)}${who}</div>
-        </div>
-        </div>
-        </div>
-        </div>`;
+<div class="card h-100 border-danger">
+<div class="card-body d-flex align-items-center gap-3 min-w-0">
+<div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
+<i class="fa-solid fa-person-falling"></i>
+</div>
+<div class="min-w-0 flex-grow-1">
+<div class="fw-bold text-danger">Última queda</div>
+<div class="small text-body-secondary text-truncate" title="${esc(when(occurredAt))}">${esc(ago(occurredAt))} · ${esc(label)}${who}</div>
+</div>
+</div>
+</div>
+</div>`;
 }
