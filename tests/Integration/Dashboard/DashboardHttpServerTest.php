@@ -103,6 +103,25 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame('image/svg+xml', $logo->getHeaderLine('Content-Type'));
     }
 
+    public function testOwnAssetsRevalidateWhileVendorAssetsAreImmutable(): void
+    {
+        $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
+
+        $stylesheet = $server(new ServerRequest('GET', '/main.css'));
+        $etag = $stylesheet->getHeaderLine('ETag');
+        self::assertNotSame('', $etag);
+        self::assertSame('no-cache', $stylesheet->getHeaderLine('Cache-Control'));
+
+        $revalidated = $server(new ServerRequest('GET', '/main.css', ['If-None-Match' => $etag]));
+        self::assertSame(304, $revalidated->getStatusCode());
+        self::assertSame('', (string)$revalidated->getBody());
+
+        $vendor = $server(new ServerRequest('GET', '/assets/vendor/sweetalert2/sweetalert2.all.min.js'));
+        self::assertSame(200, $vendor->getStatusCode());
+        self::assertSame('public, max-age=31536000, immutable', $vendor->getHeaderLine('Cache-Control'));
+        self::assertSame('', $vendor->getHeaderLine('ETag'));
+    }
+
     public function testDashboardDoesNotExposeSourceOrFilesOutsidePublicAssetRoots(): void
     {
         $server = (new \ReflectionClass(DashboardHttpServer::class))->newInstanceWithoutConstructor();
@@ -289,6 +308,30 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertStringNotContainsString((string)$responsePayload['token']['refresh_token'], $log);
         self::assertStringContainsString('"access_token":"********"', $log);
         self::assertStringContainsString('"refresh_token":"********"', $log);
+    }
+
+    public function testCatalogRoutesRevalidateWhileDeviceRoutesDoNot(): void
+    {
+        $server = $this->makeServer();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $models = $server(new ServerRequest('GET', '/api/models', ['Authorization' => 'Bearer ' . $token]));
+        self::assertSame(200, $models->getStatusCode(), (string)$models->getBody());
+        $etag = $models->getHeaderLine('ETag');
+        self::assertNotSame('', $etag);
+        self::assertSame('no-cache', $models->getHeaderLine('Cache-Control'));
+
+        $revalidated = $server(new ServerRequest(
+            'GET',
+            '/api/models',
+            ['Authorization' => 'Bearer ' . $token, 'If-None-Match' => $etag]
+        ));
+        self::assertSame(304, $revalidated->getStatusCode());
+        self::assertSame('', (string)$revalidated->getBody());
+
+        $devices = $server(new ServerRequest('GET', '/api/devices', ['Authorization' => 'Bearer ' . $token]));
+        self::assertSame(200, $devices->getStatusCode(), (string)$devices->getBody());
+        self::assertSame('', $devices->getHeaderLine('ETag'));
     }
 
     public function testApiLoggingRedactsBeforeCappingAnOversizedBody(): void

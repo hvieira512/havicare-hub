@@ -29,6 +29,8 @@ final class DashboardHttpServer
     private const MODEL_IMAGE_ROUTE = '/model-images';
     private const PUBLIC_ASSET_EXTENSIONS = ['css', 'ico', 'jpeg', 'jpg', 'js', 'png', 'svg', 'woff2'];
     private ApiKernel $apiKernel;
+    /** @var array<string, string> */
+    private array $assetCache = [];
 
     public function __construct(
         private DashboardStore $store,
@@ -112,7 +114,7 @@ final class DashboardHttpServer
             if ($method === 'GET') {
                 $file = $this->publicAssetPath($path);
                 if ($file !== null) {
-                    return $this->staticFile($file);
+                    return $this->staticFile($file, $request);
                 }
             }
         } catch (\Throwable) {
@@ -154,7 +156,7 @@ final class DashboardHttpServer
         return (string) ob_get_clean();
     }
 
-    private function staticFile(string $path): Response
+    private function staticFile(string $path, ServerRequestInterface $request): Response
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $mime = match ($ext) {
@@ -167,7 +169,31 @@ final class DashboardHttpServer
             'woff2' => 'font/woff2',
             default => 'text/plain',
         };
-        return new Response(200, ['Content-Type' => $mime], (string) file_get_contents($path));
+
+        // O caminho dos recursos de terceiros muda quando eles mudam; o nosso não tem
+        // impressão digital no URL, e por isso leva `ETag` em vez de `immutable`.
+        if (str_contains($path, '/assets/vendor/') || str_contains($path, '/assets/fonts/')) {
+            return new Response(
+                200,
+                ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=31536000, immutable'],
+                $this->assetContents($path)
+            );
+        }
+
+        $etag = sprintf('"%x-%x"', (int)filemtime($path), (int)filesize($path));
+        $headers = ['Content-Type' => $mime, 'Cache-Control' => 'no-cache', 'ETag' => $etag];
+        if ($request->getHeaderLine('If-None-Match') === $etag) {
+            return new Response(304, ['Cache-Control' => 'no-cache', 'ETag' => $etag]);
+        }
+
+        return new Response(200, $headers, $this->assetContents($path));
+    }
+
+    // O ficheiro não muda debaixo do processo: em produção o `make prod-update` reinicia-o e
+    // em desenvolvimento o vigia reinicia-o.
+    private function assetContents(string $path): string
+    {
+        return $this->assetCache[$path] ??= (string)file_get_contents($path);
     }
 
     private function publicAssetPath(string $requestPath): ?string

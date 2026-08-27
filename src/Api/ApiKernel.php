@@ -42,6 +42,22 @@ final class ApiKernel
 {
     private const LOG_REDACTION = '********';
 
+    // Só catálogos: o estado de ligação de um dispositivo muda de segundos a segundos e é
+    // precisamente o que a dashboard existe para mostrar.
+    private const REVALIDATED_ROUTES = [
+        '/api/models',
+        '/api/models/{id:\d+}',
+        '/api/models/template',
+        '/api/capabilities',
+        '/api/device-types/suppliers/models',
+        '/api/device-types/suppliers',
+        '/api/protocols',
+        '/api/protocols/{protocol}/config-catalog',
+        '/api/suppliers',
+        '/api/companies',
+        '/api/licenses',
+    ];
+
     private ApiRouter $router;
     private int $logBodyMaxBytes;
     private int $logBodyScanMaxBytes;
@@ -103,6 +119,7 @@ final class ApiKernel
         try {
             $response = $this->cors->apply($this->dispatch($request, $authContext, $match));
             $response = $response->withHeader('X-Request-Id', $requestId);
+            $response = $this->revalidatedCatalogResponse($request, $response, $method, $routePattern);
             $this->safeLogApiRequest($request, $response, $startedAt, $routePattern, $authContext, $authState);
             return $response;
         } catch (\Throwable $e) {
@@ -279,6 +296,42 @@ final class ApiKernel
             'response_content_type' => $response->getHeaderLine('Content-Type'),
             'response_body' => $this->responseBodyForLog($response, $isAuthPath),
         ]);
+    }
+
+    // O `ETag` sai do corpo já serializado: um contador por tabela exigia escrituração em
+    // cada escrita, e é isso que envelhece mal.
+    private function revalidatedCatalogResponse(
+        ServerRequestInterface $request,
+        Response $response,
+        string $method,
+        ?string $routePattern
+    ): Response {
+        if (
+            $method !== 'GET'
+            || $response->getStatusCode() !== 200
+            || $routePattern === null
+            || !in_array($routePattern, self::REVALIDATED_ROUTES, true)
+        ) {
+            return $response;
+        }
+
+        $body = $response->getBody();
+        if (!$body->isSeekable()) {
+            return $response;
+        }
+
+        $position = $body->tell();
+        $body->rewind();
+        $contents = $body->getContents();
+        $body->seek($position);
+
+        $etag = '"' . md5($contents) . '"';
+        $response = $response->withHeader('ETag', $etag)->withHeader('Cache-Control', 'no-cache');
+        if ($request->getHeaderLine('If-None-Match') !== $etag) {
+            return $response;
+        }
+
+        return new Response(304, $response->withoutHeader('Content-Type')->getHeaders());
     }
 
     private function responseBodyForLog(Response $response, bool $redactUnstructured = false): mixed

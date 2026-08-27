@@ -76,29 +76,44 @@ final class WhitelistRepository
         $stmt->execute();
         $items = array_map([$this, 'normalizeDeviceRow'], $stmt->fetchAll() ?: []);
 
-        $count = $this->pdo->prepare('SELECT COUNT(*) FROM whitelist w' . $this->deviceJoinSql() . $whereSql);
-        $count->execute($params);
+        // Três destes filtros pedem os mesmos valores com e sem contagem: sai uma consulta
+        // por filtro e a lista simples é a projecção da contada.
+        $deviceTypes = $this->countedValues('w.device_type', 'deviceType', $filters, 'deviceType', $licenseScope, $companyScope);
+        $suppliers = $this->countedValues('w.supplier', 'supplier', $filters, 'supplier', $licenseScope, $companyScope);
+        $models = $this->countedValues('w.model', 'model', $filters, 'model', $licenseScope, $companyScope);
 
         return [
             'items' => $items,
-            'total' => (int)$count->fetchColumn(),
+            'total' => $this->countDevices($filters, $licenseScope, $companyScope),
             // `available` é a lista de valores, e `counts` os mesmos valores com o número de
             // dispositivos de cada um -- que é o que a coluna de filtros mostra ao lado de
             // cada caixa. Os dois, porque o primeiro é contrato público.
             'available' => [
-                'deviceType' => $this->distinctValues('w.device_type', 'deviceType', $filters, 'deviceType', $licenseScope, $companyScope),
+                'deviceType' => self::optionValues($deviceTypes),
                 'licenseId' => $this->distinctValues('w.license_id', 'licenseId', $filters, 'licenseId', $licenseScope, $companyScope),
-                'supplier' => $this->distinctValues('w.supplier', 'supplier', $filters, 'supplier', $licenseScope, $companyScope),
-                'model' => $this->distinctValues('w.model', 'model', $filters, 'model', $licenseScope, $companyScope),
+                'supplier' => self::optionValues($suppliers),
+                'model' => self::optionValues($models),
                 'company' => $this->distinctValues('w.company', 'company', $filters, 'company', $licenseScope, $companyScope),
             ],
             'counts' => [
-                'deviceType' => $this->countedValues('w.device_type', 'deviceType', $filters, 'deviceType', $licenseScope, $companyScope),
-                'supplier' => $this->countedValues('w.supplier', 'supplier', $filters, 'supplier', $licenseScope, $companyScope),
-                'model' => $this->countedValues('w.model', 'model', $filters, 'model', $licenseScope, $companyScope),
+                'deviceType' => $deviceTypes,
+                'supplier' => $suppliers,
+                'model' => $models,
                 'license' => $this->licenseTree($filters, $licenseScope, $companyScope),
             ],
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    public function countDevices(array $filters, ?int $licenseScope = null, ?string $companyScope = null): int
+    {
+        [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope, $companyScope);
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM whitelist w' . $this->deviceJoinSql() . $whereSql);
+        $stmt->execute($params);
+
+        return (int)$stmt->fetchColumn();
     }
 
     public function register(
@@ -417,10 +432,18 @@ final class WhitelistRepository
      */
     private function distinctValues(string $column, string $alias, array $filters, string $excludeKey, ?int $licenseScope = null, ?string $companyScope = null): array
     {
-        return array_map(
-            static fn (array $option): string => (string)$option['value'],
+        return self::optionValues(
             $this->countedValues($column, $alias, $filters, $excludeKey, $licenseScope, $companyScope)
         );
+    }
+
+    /**
+     * @param list<array{value: string, count: int}> $options
+     * @return list<string>
+     */
+    private static function optionValues(array $options): array
+    {
+        return array_map(static fn (array $option): string => (string)$option['value'], $options);
     }
 
     /**
