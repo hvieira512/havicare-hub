@@ -10,7 +10,7 @@ import {ensureLicensesLoaded, invalidateLicenses} from "../licenses.js";
 import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {apiError, toast} from "../dialogs.js";
+import {apiError, confirmDestructive, toast} from "../dialogs.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
 import {renderPagination} from "../pagination.js";
 
@@ -138,10 +138,11 @@ export async function saveCompany() {
 }
 
 async function deleteCompany(id) {
-    if (
-        !confirm("Apagar empresa? Todas as licenças associadas serão apagadas.")
-    )
-        return;
+    const {isConfirmed} = await confirmDestructive(
+        "Apagar empresa?",
+        "Todas as licenças associadas serão apagadas.",
+    );
+    if (!isConfirmed) return;
     const result = await apiDeleteCompany(id);
     if (result.error) {
         toast("error", apiError(result));
@@ -202,7 +203,8 @@ export async function saveLicense() {
 }
 
 async function deleteLicense(id) {
-    if (!confirm("Apagar licença?")) return;
+    const {isConfirmed} = await confirmDestructive("Apagar licença?");
+    if (!isConfirmed) return;
     const result = await apiDeleteLicense(id);
     if (result.error) {
         toast("error", apiError(result));

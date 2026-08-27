@@ -7,7 +7,7 @@ import {ensureLicensesLoaded} from "../licenses.js";
 import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {apiError, toast} from "../dialogs.js";
+import {apiError, confirmDestructive, toast} from "../dialogs.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
 import {renderPagination} from "../pagination.js";
 
@@ -177,7 +177,8 @@ export async function toggleApiUser(button) {
 }
 
 export async function deleteApiUser(id) {
-    if (!confirm("Apagar utilizador API?")) return;
+    const {isConfirmed} = await confirmDestructive("Apagar utilizador API?");
+    if (!isConfirmed) return;
     const result = await apiDeleteApiUser(id);
     if (result.error) {
         toast("error", apiError(result));

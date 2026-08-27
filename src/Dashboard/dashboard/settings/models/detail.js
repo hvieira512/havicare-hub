@@ -8,7 +8,7 @@ import {
 import {ensureModelTemplate} from "../../capability-catalog.js";
 import {state} from "../../state.js";
 import {esc} from "../../format.js";
-import {apiError, toast} from "../../dialogs.js";
+import {apiError, confirmDestructive, toast} from "../../dialogs.js";
 import {modelPreviewHtml, sectionStrip} from "../../widgets.js";
 import {
     capabilitiesGroupedBySection,
@@ -247,12 +247,10 @@ async function renderModelDetailDeleteHint(model) {
 async function deleteCurrentModel() {
     const model = state.settingsModal.currentCapabilitiesModel;
     if (!model) return;
-    if (
-        !window.confirm(
-            `Tem a certeza que deseja apagar o modelo "${modelCommercialName(model)}"?`,
-        )
-    )
-        return;
+    const {isConfirmed} = await confirmDestructive(
+        `Tem a certeza que deseja apagar o modelo "${modelCommercialName(model)}"?`,
+    );
+    if (!isConfirmed) return;
 
     await apiDeleteModel(model.id);
     removeModelFromCatalog(model.id);

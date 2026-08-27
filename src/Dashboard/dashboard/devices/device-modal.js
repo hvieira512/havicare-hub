@@ -4,7 +4,7 @@ import {
     saveDevice as apiSaveDevice,
 } from "../api/index.js";
 import {ensureCapabilityCatalog} from "../capability-catalog.js";
-import {apiError} from "../dialogs.js";
+import {apiError, confirmDestructive} from "../dialogs.js";
 import {ensureLicensesLoaded} from "../licenses.js";
 import {
     deviceTypeCardsHtml,
@@ -527,23 +527,23 @@ export async function saveDevice() {
     }
 }
 
-export function handleDeleteDeviceBtnClick() {
+export async function handleDeleteDeviceBtnClick() {
     const imei = els.deleteDeviceBtn.dataset.imei;
     if (!imei) return;
-    if (!confirm(`Apagar o dispositivo ${imei}?`)) return;
-    apiDeleteDevice(imei).then(() => {
-        deviceModal.hide();
-        if (state.selectedImei === imei) {
-            disconnectDeviceStream();
-            clearSelection();
-            clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
-        }
-        if (isDeviceSelectorOpen()) {
-            loadSummary();
-        } else {
-            renderSelection();
-        }
-    });
+    const {isConfirmed} = await confirmDestructive(`Apagar o dispositivo ${imei}?`);
+    if (!isConfirmed) return;
+    await apiDeleteDevice(imei);
+    deviceModal.hide();
+    if (state.selectedImei === imei) {
+        disconnectDeviceStream();
+        clearSelection();
+        clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
+    }
+    if (isDeviceSelectorOpen()) {
+        await loadSummary();
+    } else {
+        renderSelection();
+    }
 }
 
 function renderDeviceSimNumberField(value = "") {
