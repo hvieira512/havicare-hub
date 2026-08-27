@@ -527,21 +527,6 @@ export async function saveDevice() {
     }
 }
 
-export async function deleteDevice(imei) {
-    if (!confirm(`Apagar o dispositivo ${imei}?`)) return;
-    await apiDeleteDevice(imei);
-    if (state.selectedImei === imei) {
-        disconnectDeviceStream();
-        clearSelection();
-        clearStorageKey(SELECTED_DEVICE_STORAGE_KEY);
-    }
-    if (isDeviceSelectorOpen()) {
-        await loadSummary();
-    } else {
-        renderSelection();
-    }
-}
-
 export function handleDeleteDeviceBtnClick() {
     const imei = els.deleteDeviceBtn.dataset.imei;
     if (!imei) return;

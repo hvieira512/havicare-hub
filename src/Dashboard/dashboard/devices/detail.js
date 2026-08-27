@@ -52,7 +52,6 @@ const ALARM_EVENT_TYPES = new Set([
 
 let els;
 let loadDeviceFn = async () => false;
-let connectionChartRoot = null;
 
 function initDeviceDetailView(context) {
     els = context.els;
@@ -755,114 +754,53 @@ function renderConnectionTimeline(rows) {
     els.connectionTimeline.dataset.connectionSignature = signature;
 
     if (events.length < 2) {
-        if (connectionChartRoot) {
-            connectionChartRoot.dispose();
-            connectionChartRoot = null;
-        }
         els.connectionTimeline.innerHTML = "";
         return;
     }
 
-    if (connectionChartRoot) {
-        connectionChartRoot.dispose();
-    }
-
-    connectionChartRoot = am5.Root.new(els.connectionTimeline);
-    connectionChartRoot._logo?.dispose();
-
-    connectionChartRoot.setThemes([
-        am5themes_Animated.new(connectionChartRoot),
-    ]);
-
-    const chart = connectionChartRoot.container.children.push(
-        am5xy.XYChart.new(connectionChartRoot, {
-            panX: false,
-            panY: false,
-            wheelX: "none",
-            wheelY: "none",
-            paddingTop: 8,
-            paddingBottom: 8,
-            paddingLeft: 0,
-            paddingRight: 0,
-        }),
-    );
-
-    const dateAxis = chart.xAxes.push(
-        am5xy.DateAxis.new(connectionChartRoot, {
-            baseInterval: { timeUnit: "minute", count: 1 },
-            renderer: am5xy.AxisRendererX.new(connectionChartRoot, {
-                minGridDistance: 60,
-            }),
-            tooltip: am5.Tooltip.new(connectionChartRoot, {}),
-        }),
-    );
-    dateAxis.get("renderer").grid.template.set("visible", false);
-
-    const valueAxis = chart.yAxes.push(
-        am5xy.ValueAxis.new(connectionChartRoot, {
-            renderer: am5xy.AxisRendererY.new(connectionChartRoot, {}),
-            min: -0.2,
-            max: 0.2,
-            strictMinMax: true,
-        }),
-    );
-    valueAxis.get("renderer").grid.template.set("visible", false);
-    valueAxis.get("renderer").labels.template.set("forceHidden", true);
-    valueAxis.get("renderer").set("visible", false);
-
-    const data = connectionTimelineData(events);
-    const series = chart.series.push(
-        am5xy.LineSeries.new(connectionChartRoot, {
-            name: "Ligação",
-            xAxis: dateAxis,
-            yAxis: valueAxis,
-            valueYField: "value",
-            valueXField: "date",
-            stroke: am5.color(0x6c757d),
-            strokeWidth: 2,
-            tooltip: am5.Tooltip.new(connectionChartRoot, {
-                labelText: '{label} em {valueX.formatDate("dd/MM/yyyy HH:mm")}',
-            }),
-        }),
-    );
-    series.data.setAll(data);
-
-    series.bullets.push(function (_root, _series, dataItem) {
-        const color = dataItem.dataContext?.bulletColor || "#6c757d";
-        return am5.Bullet.new(connectionChartRoot, {
-            sprite: am5.Circle.new(connectionChartRoot, {
-                radius: 5,
-                fill: am5.color(color),
-                stroke: am5.color(0xffffff),
-                strokeWidth: 1,
-            }),
-        });
-    });
-
-    dateAxis.start = 0;
-    dateAxis.end = 1;
-
-    chart.set(
-        "cursor",
-        am5xy.XYCursor.new(connectionChartRoot, {
-            behavior: "none",
-            xAxis: dateAxis,
-        }),
-    );
+    els.connectionTimeline.innerHTML = connectionTimelineHtml(events);
 }
 
-function connectionTimelineData(events) {
-    return events
-        .map((event) => {
-            const isConnected = event.type === "device.connected";
-            return {
-                date: eventTime(event),
-                value: 0,
-                label: isConnected ? "Ligado" : "Desligado",
-                bulletColor: isConnected ? "#198754" : "#dc3545",
-            };
-        })
-        .filter((point) => point.date > 0);
+/**
+ * A série de ligações: uma linha do tempo com um ponto por evento, verde a ligar e vermelho
+ * a desligar, e as duas pontas datadas por baixo.
+ *
+ * Era um gráfico de biblioteca com o eixo vertical escondido, o zoom desligado e um valor
+ * fixo em y -- ou seja, um gráfico de pontos sobre um eixo de tempo. As cores saem das
+ * variáveis do tema, para acompanhar o modo claro e o escuro.
+ */
+function connectionTimelineHtml(events) {
+    const points = events
+        .map((event) => ({
+            time: eventTime(event),
+            at: event.occurredAt || event.recordedAt || "",
+            connected: event.type === "device.connected",
+        }))
+        .filter((point) => point.time > 0);
+    if (points.length < 2) {
+        return "";
+    }
+
+    const first = points[0].time;
+    // Nunca zero: dois eventos no mesmo milissegundo dividiriam por zero.
+    const span = Math.max(1, points[points.length - 1].time - first);
+
+    return `
+        <div class="connection-timeline">
+            <div class="connection-timeline-track"></div>
+            ${points
+                .map((point) => {
+                    const label = point.connected ? "Ligado" : "Desligado";
+                    return `<span class="connection-timeline-dot${point.connected ? "" : " off"}"
+                        style="left:${((point.time - first) / span) * 100}%"
+                        title="${esc(`${label} em ${when(point.at)}`)}"></span>`;
+                })
+                .join("")}
+        </div>
+        <div class="connection-timeline-scale">
+            <span>${esc(when(points[0].at))}</span>
+            <span>${esc(when(points[points.length - 1].at))}</span>
+        </div>`;
 }
 
 function expectedReplies(command) {

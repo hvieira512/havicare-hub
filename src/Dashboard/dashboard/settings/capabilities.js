@@ -4,7 +4,7 @@ import {
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {renderButtonGroup, renderDeviceTypeTiles} from "../widgets.js";
-import {requestCardContent} from "../telemetry-cards.js";
+import {cardIcon} from "../telemetry-cards.js";
 import {ensureCapabilityCatalog, ensureModelTemplate} from "../capability-catalog.js";
 import {
     capabilitiesGroupedBySection,
@@ -264,8 +264,8 @@ export const CAPABILITY_SECTION_ICONS = {
  * secção de alarmes dizem menos do que ícone nenhum.
  */
 function capabilityIcon(entry, section) {
-    const mapped = requestCardContent(entry.key);
-    if (mapped.icon && mapped.icon !== "fa-circle-info") return mapped.icon;
+    const mapped = cardIcon(entry.key);
+    if (mapped !== "fa-circle-info") return mapped;
     return CAPABILITY_SECTION_ICONS[section] || "fa-circle-info";
 }
 

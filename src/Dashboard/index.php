@@ -68,7 +68,7 @@ require_once __DIR__ . '/components/modal.php';
     </section>
 
     <div id="dashboardApp" class="<?= $dashboardApiAuthRequired ? 'd-none' : '' ?>"<?= $dashboardApiAuthRequired ? ' hidden' : '' ?>>
-        <nav class="navbar navbar-expand-lg navbar-dark dashboard-navbar">
+        <nav class="navbar dashboard-navbar">
             <div class="container-fluid">
                 <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
                 <div class="d-flex align-items-center gap-2">
@@ -204,18 +204,18 @@ require_once __DIR__ . '/components/modal.php';
                                 <div class="device-detail-stack d-flex flex-column">
                                     <section id="connectionSection" class="card-section flex-shrink-0">
                                         <?= section_header('Ligações ao servidor') ?>
-                                        <div id="connectionTimeline" style="height:110px;width:100%;"></div>
+                                        <div id="connectionTimeline"></div>
                                     </section>
                                     <div class="card-section row g-0 flex-grow-1" style="min-height:0">
                                         <div class="col-12 col-xl-6 d-flex flex-column pe-xl-4">
                                             <?= section_header('Eventos recebidos', 'telemetryCount', true) ?>
                                             <div id="telemetryList" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
-                                            <?= pagination_component('telemetry') ?>
+                                            <?= pagination_component('telemetryPager') ?>
                                         </div>
                                         <div class="col-12 col-xl-6 d-flex flex-column border-start-xl ps-xl-4 mt-4 mt-xl-0">
                                             <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
                                             <div id="downlinkRequests" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
-                                            <?= pagination_component('downlink') ?>
+                                            <?= pagination_component('downlinkPager') ?>
                                         </div>
                                     </div>
                                 </div>
@@ -235,9 +235,6 @@ require_once __DIR__ . '/components/modal.php';
     <script>
         window.hubDashboardApiToken = null;
     </script>
-    <script src="/assets/vendor/amcharts5/index.js"></script>
-    <script src="/assets/vendor/amcharts5/xy.js"></script>
-    <script src="/assets/vendor/amcharts5/themes/Animated.js"></script>
     <script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script type="module" src="main.js"></script>

@@ -127,7 +127,6 @@ export const state = {
             apiUsers: false,
         },
         companyPagination: null,
-        licensesPagination: null,
         apiUsersPagination: null,
     },
     modelPreviewObjectUrl: null,

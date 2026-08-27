@@ -81,7 +81,7 @@ export async function ensureModelTemplate(supplierId, deviceType) {
 }
 
 /** O catálogo já carregado de um tipo, ou vazio se ninguém o pediu ainda. */
-export function capabilityCatalogFor(deviceType) {
+function capabilityCatalogFor(deviceType) {
     return state.capabilityCatalogByType[normalizeDeviceType(deviceType || "watch")] || [];
 }
 

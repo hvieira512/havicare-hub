@@ -9,11 +9,8 @@ import {
 import {ensureLicensesLoaded, invalidateLicenses} from "../licenses.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {
-    renderSettingsPagination,
-    setSettingsNavCount,
-    toggleCollapse,
-} from "./shell.js";
+import {setSettingsNavCount, toggleCollapse} from "./shell.js";
+import {renderPagination} from "../pagination.js";
 
 /**
  * O separador das empresas, com as licenças de cada uma dentro dela. São dois formulários e
@@ -41,13 +38,13 @@ export async function loadSettingsCompanySection(companiesPage = 1) {
     state.settingsModal.companyPagination = companyData.pagination || null;
     renderCompanySection(currentCompanies, licenses ?? []);
     renderLicensesSection(licenses ?? [], currentCompanies);
-    renderSettingsPagination(
-        state.settingsModal.companyPagination,
-        els.settingsCompanyPagination,
-        els.settingsCompanyPaginationSummary,
-        els.settingsCompanyPaginationControls,
-        "settingsCompanyPage",
-    );
+    renderPagination({
+        pagination: state.settingsModal.companyPagination,
+        rootEl: els.settingsCompanyPagination,
+        summaryEl: els.settingsCompanyPaginationSummary,
+        controlsEl: els.settingsCompanyPaginationControls,
+        actionPrefix: "settingsCompanyPage",
+    });
 }
 
 /** Depois de mexer numa empresa: as licenças em cache continuam a servir. */

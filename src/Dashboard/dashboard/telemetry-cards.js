@@ -27,82 +27,62 @@ const COMMAND_FEATURE_RULES = [
     ["rr", "rr_interval"],
 ];
 
-/** A cor de cada categoria, e só no ícone: o estado da leitura vive na pastilha. */
-const CARD_TONE_BY_TYPE = {
-    positions: "info",
-    vitals: "success",
-    position_minute_stats: "secondary",
-    vitals_minute_stats: "secondary",
-    blood_oxygen: "info",
-    blood_sugar: "warning",
-    temperature: "warning",
-    battery: "success",
-    connectivity: "info",
-    motion: "primary",
-    diaper_moisture: "info",
-    diaper_moisture_level: "info",
-    diaper_condition: "warning",
-    activity: "primary",
-    location: "success",
-    breath_rate: "info",
-    rr_interval: "info",
-    sleep: "primary",
-    sleep_state: "primary",
-    presence: "success",
-    help_call: "danger",
-    reset: "warning",
-    heart_rate: "danger",
-    blood_pressure: "danger",
-    ecg: "danger",
-    hrv: "danger",
-    "device.connected": "success",
-    "device.disconnected": "danger",
+/**
+ * O ícone e a cor de cada capacidade, numa tabela só: `[ícone, tom]`.
+ *
+ * Eram três tabelas paralelas -- tom, ícone, e outra vez o ícone dentro de cada
+ * renderizador --, sem um único desacordo entre elas e sem nada que apanhasse o dia em que
+ * houvesse. O nome vem do catálogo, pelo `capabilityLabel`, e não daqui.
+ *
+ * O tom fica no frontend de propósito: uma cor é uma escolha de apresentação, e o
+ * vocabulário é o do CSS (`telemetry-card-tone-*`).
+ */
+const CARD_STYLE = {
+    positions: ["fa-location-crosshairs", "info"],
+    vitals: ["fa-heart-pulse", "success"],
+    position_minute_stats: ["fa-chart-column", "secondary"],
+    vitals_minute_stats: ["fa-chart-line", "secondary"],
+    heart_rate: ["fa-heart-pulse", "danger"],
+    blood_pressure: ["fa-stethoscope", "danger"],
+    blood_oxygen: ["fa-droplet", "info"],
+    blood_sugar: ["fa-vial", "warning"],
+    temperature: ["fa-temperature-half", "warning"],
+    battery: ["fa-battery-three-quarters", "success"],
+    connectivity: ["fa-wifi", "info"],
+    motion: ["fa-person-running", "primary"],
+    diaper_moisture: ["fa-droplet", "info"],
+    diaper_moisture_level: ["fa-percent", "info"],
+    diaper_condition: ["fa-baby", "warning"],
+    activity: ["fa-person-walking", "primary"],
+    location: ["fa-location-dot", "success"],
+    sleep: ["fa-bed", "primary"],
+    sleep_state: ["fa-bed", "primary"],
+    presence: ["fa-location-crosshairs", "success"],
+    ecg: ["fa-wave-square", "danger"],
+    hrv: ["fa-chart-line", "danger"],
+    breath_rate: ["fa-lungs", "info"],
+    ppg: ["fa-circle-nodes", ""],
+    rr_interval: ["fa-stopwatch", "info"],
+    "device.connected": ["fa-plug-circle-check", "success"],
+    "device.disconnected": ["fa-plug-circle-xmark", "danger"],
+    help_call: ["fa-triangle-exclamation", "danger"],
+    reset: ["fa-bell-slash", "warning"],
+    unknown: ["fa-bell", ""],
 };
 
-/** Só o ícone de cada capacidade: o nome vem do catálogo, pelo `capabilityLabel`. */
-const REQUEST_CARD_ICON_BY_TYPE = {
-    positions: "fa-location-crosshairs",
-    vitals: "fa-heart-pulse",
-    position_minute_stats: "fa-chart-column",
-    vitals_minute_stats: "fa-chart-line",
-    heart_rate: "fa-heart-pulse",
-    blood_pressure: "fa-stethoscope",
-    blood_oxygen: "fa-droplet",
-    blood_sugar: "fa-vial",
-    temperature: "fa-temperature-half",
-    battery: "fa-battery-three-quarters",
-    connectivity: "fa-wifi",
-    motion: "fa-person-running",
-    diaper_moisture: "fa-droplet",
-    diaper_moisture_level: "fa-percent",
-    diaper_condition: "fa-baby",
-    activity: "fa-person-walking",
-    location: "fa-location-dot",
-    sleep: "fa-bed",
-    sleep_state: "fa-bed",
-    presence: "fa-location-crosshairs",
-    ecg: "fa-wave-square",
-    hrv: "fa-chart-line",
-    breath_rate: "fa-lungs",
-    ppg: "fa-circle-nodes",
-    rr_interval: "fa-stopwatch",
-    "device.connected": "fa-plug-circle-check",
-    "device.disconnected": "fa-plug-circle-xmark",
-    help_call: "fa-triangle-exclamation",
-    reset: "fa-bell-slash",
-    unknown: "fa-bell",
-};
+/** O ícone de uma capacidade. Sem entrada na tabela, o genérico. */
+export function cardIcon(type) {
+    return CARD_STYLE[type]?.[0] || "fa-circle-info";
+}
 
 const UPLINK_CARD_RENDERERS = {
     // O radar manda as mesmas chaves e formas que um relógio e usa os cartões dele.
     presence: (data) => ({
-        icon: "fa-location-crosshairs",
         value: presenceValue(data),
         details: presenceDetails(data),
         detailsTitle: presenceDetailsTitle(data),
     }),
     sleep_state: (data) => ({
-        icon: "fa-bed",
         value: fieldValue("sleep_state", data?.state),
     }),
     // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão.
@@ -122,7 +102,6 @@ const UPLINK_CARD_RENDERERS = {
         details: detectionDetails(data),
     }),
     position_minute_stats: (data) => ({
-        icon: "fa-chart-column",
         value: radarPositionMinuteStatsValue(data),
         details: radarPositionMinuteStatsDetails(data),
     }),
@@ -132,7 +111,6 @@ const UPLINK_CARD_RENDERERS = {
         details: radarPositionMinuteStatsDetails(data),
     }),
     vitals_minute_stats: (data) => ({
-        icon: "fa-chart-line",
         value: radarVitalsMinuteStatsValue(data),
         details: radarVitalsMinuteStatsDetails(data),
     }),
@@ -142,27 +120,21 @@ const UPLINK_CARD_RENDERERS = {
         details: radarVitalsMinuteStatsDetails(data),
     }),
     heart_rate: (data) => ({
-        icon: "fa-heart-pulse",
         value: `${data.bpm ?? "-"} bpm`,
     }),
     blood_pressure: (data) => ({
-        icon: "fa-stethoscope",
         value: `${data.systolicMmHg ?? "-"} / ${data.diastolicMmHg ?? "-"} mmHg`,
     }),
     blood_oxygen: (data) => ({
-        icon: "fa-droplet",
         value: `${data.spo2Percent ?? "-"}%`,
     }),
     blood_sugar: (data) => ({
-        icon: "fa-vial",
         value: `${data.glucoseMgDl ?? "-"} mg/dL`,
     }),
     temperature: (data) => ({
-        icon: "fa-temperature-half",
         value: `${data.bodyCelsius ?? "-"} °C`,
     }),
     battery: (data) => ({
-        icon: "fa-battery-three-quarters",
         value:
             data.percent != null
                 ? `${data.percent}%`
@@ -177,7 +149,6 @@ const UPLINK_CARD_RENDERERS = {
         details: compactDetails(data, ["signalQuality"]),
     }),
     diaper_moisture: (data) => ({
-        icon: "fa-droplet",
         // O índice 0-100 chega noutra mensagem e não tem cartão próprio: é o valor deste.
         value:
             data?.index != null
@@ -189,11 +160,9 @@ const UPLINK_CARD_RENDERERS = {
         body: diaperMoistureBody(data),
     }),
     diaper_moisture_level: (data) => ({
-        icon: "fa-percent",
         value: data?.index != null ? `${data.index}%` : "-",
     }),
     diaper_condition: (data) => ({
-        icon: "fa-baby",
         value:
             {
                 clean: "Fralda limpa",
@@ -202,7 +171,6 @@ const UPLINK_CARD_RENDERERS = {
             }[data.state] || "Estado desconhecido",
     }),
     activity: (data) => ({
-        icon: "fa-person-walking",
         value: `${data.steps ?? 0} passos`,
         details: compactDetails(data, [
             "distanceMeters",
@@ -212,7 +180,6 @@ const UPLINK_CARD_RENDERERS = {
         ]),
     }),
     location: (data, meta) => ({
-        icon: "fa-location-dot",
         value: locationValue(data),
         details: locationDetails(data, meta),
     }),
@@ -226,23 +193,20 @@ const UPLINK_CARD_RENDERERS = {
             "wearingNotice",
         ]),
     }),
-    sleep: () => ({ icon: "fa-bed", value: "Dados de sono" }),
-    ecg: () => ({ icon: "fa-wave-square", value: "Dados de ECG" }),
-    hrv: () => ({ icon: "fa-chart-line", value: "Dados de VFC" }),
+    sleep: () => ({ value: "Dados de sono" }),
+    ecg: () => ({ value: "Dados de ECG" }),
+    hrv: () => ({ value: "Dados de VFC" }),
     // Um escalar, ao contrário do sono, do ECG e da PPG, que são séries e se anunciam.
     breath_rate: (data) => ({
-        icon: "fa-lungs",
         value: `${data.breathsPerMinute ?? "-"} rpm`,
     }),
-    ppg: () => ({ icon: "fa-circle-nodes", value: "Dados de PPG" }),
+    ppg: () => ({ value: "Dados de PPG" }),
     rr_interval: (data) => ({
-        icon: "fa-stopwatch",
         value: "Intervalo RR",
         details: compactDetails(data, ["intervalMs"]),
     }),
     help_call: (data) => helpCallContent(data),
     motion: (data) => ({
-        icon: "fa-person-running",
         value:
             data?.magnitudeMg != null
                 ? `${data.magnitudeMg} mg`
@@ -250,14 +214,8 @@ const UPLINK_CARD_RENDERERS = {
         details: compactDetails(data, ["xMg", "yMg", "zMg"]),
     }),
     reset: () => ncsPagerContent("reset"),
-    "device.connected": () => ({
-        icon: "fa-plug-circle-check",
-        value: "Ligado",
-    }),
-    "device.disconnected": () => ({
-        icon: "fa-plug-circle-xmark",
-        value: "Desligado",
-    }),
+    "device.connected": () => ({ value: "Ligado" }),
+    "device.disconnected": () => ({ value: "Desligado" }),
 };
 
 // A mesma pastilha das configurações; o tom vazio deixa-a no azul neutro da marca.
@@ -321,7 +279,6 @@ export function telemetryCard({
     details = "",
     // O texto da tooltip, para quando diz mais do que a linha truncada.
     detailsTitle = "",
-    tooltip = "",
     body = "",
     feature = "",
     pending = false,
@@ -387,20 +344,24 @@ const USABLE_PAYLOAD = {
 
 export function requestCardContent(type) {
     return {
-        icon: REQUEST_CARD_ICON_BY_TYPE[type] || "fa-circle-info",
+        icon: cardIcon(type),
         value: capabilityLabel(type),
     };
 }
 
-/** `meta` é o que se sabe sobre a leitura e não está dentro dela: por agora, quando chegou. */
+/**
+ * `meta` é o que se sabe sobre a leitura e não está dentro dela: por agora, quando chegou.
+ *
+ * O ícone vem da tabela e o renderizador só o escreve quando é diferente -- o da ligação,
+ * que depende da interface, e os seis tipos de evento que não são capacidades.
+ */
 export function uplinkCardContent(type, data, meta = {}) {
-    return (
-        UPLINK_CARD_RENDERERS[type]?.(data, meta) || {
-            icon: "fa-circle-info",
-            value: capabilityLabel(type),
-            details: compactDetails(data, Object.keys(data).slice(0, 4)),
-        }
-    );
+    const rendered = UPLINK_CARD_RENDERERS[type]?.(data, meta) || {
+        value: capabilityLabel(type),
+        details: compactDetails(data, Object.keys(data).slice(0, 4)),
+    };
+
+    return {icon: cardIcon(type), ...rendered};
 }
 
 // Uma pulseira W6B diz que tipo de toque foi; um pager NCS não.
@@ -591,7 +552,7 @@ function batteryDetails(data) {
  * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos mais antigos do
  * histórico do Redis. O par 0,0 é a forma que os protocolos usam para dizer "sem fixo".
  */
-export function locationCoordinates(data) {
+function locationCoordinates(data) {
     const lat = Number(data?.lat);
     const lon = Number(data?.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
@@ -873,7 +834,6 @@ export function renderRequestCardShell(
 ) {
     const type = commandFeature(command);
     const card = requestCardContent(type);
-    const tooltip = capabilityLabel(type) || card.value || type;
     const requestable = command.requestable !== false;
     const isSystemRequestCard = ["firmware_version", "device_status"].includes(
         type,
@@ -945,7 +905,6 @@ export function renderRequestCardShell(
         detailsTitle: isSystemRequestCard
             ? ""
             : lastContent?.detailsTitle || "",
-        tooltip,
         body: bodyHtml,
         // O que não responde ao clique não deve parecer que responde.
         feature: requestable ? type : "",
@@ -958,7 +917,7 @@ export function renderRequestCardShell(
 
 /** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */
 export function cardTone(type) {
-    return CARD_TONE_BY_TYPE[type] || "";
+    return CARD_STYLE[type]?.[1] || "";
 }
 
 function requestTelemetryTypes(type) {
@@ -1106,8 +1065,6 @@ const DETECTION_TYPE_LABEL = {
     area_exit: "Saiu da área",
 };
 
-const FALL_TYPE_LABEL = DETECTION_TYPE_LABEL;
-
 function detectionValue(data) {
     return (
         DETECTION_TYPE_LABEL[String(data?.detectionType || "")] ||
@@ -1140,7 +1097,7 @@ export function fallSummaryCard(events = []) {
 
     const occurredAt = latest.occurredAt || latest.recordedAt || "";
     const detectionType = String(latest?.data?.detectionType || "");
-    const label = FALL_TYPE_LABEL[detectionType] || fieldLabel(detectionType);
+    const label = DETECTION_TYPE_LABEL[detectionType] || fieldLabel(detectionType);
     const person = latest?.data?.details?.person_index;
     const who =
         person === undefined || person === null

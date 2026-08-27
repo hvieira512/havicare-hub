@@ -193,7 +193,7 @@ ob_start();
                     </form>
                     </div>
                     <div id="companyListBody" class="mb-4"></div>
-                    <?= pagination_component('settingsCompany') ?>
+                    <?= pagination_component('settingsCompanyPagination') ?>
                     <div class="collapse mb-3" id="licenseFormCollapse">
                     <form id="licenseForm" class="row g-2 p-3 border rounded-3">
                         <input type="hidden" id="licenseId">
@@ -261,7 +261,7 @@ ob_start();
                     </form>
                     </div>
                     <?= data_table(['Utilizador', 'Perfil', 'Âmbito', 'Estado', ''], 'apiUserListBody') ?>
-                    <?= pagination_component('settingsApiUsers') ?>
+                    <?= pagination_component('settingsApiUsersPagination') ?>
                 </div>
             </div>
         </div>

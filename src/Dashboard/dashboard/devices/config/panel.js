@@ -268,14 +268,7 @@ export function renderDeviceConfigurationModal() {
         return;
     }
 
-    if (state.deviceModal.loading) {
-        els.deviceConfigRoot.innerHTML = emptyPanel(
-            "A carregar configurações...",
-        );
-        return;
-    }
-
-    if (state.deviceModal.catalogLoading) {
+    if (state.deviceModal.loading || state.deviceModal.catalogLoading) {
         els.deviceConfigRoot.innerHTML = emptyPanel(
             "A carregar configurações...",
         );

@@ -45,7 +45,6 @@ export async function loadSettingsModal(
     };
     state.settingsModal.modelCatalog = [];
     state.settingsModal.companyPagination = null;
-    state.settingsModal.licensesPagination = null;
     state.settingsModal.apiUsersPagination = null;
     state.settingsModal.modelFilters = [];
     state.settingsModal.capabilityCatalog = [];

@@ -4,7 +4,7 @@ import {
 } from "../api/index.js";
 import {ensureLicensesLoaded} from "../licenses.js";
 import {state} from "../state.js";
-import {renderPagination, resolvePaginationPage} from "../pagination.js";
+import {resolvePaginationPage} from "../pagination.js";
 
 /**
  * A casca do modal de definições: o menu da esquerda com as suas contagens, a troca de
@@ -78,22 +78,6 @@ export function setSettingsNavCount(key, total) {
     element.classList.toggle("d-none", !known);
 }
 
-export function renderSettingsPagination(
-    pagination,
-    rootEl,
-    summaryEl,
-    controlsEl,
-    action,
-) {
-    renderPagination({
-        pagination,
-        rootEl,
-        summaryEl,
-        controlsEl,
-        actionPrefix: action,
-    });
-}
-
 export function handleSettingsPaginationClick(event, paginationKey, loadFn) {
     const nextPage = resolvePaginationPage(
         event,
@@ -109,7 +93,6 @@ function paginationActionPrefix(paginationKey) {
         {
             apiUsersPagination: "settingsApiUsersPage",
             companyPagination: "settingsCompanyPage",
-            licensesPagination: "settingsLicensesPage",
         }[paginationKey] || ""
     );
 }

@@ -8,6 +8,7 @@ import {
     clearStorageKey,
     saveJsonStorage,
 } from "../storage.js";
+import {resolvePaginationPage} from "../pagination.js";
 import {
     loadSummary,
     normalizeFilterValue,
@@ -128,8 +129,7 @@ export async function clearDeviceFilters() {
 }
 
 export function handleDownlinkPagerClick(event) {
-    const button = event.target.closest("[data-action]");
-    if (!button || !state.selectedDetail) return;
+    if (!state.selectedDetail) return;
 
     const commands = filterDetailItems(allDetailItems())
         .filter((item) => item._source === "command")
@@ -138,34 +138,36 @@ export function handleDownlinkPagerClick(event) {
         1,
         Math.ceil(commands.length / state.downlinkPageSize),
     );
+    const nextPage = resolvePaginationPage(
+        event,
+        {page: state.downlinkPage, total_pages: totalPages},
+        "downlink",
+        "downlinkPageGo",
+    );
+    if (nextPage === null) return;
 
-    if (button.dataset.action === "downlinkPrev")
-        setDownlinkPage(state.downlinkPage - 1, totalPages);
-    if (button.dataset.action === "downlinkNext")
-        setDownlinkPage(state.downlinkPage + 1, totalPages);
-    if (button.dataset.action === "downlinkPageGo")
-        setDownlinkPage(parseInt(button.dataset.page || "1", 10), totalPages);
-
+    setDownlinkPage(nextPage, totalPages);
     renderDownlinkRequests(commands);
 }
 
 export function handleTelemetryPagerClick(event) {
-    const button = event.target.closest("[data-action]");
-    if (!button || !state.selectedDetail) return;
-    const allItems = allDetailItems();
-    const filtered = filterDetailItems(allItems);
-    const telemetryRows = filtered
+    if (!state.selectedDetail) return;
+
+    const telemetryRows = filterDetailItems(allDetailItems())
         .filter((item) => ["telemetry", "event"].includes(item._source))
         .map((item) => item.raw);
     const totalPages = Math.max(
         1,
         Math.ceil(telemetryRows.length / state.telemetryPageSize),
     );
-    if (button.dataset.action === "telemetryPrev")
-        setTelemetryPage(state.telemetryPage - 1, totalPages);
-    if (button.dataset.action === "telemetryNext")
-        setTelemetryPage(state.telemetryPage + 1, totalPages);
-    if (button.dataset.action === "telemetryPageGo")
-        setTelemetryPage(parseInt(button.dataset.page || "1", 10), totalPages);
+    const nextPage = resolvePaginationPage(
+        event,
+        {page: state.telemetryPage, total_pages: totalPages},
+        "telemetry",
+        "telemetryPageGo",
+    );
+    if (nextPage === null) return;
+
+    setTelemetryPage(nextPage, totalPages);
     renderTelemetryList(telemetryRows);
 }

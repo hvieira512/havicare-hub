@@ -6,11 +6,8 @@ import {
 import {ensureLicensesLoaded} from "../licenses.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
-import {
-    renderSettingsPagination,
-    setSettingsNavCount,
-    toggleCollapse,
-} from "./shell.js";
+import {setSettingsNavCount, toggleCollapse} from "./shell.js";
+import {renderPagination} from "../pagination.js";
 
 /**
  * O separador dos utilizadores da API: a tabela, o formulário, e ligar ou desligar um. As
@@ -42,13 +39,13 @@ export async function loadSettingsApiUsersSection(page = 1) {
     state.settingsModal.apiUsersPagination = response.pagination || null;
     state.settingsModal.sectionLoaded.apiUsers = true;
     renderApiUsersSection(users);
-    renderSettingsPagination(
-        state.settingsModal.apiUsersPagination,
-        els.settingsApiUsersPagination,
-        els.settingsApiUsersPaginationSummary,
-        els.settingsApiUsersPaginationControls,
-        "settingsApiUsersPage",
-    );
+    renderPagination({
+        pagination: state.settingsModal.apiUsersPagination,
+        rootEl: els.settingsApiUsersPagination,
+        summaryEl: els.settingsApiUsersPaginationSummary,
+        controlsEl: els.settingsApiUsersPaginationControls,
+        actionPrefix: "settingsApiUsersPage",
+    });
 }
 
 function renderApiUsersSection(users) {
