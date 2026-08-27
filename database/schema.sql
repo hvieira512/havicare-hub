@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS capabilities (
     sort_order INT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_capabilities_device_type_key (device_type, capability_key)
+    UNIQUE KEY uq_capabilities_device_type_key (device_type, capability_key),
+    KEY idx_capabilities_device_type_section_order (device_type, section, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS model_capabilities (
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS model_capabilities (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (model_id, capability_id),
+    KEY idx_model_capabilities_model (model_id),
     CONSTRAINT fk_model_capabilities_model_v2 FOREIGN KEY (model_id) REFERENCES models(id) ON DELETE CASCADE,
     CONSTRAINT fk_model_capabilities_capability_v2 FOREIGN KEY (capability_id) REFERENCES capabilities(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -70,7 +72,11 @@ CREATE TABLE IF NOT EXISTS whitelist (
     device_id VARCHAR(191) NOT NULL DEFAULT '',
     company VARCHAR(191) NOT NULL DEFAULT 'null',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_whitelist_supplier_model (supplier, model),
+    KEY idx_whitelist_device_type_license (device_type, license_id),
+    KEY idx_whitelist_company (company),
+    KEY idx_whitelist_device_id (device_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS gateway_device_links (
@@ -83,15 +89,6 @@ CREATE TABLE IF NOT EXISTS gateway_device_links (
     KEY idx_gateway_device_links_linked (linked_device_key, enabled),
     CONSTRAINT fk_gateway_device_links_gateway FOREIGN KEY (gateway_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE,
     CONSTRAINT fk_gateway_device_links_device FOREIGN KEY (linked_device_key) REFERENCES whitelist(imei) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS diaper_sensor_settings (
-    imei VARCHAR(64) NOT NULL PRIMARY KEY,
-    pollution_range TINYINT UNSIGNED NOT NULL,
-    pollution_value TINYINT UNSIGNED NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_diaper_sensor_settings_device FOREIGN KEY (imei) REFERENCES whitelist(imei) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS device_configurations (
@@ -176,6 +173,7 @@ CREATE TABLE IF NOT EXISTS licenses (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_licenses_company_license (company_id, license_id),
+    KEY idx_licenses_company_id (company_id),
     CONSTRAINT fk_licenses_company FOREIGN KEY (company_id) REFERENCES companies(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -190,6 +188,7 @@ CREATE TABLE IF NOT EXISTS api_users (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_api_users_license_ref (license_ref_id),
+    KEY idx_api_users_role_license (role, license_id),
     CONSTRAINT fk_api_users_license_ref FOREIGN KEY (license_ref_id) REFERENCES licenses(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -200,6 +199,7 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
     protocol VARCHAR(64) NOT NULL DEFAULT '',
     model VARCHAR(191) NOT NULL DEFAULT '',
     ident VARCHAR(191) NOT NULL DEFAULT '',
+    license_id INT UNSIGNED NOT NULL DEFAULT 0,
     reason VARCHAR(191) NOT NULL DEFAULT '',
     occurrence_count INT UNSIGNED NOT NULL DEFAULT 1,
     first_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

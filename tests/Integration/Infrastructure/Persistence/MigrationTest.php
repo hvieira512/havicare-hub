@@ -194,10 +194,11 @@ final class MigrationTest extends MysqlDashboardTestCase
             '2026082802_drop_diaper_sensor_settings',
             '2026082803_add_notification_license',
             '2026082804_radar_capability_vocabulary',
+            '2026082805_drop_diaper_sensor_settings_again',
         ], $versions);
 
         $this->reopenDashboardDatabase($this->databaseName($pdo));
-        self::assertSame(38, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
+        self::assertSame(39, (int)$pdo->query('SELECT COUNT(*) FROM schema_migrations')->fetchColumn());
         self::assertSame(
             0,
             (int)$pdo->query("SELECT COUNT(*) FROM capabilities WHERE capability_key = 'weather_data'")->fetchColumn()
@@ -542,56 +543,4 @@ final class MigrationTest extends MysqlDashboardTestCase
         return array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
     }
 
-    private function columnStructure(\PDO $pdo, string $table): array
-    {
-        $stmt = $pdo->prepare('
-            SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
-            FROM information_schema.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
-            ORDER BY ORDINAL_POSITION
-        ');
-        $stmt->execute([$table]);
-        return $stmt->fetchAll();
-    }
-
-    private function indexStructure(\PDO $pdo, string $table): array
-    {
-        $stmt = $pdo->prepare('
-            SELECT INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX, COLUMN_NAME
-            FROM information_schema.STATISTICS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
-            ORDER BY INDEX_NAME, SEQ_IN_INDEX
-        ');
-        $stmt->execute([$table]);
-        $indexes = [];
-        foreach ($stmt->fetchAll() as $row) {
-            $name = (string)$row['INDEX_NAME'];
-            $indexes[$name]['unique'] = (int)$row['NON_UNIQUE'] === 0;
-            $indexes[$name]['columns'][] = (string)$row['COLUMN_NAME'];
-        }
-
-        $normalized = [];
-        foreach ($indexes as $name => $index) {
-            $key = $name === 'PRIMARY'
-                ? 'PRIMARY'
-                : (($index['unique'] ? 'UNIQUE:' : 'INDEX:') . implode(',', $index['columns']));
-            $normalized[$key] = $index;
-        }
-        ksort($normalized);
-        return $normalized;
-    }
-
-    private function foreignKeyStructure(\PDO $pdo, string $table): array
-    {
-        $stmt = $pdo->prepare('
-            SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-            FROM information_schema.KEY_COLUMN_USAGE
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = ?
-              AND REFERENCED_TABLE_NAME IS NOT NULL
-            ORDER BY COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-        ');
-        $stmt->execute([$table]);
-        return $stmt->fetchAll();
-    }
 }

@@ -210,6 +210,87 @@ abstract class MysqlDashboardTestCase extends TestCase
     }
 
     /**
+     * A estrutura de uma base de dados, para se poder comparar duas.
+     *
+     * Vive aqui e não num teste porque há mais do que uma pergunta a fazer com ela: se o
+     * `schema.sql` sozinho descreve a base actual, e se uma base legada actualizada fica
+     * igual a uma nova. As duas comparam estrutura e nenhuma quer saber dos dados.
+     *
+     * @return list<string>
+     */
+    protected function tableNames(PDO $pdo): array
+    {
+        $tables = $pdo->query('
+            SELECT TABLE_NAME
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = \'BASE TABLE\'
+            ORDER BY TABLE_NAME
+        ');
+
+        return array_map('strval', $tables === false ? [] : $tables->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    protected function columnStructure(PDO $pdo, string $table): array
+    {
+        $stmt = $pdo->prepare('
+            SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+            ORDER BY ORDINAL_POSITION
+        ');
+        $stmt->execute([$table]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Os índices pela forma e não pelo nome.
+     *
+     * Uma chave única em `(a, b)` é a mesma restrição venha ela do `schema.sql` com um
+     * nome escolhido ou de um `ALTER TABLE` que deixou o MySQL nomeá-la. Comparar nomes
+     * dava diferenças que não são diferenças.
+     */
+    protected function indexStructure(PDO $pdo, string $table): array
+    {
+        $stmt = $pdo->prepare('
+            SELECT INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX, COLUMN_NAME
+            FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+            ORDER BY INDEX_NAME, SEQ_IN_INDEX
+        ');
+        $stmt->execute([$table]);
+        $indexes = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $name = (string)$row['INDEX_NAME'];
+            $indexes[$name]['unique'] = (int)$row['NON_UNIQUE'] === 0;
+            $indexes[$name]['columns'][] = (string)$row['COLUMN_NAME'];
+        }
+
+        $normalized = [];
+        foreach ($indexes as $name => $index) {
+            $key = $name === 'PRIMARY'
+                ? 'PRIMARY'
+                : (($index['unique'] ? 'UNIQUE:' : 'INDEX:') . implode(',', $index['columns']));
+            $normalized[$key] = $index;
+        }
+        ksort($normalized);
+        return $normalized;
+    }
+
+    protected function foreignKeyStructure(PDO $pdo, string $table): array
+    {
+        $stmt = $pdo->prepare('
+            SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+            FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = ?
+              AND REFERENCED_TABLE_NAME IS NOT NULL
+            ORDER BY COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+        ');
+        $stmt->execute([$table]);
+        return $stmt->fetchAll();
+    }
+
+    /**
      * @return array{host: string, port: int, username: string, password: string, charset: string}
      */
     private function mysqlAdminConfig(): array
