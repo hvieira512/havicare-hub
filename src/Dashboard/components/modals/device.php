@@ -44,8 +44,8 @@ ob_start();
                                     <p data-device-question="none" class="text-secondary small mb-0">Toque numa etiqueta acima para alterar uma resposta.</p>
                                 </div>
 
-                                <?php /* A empresa e a licenca sao duas colunas na base de dados, mas uma
-                                       * so escolha no ecra: a arvore escreve as duas aqui. */ ?>
+                                <?php /* A empresa e a licença são duas colunas na base de dados, mas uma
+                                       * só escolha no ecrã: a árvore escreve as duas aqui. */ ?>
                                 <input type="hidden" id="deviceCompany" value="">
                                 <input type="hidden" id="deviceLicenseId" value="0">
 

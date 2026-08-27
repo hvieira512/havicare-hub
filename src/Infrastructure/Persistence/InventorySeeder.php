@@ -7,17 +7,17 @@ namespace Hub\Infrastructure\Persistence;
 use PDO;
 
 /**
- * O inventario capturado do hub de producao: dispositivos, modelos, fornecedores, licencas
- * e as ligacoes aos gateways.
+ * O inventário capturado do hub de produção: dispositivos, modelos, fornecedores, licenças e
+ * as ligações aos gateways.
  *
- * Vive fora do plano de migracoes de proposito. O `DatabaseMigrator` corre tambem no
- * modelo de base de dados que os testes de integracao clonam com dados e tudo, por isso
- * uma migracao que insere inventario faz cada teste comecar com vinte e seis dispositivos
- * -- e um teste que conta quatro encontra vinte e nove. O esquema e migracao; os dados de
- * arranque sao um passo que so o arranque chama.
+ * Vive fora do plano de migrações de propósito. O `DatabaseMigrator` corre também no modelo
+ * de base de dados que os testes de integração clonam com dados e tudo, por isso uma
+ * migração que insere inventário faz cada teste começar com vinte e seis dispositivos -- e um
+ * teste que conta quatro encontra vinte e nove. O esquema é migração; os dados de arranque
+ * são um passo que só o arranque chama.
  *
- * As imagens dos modelos vivem em var/, que esta no gitignore, por isso viajam em
- * database/seed-model-images e sao copiadas para o lugar aqui.
+ * As imagens dos modelos vivem em `var/`, que está no gitignore, por isso viajam em
+ * `database/seed-model-images` e são copiadas para o lugar aqui.
  */
 final class InventorySeeder
 {
@@ -26,10 +26,10 @@ final class InventorySeeder
     private const IMAGE_TARGET = __DIR__ . '/../../../var/dashboard/model-images';
 
     /**
-     * Devolve false quando ja havia inventario e nao fez nada.
+     * Devolve false quando já havia inventário e não fez nada.
      *
-     * O seed em si e idempotente -- resolve os ids por chave natural -- mas verificar
-     * antes evita reescrever o que o painel possa ter mudado desde entao.
+     * O seed em si é idempotente -- resolve os ids por chave natural --, mas verificar antes
+     * evita reescrever o que o painel possa ter mudado desde então.
      */
     public function seed(PDO $pdo): bool
     {
@@ -44,8 +44,8 @@ final class InventorySeeder
 
         $pdo->exec($seed);
 
-        // Os modelos que o seed acrescenta entram depois de as migracoes de capacidades
-        // terem corrido, logo nada lhes deu um template e os cartoes ficariam vazios.
+        // Os modelos que o seed acrescenta entram depois de o catálogo ter sido semeado, logo
+        // nada lhes deu um template e os cartões ficariam vazios.
         (new ReferenceCatalogSeeder())->seedMissingModelCapabilities($pdo);
 
         $this->copyModelImages();

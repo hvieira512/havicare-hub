@@ -7,22 +7,13 @@ namespace Hub\Infrastructure\Persistence\Migration;
 use PDO;
 
 /**
- * Larga a `diaper_sensor_settings` outra vez.
+ * Larga a `diaper_sensor_settings` nas bases que já existem, onde o `schema.sql` a criou
+ * antes de deixar de a declarar.
  *
- * A `2026082802` já a largou e correu com sucesso. O que a trouxe de volta foi o
- * `DatabaseMigrator`: ele executa o `database/schema.sql` antes das migrações, em todas as
- * invocações, e o `schema.sql` continuava a declarar a tabela. Cada `bin/migrate.php`
- * recriava-a, e a migração que a apagava estava registada e não voltava a correr.
- *
- * O `schema.sql` já não a declara, mas nas bases que existem hoje -- local e produção -- a
- * tabela está lá e nada a apaga. Daí esta, que é a segunda metade do arranjo.
- *
- * A classe de defeito não é sobre fraldas: uma migração que larga algo que o `schema.sql`
- * continua a declarar é desfeita na execução seguinte. O `SchemaCompletenessTest` passou a
- * provar que os dois descrevem a mesma base.
- *
- * É a primeira migração depois da baseline, e por isso a única que resta no plano: as
- * trinta e oito anteriores foram absorvidas no `schema.sql` e no catálogo semeado.
+ * O `DatabaseMigrator` executa o `schema.sql` antes das migrações e em todas as invocações,
+ * e por isso uma migração que larga algo que o `schema.sql` continua a declarar é desfeita
+ * na execução seguinte -- é o `SchemaCompletenessTest` que agora prova que os dois descrevem
+ * a mesma base.
  */
 final class Version2026082805DropDiaperSensorSettingsAgain implements Migration
 {

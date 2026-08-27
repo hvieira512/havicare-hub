@@ -13,10 +13,10 @@ use React\Stream\ThroughStream;
 
 final class DeviceController
 {
-    /** A burst of writes collapses into one send after this delay. */
+    /** Uma rajada de escritas colapsa num envio só depois deste atraso. */
     private const STREAM_COALESCE_SECONDS = 0.25;
 
-    /** Catches writes made outside this process, and keeps the socket warm. */
+    /** Apanha escritas feitas fora deste processo, e mantém o socket quente. */
     private const STREAM_FALLBACK_SECONDS = 15;
 
     public function __construct(
@@ -67,8 +67,8 @@ final class DeviceController
 
             $payload = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             if ($payload === $lastPayload) {
-                // Nothing changed: keep the connection alive without making the
-                // client re-render the same history.
+                // Nada mudou: mantém a ligação viva sem obrigar o cliente a redesenhar o
+                // mesmo histórico.
                 $stream->write(": keep-alive\n\n");
                 return;
             }
@@ -81,9 +81,9 @@ final class DeviceController
             $send('snapshot');
         });
 
-        // The store announces its own writes, so there is nothing to poll for.
-        // A burst -- a bracelet broadcasting one press for 30 seconds, or a
-        // command moving through its lifecycle -- collapses into a single send.
+        // O store anuncia as suas próprias escritas, e por isso não há nada a sondar. Uma
+        // rajada -- uma pulseira a anunciar um toque durante 30 segundos, ou um comando a
+        // percorrer o seu ciclo de vida -- colapsa num envio só.
         $flushTimer = null;
         $unsubscribe = $this->service->updates()->subscribe(
             $imei,
@@ -98,16 +98,16 @@ final class DeviceController
             }
         );
 
-        // Safety net for writes this process cannot observe, such as a CLI
-        // script touching the store, and it doubles as the SSE keep-alive.
+        // Rede de segurança para escritas que este processo não consegue observar, como um
+        // script de linha de comandos a tocar no store, e serve de keep-alive do SSE.
         $timer = $loop->addPeriodicTimer(self::STREAM_FALLBACK_SECONDS, static function () use ($send): void {
             $send('update');
         });
 
         $stream->on('close', static function () use ($timer, $loop, $unsubscribe, &$flushTimer): void {
             $loop->cancelTimer($timer);
-            // A burst arriving as the client disconnects would otherwise leave
-            // this timer holding the closure until it fires for nothing.
+            // Sem isto, uma rajada a chegar quando o cliente se desliga deixava este
+            // temporizador a segurar a closure até disparar para nada.
             if ($flushTimer !== null) {
                 $loop->cancelTimer($flushTimer);
                 $flushTimer = null;

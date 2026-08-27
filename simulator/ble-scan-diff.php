@@ -20,9 +20,13 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use Hub\Ingress\Mqtt\Moko\MokoMessageDecoder;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Runtime\CliBootstrap;
+
+/** Relatórios de scan: 3070 no MKGW3 (JSON), 30a0/30b2 no MKGW4 (binário). */
+const SCAN_MESSAGES = [3070, '30a0', '30b2'];
 
 $options = getopt('', ['baseline::', 'min-rssi::', 'topic::', 'help']);
 if (isset($options['help'])) {
@@ -105,9 +109,11 @@ $baseline = [];
 $reported = [];
 $phase = 'baseline';
 
-$handler = function (string $topic, string $message) use (&$baseline, &$reported, &$phase, $minRssi): void {
-    $decoded = json_decode($message, true);
-    if (!is_array($decoded) || (string)($decoded['msg_id'] ?? '') !== '3070' || !is_array($decoded['data'] ?? null)) {
+$gatewayDecoder = new MokoMessageDecoder();
+
+$handler = function (string $topic, string $message) use (&$baseline, &$reported, &$phase, $minRssi, $gatewayDecoder): void {
+    $decoded = $gatewayDecoder->decode($message);
+    if (!in_array($decoded['messageId'] ?? null, SCAN_MESSAGES, true) || !is_array($decoded['data'] ?? null)) {
         return;
     }
 

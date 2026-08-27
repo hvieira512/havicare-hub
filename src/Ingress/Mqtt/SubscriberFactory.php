@@ -10,19 +10,17 @@ use PhpMqtt\Client\Repositories\MemoryRepository;
 use PhpMqtt\Client\Subscription;
 
 /**
- * Wires a subscribing MQTT ingress to its broker.
+ * Liga um ingress MQTT subscritor ao seu broker.
  *
- * The subscription has to be registered on the client's repository *before* the
- * ingress exists, because the ingress needs the connected client in its
- * constructor. That circularity is resolved with a by-reference holder, which
- * this class keeps in one place instead of at every call site.
+ * A subscrição tem de ser registada no repositório do cliente *antes* de o ingress existir,
+ * porque o ingress precisa do cliente já ligado no construtor. Essa circularidade resolve-se
+ * com um contentor por referência, que esta classe guarda num sítio só.
  *
- * Every subscriber here resumes its broker-side session (`cleanSession = false`,
- * fixed below), so the client id has to be stable -- sem pid. Um id com pid muda
- * a cada reinício do processo, o que faz o broker abrir uma sessão nova e deixar
- * a anterior órfã, a segurar a subscrição e a encher fila de QoS 1 para um
- * cliente que nunca volta. Não é uma opção: as duas coisas só estão certas
- * juntas, e por isso não há flag para as separar.
+ * Todos os subscritores retomam a sessão do lado do broker (`cleanSession = false`, fixo
+ * abaixo), e por isso o id do cliente tem de ser estável -- sem pid. Um id com pid muda a
+ * cada reinício do processo, o que faz o broker abrir uma sessão nova e deixar a anterior
+ * órfã, a segurar a subscrição e a encher fila de QoS 1 para um cliente que nunca volta. Não
+ * é uma opção: as duas coisas só estão certas juntas, e por isso não há flag para as separar.
  */
 final class SubscriberFactory
 {
@@ -33,8 +31,8 @@ final class SubscriberFactory
 
     /**
      * @param callable(MqttClient, callable(): MqttClient): MqttIngress $make
-     *        receives the connected subscriber and a reconnect factory, and
-     *        returns the ingress that should handle the topic's messages
+     *        recebe o subscritor ligado e uma fábrica de reconexão, e devolve o ingress que
+     *        deve tratar as mensagens do tópico
      */
     public function bind(string $clientSuffix, string $topicFilter, callable $make): MqttIngress
     {

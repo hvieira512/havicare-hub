@@ -20,10 +20,14 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
+use Hub\Ingress\Mqtt\Moko\MokoMessageDecoder;
 use Hub\Ingress\Mqtt\Moko\W6rDecoder;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Runtime\CliBootstrap;
+
+/** Relatórios de scan: 3070 no MKGW3 (JSON), 30a0/30b2 no MKGW4 (binário). */
+const SCAN_MESSAGES = [3070, '30a0', '30b2'];
 
 $options = getopt('', ['mac::', 'heartbeat::', 'topic::', 'help']);
 if (isset($options['help'])) {
@@ -91,12 +95,14 @@ fwrite(STDOUT, "Watching {$target} on {$topicFilter}\n");
 fwrite(STDOUT, "Reporting every {$heartbeat}s. Ctrl-C to stop.\n");
 fwrite(STDOUT, str_repeat('-', 72) . "\n");
 
-$client->subscribe($topicFilter, function (string $unusedTopic, string $message) use ($target, &$state, $decoder): void {
-    $decoded = json_decode($message, true);
-    if (!is_array($decoded) || (string)($decoded['msg_id'] ?? '') !== '3070' || !is_array($decoded['data'] ?? null)) {
+$gatewayDecoder = new MokoMessageDecoder();
+
+$client->subscribe($topicFilter, function (string $unusedTopic, string $message) use ($target, &$state, $decoder, $gatewayDecoder): void {
+    $decoded = $gatewayDecoder->decode($message);
+    if (!in_array($decoded['messageId'] ?? null, SCAN_MESSAGES, true) || !is_array($decoded['data'] ?? null)) {
         return;
     }
-    $gateway = strtolower((string)($decoded['device_info']['mac'] ?? '?'));
+    $gateway = strtolower((string)($decoded['gatewayMac'] ?? '?'));
 
     foreach ($decoded['data'] as $observation) {
         if (!is_array($observation) || strtolower((string)($observation['mac'] ?? '')) !== $target) {

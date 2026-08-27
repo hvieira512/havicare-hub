@@ -7,7 +7,7 @@ use Hub\Domain\Capability\Contacts\WonlexContactCodec;
 final class ProtocolRegistry
 {
     /**
-     * Canonical protocol metadata used by backend services and the dashboard.
+     * Os metadados canónicos de cada protocolo, usados pelos serviços e pela dashboard.
      *
      * @return array<string, array{
      *     label: string,
@@ -117,11 +117,9 @@ final class ProtocolRegistry
                 'supportsConfigCatalog' => false,
                 'dashboard' => ['groupedCapabilities' => [], 'fieldConstraints' => []],
             ],
-            // `true` e nao `false`: o que o hub queria dizer com o `false` era que o sensor
-            // nao aceita downlink, e o que ficou escrito era que nao tem configuracoes
-            // nenhumas -- foi por causa dessa linha que a sensibilidade dos alertas nao
-            // teve por onde entrar no catalogo. Quem decide se algo viaja e cada
-            // capacidade, pelo `HubAppliedCapability`, e nao o protocolo inteiro.
+            // `true` e não `false`: o sensor não aceita downlink, mas tem configurações, e
+            // são coisas diferentes. Quem decide se algo viaja é cada capacidade, pelo
+            // `HubAppliedCapability`, e não o protocolo inteiro.
             'monit-mecs-pro-ble' => [
                 'label' => 'MONIT',
                 'deviceType' => 'diaper_sensor',

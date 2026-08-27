@@ -41,9 +41,9 @@ ob_start();
                                     '<button type="button" class="btn btn-primary btn-sm" id="modelsNewModelBtn">' . icon('fa-plus', 'me-1') . 'Novo modelo</button>'
                                 ) ?>
                                 <?= search_input('modelsListSearch', 'Procurar modelo, fornecedor ou tipo', 'mt-3') ?>
-                                <?php /* O tipo e o fornecedor SAO a arvore, por isso nao ha filtros por cima
-                                       * dela; e a arvore vem inteira numa chamada, por isso nao ha paginacao
-                                       * -- um grupo cortado entre paginas e a pior das duas leituras. */ ?>
+                                <?php /* O tipo e o fornecedor SÃO a árvore, por isso não há filtros por cima
+                                       * dela; e a árvore vem inteira numa chamada, por isso não há paginação
+                                       * -- um grupo cortado entre páginas é a pior das duas leituras. */ ?>
                                 <div id="modelCatalog" class="mt-3"></div>
                             </div>
                             <div class="carousel-item">

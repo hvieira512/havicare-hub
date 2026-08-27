@@ -20,7 +20,7 @@ use Hub\Registry\Whitelist;
 
 class DeviceService
 {
-    /** Device types a gateway relays over BLE. Mirrors GATEWAY_LINKED_DEVICE_TYPES in dashboard/domain.js. */
+    /** Os tipos que um gateway retransmite por BLE. Espelha o `GATEWAY_LINKED_DEVICE_TYPES`. */
     private const GATEWAY_LINKED_DEVICE_TYPES = ['diaper_sensor', 'bracelet'];
 
     private CollectionQuery $query;
@@ -62,8 +62,8 @@ class DeviceService
             $this->capabilityRegistry,
         );
         $this->associations = new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
-        // Built here rather than injected: it is a projection of the same
-        // registry and database this service already holds.
+        // Construído aqui e não injectado: é uma projecção do mesmo registo e da mesma base
+        // de dados que este serviço já tem.
         $this->capabilities = new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
         $this->configurationSync = new ConfigurationSyncStatus();
         $this->directory = new DeviceDirectory($this->store, $this->whitelist, $this->db);
@@ -95,11 +95,11 @@ class DeviceService
         ];
         $online = $this->query->onlineFilter($params);
 
-        // A empresa e a licença deixaram de ser dois parâmetros e passaram a pares em
-        // `license`. Este endpoint é público e documentado, por isso a forma antiga continua
-        // a funcionar em vez de passar a ser ignorada em silêncio: uma empresa com licença dá
-        // o par, uma empresa sozinha dá a empresa toda, e uma licença sozinha continua a ser
-        // a condição independente que sempre foi -- não há par para formar sem empresa.
+        // A empresa e a licença viajam como pares em `license`. Este endpoint é público e
+        // documentado, por isso os dois parâmetros soltos continuam a funcionar em vez de
+        // serem ignorados em silêncio: uma empresa com licença dá o par, uma empresa sozinha
+        // dá a empresa toda, e uma licença sozinha é uma condição independente -- não há par
+        // para formar sem empresa.
         $legacyCompany = $this->query->filter($params, 'company');
         $legacyLicenseId = $this->query->filter($params, 'licenseId');
         if ($legacyCompany !== null && $legacyCompany !== 'all') {
@@ -113,9 +113,8 @@ class DeviceService
         $companyScope = $auth !== null && !$auth->isAdmin() ? $auth->company : null;
 
         // A presença não está na base de dados, e por isso entra na consulta como uma lista
-        // de IMEI em vez de uma coluna. Entra na mesma cláusula que os outros filtros, o que
-        // mantém a paginação, o total e as contagens por opção certos -- filtrá-la depois de
-        // paginar dava uma página de vinte a devolver seis e um total a mentir.
+        // de IMEI em vez de uma coluna -- na mesma cláusula que os outros filtros, para a
+        // paginação, o total e as contagens por opção continuarem certos.
         $onlineImeis = $online === null ? [] : $this->store->onlineDeviceImeis();
         $queryFilters = $filters;
         if ($online === true) {
@@ -159,9 +158,8 @@ class DeviceService
                 'available' => $result['available'],
                 'counts' => $result['counts'],
             ],
-            // O total e quantos deles estão ligados, sem filtro nenhum aplicado. É o que o
-            // cabeçalho do modal mostra, e não muda quando se filtra -- por isso não custa
-            // um pedido por cada caixa que se marca.
+            // O total e quantos deles estão ligados, sem filtro nenhum aplicado: é o que o
+            // cabeçalho do modal mostra, e não muda quando se filtra.
             'summary' => $this->deviceSummary($licenseScope, $companyScope),
         ];
     }
@@ -232,11 +230,11 @@ class DeviceService
     }
 
     /**
-     * Adds the last signal each link was heard on.
+     * Acrescenta o último sinal em que cada ligação foi ouvida.
      *
-     * A sighting is always stored against the relayed device, so the link's own
-     * two columns resolve it from either side: a sensor's page and its gateway's
-     * page read the same record instead of each needing its own lookup.
+     * Um avistamento é sempre guardado contra o dispositivo retransmitido, e por isso as duas
+     * colunas da ligação resolvem-no dos dois lados: a página de um sensor e a do seu gateway
+     * leem o mesmo registo em vez de cada uma precisar da sua consulta.
      *
      * @param list<array<string, mixed>> $links
      * @return list<array<string, mixed>>
@@ -520,8 +518,8 @@ class DeviceService
             ]);
             return ['error' => ['code' => 'invalid_request', 'message' => 'licenseId is required for non-watch devices']];
         }
-        // The device may be leaving a tenant, changing type, or changing imei;
-        // each of those leaves a retained status on the old topic.
+        // O dispositivo pode estar a sair de um cliente, a mudar de tipo ou a mudar de IMEI,
+        // e cada uma dessas deixa um estado retido no tópico antigo.
         $previous = $this->whitelist->getMetadata($imei) ?? [];
         $previousCompany = DeviceMetadata::normalizeCompany((string)($previous['company'] ?? 'null'));
         $previousLicenseId = DeviceMetadata::normalizeLicenseId($previous['licenseId'] ?? 0);
@@ -581,8 +579,8 @@ class DeviceService
     }
 
     /**
-     * The stream subscribes here to learn when recent() would return something
-     * new, instead of re-reading it on a timer.
+     * O stream subscreve aqui para saber quando o `recent()` devolveria algo novo, em vez de
+     * o voltar a ler num temporizador.
      */
     public function updates(): DeviceUpdateNotifier
     {
@@ -662,8 +660,8 @@ class DeviceService
             ];
         }
 
-        // Rows written before the lifecycle migration remain readable until the
-        // next PATCH creates their first revision.
+        // As linhas escritas antes do ciclo de vida continuam legíveis até o próximo PATCH
+        // lhes criar a primeira revisão.
         $legacyPending = $this->pendingConfiguration($model, $protocol, $configRows);
         $desired = $this->configuration($imei);
         foreach ($desired as $key => $value) {
@@ -730,9 +728,9 @@ class DeviceService
     }
 
     /**
-     * Delivery acknowledgements are persisted in reported_payload so their
-     * timestamp and native response remain inspectable. They are not reported
-     * configuration values and must not be compared with the desired payload.
+     * As confirmações de entrega ficam no `reported_payload` para a hora e a resposta nativa
+     * continuarem inspeccionáveis. Não são valores de configuração reportados, e não podem
+     * ser comparadas com o payload pretendido.
      *
      * @param list<array<string, mixed>> $configRows
      * @return list<array<string, mixed>>

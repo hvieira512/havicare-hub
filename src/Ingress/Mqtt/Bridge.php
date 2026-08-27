@@ -54,7 +54,7 @@ abstract class Bridge implements MqttIngress
 
     /**
      * `$licenseId` só é conhecido por quem o consegue tirar do que recebeu. O radar
-     * consegue -- publica em `radar/{licenca}/{uid}` --, e é o que permite à dashboard
+     * consegue -- publica em `radar/{licenseId}/{uid}` --, e é o que permite à dashboard
      * pré-seleccionar a licença ao registar. Quem se identifica só por MAC ou por endereço
      * deixa ficar a zero.
      */

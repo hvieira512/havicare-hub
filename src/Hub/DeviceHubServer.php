@@ -363,10 +363,10 @@ class DeviceHubServer
             $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
             $company = $this->currentCompany($session->imei, $session->company);
             $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
-            // O heartbeat continua a sair no MQTT, para quem o subscreve, mas nao
-            // entra no historico do dashboard: a lista de cada dispositivo guarda
-            // cem eventos e um terco deles seriam keep-alives que repetem a bateria
-            // e os passos que ja chegam como eventos proprios no mesmo instante.
+            // O heartbeat continua a sair no MQTT, para quem o subscreve, mas não entra no
+            // histórico do dashboard: a lista de cada dispositivo guarda cem eventos, e um
+            // terço deles seriam keep-alives a repetir a bateria e os passos que já chegam
+            // como eventos próprios no mesmo instante.
             if (($event['type'] ?? null) !== 'heartbeat') {
                 $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
                     $event,
@@ -461,7 +461,7 @@ class DeviceHubServer
     }
 
     /**
-     * Called when a device's tenant changes, with the tenant it is leaving.
+     * Chamado quando o cliente de um dispositivo muda, com o cliente que ele está a deixar.
      */
     public function clearRetainedStatus(string $company, int $licenseId, string $deviceType, string $imei): void
     {
@@ -568,8 +568,8 @@ class DeviceHubServer
         $metadata = $this->authorizer->metadataFor($imei);
         $licenseId = DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0);
 
-        // 0 means "unassigned", so an absent value falls back rather than
-        // silently scoping the device to license 0.
+        // O 0 quer dizer "sem atribuição", e por isso um valor ausente recorre ao anterior
+        // em vez de restringir o dispositivo à licença 0 em silêncio.
         return $licenseId !== 0 ? $licenseId : $fallback;
     }
 

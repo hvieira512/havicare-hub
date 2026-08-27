@@ -141,16 +141,13 @@ final class ReferenceCatalogSeeder
     /**
      * Dá a cada modelo as capacidades que o protocolo dele suporta e que ainda não tem.
      *
-     * Preenche lacuna a lacuna e não modelo a modelo. Saltar os modelos que já tinham
-     * linhas -- que era o que isto fazia -- deixava uma capacidade acrescentada ao catálogo
-     * depois da semeadura nunca chegar aos modelos já semeados: o aparelho suporta
-     * claramente a coisa e a API recusa-se a configurá-la porque a matriz diz que o modelo
-     * não a tem. Era preciso escrever uma migração de cada vez que isso acontecia.
+     * Preenche lacuna a lacuna e não modelo a modelo: saltar os modelos que já têm linhas
+     * deixava uma capacidade acrescentada ao catálogo nunca chegar aos modelos já semeados,
+     * e a API recusava-se a configurar o que o aparelho claramente suporta.
      *
-     * Só insere o que falta. Uma capacidade desligada à mão fica com a linha dela e
-     * continua desligada, porque o `setEnabledCapabilities` põe `enabled = 0` em vez de
-     * apagar a linha, e o `INSERT IGNORE` não lhe toca. Isto preenche buracos; não volta a
-     * ligar nada.
+     * Só insere o que falta. Uma capacidade desligada à mão fica com a linha dela e continua
+     * desligada, porque o `setEnabledCapabilities` põe `enabled = 0` em vez de apagar a
+     * linha, e o `INSERT IGNORE` não lhe toca. Isto preenche buracos; não liga nada.
      */
     private function seedModelCapabilities(PDO $pdo): void
     {

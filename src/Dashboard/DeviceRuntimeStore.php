@@ -90,14 +90,14 @@ final class DeviceRuntimeStore
     }
 
     /**
-     * The last time a gateway heard a relayed device, and how strongly.
+     * A última vez que um gateway ouviu um dispositivo retransmitido, e com que força.
      *
-     * Always keyed by the relayed device rather than by the gateway, so both
-     * sides of a link read the same record: a sensor's page asks for its own
-     * gateways, a gateway's page asks each of its sensors.
+     * Sempre indexado pelo dispositivo retransmitido e não pelo gateway, para os dois lados
+     * de uma ligação lerem o mesmo registo: a página de um sensor pede os seus gateways, a
+     * de um gateway pede cada um dos seus sensores.
      *
-     * Signal strength belongs to the pair, not to either device, which is why it
-     * lives here instead of on the device hash or as a capability of its own.
+     * A intensidade de sinal pertence ao par e não a nenhum dos dispositivos, e é por isso
+     * que vive aqui e não no hash do dispositivo nem como capacidade própria.
      */
     public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void
     {
@@ -175,8 +175,8 @@ final class DeviceRuntimeStore
 
         $states = [];
         foreach ($imeis as $index => $imei) {
-            // Lightweight in-memory clients used by consumers may not expose
-            // pipeline results; retain the direct-read compatibility path.
+            // Os clientes leves em memória que alguns consumidores usam podem não expor os
+            // resultados do pipeline, daí manter o caminho de leitura directa.
             $state = is_array($responses) && array_key_exists($index, $responses)
                 ? $responses[$index]
                 : $this->redis->hgetall($this->deviceKey($imei));

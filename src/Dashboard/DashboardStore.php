@@ -111,9 +111,9 @@ final class DashboardStore implements DashboardStoreContract
     public function append(string $imei, string $list, array $payload): void
     {
         $this->events->append($imei, $list, $payload);
-        // DeviceService::recent() serves telemetry, events and commands. The
-        // raw list is written on every gateway message and never streamed, so
-        // announcing it would wake every listener for nothing.
+        // O `DeviceService::recent()` serve telemetria, eventos e comandos. A lista crua é
+        // escrita a cada mensagem de gateway e nunca vai para o stream, por isso anunciá-la
+        // acordava todos os ouvintes para nada.
         if ($list === 'telemetry' || $list === 'events') {
             $this->updates->notify($imei);
         }

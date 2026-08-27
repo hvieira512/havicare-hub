@@ -224,7 +224,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return $resolved;
         }
 
-        // A licença é o que o UID não diz, e o tópico é `radar/{licenca}/{uid}`. Sem ela,
+        // A licença é o que o UID não diz, e o tópico é `radar/{licenseId}/{uid}`. Sem ela,
         // quem lê a notificação não sabe a que licença registar o radar que apareceu --
         // e é o único campo do assistente que não se deduz do protocolo.
         $this->recordUnauthorizedDevice(

@@ -111,12 +111,12 @@ final class DeviceConfigurationUpdateService
             }
 
             // O `sanitizeInput` entra no mesmo `try` que o `toNative`: uma capacidade que
-            // valida a entrada ali rejeita-a com a mesma excecao, e fora do `try` isso era
-            // um 500 em vez de um `invalid_config` com a razao.
+            // valida a entrada ali rejeita-a com a mesma excepção, e fora do `try` isso dava
+            // um 500 em vez de um `invalid_config` com a razão.
             try {
                 $payload = $this->capabilities->sanitizeInput($protocol, $genericKey, $payload);
 
-                // Uma capacidade que o hub aplica sozinho nao tem comandos para entregar: o
+                // Uma capacidade que o hub aplica sozinho não tem comandos para entregar: o
                 // valor desejado guarda-se e da-se por aplicado. O `stage` ja sabe o que
                 // fazer com uma alteracao sem operacoes -- marca-a `confirmed` e a linha
                 // `acked` --, por isso o resto do ciclo de vida e o mesmo das outras.
@@ -196,11 +196,11 @@ final class DeviceConfigurationUpdateService
      * @return array<string, mixed>
      */
     /**
-     * Guarda o valor de uma capacidade que nao viaja, e da-a por aplicada.
+     * Guarda o valor de uma capacidade que não viaja, e dá-a por aplicada.
      *
-     * A chave nativa e a generica: nao ha comando nativo nenhum de que ela seja tradução,
+     * A chave nativa é a genérica: não há comando nativo nenhum de que ela seja tradução,
      * e o `native_key` faz parte da chave primaria da `device_configurations`, por isso
-     * tem de ser alguma coisa. O `confirmation_mode` diz `local`, que e o que distingue
+     * tem de ser alguma coisa. O `confirmation_mode` diz `local`, que é o que distingue
      * estas linhas de uma que foi confirmada por um dispositivo.
      *
      * @param array<string, mixed> $payload
@@ -433,7 +433,8 @@ final class DeviceConfigurationUpdateService
     }
 
     /**
-     * Preserve legacy familyNumber.sosSwitch selections when no SOSNumber row exists yet.
+     * Preserva as escolhas antigas de `familyNumber.sosSwitch` enquanto não houver linha
+     * `SOSNumber`.
      *
      * @param array<string, array<string, mixed>> $currentByKey
      * @return list<string>

@@ -14,11 +14,12 @@ use Hub\Domain\Capability\Definition\WatchCapabilityDefinitions;
 use Hub\Domain\DeviceMetadata;
 
 /**
- * Authoritative catalog for generic capability identity and protocol support.
+ * O catálogo autoritativo da identidade de cada capacidade genérica e do suporte por
+ * protocolo.
  *
  * Protocol-native configuration definitions remain transport concerns in
- * DeviceConfigurationCatalog. This catalog is the only place that maps those
- * native definitions onto the public generic capability contract.
+ * `DeviceConfigurationCatalog`. Este catálogo é o único sítio que mapeia essas definições
+ * nativas no contrato público de capacidades genéricas.
  */
 final class CapabilityCatalog
 {
@@ -332,7 +333,7 @@ final class CapabilityCatalog
             'powerOffCommand' => 'power_off',
             'findDeviceCommand' => 'find_device',
             'pushMessage' => 'push_message',
-            // A chave nativa e a generica: nao ha comando nativo de que esta seja traducao,
+            // A chave nativa é a genérica: não há comando nativo de que esta seja tradução,
             // porque o hub aplica-a sozinho.
             'diaper_sensitivity' => 'diaper_sensitivity',
             default => null,

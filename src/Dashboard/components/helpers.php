@@ -13,11 +13,10 @@ function icon(string $name, string $class = ''): string
 }
 
 /**
- * O titulo de uma seccao, com um contador opcional ao lado.
+ * O título de uma secção, com um contador opcional ao lado.
  *
- * `$counterHidden` existe para os grupos de filtro: a pastilha comeca escondida e o
- * JavaScript mostra-a quando ha filtros aplicados. Sem isto os tres grupos do selector
- * de dispositivos tinham de escrever este cabecalho a mao para poderem juntar o `d-none`.
+ * `$counterHidden` existe para os grupos de filtro: a pastilha começa escondida e o
+ * JavaScript mostra-a quando há filtros aplicados.
  */
 function section_header(
     string $title,
@@ -93,8 +92,8 @@ function page_size_select(string $id): string
 /**
  * A casca de uma tabela de listagem: o corpo fica vazio para o JavaScript o preencher.
  *
- * Uma coluna sem titulo passa como cadeia vazia -- e o caso da miniatura e da coluna de
- * accoes, que nao tem cabecalho para mostrar.
+ * Uma coluna sem título passa como cadeia vazia -- é o caso da miniatura e da coluna de
+ * acções, que não têm cabeçalho para mostrar.
  *
  * @param list<string> $headers
  */
@@ -109,9 +108,9 @@ function data_table(
         $cells .= '<th>' . h($header) . '</th>';
     }
 
-    // Em telefone as celulas empilham (`d-block d-sm-table-cell` em cada linha) e cada uma
-    // leva a etiqueta do campo ao lado do valor, por isso o cabecalho passaria a nomear
-    // colunas que ja nao existem.
+    // Em telefone as células empilham (`d-block d-sm-table-cell` em cada linha) e cada uma
+    // leva a etiqueta do campo ao lado do valor, por isso o cabeçalho nomearia colunas que
+    // ali não existem.
     return '<div class="table-responsive' . ($wrapperClass !== '' ? ' ' . h($wrapperClass) : '') . '">'
         . '<table class="table table-sm align-middle' . ($tableClass !== '' ? ' ' . h($tableClass) : '') . '">'
         . '<thead class="d-none d-sm-table-header-group"><tr>' . $cells . '</tr></thead>'
@@ -121,18 +120,16 @@ function data_table(
 }
 
 /**
- * O cabecalho de uma aba: o nome, o resumo que o JavaScript escreve, e o que vai a direita.
+ * O cabeçalho de uma aba: o nome, o resumo que o JavaScript escreve, e o que vai à direita.
  *
- * O que vai a direita entra como HTML ja pronto, e nao como um punhado de parametros: os
- * quatro sitios que usam isto levam la coisas diferentes -- uma pastilha de so leitura, um
- * botao que abre um formulario, um botao que anda no carrossel -- e uma assinatura com
- * `$badgeText`, `$buttonId`, `$buttonLabel`, `$buttonTarget` seria pior que a repeticao.
+ * O que vai à direita entra como HTML já pronto e não como parâmetros escalares: os quatro
+ * sítios que usam isto levam lá coisas diferentes, e uma assinatura com `$badgeText`,
+ * `$buttonId`, `$buttonLabel` e `$buttonTarget` seria pior que a repetição.
  */
 function tab_pane_header(string $title, string $summaryId, string $trailingHtml = ''): string
 {
-    // `align-items-start`: com duas linhas a esquerda e um botao a direita, o botao fica ao
-    // nivel do titulo em vez de flutuar entre as duas linhas. Tres dos quatro cabecalhos ja
-    // o faziam; o dos modelos era o que estava fora.
+    // `align-items-start`: com duas linhas à esquerda e um botão à direita, o botão fica ao
+    // nível do título em vez de flutuar entre as duas linhas.
     return '<div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">'
         . '<div>'
         . '<div class="fw-semibold">' . h($title) . '</div>'

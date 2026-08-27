@@ -16,11 +16,10 @@ interface DashboardStoreContract
     ): void;
 
     /**
-     * Streams subscribe here to be told when a device's history changes.
+     * Os streams subscrevem aqui para saber quando o histórico de um dispositivo muda.
      *
-     * It lives on the contract so consumers take it from the store they
-     * already hold: a separately injected notifier can silently be the
-     * wrong instance, and nothing would ever fire.
+     * Vive no contrato para quem consome o tirar do store que já tem: um notificador
+     * injectado à parte pode ser a instância errada em silêncio, e nada dispararia nunca.
      */
     public function updates(): DeviceUpdateNotifier;
 
@@ -41,8 +40,8 @@ interface DashboardStoreContract
     public function deviceSeen(string $imei, array $fields): void;
 
     /**
-     * Signal strength belongs to the (device, gateway) pair, so it is recorded
-     * against the relayed device and read by both sides of the link.
+     * A intensidade de sinal pertence ao par (dispositivo, gateway), e por isso é registada
+     * contra o dispositivo retransmitido e lida pelos dois lados da ligação.
      */
     public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void;
 
@@ -74,8 +73,8 @@ interface DashboardStoreContract
     public function expireStaleDevices(int $timeoutSeconds): void;
 
     /**
-     * Redispatch queued configuration commands and retry sent commands that have
-     * not been acknowledged yet.
+     * Reenvia os comandos de configuração em fila e repete os enviados que ainda não foram
+     * confirmados.
      *
      * @param callable(string, string, array): string $dispatch
      */
@@ -106,8 +105,8 @@ interface DashboardStoreContract
     public function findCommand(string $id): ?array;
 
     /**
-     * Built commands in send order, not a keyed map: the hub forwards this
-     * straight into the Wonlex device state, so the shape is on the wire.
+     * Os comandos construídos por ordem de envio, e não um mapa por chave: o hub encaminha
+     * isto directamente para o estado do dispositivo Wonlex, logo a forma está no fio.
      *
      * @return list<array<string, mixed>>
      */

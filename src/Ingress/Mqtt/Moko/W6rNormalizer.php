@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * Turns a decoded W6R advertisement into the hub's generic shapes.
+ * Traz um anúncio W6R descodificado para as formas genéricas do hub.
  *
- * A press is reported as a per-mode counter rather than an event, so the caller
- * supplies the previous count and this only emits a help_call when the counter
- * actually moved.
+ * Um toque é reportado como um contador por modo e não como um evento, por isso quem chama
+ * traz a contagem anterior e isto só emite um `help_call` quando o contador mexeu.
  */
 final class W6rNormalizer
 {
-    /** Modes that represent someone pressing the button. */
+    /** Os modos que representam alguém a premir o botão. */
     private const HELP_CALL_MODES = ['single', 'double', 'long'];
 
     /**
@@ -71,8 +70,8 @@ final class W6rNormalizer
                 'xMg' => (int)$axes['x'],
                 'yMg' => (int)$axes['y'],
                 'zMg' => (int)$axes['z'],
-                // Orientation-independent, so a single number is comparable
-                // across wearers and mounting positions.
+                // Independente da orientação, para um número só ser comparável entre
+                // portadores e posições de montagem.
                 'magnitudeMg' => (int)round(sqrt(
                     ($axes['x'] ** 2) + ($axes['y'] ** 2) + ($axes['z'] ** 2)
                 )),
@@ -93,9 +92,9 @@ final class W6rNormalizer
             return [];
         }
 
-        // The counter is broadcast continuously, so without a previous value
-        // there is nothing to compare against: the first sighting of a device
-        // establishes the baseline instead of replaying its press history.
+        // O contador é anunciado continuamente, e por isso sem um valor anterior não há com
+        // que comparar: o primeiro avistamento estabelece a linha de base em vez de repetir
+        // o histórico de toques do dispositivo.
         $triggerCount = (int)$alarm['triggerCount'];
         if ($previousTriggerCount === null || $triggerCount === $previousTriggerCount) {
             return [];
@@ -106,8 +105,8 @@ final class W6rNormalizer
             'data' => [
                 'pressType' => $alarm['pressMode'],
                 'triggerCount' => $triggerCount,
-                // A device that restarts resets its counters, so a decrease is
-                // still one press rather than a negative delta.
+                // Um dispositivo que reinicia põe os contadores a zero, e por isso uma
+                // descida continua a ser um toque e não um delta negativo.
                 'presses' => $triggerCount > $previousTriggerCount
                     ? $triggerCount - $previousTriggerCount
                     : 1,

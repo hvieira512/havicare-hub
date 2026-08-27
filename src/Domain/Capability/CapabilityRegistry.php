@@ -233,7 +233,7 @@ final class CapabilityRegistry
     }
 
     /**
-     * Keep Wonlex transport names out of the generic API contract.
+     * Mantém os nomes de transporte da Wonlex fora do contrato genérico da API.
      *
      * @param array<string, mixed> $value
      * @return array<string, mixed>
@@ -253,8 +253,8 @@ final class CapabilityRegistry
     }
 
     /**
-     * Accept the normalized API names while retaining compatibility with
-     * legacy payloads that already contain Wonlex-native fields.
+     * Aceita os nomes normalizados da API mantendo a compatibilidade com payloads antigos
+     * que já traziam campos nativos da Wonlex.
      *
      * @param array<string, mixed> $value
      * @return array<string, mixed>

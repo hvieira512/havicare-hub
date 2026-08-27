@@ -17,10 +17,7 @@ use Hub\Domain\DiaperSensitivity;
  * deriva o estado da fralda a partir da mesma leitura física, e é o `Moko\Bridge` que os
  * lê no caminho da ingestão.
  *
- * Isto viveu com tabela, três rotas e um módulo de frontend só para si, porque não era uma
- * capacidade e não tinha por onde entrar no ciclo de vida das configurações. Os limiares,
- * os presets e a validação já estavam todos no `DiaperSensitivity`; o que faltava era o
- * hub saber que uma configuração pode não viajar.
+ * Os limiares, os presets e a validação vivem todos no `DiaperSensitivity`.
  */
 final class DiaperSensitivityCapability implements
     CapabilityContract,
@@ -76,8 +73,8 @@ final class DiaperSensitivityCapability implements
 
     public function defaultValue(string $protocol): mixed
     {
-        // A ausência de linha é o preset normal e não um erro: é o comportamento com que o
-        // hub sempre correu, e é por isso que nenhuma migração fez backfill.
+        // A ausência de linha é o preset normal e não um erro, e é por isso que não há
+        // backfill: um sensor que ninguém configurou usa o preset.
         return DiaperSensitivity::normal();
     }
 

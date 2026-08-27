@@ -7,10 +7,9 @@ namespace Hub\Domain;
 /**
  * Os dois limiares que decidem quando uma fralda conta como suja.
  *
- * A app da MONIT expõe exactamente estes dois valores e três presets sobre eles, e
- * os limiares que o hub tinha em hardcode eram, por coincidência exacta, o preset
- * "Normal". Isto existe para que os presets, as gamas válidas e a graduação vivam
- * num só ficheiro em vez de espalhados pelo repositório, pelo controlador, pelo
+ * A app da MONIT expõe exactamente estes dois valores e três presets sobre eles.
+ * Isto existe para que os presets, as gamas válidas e a graduação vivam num só
+ * ficheiro em vez de espalhados pelo repositório, pelo controlador, pelo
  * normalizador e pelo JavaScript.
  *
  * NÃO HÁ DOWNLINK. O sensor é um beacon BLE não-conectável e nada lhe é enviado; o
@@ -88,7 +87,7 @@ final class DiaperSensitivity
      * `pollutionValue / 4`, cada termo da saturação fica em 0.25 ou abaixo, logo a
      * média também, logo o índice não passa de 25 -- que é o tecto da banda `clean`.
      * O `+1` está aqui porque a comparação é `< cleanMaxDelta` e não `<=`, e é ele
-     * que reproduz exactamente o 4 que estava em hardcode para o preset normal.
+     * que dá o 4 do preset normal.
      */
     public static function cleanMaxDelta(int $pollutionValue): int
     {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/components/helpers.php';
 
-// Supplied by DashboardHttpServer::page(), which requires this file. Declared
-// here so the template states its own contract instead of assuming a caller.
+// Fornecido pelo `DashboardHttpServer::page()`, que faz `require` deste ficheiro. Declarado
+// aqui para o template dizer o seu próprio contrato em vez de assumir quem o chama.
 $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
 require_once __DIR__ . '/components/pagination.php';
 require_once __DIR__ . '/components/modal.php';
@@ -137,8 +137,8 @@ require_once __DIR__ . '/components/modal.php';
                                         <div id="selectedDeviceMeta" class="text-secondary small"></div>
                                     </div>
                                 </div>
-                                <?php /* Cada separador custava 32px -- 16 de margem mais 16 de
-                                       * padding -- e sao dois. Em telefone valem metade. */ ?>
+                                <?php /* Cada separador leva 32px -- 16 de margem mais 16 de
+                                       * padding -- e são dois. Em telefone valem metade. */ ?>
                                 <dl id="selectedDeviceFacts" class="selected-device-facts row g-2 g-sm-3 mb-0 border-top mt-2 pt-2 mt-sm-3 pt-sm-3"></dl>
                                 <div class="border-top mt-2 pt-2 mt-sm-3 pt-sm-3 d-flex justify-content-end">
                                     <button id="selectedDeviceEditBtn" class="btn btn-sm btn-outline-secondary row-action" type="button"><?= icon('fa-pen', 'me-1') ?>Editar</button>
@@ -146,11 +146,11 @@ require_once __DIR__ . '/components/modal.php';
                             </div>
                         </div>
                     </div>
-                    <?php /* Em telefone a moldura de fora desaparece: os mosaicos ja sao
-                           * cartoes, e cartao dentro de cartao gastava 32px de largura numa
-                           * moldura que nao separa nada. O padding e as goteiras saem por
-                           * utilitario; a borda e o fundo precisam da regra `.card-flush-sm`
-                           * no CSS, porque o Bootstrap nao tem `border-sm` nem `bg-sm-*`. */ ?>
+                    <?php /* Em telefone a moldura de fora desaparece: os mosaicos já são
+                           * cartões, e cartão dentro de cartão gastava 32px de largura numa
+                           * moldura que não separa nada. O padding e as goteiras saem por
+                           * utilitário; a borda e o fundo precisam da regra `.card-flush-sm`
+                           * no CSS, porque o Bootstrap não tem `border-sm` nem `bg-sm-*`. */ ?>
                     <div class="card card-flush-sm" id="requestCardsCard">
                         <div class="card-body p-0 p-sm-3">
                             <div class="row g-2 g-sm-3" id="requestGrid"></div>

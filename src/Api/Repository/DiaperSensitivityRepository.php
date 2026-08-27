@@ -11,9 +11,8 @@ use PDO;
 /**
  * A sensibilidade por sensor, lida de onde vivem todas as configurações.
  *
- * Teve tabela própria -- `diaper_sensor_settings` -- enquanto não era uma capacidade.
- * Agora é a `DiaperSensitivityCapability`, gravada pelo `PATCH .../configurations` como
- * qualquer outra, e o que fica aqui é a leitura no caminho quente da ingestão.
+ * É a `DiaperSensitivityCapability`, gravada pelo `PATCH .../configurations` como qualquer
+ * outra, e o que fica aqui é a leitura no caminho quente da ingestão.
  *
  * A cache curta é a mesma ideia do `GatewayDeviceLinkRepository`: a autorização
  * gateway/sensor já é lida da base de dados a cada observação com este padrão, e ele já
@@ -50,8 +49,8 @@ final class DiaperSensitivityRepository implements DiaperSensitivityLookup
         $stmt->execute([$sensorKey, 'diaper_sensitivity']);
         $payload = json_decode((string)$stmt->fetchColumn(), true);
 
-        // A ausência de linha é o preset normal e não um erro: é o comportamento com que o
-        // hub sempre correu, e é por isso que nenhuma migração fez backfill.
+        // A ausência de linha é o preset normal e não um erro, e é por isso que não há
+        // backfill: um sensor que ninguém configurou usa o preset.
         $settings = is_array($payload)
             && isset($payload['pollutionRange'], $payload['pollutionValue'])
             ? [

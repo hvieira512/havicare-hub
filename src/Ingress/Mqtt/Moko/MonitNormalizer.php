@@ -7,15 +7,11 @@ use Hub\Domain\DiaperSensitivity;
 final class MonitNormalizer
 {
     /**
-     * Banda do indice de humidade por estado: [minimo, maximo].
+     * Banda do índice de humidade por estado: [mínimo, máximo]. As fronteiras decorrem dos
+     * limiares configurados -- ver `buildMoistureIndex`.
      *
-     * As fronteiras nao sao arbitrarias, decorrem dos limiares configurados. Ver
-     * buildMoistureIndex.
-     *
-     * O 39 do `attention` e um 39 e nao um 40 DE PROPOSITO: os 40 sao a marca de alerta no
-     * ecra e tem de pertencer so ao `change_required`. Uma leitura real de dez canais a rondar
-     * o 6 -- nenhum a chegar aos 12, portanto `attention` -- dava media 0.43 e aterrava nos 40
-     * em cima da marca, com o badge ambar ao lado a dizer que ainda nao era preciso mudar.
+     * O 39 do `attention` é um 39 e não um 40 de propósito: os 40 são a marca de alerta no
+     * ecrã e têm de pertencer só ao `change_required`.
      *
      * @var array<string, array{int, int}>
      */
@@ -33,9 +29,9 @@ final class MonitNormalizer
      */
     public function normalize(array $decoded, array $device, string $gatewayId, array $sensitivity): array
     {
-        // Obrigatorio e sem valor por omissao de proposito: um chamador que se esqueca
-        // de ligar o lookup falha na analise estatica em vez de cair em silencio no
-        // preset normal e passar a decidir alarmes com limiares que ninguem escolheu.
+        // Obrigatório e sem valor por omissão de propósito: um chamador que se esqueça de
+        // ligar o lookup falha na análise estática, em vez de decidir alarmes com limiares
+        // que ninguém escolheu.
         $pollutionValue = $sensitivity['pollutionValue'];
         $pollutionRange = $sensitivity['pollutionRange'];
         $cleanMaxDelta = DiaperSensitivity::cleanMaxDelta($pollutionValue);
@@ -75,21 +71,16 @@ final class MonitNormalizer
                     'channels' => $channels,
                     'affectedChannelCount' => $affected,
                     'maximumDelta' => max($decoded['normalized']),
-                    // Os limiares viajam com a leitura pela mesma razao que o
-                    // `alertIndex` viaja com o indice: quem mostra "3 de 4 canais
-                    // afectados" precisa do 4, e com os limiares configuraveis por
-                    // sensor ja nao os pode escrever em hardcode.
+                    // Os limiares viajam com a leitura: quem mostra "3 de 4 canais
+                    // afectados" precisa do 4, e com os limiares configuráveis por
+                    // sensor não os pode escrever em hardcode.
                     'requiredChannelCount' => $pollutionRange,
                     'wetDelta' => $pollutionValue,
                 ]] + $common,
-                // Capacidade PROPRIA e nao um campo da `diaper_moisture`, que e detalhe deste
-                // fornecedor: os 10 canais capacitivos sao do MONIT MECS-PRO e mais nada. Um
-                // segundo medidor de fraldas -- outra marca, outra contagem de canais, ou um
-                // que de uma leitura unica -- nao tem `channels` nem `maximumDelta`, mas tem
-                // seguramente "quao humido, 0-100". O nivel e o contrato generico; os canais
-                // sao o detalhe do decoder. Guardado dentro da mensagem do fornecedor, o
-                // segundo modelo obrigava a duplicar o campo ou a que os consumidores lessem
-                // uma mensagem com forma de MONIT para tirar um numero que nada tem de MONIT.
+                // Capacidade PRÓPRIA e não um campo da `diaper_moisture`: os 10 canais
+                // capacitivos são detalhe do MONIT MECS-PRO, e um segundo medidor de fraldas
+                // tem seguramente "quão húmido, 0-100" mas não tem `channels`. O nível é o
+                // contrato genérico; os canais são o detalhe do decoder.
                 'diaper_moisture_level' => ['type' => 'diaper_moisture_level', 'data' => [
                     'index' => $this->buildMoistureIndex($decoded['normalized'], $condition, $pollutionValue),
                     'alertIndex' => self::MOISTURE_INDEX_BANDS['change_required'][0],
@@ -100,63 +91,33 @@ final class MonitNormalizer
     }
 
     /**
-     * Indice 0-100 de quanta humidade o sensor esta a ver, calculado aqui e nao a jusante.
+     * Índice 0-100 de quanta humidade o sensor está a ver, calculado aqui e não a jusante.
      *
-     * NAO E UMA PERCENTAGEM FISICA e nao deve ser apresentada como tal. O sensor mede
-     * capacitancia por canal contra uma linha de base de seco; nao ha calibracao para volume,
-     * nem referencia de fralda saturada, nem absorvencia por marca. O que isto da e a
-     * distancia entre o seco e o limiar de muda, comparavel entre leituras do mesmo sensor.
+     * NÃO É UMA PERCENTAGEM FÍSICA e não deve ser apresentada como tal. O sensor mede
+     * capacitância por canal contra uma linha de base de seco; não há calibração para volume,
+     * nem referência de fralda saturada, nem absorvência por marca. O que isto dá é a
+     * distância entre o seco e o limiar de muda, comparável entre leituras do mesmo sensor.
      *
-     * Vive aqui porque e daqui que sai o `condition`: a regra e este ficheiro, os limiares vem
-     * da configuracao do sensor, e o vector completo dos 10 canais tambem esta aqui. Calculado
-     * a jusante -- na app, a partir do `maximumDelta` e do `affectedChannelCount` -- ficava com
-     * as regras duplicadas num segundo repositorio E com menos informacao do que existe aqui.
+     * Vive aqui porque é daqui que sai o `condition`: a regra é este ficheiro, os limiares vêm
+     * da configuração do sensor, e o vector completo dos 10 canais também está aqui.
      *
-     * O `alertIndex` viaja no payload pela mesma razao: sem ele, quem desenha a marca de alerta
-     * no ecra tinha de escrever o 40 em hardcode, que e outra copia do limiar dos canais.
+     * A saturação é a média dos canais, cada um cortado no limiar de molhado, e depois entra
+     * na banda do estado que as regras acima decidiram -- é isso que garante os dois
+     * invariantes que o ecrã vê, provados pelo `MonitMoistureIndexTest` para cada
+     * configuração alcançável:
      *
-     * Vai na sua propria capacidade `diaper_moisture_level`, o que tem uma consequencia para
-     * quem consome: tendo impressao digital propria, e suprimida em separado da mensagem dos
-     * canais. Como o indice e um inteiro grosseiro que muitas vezes nao muda entre leituras,
-     * chega MENOS vezes do que a humidade -- ninguem pode assumir que as duas vem juntas.
+     *   condition == 'clean'           <=> índice <= 25
+     *   condition == 'change_required' <=> índice >= alertIndex
      *
-     * COMO FUNCIONA:
+     * O `attention` é a única banda reescalada: ali a saturação vai de quase 0 até
+     * (valor-1)/valor, e cortar em 39 empilhava metade do dia no mesmo valor -- que é
+     * justamente onde uma fralda passa a maior parte do tempo.
      *
-     * A saturacao e a media dos canais, cada um cortado no limiar de molhado -- ou seja
-     * "quantos dos 10 canais valem por um canal molhado", em fraccao. Depois entra na banda do
-     * estado que as regras acima decidiram, o que garante que o numero e o badge nunca se
-     * contradizem no ecra.
+     * Vai na capacidade `diaper_moisture_level`, com impressão digital própria, e por isso é
+     * suprimida em separado da mensagem dos canais: chega MENOS vezes do que a humidade, e
+     * ninguém pode assumir que as duas vêm juntas.
      *
-     * As bandas sao necessarias porque o estado depende de DUAS estatisticas independentes: o
-     * maximo (ha algum sitio molhado?) e a contagem (quao espalhado esta?). Nenhum numero unico
-     * e monotono com as duas.
-     *
-     * Em `clean` a saturacao cai dentro da banda por aritmetica, para QUALQUER valor de molhado
-     * configurado, e e exactamente para isso que serve a divisao por 4 no `cleanMaxDelta`:
-     *
-     *   clean -> todos os deltas <= cleanMaxDelta - 1 = intdiv(valor, 4) <= valor / 4
-     *         -> cada termo = min(delta / valor, 1) <= 0.25
-     *         -> media <= 0.25  ->  indice <= 25                          ✔ tecto da banda
-     *
-     * Em `change_required` a aritmetica da `media >= range / 10`, o que com o range 4 do preset
-     * normal aterra nos 40 e com um range menor daria menos -- e ai e o `clamp` no fim que o
-     * sobe ao piso da banda. Nao e um remendo: o que interessa e o invariante que o ecra ve, e
-     * esse mantem-se por construcao em qualquer configuracao alcancavel:
-     *
-     *   condition == 'clean'           <=> indice <= 25
-     *   condition == 'change_required' <=> indice >= alertIndex
-     *
-     * O custo, dito com clareza em vez de escondido: longe do preset normal o indice comprime-se
-     * nos extremos, e varias leituras distintas encostam ao 25 ou ao 40. Perde-se resolucao, nao
-     * correcao.
-     *
-     * Em `attention` a saturacao NAO cai na banda, e e por isso que essa e a unica reescalada.
-     * Ali a saturacao vai de quase 0 ate (valor-1)/valor (todos os canais um ponto abaixo de
-     * molhado), portanto cortar em 39 empilhava metade do dia no mesmo valor -- e uma fralda em
-     * atencao passa la a maior parte do tempo, que e justamente quando o numero tem de se mexer.
-     * Reescalada, a leitura real de dez canais a rondar o 6 da 32 em vez de bater no tecto.
-     *
-     * @param list<int> $deltas delta por canal, ja normalizado contra a linha de base
+     * @param list<int> $deltas delta por canal, já normalizado contra a linha de base
      */
     private function buildMoistureIndex(array $deltas, string $condition, int $pollutionValue): int
     {

@@ -82,9 +82,9 @@ final class WhitelistRepository
         return [
             'items' => $items,
             'total' => (int)$count->fetchColumn(),
-            // `available` continua a ser a lista de valores que sempre foi, para não partir
-            // quem já a lê; `counts` traz os mesmos valores com o número de dispositivos de
-            // cada um, que é o que a coluna de filtros mostra ao lado de cada caixa.
+            // `available` é a lista de valores, e `counts` os mesmos valores com o número de
+            // dispositivos de cada um -- que é o que a coluna de filtros mostra ao lado de
+            // cada caixa. Os dois, porque o primeiro é contrato público.
             'available' => [
                 'deviceType' => $this->distinctValues('w.device_type', 'deviceType', $filters, 'deviceType', $licenseScope, $companyScope),
                 'licenseId' => $this->distinctValues('w.license_id', 'licenseId', $filters, 'licenseId', $licenseScope, $companyScope),
@@ -133,20 +133,16 @@ final class WhitelistRepository
     }
 
     /**
-     * Tira um dispositivo do registo, e com ele as suas configurações.
-     *
-     * As linhas do ciclo de vida das configurações não desapareciam: apagar um dispositivo
-     * era só este `DELETE`, mais uma limpeza do Redis. Um IMEI registado outra vez -- o
-     * mesmo aparelho a mudar de cliente, ou um número reaproveitado -- herdava os valores
-     * desejados do dono anterior, e o painel mostrava-os como se fossem dele.
+     * Tira um dispositivo do registo, e com ele as suas configurações. Sem isto, um IMEI
+     * registado outra vez -- o mesmo aparelho a mudar de cliente, ou um número reaproveitado
+     * -- herdava os valores desejados do dono anterior.
      *
      * Feito aqui e não com uma chave estrangeira `ON DELETE CASCADE`, ao contrário da
-     * `diaper_sensor_settings` e da `gateway_device_links`: o `DeviceEventStore` escreve
-     * uma configuração reportada direto do caminho de ingestão sempre que chega um
-     * `device_config`, e uma chave estrangeira transformava uma mensagem em voo no
-     * instante da remoção -- ou nos segundos em que a cache de whitelist do worker ainda
-     * não expirou -- numa excepção no caminho quente do MQTT. Este é o único sítio por
-     * onde um dispositivo sai do registo, por isso uma linha aqui chega.
+     * `gateway_device_links`: o `DeviceEventStore` escreve uma configuração reportada direto
+     * do caminho de ingestão sempre que chega um `device_config`, e uma chave estrangeira
+     * transformava uma mensagem em voo no instante da remoção -- ou nos segundos em que a
+     * cache de whitelist do worker ainda não expirou -- numa excepção no caminho quente do
+     * MQTT. Este é o único sítio por onde um dispositivo sai do registo.
      *
      * As operações não precisam de menção: já cascateiam a partir das alterações.
      */
@@ -241,10 +237,9 @@ final class WhitelistRepository
             }
         }
 
-        // O modelo passa a comparar por igualdade e não por semelhança: as opções vêm da
-        // própria lista de modelos existentes, logo o que chega é um nome inteiro. O `LIKE`
-        // servia uma caixa de texto que já não existe, e ao aceitar vários valores
-        // significava que escolher "L08" trazia também "L08 Pro Max".
+        // O modelo compara por igualdade e não por semelhança: as opções vêm da própria lista
+        // de modelos existentes, logo o que chega é um nome inteiro, e com `LIKE` escolher
+        // "L08" trazia também "L08 Pro Max".
         $models = $this->filterValues($filters, 'model');
         if ($models !== []) {
             $clauses[] = 'w.model IN (' . $this->placeholders(count($models)) . ')';
@@ -254,19 +249,18 @@ final class WhitelistRepository
         }
 
         // A licença sozinha, da forma antiga do endpoint: sem empresa não há par para formar,
-        // e continua a ser a condição independente que sempre foi.
+        // e por isso é uma condição independente.
         $legacyLicenseId = trim((string)($filters['licenseId'] ?? ''));
         if ($legacyLicenseId !== '' && $legacyLicenseId !== 'all') {
             $clauses[] = 'w.license_id = ?';
             $params[] = DeviceMetadata::normalizeLicenseId($legacyLicenseId);
         }
 
-        // A empresa e a licença são um filtro só, e o que ele escolhe são pares.
+        // A empresa e a licença são um filtro só, e o que ele escolhe são pares: cada par é
+        // uma condição, e os pares ligam-se por "ou". Um par sem licença é a empresa toda.
         //
         // Como duas condições independentes ligadas por "e", escolher {hitcare, haviCare} e
-        // {1001, 2002} trazia também um dispositivo da hitcare com a licença 2002 -- o
-        // filtro prometia uma coisa e devolvia outra. Aqui cada par é uma condição, e os
-        // pares ligam-se por "ou". Um par sem licença é a empresa toda.
+        // {1001, 2002} trazia também um dispositivo da hitcare com a licença 2002.
         $pairs = $this->licensePairs($filters);
         if ($pairs !== []) {
             $pairClauses = [];
@@ -289,8 +283,8 @@ final class WhitelistRepository
         }
 
         // Os IMEI que o estado de ligação deixa passar. A presença vive em runtime e não na
-        // base de dados, por isso entra como uma lista -- mas entra nesta mesma cláusula, e
-        // é isso que mantém a paginação, o total e as listas de opções certos.
+        // base de dados, por isso entra como lista -- mas nesta mesma cláusula, que é o que
+        // mantém a paginação, o total e as listas de opções certos.
         if (array_key_exists('imeiIn', $filters) && is_array($filters['imeiIn'])) {
             $imeis = array_values(array_filter(array_map('strval', $filters['imeiIn'])));
             if ($imeis === []) {
@@ -421,8 +415,8 @@ final class WhitelistRepository
      * A contagem é o que diz o que se ganha ao marcar mais uma caixa, e sai por agrupamento
      * na mesma consulta que já dava os valores distintos -- não custa um pedido a mais.
      *
-     * O próprio filtro fica de fora da condição, como já ficava: marcar `hitcare` estreita a
-     * lista de modelos mas mantém `haviCare` à vista, que é o que a escolha múltipla precisa.
+     * O próprio filtro fica de fora da condição: marcar `hitcare` estreita a lista de modelos
+     * mas mantém `haviCare` à vista, que é o que a escolha múltipla precisa.
      *
      * @param array<string, mixed> $filters
      * @return list<array{value: string, count: int}>
@@ -486,7 +480,7 @@ final class WhitelistRepository
             $licenseId = DeviceMetadata::normalizeLicenseId($row['license_id'] ?? 0);
             // A chave ignora maiúsculas, porque a comparação que o filtro faz também as
             // ignora: com "hitcare" e "hitCare" como duas entradas, a árvore mostrava 9 numa
-            // delas e clicar-lhe devolvia 10. Fica a primeira grafia vista como nome.
+            // delas e clicar-lhe devolvia 10. O nome é a primeira grafia vista.
             $key = mb_strtolower($company);
             if (!isset($companies[$key])) {
                 $companies[$key] = ['company' => $company, 'count' => 0, 'licenses' => []];

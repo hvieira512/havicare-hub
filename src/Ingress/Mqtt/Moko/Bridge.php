@@ -14,8 +14,8 @@ use Hub\RawPayload;
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
     /**
-     * How each relayed device type reports, keyed by device type. Needed when the
-     * signal goes quiet, because there is no observation left to read it from.
+     * Como cada tipo de dispositivo retransmitido reporta. Necessário quando o sinal se cala,
+     * porque não sobra observação nenhuma de onde o ler.
      */
     private const RELAYED_PROTOCOLS = [
         'bracelet' => 'moko-w6r',
@@ -69,9 +69,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private readonly ObservationStateStore $state;
 
     /**
-     * Resolved once and kept, unlike the stateless decoders above which the call
-     * sites build on demand: this one carries the sample window, so a fresh
-     * instance per sighting would see an empty window every time.
+     * Resolvido uma vez e guardado, ao contrário dos decoders sem estado acima: este leva a
+     * janela de amostras, e uma instância nova por avistamento via-a sempre vazia.
      */
     private ?ProximityTracker $proximity = null;
 
@@ -190,9 +189,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * A gateway relays every BLE device it can see, so each observation is
-     * offered to the decoders in turn and the first one that recognises it
-     * owns the payload.
+     * Um gateway retransmite todos os dispositivos BLE que vê, por isso cada observação é
+     * oferecida aos decoders por ordem e o primeiro que a reconhece fica com o payload.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $observation
      */
@@ -211,8 +209,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Resolves a relayed device and confirms it is allowed to reach us through
-     * this gateway.
+     * Resolve um dispositivo retransmitido e confirma que pode chegar-nos por este gateway.
      *
      * @param array<string, mixed> $gateway
      * @return array<string, mixed>|null
@@ -240,9 +237,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * A pressed W6R broadcasts for 30 seconds, so the same trigger count
-     * arrives many times over. Each press mode keeps its own counter, and only
-     * a change is a new press.
+     * Uma W6R premida anuncia durante 30 segundos, e por isso a mesma contagem de toques
+     * chega muitas vezes. Cada modo tem o seu contador, e só uma mudança é um toque novo.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
      */
@@ -260,12 +256,12 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 $deviceKey . ':press:' . $decoded['alarm']['pressMode'],
                 (string)$decoded['alarm']['triggerCount'],
             );
-            // No press is reported either when the counter has not moved OR on the first
-            // sighting of this bracelet: the counter is cumulative, so seeing it for the
-            // first time says nothing about a press having just happened. This is the
-            // opposite of the diaper condition below, where a first observation that is
-            // already `change_required` MUST raise the alarm -- which is why the store
-            // now reports both facts and each caller decides what to do with them.
+            // Não há toque nem quando o contador não se moveu nem no primeiro avistamento
+            // desta pulseira: o contador é cumulativo, e vê-lo pela primeira vez não diz
+            // nada sobre um toque ter acabado de acontecer. É o contrário da condição da
+            // fralda abaixo, onde uma primeira observação já em `change_required` TEM de dar
+            // alarme -- e é por isso que o store reporta os dois factos e cada chamador
+            // decide o que fazer com eles.
             $previousTriggerCount = $transition === null || $transition['previous'] === null
                 ? null
                 : (int)$transition['previous'];
@@ -303,19 +299,17 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Report the signal between a relayed device and the gateway that heard it.
+     * Reporta o sinal entre um dispositivo retransmitido e o gateway que o ouviu.
      *
-     * Published per sighting rather than through shouldPublish(): that throttle
-     * fingerprints the telemetry data, and the signal lives outside it, so a
-     * sighting whose signal moved but whose readings did not was being dropped --
-     * leaving the client a series with holes it could not see, and no way to know
-     * its own statistics were computed on one.
+     * Publicado por avistamento e não pelo `shouldPublish()`: esse throttle faz impressão
+     * digital dos dados de telemetria, e o sinal vive fora dela -- um avistamento cujo sinal
+     * mexeu mas cujas leituras não mexeram era descartado, e o cliente ficava com uma série
+     * com buracos que não podia ver.
      *
-     * Not appended to the device history either. Every other telemetry is, but at
-     * roughly forty sightings a minute per pair this would bury the history list
-     * and the dashboard's telemetry table under readings nobody scrolls through.
+     * Também não vai para o histórico do dispositivo: a uns quarenta avistamentos por minuto
+     * e por par, soterrava a lista e a tabela de telemetria da dashboard.
      *
-     * @param array<string, mixed> $device the relayed device, already authorized
+     * @param array<string, mixed> $device o dispositivo retransmitido, já autorizado
      * @param array<string, mixed> $gateway
      */
     private function recordSignal(array $device, array $gateway, string $protocol, mixed $rssiDbm): void
@@ -368,12 +362,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Tell the client when a pair has gone quiet.
+     * Diz ao cliente quando um par se calou.
      *
-     * `unknown` is not `far`: out of range, a flat battery, a gateway offline and a
-     * filter set too strictly are indistinguishable from each other and from
-     * nobody being there. Reported once per pair, so silence stays silent
-     * afterwards.
+     * `unknown` não é `far`: fora de alcance, uma bateria descarregada, um gateway offline e
+     * um filtro apertado demais são indistinguíveis entre si e de não estar ninguém lá.
+     * Reportado uma vez por par, para o silêncio ficar silencioso depois disso.
      */
     public function expireStaleProximity(): void
     {
@@ -404,9 +397,9 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        // Sem lookup ligado a sensibilidade e a do preset normal, que e o comportamento
-        // com que o hub sempre correu -- o valor por omissao esta aqui e nao no
-        // normalizador, onde um parametro opcional esconderia uma ligacao esquecida.
+        // Sem lookup ligado, a sensibilidade é a do preset normal. O valor por omissão está
+        // aqui e não no normalizador, onde um parâmetro opcional esconderia uma ligação
+        // esquecida.
         $sensitivity = $this->diaperSensitivity?->forDevice($sensorKey) ?? DiaperSensitivity::normal();
         $normalized = ($this->monitNormalizer ?? new MonitNormalizer())
             ->normalize($decoded, $sensor, (string)$gateway['imei'], $sensitivity);
@@ -427,22 +420,21 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->dashboardStore?->append($sensorKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
-        // A sensibilidade entra no VALOR guardado e nao na chave. Mudar a configuracao muda
-        // a condicao derivada para a mesma leitura fisica, e essa mudanca tem de contar como
-        // transicao -- senao um cuidador que aperta a sensibilidade numa fralda ja suja nao
+        // A sensibilidade entra no VALOR guardado e não na chave. Mudar a configuração muda a
+        // condição derivada para a mesma leitura física, e essa mudança tem de contar como
+        // transição -- senão um cuidador que aperta a sensibilidade numa fralda já suja não
         // recebe alarme nenhum.
         //
-        // Na chave nao servia: seria fresca a primeira vez que cada par (sensor, configuracao)
-        // aparecesse, mas depois lembrava-se do valor antigo. Passar de `normal` para
-        // `low` e voltar a `normal` reencontrava a chave antiga com
-        // `change_required` la dentro, nao via transicao, e engolia o alarme.
+        // Na chave não servia: passar de `normal` para `low` e voltar a `normal` reencontrava
+        // a chave antiga com `change_required` lá dentro, não via transição, e engolia o
+        // alarme.
         $transition = $this->state->transitionCondition(
             $sensorKey,
             $normalized['condition'] . '@' . $sensitivity['pollutionRange'] . '-' . $sensitivity['pollutionValue'],
         );
         if ($normalized['condition'] === 'change_required' && $transition !== null) {
-            // A sensibilidade fica dentro do estado guardado e NAO sai no evento: o
-            // `previousState` e parte do contrato publicado e continua a ser um dos tres
+            // A sensibilidade fica dentro do estado guardado e NÃO sai no evento: o
+            // `previousState` é parte do contrato publicado e continua a ser um dos três
             // estados, ou nulo.
             $stored = $transition['previous'];
             $previous = is_string($stored) ? explode('@', $stored, 2)[0] : null;

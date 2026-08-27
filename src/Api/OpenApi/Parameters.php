@@ -3,12 +3,12 @@
 namespace Hub\Api\OpenApi;
 
 /**
- * Reusable OpenAPI parameter builders shared by the path definitions.
+ * Construtores de parâmetros OpenAPI reutilizáveis, partilhados pelas definições de rotas.
  */
 final class Parameters
 {
     /**
-     * Documented path parameter with a scalar schema.
+     * Um parâmetro de rota documentado, com esquema escalar.
      */
     public static function path(string $name, string $description, string $type, string|int $example): array
     {

@@ -7,7 +7,7 @@ use Hub\Api\OpenApi\Requests;
 use Hub\Api\OpenApi\Responses;
 
 /**
- * Device registration, configuration, links, telemetry and commands.
+ * Registo, configuração, ligações, telemetria e comandos de dispositivos.
  */
 final class DevicePaths
 {

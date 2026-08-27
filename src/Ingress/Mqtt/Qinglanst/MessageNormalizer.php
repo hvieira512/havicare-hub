@@ -23,15 +23,8 @@ final class MessageNormalizer
     ];
 
     /**
-     * A capacidade a que cada detecção pertence.
-     *
-     * Os quinze tipos saíam todos como um evento `detection`, com o tipo real escondido em
-     * `data.detectionType`. Uma queda vista por um radar e um SOS de uma pulseira não se
-     * conseguiam listar nem alertar pela mesma regra, porque um era `detection` e o outro
-     * `help_call`.
-     *
-     * Três capacidades e não quinze: cada evento continua a levar o tipo específico, e o
-     * separador das Capacidades não ganha quinze linhas para se ligarem uma a uma.
+     * A capacidade a que cada detecção pertence. Três e não quinze: cada evento leva o tipo
+     * específico dentro, e o separador das Capacidades não ganha quinze linhas.
      */
     private const DETECTION_CAPABILITY = [
         'fall_confirmed' => 'fall',
@@ -59,8 +52,8 @@ final class MessageNormalizer
      * respiratória e estado de sono. É a forma que o `Moko\W6rNormalizer` já usa, e que o
      * `Moko\Bridge` já sabe percorrer com estrangulamento por capacidade.
      *
-     * Os alarmes vêm em lista pelo mesmo motivo. Antes saía só o primeiro -- uma apneia e
-     * uma taquicardia no mesmo minuto e uma delas desaparecia sem deixar rasto.
+     * Os alarmes vêm em lista pelo mesmo motivo: uma apneia e uma taquicardia no mesmo
+     * minuto são dois alarmes, e um só campo perdia um deles sem deixar rasto.
      *
      * @param array{type: string, device_code: string, ...} $decoded
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string} $device
@@ -88,10 +81,9 @@ final class MessageNormalizer
 
         // Uma mensagem `position` responde a uma pergunta só: quem está na divisão, e como.
         //
-        // A postura e o último evento são de cada pessoa, tal como o x/y/z, e por isso
-        // ficam dentro dela. Tirá-los para uma leitura do aparelho obrigava a escolher uma
-        // pessoa entre as presentes -- e o que sobrasse dessa escolha era a postura de toda
-        // a gente menos uma, desligada de quem a tinha.
+        // A postura e o último evento são de cada pessoa, tal como o x/y/z, e por isso ficam
+        // dentro dela: tirá-los para uma leitura do aparelho obrigava a escolher uma pessoa
+        // entre as presentes e a deitar fora a postura das outras.
         //
         // Isto não é o `location` canónico: esse é geográfico, com GPS e células. O radar
         // dá coordenadas em decímetros relativas a si próprio, que só significam alguma
@@ -226,7 +218,7 @@ final class MessageNormalizer
         // `{breathsPerMinute}` --, as mesmas que um relógio produz, para partilharem os
         // cartões em vez de terem os seus.
         //
-        // Um zero não é uma leitura: é o radar a dizer que não mediu ninguém. Publicá-lo
+        // Um zero não é uma leitura: é o radar a dizer que não mediu ninguém, e publicá-lo
         // punha o cartão a dizer "0 bpm", que se lê como um coração parado.
         $telemetry = [];
         if ($heartRate > 0) {
@@ -442,7 +434,7 @@ final class MessageNormalizer
             : RadarValueMapper::DETECTION_CATEGORY_EVENT;
 
         return [
-            // Era 1 enquanto a telemetria já ia em 2: o mesmo protocolo emitia as duas.
+            // A mesma versão da telemetria: é o mesmo protocolo a emitir as duas.
             'schemaVersion' => 2,
             'type' => self::DETECTION_CAPABILITY[$type] ?? 'vitals_alarm',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),

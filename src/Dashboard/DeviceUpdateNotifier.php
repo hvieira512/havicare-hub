@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Hub\Dashboard;
 
 /**
- * Tells open device streams that a device's history has changed.
+ * Diz aos streams abertos que o histórico de um dispositivo mudou.
  *
  * The ingest and the dashboard HTTP server share one process and one
  * DashboardStore, so a write can be announced directly instead of every stream
  * re-reading Redis on a timer to discover it.
  *
- * Listeners are only told *which* device changed, never what: the stream still
- * reads the authoritative state itself, so a missed or duplicated notification
- * costs a redundant read rather than a wrong payload.
+ * Aos ouvintes só se diz *qual* o dispositivo que mudou, nunca o quê: o stream continua a
+ * ler o estado autoritativo por si, e por isso uma notificação perdida ou duplicada custa
+ * uma leitura a mais e não um payload errado.
  */
 class DeviceUpdateNotifier
 {
@@ -48,8 +48,8 @@ class DeviceUpdateNotifier
     }
 
     /**
-     * For sweeps that touch devices they do not name, such as expiring commands
-     * across the whole store.
+     * Para varreduras que tocam dispositivos que não nomeiam, como expirar comandos em todo
+     * o store.
      */
     public function notifyAll(): void
     {
