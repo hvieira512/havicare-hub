@@ -6,6 +6,7 @@ namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\Migration;
 use Hub\Infrastructure\Persistence\Migration\Version2026082805DropDiaperSensorSettingsAgain;
+use Hub\Infrastructure\Persistence\Migration\Version2026082806SeedMokoW6CatalogModel;
 
 /**
  * As migrações posteriores à baseline, que é o `database/schema.sql` mais o catálogo de
@@ -25,6 +26,7 @@ final class DatabaseMigrationPlan
     {
         return [
             new Version2026082805DropDiaperSensorSettingsAgain(),
+            new Version2026082806SeedMokoW6CatalogModel(),
         ];
     }
 

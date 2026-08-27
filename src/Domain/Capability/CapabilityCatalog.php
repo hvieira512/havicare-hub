@@ -133,7 +133,7 @@ final class CapabilityCatalog
             'wonlex-json' => ['device_state'],
             'voerka-ncs' => ['pager_call'],
             'monit-mecs-pro-ble' => ['change_required'],
-            'moko-w6r' => ['help_call'],
+            'moko-w6r', 'moko-w6' => ['help_call'],
             'qinglanst-radar' => ['fall', 'vitals_alarm', 'presence_event'],
             default => [],
         };
@@ -191,7 +191,7 @@ final class CapabilityCatalog
             'moko-mkgw3' => ['connectivity'],
             'moko-mkgw4' => ['connectivity', 'battery', 'location'],
             'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'],
-            'moko-w6r' => ['battery', 'motion'],
+            'moko-w6r', 'moko-w6' => ['battery', 'motion'],
             default => [],
         };
     }
