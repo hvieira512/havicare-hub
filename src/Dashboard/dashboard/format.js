@@ -36,11 +36,8 @@ export const when = (value) => {
 };
 
 /**
- * A hora de uma linha de lista: dia, mês e hora, sem ano.
- *
- * A coluna da hora e a ultima de quatro em meio painel, e "24/08/2026, 14:34:44" ocupava
- * la um terco da largura para dizer o ano quatro vezes por linha. A janela de filtro
- * comeca por omissao a sete dias, por isso o dia e o mes bastam para nao haver duvida.
+ * A hora de uma linha de lista: dia, mês e hora, sem ano. A coluna é a última de quatro em
+ * meio painel, e a janela de filtro começa por omissão a sete dias.
  */
 export const whenShort = (value) => {
     if (!value) return "";
@@ -148,15 +145,12 @@ export const fieldLabel = (key) =>
     })[key] || titleize(key);
 
 /**
- * O valor de um campo cujo conteudo e uma enumeracao, em portugues.
+ * O valor de um campo cujo conteúdo é uma enumeração, em português. O `fieldLabel` acima
+ * traduz o nome do campo; isto traduz o que lá está dentro, porque o hub envia enumerações
+ * -- `awake`, `lying_down` -- e a tradução é deste lado.
  *
- * O `fieldLabel` acima traduz o nome do campo; isto traduz o que la esta dentro. Faltava, e
- * via-se: o cartao dizia "Estado do sono" ao lado de "Awake", porque o descodificador do
- * radar devolvia as etiquetas do documento do fabricante e ninguem as convertia. O hub
- * passou a enviar enumeracoes -- `awake`, `lying_down` -- e a traducao e deste lado.
- *
- * Por chave de campo e nao um dicionario global: `low` e `high` querem dizer coisas
- * diferentes conforme se fale de uma frequencia cardiaca ou de um nivel de bateria.
+ * Por chave de campo e não num dicionário global: `low` e `high` querem dizer coisas
+ * diferentes conforme se fale de uma frequência cardíaca ou de um nível de bateria.
  */
 const FIELD_VALUE_LABELS = {
     sleep_state: {
@@ -193,18 +187,15 @@ const FIELD_VALUE_LABELS = {
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";
 
-    // Um booleano chegava aqui como texto e saia titleizado do inglês: o cartão de alarme
-    // dizia "Queda: False" e "Bateria fraca: False", e o de localização "GPS válido: False".
+    // Um booleano, que sem isto sai titleizado do inglês: "Queda: False".
     if (typeof value === "boolean") return value ? "Sim" : "Não";
 
     const raw = String(value);
     const translated = FIELD_VALUE_LABELS[key]?.[raw];
     if (translated) return translated;
 
-    // So o que parece uma enumeracao e que se embeleza. Um numero, uma percentagem ou um
-    // texto livre passam intactos: o `titleize` transformava `78` em `78` mas
-    // `2026-08-26T19:00:00Z` em `2026-08-26T19:00:00Z` com as maiusculas trocadas, e nao e
-    // trabalho dele arriscar isso.
+    // Só o que parece uma enumeração é que se embeleza: um número, uma percentagem ou um
+    // texto livre passam intactos, para o `titleize` não trocar maiúsculas num ISO 8601.
     return /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/.test(raw) ? titleize(raw) : raw;
 };
 

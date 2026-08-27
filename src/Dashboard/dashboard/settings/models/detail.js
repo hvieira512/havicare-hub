@@ -23,15 +23,14 @@ import {getSettingsModelsRuntime, modelsCarousel} from "./shell.js";
 import {backToModelList} from "./list.js";
 
 /**
- * A ficha de um modelo: o terceiro slide do carrossel do catalogo.
+ * A ficha de um modelo: o terceiro slide do carrossel do catálogo.
  *
- * Sao duas metades no mesmo ecra. Em cima a identidade -- nome comercial, modelo interno,
- * fornecedor, tipo --, que se grava por diferenca: o "Guardar" so aparece quando algum
- * campo muda. Em baixo as capacidades do modelo, que sao interruptores sobre o catalogo do
- * tipo de dispositivo, limitados ao template do fornecedor.
+ * São duas metades no mesmo ecrã. Em cima a identidade -- nome comercial, modelo interno,
+ * fornecedor, tipo --, que se grava por diferença. Em baixo as capacidades, que são
+ * interruptores sobre o catálogo do tipo, limitados ao template do fornecedor.
  *
- * As duas gravam para o mesmo endpoint mas com corpos diferentes, e por isso sao dois
- * botoes: mexer no nome de um modelo nao devia reescrever a lista das suas capacidades.
+ * Gravam para o mesmo endpoint com corpos diferentes, e por isso são dois botões: mexer no
+ * nome de um modelo não deve reescrever a lista das suas capacidades.
  */
 
 async function openModelDetail(modelId) {
@@ -60,8 +59,8 @@ async function openModelDetail(modelId) {
                 tmpl.enabledCapabilities.map(String);
         }
     }
-    // O template do fornecedor manda: uma capacidade gravada no modelo que ele nao oferece
-    // nao se mostra ligada, porque nao ha por onde a usar.
+    // O template do fornecedor manda: uma capacidade gravada no modelo que ele não oferece
+    // não se mostra ligada, porque não há por onde a usar.
     const templateSet = new Set(
         state.settingsModal.capabilityModelTemplateKeys || [],
     );
@@ -115,18 +114,16 @@ function renderModelDetailInfo(model) {
         modelDeviceType(model),
     );
 
-    // A fotografia do estado limpo, para se saber se algo mudou sem comparar campo a
-    // campo espalhado por quem trata cada evento.
+    // A fotografia do estado limpo, para se saber se algo mudou sem comparar campo a campo.
     state.settingsModal.modelDetailPristine = readModelDetailFields();
     syncModelDetailDirty();
     void renderModelDetailDeleteHint(model);
 }
 
 /**
- * Os fornecedores com o seu id, que e o que o `supplier_id` do modelo precisa.
- *
- * Vem do separador dos fornecedores quando esse ja foi aberto; caso contrario carrega-se
- * aqui, porque o detalhe de um modelo alcanca-se sem passar por lá.
+ * Os fornecedores com o seu id, que é o que o `supplier_id` do modelo precisa. Vêm do
+ * separador dos fornecedores, ou carregam-se aqui, porque este detalhe alcança-se sem lá
+ * passar.
  */
 function modelDetailSuppliers() {
     return state.modelModalSuppliers || [];
@@ -159,7 +156,7 @@ function readModelDetailFields() {
     };
 }
 
-/** O "Guardar" aparece por diferença: sem alteração nao ha botao para premir. */
+/** O "Guardar" aparece por diferença: sem alteração não há botão para premir. */
 function syncModelDetailDirty() {
     const {els} = getSettingsModelsRuntime();
     const pristine = state.settingsModal.modelDetailPristine;
@@ -217,10 +214,8 @@ async function saveModelDetail() {
 }
 
 /**
- * Quantos dispositivos usam este modelo.
- *
- * A consequencia de apagar escrita ao lado do botao, e nao depois de se premir: o
- * endpoint de dispositivos ja filtra por modelo, por isso e a paginacao que da o total.
+ * Quantos dispositivos usam este modelo: a consequência de apagar escrita ao lado do botão,
+ * e não depois de se premir. O total vem da paginação do endpoint de dispositivos.
  */
 async function renderModelDetailDeleteHint(model) {
     const {els} = getSettingsModelsRuntime();
@@ -370,11 +365,9 @@ function renderCapabilitiesSection() {
                             section.section === "telemetry"
                                 ? `${esc(String(model?.supplier || "Protocolo"))}: ${canBeRequested ? "receção e pedido" : "apenas receção"}`
                                 : "";
-                        // "Apenas receção" era um badge e "Solicitável" um interruptor,
-                        // para a mesma pergunta: o modelo aceita pedido? Sao sempre dois
-                        // interruptores, na mesma posicao. Quando o fornecedor nao suporta
-                        // pedido, o segundo fica desligado com a razao na etiqueta -- em
-                        // vez de trocar de tipo de controlo.
+                        // São sempre dois interruptores, na mesma posição. Quando o
+                        // fornecedor não suporta pedido, o segundo fica desligado com a
+                        // razão na etiqueta, em vez de trocar de tipo de controlo.
                         const requestableSwitch = section.section !== "telemetry"
                             ? ""
                             : `<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap">

@@ -40,13 +40,7 @@ const DETAIL_ITEM_TYPES = {
 
 const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];
 
-/**
- * Os alarmes que a lista de actividade mostra.
- *
- * Era uma condicao a mao com `help_call` e `reset`, e tudo o resto que chegasse por
- * `events` era descartado em silencio. Os tres do radar -- que sao a razao de haver um
- * radar -- eram ingeridos, guardados no Redis e nunca desenhados em lado nenhum.
- */
+/** Os alarmes que a lista de actividade mostra: os do NCS e os três do radar. */
 const ALARM_EVENT_TYPES = new Set([
     "help_call",
     "reset",
@@ -71,13 +65,11 @@ function renderSelection() {
     );
     els.selectedDevicePanel.classList.toggle("d-none", !state.selectedDetail);
     els.deviceDetail.classList.toggle("d-none", !state.selectedDetail);
-    // Sem dispositivo escolhido, a coluna da atividade nao tem nada para dizer que a da
-    // esquerda ja nao diga -- e essa tem o botao. Uma mensagem repetida em duas colunas
-    // le-se como erro, por isso a coluna desaparece e a da escolha ocupa a largura.
+    // Sem dispositivo escolhido a coluna da atividade não diz nada que a da esquerda não
+    // diga, e essa tem o botão: desaparece, e a da escolha ocupa a largura toda.
     els.detailColumn.classList.toggle("d-none", !state.selectedDetail);
     els.deviceColumn.classList.toggle("col-lg-4", !!state.selectedDetail);
-    // O cartao dos pedidos e agora um cartao seu, e sem dispositivo escolhido nao tem
-    // mosaico nenhum para mostrar -- ficava um cartao branco e vazio.
+    // Sem dispositivo escolhido, o cartão dos pedidos não tem mosaico nenhum para mostrar.
     els.requestCardsCard?.classList.toggle("d-none", !state.selectedDetail);
     if (!state.selectedDetail) {
         els.requestGrid.innerHTML = "";
@@ -155,21 +147,13 @@ const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
 ]);
 
 /**
- * Capacidades que existem, mas não como mosaico próprio.
- *
- * O `diaper_moisture_level` é o índice 0-100 da humidade e continua a ser capacidade
- * própria — é o campo genérico que um segundo medidor de fraldas também teria. No ecrã
- * era um segundo cartão a dizer da mesma leitura o que o primeiro já dizia, por isso
- * passou a ser o valor do cartão dos canais.
+ * Capacidades que existem, mas não como mosaico próprio: o `diaper_moisture_level` é o
+ * índice 0-100 da humidade, e mostra-se como valor do cartão dos canais.
  */
 /**
- * Capacidades que o dispositivo tem mas que o mosaico de resumo nao mostra.
- *
- * O resumo diz o estado agora. Os dois agregados do radar sao medias do ultimo minuto, e
- * ao lado dos instantaneos ficavam a dizer quase a mesma coisa com outro numero -- "67
- * bpm" ao lado de "64 bpm · 18 rpm", e "1 pessoa" ao lado de "0 pessoas · 0 m". Continuam
- * a ser ingeridos e aparecem na lista de eventos ao lado, onde a coluna do tempo lhes da o
- * sentido que um mosaico sem tempo nao da.
+ * Capacidades que o dispositivo tem mas que o mosaico de resumo não mostra: o resumo diz o
+ * estado agora, e os dois agregados do radar são médias do último minuto. Continuam na
+ * lista de eventos, onde a coluna do tempo lhes dá o sentido que um mosaico não dá.
  */
 const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set([
     "diaper_moisture_level",
@@ -227,8 +211,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         facts.push({ label: "SIM", value: String(device.simNumber) });
     }
     if (linkedDevices.length) {
-        // A bare list of MACs said nothing about whether those gateways can
-        // currently hear the device, which is the useful part.
+        // Uma lista de MACs não diz se esses gateways ouvem o dispositivo agora, que é a
+        // parte útil.
         facts.push({
             label: "Dispositivos ligados",
             html: gatewaySignalRows(linkedDevices),
@@ -240,9 +224,8 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
         ? `<img src="${esc(image)}" class="object-fit-contain" alt="${esc(model || device.imei)}" style="max-width:56px;max-height:56px;">`
         : '<i class="fa-solid fa-microchip fa-xl text-secondary"></i>';
     els.selectedDeviceTitle.textContent = device.imei;
-    // O estado e a primeira coisa que se pergunta sobre um dispositivo, e vem antes do
-    // identificador. Era um ponto colorido sem palavra -- e o vermelho de "desligado"
-    // competia com o vermelho de erro no resto do ecra.
+    // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
+    // antes do identificador.
     els.selectedDeviceBadge.className = `config-state ${device.online ? "config-state-success" : "config-state-secondary"}`;
     els.selectedDeviceBadge.innerHTML =
         `<span class="config-state-dot"></span>${device.online ? "Ligado" : "Desligado"}`;
@@ -266,9 +249,8 @@ function allDetailItems() {
     const recent = state.selectedDetail.recent || {};
     for (const row of recent.telemetry || []) {
         const payload = rowPayload(row);
-        // O heartbeat e o envelope de manutencao de ligacao, nao uma leitura: a
-        // bateria, os passos e o sinal que traz saem dele como eventos proprios
-        // com o mesmo instante, e o "esta vivo" ja esta no estado de ligacao.
+        // O heartbeat é o envelope de manutenção de ligação e não uma leitura: a bateria,
+        // os passos e o sinal que traz saem dele como eventos próprios.
         if (payload && !payload.debug && payload.type !== "heartbeat")
             items.push({ _source: "telemetry", raw: row, payload });
     }
@@ -292,9 +274,8 @@ function allDetailItems() {
 
 function filterDetailItems(items) {
     const { from, to, type, q } = state.detailFilters;
-    // A pesquisa corre sobre o que esta carregado, que e a janela escolhida nas datas --
-    // nao ha procura no historico todo porque o filtro de atividade sempre foi do lado do
-    // cliente. Compara com o que a pessoa ve na linha: o tipo e o valor formatado.
+    // A pesquisa corre sobre o que está carregado, que é a janela escolhida nas datas, e
+    // compara com o que a pessoa vê na linha: o tipo e o valor formatado.
     const needle = String(q || "").trim().toLowerCase();
     return items.filter((item) => {
         if (type !== "all" && type !== "") {
@@ -314,7 +295,7 @@ function filterDetailItems(items) {
     });
 }
 
-/** O que a linha mostra, em minusculas: o tipo e o valor formatado. */
+/** O que a linha mostra, em minúsculas: o tipo e o valor formatado. */
 function detailItemHaystack(item) {
     const itemType = detailItemType(item);
     const content = uplinkCardContent(itemType, item.payload?.data || {});
@@ -436,10 +417,8 @@ function clearDetailFilters() {
 }
 
 /**
- * A pesquisa nao espera pelo "Aplicar": escreve-se e a lista responde.
- *
- * Os selects de data e tipo tem um botao porque uma data a meio de ser escrita nao e uma
- * data; um texto a meio de ser escrito ja e um prefixo util.
+ * A pesquisa não espera pelo "Aplicar". Os selects de data e tipo têm botão porque uma
+ * data a meio de ser escrita não é uma data; um texto a meio já é um prefixo útil.
  */
 function applyDetailSearch() {
     state.detailFilters = {
@@ -460,7 +439,7 @@ function removeDetailFilter(key) {
     renderSelection();
 }
 
-/** As pastilhas do que esta aplicado, na linha abaixo da pesquisa. */
+/** As pastilhas do que está aplicado, na linha abaixo da pesquisa. */
 function renderDetailActiveFilters() {
     const { from, to, type, q } = state.detailFilters;
     const labels = [];
@@ -481,8 +460,7 @@ function renderDetailActiveFilters() {
     els.detailFilterCount.textContent = labels.length ? String(labels.length) : "";
     els.detailFilterCount.classList.toggle("d-none", labels.length === 0);
     els.clearDetailFiltersBtn.classList.toggle("d-none", labels.length === 0);
-    // Sem filtros aplicados a linha inteira sai: vazia, deixava o espaco de uma linha
-    // entre a pesquisa e a divisoria abaixo, e nada la dentro para o justificar.
+    // Sem filtros aplicados a linha inteira sai, para não sobrar espaço sem conteúdo.
     els.detailActiveFiltersRow?.classList.toggle("d-none", labels.length === 0);
 }
 
@@ -509,13 +487,9 @@ function renderTelemetryList(telemetryRows) {
     const start = (state.telemetryPage - 1) * state.telemetryPageSize;
     const pageRows = telemetry.slice(start, start + state.telemetryPageSize);
 
-    // O contador e uma pastilha encostada ao titulo, e la dentro cabe o numero e mais nada:
-    // "100 eventos" ao lado de "Eventos recebidos" dizia "eventos" duas vezes.
+    // Na pastilha do contador cabe o número e mais nada: o título já diz de quê.
     els.telemetryCount.textContent = telemetry.length ? String(telemetry.length) : "";
-    // Uma linha por evento, em colunas: pastilha do icone, nome, valor, hora. Era um
-    // bloco de tres linhas por evento -- nome e valor, o tipo nativo, e os detalhes --
-    // sem coluna alinhada nenhuma, o que dava seis eventos no espaco de dezoito e
-    // obrigava a ler cada um por inteiro para comparar duas horas.
+    // Uma linha por evento, em colunas: pastilha do ícone, nome, valor, hora.
     els.telemetryList.innerHTML = pageRows.length
         ? `<table class="table table-sm align-middle mb-0 telemetry-table">
             <tbody>${pageRows.map(renderTelemetryRow).join("")}</tbody>
@@ -525,9 +499,8 @@ function renderTelemetryList(telemetryRows) {
 }
 
 /**
- * Os dois painéis do dispositivo escolhido paginam no cliente, mas os controlos são os
- * mesmos da listagem servida pela API -- por isso saem do mesmo `renderPagination`, com o
- * resumo curto que a largura destas colunas comporta.
+ * Os dois painéis paginam no cliente, mas os controlos são os mesmos da listagem servida
+ * pela API: saem do mesmo `renderPagination`, com o resumo curto que estas colunas levam.
  */
 function renderClientPager(prefix, totalRows, totalPages) {
     const root = els[`${prefix}Pager`];
@@ -556,14 +529,10 @@ function renderTelemetryRow(payload) {
     const data =
         payload?.data && typeof payload.data === "object" ? payload.data : {};
     const card = uplinkCardContent(type, data);
-    // Os detalhes sao os que cada tipo escolhe, e nao todos os campos do payload. Eram
-    // todos: uma leitura de bateria dizia "79%" e por baixo "Percentagem: 79", e uma de
-    // humidade da fralda despejava dez campos internos -- "RequiredChannelCount: 4" --
-    // debaixo do proprio nome. Cada renderizador ja declara o que vale a pena mostrar.
+    // Os detalhes são os que cada renderizador declara, e não todos os campos do payload.
     const details = card.details || "";
-    // O `detailsTitle` existe quando a linha visivel e um resumo do que ha: a presenca
-    // mostra as posturas e guarda as coordenadas e as pessoas que nao couberam para aqui.
-    // Sem ele, a tooltip repetia o que ja estava no ecra.
+    // O `detailsTitle` existe quando a linha visível é um resumo: a presença mostra as
+    // posturas e guarda para aqui as coordenadas e as pessoas que não couberam.
     const detailsTitle = card.detailsTitle
         || details.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "");
 
@@ -596,15 +565,14 @@ function renderRequestCards(
         (count, group) => count + group.cards.length,
         0,
     );
-    // Rendered from the event history rather than a capability, so it appears
-    // exactly when the device has actually called for help.
+    // Tirado do histórico de eventos e não de uma capacidade, para aparecer exactamente
+    // quando o dispositivo pediu ajuda.
     const helpCalls = helpCallSummaryCard(events);
     const falls = fallSummaryCard(events);
 
     disposeTooltips(els.requestGrid);
 
-    // Com um grupo so, a faixa com o nome do grupo nao separa nada: e uma moldura com um
-    // titulo por cima dos mosaicos, num cartao que e so o mosaico.
+    // Com um grupo só, a faixa com o nome do grupo não separa nada.
     const cards = totalCards
         ? groups
               .map((group) =>
@@ -699,8 +667,8 @@ function renderNcsEventCard({type, latest}) {
 function renderDownlinkRequests(commands) {
     els.downlinkRequestCount.textContent = commands.length ? String(commands.length) : "";
 
-    // Paginado como os eventos recebidos: a coluna cresce com o historico, e sem paginas os
-    // pedidos antigos ficavam atras de um scroll interno que ninguem via.
+    // Paginado como os eventos recebidos: sem páginas, os pedidos antigos ficam atrás de
+    // um scroll interno que ninguém vê.
     const totalPages = Math.max(
         1,
         Math.ceil(commands.length / state.downlinkPageSize),
@@ -710,11 +678,8 @@ function renderDownlinkRequests(commands) {
     const start = (state.downlinkPage - 1) * state.downlinkPageSize;
     const pageRows = commands.slice(start, start + state.downlinkPageSize);
 
-    // A mesma linha dos eventos recebidos, do outro lado: pastilha do icone, nome, estado,
-    // hora. Eram cinco colunas com cabecalho -- "Pedido em", "Pedido", "Estado", "Resposta",
-    // "Detalhes" -- que a meia largura do painel truncavam todas. O que se perdia da coluna
-    // "Resposta" cabe no `title` da pastilha, e o erro passa a segunda linha do nome, que e
-    // o unico dos dois que se precisa de ver sem passar o rato.
+    // A mesma linha dos eventos recebidos, do outro lado: pastilha do ícone, nome, estado,
+    // hora. A resposta cabe no `title` da pastilha, e o erro na segunda linha do nome.
     els.downlinkRequests.innerHTML = pageRows.length
         ? `<table class="table table-sm align-middle mb-0 telemetry-table">
             <tbody>${pageRows.map(renderDownlinkRow).join("")}</tbody>
@@ -763,8 +728,8 @@ function renderConnectionTimeline(rows) {
         )
         .sort((a, b) => eventTime(a) - eventTime(b));
 
-    // A single event is not a timeline, and the device badge already says whether it is
-    // connected, so the section stays hidden until there is something to plot.
+    // Um evento só não é uma série, e a pastilha do dispositivo já diz se está ligado: a
+    // secção fica escondida até haver o que desenhar.
     els.connectionSection.classList.toggle("d-none", events.length < 2);
 
     if (events.length < 2) {

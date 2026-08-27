@@ -5,11 +5,9 @@ import {selectModelDeviceType, selectModelSupplier} from "./models/form.js";
 import {openModelDetail, renderCapabilitiesSection} from "./models/detail.js";
 
 /**
- * Os cliques dentro do modal de definicoes: escolher fornecedor ou tipo, ligar e desligar
- * capacidades, navegar o catalogo, e as accoes das tres listagens.
- *
- * Sao todos delegados na raiz de cada seccao, e todos fazem a mesma coisa: encontram o
- * botao pelo `data-action` e chamam quem sabe do assunto.
+ * Os cliques dentro do modal de definições: escolher fornecedor ou tipo, ligar e desligar
+ * capacidades, navegar o catálogo, e as acções das três listagens. São todos delegados na
+ * raiz de cada secção, e todos encontram o botão pelo `data-action`.
  */
 let els = {};
 
@@ -73,8 +71,8 @@ export function handleCapabilityGroupsChange(event) {
 }
 
 /**
- * A tira do catalogo desloca a lista ate a seccao, e nao filtra: o catalogo fica todo numa
- * superficie, que e o que serve para auditar um fornecedor de ponta a ponta.
+ * A tira do catálogo desloca a lista até à secção e não filtra: o catálogo fica todo numa
+ * superfície, que é o que serve para auditar um fornecedor de ponta a ponta.
  */
 export function scrollCapabilityCatalogSection(event) {
     const chip = event.target.closest(
@@ -111,19 +109,16 @@ export function jumpCapabilitySection(event) {
 }
 
 /**
- * Um clique numa folha do catalogo abre a ficha do modelo.
- *
- * A linha e um `div` com `role="button"`, e nao um `<button>`: leva dentro a imagem, dois
- * nomes e a seta, e um botao com aquilo la dentro herdava o `text-align` e o reset de
- * tipografia do Bootstrap em todos eles. Por isso o teclado tem de ser tratado a mao --
- * um `div` accionavel nao responde ao Enter nem ao espaco de graca.
+ * Um clique numa folha do catálogo abre a ficha do modelo. A linha é um `div` com
+ * `role="button"` e não um `<button>`, porque leva dentro a imagem, dois nomes e a seta, que
+ * herdariam o reset de tipografia do Bootstrap -- em troca, o teclado é tratado à mão.
  */
 export function handleModelListClick(event) {
     const row = event.target.closest('[data-action="modelCapabilities"]');
     if (!row) return;
     if (event.type === "keydown") {
         if (event.key !== "Enter" && event.key !== " ") return;
-        // O espaco numa linha accionavel rola a pagina se ninguem o travar.
+        // O espaço numa linha accionável rola a página se ninguém o travar.
         event.preventDefault();
     }
     void openModelDetail(parseInt(row.dataset.id));

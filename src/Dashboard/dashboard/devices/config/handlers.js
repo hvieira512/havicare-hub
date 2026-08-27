@@ -26,12 +26,9 @@ import {
 } from "./take-pills-audio.js";
 
 /**
- * Os handlers do painel de configuracao de um dispositivo.
- *
- * Tres eventos delegados na raiz do painel -- clique, `change` e `input` -- mais o fecho do
- * aviso de resultado. Tudo o que precisam vem do evento, por isso este modulo nao guarda
- * `els` nenhum: as regras do hub eram o unico que ia buscar elementos por conta propria, e
- * sairam quando a sensibilidade das fraldas passou a ser uma configuracao como as outras.
+ * Os handlers do painel de configuração de um dispositivo: três eventos delegados na raiz --
+ * clique, `change` e `input` -- mais o fecho do aviso de resultado. Tudo o que precisam vem
+ * do evento, e por isso este módulo não guarda `els` nenhum.
  */
 export function handleDeviceConfigClick(event) {
     const button = event.target.closest(
@@ -139,7 +136,7 @@ export function handleDeviceConfigClick(event) {
     }
 }
 
-/** Escreve cada campo do preset e recalcula qual dos botoes fica aceso. */
+/** Escreve cada campo do preset e recalcula qual dos botões fica aceso. */
 function applyConfigPreset(section, button) {
     let preset;
     try {
@@ -162,10 +159,9 @@ function applyConfigPreset(section, button) {
 }
 
 function updateConfigChoice(section, button) {
-    // Um preset preenche mais do que um campo de uma vez -- a sensibilidade das fraldas
-    // sao dois inteiros --, e o botao carrega o par em vez de um valor so. O estado activo
-    // le-se dos campos e nao de uma quarta escolha guardada a parte: nenhum preset activo
-    // ja diz que os valores nao sao de nenhum deles.
+    // Um preset preenche mais do que um campo de uma vez -- a sensibilidade das fraldas são
+    // dois inteiros --, e o botão carrega o par em vez de um valor só. O estado activo lê-se
+    // dos campos: nenhum preset activo já diz que os valores não são de nenhum deles.
     if (button.dataset.configPreset) {
         applyConfigPreset(section, button);
         return;

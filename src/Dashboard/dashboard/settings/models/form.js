@@ -18,12 +18,11 @@ import {
 } from "./list.js";
 
 /**
- * O formulario de um modelo novo: o segundo slide do carrossel do catalogo.
+ * O formulário de um modelo novo: o segundo slide do carrossel do catálogo.
  *
- * Um modelo nasce com as capacidades que o fornecedor declara para aquele tipo de
- * dispositivo -- o template --, e nao em branco: e por isso que escolher fornecedor ou
- * tipo vai buscar o template outra vez. Alterar um modelo que ja existe faz-se na ficha
- * dele, e nao aqui.
+ * Um modelo nasce com as capacidades que o fornecedor declara para aquele tipo -- o
+ * template --, e não em branco: é por isso que escolher fornecedor ou tipo vai buscar o
+ * template outra vez. Alterar um modelo que já existe faz-se na ficha dele.
  */
 
 function modelSupplierOptions(deviceType = "watch") {
@@ -150,7 +149,7 @@ function selectModelDeviceType(deviceType) {
     void refreshNewModelCapabilityTemplate();
 }
 
-/** Abre o slide do formulario, com o template do fornecedor já carregado. */
+/** Abre o slide do formulário, com o template do fornecedor já carregado. */
 async function openNewModelForm() {
     if (!state.settingsModal.sectionLoaded.modelFilters) {
         await loadSettingsModelFilters();
@@ -161,10 +160,8 @@ async function openNewModelForm() {
 }
 
 /**
- * As capacidades predefinidas do fornecedor para este tipo de dispositivo.
- *
- * Só corre para um modelo novo: num que já existe as capacidades são as dele, e vivem na
- * ficha.
+ * As capacidades predefinidas do fornecedor para este tipo. Só corre para um modelo novo:
+ * num que já existe as capacidades são as dele, e vivem na ficha.
  */
 async function refreshNewModelCapabilityTemplate() {
     const {els} = getSettingsModelsRuntime();

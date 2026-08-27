@@ -15,11 +15,9 @@ const MAC_IDENTITY = {
 };
 
 /**
- * O que cada tipo de dispositivo tem, numa linha por tipo.
- *
- * Antes disto, as diferenças por tipo viviam em três formas ao mesmo tempo: predicados
- * aqui, cadeias de `if` no modal a trocar rótulos e ajudas, e visibilidade de linhas
- * espalhada por `classList.toggle`. Acrescentar um tipo obrigava a encontrar as três.
+ * O que cada tipo de dispositivo tem, numa linha por tipo -- e não em predicados aqui,
+ * cadeias de `if` no modal e visibilidade espalhada por `classList.toggle`, que é como
+ * acrescentar um tipo passava a obrigar a encontrar três sítios.
  *
  * `identity` é o campo que identifica a unidade e o que se lhe escreve ao lado. `sim`
  * diz se há número de SIM. `gatewayLinks` diz se o dispositivo é retransmitido por um
@@ -79,10 +77,8 @@ const DEVICE_TYPES = {
 };
 
 /**
- * A linha de um tipo, sempre utilizável.
- *
- * Normaliza como o `normalizeDeviceType`, porque todos os chamadores o faziam antes de
- * decidir e repetir isso em cada um é como as três formas divergem.
+ * A linha de um tipo, sempre utilizável. Normaliza como o `normalizeDeviceType`, porque
+ * repetir isso em cada chamador é como as formas divergem.
  */
 export function deviceTypeFields(deviceType) {
     return DEVICE_TYPES[normalizeDeviceType(deviceType)];

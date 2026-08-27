@@ -8,10 +8,10 @@ export const WONLEX_MEDICATION_PERIODS = [
 ];
 
 /**
- * Coercing stored configuration values into the shapes the inputs render from.
+ * Trazer os valores de configuração guardados para as formas de que os campos desenham.
  *
- * Pure functions over plain data -- no DOM, no API -- which is what separates
- * them from the renderers that consume them and the readers that undo them.
+ * Funções puras sobre dados simples -- sem DOM e sem API --, e é isso que as separa de quem
+ * as consome a desenhar e de quem as desfaz a ler.
  */
 
 export function normalizeWonlexMedicationPlans(desired) {

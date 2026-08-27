@@ -1,5 +1,5 @@
 export const state = {
-    // Gateways registados, para o assistente de adicionar oferecer os elegiveis.
+    // Gateways registados, para o assistente de adicionar oferecer os elegíveis.
     wizardGateways: [],
     companies: [],
     summary: {
@@ -110,8 +110,8 @@ export const state = {
         capabilityRequestableCapabilities: [],
         currentCapabilitiesModel: null,
         modelFilters: [],
-        // A arvore do catalogo, inteira: tipos, fornecedores e modelos numa chamada. Nao ha
-        // pagina nem filtros porque nao ha paginacao -- a busca corre sobre isto em memoria.
+        // A árvore do catálogo, inteira: tipos, fornecedores e modelos numa chamada. Não há
+        // página nem filtros porque não há paginação -- a busca corre sobre isto em memória.
         modelCatalog: [],
         modelsSearchQuery: "",
         sectionLoaded: {
@@ -129,9 +129,8 @@ export const state = {
     loadingCommands: new Set(),
     deviceListPage: 1,
     telemetryPage: 1,
-    // Doze e nao dez: com os detalhes reduzidos ao que cada tipo declara, a maioria das
-    // linhas passou a ter uma linha de texto em vez de duas ou tres, e cabem mais duas na
-    // mesma altura. Cem eventos passam de dez paginas para nove.
+    // Doze e não dez: com os detalhes reduzidos ao que cada tipo declara, a maioria das
+    // linhas leva uma linha de texto, e cabem mais duas na mesma altura.
     telemetryPageSize: 12,
     downlinkPage: 1,
     downlinkPageSize: 12,

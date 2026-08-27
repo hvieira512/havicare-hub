@@ -17,15 +17,13 @@ import {resetModelForm} from "./form.js";
 import {getSettingsModelsRuntime, modelsCarousel} from "./shell.js";
 
 /**
- * O catalogo: tipo de dispositivo, fornecedor, modelo.
- *
- * Tres niveis porque a forma dos dados tem tres: um fornecedor nao suporta "dispositivos",
- * suporta *tipos* de dispositivo, e e por isso que existe a tabela `supplier_device_types`.
- * A MOKO aparece em dois sitios -- gateways e pulseiras -- e isso nao e duplicacao: sao
- * duas coisas diferentes de suportar.
+ * O catálogo: tipo de dispositivo, fornecedor, modelo. Três níveis porque a forma dos dados
+ * tem três -- um fornecedor suporta *tipos* de dispositivo, e é por isso que existe a tabela
+ * `supplier_device_types`. A MOKO aparece em gateways e em pulseiras, e isso não é
+ * duplicação: são duas coisas diferentes de suportar.
  */
 
-/** Um id de `collapse` que sobrevive a nomes com espacos e acentos. */
+/** Um id de `collapse` que sobrevive a nomes com espaços e acentos. */
 function slug(value) {
     return String(value)
         .toLowerCase()
@@ -40,16 +38,13 @@ function plural(count, singular, pluralWord) {
 }
 
 /**
- * Os grupos que valem a pena desenhar.
+ * Os grupos que valem a pena desenhar. A API devolve um grupo por cada tipo que existe no
+ * catálogo de capacidades, tenha ou não modelos, para quem monta selectores os ter todos;
+ * aqui um tipo sem fornecedores é uma moldura vazia, e cai fora.
  *
- * A API devolve um grupo por cada tipo que existe no catalogo de capacidades, tenha ou nao
- * modelos, para quem monta selectores os ter todos. Aqui um tipo sem fornecedores e uma
- * moldura vazia, por isso cai fora.
- *
- * Um par fornecedor×tipo registado em `supplier_device_types` mas ainda sem modelos tambem
- * nao aparece, porque a resposta e construida a partir dos modelos. Hoje nao existe nenhum
- * -- oito pares, oito com modelos -- e o formulario de modelo continua a oferecer o par a
- * partir dos filtros, que e o que importa para criar o primeiro.
+ * Um par fornecedor×tipo registado mas ainda sem modelos também não aparece, porque a
+ * resposta é construída a partir dos modelos. O formulário continua a oferecer o par a
+ * partir dos filtros, que é o que importa para criar o primeiro.
  */
 function catalogGroups() {
     return (state.settingsModal.modelCatalog || [])
@@ -66,8 +61,8 @@ function catalogGroups() {
 function modelRow(model, {showOrigin = false} = {}) {
     const commercial = modelCommercialName(model);
     const internal = modelInternalName(model);
-    // O nome interno e o codigo do fabricante e repete-se muitas vezes com o comercial
-    // (D41/D41). Quando sao iguais nao vale a pena escrever duas vezes.
+    // O nome interno é o código do fabricante e repete-se muitas vezes com o comercial
+    // (D41/D41): quando são iguais não vale a pena escrever duas vezes.
     const subtitle = showOrigin
         ? `${esc(model.supplier || "")} · ${esc(deviceTypeLabel(modelDeviceType(model)))}`
         : (internal && internal !== commercial ? esc(internal) : "");
@@ -126,14 +121,12 @@ function typeCard(group) {
 }
 
 /**
- * A busca achata a arvore.
+ * A busca achata a árvore: agrupar durante uma busca esconde resultados dentro de grupos, e
+ * um resultado que não se vê não é um resultado. Achatada, cada linha volta a dizer de quem
+ * é e de que tipo, que é o que a árvore dizia pela posição.
  *
- * Agrupar durante uma busca esconde resultados dentro de grupos, e um resultado que nao se
- * ve nao e um resultado. Achatada, cada linha volta a dizer de quem e e de que tipo, que e
- * o que a arvore dizia pela posicao.
- *
- * Filtra em memoria porque o catalogo inteiro esta em memoria: dezaseis modelos, uma
- * chamada. O `/api/models?model=` continua a existir para quem consome a API.
+ * Filtra em memória porque o catálogo inteiro está em memória. O `/api/models?model=`
+ * continua a existir para quem consome a API.
  */
 function searchResults(query) {
     const needle = query.toLowerCase();
@@ -164,8 +157,8 @@ function renderModelsSection() {
             ),
         0,
     );
-    // Um fornecedor que sirva dois tipos conta uma vez, e nao duas: e a resposta a "quantos
-    // fornecedores temos", nao a "quantos nos tem a arvore".
+    // Um fornecedor que sirva dois tipos conta uma vez: é a resposta a "quantos
+    // fornecedores temos", e não a "quantos nós tem a árvore".
     const suppliers = new Set(
         groups.flatMap((group) =>
             group.suppliers.map((supplier) => String(supplier.name || "")),
@@ -208,18 +201,18 @@ async function loadSettingsModelFilters() {
 }
 
 /**
- * O catalogo vem inteiro numa chamada -- tipos, fornecedores e modelos.
+ * O catálogo vem inteiro numa chamada -- tipos, fornecedores e modelos.
  *
- * ponytail: sem paginacao, de proposito. Sao dezaseis modelos e a resposta traz a arvore
- * ja montada; se um dia forem centenas, o caminho e nascerem fechados e buscar os filhos ao
- * abrir (`/api/models?supplier=`), e nao cortar um grupo ao meio entre duas paginas.
+ * ponytail: sem paginação, de propósito. São dezasseis modelos; se um dia forem centenas, o
+ * caminho é nascerem fechados e buscar os filhos ao abrir (`/api/models?supplier=`), e não
+ * cortar um grupo ao meio entre duas páginas.
  */
 async function loadSettingsModelsSection() {
     const response = await apiGetCatalog();
     state.settingsModal.modelCatalog = response.data || [];
     state.settingsModal.sectionLoaded.models = true;
-    // Aqui e nao no `renderModelsSection`: a busca redesenha a cada tecla, e o formulario
-    // do outro slide nao tem nada a ver com isso.
+    // Aqui e não no `renderModelsSection`: a busca redesenha a cada tecla, e o formulário
+    // do outro slide não tem nada a ver com isso.
     resetModelForm();
     renderModelsSection();
 
@@ -232,23 +225,21 @@ async function loadSettingsModelsSection() {
 function handleModelsListSearchInput() {
     const {els} = getSettingsModelsRuntime();
     state.settingsModal.modelsSearchQuery = els.modelsListSearch.value.trim();
-    // Sem espera: o filtro e local, e um debounce sobre uma lista em memoria era so
-    // atraso a fingir de rede.
+    // Sem espera: o filtro é local, e um debounce sobre uma lista em memória era atraso a
+    // fingir de rede.
     renderModelsSection();
 }
 
 /**
- * Volta ao primeiro slide, que e a lista.
- *
- * Vive aqui e nao no `shell.js` porque o que faz e recarregar a lista: pos-la outra vez a
- * vista sem a ir buscar mostrava o catalogo anterior a uma gravacao que acabou de mudar.
+ * Volta ao primeiro slide, que é a lista, e recarrega-a: pô-la outra vez à vista sem a ir
+ * buscar mostrava o catálogo anterior a uma gravação que acabou de mudar.
  */
 function backToModelList() {
     const {els} = getSettingsModelsRuntime();
     const carousel = state.settingsModal.modelsCarousel;
     if (!carousel) return;
 
-    // Ja na lista nao ha nada a fazer: o rasto e o carrossel ja estao onde deviam.
+    // Já na lista não há nada a fazer: o rasto e o carrossel já estão onde deviam.
     if (
         carousel._element.querySelector(".carousel-item.active") ===
         carousel._element.firstElementChild?.firstElementChild
@@ -256,7 +247,7 @@ function backToModelList() {
         return;
     }
 
-    // Na lista o rasto tinha um so degrau e repetia o titulo logo por baixo.
+    // Na lista o rasto tem um só degrau e repetiria o título logo por baixo.
     els.modelsBreadcrumb.classList.add("d-none");
     els.modelsBreadcrumbModels.classList.add("active");
     els.modelsBreadcrumbNew.classList.add("d-none");
@@ -274,7 +265,7 @@ function backToModelList() {
     void loadSettingsModelsSection();
 }
 
-/** O rasto e o slide do formulario de um modelo novo. */
+/** O rasto e o slide do formulário de um modelo novo. */
 function showNewModelSlide() {
     const {els} = getSettingsModelsRuntime();
     els.modelsBreadcrumb.classList.remove("d-none");

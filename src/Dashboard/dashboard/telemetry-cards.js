@@ -10,13 +10,7 @@ import {
 } from "./format.js";
 import { capabilityLabel } from "./capability-catalog.js";
 
-/**
- * A maquina dos cartoes de telemetria: o que cada evento recebido mostra, o que cada
- * pedido ao dispositivo mostra, e o estado de cada um.
- *
- * As pecas genericas de interface -- licenca, imagem de modelo, mosaico de tipos,
- * pastilhas de filtro, estado vazio -- estao em `widgets.js`, e nada aqui as chama.
- */
+/** Os cartões de telemetria. As peças genéricas de interface estão em `widgets.js`. */
 
 const COMMAND_FEATURE_RULES = [
     ["heart", "heart_rate"],
@@ -33,17 +27,7 @@ const COMMAND_FEATURE_RULES = [
     ["rr", "rr_interval"],
 ];
 
-/**
- * A cor de cada categoria de telemetria.
- *
- * Vive no icone e mais nada. Antes pintava tambem o contorno do cartao e o titulo, o que
- * dava quatro cores por painel e um cartao inteiro a competir com o seguinte; e a
- * frequencia cardiaca e a tensao arterial vinham em vermelho de perigo por serem sinais
- * vitais, o que num cartao que so oferece pedir uma leitura le-se como alarme.
- *
- * Tirar a cor toda foi longe demais: o icone colorido e o que se reconhece de relance
- * numa grelha de oito, e sem ele todos os mosaicos ficam iguais.
- */
+/** A cor de cada categoria, e só no ícone: o estado da leitura vive na pastilha. */
 const CARD_TONE_BY_TYPE = {
     positions: "info",
     vitals: "success",
@@ -75,14 +59,7 @@ const CARD_TONE_BY_TYPE = {
     "device.disconnected": "danger",
 };
 
-/**
- * O icone de cada capacidade.
- *
- * So o icone: o nome vem do catalogo, pelo `capabilityLabel`. Este mapa tinha tambem uma
- * `value` com o nome escrito a mao, e era a terceira copia dos mesmos nomes na aplicacao
- * -- a que fazia um mosaico dizer "Pressão arterial" no titulo e "Tensão arterial" no
- * valor, ao mesmo tempo.
- */
+/** Só o ícone de cada capacidade: o nome vem do catálogo, pelo `capabilityLabel`. */
 const REQUEST_CARD_ICON_BY_TYPE = {
     positions: "fa-location-crosshairs",
     vitals: "fa-heart-pulse",
@@ -117,8 +94,7 @@ const REQUEST_CARD_ICON_BY_TYPE = {
 };
 
 const UPLINK_CARD_RENDERERS = {
-    // O radar já não tem cartões de frequência cardíaca nem respiratória: manda as mesmas
-    // chaves e as mesmas formas que um relógio, e usa os cartões dele mais abaixo.
+    // O radar manda as mesmas chaves e formas que um relógio e usa os cartões dele.
     presence: (data) => ({
         icon: "fa-location-crosshairs",
         value: presenceValue(data),
@@ -129,8 +105,7 @@ const UPLINK_CARD_RENDERERS = {
         icon: "fa-bed",
         value: fieldValue("sleep_state", data?.state),
     }),
-    // Os tres alarmes do radar. Cada um leva o tipo especifico dentro, que e o que a linha
-    // mostra -- "Queda" sozinho nao distingue uma queda confirmada de alguem no chao.
+    // O tipo específico vai no valor: "Queda" não distingue uma queda de alguém no chão.
     fall: (data) => ({
         icon: "fa-person-falling",
         value: detectionValue(data),
@@ -203,14 +178,12 @@ const UPLINK_CARD_RENDERERS = {
     }),
     diaper_moisture: (data) => ({
         icon: "fa-droplet",
-        // O indice 0-100 e uma capacidade propria e chega noutra mensagem, mas nao tem
-        // cartao proprio: e o valor deste, por cima da tira dos canais que o explica.
+        // O índice 0-100 chega noutra mensagem e não tem cartão próprio: é o valor deste.
         value:
             data?.index != null
                 ? `${data.index}%`
                 : capabilityLabel("diaper_moisture"),
-        // Numa linha de lista nao ha espaco para a tira dos dez canais, e o mosaico do
-        // cartao ja a mostra. O que resta e o resumo: quantos canais passaram o limiar.
+        // Numa linha não cabe a tira dos canais; o resumo é quantos passaram o limiar.
         rowValue: diaperMoistureRowValue(data),
         span: 12,
         body: diaperMoistureBody(data),
@@ -256,10 +229,7 @@ const UPLINK_CARD_RENDERERS = {
     sleep: () => ({ icon: "fa-bed", value: "Dados de sono" }),
     ecg: () => ({ icon: "fa-wave-square", value: "Dados de ECG" }),
     hrv: () => ({ icon: "fa-chart-line", value: "Dados de VFC" }),
-    // Um escalar, ao contrario do sono, do ECG e da PPG, que sao series e por isso se
-    // anunciam em vez de se resumirem a um numero. Dizia "Dados de frequencia
-    // respiratoria" e nunca mostrava a leitura -- nem a de um relogio, que produz a mesma
-    // forma `{breathsPerMinute}` desde sempre.
+    // Um escalar, ao contrário do sono, do ECG e da PPG, que são séries e se anunciam.
     breath_rate: (data) => ({
         icon: "fa-lungs",
         value: `${data.breathsPerMinute ?? "-"} rpm`,
@@ -290,8 +260,7 @@ const UPLINK_CARD_RENDERERS = {
     }),
 };
 
-// Uma familia de estado so: e a mesma pastilha das configuracoes e das regras do hub.
-// O tom vazio deixa a pastilha no azul subtil da marca, que e o estado neutro.
+// A mesma pastilha das configurações; o tom vazio deixa-a no azul neutro da marca.
 const STATUS_BADGE_TONE = {
     queued: "config-state-secondary",
     sent: "",
@@ -343,21 +312,14 @@ function commandFeature(command) {
     return "device_config";
 }
 
-/**
- * A casca de um cartao de telemetria: o icone, o titulo, e o corpo que quem chama traz.
- *
- * Era a mesma marcacao escrita em dois sitios -- os pedidos ao dispositivo e os eventos
- * NCS -- e a cor por categoria vivia nas duas copias. O icone passa a identificar a
- * categoria sozinho: a cor fica reservada ao estado, que e o que a pastilha diz.
- */
+/** A casca de um cartão: o ícone, o título, e o corpo que quem chama traz. */
 export function telemetryCard({
     span = 6,
     icon,
     title,
     value = "",
     details = "",
-    // O texto que a tooltip mostra quando diz mais do que a linha truncada. Sem ele, a
-    // tooltip repete o que ja esta no ecra.
+    // O texto da tooltip, para quando diz mais do que a linha truncada.
     detailsTitle = "",
     tooltip = "",
     body = "",
@@ -367,12 +329,7 @@ export function telemetryCard({
     stateTone = "",
     tone = "",
 }) {
-    // O cartao e o pedido: quando ha um feature para pedir, e ele o botao. Um botao
-    // "Pedir" dentro de cada cartao dava oito primarios escuros no mesmo painel, e o
-    // alvo de clique era a parte mais pequena de uma area que ja era toda clicavel.
-    //
-    // Sem tooltip: o nome da categoria esta escrito no cartao, por isso a tooltip repetia
-    // em cima do rato o que ja estava no ecra.
+    // Quando há um feature para pedir, é o cartão inteiro o botão.
     const clickable = feature !== "";
     const tag = clickable ? "button" : "div";
     const toneClass = tone ? ` telemetry-card-tone-${esc(tone)}` : "";
@@ -381,35 +338,24 @@ export function telemetryCard({
           ` data-action="requestFeature" data-feature="${esc(feature)}"` +
           `${pending ? " disabled" : ""}`
         : ` class="card h-100${toneClass}"`;
-    // A pastilha leva a sua linha, e nao o canto da linha do icone. Num mosaico de 206px, o
-    // icone (36) mais a largura minima do nome (63) mais a pastilha (72) nao cabem nos 160
-    // uteis: "em fila" saia cortado em "em fi" por cima do contorno do cartao. O aviao de
-    // papel, com 11px, continua no canto -- esse cabe.
+    // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
         ? `<span class="config-state ${esc(stateTone || (pending ? "config-state-warning" : "config-state-secondary"))} align-self-start">` +
           `<span class="config-state-dot"></span>${esc(stateLabel)}</span>`
         : "";
-    // O canto superior direito e o lugar do pedido: em repouso, o aviao de papel diz que o
-    // mosaico se pode pedir; enquanto o pedido corre, a pastilha diz em que estado esta.
-    // Um mosaico que nao se pode pedir nao tem nada ali, e e essa ausencia que os separa --
-    // antes so o hover os distinguia, e por isso era preciso passar o rato por cima de oito
-    // mosaicos para descobrir quais respondiam ao clique. Decorativo: o nome da categoria e
-    // o `aria-label` do botao ja dizem o que ele faz.
+    // Em repouso o avião de papel diz que o mosaico se pode pedir; a correr, a pastilha
+    // diz em que estado está. Um mosaico que não se pode pedir não tem nada ali.
     const requestHint =
         clickable && !stateLabel
             ? '<span class="telemetry-card-hint flex-shrink-0" aria-hidden="true"><i class="fa-solid fa-paper-plane"></i></span>'
             : "";
 
-    // O detalhe fica fora da linha do icone, ao lado do `body`, e nao dentro da coluna do
-    // texto. Num mosaico de 206px o icone e o espacamento levam 76, e o que sobrava eram
-    // 130 -- estreito de mais para duas pastilhas lado a lado. Fora dessa linha tem a
-    // largura toda do cartao.
+    // Fora da linha do ícone, para ter a largura toda do cartão.
     const detailsHtml = details
         ? `<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details"${detailsTitle ? ` title="${esc(detailsTitle)}"` : ""}>${details}</div>`
         : "";
 
-    // Linha toda por omissao, metade so em ecra grande. Um mosaico com 172px punha o icone,
-    // o padding e o intervalo a comer metade da largura e sobravam 86 para o texto.
+    // Linha toda por omissão, metade só em ecrã grande.
     const columns = span === 12 ? "col-12" : `col-12 col-lg-${span}`;
 
     return `
@@ -434,12 +380,7 @@ export function telemetryCard({
     </div>`;
 }
 
-/**
- * Que leituras servem para o valor de um mosaico, para os tipos onde chegar não basta.
- *
- * Só a localização precisa disto: um relatório sem coordenadas chegou, é válido e não diz
- * onde o aparelho está. Todos os outros tipos usam a mais recente, ponto.
- */
+/** Só a localização precisa disto: um relatório sem coordenadas é válido e não diz onde. */
 const USABLE_PAYLOAD = {
     location: (payload) => locationCoordinates(payload?.data) !== null,
 };
@@ -451,11 +392,7 @@ export function requestCardContent(type) {
     };
 }
 
-/**
- * `meta` é o que se sabe sobre a leitura e não está dentro dela -- por agora, quando
- * chegou. Só o mosaico o passa: na lista cronológica a hora tem coluna própria, e um
- * renderizador que precise dela numa e não na outra recebe-a de quem o chama.
- */
+/** `meta` é o que se sabe sobre a leitura e não está dentro dela: por agora, quando chegou. */
 export function uplinkCardContent(type, data, meta = {}) {
     return (
         UPLINK_CARD_RENDERERS[type]?.(data, meta) || {
@@ -466,7 +403,7 @@ export function uplinkCardContent(type, data, meta = {}) {
     );
 }
 
-// A W6R press carries which kind of press it was; an NCS pager does not.
+// Uma pulseira W6R diz que tipo de toque foi; um pager NCS não.
 const HELP_CALL_PRESS_MODES = ["single", "double", "long"];
 
 const PRESS_TYPE_LABEL = {
@@ -475,8 +412,7 @@ const PRESS_TYPE_LABEL = {
     long: "toque longo",
 };
 
-// What separates the modes is how many presses, or how long one lasts, so the
-// icons say exactly that.
+// O que separa os modos é quantos toques, ou quanto dura um, e é isso que o ícone diz.
 const HELP_CALL_PRESS_ICON = {
     single: "fa-1",
     double: "fa-2",
@@ -498,7 +434,7 @@ function ncsPagerContent(type) {
     return { icon, value };
 }
 
-// Interfaces emitted by Hub\Ingress\Mqtt\Moko\GatewayNormalizer.
+// As interfaces que o `Hub\Ingress\Mqtt\Moko\GatewayNormalizer` emite.
 const CONNECTIVITY_INTERFACE_LABELS = {
     wifi: "Wi-Fi",
     ethernet: "Ethernet",
@@ -532,8 +468,7 @@ function connectivityValue(data) {
         parts.push(networkType);
     }
 
-    // A wired gateway reports no RSSI at all, and 0 dBm is a legitimate
-    // reading, so test for null rather than falsiness.
+    // Um gateway com fios não reporta RSSI e 0 dBm é leitura legítima: testar contra null.
     const dbm = data?.signalStrengthDbm;
     if (
         dbm !== null &&
@@ -549,14 +484,7 @@ function connectivityValue(data) {
         : capabilityLabel("connectivity");
 }
 
-/**
- * O limiar por canal que decidiu esta leitura, tirado da propria leitura.
- *
- * Os limiares sao configuraveis por sensor e o normalizador publica o `wetDelta` no
- * payload exactamente para que ninguem os escreva aqui. O 12 e o preset normal e serve so
- * as leituras que ficaram no historico antes de os limiares viajarem com elas: a lista de
- * cada dispositivo guarda cem eventos, e os mais antigos nao trazem o campo.
- */
+// O limiar vem no payload, por sensor; 12 é o preset normal, para leituras sem o campo.
 const DIAPER_WET_DELTA_FALLBACK = 12;
 
 function diaperWetDelta(data) {
@@ -566,20 +494,14 @@ function diaperWetDelta(data) {
         : DIAPER_WET_DELTA_FALLBACK;
 }
 
-/**
- * Quantos canais molhados obrigam a muda, tambem da leitura.
- *
- * Numa leitura antiga, que nao o traz, o resumo volta a contar sobre o total de canais --
- * que e o que dizia enquanto o limiar era o mesmo para todos os sensores.
- */
+/** Quantos canais molhados obrigam a muda. Sem o campo, conta sobre o total de canais. */
 function diaperRequiredChannels(data, channelCount) {
     const required = Number(data?.requiredChannelCount);
     return Number.isFinite(required) && required > 0 ? required : channelCount;
 }
 
-// Espelha o `DiaperSensitivity::cleanMaxDelta`: abaixo disto em todos os canais a fralda
-// esta seca. A divisao por 4 tem de ser a mesma dos dois lados, senao a tira pinta de
-// ambar um canal que o cartao ao lado ainda conta como seco.
+// Espelha o `DiaperSensitivity::cleanMaxDelta`: a divisão por 4 tem de ser igual dos dois
+// lados, senão a tira pinta de âmbar um canal que o cartão ao lado conta como seco.
 function diaperDampDelta(wetDelta) {
     return Math.floor(wetDelta / 4) + 1;
 }
@@ -597,16 +519,13 @@ function diaperMoistureBody(data) {
     }
 
     const wetDelta = diaperWetDelta(data);
-    // Deltas are 6-bit (0-63) but the decision happens at the threshold, and a dry
-    // channel reads far below it. Scaling to the full range would flatten every real
-    // reading, so the bars scale to twice the threshold and taller readings clamp to
-    // full height.
+    // Os deltas são de 6 bits, mas a decisão está no limiar: escalar à gama toda achatava
+    // todas as leituras reais, por isso a tira escala ao dobro do limiar e corta aí.
     const scaleDelta = wetDelta * 2;
 
     const columns = channels
         .map((channel, position) => {
-            // Baselines differ by an order of magnitude between channels, so
-            // only the delta is comparable across the strip.
+            // As bases diferem uma ordem de grandeza entre canais: só o delta é comparável.
             const delta = Math.max(0, Number(channel?.delta ?? 0) || 0);
             const index = channel?.index ?? position + 1;
             const band = diaperMoistureBand(delta, wetDelta);
@@ -636,13 +555,7 @@ Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-
 </div>`;
 }
 
-/**
- * O valor de uma leitura de humidade da fralda, para uma linha de lista.
- *
- * O cartão mostra a tira dos dez canais; numa linha só cabe o que a tira resume — o delta
- * mais alto e quantos canais passaram o limiar. Sem isto, a linha dizia "Humidade da
- * fralda" na coluna do nome e outra vez na coluna do valor, sem número nenhum.
- */
+/** Numa linha só cabe o que a tira resume: o delta mais alto e quantos passaram o limiar. */
 function diaperMoistureRowValue(data) {
     const channels = Array.isArray(data?.channels) ? data.channels : [];
     if (channels.length === 0) {
@@ -664,10 +577,8 @@ function batteryDetails(data) {
 /**
  * As coordenadas de uma leitura de localização, ou null quando não há posição.
  *
- * Lê o `lat`/`lon` e não o `hasCoordinates`: o histórico do Redis guarda cem eventos por
- * dispositivo e os mais antigos são anteriores a esse campo, por isso confiar nele fazia
- * uma posição boa desaparecer. O par 0,0 é a forma que os protocolos usam para dizer "sem
- * fixo" -- o normalizador do hub já o anula, mas nem sempre o fez.
+ * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos mais antigos do
+ * histórico do Redis. O par 0,0 é a forma que os protocolos usam para dizer "sem fixo".
  */
 export function locationCoordinates(data) {
     const lat = Number(data?.lat);
@@ -678,15 +589,8 @@ export function locationCoordinates(data) {
 }
 
 /**
- * O valor do cartão de localização: onde está, ou um travessão.
- *
- * Dizia "Atualização de localização" quando não havia coordenadas, que é o que o evento é
- * e não onde o aparelho está -- e o título do cartão já diz LOCALIZAÇÃO. O slot grande
- * responde a uma pergunta só, e sem posição não há resposta: o travessão diz isso, e a
- * linha de detalhes diz porquê.
- *
- * Cinco decimais são ~1 m, que é a precisão do melhor fixo que o mapa de rádio privado
- * produz. O sexto decimal são dez centímetros num mosaico de 206px.
+ * Onde está, ou um travessão: o slot grande responde a uma pergunta só, e sem posição não
+ * há resposta. Cinco decimais são ~1 m, a precisão do melhor fixo do mapa de rádio.
  */
 function locationValue(data) {
     const fix = locationCoordinates(data);
@@ -694,12 +598,8 @@ function locationValue(data) {
 }
 
 /**
- * Como se obteve a posição: GPS, ou rádio.
- *
- * Só estes dois, e não a origem crua. `cell`, `wifi` e `cell_wifi` são todos triangulação
- * a partir do ambiente de rádio, resolvida pelo mapa privado ou pela BeaconDB, e o que
- * distingue uma posição destas de uma de GPS é a proveniência, não qual das antenas
- * entrou na conta -- isso está nos detalhes de quem não conseguiu resolver.
+ * Como se obteve a posição: GPS, ou rádio, e não a origem crua. `cell`, `wifi` e
+ * `cell_wifi` são todos triangulação, e o que os distingue do GPS é a proveniência.
  */
 function locationFixLabel(data) {
     const source = String(data?.source || "").toLowerCase();
@@ -714,11 +614,8 @@ function locationAccuracy(data) {
 }
 
 /**
- * A prova de rádio que a leitura trazia, para quando não resultou em posição.
- *
- * As contagens dizem mais do que a etiqueta da origem: `cell_wifi` diz por que meio se
- * tentou, `3 antenas · 4 redes WiFi` diz isso e ainda quanta evidência havia -- e é essa
- * quantidade que explica porque é que um fixo resolve a ±1 m e o seguinte não resolve.
+ * A prova de rádio que a leitura trazia, para quando não resultou em posição: é a
+ * quantidade de evidência que explica porque é que um fixo resolve e o seguinte não.
  *
  * Sem antenas nem redes é outra falha, e não a mesma mais fraca: o aparelho reportou e não
  * viu nada, o que aponta para ele e não para a cobertura.
@@ -743,10 +640,6 @@ function locationRadioEvidence(data) {
 /**
  * Com posição, como e com que precisão; sem posição, com que evidência se tentou.
  *
- * Dizia `Origem: Cell Wifi · GPS válido: False · Velocidade: 0` -- jargão sem tradução, um
- * booleano em inglês que só repetia o que a origem já dizia, e a velocidade de um relógio
- * parado sem unidade.
- *
  * A idade vem do `meta` e não do payload, e é por isso que só aparece no mosaico: na lista
  * cronológica a hora do evento já tem coluna própria.
  */
@@ -762,11 +655,8 @@ function locationDetails(data, meta = {}) {
 }
 
 /**
- * Quantas pessoas o radar vê.
- *
- * O `count` vem do hub e não se conta o array aqui: uma leitura sem ninguém tem de dizer
- * "Ninguém" e não "Sem leituras", que é o que o cartão diria se o array vazio passasse por
- * ausência de dados. Um radar que não vê ninguém está a funcionar.
+ * Quantas pessoas o radar vê. O `count` vem do hub e não se conta o array aqui: um radar
+ * que não vê ninguém está a funcionar, e diz "Ninguém" e não "Sem leituras".
  */
 function presenceValue(data) {
     const count = Number(data?.count ?? 0) || 0;
@@ -778,17 +668,9 @@ function presenceValue(data) {
 }
 
 /**
- * O icone e o tom de cada postura.
- *
- * A etiqueta nao esta aqui: vive no `FIELD_VALUE_LABELS.posture` do `format.js`, e
- * duplica-la era refazer os tres mapas de etiquetas que esta serie de commits acabou de
- * juntar num so.
- *
- * O icone diz a categoria -- cama, cadeira, pessoa, aviso -- e o tom diz a gravidade, com
- * uma regra que se diz numa frase: verde e estar bem, azul e repouso, amarelo e suspeita,
- * vermelho e confirmacao, cinzento e nao saber. O modulo dos radares do gucc.dev pinta cada
- * postura com a sua cor, oito ao todo; aqui sao cinco tons que o CSS ja tinha, e uma queda
- * confirmada distingue-se de uma suspeita pelo vermelho e nao por outro simbolo.
+ * O ícone diz a categoria -- cama, cadeira, pessoa, aviso -- e o tom diz a gravidade:
+ * verde é estar bem, azul repouso, amarelo suspeita, vermelho confirmação, cinzento não
+ * saber. A etiqueta vive no `FIELD_VALUE_LABELS.posture` do `format.js`.
  */
 const POSTURE_STYLE = {
     standing: { icon: "fa-person", tone: "success" },
@@ -806,16 +688,14 @@ const POSTURE_STYLE = {
     unknown: { icon: "fa-question", tone: "secondary" },
 };
 
-/** A pastilha e um `badge` do Bootstrap com o par de utilitarios subtis do tom. */
+/** A pastilha é um `badge` do Bootstrap com o par de utilitários subtis do tom. */
 const CHIP_CLASS =
     "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
 
 /**
- * Uma postura como pastilha: icone, etiqueta e o tom por tras.
- *
- * A enumeracao vem do payload e vai parar a um atributo `class`, por isso passa pelo `esc`
- * -- o detalhe e injectado sem escapar, que e o que permite o `<br>` de outros cartoes, e
- * um estado novo do firmware nao pode escrever atributos.
+ * Uma postura como pastilha. A enumeração vem do payload e vai parar a um atributo
+ * `class`, por isso passa pelo `esc`: o detalhe é injectado sem escapar, e um estado novo
+ * do firmware não pode escrever atributos.
  */
 function postureChip(posture) {
     const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
@@ -833,15 +713,8 @@ function postureChip(posture) {
 const PRESENCE_CHIP_LIMIT = 3;
 
 /**
- * A postura de cada pessoa, em pastilhas.
- *
- * As coordenadas estavam nesta linha e enchiam-na: num mosaico estreito,
- * `Pessoa 1: Deitado · x 1 dm · y 0 dm · z 0 cm` cortava em "y 0 dm ·" e a postura -- a
- * unica parte que se le de relance -- competia por espaco com tres numeros relativos ao
- * aparelho, que nao significam nada sem uma planta da divisao. Passam para a tooltip.
- *
- * O corte as tres primeiras ja existia e era mudo: a quarta pessoa desaparecia sem aviso.
- * Passa a haver contador.
+ * A postura de cada pessoa, em pastilhas. As coordenadas ficam na tooltip: num mosaico
+ * estreito enchiam a linha, e não significam nada sem uma planta da divisão.
  */
 function presenceDetails(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
@@ -860,11 +733,8 @@ function presenceDetails(data) {
 }
 
 /**
- * As pessoas todas, com onde estao: o texto que espera atras do rato.
- *
- * Sem corte, ao contrario das pastilhas. E aqui que as coordenadas e a quarta pessoa em
- * diante continuam a existir, para quem esteja a comparar com a especificacao do
- * fabricante.
+ * As pessoas todas, com onde estão, sem corte: é aqui que as coordenadas e a quarta pessoa
+ * em diante existem, para quem esteja a comparar com a especificação do fabricante.
  */
 function presenceDetailsTitle(data) {
     const people = Array.isArray(data?.people) ? data.people : [];
@@ -929,10 +799,8 @@ function dataPointValue(value) {
 }
 
 /**
- * O numero da pessoa como se conta, e nao como o radar indexa.
- *
- * O aparelho numera a partir do zero e o cartao dizia "Pessoa 0". O indice fica intacto no
- * payload -- e o que se compara com os logs do fabricante --, so a etiqueta soma um.
+ * O aparelho numera as pessoas a partir do zero. O índice fica intacto no payload -- é o
+ * que se compara com os logs do fabricante --, só a etiqueta soma um.
  */
 function displayPersonIndex(value) {
     const index = Number(value);
@@ -940,12 +808,8 @@ function displayPersonIndex(value) {
 }
 
 /**
- * Os estados de um pedido que o mosaico mostra, e o tom de cada um.
- *
- * `acked` fica de fora porque a resposta já é o valor do mosaico, e `superseded` também:
- * um pedido substituído tem um mais recente atrás dele, e é esse que se mostra. O que não
- * pode faltar é a falha — se um pedido falhou e nada respondeu depois, o mosaico calado
- * era indistinguível de um mosaico a que nunca se pediu nada.
+ * Os estados de um pedido que o mosaico mostra. Sem `acked`, porque a resposta já é o
+ * valor, nem `superseded`, porque há um pedido mais recente atrás dele.
  */
 const REQUEST_CARD_STATE = {
     queued: { label: "em fila", tone: "config-state-secondary" },
@@ -956,10 +820,8 @@ const REQUEST_CARD_STATE = {
 };
 
 /**
- * O estado do pedido mais recente desta categoria, para a pastilha do mosaico.
- *
- * Uma falha só se mostra enquanto for a última palavra: se chegou uma leitura depois dela,
- * o dispositivo respondeu e é o valor que conta.
+ * O estado do pedido mais recente desta categoria. Uma falha só se mostra enquanto for a
+ * última palavra: se chegou uma leitura depois dela, o dispositivo respondeu.
  */
 function latestRequestState(type, commands, lastTelemetryTime) {
     const latest = commands
@@ -986,13 +848,7 @@ function latestRequestState(type, commands, lastTelemetryTime) {
     return entry;
 }
 
-/**
- * A hora de um pedido.
- *
- * Não é o `eventTime`: um evento traz `occurredAt` ou `recordedAt`, e um pedido traz
- * `requestedAt`. Ordenar pedidos com o `eventTime` dava zero em todos, e o "mais recente"
- * passava a ser o primeiro da lista.
- */
+/** Não é o `eventTime`: um pedido traz `requestedAt`, não `occurredAt` nem `recordedAt`. */
 function commandTime(command) {
     const time = Date.parse(command?.requestedAt || "");
     return Number.isNaN(time) ? eventTime(command) : time;
@@ -1021,11 +877,9 @@ export function renderRequestCardShell(
         )
         .sort((a, b) => eventTime(b) - eventTime(a));
 
-    // A leitura mais recente que serve, quando "servir" e mais do que ter chegado: um
-    // relatorio de localizacao que nao resolveu nao e uma leitura de onde o aparelho esta,
-    // e mostra-lo apagava a posicao boa de dois minutos antes. Num HW20PRO sao 8 de 29
-    // relatorios; num VL17 nunca resolve nenhum, e ai o cartao mostra o ultimo mesmo assim,
-    // porque a hora e a prova de radio sao o que ha para dizer.
+    // A mais recente que serve, quando "servir" é mais do que ter chegado: um relatório de
+    // localização sem posição apagaria o fixo bom de dois minutos antes. Quando nenhuma
+    // serve fica a última mesmo assim, porque a hora e a prova de rádio são o que há.
     const usable = USABLE_PAYLOAD[type];
     const pickOfType = (wanted) => {
         const ofType = payloads.filter(
@@ -1036,10 +890,8 @@ export function renderRequestCardShell(
     const lastTelemetry =
         (usable ? payloads.find(usable) : null) ?? payloads[0];
 
-    // Um cartao pode mostrar mais do que uma capacidade -- a humidade da fralda tem os
-    // canais numa mensagem e o indice noutra, que chega menos vezes -- e por isso junta a
-    // leitura mais recente de CADA tipo. Ficar so com a mais recente das duas apagava a
-    // outra: o indice desaparecia a cada leitura de canais que nao o trouxesse.
+    // A mais recente de CADA tipo, e não das duas em conjunto: a humidade da fralda tem os
+    // canais numa mensagem e o índice noutra, e ficar com uma apagava a outra.
     const lastData = Object.assign(
         {},
         ...telemetryTypes
@@ -1053,26 +905,17 @@ export function renderRequestCardShell(
               occurredAt: lastTelemetry.occurredAt || lastTelemetry.recordedAt,
           })
         : null;
-    // Sem leitura nao ha valor: o titulo ja diz o nome da capacidade, e repeti-lo por
-    // baixo em corpo maior dava dois nomes no mesmo mosaico.
+    // Sem leitura não há valor: o título já diz o nome da capacidade.
     const lastValue = lastContent ? lastContent.value : "";
-    // The card shows the latest telemetry, so an icon derived from that reading
-    // wins over the static one -- a wired gateway must not show a Wi-Fi icon.
+    // Um ícone tirado da leitura vence o estático: um gateway com fios não mostra Wi-Fi.
     const icon = command.icon || lastContent?.icon || card.icon;
-    // O titulo e sempre o nome da categoria. A leitura mais recente substituia-o, o que
-    // dava mosaicos a dizer "78%" e "Atencao" sem dizer 78% de que: num dispositivo com
-    // telemetria a chegar, o cartao perdia o nome exactamente quando tinha o que mostrar.
+    // O título é sempre o nome da categoria: "78%" sozinho não diz 78% de quê.
     const title = capabilityLabel(type) || card.value || type;
     const value = isSystemRequestCard ? card.value : lastValue;
-    // A card may ask for the full row and supply its own body, so richer
-    // telemetry does not need a special case in this shell.
+    // Um cartão pode pedir a linha toda e trazer o seu próprio corpo.
     const span = lastContent?.span || card.span || 6;
     const bodyHtml = lastContent?.body || "";
-    // "A pedir" durava o que durava a chamada HTTP que punha o pedido na fila, e desaparecia
-    // no instante em que o pedido passava a existir de verdade: o mosaico esquecia-o
-    // exactamente quando havia algo para dizer, e o unico sitio que ainda sabia era a lista
-    // ao lado. A pastilha passa a seguir o estado do pedido, que e o que o utilizador
-    // esperava ver quando clicou.
+    // A pastilha segue o estado do pedido, e não a chamada HTTP que o pôs na fila.
     const requestState = requestable
         ? latestRequestState(
               type,
@@ -1085,19 +928,15 @@ export function renderRequestCardShell(
         span,
         icon,
         title,
-        // O valor so aparece quando diz algo que o titulo nao diga.
+        // O valor só aparece quando diz algo que o título não diga.
         value: value && value !== title ? value : "",
-        // O `details` era calculado e deitado fora: a linha da lista de eventos desenhava-o
-        // e o mosaico ignorava-o. Era por isso que o estado de sono nunca aparecia no
-        // cartao dos sinais vitais, apesar de o hub o mandar desde sempre.
         details: isSystemRequestCard ? "" : lastContent?.details || "",
         detailsTitle: isSystemRequestCard
             ? ""
             : lastContent?.detailsTitle || "",
         tooltip,
         body: bodyHtml,
-        // Um cartao que nao se pode pedir nao e clicavel: o que nao responde ao clique
-        // nao deve parecer que responde.
+        // O que não responde ao clique não deve parecer que responde.
         feature: requestable ? type : "",
         pending: requestable && loading,
         stateLabel: loading ? "a pedir" : requestState?.label || "",
@@ -1106,7 +945,7 @@ export function renderRequestCardShell(
     });
 }
 
-/** A cor da categoria, para o icone. Sem entrada na tabela, o icone fica neutro. */
+/** A cor da categoria, para o ícone. Sem entrada na tabela, o ícone fica neutro. */
 export function cardTone(type) {
     return CARD_TONE_BY_TYPE[type] || "";
 }
@@ -1124,8 +963,8 @@ function requestTelemetryTypes(type) {
     if (type === "vitals_minute_stats") {
         return ["hbstatics"];
     }
-    // O indice de humidade e uma capacidade a parte, mas nao um cartao a parte: o cartao
-    // dos canais mostra-o como valor, e sozinho era um segundo cartao a dizer o mesmo.
+    // O índice de humidade é uma capacidade à parte, mas não um cartão à parte: o cartão
+    // dos canais mostra-o como valor.
     if (type === "diaper_moisture") {
         return ["diaper_moisture", "diaper_moisture_level"];
     }
@@ -1154,9 +993,7 @@ function compactDetails(data, keys) {
                     data[key] !== null &&
                     data[key] !== "",
             )
-            // O `fieldValue` traduz o que for enumeracao e deixa passar numeros e texto livre.
-            // Sem ele o cartao punha "Estado do sono: awake" -- a etiqueta em portugues e o
-            // valor cru ao lado dela.
+            // O `fieldValue` traduz enumerações; sem ele saía "Estado do sono: awake".
             .map(
                 (key) =>
                     `${esc(fieldLabel(key))}: ${esc(fieldValue(key, data[key]))}`,
@@ -1166,16 +1003,11 @@ function compactDetails(data, keys) {
 }
 
 /**
- * Summary of the most recent help call per press mode.
+ * A última chamada de ajuda por modo de toque.
  *
- * The device has no way to tell us a call was cancelled: dismissing is a
- * downlink command, and because the bracelet only advertises while alarmed,
- * every frame we ever see carries alarm_status = 1. So this deliberately does
- * not model an active/cleared alarm -- it reports when each press last
- * happened, which is a fact we can actually observe.
- *
- * @param {Array} events raw event payloads for the device
- * @returns {string} card markup, or "" when the device has never called
+ * A pulseira só anuncia enquanto está em alarme, por isso `alarm_status` vem sempre a 1 e
+ * não há como saber que uma chamada foi cancelada. O que se reporta é quando cada toque
+ * aconteceu, que é um facto observável.
  */
 export function helpCallSummaryCard(events = []) {
     const calls = (Array.isArray(events) ? events : [])
@@ -1200,11 +1032,11 @@ export function helpCallSummaryCard(events = []) {
         }
     }
 
-    // Three side by side on a desktop, stacked full width on a phone.
+    // Três lado a lado num ecrã grande, empilhadas no telemóvel.
     const columns = HELP_CALL_PRESS_MODES.map((mode) => {
         const call = latest[mode];
-        // The shared label reads as a suffix ("... (toque simples)"), so it is
-        // capitalised here where it titles a column instead.
+        // A etiqueta partilhada lê-se como sufixo ("... (toque simples)"); aqui titula uma
+        // coluna, por isso vai capitalizada.
         const suffix = PRESS_TYPE_LABEL[mode];
         const label = esc(suffix.charAt(0).toUpperCase() + suffix.slice(1));
         const icon = HELP_CALL_PRESS_ICON[mode];
@@ -1212,8 +1044,7 @@ export function helpCallSummaryCard(events = []) {
         const occurredAt = called
             ? call.occurredAt || call.recordedAt || ""
             : "";
-        // The relative time is the readable one; the exact timestamp is a
-        // detail, so it waits behind a tooltip rather than crowding the column.
+        // O tempo relativo é o legível; a hora exacta espera atrás da tooltip.
         const tooltip = called
             ? ` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(when(occurredAt))}" aria-label="${label}: ${esc(when(occurredAt))}" tabindex="0"`
             : "";
@@ -1244,7 +1075,7 @@ export function helpCallSummaryCard(events = []) {
 </div>`;
 }
 
-/** O que cada detecção do radar diz, em português. */
+/** O que cada detecção do radar diz. */
 const DETECTION_TYPE_LABEL = {
     fall_confirmed: "Queda confirmada",
     on_floor: "No chão",
@@ -1272,22 +1103,17 @@ function detectionValue(data) {
     );
 }
 
-/** O grau e o que separa um aviso de um perigo, e vem do hub ja em portugues. */
+/** O grau é o que separa um aviso de um perigo, e vem do hub já em português. */
 function detectionDetails(data) {
     const level = String(data?.detectionLevel || "");
     return level === "" || level === "info" ? "" : titleize(level);
 }
 
 /**
- * A ultima queda que o radar viu.
+ * A última queda que o radar viu, tirada do histórico de eventos e não de uma capacidade:
+ * aparece só quando houve queda, e não ocupa o mosaico nos dias em que não houve.
  *
- * Desenhado a partir do historico de eventos e nao de uma capacidade, como o
- * `helpCallSummaryCard` da pulseira: aparece exactamente quando houve uma queda, e nao
- * ocupa o mosaico com um cartao vazio nos dias -- a esmagadora maioria -- em que nao houve.
- *
- * E o alarme que poe uma queda a frente de quem olha. A telemetria da presenca diz a
- * postura de cada pessoa, mas ninguem esta a olhar para o ecra no instante em que alguem
- * cai; o que fica e o registo de que caiu.
+ * Ninguém está a olhar para o ecrã no instante em que alguém cai; o que fica é o registo.
  */
 export function fallSummaryCard(events = []) {
     const falls = (Array.isArray(events) ? events : [])

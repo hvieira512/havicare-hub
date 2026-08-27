@@ -241,9 +241,8 @@ const CONFIG_INPUT_READERS = {
         diastolic: readNumber(section, "diastolic"),
     }),
     wonlexBloodPressureWarning: (section) => ({
-        // The form offers a systolic and a diastolic threshold, which is what
-        // the Wonlex BPEarlyWarning config carries. Reading a single reminder
-        // value here would drop both of them.
+        // O formulário oferece um limiar sistólico e um diastólico, que é o que a
+        // configuração `BPEarlyWarning` da Wonlex leva: ler um valor só perdia os dois.
         enabled: readCheckbox(section, "enabled"),
         hpWarn: readNumber(section, "hpWarn"),
         LPWarn: readNumber(section, "LPWarn"),
@@ -534,9 +533,9 @@ export function renderDeviceConfigurationRoot(context) {
     }
 
     if (!catalog.length) {
-        // Calado quando quem nos chama ja mostrou uma configuracao decidida no hub:
-        // "este protocolo não tem configurações suportadas" e verdade sobre downlinks
-        // e mentira sobre o ecra, que tem uma configuracao logo acima.
+        // Calado quando quem chama já mostrou uma configuração decidida no hub: "este
+        // protocolo não tem configurações suportadas" é verdade sobre downlinks e mentira
+        // sobre o ecrã, que tem uma configuração logo acima.
         return quietWhenEmpty
             ? ""
             : emptyPanel("Este protocolo não tem configurações suportadas.");
@@ -642,8 +641,8 @@ function renderConfigSection(
     const isStored = stored ?? (row !== null && Object.keys(row).length > 0);
     const showConfigurationBadge = !entry.requestOnly;
     const deliveryMeta = configurationDeliveryMeta(isStored, delivery);
-    // Sem comando nativo, o hub aplica-a sozinho -- e entao nao ha vocabulario de
-    // protocolo para mostrar: o comando nao existe, e o tipo de campo sozinho e ruido.
+    // Sem comando nativo, o hub aplica-a sozinho, e então não há vocabulário de protocolo
+    // para mostrar: o comando não existe, e o tipo de campo sozinho é ruído.
     const hideNativeCommand = (entry.configKind === "capability" && entry.key === "alarm_clock")
         || String(entry.command || "") === "";
     const configSectionName = entry.configSectionName || entry.configSection || "";
@@ -693,9 +692,8 @@ function renderConfigSection(
 
 function renderConfigActionButton(key, row, uiState, disabled = false, appliedByHub = false) {
     const state = configButtonState(row, uiState);
-    // "Guardar" e nao "Enviar" quando nao ha nada a caminho do dispositivo. E o mesmo
-    // cuidado do estado que diz "Aplicado": o botao nao deve prometer um envio que nao
-    // acontece.
+    // "Guardar" e não "Enviar" quando não há nada a caminho do dispositivo: o botão não deve
+    // prometer um envio que não acontece.
     const idleLabel = appliedByHub
         ? "Guardar"
         : (["pushMessage", "push_message"].includes(key) ? "Enviar mensagem" : "Enviar");

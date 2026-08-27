@@ -56,9 +56,8 @@ function normalizeFilterValue(value) {
 }
 
 /**
- * Enquanto o pedido corre, a lista fica marcada como ocupada. Vale para todos os que pedem
- * de novo -- filtro, pesquisa, página --, onde o conteúdo antigo continua no ecrã e sem isto
- * nada dizia que ainda estava a mudar.
+ * Enquanto o pedido corre, a lista fica marcada como ocupada: em filtro, pesquisa ou
+ * página, o conteúdo antigo continua no ecrã e nada mais diria que está a mudar.
  */
 async function loadSummary() {
     els.deviceList?.setAttribute("aria-busy", "true");
@@ -182,15 +181,11 @@ async function ensureProtocolsLoaded(force = false) {
 }
 
 /**
- * O modal abre primeiro e enche-se quando a resposta chega.
- *
- * Com o `show()` depois do `await`, um `/api/devices` lento deixava o botão sem resposta
- * nenhuma -- e ainda clicável, logo cada clique pedia outra vez. E era mais do que um
- * pedido: as licenças e, com um dispositivo já escolhido, o detalhe dele também esperavam.
+ * O modal abre primeiro e enche-se quando a resposta chega: com o `show()` depois do
+ * `await`, um `/api/devices` lento deixa o botão sem resposta e ainda clicável.
  *
  * O esqueleto só aparece quando não há nada para mostrar. Numa segunda abertura a lista
- * anterior fica à vista, marcada como ocupada, porque uma lista antiga por um instante diz
- * mais do que caixas vazias.
+ * anterior fica à vista, marcada como ocupada, que diz mais do que caixas vazias.
  */
 async function openDeviceSelector() {
     ui.deviceSelectorModal?.show();
@@ -201,19 +196,12 @@ async function openDeviceSelector() {
 }
 
 /**
- * O esqueleto da lista e dos filtros.
+ * O esqueleto da lista e dos filtros. Cada linha é o cartão a sério -- as mesmas classes,
+ * logo a mesma altura -- com barras no lugar do texto, para a lista não saltar quando os
+ * dados chegam. São tantas quantas a página pode trazer, e a caixa corta as que não cabem.
  *
- * Cada linha é o cartão a sério -- as mesmas classes, logo a mesma altura, o mesmo raio e as
- * mesmas colunas -- com barras no lugar do texto. Copiar só a caixa de fora dava uma linha
- * mais baixa que a verdadeira, e a lista saltava quando os dados chegavam.
- *
- * As linhas enchem a moldura em vez de serem um bloco no topo: são tantas quantas a página
- * pode trazer, e a caixa corta as que não cabem. Assim o que se espera ocupa o espaço do que
- * vem, sem medir alturas em JavaScript.
- *
- * A onda é a `placeholder-wave` do Bootstrap e não a `placeholder-glow`: varre da esquerda
- * para a direita, e no contentor é uma passagem só sobre a lista toda em vez de uma por
- * linha. Está no contentor por isso.
+ * A `placeholder-wave` fica no contentor e não em cada linha, para ser uma passagem só
+ * sobre a lista toda.
  */
 function renderDeviceSelectorSkeleton() {
     const repeat = (count, markup) => Array.from({length: count}, () => markup).join("");
@@ -282,13 +270,9 @@ function renderDeviceSelectorSummary() {
 }
 
 /**
- * Um dispositivo por linha, e a linha toda.
- *
- * Era uma tabela de oito colunas, todas com o mesmo peso. Quem abre este modal quer
- * reconhecer *um* dispositivo, e reconhece-o pela foto, pelo estado e pelo IMEI -- o resto é
- * confirmação. Em cartão, esses três ficam à esquerda e a atribuição fica em campos de
- * largura fixa à direita, que caem sempre na mesma abcissa: lê-se a descer por coluna, como
- * uma tabela, mas cada dispositivo continua a ser um objecto com contorno próprio.
+ * Um dispositivo por linha, e a linha toda. Quem abre este modal quer reconhecer *um*
+ * dispositivo, e reconhece-o pela foto, pelo estado e pelo IMEI -- esses três ficam à
+ * esquerda, e a atribuição em campos de largura fixa à direita, na mesma abcissa.
  */
 function renderDeviceCard(device) {
     const selected = state.selectedImei === device.imei;
@@ -340,10 +324,8 @@ function renderDevicePagination(pagination) {
 }
 
 /**
- * O mosaico de tipos, a aceitar vários.
- *
- * Os tipos vêm do catálogo e não das contagens, para que um tipo sem dispositivos apareça
- * apagado -- saber que a frota não tem pulseiras é informação.
+ * O mosaico de tipos, a aceitar vários. Vêm do catálogo e não das contagens, para que um
+ * tipo sem dispositivos apareça apagado -- saber que a frota não tem pulseiras é informação.
  */
 function renderDeviceTypeFilter() {
     const counts = new Map(
@@ -410,14 +392,11 @@ function filterOptionMarkup({key, value, label, count, selected, partial = false
 }
 
 /**
- * A árvore de empresas e licenças.
+ * A árvore de empresas e licenças. Marcar a empresa marca-a toda; marcar algumas licenças
+ * deixa-a no traço do meio, que diz "esta empresa, mas não inteira".
  *
- * A empresa é a caixa de cima e as licenças dela ficam indentadas por baixo. Marcar a
- * empresa marca-a toda; marcar algumas licenças deixa a empresa no traço do meio, que é o
- * estado que diz "esta empresa, mas não inteira".
- *
- * "Sem licença" é a primeira opção e é folha: é a única que não pertence a empresa nenhuma,
- * e no fim ficava atrás de uma lista de empresas que pode crescer.
+ * "Sem licença" é a primeira e é folha: é a única que não pertence a empresa nenhuma, e no
+ * fim ficaria atrás de uma lista que pode crescer.
  */
 function renderDeviceLicenseFilter() {
     const tree = state.summary.deviceFilterCounts?.license || {companies: [], none: 0};
@@ -520,10 +499,8 @@ function renderDeviceFilterControls() {
 }
 
 /**
- * Os contadores ao lado de cada título, e o do topo.
- *
- * O do topo conta os grupos com filtro aplicado e não os valores marcados: diz quantas
- * coisas estão a estreitar a lista, que é a pergunta que se faz ao olhar para lá.
+ * Os contadores ao lado de cada título. O do topo conta os grupos com filtro aplicado e
+ * não os valores marcados: diz quantas coisas estão a estreitar a lista.
  */
 function renderDeviceFilterCounters() {
     const perGroup = {
@@ -610,10 +587,9 @@ async function loadDevice(imei) {
     state.selectedDetail = detail;
     state.selectedDetail.recent = null;
     state.detailFiltersDraft = { ...state.detailFilters };
-    // Antes de desenhar: os nomes das capacidades nos cartões e na lista de eventos vêm do
-    // catálogo deste tipo de dispositivo. É aqui e não no `renderSelection` porque este é o
-    // único sítio por onde entra um dispositivo novo -- os redesenhos seguintes são do
-    // mesmo, e a cache já está quente.
+    // Os nomes das capacidades vêm do catálogo deste tipo de dispositivo, e carregam-se
+    // aqui porque este é o único sítio por onde entra um dispositivo novo: nos redesenhos
+    // seguintes a cache já está quente.
     await ensureCapabilityCatalog(detail.model?.deviceType || "watch");
     renderSelectionDetail();
     connectDeviceStream(imei);

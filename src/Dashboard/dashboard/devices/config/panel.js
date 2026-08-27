@@ -8,11 +8,11 @@ import {resetPhoneControls} from "../../phone.js";
 import {state} from "../../state.js";
 
 /**
- * The configuration panel inside the device modal: saving a section,
- * refreshing what the device reports, and the per-section UI phase.
+ * O painel de configuração dentro do modal do dispositivo: gravar uma secção, refrescar o
+ * que o dispositivo reporta, e a fase da interface de cada secção.
  *
- * It owns the timers and the in-flight refresh promise, which is what kept it
- * inside bootstrap.js -- they are its state, not the dashboard's.
+ * É dele que são os temporizadores e a promessa de refresh em curso, e é isso que os traz
+ * para aqui em vez de os deixar no `app.js`.
  */
 
 let els;
@@ -24,7 +24,7 @@ export function initDeviceConfigPanel(context) {
     els = context.els;
 }
 
-/** Called when the user dismisses a feedback alert themselves. */
+/** Chamado quando o próprio utilizador fecha um aviso. */
 export function dismissConfigFeedback(key) {
     clearTimeout(configFeedbackTimers.get(key));
     configFeedbackTimers.delete(key);
@@ -307,15 +307,11 @@ export function renderDeviceConfigurationModal() {
 }
 
 /**
- * A fotografia do valor de cada bloco logo depois de desenhar.
+ * A fotografia do valor de cada bloco logo depois de desenhar, que é o que permite ao
+ * "Enviar" só acender quando o valor muda.
  *
- * E o que permite ao "Enviar" so acender quando o valor muda: nove blocos com nove
- * primarios escuros davam nove accoes igualmente urgentes num separador onde a maior
- * parte das vezes nao se muda nada.
- *
- * Falha aberta de proposito: um bloco cuja leitura nao se consegue tirar fica com o
- * botao activo, que e o comportamento antigo. E melhor um botao a mais do que uma
- * configuracao que nao se consegue enviar.
+ * Falha aberta de propósito: um bloco cuja leitura não se consegue tirar fica com o botão
+ * activo. É melhor um botão a mais do que uma configuração que não se consegue enviar.
  */
 function captureConfigSectionPristine() {
     for (const section of els.deviceConfigRoot.querySelectorAll("[data-config-section]")) {

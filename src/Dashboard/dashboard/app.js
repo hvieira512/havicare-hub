@@ -1,10 +1,7 @@
 /**
- * A raiz de composicao da dashboard.
- *
- * Este e o unico modulo que conhece toda a gente: cacheia os elementos, cria os modais do
- * Bootstrap, entrega o `els` a cada funcionalidade pelo seu `init`, e liga os ouvintes.
- * Uma funcionalidade nunca importa outra -- se duas precisam de se falar, e aqui que se
- * apresentam.
+ * A raiz de composição da dashboard, e o único módulo que conhece toda a gente: cacheia os
+ * elementos, cria os modais do Bootstrap, entrega o `els` a cada funcionalidade pelo seu
+ * `init`, e liga os ouvintes. Uma funcionalidade nunca importa outra.
  */
 import {getDevice as apiGetDevice} from "./api/index.js";
 import {esc} from "./format.js";
@@ -375,9 +372,8 @@ function bindEvents() {
         handleDevicePaginationClick,
     );
     els.requestGrid.addEventListener("click", handleRequestGridClick);
-    // A arvore do catalogo abre e fecha pelo `collapse` do Bootstrap, sem JS nosso: aqui
-    // escuta-se so o que leva a algum lado, que e a folha. O `keydown` esta ao lado do
-    // `click` porque a folha e uma linha accionavel e nao um `<button>`.
+    // A árvore do catálogo abre e fecha pelo `collapse` do Bootstrap: aqui escuta-se só a
+    // folha. O `keydown` está ao lado do `click` porque a folha não é um `<button>`.
     els.modelCatalog.addEventListener("click", handleModelListClick);
     els.modelCatalog.addEventListener("keydown", handleModelListClick);
     els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
@@ -386,8 +382,8 @@ function bindEvents() {
     els.deviceConfigRoot.addEventListener("click", handleDeviceConfigClick);
     els.deviceConfigRoot.addEventListener("input", handleDeviceConfigInput);
     els.deviceConfigRoot.addEventListener("change", handleDeviceConfigChange);
-    // O "Enviar" de cada bloco acende por diferenca. Um ouvinte na raiz para os dois
-    // eventos, depois de quem trata o campo ja ter feito o seu trabalho.
+    // O "Enviar" de cada bloco acende por diferença, num ouvinte na raiz para os dois
+    // eventos, depois de quem trata o campo ter feito o seu trabalho.
     for (const type of ["input", "change", "click"]) {
         els.deviceConfigRoot.addEventListener(type, (event) => {
             const section = event.target.closest("[data-config-section]");
@@ -441,8 +437,8 @@ function handleDeviceFormChange(event) {
 
 function handleDeviceSupplierClick(event) {
     const button = event.target.closest('[data-action="selectDeviceSupplier"]');
-    // Escolher o fornecedor nao responde a pergunta do modelo: e o par que identifica, e
-    // a pergunta so fecha quando houver modelo.
+    // Escolher o fornecedor não responde à pergunta do modelo: é o par que identifica, e a
+    // pergunta só fecha quando houver modelo.
     if (button) renderDeviceSelectors(button.dataset.value, "");
 }
 
@@ -497,8 +493,8 @@ export async function startDashboard() {
     initDeviceModal({els, deviceModal, deviceSelectorModal, settingsModal});
     initEditWizard({
         els,
-        // A autorizacao de um gateway e por empresa e licenca: mudar de licenca muda quais
-        // sao os elegiveis, e os que estavam marcados eram de outro cliente.
+        // A autorização de um gateway é por empresa e licença: mudar de licença muda quais
+        // são os elegíveis, e os que estavam marcados eram de outro cliente.
         onLicenseChange: () => void refreshGatewayOptions([]),
     });
     initCreateWizard({els, wizardModal: deviceWizardModal});
@@ -524,9 +520,8 @@ export async function startDashboard() {
     bindEvents();
     await ensureProtocolsLoaded();
 
-    // Os filtros guardados podem ser da forma antiga -- um valor por chave, e `licenseId` e
-    // `company` separados. `storedFilterList` aceita as duas, para que quem tinha filtros
-    // guardados os veja convertidos em vez de perdidos.
+    // Os filtros guardados podem ser da forma antiga, com um valor por chave e `licenseId`
+    // e `company` separados: o `storedFilterList` aceita as duas para não os perder.
     const stored = loadJsonStorage(FILTERS_STORAGE_KEY);
     if (stored && typeof stored === "object") {
         state.deviceFilters = {

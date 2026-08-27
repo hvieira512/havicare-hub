@@ -15,15 +15,12 @@ import {
 } from "../domain.js";
 
 /**
- * O separador das Capacidades: o catalogo do que um tipo de dispositivo pode ter.
+ * O separador das Capacidades: o catálogo do que um tipo de dispositivo pode ter.
  *
- * E uma vista de leitura, e nao um editor -- ligar e desligar capacidades faz-se na ficha
- * de um modelo, no separador do catalogo. O que se vem aqui perguntar e o inverso: que
- * capacidades existem para este tipo, e quais delas e que este fornecedor traz. Por isso e
- * que as que ele nao declara continuam na lista, esbatidas, em vez de desaparecerem.
- *
- * O catalogo por tipo, com a sua cache, vive no `capability-catalog.js` da raiz -- a
- * coluna de detalhe tambem o le, para dar nome as capacidades nos cartoes.
+ * É uma vista de leitura e não um editor -- ligar e desligar capacidades faz-se na ficha de
+ * um modelo. O que se vem aqui perguntar é o inverso: que capacidades existem para este
+ * tipo, e quais delas é que este fornecedor traz. Daí as que ele não declara ficarem na
+ * lista, esbatidas, em vez de desaparecerem.
  */
 let els;
 
@@ -32,10 +29,8 @@ async function initSettingsCapabilities(context) {
 }
 
 /**
- * O catálogo do tipo escolhido, guardado onde este separador o desenha.
- *
- * A cache e o pedido vivem no `capability-catalog.js` da raiz, que a coluna de detalhe
- * também usa; aqui só se escolhe qual dos catálogos é o que está à vista.
+ * O catálogo do tipo escolhido. A cache e o pedido vivem no `capability-catalog.js` da
+ * raiz, que a coluna de detalhe também usa; aqui só se escolhe qual está à vista.
  */
 async function loadCapabilityCatalog(deviceType) {
     const catalog = await ensureCapabilityCatalog(
@@ -156,9 +151,9 @@ function renderCapabilitiesCatalogSection() {
                         entry.isEvent,
                 )
                 .filter((entry) => matchesCapabilityQuery(entry))
-                // As que o fornecedor nao declara deixam de desaparecer: saber que uma
-                // capacidade existe para o tipo de dispositivo e que este fornecedor nao a
-                // traz e a pergunta que se vem aqui fazer.
+                // As que o fornecedor não declara ficam na lista: saber que uma capacidade
+                // existe para o tipo e que este fornecedor não a traz é a pergunta que se
+                // vem aqui fazer.
                 .map((entry) => ({
                     ...entry,
                     supported: !hasSupplierFilter || enabledSet.has(entry.key),
@@ -174,9 +169,8 @@ function renderCapabilitiesCatalogSection() {
         "d-none",
         visibleSections.length > 0,
     );
-    // Sem a chave: quem administra o hub nao precisa do vocabulario do protocolo, e o
-    // icone -- o mesmo que a capacidade ja tem nos cartoes de pedido -- passa a ser o que
-    // se reconhece. O tipo tambem sai, porque era a seccao repetida em cada linha.
+    // Sem a chave nem o tipo: quem administra o hub não precisa do vocabulário do
+    // protocolo, e o ícone -- o mesmo dos cartões de pedido -- é o que se reconhece.
     const supplierName = supplier ? supplier.name : "";
 
     els.capabilityCatalogViewer.innerHTML = visibleSections
@@ -192,7 +186,7 @@ function renderCapabilitiesCatalogSection() {
                             entry.isRequestable ? "Solicitável" : null,
                         ].filter(Boolean)
                         : [supplierName ? `não oferecido pela ${supplierName}` : "não oferecido"];
-                    // Numera o que e suportado, para o ultimo numero da seccao dizer
+                    // Numera o que é suportado, para o último número da secção dizer
                     // quantas capacidades o dispositivo tem de facto.
                     const number = entry.supported
                         ? String(++index).padStart(2, "0")
@@ -207,10 +201,9 @@ function renderCapabilitiesCatalogSection() {
                 })
                 .join("");
 
-            // As cinco seccoes somavam 4905px de lista corrida -- mais de seis ecras de
-            // telefone para um separador que se percorre a procura de uma linha. Em
-            // telefone cada uma fecha; o `d-sm-block` ganha ao `display: none` do collapse,
-            // por isso a partir de `sm` estao todas abertas e nao ha nada para clicar.
+            // Em telefone cada secção fecha, porque as cinco somam seis ecrãs de lista
+            // corrida. O `d-sm-block` ganha ao `display: none` do collapse, por isso a
+            // partir de `sm` estão todas abertas e não há nada para clicar.
             const bodyId = `${catalogSectionId(section)}Body`;
             const count = supported === entries.length
                 ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}`
@@ -240,9 +233,8 @@ function renderCapabilitiesCatalogSection() {
 }
 
 /**
- * Cinco seccoes irmas, cinco icones -- e uma cor. Eram ciano cheio, verde, navy, vermelho
- * e cinzento, como se tivessem gravidades diferentes, e o vermelho dos alarmes lia-se como
- * erro em vez de categoria.
+ * Cinco secções irmãs, cinco ícones -- e uma cor só: cores diferentes leem-se como
+ * gravidades diferentes, e o vermelho dos alarmes lia-se como erro em vez de categoria.
  */
 export const CAPABILITY_SECTION_ICONS = {
     telemetry: "fa-chart-line",
@@ -253,12 +245,9 @@ export const CAPABILITY_SECTION_ICONS = {
 };
 
 /**
- * O icone de uma capacidade no catalogo.
- *
- * O mapa dos cartoes de pedido cobre o que se pede a um dispositivo, que e sobretudo
- * telemetria. Fora disso caia tudo no mesmo `fa-circle-info`, e catorze circulos iguais
- * numa seccao de alarmes dizem menos do que icone nenhum -- por isso o recurso e o icone da
- * seccao, que ao menos e verdade.
+ * O ícone de uma capacidade no catálogo. O mapa dos cartões de pedido cobre sobretudo
+ * telemetria; fora disso o recurso é o ícone da secção, porque catorze círculos iguais numa
+ * secção de alarmes dizem menos do que ícone nenhum.
  */
 function capabilityIcon(entry, section) {
     const mapped = requestCardContent(entry.key);
@@ -266,14 +255,14 @@ function capabilityIcon(entry, section) {
     return CAPABILITY_SECTION_ICONS[section] || "fa-circle-info";
 }
 
-/** O `id` da seccao no catalogo, que e o destino das pastilhas da tira. */
+/** O `id` da secção no catálogo, que é o destino das pastilhas da tira. */
 function catalogSectionId(section) {
     return `capabilityCatalog-${String(section).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
 /**
- * A tira de seccoes: cada pastilha aponta para o `id` da sua seccao e leva a contagem do
- * que o fornecedor suporta, para se saber o tamanho de uma seccao antes de se ir la.
+ * A tira de secções: cada pastilha aponta para o `id` da sua secção e leva a contagem do
+ * que o fornecedor suporta, para se saber o tamanho de uma secção antes de se ir lá.
  */
 function renderCapabilityCatalogSectionNav(sections) {
     if (!els.capabilityCatalogSectionNav) return;
@@ -296,7 +285,7 @@ function handleCapabilityCatalogSearch() {
     renderCapabilitiesCatalogSection();
 }
 
-/** A pesquisa do catalogo: compara com o nome e com a chave, que e o que a linha mostra. */
+/** A pesquisa do catálogo: compara com o nome e com a chave. */
 function matchesCapabilityQuery(entry) {
     const needle = String(state.settingsModal.capabilityQuery || "").trim().toLowerCase();
     if (needle === "") return true;

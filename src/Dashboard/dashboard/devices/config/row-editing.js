@@ -4,11 +4,10 @@ import {wonlexMedicationPlanRow} from "./inputs.js";
 import {syncTakePillsCustomVisibility} from "./take-pills-audio.js";
 
 /**
- * Adding, removing and renumbering the repeatable rows in a configuration
- * section: contacts, phone lists, alarm clocks, medication plans, reminders.
+ * Acrescentar, remover e renumerar as linhas repetíveis de uma secção de configuração:
+ * contactos, listas telefónicas, alarmes, planos de medicação, lembretes.
  *
- * None of it touches the dashboard's module state, which is what let it come
- * out of bootstrap.js as a unit -- and what makes it testable on its own.
+ * Nada disto toca no estado dos módulos da dashboard, e é isso que o torna testável à parte.
  */
 
 export function appendContactRow(section) {

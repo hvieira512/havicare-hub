@@ -9,12 +9,11 @@ import {
 } from "./alarm-fields.js";
 
 /**
- * Readers turn a rendered configuration section back into the payload sent to
- * the device.
+ * Os leitores transformam uma secção de configuração desenhada no payload que vai para o
+ * dispositivo.
  *
- * They are the half of config.js that touches the DOM, and the half where a
- * mistake is silent -- a dropped field looks like a successful save. The round
- * trip is characterised in tests/Frontend/config-payload-roundtrip.test.js.
+ * São a metade que toca no DOM, e a metade onde um erro é silencioso: um campo perdido
+ * parece uma gravação com sucesso. A ida e volta está no `config-payload-roundtrip.test.js`.
  */
 
 export function firstFieldName(section) {

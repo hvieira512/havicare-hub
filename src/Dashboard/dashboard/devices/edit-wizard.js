@@ -7,19 +7,14 @@ import {
 } from "./classification-ui.js";
 
 /**
- * A classificacao no modal de edicao, com a mesma forma do assistente de adicionar.
+ * A classificação no modal de edição, com a mesma forma do assistente de adicionar: num
+ * dispositivo já registado o tipo e o modelo são respostas dadas, por isso colapsam em
+ * etiquetas e só se abrem quando se toca numa.
  *
- * O separador Geral tinha os tres controlos da classificacao sempre abertos -- o mosaico
- * de tipos, as pastilhas de fornecedor e as de modelo -- por cima do MAC e dos gateways.
- * Eram trinta e tal controlos a vista para editar um numero de serie, e um dispositivo ja
- * registado tem tipo e modelo: sao respostas dadas, nao perguntas por fazer. Aqui
- * colapsam em etiquetas, e so se abrem quando se toca numa.
- *
- * Nao usa o motor do `wizard.js` de proposito. Num dispositivo que existe nao ha respostas
- * em falta -- o estado e so qual a pergunta aberta e em que passo se esta, duas variaveis.
- * A verdade sobre o tipo, o modelo e a licenca continua a viver nos elementos do
- * formulario, que e de onde o `saveDevice` e o separador das configuracoes a leem; ter
- * uma segunda copia dela dentro de um motor era ter duas que podiam discordar.
+ * Não usa o motor do `wizard.js` de propósito. Num dispositivo que existe não há respostas
+ * em falta -- o estado é só qual a pergunta aberta e em que passo se está --, e a verdade
+ * sobre o tipo, o modelo e a licença vive nos elementos do formulário, que é de onde o
+ * `saveDevice` a lê. Uma segunda cópia dentro de um motor eram duas que podiam discordar.
  */
 
 const STEPS = ["Classificação", "Este aparelho"];
@@ -47,10 +42,8 @@ export function initEditWizard(context) {
 }
 
 /**
- * Prepara o modal para um dispositivo.
- *
- * Abre no passo 2 e nao no 1: o que se costuma vir alterar e o numero de serie, o SIM ou
- * os gateways, e a classificacao ja esta feita -- fica na trilha, a vista e a um clique.
+ * Prepara o modal para um dispositivo. Abre no passo 2 e não no 1: o que se costuma vir
+ * alterar é o número de série, o SIM ou os gateways, e a classificação já está feita.
  */
 export function resetEditWizard(groups = []) {
     licenseGroups = groups;
@@ -59,11 +52,8 @@ export function resetEditWizard(groups = []) {
 }
 
 /**
- * Uma resposta dada no passo 1.
- *
- * Escolher o tipo leva ao modelo, porque o modelo anterior nao existe no tipo novo e o
- * que fica escolhido e o primeiro da lista -- um palpite que tem de ser confirmado.
- * Qualquer outra resposta fecha o passo.
+ * Uma resposta dada no passo 1. Escolher o tipo leva ao modelo, porque o modelo anterior
+ * não existe no tipo novo e o que fica escolhido é um palpite. As outras fecham o passo.
  */
 export function editWizardAnswered(key) {
     openQuestion = key === "type" ? "model" : null;
@@ -99,12 +89,12 @@ function handleLicenseClick(event) {
 
     els.deviceCompany.value = picked.dataset.licenseCompany || "";
     els.deviceLicenseId.value = picked.dataset.licenseId || "0";
-    // Os gateways que se podem autorizar sao os da mesma empresa e licenca.
+    // Os gateways autorizáveis são os da mesma empresa e licença.
     onLicenseChange();
     editWizardAnswered("owner");
 }
 
-/** As respostas, lidas dos elementos do formulario -- que sao onde elas vivem. */
+/** As respostas, lidas dos elementos do formulário -- que é onde elas vivem. */
 function answerValues() {
     return {
         type: deviceTypeLabel(els.deviceForm.dataset.deviceType || "watch"),
@@ -121,16 +111,14 @@ function answerValues() {
 
 function renderTrail() {
     const values = answerValues();
-    // Enquanto o dispositivo nao chegou, o formulario ainda tem o que la estava por
-    // omissao: mostrar isso era escrever a classificacao de outro aparelho. Sem badges, a
-    // trilha fica com as tres perguntas esbatidas, que e o que se sabe -- nada.
+    // Enquanto o dispositivo não chegou, o formulário tem o que lá estava por omissão, que
+    // é a classificação de outro aparelho: sem badges, a trilha diz o que se sabe -- nada.
     const known = !state.deviceModal.loading;
 
     els.deviceTrail.setAttribute("aria-valuenow", String(step));
     els.deviceTrail.innerHTML = wizardTrailHtml({
         questions: TRAIL_QUESTIONS,
-        // A pergunta aberta nao leva badge: e a que se esta a responder, e o valor antigo
-        // esta na grelha por baixo, marcado.
+        // A pergunta aberta não leva badge: o valor antigo está marcado na grelha abaixo.
         badges: TRAIL_QUESTIONS
             .filter((question) => known && question.key !== openQuestion)
             .map((question) => ({
@@ -145,7 +133,7 @@ function renderTrail() {
 }
 
 function renderVisibleQuestion() {
-    // `none` e o paragrafo que fica no lugar da pergunta quando nao ha nenhuma aberta.
+    // `none` é o parágrafo que fica no lugar da pergunta quando não há nenhuma aberta.
     const shownKey = step === 1 ? openQuestion || "none" : "";
     for (const block of els.deviceStep1.querySelectorAll("[data-device-question]")) {
         block.classList.toggle(
@@ -167,7 +155,7 @@ function renderVisibleQuestion() {
 function renderFooter() {
     els.deviceBackBtn.classList.toggle("d-none", step !== 2);
     els.deviceNextBtn.classList.toggle("d-none", step !== 1);
-    // Guardar so no passo do aparelho: e o unico onde ha campos por validar, e responder
-    // no passo 1 traz para ca sozinho.
+    // Guardar só no passo do aparelho: é o único com campos por validar, e responder no
+    // passo 1 traz para cá sozinho.
     els.saveDeviceBtn.classList.toggle("d-none", step !== 2);
 }

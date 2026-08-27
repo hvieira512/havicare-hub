@@ -11,11 +11,9 @@ import {disposeTooltips, refreshTooltips} from "../tooltips.js";
 import {linkSignal, signalMeter} from "./gateway-signal.js";
 
 /**
- * The gateway-link picker in the device modal: which gateways a sensor may
- * talk to, rendered as selectable cards.
- *
- * Follows the same shape as the other view modules -- it receives the cached
- * element map through initGatewayLinksUi rather than reaching for one itself.
+ * O escolhedor de gateways no modal do dispositivo: com que gateways um sensor pode falar,
+ * em cards seleccionáveis. Recebe o mapa de elementos pelo `initGatewayLinksUi`, como os
+ * outros módulos de vista.
  */
 
 let els;
@@ -87,8 +85,8 @@ const GATEWAY_THUMB_PLACEHOLDER = `<svg class="gateway-card-thumb-icon" viewBox=
 </svg>`;
 
 /**
- * O card de um gateway. Exportado para o assistente de adicionar o reutilizar: as classes
- * e os estados de foco vivem no CSS e duplicar o markup era duplicar essa contratacao.
+ * O card de um gateway. Exportado para o assistente de adicionar o reutilizar: as classes e
+ * os estados de foco vivem no CSS, e duplicar a marcação era duplicar essa contratação.
  */
 export function gatewayCardMarkup(gateway, checked, signal = null) {
     const key = String(gateway.imei || "").trim().toLowerCase();
@@ -110,11 +108,9 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
 }
 
 /**
- * Signals ride on the sensor's own link rows, so they only apply while the modal
- * is editing the device that is currently selected in the detail view. Editing
- * anything else shows no signal rather than another device's.
- *
- * @returns {Map<string, {rssiDbm: number, at: string}>} keyed by gateway MAC
+ * Os sinais viajam nas linhas de ligação do próprio sensor, por isso só se aplicam enquanto
+ * o modal estiver a editar o dispositivo escolhido na coluna de detalhe. A editar outro não
+ * mostra sinal nenhum, em vez de mostrar o de outro dispositivo.
  */
 function signalsForEditedDevice() {
     const editing = String(els.deviceImei?.value || "").trim().toLowerCase();

@@ -1,8 +1,6 @@
 /**
- * Alarm field shapes shared by the renderers and the readers.
- *
- * They live here rather than in either side because both need them, and
- * importing one from the other would make the two modules circular.
+ * As formas dos campos de alarme, partilhadas por quem os desenha e por quem os lê. Vivem
+ * aqui e não num dos dois lados porque importar um do outro fechava um ciclo.
  */
 
 export function normalizeAlarmClockRecurrenceKind(value) {

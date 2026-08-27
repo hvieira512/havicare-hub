@@ -1,11 +1,9 @@
 import {state} from "../../state.js";
 
 /**
- * O contexto e a navegacao do separador do catalogo.
- *
- * O separador sao tres slides de um carrossel -- a lista, o formulario de um modelo novo,
- * e a ficha de um modelo --, e os tres precisam do mesmo `els` e do mesmo carrossel. Ficam
- * aqui, num modulo que nao importa nenhum dos tres, para que qualquer um o possa importar.
+ * O contexto e a navegação do separador do catálogo: três slides de um carrossel -- a lista,
+ * o formulário de um modelo novo, e a ficha de um modelo -- que precisam do mesmo `els` e do
+ * mesmo carrossel. Ficam num módulo que não importa nenhum dos três.
  */
 let els;
 let ui;
@@ -20,10 +18,8 @@ export function getSettingsModelsRuntime() {
 }
 
 /**
- * O carrossel dos tres slides, criado a primeira vez que alguem precisa dele.
- *
- * Preguicoso e nao preso ao `shown.bs.tab` do separador: o catalogo e o separador de
- * entrada, e esse evento nao dispara em quem ja esta activo.
+ * O carrossel dos três slides, criado à primeira vez que alguém precisa dele: preguiçoso e
+ * não preso ao `shown.bs.tab`, que não dispara no separador de entrada.
  */
 export function modelsCarousel() {
     if (!state.settingsModal.modelsCarousel && els?.modelsCarousel) {

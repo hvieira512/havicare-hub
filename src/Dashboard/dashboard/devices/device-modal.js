@@ -81,11 +81,9 @@ import {
 } from "../storage.js";
 
 /**
- * The add/edit device modal: its selectors, its form, and saving or deleting
- * the device it is editing.
- *
- * Receives the element map and the Bootstrap modal instances through
- * initDeviceModal, the same way the other view modules take their context.
+ * O modal de adicionar e editar um dispositivo: os seus selectores, o formulário, e gravar
+ * ou apagar. Recebe o mapa de elementos e as instâncias do Bootstrap pelo `initDeviceModal`,
+ * como os outros módulos de vista.
  */
 
 let els;
@@ -97,14 +95,12 @@ export function initDeviceModal(context) {
 }
 
 /**
- * As licencas, agrupadas pela empresa que as detem, para a arvore da classificacao.
+ * As licenças, agrupadas pela empresa que as detém, para a árvore da classificação. Todas
+ * de uma vez e não as da empresa do dispositivo: mudar de cliente é precisamente uma das
+ * razões para abrir isto.
  *
- * Todas de uma vez e nao as da empresa do dispositivo: a arvore mostra-as todas, e mudar
- * de cliente e precisamente uma das razoes para abrir isto.
- *
- * Devolve `null` quando o pedido falha, para o modal poder distinguir "o servidor nao
- * respondeu" de "nao ha licencas nenhumas", que sao coisas diferentes de dizer a quem esta
- * a olhar para uma arvore vazia.
+ * Devolve `null` quando o pedido falha, para o modal distinguir "o servidor não respondeu"
+ * de "não há licenças nenhumas" a quem está a olhar para uma árvore vazia.
  */
 async function loadLicenseGroups() {
     const response = await apiGetLicenses({limit: 500});
@@ -199,7 +195,7 @@ export async function editDevice(imei, supplier, model) {
             String(deviceModel?.internalModel || model),
             deviceType,
         );
-        // `null` e como a base de dados escreve "sem empresa": nao e um nome.
+        // `null` é como a base de dados escreve "sem empresa": não é um nome.
         els.deviceCompany.value = deviceCompany === "null" ? "" : deviceCompany;
         els.deviceLicenseId.value = licenseId;
         state.deviceModal.deviceType = normalizeDeviceType(deviceType);
@@ -232,10 +228,7 @@ export async function editDevice(imei, supplier, model) {
 }
 
 /**
- * A identidade do dispositivo no cabeçalho do modal.
- *
- * O título dizia «Editar dispositivo» e mais nada: qual dispositivo era só se sabia a ler
- * o campo do IMEI, a meio do formulário. Aqui está sempre à vista, mesmo com o separador
+ * A identidade do dispositivo no cabeçalho do modal, sempre à vista -- mesmo com o separador
  * das configurações aberto e a página a rolar.
  */
 function renderDeviceModalIdentity(device, deviceModel, deviceType) {

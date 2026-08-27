@@ -15,14 +15,11 @@ import {initSettingsModels} from "./models/shell.js";
 import {loadSettingsModelsSection} from "./models/list.js";
 
 /**
- * A raiz de composicao do modal de definicoes.
+ * A raiz de composição do modal de definições, e o único módulo que conhece as quatro
+ * secções -- catálogo, capacidades, empresas e utilizadores da API. Nenhuma secção importa
+ * daqui, e é por isso que este ficheiro as pode importar todas sem fechar um ciclo.
  *
- * E o unico modulo que conhece as quatro seccoes -- catalogo, capacidades, empresas e
- * utilizadores da API --, tal como o `app.js` e o unico que conhece as funcionalidades.
- * Nenhuma seccao importa daqui, e e por isso que este ficheiro as pode importar todas sem
- * fechar um ciclo.
- *
- * O que as seccoes partilham -- o menu, as contagens, a paginacao -- vive no `shell.js`.
+ * O que as secções partilham -- o menu, as contagens, a paginação -- vive no `shell.js`.
  */
 export function initSettings(context) {
     initSettingsShell(context);
@@ -33,10 +30,8 @@ export function initSettings(context) {
 }
 
 /**
- * Abre o modal numa seccao, com tudo por carregar.
- *
- * A seccao carrega-se aqui e nao so pelo `shown.bs.tab`: esse evento nao dispara quando o
- * separador pedido ja e o activo, e nesse caso ficava um ecra vazio.
+ * Abre o modal numa secção. Carrega-se aqui e não só pelo `shown.bs.tab`, porque esse
+ * evento não dispara quando o separador pedido já é o activo.
  */
 export async function loadSettingsModal(
     section = state.settingsModal.section || "models",

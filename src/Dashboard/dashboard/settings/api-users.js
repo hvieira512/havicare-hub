@@ -13,10 +13,9 @@ import {
 } from "./shell.js";
 
 /**
- * O separador dos utilizadores da API: a tabela, o formulario, e ligar ou desligar um.
- *
- * As licencas vem com a lista e ficam aqui porque so este ecra as usa -- sao as opcoes do
- * select do formulario, e um cliente sem licenca nao pode ser gravado.
+ * O separador dos utilizadores da API: a tabela, o formulário, e ligar ou desligar um. As
+ * licenças vêm com a lista e ficam aqui porque só este ecrã as usa, como opções do select --
+ * e um cliente sem licença não pode ser gravado.
  */
 let els;
 let apiUserLicenses = [];
@@ -73,8 +72,7 @@ function renderApiUsersSection(users) {
         <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
         <span class="section-label d-sm-none me-2">Âmbito</span>${user.role === "hub_admin"
             // O âmbito é a informação com mais consequência da tabela -- quem vê os dados
-            // de que licença. "Todas" estava em cinzento mais fraco que o resto da linha,
-            // como se fosse um valor por omissão sem importância. É um privilégio.
+            // de que licença --, e "Todas" é um privilégio e não um valor por omissão.
             ? '<span class="config-state"><span class="config-state-dot"></span>Todas as licenças</span>'
             : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
         <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
@@ -116,8 +114,8 @@ export function editApiUser(button) {
     els.apiUserPassword.value = "";
     els.apiUserPassword.placeholder = "Deixar vazio para manter";
     syncApiUserRoleFields();
-    // O formulario esta fechado por omissao: editar tem de o abrir, senao o clique no
-    // lapis preenchia campos que ninguem estava a ver.
+    // O formulário está fechado por omissão: editar tem de o abrir, senão o clique no lápis
+    // preenche campos que ninguém está a ver.
     toggleCollapse(els.apiUserFormCollapse, true);
 }
 

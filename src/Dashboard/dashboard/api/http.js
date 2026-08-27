@@ -134,7 +134,7 @@ export const refreshAccessToken = async () => {
                 return payload.token;
             }
         } catch {
-            // Retry below while the current access token remains valid.
+            // Repete abaixo enquanto o token de acesso actual continuar válido.
         }
 
         const expiresAt = window.hubDashboardApiToken?.expires_at;
@@ -170,9 +170,9 @@ export const withQuery = (url, params = {}) => {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return;
-        // Uma lista sai como `chave[]=a&chave[]=b`, que e o que o `parse_str` do lado do
-        // servidor le como array. Uma lista vazia nao sai -- e a ausencia do filtro, e nao
-        // um filtro por nada.
+        // Uma lista sai como `chave[]=a&chave[]=b`, que é o que o `parse_str` do servidor lê
+        // como array. Uma lista vazia não sai: é a ausência do filtro, e não um filtro por
+        // nada.
         if (Array.isArray(value)) {
             value
                 .filter((entry) => entry !== undefined && entry !== null && entry !== '')

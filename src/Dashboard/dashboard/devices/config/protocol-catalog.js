@@ -2,16 +2,14 @@ import { requestJson } from "../../api/http.js";
 import { state } from "../../state.js";
 
 /**
- * The per-protocol configuration catalog and the dashboard metadata that comes
- * with it.
+ * O catálogo de configuração de cada protocolo, e os metadados da dashboard que vêm com ele.
  *
- * Kept apart from the rendering and reading code because it is the only part
- * that talks to the API and caches: everything else is a pure function of what
- * it returns.
+ * Separado do código que desenha e que lê porque é a única parte que fala com a API e que
+ * tem cache: o resto é função pura do que isto devolve.
  */
 
-// In-flight requests, so N sections asking for the same protocol at once share
-// a single fetch rather than racing each other.
+// Pedidos em curso, para N secções que peçam o mesmo protocolo ao mesmo tempo partilharem
+// um fetch em vez de correrem umas contra as outras.
 const protocolCatalogRequests = {};
 
 function isPlainObject(value) {

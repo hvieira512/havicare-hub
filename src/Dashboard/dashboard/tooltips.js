@@ -1,16 +1,15 @@
 /**
- * Bootstrap tooltips are opt-in, so any container whose markup is re-rendered has
- * to hand its elements to Bootstrap again afterwards.
+ * As tooltips do Bootstrap são por adesão: um contentor que redesenha a marcação tem de
+ * voltar a entregar-lhe os elementos.
  */
 
 /**
- * Attach a tooltip to every opted-in element inside a container.
+ * Liga uma tooltip a cada elemento que a pediu dentro de um contentor.
  *
- * The animation is deliberately off. A container that re-renders disposes these
- * instances, and an animated tooltip queues its hide completion on the fade
- * transition -- dispose() cannot cancel that callback, so it later runs against a
- * nulled instance and throws. Hiding synchronously leaves nothing pending to race
- * with the next render.
+ * A animação está desligada de propósito. Um contentor que redesenha destrói estas
+ * instâncias, e uma tooltip animada agenda o fim do `hide` na transição de fade -- o
+ * `dispose()` não cancela esse callback, que depois corre contra uma instância nula e
+ * estoura. Esconder de forma síncrona não deixa nada pendente.
  */
 export function refreshTooltips(root) {
     const bootstrap = window.bootstrap;
@@ -21,7 +20,7 @@ export function refreshTooltips(root) {
     });
 }
 
-/** Tear tooltips down before the container's markup is replaced. */
+/** Desliga as tooltips antes de a marcação do contentor ser substituída. */
 export function disposeTooltips(root) {
     const bootstrap = window.bootstrap;
     if (!bootstrap?.Tooltip || !root) return;

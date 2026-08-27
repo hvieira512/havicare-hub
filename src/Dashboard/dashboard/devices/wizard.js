@@ -1,17 +1,12 @@
 /**
- * O motor do assistente: perguntas em sequencia, respostas que colapsam em badges.
+ * O motor do assistente. Sabe três coisas -- qual é a pergunta activa, que respostas já
+ * há, e se pode avançar --, e o resto é desenhado por quem o usa.
  *
- * Nao e uma biblioteca nem uma maquina de estados. Sabe tres coisas -- qual e a pergunta
- * activa, que respostas ja ha, e se pode avancar -- e o resto e desenhado por quem o usa.
+ * A pergunta activa é a primeira sem resposta, o que faz a revelação progressiva cair por
+ * si: responder revela a seguinte, e limpar uma resposta faz voltar atrás.
  *
- * As perguntas sao uma lista declarativa. Cada uma diz a que passo pertence (para a barra
- * de progresso), como se le a resposta do estado, e que badges essa resposta produz. A
- * pergunta activa e a primeira sem resposta, o que faz a revelacao progressiva cair por
- * si: responder revela a seguinte, e limpar uma resposta faz voltar atras sem codigo
- * proprio para isso.
- *
- * `clears` e a unica coisa que nao e derivavel: responder ao tipo invalida o modelo, e
- * responder a empresa invalida a licenca, porque a resposta anterior pode nao existir no
+ * `clears` é a única coisa que não é derivável: responder ao tipo invalida o modelo, e
+ * responder à empresa invalida a licença, porque a resposta anterior pode não existir no
  * conjunto novo. Declara-se, em vez de se espalhar por quem trata cada clique.
  */
 
@@ -28,30 +23,24 @@ export function createWizard({questions, steps}) {
     }
 
     /**
-     * Uma pergunta `optional` nao trava o passo: nao lhe responder e, em si, uma
-     * resposta. A empresa e assim -- um dispositivo pode nao ter nenhuma -- e por isso
-     * continua a ser feita, com a omissao escolhida a partida, sem impedir o avanco.
+     * Uma pergunta `optional` não trava o passo: não lhe responder é, em si, uma resposta.
+     * A licença é assim, e continua a ser feita, com a omissão escolhida à partida.
      */
     function blocks(question) {
         return !question.optional && !isAnswered(question);
     }
 
-    /** Um passo esta completo quando nenhuma das suas perguntas o trava. */
+    /** Um passo está completo quando nenhuma das suas perguntas o trava. */
     function isStepComplete(number) {
         return !inStep(number).some(blocks);
     }
 
     /**
-     * A primeira pergunta sem resposta DENTRO do passo actual, ou null quando o passo
-     * esta completo.
+     * A primeira pergunta sem resposta DENTRO do passo actual, ou null quando o passo está
+     * completo. Sem resposta e não "que trave": o que a omissão dispensa é o avanço.
      *
-     * Sem resposta e nao "que trave": uma pergunta opcional continua a ser feita ate ser
-     * respondida, e o que a omissao dispensa e o avanco, nao a pergunta.
-     *
-     * Limitada ao passo de proposito. Derivar o passo da pergunta activa, como a
-     * primeira versao fazia, fazia a barra de progresso saltar para o passo seguinte no
-     * instante em que a ultima resposta do actual entrava -- antes de a pessoa premir
-     * "Seguinte", que e uma acao deliberada e nao uma consequencia.
+     * Limitada ao passo de propósito: derivar o passo da pergunta activa fazia a barra de
+     * progresso saltar sozinha, e avançar é uma acção deliberada.
      */
     function current() {
         return inStep(step).find((question) => !isAnswered(question)) ?? null;
@@ -83,7 +72,7 @@ export function createWizard({questions, steps}) {
         canGoBack: () => step > 1,
         isLastStep: () => step === steps.length,
 
-        /** Tudo o que e preciso respondido: e o que habilita o botao de criar. */
+        /** Tudo o que é preciso respondido: é o que habilita o botão de criar. */
         isComplete: () => !questions.some(blocks),
 
         advance() {
@@ -99,19 +88,14 @@ export function createWizard({questions, steps}) {
         answer: applyAnswer,
 
         /**
-         * Responde e, se essa era a ultima pergunta do passo, avanca.
+         * Responde e, se essa era a última pergunta do passo, avança.
          *
-         * Sem isto, responder a ultima deixava um ecra que nao perguntava nada -- so
-         * dizia que o passo estava completo -- e obrigava a um clique no "Seguinte" entre
-         * a ultima resposta e o campo seguinte.
+         * "Última" é não ter nenhuma aberta, e não o passo estar completo: uma pergunta
+         * opcional não trava o passo mas continua a ser feita, e avançar por cima dela era
+         * saltá-la sem a mostrar.
          *
-         * "Ultima" e nao ter nenhuma aberta, e nao o passo estar completo: uma pergunta
-         * opcional nao trava o passo mas continua a ser feita, e avancar por cima dela era
-         * saltar uma pergunta sem a mostrar.
-         *
-         * Nao e o mesmo que avancar sempre que o passo esta completo. O "Anterior" leva de
-         * volta a um passo completo por definicao, e la nao se avanca -- senao nao havia
-         * como voltar atras.
+         * Avança ao responder e não sempre que o passo está completo: o "Anterior" leva a
+         * um passo completo por definição, e lá não se avança -- senão não havia recuo.
          */
         answerAndAdvance(key, value) {
             applyAnswer(key, value);
@@ -122,8 +106,8 @@ export function createWizard({questions, steps}) {
         },
 
         /**
-         * Voltar a uma pergunta ja respondida: apaga-a e o que dela dependia, e recua
-         * o passo se a pergunta pertencer a um anterior.
+         * Voltar a uma pergunta já respondida: apaga-a e o que dela dependia, e recua o
+         * passo se a pergunta pertencer a um anterior.
          */
         reopen(key) {
             const question = questions.find((q) => q.key === key);
@@ -141,7 +125,7 @@ export function createWizard({questions, steps}) {
             return answers;
         },
 
-        /** As badges de todas as respostas, achatadas na ordem das perguntas. */
+        /** As badges de todas as respostas, na ordem das perguntas. */
         badges() {
             return answered().flatMap((question) =>
                 question.badges(answers).map((badge) => ({...badge, key: question.key})),

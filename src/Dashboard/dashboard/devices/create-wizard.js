@@ -35,19 +35,9 @@ import {
 } from "./list.js";
 
 /**
- * O assistente de adicionar um dispositivo: quatro perguntas, duas em cada ecra.
- *
- * O que o distingue do formulario que substitui: mostra uma pergunta de cada vez, e cada
- * resposta colapsa numa badge. O ecra nunca acumula controlos -- tres perguntas passam
- * pelo passo 1 e ha no maximo dois campos a vista.
- *
- * O que e por tipo de dispositivo vem da tabela `DEVICE_TYPES`, e nao de ramificacoes
- * aqui. O passo 2 de um relogio tem IMEI e SIM; o de um medidor de fraldas tem MAC e
- * gateways; e nenhum dos dois esta escrito neste ficheiro.
- *
- * A meio do ficheiro comeca o que o assistente precisa do resto da aplicacao: abrir,
- * carregar as licencas e os gateways, e criar o dispositivo no fim. Estava num modulo a
- * parte com este mesmo nome noutra pasta, o que dava dois ficheiros `create-wizard.js`.
+ * O assistente de adicionar um dispositivo: quatro perguntas, uma de cada vez, e cada
+ * resposta a colapsar numa badge. O que varia por tipo vem da tabela `DEVICE_TYPES` e não
+ * de ramificações aqui -- o passo 2 de um relógio tem IMEI e SIM, o de um medidor tem MAC.
  */
 
 let els;
@@ -57,15 +47,8 @@ let licenseGroups = [];
 
 const STEPS = ["Classificação", "Este aparelho"];
 
-/**
- * As perguntas. Cada uma sabe quando esta respondida, que badges produz e o que a sua
- * resposta invalida -- e nada mais. O desenho de cada uma esta em `renderQuestion`.
- */
-/**
- * As perguntas que aparecem na trilha, respondidas ou nao, com o nome que levam antes de
- * ter resposta. A do passo 2 nao entra: a trilha e a classificacao, e o passo 2 e sobre
- * este aparelho em concreto.
- */
+/** Cada pergunta sabe quando está respondida, que badges produz e o que invalida. */
+/** A pergunta do passo 2 não entra: a trilha é a classificação, o passo 2 é este aparelho. */
 const TRAIL_QUESTIONS = [
     {key: "type", label: "Tipo"},
     {key: "model", label: "Modelo"},
@@ -90,11 +73,10 @@ const QUESTIONS = [
     {
         key: "owner",
         step: 1,
-        // Os gateways que se podem autorizar sao os da mesma empresa e licenca: trocar de
-        // licenca depois de os escolher deixava-os la, vindos de outro cliente.
+        // Os gateways autorizáveis são os da mesma empresa e licença, daí trocar de
+        // licença limpar os que já estavam escolhidos.
         clears: ["gateways"],
-        // Um dispositivo pode nao ter licenca, e "Sem licença" e uma resposta como as
-        // outras -- por isso a pergunta nao trava o avanco enquanto ninguem lhe tocar.
+        // "Sem licença" é uma resposta como as outras, por isso não trava o avanço.
         optional: true,
         isAnswered: (a) => Boolean(a.owner),
         badges: (a) => [
@@ -134,13 +116,9 @@ export function initCreateWizard(context) {
 }
 
 /**
- * Abre o assistente. Um dispositivo novo nao herda respostas de outro.
- *
- * `seed` sao respostas de partida, e existe por causa das notificacoes: quando o hub ve
- * um dispositivo nao autorizado, o aviso leva ao assistente com o tipo, o modelo e a
- * identidade que ele reportou ja preenchidos, para nao se escrever a mao o que o hub
- * acabou de dizer. Sao respostas normais e nao um modo especial -- o utilizador pode
- * alterar qualquer uma pela trilha.
+ * Abre o assistente. `seed` são respostas de partida, e existe por causa das notificações:
+ * o aviso de um dispositivo não autorizado leva ao assistente com o tipo, o modelo e a
+ * identidade que ele reportou já preenchidos. São respostas normais, alteráveis na trilha.
  */
 function openCreateWizard(licenseList = [], seed = {}) {
     licenseGroups = licenseList;
@@ -148,16 +126,8 @@ function openCreateWizard(licenseList = [], seed = {}) {
     for (const [key, value] of Object.entries(seed)) {
         if (value) wizard.answer(key, value);
     }
-    // O assistente abre onde a pessoa tem alguma coisa para fazer.
-    //
-    // O `answer` responde e fica quieto -- e o que se quer quando se clica numa opcao,
-    // porque avancar e uma accao deliberada. Mas um seed responde a tudo de uma vez, e
-    // sem isto uma notificacao abria no passo 1 a dizer que o passo 1 estava completo,
-    // com um "Seguinte" pelo meio para chegar ao que faltava. Nao ha nada que faltasse:
-    // o hub ja tinha dito tudo.
-    //
-    // Para no primeiro passo com uma pergunta por responder, e nunca salta o ultimo --
-    // criar o dispositivo continua a ser um clique de quem esta a ler o que vai criar.
+    // Abre onde há alguma coisa para fazer: para no primeiro passo com uma pergunta por
+    // responder, e nunca salta o último -- criar é um clique deliberado.
     while (wizard.current() === null && wizard.canAdvance()) {
         wizard.advance();
     }
@@ -174,22 +144,10 @@ function render() {
     renderFooter();
 }
 
+/** A trilha, com o passo no fim da linha. Cada badge é um botão para a sua pergunta. */
 /**
- * A trilha, com o passo a que pertence no fim da linha.
- *
- * Eram duas linhas a dizer a mesma coisa: uma barra "1 · Classificacao / 2 · Este
- * aparelho" e, debaixo dela, os badges das respostas. Uma linha basta -- os badges dizem
- * onde se esta, e o passo diz quanto falta.
- *
- * Cada badge e um botao para a sua pergunta. O "alterar" so reabria a ultima resposta,
- * o que obrigava a refazer tudo o que viesse depois para voltar ao tipo.
- */
-/**
- * As tres perguntas da classificacao estao sempre na trilha, e o passo no fim da linha.
- *
- * So as respondidas apareciam, o que deixava a linha vazia ao abrir e nao dizia quantas
- * perguntas faltavam. Uma pendente esbatida ja diz o que vem a seguir; a activa fica
- * contornada; a respondida fica cheia e e um botao para voltar aquela pergunta.
+ * As três perguntas da classificação estão sempre na trilha: uma pendente esbatida diz o
+ * que vem a seguir, a activa fica contornada, a respondida é um botão para voltar a ela.
  */
 function renderTrail() {
     const step = wizard.step();
@@ -203,12 +161,7 @@ function renderTrail() {
     });
 }
 
-/**
- * A imagem do modelo, que entra quando ja se sabe qual e.
- *
- * Reutiliza o `modelPreviewHtml`, que e o mesmo desenho que o modal de edicao usa -- a
- * dashboard ja serve a imagem real de cada modelo e nao ha aqui um segundo caminho.
- */
+/** A imagem do modelo, pelo `modelPreviewHtml` -- o mesmo desenho do modal de edição. */
 function renderArt() {
     const answers = wizard.answers();
     const chosen = answers.model;
@@ -225,16 +178,9 @@ function renderArt() {
 }
 
 /**
- * O ultimo passo nao e uma pergunta a revelar: e o formulario a rever antes de criar.
- *
- * Nos passos anteriores uma resposta colapsa numa badge da trilha e da lugar a seguinte.
- * Aqui nao ha seguinte, e os campos ficam a vista respondidos ou nao -- que e o que ja
- * acontecia a escrever, porque o `handleInput` responde sem redesenhar de proposito, para
- * nao tirar o cursor de baixo dos dedos.
- *
- * O que faltava era entrar no passo ja preenchido. Uma notificacao traz a identidade, e o
- * ecra que aparecia era um "tudo preenchido" sem campo nenhum -- nao se via o UID que ia
- * ser gravado, nem havia como corrigi-lo sem voltar atras.
+ * O último passo não é uma pergunta a revelar: é o formulário a rever antes de criar, com
+ * os campos à vista respondidos ou não. O `handleInput` responde sem redesenhar de
+ * propósito, para não tirar o cursor de baixo dos dedos.
  */
 const LAST_STEP_QUESTIONS = QUESTIONS.filter((question) => question.step === STEPS.length);
 
@@ -242,7 +188,7 @@ function renderAsk() {
     const question = wizard.current()
         ?? (wizard.isLastStep() ? LAST_STEP_QUESTIONS[0] : null);
     els.wizardAsk.innerHTML = question ? renderQuestion(question.key) : renderStepDone();
-    // Reinicia a animacao de entrada a cada pergunta nova.
+    // Reinicia a animação de entrada a cada pergunta nova.
     els.wizardAsk.style.animation = "none";
     void els.wizardAsk.offsetHeight;
     els.wizardAsk.style.animation = "";
@@ -269,13 +215,8 @@ function answerAndRender(key, value) {
     render();
 }
 
-/**
- * O que fica no lugar da pergunta quando o passo nao tem nenhuma aberta.
- *
- * No passo 1 so se chega aqui pelo "Anterior", e o que ha para fazer e mudar uma resposta
- * -- que se faz nas etiquetas da trilha, mesmo por cima.
- */
-/** Um passo intermedio sem nada por perguntar: a trilha e o unico sitio onde ha o que fazer. */
+/** No passo 1 só se chega aqui pelo "Anterior", e o que há para fazer é na trilha. */
+/** Um passo intermédio sem nada por perguntar: a trilha é o único sítio onde há que fazer. */
 function renderStepDone() {
     return `<p class="text-secondary small mb-0">
         Toque numa etiqueta acima para alterar uma resposta.
@@ -386,8 +327,8 @@ function renderIdentity(answers) {
  * Os gateways da mesma empresa e licença: a autorização é por par, não global.
  *
  * A ausência escreve-se de duas maneiras conforme quem a escreveu -- a base de dados
- * guarda a empresa vazia como `null` e a licença como `0`, e o assistente diz "" e "0".
- * Sem as normalizar, um gateway sem dono nunca aparecia a um sensor sem dono.
+ * guarda a empresa vazia como `null` e a licença como `0`, e o assistente diz "" e "0" --,
+ * e sem as normalizar um gateway sem dono não aparece a um sensor sem dono.
  */
 function eligibleGatewayList(answers) {
     const owner = answers.owner || {};
@@ -409,9 +350,8 @@ function licenseIdKey(value) {
 }
 
 function renderFooter() {
-    // Escondido e nao desactivado no primeiro passo: um botao cinzento que nunca serve
-    // ocupa espaco e convida a ser premido. Voltar a uma resposta ja dada faz-se pelo
-    // "alterar" na trilha, que e onde ela esta.
+    // Escondido e não desactivado no primeiro passo: um botão cinzento que nunca serve
+    // convida a ser premido. Voltar a uma resposta faz-se pelo "alterar" na trilha.
     els.wizardBackBtn.classList.toggle("d-none", !wizard.canGoBack());
     const last = wizard.isLastStep();
     els.wizardNextBtn.innerHTML = last
@@ -503,16 +443,12 @@ async function create() {
     if (error) setError(error);
 }
 
-/* ---------- o que o assistente precisa do resto da aplicacao ---------- */
+/* ---------- o que o assistente precisa do resto da aplicação ---------- */
 
 /**
- * Abre o assistente.
- *
- * Carrega as licencas e os gateways antes de mostrar, para a primeira pergunta ja poder
- * dizer quantos modelos existem por tipo e a terceira ja ter a arvore de licencas.
- *
- * As licencas vem todas de uma vez e nao empresa a empresa: a arvore mostra-as todas ao
- * mesmo tempo, e uma licenca acabada de criar tem de estar la -- e a que se quer usar.
+ * Abre o assistente, com as licenças e os gateways carregados antes de mostrar. As
+ * licenças vêm todas de uma vez e não empresa a empresa: a árvore mostra-as ao mesmo
+ * tempo, e uma licença acabada de criar é a que se quer usar.
  */
 export async function openWizard(source = "") {
     await ensureDeviceTypeSuppliersModelsLoaded();
@@ -524,11 +460,8 @@ export async function openWizard(source = "") {
 }
 
 /**
- * As respostas que uma notificacao de dispositivo nao autorizado ja permite dar.
- *
- * O hub viu o dispositivo e disse o protocolo, o modelo reportado e a identidade. Isso
- * chega para o tipo e o modelo, e evita escrever a mao o que ele acabou de dizer. Sem
- * notificacao devolve nada, e o assistente comeca do zero.
+ * As respostas que uma notificação de dispositivo não autorizado já permite dar: o hub
+ * disse o protocolo, o modelo reportado e a identidade. Sem notificação, começa do zero.
  */
 function seedFromNotification(source, tree = []) {
     const notification = source && typeof source === "object" ? source : null;
@@ -575,10 +508,8 @@ async function loadWizardGateways() {
 }
 
 /**
- * Cria o dispositivo e, se for retransmitido, autoriza os gateways escolhidos.
- *
- * Devolve a mensagem de erro ou null: o erro desenha-se no lugar do assistente, em vez de
- * o modal ter de saber onde.
+ * Cria o dispositivo e, se for retransmitido, autoriza os gateways escolhidos. Devolve a
+ * mensagem de erro ou null: o erro desenha-se no lugar do assistente.
  */
 async function createDeviceFromWizard(answers) {
     const fields = deviceTypeFields(answers.type);
@@ -590,7 +521,7 @@ async function createDeviceFromWizard(answers) {
         answers.model.supplier,
         answers.model.model,
         answers.type,
-        // Sem empresa nao ha licenca: e o "0" que a whitelist ja usa para dizer isso.
+        // Sem empresa não há licença: é o "0" que a whitelist já usa para dizer isso.
         String(answers.owner?.licenseId || "0"),
         fields.sim ? String(answers.sim || "") : "",
         byImei ? "" : identity,

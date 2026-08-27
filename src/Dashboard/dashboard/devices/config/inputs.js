@@ -18,11 +18,9 @@ import {
 } from "./normalizers.js";
 
 /**
- * The HTML for every configuration input type.
- *
- * Renderers only: each one turns a desired value into markup that the matching
- * reader in readers.js can turn back into a payload. The pairing between the
- * two is what tests/Frontend/config-payload-roundtrip.test.js checks.
+ * O HTML de cada tipo de campo de configuração. Só desenho: cada um transforma o valor
+ * pretendido em marcação que o leitor correspondente no `readers.js` volta a transformar em
+ * payload, e é esse par que o `config-payload-roundtrip.test.js` verifica.
  */
 
 let uidCounter = 0;
@@ -192,15 +190,12 @@ export function fallSensitivityInput(desired) {
 }
 
 /**
- * A sensibilidade dos alertas de um medidor de fraldas: dois inteiros e três atalhos.
+ * A sensibilidade dos alertas de um medidor de fraldas: dois inteiros e três atalhos. Os
+ * números estão sempre à vista e os presets são botões que os preenchem, sem um quarto botão
+ * "Personalizado" -- nenhum preset activo já diz que os valores não são de nenhum deles.
  *
- * Os dois números estão sempre à vista e os presets são botões que os preenchem -- no
- * bloco anterior a esta capacidade os números escondiam-se atrás de um quarto botão
- * "Personalizado", e esse estado passa a ler-se sozinho: nenhum preset activo quer dizer
- * que os valores não são de nenhum deles.
- *
- * Os presets e as gamas vêm no `_meta` da capacidade, servidos pelo hub, para não haver
- * aqui uma segunda cópia destas fronteiras.
+ * Os presets e as gamas vêm no `_meta` da capacidade, servidos pelo hub, para não haver aqui
+ * uma segunda cópia destas fronteiras.
  */
 export function diaperSensitivityInput(desired, meta = {}) {
     const presets = meta.presets || {};

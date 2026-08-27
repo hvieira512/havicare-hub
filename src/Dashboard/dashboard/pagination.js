@@ -11,9 +11,8 @@ const defaultSummary = (start, end, total) => `A mostrar de ${start} até ${end}
  * estreitos do dispositivo escolhido só têm largura para "1–12 de 30".
  *
  * `goAction` existe porque os handlers dos painéis do dispositivo estão registados em
- * `telemetryPageGo`/`downlinkPageGo` e não em `${actionPrefix}Go`. Deixar o valor por
- * omissão nesses dois sítios não dava erro nenhum -- os botões numerados simplesmente
- * deixavam de responder, e o anterior/seguinte continuava a funcionar.
+ * `telemetryPageGo`/`downlinkPageGo` e não em `${actionPrefix}Go`. Com o valor por omissão
+ * nesses dois sítios os botões numerados deixam de responder sem dar erro nenhum.
  */
 export function renderPagination({
     pagination,

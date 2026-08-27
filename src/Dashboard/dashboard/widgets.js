@@ -6,25 +6,18 @@ import {
 } from "./domain.js";
 
 /**
- * As pecas de interface que nao pertencem a um ecra em particular: a atribuicao de um
- * dispositivo, a imagem de um modelo, os grupos de botoes, o mosaico de tipos, as
- * pastilhas de filtro e o estado vazio.
- *
- * Estavam no mesmo ficheiro que a maquina dos cartoes de telemetria, entrelacadas com ela,
- * e as duas familias nao se tocam: nenhuma funcao de telemetria chama nada daqui. Quem
- * procurava um problema na pastilha da licenca tinha de atravessar novecentas linhas de
- * normalizacao de radares para chegar a dez.
+ * As peças de interface que não pertencem a um ecrã em particular: a atribuição de um
+ * dispositivo, a imagem de um modelo, os grupos de botões, o mosaico de tipos, as pastilhas
+ * de filtro e o estado vazio. Os cartões de telemetria estão no `telemetry-cards.js`.
  */
 
 /**
- * A atribuicao de um dispositivo, num campo so.
+ * A atribuição de um dispositivo, num campo só. A licença pertence à empresa e um
+ * dispositivo tem as duas ou nenhuma, por isso o valor tem duas formas e não quatro:
+ * `empresa · número`, ou "Sem licença".
  *
- * A licenca pertence a empresa, e um dispositivo tem as duas ou nenhuma -- nao existe
- * "empresa sem licenca" nem uma licenca fora de uma empresa. Por isso o valor tem duas
- * formas e nao quatro: `empresa · numero`, ou "Sem licenca".
- *
- * `valueClass` existe porque o cartao da listagem precisa do seu proprio corte de texto e
- * o painel de factos do dispositivo escolhido nao: la o valor herda a tipografia do `dd`.
+ * `valueClass` existe porque o cartão da listagem precisa do seu corte de texto e o painel
+ * de factos não: lá o valor herda a tipografia do `dd`.
  */
 export function deviceLicenseHtml(device, valueClass = "") {
     const company = String(device.company || "").trim();
@@ -51,11 +44,8 @@ export function modelImageHtml(modelInfo, size = 40) {
 }
 
 /**
- * A imagem grande de um modelo, ou o icone com a etiqueta quando nao ha imagem.
- *
- * Nao fixa tamanho de proposito: quem manda e o contentor, que ja o limita por CSS --
- * `.showcase-preview img`, `.wizard-art img`, `.wizard-card-thumb img`. Um tamanho inline
- * aqui lutava com essas regras.
+ * A imagem grande de um modelo, ou o ícone com a etiqueta quando não há imagem. Não fixa
+ * tamanho de propósito: quem manda é o contentor, que já o limita por CSS.
  */
 export function modelPreviewHtml(modelInfo, label = "Modelo") {
     const imageLabel =
@@ -154,11 +144,9 @@ export function renderDeviceTypeTiles(
 }
 
 /**
- * As pastilhas dos filtros aplicados, com o x para remover cada um.
- *
- * O arranjo e sempre o mesmo: a pesquisa e o botao de filtros na primeira linha, e as
- * pastilhas do que esta aplicado na linha de baixo. Estava escrito a letra na listagem
- * de dispositivos e na de modelos, e a diferenca era so o nome da accao.
+ * As pastilhas dos filtros aplicados, com o x para remover cada um. O arranjo é sempre o
+ * mesmo -- pesquisa e botão de filtros na primeira linha, pastilhas na de baixo --, e entre
+ * a listagem de dispositivos e a de modelos o que varia é só o nome da acção.
  */
 export function filterChips(labels, action) {
     return labels
@@ -176,10 +164,8 @@ export function filterChips(labels, action) {
 }
 
 /**
- * O estado vazio de um painel.
- *
- * Texto e nao caixa: um painel vazio dentro de um cartao branco ganhava uma segunda
- * moldura cinzenta a dizer que nao ha nada, e a moldura lia-se como conteudo.
+ * O estado vazio de um painel, em texto e não em caixa: dentro de um cartão branco, uma
+ * segunda moldura cinzenta a dizer que não há nada lê-se como conteúdo.
  */
 export function emptyPanel(text) {
     return `<div class="text-secondary py-3">${esc(text)}</div>`;

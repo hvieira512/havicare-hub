@@ -7,12 +7,11 @@ import {state} from "../state.js";
 import {renderPagination, resolvePaginationPage} from "../pagination.js";
 
 /**
- * A casca do modal de definicoes: o menu da esquerda com as suas contagens, a troca de
- * separador, e a paginacao que as listagens partilham.
+ * A casca do modal de definições: o menu da esquerda com as suas contagens, a troca de
+ * separador, e a paginação que as listagens partilham.
  *
- * Nao conhece nenhuma seccao. E ao contrario que funciona -- cada seccao importa daqui o
- * que precisa --, e por isso e que este ficheiro pode ser importado por todas sem nenhum
- * ciclo. Quem sabe que seccoes existem e o `index.js`.
+ * Não conhece nenhuma secção -- cada secção importa daqui o que precisa --, e é por isso que
+ * pode ser importado por todas sem ciclo nenhum. Quem sabe que secções existem é o `index.js`.
  */
 let els;
 let ui;
@@ -26,7 +25,7 @@ export function showSettingsModal() {
     ui.settingsModal.show();
 }
 
-/** Abre o separador de uma seccao. */
+/** Abre o separador de uma secção. */
 export function activateSettingsSection(section) {
     state.settingsModal.section = section;
     const button =
@@ -40,13 +39,10 @@ export function activateSettingsSection(section) {
 }
 
 /**
- * As contagens do menu, todas, ao abrir o modal.
+ * As contagens do menu, todas, ao abrir o modal: cada separador enche a sua quando carrega,
+ * mas só carrega quando se abre, e o menu ficaria com um número e nada nos outros.
  *
- * Cada separador enche a sua quando carrega, mas so carrega quando se abre -- e o menu
- * ficava com um numero no primeiro separador e nada nos outros. Sao tres pedidos de uma
- * linha cada, so para ler o total da paginacao.
- *
- * Falha em silencio: um numero que nao se sabe nao aparece, e a contagem do separador
+ * Falha em silêncio: um número que não se sabe não aparece, e a contagem do separador
  * enche-a quando ele abrir.
  */
 export async function loadSettingsNavCounts() {
@@ -65,14 +61,12 @@ export async function loadSettingsNavCounts() {
 }
 
 /**
- * A contagem de uma seccao no menu das definicoes.
- *
- * Cada carregador chama isto com o seu total, em vez de haver um sitio que sabe contar
- * tudo -- so quem foi buscar a lista e que sabe quantos sao.
+ * A contagem de uma secção no menu. Cada carregador chama isto com o seu total, porque só
+ * quem foi buscar a lista é que sabe quantos são.
  */
 export function setSettingsNavCount(key, total) {
-    // `els?.` e nao `els.`: quem desenha uma seccao nao tem de saber se o modal ja foi
-    // inicializado, e sem isto a primeira contagem antes do `initSettings` rebentava.
+    // `els?.` e não `els.`: quem desenha uma secção não tem de saber se o modal já foi
+    // inicializado.
     const element = els?.[`settings${key}Count`];
     if (!element) return;
     const known = Number.isFinite(Number(total));
@@ -116,7 +110,7 @@ function paginationActionPrefix(paginationKey) {
     );
 }
 
-/** Abre ou fecha um `collapse` do Bootstrap sem depender do botao que o comanda. */
+/** Abre ou fecha um `collapse` do Bootstrap sem depender do botão que o comanda. */
 export function toggleCollapse(element, show) {
     if (!element || typeof bootstrap === "undefined") return;
     const instance = bootstrap.Collapse.getOrCreateInstance(element, {toggle: false});

@@ -16,11 +16,9 @@ import {
 } from "./shell.js";
 
 /**
- * O separador das empresas, com as licencas de cada uma dentro dela.
- *
- * Sao dois formularios e uma lista so. Eram duas tabelas lado a lado com o mesmo peso, e a
- * relacao -- uma licenca pertence a uma empresa -- so se percebia porque o formulario da
- * licenca tinha um select de empresa. Por isso e que os dois vivem no mesmo modulo.
+ * O separador das empresas, com as licenças de cada uma dentro dela. São dois formulários e
+ * uma lista só, porque a relação -- uma licença pertence a uma empresa -- é o que o ecrã tem
+ * de mostrar, e é por isso que os dois vivem no mesmo módulo.
  */
 let els;
 
@@ -141,8 +139,8 @@ async function deleteCompany(id) {
 }
 
 /**
- * As licencas ja se desenham dentro da empresa a que pertencem, na lista das empresas.
- * O que fica por fazer aqui e encher o select de empresa do formulario.
+ * As licenças já se desenham dentro da empresa a que pertencem, na lista das empresas: o
+ * que fica por fazer aqui é encher o select de empresa do formulário.
  */
 function renderLicensesSection(licenses, companies) {
     resetLicenseForm();
@@ -201,7 +199,7 @@ async function deleteLicense(id) {
     await loadSettingsCompanySection();
 }
 
-/** Os cliques da lista: as linhas das licencas estao dentro da empresa a que pertencem. */
+/** Os cliques da lista: as linhas das licenças estão dentro da empresa a que pertencem. */
 export function handleCompanyListClick(event) {
     const button = event.target.closest("button");
     if (!button) return;

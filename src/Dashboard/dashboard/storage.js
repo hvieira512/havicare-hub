@@ -1,5 +1,5 @@
-// Storage keys live with the storage helpers so any view can read the same
-// value without re-declaring the string.
+// As chaves ficam com os ajudantes de armazenamento, para qualquer vista ler o mesmo valor
+// sem redeclarar a string.
 export const FILTERS_STORAGE_KEY = "hub-dashboard-device-filters";
 export const SELECTED_DEVICE_STORAGE_KEY = "hub-dashboard-selected-device";
 

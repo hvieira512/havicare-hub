@@ -9,20 +9,16 @@ import {
 import {deviceTypeIcon, modelPreviewHtml} from "../widgets.js";
 
 /**
- * O desenho da classificacao de um dispositivo -- tipo, modelo e licenca -- partilhado
+ * O desenho da classificação de um dispositivo -- tipo, modelo e licença -- partilhado
  * pelo assistente de adicionar e pelo modal de editar.
  *
- * Sao construtores de HTML e nada mais: nao guardam estado nem escutam eventos. Quem os
- * usa e que sabe onde os por e o que fazer com o clique, e e por isso que os dois modais
- * podem ter fluxos diferentes sem duplicar a marcacao.
+ * São construtores de HTML e nada mais: não guardam estado nem escutam eventos, e é por
+ * isso que os dois modais podem ter fluxos diferentes sem duplicar a marcação.
  */
 
 /**
- * As licencas agrupadas pela empresa que as detem.
- *
- * A `/api/licenses` ja vem ordenada por empresa e depois por licenca, e traz o nome da
- * empresa em cada linha -- agrupar e so partir a lista onde o nome muda. Empresas sem
- * licencas nenhumas nao chegam aqui, porque a lista e de licencas.
+ * As licenças agrupadas pela empresa que as detém. A `/api/licenses` já vem ordenada por
+ * empresa e traz o nome em cada linha: agrupar é só partir a lista onde o nome muda.
  */
 export function licenseTree(licenses = []) {
     const groups = new Map();
@@ -37,19 +33,18 @@ export function licenseTree(licenses = []) {
     return [...groups].map(([company, entries]) => ({company, licenses: entries}));
 }
 
-/** A chave de uma escolha: o `licenseId` sozinho nao chega, so e unico dentro da empresa. */
+/** A chave de uma escolha: o `licenseId` só é único dentro da empresa. */
 function licenseKey(company, licenseId) {
     return `${String(company ?? "")}:${String(licenseId ?? "0")}`;
 }
 
 /**
- * Um `licenseId` sozinho, resolvido na arvore para ganhar a empresa que lhe falta.
+ * Um `licenseId` sozinho, resolvido na árvore para ganhar a empresa que lhe falta: a
+ * notificação de um radar não autorizado traz a licença do tópico `radar/{licenseId}/{uid}`
+ * e o assistente quer pré-selecioná-la.
  *
- * Existe porque a notificacao de um radar nao autorizado traz a licenca do topico
- * `radar/{licenca}/{uid}` e o assistente quer pre-selecciona-la -- mas a escolha e o par
- * empresa+licenca, pela mesma razao que o `licenseKey` acima. Se o mesmo numero existir em
- * duas empresas nao ha como saber qual e, e devolve nada: por escolher e melhor do que
- * escolhido mal sem ninguem reparar.
+ * Se o mesmo número existir em duas empresas não há como saber qual é, e devolve nada: por
+ * escolher é melhor do que escolhido mal sem ninguém reparar.
  */
 export function ownerFromLicense(licenseId, tree = []) {
     const wanted = String(licenseId ?? "");
@@ -65,14 +60,12 @@ export function ownerFromLicense(licenseId, tree = []) {
 }
 
 /**
- * A arvore de licencas por onde se escolhe o dono de um dispositivo.
+ * A árvore de licenças por onde se escolhe o dono de um dispositivo. A empresa é só o
+ * cabeçalho do grupo: escolhe-se uma licença, e a empresa vem dela. O mesmo desenho dos
+ * filtros do "Escolher dispositivo", mas de escolha única -- daí o `radiogroup`.
  *
- * A empresa e so o cabecalho do grupo: escolhe-se uma licenca, e a empresa vem dela. O
- * mesmo desenho dos filtros do "Escolher dispositivo", mas de escolha unica -- daí o
- * `radiogroup` e a marca redonda em vez da caixa de visto.
- *
- * "Sem licenca" e a primeira e e folha: e a unica escolha que nao pertence a empresa
- * nenhuma, e no fim ficava atras de uma lista que cresce com cada cliente novo.
+ * "Sem licença" é a primeira e é folha: é a única que não pertence a empresa nenhuma, e no
+ * fim ficaria atrás de uma lista que cresce com cada cliente novo.
  */
 export function licensePickerHtml(tree, selected = null) {
     const chosen = selected
@@ -130,7 +123,7 @@ function licenseRow({company, licenseId, label, selected, nested = false}) {
         </button>`;
 }
 
-/** A licenca escolhida, por palavras: e o que a badge da trilha mostra. */
+/** A licença escolhida, por palavras: é o que a badge da trilha mostra. */
 export function licenseBadgeValue(owner, tree = []) {
     const licenseId = String(owner?.licenseId ?? "0");
     if (licenseId === "0") return "Sem licença";
@@ -144,12 +137,9 @@ export function licenseBadgeValue(owner, tree = []) {
 /* ---------- a trilha ---------- */
 
 /**
- * A trilha: as perguntas da classificacao em fila, e o passo no fim da linha.
- *
- * Uma respondida fica cheia e e um botao para voltar aquela pergunta; a activa fica
- * contornada; as que faltam ficam esbatidas, para se ver quantas sao sem parecerem
- * clicaveis. Mostrar so as respondidas deixava a linha vazia ao abrir e nao dizia quanto
- * faltava.
+ * A trilha: as perguntas da classificação em fila, e o passo no fim da linha. Uma
+ * respondida é um botão para voltar àquela pergunta, a activa fica contornada, e as que
+ * faltam ficam esbatidas -- para se ver quantas são sem parecerem clicáveis.
  */
 export function wizardTrailHtml({
     questions,
@@ -189,10 +179,8 @@ export function wizardTrailHtml({
 
 /**
  * A grelha de escolhas em cards, partilhada pelo tipo de dispositivo e pelo modelo.
- *
- * `visual` e um icone ou uma miniatura: um tipo de dispositivo e uma ideia e leva icone,
- * um modelo e um objecto que existe e leva a fotografia. O resto da forma e o mesmo, e
- * duplica-la para o modelo era duplicar tambem os estados de foco e de selecao.
+ * `visual` é um ícone ou uma miniatura: um tipo é uma ideia e leva ícone, um modelo é um
+ * objecto que existe e leva a fotografia.
  */
 export function cardGrid(label, cards) {
     return `
@@ -212,11 +200,8 @@ export function cardGrid(label, cards) {
 }
 
 /**
- * Os tipos de dispositivo em cards.
- *
- * `attrsFor` e `countFor` sao de quem chama porque e ai que diferem: o assistente marca
- * os cards com os seus proprios atributos e conta os modelos de cada tipo, o modal de
- * edicao usa as accoes que ja tinha e nao conta nada -- o tipo ja esta escolhido.
+ * Os tipos de dispositivo em cards. O `attrsFor` e o `countFor` são de quem chama porque é
+ * aí que diferem: o assistente conta os modelos de cada tipo, o modal de edição não conta.
  */
 export function deviceTypeCardsHtml({attrsFor, selected = "", countFor = null}) {
     return cardGrid(
@@ -237,10 +222,8 @@ export function deviceTypeCardsHtml({attrsFor, selected = "", countFor = null}) 
 }
 
 /**
- * Os modelos em cards, com fotografia.
- *
- * O nome comercial e o titulo e o modelo interno o subtitulo: e o comercial que a pessoa
- * reconhece da caixa, e o interno que aparece depois nos topicos e na base de dados.
+ * Os modelos em cards. O nome comercial é o título e o modelo interno o subtítulo: é o
+ * comercial que se reconhece da caixa, e o interno que aparece nos tópicos e na base.
  */
 export function modelCardsHtml({models, attrsFor, selected = ""}) {
     return cardGrid(
@@ -259,7 +242,7 @@ export function modelCardsHtml({models, attrsFor, selected = ""}) {
     );
 }
 
-/** Os fornecedores em pastilhas: sao poucos e nao tem imagem que justifique um card. */
+/** Os fornecedores em pastilhas: são poucos e não têm imagem que justifique um card. */
 export function supplierPillsHtml({suppliers, attrsFor, selected = ""}) {
     return `
         <div class="d-flex flex-wrap gap-2" role="group" aria-label="Fornecedor">
@@ -274,5 +257,5 @@ export function supplierPillsHtml({suppliers, attrsFor, selected = ""}) {
         </div>`;
 }
 
-/** O que o tipo de dispositivo se chama, para quem so precisa da etiqueta. */
+/** O que o tipo de dispositivo se chama, para quem só precisa da etiqueta. */
 export {deviceTypeLabel};
