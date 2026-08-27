@@ -11,6 +11,7 @@ import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {apiError, confirmDestructive, toast} from "../dialogs.js";
+import {clearInvalid, markInvalid} from "../validation.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
 import {renderPagination} from "../pagination.js";
 
@@ -110,6 +111,7 @@ function renderCompanySection(companies, licenses) {
 
 export function resetCompanyForm() {
     els.companyForm.reset();
+    clearInvalid(els.companyForm);
     els.companyId.value = "";
     toggleCollapse(els.companyFormCollapse, false);
 }
@@ -123,8 +125,9 @@ function editCompany(button) {
 export async function saveCompany() {
     const id = els.companyId.value.trim();
     const name = els.companyName.value.trim();
+    clearInvalid(els.companyForm);
     if (!name) {
-        alert("O nome é obrigatório");
+        markInvalid(els.companyName, "O nome é obrigatório");
         return;
     }
     const result = await (id
@@ -168,6 +171,7 @@ function renderLicensesSection(licenses, companies) {
 
 export function resetLicenseForm() {
     els.licenseForm.reset();
+    clearInvalid(els.licenseForm);
     els.licenseId.value = "";
     toggleCollapse(els.licenseFormCollapse, false);
 }
@@ -185,14 +189,14 @@ export async function saveLicense() {
     const companyId = els.licenseCompanySelect.value;
     const licenseId = els.licenseLicenseId.value.trim();
     const name = els.licenseName.value.trim();
+    clearInvalid(els.licenseForm);
     if (!companyId) {
-        alert("Selecione uma empresa");
-        return;
+        markInvalid(els.licenseCompanySelect, "Selecione uma empresa");
     }
     if (!licenseId) {
-        alert("O ID da licença é obrigatório");
-        return;
+        markInvalid(els.licenseLicenseId, "O ID da licença é obrigatório");
     }
+    if (els.licenseForm.querySelector(".is-invalid")) return;
     const body = { companyId: Number(companyId), licenseId, name };
     const result = await apiSaveLicense(id, body);
     if (result.error) {

@@ -8,6 +8,7 @@ import {stateBadge} from "../widgets.js";
 import {state} from "../state.js";
 import {esc} from "../format.js";
 import {apiError, confirmDestructive, toast} from "../dialogs.js";
+import {clearInvalid, markInvalid} from "../validation.js";
 import {setSettingsNavCount, toggleCollapse} from "./shell.js";
 import {renderPagination} from "../pagination.js";
 
@@ -99,6 +100,7 @@ function renderApiUserLicenseOptions() {
 
 export function resetApiUserForm() {
     els.apiUserForm.reset();
+    clearInvalid(els.apiUserForm);
     els.apiUserId.value = "";
     els.apiUserRole.value = "license_client";
     els.apiUserEnabled.checked = true;
@@ -138,18 +140,17 @@ export async function saveApiUser() {
         licenseRefId: els.apiUserLicenseRefId.value.trim(),
         enabled: els.apiUserEnabled.checked,
     };
+    clearInvalid(els.apiUserForm);
     if (!body.username) {
-        alert("Utilizador é obrigatório");
-        return;
+        markInvalid(els.apiUsername, "Utilizador é obrigatório");
     }
     if (!id && !body.password.trim()) {
-        alert("Password é obrigatória para novo utilizador");
-        return;
+        markInvalid(els.apiUserPassword, "Password é obrigatória para novo utilizador");
     }
     if (body.role === "license_client" && !body.licenseRefId) {
-        alert("Licença é obrigatória para clientes");
-        return;
+        markInvalid(els.apiUserLicenseRefId, "Licença é obrigatória para clientes");
     }
+    if (els.apiUserForm.querySelector(".is-invalid")) return;
 
     const result = await apiSaveApiUser(id, body);
     if (result.error) {
