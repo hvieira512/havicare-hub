@@ -99,6 +99,10 @@ final class WhitelistRepository
                 'deviceType' => $deviceTypes,
                 'supplier' => $suppliers,
                 'model' => $models,
+                // O fornecedor com os seus modelos por baixo, para a coluna de filtros os
+                // desenhar numa árvore só. As duas listas planas ficam: são elas que dão a
+                // contagem de cada caixa quando o outro filtro está aplicado.
+                'supplierModels' => $this->supplierTree($filters, $licenseScope, $companyScope),
                 'license' => $this->licenseTree($filters, $licenseScope, $companyScope),
             ],
         ];
@@ -519,6 +523,73 @@ final class WhitelistRepository
      * @param array<string, mixed> $filters
      * @return array{companies: list<array{company: string, count: int, licenses: list<array{licenseId: int, count: int}>}>, none: int}
      */
+    /**
+     * Os modelos agrupados pelo fornecedor a que pertencem, como a licença é agrupada pela
+     * empresa.
+     *
+     * A relação tem de sair do SQL e não de juntar as duas listas planas no cliente: o mesmo
+     * nome de modelo pode existir em dois fornecedores, e aí a contagem plana não diz de qual
+     * é. Aqui o par vem do `GROUP BY` e não há ambiguidade nenhuma.
+     *
+     * Os dois filtros ficam de fora do cálculo pela mesma razão que o da licença fica: a
+     * contagem ao lado de cada caixa é a de quantos aparecem se for essa a escolha, e com o
+     * próprio filtro aplicado seria sempre a do que já está à vista.
+     *
+     * @param array<string, mixed> $filters
+     * @return array{suppliers: list<array{supplier: string, count: int, models: list<array{model: string, count: int}>}>}
+     */
+    private function supplierTree(array $filters, ?int $licenseScope = null, ?string $companyScope = null): array
+    {
+        $candidateFilters = $filters;
+        unset($candidateFilters['supplier'], $candidateFilters['model']);
+        [$whereSql, $params] = $this->buildWhereClause($candidateFilters, $licenseScope, $companyScope);
+        $stmt = $this->pdo->prepare(
+            'SELECT w.supplier AS supplier, w.model AS model, COUNT(*) AS total FROM whitelist w'
+            . $this->deviceJoinSql() . $whereSql
+            . ' GROUP BY w.supplier, w.model ORDER BY w.supplier, w.model'
+        );
+        $stmt->execute($params);
+
+        $suppliers = [];
+        foreach ($stmt->fetchAll() ?: [] as $row) {
+            $supplier = trim((string)($row['supplier'] ?? ''));
+            if ($supplier === '') {
+                continue;
+            }
+
+            $total = (int)($row['total'] ?? 0);
+            // A chave ignora maiúsculas, pela mesma razão que a das empresas: com "MOKO" e
+            // "Moko" como duas entradas, a árvore mostrava a contagem partida em duas.
+            $key = mb_strtolower($supplier);
+            if (!isset($suppliers[$key])) {
+                $suppliers[$key] = ['supplier' => $supplier, 'count' => 0, 'models' => []];
+            }
+            $suppliers[$key]['count'] += $total;
+
+            $model = trim((string)($row['model'] ?? ''));
+            if ($model === '') {
+                continue;
+            }
+            $suppliers[$key]['models'][] = ['model' => $model, 'count' => $total];
+        }
+
+        usort(
+            $suppliers,
+            static fn (array $left, array $right): int => $right['count'] <=> $left['count']
+                ?: strcasecmp($left['supplier'], $right['supplier'])
+        );
+
+        foreach ($suppliers as $index => $supplier) {
+            usort(
+                $suppliers[$index]['models'],
+                static fn (array $left, array $right): int => $right['count'] <=> $left['count']
+                    ?: strcasecmp($left['model'], $right['model'])
+            );
+        }
+
+        return ['suppliers' => array_values($suppliers)];
+    }
+
     private function licenseTree(array $filters, ?int $licenseScope = null, ?string $companyScope = null): array
     {
         $candidateFilters = $filters;

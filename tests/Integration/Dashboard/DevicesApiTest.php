@@ -173,6 +173,54 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         );
     }
 
+    /**
+     * A árvore de fornecedores e modelos, como a das empresas e licenças.
+     *
+     * A relação tem de vir do servidor: juntar as duas listas planas no cliente não diz a que
+     * fornecedor pertence um modelo, e o mesmo nome pode existir em dois.
+     */
+    public function testListGroupsModelsUnderTheSupplierTheyBelongTo(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $db->whitelist->register('900000000000010', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        $db->whitelist->register('900000000000011', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'alfa');
+        $db->whitelist->register('900000000000012', 'Vivistar', 'VL17', 'watch', 1001, '', '', 'alfa');
+        $db->whitelist->register('900000000000013', 'MOKO', 'MKGW4', 'gateway', 1001, '', '', 'alfa');
+
+        $tree = $api->list('page=1&limit=1')['filters']['counts']['supplierModels'] ?? [];
+
+        $vivistar = null;
+        foreach ($tree['suppliers'] ?? [] as $supplier) {
+            if ($supplier['supplier'] === 'Vivistar') {
+                $vivistar = $supplier;
+            }
+        }
+
+        self::assertNotNull($vivistar, 'o fornecedor tem de estar na árvore');
+
+        // Números relativos e não absolutos: o catálogo semeado já traz aparelhos, e uma
+        // contagem à unidade partia-se sempre que a semente mudasse.
+        self::assertSame(
+            array_sum(array_column($vivistar['models'], 'count')),
+            $vivistar['count'],
+            'a contagem do pai é a soma dos filhos'
+        );
+
+        $models = array_column($vivistar['models'], 'count', 'model');
+        self::assertArrayHasKey('L08 Pro', $models);
+        self::assertArrayHasKey('VL17', $models);
+        self::assertGreaterThanOrEqual(2, $models['L08 Pro']);
+
+        // Um modelo de outro fornecedor não se mistura com os deste.
+        self::assertArrayNotHasKey('MKGW4', $models);
+
+        // E a ordem é por contagem, como no resto da coluna de filtros.
+        $counts = array_values($models);
+        for ($i = 1; $i < count($counts); $i++) {
+            self::assertGreaterThanOrEqual($counts[$i], $counts[$i - 1], 'do maior para o menor');
+        }
+    }
+
     public function testListCountsEveryOptionAndBuildsTheLicenseTree(): void
     {
         [$api, $db, $store] = $this->makeApi();

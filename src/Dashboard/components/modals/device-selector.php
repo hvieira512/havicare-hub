@@ -32,13 +32,11 @@ ob_start();
         </div>
 
         <?= filter_group('Tipo', 'deviceTypeFilterCount', 'deviceTypeFilter', 'device-type-grid') ?>
+        <?php /* Os modelos vivem dentro do fornecedor a que pertencem, como as licenças
+               * dentro da empresa. Eram dois grupos, e o de baixo precisava de procura
+               * própria porque a lista de todos os modelos juntos era comprida; debaixo do
+               * fornecedor são poucos e a procura deixou de fazer falta. */ ?>
         <?= filter_group('Fornecedor', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list') ?>
-
-        <div class="d-flex flex-column">
-            <?= section_header('Modelo', 'deviceModelFilterCount', true, true) ?>
-            <?= search_input('deviceModelFilterSearch', 'Procurar modelo', 'mb-2') ?>
-            <div id="deviceModelFilter" class="filter-list"></div>
-        </div>
 
         <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list') ?>
     </aside>

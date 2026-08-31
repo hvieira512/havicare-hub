@@ -25,7 +25,6 @@ import {
 import {
     clearDeviceFilters,
     handleDeviceFilterClick,
-    handleDeviceModelFilterSearch,
     handleDeviceOnlineFilterChange,
     handleDownlinkPagerClick,
     handleTelemetryPagerClick,
@@ -148,15 +147,10 @@ function bindListAndFilters() {
     for (const root of [
         els.deviceTypeFilter,
         els.deviceSupplierFilter,
-        els.deviceModelFilter,
         els.deviceLicenseFilter,
     ]) {
         root?.addEventListener("click", handleDeviceFilterClick);
     }
-    els.deviceModelFilterSearch?.addEventListener(
-        "input",
-        handleDeviceModelFilterSearch,
-    );
     for (const input of document.querySelectorAll("input[name=\"deviceOnlineFilter\"]")) {
         input.addEventListener("change", handleDeviceOnlineFilterChange);
     }

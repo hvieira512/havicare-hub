@@ -52,7 +52,6 @@ export const state = {
         license: [],
         online: null,
     },
-    deviceModelFilterSearch: "",
     deviceSearchQuery: "",
     selectedImei: null,
     selectedDetail: null,

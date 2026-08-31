@@ -11,11 +11,7 @@ import {
     saveJsonStorage,
 } from "../storage.js";
 import { resolvePaginationPage } from "../pagination.js";
-import {
-    loadSummary,
-    normalizeFilterValue,
-    renderDeviceSelector,
-} from "./list.js";
+import { loadSummary, normalizeFilterValue } from "./list.js";
 import {
     allDetailItems,
     filterDetailItems,
@@ -29,12 +25,6 @@ import {
  * Estão juntos porque partilham a mesma ideia: leem o estado, mexem-lhe, e voltam a pedir
  * a lista -- nenhum deles constrói marcação.
  */
-let els = {};
-
-export function initDeviceFilterHandlers(context) {
-    els = context.els;
-}
-
 /**
  * Marcar ou desmarcar um valor de filtro.
  *
@@ -50,7 +40,27 @@ async function toggleDeviceFilter(key, value) {
     const current = state.deviceFilters[key] || [];
     let next;
 
-    if (current.includes(value)) {
+    // O modelo mostra-se marcado quando o fornecedor dele está marcado, mas não está na lista
+    // do filtro `model` -- quem lá está é o fornecedor. Clicá-lo quer dizer "tira este", e
+    // por isso troca-se o fornecedor pelos irmãos, como a licença faz com a empresa.
+    const supplierOfClickedModel = key === "model" ? supplierOwningModel(value) : null;
+    const clickedModelIsCoveredBySupplier =
+        supplierOfClickedModel !== null &&
+        !current.includes(value) &&
+        (state.deviceFilters.supplier || []).includes(supplierOfClickedModel);
+
+    if (clickedModelIsCoveredBySupplier) {
+        const siblings = modelsForSupplier(supplierOfClickedModel).filter(
+            (model) => model !== value,
+        );
+        changeDeviceFilter(
+            "supplier",
+            (state.deviceFilters.supplier || []).filter(
+                (entry) => entry !== supplierOfClickedModel,
+            ),
+        );
+        next = [...new Set([...current, ...siblings])];
+    } else if (current.includes(value)) {
         next = current.filter((entry) => entry !== value);
     } else if (key === "license" && !value.includes(":") && value !== "none") {
         next = [...current.filter((entry) => !entry.startsWith(`${value}:`)), value];
@@ -69,8 +79,33 @@ async function toggleDeviceFilter(key, value) {
     }
 
     changeDeviceFilter(key, next);
+    // Marcar o fornecedor absorve os modelos dele: tê-los na lista ao lado significaria o
+    // mesmo fornecedor duas vezes na condição, e a lista estreitava em vez de alargar.
+    if (key === "supplier" && next.includes(value)) {
+        const owned = modelsForSupplier(value);
+        changeDeviceFilter(
+            "model",
+            (state.deviceFilters.model || []).filter((model) => !owned.includes(model)),
+        );
+    }
     saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
     await loadSummary();
+}
+
+function modelsForSupplier(supplier) {
+    const tree = state.summary.deviceFilterCounts?.supplierModels || { suppliers: [] };
+    const entry = (tree.suppliers || []).find(
+        (candidate) => String(candidate.supplier) === supplier,
+    );
+    return (entry?.models || []).map((model) => String(model.model));
+}
+
+function supplierOwningModel(model) {
+    const tree = state.summary.deviceFilterCounts?.supplierModels || { suppliers: [] };
+    const entry = (tree.suppliers || []).find((candidate) =>
+        (candidate.models || []).some((each) => String(each.model) === model),
+    );
+    return entry ? String(entry.supplier) : null;
 }
 
 /** Um filtro guardado, seja lista ou valor único da forma antiga. */
@@ -106,11 +141,6 @@ export async function handleDeviceOnlineFilterChange(event) {
     await loadSummary();
 }
 
-export function handleDeviceModelFilterSearch() {
-    state.deviceModelFilterSearch = els.deviceModelFilterSearch.value;
-    renderDeviceSelector();
-}
-
 export async function clearDeviceFilters() {
     setDeviceFilters({
         deviceType: [],
@@ -119,7 +149,6 @@ export async function clearDeviceFilters() {
         license: [],
         online: null,
     });
-    state.deviceModelFilterSearch = "";
     clearStorageKey(FILTERS_STORAGE_KEY);
     await loadSummary();
 }

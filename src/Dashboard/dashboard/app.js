@@ -21,10 +21,7 @@ import {
     loadJsonStorage,
     loadTextStorage,
 } from "./storage.js";
-import {
-    initDeviceFilterHandlers,
-    storedFilterList,
-} from "./devices/filters.js";
+import { storedFilterList } from "./devices/filters.js";
 import {
     ensureProtocolsLoaded,
     initDeviceList,
@@ -80,7 +77,6 @@ export async function startDashboard() {
         onLicenseChange: () => void refreshGatewayOptions([]),
     });
     initCreateWizard({ els, wizardModal: deviceWizardModal });
-    initDeviceFilterHandlers({ els });
     initSettingsClickHandlers({ els });
     initDeviceList({ els, ui });
     initSettings({ els, ui });

@@ -195,7 +195,7 @@ function renderDeviceSelectorSkeleton() {
 
     els.deviceList.innerHTML = deviceCardSkeletonList(state.deviceListPageSize);
 
-    for (const el of [els.deviceSupplierFilter, els.deviceModelFilter, els.deviceLicenseFilter]) {
+    for (const el of [els.deviceSupplierFilter, els.deviceLicenseFilter]) {
         el.innerHTML = `
             <div class="placeholder-wave">
             ${repeat(
@@ -277,36 +277,6 @@ function renderDeviceTypeFilter() {
     });
 }
 
-/** Uma lista de opções de escolha múltipla, com a contagem de cada uma. */
-function renderFilterOptionList(rootEl, key, options, labelForValue, search = "") {
-    const selected = state.deviceFilters[key];
-    const needle = search.trim().toLowerCase();
-    // A ordem é a que vem do servidor e não muda ao marcar: com o que está marcado a subir
-    // ao topo, a opção seguinte deslocava-se debaixo do cursor entre dois cliques.
-    const visible = options.filter((option) => {
-        if (needle === "") return true;
-        return (
-            String(option.value).toLowerCase().includes(needle) ||
-            String(labelForValue(option.value)).toLowerCase().includes(needle)
-        );
-    });
-
-    rootEl.innerHTML = visible.length
-        ? visible
-                .map((option) => {
-                    const value = String(option.value);
-                    return filterOptionMarkup({
-                        key,
-                        value,
-                        label: labelForValue(value),
-                        count: option.count,
-                        selected: selected.includes(value),
-                    });
-                })
-                .join("")
-        : "<div class=\"small text-secondary px-1 py-2\">Nada corresponde à procura.</div>";
-}
-
 function filterOptionMarkup({ key, value, label, count, selected, partial = false, nested = false }) {
     const classes = [
         "filter-option",
@@ -324,6 +294,70 @@ function filterOptionMarkup({ key, value, label, count, selected, partial = fals
         <span class="filter-option-name">${label}</span>
         <span class="count-number flex-shrink-0">${count}</span>
         </button>`;
+}
+
+/**
+ * A árvore de fornecedores e modelos, com a forma da das empresas e licenças.
+ *
+ * Eram dois grupos separados, e o de baixo tinha uma caixa de procura própria porque a lista
+ * de modelos de todos os fornecedores juntos ficava longa. Debaixo do fornecedor a que
+ * pertencem são poucos de cada vez, e a procura deixa de fazer falta -- quem procura um
+ * modelo sabe de que fornecedor é.
+ *
+ * A diferença para a das licenças é que aqui os dois níveis continuam a ser dois filtros
+ * distintos, `supplier` e `model`: marcar o fornecedor filtra por fornecedor, marcar um
+ * modelo filtra por modelo. Só o desenho é que é comum. Com o fornecedor marcado os modelos
+ * dele mostram-se marcados, porque é isso que a lista mostra.
+ */
+function renderDeviceSupplierFilter() {
+    const tree = state.summary.deviceFilterCounts?.supplierModels || { suppliers: [] };
+    const selectedSuppliers = state.deviceFilters.supplier;
+    const selectedModels = state.deviceFilters.model;
+    const rows = [];
+
+    for (const entry of tree.suppliers || []) {
+        const supplier = String(entry.supplier);
+        const models = entry.models || [];
+        const supplierSelected = selectedSuppliers.includes(supplier);
+        const someModelSelected = models.some((model) =>
+            selectedModels.includes(String(model.model)),
+        );
+
+        rows.push(
+            filterOptionMarkup({
+                key: "supplier",
+                value: supplier,
+                label: supplier,
+                count: entry.count,
+                selected: supplierSelected,
+                partial: !supplierSelected && someModelSelected,
+            }),
+        );
+
+        if (models.length === 0) {
+            continue;
+        }
+
+        const branch = models
+            .map((model) => {
+                const value = String(model.model);
+                return filterOptionMarkup({
+                    key: "model",
+                    value,
+                    label: modelDisplayName(supplier, value),
+                    count: model.count,
+                    selected: supplierSelected || selectedModels.includes(value),
+                    nested: true,
+                });
+            })
+            .join("");
+
+        rows.push(html`<div class="filter-branch">${raw(branch)}</div>`);
+    }
+
+    els.deviceSupplierFilter.innerHTML = rows.length
+        ? rows.join("")
+        : "<div class=\"small text-secondary px-1 py-2\">Não há fornecedores para mostrar.</div>";
 }
 
 /**
@@ -398,32 +432,10 @@ function renderDeviceLicenseFilter() {
 }
 
 function renderDeviceFilterControls() {
-    const counts = state.summary.deviceFilterCounts || {
-        deviceType: [],
-        supplier: [],
-        model: [],
-        license: { companies: [], none: 0 },
-    };
-
     renderDeviceTypeFilter();
-    renderFilterOptionList(
-        els.deviceSupplierFilter,
-        "supplier",
-        counts.supplier || [],
-        (value) => value,
-    );
-    renderFilterOptionList(
-        els.deviceModelFilter,
-        "model",
-        counts.model || [],
-        (value) => modelDisplayName("", value),
-        state.deviceModelFilterSearch,
-    );
+    renderDeviceSupplierFilter();
     renderDeviceLicenseFilter();
 
-    if (els.deviceModelFilterSearch) {
-        els.deviceModelFilterSearch.value = state.deviceModelFilterSearch;
-    }
     for (const input of document.querySelectorAll("input[name=\"deviceOnlineFilter\"]")) {
         const { online } = state.deviceFilters;
         const value = online === null ? "all" : online ? "online" : "offline";
@@ -440,14 +452,16 @@ function renderDeviceFilterControls() {
 function renderDeviceFilterCounters() {
     const perGroup = {
         deviceType: state.deviceFilters.deviceType.length,
-        supplier: state.deviceFilters.supplier.length,
-        model: state.deviceFilters.model.length,
+        // O fornecedor e o modelo continuam a ser dois filtros, mas passaram a ser um só
+        // grupo no ecrã: a pastilha ao lado do título conta os dois, senão marcar um modelo
+        // estreitava a lista sem que nada o dissesse.
+        supplier:
+            state.deviceFilters.supplier.length + state.deviceFilters.model.length,
         license: state.deviceFilters.license.length,
     };
     const counterEls = {
         deviceType: els.deviceTypeFilterCount,
         supplier: els.deviceSupplierFilterCount,
-        model: els.deviceModelFilterCount,
         license: els.deviceLicenseFilterCount,
     };
     for (const [key, count] of Object.entries(perGroup)) {
