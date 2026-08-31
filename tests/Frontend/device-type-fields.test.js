@@ -33,11 +33,23 @@ test("o relogio identifica-se por IMEI e tem SIM", () => {
     assert.equal(fields.gatewayLinks, false);
 });
 
-test("os outros tipos identificam-se por deviceId e não têm SIM", () => {
+test("os outros tipos identificam-se por deviceId", () => {
     for (const type of TYPES.filter((t) => t !== "watch")) {
-        const fields = deviceTypeFields(type);
-        assert.equal(fields.identity.field, "deviceId", type);
-        assert.equal(fields.sim, false, type);
+        assert.equal(deviceTypeFields(type).identity.field, "deviceId", type);
+    }
+});
+
+/**
+ * Identificar-se por MAC e levar SIM são duas perguntas distintas, e o gateway responde
+ * diferente às duas: é o cartão dele que faz o backhaul. Enquanto foram a mesma pergunta --
+ * um `deviceType !== "watch"` -- guardar um gateway apagava-lhe o número.
+ */
+test("o SIM não acompanha o tipo de identidade: o gateway tem os dois", () => {
+    assert.equal(deviceTypeFields("gateway").identity.field, "deviceId");
+    assert.equal(deviceTypeFields("gateway").sim, true);
+
+    for (const type of ["ncs", "radar", "diaper_sensor", "bracelet"]) {
+        assert.equal(deviceTypeFields(type).sim, false, type);
     }
 });
 

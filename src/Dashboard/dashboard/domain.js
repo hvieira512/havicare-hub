@@ -1,80 +1,17 @@
-export const deviceTypeOptions = [
-    { value: "watch", label: "Relógio" },
-    { value: "ncs", label: "NCS" },
-    { value: "radar", label: "Radar" },
-    { value: "gateway", label: "Gateway" },
-    { value: "diaper_sensor", label: "Medidor de fraldas" },
-    { value: "bracelet", label: "Pulseira" },
-];
-
-const MAC_IDENTITY = {
-    field: "deviceId",
-    label: "MAC",
-    help: "Endereço MAC canónico, sem separadores (12 caracteres hexadecimais).",
-    placeholder: "d48c49f7909c",
-};
-
 /**
- * O que cada tipo de dispositivo tem, numa linha por tipo -- e não em predicados aqui,
- * cadeias de `if` no modal e visibilidade espalhada por `classList.toggle`, que é como
- * acrescentar um tipo passava a obrigar a encontrar três sítios.
+ * O que cada tipo de dispositivo tem: o campo que o identifica, se leva SIM, e se é
+ * retransmitido por um gateway em vez de falar por conta própria.
  *
- * `identity` é o campo que identifica a unidade e o que se lhe escreve ao lado. `sim`
- * diz se há número de SIM. `gatewayLinks` diz se o dispositivo é retransmitido por um
- * gateway em vez de falar por conta própria.
- *
- * ponytail: isto duplica o que o hub já sabe nas definições de capacidades por tipo, em
- * PHP. A saída certa é a API servir o descritor, como já serve as capacidades; consolidar
- * primeiro num só sítio no frontend é o que torna essa migração numa substituição de
- * tabela por chamada, em vez de uma caça a ramificações.
+ * A tabela vive no `DeviceTypeCatalog`, em PHP, e o `index.php` serve-a em
+ * `window.hubDeviceTypes`. Estava escrita aqui e mais três vezes -- a lista dos tipos
+ * também em PHP, os tipos retransmitidos no `DeviceService`, e o `sim` outra vez como um
+ * `deviceType !== "watch"` dentro do `saveDevice`, que já tinha divergido desta.
  */
-const DEVICE_TYPES = {
-    watch: {
-        identity: {
-            field: "imei",
-            label: "IMEI",
-            help: "15 dígitos, como vem impresso no dispositivo.",
-            placeholder: "861265061009822",
-        },
-        sim: true,
-        gatewayLinks: false,
-    },
-    ncs: {
-        identity: {
-            field: "deviceId",
-            label: "Device ID (MAC)",
-            help: "MAC address do dispositivo NCS (ex.: bea6c3dd8e02). Obrigatório.",
-            placeholder: "MAC address (ex.: bea6c3dd8e02)",
-        },
-        sim: false,
-        gatewayLinks: false,
-    },
-    radar: {
-        identity: {
-            field: "deviceId",
-            label: "Device ID",
-            help: "Identificador do dispositivo radar no protocolo.",
-            placeholder: "ID do dispositivo",
-        },
-        sim: false,
-        gatewayLinks: false,
-    },
-    gateway: {
-        identity: MAC_IDENTITY,
-        sim: false,
-        gatewayLinks: false,
-    },
-    diaper_sensor: {
-        identity: MAC_IDENTITY,
-        sim: false,
-        gatewayLinks: true,
-    },
-    bracelet: {
-        identity: MAC_IDENTITY,
-        sim: false,
-        gatewayLinks: true,
-    },
-};
+const DEVICE_TYPES = globalThis.window?.hubDeviceTypes ?? {};
+
+export const deviceTypeOptions = Object.entries(DEVICE_TYPES).map(
+    ([value, descriptor]) => ({ value, label: descriptor.label }),
+);
 
 /**
  * A linha de um tipo, sempre utilizável. Normaliza como o `normalizeDeviceType`, porque

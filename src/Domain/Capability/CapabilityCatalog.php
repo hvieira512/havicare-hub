@@ -12,6 +12,7 @@ use Hub\Domain\Capability\Definition\BraceletCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\DiaperSensorCapabilityDefinitions;
 use Hub\Domain\Capability\Definition\WatchCapabilityDefinitions;
 use Hub\Domain\DeviceMetadata;
+use Hub\Domain\DeviceTypeCatalog;
 
 /**
  * O catálogo autoritativo da identidade de cada capacidade genérica e do suporte por
@@ -28,7 +29,7 @@ final class CapabilityCatalog
      */
     public static function deviceTypes(): array
     {
-        return ['watch', 'ncs', 'radar', 'gateway', 'diaper_sensor', 'bracelet'];
+        return DeviceTypeCatalog::keys();
     }
 
     /**

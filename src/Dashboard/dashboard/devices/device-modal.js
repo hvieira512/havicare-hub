@@ -443,25 +443,38 @@ export async function saveDevice() {
     const licenseId = els.deviceLicenseId.value.trim();
     const supplier = els.deviceForm.dataset.supplier || "";
     const model = els.deviceForm.dataset.model || "";
+    // O que identifica o aparelho e se leva SIM são duas perguntas distintas, e um gateway
+    // responde diferente às duas: identifica-se por MAC e leva SIM à mesma. Enquanto isto foi
+    // um `deviceType !== "watch"` as duas andaram juntas, e guardar apagava o SIM de tudo o
+    // que não fosse relógio -- incluindo do gateway, onde a SIM é o backhaul.
+    const fields = deviceTypeFields(deviceType);
+    const identifiedByImei = fields.identity.field === "imei";
     const deviceId = isFourPTouchSelection(
         supplier,
         model,
         state.deviceTypeSuppliersModels,
     )
         ? deriveFourPTouchDeviceId(imei)
-        : deviceType === "watch"
+        : identifiedByImei
             ? ""
             : els.deviceDeviceId.value.trim();
 
-    if (deviceType !== "watch") {
-        if (classificationIsMissing(supplier, model)) return;
+    if (classificationIsMissing(supplier, model)) return;
+
+    if (identifiedByImei) {
+        if (!imei) {
+            markInvalid(els.deviceImei, "O IMEI é obrigatório");
+            return;
+        }
+    } else {
         if (!deviceId) {
             markInvalid(els.deviceDeviceId, "O Device ID é obrigatório");
             return;
         }
         imei = deviceId;
-        simNumber = "";
-    } else {
+    }
+
+    if (fields.sim) {
         try {
             simNumber = getDeviceSimNumberValue(true);
         } catch {
@@ -469,11 +482,6 @@ export async function saveDevice() {
             els.deviceSimNumberRoot
                 ?.querySelector("[data-phone-local]")
                 ?.focus();
-            return;
-        }
-        if (classificationIsMissing(supplier, model)) return;
-        if (!imei) {
-            markInvalid(els.deviceImei, "O IMEI é obrigatório");
             return;
         }
     }

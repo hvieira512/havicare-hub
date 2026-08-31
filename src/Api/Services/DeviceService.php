@@ -14,15 +14,13 @@ use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Dashboard\DeviceUpdateNotifier;
 use Hub\Domain\DeviceMetadata;
+use Hub\Domain\DeviceTypeCatalog;
 use Hub\Device\DeviceHubServer;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 
 class DeviceService
 {
-    /** Os tipos que um gateway retransmite por BLE. Espelha o `GATEWAY_LINKED_DEVICE_TYPES`. */
-    private const GATEWAY_LINKED_DEVICE_TYPES = ['diaper_sensor', 'bracelet'];
-
     private CollectionQuery $query;
     private DevicePresentation $presentation;
     private DeviceResponseCompactor $responseCompactor;
@@ -302,7 +300,7 @@ class DeviceService
         if ($gateway === null || $linked === null || !$this->directory->canAccessDevice($imei, $auth) || !$this->directory->canAccessDevice($linkedImei, $auth)) {
             return ApiError::deviceNotFound()->toArray();
         }
-        if ($gateway->deviceType !== 'gateway' || !in_array($linked->deviceType, self::GATEWAY_LINKED_DEVICE_TYPES, true)) {
+        if ($gateway->deviceType !== 'gateway' || !in_array($linked->deviceType, DeviceTypeCatalog::linkedToGateway(), true)) {
             return ApiError::invalidLink('A gateway can only link to a diaper sensor or a bracelet')->toArray();
         }
         if ($gateway->company !== $linked->company || $gateway->licenseId !== $linked->licenseId) {
