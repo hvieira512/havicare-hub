@@ -175,7 +175,12 @@ export function wizardTrailHtml({
             </span>`;
         })
         .join("") +
-        `<span class="wizard-trail-step">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`;
+        // Sem passos não há contador. Num dispositivo que já existe não se está a meio de
+        // coisa nenhuma -- as etiquetas são o que ele é, e "Passo 2 de 2" anunciava uma
+        // sequência que ninguém começou.
+        (steps.length
+            ? `<span class="wizard-trail-step">Passo ${step} de ${steps.length} · ${esc(steps[step - 1] || "")}</span>`
+            : "");
 }
 
 /* ---------- o tipo e o modelo ---------- */

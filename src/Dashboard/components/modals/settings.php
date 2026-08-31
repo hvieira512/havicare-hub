@@ -49,7 +49,7 @@ ob_start();
                             <div class="carousel-item">
                                 <form id="modelForm" class="row g-4 align-items-stretch mb-4">
                                     <div class="col-lg-5">
-                                        <div id="modelPreview" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
+                                        <div id="modelPreview" class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100 position-relative" role="button" tabindex="0" title="Clique ou arraste para alterar a imagem">
                                             <input type="file" id="modelImage" accept="image/*" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
                                             <div id="modelPreviewContent" class="text-center text-secondary w-100">
                                                 <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
@@ -117,7 +117,7 @@ ob_start();
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
-                                        <div id="modelDetailImage" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-3 h-100">
+                                        <div id="modelDetailImage" class="showcase-preview border rounded d-flex align-items-center justify-content-center p-3 h-100">
                                             <div class="text-center text-secondary w-100">
                                                 <?= icon('fa-microchip', 'fs-1 opacity-50') ?>
                                                 <div class="small mt-2" id="modelDetailName">Modelo</div>
@@ -172,94 +172,29 @@ ob_start();
                     <div id="capabilityCatalogViewer" class="vstack gap-3"></div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsCompanyPane" role="tabpanel" aria-labelledby="settingsCompanyTabBtn">
+                    <?php /* Sem formulários à parte: uma empresa ou uma licença abre-se na própria
+                           * linha, e uma licença nova nasce dentro da empresa em que se carregou
+                           * no `+`. Ver `settings/companies.js`. */ ?>
                     <?= tab_pane_header(
-                        'Empresas',
+                        'Licenças',
                         'companiesTabSummary',
                         '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newCompanyBtn"'
-                        . ' data-bs-toggle="collapse" data-bs-target="#companyFormCollapse"'
-                        . ' aria-expanded="false" aria-controls="companyFormCollapse">'
+                        . ' data-action="newCompany">'
                         . icon('fa-plus', 'me-1') . 'Nova empresa</button>'
                     ) ?>
-                    <div class="collapse mb-3" id="companyFormCollapse">
-                    <form id="companyForm" class="row g-2 p-3 border rounded-3">
-                        <input type="hidden" id="companyId">
-                        <div class="col-md-6">
-                            <input type="text" class="form-control form-control-sm" id="companyName" placeholder="Nome da empresa" required>
-                        </div>
-                        <div class="col-md-6 d-flex gap-2">
-                            <button id="resetCompanyBtn" type="button" class="btn btn-outline-secondary btn-sm">Cancelar</button>
-                            <button id="saveCompanyBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
-                        </div>
-                    </form>
-                    </div>
                     <div id="companyListBody" class="mb-4"></div>
                     <?= pagination_component('settingsCompanyPagination') ?>
-                    <div class="collapse mb-3" id="licenseFormCollapse">
-                    <form id="licenseForm" class="row g-2 p-3 border rounded-3">
-                        <input type="hidden" id="licenseId">
-                        <div class="col-md-4">
-                            <select class="form-select form-select-sm" id="licenseCompanySelect">
-                                <option value="">Selecionar empresa</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" class="form-control form-control-sm" id="licenseLicenseId" placeholder="ID da licença (ex: 1001)" required>
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" class="form-control form-control-sm" id="licenseName" placeholder="Nome (ex: gucc.dev)">
-                        </div>
-                        <div class="col-md-2 d-flex gap-2">
-                            <button id="resetLicenseBtn" type="button" class="btn btn-outline-secondary btn-sm">Cancelar</button>
-                            <button id="saveLicenseBtn" type="button" class="btn btn-primary btn-sm"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
-                        </div>
-                    </form>
-                    </div>
                 </div>
                 <div class="tab-pane fade h-100" id="settingsApiUsersPane" role="tabpanel" aria-labelledby="settingsApiUsersTabBtn">
+                    <?php /* Sem formulário à parte: criar abre um rascunho no topo da lista e editar
+                           * transforma a linha que se tocou. Ver `settings/api-users.js`. */ ?>
                     <?= tab_pane_header(
                         'Utilizadores API',
                         'apiUsersTabSummary',
                         '<button type="button" class="btn btn-primary btn-sm flex-shrink-0" id="newApiUserBtn"'
-                        . ' data-bs-toggle="collapse" data-bs-target="#apiUserFormCollapse"'
-                        . ' aria-expanded="false" aria-controls="apiUserFormCollapse">'
+                        . ' data-action="newApiUser">'
                         . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
                     ) ?>
-                    <div class="collapse mb-3" id="apiUserFormCollapse">
-                    <form id="apiUserForm" class="row g-3 p-3 border rounded-3">
-                        <input type="hidden" id="apiUserId">
-                        <div class="col-md-4">
-                            <label for="apiUsername" class="form-label">Utilizador</label>
-                            <input type="text" class="form-control form-control-sm" id="apiUsername" autocomplete="off" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="apiUserPassword" class="form-label">Password</label>
-                            <input type="password" class="form-control form-control-sm" id="apiUserPassword" autocomplete="new-password">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="apiUserRole" class="form-label">Perfil</label>
-                            <select class="form-select form-select-sm" id="apiUserRole">
-                                <option value="license_client">Cliente por licença</option>
-                                <option value="hub_admin">Admin Hub</option>
-                            </select>
-                        </div>
-                        <div class="col-md-5">
-                            <label for="apiUserLicenseRefId" class="form-label">Empresa / licença</label>
-                            <select class="form-select form-select-sm" id="apiUserLicenseRefId">
-                                <option value="">Selecionar licença</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" role="switch" id="apiUserEnabled" checked>
-                                <label class="form-check-label" for="apiUserEnabled">Ativo</label>
-                            </div>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end gap-2">
-                            <button id="resetApiUserBtn" type="button" class="btn btn-outline-secondary btn-sm flex-fill">Cancelar</button>
-                            <button id="saveApiUserBtn" type="button" class="btn btn-primary btn-sm flex-fill"><?= icon('fa-floppy-disk', 'me-1') ?>Guardar</button>
-                        </div>
-                    </form>
-                    </div>
                     <?= data_table(['Utilizador', 'Perfil', 'Âmbito', 'Estado', ''], 'apiUserListBody') ?>
                     <?= pagination_component('settingsApiUsersPagination') ?>
                 </div>

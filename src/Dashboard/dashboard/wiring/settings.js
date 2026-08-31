@@ -11,6 +11,7 @@ import { esc } from "../format.js";
 import { loadSettingsModal } from "../settings/index.js";
 import { handleSettingsPaginationClick } from "../settings/shell.js";
 import {
+    handleApiUserListChange,
     handleApiUserListClick,
     handleCapabilityDeviceTypeClick,
     handleCapabilityGroupsChange,
@@ -27,17 +28,12 @@ import {
 } from "../settings/capabilities.js";
 import {
     loadSettingsApiUsersSection,
-    resetApiUserForm,
-    saveApiUser,
-    syncApiUserRoleFields,
+    newApiUser,
 } from "../settings/api-users.js";
 import {
     handleCompanyListClick,
     loadSettingsCompanySection,
-    resetCompanyForm,
-    resetLicenseForm,
-    saveCompany,
-    saveLicense,
+    newCompany,
 } from "../settings/companies.js";
 import {
     backToModelList,
@@ -172,16 +168,9 @@ function bindCapabilities() {
 }
 
 function bindApiUsers() {
-    els.saveApiUserBtn.addEventListener("click", () => {
-        void saveApiUser();
-    });
-    els.resetApiUserBtn.addEventListener("click", resetApiUserForm);
-    els.apiUserForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveApiUser();
-    });
-    els.apiUserRole.addEventListener("change", syncApiUserRoleFields);
+    els.newApiUserBtn?.addEventListener("click", newApiUser);
     els.apiUserListBody.addEventListener("click", handleApiUserListClick);
+    els.apiUserListBody.addEventListener("change", handleApiUserListChange);
     els.settingsApiUsersPagination?.addEventListener("click", (event) =>
         handleSettingsPaginationClick(
             event,
@@ -192,22 +181,7 @@ function bindApiUsers() {
 }
 
 function bindCompanies() {
-    els.saveCompanyBtn.addEventListener("click", () => {
-        void saveCompany();
-    });
-    els.resetCompanyBtn.addEventListener("click", resetCompanyForm);
-    els.companyForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveCompany();
-    });
-    els.saveLicenseBtn.addEventListener("click", () => {
-        void saveLicense();
-    });
-    els.resetLicenseBtn.addEventListener("click", resetLicenseForm);
-    els.licenseForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveLicense();
-    });
+    els.newCompanyBtn?.addEventListener("click", newCompany);
     els.companyListBody.addEventListener("click", handleCompanyListClick);
     els.settingsCompanyPagination?.addEventListener("click", (event) =>
         handleSettingsPaginationClick(event, "companyPagination", (page) =>

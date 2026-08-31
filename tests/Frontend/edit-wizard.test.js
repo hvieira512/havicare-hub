@@ -71,7 +71,9 @@ test("abre no passo do aparelho, com a classificação em etiquetas", () => {
         [...root.querySelectorAll("[data-wizard-reopen]")].map((b) => b.dataset.wizardReopen),
         ["type", "model", "owner"],
     );
-    assert.match(root.querySelector(".wizard-trail-step").textContent, /Passo 2 de 2/);
+    // Sem contador de passos: um dispositivo que já existe não está a meio de uma sequência,
+    // e "Passo 2 de 2" anunciava uma que ninguém começou. As etiquetas é que dizem o que ele é.
+    assert.equal(root.querySelector(".wizard-trail-step"), null);
     assert.equal(els.deviceStep1.classList.contains("d-none"), true);
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
     assert.deepEqual(openQuestion(), []);
@@ -102,12 +104,14 @@ test("tocar numa etiqueta abre aquela pergunta, e só aquela", () => {
 
     assert.deepEqual(openQuestion(), ["model"]);
     assert.equal(els.deviceStep2.classList.contains("d-none"), true);
-    assert.match(root.querySelector(".wizard-trail-step").textContent, /Passo 1 de 2/);
+    assert.equal(root.querySelector(".wizard-trail-step"), null);
     // A pergunta aberta perde o valor da etiqueta: esta na grelha por baixo, marcada.
     assert.equal(root.querySelector("[data-wizard-reopen=\"model\"]"), null);
     assert.equal(root.querySelectorAll(".wizard-badge-now").length, 1);
-    // E guardar só no passo do aparelho, que é onde há campos por validar.
-    assert.equal(els.saveDeviceBtn.classList.contains("d-none"), true);
+    // O `Guardar` fica. Está no rodapé do modal e não desaparece por se ter tocado numa
+    // etiqueta -- um botão que foge quando se mexe noutra coisa é o que faz procurá-lo.
+    // Guardar com a pergunta aberta fecha-a primeiro, para a validação se ver.
+    assert.equal(els.saveDeviceBtn.classList.contains("d-none"), false);
 });
 
 test("escolher o tipo leva ao modelo, porque o anterior deixou de existir", () => {
@@ -161,18 +165,25 @@ test("\"Sem licença\" limpa a empresa e não deixa o número anterior", () => {
     assert.equal(els.deviceLicenseId.value, "0");
 });
 
-test("o Anterior volta à classificação sem abrir pergunta nenhuma", () => {
+/**
+ * Sair de uma pergunta sem lhe mexer.
+ *
+ * O "Anterior" saiu: num dispositivo que existe não há um passo atrás para onde ir, e quem
+ * quer mudar a classificação toca na etiqueta que a diz. O que ficou por resolver era o
+ * contrário -- abrir uma pergunta por engano e querer voltar --, e é isso que este botão faz.
+ */
+test("sair de uma pergunta aberta devolve os campos do aparelho, sem apagar respostas", () => {
     const { root, els, openQuestion } = harness();
 
-    els.deviceBackBtn.click();
-
-    assert.deepEqual(openQuestion(), ["none"]);
-    assert.match(root.querySelector(".wizard-trail-step").textContent, /Passo 1 de 2/);
-    // As três continuam respondidas: voltar atrás não apaga nada.
-    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
+    root.querySelector("[data-wizard-reopen=\"model\"]").click();
+    assert.deepEqual(openQuestion(), ["model"]);
 
     els.deviceNextBtn.click();
+
+    assert.deepEqual(openQuestion(), []);
     assert.equal(els.deviceStep2.classList.contains("d-none"), false);
+    // As três continuam respondidas: sair não apaga nada.
+    assert.equal(root.querySelectorAll("[data-wizard-reopen]").length, 3);
 });
 
 test("enquanto o dispositivo não chegou, a trilha não inventa uma classificação", () => {

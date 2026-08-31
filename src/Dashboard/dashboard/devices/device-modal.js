@@ -16,6 +16,7 @@ import {
 import {
     renderEditWizard,
     resetEditWizard,
+    showDeviceFields,
 } from "./edit-wizard.js";
 import {
     catalogForProtocol,
@@ -433,6 +434,9 @@ function applyFourPTouchDeviceIdUi() {
 }
 
 export async function saveDevice() {
+    // Guardar com uma pergunta da classificação aberta fecha-a primeiro: a validação abaixo
+    // marca campos que só existem no passo do aparelho.
+    showDeviceFields();
     setDeviceFormError("");
     clearInvalid(els.deviceForm);
     let imei = els.deviceImei.value.trim();

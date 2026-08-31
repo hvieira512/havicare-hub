@@ -63,8 +63,8 @@ $body = (string) ob_get_clean();
 
 ob_start();
 ?>
-<button type="button" class="btn btn-outline-primary" id="openAddDeviceFromSelectorBtn"><?= icon('fa-plus', 'me-1') ?>Adicionar dispositivo</button>
-<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+<button type="button" class="btn btn-primary" id="openAddDeviceFromSelectorBtn"><?= icon('fa-plus', 'me-1') ?>Adicionar dispositivo</button>
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
 <?php
 $footer = (string) ob_get_clean();
 

@@ -1,5 +1,13 @@
 import { state } from "../state.js";
-import { deleteApiUser, editApiUser, toggleApiUser } from "./api-users.js";
+import {
+    cancelApiUserEdit,
+    deleteApiUser,
+    editApiUser,
+    revealApiUserPassword,
+    saveApiUserRow,
+    syncApiUserRowRole,
+    toggleApiUser,
+} from "./api-users.js";
 import { loadSettingsCapabilitiesSection } from "./capabilities.js";
 import { selectModelDeviceType, selectModelSupplier } from "./models/form.js";
 import {
@@ -137,13 +145,19 @@ export function handleModelListClick(event) {
 export function handleApiUserListClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
-    if (button.dataset.action === "editApiUser") {
-        editApiUser(button);
-    }
-    if (button.dataset.action === "toggleApiUser") {
-        toggleApiUser(button);
-    }
-    if (button.dataset.action === "deleteApiUser") {
-        deleteApiUser(parseInt(button.dataset.id));
-    }
+    const actions = {
+        editApiUser: () => editApiUser(button),
+        cancelApiUserEdit: () => cancelApiUserEdit(),
+        revealApiUserPassword: () => revealApiUserPassword(button),
+        saveApiUserRow: () => void saveApiUserRow(button),
+        toggleApiUser: () => toggleApiUser(button),
+        deleteApiUser: () => deleteApiUser(parseInt(button.dataset.id)),
+    };
+    actions[button.dataset.action]?.();
+}
+
+/** O perfil muda dentro da linha aberta, e a licença acompanha-o. */
+export function handleApiUserListChange(event) {
+    const select = event.target.closest("[data-field=\"role\"]");
+    if (select) syncApiUserRowRole(select);
 }

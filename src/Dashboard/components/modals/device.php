@@ -92,10 +92,13 @@ ob_start();
                                 </div>
 
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
+                                <?php /* Só a saída da pergunta de classificação. Guardar e eliminar estão
+                                       * no rodapé do modal, ao lado do fechar: um sítio para as acções
+                                       * e não dois. O "Anterior" saiu -- voltar a uma pergunta faz-se
+                                       * na etiqueta dela, que diz qual, e não num botão que só diz que
+                                       * há um passo atrás. */ ?>
                                 <div class="d-flex justify-content-end gap-2">
-                                    <button type="button" class="btn btn-outline-secondary d-none" id="deviceBackBtn"><?= icon('fa-arrow-left', 'me-2') ?>Anterior</button>
-                                    <button type="button" class="btn btn-primary d-none" id="deviceNextBtn">Seguinte<?= icon('fa-arrow-right', 'ms-2') ?></button>
-                                    <button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>
+                                    <button type="button" class="btn btn-outline-secondary d-none" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
                                 </div>
                             </div>
                         </div>
@@ -114,7 +117,12 @@ ob_start();
 <?php
 $body = (string) ob_get_clean();
 
-$footer = '<button type="button" class="btn btn-outline-danger d-none" id="deleteDeviceBtn">' . icon('fa-trash', 'me-1') . 'Eliminar</button><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>';
+// Uma zona de acções só. O `me-auto` empurra o destrutivo para longe das outras duas, que é
+// o que o separa sem lhe dar uma cor que grite.
+$footer = '<button type="button" class="btn btn-outline-danger d-none me-auto" id="deleteDeviceBtn">'
+    . icon('fa-trash', 'me-1') . 'Eliminar</button>'
+    . '<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>'
+    . '<button id="saveDeviceBtn" type="button" class="btn btn-primary">Guardar dispositivo</button>';
 
 $header = '<div class="modal-device-identity" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'

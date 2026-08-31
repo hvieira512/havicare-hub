@@ -17,8 +17,6 @@ import {
  * `saveDevice` a lê. Uma segunda cópia dentro de um motor eram duas que podiam discordar.
  */
 
-const STEPS = ["Classificação", "Este aparelho"];
-
 const TRAIL_QUESTIONS = [
     { key: "type", label: "Tipo" },
     { key: "model", label: "Modelo" },
@@ -37,7 +35,6 @@ export function initEditWizard(context) {
 
     els.deviceTrail?.addEventListener("click", handleTrailClick);
     els.deviceLicensePicker?.addEventListener("click", handleLicenseClick);
-    els.deviceBackBtn?.addEventListener("click", () => goToStep(1));
     els.deviceNextBtn?.addEventListener("click", () => goToStep(2));
 }
 
@@ -128,7 +125,9 @@ function renderTrail() {
             })),
         currentKey: openQuestion || "",
         step,
-        steps: STEPS,
+        // Sem contador: ver `wizardTrailHtml`. As etiquetas continuam a ser a saída para
+        // voltar a uma pergunta, que é o que aqui faz falta.
+        steps: [],
     });
 }
 
@@ -153,9 +152,18 @@ function renderVisibleQuestion() {
 }
 
 function renderFooter() {
-    els.deviceBackBtn.classList.toggle("d-none", step !== 2);
     els.deviceNextBtn.classList.toggle("d-none", step !== 1);
-    // Guardar só no passo do aparelho: é o único com campos por validar, e responder no
-    // passo 1 traz para cá sozinho.
-    els.saveDeviceBtn.classList.toggle("d-none", step !== 2);
+}
+
+/**
+ * Traz os campos do aparelho de volta, se uma pergunta da classificação estava aberta.
+ *
+ * O `Guardar` está no rodapé e nunca desaparece: um botão que se esconde por se ter tocado
+ * noutra coisa é a razão de se ficar a olhar para o rodapé à procura dele. Em troca, guardar
+ * com uma pergunta aberta fecha-a primeiro -- senão a validação marcava campos escondidos e
+ * o pedido falhava sem nada que se visse.
+ */
+export function showDeviceFields() {
+    if (step === 2) return;
+    goToStep(2);
 }
