@@ -13,7 +13,7 @@ final class MessageNormalizerTest extends TestCase
     /**
      * Uma mensagem `heartbreath` dá três leituras, cada uma com a sua capacidade.
      *
-     * A frequência cardíaca e a respiratória usam as formas do `Hub\FeatureNormalizer` --
+     * A frequência cardíaca e a respiratória usam as formas do `Hub\Device\FeatureNormalizer` --
      * `{bpm}` e `{breathsPerMinute}` --, as mesmas de um relógio, e é isso que lhes dá os
      * cartões que já existem em vez de um cartão feito à mão só para o radar.
      */

@@ -154,10 +154,6 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
         ];
     }
 
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
 
     /**
      * @return list<array<string, mixed>>

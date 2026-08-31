@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Runtime;
 
-use Hub\HubMqttBridge;
+use Hub\Device\HubMqttBridge;
 use Hub\Log\Logger;
 
 final class StartupBanner

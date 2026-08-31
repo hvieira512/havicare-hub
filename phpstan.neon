@@ -37,7 +37,7 @@ parameters:
             identifier: notIdentical.alwaysTrue
             paths:
                 - src/Api/Routing/ApiRoute.php
-                - src/DeviceEventDecoder.php
+                - src/Device/DeviceEventDecoder.php
                 - src/Protocol/Adapter/VivistarAdapter.php
         # Exhaustive match over a fixed key set: the last arm and the default are
         # unreachable by inference, but dropping the default would turn an

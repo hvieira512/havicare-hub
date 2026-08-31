@@ -3,12 +3,12 @@
 namespace Hub\Ingress\Mqtt\Moko;
 
 use Hub\Domain\DeviceMetadata;
-use Hub\CommercialModelResolver;
+use Hub\Device\CommercialModelResolver;
 use Hub\Domain\DiaperSensitivity;
 use Hub\Domain\DiaperSensitivityLookup;
 use Hub\Domain\GatewayDeviceLinkLookup;
 use Hub\Log\Logger;
-use Hub\RawPayload;
+use Hub\Device\RawPayload;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
@@ -41,7 +41,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
         \Hub\Registry\Whitelist $whitelist,
-        \Hub\HubMqttBridge $mqttBridge,
+        \Hub\Device\HubMqttBridge $mqttBridge,
         GatewayDeviceLinkLookup $links,
         ObservationStateStore $state,
         string $topicFilter = 'havicare-hub/null/0/gw/+/raw',

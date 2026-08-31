@@ -7,7 +7,7 @@ use Hub\Api\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\DeviceHubServer;
+use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityHelpers;
 use Hub\Domain\Capability\CapabilityRegistry;

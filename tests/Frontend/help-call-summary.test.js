@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // Tem de vir antes dos módulos do dashboard: o nome de uma capacidade vem do catálogo, e esse
 // caminho passa pelo `api/http.js`, que toca em `window` ao carregar.
 import "./support/browser-env.js";
-import { helpCallSummaryCard } from "../../src/Dashboard/dashboard/telemetry-cards.js";
+import { helpCallSummaryCard } from "../../src/Dashboard/dashboard/devices/event-summary-cards.js";
 
 const call = (pressType, occurredAt) => ({
     type: "help_call",

@@ -284,3 +284,35 @@ export function capabilitiesGroupedBySection(catalog = []) {
         entries,
     }));
 }
+
+/**
+ * Como se chama cada modo de toque de um botão de ajuda.
+ *
+ * Lê-se como sufixo -- "chamada de ajuda (toque simples)" --, e por isso vem em minúsculas;
+ * quem titula uma coluna com isto capitaliza a primeira letra.
+ */
+export const PRESS_TYPE_LABEL = {
+    single: "toque simples",
+    double: "toque duplo",
+    triple: "toque triplo",
+    long: "toque longo",
+};
+
+/** O que cada detecção do radar diz. */
+export const DETECTION_TYPE_LABEL = {
+    fall_confirmed: "Queda confirmada",
+    on_floor: "No chão",
+    sitting_confirmed: "Sentado no chão",
+    apnea: "Apneia",
+    heart_rate_high: "Frequência cardíaca alta",
+    heart_rate_high_critical: "Frequência cardíaca muito alta",
+    heart_rate_low: "Frequência cardíaca baixa",
+    heart_rate_low_critical: "Frequência cardíaca muito baixa",
+    breathing_high: "Respiração acelerada",
+    breathing_low: "Respiração lenta",
+    vitals_signal_lost: "Sem sinais vitais",
+    room_entry: "Entrou na divisão",
+    room_exit: "Saiu da divisão",
+    area_entry: "Entrou na área",
+    area_exit: "Saiu da área",
+};

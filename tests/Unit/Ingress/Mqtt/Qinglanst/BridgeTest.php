@@ -57,7 +57,7 @@ final class BridgeTest extends TestCase
             $mqttBridge,
             decoder: new \Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder(),
             normalizer: new \Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer(),
-            commercialModelResolver: new class extends \Hub\CommercialModelResolver {
+            commercialModelResolver: new class extends \Hub\Device\CommercialModelResolver {
                 public function __construct()
                 {
                 }

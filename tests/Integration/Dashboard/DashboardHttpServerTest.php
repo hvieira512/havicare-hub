@@ -11,8 +11,8 @@ use Hub\Api\Services\ModelService;
 use Hub\Dashboard\DashboardHttpServer;
 use Hub\Dashboard\DashboardStore;
 use Hub\Log\Logger;
-use Hub\PendingDownlink;
-use Hub\PendingDownlinkQueue;
+use Hub\Device\PendingDownlink;
+use Hub\Device\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 use Hub\Runtime\DashboardServerFactory;
 use React\EventLoop\Loop;
@@ -962,7 +962,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     public function testDeviceDetailAndGenericConfigurationPutExposeNewPendingShape(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(function (string $imei, string $bytes) use (&$submitted): string {
             $submitted[] = ['imei' => $imei, 'bytes' => $bytes];
             return 'sent';
@@ -1465,7 +1465,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
      * @return array{0: callable, 1: ApiDataAccess, 2: DashboardStore}
      */
     private function makeServerWithDatabase(
-        ?\Hub\DeviceHubServer $hub = null,
+        ?\Hub\Device\DeviceHubServer $hub = null,
         ?PendingDownlinkQueue $queue = null,
         bool $apiAuthRequired = true,
         int $apiTokenTtlSeconds = 3600,
@@ -1490,7 +1490,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         $store->registerDevice('861265061009844', 'Vivistar', 'L08 Pro', 'watch', 0, '', '', 'null');
 
         if ($hub === null) {
-            $hub = $this->createMock(\Hub\DeviceHubServer::class);
+            $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
             $hub->method('submitDownlink')->willReturn('sent');
         }
 

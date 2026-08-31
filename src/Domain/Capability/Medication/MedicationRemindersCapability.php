@@ -100,6 +100,8 @@ final class MedicationRemindersCapability implements CapabilityContract
         };
     }
 
+    // Esta capacidade não usa o `CapabilityHelpers` -- não precisa de nenhum dos seus
+    // ajudantes --, e por isso declara o que as outras herdam dele.
     public function resolveConfigKey(string $protocol, string $key): ?string
     {
         return $key;

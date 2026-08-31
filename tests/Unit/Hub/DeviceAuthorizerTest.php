@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\DeviceAuthorizer;
-use Hub\DeviceIdentity;
+use Hub\Device\DeviceAuthorizer;
+use Hub\Device\DeviceIdentity;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
@@ -81,9 +81,9 @@ final class DeviceAuthorizerTest extends TestCase
         self::assertSame('4P Touch D46', $result->commercialName);
     }
 
-    private function commercialResolver(): \Hub\CommercialModelResolver
+    private function commercialResolver(): \Hub\Device\CommercialModelResolver
     {
-        return new class extends \Hub\CommercialModelResolver {
+        return new class extends \Hub\Device\CommercialModelResolver {
             public function __construct()
             {
             }

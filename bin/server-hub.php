@@ -5,8 +5,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Hub\HubDownlinkSubscriber;
-use Hub\HubTcpIngress;
+use Hub\Device\HubDownlinkSubscriber;
+use Hub\Device\HubTcpIngress;
 use Hub\Ingress\Mqtt\IngressRunner;
 use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
 use Hub\Ingress\Mqtt\Moko\RedisObservationStateStore;

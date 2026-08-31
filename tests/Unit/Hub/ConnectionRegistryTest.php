@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\ConnectionRegistry;
-use Hub\DeviceIdentity;
-use Hub\ConnectionInterface;
+use Hub\Device\ConnectionRegistry;
+use Hub\Device\DeviceIdentity;
+use Hub\Device\ConnectionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class ConnectionRegistryTest extends TestCase

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub\Watch;
 
-use Hub\DeviceEventDecoder;
-use Hub\DeviceSession;
+use Hub\Device\DeviceEventDecoder;
+use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\FourPTouchAdapter;
 use Hub\Protocol\Adapter\WonlexAdapter;
-use Hub\Watch\Supplier\FourPTouch\FourPTouchWatchProtocol;
-use Hub\Watch\Supplier\Wonlex\WonlexWatchProtocol;
+use Hub\Device\Watch\Supplier\FourPTouch\FourPTouchWatchProtocol;
+use Hub\Device\Watch\Supplier\Wonlex\WonlexWatchProtocol;
 use PHPUnit\Framework\TestCase;
 
 final class WonlexAndFourPTouchProtocolTest extends TestCase
@@ -169,7 +169,7 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
     }
 }
 
-final class WatchFakeConnection implements \Hub\ConnectionInterface
+final class WatchFakeConnection implements \Hub\Device\ConnectionInterface
 {
     public int $resourceId = 1;
 

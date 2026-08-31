@@ -17,7 +17,7 @@ use Hub\Api\Services\ModelService;
 use Hub\Api\Services\ProtocolService;
 use Hub\Api\Services\SupplierService;
 use Hub\Api\Repository\ApiDataAccess;
-use Hub\DeviceHubServer;
+use Hub\Device\DeviceHubServer;
 use Hub\Domain\DeviceMetadata;
 use Hub\Registry\Whitelist;
 use Psr\Http\Message\ServerRequestInterface;

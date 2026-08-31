@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
-use Hub\DeviceHubServer;
-use Hub\HubDownlinkSubscriber;
+use Hub\Device\DeviceHubServer;
+use Hub\Device\HubDownlinkSubscriber;
 use Hub\Ingress\Mqtt\Bridge;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Doubles;
 
-use Hub\HubMqttBridge;
+use Hub\Device\HubMqttBridge;
 
 /**
  * Captures what an ingress publishes instead of talking to a broker.

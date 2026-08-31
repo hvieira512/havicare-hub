@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\DeviceHubServer;
-use Hub\HubMqttBridge;
-use Hub\PendingDownlink;
-use Hub\PendingDownlinkQueue;
+use Hub\Device\DeviceHubServer;
+use Hub\Device\HubMqttBridge;
+use Hub\Device\PendingDownlink;
+use Hub\Device\PendingDownlinkQueue;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Whitelist;
-use Hub\ConnectionInterface;
+use Hub\Device\ConnectionInterface;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Location\BeaconDbRequestBuilder;
 use Hub\Location\BeaconDbTelemetryEnricher;
@@ -571,9 +571,9 @@ final class DeviceHubMqttContractTest extends TestCase
     }
 
 
-    private function commercialResolver(): \Hub\CommercialModelResolver
+    private function commercialResolver(): \Hub\Device\CommercialModelResolver
     {
-        return new class extends \Hub\CommercialModelResolver {
+        return new class extends \Hub\Device\CommercialModelResolver {
             public function __construct()
             {
             }

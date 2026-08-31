@@ -52,7 +52,7 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         $db = ApiDataAccess::fromDatabase($database);
         $store = new DashboardStore(new InMemoryRedisClient(), prefix: 'test:dashboard:diaper-sensitivity');
         $store->setDataAccess($db);
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
 
         $api = new DeviceService($store, new Whitelist($this->whitelistPath, $db->whitelist), $hub, $db);

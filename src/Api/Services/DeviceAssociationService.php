@@ -9,7 +9,7 @@ use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Domain\DeviceMetadata;
-use Hub\DeviceHubServer;
+use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
 
 final class DeviceAssociationService

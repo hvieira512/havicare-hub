@@ -9,7 +9,7 @@ use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Domain\ProtocolRegistry;
 use Hub\Protocol\AdapterRegistry;
-use Hub\Watch\WatchProtocolRegistry;
+use Hub\Device\Watch\WatchProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**

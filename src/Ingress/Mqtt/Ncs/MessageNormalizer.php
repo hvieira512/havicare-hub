@@ -2,7 +2,7 @@
 
 namespace Hub\Ingress\Mqtt\Ncs;
 
-use Hub\RawPayload;
+use Hub\Device\RawPayload;
 
 final class MessageNormalizer
 {

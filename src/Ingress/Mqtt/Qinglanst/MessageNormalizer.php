@@ -214,7 +214,7 @@ final class MessageNormalizer
         $heartRate = (int)($decoded['heart_rate'] ?? 0);
 
         // Três grandezas numa mensagem, três leituras. As formas da frequência cardíaca e
-        // da respiratória são as do `Hub\FeatureNormalizer` -- `{bpm}` e
+        // da respiratória são as do `Hub\Device\FeatureNormalizer` -- `{bpm}` e
         // `{breathsPerMinute}` --, as mesmas que um relógio produz, para partilharem os
         // cartões em vez de terem os seus.
         //

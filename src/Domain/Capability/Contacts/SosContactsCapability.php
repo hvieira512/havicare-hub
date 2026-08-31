@@ -139,10 +139,6 @@ final class SosContactsCapability implements CapabilityContract
         ];
     }
 
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
 
     /**
      * @return array<string, array<string, mixed>>

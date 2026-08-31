@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub\Watch;
 
-use Hub\Watch\WatchProtocolRegistry;
+use Hub\Device\Watch\WatchProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 final class WatchProtocolRegistryTest extends TestCase

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
-use Hub\HubMqttBridge;
+use Hub\Device\HubMqttBridge;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
 use PhpMqtt\Client\MqttClient;

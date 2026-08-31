@@ -95,9 +95,4 @@ final class WhitelistEnabledCapability implements CapabilityContract
     {
         return ['value' => $value, '_meta' => $this->meta($protocol, $meta)];
     }
-
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
 }

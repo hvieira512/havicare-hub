@@ -9,7 +9,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
     private readonly ?PayloadDecoder $decoder;
     private readonly ?MessageNormalizer $normalizer;
-    private readonly ?\Hub\CommercialModelResolver $commercialModelResolver;
+    private readonly ?\Hub\Device\CommercialModelResolver $commercialModelResolver;
     private readonly IngestStats $stats;
     private readonly DashboardWritePolicy $dashboardWritePolicy;
     private const SUPPORTED_TYPES = ['position', 'heartbreath', 'posstatics', 'hbstatics'];
@@ -19,7 +19,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
         \Hub\Registry\Whitelist $whitelist,
-        \Hub\HubMqttBridge $mqttBridge,
+        \Hub\Device\HubMqttBridge $mqttBridge,
         string $topicFilter = 'radar/1001/#',
         ?callable $reconnectSubscriber = null,
         ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
@@ -27,7 +27,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         ?MessageNormalizer $normalizer = null,
         ?IngestStats $stats = null,
         ?DashboardWritePolicy $dashboardWritePolicy = null,
-        ?\Hub\CommercialModelResolver $commercialModelResolver = null,
+        ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
     ) {
         parent::__construct(
             $subscriber,

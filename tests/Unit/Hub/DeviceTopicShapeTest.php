@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hub;
 
 use Hub\Domain\DeviceMetadata;
-use Hub\HubMqttBridge;
+use Hub\Device\HubMqttBridge;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Doubles\IngressFixtures;
 

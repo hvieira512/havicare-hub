@@ -1,12 +1,13 @@
 import {
     ago,
+    displayPersonIndex,
     eventTime,
     fieldLabel,
     fieldValue,
     rowPayload,
     titleize,
-    when,
 } from "./format.js";
+import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "./domain.js";
 import { html, raw } from "./html.js";
 import { capabilityLabel } from "./capability-catalog.js";
 import { stateBadge } from "./widgets.js";
@@ -371,32 +372,12 @@ export function uplinkCardContent(type, data, meta = {}) {
 }
 
 // Uma pulseira W6B diz que tipo de toque foi; um pager NCS não.
-// Todos os modos que um dispositivo pode reportar. Serve para filtrar eventos, não para
-// desenhar: nenhum dispositivo consegue os quatro.
-const HELP_CALL_PRESS_MODES = ["single", "double", "triple", "long"];
 
 /**
  * Quando o protocolo não declara os seus modos. Que modos um dispositivo consegue emitir é
  * um facto sobre o dispositivo, e vem do registry de protocolos no backend -- este cartão
  * desenha os que lhe derem.
  */
-const DEFAULT_PRESS_MODES = ["single", "double", "long"];
-
-const PRESS_TYPE_LABEL = {
-    single: "toque simples",
-    double: "toque duplo",
-    triple: "toque triplo",
-    long: "toque longo",
-};
-
-// O que separa os modos é quantos toques, ou quanto dura um, e é isso que o ícone diz.
-const HELP_CALL_PRESS_ICON = {
-    single: "fa-1",
-    double: "fa-2",
-    triple: "fa-3",
-    long: "fa-stopwatch",
-};
-
 function helpCallContent(data) {
     const base = ncsPagerContent("help_call");
     const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];
@@ -773,15 +754,6 @@ function dataPointValue(value) {
 }
 
 /**
- * O aparelho numera as pessoas a partir do zero. O índice fica intacto no payload -- é o
- * que se compara com os logs do fabricante --, só a etiqueta soma um.
- */
-function displayPersonIndex(value) {
-    const index = Number(value);
-    return Number.isInteger(index) ? String(index + 1) : "-";
-}
-
-/**
  * Os estados de um pedido que o mosaico mostra. Sem `acked`, porque a resposta já é o
  * valor, nem `superseded`, porque há um pedido mais recente atrás dele.
  */
@@ -972,103 +944,6 @@ function compactDetails(data, keys) {
     );
 }
 
-/**
- * A última chamada de ajuda por modo de toque.
- *
- * A pulseira só anuncia enquanto está em alarme, por isso `alarm_status` vem sempre a 1 e
- * não há como saber que uma chamada foi cancelada. O que se reporta é quando cada toque
- * aconteceu, que é um facto observável.
- */
-export function helpCallSummaryCard(events = [], pressModes = []) {
-    const calls = (Array.isArray(events) ? events : [])
-        .map(rowPayload)
-        .filter((payload) => String(payload?.type || "") === "help_call");
-
-    if (calls.length === 0) {
-        return "";
-    }
-
-    const latest = {};
-    for (const call of calls) {
-        const mode = String(call?.data?.pressType || "");
-        if (!HELP_CALL_PRESS_MODES.includes(mode)) {
-            continue;
-        }
-        if (
-            latest[mode] === undefined ||
-            eventTime(call) > eventTime(latest[mode])
-        ) {
-            latest[mode] = call;
-        }
-    }
-
-    // Três lado a lado num ecrã grande, empilhadas no telemóvel.
-    const modes = pressModes.length > 0 ? pressModes : DEFAULT_PRESS_MODES;
-    const columns = modes.map((mode) => {
-        const call = latest[mode];
-        // A etiqueta partilhada lê-se como sufixo ("... (toque simples)"); aqui titula uma
-        // coluna, por isso vai capitalizada.
-        const suffix = PRESS_TYPE_LABEL[mode];
-        const label = suffix.charAt(0).toUpperCase() + suffix.slice(1);
-        const icon = HELP_CALL_PRESS_ICON[mode];
-        const called = call !== undefined;
-        const occurredAt = called
-            ? call.occurredAt || call.recordedAt || ""
-            : "";
-        // O tempo relativo é o legível; a hora exacta espera atrás da tooltip.
-        const tooltip = called
-            ? html` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${when(occurredAt)}" aria-label="${label}: ${when(occurredAt)}" tabindex="0"`
-            : "";
-        const occurredAttr = called ? html` data-occurred-at="${occurredAt}"` : "";
-        const since = called
-            ? html`${ago(occurredAt)}`
-            : "<span class=\"help-call-never\">nunca</span>";
-
-        return html`<div class="col-12 col-md-4">
-<div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${raw(occurredAttr)}${raw(tooltip)}>
-<i class="fa-solid ${icon} ${called ? "text-danger" : "text-body-secondary"}" style="width:1.25rem;text-align:center;flex-shrink:0;"></i>
-<div class="min-w-0">
-<div class="fw-semibold text-truncate">${label}</div>
-<div class="small text-body-secondary">${raw(since)}</div>
-</div>
-</div>
-</div>`;
-    }).join("");
-
-    return html`<div class="col-12">
-<div class="card h-100 border-danger">
-<div class="card-body">
-<div class="d-flex align-items-center gap-3 min-w-0 mb-3">
-<div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
-<i class="fa-solid fa-triangle-exclamation"></i>
-</div>
-<div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
-</div>
-<div class="row g-2">${raw(columns)}</div>
-</div>
-</div>
-</div>`;
-}
-
-/** O que cada detecção do radar diz. */
-const DETECTION_TYPE_LABEL = {
-    fall_confirmed: "Queda confirmada",
-    on_floor: "No chão",
-    sitting_confirmed: "Sentado no chão",
-    apnea: "Apneia",
-    heart_rate_high: "Frequência cardíaca alta",
-    heart_rate_high_critical: "Frequência cardíaca muito alta",
-    heart_rate_low: "Frequência cardíaca baixa",
-    heart_rate_low_critical: "Frequência cardíaca muito baixa",
-    breathing_high: "Respiração acelerada",
-    breathing_low: "Respiração lenta",
-    vitals_signal_lost: "Sem sinais vitais",
-    room_entry: "Entrou na divisão",
-    room_exit: "Saiu da divisão",
-    area_entry: "Entrou na área",
-    area_exit: "Saiu da área",
-};
-
 function detectionValue(data) {
     return (
         DETECTION_TYPE_LABEL[String(data?.detectionType || "")] ||
@@ -1086,45 +961,4 @@ function detectionValue(data) {
 function detectionDetails(data) {
     const level = String(data?.detectionLevel || "");
     return level === "" || level === "info" ? "" : html`${titleize(level)}`;
-}
-
-/**
- * A última queda que o radar viu, tirada do histórico de eventos e não de uma capacidade:
- * aparece só quando houve queda, e não ocupa o mosaico nos dias em que não houve.
- *
- * Ninguém está a olhar para o ecrã no instante em que alguém cai; o que fica é o registo.
- */
-export function fallSummaryCard(events = []) {
-    const falls = (Array.isArray(events) ? events : [])
-        .map(rowPayload)
-        .filter((payload) => String(payload?.type || "") === "fall")
-        .sort((a, b) => eventTime(b) - eventTime(a));
-
-    const latest = falls[0];
-    if (latest === undefined) {
-        return "";
-    }
-
-    const occurredAt = latest.occurredAt || latest.recordedAt || "";
-    const detectionType = String(latest?.data?.detectionType || "");
-    const label = DETECTION_TYPE_LABEL[detectionType] || fieldLabel(detectionType);
-    const person = latest?.data?.details?.person_index;
-    const who =
-        person === undefined || person === null
-            ? ""
-            : html` · Pessoa ${displayPersonIndex(person)}`;
-
-    return html`<div class="col-12">
-<div class="card h-100 border-danger">
-<div class="card-body d-flex align-items-center gap-3 min-w-0">
-<div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
-<i class="fa-solid fa-person-falling"></i>
-</div>
-<div class="min-w-0 flex-grow-1">
-<div class="fw-bold text-danger">Última queda</div>
-<div class="small text-body-secondary text-truncate" title="${when(occurredAt)}">${ago(occurredAt)} · ${label}${raw(who)}</div>
-</div>
-</div>
-</div>
-</div>`;
 }

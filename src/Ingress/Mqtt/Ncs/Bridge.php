@@ -8,17 +8,17 @@ use Hub\Log\Logger;
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
     private readonly ?MessageNormalizer $normalizer;
-    private readonly ?\Hub\CommercialModelResolver $commercialModelResolver;
+    private readonly ?\Hub\Device\CommercialModelResolver $commercialModelResolver;
 
     public function __construct(
         \PhpMqtt\Client\MqttClient $subscriber,
         \Hub\Registry\Whitelist $whitelist,
-        \Hub\HubMqttBridge $mqttBridge,
+        \Hub\Device\HubMqttBridge $mqttBridge,
         string $topicFilter = '/voerka/#',
         ?callable $reconnectSubscriber = null,
         ?\Hub\Dashboard\DashboardStoreContract $dashboardStore = null,
         ?MessageNormalizer $normalizer = null,
-        ?\Hub\CommercialModelResolver $commercialModelResolver = null,
+        ?\Hub\Device\CommercialModelResolver $commercialModelResolver = null,
     ) {
         parent::__construct(
             $subscriber,

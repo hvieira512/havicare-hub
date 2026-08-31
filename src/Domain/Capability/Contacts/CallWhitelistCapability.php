@@ -151,10 +151,6 @@ final class CallWhitelistCapability implements CapabilityContract
         ];
     }
 
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
 
     /**
      * @return list<array{name: string, phone: string}>

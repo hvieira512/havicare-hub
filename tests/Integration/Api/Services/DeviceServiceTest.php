@@ -5,7 +5,7 @@ namespace Tests\Integration\Api\Services;
 use Hub\Api\Services\DeviceService;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\DeviceHubServer;
+use Hub\Device\DeviceHubServer;
 use Hub\Registry\Whitelist;
 use Tests\Support\MysqlDashboardTestCase;
 

@@ -3,7 +3,7 @@
 namespace Hub\Ingress\Mqtt;
 
 use Hub\Dashboard\DashboardStoreContract;
-use Hub\HubMqttBridge;
+use Hub\Device\HubMqttBridge;
 use Hub\Log\Logger;
 use Hub\Mqtt\ReconnectsOnLoopFailure;
 use Hub\Registry\Whitelist;

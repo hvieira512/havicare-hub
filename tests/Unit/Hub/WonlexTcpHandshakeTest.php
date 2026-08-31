@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\DeviceHubServer;
-use Hub\HubMqttBridge;
-use Hub\HubTcpIngress;
+use Hub\Device\DeviceHubServer;
+use Hub\Device\HubMqttBridge;
+use Hub\Device\HubTcpIngress;
 use Hub\Protocol\Adapter\WonlexAdapter;
 use Hub\Registry\Whitelist;
 use PHPUnit\Framework\TestCase;

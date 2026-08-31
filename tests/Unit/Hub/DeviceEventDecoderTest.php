@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\DeviceEventDecoder;
-use Hub\DeviceSession;
-use Hub\ConnectionInterface;
+use Hub\Device\DeviceEventDecoder;
+use Hub\Device\DeviceSession;
+use Hub\Device\ConnectionInterface;
 use PHPUnit\Framework\TestCase;
 
 final class DeviceEventDecoderTest extends TestCase

@@ -6,7 +6,7 @@ require __DIR__ . '/../vendor/autoload.php';
 use Hub\Bootstrap;
 use Hub\Config;
 use Hub\Dashboard\DashboardStore;
-use Hub\HubMqttBridge;
+use Hub\Device\HubMqttBridge;
 use Hub\Ingress\Mqtt\Qinglanst\DashboardWritePolicy;
 use Hub\Ingress\Mqtt\Qinglanst\MessageNormalizer;
 use Hub\Ingress\Mqtt\Qinglanst\PayloadDecoder;

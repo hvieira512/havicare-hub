@@ -5,8 +5,8 @@ namespace Tests\Integration\Dashboard;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Services\DeviceService;
 use Hub\Dashboard\DashboardStore;
-use Hub\PendingDownlink;
-use Hub\PendingDownlinkQueue;
+use Hub\Device\PendingDownlink;
+use Hub\Device\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
 use Tests\Support\MysqlDashboardTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
@@ -1505,7 +1505,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     public function testFourPTouchSosContactsRejectsMoreThanThreeNumbers(): void
     {
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->expects(self::never())->method('submitDownlink');
         [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('4P Touch', 'D46');
@@ -2820,7 +2820,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     public function testHw20ProOnlyAllowsVerifiedHealthRequests(): void
     {
         $submitted = [];
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(
             function (string $imei, string $bytes) use (&$submitted): string {
                 $submitted[] = [
@@ -2925,7 +2925,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
     public function testQueuedTelemetryRequestIsRedispatchedWhenDeliveryBecomesAvailable(): void
     {
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('queued');
         [$api, $db, $store] = $this->makeApi(hub: $hub);
         $model = $db->models->find('Vivistar', 'L08 Pro');
@@ -3114,7 +3114,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     /**
      * @return array{0: DeviceService, 1: ApiDataAccess, 2: DashboardStore}
      */
-    private function makeApi(?\Hub\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null): array
+    private function makeApi(?\Hub\Device\DeviceHubServer $hub = null, ?PendingDownlinkQueue $queue = null): array
     {
         $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
         $db->whitelist->register('861265061009822', 'Vivistar', 'L08 Pro');
@@ -3134,9 +3134,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         return [$api, $db, $store];
     }
 
-    private function makeHubServerMock(): \Hub\DeviceHubServer
+    private function makeHubServerMock(): \Hub\Device\DeviceHubServer
     {
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturn('sent');
 
         return $hub;
@@ -3148,9 +3148,9 @@ final class DevicesApiTest extends MysqlDashboardTestCase
      *
      * @param list<array{imei: string, bytes: string}> $submitted
      */
-    private function recordingHub(array &$submitted, string $result = 'sent'): \Hub\DeviceHubServer
+    private function recordingHub(array &$submitted, string $result = 'sent'): \Hub\Device\DeviceHubServer
     {
-        $hub = $this->createMock(\Hub\DeviceHubServer::class);
+        $hub = $this->createMock(\Hub\Device\DeviceHubServer::class);
         $hub->method('submitDownlink')->willReturnCallback(
             function (string $imei, string $bytes) use (&$submitted, $result): string {
                 $submitted[] = ['imei' => $imei, 'bytes' => $bytes];

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub;
 
-use Hub\RawPayload;
+use Hub\Device\RawPayload;
 use PHPUnit\Framework\TestCase;
 
 final class RawPayloadTest extends TestCase

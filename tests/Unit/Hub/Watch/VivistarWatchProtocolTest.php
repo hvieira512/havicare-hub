@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hub\Watch;
 
-use Hub\DeviceEventDecoder;
-use Hub\DeviceSession;
+use Hub\Device\DeviceEventDecoder;
+use Hub\Device\DeviceSession;
 use Hub\Protocol\Adapter\VivistarAdapter;
-use Hub\Watch\Supplier\Vivistar\VivistarWatchProtocol;
+use Hub\Device\Watch\Supplier\Vivistar\VivistarWatchProtocol;
 use PHPUnit\Framework\TestCase;
 
 final class VivistarWatchProtocolTest extends TestCase
@@ -43,7 +43,7 @@ final class VivistarWatchProtocolTest extends TestCase
     }
 }
 
-final class VivistarFakeConnection implements \Hub\ConnectionInterface
+final class VivistarFakeConnection implements \Hub\Device\ConnectionInterface
 {
     public int $resourceId = 1;
 

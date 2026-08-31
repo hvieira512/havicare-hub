@@ -24,13 +24,12 @@ import { deviceLicenseHtml, emptyPanel, filterChips, onlineBadge } from "../widg
 import {
     cardTone,
     telemetryCard,
-    fallSummaryCard,
-    helpCallSummaryCard,
     renderRequestCardShell,
     requestCardContent,
     statusBadge,
     uplinkCardContent,
 } from "../telemetry-cards.js";
+import { fallSummaryCard, helpCallSummaryCard } from "./event-summary-cards.js";
 import { protocolHelpCallPressModes } from "./config/protocol-catalog.js";
 import { renderPagination } from "../pagination.js";
 import { clearStorageKey, saveTextStorage } from "../storage.js";

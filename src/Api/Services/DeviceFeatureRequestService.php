@@ -10,7 +10,7 @@ use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Dashboard\DeviceCommandRecord;
-use Hub\DeviceHubServer;
+use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;

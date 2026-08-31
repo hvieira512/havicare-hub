@@ -75,6 +75,14 @@ todos de cada vez.
 A regra não pede uma migração. Pede que o próximo widget nasça no sítio certo, e que os
 ficheiros grandes encolham por atrito, à medida que se passa por eles.
 
+O `devices/event-summary-cards.js` é o segundo, e mostra como é o atrito na prática. A
+última chamada de ajuda e a última queda estavam no `telemetry-cards.js` só por serem
+cartões: o resto daquele ficheiro é um cartão por *tipo de telemetria*, com uma tabela a
+mapear tipo em ícone e corpo, enquanto estes dois lêem o histórico inteiro e resumem-no.
+Ao saírem, o que era partilhado subiu em vez de vir atrás -- o `displayPersonIndex` para o
+`format.js`, as tabelas de nomes para o `domain.js` --, que é a regra 2 a funcionar. O
+`telemetry-cards.js` ficou com menos 170 linhas.
+
 ## A árvore
 
 ```
@@ -100,6 +108,7 @@ dashboard/
 │
 ├── api/                    um ficheiro por recurso; o único sítio com fetch
 │   ├── http.js             requestJson(), formRequest(), withQuery() e o token
+│   ├── auth.js             o bilhete de vida curta que abre o stream
 │   ├── index.js            o barril que o resto importa
 │   └── devices.js  models.js  licenses.js  companies.js  users.js  …
 │
@@ -117,6 +126,8 @@ dashboard/
 │   ├── gateway-links.js    que gateways são elegíveis (lógica pura)
 │   ├── gateway-links-ui.js os cards de gateway no modal
 │   ├── gateway-signal.js   o RSSI de cada par (dispositivo, gateway)
+│   ├── device-card.js      o cartão de um dispositivo, e o seu esqueleto
+│   ├── event-summary-cards.js  a última chamada de ajuda e a última queda
 │   ├── stream.js           o EventSource que traz os eventos em directo
 │   ├── config/             o separador de configurações de um dispositivo
 │   │   ├── index.js        desenha a raiz e as secções

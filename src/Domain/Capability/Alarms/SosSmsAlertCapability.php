@@ -80,9 +80,4 @@ final class SosSmsAlertCapability implements CapabilityContract
     ): array {
         return ['value' => $value, '_meta' => $meta];
     }
-
-    public function resolveConfigKey(string $protocol, string $key): ?string
-    {
-        return $key;
-    }
 }
