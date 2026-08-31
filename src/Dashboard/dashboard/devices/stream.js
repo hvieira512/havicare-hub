@@ -3,6 +3,26 @@ let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
 let eventSource = null;
 let currentImei = "";
+let streamLive = false;
+let reconnectTimer = null;
+let reconnectAttempt = 0;
+
+// O `EventSource` religa-se sozinho enquanto fica em `CONNECTING`. O `CLOSED` é terminal, e
+// é esse que estes atrasos cobrem. O tecto de meio minuto existe para um servidor em baixo
+// não levar um pedido por segundo de cada dashboard aberta.
+const RECONNECT_BASE_MS = 1000;
+const RECONNECT_MAX_MS = 30000;
+
+/**
+ * Se o stream está a entregar.
+ *
+ * Importa saber porque este é o único caminho por onde o `recent` chega: o
+ * `GET /api/devices/{imei}` devolve o dispositivo, o modelo e a configuração, e não a
+ * telemetria, os eventos nem os comandos.
+ */
+export function isDeviceStreamLive() {
+    return streamLive;
+}
 
 export function initDeviceStream(context) {
     state = context.state;
@@ -28,25 +48,69 @@ export function connectDeviceStream(imei) {
     }
 
     eventSource = new EventSource(url);
+    eventSource.addEventListener("open", handleStreamOpen);
     eventSource.addEventListener("snapshot", handleStreamUpdate);
     eventSource.addEventListener("update", handleStreamUpdate);
     eventSource.onerror = function () {
         if (eventSource?.readyState === EventSource.CLOSED) {
+            // Antes desistia-se aqui, e o histórico do dispositivo ficava congelado até
+            // alguém trocar de dispositivo ou o token ser renovado: a sondagem de 30 em 30
+            // segundos preserva de propósito o `recent` que já tinha, e por isso não havia
+            // nada a ir buscar telemetria nova depois de o stream cair.
             closeDeviceStream();
+            scheduleReconnect();
         }
     };
 }
 
 export function disconnectDeviceStream() {
     currentImei = "";
+    reconnectAttempt = 0;
     closeDeviceStream();
 }
 
 function closeDeviceStream() {
+    streamLive = false;
+    if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
     if (eventSource) {
         eventSource.close();
         eventSource = null;
     }
+}
+
+/**
+ * Volta a ligar com o atraso a crescer, e só enquanto houver dispositivo escolhido.
+ *
+ * Sem credencial não se tenta: o `hub-dashboard-api-token-updated` liga quando ela chegar, e
+ * insistir aqui só produzia 401 em série.
+ */
+function scheduleReconnect() {
+    if (!currentImei || reconnectTimer !== null) {
+        return;
+    }
+    if (
+        document.body.dataset.dashboardAuthRequired === "true" &&
+        !window.hubDashboardApiToken?.access_token
+    ) {
+        return;
+    }
+
+    const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_BASE_MS * 2 ** reconnectAttempt);
+    reconnectAttempt += 1;
+    reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        if (currentImei) {
+            connectDeviceStream(currentImei);
+        }
+    }, delay);
+}
+
+function handleStreamOpen() {
+    streamLive = true;
+    reconnectAttempt = 0;
 }
 
 function handleTokenUpdated() {
@@ -61,10 +125,15 @@ function handleTokenUpdated() {
         return;
     }
 
+    // Credencial nova é uma razão nova para tentar: a espera acumulada pelas falhas
+    // anteriores não se aplica a esta.
+    reconnectAttempt = 0;
     connectDeviceStream(currentImei);
 }
 
 function handleStreamUpdate(event) {
+    // Uma entrega prova a ligação mesmo que o `open` se tenha perdido.
+    streamLive = true;
     const data = JSON.parse(event.data);
     if (!state.selectedDetail) return;
     state.selectedDetail.recent = {

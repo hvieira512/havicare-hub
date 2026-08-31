@@ -6,7 +6,7 @@ import {
 import { ensureLicensesLoaded } from "../licenses.js";
 import { stateBadge } from "../widgets.js";
 import { state } from "../state.js";
-import { esc } from "../format.js";
+import { html, raw } from "../html.js";
 import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount, toggleCollapse } from "./shell.js";
@@ -63,39 +63,44 @@ function renderApiUsersSection(users) {
                 (admins ? ` · ${admins} com acesso a todas as licenças` : "");
     }
     els.apiUserListBody.innerHTML = (users || [])
-        .map(
-            (user) => `
+        .map((user) => {
+            const enabled = Number(user.enabled) === 1;
+            // O âmbito é a informação com mais consequência da tabela -- quem vê os dados de
+            // que licença --, e "Todas" é um privilégio e não um valor por omissão.
+            const scope = user.role === "hub_admin"
+                ? raw(stateBadge("Todas as licenças"))
+                : user.company_name && user.license_id
+                    ? `${user.company_name} / ${user.license_id}`
+                    : "Sem licença válida";
+
+            return html`
         <tr class="d-block d-sm-table-row">
-        <td class="fw-semibold d-block d-sm-table-cell border-0 pb-0 py-sm-2">${esc(user.username)}</td>
+        <td class="fw-semibold d-block d-sm-table-cell border-0 pb-0 py-sm-2">${user.username}</td>
         <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
             <span class="section-label d-sm-none me-2">Perfil</span>
-            <span class="section-label">${esc(apiRoleLabel(user.role))}</span>
+            <span class="section-label">${apiRoleLabel(user.role)}</span>
         </td>
         <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
-        <span class="section-label d-sm-none me-2">Âmbito</span>${user.role === "hub_admin"
-            // O âmbito é a informação com mais consequência da tabela -- quem vê os dados
-            // de que licença --, e "Todas" é um privilégio e não um valor por omissão.
-            ? stateBadge("Todas as licenças")
-            : esc(user.company_name && user.license_id ? `${user.company_name} / ${user.license_id}` : "Sem licença válida")}</td>
+        <span class="section-label d-sm-none me-2">Âmbito</span>${scope}</td>
         <td class="d-block d-sm-table-cell border-0 py-0 py-sm-2">
-            ${stateBadge(
-                Number(user.enabled) === 1 ? "Ativo" : "Inativo",
-                Number(user.enabled) === 1 ? "config-state-success" : "config-state-secondary",
-            )}
+            ${raw(stateBadge(
+                enabled ? "Ativo" : "Inativo",
+                enabled ? "config-state-success" : "config-state-secondary",
+            ))}
         </td>
         <td class="text-end text-nowrap d-block d-sm-table-cell pt-2">
-        <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-outline-secondary btn-sm" data-action="toggleApiUser" data-id="${user.id}" data-username="${esc(user.username)}" data-role="${esc(user.role)}" data-license-ref-id="${esc(user.license_ref_id || "")}" data-enabled="${Number(user.enabled) === 1 ? "1" : ""}" title="${Number(user.enabled) === 1 ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${Number(user.enabled) === 1 ? "pause" : "play"}"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" data-action="editApiUser" data-id="${user.id}" data-username="${user.username}" data-role="${user.role}" data-license-ref-id="${user.license_ref_id || ""}" data-enabled="${enabled ? "1" : ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" data-action="toggleApiUser" data-id="${user.id}" data-username="${user.username}" data-role="${user.role}" data-license-ref-id="${user.license_ref_id || ""}" data-enabled="${enabled ? "1" : ""}" title="${enabled ? "Desativar" : "Ativar"}"><i class="fa-solid fa-${enabled ? "pause" : "play"}"></i></button>
         <button class="btn btn-outline-danger btn-sm" data-id="${user.id}" data-action="deleteApiUser" title="Apagar"><i class="fa-solid fa-trash"></i></button>
         </td>
-        </tr>`,
-        )
+        </tr>`;
+        })
         .join("");
 }
 
 function renderApiUserLicenseOptions() {
     els.apiUserLicenseRefId.innerHTML = "<option value=\"\">Selecionar licença</option>" +
-        apiUserLicenses.map((license) => `<option value="${esc(license.id)}">${esc(`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`)}</option>`).join("");
+        apiUserLicenses.map((license) => html`<option value="${license.id}">${`${license.company_name || "-"} / ${license.license_id} — ${license.name || ""}`}</option>`).join("");
 }
 
 export function resetApiUserForm() {

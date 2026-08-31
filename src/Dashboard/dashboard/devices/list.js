@@ -7,7 +7,7 @@ import { getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels } from 
 import { ensureCapabilityCatalog } from "../capability-catalog.js";
 import { ensureLicensesLoaded } from "../licenses.js";
 import { state, clearSelection, selectImei } from "../state.js";
-import { esc } from "../format.js";
+import { html, raw } from "../html.js";
 import {
     deviceLicenseHtml,
     emptyPanel,
@@ -262,7 +262,7 @@ function renderDeviceSelectorSummary() {
 function renderDeviceCard(device) {
     const selected = state.selectedImei === device.imei;
     const image = device.image
-        ? `<img src="${esc(device.image)}" alt="${esc(device.model || device.imei)}">`
+        ? html`<img src="${device.image}" alt="${device.model || device.imei}">`
         : "<i class=\"fa-solid fa-microchip\"></i>";
     const meta = [
         deviceTypeLabel(normalizeDeviceType(device.deviceType)),
@@ -271,25 +271,25 @@ function renderDeviceCard(device) {
         .filter(Boolean)
         .join(" · ");
 
-    return `
+    return html`
         <button type="button" class="device-card${selected ? " selected" : ""}${device.online ? "" : " offline"}"
-            data-imei="${esc(device.imei)}" data-action="select"${selected ? " aria-current=\"true\"" : ""}>
-        <span class="device-card-thumb">${image}</span>
-        ${onlineBadge(device.online)}
+            data-imei="${device.imei}" data-action="select"${selected ? " aria-current=\"true\"" : ""}>
+        <span class="device-card-thumb">${raw(image)}</span>
+        ${raw(onlineBadge(device.online))}
         <span class="device-card-identity">
             <span class="min-width-0">
-                <span class="device-card-imei d-block text-truncate">${esc(device.imei)}</span>
-                <span class="device-card-meta d-block text-truncate">${esc(meta)}</span>
+                <span class="device-card-imei d-block text-truncate">${device.imei}</span>
+                <span class="device-card-meta d-block text-truncate">${meta}</span>
             </span>
         </span>
         <span class="device-card-fields">
             <span class="device-card-field">
                 <span class="device-card-field-label">Licença</span>
-                ${deviceLicenseHtml(device, "device-card-field-value")}
+                ${raw(deviceLicenseHtml(device, "device-card-field-value"))}
             </span>
             <span class="device-card-field">
                 <span class="device-card-field-label">SIM</span>
-                <span class="device-card-field-value${device.simNumber ? " tabular-nums" : " empty"}">${esc(device.simNumber || "—")}</span>
+                <span class="device-card-field-value${device.simNumber ? " tabular-nums" : " empty"}">${device.simNumber || "—"}</span>
             </span>
         </span>
         </button>`;
@@ -352,7 +352,7 @@ function renderFilterOptionList(rootEl, key, options, labelForValue, search = ""
                     });
                 })
                 .join("")
-        : `<div class="small text-secondary px-1 py-2">Nada corresponde à procura.</div>`;
+        : "<div class=\"small text-secondary px-1 py-2\">Nada corresponde à procura.</div>";
 }
 
 function filterOptionMarkup({ key, value, label, count, selected, partial = false, nested = false }) {
@@ -365,12 +365,12 @@ function filterOptionMarkup({ key, value, label, count, selected, partial = fals
         .filter(Boolean)
         .join(" ");
 
-    return `
+    return html`
         <button type="button" class="${classes}" data-action="toggleDeviceFilter"
-            data-filter-key="${esc(key)}" data-filter-value="${esc(value)}" aria-pressed="${selected ? "true" : "false"}">
+            data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}">
         <span class="filter-option-box"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
-        <span class="filter-option-name">${esc(label)}</span>
-        <span class="filter-option-count count-number">${esc(count)}</span>
+        <span class="filter-option-name">${label}</span>
+        <span class="filter-option-count count-number">${count}</span>
         </button>`;
 }
 
@@ -420,24 +420,24 @@ function renderDeviceLicenseFilter() {
             continue;
         }
 
-        rows.push(
-            `<div class="filter-branch">${licenses
-                .map((license) => {
-                    const value = `${name}:${license.licenseId}`;
-                    return filterOptionMarkup({
-                        key: "license",
-                        value,
-                        label: licenseDisplayLabel(
-                            license.licenseId,
-                            state.settingsModal.licenses || [],
-                        ),
-                        count: license.count,
-                        selected: companySelected || selected.includes(value),
-                        nested: true,
-                    });
-                })
-                .join("")}</div>`,
-        );
+        const branch = licenses
+            .map((license) => {
+                const value = `${name}:${license.licenseId}`;
+                return filterOptionMarkup({
+                    key: "license",
+                    value,
+                    label: licenseDisplayLabel(
+                        license.licenseId,
+                        state.settingsModal.licenses || [],
+                    ),
+                    count: license.count,
+                    selected: companySelected || selected.includes(value),
+                    nested: true,
+                });
+            })
+            .join("");
+
+        rows.push(html`<div class="filter-branch">${raw(branch)}</div>`);
     }
 
     els.deviceLicenseFilter.innerHTML = rows.length

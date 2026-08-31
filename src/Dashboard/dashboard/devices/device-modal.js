@@ -60,8 +60,9 @@ import {
     disconnectDeviceStream,
 } from "./stream.js";
 import {
-    esc,
-} from "../format.js";
+    html,
+    raw,
+} from "../html.js";
 import {
     normalizePhoneControl,
     renderPhoneControl,
@@ -266,14 +267,14 @@ function renderDeviceModalIdentity(device, deviceModel, deviceType) {
             : company,
     ].filter((part) => part !== "");
 
-    els.deviceModalIdentity.innerHTML = `
-        <span class="modal-device-thumb">${modelImageHtml(deviceModel, 26)}</span>
+    els.deviceModalIdentity.innerHTML = html`
+        <span class="modal-device-thumb">${raw(modelImageHtml(deviceModel, 26))}</span>
         <span class="min-w-0">
             <span class="d-flex align-items-center gap-2 flex-wrap">
-                <h5 class="modal-title mb-0 tabular-nums" id="deviceModalLabel">${esc(imei)}</h5>
-                ${onlineBadge(online)}
+                <h5 class="modal-title mb-0 tabular-nums" id="deviceModalLabel">${imei}</h5>
+                ${raw(onlineBadge(online))}
             </span>
-            <span class="d-block small text-secondary">${esc(meta.join(" · "))}</span>
+            <span class="d-block small text-secondary">${meta.join(" · ")}</span>
         </span>`;
 }
 
@@ -313,14 +314,14 @@ export async function renderDeviceSelectors(
         suppliers,
         selected: supplier,
         attrsFor: (name) =>
-            `data-action="selectDeviceSupplier" data-value="${esc(name)}"`,
+            html`data-action="selectDeviceSupplier" data-value="${name}"`,
     });
     els.deviceModelButtons.innerHTML = availableModels.length
         ? modelCardsHtml({
                 models: availableModels,
                 selected: model,
                 attrsFor: (internal) =>
-                    `data-action="selectDeviceModel" data-value="${esc(internal)}"`,
+                    html`data-action="selectDeviceModel" data-value="${internal}"`,
             })
         : "<div class=\"text-secondary small py-2\">Sem modelos deste fornecedor.</div>";
     updateDevicePreview();
@@ -335,7 +336,7 @@ export function renderDeviceTypeSelector(selectedType = "watch") {
     els.deviceTypeButtons.innerHTML = deviceTypeCardsHtml({
         selected: deviceType,
         attrsFor: (value) =>
-            `data-action="selectDeviceType" data-value="${esc(value)}"`,
+            html`data-action="selectDeviceType" data-value="${value}"`,
     });
 
     // Uma linha da tabela em vez de quatro cadeias de `if` e cinco toggles decididos aqui.

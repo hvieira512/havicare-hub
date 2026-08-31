@@ -1,486 +1,60 @@
 /**
- * A raiz de composição da dashboard, e o único módulo que conhece toda a gente: cacheia os
- * elementos, cria os modais do Bootstrap, entrega o `els` a cada funcionalidade pelo seu
- * `init`, e liga os ouvintes. Uma funcionalidade nunca importa outra.
+ * A raiz de composição da dashboard: cacheia os elementos, cria os modais do Bootstrap,
+ * entrega o `els` a cada funcionalidade pelo seu `init`, manda ligar os ouvintes e repõe o
+ * que ficou guardado da sessão anterior.
+ *
+ * Continua a ser o único sítio que conhece toda a gente, e uma funcionalidade continua a
+ * nunca importar outra -- é essa regra que mantém o grafo de módulos sem ciclos. O que mudou
+ * foi só o tamanho: os cerca de noventa ouvintes que viviam aqui passaram para o `wiring/`,
+ * que é raiz de composição na mesma, dividida por área. Não se moveu acoplamento nenhum para
+ * dentro das funcionalidades, porque era isso que a regra proibia.
  */
 import { getDevice as apiGetDevice } from "./api/index.js";
-import { esc } from "./format.js";
-import { syncPhoneControl } from "./phone.js";
 import { state } from "./state.js";
 import { cacheElements } from "./dom.js";
-import {
-    handleConfigFeedbackClosed,
-    handleDeviceConfigChange,
-    handleDeviceConfigClick,
-    handleDeviceConfigInput,
-} from "./devices/config/handlers.js";
-import {
-    handleApiUserListClick,
-    handleCapabilityDeviceTypeClick,
-    handleCapabilityGroupsChange,
-    handleModelDeviceTypeClick,
-    handleModelListClick,
-    handleModelSupplierClick,
-    initSettingsClickHandlers,
-    jumpCapabilitySection,
-    scrollCapabilityCatalogSection,
-} from "./settings/clicks.js";
-import {
-    clearDeviceFilters,
-    handleDeviceFilterClick,
-    handleDeviceModelFilterSearch,
-    handleDeviceOnlineFilterChange,
-    handleDownlinkPagerClick,
-    handleTelemetryPagerClick,
-    initDeviceFilterHandlers,
-    storedFilterList,
-} from "./devices/filters.js";
+import { bindDeviceEvents } from "./wiring/devices.js";
+import { bindSettingsEvents } from "./wiring/settings.js";
+import { bindInvalidClearing } from "./validation.js";
 import {
     FILTERS_STORAGE_KEY,
     SELECTED_DEVICE_STORAGE_KEY,
     loadJsonStorage,
     loadTextStorage,
 } from "./storage.js";
-import { normalizeDeviceType } from "./domain.js";
 import {
-    handleDeviceListLimitChange,
-    handleDeviceListSearchInput,
-    handleDevicePaginationClick,
+    initDeviceFilterHandlers,
+    storedFilterList,
+} from "./devices/filters.js";
+import {
+    ensureProtocolsLoaded,
     initDeviceList,
     loadDevice,
-    ensureProtocolsLoaded,
-    openDeviceSelector,
-    selectDevice,
 } from "./devices/list.js";
-import {
-    applyDetailFilters,
-    clearDetailFilters,
-    updateDetailFilterDraft,
-    applyDetailSearch,
-    removeDetailFilter,
-    requestTelemetryFeature,
-    renderSelection,
-} from "./devices/detail.js";
+import { renderSelection } from "./devices/detail.js";
 import { initDeviceStream } from "./devices/stream.js";
-import {
-    editWizardAnswered,
-    initEditWizard,
-} from "./devices/edit-wizard.js";
-import {
-    editDevice,
-    ensureDeviceConfigurationCatalogLoaded,
-    handleDeleteDeviceBtnClick,
-    renderDeviceSelectors,
-    renderDeviceTypeSelector,
-    saveDevice,
-    setDeviceFormError,
-    syncDeviceModalContext,
-    initDeviceModal,
-} from "./devices/device-modal.js";
+import { initEditWizard } from "./devices/edit-wizard.js";
+import { initDeviceModal } from "./devices/device-modal.js";
 import {
     initDeviceConfigPanel,
-    renderDeviceConfigurationModal,
-    syncConfigSectionDirty,
     syncDeviceModalCommandStates,
 } from "./devices/config/panel.js";
 import { initCreateWizard, openWizard } from "./devices/create-wizard.js";
 import {
     initGatewayLinksUi,
     refreshGatewayOptions,
-    updateGatewayLinkSelection,
 } from "./devices/gateway-links-ui.js";
 import { initNotifications } from "./notifications.js";
-import { bindInvalidClearing } from "./validation.js";
-import { initSettings, loadSettingsModal } from "./settings/index.js";
-import { handleSettingsPaginationClick } from "./settings/shell.js";
-import {
-    loadSettingsApiUsersSection,
-    resetApiUserForm,
-    saveApiUser,
-    syncApiUserRoleFields,
-} from "./settings/api-users.js";
-import {
-    handleCompanyListClick,
-    loadSettingsCompanySection,
-    resetCompanyForm,
-    resetLicenseForm,
-    saveCompany,
-    saveLicense,
-} from "./settings/companies.js";
-import {
-    handleCapabilityCatalogSearch,
-    handleCapabilitySupplierClick,
-    loadSettingsCapabilitiesSection,
-} from "./settings/capabilities.js";
-import {
-    backToModelList,
-    handleModelsListSearchInput,
-    loadSettingsModelsSection,
-} from "./settings/models/list.js";
-import {
-    openNewModelForm,
-    resetModelForm,
-    revokeModelPreviewUrl,
-    saveModel,
-    updateModelProtocolAndPreview,
-} from "./settings/models/form.js";
-import {
-    deleteCurrentModel,
-    resetModelDetailFields,
-    saveCapabilities,
-    saveModelDetail,
-    syncModelDetailDirty,
-} from "./settings/models/detail.js";
+import { initSettings } from "./settings/index.js";
+import { initSettingsClickHandlers } from "./settings/clicks.js";
+
+/** De quanto em quanto tempo se relê o dispositivo escolhido. Ver a nota no `startDashboard`. */
+const DEVICE_REFRESH_MS = 30000;
 
 let els = {};
 let deviceModal = null;
 let deviceWizardModal = null;
 let deviceSelectorModal = null;
 let settingsModal = null;
-
-function bindEvents() {
-    // Um ouvinte só e não um por formulário: os campos marcados vivem em cinco formulários,
-    // uns servidos pelo PHP e outros desenhados em JS.
-    bindInvalidClearing(document);
-    els.addDeviceBtn.addEventListener("click", () => {
-        void openWizard();
-    });
-    els.openAddDeviceFromSelectorBtn.addEventListener("click", () => {
-        deviceSelectorModal?.hide();
-        void openWizard();
-    });
-    els.openDeviceSelectorBtn.addEventListener("click", () => {
-        void openDeviceSelector();
-    });
-    els.emptyStateSelectDeviceBtn.addEventListener("click", () => {
-        void openDeviceSelector();
-    });
-    els.selectedDeviceEditBtn.addEventListener("click", () => {
-        if (!state.selectedDetail?.device) return;
-        const m = state.selectedDetail.model;
-        void editDevice(
-            state.selectedDetail.device.imei,
-            m?.supplier || "",
-            m?.internalModel || "",
-        );
-    });
-    els.saveDeviceBtn.addEventListener("click", saveDevice);
-    els.deviceForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveDevice();
-    });
-    els.deviceGatewayLinksSelectAllBtn.addEventListener("click", () => {
-        els.deviceGatewayLinksList
-            ?.querySelectorAll("input[data-gateway-key]")
-            .forEach((input) => {
-                input.checked = true;
-            });
-        updateGatewayLinkSelection();
-    });
-    els.deviceGatewayLinksClearBtn.addEventListener("click", () => {
-        els.deviceGatewayLinksList
-            ?.querySelectorAll("input[data-gateway-key]")
-            .forEach((input) => {
-                input.checked = false;
-            });
-        updateGatewayLinkSelection();
-    });
-    els.deviceListLimit.addEventListener("change", handleDeviceListLimitChange);
-    els.deviceListSearch.addEventListener("input", handleDeviceListSearchInput);
-    // Um ouvinte por coluna e não um por controlo: as opções são redesenhadas a cada
-    // resposta, e ligar o ouvinte a cada botão obrigava a religá-los todos de cada vez.
-    for (const root of [
-        els.deviceTypeFilter,
-        els.deviceSupplierFilter,
-        els.deviceModelFilter,
-        els.deviceLicenseFilter,
-    ]) {
-        root?.addEventListener("click", handleDeviceFilterClick);
-    }
-    els.deviceModelFilterSearch?.addEventListener(
-        "input",
-        handleDeviceModelFilterSearch,
-    );
-    for (const input of document.querySelectorAll("input[name=\"deviceOnlineFilter\"]")) {
-        input.addEventListener("change", handleDeviceOnlineFilterChange);
-    }
-    els.clearDeviceFiltersBtn.addEventListener("click", clearDeviceFilters);
-    els.deviceImei.addEventListener("input", handleDeviceImeiInput);
-    els.deviceLicenseId.addEventListener("input", handleDeviceImeiInput);
-    els.deviceDeviceId.addEventListener("input", handleDeviceImeiInput);
-    els.deviceForm.addEventListener("input", handleDeviceFormInput);
-    els.deviceForm.addEventListener("change", handleDeviceFormChange);
-    els.manageSettingsBtn.addEventListener("click", () => {
-        void loadSettingsModal("models");
-    });
-
-    els.saveModelBtn.addEventListener("click", saveModel);
-    els.resetModelBtn.addEventListener("click", () => resetModelForm());
-    els.modelForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveModel();
-    });
-    els.modelInternalModel.addEventListener("input", () =>
-        updateModelProtocolAndPreview(),
-    );
-    els.modelCommercialName.addEventListener("input", () =>
-        updateModelProtocolAndPreview(),
-    );
-    els.modelImage.addEventListener("change", handleModelImageChange);
-    els.saveCapabilitiesBtn.addEventListener("click", () => {
-        void saveCapabilities();
-    });
-    els.saveApiUserBtn.addEventListener("click", () => {
-        void saveApiUser();
-    });
-    els.resetApiUserBtn.addEventListener("click", resetApiUserForm);
-    els.apiUserForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveApiUser();
-    });
-    els.apiUserRole.addEventListener("change", syncApiUserRoleFields);
-    els.telemetryPager.addEventListener("click", handleTelemetryPagerClick);
-    els.downlinkPager?.addEventListener("click", handleDownlinkPagerClick);
-    els.applyDetailFiltersBtn.addEventListener("click", applyDetailFilters);
-    els.clearDetailFiltersBtn.addEventListener("click", clearDetailFilters);
-    els.detailFilterFrom.addEventListener("change", updateDetailFilterDraft);
-    els.detailFilterTo.addEventListener("change", updateDetailFilterDraft);
-    els.detailFilterType.addEventListener("change", updateDetailFilterDraft);
-    els.detailSearch.addEventListener("input", applyDetailSearch);
-    els.detailActiveFilters.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-action=\"removeDetailFilter\"]");
-        if (!button) return;
-        const key = button.dataset.filterKey;
-        // A pastilha do intervalo cobre as duas datas, por isso limpa as duas.
-        if (key === "range") {
-            removeDetailFilter("from");
-            removeDetailFilter("to");
-            return;
-        }
-        removeDetailFilter(key);
-    });
-    els.deleteDeviceBtn.addEventListener("click", handleDeleteDeviceBtnClick);
-    els.deviceSupplierButtons.addEventListener(
-        "click",
-        handleDeviceSupplierClick,
-    );
-    els.deviceTypeButtons.addEventListener("click", handleDeviceTypeClick);
-    els.deviceModelButtons.addEventListener("click", handleDeviceModelClick);
-    els.modelSupplierButtons.addEventListener(
-        "click",
-        handleModelSupplierClick,
-    );
-    els.modelDeviceTypeButtons.addEventListener(
-        "click",
-        handleModelDeviceTypeClick,
-    );
-    els.capabilityGroups.addEventListener(
-        "change",
-        handleCapabilityGroupsChange,
-    );
-    els.capabilitySectionNav.addEventListener("click", jumpCapabilitySection);
-    els.capabilityCatalogSectionNav?.addEventListener(
-        "click",
-        scrollCapabilityCatalogSection,
-    );
-    els.capabilityDeviceTypeButtons.addEventListener(
-        "click",
-        handleCapabilityDeviceTypeClick,
-    );
-    els.capabilitySupplierButtons.addEventListener(
-        "click",
-        handleCapabilitySupplierClick,
-    );
-    els.capabilityCatalogSearch?.addEventListener(
-        "input",
-        handleCapabilityCatalogSearch,
-    );
-    els.modelsBreadcrumbModels.addEventListener("click", backToModelList);
-    els.modelsNewModelBtn.addEventListener("click", openNewModelForm);
-    els.modelDetailSaveBtn.addEventListener("click", saveModelDetail);
-    els.modelDetailResetBtn.addEventListener("click", resetModelDetailFields);
-    els.modelDetailFields.addEventListener("input", syncModelDetailDirty);
-    els.modelDetailFields.addEventListener("change", syncModelDetailDirty);
-    els.modelDetailDeleteBtn.addEventListener("click", () => {
-        void deleteCurrentModel();
-    });
-    els.modelsCarousel.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-action=\"backToModelList\"]");
-        if (button) backToModelList();
-    });
-    els.settingsModelsTabBtn.addEventListener("shown.bs.tab", () => {
-        state.settingsModal.section = "models";
-        if (!state.settingsModal.sectionLoaded.models) {
-            void loadSettingsModelsSection();
-        }
-    });
-    els.settingsCapabilitiesTabBtn.addEventListener("shown.bs.tab", () => {
-        state.settingsModal.section = "capabilities";
-        if (!state.settingsModal.sectionLoaded.capabilities) {
-            void loadSettingsCapabilitiesSection();
-        }
-    });
-    els.settingsApiUsersTabBtn.addEventListener("shown.bs.tab", () => {
-        state.settingsModal.section = "apiUsers";
-        if (!state.settingsModal.sectionLoaded.apiUsers) {
-            void loadSettingsApiUsersSection();
-        }
-    });
-    els.settingsCompanyTabBtn.addEventListener("shown.bs.tab", () => {
-        state.settingsModal.section = "company";
-        if (!state.settingsModal.sectionLoaded.company) {
-            void loadSettingsCompanySection();
-        }
-    });
-    els.deviceGeneralTabBtn.addEventListener("shown.bs.tab", () => {
-        state.deviceModal.activeTab = "general";
-    });
-    els.deviceConfigTabBtn.addEventListener("shown.bs.tab", () => {
-        state.deviceModal.activeTab = "config";
-        void (async () => {
-            await ensureDeviceConfigurationCatalogLoaded();
-            renderDeviceConfigurationModal();
-        })();
-    });
-    els.saveCompanyBtn.addEventListener("click", () => {
-        void saveCompany();
-    });
-    els.resetCompanyBtn.addEventListener("click", resetCompanyForm);
-    els.companyForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveCompany();
-    });
-    els.saveLicenseBtn.addEventListener("click", () => {
-        void saveLicense();
-    });
-    els.resetLicenseBtn.addEventListener("click", resetLicenseForm);
-    els.licenseForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        saveLicense();
-    });
-    els.settingsApiUsersPagination?.addEventListener("click", (event) =>
-        handleSettingsPaginationClick(
-            event,
-            "apiUsersPagination",
-            loadSettingsApiUsersSection,
-        ),
-    );
-    els.settingsCompanyPagination?.addEventListener("click", (event) =>
-        handleSettingsPaginationClick(event, "companyPagination", (page) =>
-            loadSettingsCompanySection(page),
-        ),
-    );
-    els.deviceList.addEventListener("click", handleDeviceListClick);
-    els.deviceListPagination.addEventListener(
-        "click",
-        handleDevicePaginationClick,
-    );
-    els.requestGrid.addEventListener("click", handleRequestGridClick);
-    // A árvore do catálogo abre e fecha pelo `collapse` do Bootstrap: aqui escuta-se só a
-    // folha. O `keydown` está ao lado do `click` porque a folha não é um `<button>`.
-    els.modelCatalog.addEventListener("click", handleModelListClick);
-    els.modelCatalog.addEventListener("keydown", handleModelListClick);
-    els.modelsListSearch.addEventListener("input", handleModelsListSearchInput);
-    els.apiUserListBody.addEventListener("click", handleApiUserListClick);
-    els.companyListBody.addEventListener("click", handleCompanyListClick);
-    // Um ouvinte por evento, e não dois: o "Enviar" de cada bloco acende por diferença,
-    // depois de quem trata o campo ter feito o seu trabalho.
-    for (const [type, handle] of [
-        ["click", handleDeviceConfigClick],
-        ["input", handleDeviceConfigInput],
-        ["change", handleDeviceConfigChange],
-    ]) {
-        els.deviceConfigRoot.addEventListener(type, (event) => {
-            handle(event);
-            const section = event.target.closest("[data-config-section]");
-            if (section) syncConfigSectionDirty(section);
-        });
-    }
-    els.deviceConfigRoot.addEventListener(
-        "closed.bs.alert",
-        handleConfigFeedbackClosed,
-    );
-}
-
-function handleModelImageChange() {
-    revokeModelPreviewUrl();
-    const file = els.modelImage.files[0];
-    if (file) {
-        state.modelPreviewObjectUrl = URL.createObjectURL(file);
-        const label =
-            els.modelCommercialName.value.trim() ||
-            els.modelInternalModel.value.trim() ||
-            "Modelo";
-        els.modelPreviewContent.innerHTML = `<img src="${esc(state.modelPreviewObjectUrl)}" class="object-fit-contain w-100 h-100" alt="${esc(label)}" style="max-height:180px;">`;
-    } else {
-        updateModelProtocolAndPreview();
-    }
-}
-
-async function handleDeviceImeiInput() {
-    await syncDeviceModalContext();
-    renderDeviceConfigurationModal();
-}
-
-function handleDeviceFormInput(event) {
-    setDeviceFormError("");
-    if (event.target.matches("[data-phone-local]")) {
-        syncPhoneControl(event.target);
-        void syncDeviceModalContext();
-    }
-}
-
-function handleDeviceFormChange(event) {
-    setDeviceFormError("");
-    if (event.target.matches("#deviceGatewayLinksList input[data-gateway-key]")) {
-        updateGatewayLinkSelection();
-    }
-    if (event.target.matches("[data-phone-country]")) {
-        syncPhoneControl(event.target);
-        void syncDeviceModalContext();
-    }
-}
-
-function handleDeviceSupplierClick(event) {
-    const button = event.target.closest("[data-action=\"selectDeviceSupplier\"]");
-    // Escolher o fornecedor não responde à pergunta do modelo: é o par que identifica, e a
-    // pergunta só fecha quando houver modelo.
-    if (button) renderDeviceSelectors(button.dataset.value, "");
-}
-
-async function handleDeviceTypeClick(event) {
-    const button = event.target.closest("[data-action=\"selectDeviceType\"]");
-    if (!button) return;
-
-    const deviceType = normalizeDeviceType(button.dataset.value);
-    renderDeviceTypeSelector(deviceType);
-    await renderDeviceSelectors("", "", deviceType);
-    await refreshGatewayOptions([]);
-    editWizardAnswered("type");
-}
-
-function handleDeviceModelClick(event) {
-    const button = event.target.closest("[data-action=\"selectDeviceModel\"]");
-    if (!button) return;
-    els.deviceForm.dataset.model = button.dataset.value;
-    renderDeviceSelectors(
-        els.deviceForm.dataset.supplier,
-        button.dataset.value,
-    );
-    editWizardAnswered("model");
-}
-
-function handleDeviceListClick(event) {
-    const button = event.target.closest("[data-action]");
-    if (!button) return;
-    const { action, imei } = button.dataset;
-    if (action === "select") selectDevice(imei);
-}
-
-function handleRequestGridClick(event) {
-    const button = event.target.closest("[data-action=\"requestFeature\"]");
-    if (button) requestTelemetryFeature(String(button.dataset.feature || ""));
-}
 
 export async function startDashboard() {
     els = cacheElements();
@@ -496,6 +70,8 @@ export async function startDashboard() {
     settingsModal = new bootstrap.Modal(
         document.getElementById("settingsModal"),
     );
+    const ui = { deviceModal, deviceSelectorModal, settingsModal };
+
     initDeviceModal({ els, deviceModal, deviceSelectorModal, settingsModal });
     initEditWizard({
         els,
@@ -506,14 +82,8 @@ export async function startDashboard() {
     initCreateWizard({ els, wizardModal: deviceWizardModal });
     initDeviceFilterHandlers({ els });
     initSettingsClickHandlers({ els });
-    initDeviceList({
-        els,
-        ui: { deviceModal, deviceSelectorModal, settingsModal },
-    });
-    initSettings({
-        els,
-        ui: { deviceModal, deviceSelectorModal, settingsModal },
-    });
+    initDeviceList({ els, ui });
+    initSettings({ els, ui });
     initDeviceStream({
         state,
         renderSelection,
@@ -523,7 +93,13 @@ export async function startDashboard() {
         els,
         openAddDevice: openWizard,
     });
-    bindEvents();
+
+    // Um ouvinte só e não um por formulário: os campos marcados vivem em cinco formulários,
+    // uns servidos pelo PHP e outros desenhados em JS.
+    bindInvalidClearing(document);
+    bindDeviceEvents({ els, ui });
+    bindSettingsEvents({ els });
+
     await ensureProtocolsLoaded();
 
     // Os filtros guardados podem ser da forma antiga, com um valor por chave e `licenseId`
@@ -546,22 +122,29 @@ export async function startDashboard() {
         renderSelection();
     }
 
-    setInterval(() => {
-        if (
-            document.body.dataset.dashboardAuthRequired === "true" &&
-            !window.hubDashboardApiToken?.access_token
-        ) {
-            return;
-        }
-        if (state.selectedImei) {
-            apiGetDevice(state.selectedImei).then((detail) => {
-                if (detail?.error) return;
-                if (state.selectedImei !== detail.device?.imei) return;
-                const recent = state.selectedDetail?.recent;
-                state.selectedDetail = detail;
-                state.selectedDetail.recent = recent;
-                renderSelection();
-            });
-        }
-    }, 30000);
+    // Isto relê o registo do dispositivo -- estado de ligação, modelo, configuração -- e não
+    // o histórico: o `recent` preserva-se de propósito porque só o stream o traz, e é o
+    // `stream.js` que garante que ele volta a ligar-se quando cai.
+    setInterval(refreshSelectedDevice, DEVICE_REFRESH_MS);
+}
+
+function refreshSelectedDevice() {
+    if (
+        document.body.dataset.dashboardAuthRequired === "true" &&
+        !window.hubDashboardApiToken?.access_token
+    ) {
+        return;
+    }
+    if (!state.selectedImei) {
+        return;
+    }
+
+    apiGetDevice(state.selectedImei).then((detail) => {
+        if (detail?.error) return;
+        if (state.selectedImei !== detail.device?.imei) return;
+        const recent = state.selectedDetail?.recent;
+        state.selectedDetail = detail;
+        state.selectedDetail.recent = recent;
+        renderSelection();
+    });
 }

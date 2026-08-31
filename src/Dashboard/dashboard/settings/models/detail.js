@@ -7,7 +7,7 @@ import {
 } from "../../api/index.js";
 import { ensureModelTemplate } from "../../capability-catalog.js";
 import { state } from "../../state.js";
-import { esc } from "../../format.js";
+import { html, raw } from "../../html.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
 import { modelPreviewHtml, sectionStrip } from "../../widgets.js";
@@ -142,7 +142,7 @@ function renderModelDetailSelect(select, options, selected) {
     select.innerHTML = options
         .map(
             (option) =>
-                `<option value="${esc(option.value)}"${option.value === selected ? " selected" : ""}>${esc(option.label)}</option>`,
+                html`<option value="${option.value}"${option.value === selected ? " selected" : ""}>${option.label}</option>`,
         )
         .join("");
     select.value = selected;
@@ -434,52 +434,60 @@ function renderCapabilitiesSection() {
 
     const section = sections.find((s) => s.section === activeSection);
     if (section) {
-        els.capabilityGroups.innerHTML = `
+        const rows = section.entries
+            .map((feature) => {
+                const labelText = capabilityLabelByKey(
+                    feature,
+                    state.settingsModal.capabilityCatalog,
+                );
+                const sectionState = capabilities[section.section] || {};
+                const isInModelPayload = Object.prototype.hasOwnProperty.call(
+                    sectionState,
+                    feature,
+                );
+                const canBeRequested =
+                    section.section === "telemetry" &&
+                    protocolRequestable.has(feature);
+                const protocolDescription =
+                    section.section === "telemetry"
+                        ? html`${String(model?.supplier || "Protocolo")}: ${canBeRequested ? "receção e pedido" : "apenas receção"}`
+                        : "";
+                const noRequestNote = canBeRequested
+                    ? ""
+                    : html`<div class="section-label">${String(model?.supplier || "O protocolo")} não suporta pedido</div>`;
+                // São sempre dois interruptores, na mesma posição. Quando o fornecedor não
+                // suporta pedido, o segundo fica desligado com a razão na etiqueta, em vez
+                // de trocar de tipo de controlo.
+                const requestableSwitch = section.section !== "telemetry"
+                    ? ""
+                    : html`<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap">
+                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${feature}" id="requestable-${feature}" ${canBeRequested && requestable.has(feature) ? "checked" : ""} ${canBeRequested && enabled.has(feature) ? "" : "disabled"}>
+                                <label class="form-check-label small" for="requestable-${feature}">Solicitável</label>
+                                ${raw(noRequestNote)}
+                               </div>`;
+                const description = protocolDescription || (!isInModelPayload
+                    ? "Disponível no catálogo do tipo de dispositivo."
+                    : "Suportada pelo modelo");
+                return html`
+                        <div class="d-flex justify-content-between align-items-start gap-3 border rounded-3 px-3 py-2">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilitySupport" data-feature="${feature}" id="cap-${feature}" ${enabled.has(feature) ? "checked" : ""}>
+                                <label class="form-check-label" for="cap-${feature}">${labelText}</label>
+                                <div class="section-label">${raw(description)}</div>
+                            </div>
+                            ${raw(requestableSwitch)}
+                        </div>`;
+            })
+            .join("");
+
+        els.capabilityGroups.innerHTML = html`
         <section class="border rounded-3 p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="section-label">${esc(section.label)}</div>
+                <div class="section-label">${section.label}</div>
                 <span class="small text-secondary" data-section-count>${section.entries.filter((f) => enabled.has(f)).length}/${section.entries.length} ativos</span>
             </div>
             <div class="d-flex flex-column gap-2">
-                ${section.entries
-                    .map((feature) => {
-                        const labelText = capabilityLabelByKey(
-                            feature,
-                            state.settingsModal.capabilityCatalog,
-                        );
-                        const sectionState = capabilities[section.section] || {};
-                        const isInModelPayload = Object.prototype.hasOwnProperty.call(
-                            sectionState,
-                            feature,
-                        );
-                        const canBeRequested =
-                            section.section === "telemetry" &&
-                            protocolRequestable.has(feature);
-                        const protocolDescription =
-                            section.section === "telemetry"
-                                ? `${esc(String(model?.supplier || "Protocolo"))}: ${canBeRequested ? "receção e pedido" : "apenas receção"}`
-                                : "";
-                        // São sempre dois interruptores, na mesma posição. Quando o
-                        // fornecedor não suporta pedido, o segundo fica desligado com a
-                        // razão na etiqueta, em vez de trocar de tipo de controlo.
-                        const requestableSwitch = section.section !== "telemetry"
-                            ? ""
-                            : `<div class="form-check form-switch mb-0 flex-shrink-0 text-nowrap">
-                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilityRequestability" data-feature="${esc(feature)}" id="requestable-${esc(feature)}" ${canBeRequested && requestable.has(feature) ? "checked" : ""} ${canBeRequested && enabled.has(feature) ? "" : "disabled"}>
-                                <label class="form-check-label small" for="requestable-${esc(feature)}">Solicitável</label>
-                                ${canBeRequested ? "" : `<div class="section-label">${esc(String(model?.supplier || "O protocolo"))} não suporta pedido</div>`}
-                               </div>`;
-                        return `
-                        <div class="d-flex justify-content-between align-items-start gap-3 border rounded-3 px-3 py-2">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" data-action="toggleCapabilitySupport" data-feature="${esc(feature)}" id="cap-${esc(feature)}" ${enabled.has(feature) ? "checked" : ""}>
-                                <label class="form-check-label" for="cap-${esc(feature)}">${esc(labelText)}</label>
-                                <div class="section-label">${protocolDescription || (!isInModelPayload ? "Disponível no catálogo do tipo de dispositivo." : "Suportada pelo modelo")}</div>
-                            </div>
-                            ${requestableSwitch}
-                        </div>`;
-                    })
-                    .join("")}
+                ${raw(rows)}
             </div>
         </section>`;
     } else {

@@ -1,4 +1,4 @@
-import { esc } from "./format.js";
+import { html, raw } from "./html.js";
 import {
     deviceTypeLabel,
     normalizeDeviceType,
@@ -23,27 +23,29 @@ export function deviceLicenseHtml(device, valueClass = "") {
     const company = String(device.company || "").trim();
     const licenseId = normalizeLicenseId(device.licenseId);
     if (company === "" || company.toLowerCase() === "null" || licenseId === "0") {
-        return `<span class="${valueClass ? `${valueClass} ` : ""}license-empty">Sem licença</span>`;
+        return html`<span class="${`${valueClass} license-empty`.trim()}">Sem licença</span>`;
     }
 
-    const attribute = valueClass ? ` class="${valueClass}"` : "";
-    return `<span${attribute}>${esc(company)}<span class="license-separator">·</span><span class="license-number">${esc(licenseId)}</span></span>`;
+    const attribute = valueClass ? html` class="${valueClass}"` : "";
+    return html`<span${raw(attribute)}>${company}<span class="license-separator">·</span><span class="license-number">${licenseId}</span></span>`;
 }
 
 /**
  * Uma etiqueta com o seu controlo, que é o bloco de que os formulários de configuração são
- * feitos. O controlo entra como HTML já pronto -- é a regra da casa --, e a etiqueta e a
- * ajuda entram como texto, que sai escapado.
+ * feitos. O controlo entra como HTML já pronto, e é por isso que passa pelo `raw()`: a
+ * etiqueta e a ajuda entram como texto e saem escapadas por omissão.
  *
  * `cls` são as classes da coluna: os sítios que usam isto trazem vinte e sete valores
  * diferentes, e isso é dado, não uma variante.
  */
 export function field(label, control, { help = "", cls = "", required = false } = {}) {
-    return `
-        <div${cls ? ` class="${esc(cls)}"` : ""}>
-            <label class="form-label-sm${required ? " required" : ""}">${esc(label)}</label>
-            ${control}
-            ${help ? `<div class="form-text">${esc(help)}</div>` : ""}
+    const classAttribute = cls ? html` class="${cls}"` : "";
+    const helpLine = help ? html`<div class="form-text">${help}</div>` : "";
+    return html`
+        <div${raw(classAttribute)}>
+            <label class="form-label-sm${required ? " required" : ""}">${label}</label>
+            ${raw(control)}
+            ${raw(helpLine)}
         </div>`;
 }
 
@@ -57,10 +59,10 @@ export function field(label, control, { help = "", cls = "", required = false } 
  */
 export function sectionStrip(sections, action, activeKey = "") {
     return sections
-        .map(({ key, label, count, icon = "" }) => `
+        .map(({ key, label, count, icon = "" }) => html`
         <button type="button" class="capability-section-chip${key === activeKey ? " selected" : ""}"
-            data-action="${esc(action)}" data-section="${esc(key)}">
-            ${icon ? `<i class="fa-solid ${esc(icon)}"></i>` : ""}${esc(label)}<span class="count count-number" data-section-count>${esc(count)}</span>
+            data-action="${action}" data-section="${key}">
+            ${raw(icon ? html`<i class="fa-solid ${icon}"></i>` : "")}${label}<span class="count count-number" data-section-count>${count}</span>
         </button>`)
         .join("");
 }
@@ -71,7 +73,7 @@ export function sectionStrip(sections, action, activeKey = "") {
  */
 export function stateBadge(label, tone = "", extraClass = "") {
     const classes = ["config-state", tone, extraClass].filter(Boolean).join(" ");
-    return `<span class="${classes}"><span class="config-state-dot"></span>${esc(label)}</span>`;
+    return html`<span class="${classes}"><span class="config-state-dot"></span>${label}</span>`;
 }
 
 /** Ligado ou desligado: a mesma expressão em três ecrãs, com um parâmetro só. */
@@ -91,8 +93,8 @@ export function modelImageHtml(modelInfo, size = 40) {
         modelInfo?.model ||
         "Modelo";
     return modelInfo?.image
-        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(label)}" style="width:${size}px;height:${size}px;">`
-        : `<i class="fa-solid fa-microchip text-secondary" style="width:${size}px;font-size:${Math.round(size * 0.62)}px"></i>`;
+        ? html`<img src="${modelInfo.image}" class="object-fit-contain" alt="${label}" style="width:${size}px;height:${size}px;">`
+        : html`<i class="fa-solid fa-microchip text-secondary" style="width:${size}px;font-size:${Math.round(size * 0.62)}px"></i>`;
 }
 
 /**
@@ -108,8 +110,8 @@ export function modelPreviewHtml(modelInfo, label = "Modelo") {
         modelInfo?.model ||
         label;
     return modelInfo?.image
-        ? `<img src="${esc(modelInfo.image)}" class="object-fit-contain" alt="${esc(imageLabel)}">`
-        : `<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${esc(label)}</div></div>`;
+        ? html`<img src="${modelInfo.image}" class="object-fit-contain" alt="${imageLabel}">`
+        : html`<div class="text-center text-secondary"><i class="fa-solid fa-microchip fs-1 opacity-50"></i><div class="small mt-2">${label}</div></div>`;
 }
 
 export function renderButtonGroup(
@@ -125,7 +127,7 @@ export function renderButtonGroup(
                 .map((item) => {
                     const value = String(item[valueKey] ?? "");
                     const label = String(item[labelKey] ?? value);
-                    return `<button type="button" class="btn btn-sm ${value === selected ? "btn-primary" : "btn-outline-primary"}" data-action="${esc(action)}" data-value="${esc(value)}">${esc(label)}</button>`;
+                    return html`<button type="button" class="btn btn-sm ${value === selected ? "btn-primary" : "btn-outline-primary"}" data-action="${action}" data-value="${value}">${label}</button>`;
                 })
                 .join("")
         : "<div class=\"text-secondary small py-2\">Sem opções disponíveis</div>";
@@ -180,16 +182,22 @@ export function renderDeviceTypeTiles(
                 ? Number((counts.get ? counts.get(value) : counts[value]) || 0)
                 : null;
             const filterAttrs = multiple
-                ? ` data-filter-key="${esc(filterKey)}" data-filter-value="${esc(value)}"`
+                ? html` data-filter-key="${filterKey}" data-filter-value="${value}"`
                 : "";
-            return `
+            const check = multiple
+                ? "<span class=\"device-type-tile-check\"><i class=\"fa-solid fa-check\"></i></span>"
+                : "";
+            const countChip = counts
+                ? html`<span class="count-number">${count === 0 ? "nenhum" : count}</span>`
+                : "";
+            return html`
             <button type="button" class="device-type-tile${on ? " selected" : ""}"
-                data-action="${esc(action)}" data-value="${esc(value)}"${filterAttrs}
+                data-action="${action}" data-value="${value}"${raw(filterAttrs)}
                 ${count === 0 && !on ? "disabled" : ""} aria-pressed="${on ? "true" : "false"}">
-            ${multiple ? "<span class=\"device-type-tile-check\"><i class=\"fa-solid fa-check\"></i></span>" : ""}
-            <span class="device-type-tile-icon"><i class="fa-solid ${esc(deviceTypeIcon(value))}"></i></span>
-            <span class="device-type-tile-name">${esc(deviceTypeLabel(value))}</span>
-            ${counts ? `<span class="count-number">${count === 0 ? "nenhum" : count}</span>` : ""}
+            ${raw(check)}
+            <span class="device-type-tile-icon"><i class="fa-solid ${deviceTypeIcon(value)}"></i></span>
+            <span class="device-type-tile-name">${deviceTypeLabel(value)}</span>
+            ${raw(countChip)}
             </button>`;
         })
         .join("");
@@ -203,11 +211,11 @@ export function renderDeviceTypeTiles(
 export function filterChips(labels, action) {
     return labels
         .map(
-            (item) => `
+            (item) => html`
         <span class="filter-chip">
-            <span>${esc(item.label)}</span>
-            <button type="button" class="filter-chip-remove" data-action="${esc(action)}"
-                data-filter-key="${esc(item.key)}" aria-label="Remover filtro ${esc(item.label)}">
+            <span>${item.label}</span>
+            <button type="button" class="filter-chip-remove" data-action="${action}"
+                data-filter-key="${item.key}" aria-label="Remover filtro ${item.label}">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </span>`,
@@ -220,5 +228,5 @@ export function filterChips(labels, action) {
  * segunda moldura cinzenta a dizer que não há nada lê-se como conteúdo.
  */
 export function emptyPanel(text) {
-    return `<div class="text-secondary py-3">${esc(text)}</div>`;
+    return html`<div class="text-secondary py-3">${text}</div>`;
 }

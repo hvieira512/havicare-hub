@@ -1,6 +1,5 @@
 import {
     ago,
-    esc,
     eventTime,
     fieldLabel,
     fieldValue,
@@ -8,6 +7,7 @@ import {
     titleize,
     when,
 } from "./format.js";
+import { html, raw } from "./html.js";
 import { capabilityLabel } from "./capability-catalog.js";
 import { stateBadge } from "./widgets.js";
 
@@ -290,12 +290,10 @@ export function telemetryCard({
     // Quando há um feature para pedir, é o cartão inteiro o botão.
     const clickable = feature !== "";
     const tag = clickable ? "button" : "div";
-    const toneClass = tone ? ` telemetry-card-tone-${esc(tone)}` : "";
+    const toneClass = tone ? ` telemetry-card-tone-${tone}` : "";
     const attrs = clickable
-        ? ` type="button" class="card h-100 telemetry-card-action text-start${toneClass}"` +
-        ` data-action="requestFeature" data-feature="${esc(feature)}"` +
-        `${pending ? " disabled" : ""}`
-        : ` class="card h-100${toneClass}"`;
+        ? html` type="button" class="card h-100 telemetry-card-action text-start${toneClass}" data-action="requestFeature" data-feature="${feature}"${pending ? " disabled" : ""}`
+        : html` class="card h-100${toneClass}"`;
     // A pastilha leva a sua linha: num mosaico estreito não cabe ao lado do ícone e do nome.
     const state = stateLabel
         ? stateBadge(
@@ -312,30 +310,34 @@ export function telemetryCard({
             : "";
 
     // Fora da linha do ícone, para ter a largura toda do cartão.
+    const detailsTitleAttr = detailsTitle ? html` title="${detailsTitle}"` : "";
     const detailsHtml = details
-        ? `<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details"${detailsTitle ? ` title="${esc(detailsTitle)}"` : ""}>${details}</div>`
+        ? html`<div class="d-flex flex-wrap gap-1 mt-2 telemetry-row-details"${raw(detailsTitleAttr)}>${raw(details)}</div>`
+        : "";
+    const valueHtml = value
+        ? html`<div class="telemetry-card-value tabular-nums text-break">${value}</div>`
         : "";
 
     // Linha toda por omissão, metade só em ecrã grande.
     const columns = span === 12 ? "col-12" : `col-12 col-lg-${span}`;
 
-    return `
+    return html`
     <div class="${columns}">
-        <${tag}${attrs}>
+        <${tag}${raw(attrs)}>
             <div class="card-body telemetry-card-body p-3">
                 <div class="d-flex align-items-center gap-2 gap-sm-3">
                     <div class="telemetry-card-icon">
-                        <i class="fa-solid ${esc(icon)}"></i>
+                        <i class="fa-solid ${icon}"></i>
                     </div>
                     <div class="flex-grow-1 min-w-0">
-                        <div class="telemetry-card-title">${esc(title)}</div>
-                            ${value ? `<div class="telemetry-card-value tabular-nums text-break">${esc(value)}</div>` : ""}
+                        <div class="telemetry-card-title">${title}</div>
+                            ${raw(valueHtml)}
                         </div>
-                        ${requestHint}
+                        ${raw(requestHint)}
                     </div>
-                    ${state}
-                    ${detailsHtml}
-                ${body}
+                    ${raw(state)}
+                    ${raw(detailsHtml)}
+                ${raw(body)}
             </div>
         </${tag}>
     </div>`;
@@ -508,12 +510,12 @@ function diaperMoistureBody(data) {
             const height = Math.min(100, (delta / scaleDelta) * 100);
             const tooltip = `Canal ${index} · delta ${delta} (base ${channel?.baseline ?? "-"}, leitura ${channel?.value ?? "-"})`;
 
-            return `<div class="diaper-channel" title="${esc(tooltip)}">
-<div class="diaper-channel-value diaper-channel-value--${band}">${esc(delta)}</div>
+            return html`<div class="diaper-channel" title="${tooltip}">
+<div class="diaper-channel-value diaper-channel-value--${band}">${delta}</div>
 <div class="diaper-channel-track">
 <div class="diaper-channel-fill diaper-channel-fill--${band}" style="height:${height}%"></div>
 </div>
-<div class="diaper-channel-index">${esc(index)}</div>
+<div class="diaper-channel-index">${index}</div>
 </div>`;
         })
         .join("");
@@ -523,10 +525,10 @@ function diaperMoistureBody(data) {
     const required = diaperRequiredChannels(data, channels.length);
     const thresholdOffset = (wetDelta / scaleDelta) * 100;
 
-    return `<div class="diaper-moisture mt-3">
-<div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${columns}</div>
+    return html`<div class="diaper-moisture mt-3">
+<div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${raw(columns)}</div>
 <div class="diaper-moisture-summary small text-secondary mt-2">
-Máx. <strong class="text-body">${esc(maximum)}</strong> · <strong class="text-body">${esc(affected)}</strong> de ${esc(required)} canais acima do limiar (${esc(wetDelta)})
+Máx. <strong class="text-body">${maximum}</strong> · <strong class="text-body">${affected}</strong> de ${required} canais acima do limiar (${wetDelta})
 </div>
 </div>`;
 }
@@ -626,7 +628,7 @@ function locationDetails(data, meta = {}) {
 
     return [...parts, meta?.occurredAt ? ago(meta.occurredAt) : ""]
         .filter(Boolean)
-        .map((part) => esc(part))
+        .map((part) => html`${part}`)
         .join(" · ");
 }
 
@@ -669,20 +671,16 @@ const CHIP_CLASS =
     "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
 
 /**
- * Uma postura como pastilha. A enumeração vem do payload e vai parar a um atributo
- * `class`, por isso passa pelo `esc`: o detalhe é injectado sem escapar, e um estado novo
- * do firmware não pode escrever atributos.
+ * Uma postura como pastilha. A enumeração vem do payload e vai parar a um atributo `class`,
+ * por isso tem de sair escapada -- o detalhe é injectado sem escapar, e um estado novo do
+ * firmware não pode escrever atributos.
  */
 function postureChip(posture) {
     const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
-    const tone = esc(style.tone);
-    const label = esc(fieldValue("posture", posture));
+    const tone = style.tone;
+    const label = fieldValue("posture", posture);
 
-    return (
-        `<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis" title="${label}">` +
-        `<i class="fa-solid ${esc(style.icon)}" aria-hidden="true"></i>` +
-        `${label}</span>`
-    );
+    return html`<span class="${CHIP_CLASS} bg-${tone}-subtle text-${tone}-emphasis" title="${label}"><i class="fa-solid ${style.icon}" aria-hidden="true"></i>${label}</span>`;
 }
 
 /** Quantas pastilhas cabem antes de o mosaico crescer de mais. */
@@ -701,7 +699,7 @@ function presenceDetails(data) {
 
     if (hidden > 0) {
         chips.push(
-            `<span class="${CHIP_CLASS} bg-secondary-subtle text-secondary-emphasis">+${hidden}</span>`,
+            html`<span class="${CHIP_CLASS} bg-secondary-subtle text-secondary-emphasis">+${hidden}</span>`,
         );
     }
 
@@ -969,10 +967,7 @@ function compactDetails(data, keys) {
                     data[key] !== "",
             )
             // O `fieldValue` traduz enumerações; sem ele saía "Estado do sono: awake".
-            .map(
-                (key) =>
-                    `${esc(fieldLabel(key))}: ${esc(fieldValue(key, data[key]))}`,
-            )
+            .map((key) => html`${fieldLabel(key)}: ${fieldValue(key, data[key])}`)
             .join(" · ")
     );
 }
@@ -1014,7 +1009,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
         // A etiqueta partilhada lê-se como sufixo ("... (toque simples)"); aqui titula uma
         // coluna, por isso vai capitalizada.
         const suffix = PRESS_TYPE_LABEL[mode];
-        const label = esc(suffix.charAt(0).toUpperCase() + suffix.slice(1));
+        const label = suffix.charAt(0).toUpperCase() + suffix.slice(1);
         const icon = HELP_CALL_PRESS_ICON[mode];
         const called = call !== undefined;
         const occurredAt = called
@@ -1022,21 +1017,25 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
             : "";
         // O tempo relativo é o legível; a hora exacta espera atrás da tooltip.
         const tooltip = called
-            ? ` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${esc(when(occurredAt))}" aria-label="${label}: ${esc(when(occurredAt))}" tabindex="0"`
+            ? html` data-bs-toggle="tooltip" data-bs-trigger="hover focus" data-bs-placement="top" data-bs-title="${when(occurredAt)}" aria-label="${label}: ${when(occurredAt)}" tabindex="0"`
             : "";
+        const occurredAttr = called ? html` data-occurred-at="${occurredAt}"` : "";
+        const since = called
+            ? html`${ago(occurredAt)}`
+            : "<span class=\"help-call-never\">nunca</span>";
 
-        return `<div class="col-12 col-md-4">
-<div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${called ? ` data-occurred-at="${esc(occurredAt)}"` : ""}${tooltip}>
+        return html`<div class="col-12 col-md-4">
+<div class="d-flex align-items-center gap-2 border rounded p-2 h-100${called ? "" : " opacity-50"}"${raw(occurredAttr)}${raw(tooltip)}>
 <i class="fa-solid ${icon} ${called ? "text-danger" : "text-body-secondary"}" style="width:1.25rem;text-align:center;flex-shrink:0;"></i>
 <div class="min-w-0">
 <div class="fw-semibold text-truncate">${label}</div>
-<div class="small text-body-secondary">${called ? esc(ago(occurredAt)) : "<span class=\"help-call-never\">nunca</span>"}</div>
+<div class="small text-body-secondary">${raw(since)}</div>
 </div>
 </div>
 </div>`;
     }).join("");
 
-    return `<div class="col-12">
+    return html`<div class="col-12">
 <div class="card h-100 border-danger">
 <div class="card-body">
 <div class="d-flex align-items-center gap-3 min-w-0 mb-3">
@@ -1045,7 +1044,7 @@ export function helpCallSummaryCard(events = [], pressModes = []) {
 </div>
 <div class="fw-bold text-danger flex-grow-1 min-w-0">Últimas chamadas de ajuda</div>
 </div>
-<div class="row g-2">${columns}</div>
+<div class="row g-2">${raw(columns)}</div>
 </div>
 </div>
 </div>`;
@@ -1077,10 +1076,16 @@ function detectionValue(data) {
     );
 }
 
-/** O grau é o que separa um aviso de um perigo, e vem do hub já em português. */
+/**
+ * O grau é o que separa um aviso de um perigo, e vem do hub já em português.
+ *
+ * Escapado: isto é um `details`, e os `details` são injectados sem escapar pelo cartão e pela
+ * linha da lista. O `detectionLevel` vem no payload do radar e chega à base de dados pelo
+ * MQTT sem passar por ninguém -- sem o `html` aqui, um grau inventado escrevia marcação.
+ */
 function detectionDetails(data) {
     const level = String(data?.detectionLevel || "");
-    return level === "" || level === "info" ? "" : titleize(level);
+    return level === "" || level === "info" ? "" : html`${titleize(level)}`;
 }
 
 /**
@@ -1107,9 +1112,9 @@ export function fallSummaryCard(events = []) {
     const who =
         person === undefined || person === null
             ? ""
-            : ` · Pessoa ${esc(displayPersonIndex(person))}`;
+            : html` · Pessoa ${displayPersonIndex(person)}`;
 
-    return `<div class="col-12">
+    return html`<div class="col-12">
 <div class="card h-100 border-danger">
 <div class="card-body d-flex align-items-center gap-3 min-w-0">
 <div class="bg-danger bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center text-danger" style="width:36px;height:36px;flex-shrink:0;">
@@ -1117,7 +1122,7 @@ export function fallSummaryCard(events = []) {
 </div>
 <div class="min-w-0 flex-grow-1">
 <div class="fw-bold text-danger">Última queda</div>
-<div class="small text-body-secondary text-truncate" title="${esc(when(occurredAt))}">${esc(ago(occurredAt))} · ${esc(label)}${who}</div>
+<div class="small text-body-secondary text-truncate" title="${when(occurredAt)}">${ago(occurredAt)} · ${label}${raw(who)}</div>
 </div>
 </div>
 </div>

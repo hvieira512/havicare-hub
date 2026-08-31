@@ -3,7 +3,8 @@ import {
     getNotifications,
     markNotificationsRead,
 } from "./api/index.js";
-import { ago, esc } from "./format.js";
+import { ago } from "./format.js";
+import { html, raw } from "./html.js";
 import { toast } from "./dialogs.js";
 
 const POLL_INTERVAL_MS = 15_000;
@@ -38,12 +39,15 @@ const render = () => {
             Number(notification.licenseId) > 0
                 ? `licença ${notification.licenseId}`
                 : notification.model || notification.ident,
-        ].filter(Boolean).map(esc).join(" · ");
+        ].filter(Boolean).join(" · ");
         const unreadClass = notification.readAt
             ? ""
             : " list-group-item-primary";
+        const detailsLine = details === ""
+            ? ""
+            : html`<span class="d-block small text-secondary text-break">${details}</span>`;
 
-        return `
+        return html`
             <div class="list-group-item px-3 py-3${unreadClass}">
                 <div class="d-flex align-items-start gap-2">
                     <button class="btn border-0 bg-transparent text-start p-0 flex-grow-1 min-width-0" type="button" data-notification-id="${Number(notification.id) || 0}">
@@ -51,11 +55,11 @@ const render = () => {
                             <i class="fa-solid fa-triangle-exclamation text-danger mt-1" aria-hidden="true"></i>
                             <span class="min-width-0 flex-grow-1">
                                 <span class="d-block fw-semibold">Dispositivo não autorizado</span>
-                                <span class="d-block font-monospace small text-break">${esc(notification.imei)}</span>
-                                ${details === "" ? "" : `<span class="d-block small text-secondary text-break">${details}</span>`}
+                                <span class="d-block font-monospace small text-break">${notification.imei}</span>
+                                ${raw(detailsLine)}
                                 <span class="d-flex justify-content-between gap-2 small text-secondary mt-1">
                                     <span>${attempts > 1 ? `${attempts} tentativas` : "1 tentativa"}</span>
-                                    <span>${esc(ago(notification.lastSeenAt))}</span>
+                                    <span>${ago(notification.lastSeenAt)}</span>
                                 </span>
                             </span>
                         </span>

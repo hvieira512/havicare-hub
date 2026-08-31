@@ -9,13 +9,13 @@ import {
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import {
     commandLabel,
-    esc,
     eventTime,
     fieldLabel,
     rowPayload,
     when,
     whenShort,
 } from "../format.js";
+import { html, raw } from "../html.js";
 import { capabilityLabel } from "../capability-catalog.js";
 import { apiError, toast } from "../dialogs.js";
 import { deviceLicenseHtml, emptyPanel, filterChips, onlineBadge } from "../widgets.js";
@@ -222,7 +222,7 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     }
 
     els.selectedDevicePreview.innerHTML = image
-        ? `<img src="${esc(image)}" class="object-fit-contain" alt="${esc(model || device.imei)}" style="max-width:56px;max-height:56px;">`
+        ? html`<img src="${image}" class="object-fit-contain" alt="${model || device.imei}" style="max-width:56px;max-height:56px;">`
         : "<i class=\"fa-solid fa-microchip fa-xl text-secondary\"></i>";
     els.selectedDeviceTitle.textContent = device.imei;
     // O estado é a primeira coisa que se pergunta sobre um dispositivo, e por isso vem
@@ -232,10 +232,10 @@ function renderSelectedDeviceSummary(device, deviceModel, linkedDevices = []) {
     disposeTooltips(els.selectedDeviceFacts);
     els.selectedDeviceFacts.innerHTML = facts
         .map(
-            (item) => `
+            (item) => html`
         <div class="${item.wide ? "col-12" : "col-6"}">
-            <dt class="mb-1">${esc(item.label)}</dt>
-            <dd class="text-break mb-0">${item.html ?? esc(item.value)}</dd>
+            <dt class="mb-1">${item.label}</dt>
+            <dd class="text-break mb-0">${item.html ? raw(item.html) : item.value}</dd>
         </div>
     `,
         )
@@ -352,18 +352,12 @@ function populateDetailFilterTypes() {
 
         if (select.dataset.detailFilterTypesSignature) {
             for (const type of missingTypes) {
-                select.insertAdjacentHTML(
-                    "beforeend",
-                    `<option value="${esc(type)}">${esc(telemetryFilterLabel(type))}</option>`,
-                );
+                select.insertAdjacentHTML("beforeend", filterTypeOption(type));
             }
         } else {
             select.innerHTML = [
                 "<option value=\"all\">Todos</option>",
-                ...observedTypes.map(
-                    (type) =>
-                        `<option value="${esc(type)}">${esc(telemetryFilterLabel(type))}</option>`,
-                ),
+                ...observedTypes.map(filterTypeOption),
             ].join("");
         }
 
@@ -372,16 +366,17 @@ function populateDetailFilterTypes() {
 
     if (currentValue && currentValue !== "all") {
         if (!hasCurrentValue) {
-            select.insertAdjacentHTML(
-                "beforeend",
-                `<option value="${esc(currentValue)}">${esc(telemetryFilterLabel(currentValue))}</option>`,
-            );
+            select.insertAdjacentHTML("beforeend", filterTypeOption(currentValue));
         }
         select.value = currentValue;
         return;
     }
 
     select.value = "all";
+}
+
+function filterTypeOption(type) {
+    return html`<option value="${type}">${telemetryFilterLabel(type)}</option>`;
 }
 
 function telemetryFilterLabel(type) {
@@ -536,8 +531,8 @@ function activityTable(rootEl, rows, emptyText) {
     // atiravam para o topo uma lista que estava a ser lida.
     const scrollTop = rootEl.scrollTop;
     rootEl.innerHTML = rows.length
-        ? `<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${rows.map(activityRow).join("")}</tbody>
+        ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
+            <tbody>${raw(rows.map(activityRow).join(""))}</tbody>
            </table>`
         : emptyPanel(emptyText);
     rootEl.scrollTop = scrollTop;
@@ -557,26 +552,33 @@ function activityRow({
     time,
     timeTitle = "",
 }) {
-    return `
+    const subLine = sub
+        ? html`<span class="telemetry-row-details fw-normal d-block text-truncate"${raw(subTitle ? html` title="${subTitle}"` : "")}>${raw(sub)}</span>`
+        : "";
+    const detailLine = detail
+        ? html`<span class="telemetry-row-details d-flex flex-wrap gap-1"${raw(detailTitle ? html` title="${detailTitle}"` : "")}>${raw(detail)}</span>`
+        : "";
+
+    return html`
         <tr>
         <td>
-            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${esc(tone)}` : ""}">
-                <i class="fa-solid ${esc(icon)}"></i>
+            <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${tone}` : ""}">
+                <i class="fa-solid ${icon}"></i>
             </span>
         </td>
         <td class="fw-medium">
             <span class="telemetry-row-stack">
-                <span class="d-block text-truncate" title="${esc(nameTitle || name)}">${esc(name)}</span>
-                ${sub ? `<span class="telemetry-row-details fw-normal d-block text-truncate"${subTitle ? ` title="${esc(subTitle)}"` : ""}>${sub}</span>` : ""}
+                <span class="d-block text-truncate" title="${nameTitle || name}">${name}</span>
+                ${raw(subLine)}
             </span>
         </td>
-        <td class="tabular-nums"${valueTitle ? ` title="${esc(valueTitle)}"` : ""}>
+        <td class="tabular-nums"${raw(valueTitle ? html` title="${valueTitle}"` : "")}>
             <span class="telemetry-row-stack">
-                <span class="d-block text-truncate">${value}</span>
-                ${detail ? `<span class="telemetry-row-details d-flex flex-wrap gap-1"${detailTitle ? ` title="${esc(detailTitle)}"` : ""}>${detail}</span>` : ""}
+                <span class="d-block text-truncate">${raw(value)}</span>
+                ${raw(detailLine)}
             </span>
         </td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" title="${esc(timeTitle)}">${esc(time)}</td>
+        <td class="text-end text-nowrap tabular-nums text-secondary" title="${timeTitle}">${time}</td>
         </tr>`;
 }
 
@@ -595,7 +597,7 @@ function telemetryActivityRow(payload) {
         icon: card.icon,
         tone: cardTone(type),
         name: capabilityLabel(type),
-        value: esc(card.rowValue || card.value),
+        value: html`${card.rowValue || card.value}`,
         detail,
         detailTitle: card.detailsTitle ||
             detail.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, ""),
@@ -638,7 +640,7 @@ function renderRequestCards(
                 )
                 .join("")
         : "";
-    els.requestGrid.innerHTML = falls + helpCalls + cards || `<div class="col-12">${emptyPanel("Não há pedidos disponíveis para este dispositivo.")}</div>`;
+    els.requestGrid.innerHTML = falls + helpCalls + cards || html`<div class="col-12">${raw(emptyPanel("Não há pedidos disponíveis para este dispositivo."))}</div>`;
     refreshTooltips(els.requestGrid);
 }
 
@@ -667,14 +669,14 @@ function renderRequestCardGroup(
         return cards;
     }
 
-    return `
+    return html`
         <div class="col-12">
         <div class="border rounded-3 p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="section-label">${esc(group.label || "Pedidos")}</div>
+        <div class="section-label">${group.label || "Pedidos"}</div>
         <span class="count-chip">${group.cards.length}</span>
         </div>
-        <div class="row g-3">${cards}</div>
+        <div class="row g-3">${raw(cards)}</div>
         </div>
         </div>`;
 }
@@ -696,7 +698,7 @@ function renderNcsEventCards(rows = []) {
         : "";
     els.ncsEventGrid.innerHTML = cards.length
         ? cards.map(renderNcsEventCard).join("")
-        : `<div class="col-12">${emptyPanel("Ainda não há eventos NCS recebidos.")}</div>`;
+        : html`<div class="col-12">${raw(emptyPanel("Ainda não há eventos NCS recebidos."))}</div>`;
 }
 
 function renderNcsEventCard({ type, latest }) {
@@ -707,13 +709,17 @@ function renderNcsEventCard({ type, latest }) {
             ? String(latest.data.pagerId || "")
             : "";
 
+    const pagerLine = pagerId
+        ? html`<div class="small text-secondary">Pager: ${pagerId}</div>`
+        : "";
+
     return telemetryCard({
         icon: content.icon,
         title: content.value,
         tone: cardTone(type),
-        body: `
-        <div class="small text-secondary mt-2">Último evento: ${esc(timestamp)}</div>
-        ${pagerId ? `<div class="small text-secondary">Pager: ${esc(pagerId)}</div>` : ""}`,
+        body: html`
+        <div class="small text-secondary mt-2">Último evento: ${timestamp}</div>
+        ${raw(pagerLine)}`,
     });
 }
 
@@ -754,7 +760,7 @@ function downlinkActivityRow(command) {
         icon: requestCardContent(feature).icon,
         tone: cardTone(feature),
         name: commandLabel(command) || requestCardContent(feature).value || "Pedido",
-        sub: note ? esc(note) : "",
+        sub: note ? html`${note}` : "",
         subTitle: note,
         value: statusBadge(String(command.status || "unknown")),
         valueTitle: replied,
@@ -820,21 +826,23 @@ function connectionTimelineHtml(events) {
     // Nunca zero: dois eventos no mesmo milissegundo dividiriam por zero.
     const span = Math.max(1, points[points.length - 1].time - first);
 
-    return `
+    const dots = points
+        .map((point) => {
+            const label = point.connected ? "Ligado" : "Desligado";
+            return html`<span class="connection-timeline-dot${point.connected ? "" : " off"}"
+                        style="left:${((point.time - first) / span) * 100}%"
+                        title="${label} em ${when(point.at)}"></span>`;
+        })
+        .join("");
+
+    return html`
         <div class="connection-timeline">
             <div class="connection-timeline-track"></div>
-            ${points
-                .map((point) => {
-                    const label = point.connected ? "Ligado" : "Desligado";
-                    return `<span class="connection-timeline-dot${point.connected ? "" : " off"}"
-                        style="left:${((point.time - first) / span) * 100}%"
-                        title="${esc(`${label} em ${when(point.at)}`)}"></span>`;
-                })
-                .join("")}
+            ${raw(dots)}
         </div>
         <div class="connection-timeline-scale">
-            <span>${esc(when(points[0].at))}</span>
-            <span>${esc(when(points[points.length - 1].at))}</span>
+            <span>${when(points[0].at)}</span>
+            <span>${when(points[points.length - 1].at)}</span>
         </div>`;
 }
 

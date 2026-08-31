@@ -9,7 +9,7 @@ import {
 import { ensureLicensesLoaded, invalidateLicenses } from "../licenses.js";
 import { stateBadge } from "../widgets.js";
 import { state } from "../state.js";
-import { esc } from "../format.js";
+import { html, raw } from "../html.js";
 import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount, toggleCollapse } from "./shell.js";
@@ -80,29 +80,31 @@ function renderCompanySection(companies, licenses) {
             const owned = (licenses || []).filter(
                 (license) => String(license.company_id) === String(item.id),
             );
-            return `
+            const licenseRows = owned.map((license) => html`
+        <div class="tree-row justify-content-between">
+            <div class="d-flex align-items-center gap-2 min-w-0">
+                <span class="section-label tabular-nums" style="letter-spacing:0">ID ${license.license_id}</span>
+                <span class="text-truncate">${license.name || "sem nome"}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${license.id}" data-company-id="${license.company_id}" data-company-name="${license.company_name || ""}" data-license-id="${license.license_id}" data-name="${license.name || ""}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-danger btn-sm" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>`).join("");
+
+            return html`
         <div class="card mb-2">
         <div class="card-body p-3">
         <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-            <div class="fw-semibold">${esc(item.name)}</div>
+            <div class="fw-semibold">${item.name}</div>
             <div class="d-flex align-items-center gap-2">
-                ${stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "config-state-secondary")}
+                ${raw(stateBadge(`${owned.length} ${owned.length === 1 ? "licença" : "licenças"}`, "config-state-secondary"))}
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" data-action="newLicenseForCompany" data-company-id="${item.id}">Nova licença</button>
-                <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${item.id}" data-name="${esc(item.name)}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-outline-secondary btn-sm" data-action="editCompany" data-id="${item.id}" data-name="${item.name}" title="Editar"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-outline-danger btn-sm" data-id="${item.id}" data-action="deleteCompany" title="Apagar"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>
-        ${owned.map((license) => `
-        <div class="tree-row justify-content-between">
-            <div class="d-flex align-items-center gap-2 min-w-0">
-                <span class="section-label tabular-nums" style="letter-spacing:0">ID ${esc(license.license_id)}</span>
-                <span class="text-truncate">${esc(license.name || "sem nome")}</span>
-            </div>
-            <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                <button class="btn btn-outline-secondary btn-sm" data-action="editLicense" data-id="${license.id}" data-company-id="${license.company_id}" data-company-name="${esc(license.company_name || "")}" data-license-id="${esc(license.license_id)}" data-name="${esc(license.name || "")}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn btn-outline-danger btn-sm" data-id="${license.id}" data-action="deleteLicense" title="Apagar"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        </div>`).join("")}
+        ${raw(licenseRows)}
         </div>
         </div>`;
         })
@@ -163,7 +165,7 @@ async function deleteCompany(id) {
 function renderLicensesSection(licenses, companies) {
     resetLicenseForm();
     const companyOptions = (companies || [])
-        .map((s) => `<option value="${s.id}">${esc(s.name)}</option>`)
+        .map((s) => html`<option value="${s.id}">${s.name}</option>`)
         .join("");
     els.licenseCompanySelect.innerHTML =
         "<option value=\"\">Selecionar empresa</option>" + companyOptions;

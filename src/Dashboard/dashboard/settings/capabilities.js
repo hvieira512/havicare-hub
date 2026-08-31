@@ -2,7 +2,7 @@ import {
     getModelFilters as apiGetModelFilters,
 } from "../api/index.js";
 import { state } from "../state.js";
-import { esc } from "../format.js";
+import { html, raw } from "../html.js";
 import { renderButtonGroup, renderDeviceTypeTiles, sectionStrip } from "../widgets.js";
 import { cardIcon } from "../telemetry-cards.js";
 import { ensureCapabilityCatalog, ensureModelTemplate } from "../capability-catalog.js";
@@ -197,12 +197,12 @@ function renderCapabilitiesCatalogSection() {
                     const number = entry.supported
                         ? String(++index).padStart(2, "0")
                         : "—";
-                    return `
+                    return html`
                 <div class="capability-row${entry.supported ? "" : " is-unsupported"}">
                     <span class="capability-index" aria-hidden="true">${number}</span>
-                    <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${esc(capabilityIcon(entry, section))}"></i></span>
-                    <span class="capability-name">${esc(entry.label || humanizeCapabilityKey(entry.key))}</span>
-                    <span class="capability-facts">${esc(facts.join(" · "))}</span>
+                    <span class="d-flex justify-content-center text-secondary"><i class="fa-solid ${capabilityIcon(entry, section)}"></i></span>
+                    <span class="capability-name">${entry.label || humanizeCapabilityKey(entry.key)}</span>
+                    <span class="capability-facts">${facts.join(" · ")}</span>
                 </div>`;
                 })
                 .join("");
@@ -215,20 +215,20 @@ function renderCapabilitiesCatalogSection() {
                 ? `${supported} ${supported === 1 ? "capacidade" : "capacidades"}`
                 : `${supported} de ${entries.length}`;
 
-            return `
-        <section id="${esc(catalogSectionId(section))}" class="capability-catalog-section">
+            return html`
+        <section id="${catalogSectionId(section)}" class="capability-catalog-section">
             <button type="button"
                 class="d-flex justify-content-between align-items-center gap-2 w-100 mb-2 p-0 py-1 border-0 bg-transparent text-start"
-                data-bs-toggle="collapse" data-bs-target="#${esc(bodyId)}"
-                aria-expanded="false" aria-controls="${esc(bodyId)}">
-                <span class="section-label">${esc(label)}</span>
+                data-bs-toggle="collapse" data-bs-target="#${bodyId}"
+                aria-expanded="false" aria-controls="${bodyId}">
+                <span class="section-label">${label}</span>
                 <span class="d-flex align-items-center gap-2">
                     <span class="small text-secondary">${count}</span>
                     <i class="fa-solid fa-chevron-down small text-secondary d-sm-none" aria-hidden="true"></i>
                 </span>
             </button>
-            <div class="collapse d-sm-block" id="${esc(bodyId)}">
-                <div class="vstack gap-2">${rows}</div>
+            <div class="collapse d-sm-block" id="${bodyId}">
+                <div class="vstack gap-2">${raw(rows)}</div>
             </div>
         </section>
     `;
