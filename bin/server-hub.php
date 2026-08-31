@@ -19,6 +19,7 @@ use Hub\Log\Logger;
 use Hub\Mqtt\BrokerSettings;
 use Hub\Mqtt\ConnectionFactory;
 use Hub\Runtime\CliBootstrap;
+use Hub\Runtime\CrashWatch;
 use Hub\Runtime\DashboardServerFactory;
 use Hub\Runtime\HubServices;
 use Hub\Runtime\MaintenanceScheduler;
@@ -35,6 +36,30 @@ try {
 
 $services = HubServices::boot($config, $hubConnections);
 $loop = Loop::get();
+
+// Uma queda tem de chegar a alguém. O `Restart=always` levanta o processo em milissegundos e
+// a única prova ficava no `journalctl`; a notificação aparece no sino da dashboard, que é
+// onde se está a olhar. Repetições incrementam o contador e voltam a pô-la por ler.
+$crashWatch = new CrashWatch(__DIR__ . '/../var/run/hub-boot.marker');
+$uncleanShutdown = $crashWatch->claimBoot();
+if ($uncleanShutdown !== null) {
+    Logger::channel('hub')->error("Previous run ended abruptly: {$uncleanShutdown}");
+    $services->dataAccess->dashboardNotifications->record(
+        'hub_unclean_restart',
+        'hub',
+        '',
+        '',
+        (string)gethostname(),
+        $uncleanShutdown,
+    );
+}
+
+foreach ([SIGTERM, SIGINT] as $signal) {
+    $loop->addSignal($signal, static function () use ($crashWatch, $loop): void {
+        $crashWatch->markCleanShutdown();
+        $loop->stop();
+    });
+}
 $subscribers = new SubscriberFactory($hubConnections);
 $runner = new IngressRunner($loop);
 $enabledIngresses = [];

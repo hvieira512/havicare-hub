@@ -9,6 +9,40 @@ import { toast } from "./dialogs.js";
 
 const POLL_INTERVAL_MS = 15_000;
 
+/**
+ * O `type` já vinha na resposta e o cartão ignorava-o: escrevia sempre "Dispositivo não
+ * autorizado", que era o único tipo que existia. Passou a haver um segundo -- o hub avisa
+ * aqui quando se reiniciou sozinho --, e um aviso de queda do processo com o título de um
+ * dispositivo não autorizado não diz nada a ninguém.
+ *
+ * O identificador só se mostra quando é de facto um dispositivo; para o hub, o que interessa
+ * é a razão.
+ */
+const NOTIFICATION_TYPES = {
+    device_not_authorized: {
+        title: "Dispositivo não autorizado",
+        icon: "fa-triangle-exclamation",
+        showsDevice: true,
+        count: (n) => (n > 1 ? `${n} tentativas` : "1 tentativa"),
+    },
+    hub_unclean_restart: {
+        title: "O hub reiniciou-se sozinho",
+        icon: "fa-bolt",
+        showsDevice: false,
+        count: (n) => (n > 1 ? `${n} vezes` : "1 vez"),
+    },
+};
+
+const DEFAULT_NOTIFICATION_TYPE = {
+    title: "Notificação",
+    icon: "fa-triangle-exclamation",
+    showsDevice: true,
+    count: (n) => (n > 1 ? `${n} ocorrências` : "1 ocorrência"),
+};
+
+const notificationType = (type) =>
+    NOTIFICATION_TYPES[String(type || "")] || DEFAULT_NOTIFICATION_TYPE;
+
 let initialized = false;
 let elements = null;
 let addDevice = null;
@@ -32,33 +66,41 @@ const render = () => {
 
     elements.list.innerHTML = notifications.map((notification) => {
         const attempts = Number(notification.occurrenceCount) || 1;
+        const kind = notificationType(notification.type);
         // A licença ganha ao modelo e à identidade: quando o hub a sabe, é a informação que
         // falta a quem vai registar o dispositivo. A identidade já é a linha de cima.
-        const details = [
-            notification.protocol,
-            Number(notification.licenseId) > 0
-                ? `licença ${notification.licenseId}`
-                : notification.model || notification.ident,
-        ].filter(Boolean).join(" · ");
+        const details = kind.showsDevice
+            ? [
+                    notification.protocol,
+                    Number(notification.licenseId) > 0
+                        ? `licença ${notification.licenseId}`
+                        : notification.model || notification.ident,
+                ].filter(Boolean).join(" · ")
+            // Para o hub, a razão é a notícia: diz qual foi o processo que caiu e quando
+            // tinha arrancado.
+            : String(notification.reason || "");
         const unreadClass = notification.readAt
             ? ""
             : " list-group-item-primary";
         const detailsLine = details === ""
             ? ""
             : html`<span class="d-block small text-secondary text-break">${details}</span>`;
+        const deviceLine = kind.showsDevice
+            ? html`<span class="d-block font-monospace small text-break">${notification.imei}</span>`
+            : "";
 
         return html`
             <div class="list-group-item px-3 py-3${unreadClass}">
                 <div class="d-flex align-items-start gap-2">
                     <button class="btn border-0 bg-transparent text-start p-0 flex-grow-1 min-width-0" type="button" data-notification-id="${Number(notification.id) || 0}">
                         <span class="d-flex align-items-start gap-2">
-                            <i class="fa-solid fa-triangle-exclamation text-danger mt-1" aria-hidden="true"></i>
+                            <i class="fa-solid ${kind.icon} text-danger mt-1" aria-hidden="true"></i>
                             <span class="min-width-0 flex-grow-1">
-                                <span class="d-block fw-semibold">Dispositivo não autorizado</span>
-                                <span class="d-block font-monospace small text-break">${notification.imei}</span>
+                                <span class="d-block fw-semibold">${kind.title}</span>
+                                ${raw(deviceLine)}
                                 ${raw(detailsLine)}
                                 <span class="d-flex justify-content-between gap-2 small text-secondary mt-1">
-                                    <span>${attempts > 1 ? `${attempts} tentativas` : "1 tentativa"}</span>
+                                    <span>${kind.count(attempts)}</span>
                                     <span>${ago(notification.lastSeenAt)}</span>
                                 </span>
                             </span>
