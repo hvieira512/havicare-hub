@@ -175,6 +175,51 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         }
     }
 
+    /**
+     * O pedido mal formado é 400 e a credencial recusada é 401.
+     *
+     * O controlador respondia 401 a qualquer erro do login, e por isso um corpo sem password
+     * -- ou que nem sequer era JSON -- chegava ao cliente como "credencial inválida". Quem
+     * gera um cliente a partir da especificação não tem como distinguir os dois casos se a
+     * API lhes der o mesmo estado.
+     */
+    public function testApiLoginSeparatesMalformedRequestsFromRejectedCredentials(): void
+    {
+        $server = $this->makeServer();
+
+        $missingPassword = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'admin'], JSON_THROW_ON_ERROR)
+        ));
+        self::assertSame(400, $missingPassword->getStatusCode(), (string)$missingPassword->getBody());
+        self::assertSame(
+            'invalid_request',
+            json_decode((string)$missingPassword->getBody(), true, 512, JSON_THROW_ON_ERROR)['error']['code'] ?? null
+        );
+
+        $wrongPassword = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['username' => 'admin', 'password' => 'nao-e-esta'], JSON_THROW_ON_ERROR)
+        ));
+        self::assertSame(401, $wrongPassword->getStatusCode(), (string)$wrongPassword->getBody());
+        self::assertSame(
+            'invalid_credentials',
+            json_decode((string)$wrongPassword->getBody(), true, 512, JSON_THROW_ON_ERROR)['error']['code'] ?? null
+        );
+
+        $badRefresh = $server(new ServerRequest(
+            'POST',
+            '/api/auth/login',
+            ['Content-Type' => 'application/json'],
+            json_encode(['refresh_token' => 'nao-existe'], JSON_THROW_ON_ERROR)
+        ));
+        self::assertSame(401, $badRefresh->getStatusCode(), (string)$badRefresh->getBody());
+    }
+
     public function testApiLoginIssuesBearerTokenAndAllowsApiAccess(): void
     {
         $server = $this->makeServer();

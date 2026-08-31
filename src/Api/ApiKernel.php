@@ -138,7 +138,7 @@ final class ApiKernel
      */
     private function apiRoutes(): array
     {
-        $auth = new AuthController($this->auth, $this->json);
+        $auth = new AuthController($this->auth, $this->json, $this->statusMapper);
         $devices = new DeviceController($this->devices, $this->json, $this->statusMapper);
         $models = new ModelController($this->models, $this->json, $this->statusMapper);
         $capabilities = new CapabilityController($this->capabilities, $this->json, $this->statusMapper);

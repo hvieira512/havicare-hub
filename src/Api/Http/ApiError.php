@@ -25,6 +25,11 @@ final class ApiError
      * @var array<string, int>
      */
     private const STATUS_BY_CODE = [
+        // A credencial recusada é 401 e não 400: o pedido está bem formado, o que falha é
+        // quem o faz. O `AuthController` respondia 401 a qualquer erro do login, incluindo a
+        // um pedido sem password nenhuma -- que é 400, e agora sai daqui como tal.
+        'invalid_credentials' => 401,
+        'invalid_refresh_token' => 401,
         'forbidden' => 403,
         'association_not_found' => 404,
         'capability_not_found' => 404,
@@ -68,8 +73,6 @@ final class ApiError
         'unknown_protocol',
         'device_already_associated',
         'invalid_association',
-        'invalid_credentials',
-        'invalid_refresh_token',
         'invalid_role',
         'invalid_license',
         'feature_not_requestable',
