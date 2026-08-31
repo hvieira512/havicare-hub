@@ -234,13 +234,18 @@ require_once __DIR__ . '/components/modal.php';
                                     <div class="card-section row g-0 flex-grow-1" style="min-height:0">
                                         <div class="col-12 col-xl-6 d-flex flex-column pe-xl-4">
                                             <?= section_header('Eventos recebidos', 'telemetryCount', true) ?>
+                                            <?php /* O paginador fica entre o título e a lista: em baixo era empurrado
+                                                   * para o fundo da coluna pelo `flex-grow-1` da lista, e numa página
+                                                   * com poucas linhas ficava a metros do conteúdo que pagina.
+                                                   *
+                                                   * Sem resumo: o total já está na pastilha ao lado do título. */ ?>
+                                            <?= pagination_component('telemetryPager', 'mb-2', false) ?>
                                             <div id="telemetryList" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
-                                            <?= pagination_component('telemetryPager') ?>
                                         </div>
                                         <div class="col-12 col-xl-6 d-flex flex-column border-start-xl ps-xl-4 mt-4 mt-xl-0">
                                             <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
+                                            <?= pagination_component('downlinkPager', 'mb-2', false) ?>
                                             <div id="downlinkRequests" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
-                                            <?= pagination_component('downlinkPager') ?>
                                         </div>
                                     </div>
                                 </div>

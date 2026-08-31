@@ -31,7 +31,11 @@ export function renderPagination({
 
     if (totalPages <= 1) {
         rootEl.classList.add("d-none");
-        summaryEl.textContent = "";
+        // Sem resumo não há elemento nenhum: onde o total já vive numa pastilha ao lado do
+        // título, repeti-lo aqui era escrever o mesmo número duas vezes no mesmo ecrã.
+        if (summaryEl) {
+            summaryEl.textContent = "";
+        }
         controlsEl.innerHTML = "";
         return;
     }
@@ -39,14 +43,27 @@ export function renderPagination({
     const pageStart = (currentPage - 1) * limit + 1;
     const pageEnd = Math.min(total, currentPage * limit);
     rootEl.classList.remove("d-none");
-    summaryEl.textContent = summary(pageStart, pageEnd, total);
+    if (summaryEl) {
+        summaryEl.textContent = summary(pageStart, pageEnd, total);
+    }
+    // O componente `pagination` do Bootstrap em vez de um `btn-group` de botões: dá o mesmo
+    // sem uma linha de CSS nosso -- cantos só nas pontas, a página actual preenchida, o
+    // travado esbatido -- e o `page-link` já traz o alvo de toque e o anel de foco.
+    const arrow = (action, icon, label, disabled) =>
+        `<li class="page-item${disabled ? " disabled" : ""}">` +
+        `<button type="button" class="page-link rounded ms-0" data-action="${esc(action)}" ${disabled ? "disabled" : ""}` +
+        ` aria-label="${esc(label)}"><i class="fa-solid ${icon}"></i></button></li>`;
+
     controlsEl.innerHTML = [
-        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(actionPrefix)}Prev" ${currentPage <= 1 ? "disabled" : ""} aria-label="Página anterior"><i class="fa-solid fa-chevron-left"></i></button>`,
+        arrow(`${actionPrefix}Prev`, "fa-chevron-left", "Página anterior", currentPage <= 1),
         ...Array.from({ length: totalPages }, (_, index) => {
             const page = index + 1;
-            return `<button type="button" class="btn ${page === currentPage ? "btn-primary" : "btn-outline-secondary"} btn-sm" data-action="${esc(goAction)}" data-page="${page}" ${page === currentPage ? "aria-current=\"page\"" : ""}>${page}</button>`;
+            const active = page === currentPage;
+            return `<li class="page-item${active ? " active" : ""}">` +
+                `<button type="button" class="page-link rounded ms-0 px-1 text-center" data-action="${esc(goAction)}" data-page="${page}"` +
+                `${active ? " aria-current=\"page\"" : ""}>${page}</button></li>`;
         }),
-        `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="${esc(actionPrefix)}Next" ${currentPage >= totalPages ? "disabled" : ""} aria-label="Página seguinte"><i class="fa-solid fa-chevron-right"></i></button>`,
+        arrow(`${actionPrefix}Next`, "fa-chevron-right", "Página seguinte", currentPage >= totalPages),
     ].join("");
 }
 

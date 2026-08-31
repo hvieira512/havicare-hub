@@ -181,6 +181,21 @@
     min-width: 0;
 }
 
+/* Os botões do paginador medem o que o número mede, e por isso o "1" ficava a 22px ao lado
+   do "13" a 31px -- treze caixas de larguras diferentes numa linha lêem-se como desalinhadas.
+   Com uma medida mínima igual para todos, todos medem o mesmo.
+
+   A medida é a do "13" com o padding apertado (`px-1`, do Bootstrap): a partir daí é ele que
+   manda e os de um dígito igualam-no. A 2rem os quinze botões de treze páginas não cabiam na
+   coluna e a seta seguinte partia sozinha para uma segunda linha.
+
+   O que não há é utilitário de largura: os do Bootstrap são só percentagens (`w-25` a
+   `w-100`), e o `flex-fill` é `flex: 1 1 auto`, que reparte o espaço livre mas mantém a base
+   de cada um diferente. Daí esta linha ser nossa. */
+.pagination .page-link {
+    min-width: 1.5rem;
+}
+
 /* A divisória entre blocos de um cartão vai de bordo a bordo. Encolhida à largura do
    conteúdo lê-se como a moldura de outra caixa dentro do cartão; a sangrar até ao contorno é
    a mesma linha que separa duas linhas de uma tabela, e o cartão continua um. */

@@ -500,7 +500,8 @@ function renderClientPager(prefix, totalRows, totalPages) {
     const root = els[`${prefix}Pager`];
     const summaryEl = els[`${prefix}PagerSummary`];
     const controlsEl = els[`${prefix}PagerControls`];
-    if (!root || !summaryEl || !controlsEl) return;
+    // O resumo é opcional: nestes dois painéis o total já está na pastilha do título.
+    if (!root || !controlsEl) return;
 
     renderPagination({
         pagination: {
