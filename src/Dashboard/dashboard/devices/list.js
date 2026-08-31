@@ -6,18 +6,22 @@ import {
 import { getDeviceTypeSuppliersModels as apiGetDeviceTypeSuppliersModels } from "../api/models.js";
 import { ensureCapabilityCatalog } from "../capability-catalog.js";
 import { ensureLicensesLoaded } from "../licenses.js";
-import { state, clearSelection, selectImei } from "../state.js";
-import { html, raw } from "../html.js";
 import {
-    deviceLicenseHtml,
-    emptyPanel,
-    onlineBadge,
-    renderDeviceTypeTiles,
-} from "../widgets.js";
+    state,
+    clearSelection,
+    resetDetailFiltersDraft,
+    resetDeviceListPage,
+    selectImei,
+    setDeviceListPage,
+    setDeviceTypeSuppliersModels,
+    setSelectedDetail,
+} from "../state.js";
+import { html, raw } from "../html.js";
+import { emptyPanel, renderDeviceTypeTiles } from "../widgets.js";
+import { deviceCard, deviceCardSkeletonList } from "./device-card.js";
 import { renderPagination, resolvePaginationPage } from "../pagination.js";
 import {
     companyLabel,
-    deviceTypeLabel,
     deviceTypeOptions,
     licenseDisplayLabel,
     modelDisplayName,
@@ -42,9 +46,7 @@ import { connectDeviceStream, disconnectDeviceStream } from "./stream.js";
 let els;
 let ui;
 let deviceSearchTimer = null;
-// Quantas linhas de esqueleto no máximo: a moldura mais alta (46rem) leva doze cartões, e
-// acima disso seriam linhas cortadas a custo zero de informação.
-const SKELETON_MAX_ROWS = 12;
+
 export function initDeviceList(context) {
     els = context.els;
     ui = context.ui;
@@ -110,7 +112,7 @@ async function fetchSummary() {
     };
     state.deviceListPageSize =
         state.summary.devicePagination.limit || state.deviceListPageSize;
-    state.deviceListPage = state.summary.devicePagination.page || 1;
+    setDeviceListPage(state.summary.devicePagination.page);
     renderDeviceSelector();
     if (state.selectedImei) {
         await loadDevice(state.selectedImei);
@@ -151,7 +153,7 @@ async function ensureDeviceTypeSuppliersModelsLoaded(force = false) {
 
     const response = await apiGetDeviceTypeSuppliersModels();
     const groups = response?.error ? [] : response.data || [];
-    state.deviceTypeSuppliersModels = flattenDeviceTypeSuppliersModels(groups);
+    setDeviceTypeSuppliersModels(flattenDeviceTypeSuppliersModels(groups));
     return state.deviceTypeSuppliersModels;
 }
 
@@ -190,26 +192,8 @@ async function openDeviceSelector() {
  */
 function renderDeviceSelectorSkeleton() {
     const repeat = (count, markup) => Array.from({ length: count }, () => markup).join("");
-    const row = `
-        <div class="device-card device-card-skeleton" aria-hidden="true">
-        <span class="device-card-thumb placeholder"></span>
-        <span class="placeholder device-card-skeleton-pill"></span>
-        <span class="device-card-identity">
-            <span class="min-width-0 w-100">
-                <span class="placeholder d-block col-7 mb-1"></span>
-                <span class="placeholder d-block col-4"></span>
-            </span>
-        </span>
-        <span class="device-card-fields">
-            <span class="device-card-field"><span class="placeholder col-9"></span></span>
-            <span class="device-card-field"><span class="placeholder col-7"></span></span>
-        </span>
-        </div>`;
 
-    els.deviceList.innerHTML = `
-        <div class="device-card-skeleton-list placeholder-wave">
-        ${repeat(Math.min(state.deviceListPageSize, SKELETON_MAX_ROWS), row)}
-        </div>`;
+    els.deviceList.innerHTML = deviceCardSkeletonList(state.deviceListPageSize);
 
     for (const el of [els.deviceSupplierFilter, els.deviceModelFilter, els.deviceLicenseFilter]) {
         el.innerHTML = `
@@ -260,39 +244,7 @@ function renderDeviceSelectorSummary() {
  * esquerda, e a atribuição em campos de largura fixa à direita, na mesma abcissa.
  */
 function renderDeviceCard(device) {
-    const selected = state.selectedImei === device.imei;
-    const image = device.image
-        ? html`<img src="${device.image}" alt="${device.model || device.imei}">`
-        : "<i class=\"fa-solid fa-microchip\"></i>";
-    const meta = [
-        deviceTypeLabel(normalizeDeviceType(device.deviceType)),
-        [device.supplier, device.model].filter(Boolean).join(" "),
-    ]
-        .filter(Boolean)
-        .join(" · ");
-
-    return html`
-        <button type="button" class="device-card${selected ? " selected" : ""}${device.online ? "" : " offline"}"
-            data-imei="${device.imei}" data-action="select"${selected ? " aria-current=\"true\"" : ""}>
-        <span class="device-card-thumb">${raw(image)}</span>
-        ${raw(onlineBadge(device.online))}
-        <span class="device-card-identity">
-            <span class="min-width-0">
-                <span class="device-card-imei d-block text-truncate">${device.imei}</span>
-                <span class="device-card-meta d-block text-truncate">${meta}</span>
-            </span>
-        </span>
-        <span class="device-card-fields">
-            <span class="device-card-field">
-                <span class="device-card-field-label">Licença</span>
-                ${raw(deviceLicenseHtml(device, "device-card-field-value"))}
-            </span>
-            <span class="device-card-field">
-                <span class="device-card-field-label">SIM</span>
-                <span class="device-card-field-value${device.simNumber ? " tabular-nums" : " empty"}">${device.simNumber || "—"}</span>
-            </span>
-        </span>
-        </button>`;
+    return deviceCard(device, state.selectedImei === device.imei);
 }
 
 function renderDevicePagination(pagination) {
@@ -522,13 +474,13 @@ function handleDeviceListLimitChange() {
         return;
     }
     state.deviceListPageSize = nextLimit;
-    state.deviceListPage = 1;
+    resetDeviceListPage();
     void loadSummary();
 }
 
 function handleDeviceListSearchInput() {
     state.deviceSearchQuery = els.deviceListSearch.value.trim();
-    state.deviceListPage = 1;
+    resetDeviceListPage();
     clearTimeout(deviceSearchTimer);
     deviceSearchTimer = setTimeout(() => {
         void loadSummary();
@@ -542,7 +494,7 @@ function handleDevicePaginationClick(event) {
         "devicePage",
     );
     if (nextPage === null) return;
-    state.deviceListPage = nextPage;
+    setDeviceListPage(nextPage);
     void loadSummary();
 }
 
@@ -567,9 +519,8 @@ async function loadDevice(imei) {
         return false;
     }
     disconnectDeviceStream();
-    state.selectedDetail = detail;
-    state.selectedDetail.recent = null;
-    state.detailFiltersDraft = { ...state.detailFilters };
+    setSelectedDetail(detail);
+    resetDetailFiltersDraft();
     // Os nomes das capacidades vêm do catálogo deste tipo de dispositivo, e carregam-se
     // aqui porque este é o único sítio por onde entra um dispositivo novo: nos redesenhos
     // seguintes a cache já está quente.

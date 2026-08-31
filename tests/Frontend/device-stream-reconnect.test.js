@@ -73,7 +73,7 @@ const reset = () => {
     scheduled.length = 0;
     delete document.body.dataset.dashboardAuthRequired;
     window.hubDashboardApiToken = null;
-    stream.initDeviceStream({ state: { selectedDetail: null }, renderSelection: () => {} });
+    stream.initDeviceStream({ renderSelection: () => {} });
     stream.disconnectDeviceStream();
     FakeEventSource.instances.length = 0;
     scheduled.length = 0;

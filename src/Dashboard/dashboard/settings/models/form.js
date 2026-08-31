@@ -2,7 +2,11 @@ import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
 import { ensureModelTemplate } from "../../capability-catalog.js";
-import { state } from "../../state.js";
+import {
+    invalidateDeviceTypeSuppliersModels,
+    setModelPreviewObjectUrl,
+    state,
+} from "../../state.js";
 import { esc } from "../../format.js";
 import { apiError, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
@@ -71,13 +75,6 @@ function renderModelDeviceTypeButtons(selectedDeviceType) {
     });
 }
 
-function revokeModelPreviewUrl() {
-    if (state.modelPreviewObjectUrl) {
-        URL.revokeObjectURL(state.modelPreviewObjectUrl);
-        state.modelPreviewObjectUrl = null;
-    }
-}
-
 function updateModelProtocolAndPreview() {
     const { els } = getSettingsModelsRuntime();
     const supplier = els.modelForm.dataset.supplier || "";
@@ -95,7 +92,7 @@ function updateModelProtocolAndPreview() {
 
 function resetModelForm(selectedSupplierId = "") {
     const { els } = getSettingsModelsRuntime();
-    revokeModelPreviewUrl();
+    setModelPreviewObjectUrl();
     els.modelForm.reset();
     clearInvalid(els.modelForm);
     delete els.modelForm.dataset.modelId;
@@ -129,7 +126,7 @@ function resetModelForm(selectedSupplierId = "") {
 
 function selectModelSupplier(supplierId) {
     const { els } = getSettingsModelsRuntime();
-    revokeModelPreviewUrl();
+    setModelPreviewObjectUrl();
     els.modelImage.value = "";
     const deviceType = normalizeDeviceType(
         els.modelForm.dataset.deviceType || "watch",
@@ -271,7 +268,7 @@ async function saveModel() {
     // existia: as três listas em memória deixam de valer.
     state.settingsModal.sectionLoaded.models = false;
     state.settingsModal.sectionLoaded.modelFilters = false;
-    state.deviceTypeSuppliersModels = [];
+    invalidateDeviceTypeSuppliersModels();
     backToModelList();
 }
 
@@ -279,7 +276,6 @@ export {
     openNewModelForm,
     refreshNewModelCapabilityTemplate,
     resetModelForm,
-    revokeModelPreviewUrl,
     saveModel,
     selectModelDeviceType,
     selectModelSupplier,

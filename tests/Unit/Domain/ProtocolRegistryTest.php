@@ -7,6 +7,11 @@ use PHPUnit\Framework\TestCase;
 
 final class ProtocolRegistryTest extends TestCase
 {
+    /**
+     * O que a dashboard precisa para desenhar os campos saiu daqui para o
+     * `ProtocolDashboardMeta`, e as asserções que o cobriam foram com ele: ver o
+     * `tests/Unit/Api/Http/ProtocolDashboardMetaTest.php`.
+     */
     public function testDescribeReturnsCanonicalMetadataForFourPTouch(): void
     {
         $protocol = ProtocolRegistry::describe('four-p-touch');
@@ -15,32 +20,18 @@ final class ProtocolRegistryTest extends TestCase
         self::assertSame('4P Touch', $protocol['label']);
         self::assertSame('watch', $protocol['deviceType']);
         self::assertTrue($protocol['supportsConfigCatalog']);
-        self::assertArrayNotHasKey('categoryOrder', $protocol['dashboard']);
-        self::assertArrayNotHasKey('categoryLabels', $protocol['dashboard']);
-        self::assertSame('Contactos SOS', $protocol['dashboard']['groupedCapabilities']['sos_contacts']['label']);
-        self::assertSame(10, $protocol['dashboard']['groupedCapabilities']['call_whitelist']['limit']);
-        self::assertSame(10, $protocol['dashboard']['fieldConstraints']['phonebook']['name']['maxLength']);
-        self::assertSame(20, $protocol['dashboard']['fieldConstraints']['phonebook']['phone']['maxLength']);
     }
 
-    public function testProtocolDashboardMetadataDoesNotDefineASecondCapabilityTaxonomy(): void
+    /** O domínio deixou de decidir com que aspecto fica um campo. */
+    public function testDescribeCarriesNoPresentationConcerns(): void
     {
-        foreach (['wonlex-json', 'vivistar-iw', 'four-p-touch'] as $protocolKey) {
-            $dashboard = ProtocolRegistry::describe($protocolKey)['dashboard'];
-            self::assertArrayNotHasKey('categoryLabels', $dashboard);
-            self::assertArrayNotHasKey('categoryOrder', $dashboard);
+        foreach (ProtocolRegistry::keys() as $protocolKey) {
+            self::assertSame(
+                ['protocol', 'label', 'deviceType', 'supportsConfigCatalog'],
+                array_keys(ProtocolRegistry::describe($protocolKey)),
+                "O `describe('{$protocolKey}')` voltou a trazer apresentação consigo."
+            );
         }
-    }
-
-    public function testWonlexContactMetadataUsesTheGenericContactContract(): void
-    {
-        $dashboard = ProtocolRegistry::describe('wonlex-json')['dashboard'];
-
-        self::assertSame(10, $dashboard['groupedCapabilities']['phonebook']['limit'] ?? null);
-        self::assertSame(10, $dashboard['groupedCapabilities']['sos_contacts']['limit'] ?? null);
-        self::assertArrayHasKey('whitelist_enabled', $dashboard['groupedCapabilities']);
-        self::assertArrayNotHasKey('call_whitelist', $dashboard['groupedCapabilities']);
-        self::assertSame(4, $dashboard['fieldConstraints']['phonebook']['name']['maxLength'] ?? null);
     }
 
     public function testOnlyProtocolsWithConfigCatalogAreReturnedInTheHelper(): void

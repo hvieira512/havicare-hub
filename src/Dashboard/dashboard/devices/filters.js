@@ -1,4 +1,6 @@
 import {
+    changeDeviceFilter,
+    setDeviceFilters,
     setDownlinkPage,
     setTelemetryPage,
     state,
@@ -66,8 +68,7 @@ async function toggleDeviceFilter(key, value) {
         next = [...current, value];
     }
 
-    state.deviceFilters = { ...state.deviceFilters, [key]: next };
-    state.deviceListPage = 1;
+    changeDeviceFilter(key, next);
     saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
     await loadSummary();
 }
@@ -100,11 +101,7 @@ export async function handleDeviceFilterClick(event) {
 
 export async function handleDeviceOnlineFilterChange(event) {
     const value = event.target.value;
-    state.deviceFilters = {
-        ...state.deviceFilters,
-        online: value === "all" ? null : value === "online",
-    };
-    state.deviceListPage = 1;
+    changeDeviceFilter("online", value === "all" ? null : value === "online");
     saveJsonStorage(FILTERS_STORAGE_KEY, state.deviceFilters);
     await loadSummary();
 }
@@ -115,15 +112,14 @@ export function handleDeviceModelFilterSearch() {
 }
 
 export async function clearDeviceFilters() {
-    state.deviceFilters = {
+    setDeviceFilters({
         deviceType: [],
         supplier: [],
         model: [],
         license: [],
         online: null,
-    };
+    });
     state.deviceModelFilterSearch = "";
-    state.deviceListPage = 1;
     clearStorageKey(FILTERS_STORAGE_KEY);
     await loadSummary();
 }

@@ -4,14 +4,15 @@ A interface do hub: uma página só, servida em PHP, com o comportamento em mód
 o browser carrega tal como estão. **Não há build step** -- nem bundler, nem transpilador,
 nem `node_modules` em produção. Guardar um ficheiro e recarregar a página é o ciclo todo.
 
-Bootstrap, Font Awesome, amCharts, SweetAlert2 e o Swagger UI estão no repositório, em
+Bootstrap, Font Awesome, SweetAlert2 e o Swagger UI estão no repositório, em
 `assets/vendor/`, e são servidos por nós -- ver o `README.md` dessa pasta. O resto é nosso.
 
 ```
 src/Dashboard/
 ├── index.php          a página
 ├── main.js            o <script type="module"> que a página carrega
-├── main.css           todo o CSS
+├── main.css           os modais: dispositivo, definições, assistente
+├── assets/css/        o resto do CSS, por área: base, shell, device, login
 ├── components/        os partials PHP que produzem a marcação
 ├── assets/            o logo, as fontes e as bibliotecas de terceiros
 ├── dashboard/         todo o JavaScript  ← o resto deste documento
@@ -27,24 +28,68 @@ São só estas, e explicam onde cada ficheiro está:
    que os apresenta.
 2. **Um módulo que só uma funcionalidade usa vive dentro dela.** Sobe à raiz de
    `dashboard/` quando aparecer o segundo consumidor -- e não antes.
-3. **Só o `app.js` conhece toda a gente.** É a raiz de composição: cacheia os elementos,
-   cria os modais, entrega o `els` a cada funcionalidade e liga os ouvintes.
+3. **Só a raiz de composição conhece toda a gente.** É o `app.js` mais o `wiring/`:
+   cacheia os elementos, cria os modais, entrega o `els` a cada funcionalidade e liga os
+   ouvintes. O `wiring/` existe porque o `app.js` tinha 567 linhas e quase noventa
+   ouvintes; dividi-lo por área moveu linhas, não acoplamento. Os módulos do `wiring/`
+   são raiz de composição como o `app.js` e podem importar de onde precisarem -- é
+   precisamente por isso que os ouvintes vivem lá e não dentro das funcionalidades, já
+   que quase todos atravessam duas ou três e a regra 1 proíbe-os de se conhecerem.
+
+4. **Um widget novo nasce no seu próprio módulo, ao lado da funcionalidade que o usa.**
+   Não se acrescenta ao `inputs.js` nem ao `telemetry-cards.js`. O `devices/device-card.js`
+   é o exemplo a seguir.
 
 Cada pasta com mais do que um ficheiro repete a regra 3 à sua escala: `settings/index.js`
 é o único que conhece as quatro secções do modal, e `settings/shell.js` é o que todas
 partilham sem conhecer nenhuma.
+
+### Porque é que a regra 4 existe
+
+Um cartão de dispositivo estava espalhado por quatro sítios: a marcação numa função do
+`list.js`, o estilo no `main.css` global, o ouvinte no `wiring/`, e os dados no `state`.
+Mudar um widget obrigava a abrir quatro ficheiros, e nada dizia que os quatro pedaços
+eram a mesma coisa.
+
+É também a razão de os ficheiros grandes serem grandes. O `inputs.js` com mil e
+trezentas linhas e o `telemetry-cards.js` com mil e cento e trinta não estão mal
+escritos: são o sítio onde tudo o que é *do mesmo género* se acumulou, porque não havia
+sítio nenhum para o que é *da mesma funcionalidade*. Organizar por camada em vez de por
+funcionalidade dá exactamente isto.
+
+O `devices/device-card.js` é o primeiro feito assim, e mostra até onde a regra vai. Juntou
+o que se podia juntar sem pagar por isso: a marcação e o esqueleto ficam no mesmo módulo,
+porque têm de mudar juntos -- o esqueleto é o cartão com as mesmas classes e barras no lugar
+do texto, e é isso que impede a lista de saltar --, e o nome do `data-action` passa a ser
+exportado, para o ouvinte delegado do `wiring/` não repetir a string que a marcação escreve.
+
+**O CSS não vem.** Fica no bloco `.device-card*` do `assets/css/device.css`, marcado com um
+comentário que aponta para o módulo. Sem passo de compilação, um ficheiro de estilo por
+widget é um pedido HTTP por widget, e foi por isso que a divisão do CSS parou em cinco
+ficheiros por área. Co-locar o estilo custava mais do que resolvia.
+
+E o ouvinte também não vem: continua delegado na raiz da lista, que é o padrão da casa --
+as opções são redesenhadas a cada resposta, e um ouvinte por cartão obrigava a religá-los
+todos de cada vez.
+
+A regra não pede uma migração. Pede que o próximo widget nasça no sítio certo, e que os
+ficheiros grandes encolham por atrito, à medida que se passa por eles.
 
 ## A árvore
 
 ```
 dashboard/
 ├── app.js                  a raiz de composição
+├── wiring/                 os ouvintes, por área -- raiz de composição, como o app.js
+│   ├── devices.js          lista, filtros, modal, painel de configuração, detalhe
+│   └── settings.js         modelos, capacidades, utilizadores da API, empresas
 ├── dom.js                  cacheElements(): os ~200 getElementById, num sítio só
 │
 │   ── o núcleo partilhado: o que duas ou mais funcionalidades usam ──
 ├── state.js                o objeto de estado, um só, com um sub-objeto por ecrã
 ├── domain.js               o vocabulário: tipos de dispositivo, modelos, fornecedores, licenças
 ├── format.js               esc(), datas, e as etiquetas por chave
+├── html.js                 html`` e raw(): a marcação escapa por omissão
 ├── widgets.js              os pedaços de HTML que mais do que um ecrã desenha
 ├── telemetry-cards.js      o catálogo dos cartões de telemetria: ícone, cor e corpo por tipo
 ├── pagination.js           o paginador das listagens
@@ -114,6 +159,13 @@ export function initGatewayLinksUi(context) {
     els = context.els;
 }
 ```
+
+Um `id` que não exista dá `undefined`, e não um erro: renomeá-lo num template deixava o
+ouvinte por ligar e o botão a não fazer nada, em silêncio. O acoplamento entre os `id` do
+PHP e o JavaScript é o preço de não haver build, e não vai deixar de existir -- mas está
+verificado. O `tests/Unit/Dashboard/DashboardElementIdsTest.php` desenha a página a sério,
+com os modais e os auxiliares já corridos, e exige que cada `els.x` que o JavaScript lê
+exista mesmo.
 
 **O estado.** Tudo o que sobrevive a um render está em `state.js`, com um sub-objeto por
 ecrã (`state.settingsModal`, `state.deviceModal`, `state.summary`). Não há estado
@@ -212,9 +264,15 @@ correcção é apontar o teste ao ficheiro novo.
   formulário do outro slide, o formulário volta à lista depois de gravar. Resolvem-se em
   tempo de chamada e não quebram nada; parti-los obrigava a um registo de callbacks que
   custa mais do que resolve. É o único ciclo do grafo.
-- **`devices/config/inputs.js` (1212 linhas) e `devices/detail.js` (905).** São grandes
-  porque o problema é grande -- um renderer por tipo de campo, um cartão por tipo de
-  telemetria. Partir por tamanho, sem uma linha que os separe de verdade, só espalha.
-- **`main.css` tem 2152 linhas num ficheiro só.** Sem build, dividi-lo custa `<link>`s.
-  As secções maiores estão marcadas com `/* ===== nome ===== */`.
-- **Os `id` entre o PHP e o `dom.js` não são verificados**, como está acima.
+- **`devices/config/inputs.js` e `telemetry-cards.js` passam das mil linhas.** Partir por
+  tamanho, sem uma linha que os separe de verdade, só espalha. A linha que os separa é a
+  regra 4: são o sítio onde tudo o que é do mesmo *género* se acumulou, e encolhem por
+  atrito à medida que cada widget novo nasce junto do seu CSS e do seu ouvinte.
+- **O CSS está dividido por área**, em cinco ficheiros: `assets/css/base.css` (tokens e
+  fontes), `shell.css` (moldura, navbar, cartões), `device.css` (o ecrã do dispositivo),
+  `login.css`, e o `main.css` fica com os modais. A ordem no `<head>` é essa, e é a
+  cascata original: cada ficheiro é uma fatia contígua do que era um só. O `main.css`
+  ficou em último e na raiz porque `/main.css` é uma rota fixa no
+  `DashboardHttpServer::publicAssetPath()` -- os ficheiros da raiz não são apanhados por
+  padrão, só o `/main.css` e o `/main.js`. Sem build, cada ficheiro é mais um pedido, e
+  por isso são cinco e não vinte.

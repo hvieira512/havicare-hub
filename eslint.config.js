@@ -25,9 +25,6 @@ export default [
                 ...globals.node,
                 bootstrap: "readonly",
                 Swal: "readonly",
-                am5: "readonly",
-                am5xy: "readonly",
-                am5themes_Animated: "readonly",
             },
         },
         rules: {

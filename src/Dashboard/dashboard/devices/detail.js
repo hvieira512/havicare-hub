@@ -2,9 +2,11 @@ import {
     requestFeature as apiRequestFeature,
 } from "../api/index.js";
 import {
+    resetDetailFiltersDraft,
     setDownlinkPage,
     setTelemetryPage,
     state,
+    updateDetailFiltersDraft,
 } from "../state.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 import {
@@ -81,7 +83,7 @@ function renderSelection() {
     }
 
     if (!state.detailFiltersDraft || typeof state.detailFiltersDraft !== "object") {
-        state.detailFiltersDraft = { ...state.detailFilters };
+        resetDetailFiltersDraft();
     }
 
     const device = state.selectedDetail.device;
@@ -397,14 +399,14 @@ function applyDetailFilters() {
         type: els.detailFilterType.value,
         q: state.detailFilters.q,
     };
-    state.detailFiltersDraft = { ...state.detailFilters };
+    resetDetailFiltersDraft();
     state.telemetryPage = 1;
     renderSelection();
 }
 
 function clearDetailFilters() {
     state.detailFilters = { from: "", to: "", type: "all", q: "" };
-    state.detailFiltersDraft = { ...state.detailFilters };
+    resetDetailFiltersDraft();
     state.telemetryPage = 1;
     if (els.detailSearch) els.detailSearch.value = "";
     renderSelection();
@@ -419,7 +421,7 @@ function applyDetailSearch() {
         ...state.detailFilters,
         q: els.detailSearch.value,
     };
-    state.detailFiltersDraft = { ...state.detailFiltersDraft, q: els.detailSearch.value };
+    updateDetailFiltersDraft({ q: els.detailSearch.value });
     state.telemetryPage = 1;
     renderSelection();
 }
@@ -427,7 +429,7 @@ function applyDetailSearch() {
 function removeDetailFilter(key) {
     const cleared = key === "type" ? "all" : "";
     state.detailFilters = { ...state.detailFilters, [key]: cleared };
-    state.detailFiltersDraft = { ...state.detailFilters };
+    resetDetailFiltersDraft();
     state.telemetryPage = 1;
     if (key === "q" && els.detailSearch) els.detailSearch.value = "";
     renderSelection();
@@ -459,12 +461,12 @@ function renderDetailActiveFilters() {
 }
 
 function updateDetailFilterDraft() {
-    state.detailFiltersDraft = {
+    updateDetailFiltersDraft({
         from: els.detailFilterFrom.value,
         to: els.detailFilterTo.value,
         type: els.detailFilterType.value,
         q: state.detailFilters.q,
-    };
+    });
 }
 
 function renderTelemetryList(telemetryRows) {

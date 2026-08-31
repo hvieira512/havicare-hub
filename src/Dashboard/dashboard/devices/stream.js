@@ -1,4 +1,9 @@
-let state;
+// O `state` entrava aqui por injecção, e passou a entrar por import como em todos os outros
+// módulos. Enquanto as escritas passaram a ir pelos mutadores do módulo e a leitura ficou no
+// objecto injectado, eram o mesmo objecto em produção -- mas só por o `app.js` injectar o
+// verdadeiro. Um teste que injectasse outro lia de um e escrevia no outro.
+import { setSelectedDetailRecent, state } from "../state.js";
+
 let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
 let eventSource = null;
@@ -55,7 +60,6 @@ function handleVisibilityChange() {
 }
 
 export function initDeviceStream(context) {
-    state = context.state;
     onRenderSelection = context.renderSelection;
     onCommandsUpdated = context.onCommandsUpdated || (() => {});
     window.addEventListener("hub-dashboard-api-token-updated", handleTokenUpdated);
@@ -167,11 +171,11 @@ function handleStreamUpdate(event) {
     streamLive = true;
     const data = JSON.parse(event.data);
     if (!state.selectedDetail) return;
-    state.selectedDetail.recent = {
+    setSelectedDetailRecent({
         telemetry: data.telemetry || [],
         events: data.events || [],
         commands: data.commands || [],
-    };
+    });
     onCommandsUpdated(currentImei, data.commands || []);
     onRenderSelection();
 }

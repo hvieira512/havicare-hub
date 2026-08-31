@@ -6,7 +6,7 @@
  * funcionalidade, e por isso pode importar de toda a gente. A regra de que uma funcionalidade
  * nunca importa outra continua de pé.
  */
-import { state } from "../state.js";
+import { setModelPreviewObjectUrl, state } from "../state.js";
 import { esc } from "../format.js";
 import { loadSettingsModal } from "../settings/index.js";
 import { handleSettingsPaginationClick } from "../settings/shell.js";
@@ -47,7 +47,6 @@ import {
 import {
     openNewModelForm,
     resetModelForm,
-    revokeModelPreviewUrl,
     saveModel,
     updateModelProtocolAndPreview,
 } from "../settings/models/form.js";
@@ -218,16 +217,18 @@ function bindCompanies() {
 }
 
 function handleModelImageChange() {
-    revokeModelPreviewUrl();
     const file = els.modelImage.files[0];
     if (file) {
-        state.modelPreviewObjectUrl = URL.createObjectURL(file);
+        setModelPreviewObjectUrl(URL.createObjectURL(file));
         const label =
             els.modelCommercialName.value.trim() ||
             els.modelInternalModel.value.trim() ||
             "Modelo";
         els.modelPreviewContent.innerHTML = `<img src="${esc(state.modelPreviewObjectUrl)}" class="object-fit-contain w-100 h-100" alt="${esc(label)}" style="max-height:180px;">`;
     } else {
+        // Limpar a escolha volta à imagem gravada, e o `updateModelProtocolAndPreview` só a
+        // desenha quando não há object URL por cima.
+        setModelPreviewObjectUrl();
         updateModelProtocolAndPreview();
     }
 }

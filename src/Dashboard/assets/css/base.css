@@ -1,0 +1,154 @@
+/* ===== base =====
+   Tipos de letra, tokens do tema e as sobreposições aos componentes do Bootstrap. É o
+   primeiro da cadeia porque todos os outros contam com estas variáveis já definidas: uma
+   regra só entra aqui se valer para a página toda. */
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-Medium.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/assets/fonts/Poppins-Bold.woff2') format('woff2');
+}
+
+:root,
+[data-bs-theme="light"] {
+    --bs-body-font-size: .875rem;
+    --bs-primary: #0b163f;
+    --bs-primary-rgb: 11, 22, 63;
+    --bs-primary-text-emphasis: #070d26;
+    --bs-primary-bg-subtle: #d5d8e1;
+    --bs-primary-border-subtle: #a4a9b9;
+    --bs-link-color: #0b163f;
+    --bs-link-color-rgb: 11, 22, 63;
+    --bs-link-hover-color: #070e28;
+    --bs-link-hover-color-rgb: 7, 14, 40;
+    --bs-focus-ring-color: rgba(11, 22, 63, .25);
+}
+
+.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #0b163f;
+    --bs-btn-border-color: #0b163f;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #091233;
+    --bs-btn-hover-border-color: #08102d;
+    --bs-btn-focus-shadow-rgb: 11, 22, 63;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #08102d;
+    --bs-btn-active-border-color: #070e28;
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: #0b163f;
+    --bs-btn-disabled-border-color: #0b163f;
+}
+
+/* ===== a base do telemóvel =====
+   As únicas coisas desta página que os utilitários do Bootstrap não sabem fazer: não há
+   `fs-sm-*` nem tamanho de botão por breakpoint. Todo o resto está na marcação, onde se vê
+   ao lado do elemento a que se aplica. */
+@media (max-width: 575.98px) {
+    /* Um campo com menos de 16px faz o Safari do iPhone dar zoom à página ao focar, e não
+       volta atrás. O par com `input-group-sm` está cá porque o Bootstrap serve esse caso
+       com dois selectores, e ganharia ao de um só. */
+    .form-control,
+    .form-select,
+    .input-group-sm > .form-control,
+    .input-group-sm > .form-select {
+        font-size: 1rem;
+    }
+
+    /* 44px é o alvo de toque mínimo, e os botões desta página são quase todos `btn-sm`,
+       que dá 31. O texto continua pequeno; o que cresce é a área de toque. */
+    .btn {
+        min-height: 44px;
+    }
+
+    /* Um cartão que só serve de moldura em ecrã largo. O padding sai por `p-0 p-sm-3` na
+       marcação; a borda e o fundo vêm cá ter porque não há `border-sm` nem `bg-sm-*`. */
+    .card-flush-sm {
+        border: 0;
+        background: transparent;
+    }
+
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #0b163f;
+    --bs-btn-border-color: #0b163f;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #0b163f;
+    --bs-btn-hover-border-color: #0b163f;
+    --bs-btn-focus-shadow-rgb: 11, 22, 63;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #0b163f;
+    --bs-btn-active-border-color: #0b163f;
+    --bs-btn-disabled-color: #0b163f;
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: #0b163f;
+}
+
+.form-check-input:checked,
+.form-check-input[type="checkbox"]:indeterminate {
+    background-color: #0b163f;
+    border-color: #0b163f;
+}
+
+.nav-pills {
+    --bs-nav-pills-link-active-bg: #0b163f;
+}
+
+.pagination {
+    --bs-pagination-active-bg: #0b163f;
+    --bs-pagination-active-border-color: #0b163f;
+}
+
+.list-group {
+    --bs-list-group-active-bg: #0b163f;
+    --bs-list-group-active-border-color: #0b163f;
+}
+
+.list-group-item-primary {
+    --bs-list-group-color: #070d26;
+    --bs-list-group-bg: #d5d8e1;
+    --bs-list-group-border-color: #a4a9b9;
+    --bs-list-group-action-hover-color: #070d26;
+    --bs-list-group-action-hover-bg: #caced8;
+    --bs-list-group-action-active-color: #070d26;
+    --bs-list-group-action-active-bg: #bfc3ce;
+    --bs-list-group-active-color: #fff;
+    --bs-list-group-active-bg: #0b163f;
+    --bs-list-group-active-border-color: #0b163f;
+}
+
+.dropdown-menu {
+    --bs-dropdown-link-active-bg: #0b163f;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+}
+

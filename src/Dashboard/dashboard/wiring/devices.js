@@ -45,6 +45,7 @@ import {
     requestTelemetryFeature,
     updateDetailFilterDraft,
 } from "../devices/detail.js";
+import { DEVICE_CARD_ACTION } from "../devices/device-card.js";
 import { editWizardAnswered } from "../devices/edit-wizard.js";
 import {
     editDevice,
@@ -276,7 +277,9 @@ function handleDeviceListClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const { action, imei } = button.dataset;
-    if (action === "select") selectDevice(imei);
+    // A acção vem do módulo do cartão em vez de ser a string repetida aqui: quem muda a
+    // marcação muda o ouvinte no mesmo sítio.
+    if (action === DEVICE_CARD_ACTION) selectDevice(imei);
 }
 
 function handleRequestGridClick(event) {

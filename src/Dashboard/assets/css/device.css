@@ -1,0 +1,965 @@
+/* ===== dispositivos =====
+   Tudo o que mostra dispositivos: o painel de detalhe, as duas tabelas de telemetria, o
+   modal de escolha com os seus filtros, a lista de cartões, o catálogo de capacidades e os
+   mosaicos de telemetria. As media queries ficam ao lado das regras que anulam -- várias
+   dependem de vir depois delas, porque uma media query não acrescenta especificidade. */
+
+/* O painel de detalhe enche o cartão, para as duas listas terem altura para crescer. Não se
+   usa `d-flex` aqui porque o `d-none` que o esconde é do mesmo peso e perdia. */
+.device-detail-open {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.device-detail-stack {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/* A divisória entre as duas listas só existe quando estão mesmo lado a lado. */
+@media (min-width: 1200px) {
+    .border-start-xl {
+        border-left: 1px solid var(--bs-border-color);
+    }
+}
+
+/* As duas listas do painel de detalhe -- eventos recebidos e pedidos ao dispositivo.
+   O `table-sm` do Bootstrap aperta as linhas a .25rem, e uma pastilha de 26px dentro de uma
+   linha de 8px de altura útil toca na de cima e na de baixo. A última linha não leva
+   divisória: por baixo dela vem logo o contorno do cartão ou o paginador. */
+.telemetry-table > :not(caption) > * > * {
+    padding: .625rem .75rem .625rem 0;
+    background: transparent;
+}
+
+.telemetry-table > tbody > tr:last-child > * {
+    border-bottom-width: 0;
+}
+
+.telemetry-table > tbody > tr > *:last-child {
+    padding-right: 0;
+}
+
+/* Uma linha por evento, sempre a mesma altura. Metade dos tipos declara detalhes e a outra
+   metade não, e com esses detalhes numa segunda linha a lista alternava entre alturas
+   conforme o tipo de cada evento. Os detalhes vão a seguir ao valor, na mesma
+   linha, e o que não cabe corta-se com reticências. O texto completo fica no `title` da
+   célula. */
+.telemetry-table {
+    table-layout: fixed;
+}
+
+/* Colunas fixas, iguais nos dois painéis: o ícone, o nome, o valor com o que sobra, e a
+   hora. Sem isto cada página media as suas colunas pelo conteúdo que lhe tocou, e as duas
+   listas lado a lado nunca alinhavam entre si nem de uma página para a outra. */
+.telemetry-table > tbody > tr > td:nth-child(1) {
+    width: 2.125rem;
+}
+
+.telemetry-table > tbody > tr > td:nth-child(2) {
+    width: 34%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* A hora mede o que a hora precisa e nunca se corta: é a coluna que se usa para comparar
+   dois eventos, e "25/08, 12:47:5..." não serve para comparar nada. */
+.telemetry-table > tbody > tr > td:nth-child(4) {
+    width: 7.5rem;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+/* Metade dos tipos declara detalhes e a outra metade não, e a segunda linha de uns fazia a
+   lista alternar entre duas alturas. A altura de duas linhas fica reservada aqui, no
+   contentor, e não numa linha vazia: assim uma linha sem detalhes centra o valor no meio da
+   altura reservada em vez de o encostar ao topo. */
+.telemetry-row-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 2.4rem;
+    min-width: 0;
+}
+
+/* Num telefone as quatro colunas dividem os ~310px úteis do cartão entre nome, valor e
+   hora, e o nome ainda leva uma largura fixa no próprio `td`. A linha passa a duas: o
+   ícone, o nome e a hora em cima, o valor com a largura toda em baixo. Serve as duas
+   tabelas do painel, os eventos recebidos e os pedidos ao dispositivo.
+
+   TEM de vir depois das regras que anula. Uma media query não acrescenta especificidade: o
+   `width: auto` daqui e o `width: 34%` do nome têm a mesma, e quem ganha é quem vier mais
+   abaixo no ficheiro. */
+@media (max-width: 575.98px) {
+    .telemetry-table > tbody > tr {
+        display: grid;
+        grid-template-columns: 2.125rem minmax(0, 1fr) auto;
+        align-items: start;
+        padding: .5rem 0;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .telemetry-table > tbody > tr:last-child {
+        border-bottom: 0;
+    }
+
+    .telemetry-table > tbody > tr > td {
+        width: auto;
+        border-bottom: 0;
+        padding: 0 .5rem 0 0;
+    }
+
+    /* As larguras fixas das colunas não se aplicam a uma grelha: aqui quem manda são as
+       faixas do `tr`, e cada celula volta a medir o que a sua faixa lhe der. */
+    .telemetry-table > tbody > tr > td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+        width: auto;
+    }
+
+    .telemetry-table > tbody > tr > td:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+        width: auto;
+    }
+
+    .telemetry-table > tbody > tr > td:nth-child(4) {
+        grid-column: 3;
+        grid-row: 1;
+        padding-right: 0;
+        width: auto;
+    }
+
+    .telemetry-table > tbody > tr > td:nth-child(3) {
+        grid-column: 2 / -1;
+        grid-row: 2;
+        padding: .125rem 0 0 0;
+        width: auto;
+    }
+}
+
+/* A truncagem destas duas vive na marcação, em `d-block text-truncate`: o `d-block` tem de
+   ir junto porque `overflow` e `text-overflow` não fazem nada num elemento inline, e estes
+   são `span`. Aqui fica só o que o Bootstrap não dá. */
+.telemetry-row-details {
+    color: var(--bs-secondary-color);
+    font-size: .8125rem;
+    line-height: 1.3;
+}
+
+/* A etiqueta de um campo. Escrevia-se `form-label form-label-sm` em setenta e um sítios, e o
+   segundo nome não existia em lado nenhum -- o espaçamento vinha todo do primeiro. */
+.form-label-sm {
+    /* `block` porque metade destes campos escrevia `d-block` à mão: sem isso, um controlo
+       que não seja de bloco -- um grupo de botões -- sobe para o lado da etiqueta. */
+    display: block;
+    margin-bottom: .5rem;
+}
+
+/* Um interruptor ao lado de campos com etiqueta: desce o que a etiqueta ocupa, para as duas
+   colunas assentarem na mesma linha. Era um `mt-4` à mão em seis sítios. */
+.form-switch-aligned {
+    margin-top: 1.5rem;
+}
+
+/* O asterisco de obrigatório, no CSS e não em nove `<span>` à mão -- seis dos quais estavam
+   escondidos dos leitores de ecrã e três não, que os fazia anunciar "asterisco" em três
+   campos e em seis não. Assim não é anunciado em nenhum. */
+.form-label-sm.required::after {
+    content: " *";
+    color: var(--bs-danger);
+}
+
+/* O bootstrap só mostra o `.invalid-feedback` a seguir aos seus próprios controlos, e o
+   fornecedor de um modelo escolhe-se num grupo de botões e não num campo. */
+.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+/* A série de ligações: uma linha do tempo com um ponto por evento. As cores são as do tema,
+   e por isso acompanham o modo claro e o escuro. */
+.connection-timeline {
+    position: relative;
+    height: 68px;
+    margin: 0 6px;
+}
+
+.connection-timeline-track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--bs-secondary-color);
+    opacity: .45;
+}
+
+.connection-timeline-dot {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--bs-success);
+    border: 1px solid var(--bs-body-bg);
+}
+
+.connection-timeline-dot.off {
+    background: var(--bs-danger);
+}
+
+.connection-timeline-scale {
+    display: flex;
+    justify-content: space-between;
+    gap: .5rem;
+    font-size: .75rem;
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+}
+
+/* A pastilha do ícone numa linha de evento: a mesma ideia do cartão, em 26px. */
+.telemetry-row-icon {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    background: var(--tone-bg, var(--bs-tertiary-bg));
+    color: var(--tone-fg, var(--bs-secondary-color));
+    font-size: .75rem;
+}
+
+/* O cartão que é o próprio pedido. Sem sombra: o que responde ao clique diz-se em repouso
+   pelo avião de papel no canto, e sob o rato pelo tom da categoria a acender. */
+.telemetry-card-action {
+    /* Um `button` encolhe para o conteúdo, e um `div.card` não: sem isto, o mosaico de
+       "Atividade" fica mais estreito que o de "Oxigénio no sangue" na mesma coluna. */
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .12s ease, background-color .12s ease;
+}
+
+/* O tom da categoria a acender, e não o cinzento. Escrever `--bs-primary-border-subtle` e
+   `--bs-tertiary-bg` por cima do tom punha um mosaico de bateria verde e um de frequência
+   cardíaca vermelho os dois cinzentos sob o rato -- a cor que o
+   identificava desaparecia exactamente no momento em que se ia clicar nele. */
+.telemetry-card-action:hover:not(:disabled),
+.telemetry-card-action:focus-visible {
+    border-color: var(--tone-fg, var(--bs-primary));
+    background: var(--tone-bg, var(--bs-tertiary-bg));
+}
+
+/* A pastilha do ícone inverte: sobre o cartão tingido, o branco destaca-a. */
+.telemetry-card-action:hover:not(:disabled) .telemetry-card-icon,
+.telemetry-card-action:focus-visible .telemetry-card-icon {
+    background: var(--bs-body-bg);
+    color: var(--tone-fg, var(--bs-body-color));
+}
+
+/* O avião de papel: presente em repouso, mas quase apagado -- oito mosaicos com um ícone
+   nítido no canto leem-se como oito avisos. Sob o rato ganha o tom da categoria. */
+.telemetry-card-hint {
+    font-size: .6875rem;
+    line-height: 1.6;
+    color: var(--bs-secondary-color);
+    opacity: .4;
+    transition: opacity .12s ease, color .12s ease;
+}
+
+.telemetry-card-action:hover:not(:disabled) .telemetry-card-hint,
+.telemetry-card-action:focus-visible .telemetry-card-hint {
+    color: var(--tone-fg, var(--bs-body-color));
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .telemetry-card-hint { transition: none; }
+}
+
+.telemetry-card-action:disabled {
+    cursor: default;
+    opacity: .75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .telemetry-card-action { transition: none; }
+}
+
+/* ===== escolher dispositivo ===== */
+
+/* O modal tem altura fixa: com a altura a vir do conteúdo, cada filtro aplicado colapsava a
+   caixa de dez linhas para uma debaixo do rato, e o botão que se ia clicar mudava de sítio
+   no momento do clique. Aqui a lista rola dentro de uma moldura que não se mexe.
+
+   A altura é uma fracção do ecrã e não um número de pixéis, para não ser mais alta do que o
+   ecrã em portáteis pequenos. */
+/* Altura definida e não um mínimo com um máximo: uma coluna só sabe onde rolar se a altura
+   do pai for um comprimento resolvido, e com `min-height`/`max-height` a altura continua a
+   vir do conteúdo -- a lista cresce 1132px dentro de uma moldura de 691 e transborda por
+   baixo do rodapé em vez de rolar.
+
+   Os limites do `clamp` são os dois lados do problema: o mínimo garante que a caixa não
+   colapsa quando um filtro deixa um dispositivo, e o máximo evita um modal absurdamente alto
+   num ecrã grande. */
+.device-selector-body {
+    height: clamp(26rem, 62vh, 46rem);
+}
+
+.device-selector-body > * {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    /* A margem negativa das listas de opções chega ao limite da caixa e dava uma barra
+       horizontal por baixo dos filtros. Nada aqui rola de lado. */
+    overflow-x: hidden;
+}
+
+/* Cada coluna rola por si. Presas ao mesmo scroll, chegar ao último filtro obrigava a descer
+   a lista de dispositivos -- duas coisas independentes num movimento só. */
+.device-filter-column {
+    gap: 1.25rem;
+    border-right: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
+}
+
+/* A coluna e um `collapse`, para os filtros se esconderem atras de um botao no telefone. A
+   partir de lg tem de estar sempre aberta, e o `d-lg-block` do Bootstrap fa-lo com um
+   `display: block !important` que apagava a coluna flex daqui. Este `!important` existe para
+   responder a esse, e não por preguiça de especificidade. */
+@media (min-width: 992px) {
+    .device-filter-column.collapse {
+        display: flex !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    /* Abaixo de lg o modal é o ecrã inteiro e as colunas empilham: a coluna dos filtros
+       deixa de ter contorno lateral e rola com a página, e não por dentro. */
+    .device-selector-body {
+        height: auto;
+    }
+
+    .device-selector-body > * {
+        height: auto;
+        overflow-y: visible;
+    }
+
+    .device-filter-column {
+        border-right: 0;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+}
+
+/* O mosaico de tipos: o mesmo do assistente de "Adicionar dispositivo", a duas colunas
+   porque e o que cabe numa coluna de 4/12. */
+.device-type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+}
+
+/* A mesma grelha fora da coluna estreita do selector: nos modais há largura para mais do
+   que duas colunas, e duas deixavam metade da linha vazia. */
+.device-type-grid.is-wide {
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+}
+
+/* ===== catálogo de capacidades ===== */
+
+/* A tira das secções fica colada ao topo enquanto a lista corre por baixo, e cada pastilha
+   aponta para o `id` da sua secção. Com cinco cabeçalhos dentro de milhares de pixéis de
+   scroll, saber onde está uma secção exigia procurá-la. */
+.capability-section-nav {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    gap: .375rem;
+    overflow-x: auto;
+    padding: .625rem 0;
+    margin-bottom: .25rem;
+    background: var(--bs-body-bg);
+    scrollbar-width: thin;
+}
+
+.capability-section-chip {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .375rem;
+    padding: .3125rem .6875rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 20px;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-size: .8125rem;
+    font-weight: 560;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .12s ease, border-color .12s ease;
+}
+
+.capability-section-chip .count {
+    font-weight: 600;
+}
+
+.capability-section-chip:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+.capability-section-chip.selected {
+    background: var(--bs-primary-bg-subtle);
+    border-color: var(--bs-primary-border-subtle);
+}
+
+.capability-section-chip.selected .count {
+    color: var(--bs-primary);
+}
+
+/* A secção é um destino de scroll, e o desvio é a altura da tira, para o cabeçalho não
+   ficar debaixo dela ao chegar. */
+.capability-catalog-section {
+    scroll-margin-top: 3.25rem;
+}
+
+/* Uma linha por capacidade: o número, o ícone que a capacidade já tem nos cartões de pedido,
+   o nome, e os factos. Nada leva largura fixa. */
+.capability-row {
+    display: grid;
+    grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .625rem;
+    padding: .4375rem .75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+}
+
+/* O número conta o que o fornecedor suporta, em negrito e apagado: enumera sem competir
+   com o nome que está ao lado. */
+.capability-index {
+    font-weight: 700;
+    font-size: 1.0625rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--bs-emphasis-color);
+    opacity: .22;
+}
+
+.capability-name {
+    font-weight: 600;
+    font-size: .9375rem;
+    min-width: 0;
+}
+
+.capability-facts {
+    font-size: .8125rem;
+    color: var(--bs-secondary-color);
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Existe para o tipo de dispositivo, mas o fornecedor escolhido não a declara. Fica
+   apagada e no fundo afundado: é contexto, e não uma linha que se possa accionar. */
+.capability-row.is-unsupported {
+    opacity: .42;
+    background: var(--bs-tertiary-bg);
+}
+
+.capability-row.is-unsupported .capability-index {
+    opacity: .12;
+}
+
+@media (max-width: 575.98px) {
+    .capability-row {
+        grid-template-columns: 1.9rem 1.4rem minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .capability-facts {
+        grid-column: 3;
+        text-align: left;
+        white-space: normal;
+    }
+}
+
+.device-type-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .1875rem;
+    width: 100%;
+    padding: .8125rem .5rem .6875rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .5rem;
+    background: var(--bs-body-bg);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .12s ease, background-color .12s ease;
+}
+
+.device-type-tile:hover,
+.device-type-tile:focus-visible {
+    border-color: var(--bs-primary-border-subtle);
+    background: var(--bs-tertiary-bg);
+}
+
+.device-type-tile.selected {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+/* Um tipo sem dispositivos fica à vista e apagado: saber que a frota não tem pulseiras é
+   informação, e escondê-lo deixava a pergunta sem resposta. */
+.device-type-tile:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.device-type-tile-icon { font-size: 1.125rem; line-height: 1; }
+
+.device-type-tile-name {
+    font-size: .78125rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+
+.device-type-tile-check {
+    position: absolute;
+    top: .375rem;
+    right: .375rem;
+    width: 14px;
+    height: 14px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 3px;
+    background: var(--bs-body-bg);
+    color: transparent;
+    font-size: .5rem;
+}
+
+.device-type-tile.selected .device-type-tile-check {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary);
+    color: #fff;
+}
+
+/* Uma lista de opções de escolha múltipla. Sem altura máxima nem rolamento próprio: dar a
+   cada grupo o seu dava seis barras de dez pixéis dentro da barra da coluna, e nenhuma
+   delas se agarra bem. Quem rola é a coluna. */
+.filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    /* As caixas de selecção alinham à esquerda com a etiqueta do grupo e com o campo de
+       pesquisa. O `padding` da linha existe para o realce respirar, e sem esta margem
+       empurrava-as para dentro -- a etiqueta a 0 e as opções a 7. */
+    margin-inline: -.4375rem;
+}
+
+/* Sem `width: 100%`: numa coluna flex a linha já estica sozinha, e a largura fixa somada à
+   margem de indentacao das licencas empurrava a contagem para fora da coluna. */
+.filter-option {
+    display: flex;
+    align-items: center;
+    gap: .5625rem;
+    padding: .3125rem .4375rem;
+    border: 1px solid transparent;
+    border-radius: .375rem;
+    background: transparent;
+    font-size: .8125rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.filter-option:hover,
+.filter-option:focus-visible {
+    background: var(--bs-body-bg);
+}
+
+.filter-option.selected {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-primary-border-subtle);
+    font-weight: 500;
+}
+
+.filter-option-box {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 3px;
+    background: var(--bs-body-bg);
+    color: transparent;
+    font-size: .5rem;
+}
+
+.filter-option.selected .filter-option-box,
+.filter-option.partial .filter-option-box {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary);
+    color: #fff;
+}
+
+.filter-option-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-option-count {
+    flex: none;
+}
+
+/* A licença por baixo da empresa a que pertence, com o traço que as liga. */
+.filter-option-nested {
+    margin-left: 1.25rem;
+    font-size: .78125rem;
+}
+
+.filter-option-nested .filter-option-box {
+    width: 13px;
+    height: 13px;
+}
+
+.filter-branch {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.filter-branch::before {
+    content: "";
+    position: absolute;
+    left: .8125rem;
+    top: 0;
+    bottom: .5625rem;
+    width: 1px;
+    background: var(--bs-border-color);
+}
+
+/* O mesmo desenho dos filtros, mas de escolha única: a marca é redonda para não prometer
+   que se podem marcar várias, e a empresa é só o cabeçalho do grupo. */
+.license-picker .filter-option-box {
+    border-radius: 50%;
+}
+
+.license-picker-company {
+    padding: .5rem .4375rem .125rem 1.875rem;
+    font-weight: 500;
+    color: var(--bs-secondary-color);
+}
+
+/* ===== cartão de dispositivo =====
+   A marcação e o esqueleto deste bloco vivem em `dashboard/devices/device-card.js`, e mudam
+   com ele. O estilo fica aqui e não ao lado do módulo porque sem passo de compilação um
+   ficheiro de estilo por widget é um pedido HTTP por widget -- ver a regra 4 do README.
+
+   Um dispositivo por linha, e a linha toda. Cada campo cai sempre na mesma abcissa e a lista
+   lê-se a descer por coluna, como uma tabela -- mas cada dispositivo continua a ser um
+   objecto com contorno próprio, e não uma linha de grelha. */
+.device-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.device-card {
+    display: grid;
+    grid-template-columns: 40px 104px minmax(0, 1fr) 11rem 6.25rem;
+    align-items: center;
+    gap: .875rem;
+    width: 100%;
+    padding: .625rem .875rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .5rem;
+    background: var(--bs-body-bg);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .12s ease, background-color .12s ease;
+}
+
+/* O esqueleto empresta a geometria do cartão, mas não é um alvo: sem isto reagia ao rato e
+   dava a entender que se podia escolher um dispositivo que ainda não chegou. */
+.device-card-skeleton {
+    cursor: default;
+    pointer-events: none;
+}
+
+/* A miniatura empresta a medida e o raio ao esqueleto, mas o fundo dela e o da caixa vazia da
+   fotografia -- e main.css vem depois do Bootstrap, logo ganhava ao `.placeholder`. Sem isto
+   a miniatura ficava quase invisivel ao lado das barras. */
+.device-card-skeleton .device-card-thumb {
+    background-color: currentcolor;
+}
+
+/* A pastilha de estado do cartão a sério tem a largura do seu texto. A barra que a substitui
+   não tem texto, e sem medida ficava um risco de 1em. */
+.device-card-skeleton-pill {
+    width: 5.25rem;
+    height: 1.25rem;
+    border-radius: 1rem;
+}
+
+/* As linhas enchem a moldura, em vez de serem um bloco no topo com espaco vazio por baixo.
+   `flex: 1` estica a caixa até à paginação e `overflow: hidden` corta as que não cabem, o
+   que deixa o número de linhas ser generoso sem medir a altura da moldura em JavaScript. */
+.device-card-skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* A lista só estica enquanto tem o esqueleto dentro. Esticada sempre, uma lista de três
+   dispositivos empurrava a paginação para o fundo da moldura. O `:has` desliga-se sozinho
+   quando os cartões verdadeiros substituem o esqueleto -- não há classe para limpar. */
+.device-card-list:has(.device-card-skeleton-list) {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/* Ao pedir de novo, o que está no ecrã é o resultado anterior. Esbatido diz que ainda está a
+   mudar, e deixa-o legível -- trocar a lista por um esqueleto a cada filtro custa mais. */
+.device-card-list[aria-busy="true"] {
+    opacity: .55;
+}
+
+.device-card:hover,
+.device-card:focus-visible {
+    border-color: var(--bs-primary-border-subtle);
+    background: var(--bs-tertiary-bg);
+}
+
+.device-card.selected {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+/* A pastilha ocupa o que o seu texto ocupa. Como item de grelha esticava a largura da
+   coluna, e "LIGADO" ficava com a mesma medida de "DESLIGADO". */
+.device-card > .config-state {
+    justify-self: start;
+}
+
+/* Os dois campos são células da grelha do cartão, e não uma célula com dois campos dentro:
+   como contentor, empilhava a licença sobre o SIM numa coluna só e perdia o alinhamento a
+   descer, que é a razão de ser desta grelha. O `display: contents` promove-os a itens da
+   grelha de cima; em telefone volta a ser um contentor, com a sua própria grelha. */
+.device-card-fields {
+    display: contents;
+}
+
+.device-card-thumb {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: .5rem;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    overflow: hidden;
+}
+
+.device-card-thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.device-card.offline .device-card-thumb { opacity: .5; }
+.device-card.offline .device-card-imei { color: var(--bs-secondary-color); }
+
+.device-card-imei {
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
+
+.device-card-meta {
+    font-size: .75rem;
+    color: var(--bs-secondary-color);
+    line-height: 1.35;
+}
+
+.device-card-field-label {
+    display: block;
+    font-size: .625rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+    line-height: 1.5;
+}
+
+/* Bloco, e não inline: `overflow` e `text-overflow` não fazem nada numa caixa inline, e sem
+   isso o número do SIM sai do cartão em vez de ser cortado. */
+.device-card-field-value {
+    display: block;
+    min-width: 0;
+    font-size: .8125rem;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Sem o prefixo do cartão: o mesmo par empresa/licença aparece no painel do dispositivo
+   escolhido, onde o valor não está dentro de um `.device-card-field-value`. */
+.license-number {
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+}
+
+.license-separator {
+    color: var(--bs-border-color);
+    padding: 0 1px;
+}
+
+.license-empty,
+.device-card-field-value.empty { color: var(--bs-secondary-color); }
+
+/* Num telefone as cinco colunas não cabem, mas o cartão continua uma grelha e não uma
+   coluna: a miniatura fica à esquerda com a pastilha e o identificador ao lado dela, e os
+   campos de atribuição passam a uma fila por baixo da divisória. Em coluna simples a
+   miniatura ficava numa linha sozinha e a pastilha esticava à largura do cartão. */
+@media (max-width: 767.98px) {
+    .device-card {
+        grid-template-columns: 40px minmax(0, 1fr);
+        grid-template-areas:
+            "thumb state"
+            "thumb identity"
+            "fields fields";
+        align-items: start;
+        gap: .25rem .625rem;
+        padding: .625rem .75rem;
+    }
+
+    .device-card-thumb { grid-area: thumb; }
+    .device-card > .config-state { grid-area: state; }
+    .device-card-identity { grid-area: identity; min-width: 0; }
+
+    /* O SIM pede a largura que precisa em vez de levar 5.25rem fixos: um número português
+       com indicativo mede mais do que isso e transborda. A licença fica com o resto e
+       encolhe, que é o que o `minmax(0, 1fr)` garante. */
+    .device-card-fields {
+        grid-area: fields;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: .5rem;
+        margin-top: .3125rem;
+        border-top: 1px solid var(--bs-border-color);
+        padding-top: .5rem;
+    }
+
+    .device-card-field {
+        min-width: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .device-card,
+    .device-type-tile {
+        transition: none;
+    }
+}
+
+/* O ícone à esquerda, o nome e o valor ao lado dele, e a pastilha de estado no extremo. A
+   coluna interna é só para separar esta linha do corpo que alguns mosaicos trazem -- a barra
+   de humidade da fralda, por exemplo.
+
+   O nome quebra em duas linhas em vez de ser truncado: a 375px, com dois mosaicos por linha,
+   "Oxigénio no sangue" ficava "Oxigénio no sa" e o `title` que o completava era uma tooltip
+   a dizer o que já estava escrito no ecrã. */
+.telemetry-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.telemetry-card-title {
+    line-height: 1.3;
+}
+
+/* A leitura mais recente, sob o nome da categoria, na cor da categoria. */
+.telemetry-card-value {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-top: .0625rem;
+    color: var(--tone-fg, inherit);
+}
+
+/* O ícone de um cartão de telemetria, cinzento por omissão: a categoria lê-se no ícone e não
+   na cor, e a cor fica disponível para o estado. */
+.telemetry-card-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .5rem;
+    background: var(--tone-bg, var(--bs-tertiary-bg));
+    color: var(--tone-fg, var(--bs-secondary-color));
+}
+
+/* O nome da categoria é uma etiqueta e não um título: pequeno, maiúsculas, peso normal. O
+   que se lê primeiro no cartão é o valor. */
+.telemetry-card-title {
+    font-size: .6875rem;
+    font-weight: 400;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+/* A cor da categoria é definida uma vez por tom, e o ícone, a borda e o valor bebem dela:
+   definida em três sítios, a borda ficava para trás quando o ícone mudava. */
+.telemetry-card-tone-info { --tone-bg: rgba(var(--bs-info-rgb), .12); --tone-fg: #0a6c85; --tone-border: var(--bs-info-border-subtle); }
+.telemetry-card-tone-success { --tone-bg: rgba(var(--bs-success-rgb), .12); --tone-fg: var(--bs-success-text-emphasis); --tone-border: var(--bs-success-border-subtle); }
+.telemetry-card-tone-warning { --tone-bg: rgba(var(--bs-warning-rgb), .18); --tone-fg: #8a6a04; --tone-border: var(--bs-warning-border-subtle); }
+.telemetry-card-tone-danger { --tone-bg: rgba(var(--bs-danger-rgb), .12); --tone-fg: var(--bs-danger-text-emphasis); --tone-border: var(--bs-danger-border-subtle); }
+.telemetry-card-tone-primary { --tone-bg: var(--bs-primary-bg-subtle); --tone-fg: var(--bs-primary-text-emphasis); --tone-border: var(--bs-primary-border-subtle); }
+.telemetry-card-tone-secondary { --tone-bg: var(--bs-secondary-bg); --tone-fg: var(--bs-secondary-color); --tone-border: var(--bs-border-color); }
+
+/* A borda do cartão acompanha o tom. */
+.card[class*="telemetry-card-tone-"] {
+    border-color: var(--tone-border);
+}
+
+/* A etiqueta em maiúsculas é o único cabeçalho de secção dentro de um cartão: o título do
+   ecrã não pode competir com um h5 em cada bloco. Uma medida só para os quatro sítios onde
+   aparece -- os factos do dispositivo, a chave da badge da trilha, o nome do passo do
+   assistente e a pastilha de estado. */
+.section-label,
+.selected-device-facts dt,
+.wizard-trail .wizard-badge-key {
+    font-size: .6875rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+

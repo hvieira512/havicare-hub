@@ -10,7 +10,7 @@
  * dentro das funcionalidades, porque era isso que a regra proibia.
  */
 import { getDevice as apiGetDevice } from "./api/index.js";
-import { state } from "./state.js";
+import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";
 import { cacheElements } from "./dom.js";
 import { bindDeviceEvents } from "./wiring/devices.js";
 import { bindSettingsEvents } from "./wiring/settings.js";
@@ -85,7 +85,6 @@ export async function startDashboard() {
     initDeviceList({ els, ui });
     initSettings({ els, ui });
     initDeviceStream({
-        state,
         renderSelection,
         onCommandsUpdated: syncDeviceModalCommandStates,
     });
@@ -106,13 +105,13 @@ export async function startDashboard() {
     // e `company` separados: o `storedFilterList` aceita as duas para não os perder.
     const stored = loadJsonStorage(FILTERS_STORAGE_KEY);
     if (stored && typeof stored === "object") {
-        state.deviceFilters = {
+        setDeviceFilters({
             deviceType: storedFilterList(stored.deviceType),
             supplier: storedFilterList(stored.supplier),
             model: storedFilterList(stored.model),
             license: storedFilterList(stored.license),
             online: typeof stored.online === "boolean" ? stored.online : null,
-        };
+        });
     }
     const storedSelectedImei = loadTextStorage(SELECTED_DEVICE_STORAGE_KEY);
     if (storedSelectedImei) {
@@ -142,9 +141,7 @@ function refreshSelectedDevice() {
     apiGetDevice(state.selectedImei).then((detail) => {
         if (detail?.error) return;
         if (state.selectedImei !== detail.device?.imei) return;
-        const recent = state.selectedDetail?.recent;
-        state.selectedDetail = detail;
-        state.selectedDetail.recent = recent;
+        refreshSelectedDetail(detail);
         renderSelection();
     });
 }

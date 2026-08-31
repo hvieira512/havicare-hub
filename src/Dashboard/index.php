@@ -23,6 +23,13 @@ require_once __DIR__ . '/components/modal.php';
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/logo.svg">
     <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <!-- A ordem é a da folha única de onde estes saíram: sem build, a cascata é a ordem
+         destas etiquetas, e várias regras contam com vir depois das que anulam. O
+         `main.css` fica no fim porque ficou com a cauda do ficheiro original. -->
+    <link href="/assets/css/base.css" rel="stylesheet">
+    <link href="/assets/css/shell.css" rel="stylesheet">
+    <link href="/assets/css/device.css" rel="stylesheet">
+    <link href="/assets/css/login.css" rel="stylesheet">
     <link href="main.css" rel="stylesheet">
 </head>
 

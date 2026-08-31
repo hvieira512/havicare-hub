@@ -6,7 +6,7 @@ import {
     saveModel as apiSaveModel,
 } from "../../api/index.js";
 import { ensureModelTemplate } from "../../capability-catalog.js";
-import { state } from "../../state.js";
+import { invalidateDeviceTypeSuppliersModels, state } from "../../state.js";
 import { html, raw } from "../../html.js";
 import { apiError, confirmDestructive, toast } from "../../dialogs.js";
 import { clearInvalid, markInvalid } from "../../validation.js";
@@ -230,7 +230,7 @@ async function saveModelDetail() {
     // O nome, o fornecedor e o tipo são o que a árvore mostra, e o que o resto da dashboard
     // usa para reconhecer o modelo: as duas listas em memória deixam de valer.
     state.settingsModal.sectionLoaded.models = false;
-    state.deviceTypeSuppliersModels = [];
+    invalidateDeviceTypeSuppliersModels();
 }
 
 /**
@@ -261,7 +261,7 @@ async function deleteCurrentModel() {
 
     await apiDeleteModel(model.id);
     removeModelFromCatalog(model.id);
-    state.deviceTypeSuppliersModels = [];
+    invalidateDeviceTypeSuppliersModels();
     backToModelList();
 }
 

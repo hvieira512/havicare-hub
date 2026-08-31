@@ -1,0 +1,164 @@
+/* ===== entrada =====
+   O ecrã de autenticação e mais nada: o painel escuro, a órbita, a marca e o formulário.
+   É o único bloco da página que ninguém mais partilha, e por isso é o mais fácil de manter
+   à parte -- uma regra `dashboard-login-*` só existe aqui. */
+
+.dashboard-login {
+    background:
+        radial-gradient(circle at 15% 15%, rgba(11, 22, 63, .12), transparent 32rem),
+        #f4f5f7;
+}
+
+/* O cinzento claro da maqueta, e não branco: os campos são brancos, e sobre branco puro
+   desapareciam -- o lado direito lê-se como uma folha vazia com texto solto. */
+.dashboard-login-panel {
+    background: #f4f5f7;
+    box-shadow: -1.5rem 0 4rem rgba(18, 28, 45, .08);
+    z-index: 1;
+}
+
+.dashboard-login-panel .form-control {
+    background-color: #fff;
+}
+
+.dashboard-login-brand img {
+    width: 148px;
+}
+
+.dashboard-login-submit {
+    min-height: 2.75rem;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.dashboard-login-submit-loading {
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+}
+
+.dashboard-login-submit-loading:not(.d-none) {
+    display: inline-flex;
+}
+
+.dashboard-login-atmosphere {
+    background:
+        linear-gradient(145deg, rgba(9, 18, 33, .95), rgba(15, 53, 85, .92)),
+        repeating-linear-gradient(90deg, transparent 0 79px, rgba(255, 255, 255, .04) 80px);
+}
+
+.dashboard-login-atmosphere::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+    background-size: 80px 80px;
+}
+
+/* A marca no canto superior esquerdo do painel escuro, como na maqueta. O logo e escuro,
+   por isso inverte-se, como ja acontece na barra de navegacao. */
+.dashboard-login-badge {
+    position: absolute;
+    left: 3rem;
+    top: 2.5rem;
+}
+
+.dashboard-login-badge img {
+    height: 24px;
+    width: auto;
+    display: block;
+    filter: invert(100%);
+    opacity: .9;
+}
+
+/* A assinatura e a frase, no canto inferior esquerdo. Estavam a direita e sem frase. */
+.dashboard-login-mark {
+    position: absolute;
+    left: 3rem;
+    right: 3rem;
+    bottom: 2.5rem;
+    max-width: 20rem;
+}
+
+.dashboard-login-signature {
+    display: block;
+    color: rgba(255, 255, 255, .45);
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    margin-bottom: .625rem;
+}
+
+.dashboard-login-pitch {
+    margin: 0;
+    color: rgba(255, 255, 255, .8);
+    font-size: .875rem;
+    line-height: 1.6;
+}
+
+/* Uma medida fixa para o formulario, em vez da largura que a coluna der. */
+.dashboard-login-form-column {
+    width: 100%;
+    max-width: 22.5rem;
+    margin: 0 auto;
+}
+
+.dashboard-login-orbit {
+    position: absolute;
+    width: min(46vw, 660px);
+    aspect-ratio: 1;
+    top: 50%;
+    left: 50%;
+    border: 1px solid rgba(116, 192, 252, .34);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.dashboard-login-orbit::before,
+.dashboard-login-orbit::after {
+    content: "";
+    position: absolute;
+    border: 1px solid rgba(116, 192, 252, .2);
+    border-radius: 50%;
+}
+
+.dashboard-login-orbit::before {
+    inset: 16%;
+}
+
+.dashboard-login-orbit::after {
+    inset: 34%;
+    background: radial-gradient(circle, rgba(13, 202, 240, .3), transparent 68%);
+}
+
+.dashboard-login-signal {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #74c0fc;
+    box-shadow: 0 0 0 10px rgba(116, 192, 252, .08), 0 0 2rem #0dcaf0;
+    animation: signal-pulse 2.4s ease-in-out infinite;
+}
+
+.dashboard-login-signal-one {
+    top: 27%;
+    left: 39%;
+}
+
+.dashboard-login-signal-two {
+    right: 28%;
+    bottom: 31%;
+    animation-delay: -1.2s;
+}
+
+@keyframes signal-pulse {
+    50% {
+        transform: scale(1.25);
+        opacity: .65;
+    }
+}
+

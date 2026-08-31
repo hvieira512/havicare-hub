@@ -1,0 +1,274 @@
+/* ===== moldura e primitivas =====
+   A armação da página -- colunas, barra de navegação, cartão -- e as peças que qualquer
+   ecrã usa: linhas de árvore, pastilhas de contagem, divisórias de cartão, pastilhas de
+   filtro. Uma regra entra aqui quando serve mais do que uma área; se só serve uma, vive no
+   ficheiro dessa área. */
+
+/* As duas colunas do ecrã principal chegam ao fundo, para as duas listas terem espaço para
+   crescer. `min-height` e não `height`: quando o conteúdo passa do ecrã, a página cresce. */
+#dashboardApp {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+}
+
+.dashboard-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.dashboard-main > .row {
+    flex: 1 1 auto;
+}
+
+/* Na coluna da esquerda, é o cartão dos mosaicos que absorve o resto: o da identidade tem a
+   altura dos factos que mostra, e esticá-lo deixava o `Editar` a flutuar sozinho. */
+#requestCardsCard {
+    flex: 1 1 auto;
+}
+
+/* ===== primitivas do sistema ===== */
+
+/* A barra de navegação é o navy da marca. */
+.dashboard-navbar {
+    background-color: var(--bs-primary);
+}
+
+/* Dentro da barra, os `btn-dark` pedem a cor à própria barra: o quase-preto do Bootstrap
+   sobre o navy da marca lê-se como um segundo escuro. */
+.dashboard-navbar .btn-dark {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: rgba(255, 255, 255, 0.08);
+    --bs-btn-border-color: rgba(255, 255, 255, 0.18);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: rgba(255, 255, 255, 0.16);
+    --bs-btn-hover-border-color: rgba(255, 255, 255, 0.28);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: rgba(255, 255, 255, 0.22);
+    --bs-btn-active-border-color: rgba(255, 255, 255, 0.32);
+}
+
+/* Uma elevação só: a página é cinzenta, o cartão é branco, e dentro do cartão separa-se com
+   linha e espaço. O contorno do cartão é mais claro que o das linhas interiores, para a
+   moldura exterior não competir com as divisórias que estruturam o conteúdo. */
+.card {
+    --bs-card-border-color: #e9ecef;
+}
+
+/* Um filho pertence ao cabecalho acima dele, e le-se indentado sob ele. A linha vertical e
+   o que diz que pertence, sem precisar de uma segunda tabela a dizer o mesmo.
+
+   Serve as licenças dentro de uma empresa e o catálogo -- fornecedores dentro de um tipo,
+   modelos dentro de um fornecedor. As margens negativas são para a linha atravessar o
+   cartão de lado a lado, e valem o `p-3` do `card-body` que os dois usam. */
+.tree-row {
+    margin: .75rem -1rem 0;
+    padding: .75rem 1rem 0 2rem;
+    border-top: 1px solid var(--bs-border-color-translucent);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.tree-row+.tree-row {
+    margin-top: .5rem;
+    padding-top: .5rem;
+}
+
+/* A curva que liga o filho ao cabeçalho acima dele. */
+.tree-row::before {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 50%;
+    width: 1px;
+    background: var(--bs-border-color);
+}
+
+.tree-row::after {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    width: .5rem;
+    height: 1px;
+    background: var(--bs-border-color);
+}
+
+/* O terceiro nível: um modelo dentro de um fornecedor dentro de um tipo. */
+.tree-row-nested {
+    padding-left: 3.25rem;
+}
+
+.tree-row-nested::before,
+.tree-row-nested::after {
+    left: 2.25rem;
+}
+
+/* A 375px a indentação dupla come o nome: um modelo com nome comercial e código interno
+   começa a 3.25rem e sobra-lhe menos de metade da largura. */
+@media (max-width: 575.98px) {
+    .tree-row {
+        padding-left: 1.5rem;
+    }
+
+    .tree-row::before,
+    .tree-row::after {
+        left: .625rem;
+    }
+
+    .tree-row-nested {
+        padding-left: 2.5rem;
+    }
+
+    .tree-row-nested::before,
+    .tree-row-nested::after {
+        left: 1.625rem;
+    }
+}
+
+/* A folha do catálogo abre a ficha do modelo, e por isso reage ao rato. */
+.catalog-model {
+    cursor: pointer;
+}
+
+.catalog-model:hover,
+.catalog-model:focus-visible {
+    background: var(--bs-tertiary-bg);
+}
+
+.catalog-model-image {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.catalog-caret {
+    font-size: .75rem;
+    transition: transform .15s ease;
+}
+
+[aria-expanded="false"] .catalog-caret {
+    transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .catalog-caret {
+        transition: none;
+    }
+}
+
+/* Identificadores e valores em coluna alinham dígito a dígito. Um IMEI de 15 dígitos numa
+   tabela de vinte linhas lê-se por comparação, e sem isto cada linha começa noutro sítio. */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
+/* A divisória entre blocos de um cartão vai de bordo a bordo. Encolhida à largura do
+   conteúdo lê-se como a moldura de outra caixa dentro do cartão; a sangrar até ao contorno é
+   a mesma linha que separa duas linhas de uma tabela, e o cartão continua um. */
+.card-section {
+    margin-top: 1rem;
+    margin-inline: calc(-1 * var(--bs-card-spacer-x, 1rem));
+    padding-top: 1rem;
+    padding-inline: var(--bs-card-spacer-x, 1rem);
+    border-top: 1px solid var(--bs-border-color);
+}
+
+/* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Eventos recebidos" e
+   "12" são a mesma informação, e a meio metro de distância deixam de o ser. */
+.count-chip {
+    font-size: .6875rem;
+    font-weight: 600;
+    line-height: 1.45;
+    padding: 0 .4rem;
+    border-radius: 10px;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Sem contagem não há pastilha: vazia, é um rectângulo cinzento de 6px ao lado do título. */
+.count-chip:empty {
+    display: none;
+}
+
+/* Um número ao lado de uma etiqueta, sem pastilha à volta: o mosaico de tipos, as opções de
+   filtro e as pastilhas de secção escreviam as mesmas três declarações cada um. */
+.count-number {
+    font-size: .6875rem;
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Um aviso dentro de um bloco de configuração. As classes eram as mesmas em quatro sítios,
+   por duas ordens diferentes. As margens ficam de fora: variam com o sítio. */
+.alert-compact {
+    padding: .5rem 1rem;
+    font-size: .875em;
+}
+
+/* No botão de filtros a pastilha diz quantos estão ligados, e essa é a única cor do painel:
+   sobre o cinzento das outras não se distinguia de uma contagem qualquer. */
+.count-chip-strong {
+    background: var(--bs-primary);
+    color: #fff;
+}
+
+/* A pastilha de um filtro aplicado, neutra: o filtro não é um estado do sistema, e a única
+   cor do painel é o contador do botão. A forma é a das pastilhas de estado -- ponto,
+   maiúsculas, mesma altura -- porque um filtro aplicado também é uma condição ligada. */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .6875rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: .15rem .3rem .15rem .55rem;
+    border-radius: 20px;
+    /* O cinzento da maqueta e não o `tertiary-bg`: a um tom do branco do cartão a pastilha
+       não se lê como pastilha, é texto em maiúsculas com um ponto à frente. */
+    background: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+}
+
+.filter-chip::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 50%;
+    background: currentcolor;
+}
+
+.filter-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: .625rem;
+}
+
+/* O fundo do realce é mais escuro que o da pastilha, senão não se via: a pastilha já é o
+   `secondary-bg`, que era tambem o realce. */
+.filter-chip-remove:hover,
+.filter-chip-remove:focus-visible {
+    background: var(--bs-tertiary-color);
+    color: var(--bs-body-bg);
+}
+
