@@ -199,16 +199,39 @@ function handleTokenUpdated() {
     connectDeviceStream(currentImei);
 }
 
+/**
+ * Junta o que chegou ao que já cá estava.
+ *
+ * O `snapshot` traz o histórico todo e substitui. As actualizações trazem só o que entrou
+ * desde a última -- é isso que faz um radar custar umas linhas em vez das duzentas entradas
+ * de cada vez --, e por isso empilham-se à frente, que é onde as mais recentes vivem. A lista
+ * apara-se ao limite que o servidor diz guardar, para o cliente não crescer sem fim.
+ *
+ * Os comandos vêm sempre por inteiro: mudam de estado, e uma entrada que muda não se manda
+ * por diferenças.
+ */
+function mergeRecent(previous, data, isSnapshot) {
+    const limit = Number(data.limit) > 0 ? Number(data.limit) : 100;
+    const merge = (incoming, existing) => (isSnapshot
+        ? incoming
+        : [...incoming, ...existing].slice(0, limit));
+
+    return {
+        telemetry: merge(data.telemetry || [], previous?.telemetry || []),
+        events: merge(data.events || [], previous?.events || []),
+        commands: data.commands || [],
+    };
+}
+
 function handleStreamUpdate(event) {
     // Uma entrega prova a ligação mesmo que o `open` se tenha perdido.
     streamLive = true;
     const data = JSON.parse(event.data);
     if (!state.selectedDetail) return;
-    setSelectedDetailRecent({
-        telemetry: data.telemetry || [],
-        events: data.events || [],
-        commands: data.commands || [],
-    });
+
+    setSelectedDetailRecent(
+        mergeRecent(state.selectedDetail.recent, data, event.type === "snapshot"),
+    );
     onCommandsUpdated(currentImei, data.commands || []);
     onRenderSelection();
 }

@@ -99,7 +99,14 @@ interface DashboardStoreContract
      */
     public function onlineDeviceImeis(): array;
 
-    public function recent(string $imei, string $list): array;
+    /** Com `$sinceSeq` maior que zero, só o que entrou depois desse número de ordem. */
+    public function recent(string $imei, string $list, int $sinceSeq = 0): array;
+
+    /** O número de ordem da entrada mais recente, para o cliente saber onde ficou. */
+    public function latestSequence(string $imei, string $list): int;
+
+    /** Quantas entradas o histórico guarda por lista. */
+    public function historyLimit(): int;
 
     public function commands(string $imei): array;
 

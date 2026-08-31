@@ -54,7 +54,6 @@ final class DeviceController
 
         $loop = Loop::get();
         $stream = new ThroughStream();
-        $lastPayload = null;
 
         // O cliente ainda não drenou o que já lhe foi escrito.
         //
@@ -72,27 +71,50 @@ final class DeviceController
             $blocked = false;
         });
 
-        $send = function (string $event) use ($imei, $auth, $stream, &$lastPayload, &$blocked): void {
+        // Onde é que este cliente já vai, por lista. O instantâneo parte do zero e leva o
+        // histórico todo; a partir daí cada actualização leva só o que entrou depois.
+        //
+        // É isto que tira a pressão de onde ela vinha: um radar publica cerca de vinte
+        // mensagens por segundo, e mandar as cem entradas de cada lista quatro vezes por
+        // segundo eram umas dezenas de KB por segundo por separador aberto. Com o cursor são
+        // as poucas linhas que mudaram. A contrapressão continua a ser a rede de segurança,
+        // mas passa a ser bem menos precisada.
+        $cursor = ['telemetry' => 0, 'events' => 0];
+        $lastCommands = null;
+
+        $send = function (string $event) use ($imei, $auth, $stream, &$cursor, &$lastCommands, &$blocked): void {
             if (!$stream->isWritable() || $blocked) {
                 return;
             }
 
-            $data = $this->service->recent($imei, $auth);
+            $data = $this->service->recent($imei, $auth, $cursor);
             if (isset($data['error'])) {
                 return;
             }
 
-            $payload = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            if ($payload === $lastPayload) {
+            $cursor = [
+                'telemetry' => (int)($data['cursor']['telemetry'] ?? 0),
+                'events' => (int)($data['cursor']['events'] ?? 0),
+            ];
+            unset($data['cursor']);
+
+            // Os comandos vão sempre por inteiro porque mudam de estado, e por isso é a
+            // comparação deles que decide se uma actualização sem linhas novas tem alguma
+            // coisa para dizer.
+            $commands = json_encode($data['commands'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $hasNewEntries = $data['telemetry'] !== [] || $data['events'] !== [];
+            if (!$hasNewEntries && $commands === $lastCommands) {
                 // Nada mudou: mantém a ligação viva sem obrigar o cliente a redesenhar o
                 // mesmo histórico.
                 $blocked = $stream->write(": keep-alive\n\n") === false;
                 return;
             }
 
+            $lastCommands = $commands;
+            $payload = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
             // O `false` do `write()` não quer dizer que o payload se perdeu: ficou aceite no
-            // buffer, e por isso o `lastPayload` acompanha-o na mesma.
-            $lastPayload = $payload;
+            // buffer, e por isso o cursor avança na mesma.
             $blocked = $stream->write("event: {$event}\ndata: {$payload}\n\n") === false;
         };
 
@@ -226,12 +248,5 @@ final class DeviceController
     public function delete(array $params): Response
     {
         return $this->json->respond($this->service->delete($params['imei']));
-    }
-
-    public function recent(array $params, ServerRequestInterface $request): Response
-    {
-        $result = $this->service->recent($params['imei'], RequestContext::auth($request));
-
-        return $this->json->respond($result, $this->status->map($result));
     }
 }

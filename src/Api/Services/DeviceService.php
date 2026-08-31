@@ -580,16 +580,40 @@ class DeviceService
         return $this->store->updates();
     }
 
-    public function recent(string $imei, ?ApiAuthContext $auth = null): array
+    /**
+     * O histórico recente de um dispositivo.
+     *
+     * O `$since` é o cursor do cliente, por lista. Vazio devolve tudo -- é o instantâneo de
+     * quem acaba de ligar. Preenchido devolve só o que entrou depois, que é o que faz um
+     * radar a vinte mensagens por segundo custar umas linhas por actualização em vez do
+     * histórico inteiro de cada vez.
+     *
+     * Os comandos vão sempre por inteiro: ao contrário da telemetria e dos eventos, que só
+     * crescem, um comando muda de estado ao longo da vida, e uma entrada que muda não se
+     * pode mandar por diferenças sem dizer também o que desapareceu.
+     *
+     * @param array<string, int> $since
+     */
+    public function recent(string $imei, ?ApiAuthContext $auth = null, array $since = []): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
             return ApiError::deviceNotFound()->toArray();
         }
 
+        $telemetrySince = max(0, (int)($since['telemetry'] ?? 0));
+        $eventsSince = max(0, (int)($since['events'] ?? 0));
+
         return [
-            'telemetry' => $this->store->recent($imei, 'telemetry'),
-            'events' => $this->store->recent($imei, 'events'),
+            'telemetry' => $this->store->recent($imei, 'telemetry', $telemetrySince),
+            'events' => $this->store->recent($imei, 'events', $eventsSince),
             'commands' => $this->store->commands($imei),
+            'cursor' => [
+                'telemetry' => $this->store->latestSequence($imei, 'telemetry'),
+                'events' => $this->store->latestSequence($imei, 'events'),
+            ],
+            // Quantas entradas o histórico guarda, para o cliente aparar a lista ao juntar
+            // uma diferença sem ter de adivinhar o limite do servidor.
+            'limit' => $this->store->historyLimit(),
         ];
     }
 

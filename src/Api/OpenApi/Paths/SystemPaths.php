@@ -39,29 +39,9 @@ final class SystemPaths
                     ],
                 ],
             ],
-            '/api/auth/stream-ticket' => [
-                'post' => [
-                    'tags' => ['System'],
-                    'summary' => 'Issue a short-lived, single-use ticket for opening an SSE stream',
-                    'description' => 'EventSource cannot send an Authorization header, so a stream credential has to travel in the URL — where it is recorded by any proxy along the way and by browser history. This ticket is scoped to the caller, valid for seconds, and burned on first use, so a leaked URL opens nothing. Pass it to the stream endpoint as `?ticket=`.',
-                    'responses' => [
-                        '200' => Responses::content('Stream ticket issued', [
-                            'type' => 'object',
-                            'properties' => [
-                                'data' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'ticket' => ['type' => 'string'],
-                                        'expires_in' => ['type' => 'integer'],
-                                        'expires_at' => ['type' => 'string', 'format' => 'date-time'],
-                                    ],
-                                ],
-                            ],
-                        ]),
-                        '403' => Responses::error(),
-                    ],
-                ],
-            ],
+            // O `/api/auth/stream-ticket` não está aqui de propósito: existe só para a
+            // dashboard abrir o seu stream, que também não é público. Ver a lista de rotas
+            // internas no `OpenApiSpecRoutesTest`.
         ];
     }
 

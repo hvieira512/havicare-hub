@@ -217,9 +217,19 @@ final class DashboardStore implements DashboardStoreContract
         return $this->runtime->onlineDeviceImeis();
     }
 
-    public function recent(string $imei, string $list): array
+    public function recent(string $imei, string $list, int $sinceSeq = 0): array
     {
-        return $this->events->recent($imei, $list);
+        return $this->events->recent($imei, $list, $sinceSeq);
+    }
+
+    public function latestSequence(string $imei, string $list): int
+    {
+        return $this->events->latestSequence($imei, $list);
+    }
+
+    public function historyLimit(): int
+    {
+        return $this->limit;
     }
 
     public function commands(string $imei): array

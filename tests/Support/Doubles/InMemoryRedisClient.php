@@ -95,8 +95,18 @@ final class InMemoryRedisClient implements ClientInterface
             'setex' => $this->setex((string)$arguments[0], (int)$arguments[1], (string)$arguments[2]),
             'get' => $this->get((string)$arguments[0]),
             'del' => $this->del($arguments[0]),
+            'incr' => $this->incr((string)$arguments[0]),
             default => throw new \BadMethodCallException("Redis method {$method} is not implemented"),
         };
+    }
+
+    /** O contador que dá o número de ordem a cada entrada do histórico. */
+    private function incr(string $key): int
+    {
+        $next = (int)($this->strings[$key] ?? '0') + 1;
+        $this->strings[$key] = (string)$next;
+
+        return $next;
     }
 
     private function sadd(string $key, string $member): int

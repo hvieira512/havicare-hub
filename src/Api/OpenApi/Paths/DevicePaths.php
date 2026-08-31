@@ -173,22 +173,8 @@ final class DevicePaths
                     ],
                 ],
             ],
-            '/api/devices/{imei}/stream' => [
-                'get' => [
-                    'tags' => [self::TAG],
-                    'summary' => 'Open a server-sent events stream for recent device activity',
-                    'parameters' => [$imei],
-                    'responses' => [
-                        '200' => Responses::content(
-                            'SSE stream emitting snapshot and update events',
-                            Responses::ref('DeviceStreamResponse'),
-                            'text/event-stream',
-                        ),
-                        '403' => Responses::error(),
-                        '404' => Responses::error(),
-                    ],
-                ],
-            ],
+            // O `/api/devices/{imei}/stream` não está aqui de propósito: serve a dashboard e
+            // mais ninguém. Ver a lista de rotas internas no `OpenApiSpecRoutesTest`.
             '/api/commands/{id}' => [
                 'get' => [
                     'tags' => [self::TAG],

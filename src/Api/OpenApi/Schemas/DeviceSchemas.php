@@ -70,10 +70,6 @@ final class DeviceSchemas
                     'capabilities' => Responses::ref('DeviceCapabilitiesMatrix'),
                 ],
             ],
-            'DeviceStreamResponse' => [
-                'type' => 'string',
-                'example' => "event: snapshot\ndata: {\"telemetry\":[],\"events\":[],\"commands\":[]}\n\n",
-            ],
             'DeviceCreateRequest' => [
                 'type' => 'object',
                 'required' => ['imei', 'supplier', 'model'],

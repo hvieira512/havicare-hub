@@ -16,6 +16,23 @@ final class OpenApiSpecRoutesTest extends TestCase
 {
     private const ROUTES_DIR = __DIR__ . '/../../../src/Api/Routes';
 
+    /**
+     * Rotas que existem e não se documentam, porque não são para ninguém de fora.
+     *
+     * O stream serve a dashboard e mais nada: é o `EventSource` de uma página que corre neste
+     * mesmo servidor. Documentá-lo convidava a que se dependesse dele, e ele não tem o
+     * compromisso de estabilidade que o resto da API tem -- a forma do que ali viaja mudou
+     * quando passou a mandar diferenças em vez do histórico todo, e há-de voltar a mudar.
+     *
+     * O bilhete existe apenas para abrir esse stream, e por isso segue-o.
+     *
+     * @var list<string>
+     */
+    private const INTERNAL_ROUTES = [
+        '/api/auth/stream-ticket',
+        '/api/devices/{imei}/stream',
+    ];
+
     public function testEveryRegisteredRouteIsDocumentedAndViceVersa(): void
     {
         $registered = $this->registeredPaths();
@@ -31,6 +48,44 @@ final class OpenApiSpecRoutesTest extends TestCase
             array_values(array_diff($documented, $registered)),
             'paths documented in the OpenAPI spec that no route serves'
         );
+    }
+
+    /**
+     * E o outro sentido da mesma regra: uma rota interna não pode reaparecer na especificação
+     * sem que alguém repare. Sem isto, bastava alguém documentá-la de boa fé para ela voltar
+     * a ser pública.
+     */
+    public function testInternalRoutesStayOutOfTheSpecification(): void
+    {
+        $documented = $this->documentedPaths();
+
+        foreach (self::INTERNAL_ROUTES as $internal) {
+            self::assertNotContains(
+                $internal,
+                $documented,
+                "A rota `{$internal}` é interna à dashboard e não se documenta."
+            );
+        }
+    }
+
+    /** A lista de internas não pode ganhar rotas que já não existem. */
+    public function testEveryInternalRouteStillExists(): void
+    {
+        $registered = [];
+        foreach (glob(self::ROUTES_DIR . '/*.php') ?: [] as $file) {
+            preg_match_all(
+                "/new ApiRoute\(\s*'[A-Z]+'\s*,\s*'([^']+)'/",
+                (string)file_get_contents($file),
+                $matches
+            );
+            foreach ($matches[1] as $pattern) {
+                $registered[] = preg_replace('/\{([A-Za-z]+):[^}]*\}/', '{$1}', $pattern);
+            }
+        }
+
+        foreach (self::INTERNAL_ROUTES as $internal) {
+            self::assertContains($internal, $registered, "A rota interna `{$internal}` já não existe.");
+        }
     }
 
     /** @return list<string> */
@@ -50,7 +105,7 @@ final class OpenApiSpecRoutesTest extends TestCase
             }
         }
 
-        $paths = array_values(array_unique($paths));
+        $paths = array_values(array_diff(array_unique($paths), self::INTERNAL_ROUTES));
         sort($paths);
 
         // Se o padrão acima deixar de casar, as duas diferenças ficam vazias e o teste passa

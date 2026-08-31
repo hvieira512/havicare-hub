@@ -41,7 +41,9 @@ class FakeEventSource {
     emit(type, data) {
         this.readyState = FakeEventSource.OPEN;
         for (const handler of this.listeners[type] || []) {
-            handler(data === undefined ? {} : { data: JSON.stringify(data) });
+            // O `type` vai junto porque é por ele que o cliente distingue um instantâneo, que
+            // substitui o histórico, de uma actualização, que se junta ao que já lá está.
+            handler(data === undefined ? { type } : { type, data: JSON.stringify(data) });
         }
     }
 
