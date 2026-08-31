@@ -6,6 +6,7 @@ namespace Tests\Unit\Api\OpenApi;
 
 use Hub\Api\OpenApi\SchemaFromRequest;
 use Hub\Api\Request\ApiUserWriteRequest;
+use Hub\Api\Request\DeviceAssociationRequest;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,6 +23,29 @@ final class SchemaFromRequestTest extends TestCase
         $schema = SchemaFromRequest::schema(ApiUserWriteRequest::class, [ApiUserWriteRequest::GROUP_CREATE]);
 
         self::assertSame(['username', 'password'], $schema['required']);
+    }
+
+    /**
+     * Obrigatório não é só o `NotBlank`.
+     *
+     * O `licenseId` da associação é obrigatório porque o `Positive` recusa o `0` com que
+     * nasce, e não porque alguém lhe tenha posto um `NotBlank`. A versão anterior deste
+     * gerador procurava classes de constraint por nome e documentava-o como opcional.
+     */
+    public function testAnyConstraintThatRejectsTheDefaultMakesTheFieldRequired(): void
+    {
+        $schema = SchemaFromRequest::schema(DeviceAssociationRequest::class);
+
+        self::assertSame(['company', 'licenseId'], $schema['required']);
+    }
+
+    /** O valor com que um campo obrigatório nasce é o que as regras recusam. */
+    public function testARequiredFieldDoesNotAdvertiseItsConstructorDefault(): void
+    {
+        $properties = SchemaFromRequest::schema(DeviceAssociationRequest::class)['properties'];
+
+        self::assertArrayNotHasKey('default', $properties['licenseId'], 'o 0 é recusado pelo Positive');
+        self::assertSame(1, $properties['licenseId']['minimum']);
     }
 
     /** A mesma declaração descreve os dois corpos, conforme o grupo que a rota corre. */

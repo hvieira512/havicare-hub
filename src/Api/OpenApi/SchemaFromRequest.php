@@ -36,15 +36,15 @@ final class SchemaFromRequest
             ->getValidator()
             ->getMetadataFor($requestClass);
 
+        $required = self::requiredFields($requestClass, $groups);
         $properties = [];
-        $required = [];
         foreach ((new \ReflectionClass($requestClass))->getConstructor()?->getParameters() ?? [] as $parameter) {
             $name = $parameter->getName();
-            $constraints = self::constraintsFor($metadata, $name, $groups);
-            $properties[$name] = self::property($parameter, $constraints);
-            if (self::isRequired($constraints)) {
-                $required[] = $name;
-            }
+            $properties[$name] = self::property(
+                $parameter,
+                self::constraintsFor($metadata, $name, $groups),
+                in_array($name, $required, true),
+            );
         }
 
         $schema = ['type' => 'object', 'properties' => $properties];
@@ -60,7 +60,7 @@ final class SchemaFromRequest
      * @param list<object> $constraints
      * @return array<string, mixed>
      */
-    private static function property(\ReflectionParameter $parameter, array $constraints): array
+    private static function property(\ReflectionParameter $parameter, array $constraints, bool $required): array
     {
         $type = $parameter->getType();
         $property = ['type' => self::jsonType($type instanceof \ReflectionNamedType ? $type->getName() : 'string')];
@@ -78,12 +78,11 @@ final class SchemaFromRequest
             };
         }
 
-        // A string vazia é o valor que o construtor precisa de ter para o campo ser
-        // opcional em PHP, não um valor por omissão da API. Documentá-la dizia a quem lê que
-        // omitir o campo é o mesmo que mandá-lo vazio -- e é precisamente o que o `NotBlank`
-        // recusa.
+        // Um campo obrigatório não tem valor por omissão que se documente: o valor com que
+        // nasce é precisamente o que as regras recusam -- a string vazia do `NotBlank`, o
+        // zero do `Positive` --, e anunciá-lo dizia a quem lê que omitir o campo é legítimo.
         $default = $parameter->isDefaultValueAvailable() ? $parameter->getDefaultValue() : null;
-        if ($default !== null && $default !== '') {
+        if (!$required && $default !== null) {
             $property['default'] = $default;
         }
 
@@ -121,19 +120,34 @@ final class SchemaFromRequest
     }
 
     /**
-     * Obrigatório é o que não pode vir vazio nem em falta.
+     * Obrigatório é o campo cujo valor por omissão as próprias regras recusam.
      *
-     * @param list<object> $constraints
+     * Perguntar ao validador em vez de enumerar classes de constraint. A versão anterior
+     * procurava `NotBlank` e `NotNull` e mais nada, e por isso o `licenseId` da associação --
+     * que é obrigatório porque o `Positive` recusa o `0` com que nasce -- saía documentado
+     * como opcional. Qualquer regra nova passava a ter de ser acrescentada aqui à mão, e o
+     * esquema mentia em silêncio até alguém reparar.
+     *
+     * Instanciar sem argumentos é o que isto exige de um objecto de pedido: todos os campos
+     * têm valor por omissão, porque é assim que um campo omitido se representa.
+     *
+     * @param class-string $requestClass
+     * @param list<string> $groups
+     * @return list<string>
      */
-    private static function isRequired(array $constraints): bool
+    private static function requiredFields(string $requestClass, array $groups): array
     {
-        foreach ($constraints as $constraint) {
-            if ($constraint instanceof Assert\NotBlank || $constraint instanceof Assert\NotNull) {
-                return true;
-            }
+        $violations = Validation::createValidatorBuilder()
+            ->enableAttributeMapping()
+            ->getValidator()
+            ->validate(new $requestClass(), null, array_merge(['Default'], $groups));
+
+        $required = [];
+        foreach ($violations as $violation) {
+            $required[(string)$violation->getPropertyPath()] = true;
         }
 
-        return false;
+        return array_keys($required);
     }
 
     /**

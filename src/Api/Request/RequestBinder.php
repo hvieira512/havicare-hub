@@ -44,7 +44,7 @@ final class RequestBinder
      * @param array<string, mixed> $payload
      * @param class-string<T> $requestClass
      * @param list<string> $groups grupos de validação além do `Default`
-     * @param bool $fromForm o corpo veio de `multipart/form-data`, onde tudo é string
+     * @param bool $coerceStrings aceita escalares codificados como string
      * @param array<string, string> $codeByField códigos de erro próprios, por campo
      * @return T|array{error: array<string, mixed>}
      */
@@ -52,7 +52,7 @@ final class RequestBinder
         array $payload,
         string $requestClass,
         array $groups = [],
-        bool $fromForm = false,
+        bool $coerceStrings = false,
         array $codeByField = []
     ): object|array {
         $payload = self::canonicalKeys($payload);
@@ -66,7 +66,7 @@ final class RequestBinder
                 continue;
             }
 
-            $cast = self::cast($payload[$name], $parameter->getType(), $fromForm);
+            $cast = self::cast($payload[$name], $parameter->getType(), $coerceStrings);
             if ($cast === null) {
                 $fieldErrors[$name][] = 'must be of type ' . self::typeName($parameter->getType());
                 continue;
@@ -123,14 +123,18 @@ final class RequestBinder
      * Devolve um array de um elemento e não o valor: um campo pode legitimamente valer
      * `null`, e um `null` de retorno tem de querer dizer "recusado" e mais nada.
      *
-     * O `multipart/form-data` não tem tipos -- o `supplier_id` chega como `"3"` e o `enabled`
-     * como `"1"` --, e por isso a conversão de strings numéricas só é permitida quando o
-     * corpo veio de um formulário. Num corpo JSON, um `"3"` onde se espera um inteiro é um
-     * cliente com um erro, e é melhor dizer-lho.
+     * A conversão de strings numéricas é opcional, e a rota é que decide.
+     *
+     * O `multipart/form-data` não tem tipos: o `supplier_id` chega como `"3"` e o `enabled`
+     * como `"1"`, e sem conversão um formulário válido era recusado. A associação de
+     * dispositivo não é um formulário e mesmo assim precisa dela, porque sempre aceitou o
+     * `licenseId` como texto -- é o que os clientes mandam e o que os testes de integração
+     * escrevem. Onde não se pede, um `"3"` num campo inteiro é um cliente com um erro, e vale
+     * mais dizer-lho do que adivinhar por ele.
      *
      * @return array{0: mixed}|null
      */
-    private static function cast(mixed $value, ?\ReflectionType $type, bool $fromForm): ?array
+    private static function cast(mixed $value, ?\ReflectionType $type, bool $coerceStrings): ?array
     {
         if (!$type instanceof \ReflectionNamedType) {
             return [$value];
@@ -142,17 +146,17 @@ final class RequestBinder
         return match ($type->getName()) {
             'int' => match (true) {
                 is_int($value) => [$value],
-                $fromForm && is_string($value) && preg_match('/^-?\d+$/', $value) === 1 => [(int)$value],
+                $coerceStrings && is_string($value) && preg_match('/^-?\d+$/', $value) === 1 => [(int)$value],
                 default => null,
             },
             'float' => match (true) {
                 is_float($value) || is_int($value) => [(float)$value],
-                $fromForm && is_string($value) && is_numeric($value) => [(float)$value],
+                $coerceStrings && is_string($value) && is_numeric($value) => [(float)$value],
                 default => null,
             },
             'bool' => match (true) {
                 is_bool($value) => [$value],
-                $fromForm && is_string($value) => self::formBool($value),
+                $coerceStrings && is_string($value) => self::stringBool($value),
                 default => null,
             },
             'string' => is_string($value) ? [$value] : null,
@@ -162,7 +166,7 @@ final class RequestBinder
     }
 
     /** @return array{0: bool}|null */
-    private static function formBool(string $value): ?array
+    private static function stringBool(string $value): ?array
     {
         return match (strtolower(trim($value))) {
             '1', 'true', 'on', 'yes' => [true],

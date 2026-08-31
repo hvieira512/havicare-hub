@@ -3,6 +3,8 @@
 namespace Hub\Api\OpenApi\Schemas;
 
 use Hub\Api\OpenApi\Responses;
+use Hub\Api\OpenApi\SchemaFromRequest;
+use Hub\Api\Request\DeviceAssociationRequest;
 
 /**
  * Os recursos de dispositivo: resumos, detalhe, ciclo de vida da configuração e telemetria.
@@ -319,12 +321,13 @@ final class DeviceSchemas
                 'required' => ['company', 'licenseId'],
                 'properties' => $association,
             ],
-            'DeviceAssociationRequest' => [
-                'type' => 'object',
-                'required' => ['company', 'licenseId'],
-                'description' => 'Associates the device to an existing company and license. If the company exists but the license row does not, the hub creates the license automatically using the requested licenseId.',
-                'properties' => $association,
-            ],
+            // Derivado do `DeviceAssociationRequest`. A descrição fica à mão porque descreve
+            // o que a rota *faz* com o corpo -- criar a licença em falta --, e isso não é uma
+            // regra sobre a forma dele.
+            'DeviceAssociationRequest' => array_merge(
+                SchemaFromRequest::schema(DeviceAssociationRequest::class),
+                ['description' => 'Associates the device to an existing company and license. If the company exists but the license row does not, the hub creates the license automatically using the requested licenseId.'],
+            ),
             'DeviceAssociationResponse' => [
                 'type' => 'object',
                 'required' => ['status', 'imei', 'association'],
