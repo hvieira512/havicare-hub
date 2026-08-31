@@ -30,6 +30,18 @@ beforeEach(() => {
     state.downlinkPage = 1;
 });
 
+/**
+ * Quantas entradas fazem `pages` páginas, ao tamanho de página que estiver em vigor.
+ *
+ * Estava escrito 30 à mão, com "30 eventos a 12 por página dão três páginas" ao lado. Ao
+ * subir o tamanho da página os números deixaram de bater certo e três testes partiram-se
+ * sem que nada do que eles afirmam tivesse mudado. O tamanho da página é uma afinação, não
+ * é o que estes testes prendem.
+ */
+function entriesForPages(pageSize, pages, extra = 6) {
+    return pageSize * (pages - 1) + extra;
+}
+
 function pagerButton(controls, action) {
     const button = controls.querySelector(`[data-action="${action}"]`);
     assert.ok(button, `nenhum botão com a acção ${action}`);
@@ -98,11 +110,12 @@ test("três páginas dão três botões, com a actual marcada e o anterior trava
     const els = telemetryEls();
     initDeviceDetailView({ els });
 
-    // 30 eventos com um tamanho de página de 12 dão três páginas.
-    renderTelemetryList(Array.from({ length: 30 }, (_, index) => telemetryEvent(index)));
+    const size = state.telemetryPageSize;
+    const total = entriesForPages(size, 3);
+    renderTelemetryList(Array.from({ length: total }, (_, index) => telemetryEvent(index)));
 
     assert.equal(els.telemetryPager.classList.contains("d-none"), false);
-    assert.equal(els.telemetryPagerSummary.textContent, "1–12 de 30");
+    assert.equal(els.telemetryPagerSummary.textContent, `1–${size} de ${total}`);
 
     const buttons = [...els.telemetryPagerControls.querySelectorAll("button")];
     assert.deepEqual(
@@ -130,9 +143,11 @@ test("na última página o resumo conta só o que resta e o seguinte fica travad
     initDeviceDetailView({ els });
     state.telemetryPage = 3;
 
-    renderTelemetryList(Array.from({ length: 30 }, (_, index) => telemetryEvent(index)));
+    const size = state.telemetryPageSize;
+    const total = entriesForPages(size, 3);
+    renderTelemetryList(Array.from({ length: total }, (_, index) => telemetryEvent(index)));
 
-    assert.equal(els.telemetryPagerSummary.textContent, "25–30 de 30");
+    assert.equal(els.telemetryPagerSummary.textContent, `${size * 2 + 1}–${total} de ${total}`);
     assert.equal(pagerButton(els.telemetryPagerControls, "telemetryNext").disabled, true);
     assert.equal(pagerButton(els.telemetryPagerControls, "telemetryPrev").disabled, false);
 });
@@ -141,9 +156,11 @@ test("o paginador dos pedidos leva o seu prefixo nas acções", () => {
     const els = downlinkEls();
     initDeviceDetailView({ els });
 
-    renderDownlinkRequests(Array.from({ length: 30 }, (_, index) => downlinkRequest(index)));
+    const size = state.downlinkPageSize;
+    const total = entriesForPages(size, 3);
+    renderDownlinkRequests(Array.from({ length: total }, (_, index) => downlinkRequest(index)));
 
-    assert.equal(els.downlinkPagerSummary.textContent, "1–12 de 30");
+    assert.equal(els.downlinkPagerSummary.textContent, `1–${size} de ${total}`);
     assert.equal(pagerButton(els.downlinkPagerControls, "downlinkPrev").disabled, true);
     assert.deepEqual(
         [...els.downlinkPagerControls.querySelectorAll("[data-action='downlinkPageGo']")]

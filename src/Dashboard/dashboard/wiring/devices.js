@@ -43,6 +43,7 @@ import {
     clearDetailFilters,
     removeDetailFilter,
     requestTelemetryFeature,
+    toggleActivityRow,
     updateDetailFilterDraft,
 } from "../devices/detail.js";
 import { DEVICE_CARD_ACTION } from "../devices/device-card.js";
@@ -168,6 +169,13 @@ function bindListAndFilters() {
 }
 
 function bindDetail() {
+    // As duas listas abrem a linha carregada, ao rato e ao teclado. O ouvinte fica na lista
+    // e não em cada linha: elas voltam a desenhar-se a cada mensagem do stream, e prender
+    // ouvintes a linhas que se deitam fora a cada segundo era prendê-los ao lixo.
+    for (const lista of [els.telemetryList, els.downlinkRequests]) {
+        lista?.addEventListener("click", toggleActivityRow);
+        lista?.addEventListener("keydown", toggleActivityRow);
+    }
     els.telemetryPager.addEventListener("click", handleTelemetryPagerClick);
     els.downlinkPager?.addEventListener("click", handleDownlinkPagerClick);
     els.applyDetailFiltersBtn.addEventListener("click", applyDetailFilters);

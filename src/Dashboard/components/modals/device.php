@@ -4,19 +4,33 @@ declare(strict_types=1);
 
 ob_start();
 ?>
-<div class="device-modal-shell">
-    <div class="row g-4">
-        <div class="col-12 col-lg-2">
+<?php /* Quem rola é a coluna do conteúdo, não o corpo inteiro do modal.
+       *
+       * Com o corpo a rolar como um todo, a coluna das abas esticava até à altura do
+       * conteúdo -- 82px de botões dentro de 1164px de coluna -- e centrá-los punha-os a meio
+       * dessa altura, ou seja fora do ecrã em qualquer aparelho com configurações a sério.
+       * Rolando só o conteúdo, a coluna das abas mede o que o modal mede e o `align-self`
+       * centra-os onde se vêem. */ ?>
+<div class="device-modal-shell h-100">
+    <div class="row g-4 h-100">
+        <div class="col-12 col-lg-2 align-self-lg-center">
             <div class="nav nav-pills flex-row flex-lg-column flex-nowrap gap-2 w-100" id="deviceModalNav" role="tablist">
-                <button class="nav-link active text-start" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
-                    Geral
+                <button class="nav-link active text-start d-flex align-items-center gap-2" id="deviceGeneralTabBtn" data-bs-toggle="pill" data-bs-target="#deviceGeneralPane" type="button" role="tab" aria-controls="deviceGeneralPane" aria-selected="true">
+                    <?= icon('fa-address-card', 'fa-fw') ?>Geral
                 </button>
-                <button class="nav-link text-start d-none" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
-                    Configurações
+                <?php /* `fa-sliders` e não `fa-gear`: o `fa-gear` é o ícone da secção "Sistema",
+                       * que é um dos separadores lá dentro. O mesmo ícone para o todo e para
+                       * uma das partes lia-se como sendo a mesma coisa. */ ?>
+                <?php /* `d-flex` e `d-none` juntas: o `d-none` do Bootstrap vem depois na folha
+                       * e ganha enquanto lá estiver, e o JS que a tira deixa o `d-flex` a
+                       * valer -- sem ele o botão voltava a `inline-block` e o ícone descolava
+                       * do texto. */ ?>
+                <button class="nav-link text-start d-flex d-none align-items-center gap-2" id="deviceConfigTabBtn" data-bs-toggle="pill" data-bs-target="#deviceConfigPane" type="button" role="tab" aria-controls="deviceConfigPane" aria-selected="false">
+                    <?= icon('fa-sliders', 'fa-fw') ?>Configurações
                 </button>
             </div>
         </div>
-        <div class="col-12 col-lg-10">
+        <div class="col-12 col-lg-10 h-100 overflow-auto">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
@@ -106,4 +120,10 @@ $header = '<div class="modal-device-identity" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
     . '</div>';
 
-render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-fullscreen-md-down modal-dialog-scrollable', $header);
+// `h-100` no conteúdo: a altura passa a ser a do ecrã e não a do separador aberto. O "Geral"
+// tem meia dúzia de campos e as "Configurações" trinta, e a caixa mudava de tamanho a cada
+// troca -- com o rato pousado onde o botão estava um instante antes.
+// `overflow-hidden` no corpo: o `modal-dialog-scrollable` põe-lhe `overflow-y: auto`, e é
+// esse rolamento que se transfere para a coluna do conteúdo. Os utilitários do Bootstrap são
+// `!important`, e por isso ganham à regra do componente sem precisar de CSS nosso.
+render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-fullscreen-md-down modal-dialog-scrollable', $header, 'overflow-hidden', 'h-100');

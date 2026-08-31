@@ -193,7 +193,7 @@ require_once __DIR__ . '/components/modal.php';
                 </aside>
                 <section id="detailColumn" class="col-12 col-lg-8">
                     <div class="card h-100">
-                        <div class="card-body d-flex flex-column">
+                        <div class="card-body d-flex flex-column min-h-0">
                             <div id="deviceDetail" class="d-none device-detail-open">
                                 <div id="detailFiltersPanel">
                                     <div class="d-flex align-items-center gap-2">
@@ -232,7 +232,10 @@ require_once __DIR__ . '/components/modal.php';
                                         <div id="connectionTimeline"></div>
                                     </section>
                                     <div class="card-section row g-0 flex-grow-1" style="min-height:0">
-                                        <div class="col-12 col-xl-6 d-flex flex-column pe-xl-4">
+                                        <?php /* `min-h-0` nas duas colunas: um item de flex não encolhe abaixo do
+                                               * conteúdo, e sem isto a lista empurrava a coluna, a coluna empurrava
+                                               * o cartão e o `overflow-auto` da lista nunca tinha o que rolar. */ ?>
+                                        <div class="col-12 col-xl-6 d-flex flex-column min-h-0 pe-xl-4">
                                             <?= section_header('Eventos recebidos', 'telemetryCount', true) ?>
                                             <?php /* O paginador fica entre o título e a lista: em baixo era empurrado
                                                    * para o fundo da coluna pelo `flex-grow-1` da lista, e numa página
@@ -240,12 +243,12 @@ require_once __DIR__ . '/components/modal.php';
                                                    *
                                                    * Sem resumo: o total já está na pastilha ao lado do título. */ ?>
                                             <?= pagination_component('telemetryPager', 'mb-2', false) ?>
-                                            <div id="telemetryList" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
+                                            <div id="telemetryList" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
                                         </div>
-                                        <div class="col-12 col-xl-6 d-flex flex-column border-start-xl ps-xl-4 mt-4 mt-xl-0">
+                                        <div class="col-12 col-xl-6 d-flex flex-column min-h-0 border-start-xl ps-xl-4 mt-4 mt-xl-0">
                                             <?= section_header('Pedidos ao dispositivo', 'downlinkRequestCount', true) ?>
                                             <?= pagination_component('downlinkPager', 'mb-2', false) ?>
-                                            <div id="downlinkRequests" class="flex-grow-1 overflow-auto" style="min-height:0"></div>
+                                            <div id="downlinkRequests" class="activity-list flex-grow-1 min-h-0 overflow-auto"></div>
                                         </div>
                                     </div>
                                 </div>

@@ -488,6 +488,10 @@ function renderTelemetryList(telemetryRows) {
         els.telemetryList,
         pageRows.map(telemetryActivityRow),
         "Ainda não há eventos recebidos.",
+        // O prefixo é por lista: as duas desenham-se ao mesmo tempo no mesmo documento, e
+        // com o mesmo `activityRowDetail0` em cada uma ficavam dois elementos com o mesmo id.
+        "telemetryRowDetail",
+        state.telemetryPage,
     );
     renderClientPager("telemetry", telemetry.length, totalPages);
 }
@@ -528,18 +532,84 @@ function renderClientPager(prefix, totalRows, totalPages) {
  * `value` e as duas segundas linhas entram como HTML já pronto, porque de um lado são texto
  * e do outro uma pastilha ou uma tira de pastilhas.
  */
-function activityTable(rootEl, rows, emptyText) {
+/**
+ * As linhas abertas, por chave do registo e não por posição.
+ *
+ * Estas listas voltam a desenhar-se a cada mensagem do stream -- num radar é mais do que uma
+ * vez por segundo --, e um índice não serve de memória: chega um evento novo, tudo desce uma
+ * casa e a linha aberta passava a ser outra. A chave é a do evento, e por isso a linha que
+ * está aberta continua aberta enquanto o histórico anda por baixo dela.
+ */
+const openActivityRows = new Set();
+
+/** A página que cada lista tinha da última vez, para se saber quando o leitor mudou de página. */
+const lastRenderedPage = new Map();
+
+function activityTable(rootEl, rows, emptyText, idPrefix, page = 1) {
     // A lista rola por dentro: sem repor a posição, cada mensagem do stream e cada sondagem
     // atiravam para o topo uma lista que estava a ser lida.
-    const scrollTop = rootEl.scrollTop;
+    //
+    // Mudar de página é o contrário: aí quer-se o princípio da página nova, e não a altura a
+    // que se estava na anterior. Com páginas maiores do que a janela isto passou a notar-se.
+    const mudouDePagina = lastRenderedPage.get(idPrefix) !== page;
+    lastRenderedPage.set(idPrefix, page);
+    const scrollTop = mudouDePagina ? 0 : rootEl.scrollTop;
     rootEl.innerHTML = rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
-            <tbody>${raw(rows.map(activityRow).join(""))}</tbody>
+            <tbody>${raw(rows.map((row, index) => activityRow(row, `${idPrefix}${index}`)).join(""))}</tbody>
            </table>`
         : emptyPanel(emptyText);
     rootEl.scrollTop = scrollTop;
 }
 
+/**
+ * Abre ou fecha a linha carregada, e guarda a decisão para o próximo desenho.
+ *
+ * Devolve `true` quando tratou do evento, para quem chama saber que não é um clique para
+ * mais ninguém.
+ */
+export function toggleActivityRow(event) {
+    const row = event.target.closest("[data-row-toggle]");
+    if (!row) {
+        return false;
+    }
+    if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") {
+        return false;
+    }
+    if (event.type === "keydown") {
+        // O espaço rola a página se o deixarmos passar.
+        event.preventDefault();
+    }
+
+    // A gaveta é a linha logo a seguir, e é assim que se procura: por `getElementById` só se
+    // acha o que já está pendurado no documento, e as duas listas desenham-se antes disso.
+    const panel = row.nextElementSibling;
+    const key = row.dataset.rowKey || "";
+    const open = row.getAttribute("aria-expanded") !== "true";
+    row.setAttribute("aria-expanded", open ? "true" : "false");
+    panel?.classList.toggle("d-none", !open);
+    if (open) {
+        openActivityRows.add(key);
+    } else {
+        openActivityRows.delete(key);
+    }
+
+    return true;
+}
+
+/**
+ * Uma linha da lista de actividade, e -- quando há mais do que cabe -- a linha escondida que
+ * a abre.
+ *
+ * Todas as linhas medem o mesmo. Media-se 59px numas e 160px noutras, porque os detalhes de
+ * um `minute_stats` são uma frase comprida que caía num contentor a embrulhar e ocupava seis
+ * linhas. Com alturas assim uma página de doze linhas media 708px ou 1920px conforme os
+ * tipos que lhe calhassem, e comparar duas páginas deixava de ser possível.
+ *
+ * Os detalhes cortam-se numa linha. O que fica de fora não se perde: a linha abre e mostra
+ * tudo. Um `title` não servia -- o texto de um `minute_stats` é o conteúdo todo daquele
+ * evento, e num telemóvel ou por teclado uma tooltip não existe.
+ */
 function activityRow({
     icon,
     tone = "",
@@ -550,19 +620,41 @@ function activityRow({
     value = "",
     valueTitle = "",
     detail = "",
+    detailKind = "text",
     detailTitle = "",
+    expanded = "",
+    key = "",
     time,
     timeTitle = "",
-}) {
+}, panelId) {
     const subLine = sub
         ? html`<span class="telemetry-row-details fw-normal d-block text-truncate"${raw(subTitle ? html` title="${subTitle}"` : "")}>${raw(sub)}</span>`
         : "";
+    // As pastilhas não se cortam a meio: já vêm limitadas na origem, e o que sobra do lado
+    // direito esconde-se. O texto corta-se com reticências, como o nome na coluna ao lado.
+    const detailClass = detailKind === "chips"
+        ? "telemetry-row-details d-flex gap-1 overflow-hidden"
+        : "telemetry-row-details d-block text-truncate";
     const detailLine = detail
-        ? html`<span class="telemetry-row-details d-flex flex-wrap gap-1"${raw(detailTitle ? html` title="${detailTitle}"` : "")}>${raw(detail)}</span>`
+        ? html`<span class="${detailClass}"${raw(detailTitle ? html` title="${detailTitle}"` : "")}>${raw(detail)}</span>`
+        : "";
+
+    const openable = expanded !== "";
+    const isOpen = openable && openActivityRows.has(key);
+    const rowAttrs = openable
+        ? raw(html` class="telemetry-row-openable" role="button" tabindex="0" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="${panelId}" data-row-toggle="${panelId}" data-row-key="${key}"`)
+        : raw("");
+    const caret = openable
+        ? raw(html`<i class="fa-solid fa-chevron-down telemetry-row-caret ms-2" aria-hidden="true"></i>`)
+        : raw("");
+    const panel = openable
+        ? html`<tr id="${panelId}" class="telemetry-row-panel${isOpen ? "" : " d-none"}">
+            <td colspan="4">${expanded}</td>
+           </tr>`
         : "";
 
     return html`
-        <tr>
+        <tr${rowAttrs}>
         <td>
             <span class="telemetry-row-icon${tone ? ` telemetry-card-tone-${tone}` : ""}">
                 <i class="fa-solid ${icon}"></i>
@@ -580,8 +672,8 @@ function activityRow({
                 ${raw(detailLine)}
             </span>
         </td>
-        <td class="text-end text-nowrap tabular-nums text-secondary" title="${timeTitle}">${time}</td>
-        </tr>`;
+        <td class="text-end text-nowrap tabular-nums text-secondary" title="${timeTitle}">${time}${caret}</td>
+        </tr>${raw(panel)}`;
 }
 
 function telemetryActivityRow(payload) {
@@ -595,14 +687,26 @@ function telemetryActivityRow(payload) {
     // posturas e guarda para aqui as coordenadas e as pessoas que não couberam.
     const at = payload.occurredAt || payload.recordedAt;
 
+    const detailText = card.detailsTitle ||
+        detail.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, "");
+
     return {
         icon: card.icon,
         tone: cardTone(type),
         name: capabilityLabel(type),
         value: html`${card.rowValue || card.value}`,
         detail,
-        detailTitle: card.detailsTitle ||
-            detail.replace(/<br\s*\/?>/gi, " · ").replace(/<[^>]*>/g, ""),
+        detailKind: card.detailsKind || "text",
+        detailTitle: detailText,
+        // O que a linha aberta mostra. Só há o que abrir se houver detalhes: uma frequência
+        // cardíaca é o valor e mais nada, e uma seta a dizer que há mais era uma mentira.
+        expanded: detailText,
+        // O `seq` do `DeviceEventStore` é monótono por dispositivo e lista, e por isso serve
+        // de identidade estável enquanto o histórico anda. Sem ele, a hora e o tipo.
+        //
+        // O IMEI vai na chave porque o `seq` recomeça em cada dispositivo: sem ele, mudar de
+        // aparelho abria sozinha a linha que calhasse ter o mesmo número de ordem.
+        key: `t:${state.selectedImei}:${payload?.seq ?? `${at}:${type}`}`,
         time: whenShort(at) || "hora desconhecida",
         timeTitle: when(at),
     };
@@ -743,6 +847,8 @@ function renderDownlinkRequests(commands) {
         els.downlinkRequests,
         pageRows.map(downlinkActivityRow),
         "Ainda não há pedidos ao dispositivo.",
+        "downlinkRowDetail",
+        state.downlinkPage,
     );
 
     renderClientPager("downlink", commands.length, totalPages);
@@ -766,6 +872,10 @@ function downlinkActivityRow(command) {
         subTitle: note,
         value: statusBadge(String(command.status || "unknown")),
         valueTitle: replied,
+        // O erro corta-se na linha e a resposta só vivia num `title`. Abrindo, vêem-se os
+        // dois por inteiro -- que num pedido falhado é justamente o que se quer ler.
+        expanded: [note, replied].filter(Boolean).join(" · "),
+        key: `d:${state.selectedImei}:${command.id ?? `${command.requestedAt}:${feature}`}`,
         time: whenShort(command.requestedAt) || "-",
         timeTitle: when(command.requestedAt),
     };

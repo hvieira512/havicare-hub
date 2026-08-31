@@ -135,9 +135,16 @@ export const state = {
     telemetryPage: 1,
     // Doze e não dez: com os detalhes reduzidos ao que cada tipo declara, a maioria das
     // linhas leva uma linha de texto, e cabem mais duas na mesma altura.
-    telemetryPageSize: 12,
+    // O Redis guarda 100 entradas por lista, e as duas listas do painel juntas dão no máximo
+    // 200. A 12 por página isso são dezassete páginas -- mais botões do que cabem na coluna,
+    // e o paginador partia em duas linhas. A 15 são catorze páginas no pior caso, que ainda
+    // cabem numa linha só.
+    //
+    // Só se pode subir isto agora: a lista tem altura fixa e rola por dentro, portanto uma
+    // página maior já não estica o cartão. Antes, uma página maior era um cartão mais alto.
+    telemetryPageSize: 15,
     downlinkPage: 1,
-    downlinkPageSize: 12,
+    downlinkPageSize: 15,
 };
 
 // Selar é uma guarda contra gralhas, não uma tranca: com os módulos ES em modo estrito, um

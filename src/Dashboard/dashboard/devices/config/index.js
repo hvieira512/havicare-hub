@@ -1,5 +1,8 @@
 import { esc, titleize } from "../../format.js";
 import { emptyPanel, stateBadge } from "../../widgets.js";
+// Os mesmos cinco ícones do catálogo de capacidades: as secções são as mesmas, e um separador
+// com outro ícone para a mesma secção lia-se como sendo outra coisa.
+import { CAPABILITY_SECTION_ICONS } from "../../settings/capabilities.js";
 import { takePillsInput, takePillsReminderGroup } from "./four-p-touch-take-pills.js";
 import {
     defaultWonlexMedicationPlan,
@@ -576,6 +579,7 @@ export function renderDeviceConfigurationRoot(context) {
                     .map(
                         (group) => `
                     <button type="button" class="nav-link d-inline-flex align-items-center gap-2 ${group.key === currentCategory ? "active" : ""}" data-config-category="${esc(group.key)}">
+                        <i class="fa-solid ${esc(CAPABILITY_SECTION_ICONS[group.key] || "fa-gear")} fa-fw" aria-hidden="true"></i>
                         ${esc(group.label)}
                         <span class="badge rounded-pill text-bg-secondary">${group.entries.length}</span>
                     </button>

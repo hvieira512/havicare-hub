@@ -181,6 +181,14 @@
     min-width: 0;
 }
 
+/* O mesmo para a altura, e pela mesma razão. Um item de flex tem `min-height: auto`, que o
+   impede de encolher abaixo do conteúdo: uma lista alta empurrava a coluna, a coluna
+   empurrava o cartão, e o `overflow-auto` da lista nunca chegava a ter o que rolar porque
+   nada acima dela limitava a altura. O Bootstrap não traz utilitário para isto. */
+.min-h-0 {
+    min-height: 0;
+}
+
 /* Os botões do paginador medem o que o número mede, e por isso o "1" ficava a 22px ao lado
    do "13" a 31px -- treze caixas de larguras diferentes numa linha lêem-se como desalinhadas.
    Com uma medida mínima igual para todos, todos medem o mesmo.

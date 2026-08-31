@@ -82,6 +82,11 @@ const UPLINK_CARD_RENDERERS = {
     presence: (data) => ({
         value: presenceValue(data),
         details: presenceDetails(data),
+        // A única que devolve pastilhas em vez de texto. Quem desenha a linha precisa de
+        // saber a diferença: o texto corta-se numa linha com reticências, e as pastilhas não
+        // se cortam a meio -- já vêm limitadas pelo `PRESENCE_CHIP_LIMIT`, com um `+N` a
+        // dizer quantas ficaram de fora.
+        detailsKind: "chips",
         detailsTitle: presenceDetailsTitle(data),
     }),
     sleep_state: (data) => ({

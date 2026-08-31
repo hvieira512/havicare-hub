@@ -30,7 +30,9 @@
    linha de 8px de altura útil toca na de cima e na de baixo. A última linha não leva
    divisória: por baixo dela vem logo o contorno do cartão ou o paginador. */
 .telemetry-table > :not(caption) > * > * {
-    padding: .625rem .75rem .625rem 0;
+    /* .5rem e não .625rem: dois pixéis por lado numa lista de quinze linhas são trinta
+       pixéis de altura que a lista ganha, e a pastilha de 26px continua a ter folga. */
+    padding: .5rem .75rem .5rem 0;
     background: transparent;
 }
 
@@ -83,6 +85,43 @@
     justify-content: center;
     min-height: 2.4rem;
     min-width: 0;
+}
+
+/* A linha que se pode abrir. O cursor e o realce dizem que responde ao clique, e a seta
+   confirma-o para quem não passa o rato -- num telemóvel não há hover nenhum. */
+.telemetry-row-openable {
+    cursor: pointer;
+}
+
+.telemetry-row-openable:hover,
+.telemetry-row-openable:focus-visible {
+    background: var(--bs-tertiary-bg);
+}
+
+.telemetry-row-caret {
+    font-size: var(--fs-micro);
+    color: var(--bs-secondary-color);
+    transition: transform .15s ease;
+}
+
+.telemetry-row-openable[aria-expanded="true"] .telemetry-row-caret {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .telemetry-row-caret {
+        transition: none;
+    }
+}
+
+/* O que a linha aberta mostra: o texto por inteiro, com quebra, recuado até onde começa o
+   nome para se ler como pertencendo à linha de cima e não como uma linha nova da lista. */
+.telemetry-row-panel > td {
+    padding: 0 0 .625rem 2.125rem;
+    color: var(--bs-secondary-color);
+    font-size: var(--fs-sm);
+    line-height: 1.45;
+    white-space: normal;
 }
 
 /* Num telefone as quatro colunas dividem os ~310px úteis do cartão entre nome, valor e
