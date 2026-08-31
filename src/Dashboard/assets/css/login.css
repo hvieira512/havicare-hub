@@ -3,9 +3,14 @@
    É o único bloco da página que ninguém mais partilha, e por isso é o mais fácil de manter
    à parte -- uma regra `dashboard-login-*` só existe aqui. */
 
-/* O cinzento claro da maqueta é a superfície deste ecrã, e estava escrito duas vezes. */
+/* O cinzento claro da maqueta é a superfície deste ecrã, e estava escrito duas vezes.
+   O painel da esquerda não leva par escuro: já é escuro nos dois temas, de propósito. */
 :root {
     --login-surface: #f4f5f7;
+}
+
+[data-bs-theme="dark"] {
+    --login-surface: #15171a;
 }
 
 .dashboard-login {

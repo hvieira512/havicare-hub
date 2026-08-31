@@ -39,9 +39,7 @@ final class DeviceAssociationService
             if (!$auth->canAccessTenant($company, $licenseId)) {
                 return ApiError::forbidden()->toArray();
             }
-            $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
-            $currentCompany = trim((string)($existing['company'] ?? 'null'));
-            if ($currentLicenseId !== 0 || $currentCompany !== 'null') {
+            if ($existing->licenseId !== 0 || $existing->company !== 'null') {
                 return ApiError::deviceAlreadyAssociated()->toArray();
             }
         }
@@ -63,8 +61,8 @@ final class DeviceAssociationService
             return ApiError::deviceNotFound()->toArray();
         }
 
-        $licenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
-        $company = trim((string)($existing['company'] ?? 'null'));
+        $licenseId = $existing->licenseId;
+        $company = $existing->company;
         if ($licenseId === 0 && $company === 'null') {
             return ApiError::associationNotFound()->toArray();
         }
@@ -84,10 +82,8 @@ final class DeviceAssociationService
      * partir dele, portanto um par novo escrito lá antes do SQL falhar não estraga nada --
      * a listagem lê-se do MySQL. Ao contrário, o SQL escrito primeiro e o Redis a falhar
      * deixava o dispositivo a servir o estado retido do cliente anterior.
-     *
-     * @param array<string, mixed> $existing metadata before the change
      */
-    private function writeAssociation(array $existing, string $imei, string $company, int $licenseId): void
+    private function writeAssociation(DeviceMetadata $existing, string $imei, string $company, int $licenseId): void
     {
         $this->releaseRetainedStatus($existing, $imei, $company, $licenseId);
         $this->store->updateDeviceAssociation($imei, $company, $licenseId);
@@ -115,22 +111,13 @@ final class DeviceAssociationService
      *
      * Sem isto, o tópico antigo continua a servir o último estado do dispositivo a quem
      * subscreve esse cliente, muito depois de ele ter mudado.
-     *
-     * @param array<string, mixed> $existing metadata before the change
      */
-    private function releaseRetainedStatus(array $existing, string $imei, string $company, int $licenseId): void
+    private function releaseRetainedStatus(DeviceMetadata $existing, string $imei, string $company, int $licenseId): void
     {
-        $previousCompany = DeviceMetadata::normalizeCompany((string)($existing['company'] ?? 'null'));
-        $previousLicenseId = DeviceMetadata::normalizeLicenseId($existing['licenseId'] ?? 0);
-        if ($previousCompany === DeviceMetadata::normalizeCompany($company) && $previousLicenseId === $licenseId) {
+        if ($existing->company === DeviceMetadata::normalizeCompany($company) && $existing->licenseId === $licenseId) {
             return;
         }
 
-        $this->hub?->clearRetainedStatus(
-            $previousCompany,
-            $previousLicenseId,
-            DeviceMetadata::normalizeDeviceType((string)($existing['deviceType'] ?? 'watch')),
-            $imei
-        );
+        $this->hub?->clearRetainedStatus($existing->company, $existing->licenseId, $existing->deviceType, $imei);
     }
 }

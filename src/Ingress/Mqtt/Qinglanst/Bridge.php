@@ -209,7 +209,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string}|null
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string}|null
      */
     private function resolveDevice(Topic $topic): ?array
     {
@@ -240,8 +240,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string, commercialName?: string} $device
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string, commercialName?: string}
+     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string, commercialName?: string} $device
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string, commercialName?: string}
      */
     private function enrichDevice(array $device): array
     {

@@ -21,6 +21,22 @@ require_once __DIR__ . '/components/modal.php';
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo.svg">
     <link rel="icon" type="image/svg+xml" sizes="32x32" href="/assets/logo.svg">
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/assets/logo.svg">
+    <!-- Antes das folhas e antes de qualquer módulo: o tema tem de estar posto na primeira
+         pintura, senão a página abre clara e escurece à frente de quem está a olhar. É a
+         única razão para ter JavaScript aqui em cima, e por isso não faz mais nada. A chave
+         é a mesma do `storage.js`, escrita à mão porque aqui ainda não há módulos. -->
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem("hub-dashboard-theme");
+                var dark = stored === "dark"
+                    || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.setAttribute("data-bs-theme", dark ? "dark" : "light");
+            } catch (e) {
+                document.documentElement.setAttribute("data-bs-theme", "light");
+            }
+        })();
+    </script>
     <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <!-- A ordem é a da folha única de onde estes saíram: sem build, a cascata é a ordem
@@ -78,6 +94,9 @@ require_once __DIR__ . '/components/modal.php';
             <div class="container-fluid">
                 <span class="navbar-brand"><img src="/assets/logo.svg" alt="hitHUB"></span>
                 <div class="d-flex align-items-center gap-2">
+                    <button id="dashboardThemeBtn" class="btn btn-sm btn-dark" type="button" aria-pressed="false" aria-label="Mudar para o tema escuro" title="Mudar para o tema escuro">
+                        <?= icon('fa-moon', 'fs-5 fa-fw') ?>
+                    </button>
                     <div id="dashboardNotificationsDropdown" class="dropdown">
                         <button id="dashboardNotificationsBtn" class="btn btn-sm btn-dark position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notificações" title="Notificações">
                             <?= icon('fa-bell', 'fs-5') ?>

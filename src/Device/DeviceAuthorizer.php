@@ -41,17 +41,17 @@ class DeviceAuthorizer
      */
     public function metadataFor(string $imei): array
     {
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($metadata['supplier'] ?? '');
-        $model = (string)($metadata['model'] ?? '');
+        $metadata = $this->whitelist->getMetadata($imei);
+        $supplier = $metadata?->supplier ?? '';
+        $model = $metadata?->model ?? '';
 
         return [
             'supplier' => $supplier,
             'model' => $model,
             'commercialName' => $this->commercialNameFor($supplier, $model),
-            'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
-            'licenseId' => DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
-            'company' => (string)($metadata['company'] ?? 'null'),
+            'deviceType' => $metadata?->deviceType ?? 'watch',
+            'licenseId' => $metadata?->licenseId ?? 0,
+            'company' => $metadata?->company ?? 'null',
         ];
     }
 

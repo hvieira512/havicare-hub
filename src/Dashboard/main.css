@@ -207,6 +207,18 @@
     --moisture-wet-text: #1e3a8a;
 }
 
+/* No escuro a escala inverte-se de direcção mas não de sentido: no claro, mais humidade é
+   azul mais carregado; aqui é azul mais aceso. O que se lê continua a ser "quanto mais
+   forte, mais molhado", que é o que a barra tem de dizer. O seco deixa de ser um cinzento
+   claro e passa a ser um degrau acima do fundo da barra, senão lê-se como cheio. */
+[data-bs-theme="dark"] {
+    --moisture-dry: #495057;
+    --moisture-damp: #3b82f6;
+    --moisture-wet: #93c5fd;
+    --moisture-damp-text: #60a5fa;
+    --moisture-wet-text: #93c5fd;
+}
+
 .diaper-strip {
     display: grid;
     grid-auto-flow: column;

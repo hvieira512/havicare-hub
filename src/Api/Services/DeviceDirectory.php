@@ -81,8 +81,7 @@ final class DeviceDirectory
             return DeviceMetadata::normalizeLicenseId($licenseId);
         }
 
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        return DeviceMetadata::normalizeLicenseId((string)($metadata['licenseId'] ?? '0'));
+        return $this->whitelist->getMetadata($imei)?->licenseId ?? 0;
     }
 
     private function deviceCompany(string $imei, array $device): string
@@ -92,8 +91,7 @@ final class DeviceDirectory
             return $company;
         }
 
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        return trim((string)($metadata['company'] ?? ''));
+        return $this->whitelist->getMetadata($imei)?->company ?? '';
     }
 
     public function normalizeLicenseId(int|string $licenseId, string $deviceType): int
@@ -130,19 +128,19 @@ final class DeviceDirectory
                 'lastConnectionId',
             ])
         );
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $metadata = $this->whitelist->getMetadata($imei);
         $device = array_merge(
             $device,
             array_filter($storeDevice, static fn (mixed $value): bool => $value !== '' && $value !== null)
         );
         $device += [
-            'supplier' => (string)($metadata['supplier'] ?? ''),
-            'model' => (string)($metadata['model'] ?? ''),
-            'deviceType' => (string)($metadata['deviceType'] ?? 'watch'),
-            'licenseId' => (int)($metadata['licenseId'] ?? 0),
-            'simNumber' => (string)($metadata['simNumber'] ?? ''),
-            'deviceId' => (string)($metadata['deviceId'] ?? ''),
-            'company' => (string)($metadata['company'] ?? 'null'),
+            'supplier' => $metadata?->supplier ?? '',
+            'model' => $metadata?->model ?? '',
+            'deviceType' => $metadata?->deviceType ?? 'watch',
+            'licenseId' => $metadata?->licenseId ?? 0,
+            'simNumber' => $metadata?->simNumber ?? '',
+            'deviceId' => $metadata?->deviceId ?? '',
+            'company' => $metadata?->company ?? 'null',
         ];
         $runtimeStates = $this->store->runtimeStates([$imei]);
 

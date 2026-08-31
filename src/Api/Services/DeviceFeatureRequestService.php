@@ -12,6 +12,7 @@ use Hub\Dashboard\DashboardStoreContract;
 use Hub\Dashboard\DeviceCommandRecord;
 use Hub\Device\DeviceHubServer;
 use Hub\Domain\Capability\CapabilityRegistry;
+use Hub\Domain\DeviceMetadata;
 use Hub\Log\Logger;
 use Hub\Registry\Whitelist;
 
@@ -62,9 +63,9 @@ final class DeviceFeatureRequestService
         }
 
         $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $metadata = $this->whitelist->getMetadata($imei);
+        $supplier = (string)($device['supplier'] ?? $metadata?->supplier ?? '');
+        $model = (string)($device['model'] ?? $metadata?->model ?? '');
         $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel($supplier, $model));
         $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
 
@@ -136,9 +137,9 @@ final class DeviceFeatureRequestService
         }
 
         $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $metadata = $this->whitelist->getMetadata($imei);
+        $supplier = (string)($device['supplier'] ?? $metadata?->supplier ?? '');
+        $model = (string)($device['model'] ?? $metadata?->model ?? '');
         $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel($supplier, $model));
         $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
         $enabled = array_flip($modelRow !== null
@@ -178,7 +179,7 @@ final class DeviceFeatureRequestService
             $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
             $command = $commandPayload['command'];
             $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $command, $commandPayload['payload'], [
-                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+                'deviceId' => $metadata !== null ? $metadata->deviceId : (string)($device['deviceId'] ?? ''),
             ]);
             $id = bin2hex(random_bytes(8));
             $status = $this->hub->submitDownlink($imei, $bytes);
@@ -219,8 +220,13 @@ final class DeviceFeatureRequestService
         ];
     }
 
-    private function sendFeatureCommands(string $imei, string $protocol, string $feature, array $metadata, array $device): array
-    {
+    private function sendFeatureCommands(
+        string $imei,
+        string $protocol,
+        string $feature,
+        ?DeviceMetadata $metadata,
+        array $device
+    ): array {
         $entries = DeviceCommandCatalog::commandsForFeature($protocol, $feature);
         if ($entries === []) {
             return ApiError::unsupportedFeature('Feature is not supported for this device')->toArray();
@@ -238,7 +244,7 @@ final class DeviceFeatureRequestService
                 ? ($entry['data'] ?? [])
                 : ['fields' => $entry['data'] ?? []];
             $bytes = DeviceCommandCatalog::buildDownlink($protocol, $imei, $nativeCommand, $nativePayload, [
-                'deviceId' => (string)($metadata['deviceId'] ?? $device['deviceId'] ?? ''),
+                'deviceId' => $metadata !== null ? $metadata->deviceId : (string)($device['deviceId'] ?? ''),
             ]);
             $id = bin2hex(random_bytes(8));
             $status = $this->hub->submitDownlink($imei, $bytes);

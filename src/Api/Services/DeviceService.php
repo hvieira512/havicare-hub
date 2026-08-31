@@ -302,13 +302,10 @@ class DeviceService
         if ($gateway === null || $linked === null || !$this->directory->canAccessDevice($imei, $auth) || !$this->directory->canAccessDevice($linkedImei, $auth)) {
             return ApiError::deviceNotFound()->toArray();
         }
-        if (($gateway['deviceType'] ?? '') !== 'gateway' || !in_array($linked['deviceType'] ?? '', self::GATEWAY_LINKED_DEVICE_TYPES, true)) {
+        if ($gateway->deviceType !== 'gateway' || !in_array($linked->deviceType, self::GATEWAY_LINKED_DEVICE_TYPES, true)) {
             return ApiError::invalidLink('A gateway can only link to a diaper sensor or a bracelet')->toArray();
         }
-        if (
-            (string)($gateway['company'] ?? 'null') !== (string)($linked['company'] ?? 'null')
-            || (string)($gateway['licenseId'] ?? '0') !== (string)($linked['licenseId'] ?? '0')
-        ) {
+        if ($gateway->company !== $linked->company || $gateway->licenseId !== $linked->licenseId) {
             return ApiError::invalidLink('Linked devices must belong to the same company and license')->toArray();
         }
         return ['status' => 'ok'];
@@ -331,8 +328,8 @@ class DeviceService
         }
 
         $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? ($metadata['supplier'] ?? '')), (string)($device['model'] ?? ($metadata['model'] ?? ''))));
+        $metadata = $this->whitelist->getMetadata($imei);
+        $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? $metadata?->supplier ?? ''), (string)($device['model'] ?? $metadata?->model ?? '')));
         return $this->configurationQueries->current($imei, $protocol);
     }
 
@@ -358,9 +355,9 @@ class DeviceService
         }
 
         $device = $this->directory->deviceSnapshot($imei);
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $supplier = (string)($device['supplier'] ?? ($metadata['supplier'] ?? ''));
-        $model = (string)($device['model'] ?? ($metadata['model'] ?? ''));
+        $metadata = $this->whitelist->getMetadata($imei);
+        $supplier = (string)($device['supplier'] ?? $metadata?->supplier ?? '');
+        $model = (string)($device['model'] ?? $metadata?->model ?? '');
         $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel($supplier, $model));
         $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
         $update = $this->configurationUpdates->update(
@@ -370,7 +367,7 @@ class DeviceService
             $model,
             $protocol,
             $modelRow,
-            $metadata,
+            $metadata?->toArray() ?? [],
             $device,
             $requestId,
         );
@@ -500,10 +497,10 @@ class DeviceService
         }
         // O dispositivo pode estar a sair de um cliente, a mudar de tipo ou a mudar de IMEI,
         // e cada uma dessas deixa um estado retido no tópico antigo.
-        $previous = $this->whitelist->getMetadata($imei) ?? [];
-        $previousCompany = DeviceMetadata::normalizeCompany((string)($previous['company'] ?? 'null'));
-        $previousLicenseId = DeviceMetadata::normalizeLicenseId($previous['licenseId'] ?? 0);
-        $previousDeviceType = DeviceMetadata::normalizeDeviceType((string)($previous['deviceType'] ?? 'watch'));
+        $previous = $this->whitelist->getMetadata($imei);
+        $previousCompany = $previous?->company ?? 'null';
+        $previousLicenseId = $previous?->licenseId ?? 0;
+        $previousDeviceType = $previous?->deviceType ?? 'watch';
         if (
             $newImei !== $imei
             || $previousCompany !== $company
@@ -554,11 +551,11 @@ class DeviceService
 
     public function delete(string $imei): array
     {
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
+        $metadata = $this->whitelist->getMetadata($imei);
         $this->hub->clearRetainedStatus(
-            DeviceMetadata::normalizeCompany((string)($metadata['company'] ?? 'null')),
-            DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
-            DeviceMetadata::normalizeDeviceType((string)($metadata['deviceType'] ?? 'watch')),
+            $metadata?->company ?? 'null',
+            $metadata?->licenseId ?? 0,
+            $metadata?->deviceType ?? 'watch',
             $imei
         );
         // A remoção é a ordem inversa do registo, pela mesma razão: o inventário sai primeiro

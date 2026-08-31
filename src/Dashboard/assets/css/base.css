@@ -64,6 +64,33 @@
     --brand-on-rgb: 255, 255, 255;
 }
 
+/* ===== o mesmo navy, no escuro =====
+   O Bootstrap 5.3 já vira os seus próprios tokens em `[data-bs-theme="dark"]`, e como quase
+   tudo neste projecto pede a cor por `var(--bs-*)`, quase tudo vira sozinho. O que faltava
+   era isto: nove valores da marca escritos à mão, que no escuro ficavam onde estavam.
+   Esta é a razão de terem virado tokens primeiro.
+
+   O navy sobe de luminosidade: a #0b163f um botão desaparecia contra o fundo escuro. A
+   ênfase faz o contrário e passa a ser o tom claro -- é o que o Bootstrap faz aos seus
+   `-text-emphasis`, porque no escuro quem realça é a luz e não a sombra.
+
+   O quanto sobe não é gosto: a barra de navegação é este navy sobre o corpo da página, e a
+   #2c4a8f a diferença entre os dois era de 1,8 para 1 -- a barra desaparecia como banda. A
+   #3a5eb0 são 2,5 para 1 contra o corpo e 6,2 para 1 para o texto branco que assenta nela,
+   que é o equilíbrio entre ver-se a barra e ler-se o que lá está dentro. */
+[data-bs-theme="dark"] {
+    --brand: #3a5eb0;
+    --brand-rgb: 58, 94, 176;
+    --brand-hover: #4269bd;
+    --brand-active: #4a74c9;
+    --brand-emphasis: #a9bde8;
+    --brand-emphasis-rgb: 169, 189, 232;
+    --brand-subtle: #16233f;
+    --brand-subtle-hover: #1c2b4c;
+    --brand-subtle-active: #223359;
+    --brand-subtle-border: #2f406b;
+}
+
 /* ===== a escala tipográfica =====
    Dezanove tamanhos de letra, quase todos medidos a régua sobre uma maqueta: 12,48px, 12,5px,
    12,8px e 13px viviam em quatro regras vizinhas, e não há olho que os separe. O que a

@@ -6,6 +6,7 @@ use Hub\Api\Services\DeviceService;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\DeviceHubServer;
+use Hub\Domain\DeviceMetadata;
 use Hub\Registry\Whitelist;
 use Tests\Support\MysqlDashboardTestCase;
 
@@ -220,12 +221,7 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
 
     private function mockDeviceAccess(string $imei, string $protocol, string $supplier, string $model): void
     {
-        $this->whitelist->method('getMetadata')->with($imei)->willReturn([
-            'imei' => $imei,
-            'supplier' => $supplier,
-            'model' => $model,
-            'protocol' => $protocol,
-        ]);
+        $this->whitelist->method('getMetadata')->with($imei)->willReturn(new DeviceMetadata($supplier, $model));
         $supplierId = $this->db->suppliers->create($supplier);
         $this->db->models->add($supplierId, $model, $model, 'watch');
         $this->modelId = (int)($this->db->models->find($supplier, $model)['id'] ?? 0);

@@ -65,12 +65,13 @@ final class DeviceTopicShapeTest extends TestCase
 
         $metadata = $whitelist->getMetadata('861265061009822');
 
-        self::assertSame('hitcare', $metadata['company'] ?? null);
+        self::assertSame('hitcare', $metadata?->company);
+        self::assertNotNull($metadata);
         self::assertSame(
             'hitcare/1001/watch/861265061009822/status',
             $this->bridge()->deviceTopic(
-                (string)$metadata['company'],
-                (int)$metadata['licenseId'],
+                $metadata->company,
+                $metadata->licenseId,
                 'watch',
                 '861265061009822',
                 'status'

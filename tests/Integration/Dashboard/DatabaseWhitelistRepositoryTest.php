@@ -46,7 +46,7 @@ final class DatabaseWhitelistRepositoryTest extends MysqlDashboardTestCase
         $db->whitelist->register('canonical-imei', 'Voerka', 'W812', 'ncs', 22, '', 'gateway-uid', 'havicare');
 
         self::assertTrue($whitelist->isAuthorized('canonical-imei'));
-        self::assertSame('havicare', $whitelist->getMetadata('canonical-imei')['company'] ?? null);
+        self::assertSame('havicare', $whitelist->getMetadata('canonical-imei')?->company);
         self::assertSame('canonical-imei', $whitelist->resolve('gateway-uid', 'ncs', 'gateway-uid')['imei'] ?? null);
     }
 

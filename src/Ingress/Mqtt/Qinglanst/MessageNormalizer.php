@@ -56,7 +56,7 @@ final class MessageNormalizer
      * minuto são dois alarmes, e um só campo perdia um deles sem deixar rasto.
      *
      * @param array{type: string, device_code: string, ...} $decoded
-     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company?: string} $device
+     * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string} $device
      * @return array{telemetry: array<string, array>, events: list<array>}
      */
     public function normalize(array $decoded, Topic $topic, array $device): array

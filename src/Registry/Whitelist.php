@@ -7,7 +7,7 @@ use Hub\Api\Repository\WhitelistRepository;
 
 class Whitelist
 {
-    /** @var array<string, array{supplier: string, model: string, deviceType: string, licenseId: string, simNumber: string, deviceId: string, company: string}> */
+    /** @var array<string, DeviceMetadata> */
     private array $devices;
     private string $filePath;
     private ?WhitelistRepository $db;
@@ -40,21 +40,6 @@ class Whitelist
                     continue;
                 }
                 $this->loadEntry((string)$imei, $value);
-                if ($this->db !== null) {
-                    $metadata = $this->devices[trim((string)$imei)] ?? null;
-                    if (is_array($metadata)) {
-                        $this->db->register(
-                            trim((string)$imei),
-                            (string)($metadata['supplier'] ?? ''),
-                            (string)($metadata['model'] ?? ''),
-                            (string)($metadata['deviceType'] ?? 'watch'),
-                            DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
-                            (string)($metadata['simNumber'] ?? ''),
-                            (string)($metadata['deviceId'] ?? ''),
-                            (string)($metadata['company'] ?? 'null'),
-                        );
-                    }
-                }
             }
         }
     }
@@ -62,29 +47,12 @@ class Whitelist
     private function loadEntry(string $imei, array $value): void
     {
         $imei = trim($imei);
-        $supplier = trim((string)($value['supplier'] ?? ''));
-        $model = trim((string)($value['model'] ?? ''));
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch'));
-        $licenseId = DeviceMetadata::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0'));
-        $company = DeviceMetadata::normalizeCompany((string)($value['company'] ?? 'null'));
-        $simNumber = trim((string)($value['simNumber'] ?? $value['sim_number'] ?? ''));
-        $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
-        if ($deviceId === '') {
-            $deviceId = trim((string)($value['sourceDeviceId'] ?? $value['source_device_id'] ?? ''));
-        }
-        if ($imei === '' || $supplier === '' || $model === '') {
+        $metadata = DeviceMetadata::fromArray($value);
+        if ($imei === '' || $metadata->supplier === '' || $metadata->model === '') {
             return;
         }
 
-        $this->devices[$imei] = [
-            'supplier' => $supplier,
-            'model' => $model,
-            'deviceType' => $deviceType,
-            'licenseId' => $licenseId,
-            'company' => $company,
-            'simNumber' => $simNumber,
-            'deviceId' => $deviceId,
-        ];
+        $this->devices[$imei] = $metadata;
     }
 
     public function isAuthorized(string $imei): bool
@@ -92,7 +60,7 @@ class Whitelist
         return $this->getMetadata($imei) !== null;
     }
 
-    public function getMetadata(string $imei): ?array
+    public function getMetadata(string $imei): ?DeviceMetadata
     {
         if ($this->db !== null) {
             $this->refreshDatabaseCacheIfStale();
@@ -101,6 +69,9 @@ class Whitelist
         return $this->devices[$imei] ?? null;
     }
 
+    /**
+     * @return array<string, DeviceMetadata>
+     */
     public function all(): array
     {
         if ($this->db !== null) {
@@ -123,15 +94,7 @@ class Whitelist
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
         $company = DeviceMetadata::normalizeCompany($company);
-        $this->devices[$imei] = [
-            'supplier' => $supplier,
-            'model' => $model,
-            'deviceType' => $deviceType,
-            'licenseId' => $licenseId,
-            'company' => $company,
-            'simNumber' => $simNumber,
-            'deviceId' => $deviceId,
-        ];
+        $this->devices[$imei] = new DeviceMetadata($supplier, $model, $deviceType, $licenseId, $company, $simNumber, $deviceId);
         $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         if ($this->db === null) {
             $this->saveFile();
@@ -163,15 +126,7 @@ class Whitelist
         $deviceType = DeviceMetadata::normalizeDeviceType($deviceType);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
         $company = DeviceMetadata::normalizeCompany($company);
-        $this->devices[$imei] = [
-            'supplier' => $supplier,
-            'model' => $model,
-            'deviceType' => $deviceType,
-            'licenseId' => $licenseId,
-            'company' => $company,
-            'simNumber' => $simNumber,
-            'deviceId' => $deviceId,
-        ];
+        $this->devices[$imei] = new DeviceMetadata($supplier, $model, $deviceType, $licenseId, $company, $simNumber, $deviceId);
         $this->db?->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         if ($this->db === null) {
             $this->saveFile();
@@ -181,14 +136,22 @@ class Whitelist
 
     public function updateAssociation(string $imei, string $company, int|string $licenseId): bool
     {
-        if ($this->getMetadata($imei) === null) {
+        $current = $this->getMetadata($imei);
+        if ($current === null) {
             return false;
         }
 
         $company = DeviceMetadata::normalizeCompany($company);
         $licenseId = DeviceMetadata::normalizeLicenseId($licenseId);
-        $this->devices[$imei]['company'] = $company;
-        $this->devices[$imei]['licenseId'] = $licenseId;
+        $this->devices[$imei] = new DeviceMetadata(
+            $current->supplier,
+            $current->model,
+            $current->deviceType,
+            $licenseId,
+            $company,
+            $current->simNumber,
+            $current->deviceId,
+        );
         $this->db?->updateAssociation($imei, $company, $licenseId);
         if ($this->db === null) {
             $this->saveFile();
@@ -198,13 +161,21 @@ class Whitelist
     }
 
     /**
-     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: string, company: string, simNumber: string, deviceId: string}|null
+     * O `licenseId` é `int`, e sempre foi: quem o escreve é o `normalizeLicenseId`, que
+     * devolve `int`. O bloco dizia `string` e ninguém dava por isso porque a forma do array
+     * era inferida por aproximação; com os campos a virem de um objecto com tipo, a mentira
+     * deixou de passar.
+     *
+     * Continua a devolver array e não `DeviceMetadata` porque acrescenta o `imei` à mistura,
+     * e o `imei` é a chave do mapa e não um campo da entrada.
+     *
+     * @return array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company: string, simNumber: string, deviceId: string}|null
      */
     public function resolve(string $imei, string $protocol = '', string $ident = ''): ?array
     {
         $exact = $this->getMetadata($imei);
         if ($exact !== null) {
-            return ['imei' => $imei] + $exact;
+            return ['imei' => $imei] + $exact->toArray();
         }
 
         $alias = trim($ident !== '' ? $ident : $imei);
@@ -217,11 +188,11 @@ class Whitelist
                 return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias));
             }
             foreach ($this->devices as $canonicalImei => $metadata) {
-                if (($metadata['deviceId'] ?? '') !== $alias) {
+                if ($metadata->deviceId !== $alias) {
                     continue;
                 }
 
-                return ['imei' => $canonicalImei] + $metadata;
+                return ['imei' => $canonicalImei] + $metadata->toArray();
             }
 
             return null;
@@ -232,15 +203,15 @@ class Whitelist
                 return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'ncs'));
             }
             foreach ($this->devices as $canonicalImei => $metadata) {
-                if (($metadata['deviceType'] ?? '') !== 'ncs') {
+                if ($metadata->deviceType !== 'ncs') {
                     continue;
                 }
 
-                if (($metadata['deviceId'] ?? '') !== $alias) {
+                if ($metadata->deviceId !== $alias) {
                     continue;
                 }
 
-                return ['imei' => $canonicalImei] + $metadata;
+                return ['imei' => $canonicalImei] + $metadata->toArray();
             }
 
             return null;
@@ -251,12 +222,12 @@ class Whitelist
                 return $this->resolvedDatabaseAlias($this->db->findByDeviceId($alias, 'radar'));
             }
             foreach ($this->devices as $canonicalImei => $metadata) {
-                if (($metadata['deviceType'] ?? '') !== 'radar') {
+                if ($metadata->deviceType !== 'radar') {
                     continue;
                 }
 
-                if ($canonicalImei === $alias || ($metadata['deviceId'] ?? '') === $alias) {
-                    return ['imei' => $canonicalImei] + $metadata;
+                if ($canonicalImei === $alias || $metadata->deviceId === $alias) {
+                    return ['imei' => $canonicalImei] + $metadata->toArray();
                 }
             }
 
@@ -264,24 +235,6 @@ class Whitelist
         }
 
         return null;
-    }
-
-    private function normalizeMetadata(array $value): array
-    {
-        $deviceId = trim((string)($value['deviceId'] ?? $value['device_id'] ?? ''));
-        if ($deviceId === '') {
-            $deviceId = trim((string)($value['sourceDeviceId'] ?? $value['source_device_id'] ?? ''));
-        }
-
-        return [
-            'supplier' => trim((string)($value['supplier'] ?? '')),
-            'model' => trim((string)($value['model'] ?? '')),
-            'deviceType' => DeviceMetadata::normalizeDeviceType((string)($value['deviceType'] ?? $value['device_type'] ?? 'watch')),
-            'licenseId' => DeviceMetadata::normalizeLicenseId((string)($value['licenseId'] ?? $value['license_id'] ?? '0')),
-            'company' => DeviceMetadata::normalizeCompany((string)($value['company'] ?? 'null')),
-            'simNumber' => trim((string)($value['simNumber'] ?? $value['sim_number'] ?? '')),
-            'deviceId' => $deviceId,
-        ];
     }
 
     private function refreshDatabaseCacheIfStale(): void
@@ -315,7 +268,7 @@ class Whitelist
         }
 
         $imei = trim((string)($row['imei'] ?? ''));
-        return $imei === '' ? null : ['imei' => $imei] + $this->normalizeMetadata($row);
+        return $imei === '' ? null : ['imei' => $imei] + DeviceMetadata::fromArray($row)->toArray();
     }
 
     private function saveFile(): void
@@ -326,7 +279,10 @@ class Whitelist
         }
         file_put_contents(
             $this->filePath,
-            json_encode($this->devices, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            json_encode(
+                array_map(static fn (DeviceMetadata $metadata): array => $metadata->toArray(), $this->devices),
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE
+            )
         );
     }
 }

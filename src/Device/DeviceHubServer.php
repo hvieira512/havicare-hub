@@ -2,7 +2,6 @@
 
 namespace Hub\Device;
 
-use Hub\Domain\DeviceMetadata;
 use Hub\Log\Logger;
 use Hub\Location\LocationTelemetryEnricherContract;
 use Hub\Dashboard\DashboardStoreContract;
@@ -572,8 +571,7 @@ class DeviceHubServer
     // numa ligação viva, e a sessão guardou os valores do login.
     private function currentLicenseId(string $imei, int $fallback = 0): int
     {
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $licenseId = DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0);
+        $licenseId = $this->whitelist->getMetadata($imei)?->licenseId ?? 0;
 
         // O 0 quer dizer "sem atribuição", e por isso um valor ausente recorre ao anterior
         // em vez de restringir o dispositivo à licença 0 em silêncio.
@@ -582,8 +580,7 @@ class DeviceHubServer
 
     private function currentCompany(string $imei, string $fallback = 'null'): string
     {
-        $metadata = $this->whitelist->getMetadata($imei) ?? [];
-        $company = (string)($metadata['company'] ?? '');
+        $company = $this->whitelist->getMetadata($imei)?->company ?? '';
         return $company !== '' ? $company : $fallback;
     }
 

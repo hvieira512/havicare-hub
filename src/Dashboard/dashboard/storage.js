@@ -2,6 +2,9 @@
 // sem redeclarar a string.
 export const FILTERS_STORAGE_KEY = "hub-dashboard-device-filters";
 export const SELECTED_DEVICE_STORAGE_KEY = "hub-dashboard-selected-device";
+// Repetida à mão no `<head>` do `index.php`, que tem de aplicar o tema antes da primeira
+// pintura e não pode esperar por um módulo. Mudar aqui é mudar lá.
+export const THEME_STORAGE_KEY = "hub-dashboard-theme";
 
 export function loadJsonStorage(key) {
     try {

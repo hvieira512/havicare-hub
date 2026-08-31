@@ -173,6 +173,14 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Um filho de flex não encolhe abaixo do seu conteúdo sem isto, e o `text-truncate` do irmão
+   ao lado nunca chega a cortar nada -- é a linha que transborda em vez de encolher.
+   Escrevia-se `min-w-0` em dez sítios da marcação e a classe não existia em lado nenhum:
+   nem no Bootstrap 5.3, que não traz utilitário de `min-width`, nem aqui. */
+.min-w-0 {
+    min-width: 0;
+}
+
 /* A divisória entre blocos de um cartão vai de bordo a bordo. Encolhida à largura do
    conteúdo lê-se como a moldura de outra caixa dentro do cartão; a sangrar até ao contorno é
    a mesma linha que separa duas linhas de uma tabela, e o cartão continua um. */
