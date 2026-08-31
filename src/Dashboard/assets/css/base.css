@@ -53,10 +53,19 @@
     --brand-active: #08102d;
     --brand-emphasis: #070d26;
     --brand-emphasis-rgb: 7, 13, 38;
-    --brand-subtle: #d5d8e1;
-    --brand-subtle-hover: #caced8;
-    --brand-subtle-active: #bfc3ce;
-    --brand-subtle-border: #a4a9b9;
+    /* Os subtis são o navy diluído e não um cinzento: o `#d5d8e1` que aqui estava tinha
+       perdido o azul pelo caminho, e uma linha seleccionada ficava cinzenta ao lado de um
+       botão navy. Estes mantêm o tom e só lhe tiram saturação. */
+    --brand-subtle: #dde3f0;
+    --brand-subtle-hover: #d0d8ea;
+    --brand-subtle-active: #c3cde4;
+    --brand-subtle-border: #b3bfda;
+    /* A superfície da marca: a barra de navegação e mais nada.
+       Separada do `--brand` porque as duas coisas divergem no escuro. O `--brand` é o que
+       reage ao toque -- botões, links, o que está seleccionado -- e no escuro tem de subir de
+       luminosidade para se ver. Uma barra que suba com ele deixa de ser a barra da marca e
+       passa a ser uma faixa azul viva no topo da página. */
+    --brand-bar: #0b163f;
     /* O texto que assenta sobre o navy. Um nome e não `#fff`, porque no escuro deixa de o ser.
        O par em RGB é para as camadas translúcidas da barra de navegação, que são tons desta
        cor e não do branco: seguem-na sozinhas quando ela mudar. */
@@ -79,16 +88,47 @@
    #3a5eb0 são 2,5 para 1 contra o corpo e 6,2 para 1 para o texto branco que assenta nela,
    que é o equilíbrio entre ver-se a barra e ler-se o que lá está dentro. */
 [data-bs-theme="dark"] {
-    --brand: #3a5eb0;
-    --brand-rgb: 58, 94, 176;
-    --brand-hover: #4269bd;
-    --brand-active: #4a74c9;
-    --brand-emphasis: #a9bde8;
-    --brand-emphasis-rgb: 169, 189, 232;
-    --brand-subtle: #16233f;
-    --brand-subtle-hover: #1c2b4c;
-    --brand-subtle-active: #223359;
-    --brand-subtle-border: #2f406b;
+    --brand: #3f6fe0;
+    --brand-rgb: 63, 111, 224;
+    --brand-hover: #4b79e8;
+    --brand-active: #5885f0;
+    --brand-emphasis: #a8c0f8;
+    --brand-emphasis-rgb: 168, 192, 248;
+    --brand-subtle: #16223d;
+    --brand-subtle-hover: #1c2a4a;
+    --brand-subtle-active: #223257;
+    --brand-subtle-border: #2b3b63;
+    /* A barra desce em vez de subir. No claro é o navy sobre uma página clara; no escuro
+       continua a ser navy, e é a página que se afunda por baixo dela. Contra o corpo dá 1,14
+       para 1 -- o mesmo degrau que separa um cartão do fundo -- e 16,8 para 1 para o branco
+       que assenta nela. Antes subia até `#3a5eb0` e lia-se como uma barra azul genérica em
+       cima de uma aplicação cinzenta. */
+    --brand-bar: #131d33;
+}
+
+/* ===== as superfícies do escuro =====
+   O tema escuro do Bootstrap é cinzento neutro, e o da marca é navy: a aplicação lia-se como
+   duas peças de sítios diferentes -- um corpo cinzento com uma faixa azul colada em cima.
+   Estes cinco valores puxam as superfícies para a mesma família da marca, tirando saturação
+   em vez de tirando o tom.
+
+   Os degraus entre elas são de 1,10 e 1,12 para 1, que é o mesmo que separa o cartão branco
+   do corpo `#f4f5f7` no tema claro: a mesma leitura de profundidade nos dois temas, e não uma
+   hierarquia mais rasa no escuro. O texto assenta a 15,8 para 1 e o texto suave a 7,7. */
+[data-bs-theme="dark"] {
+    --bs-body-bg: #0a0f1a;
+    --bs-body-bg-rgb: 10, 15, 26;
+    --bs-body-color: #e6e9f2;
+    --bs-body-color-rgb: 230, 233, 242;
+    --bs-emphasis-color: #f2f4fa;
+    --bs-secondary-color: rgba(230, 233, 242, .68);
+    --bs-secondary-bg: #121a2b;
+    --bs-secondary-bg-rgb: 18, 26, 43;
+    --bs-tertiary-color: rgba(230, 233, 242, .45);
+    --bs-tertiary-bg: #1a2438;
+    --bs-tertiary-bg-rgb: 26, 36, 56;
+    --bs-border-color: #26314b;
+    --bs-border-color-translucent: rgba(255, 255, 255, .1);
 }
 
 /* ===== a escala tipográfica =====

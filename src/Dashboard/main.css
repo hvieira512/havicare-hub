@@ -7,8 +7,24 @@
    há testes que lêem este ficheiro pelo nome, por isso ficou com a cauda da folha original
    em vez de mudar de nome. O resto está em `assets/css/`, carregado antes deste. */
 
+/* A chapa onde a fotografia do produto assenta.
+   As fotografias dos modelos vêm com o fundo branco lá dentro, e por isso no tema escuro
+   apareciam como um rectângulo branco a flutuar sobre a superfície escura -- que se lê como
+   um erro e não como uma fotografia. A chapa é clara nos dois temas de propósito: assim o
+   branco da imagem encosta a um branco que ali devia estar, e o que se vê é uma fotografia
+   numa moldura. Não é `bg-body-tertiary` porque essa vira com o tema, que é exactamente o
+   que aqui não pode acontecer. */
 .showcase-preview {
     min-height: 280px;
+    background-color: #fff;
+}
+
+/* No escuro a chapa não muda de cor -- baixa de brilho com a fotografia em cima dela. Os dois
+   descem juntos, e por isso o rebordo branco da imagem continua a não se ver; o que muda é
+   deixar de ser um farol no meio de uma página escura. Uma chapa acinzentada em vez desta
+   fazia reaparecer o rectângulo, que é o que se queria tirar. */
+[data-bs-theme="dark"] .showcase-preview {
+    filter: brightness(.84);
 }
 
 .showcase-preview img {
@@ -212,7 +228,7 @@
    forte, mais molhado", que é o que a barra tem de dizer. O seco deixa de ser um cinzento
    claro e passa a ser um degrau acima do fundo da barra, senão lê-se como cheio. */
 [data-bs-theme="dark"] {
-    --moisture-dry: #495057;
+    --moisture-dry: #2c3850;
     --moisture-damp: #3b82f6;
     --moisture-wet: #93c5fd;
     --moisture-damp-text: #60a5fa;

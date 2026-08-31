@@ -39,7 +39,7 @@ function section_header(
 
 function showcase_preview(string $id): string
 {
-    return '<div id="' . h($id) . '" class="showcase-preview border rounded bg-body-tertiary d-flex align-items-center justify-content-center p-4 h-100"></div>';
+    return '<div id="' . h($id) . '" class="showcase-preview border rounded d-flex align-items-center justify-content-center p-4 h-100"></div>';
 }
 
 /** Um grupo de filtro: o titulo com a contagem, e o contentor que o JavaScript preenche. */

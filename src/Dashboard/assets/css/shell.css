@@ -31,9 +31,11 @@
 
 /* ===== primitivas do sistema ===== */
 
-/* A barra de navegação é o navy da marca. */
+/* A barra de navegação é o navy da marca -- a superfície, e não a cor que reage ao toque:
+   as duas separam-se no escuro, onde o `--brand` sobe para se ver como botão e a barra tem
+   de ficar em baixo para continuar a ser a barra. */
 .dashboard-navbar {
-    background-color: var(--bs-primary);
+    background-color: var(--brand-bar);
 }
 
 /* Dentro da barra, os `btn-dark` pedem a cor à própria barra: o quase-preto do Bootstrap
