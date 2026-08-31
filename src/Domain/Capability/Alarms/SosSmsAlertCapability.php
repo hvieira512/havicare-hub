@@ -19,11 +19,6 @@ final class SosSmsAlertCapability implements CapabilityContract
         return 'sos_sms_alert';
     }
 
-    public function section(): string
-    {
-        return 'alarms';
-    }
-
     public function isList(): bool
     {
         return false;
@@ -52,7 +47,7 @@ final class SosSmsAlertCapability implements CapabilityContract
         };
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         return ['enabled' => (bool)($desired['enabled'] ?? $desired['switchState'] ?? false)];
     }

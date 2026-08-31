@@ -47,11 +47,4 @@ final class Topic
 
         return new self($topic, $scope, $sourceId, $kind);
     }
-
-    public function nativeType(): string
-    {
-        return $this->kind === 'status'
-            ? sprintf('status.%s', (string)$this->statusName)
-            : $this->kind;
-    }
 }

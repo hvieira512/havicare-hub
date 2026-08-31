@@ -172,7 +172,15 @@ final class Vivistar implements AlarmClockHandler
             return [];
         }
 
-        $days = self::parseDayList((string)($item['days'] ?? ''));
+        // O `normalizeItemForNative`, que faz o caminho contrário, já aceitava os dias em
+        // lista; este só aceitava a máquina de dígitos. Uma lista caía no `(string)`, dava
+        // aviso de conversão e saía como `Array`, que não tem dígitos nenhuns -- e um alarme
+        // de todos os dias era reportado como sendo de uma vez só. Os dois lados passam a
+        // aceitar as duas formas.
+        $daysValue = $item['days'] ?? '';
+        $days = self::parseDayList(
+            is_array($daysValue) ? self::formatDayList($daysValue) : (string)$daysValue
+        );
         $kind = $days === []
             ? 'once'
             : ($days === [1, 2, 3, 4, 5, 6, 7] ? 'daily' : 'custom');

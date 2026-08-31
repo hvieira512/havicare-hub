@@ -39,22 +39,25 @@
 /* Dentro da barra, os `btn-dark` pedem a cor à própria barra: o quase-preto do Bootstrap
    sobre o navy da marca lê-se como um segundo escuro. */
 .dashboard-navbar .btn-dark {
-    --bs-btn-color: #fff;
-    --bs-btn-bg: rgba(255, 255, 255, 0.08);
-    --bs-btn-border-color: rgba(255, 255, 255, 0.18);
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: rgba(255, 255, 255, 0.16);
-    --bs-btn-hover-border-color: rgba(255, 255, 255, 0.28);
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: rgba(255, 255, 255, 0.22);
-    --bs-btn-active-border-color: rgba(255, 255, 255, 0.32);
+    --bs-btn-color: var(--brand-on);
+    --bs-btn-bg: rgba(var(--brand-on-rgb), .08);
+    --bs-btn-border-color: rgba(var(--brand-on-rgb), .18);
+    --bs-btn-hover-color: var(--brand-on);
+    --bs-btn-hover-bg: rgba(var(--brand-on-rgb), .16);
+    --bs-btn-hover-border-color: rgba(var(--brand-on-rgb), .28);
+    --bs-btn-active-color: var(--brand-on);
+    --bs-btn-active-bg: rgba(var(--brand-on-rgb), .22);
+    --bs-btn-active-border-color: rgba(var(--brand-on-rgb), .32);
 }
 
 /* Uma elevação só: a página é cinzenta, o cartão é branco, e dentro do cartão separa-se com
    linha e espaço. O contorno do cartão é mais claro que o das linhas interiores, para a
    moldura exterior não competir com as divisórias que estruturam o conteúdo. */
 .card {
-    --bs-card-border-color: #e9ecef;
+    /* O `secondary-bg` é o `#e9ecef` que aqui estava escrito à mão, e é um degrau mais claro
+       que o `border-color` que separa as linhas lá dentro -- que é a relação que se queria.
+       Vindo do token, vira sozinho quando o tema virar. */
+    --bs-card-border-color: var(--bs-secondary-bg);
 }
 
 /* Um filho pertence ao cabecalho acima dele, e le-se indentado sob ele. A linha vertical e
@@ -150,7 +153,7 @@
 }
 
 .catalog-caret {
-    font-size: .75rem;
+    font-size: var(--fs-sm);
     transition: transform .15s ease;
 }
 
@@ -184,7 +187,7 @@
 /* O contador ao lado da etiqueta, e não no extremo oposto do cartão: "Eventos recebidos" e
    "12" são a mesma informação, e a meio metro de distância deixam de o ser. */
 .count-chip {
-    font-size: .6875rem;
+    font-size: var(--fs-label);
     font-weight: 600;
     line-height: 1.45;
     padding: 0 .4rem;
@@ -202,7 +205,7 @@
 /* Um número ao lado de uma etiqueta, sem pastilha à volta: o mosaico de tipos, as opções de
    filtro e as pastilhas de secção escreviam as mesmas três declarações cada um. */
 .count-number {
-    font-size: .6875rem;
+    font-size: var(--fs-label);
     color: var(--bs-secondary-color);
     font-variant-numeric: tabular-nums;
 }
@@ -218,7 +221,7 @@
    sobre o cinzento das outras não se distinguia de uma contagem qualquer. */
 .count-chip-strong {
     background: var(--bs-primary);
-    color: #fff;
+    color: var(--brand-on);
 }
 
 /* A pastilha de um filtro aplicado, neutra: o filtro não é um estado do sistema, e a única
@@ -228,7 +231,7 @@
     display: inline-flex;
     align-items: center;
     gap: .35rem;
-    font-size: .6875rem;
+    font-size: var(--fs-label);
     font-weight: 600;
     letter-spacing: .04em;
     text-transform: uppercase;
@@ -261,7 +264,7 @@
     border-radius: 50%;
     background: transparent;
     color: inherit;
-    font-size: .625rem;
+    font-size: var(--fs-micro);
 }
 
 /* O fundo do realce é mais escuro que o da pastilha, senão não se via: a pastilha já é o

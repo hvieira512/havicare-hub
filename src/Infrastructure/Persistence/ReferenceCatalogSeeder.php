@@ -49,11 +49,6 @@ final class ReferenceCatalogSeeder
         $this->seedModelCapabilities($pdo);
     }
 
-    public function syncCapabilities(PDO $pdo): void
-    {
-        $this->seedCapabilities($pdo);
-    }
-
     private function seedSuppliersAndModels(PDO $pdo): void
     {
         $supplier = $pdo->prepare('INSERT IGNORE INTO suppliers (name) VALUES (?)');

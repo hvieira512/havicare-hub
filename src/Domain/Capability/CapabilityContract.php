@@ -14,9 +14,6 @@ interface CapabilityContract
     /** A chave genérica usada nos pedidos e respostas da API (por exemplo, `alarm_clock`). */
     public function key(): string;
 
-    /** A secção a que esta capacidade pertence (por exemplo, `alarms` ou `contacts`). */
-    public function section(): string;
-
     /** Se a resposta desta capacidade tem forma de lista (`items`) em vez de valor. */
     public function isList(): bool;
 
@@ -44,8 +41,13 @@ interface CapabilityContract
     /**
      * Converte um payload pretendido guardado em `device_configurations` de volta à forma
      * genérica pública, para a resposta da API.
+     *
+     * Leva o protocolo pela mesma razão que o `toNative`: a mesma chave nativa quer dizer
+     * coisas diferentes em fornecedores diferentes -- a Wonlex e a 4P-Touch chamam as duas
+     * `alarmClock` a listas com formatos que não se parecem. Sem o protocolo, descodificar é
+     * adivinhar.
      */
-    public function fromNative(string $nativeKey, array $desired): mixed;
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed;
 
     /** O valor devolvido quando o dispositivo não tem linha de configuração nenhuma. */
     public function defaultValue(string $protocol): mixed;

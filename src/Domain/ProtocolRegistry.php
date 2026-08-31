@@ -92,11 +92,6 @@ final class ProtocolRegistry
         return isset(self::all()[trim($protocol)]);
     }
 
-    public static function label(string $protocol): string
-    {
-        return (string)(self::all()[trim($protocol)]['label'] ?? trim($protocol));
-    }
-
     /**
      * @return list<string>
      */

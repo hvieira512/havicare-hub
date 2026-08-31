@@ -31,11 +31,6 @@ final class SosContactsCapability implements CapabilityContract
         return 'sos_contacts';
     }
 
-    public function section(): string
-    {
-        return 'contacts';
-    }
-
     public function isList(): bool
     {
         return false;
@@ -64,7 +59,7 @@ final class SosContactsCapability implements CapabilityContract
         };
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         if (isset($desired['numbers']) && is_array($desired['numbers'])) {
             return self::stringList($desired['numbers']);

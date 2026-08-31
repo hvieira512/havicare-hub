@@ -110,11 +110,6 @@
     opacity: .65;
 }
 
-.gateway-card-check {
-    flex-shrink: 0;
-    margin: 0;
-}
-
 .gateway-card-thumb {
     width: 48px;
     height: 48px;
@@ -153,7 +148,7 @@
 .gateway-card-mac {
     display: block;
     font-weight: 600;
-    font-size: .9rem;
+    font-size: var(--fs-body);
     line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -162,7 +157,7 @@
 
 .gateway-card-model {
     display: block;
-    font-size: .8rem;
+    font-size: var(--fs-sm);
     line-height: 1.3;
     color: var(--bs-secondary-color);
     overflow: hidden;
@@ -200,6 +195,18 @@
 .signal-meter-bar:nth-child(3) { height: 75%; }
 .signal-meter-bar:nth-child(4) { height: 100%; }
 
+/* Os três estados de humidade têm cor própria porque nenhuma das do Bootstrap os diz: seco,
+   húmido e molhado é uma escala do domínio, não um `info`/`warning`/`danger`. Ficam em
+   tokens e não escritas nas cinco regras que as usam, para o azul da barra e o azul do
+   número não poderem passar a dizer coisas diferentes. */
+:root {
+    --moisture-dry: #cbd5e1;
+    --moisture-damp: #93c5fd;
+    --moisture-wet: #3b82f6;
+    --moisture-damp-text: #1d4ed8;
+    --moisture-wet-text: #1e3a8a;
+}
+
 .diaper-strip {
     display: grid;
     grid-auto-flow: column;
@@ -218,7 +225,7 @@
 
 .diaper-channel-value {
     text-align: center;
-    font-size: .75rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
@@ -226,11 +233,11 @@
 }
 
 .diaper-channel-value--damp {
-    color: #1d4ed8;
+    color: var(--moisture-damp-text);
 }
 
 .diaper-channel-value--wet {
-    color: #1e3a8a;
+    color: var(--moisture-wet-text);
 }
 
 .diaper-channel-track {
@@ -260,29 +267,24 @@
 .diaper-channel-fill {
     width: 100%;
     border-radius: .35rem .35rem 0 0;
-    background: #cbd5e1;
+    background: var(--moisture-dry);
     transition: height .2s ease-in-out;
 }
 
 .diaper-channel-fill--damp {
-    background: #93c5fd;
+    background: var(--moisture-damp);
 }
 
 .diaper-channel-fill--wet {
-    background: #3b82f6;
+    background: var(--moisture-wet);
 }
 
 .diaper-channel-index {
     text-align: center;
-    font-size: .65rem;
+    font-size: var(--fs-label);
     line-height: 1.2;
     color: var(--bs-secondary-color);
     font-variant-numeric: tabular-nums;
-}
-
-.diaper-moisture-summary {
-    border-top: 1px solid var(--bs-border-color);
-    padding-top: .5rem;
 }
 
 .navbar-brand img {
@@ -354,15 +356,15 @@
     border-radius: 20px;
     background: var(--bs-tertiary-bg);
     color: var(--bs-secondary-color);
-    font-size: .6875rem;
+    font-size: var(--fs-label);
     font-weight: 600;
     text-align: center;
     font-variant-numeric: tabular-nums;
 }
 
 .nav-pills .nav-link.active .settings-nav-count {
-    background: rgba(255, 255, 255, .2);
-    color: #fff;
+    background: rgba(var(--brand-on-rgb), .2);
+    color: var(--brand-on);
 }
 
 /* Abaixo do ecrã largo, o menu das definições é uma tira que desliza. O `align-items`
@@ -401,12 +403,6 @@
 
 /* ===== assistente de adicionar dispositivo ===== */
 
-.device-wizard {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
 /* A barra mostra os passos com nome, e não uma percentagem: quem está no primeiro tem de
    conseguir ver o que falta. */
 /* A trilha das respostas já dadas, e o passo no fim da linha. Cada badge colapsa uma
@@ -432,7 +428,7 @@
     justify-content: center;
     gap: .05rem;
     min-height: 2.5rem;
-    font-size: .8rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     padding: .25rem .7rem;
     border: 1px solid transparent;
@@ -473,14 +469,14 @@
 
 .wizard-trail .wizard-trail-step {
     margin-left: auto;
-    font-size: .8rem;
+    font-size: var(--fs-sm);
     color: var(--bs-secondary-color);
     white-space: nowrap;
 }
 
 .wizard-trail .wizard-trail-sep {
     color: var(--bs-secondary-color);
-    font-size: .8rem;
+    font-size: var(--fs-sm);
 }
 
 @keyframes wizard-badge-in {
@@ -536,13 +532,13 @@
 }
 
 .wizard-art .wizard-art-name {
-    font-size: .78rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     text-align: center;
 }
 
 .wizard-art .wizard-art-sub {
-    font-size: .7rem;
+    font-size: var(--fs-label);
     color: var(--bs-secondary-color);
     text-align: center;
 }
@@ -596,7 +592,7 @@
 }
 
 .wizard-card-icon {
-    font-size: 1.4rem;
+    font-size: var(--fs-xl);
     color: var(--bs-secondary-color);
 }
 
@@ -617,14 +613,14 @@
 }
 
 .wizard-card-label {
-    font-size: .82rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     line-height: 1.3;
 }
 
 /* O modelo interno, ou a contagem de modelos de um tipo. */
 .wizard-card-sub {
-    font-size: .7rem;
+    font-size: var(--fs-label);
     color: var(--bs-secondary-color);
 }
 
@@ -641,7 +637,7 @@
     display: inline-flex;
     align-items: center;
     gap: .35rem;
-    font-size: .6875rem;
+    font-size: var(--fs-label);
     font-weight: 600;
     letter-spacing: .04em;
     text-transform: uppercase;

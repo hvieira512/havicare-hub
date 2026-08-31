@@ -322,10 +322,12 @@ export function telemetryCard({
     // Linha toda por omissão, metade só em ecrã grande.
     const columns = span === 12 ? "col-12" : `col-12 col-lg-${span}`;
 
+    // O corpo é uma coluna só para separar a linha do ícone do corpo que alguns mosaicos
+    // trazem -- a barra de humidade da fralda, por exemplo.
     return html`
     <div class="${columns}">
         <${tag}${raw(attrs)}>
-            <div class="card-body telemetry-card-body p-3">
+            <div class="card-body p-3 d-flex flex-column gap-3">
                 <div class="d-flex align-items-center gap-2 gap-sm-3">
                     <div class="telemetry-card-icon">
                         <i class="fa-solid ${icon}"></i>
@@ -508,7 +510,7 @@ function diaperMoistureBody(data) {
 
     return html`<div class="diaper-moisture mt-3">
 <div class="diaper-strip" style="--diaper-threshold:${thresholdOffset}%">${raw(columns)}</div>
-<div class="diaper-moisture-summary small text-secondary mt-2">
+<div class="border-top pt-2 small text-secondary mt-2">
 Máx. <strong class="text-body">${maximum}</strong> · <strong class="text-body">${affected}</strong> de ${required} canais acima do limiar (${wetDelta})
 </div>
 </div>`;

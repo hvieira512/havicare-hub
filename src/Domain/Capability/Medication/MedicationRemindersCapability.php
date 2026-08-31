@@ -30,11 +30,6 @@ final class MedicationRemindersCapability implements CapabilityContract
         return 'medication_reminders';
     }
 
-    public function section(): string
-    {
-        return 'alarms';
-    }
-
     public function isList(): bool
     {
         return false;
@@ -59,9 +54,9 @@ final class MedicationRemindersCapability implements CapabilityContract
         };
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
-        return $nativeKey === 'dnMedicationPlan'
+        return $protocol === 'wonlex-json'
             ? $this->wonlex->fromNative($desired)
             : $this->fourPTouch->fromNative($desired);
     }

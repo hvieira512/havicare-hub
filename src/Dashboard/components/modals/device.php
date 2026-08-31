@@ -21,7 +21,7 @@ ob_start();
                 <div class="tab-pane fade show active" id="deviceGeneralPane" role="tabpanel" aria-labelledby="deviceGeneralTabBtn">
                     <form id="deviceForm" class="row g-4">
                         <div class="col-lg-8 order-lg-1">
-                            <div class="device-wizard">
+                            <div class="d-flex flex-column gap-4">
                                 <?php /* A mesma trilha do assistente de adicionar: as respostas ja dadas
                                        * em etiquetas, e cada uma um botao para voltar aquela pergunta. */ ?>
                                 <div class="wizard-trail" id="deviceTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="2"></div>

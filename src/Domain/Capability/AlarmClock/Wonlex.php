@@ -23,7 +23,14 @@ final class Wonlex implements AlarmClockHandler
 
     public function fromNative(array $desired): array
     {
-        $items = $desired['items'] ?? $desired['alarmClockList'] ?? [];
+        // O `?? $desired` no fim é o que a Vivistar e a 4P-Touch já tinham e esta não: o
+        // apresentador chama isto duas vezes na mesma leitura -- uma na linha guardada, outra
+        // ao embrulhar a resposta -- e à segunda o que chega já é a lista pública, sem
+        // `items` nem `alarmClockList` à volta. Sem esta alternativa devolvia-se lista vazia,
+        // e o alarme guardado de um relógio Wonlex desaparecia da resposta.
+        //
+        // O mapa abaixo já tratava do resto: um item que traga `recurrence` sai como entrou.
+        $items = $desired['items'] ?? $desired['alarmClockList'] ?? $desired;
         if (!is_array($items) || !array_is_list($items)) {
             return [];
         }

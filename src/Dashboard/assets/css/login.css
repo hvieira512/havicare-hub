@@ -3,22 +3,29 @@
    É o único bloco da página que ninguém mais partilha, e por isso é o mais fácil de manter
    à parte -- uma regra `dashboard-login-*` só existe aqui. */
 
+/* O cinzento claro da maqueta é a superfície deste ecrã, e estava escrito duas vezes. */
+:root {
+    --login-surface: #f4f5f7;
+}
+
 .dashboard-login {
     background:
-        radial-gradient(circle at 15% 15%, rgba(11, 22, 63, .12), transparent 32rem),
-        #f4f5f7;
+        radial-gradient(circle at 15% 15%, rgba(var(--brand-rgb), .12), transparent 32rem),
+        var(--login-surface);
 }
 
 /* O cinzento claro da maqueta, e não branco: os campos são brancos, e sobre branco puro
    desapareciam -- o lado direito lê-se como uma folha vazia com texto solto. */
 .dashboard-login-panel {
-    background: #f4f5f7;
+    background: var(--login-surface);
     box-shadow: -1.5rem 0 4rem rgba(18, 28, 45, .08);
     z-index: 1;
 }
 
+/* O branco do campo é o do corpo da página: é a mesma relação -- campo claro sobre
+   superfície cinzenta -- e assim vira com o tema em vez de ficar branco no escuro. */
 .dashboard-login-panel .form-control {
-    background-color: #fff;
+    background-color: var(--bs-body-bg);
 }
 
 .dashboard-login-brand img {
@@ -27,7 +34,7 @@
 
 .dashboard-login-submit {
     min-height: 2.75rem;
-    font-size: .875rem;
+    font-size: var(--fs-body);
     font-weight: 600;
 }
 
@@ -85,7 +92,7 @@
 .dashboard-login-signature {
     display: block;
     color: rgba(255, 255, 255, .45);
-    font-size: .7rem;
+    font-size: var(--fs-label);
     font-weight: 600;
     letter-spacing: .22em;
     text-transform: uppercase;
@@ -95,7 +102,7 @@
 .dashboard-login-pitch {
     margin: 0;
     color: rgba(255, 255, 255, .8);
-    font-size: .875rem;
+    font-size: var(--fs-body);
     line-height: 1.6;
 }
 

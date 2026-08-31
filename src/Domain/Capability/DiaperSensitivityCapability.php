@@ -31,11 +31,6 @@ final class DiaperSensitivityCapability implements
         return 'diaper_sensitivity';
     }
 
-    public function section(): string
-    {
-        return 'settings_system';
-    }
-
     public function isList(): bool
     {
         return false;
@@ -63,7 +58,7 @@ final class DiaperSensitivityCapability implements
         );
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         return [
             'pollutionRange' => (int)($desired['pollutionRange'] ?? DiaperSensitivity::normal()['pollutionRange']),

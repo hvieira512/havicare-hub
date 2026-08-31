@@ -23,11 +23,6 @@ final class WhitelistEnabledCapability implements CapabilityContract
         return 'whitelist_enabled';
     }
 
-    public function section(): string
-    {
-        return 'contacts';
-    }
-
     public function isList(): bool
     {
         return false;
@@ -65,7 +60,7 @@ final class WhitelistEnabledCapability implements CapabilityContract
         };
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         return ['enabled' => (bool)($desired['enabled'] ?? $desired['switchState'] ?? false)];
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 ob_start();
 ?>
-<div class="device-wizard">
+<div class="d-flex flex-column gap-4">
     <div class="wizard-trail" id="wizardTrail" role="progressbar" aria-valuemin="1" aria-valuemax="2" aria-valuenow="1"></div>
 
     <div class="wizard-stage">

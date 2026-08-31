@@ -28,9 +28,4 @@ final class Responses
     {
         return self::content($description, self::ref($schema));
     }
-
-    public static function object(string $description): array
-    {
-        return self::content($description, ['type' => 'object']);
-    }
 }

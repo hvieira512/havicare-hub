@@ -73,7 +73,7 @@ final class CapabilityRegistryTest extends TestCase
         self::assertTrue($native['familyNumber']['contacts'][0]['sosSwitch']);
         self::assertSame(
             [['name' => 'Care', 'phone' => '+351210000000']],
-            $registry->fromNative('phonebook', 'familyNumber', $native['familyNumber'])
+            $registry->fromNative('wonlex-json', 'phonebook', 'familyNumber', $native['familyNumber'])
         );
     }
 
@@ -114,10 +114,10 @@ final class CapabilityRegistryTest extends TestCase
         self::assertSame(
             ['enabled' => true],
             $registry->fromNative(
+                'wonlex-json',
                 'fall_detection',
                 'wonlexFallWarnSwitch',
-                ['switchState' => 1],
-                'wonlex-json'
+                ['switchState' => 1]
             )
         );
         self::assertSame(
@@ -127,14 +127,14 @@ final class CapabilityRegistryTest extends TestCase
                 'exerciseEnabled' => false,
             ],
             $registry->fromNative(
+                'wonlex-json',
                 'heart_rate_high_alert',
                 'wonlexHeartRateHighRemind',
                 [
                     'switchState' => 1,
                     'remindValue' => 120,
                     'exerciseSwitchState' => 0,
-                ],
-                'wonlex-json'
+                ]
             )
         );
     }
@@ -150,21 +150,21 @@ final class CapabilityRegistryTest extends TestCase
                 'enabled' => true,
                 'recurrence' => ['kind' => 'daily'],
             ]],
-            $registry->fromNative('alarm_clock', 'alarmClock', [
+            $registry->fromNative('wonlex-json', 'alarm_clock', 'alarmClock', [
                 'alarmClockList' => [[
                     'label' => 'Medicine',
                     'startTime' => '08:00',
                     'week' => '1111111',
                     'status' => '1',
                 ]],
-            ], 'wonlex-json')
+            ])
         );
 
         self::assertSame(
             '08:00',
-            $registry->fromNative('alarm_clock', 'alarmClock', [
+            $registry->fromNative('four-p-touch', 'alarm_clock', 'alarmClock', [
                 'alarms' => [['time' => '08:00', 'enabled' => true, 'mode' => 1, 'custom' => '']],
-            ], 'four-p-touch')[0]['time'] ?? null
+            ])[0]['time'] ?? null
         );
     }
 
@@ -179,14 +179,14 @@ final class CapabilityRegistryTest extends TestCase
                 'enabled' => false,
                 'recurrence' => ['kind' => 'custom', 'days' => []],
             ]],
-            $registry->fromNative('alarm_clock', 'alarmClock', [
+            $registry->fromNative('wonlex-json', 'alarm_clock', 'alarmClock', [
                 'alarmClockList' => [[
                     'label' => 'Disabled',
                     'startTime' => '08:00',
                     'week' => '0000000',
                     'status' => '0',
                 ]],
-            ], 'wonlex-json')
+            ])
         );
     }
 }

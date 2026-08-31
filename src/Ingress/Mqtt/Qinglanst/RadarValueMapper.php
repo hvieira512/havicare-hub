@@ -4,11 +4,6 @@ namespace Hub\Ingress\Mqtt\Qinglanst;
 
 final class RadarValueMapper
 {
-    public const EVENT_TYPE_POSITION = 1;
-    public const EVENT_TYPE_MINUTE_STATS = 2;
-    public const EVENT_TYPE_VITALS = 3;
-    public const EVENT_TYPE_SLEEP_STATS = 4;
-
     public const UNKNOWN_CODE = 255;
 
     public const DETECTION_CATEGORY_ALARM = 1;
@@ -36,9 +31,6 @@ final class RadarValueMapper
 
     public const DETECTION_SOURCE_POSITION = 1;
     public const DETECTION_SOURCE_HEARTBREATH = 2;
-
-    public const REPORT_TYPE_DAILY = 1;
-    public const REPORT_TYPE_MONTHLY = 2;
 
     private const POSTURE_CODE_TO_LABEL = [
         0 => 'Initialization',
@@ -103,25 +95,6 @@ final class RadarValueMapper
         self::UNKNOWN_CODE => 'unknown',
     ];
 
-    private const DETECTION_TYPE_CODE_TO_LABEL = [
-        self::DETECTION_TYPE_FALL_CONFIRMED => 'fall_confirmed',
-        self::DETECTION_TYPE_HEART_RATE_HIGH_CRITICAL => 'heart_rate_high_critical',
-        self::DETECTION_TYPE_HEART_RATE_HIGH => 'heart_rate_high',
-        self::DETECTION_TYPE_HEART_RATE_LOW_CRITICAL => 'heart_rate_low_critical',
-        self::DETECTION_TYPE_HEART_RATE_LOW => 'heart_rate_low',
-        self::DETECTION_TYPE_APNEA => 'apnea',
-        self::DETECTION_TYPE_BREATHING_HIGH => 'breathing_high',
-        self::DETECTION_TYPE_BREATHING_LOW => 'breathing_low',
-        self::DETECTION_TYPE_VITALS_SIGNAL_LOST => 'vitals_signal_lost',
-        self::DETECTION_TYPE_ROOM_ENTRY => 'room_entry',
-        self::DETECTION_TYPE_ROOM_EXIT => 'room_exit',
-        self::DETECTION_TYPE_AREA_ENTRY => 'area_entry',
-        self::DETECTION_TYPE_AREA_EXIT => 'area_exit',
-        self::DETECTION_TYPE_SITTING_CONFIRMED => 'sitting_confirmed',
-        self::DETECTION_TYPE_ON_FLOOR => 'on_floor',
-        self::UNKNOWN_CODE => 'unknown',
-    ];
-
     private const DETECTION_LEVEL_CODE_TO_LABEL = [
         self::DETECTION_LEVEL_INFO => 'info',
         self::DETECTION_LEVEL_WARNING => 'aviso',
@@ -133,20 +106,6 @@ final class RadarValueMapper
         self::DETECTION_SOURCE_POSITION => 'position',
         self::DETECTION_SOURCE_HEARTBREATH => 'heartbreath',
         self::UNKNOWN_CODE => 'unknown',
-    ];
-
-    private const REPORT_TYPE_CODE_TO_LABEL = [
-        self::REPORT_TYPE_DAILY => 'daily',
-        self::REPORT_TYPE_MONTHLY => 'monthly',
-        self::UNKNOWN_CODE => 'unknown',
-    ];
-
-    private const BED_POSTURE_CODES = [
-        3 => true,
-        6 => true,
-        9 => true,
-        10 => true,
-        11 => true,
     ];
 
     /**
@@ -192,24 +151,11 @@ final class RadarValueMapper
     ];
 
     private static ?array $detectionCategoryLabelToCode = null;
-    private static ?array $detectionTypeLabelToCode = null;
     private static ?array $detectionLevelLabelToCode = null;
     private static ?array $detectionSourceLabelToCode = null;
-    private static ?array $reportTypeLabelToCode = null;
 
     private function __construct()
     {
-    }
-
-    public static function eventTypeCodeForMessageType(string $messageType): int
-    {
-        return match ($messageType) {
-            'position' => self::EVENT_TYPE_POSITION,
-            'heartbreath' => self::EVENT_TYPE_VITALS,
-            'posstatics' => self::EVENT_TYPE_MINUTE_STATS,
-            'hbstatics' => self::EVENT_TYPE_SLEEP_STATS,
-            default => 0,
-        };
     }
 
     public static function decodePostureState(int|string|null $value): string
@@ -255,19 +201,6 @@ final class RadarValueMapper
         return self::encodeWithLabelMap($value, self::detectionCategoryLabelToCode(), self::UNKNOWN_CODE);
     }
 
-    public static function decodeDetectionType(int|string|null $value): string
-    {
-        if (is_string($value) && !ctype_digit($value)) {
-            return self::DETECTION_TYPE_CODE_TO_LABEL[self::encodeDetectionType($value)] ?? 'unknown';
-        }
-        return self::decodeWithCodeMap($value, self::DETECTION_TYPE_CODE_TO_LABEL, 'unknown');
-    }
-
-    public static function encodeDetectionType(int|string|null $value): int
-    {
-        return self::encodeWithLabelMap($value, self::detectionTypeLabelToCode(), self::UNKNOWN_CODE);
-    }
-
     public static function decodeDetectionLevel(int|string|null $value): string
     {
         if (is_string($value) && !ctype_digit($value)) {
@@ -294,19 +227,6 @@ final class RadarValueMapper
         return self::encodeWithLabelMap($value, self::detectionSourceLabelToCode(), self::UNKNOWN_CODE);
     }
 
-    public static function decodeSleepReportType(int|string|null $value): string
-    {
-        if (is_string($value) && !ctype_digit($value)) {
-            return self::REPORT_TYPE_CODE_TO_LABEL[self::encodeSleepReportType($value)] ?? 'unknown';
-        }
-        return self::decodeWithCodeMap($value, self::REPORT_TYPE_CODE_TO_LABEL, 'unknown');
-    }
-
-    public static function encodeSleepReportType(int|string|null $value): int
-    {
-        return self::encodeWithLabelMap($value, self::reportTypeLabelToCode(), self::REPORT_TYPE_DAILY);
-    }
-
     public static function detectionAlarmTypeCodes(): array
     {
         return [
@@ -324,16 +244,6 @@ final class RadarValueMapper
         ];
     }
 
-    public static function detectionEventTypeCodes(): array
-    {
-        return [
-            self::DETECTION_TYPE_ROOM_ENTRY,
-            self::DETECTION_TYPE_ROOM_EXIT,
-            self::DETECTION_TYPE_AREA_ENTRY,
-            self::DETECTION_TYPE_AREA_EXIT,
-        ];
-    }
-
     /**
      * A enumeração correspondente a uma etiqueta do fabricante.
      *
@@ -345,32 +255,6 @@ final class RadarValueMapper
     {
         return self::LABEL_TO_ENUM[$label]
             ?? strtolower(str_replace(' ', '_', trim($label)));
-    }
-
-    public static function isFallConfirmation(int|string|null $value): bool
-    {
-        return (int)$value === 5;
-    }
-
-    public static function isInitialization(int|string|null $value): bool
-    {
-        return (int)$value === 0;
-    }
-
-    public static function isLeaveRoom(int|string|null $value): bool
-    {
-        return (int)$value === 2;
-    }
-
-    public static function isSleepLike(int|string|null $value): bool
-    {
-        $code = (int)$value;
-        return $code === 1 || $code === 2;
-    }
-
-    public static function isBedPosture(int|string|null $value): bool
-    {
-        return isset(self::BED_POSTURE_CODES[(int)$value]);
     }
 
     private static function encodeWithLabelMap(int|string|null $value, array $map, int $fallback): int
@@ -420,14 +304,6 @@ final class RadarValueMapper
         return self::$detectionCategoryLabelToCode;
     }
 
-    private static function detectionTypeLabelToCode(): array
-    {
-        if (self::$detectionTypeLabelToCode === null) {
-            self::$detectionTypeLabelToCode = array_flip(self::DETECTION_TYPE_CODE_TO_LABEL);
-        }
-        return self::$detectionTypeLabelToCode;
-    }
-
     private static function detectionLevelLabelToCode(): array
     {
         if (self::$detectionLevelLabelToCode === null) {
@@ -444,13 +320,5 @@ final class RadarValueMapper
             self::$detectionSourceLabelToCode = array_flip(self::DETECTION_SOURCE_CODE_TO_LABEL);
         }
         return self::$detectionSourceLabelToCode;
-    }
-
-    private static function reportTypeLabelToCode(): array
-    {
-        if (self::$reportTypeLabelToCode === null) {
-            self::$reportTypeLabelToCode = array_flip(self::REPORT_TYPE_CODE_TO_LABEL);
-        }
-        return self::$reportTypeLabelToCode;
     }
 }

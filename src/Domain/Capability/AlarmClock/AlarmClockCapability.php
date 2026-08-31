@@ -19,29 +19,17 @@ final class AlarmClockCapability implements CapabilityContract
     /** @var array<string, AlarmClockHandler> protocol → handler */
     private array $handlers;
 
-    /** @var array<string, AlarmClockHandler> protocol key → handler */
-    private array $handlersByNativeKey;
-
     /**
      * @param array<string, AlarmClockHandler> $handlers  Keyed by protocol
      */
     public function __construct(array $handlers = [])
     {
         $this->handlers = $handlers;
-        $this->handlersByNativeKey = [];
-        foreach ($handlers as $handler) {
-            $this->handlersByNativeKey[$handler->nativeKey()] = $handler;
-        }
     }
 
     public function key(): string
     {
         return 'alarm_clock';
-    }
-
-    public function section(): string
-    {
-        return 'alarms';
     }
 
     public function isList(): bool
@@ -73,24 +61,25 @@ final class AlarmClockCapability implements CapabilityContract
         return $handler->toNative($value);
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
-    {
-        $handler = $this->handlersByNativeKey[$nativeKey] ?? null;
-        if ($handler !== null) {
-            return $handler->fromNative($desired);
-        }
-
-        return [];
-    }
-
-    public function fromNativeForProtocol(string $protocol, string $nativeKey, array $desired): mixed
+    /**
+     * Havia dois: este, que procurava o handler pela chave nativa, e um
+     * `fromNativeForProtocol` que procurava pelo protocolo e caía neste quando não achava.
+     * Quem escolhia entre os dois era um `instanceof AlarmClockCapability` no registo.
+     *
+     * O índice por chave nativa não podia funcionar: a Wonlex e a 4P-Touch declaram as duas
+     * `alarmClock`, e num mapa com essa chave a segunda apagava a primeira -- os alarmes de
+     * um relógio Wonlex saíam pelo descodificador da 4P-Touch. O `fromNativeForProtocol` não
+     * era uma excepção à regra, era o penso para este índice.
+     *
+     * Fica um método só, e a regra é a mesma do `toNative`: quem manda é o protocolo.
+     */
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         $handler = $this->handlers[$protocol] ?? null;
-        if ($handler !== null && $handler->nativeKey() === $nativeKey) {
-            return $handler->fromNative($desired);
-        }
 
-        return $this->fromNative($nativeKey, $desired);
+        return $handler !== null && $handler->nativeKey() === $nativeKey
+            ? $handler->fromNative($desired)
+            : [];
     }
 
     public function defaultValue(string $protocol): mixed
@@ -146,7 +135,7 @@ final class AlarmClockCapability implements CapabilityContract
     public function responseEntry(string $protocol, string $nativeKey, mixed $value, array $meta): array
     {
         return [
-            'value' => $this->fromNativeForProtocol($protocol, $nativeKey, is_array($value) ? $value : []),
+            'value' => $this->fromNative($protocol, $nativeKey, is_array($value) ? $value : []),
             '_meta' => $this->meta($protocol, $meta),
         ];
     }

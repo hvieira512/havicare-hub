@@ -64,7 +64,12 @@ final class DeviceCapabilityPresenterTest extends MysqlDashboardTestCase
     {
         $model = $this->model('Wonlex', 'HW20PRO');
         $rows = [[
-            'native_key' => 'reminders',
+            // `alarmClock` e não `reminders`: o `reminders` é a chave nativa da Vivistar, e
+            // esta linha é de um relógio Wonlex. Passava à mesma porque a descodificação
+            // procurava o handler pela chave nativa e ignorava o protocolo -- o alarme de um
+            // Wonlex saía pelo descodificador de outro fornecedor, e aqui as duas formas
+            // coincidiam. Agora quem manda é o protocolo, e a linha tem de ser coerente.
+            'native_key' => 'alarmClock',
             'config_key' => 'alarm_clock',
             'desired_payload' => ['items' => [['time' => '07:30', 'enabled' => true, 'recurrence' => ['kind' => 'daily']]]],
             'desired_updated_at' => '2026-01-01 10:00:00',

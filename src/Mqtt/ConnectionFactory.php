@@ -22,11 +22,6 @@ class ConnectionFactory
     {
     }
 
-    public function settings(): BrokerSettings
-    {
-        return $this->settings;
-    }
-
     /**
      * Um id de cliente estável não leva o pid, para o broker reconhecer a mesma sessão
      * através dos reinícios do processo -- que é o que as subscrições persistentes exigem.

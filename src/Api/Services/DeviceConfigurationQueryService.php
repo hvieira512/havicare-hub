@@ -45,7 +45,7 @@ final class DeviceConfigurationQueryService
             $normalized = $this->publicValue(
                 $protocol,
                 $genericKey,
-                $this->capabilities->fromNative($genericKey, $nativeKey, $desired, $protocol)
+                $this->capabilities->fromNative($protocol, $genericKey, $nativeKey, $desired)
             );
             if ($normalized === null) {
                 continue;

@@ -25,11 +25,6 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
         return 'phonebook';
     }
 
-    public function section(): string
-    {
-        return 'contacts';
-    }
-
     public function isList(): bool
     {
         return false;
@@ -93,7 +88,7 @@ final class PhonebookCapability implements CapabilityContract, CapabilityInputSa
         return $contacts;
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         if ($nativeKey === 'familyNumber') {
             $contacts = $desired['contacts'] ?? $desired['familyNumbers'] ?? $desired;

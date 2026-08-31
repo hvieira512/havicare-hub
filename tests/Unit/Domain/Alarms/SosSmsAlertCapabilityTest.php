@@ -17,7 +17,7 @@ final class SosSmsAlertCapabilityTest extends TestCase
         );
         self::assertSame(
             ['enabled' => true],
-            $capability->fromNative('wonlexSOSSwitch', ['switchState' => 1])
+            $capability->fromNative('wonlex-json', 'wonlexSOSSwitch', ['switchState' => 1])
         );
     }
 
@@ -31,7 +31,7 @@ final class SosSmsAlertCapabilityTest extends TestCase
         );
         self::assertSame(
             ['enabled' => false],
-            $capability->fromNative('sosSmsAlerts', ['enabled' => false])
+            $capability->fromNative('four-p-touch', 'sosSmsAlerts', ['enabled' => false])
         );
     }
 }

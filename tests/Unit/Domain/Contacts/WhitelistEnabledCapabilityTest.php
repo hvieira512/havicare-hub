@@ -37,7 +37,7 @@ final class WhitelistEnabledCapabilityTest extends TestCase
         );
         self::assertSame(
             ['enabled' => true],
-            $capability->fromNative('wonlexCallInLimitSwitch', ['switchState' => 1])
+            $capability->fromNative('wonlex-json', 'wonlexCallInLimitSwitch', ['switchState' => 1])
         );
         self::assertSame(
             ['phonebook', 'sos_contacts'],

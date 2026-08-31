@@ -45,7 +45,7 @@ ob_start();
 
     <section class="col-12 col-lg-8 p-3 device-list-column">
         <?= search_input('deviceListSearch', 'Procurar IMEI, fornecedor ou modelo', 'mb-3') ?>
-        <div id="deviceList" class="device-card-list"></div>
+        <div id="deviceList" class="device-card-list d-flex flex-column gap-2"></div>
         <div class="d-flex justify-content-between align-items-center gap-2 mt-3 flex-wrap">
             <?= pagination_component('deviceListPagination') ?>
             <div class="d-flex align-items-center gap-2 ms-auto">

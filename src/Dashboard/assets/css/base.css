@@ -35,35 +35,83 @@
     src: url('/assets/fonts/Poppins-Bold.woff2') format('woff2');
 }
 
+/* ===== a paleta da marca =====
+   O navy estava escrito 24 vezes, e as suas sombras mais 10. Mudar a cor da marca era um
+   find-and-replace por 34 sítios, e bastava falhar um para ficar um botão de outra cor.
+
+   Fica aqui em cima e sozinha porque é a identidade, não o tema: o bloco de baixo é que a
+   liga aos nomes do Bootstrap. Um tema escuro reescreve estas nove linhas e o resto do
+   ficheiro -- e do projecto -- não muda uma vírgula.
+
+   O `#070e28` juntou-se ao `#070d26`: dois em sete e dois em quarenta de diferença num canal
+   é meia unidade de ΔE, e o olho separa a partir de duas. Eram a mesma cor escrita duas
+   vezes, e uma paleta com um tom a menos é um tom a menos para espelhar no escuro. */
+:root {
+    --brand: #0b163f;
+    --brand-rgb: 11, 22, 63;
+    --brand-hover: #091233;
+    --brand-active: #08102d;
+    --brand-emphasis: #070d26;
+    --brand-emphasis-rgb: 7, 13, 38;
+    --brand-subtle: #d5d8e1;
+    --brand-subtle-hover: #caced8;
+    --brand-subtle-active: #bfc3ce;
+    --brand-subtle-border: #a4a9b9;
+    /* O texto que assenta sobre o navy. Um nome e não `#fff`, porque no escuro deixa de o ser.
+       O par em RGB é para as camadas translúcidas da barra de navegação, que são tons desta
+       cor e não do branco: seguem-na sozinhas quando ela mudar. */
+    --brand-on: #fff;
+    --brand-on-rgb: 255, 255, 255;
+}
+
+/* ===== a escala tipográfica =====
+   Dezanove tamanhos de letra, quase todos medidos a régua sobre uma maqueta: 12,48px, 12,5px,
+   12,8px e 13px viviam em quatro regras vizinhas, e não há olho que os separe. O que a
+   diferença fazia era obrigar a inventar um número novo a cada regra que se escrevia.
+
+   Seis degraus. O `--fs-body` é o próprio `--bs-body-font-size` e não uma cópia dele, que
+   ficaria para trás no dia em que o corpo do texto mudar; os outros cinco são passos à volta
+   dele. Os extremos existem por uma razão concreta e não por simetria: o `--fs-micro` é o
+   visto dentro de uma caixa de 14px, o `--fs-xl` é o ícone do cartão do assistente. Escolher
+   um tamanho passa a ser escolher um papel. */
+:root {
+    --fs-micro: .625rem;
+    --fs-label: .6875rem;
+    --fs-sm: .8125rem;
+    --fs-body: var(--bs-body-font-size);
+    --fs-lg: 1.0625rem;
+    --fs-xl: 1.4rem;
+}
+
 :root,
 [data-bs-theme="light"] {
     --bs-body-font-size: .875rem;
-    --bs-primary: #0b163f;
-    --bs-primary-rgb: 11, 22, 63;
-    --bs-primary-text-emphasis: #070d26;
-    --bs-primary-bg-subtle: #d5d8e1;
-    --bs-primary-border-subtle: #a4a9b9;
-    --bs-link-color: #0b163f;
-    --bs-link-color-rgb: 11, 22, 63;
-    --bs-link-hover-color: #070e28;
-    --bs-link-hover-color-rgb: 7, 14, 40;
-    --bs-focus-ring-color: rgba(11, 22, 63, .25);
+    --bs-primary: var(--brand);
+    --bs-primary-rgb: var(--brand-rgb);
+    --bs-primary-text-emphasis: var(--brand-emphasis);
+    --bs-primary-bg-subtle: var(--brand-subtle);
+    --bs-primary-border-subtle: var(--brand-subtle-border);
+    --bs-link-color: var(--brand);
+    --bs-link-color-rgb: var(--brand-rgb);
+    --bs-link-hover-color: var(--brand-emphasis);
+    --bs-link-hover-color-rgb: var(--brand-emphasis-rgb);
+    --bs-focus-ring-color: rgba(var(--brand-rgb), .25);
 }
 
 .btn-primary {
-    --bs-btn-color: #fff;
-    --bs-btn-bg: #0b163f;
-    --bs-btn-border-color: #0b163f;
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: #091233;
-    --bs-btn-hover-border-color: #08102d;
-    --bs-btn-focus-shadow-rgb: 11, 22, 63;
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #08102d;
-    --bs-btn-active-border-color: #070e28;
-    --bs-btn-disabled-color: #fff;
-    --bs-btn-disabled-bg: #0b163f;
-    --bs-btn-disabled-border-color: #0b163f;
+    --bs-btn-color: var(--brand-on);
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-color: var(--brand-on);
+    --bs-btn-hover-bg: var(--brand-hover);
+    --bs-btn-hover-border-color: var(--brand-active);
+    --bs-btn-focus-shadow-rgb: var(--brand-rgb);
+    --bs-btn-active-color: var(--brand-on);
+    --bs-btn-active-bg: var(--brand-active);
+    --bs-btn-active-border-color: var(--brand-emphasis);
+    --bs-btn-disabled-color: var(--brand-on);
+    --bs-btn-disabled-bg: var(--brand);
+    --bs-btn-disabled-border-color: var(--brand);
 }
 
 /* ===== a base do telemóvel =====
@@ -97,55 +145,55 @@
 }
 
 .btn-outline-primary {
-    --bs-btn-color: #0b163f;
-    --bs-btn-border-color: #0b163f;
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: #0b163f;
-    --bs-btn-hover-border-color: #0b163f;
-    --bs-btn-focus-shadow-rgb: 11, 22, 63;
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #0b163f;
-    --bs-btn-active-border-color: #0b163f;
-    --bs-btn-disabled-color: #0b163f;
+    --bs-btn-color: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-color: var(--brand-on);
+    --bs-btn-hover-bg: var(--brand);
+    --bs-btn-hover-border-color: var(--brand);
+    --bs-btn-focus-shadow-rgb: var(--brand-rgb);
+    --bs-btn-active-color: var(--brand-on);
+    --bs-btn-active-bg: var(--brand);
+    --bs-btn-active-border-color: var(--brand);
+    --bs-btn-disabled-color: var(--brand);
     --bs-btn-disabled-bg: transparent;
-    --bs-btn-disabled-border-color: #0b163f;
+    --bs-btn-disabled-border-color: var(--brand);
 }
 
 .form-check-input:checked,
 .form-check-input[type="checkbox"]:indeterminate {
-    background-color: #0b163f;
-    border-color: #0b163f;
+    background-color: var(--brand);
+    border-color: var(--brand);
 }
 
 .nav-pills {
-    --bs-nav-pills-link-active-bg: #0b163f;
+    --bs-nav-pills-link-active-bg: var(--brand);
 }
 
 .pagination {
-    --bs-pagination-active-bg: #0b163f;
-    --bs-pagination-active-border-color: #0b163f;
+    --bs-pagination-active-bg: var(--brand);
+    --bs-pagination-active-border-color: var(--brand);
 }
 
 .list-group {
-    --bs-list-group-active-bg: #0b163f;
-    --bs-list-group-active-border-color: #0b163f;
+    --bs-list-group-active-bg: var(--brand);
+    --bs-list-group-active-border-color: var(--brand);
 }
 
 .list-group-item-primary {
-    --bs-list-group-color: #070d26;
-    --bs-list-group-bg: #d5d8e1;
-    --bs-list-group-border-color: #a4a9b9;
-    --bs-list-group-action-hover-color: #070d26;
-    --bs-list-group-action-hover-bg: #caced8;
-    --bs-list-group-action-active-color: #070d26;
-    --bs-list-group-action-active-bg: #bfc3ce;
-    --bs-list-group-active-color: #fff;
-    --bs-list-group-active-bg: #0b163f;
-    --bs-list-group-active-border-color: #0b163f;
+    --bs-list-group-color: var(--brand-emphasis);
+    --bs-list-group-bg: var(--brand-subtle);
+    --bs-list-group-border-color: var(--brand-subtle-border);
+    --bs-list-group-action-hover-color: var(--brand-emphasis);
+    --bs-list-group-action-hover-bg: var(--brand-subtle-hover);
+    --bs-list-group-action-active-color: var(--brand-emphasis);
+    --bs-list-group-action-active-bg: var(--brand-subtle-active);
+    --bs-list-group-active-color: var(--brand-on);
+    --bs-list-group-active-bg: var(--brand);
+    --bs-list-group-active-border-color: var(--brand);
 }
 
 .dropdown-menu {
-    --bs-dropdown-link-active-bg: #0b163f;
+    --bs-dropdown-link-active-bg: var(--brand);
 }
 
 body {

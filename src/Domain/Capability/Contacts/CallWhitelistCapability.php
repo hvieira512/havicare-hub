@@ -33,11 +33,6 @@ final class CallWhitelistCapability implements CapabilityContract
         return 'call_whitelist';
     }
 
-    public function section(): string
-    {
-        return 'contacts';
-    }
-
     public function isList(): bool
     {
         return false;
@@ -64,7 +59,7 @@ final class CallWhitelistCapability implements CapabilityContract
         };
     }
 
-    public function fromNative(string $nativeKey, array $desired): mixed
+    public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
         if ($nativeKey === 'call_whitelist') {
             if (isset($desired['fields']) && is_array($desired['fields'])) {

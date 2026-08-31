@@ -496,7 +496,7 @@ final class DeviceCapabilityPresenter
         string $nativeKey,
         array $desired
     ): mixed {
-        return $this->capabilityRegistry->fromNative($genericKey, $nativeKey, $desired, $protocol);
+        return $this->capabilityRegistry->fromNative($protocol, $genericKey, $nativeKey, $desired);
     }
 
     /**

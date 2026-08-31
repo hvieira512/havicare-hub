@@ -322,7 +322,7 @@ function filterOptionMarkup({ key, value, label, count, selected, partial = fals
             data-filter-key="${key}" data-filter-value="${value}" aria-pressed="${selected ? "true" : "false"}">
         <span class="filter-option-box"><i class="fa-solid ${partial && !selected ? "fa-minus" : "fa-check"}"></i></span>
         <span class="filter-option-name">${label}</span>
-        <span class="filter-option-count count-number">${count}</span>
+        <span class="count-number flex-shrink-0">${count}</span>
         </button>`;
 }
 

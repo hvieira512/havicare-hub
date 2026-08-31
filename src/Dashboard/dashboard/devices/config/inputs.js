@@ -320,7 +320,7 @@ export function intervalHoursToggleInput(desired) {
 function enabledSwitch(desired) {
     const enabled = boolValue(desired.enabled, true);
     return `
-        <div class="form-check form-switch form-switch-aligned">
+        <div class="form-check form-switch mt-4">
             <input class="form-check-input" type="checkbox" role="switch" data-config-field="enabled" ${enabled ? "checked" : ""}>
             <label class="form-check-label" data-switch-label>${enabled ? "Ligado" : "Desligado"}</label>
         </div>`;
@@ -401,7 +401,7 @@ export function workingModeInput(desired) {
                         { cls: "col-md-6" },
                     )}
                     <div class="col-md-6">
-                        <div class="form-check form-switch form-switch-aligned">
+                        <div class="form-check form-switch mt-4">
                             <input class="form-check-input" type="checkbox" role="switch" data-config-field="gpsEnabled" ${gpsEnabled ? "checked" : ""}>
                             <label class="form-check-label">GPS ativo</label>
                         </div>
@@ -657,7 +657,7 @@ export function wonlexHeartRateRangeInput(desired) {
                     { cls: "col-md-6" },
                 )}
                 <div class="col-md-6">
-                    <div class="form-check form-switch form-switch-aligned">
+                    <div class="form-check form-switch mt-4">
                         <input class="form-check-input" type="checkbox" role="switch" data-config-field="exerciseEnabled" ${exerciseEnabled ? "checked" : ""}>
                         <label class="form-check-label">Usar limites de exercício</label>
                     </div>
@@ -1106,7 +1106,7 @@ export function fourPTouchAlarmRow(alarm, index) {
                     { cls: "col-sm-6 col-lg-2" },
                 )}
                 <div class="col-sm-6 col-lg-2">
-                    <div class="form-check form-switch form-switch-aligned">
+                    <div class="form-check form-switch mt-4">
                         <input class="form-check-input" type="checkbox" role="switch" data-fourptouch-field="enabled" ${boolValue(alarm.enabled, true) ? "checked" : ""}>
                         <label class="form-check-label" data-switch-label>${boolValue(alarm.enabled, true) ? "Ligado" : "Desligado"}</label>
                     </div>
@@ -1199,7 +1199,7 @@ function alarmClockRow(item = {}, typeOptions = [], recurrenceOptions = [], wonl
                     { cls: `col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}`, required: true },
                 )}
                 <div class="col-sm-6 col-lg-${hasTypeSelector ? "1" : "3"}">
-                    <div class="form-check form-switch form-switch-aligned">
+                    <div class="form-check form-switch mt-4">
                         <input class="form-check-input" type="checkbox" role="switch" data-alarm-clock-field="enabled" ${boolValue(item.enabled, true) ? "checked" : ""}>
                         <label class="form-check-label" data-switch-label>${boolValue(item.enabled, true) ? "Ligado" : "Desligado"}</label>
                     </div>

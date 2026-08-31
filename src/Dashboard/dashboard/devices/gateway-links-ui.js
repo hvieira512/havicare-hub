@@ -97,7 +97,7 @@ export function gatewayCardMarkup(gateway, checked, signal = null) {
         : GATEWAY_THUMB_PLACEHOLDER;
 
     return `<label class="gateway-card">
-        <input class="form-check-input gateway-card-check" type="checkbox" data-gateway-key="${esc(key)}"${checked ? " checked" : ""}>
+        <input class="form-check-input gateway-card-check flex-shrink-0 m-0" type="checkbox" data-gateway-key="${esc(key)}"${checked ? " checked" : ""}>
         <span class="gateway-card-thumb">${thumb}</span>
         <span class="gateway-card-text">
             <span class="gateway-card-mac">${esc(key)}</span>

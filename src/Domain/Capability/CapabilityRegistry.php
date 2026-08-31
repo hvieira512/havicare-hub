@@ -2,7 +2,6 @@
 
 namespace Hub\Domain\Capability;
 
-use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\AlarmClock\AlarmClockCapability;
 use Hub\Domain\Capability\AlarmClock\FourPTouch as FourPTouchAlarmClock;
 use Hub\Domain\Capability\AlarmClock\Vivistar as VivistarAlarmClock;
@@ -20,14 +19,22 @@ use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
  *
  * As capacidades complexas (`alarm_clock`, `sos_contacts`, `call_whitelist`, ...) implementam
  * o `CapabilityContract` e registam-se aqui. As simples -- interruptores, números, telefones
- * -- são tratadas genericamente pelos metadados do `DeviceConfigurationCatalog`.
+ * -- caem na `GenericCapability`, que também é um `CapabilityContract`.
+ *
+ * É por isso que este ficheiro encolheu para metade: sete métodos perguntavam
+ * `isset($this->contracts[$key])` e tratavam eles próprios do caso em que a resposta era
+ * não, e os cerca de 120 linhas dessa segunda metade eram tradução de fio da Vivistar e da
+ * Wonlex a viver dentro de um registo. O `contract()` devolve sempre alguém, e um registo
+ * volta a só registar e a delegar.
  */
 final class CapabilityRegistry
 {
-    use CapabilityHelpers;
-
     /** @var array<string, CapabilityContract> */
     private array $contracts = [];
+
+    /** @var array<string, GenericCapability> as genéricas, criadas à medida que aparecem */
+    private array $generic = [];
+
     private FourPTouchGenericHandler $fourPTouchGeneric;
 
     public function __construct()
@@ -55,6 +62,13 @@ final class CapabilityRegistry
         $this->contracts[$capability->key()] = $capability;
     }
 
+    /**
+     * O contrato escrito à mão desta chave, ou `null` se não houver nenhum.
+     *
+     * Continua a devolver `null` de propósito: quem chama isto está mesmo a perguntar se a
+     * capacidade tem código próprio -- é uma pergunta legítima, ao contrário dos `isset` que
+     * os métodos de despacho faziam para decidir se delegavam.
+     */
     public function get(string $genericKey): ?CapabilityContract
     {
         return $this->contracts[$genericKey] ?? null;
@@ -65,6 +79,16 @@ final class CapabilityRegistry
         return isset($this->contracts[$genericKey]);
     }
 
+    /** Quem trata desta chave: o contrato escrito à mão, ou a genérica. Nunca `null`. */
+    private function contract(string $genericKey): CapabilityContract
+    {
+        // `??` e não `??=` no primeiro: escrever aqui punha a genérica dentro do mapa dos
+        // contratos, e o `has()` e o `get()` -- que existem justamente para distinguir os
+        // dois -- passavam a responder que sim a toda a gente.
+        return $this->contracts[$genericKey]
+            ?? ($this->generic[$genericKey] ??= new GenericCapability($genericKey, $this->fourPTouchGeneric));
+    }
+
     /**
      * Se a alteração tem de viajar para o dispositivo, ou se o hub a aplica sozinho.
      *
@@ -73,17 +97,12 @@ final class CapabilityRegistry
      */
     public function travelsToDevice(string $genericKey): bool
     {
-        return !(($this->contracts[$genericKey] ?? null) instanceof HubAppliedCapability);
+        return !($this->contract($genericKey) instanceof HubAppliedCapability);
     }
 
     public function supportsProtocol(string $genericKey, string $protocol): bool
     {
-        $contract = $this->contracts[$genericKey] ?? null;
-        if ($contract === null) {
-            return true;
-        }
-
-        return in_array($protocol, $contract->supportedProtocols(), true);
+        return in_array($protocol, $this->contract($genericKey)->supportedProtocols(), true);
     }
 
     /**
@@ -91,228 +110,55 @@ final class CapabilityRegistry
      */
     public function toNative(string $protocol, string $genericKey, mixed $value): array
     {
-        if (isset($this->contracts[$genericKey])) {
-            return $this->contracts[$genericKey]->toNative($protocol, $value);
-        }
-
-        return $this->genericToNative($protocol, $genericKey, $value);
+        return $this->contract($genericKey)->toNative($protocol, $value);
     }
 
+    /**
+     * O `instanceof` fica: não é um desvio à regra, é a pergunta "esta capacidade quer
+     * limpar o que lhe entra?". Quem quiser diz-lo implementando o `CapabilityInputSanitizer`,
+     * e quem não quiser não escreve método nenhum.
+     */
     public function sanitizeInput(string $protocol, string $genericKey, mixed $value): mixed
     {
-        $contract = $this->contracts[$genericKey] ?? null;
+        $contract = $this->contract($genericKey);
 
         return $contract instanceof CapabilityInputSanitizer
             ? $contract->sanitizeInput($protocol, $value)
             : $value;
     }
 
-    public function fromNative(string $genericKey, string $nativeKey, array $desired, string $protocol = ''): mixed
+    /**
+     * O protocolo vem à frente e sem valor por omissão, como no `toNative` e no
+     * `responseEntry`. Era um `string $protocol = ''` no fim, e o `''` deixava chamar isto
+     * sem dizer de que fornecedor era o payload -- o que só funcionava porque um
+     * `instanceof AlarmClockCapability` aqui desviava esse caso para um segundo método.
+     * Descodificar sem saber o protocolo é adivinhar; agora não se pode pedir.
+     */
+    public function fromNative(string $protocol, string $genericKey, string $nativeKey, array $desired): mixed
     {
-        if (isset($this->contracts[$genericKey])) {
-            if ($protocol !== '' && $this->contracts[$genericKey] instanceof AlarmClockCapability) {
-                return $this->contracts[$genericKey]->fromNativeForProtocol($protocol, $nativeKey, $desired);
-            }
-            return $this->contracts[$genericKey]->fromNative($nativeKey, $desired);
-        }
-
-        if ($nativeKey !== '' && FourPTouchGenericHandler::nativeKeyToGenericKey($nativeKey) !== null) {
-            return $this->fourPTouchGeneric->fromNative($genericKey, $nativeKey, $desired);
-        }
-
-        return $protocol === 'wonlex-json'
-            ? $this->wonlexFromNative($desired)
-            : $desired;
+        return $this->contract($genericKey)->fromNative($protocol, $nativeKey, $desired);
     }
 
     public function responseEntry(string $protocol, string $genericKey, string $nativeKey, mixed $value, array $meta): array
     {
-        if (isset($this->contracts[$genericKey])) {
-            return $this->contracts[$genericKey]->responseEntry($protocol, $nativeKey, $value, $meta);
-        }
-
-        return [
-            'value' => $value,
-            '_meta' => $meta,
-        ];
+        return $this->contract($genericKey)->responseEntry($protocol, $nativeKey, $value, $meta);
     }
 
     public function defaultValue(string $protocol, string $genericKey): mixed
     {
-        if (isset($this->contracts[$genericKey])) {
-            return $this->contracts[$genericKey]->defaultValue($protocol);
-        }
-
-        return $this->genericDefaultValue($protocol, $genericKey);
+        return $this->contract($genericKey)->defaultValue($protocol);
     }
 
+    /** Nada com que juntar é a única regra que vale para todas, e por isso fica cá fora. */
     public function merge(string $genericKey, mixed $existing, mixed $incoming): mixed
     {
-        if ($existing === null) {
-            return $incoming;
-        }
-
-        if (isset($this->contracts[$genericKey])) {
-            return $this->contracts[$genericKey]->merge($existing, $incoming);
-        }
-
-        return self::mergeAssociativeValues($existing, $incoming);
+        return $existing === null
+            ? $incoming
+            : $this->contract($genericKey)->merge($existing, $incoming);
     }
 
     public function resolveConfigKey(string $protocol, string $key): ?string
     {
-        if (isset($this->contracts[$key])) {
-            return $this->contracts[$key]->resolveConfigKey($protocol, $key);
-        }
-
-        $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $key);
-
-        return $entry !== null ? $key : null;
-    }
-
-    // ------------------------------------------------------------------
-    // Generic fallback for capabilities without a contract
-    // ------------------------------------------------------------------
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function genericToNative(string $protocol, string $genericKey, mixed $value): array
-    {
-        return match ($protocol) {
-            'vivistar-iw' => $this->vivistarGenericToNative($genericKey, $value),
-            'wonlex-json' => $this->wonlexGenericToNative($genericKey, $value),
-            'four-p-touch' => $this->fourPTouchGeneric->toNative($genericKey, $value),
-            default => throw new \InvalidArgumentException("Unsupported protocol {$protocol}"),
-        };
-    }
-
-    private function genericDefaultValue(string $protocol, string $genericKey): mixed
-    {
-        $entry = $this->findConfigEntryForGenericKey($protocol, $genericKey);
-        if ($entry === null) {
-            return [];
-        }
-
-        return $this->defaultDesiredPayload($entry);
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function vivistarGenericToNative(string $genericKey, mixed $value): array
-    {
-        return match ($genericKey) {
-            'working_mode' => ['workingMode' => self::requireObjectValue($value, 'workingMode')],
-            'fall_detection' => ['fallDetection' => ['enabled' => self::requireBoolLikeField($value, 'enabled')]],
-            'fall_sensitivity' => ['fallSensitivity' => ['sensitivity' => self::requireIntField($value, 'sensitivity')]],
-            'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            'auto_vitals_interval' => ['autoHealthMeasurement' => self::requireObjectValue($value, 'autoHealthMeasurement')],
-            default => throw new \InvalidArgumentException("Unsupported vivistar-iw capability {$genericKey}"),
-        };
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function wonlexGenericToNative(string $genericKey, mixed $value): array
-    {
-        return match ($genericKey) {
-            'reset_device' => ['resetCommand' => []],
-            'restart_device' => ['restartCommand' => []],
-            'power_off' => ['powerOffCommand' => []],
-            'find_device' => ['findDeviceCommand' => []],
-            'push_message' => ['pushMessage' => ['message' => self::requireStringField($value, 'message')]],
-            default => [
-                $this->resolveWonlexNativeKey($genericKey) => $this->wonlexToNative(
-                    self::requireObjectValue($value, $genericKey)
-                ),
-            ],
-        };
-    }
-
-    /**
-     * Mantém os nomes de transporte da Wonlex fora do contrato genérico da API.
-     *
-     * @param array<string, mixed> $value
-     * @return array<string, mixed>
-     */
-    private function wonlexFromNative(array $value): array
-    {
-        if (array_key_exists('switchState', $value)) {
-            $value['enabled'] = self::wonlexBool($value['switchState'], 'switchState');
-            unset($value['switchState']);
-        }
-        if (array_key_exists('exerciseSwitchState', $value)) {
-            $value['exerciseEnabled'] = self::wonlexBool($value['exerciseSwitchState'], 'exerciseSwitchState');
-            unset($value['exerciseSwitchState']);
-        }
-
-        return $value;
-    }
-
-    /**
-     * Aceita os nomes normalizados da API mantendo a compatibilidade com payloads antigos
-     * que já traziam campos nativos da Wonlex.
-     *
-     * @param array<string, mixed> $value
-     * @return array<string, mixed>
-     */
-    private function wonlexToNative(array $value): array
-    {
-        if (array_key_exists('enabled', $value) && !array_key_exists('switchState', $value)) {
-            $value['switchState'] = self::wonlexBool($value['enabled'], 'enabled');
-        }
-        unset($value['enabled']);
-
-        if (array_key_exists('exerciseEnabled', $value) && !array_key_exists('exerciseSwitchState', $value)) {
-            $value['exerciseSwitchState'] = self::wonlexBool($value['exerciseEnabled'], 'exerciseEnabled');
-        }
-        unset($value['exerciseEnabled']);
-
-        return $value;
-    }
-
-    private static function wonlexBool(mixed $value, string $field): bool
-    {
-        $normalized = self::requireBoolLikeValue($value, $field);
-
-        return in_array($normalized, [true, 1, '1'], true);
-    }
-
-    // ------------------------------------------------------------------
-    // Default payload for simple capabilities
-    // ------------------------------------------------------------------
-
-    private function defaultDesiredPayload(array $entry): array
-    {
-        return ConfigurationInputDefaults::forEntry($entry);
-    }
-
-    // ------------------------------------------------------------------
-    // Config entry lookup
-    // ------------------------------------------------------------------
-
-    private function findConfigEntryForGenericKey(string $protocol, string $genericKey): ?array
-    {
-        foreach (DeviceConfigurationCatalog::configsForProtocol($protocol) as $entry) {
-            if (CapabilityCatalog::mapConfigurationKey((string)($entry['key'] ?? '')) === $genericKey) {
-                return $entry;
-            }
-        }
-
-        return null;
-    }
-
-    private function resolveWonlexNativeKey(string $genericKey): string
-    {
-        foreach (DeviceConfigurationCatalog::configsForProtocol('wonlex-json') as $entry) {
-            $nativeKey = trim((string)($entry['key'] ?? ''));
-            if (CapabilityCatalog::mapConfigurationKey($nativeKey) === $genericKey) {
-                return $nativeKey;
-            }
-        }
-
-        throw new \InvalidArgumentException("Unsupported wonlex-json capability {$genericKey}");
+        return $this->contract($key)->resolveConfigKey($protocol, $key);
     }
 }
