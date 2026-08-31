@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Controllers;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\ErrorStatusMapper;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\RequestContext;
@@ -45,14 +46,27 @@ final class ModelController
         return $this->json->respond($this->service->show((int)$params['id'], RequestContext::baseUrl($request)));
     }
 
+    /** O modelo chega em JSON ou em `multipart/form-data`, porque traz a imagem com ele. */
     public function create(ServerRequestInterface $request): Response
     {
-        return $this->json->respond($this->service->create($request));
+        $payload = RequestContext::formOrJsonBody($request);
+        if ($payload === null) {
+            return $this->json->respond(ApiError::invalidJson()->toArray());
+        }
+
+        return $this->json->respond($this->service->create($payload, $request->getUploadedFiles()['image'] ?? null));
     }
 
     public function update(array $params, ServerRequestInterface $request): Response
     {
-        return $this->json->respond($this->service->update((int)$params['id'], $request));
+        $payload = RequestContext::formOrJsonBody($request);
+        if ($payload === null) {
+            return $this->json->respond(ApiError::invalidJson()->toArray());
+        }
+
+        return $this->json->respond(
+            $this->service->update((int)$params['id'], $payload, $request->getUploadedFiles()['image'] ?? null)
+        );
     }
 
     public function delete(array $params): Response

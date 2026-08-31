@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Controllers;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\RequestContext;
 use Hub\Api\Services\AuthService;
@@ -18,7 +19,10 @@ final class AuthController
 
     public function login(ServerRequestInterface $request): Response
     {
-        $result = $this->service->login(RequestContext::requestBody($request), RequestContext::requestId($request));
+        $payload = RequestContext::jsonBody($request);
+        $result = $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->login($payload, RequestContext::requestId($request));
 
         return $this->json->respond($result, isset($result['error']) ? 401 : 200);
     }

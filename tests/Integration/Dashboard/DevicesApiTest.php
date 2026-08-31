@@ -32,7 +32,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['location']);
 
-        $response = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+        $response = $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
 
         self::assertSame('unsupported_feature', $response['error']['code'] ?? null);
     }
@@ -41,14 +41,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api, $db] = $this->makeApi();
 
-        $response = $api->create(json_encode([
+        $response = $api->create([
             'imei' => '864293000000111',
             'supplier' => '4P Touch',
             'model' => 'D46',
             'deviceType' => 'watch',
             'licenseId' => '0',
             'deviceId' => '',
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('9300000011', $api->show('864293000000111')['device']['deviceId'] ?? null);
@@ -58,13 +58,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api, $db] = $this->makeApi();
 
-        $response = $api->create(json_encode([
+        $response = $api->create([
             'imei' => '861265061009822',
             'supplier' => 'Vivistar',
             'model' => 'L08 Pro',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('device_exists', $response['error']['code'] ?? null);
         self::assertSame('Device with this IMEI already exists', $response['error']['message'] ?? null);
@@ -527,13 +527,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api, $db] = $this->makeApi();
         $imei = '868705080300697';
-        $created = $api->create(json_encode([
+        $created = $api->create([
             'imei' => $imei,
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame('ok', $created['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
@@ -652,13 +652,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api, $db] = $this->makeApi();
         $imei = '868705080300697';
-        $created = $api->create(json_encode([
+        $created = $api->create([
             'imei' => $imei,
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame('ok', $created['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
@@ -701,23 +701,23 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $submitted = [];
         [$api, $db, $store] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300697';
-        self::assertSame('ok', $api->create(json_encode([
+        self::assertSame('ok', $api->create([
             'imei' => $imei,
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+        ])['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
 
-        $updated = $api->updateConfigurations($imei, json_encode([
+        $updated = $api->updateConfigurations($imei, [
             'configurations' => [
                 'fall_detection' => ['enabled' => false],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $updated['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -1223,7 +1223,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'alarm_clock' => [
                     'items' => [
@@ -1236,7 +1236,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
@@ -1266,7 +1266,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'alarm_clock' => [
                     'items' => [
@@ -1279,7 +1279,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
@@ -1319,13 +1319,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'cmd-0'
         );
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'fall_detection' => [
                     'enabled' => false,
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('fall_detection', $response['results'][0]['key'] ?? null);
@@ -1355,13 +1355,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['whitelist_enabled']);
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'whitelist_enabled' => [
                     'enabled' => false,
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('whitelist_enabled', $response['results'][0]['key'] ?? null);
@@ -1385,11 +1385,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['whitelist_enabled']);
         $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 1, '', '7597567372', 'havicare');
 
-        $disabled = $api->updateConfigurations('637507597567372', json_encode([
+        $disabled = $api->updateConfigurations('637507597567372', [
             'configurations' => [
                 'whitelist_enabled' => ['enabled' => false],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $disabled['status'] ?? null);
         self::assertSame('rejectUnknownCalls', $disabled['results'][0]['operations'][0]['nativeKey'] ?? null);
@@ -1399,11 +1399,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertFalse($afterDisable['configurations']['whitelist_enabled']['enabled'] ?? true);
         self::assertFalse($afterDisable['capabilities']['contacts']['whitelist_enabled']['value']['enabled'] ?? true);
 
-        $enabled = $api->updateConfigurations('637507597567372', json_encode([
+        $enabled = $api->updateConfigurations('637507597567372', [
             'configurations' => [
                 'whitelist_enabled' => ['enabled' => true],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $enabled['status'] ?? null);
         self::assertCount(2, $submitted);
@@ -1464,13 +1464,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
-        $response = $api->updateConfigurations('861728087060467', json_encode([
+        $response = $api->updateConfigurations('861728087060467', [
             'configurations' => [
                 'sos_contacts' => [
                     '+351938854803',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -1490,14 +1490,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
-        $response = $api->updateConfigurations('861728087060467', json_encode([
+        $response = $api->updateConfigurations('861728087060467', [
             'configurations' => [
                 'sos_contacts' => [
                     '+351938854803',
                     '+351938854803',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame('numbers must not contain repeated values', $response['error']['message'] ?? null);
@@ -1513,7 +1513,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
 
-        $response = $api->updateConfigurations('861728087060467', json_encode([
+        $response = $api->updateConfigurations('861728087060467', [
             'configurations' => [
                 'sos_contacts' => [
                     '+351938854803',
@@ -1522,7 +1522,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     '+351938854806',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame('numbers must contain at most 3 values', $response['error']['message'] ?? null);
@@ -1537,14 +1537,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $store->registerDevice('861728087060467', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
 
-        $response = $api->updateConfigurations('861728087060467', json_encode([
+        $response = $api->updateConfigurations('861728087060467', [
             'configurations' => [
                 'call_whitelist' => [
                     '+351922222222',
                     '+351922222222',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame('numbers must not contain repeated values', $response['error']['message'] ?? null);
@@ -1558,7 +1558,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'alarm_clock' => [
                     'items' => [
@@ -1570,7 +1570,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame('type is required', $response['error']['message'] ?? null);
@@ -1687,11 +1687,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
-        $updated = $api->updateConfigurations('861265061009822', json_encode([
+        $updated = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'fall_detection' => ['enabled' => true],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
         $commandId = (string)($updated['results'][0]['operations'][0]['lastCommandId'] ?? '');
         self::assertNotSame('', $commandId);
 
@@ -1714,11 +1714,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             $db->deviceConfigurations->allForImei('861265061009822')[0]['last_status'] ?? null
         );
 
-        $retried = $api->updateConfigurations('861265061009822', json_encode([
+        $retried = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'fall_detection' => ['enabled' => true],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame(2, $retried['results'][0]['desiredRevision'] ?? null);
         self::assertNotSame(
             $updated['results'][0]['changeId'] ?? '',
@@ -1753,7 +1753,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ['contacts' => [['name' => 'Bruno', 'phone' => '+351922222222']]]
         );
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'fall_detection' => ['enabled' => true],
                 'call_whitelist' => [
@@ -1762,7 +1762,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(2, $submitted);
@@ -1792,7 +1792,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'medication_reminders' => [
                     'reminderSettings' => [
@@ -1805,7 +1805,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'reminderText' => 'meds',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -1823,7 +1823,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'medication_reminders' => [
                     'reminderSettings' => [],
@@ -1831,7 +1831,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'voiceData' => '',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame([], $response['configurations']['medication_reminders']['reminderSettings'] ?? null);
@@ -1868,7 +1868,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ]
         );
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'medication_reminders' => [
                     'reminderSettings' => [
@@ -1881,7 +1881,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'reminderText' => 'updated',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -1899,13 +1899,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['location_reporting_interval']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'location_reporting_interval' => [
                     'intervalSeconds' => 3600,
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -1924,13 +1924,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['center_number']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'center_number' => [
                     'phone' => '351911111111',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -1949,7 +1949,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'alarm_clock' => [
                     'items' => [
@@ -1963,7 +1963,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -1980,7 +1980,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                     'alarm_clock' => [
                         'items' => [
@@ -1992,7 +1992,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                         ],
                     ],
                 ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
@@ -2021,14 +2021,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_sensitivity']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'fall_sensitivity' => [
                     'sensitivity' => 4,
                     'levels' => 6,
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('fall_sensitivity', $response['results'][0]['key'] ?? null);
@@ -2048,13 +2048,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_sensitivity']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'fall_sensitivity' => [
                     'sensitivity' => 6,
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('fallDownSensitivity', $response['results'][0]['operations'][0]['nativeKey'] ?? null);
@@ -2075,7 +2075,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
         $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 0, '', '7597567372', 'hitcare');
 
-        $response = $api->updateConfigurations('637507597567372', json_encode([
+        $response = $api->updateConfigurations('637507597567372', [
             'configurations' => [
                 'call_whitelist' => [
                     '+351911111111',
@@ -2086,7 +2086,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     '+351966666666',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('call_whitelist', $response['results'][0]['key'] ?? null);
@@ -2114,7 +2114,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'phonebook' => [
                     'contacts' => [
@@ -2122,7 +2122,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('phonebook', $response['results'][0]['key'] ?? null);
@@ -2148,13 +2148,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['phonebook']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'phonebook' => [
                     'contacts' => [],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('phonebook', $response['results'][0]['key'] ?? null);
@@ -2177,13 +2177,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'alarm_clock' => [
                     'items' => [],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('alarm_clock', $response['results'][0]['key'] ?? null);
@@ -2207,11 +2207,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'sos_contacts' => [],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertSame('sos_contacts', $response['results'][0]['key'] ?? null);
@@ -2235,18 +2235,18 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['sos_contacts']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $initial = $api->updateConfigurations('868017032159118', json_encode([
+        $initial = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'sos_contacts' => ['123456789'],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame('ok', $initial['status'] ?? null);
 
-        $cleared = $api->updateConfigurations('868017032159118', json_encode([
+        $cleared = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'sos_contacts' => [],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $cleared['status'] ?? null);
         self::assertCount(3, $cleared['results'][0]['operations'] ?? []);
@@ -2268,7 +2268,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'alarm_clock' => [
                     'items' => [
@@ -2281,7 +2281,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame('type is not supported for four-p-touch alarm_clock', $response['error']['message'] ?? null);
@@ -2296,14 +2296,14 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['language_timezone']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'language_timezone' => [
                     'language' => 0,
                     'timeZone' => '0',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -2319,7 +2319,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['medication_reminders']);
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'medication_reminders' => [
                     'reminderSettings' => [
@@ -2332,7 +2332,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'voiceData' => '',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -2343,7 +2343,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([], JSON_THROW_ON_ERROR));
+        $response = $api->updateConfigurations('861265061009822', []);
 
         self::assertSame('invalid_request', $response['error']['code'] ?? null);
     }
@@ -2352,11 +2352,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'unknownConfig' => ['enabled' => true],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
     }
@@ -2365,11 +2365,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'fallDetection' => ['enabled' => true],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame(
@@ -2386,11 +2386,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['fall_detection']);
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'working_mode' => ['mode' => 1],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame(
@@ -2404,7 +2404,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'working_mode' => [
                     'mode' => 8,
@@ -2412,7 +2412,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     'gpsEnabled' => true,
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame('intervalSeconds must be at least 30 for mode 8', $response['error']['message'] ?? null);
@@ -2427,10 +2427,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
 
-        $response = $api->requestFeature('861265061009822', json_encode([
+        $response = $api->requestFeature('861265061009822', [
             'capability' => 'push_message',
             'value' => ['message' => 'are you ok?'],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('waiting', $response['status'] ?? null);
         self::assertSame('push_message', $response['capability'] ?? null);
@@ -2452,20 +2452,20 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Wonlex', 'HW20PRO');
 
         self::assertIsArray($model);
-        self::assertSame('ok', $api->create(json_encode([
+        self::assertSame('ok', $api->create([
             'imei' => $imei,
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+        ])['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
         $store->registerDevice($imei, 'Wonlex', 'HW20PRO');
 
-        $response = $api->requestFeature($imei, json_encode([
+        $response = $api->requestFeature($imei, [
             'capability' => 'push_message',
             'value' => ['message' => 'Hello World'],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('sent', $response['status'] ?? null);
         self::assertSame('sent', $response['commands'][0]['status'] ?? null);
@@ -2487,10 +2487,10 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
 
-        $response = $api->requestFeature('861265061009822', json_encode([
+        $response = $api->requestFeature('861265061009822', [
             'capability' => 'push_message',
             'value' => ['message' => 'are you ok?'],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('unsupported_feature', $response['error']['code'] ?? null);
     }
@@ -2503,11 +2503,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['push_message']);
 
-        $response = $api->updateConfigurations('861265061009822', json_encode([
+        $response = $api->updateConfigurations('861265061009822', [
             'configurations' => [
                 'push_message' => ['message' => 'are you ok?'],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_config', $response['error']['code'] ?? null);
         self::assertSame([], $db->deviceConfigurations->allForImei('861265061009822'));
@@ -2523,7 +2523,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
         $store->registerDevice('637507597567372', '4P Touch', 'D46', 'watch', 0, '', '7597567372', 'hitcare');
 
-        $response = $api->updateConfigurations('637507597567372', json_encode([
+        $response = $api->updateConfigurations('637507597567372', [
             'configurations' => [
                 'call_whitelist' => [
                     '111',
@@ -2534,7 +2534,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     '666',
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(2, $response['results'][0]['operations'] ?? []);
@@ -2556,13 +2556,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $submitted = [];
         [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300698';
-        self::assertSame('ok', $api->create(json_encode([
+        self::assertSame('ok', $api->create([
             'imei' => $imei,
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+        ])['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
@@ -2584,7 +2584,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'drugInterval' => 1,
             'drugTime' => ['alarmClock' => ['Morning' => '08:00'], 'checkboxes' => [0], 'radio' => 0],
         ];
-        $response = $api->updateConfigurations($imei, json_encode([
+        $response = $api->updateConfigurations($imei, [
             'configurations' => [
                 'heart_rate_measurement_interval' => ['interval' => 15],
                 'alarm_clock' => ['items' => [[
@@ -2606,7 +2606,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     $plan + ['drugName' => 'Evening medicine'],
                 ]],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(8, $submitted);
@@ -2655,13 +2655,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $submitted = [];
         [$api, $db] = $this->makeApi(hub: $this->recordingHub($submitted));
         $imei = '868705080300698';
-        self::assertSame('ok', $api->create(json_encode([
+        self::assertSame('ok', $api->create([
             'imei' => $imei,
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR))['status'] ?? null);
+        ])['status'] ?? null);
 
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
@@ -2670,11 +2670,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ['medication_reminders']
         );
 
-        $response = $api->updateConfigurations($imei, json_encode([
+        $response = $api->updateConfigurations($imei, [
             'configurations' => [
                 'medication_reminders' => ['plans' => []],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -2706,7 +2706,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['alarm_clock']);
         $store->registerDevice('868017032159118', '4P Touch', 'D46', 'watch', 1001, '', '', 'hitcare');
 
-        $response = $api->updateConfigurations('868017032159118', json_encode([
+        $response = $api->updateConfigurations('868017032159118', [
             'configurations' => [
                 'alarm_clock' => [
                     'items' => [
@@ -2718,7 +2718,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
                     ],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $response['status'] ?? null);
         self::assertCount(1, $submitted);
@@ -2744,7 +2744,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
         $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 72]);
         $store->append('861265061009822', 'events', ['type' => 'sos', 'status' => 'triggered']);
-        $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+        $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
 
         $response = $api->recent('861265061009822');
 
@@ -2763,7 +2763,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate']);
 
-        $response = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+        $response = $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
 
         self::assertSame('waiting', $response['status'] ?? null);
         self::assertSame('heart_rate', $response['feature'] ?? null);
@@ -2787,11 +2787,11 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $first = $api->requestFeature(
             '861265061009822',
-            json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR)
+            ['feature' => 'heart_rate']
         );
         $second = $api->requestFeature(
             '861265061009822',
-            json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR)
+            ['feature' => 'heart_rate']
         );
 
         $firstId = (string)($first['commands'][0]['id'] ?? '');
@@ -2849,13 +2849,13 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         $features = $requestableFeatures + $nonRequestableFeatures;
 
         self::assertIsArray($model);
-        $created = $api->create(json_encode([
+        $created = $api->create([
             'imei' => $imei,
             'supplier' => 'Wonlex',
             'model' => 'HW20PRO',
             'deviceType' => 'watch',
             'licenseId' => '0',
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame('ok', $created['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], array_keys($features));
         // O que se pode pedir a um modelo é uma decisão por modelo, guardada no
@@ -2888,7 +2888,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         foreach ($requestableFeatures as $feature => $nativeType) {
             $response = $api->requestFeature(
                 $imei,
-                json_encode(['feature' => $feature], JSON_THROW_ON_ERROR)
+                ['feature' => $feature]
             );
             self::assertSame('waiting', $response['status'] ?? null, $nativeType);
         }
@@ -2896,7 +2896,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         foreach ($nonRequestableFeatures as $feature => $nativeType) {
             $response = $api->requestFeature(
                 $imei,
-                json_encode(['feature' => $feature], JSON_THROW_ON_ERROR)
+                ['feature' => $feature]
             );
             self::assertSame('feature_not_requestable', $response['error']['code'] ?? null, $nativeType);
         }
@@ -2935,7 +2935,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
 
         $response = $api->requestFeature(
             '861265061009822',
-            json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR)
+            ['feature' => 'heart_rate']
         );
 
         self::assertSame('queued', $response['status'] ?? null);
@@ -2970,7 +2970,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['call_whitelist']);
 
-        $response = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+        $response = $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
 
         self::assertSame('unsupported_feature', $response['error']['code'] ?? null);
     }
@@ -2979,7 +2979,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $created = $api->requestFeature('861265061009822', json_encode(['feature' => 'heart_rate'], JSON_THROW_ON_ERROR));
+        $created = $api->requestFeature('861265061009822', ['feature' => 'heart_rate']);
         $id = (string)($created['commands'][0]['id'] ?? '');
 
         $response = $api->commandStatus($id);
@@ -2993,28 +2993,28 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     {
         [$api] = $this->makeApi();
 
-        $response = $api->update('861265061009822', json_encode([
+        $response = $api->update('861265061009822', [
             'configurations' => [
                 'fallDetection' => ['enabled' => true],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('invalid_request', $response['error']['code'] ?? null);
 
-        $legacyConfigs = $api->update('861265061009822', json_encode([
+        $legacyConfigs = $api->update('861265061009822', [
             'configs' => [
                 'fallDetection' => ['enabled' => true],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame('invalid_request', $legacyConfigs['error']['code'] ?? null);
 
-        $legacyCapabilities = $api->update('861265061009822', json_encode([
+        $legacyCapabilities = $api->update('861265061009822', [
             'capabilities' => [
                 'alarms' => [
                     'fall_detection' => ['enabled' => true],
                 ],
             ],
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame('invalid_request', $legacyCapabilities['error']['code'] ?? null);
     }
 
@@ -3027,7 +3027,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ['imei' => 'eec5000202f9', 'supplier' => 'MONIT', 'model' => 'MECS-PRO'],
             ] as $device
         ) {
-            $result = $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
+            $result = $api->create($device + ['licenseId' => '1001', 'company' => 'hitcare']);
             self::assertSame('ok', $result['status'] ?? null);
         }
 
@@ -3060,7 +3060,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ['imei' => '861265061009823', 'supplier' => 'Vivistar', 'model' => 'L08 Pro'],
             ] as $device
         ) {
-            $result = $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
+            $result = $api->create($device + ['licenseId' => '1001', 'company' => 'hitcare']);
             self::assertSame('ok', $result['status'] ?? null);
         }
 
@@ -3085,7 +3085,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             ['imei' => 'fbd87c59ba8b', 'supplier' => 'MOKO', 'model' => 'W6B'],
             ] as $device
         ) {
-            $api->create(json_encode($device + ['licenseId' => '1001', 'company' => 'hitcare'], JSON_THROW_ON_ERROR));
+            $api->create($device + ['licenseId' => '1001', 'company' => 'hitcare']);
         }
         $api->createLink('c5e390f30bce', 'fbd87c59ba8b');
         $api->createLink('dc1603ecf1f7', 'fbd87c59ba8b');

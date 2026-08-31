@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Controllers;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\ErrorStatusMapper;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\RequestContext;
@@ -124,8 +125,10 @@ final class DeviceController
 
     public function requestFeature(array $params, ServerRequestInterface $request): Response
     {
-        $auth = RequestContext::auth($request);
-        $result = $this->service->requestFeature($params['imei'], RequestContext::requestBody($request), $auth, RequestContext::requestId($request));
+        $payload = RequestContext::jsonBody($request);
+        $result = $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->requestFeature($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request));
 
         return $this->json->respond($result, $this->status->map($result));
     }
@@ -150,7 +153,10 @@ final class DeviceController
 
     public function patchAssociation(array $params, ServerRequestInterface $request): Response
     {
-        $result = $this->service->patchAssociation($params['imei'], RequestContext::requestBody($request), RequestContext::auth($request));
+        $payload = RequestContext::jsonBody($request);
+        $result = $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->patchAssociation($params['imei'], $payload, RequestContext::auth($request));
 
         return $this->json->respond($result, $this->status->map($result));
     }
@@ -171,21 +177,30 @@ final class DeviceController
 
     public function create(array $params, ServerRequestInterface $request): Response
     {
-        $result = $this->service->create(RequestContext::requestBody($request));
+        $payload = RequestContext::jsonBody($request);
+        $result = $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->create($payload);
 
         return $this->json->respond($result, $this->status->map($result, 201));
     }
 
     public function update(array $params, ServerRequestInterface $request): Response
     {
-        $result = $this->service->update($params['imei'], RequestContext::requestBody($request), RequestContext::auth($request), RequestContext::requestId($request));
+        $payload = RequestContext::jsonBody($request);
+        $result = $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->update($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request));
 
         return $this->json->respond($result, $this->status->map($result));
     }
 
     public function updateConfigurations(array $params, ServerRequestInterface $request): Response
     {
-        $result = $this->service->updateConfigurations($params['imei'], RequestContext::requestBody($request), RequestContext::auth($request), RequestContext::requestId($request));
+        $payload = RequestContext::jsonBody($request);
+        $result = $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->updateConfigurations($params['imei'], $payload, RequestContext::auth($request), RequestContext::requestId($request));
 
         return $this->json->respond($result, $this->status->map($result));
     }

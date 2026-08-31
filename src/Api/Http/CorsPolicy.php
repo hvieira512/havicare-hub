@@ -2,11 +2,11 @@
 
 namespace Hub\Api\Http;
 
-use React\Http\Message\Response;
+use Psr\Http\Message\ResponseInterface;
 
 final class CorsPolicy
 {
-    public function apply(Response $response): Response
+    public function apply(ResponseInterface $response): ResponseInterface
     {
         return $response->withHeader('Access-Control-Allow-Origin', '*')
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')

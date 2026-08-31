@@ -2,6 +2,12 @@
 
 namespace Hub\Api\Http;
 
+/**
+ * O estado HTTP de um resultado de serviço.
+ *
+ * Continua a receber o array porque é isso que os serviços devolvem, mas já não adivinha o
+ * estado pela forma do código: pergunta-o ao `ApiError`, onde cada código o declara.
+ */
 final class ErrorStatusMapper
 {
     public function map(array $result, int $success = 200): int
@@ -10,17 +16,6 @@ final class ErrorStatusMapper
             return $success;
         }
 
-        $code = (string)($result['error']['code'] ?? '');
-        if ($code === 'forbidden') {
-            return 403;
-        }
-        if ($code === 'not_found' || str_ends_with($code, '_not_found')) {
-            return 404;
-        }
-        if ($code === 'conflict' || str_ends_with($code, '_exists') || str_starts_with($code, 'duplicate_')) {
-            return 409;
-        }
-
-        return 400;
+        return ApiError::statusForCode((string)($result['error']['code'] ?? ''));
     }
 }

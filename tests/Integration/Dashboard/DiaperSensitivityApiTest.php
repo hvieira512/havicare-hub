@@ -56,10 +56,10 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         $hub->method('submitDownlink')->willReturn('sent');
 
         $api = new DeviceService($store, new Whitelist($this->whitelistPath, $db->whitelist), $hub, $db);
-        $created = $api->create(json_encode([
+        $created = $api->create([
             'imei' => self::SENSOR, 'supplier' => 'MONIT', 'model' => 'MECS-PRO',
             'licenseId' => '1001', 'company' => 'hitcare',
-        ], JSON_THROW_ON_ERROR));
+        ]);
         self::assertSame('ok', $created['status'] ?? null, 'devia registar o sensor');
 
         return [$api, $pdo];
@@ -68,9 +68,9 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
     /** @param array<string, mixed> $value */
     private function patch(DeviceService $api, array $value): array
     {
-        return $api->updateConfigurations(self::SENSOR, json_encode([
+        return $api->updateConfigurations(self::SENSOR, [
             'configurations' => ['diaper_sensitivity' => $value],
-        ], JSON_THROW_ON_ERROR));
+        ]);
     }
 
     /** @return array<string, mixed> */

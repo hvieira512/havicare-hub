@@ -64,19 +64,18 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Wonlex', 'HW20PRO');
 
         self::assertIsArray($model);
-        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
-            ->withParsedBody([
-                'supplier_id' => (int)$model['supplier_id'],
-                'internalModel' => (string)$model['internal_model'],
-                'commercialName' => (string)$model['commercial_name'],
-                'deviceType' => (string)$model['device_type'],
-                'capabilitiesConfigured' => '1',
-                'capabilities' => ['heart_rate', 'blood_pressure'],
-                'requestableCapabilitiesConfigured' => '1',
-                'requestableCapabilities' => ['heart_rate'],
-            ]);
+        $payload = [
+            'supplier_id' => (int)$model['supplier_id'],
+            'internalModel' => (string)$model['internal_model'],
+            'commercialName' => (string)$model['commercial_name'],
+            'deviceType' => (string)$model['device_type'],
+            'capabilitiesConfigured' => '1',
+            'capabilities' => ['heart_rate', 'blood_pressure'],
+            'requestableCapabilitiesConfigured' => '1',
+            'requestableCapabilities' => ['heart_rate'],
+        ];
 
-        $result = $api->update((int)$model['id'], $request);
+        $result = $api->update((int)$model['id'], $payload);
 
         self::assertSame('ok', $result['status'] ?? null);
         self::assertSame(
@@ -93,19 +92,18 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Wonlex', 'HW20PRO');
 
         self::assertIsArray($model);
-        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
-            ->withParsedBody([
-                'supplier_id' => (int)$model['supplier_id'],
-                'internalModel' => (string)$model['internal_model'],
-                'commercialName' => (string)$model['commercial_name'],
-                'deviceType' => (string)$model['device_type'],
-                'capabilitiesConfigured' => '1',
-                'capabilities' => ['blood_pressure'],
-                'requestableCapabilitiesConfigured' => '1',
-                'requestableCapabilities' => ['heart_rate'],
-            ]);
+        $payload = [
+            'supplier_id' => (int)$model['supplier_id'],
+            'internalModel' => (string)$model['internal_model'],
+            'commercialName' => (string)$model['commercial_name'],
+            'deviceType' => (string)$model['device_type'],
+            'capabilitiesConfigured' => '1',
+            'capabilities' => ['blood_pressure'],
+            'requestableCapabilitiesConfigured' => '1',
+            'requestableCapabilities' => ['heart_rate'],
+        ];
 
-        $result = $api->update((int)$model['id'], $request);
+        $result = $api->update((int)$model['id'], $payload);
 
         self::assertSame('invalid_requestable_capability', $result['error']['code'] ?? null);
     }
@@ -274,17 +272,16 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'L08 Pro');
 
         self::assertIsArray($model);
-        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
-            ->withParsedBody([
-                'supplier_id' => (int)$model['supplier_id'],
-                'internalModel' => (string)$model['internal_model'],
-                'commercialName' => (string)$model['commercial_name'],
-                'deviceType' => (string)$model['device_type'],
-                'capabilitiesConfigured' => '1',
-                'capabilities' => ['heart_rate', 'call_whitelist', 'working_mode'],
-            ]);
+        $payload = [
+            'supplier_id' => (int)$model['supplier_id'],
+            'internalModel' => (string)$model['internal_model'],
+            'commercialName' => (string)$model['commercial_name'],
+            'deviceType' => (string)$model['device_type'],
+            'capabilitiesConfigured' => '1',
+            'capabilities' => ['heart_rate', 'call_whitelist', 'working_mode'],
+        ];
 
-        $result = $api->update((int)$model['id'], $request);
+        $result = $api->update((int)$model['id'], $payload);
 
         self::assertSame('ok', $result['status'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
@@ -304,15 +301,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $supplier = $db->suppliers->findByName('4P Touch');
 
         self::assertIsArray($supplier);
-        $request = (new ServerRequest('POST', '/api/models'))
-            ->withParsedBody([
-                'supplier_id' => (int)$supplier['id'],
-                'internalModel' => 'D46-PLUS',
-                'commercialName' => 'D46 Plus',
-                'deviceType' => 'watch',
-            ]);
-
-        $result = $api->create($request);
+        $result = $api->create([
+            'supplier_id' => (int)$supplier['id'],
+            'internalModel' => 'D46-PLUS',
+            'commercialName' => 'D46 Plus',
+            'deviceType' => 'watch',
+        ]);
 
         self::assertSame('ok', $result['status'] ?? null);
         $model = $db->models->find('4P Touch', 'D46-PLUS');
@@ -332,15 +326,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'call_whitelist']);
 
-        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
-            ->withParsedBody([
-                'supplier_id' => (int)$model['supplier_id'],
-                'internalModel' => (string)$model['internal_model'],
-                'commercialName' => 'Vivistar L08 Pro Renamed',
-                'deviceType' => (string)$model['device_type'],
-            ]);
-
-        $result = $api->update((int)$model['id'], $request);
+        $result = $api->update((int)$model['id'], [
+            'supplier_id' => (int)$model['supplier_id'],
+            'internalModel' => (string)$model['internal_model'],
+            'commercialName' => 'Vivistar L08 Pro Renamed',
+            'deviceType' => (string)$model['device_type'],
+        ]);
 
         self::assertSame('ok', $result['status'] ?? null);
         $actual = $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id']);
@@ -356,15 +347,12 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertIsArray($model);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], ['heart_rate', 'ecg']);
 
-        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
-            ->withParsedBody([
-                'supplier_id' => (int)$model['supplier_id'],
-                'internalModel' => (string)$model['internal_model'],
-                'commercialName' => (string)$model['commercial_name'],
-                'deviceType' => (string)$model['device_type'],
-            ]);
-
-        $result = $api->update((int)$model['id'], $request);
+        $result = $api->update((int)$model['id'], [
+            'supplier_id' => (int)$model['supplier_id'],
+            'internalModel' => (string)$model['internal_model'],
+            'commercialName' => (string)$model['commercial_name'],
+            'deviceType' => (string)$model['device_type'],
+        ]);
 
         self::assertSame('ok', $result['status'] ?? null);
         self::assertSame(
@@ -382,19 +370,16 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('Vivistar', 'RADAR-TEMP');
         self::assertIsArray($model);
 
-        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
-            ->withParsedBody([
-                'supplier_id' => (int)$model['supplier_id'],
-                'internalModel' => (string)$model['internal_model'],
-                'commercialName' => (string)$model['commercial_name'],
-                'deviceType' => (string)$model['device_type'],
-                'capabilitiesConfigured' => '1',
-                // Uma capacidade real, mas de outro tipo de dispositivo. Não pode ser
-                // `heart_rate`: o radar mede-a, e tem-na no catálogo.
-                'capabilities' => ['blood_pressure'],
-            ]);
-
-        $result = $api->update((int)$model['id'], $request);
+        $result = $api->update((int)$model['id'], [
+            'supplier_id' => (int)$model['supplier_id'],
+            'internalModel' => (string)$model['internal_model'],
+            'commercialName' => (string)$model['commercial_name'],
+            'deviceType' => (string)$model['device_type'],
+            'capabilitiesConfigured' => '1',
+            // Uma capacidade real, mas de outro tipo de dispositivo. Não pode ser
+            // `heart_rate`: o radar mede-a, e tem-na no catálogo.
+            'capabilities' => ['blood_pressure'],
+        ]);
 
         self::assertSame('unsupported_capability', $result['error']['code'] ?? null);
     }
@@ -405,17 +390,14 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $model = $db->models->find('4P Touch', 'D46');
 
         self::assertIsArray($model);
-        $request = (new ServerRequest('PUT', '/api/models/' . (int)$model['id']))
-            ->withParsedBody([
-                'supplier_id' => (int)$model['supplier_id'],
-                'internalModel' => (string)$model['internal_model'],
-                'commercialName' => (string)$model['commercial_name'],
-                'deviceType' => (string)$model['device_type'],
-                'capabilitiesConfigured' => '1',
-                'capabilities' => ['heart_rate', 'ecg'],
-            ]);
-
-        $result = $api->update((int)$model['id'], $request);
+        $result = $api->update((int)$model['id'], [
+            'supplier_id' => (int)$model['supplier_id'],
+            'internalModel' => (string)$model['internal_model'],
+            'commercialName' => (string)$model['commercial_name'],
+            'deviceType' => (string)$model['device_type'],
+            'capabilitiesConfigured' => '1',
+            'capabilities' => ['heart_rate', 'ecg'],
+        ]);
 
         self::assertSame('unsupported_capability', $result['error']['code'] ?? null);
     }

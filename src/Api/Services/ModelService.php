@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Http\ModelImageUrl;
@@ -11,7 +12,6 @@ use Hub\Domain\DeviceProtocol;
 use Hub\Domain\DeviceMetadata;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\SupplierCapabilityTemplate;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
 class ModelService
@@ -210,7 +210,7 @@ class ModelService
     {
         $entry = $this->db->models->findById($id);
         if ($entry === null) {
-            return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
+            return ApiError::modelNotFound()->toArray();
         }
 
         $protocol = DeviceProtocol::forModel((string)($entry['supplier_name'] ?? ''), (string)($entry['internal_model'] ?? ''));
@@ -251,18 +251,18 @@ class ModelService
         $supplierId = (int)($params['supplierId'] ?? $params['supplier_id'] ?? 0);
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($params['deviceType'] ?? $params['device_type'] ?? 'watch'));
         if ($supplierId <= 0) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'supplierId is required']];
+            return ApiError::invalidRequest('supplierId is required')->toArray();
         }
 
         $supplier = $this->db->suppliers->findById($supplierId);
         if ($supplier === null) {
-            return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier does not exist']];
+            return ApiError::supplierNotFound()->toArray();
         }
 
         $supplierName = (string)($supplier['name'] ?? '');
         $protocol = DeviceProtocol::forSupplier($supplierName);
         if ($protocol === '') {
-            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
+            return ApiError::unknownProtocol('Could not determine protocol for this supplier')->toArray();
         }
 
         $catalog = $this->db->genericCapabilities->all($deviceType);
@@ -283,20 +283,20 @@ class ModelService
         ];
     }
 
-    public function create(ServerRequestInterface $request): array
+    public function create(array $payload, mixed $imageUpload = null): array
     {
-        $payload = $this->modelPayload($request, 'create');
-        if (isset($payload['error'])) {
-            return $payload;
+        $fields = $this->modelFields($payload, 'create');
+        if (isset($fields['error'])) {
+            return $fields;
         }
-        $supplierId = (int)$payload['supplier_id'];
-        $internalModel = (string)$payload['internal_model'];
-        $commercialName = (string)$payload['commercial_name'];
-        $deviceType = (string)$payload['device_type'];
-        $enabledCapabilities = $payload['enabled_capabilities'];
-        $requestableCapabilities = $payload['requestable_capabilities'];
+        $supplierId = (int)$fields['supplier_id'];
+        $internalModel = (string)$fields['internal_model'];
+        $commercialName = (string)$fields['commercial_name'];
+        $deviceType = (string)$fields['device_type'];
+        $enabledCapabilities = $fields['enabled_capabilities'];
+        $requestableCapabilities = $fields['requestable_capabilities'];
 
-        $imagePath = $this->storeModelImage($request->getUploadedFiles()['image'] ?? null);
+        $imagePath = $this->storeModelImage($imageUpload);
         if (is_array($imagePath)) {
             return $imagePath;
         }
@@ -325,28 +325,28 @@ class ModelService
         return ['status' => 'ok'];
     }
 
-    public function update(int $id, ServerRequestInterface $request): array
+    public function update(int $id, array $payload, mixed $imageUpload = null): array
     {
         $current = $this->db->models->findById($id);
         if ($current === null) {
-            return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
+            return ApiError::modelNotFound()->toArray();
         }
 
-        $payload = $this->modelPayload($request, 'update', $id);
-        if (isset($payload['error'])) {
-            return $payload;
+        $fields = $this->modelFields($payload, 'update', $id);
+        if (isset($fields['error'])) {
+            return $fields;
         }
-        $supplierId = (int)$payload['supplier_id'];
-        $internalModel = (string)$payload['internal_model'];
-        $commercialName = (string)$payload['commercial_name'];
-        $deviceType = (string)$payload['device_type'];
-        $enabledCapabilities = $payload['enabled_capabilities'];
-        $requestableCapabilities = $payload['requestable_capabilities'];
+        $supplierId = (int)$fields['supplier_id'];
+        $internalModel = (string)$fields['internal_model'];
+        $commercialName = (string)$fields['commercial_name'];
+        $deviceType = (string)$fields['device_type'];
+        $enabledCapabilities = $fields['enabled_capabilities'];
+        $requestableCapabilities = $fields['requestable_capabilities'];
         if ($this->db->models->existsForDifferentId($id, $supplierId, $internalModel)) {
-            return ['error' => ['code' => 'model_exists', 'message' => 'Another model with this supplier and model name already exists']];
+            return ApiError::modelExists()->toArray();
         }
 
-        $imagePath = $this->storeModelImage($request->getUploadedFiles()['image'] ?? null);
+        $imagePath = $this->storeModelImage($imageUpload);
         if (is_array($imagePath)) {
             return $imagePath;
         }
@@ -383,16 +383,16 @@ class ModelService
             return null;
         }
         if ($upload->getError() !== UPLOAD_ERR_OK) {
-            return ['error' => ['code' => 'upload_failed', 'message' => 'Image upload failed']];
+            return ApiError::uploadFailed()->toArray();
         }
         if (($upload->getSize() ?? 0) > self::MAX_MODEL_IMAGE_BYTES) {
-            return ['error' => ['code' => 'image_too_large', 'message' => 'Model image must be 5 MB or smaller']];
+            return ApiError::imageTooLarge()->toArray();
         }
         if (!function_exists('imagecreatefromstring')) {
-            return ['error' => ['code' => 'gd_missing', 'message' => 'PHP GD extension is required to compress model images']];
+            return ApiError::gdMissing()->toArray();
         }
         if (!function_exists('imagejpeg')) {
-            return ['error' => ['code' => 'gd_jpeg_missing', 'message' => 'PHP GD JPEG support is required to save compressed model images']];
+            return ApiError::gdJpegMissing()->toArray();
         }
 
         $stream = $upload->getStream();
@@ -406,7 +406,7 @@ class ModelService
 
         $source = @\imagecreatefromstring($this->stripPngColorProfiles($bytes));
         if ($source === false) {
-            return ['error' => ['code' => 'invalid_image', 'message' => 'Model image must be a valid image file']];
+            return ApiError::invalidImage()->toArray();
         }
 
         $width = \imagesx($source);
@@ -427,34 +427,30 @@ class ModelService
         $saved = \imagejpeg($target, $path, 78);
 
         if (!$saved) {
-            return ['error' => ['code' => 'image_save_failed', 'message' => 'Could not save model image']];
+            return ApiError::imageSaveFailed()->toArray();
         }
 
         return self::MODEL_IMAGE_ROUTE . '/' . $filename;
     }
 
-    private function modelPayload(ServerRequestInterface $request, string $mode, ?int $modelId = null): array
+    private function modelFields(array $decoded, string $mode, ?int $modelId = null): array
     {
-        $decoded = $this->modelRequestData($request);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
         $supplierId = (int)($decoded['supplier_id'] ?? 0);
         $internalModel = trim((string)($decoded['internalModel'] ?? $decoded['internal_model'] ?? ''));
         $commercialName = trim((string)($decoded['commercialName'] ?? $decoded['commercial_name'] ?? ''));
         $deviceType = DeviceMetadata::normalizeDeviceType((string)($decoded['deviceType'] ?? $decoded['device_type'] ?? 'watch'));
         if ($supplierId <= 0 || $internalModel === '' || $commercialName === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'supplier_id, internalModel, and commercialName are required']];
+            return ApiError::invalidRequest('supplier_id, internalModel, and commercialName are required')->toArray();
         }
         $supplier = $this->db->suppliers->findById($supplierId);
         if ($supplier === null) {
-            return ['error' => ['code' => 'supplier_not_found', 'message' => 'Supplier does not exist']];
+            return ApiError::supplierNotFound()->toArray();
         }
 
         $supplierName = (string)($supplier['name'] ?? '');
         $protocol = DeviceProtocol::forSupplier($supplierName);
         if ($protocol === '') {
-            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Could not determine protocol for this supplier']];
+            return ApiError::unknownProtocol('Could not determine protocol for this supplier')->toArray();
         }
 
         $defaultFeatures = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
@@ -489,7 +485,7 @@ class ModelService
         } else {
             $unsupported = array_values(array_filter($enabledCapabilities, static fn(string $f): bool => !isset($defaultFeatureSet[$f])));
             if ($unsupported !== []) {
-                return ['error' => ['code' => 'unsupported_capability', 'message' => 'One or more capabilities are not allowed for this device type']];
+                return ApiError::unsupportedCapability()->toArray();
             }
         }
 
@@ -513,10 +509,7 @@ class ModelService
                     !isset($enabledSet[$feature]) || !isset($requestableCatalog[$feature])
             ));
             if ($invalid !== []) {
-                return ['error' => [
-                    'code' => 'invalid_requestable_capability',
-                    'message' => 'Requestable telemetry must also be supported and requestable in the capability catalog',
-                ]];
+                return ApiError::invalidRequestableCapability()->toArray();
             }
         }
 
@@ -533,18 +526,6 @@ class ModelService
             'enabled_capabilities' => $capabilityIds,
             'requestable_capabilities' => $requestableCapabilityIds,
         ];
-    }
-
-    private function modelRequestData(ServerRequestInterface $request): ?array
-    {
-        $parsed = $request->getParsedBody();
-        if (is_array($parsed)) {
-            return $parsed;
-        }
-
-        $decoded = json_decode((string)$request->getBody(), true);
-
-        return is_array($decoded) ? $decoded : null;
     }
 
     /**

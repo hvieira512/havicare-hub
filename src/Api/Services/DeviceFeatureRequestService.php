@@ -3,6 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
@@ -34,7 +35,7 @@ final class DeviceFeatureRequestService
     ) {
     }
 
-    public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    public function requestFeature(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
             Logger::channel('api')->warning('API telemetry request rejected', [
@@ -42,24 +43,13 @@ final class DeviceFeatureRequestService
                 'imei' => $imei,
                 'error_code' => 'not_found',
             ]);
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            Logger::channel('api')->warning('API telemetry request rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'invalid_json',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
-        $feature = trim((string)($decoded['feature'] ?? ''));
-        $capability = trim((string)($decoded['capability'] ?? ''));
+        $feature = trim((string)($payload['feature'] ?? ''));
+        $capability = trim((string)($payload['capability'] ?? ''));
         if ($feature === '' && $capability !== '') {
-            return $this->requestCapabilityAction($imei, $decoded, $auth, $requestId);
+            return $this->requestCapabilityAction($imei, $payload, $auth, $requestId);
         }
         if ($feature === '') {
             Logger::channel('api')->warning('API telemetry request rejected', [
@@ -68,7 +58,7 @@ final class DeviceFeatureRequestService
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_feature',
             ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'feature is required']];
+            return ApiError::invalidRequest('feature is required')->toArray();
         }
 
         $device = $this->directory->deviceSnapshot($imei);
@@ -86,7 +76,7 @@ final class DeviceFeatureRequestService
                 'feature' => $feature,
                 'error_code' => 'unsupported_feature',
             ]);
-            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
+            return ApiError::unsupportedFeature('Feature is not supported for this device')->toArray();
         }
         if (!($telemetrySupport[$feature]['requestable'] ?? false)) {
             Logger::channel('api')->warning('API telemetry request rejected', [
@@ -95,7 +85,7 @@ final class DeviceFeatureRequestService
                 'feature' => $feature,
                 'error_code' => 'feature_not_requestable',
             ]);
-            return ['error' => ['code' => 'feature_not_requestable', 'message' => 'Feature cannot be requested for this device']];
+            return ApiError::featureNotRequestable()->toArray();
         }
 
         $result = $this->sendFeatureCommands($imei, $protocol, $feature, $metadata, $device);
@@ -128,9 +118,9 @@ final class DeviceFeatureRequestService
         ];
     }
 
-    private function requestCapabilityAction(string $imei, array $decoded, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    private function requestCapabilityAction(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
-        $capability = trim((string)($decoded['capability'] ?? ''));
+        $capability = trim((string)($payload['capability'] ?? ''));
         if (!$this->directory->canAccessDevice($imei, $auth)) {
             Logger::channel('api')->warning('API capability request rejected', [
                 'request_id' => $requestId,
@@ -138,11 +128,11 @@ final class DeviceFeatureRequestService
                 'capability' => $capability,
                 'error_code' => 'not_found',
             ]);
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
         if ($capability === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'capability is required']];
+            return ApiError::invalidRequest('capability is required')->toArray();
         }
 
         $device = $this->directory->deviceSnapshot($imei);
@@ -162,11 +152,11 @@ final class DeviceFeatureRequestService
                 'capability' => $capability,
                 'error_code' => 'unsupported_feature',
             ]);
-            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Capability is not supported for this device']];
+            return ApiError::unsupportedFeature('Capability is not supported for this device')->toArray();
         }
 
         try {
-            $nativeUpdates = $this->capabilityRegistry->toNative($protocol, $capability, $decoded['value'] ?? null);
+            $nativeUpdates = $this->capabilityRegistry->toNative($protocol, $capability, $payload['value'] ?? null);
         } catch (\InvalidArgumentException $e) {
             Logger::channel('api')->warning('API capability request rejected', [
                 'request_id' => $requestId,
@@ -175,14 +165,14 @@ final class DeviceFeatureRequestService
                 'error_code' => 'invalid_config',
                 'message' => $e->getMessage(),
             ]);
-            return ['error' => ['code' => 'invalid_config', 'message' => $e->getMessage()]];
+            return ApiError::invalidConfig($e->getMessage())->toArray();
         }
 
         $commands = [];
         foreach ($nativeUpdates as $nativeKey => $payload) {
             $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
             if ($error !== null) {
-                return ['error' => ['code' => 'invalid_config', 'message' => $error]];
+                return ApiError::invalidConfig($error)->toArray();
             }
 
             $commandPayload = DeviceConfigurationCatalog::commandPayload($protocol, $nativeKey, $payload);
@@ -233,7 +223,7 @@ final class DeviceFeatureRequestService
     {
         $entries = DeviceCommandCatalog::commandsForFeature($protocol, $feature);
         if ($entries === []) {
-            return ['error' => ['code' => 'unsupported_feature', 'message' => 'Feature is not supported for this device']];
+            return ApiError::unsupportedFeature('Feature is not supported for this device')->toArray();
         }
 
         $this->supersedeConflictingFeatureRequests($imei, $feature);
@@ -319,12 +309,12 @@ final class DeviceFeatureRequestService
     {
         $result = $this->store->findCommand($id);
         if ($result === null) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Command was not found']];
+            return ApiError::commandNotFound()->toArray();
         }
         $device = is_array($result['device'] ?? null) ? $result['device'] : [];
         $imei = (string)($device['imei'] ?? '');
         if ($imei === '' || !$this->directory->canAccessDevice($imei, $auth, $device)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Command was not found']];
+            return ApiError::commandNotFound()->toArray();
         }
 
         return $result;

@@ -4,6 +4,7 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\ApiTokenStore;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Domain\DeviceMetadata;
 use Hub\Log\Logger;
@@ -18,25 +19,15 @@ class AuthService
     ) {
     }
 
-    public function login(string $body, string $requestId = ''): array
+    public function login(array $payload, string $requestId = ''): array
     {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            Logger::channel('api')->warning('API login rejected', [
-                'request_id' => $requestId,
-                'error_code' => 'invalid_request',
-                'reason' => 'invalid_json',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
-        $refreshToken = trim((string)($decoded['refresh_token'] ?? ''));
+        $refreshToken = trim((string)($payload['refresh_token'] ?? ''));
         if ($refreshToken !== '') {
             return $this->refresh($refreshToken, $requestId);
         }
 
-        $username = trim((string)($decoded['username'] ?? ''));
-        $password = (string)($decoded['password'] ?? '');
+        $username = trim((string)($payload['username'] ?? ''));
+        $password = (string)($payload['password'] ?? '');
         if ($username === '' || $password === '') {
             Logger::channel('api')->warning('API login rejected', [
                 'request_id' => $requestId,
@@ -44,7 +35,7 @@ class AuthService
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_credentials',
             ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'username and password are required']];
+            return ApiError::invalidRequest('username and password are required')->toArray();
         }
 
         $identity = $this->identityForCredentials($username, $password);
@@ -54,7 +45,7 @@ class AuthService
                 'username' => $username,
                 'error_code' => 'invalid_credentials',
             ]);
-            return ['error' => ['code' => 'invalid_credentials', 'message' => 'Invalid credentials']];
+            return ApiError::invalidCredentials()->toArray();
         }
 
         Logger::channel('api')->info('API login accepted', [
@@ -90,7 +81,7 @@ class AuthService
                 'error_code' => 'invalid_refresh_token',
             ]);
 
-            return ['error' => ['code' => 'invalid_refresh_token', 'message' => 'Invalid refresh token']];
+            return ApiError::invalidRefreshToken()->toArray();
         }
 
         Logger::channel('api')->info('API token refreshed', [

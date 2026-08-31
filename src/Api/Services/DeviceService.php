@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\DeviceResponseCompactor;
@@ -45,6 +46,11 @@ class DeviceService
         ?DeviceConfigurationUpdateService $configurationUpdates = null,
         ?DeviceConfigurationQueryService $configurationQueries = null,
         ?DeviceResponseCompactor $responseCompactor = null,
+        ?DeviceAssociationService $associations = null,
+        ?DeviceCapabilityPresenter $capabilities = null,
+        ?ConfigurationSyncStatus $configurationSync = null,
+        ?DeviceDirectory $directory = null,
+        ?DeviceFeatureRequestService $featureRequests = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->presentation = $presentation ?? new DevicePresentation();
@@ -60,13 +66,16 @@ class DeviceService
             $this->db,
             $this->capabilityRegistry,
         );
-        $this->associations = new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
-        // Construído aqui e não injectado: é uma projecção do mesmo registo e da mesma base
-        // de dados que este serviço já tem.
-        $this->capabilities = new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
-        $this->configurationSync = new ConfigurationSyncStatus();
-        $this->directory = new DeviceDirectory($this->store, $this->whitelist, $this->db);
-        $this->featureRequests = new DeviceFeatureRequestService(
+        $this->associations = $associations ?? new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
+        // O valor por omissão continua a nascer aqui, e pela mesma razão de sempre: é uma
+        // projecção do mesmo registo e da mesma base de dados que este serviço já tem, e
+        // obrigar quem o constrói a montá-la era pedir-lhe que repetisse o que já lhe deu.
+        // O parâmetro é só a costura: deixa um teste trocar esta peça sem ter de montar as
+        // outras dez à volta dela.
+        $this->capabilities = $capabilities ?? new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
+        $this->configurationSync = $configurationSync ?? new ConfigurationSyncStatus();
+        $this->directory = $directory ?? new DeviceDirectory($this->store, $this->whitelist, $this->db);
+        $this->featureRequests = $featureRequests ?? new DeviceFeatureRequestService(
             $this->store,
             $this->whitelist,
             $this->hub,
@@ -182,7 +191,7 @@ class DeviceService
     {
         $device = $this->directory->deviceSnapshot($imei);
         if (!$this->directory->canAccessDevice($imei, $auth, $device)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
         $protocol = (string)($device['protocol'] ?? $this->directory->protocolForModel((string)($device['supplier'] ?? ''), (string)($device['model'] ?? '')));
         $modelRow = $this->directory->modelForDevice($device);
@@ -261,7 +270,7 @@ class DeviceService
     public function links(string $imei, ?ApiAuthContext $auth = null): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
         return ['data' => $this->db->gatewayDeviceLinks->forDevice($imei)];
     }
@@ -291,23 +300,23 @@ class DeviceService
         $gateway = $this->whitelist->getMetadata($imei);
         $linked = $this->whitelist->getMetadata($linkedImei);
         if ($gateway === null || $linked === null || !$this->directory->canAccessDevice($imei, $auth) || !$this->directory->canAccessDevice($linkedImei, $auth)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
         if (($gateway['deviceType'] ?? '') !== 'gateway' || !in_array($linked['deviceType'] ?? '', self::GATEWAY_LINKED_DEVICE_TYPES, true)) {
-            return ['error' => ['code' => 'invalid_link', 'message' => 'A gateway can only link to a diaper sensor or a bracelet']];
+            return ApiError::invalidLink('A gateway can only link to a diaper sensor or a bracelet')->toArray();
         }
         if (
             (string)($gateway['company'] ?? 'null') !== (string)($linked['company'] ?? 'null')
             || (string)($gateway['licenseId'] ?? '0') !== (string)($linked['licenseId'] ?? '0')
         ) {
-            return ['error' => ['code' => 'invalid_link', 'message' => 'Linked devices must belong to the same company and license']];
+            return ApiError::invalidLink('Linked devices must belong to the same company and license')->toArray();
         }
         return ['status' => 'ok'];
     }
 
-    public function requestFeature(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    public function requestFeature(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
-        return $this->featureRequests->requestFeature($imei, $body, $auth, $requestId);
+        return $this->featureRequests->requestFeature($imei, $payload, $auth, $requestId);
     }
 
     public function commandStatus(string $id, ?ApiAuthContext $auth = null): array
@@ -318,7 +327,7 @@ class DeviceService
     public function configuration(string $imei, ?ApiAuthContext $auth = null): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
         $device = $this->directory->deviceSnapshot($imei);
@@ -327,7 +336,7 @@ class DeviceService
         return $this->configurationQueries->current($imei, $protocol);
     }
 
-    public function updateConfigurations(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    public function updateConfigurations(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
             Logger::channel('api')->warning('API device configuration rejected', [
@@ -335,28 +344,17 @@ class DeviceService
                 'imei' => $imei,
                 'error_code' => 'not_found',
             ]);
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            Logger::channel('api')->warning('API device configuration rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'invalid_json',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
-        if (!isset($decoded['configurations']) || !is_array($decoded['configurations'])) {
+        if (!isset($payload['configurations']) || !is_array($payload['configurations'])) {
             Logger::channel('api')->warning('API device configuration rejected', [
                 'request_id' => $requestId,
                 'imei' => $imei,
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_configurations_object',
             ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'configurations object is required']];
+            return ApiError::invalidRequest('configurations object is required')->toArray();
         }
 
         $device = $this->directory->deviceSnapshot($imei);
@@ -367,7 +365,7 @@ class DeviceService
         $modelRow = $this->directory->modelForSupplierAndName($supplier, $model);
         $update = $this->configurationUpdates->update(
             $imei,
-            $decoded['configurations'],
+            $payload['configurations'],
             $supplier,
             $model,
             $protocol,
@@ -386,7 +384,7 @@ class DeviceService
             'imei' => $imei,
             'mode' => 'configurations',
             'result_count' => count($results),
-            'config_keys' => array_keys($decoded['configurations']),
+            'config_keys' => array_keys($payload['configurations']),
         ]);
 
         $snapshot = $this->show($imei, $auth);
@@ -400,54 +398,51 @@ class DeviceService
         ];
     }
 
-    public function create(string $body): array
+    public function create(array $payload): array
     {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-        $imei = trim((string)($decoded['imei'] ?? ''));
-        $supplier = trim((string)($decoded['supplier'] ?? ''));
-        $model = trim((string)($decoded['model'] ?? ''));
+        $imei = trim((string)($payload['imei'] ?? ''));
+        $supplier = trim((string)($payload['supplier'] ?? ''));
+        $model = trim((string)($payload['model'] ?? ''));
         $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $decoded['deviceType'] ?? 'watch'));
-        $licenseId = $this->directory->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
-        $simNumber = trim((string)($decoded['simNumber'] ?? ''));
-        $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
-        $company = DeviceMetadata::normalizeCompany((string)($decoded['company'] ?? 'null'));
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $payload['deviceType'] ?? 'watch'));
+        $licenseId = $this->directory->normalizeLicenseId((string)($payload['licenseId'] ?? '0'), $deviceType);
+        $simNumber = trim((string)($payload['simNumber'] ?? ''));
+        $deviceId = trim((string)($payload['deviceId'] ?? $payload['device_id'] ?? ''));
+        $company = DeviceMetadata::normalizeCompany((string)($payload['company'] ?? 'null'));
         if ($imei === '' || $supplier === '' || $model === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
+            return ApiError::invalidRequest('imei, supplier, and model are required')->toArray();
         }
         if ($modelRecord === null) {
-            return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
+            return ApiError::modelNotFoundForSupplier()->toArray();
         }
         if ($this->whitelist->getMetadata($imei) !== null) {
-            return ['error' => ['code' => 'device_exists', 'message' => 'Device with this IMEI already exists']];
+            return ApiError::deviceExists()->toArray();
         }
         $deviceId = $this->directory->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
-        $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        // O Redis vai primeiro e o inventário a seguir. É a ordem que importa: o Redis é uma
+        // projecção do inventário -- a listagem, o total e os filtros lêem-se todos do MySQL
+        // --, e por isso uma entrada lá a mais é invisível e o próximo registo reescreve-a.
+        // Pela ordem contrária, uma falha no meio deixava a linha de inventário que a
+        // dashboard nunca chegava a conhecer, e essa aparecia na lista para sempre.
         $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        try {
+            $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        } catch (\Throwable $e) {
+            // Aqui a compensação é segura porque acabámos de confirmar que o IMEI não existia:
+            // não há estado anterior para apagar sem querer.
+            $this->store->deleteDevice($imei);
+            throw $e;
+        }
 
         return ['status' => 'ok', 'imei' => $imei];
     }
 
-    public function update(string $imei, string $body, ?ApiAuthContext $auth = null, string $requestId = ''): array
+    public function update(string $imei, array $payload, ?ApiAuthContext $auth = null, string $requestId = ''): array
     {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            Logger::channel('api')->warning('API device update rejected', [
-                'request_id' => $requestId,
-                'imei' => $imei,
-                'error_code' => 'invalid_request',
-                'reason' => 'invalid_json',
-            ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
         if (
-            isset($decoded['configurations'])
-            || isset($decoded['configs'])
-            || isset($decoded['capabilities'])
+            isset($payload['configurations'])
+            || isset($payload['configs'])
+            || isset($payload['capabilities'])
         ) {
             Logger::channel('api')->warning('API device update rejected', [
                 'request_id' => $requestId,
@@ -455,7 +450,7 @@ class DeviceService
                 'error_code' => 'invalid_request',
                 'reason' => 'configuration_payload_not_allowed_on_metadata_endpoint',
             ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Use /api/devices/{imei}/configurations for device configurations']];
+            return ApiError::invalidRequest('Use /api/devices/{imei}/configurations for device configurations')->toArray();
         }
 
         if ($auth !== null && !$auth->isAdmin()) {
@@ -465,18 +460,18 @@ class DeviceService
                 'error_code' => 'forbidden',
                 'reason' => 'metadata_update_requires_admin',
             ]);
-            return ['error' => ['code' => 'forbidden', 'message' => 'Forbidden']];
+            return ApiError::forbidden()->toArray();
         }
 
-        $newImei = trim((string)($decoded['imei'] ?? $imei));
-        $supplier = trim((string)($decoded['supplier'] ?? ''));
-        $model = trim((string)($decoded['model'] ?? ''));
+        $newImei = trim((string)($payload['imei'] ?? $imei));
+        $supplier = trim((string)($payload['supplier'] ?? ''));
+        $model = trim((string)($payload['model'] ?? ''));
         $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $decoded['deviceType'] ?? 'watch'));
-        $licenseId = $this->directory->normalizeLicenseId((string)($decoded['licenseId'] ?? '0'), $deviceType);
-        $simNumber = trim((string)($decoded['simNumber'] ?? ''));
-        $deviceId = trim((string)($decoded['deviceId'] ?? $decoded['device_id'] ?? ''));
-        $company = DeviceMetadata::normalizeCompany((string)($decoded['company'] ?? 'null'));
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $payload['deviceType'] ?? 'watch'));
+        $licenseId = $this->directory->normalizeLicenseId((string)($payload['licenseId'] ?? '0'), $deviceType);
+        $simNumber = trim((string)($payload['simNumber'] ?? ''));
+        $deviceId = trim((string)($payload['deviceId'] ?? $payload['device_id'] ?? ''));
+        $company = DeviceMetadata::normalizeCompany((string)($payload['company'] ?? 'null'));
         if ($newImei === '' || $supplier === '' || $model === '') {
             Logger::channel('api')->warning('API device update rejected', [
                 'request_id' => $requestId,
@@ -484,7 +479,7 @@ class DeviceService
                 'error_code' => 'invalid_request',
                 'reason' => 'missing_required_metadata_fields',
             ]);
-            return ['error' => ['code' => 'invalid_request', 'message' => 'imei, supplier, and model are required']];
+            return ApiError::invalidRequest('imei, supplier, and model are required')->toArray();
         }
         if ($modelRecord === null) {
             Logger::channel('api')->warning('API device update rejected', [
@@ -492,7 +487,7 @@ class DeviceService
                 'imei' => $imei,
                 'error_code' => 'model_not_found',
             ]);
-            return ['error' => ['code' => 'model_not_found', 'message' => 'Model does not exist for this supplier']];
+            return ApiError::modelNotFoundForSupplier()->toArray();
         }
         if ($newImei !== $imei && $this->whitelist->getMetadata($newImei) !== null) {
             Logger::channel('api')->warning('API device update rejected', [
@@ -501,7 +496,7 @@ class DeviceService
                 'new_imei' => $newImei,
                 'error_code' => 'device_exists',
             ]);
-            return ['error' => ['code' => 'device_exists', 'message' => 'Device with this IMEI already exists']];
+            return ApiError::deviceExists()->toArray();
         }
         // O dispositivo pode estar a sair de um cliente, a mudar de tipo ou a mudar de IMEI,
         // e cada uma dessas deixa um estado retido no tópico antigo.
@@ -519,12 +514,20 @@ class DeviceService
         }
 
         $deviceId = $this->directory->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
+        // A mesma regra do `create`, aplicada nos dois sentidos: a projecção ganha primeiro e
+        // perde por último, e dentro do inventário o registo novo entra antes de o antigo
+        // sair. Assim uma falha a meio deixa no máximo uma entrada a mais no Redis -- que a
+        // listagem, lida do MySQL, ignora -- e nunca um dispositivo apagado do inventário sem
+        // ter chegado a ser gravado com o IMEI novo.
+        //
+        // O `unregister()` que fecha esta troca é atómico: são três DELETE sem chave
+        // estrangeira a ligá-los, e o `WhitelistRepository` embrulha-os numa transacção.
+        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
+        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         if ($newImei !== $imei) {
             $this->whitelist->unregister($imei);
             $this->store->deleteDevice($imei);
         }
-        $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
-        $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
 
         Logger::channel('api')->info('API device metadata updated', [
             'request_id' => $requestId,
@@ -539,9 +542,9 @@ class DeviceService
         return ['status' => 'ok', 'imei' => $newImei];
     }
 
-    public function patchAssociation(string $imei, string $body, ?ApiAuthContext $auth = null): array
+    public function patchAssociation(string $imei, array $payload, ?ApiAuthContext $auth = null): array
     {
-        return $this->associations->associate($imei, $body, $auth);
+        return $this->associations->associate($imei, $payload, $auth);
     }
 
     public function deleteAssociation(string $imei, ?ApiAuthContext $auth = null): array
@@ -558,6 +561,10 @@ class DeviceService
             DeviceMetadata::normalizeDeviceType((string)($metadata['deviceType'] ?? 'watch')),
             $imei
         );
+        // A remoção é a ordem inversa do registo, pela mesma razão: o inventário sai primeiro
+        // e a projecção a seguir. Se o Redis falhar aqui fica lá uma entrada órfã, que nada
+        // lista; se saísse primeiro, uma falha no SQL deixava um dispositivo no inventário
+        // sem projecção nenhuma -- de novo o dispositivo que a dashboard não conhece.
         $this->whitelist->unregister($imei);
         $this->store->deleteDevice($imei);
 
@@ -576,7 +583,7 @@ class DeviceService
     public function recent(string $imei, ?ApiAuthContext $auth = null): array
     {
         if (!$this->directory->canAccessDevice($imei, $auth)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
         return [

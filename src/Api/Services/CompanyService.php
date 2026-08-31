@@ -3,6 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Domain\DeviceMetadata;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;
@@ -33,37 +34,29 @@ class CompanyService
         return $this->collection->respond($items, $page, $limit, [], []);
     }
 
-    public function create(string $body): array
+    public function create(array $payload): array
     {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-        $name = DeviceMetadata::normalizeCompany((string)($decoded['name'] ?? ''));
+        $name = DeviceMetadata::normalizeCompany((string)($payload['name'] ?? ''));
         if ($name === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
+            return ApiError::invalidRequest('name is required')->toArray();
         }
         $id = $this->db->companies->create($name);
         if ($id <= 0) {
-            return ['error' => ['code' => 'duplicate', 'message' => 'Company with this name already exists']];
+            return ApiError::duplicateCompany()->toArray();
         }
 
         return ['status' => 'ok', 'id' => $id];
     }
 
-    public function update(int $id, string $body): array
+    public function update(int $id, array $payload): array
     {
         $existing = $this->db->companies->findById($id);
         if ($existing === null) {
-            return ['error' => ['code' => 'company_not_found', 'message' => 'Company not found']];
+            return ApiError::companyNotFound()->toArray();
         }
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-        $name = DeviceMetadata::normalizeCompany((string)($decoded['name'] ?? ''));
+        $name = DeviceMetadata::normalizeCompany((string)($payload['name'] ?? ''));
         if ($name === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'name is required']];
+            return ApiError::invalidRequest('name is required')->toArray();
         }
         $this->db->companies->update($id, $name);
 
@@ -74,7 +67,7 @@ class CompanyService
     {
         $existing = $this->db->companies->findById($id);
         if ($existing === null) {
-            return ['error' => ['code' => 'company_not_found', 'message' => 'Company not found']];
+            return ApiError::companyNotFound()->toArray();
         }
         $this->db->companies->delete($id);
 

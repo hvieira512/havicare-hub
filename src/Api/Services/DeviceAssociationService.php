@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Domain\DeviceMetadata;
@@ -21,43 +22,36 @@ final class DeviceAssociationService
     ) {
     }
 
-    public function associate(string $imei, string $body, ?ApiAuthContext $auth = null): array
+    public function associate(string $imei, array $payload, ?ApiAuthContext $auth = null): array
     {
         $existing = $this->whitelist->getMetadata($imei);
         if ($existing === null) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
-        $company = DeviceMetadata::normalizeCompany((string)($decoded['company'] ?? ''));
-        $licenseId = DeviceMetadata::normalizeLicenseId((string)($decoded['licenseId'] ?? ''));
+        $company = DeviceMetadata::normalizeCompany((string)($payload['company'] ?? ''));
+        $licenseId = DeviceMetadata::normalizeLicenseId((string)($payload['licenseId'] ?? ''));
         if ($company === '' || $licenseId === 0) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'company and licenseId are required']];
+            return ApiError::invalidRequest('company and licenseId are required')->toArray();
         }
 
         if ($auth !== null && !$auth->isAdmin()) {
             if (!$auth->canAccessTenant($company, $licenseId)) {
-                return ['error' => ['code' => 'forbidden', 'message' => 'Forbidden']];
+                return ApiError::forbidden()->toArray();
             }
             $currentLicenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
             $currentCompany = trim((string)($existing['company'] ?? 'null'));
             if ($currentLicenseId !== 0 || $currentCompany !== 'null') {
-                return ['error' => ['code' => 'device_already_associated', 'message' => 'Device is already associated']];
+                return ApiError::deviceAlreadyAssociated()->toArray();
             }
         }
 
         $mayProvisionLicense = $auth === null || $auth->isAdmin();
         if ($this->license($company, $licenseId, $mayProvisionLicense) === null) {
-            return ['error' => ['code' => 'invalid_association', 'message' => 'company and licenseId do not match a registered license']];
+            return ApiError::invalidAssociation()->toArray();
         }
 
-        $this->releaseRetainedStatus($existing, $imei, $company, $licenseId);
-        $this->whitelist->updateAssociation($imei, $company, $licenseId);
-        $this->store->updateDeviceAssociation($imei, $company, $licenseId);
+        $this->writeAssociation($existing, $imei, $company, $licenseId);
 
         return ['status' => 'ok', 'imei' => $imei, 'association' => ['company' => $company, 'licenseId' => $licenseId]];
     }
@@ -66,23 +60,38 @@ final class DeviceAssociationService
     {
         $existing = $this->whitelist->getMetadata($imei);
         if ($existing === null) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
         $licenseId = DeviceMetadata::normalizeLicenseId((string)($existing['licenseId'] ?? '0'));
         $company = trim((string)($existing['company'] ?? 'null'));
         if ($licenseId === 0 && $company === 'null') {
-            return ['error' => ['code' => 'association_not_found', 'message' => 'Device association was not found']];
+            return ApiError::associationNotFound()->toArray();
         }
         if ($auth !== null && !$auth->isAdmin() && !$auth->canAccessTenant($company, $licenseId)) {
-            return ['error' => ['code' => 'not_found', 'message' => 'Device was not found']];
+            return ApiError::deviceNotFound()->toArray();
         }
 
-        $this->releaseRetainedStatus($existing, $imei, 'null', 0);
-        $this->whitelist->updateAssociation($imei, 'null', 0);
-        $this->store->updateDeviceAssociation($imei, 'null', 0);
+        $this->writeAssociation($existing, $imei, 'null', 0);
 
         return ['status' => 'ok', 'imei' => $imei, 'association' => ['company' => 'null', 'licenseId' => 0]];
+    }
+
+    /**
+     * Muda o dono do dispositivo no inventário e no Redis.
+     *
+     * O Redis vai primeiro de propósito: é uma projecção do inventário e é reconstruído a
+     * partir dele, portanto um par novo escrito lá antes do SQL falhar não estraga nada --
+     * a listagem lê-se do MySQL. Ao contrário, o SQL escrito primeiro e o Redis a falhar
+     * deixava o dispositivo a servir o estado retido do cliente anterior.
+     *
+     * @param array<string, mixed> $existing metadata before the change
+     */
+    private function writeAssociation(array $existing, string $imei, string $company, int $licenseId): void
+    {
+        $this->releaseRetainedStatus($existing, $imei, $company, $licenseId);
+        $this->store->updateDeviceAssociation($imei, $company, $licenseId);
+        $this->whitelist->updateAssociation($imei, $company, $licenseId);
     }
 
     private function license(string $company, int $licenseId, bool $createIfMissing): ?array

@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Controllers;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\ErrorStatusMapper;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\RequestContext;
@@ -32,11 +33,14 @@ final class CapabilityDiscoveryController
 
     public function preview(ServerRequestInterface $request): Response
     {
-        $result = $this->service->preview(
-            RequestContext::requestBody($request),
-            RequestContext::auth($request),
-            RequestContext::baseUrl($request),
-        );
+        $payload = RequestContext::jsonBody($request);
+        $result = $payload === null
+            ? ApiError::invalidJson()->toArray()
+            : $this->service->preview(
+                $payload,
+                RequestContext::auth($request),
+                RequestContext::baseUrl($request),
+            );
 
         return $this->json->respond($result, $this->status->map($result));
     }

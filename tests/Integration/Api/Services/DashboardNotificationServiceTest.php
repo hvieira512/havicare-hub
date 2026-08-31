@@ -42,7 +42,7 @@ final class DashboardNotificationServiceTest extends MysqlDashboardTestCase
     {
         self::assertSame(
             'invalid_request',
-            $this->service->markRead('{}')['error']['code'] ?? null
+            $this->service->markRead([])['error']['code'] ?? null
         );
 
         $this->db->dashboardNotifications->record(
@@ -55,7 +55,7 @@ final class DashboardNotificationServiceTest extends MysqlDashboardTestCase
         );
         $id = (int)$this->db->dashboardNotifications->latest(20)[0]['id'];
 
-        $result = $this->service->markRead(json_encode(['ids' => [$id]], JSON_THROW_ON_ERROR));
+        $result = $this->service->markRead(['ids' => [$id]]);
 
         self::assertSame('ok', $result['status']);
         self::assertSame(0, $result['unreadCount']);

@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\DeviceMetadata;
@@ -32,7 +33,7 @@ class CapabilityService
     {
         $row = $this->db->genericCapabilities->findById($id);
         if ($row === null) {
-            return ['error' => ['code' => 'capability_not_found', 'message' => 'Capability not found']];
+            return ApiError::capabilityNotFound()->toArray();
         }
 
         return $this->serializeCapability($row);

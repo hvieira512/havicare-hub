@@ -3,6 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Repository\CapabilityDiscoveryRepository;
 use Hub\Domain\Capability\CapabilityCatalog;
@@ -28,28 +29,23 @@ final class CapabilityDiscoveryService
     {
         $run = $this->repository->find($id);
         if ($run === null) {
-            return ['error' => ['code' => 'discovery_not_found', 'message' => 'Discovery run not found']];
+            return ApiError::discoveryNotFound()->toArray();
         }
 
         return $run;
     }
 
-    public function preview(string $body, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
+    public function preview(array $payload, ?ApiAuthContext $auth = null, string $baseUrl = 'http://localhost:8081'): array
     {
-        $payload = json_decode($body, true);
-        if (!is_array($payload)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
         $imei = trim((string)($payload['imei'] ?? ''));
         $modelId = (int)($payload['modelId'] ?? 0);
         if ($imei === '' || $modelId <= 0) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'imei and modelId are required']];
+            return ApiError::invalidRequest('imei and modelId are required')->toArray();
         }
 
         $model = $this->db->models->findById($modelId);
         if ($model === null) {
-            return ['error' => ['code' => 'model_not_found', 'message' => 'Model not found']];
+            return ApiError::modelNotFound()->toArray();
         }
 
         $device = $this->devices->show($imei, $auth, $baseUrl);
@@ -120,12 +116,12 @@ final class CapabilityDiscoveryService
     {
         $run = $this->repository->find($id);
         if ($run === null) {
-            return ['error' => ['code' => 'discovery_not_found', 'message' => 'Discovery run not found']];
+            return ApiError::discoveryNotFound()->toArray();
         }
 
         $modelId = (int)($run['model']['id'] ?? 0);
         if ($modelId <= 0) {
-            return ['error' => ['code' => 'invalid_state', 'message' => 'Discovery run is missing the model id']];
+            return ApiError::discoveryMissingModelId()->toArray();
         }
 
         $keys = array_values(array_map('strval', $run['suggestedEnabledCapabilityKeys'] ?? []));

@@ -58,10 +58,10 @@ final class CapabilityDiscoveryApiTest extends MysqlDashboardTestCase
             new CapabilityDiscoveryRepository($this->repoDir),
         );
 
-        $preview = $service->preview(json_encode([
+        $preview = $service->preview([
             'imei' => '861265061009822',
             'modelId' => (int)$model['id'],
-        ], JSON_THROW_ON_ERROR), null, 'http://localhost:8081');
+        ], null, 'http://localhost:8081');
 
         self::assertSame('draft', $preview['status'] ?? null);
         self::assertSame((int)$model['id'], $preview['model']['id'] ?? null);

@@ -31,6 +31,10 @@ final class DashboardHttpServer
     private ApiKernel $apiKernel;
     /** @var array<string, string> */
     private array $assetCache = [];
+    // Não é promovida: com um valor por omissão declarado, uma instância criada por
+    // `newInstanceWithoutConstructor()` -- como fazem os testes dos recursos estáticos --
+    // continua a lê-la sem fatal, e o `page()` dispensa o `isset()`.
+    private bool $apiAuthRequired = true;
 
     public function __construct(
         private DashboardStore $store,
@@ -38,22 +42,11 @@ final class DashboardHttpServer
         private Whitelist $whitelist,
         private DeviceHubServer $hub,
         private ApiDataAccess $db,
-        private bool $apiAuthRequired = true,
+        bool $apiAuthRequired = true,
         private int $apiTokenTtlSeconds = 3600,
         private int $apiRefreshTokenTtlSeconds = 2592000,
     ) {
-        foreach ($this->whitelist->all() as $imei => $metadata) {
-            $this->store->registerDevice(
-                (string)$imei,
-                (string)($metadata['supplier'] ?? ''),
-                (string)($metadata['model'] ?? ''),
-                (string)($metadata['deviceType'] ?? 'watch'),
-                DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
-                (string)($metadata['simNumber'] ?? ''),
-                (string)($metadata['deviceId'] ?? ''),
-                (string)($metadata['company'] ?? 'null')
-            );
-        }
+        $this->apiAuthRequired = $apiAuthRequired;
 
         // O store anuncia as suas próprias escritas, e por isso o stream tem de subscrever
         // esse notificador exacto, e não um seu.
@@ -82,21 +75,36 @@ final class DashboardHttpServer
             new DashboardNotificationService($this->db),
             new \Hub\Api\Http\JsonResponder(),
             new \Hub\Api\Http\HtmlResponder(),
-            new \Hub\Api\Http\CorsPolicy(),
             new \Hub\Api\Http\ErrorStatusMapper(),
             new \Hub\Api\Auth\BearerTokenResolver($this->tokens),
             new \Hub\Api\Auth\RouteAccessPolicy(),
         );
     }
 
+    /**
+     * Semeia no Redis os dispositivos da whitelist. Era o que o construtor fazia, e construir
+     * um objecto não deve escrever num datastore: quem serve é que decide quando aquecer.
+     */
+    public function warmUp(): void
+    {
+        foreach ($this->whitelist->all() as $imei => $metadata) {
+            $this->store->registerDevice(
+                (string)$imei,
+                (string)($metadata['supplier'] ?? ''),
+                (string)($metadata['model'] ?? ''),
+                (string)($metadata['deviceType'] ?? 'watch'),
+                DeviceMetadata::normalizeLicenseId($metadata['licenseId'] ?? 0),
+                (string)($metadata['simNumber'] ?? ''),
+                (string)($metadata['deviceId'] ?? ''),
+                (string)($metadata['company'] ?? 'null')
+            );
+        }
+    }
+
     public function __invoke(ServerRequestInterface $request): Response
     {
         $method = strtoupper($request->getMethod());
         $path = $request->getUri()->getPath();
-
-        if ($method === 'OPTIONS') {
-            return $this->cors(new Response(204));
-        }
 
         if (str_starts_with($path, '/api/')) {
             return $this->apiKernel->handle($request);
@@ -118,20 +126,12 @@ final class DashboardHttpServer
                 }
             }
         } catch (\Throwable) {
-            return $this->cors($this->json([
+            return $this->json([
                 'error' => ['code' => 'server_error', 'message' => 'Internal server error'],
-            ], 500));
+            ], 500);
         }
 
-        return $this->cors($this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404));
-    }
-
-    private function cors(Response $response): Response
-    {
-        return $response->withHeader('Access-Control-Allow-Origin', '*')
-            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
-            ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-            ->withHeader('Access-Control-Max-Age', '86400');
+        return $this->json(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
     }
 
     private function json(array $payload, int $status = 200): Response
@@ -146,10 +146,7 @@ final class DashboardHttpServer
 
     private function page(): string
     {
-        // O `page()` também se alcança por `newInstanceWithoutConstructor()`, onde a
-        // propriedade promovida está genuinamente por inicializar -- daí o `isset()` em vez
-        // de uma leitura directa, que dava fatal.
-        $dashboardApiAuthRequired = isset($this->apiAuthRequired) ? $this->apiAuthRequired : true;
+        $dashboardApiAuthRequired = $this->apiAuthRequired;
 
         ob_start();
         require __DIR__ . '/index.php';

@@ -41,13 +41,13 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $imei = '8800000015';
         $capability = 'make_call';
         $phone = '123456789';
-        $body = json_encode(['capability' => $capability, 'value' => ['phone' => $phone]]);
+        $payload = ['capability' => $capability, 'value' => ['phone' => $phone]];
 
         $this->mockDeviceAccess($imei, 'four-p-touch', '4P Touch', '4P-TOUCH');
         $this->mockModelCapabilities([$capability]);
         $this->hub->method('submitDownlink')->willReturn('sent');
 
-        $result = $this->service->requestFeature($imei, $body);
+        $result = $this->service->requestFeature($imei, $payload);
 
         self::assertSame('waiting', $result['status']);
         self::assertCount(1, $result['commands']);
@@ -60,13 +60,13 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $imei = '8800000015';
         $capability = 'center_number';
         $phone = '987654321';
-        $body = json_encode(['capability' => $capability, 'value' => ['phone' => $phone]]);
+        $payload = ['capability' => $capability, 'value' => ['phone' => $phone]];
 
         $this->mockDeviceAccess($imei, 'four-p-touch', '4P Touch', '4P-TOUCH');
         $this->mockModelCapabilities([$capability]);
         $this->hub->method('submitDownlink')->willReturn('sent');
 
-        $result = $this->service->requestFeature($imei, $body);
+        $result = $this->service->requestFeature($imei, $payload);
 
         self::assertSame('waiting', $result['status']);
         self::assertCount(1, $result['commands']);
@@ -79,13 +79,13 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
         $imei = '8800000015';
         $capability = 'push_message';
         $message = 'Hello World';
-        $body = json_encode(['capability' => $capability, 'value' => ['message' => $message]]);
+        $payload = ['capability' => $capability, 'value' => ['message' => $message]];
 
         $this->mockDeviceAccess($imei, 'four-p-touch', '4P Touch', '4P-TOUCH');
         $this->mockModelCapabilities([$capability]);
         $this->hub->method('submitDownlink')->willReturn('sent');
 
-        $result = $this->service->requestFeature($imei, $body);
+        $result = $this->service->requestFeature($imei, $payload);
 
         self::assertSame('waiting', $result['status']);
         self::assertCount(1, $result['commands']);
@@ -97,13 +97,13 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     {
         $imei = '8800000015';
         $capability = 'reset_device';
-        $body = json_encode(['capability' => $capability, 'value' => []]);
+        $payload = ['capability' => $capability, 'value' => []];
 
         $this->mockDeviceAccess($imei, 'four-p-touch', '4P Touch', '4P-TOUCH');
         $this->mockModelCapabilities([$capability]);
         $this->hub->method('submitDownlink')->willReturn('sent');
 
-        $result = $this->service->requestFeature($imei, $body);
+        $result = $this->service->requestFeature($imei, $payload);
 
         self::assertSame('waiting', $result['status']);
         self::assertCount(1, $result['commands']);
@@ -115,13 +115,13 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     {
         $imei = '8800000015';
         $capability = 'power_off';
-        $body = json_encode(['capability' => $capability, 'value' => []]);
+        $payload = ['capability' => $capability, 'value' => []];
 
         $this->mockDeviceAccess($imei, 'four-p-touch', '4P Touch', '4P-TOUCH');
         $this->mockModelCapabilities([$capability]);
         $this->hub->method('submitDownlink')->willReturn('sent');
 
-        $result = $this->service->requestFeature($imei, $body);
+        $result = $this->service->requestFeature($imei, $payload);
 
         self::assertSame('waiting', $result['status']);
         self::assertCount(1, $result['commands']);
@@ -133,13 +133,13 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
     {
         $imei = '8800000015';
         $capability = 'find_device';
-        $body = json_encode(['capability' => $capability, 'value' => []]);
+        $payload = ['capability' => $capability, 'value' => []];
 
         $this->mockDeviceAccess($imei, 'four-p-touch', '4P Touch', '4P-TOUCH');
         $this->mockModelCapabilities([$capability]);
         $this->hub->method('submitDownlink')->willReturn('sent');
 
-        $result = $this->service->requestFeature($imei, $body);
+        $result = $this->service->requestFeature($imei, $payload);
 
         self::assertSame('waiting', $result['status']);
         self::assertCount(1, $result['commands']);
@@ -168,10 +168,10 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
 
         $this->mockDeviceAccess($imei, 'vivistar-iw', 'Vivistar', 'L08 Pro');
 
-        $result = $this->service->patchAssociation($imei, json_encode([
+        $result = $this->service->patchAssociation($imei, [
             'company' => $company,
             'licenseId' => (string)$licenseId,
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         self::assertSame('ok', $result['status'] ?? null);
         self::assertSame($company, $result['association']['company'] ?? null);
@@ -183,6 +183,39 @@ final class DeviceServiceTest extends MysqlDashboardTestCase
             0,
             count(array_filter($created, static fn(array $row): bool => (int)($row['company_id'] ?? 0) === (int)$companyRow['id']))
         );
+    }
+
+    /**
+     * O Redis é uma projecção do inventário, e por isso é escrito primeiro: uma falha do SQL
+     * a seguir deixa lá uma entrada que nada lista, enquanto pela ordem contrária ficava uma
+     * linha de inventário sem projecção -- o dispositivo que a dashboard nunca conhece.
+     */
+    public function testCreateWritesTheProjectionBeforeTheInventory(): void
+    {
+        $supplierId = $this->db->suppliers->create('Vivistar');
+        $this->db->models->add($supplierId, 'L08 Pro', 'L08 Pro', 'watch');
+
+        $writes = [];
+        $this->store->method('registerDevice')->willReturnCallback(
+            static function () use (&$writes): void {
+                $writes[] = 'redis';
+            }
+        );
+        $this->whitelist->method('register')->willReturnCallback(
+            static function () use (&$writes): void {
+                $writes[] = 'sql';
+            }
+        );
+
+        $result = $this->service->create([
+            'imei' => '861265061009877',
+            'supplier' => 'Vivistar',
+            'model' => 'L08 Pro',
+            'licenseId' => '0',
+        ]);
+
+        self::assertSame('ok', $result['status'] ?? null);
+        self::assertSame(['redis', 'sql'], $writes);
     }
 
     private function mockDeviceAccess(string $imei, string $protocol, string $supplier, string $model): void

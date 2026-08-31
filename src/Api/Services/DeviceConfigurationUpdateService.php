@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Command\DeviceConfigurationCatalog;
@@ -260,17 +261,17 @@ final class DeviceConfigurationUpdateService
         array $device,
     ): array {
         if ($protocol === '') {
-            return ['error' => ['code' => 'unknown_protocol', 'message' => 'Device protocol could not be resolved']];
+            return ApiError::unknownProtocol('Device protocol could not be resolved')->toArray();
         }
 
         $entry = DeviceConfigurationCatalog::configForProtocol($protocol, $nativeKey);
         if (($entry['transient'] ?? false) === true) {
-            return ['error' => ['code' => 'invalid_config', 'message' => "{$nativeKey} is a transient action and must be requested via /requests"]];
+            return ApiError::invalidConfig("{$nativeKey} is a transient action and must be requested via /requests")->toArray();
         }
 
         $error = DeviceConfigurationCatalog::validate($protocol, $nativeKey, $payload);
         if ($error !== null) {
-            return ['error' => ['code' => 'invalid_config', 'message' => $error]];
+            return ApiError::invalidConfig($error)->toArray();
         }
 
         $operations = [];
@@ -381,7 +382,7 @@ final class DeviceConfigurationUpdateService
             'message' => $message,
         ], static fn(mixed $value): bool => $value !== ''));
 
-        return ['error' => ['code' => 'invalid_config', 'message' => $message]];
+        return ApiError::invalidConfig($message)->toArray();
     }
 
     private function comparisonStoredConfigurationKey(string $key): ?string

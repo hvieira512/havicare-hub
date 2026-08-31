@@ -177,12 +177,39 @@ final class WhitelistRepository
      */
     public function unregister(string $imei): void
     {
-        foreach (['device_configurations', 'device_configuration_changes'] as $table) {
-            $this->pdo->prepare("DELETE FROM `{$table}` WHERE imei = ?")->execute([$imei]);
+        // As três remoções são uma só operação. Precisamente por não haver chave estrangeira
+        // a cascatear -- a razão está acima --, nada repunha a coerência se a segunda ou a
+        // terceira falhasse: ficava um dispositivo sem configurações mas ainda no registo, e
+        // portanto ainda aceite pela ingestão, ou uma linha de whitelist já removida com as
+        // configurações órfãs a sobreviver-lhe.
+        //
+        // O `inTransaction()` existe porque uma transacção pode já estar aberta por quem
+        // chama, e o PDO não aninha: quem a abriu é que a fecha.
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
         }
 
-        $stmt = $this->pdo->prepare('DELETE FROM whitelist WHERE imei = ?');
-        $stmt->execute([$imei]);
+        // Só as remoções vão dentro do `try`: aqui, se falhar, a transacção está aberta com
+        // certeza, e o `rollBack()` dispensa perguntar. O `commit()` fica de fora porque uma
+        // falha *dele* já não deixa nada para desfazer.
+        try {
+            foreach (['device_configurations', 'device_configuration_changes'] as $table) {
+                $this->pdo->prepare("DELETE FROM `{$table}` WHERE imei = ?")->execute([$imei]);
+            }
+
+            $this->pdo->prepare('DELETE FROM whitelist WHERE imei = ?')->execute([$imei]);
+        } catch (\Throwable $e) {
+            if ($ownsTransaction) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+
+        if ($ownsTransaction) {
+            $this->pdo->commit();
+        }
     }
 
     public function updateAssociation(string $imei, string $company, int $licenseId): bool

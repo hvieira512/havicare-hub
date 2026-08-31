@@ -14,6 +14,7 @@ use Hub\Log\Logger;
 use Hub\PendingDownlink;
 use Hub\PendingDownlinkQueue;
 use Hub\Registry\Whitelist;
+use Hub\Runtime\DashboardServerFactory;
 use React\EventLoop\Loop;
 use Tests\Support\MysqlDashboardTestCase;
 use Tests\Support\Doubles\InMemoryRedisClient;
@@ -1328,7 +1329,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         bool $apiAuthRequired = true,
         int $apiTokenTtlSeconds = 3600,
         int $apiRefreshTokenTtlSeconds = 2592000
-    ): DashboardHttpServer {
+    ): callable {
         return $this->makeServerWithDatabase(
             apiAuthRequired: $apiAuthRequired,
             apiTokenTtlSeconds: $apiTokenTtlSeconds,
@@ -1337,7 +1338,10 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
-     * @return array{0: DashboardHttpServer, 1: ApiDataAccess, 2: DashboardStore}
+     * Devolve a cadeia inteira, e não só a dashboard: o CORS e o registo do `/api/` são
+     * middleware, e é a `DashboardServerFactory` que os monta -- aqui como em produção.
+     *
+     * @return array{0: callable, 1: ApiDataAccess, 2: DashboardStore}
      */
     private function makeServerWithDatabase(
         ?\Hub\DeviceHubServer $hub = null,
@@ -1369,7 +1373,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             $hub->method('submitDownlink')->willReturn('sent');
         }
 
-        $server = new DashboardHttpServer(
+        $dashboard = new DashboardHttpServer(
             $store,
             new ApiTokenStore($redis, 'test:api-tokens'),
             new Whitelist($this->whitelistPath, $db->whitelist),
@@ -1379,8 +1383,9 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
             $apiTokenTtlSeconds,
             $apiRefreshTokenTtlSeconds
         );
+        $dashboard->warmUp();
 
-        return [$server, $db, $store];
+        return [DashboardServerFactory::handler($dashboard), $db, $store];
     }
 
 
@@ -1454,7 +1459,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::fail('SSE frame did not contain a data line.');
     }
 
-    private function loginToken(DashboardHttpServer $server, string $username, string $password): string
+    private function loginToken(callable $server, string $username, string $password): string
     {
         $payload = $this->loginPayload($server, $username, $password);
 
@@ -1462,7 +1467,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /** @return array<string, mixed> */
-    private function loginPayload(DashboardHttpServer $server, string $username, string $password): array
+    private function loginPayload(callable $server, string $username, string $password): array
     {
         $login = $server(new ServerRequest(
             'POST',

@@ -3,6 +3,7 @@
 namespace Hub\Api\Services;
 
 use Hub\Api\Auth\ApiAuthContext;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;
@@ -47,57 +48,57 @@ class ApiUserService
         ]);
     }
 
-    public function create(string $body): array
+    public function create(array $payload): array
     {
-        $payload = $this->payload($body, true);
-        if (isset($payload['error'])) {
-            return $payload;
+        $fields = $this->fields($payload, true);
+        if (isset($fields['error'])) {
+            return $fields;
         }
 
-        $username = (string)$payload['username'];
+        $username = (string)$fields['username'];
         if ($this->db->apiUsers->findByUsername($username) !== null) {
-            return ['error' => ['code' => 'user_exists', 'message' => 'Username already exists']];
+            return ApiError::userExists()->toArray();
         }
 
         $id = $this->db->apiUsers->create(
             $username,
-            password_hash((string)$payload['password'], PASSWORD_DEFAULT),
-            (string)$payload['role'],
-            (int)$payload['licenseId'],
-            (bool)$payload['enabled'],
-            $payload['licenseRefId'],
+            password_hash((string)$fields['password'], PASSWORD_DEFAULT),
+            (string)$fields['role'],
+            (int)$fields['licenseId'],
+            (bool)$fields['enabled'],
+            $fields['licenseRefId'],
         );
 
         return ['status' => 'ok', 'id' => $id];
     }
 
-    public function update(int $id, string $body): array
+    public function update(int $id, array $payload): array
     {
         if ($this->db->apiUsers->findById($id) === null) {
-            return ['error' => ['code' => 'user_not_found', 'message' => 'API user not found']];
+            return ApiError::userNotFound()->toArray();
         }
 
-        $payload = $this->payload($body, false);
-        if (isset($payload['error'])) {
-            return $payload;
+        $fields = $this->fields($payload, false);
+        if (isset($fields['error'])) {
+            return $fields;
         }
 
-        $username = (string)$payload['username'];
+        $username = (string)$fields['username'];
         if ($this->db->apiUsers->usernameExistsForDifferentId($id, $username)) {
-            return ['error' => ['code' => 'user_exists', 'message' => 'Username already exists']];
+            return ApiError::userExists()->toArray();
         }
 
-        $passwordHash = (string)($payload['password'] ?? '') !== ''
-            ? password_hash((string)$payload['password'], PASSWORD_DEFAULT)
+        $passwordHash = (string)($fields['password'] ?? '') !== ''
+            ? password_hash((string)$fields['password'], PASSWORD_DEFAULT)
             : null;
         $this->db->apiUsers->update(
             $id,
             $username,
-            (string)$payload['role'],
-            (int)$payload['licenseId'],
-            (bool)$payload['enabled'],
+            (string)$fields['role'],
+            (int)$fields['licenseId'],
+            (bool)$fields['enabled'],
             $passwordHash,
-            $payload['licenseRefId'],
+            $fields['licenseRefId'],
         );
 
         return ['status' => 'ok', 'id' => $id];
@@ -106,7 +107,7 @@ class ApiUserService
     public function delete(int $id): array
     {
         if ($this->db->apiUsers->findById($id) === null) {
-            return ['error' => ['code' => 'user_not_found', 'message' => 'API user not found']];
+            return ApiError::userNotFound()->toArray();
         }
 
         $this->db->apiUsers->delete($id);
@@ -114,32 +115,27 @@ class ApiUserService
         return ['status' => 'ok'];
     }
 
-    private function payload(string $body, bool $passwordRequired): array
+    private function fields(array $payload, bool $passwordRequired): array
     {
-        $decoded = json_decode($body, true);
-        if (!is_array($decoded)) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'Invalid JSON']];
-        }
-
-        $username = trim((string)($decoded['username'] ?? ''));
-        $password = (string)($decoded['password'] ?? '');
-        $role = trim((string)($decoded['role'] ?? ''));
-        $licenseId = DeviceMetadata::normalizeLicenseId((string)($decoded['licenseId'] ?? $decoded['license_id'] ?? ''));
-        $licenseRefId = (int)($decoded['licenseRefId'] ?? $decoded['license_ref_id'] ?? 0);
-        $companyId = (int)($decoded['companyId'] ?? $decoded['company_id'] ?? 0);
-        $enabled = array_key_exists('enabled', $decoded) ? (bool)$decoded['enabled'] : true;
+        $username = trim((string)($payload['username'] ?? ''));
+        $password = (string)($payload['password'] ?? '');
+        $role = trim((string)($payload['role'] ?? ''));
+        $licenseId = DeviceMetadata::normalizeLicenseId((string)($payload['licenseId'] ?? $payload['license_id'] ?? ''));
+        $licenseRefId = (int)($payload['licenseRefId'] ?? $payload['license_ref_id'] ?? 0);
+        $companyId = (int)($payload['companyId'] ?? $payload['company_id'] ?? 0);
+        $enabled = array_key_exists('enabled', $payload) ? (bool)$payload['enabled'] : true;
 
         if ($username === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'username is required']];
+            return ApiError::invalidRequest('username is required')->toArray();
         }
         if ($passwordRequired && trim($password) === '') {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'password is required']];
+            return ApiError::invalidRequest('password is required')->toArray();
         }
         if ($role === '') {
             $role = ApiAuthContext::ROLE_LICENSE_CLIENT;
         }
         if (!in_array($role, ApiAuthContext::roles(), true)) {
-            return ['error' => ['code' => 'invalid_role', 'message' => 'role must be hub_admin or license_client']];
+            return ApiError::invalidRole()->toArray();
         }
         if ($role === ApiAuthContext::ROLE_LICENSE_CLIENT) {
             $license = $licenseRefId > 0
@@ -148,7 +144,7 @@ class ApiUserService
                     ? $this->db->licenses->findByCompanyAndLicense($companyId, $licenseId)
                     : null);
             if ($license === null) {
-                return ['error' => ['code' => 'invalid_license', 'message' => 'A valid company license is required for license clients']];
+                return ApiError::invalidLicense()->toArray();
             }
             $licenseRefId = (int)$license['id'];
             $licenseId = DeviceMetadata::normalizeLicenseId((string)$license['license_id']);

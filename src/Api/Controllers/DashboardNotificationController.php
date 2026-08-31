@@ -25,9 +25,13 @@ final class DashboardNotificationController
         return $this->json->respond($this->service->list((string)$request->getUri()->getQuery()));
     }
 
+    /**
+     * O corpo ilegível segue como array vazio em vez de erro próprio: este endpoint sempre
+     * respondeu "ids array is required" a um corpo que não é JSON, e é o que o serviço diz.
+     */
     public function markRead(ServerRequestInterface $request): Response
     {
-        $result = $this->service->markRead(RequestContext::requestBody($request));
+        $result = $this->service->markRead(RequestContext::jsonBody($request) ?? []);
 
         return $this->json->respond($result, $this->status->map($result));
     }

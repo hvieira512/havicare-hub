@@ -16,10 +16,10 @@ use Hub\Api\Controllers\SupplierController;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\BearerTokenResolver;
 use Hub\Api\Auth\RouteAccessPolicy;
-use Hub\Api\Http\CorsPolicy;
 use Hub\Api\Http\ErrorStatusMapper;
 use Hub\Api\Http\HtmlResponder;
 use Hub\Api\Http\JsonResponder;
+use Hub\Api\Http\Middleware\ApiLogContext;
 use Hub\Api\Http\RequestContext;
 use Hub\Api\Routing\ApiRoute;
 use Hub\Api\Routing\ApiRouter;
@@ -40,8 +40,6 @@ use React\Http\Message\Response;
 
 final class ApiKernel
 {
-    private const LOG_REDACTION = '********';
-
     // Só catálogos: o estado de ligação de um dispositivo muda de segundos a segundos e é
     // precisamente o que a dashboard existe para mostrar.
     private const REVALIDATED_ROUTES = [
@@ -59,8 +57,6 @@ final class ApiKernel
     ];
 
     private ApiRouter $router;
-    private int $logBodyMaxBytes;
-    private int $logBodyScanMaxBytes;
 
     public function __construct(
         private bool $apiAuthRequired,
@@ -77,26 +73,26 @@ final class ApiKernel
         private DashboardNotificationService $notifications,
         private JsonResponder $json,
         private HtmlResponder $html,
-        private CorsPolicy $cors,
         private ErrorStatusMapper $statusMapper,
         private BearerTokenResolver $bearerTokenResolver,
         private RouteAccessPolicy $routeAccessPolicy,
     ) {
         $this->router = new ApiRouter($this->apiRoutes());
-        $this->logBodyMaxBytes = max(0, (int)(getenv('LOG_BODY_MAX_BYTES') ?: 16384));
-        $this->logBodyScanMaxBytes = max(0, (int)(getenv('LOG_BODY_SCAN_MAX_BYTES') ?: 1048576));
     }
 
+    /**
+     * O CORS, o `X-Request-Id` e o registo do pedido saíram daqui para o
+     * `Hub\Api\Http\Middleware`. A resolução da identidade ficou: alimenta ao mesmo tempo o
+     * registo e a política de acesso à rota, e separá-la obrigava a correr o encaminhamento
+     * duas vezes -- num middleware para saber a rota e aqui para a despachar.
+     */
     public function handle(ServerRequestInterface $request): Response
     {
         $method = strtoupper($request->getMethod());
         $path = $request->getUri()->getPath();
-        $requestId = $request->getHeaderLine('X-Request-Id') ?: RequestContext::requestId($request) ?: bin2hex(random_bytes(16));
-        $rawBody = (string)$request->getBody();
-        $request = $request
-            ->withAttribute(RequestContext::ATTR_REQUEST_ID, $requestId)
-            ->withAttribute(RequestContext::ATTR_RAW_BODY, $rawBody);
-        $startedAt = microtime(true);
+        $requestId = RequestContext::requestId($request);
+        $logContext = $request->getAttribute(ApiLogContext::ATTRIBUTE);
+        $logContext = $logContext instanceof ApiLogContext ? $logContext : null;
         $match = $this->router->match($method, $path);
         $routePattern = $match !== null ? $match['route']->pattern() : null;
         $authResolution = $this->isPublicApiPath($path)
@@ -104,12 +100,10 @@ final class ApiKernel
             : $this->resolveApiAuthContext($request);
         $authContext = $authResolution['context'];
         $authState = $authResolution['state'];
+        $logContext?->describe($routePattern, $authContext, $authState);
 
         if (!$this->isPublicApiPath($path) && $authContext === null) {
-            $response = $this->cors->apply($this->json->respond(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401));
-            $response = $response->withHeader('X-Request-Id', $requestId);
-            $this->safeLogApiRequest($request, $response, $startedAt, $routePattern, $authContext, $authState);
-            return $response;
+            return $this->json->respond(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401);
         }
 
         if ($routePattern !== null) {
@@ -117,11 +111,8 @@ final class ApiKernel
         }
 
         try {
-            $response = $this->cors->apply($this->dispatch($request, $authContext, $match));
-            $response = $response->withHeader('X-Request-Id', $requestId);
-            $response = $this->revalidatedCatalogResponse($request, $response, $method, $routePattern);
-            $this->safeLogApiRequest($request, $response, $startedAt, $routePattern, $authContext, $authState);
-            return $response;
+            $response = $this->dispatch($request, $authContext, $match);
+            return $this->revalidatedCatalogResponse($request, $response, $method, $routePattern);
         } catch (\Throwable $e) {
             Logger::channel('api')->error('Unhandled API exception', [
                 'request_id' => $requestId,
@@ -131,16 +122,14 @@ final class ApiKernel
                 'exception' => $e::class,
                 'message' => $e->getMessage(),
             ]);
-            $response = $this->cors->apply($this->json->respond([
+            $logContext?->describe($routePattern, $authContext, 'error');
+            return $this->json->respond([
                 'error' => [
                     'code' => 'server_error',
                     'message' => 'Internal server error',
                     'requestId' => $requestId,
                 ],
-            ], 500));
-            $response = $response->withHeader('X-Request-Id', $requestId);
-            $this->safeLogApiRequest($request, $response, $startedAt, $routePattern, $authContext, 'error');
-            return $response;
+            ], 500);
         }
     }
 
@@ -260,46 +249,9 @@ final class ApiKernel
         ], true);
     }
 
-    private function logApiRequest(
-        ServerRequestInterface $request,
-        Response $response,
-        float $startedAt,
-        ?string $routePattern,
-        ?ApiAuthContext $authContext,
-        string $authState
-    ): void {
-        $query = $this->sanitizeLogQuery($request->getUri()->getQuery());
-        $serverParams = $request->getServerParams();
-        $status = $response->getStatusCode();
-        $level = $status >= 500 ? 'error' : ($status >= 400 ? 'warning' : 'info');
-        $path = $request->getUri()->getPath();
-        $isAuthPath = str_starts_with($path, '/api/auth/');
-
-        Logger::channel('api')->log($level, 'API request completed', [
-            'request_id' => (string)$request->getAttribute(RequestContext::ATTR_REQUEST_ID, ''),
-            'method' => strtoupper($request->getMethod()),
-            'path' => $path,
-            'query' => $query,
-            'route' => $routePattern,
-            'status' => $status,
-            'duration_ms' => (int)round((microtime(true) - $startedAt) * 1000),
-            'remote_ip' => (string)($serverParams['REMOTE_ADDR'] ?? ''),
-            'user_agent' => $request->getHeaderLine('User-Agent'),
-            'auth_state' => $authState,
-            'username' => $authContext?->username,
-            'role' => $authContext?->role,
-            'license_id' => $authContext?->licenseId,
-            'request_body' => $this->structuredLogBody(
-                (string)$request->getAttribute(RequestContext::ATTR_RAW_BODY, ''),
-                $isAuthPath
-            ),
-            'response_content_type' => $response->getHeaderLine('Content-Type'),
-            'response_body' => $this->responseBodyForLog($response, $isAuthPath),
-        ]);
-    }
-
     // O `ETag` sai do corpo já serializado: um contador por tabela exigia escrituração em
-    // cada escrita, e é isso que envelhece mal.
+    // cada escrita, e é isso que envelhece mal. Fica no kernel, e não num middleware, porque
+    // é a resposta desta rota que decide -- não o pedido.
     private function revalidatedCatalogResponse(
         ServerRequestInterface $request,
         Response $response,
@@ -332,138 +284,5 @@ final class ApiKernel
         }
 
         return new Response(304, $response->withoutHeader('Content-Type')->getHeaders());
-    }
-
-    private function responseBodyForLog(Response $response, bool $redactUnstructured = false): mixed
-    {
-        $body = $response->getBody();
-        try {
-            if ($body->isSeekable()) {
-                $position = $body->tell();
-                $body->rewind();
-                $contents = $body->getContents();
-                $body->seek($position);
-            } else {
-                $contents = (string)$body;
-            }
-        } catch (\Throwable) {
-            return null;
-        }
-
-        return $this->structuredLogBody($contents, $redactUnstructured);
-    }
-
-    private function structuredLogBody(string $body, bool $redactUnstructured = false): mixed
-    {
-        $body = trim($body);
-        if ($body === '') {
-            return null;
-        }
-
-        // Um corpo desta dimensão nem chega a ser descodificado: a descodificação e as
-        // recursões que se lhe seguem correm no laço que também serve o TCP e as pontes MQTT.
-        if (strlen($body) > $this->logBodyScanMaxBytes) {
-            return sprintf('[corpo não registado: %d bytes]', strlen($body));
-        }
-
-        try {
-            $sanitized = $this->sanitizeLogValue(json_decode($body, true, 512, JSON_THROW_ON_ERROR));
-        } catch (\JsonException) {
-            return $this->cappedLogBody($redactUnstructured ? self::LOG_REDACTION : $body);
-        }
-
-        $encoded = json_encode($sanitized);
-
-        return $encoded === false || strlen($encoded) <= $this->logBodyMaxBytes
-            ? $sanitized
-            : $this->cappedLogBody($encoded);
-    }
-
-    // O corte vem sempre depois da rasura: cortar o texto cru deixava credenciais por rasurar.
-    private function cappedLogBody(string $value): string
-    {
-        $size = strlen($value);
-        if ($size <= $this->logBodyMaxBytes) {
-            return $value;
-        }
-
-        return substr($value, 0, $this->logBodyMaxBytes) . sprintf('…[truncado, %d bytes no total]', $size);
-    }
-
-    private function sanitizeLogValue(mixed $value): mixed
-    {
-        if (!is_array($value)) {
-            return $value;
-        }
-
-        $sanitized = [];
-        foreach ($value as $key => $item) {
-            if (is_string($key) && $this->isSensitiveLogField($key, $item)) {
-                $sanitized[$key] = self::LOG_REDACTION;
-                continue;
-            }
-
-            $sanitized[$key] = $this->sanitizeLogValue($item);
-        }
-
-        return $sanitized;
-    }
-
-    private function sanitizeLogQuery(string $query): string
-    {
-        if ($query === '') {
-            return '';
-        }
-
-        $parts = [];
-        foreach (explode('&', $query) as $part) {
-            [$rawKey, $rawValue] = array_pad(explode('=', $part, 2), 2, '');
-            $key = rawurldecode($rawKey);
-            $value = rawurldecode($rawValue);
-            $parts[] = $this->isSensitiveLogField($key, $value)
-                ? $rawKey . '=' . self::LOG_REDACTION
-                : $part;
-        }
-
-        return implode('&', $parts);
-    }
-
-    private function isSensitiveLogField(string $key, mixed $value): bool
-    {
-        $normalized = preg_replace('/(?<!^)[A-Z]/', '_$0', $key) ?? $key;
-        $normalized = strtolower(str_replace(['-', ' '], '_', $normalized));
-
-        if (
-            $normalized === 'password'
-            || str_ends_with($normalized, '_password')
-            || $normalized === 'secret'
-            || str_ends_with($normalized, '_secret')
-            || $normalized === 'authorization'
-            || $normalized === 'api_key'
-        ) {
-            return true;
-        }
-
-        return !is_array($value)
-            && ($normalized === 'token' || str_ends_with($normalized, '_token'));
-    }
-
-    private function safeLogApiRequest(
-        ServerRequestInterface $request,
-        Response $response,
-        float $startedAt,
-        ?string $routePattern,
-        ?ApiAuthContext $authContext,
-        string $authState
-    ): void {
-        try {
-            $this->logApiRequest($request, $response, $startedAt, $routePattern, $authContext, $authState);
-        } catch (\Throwable $e) {
-            Logger::channel('api')->warning('Failed to log API request completion', [
-                'request_id' => (string)$request->getAttribute(RequestContext::ATTR_REQUEST_ID, ''),
-                'exception' => $e::class,
-                'message' => $e->getMessage(),
-            ]);
-        }
     }
 }

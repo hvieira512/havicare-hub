@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
 
 final class DashboardNotificationService
@@ -26,21 +27,25 @@ final class DashboardNotificationService
         ];
     }
 
-    public function markRead(string $body): array
+    /**
+     * Um corpo que não é JSON chega aqui como array vazio, e não à parte: este endpoint
+     * sempre respondeu "ids array is required" a um corpo ilegível, e é o que os clientes
+     * esperam ver.
+     */
+    public function markRead(array $payload): array
     {
-        $payload = json_decode($body, true);
-        if (!is_array($payload) || !isset($payload['ids']) || !is_array($payload['ids'])) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'ids array is required']];
+        if (!isset($payload['ids']) || !is_array($payload['ids'])) {
+            return ApiError::invalidRequest('ids array is required')->toArray();
         }
 
         $ids = [];
         foreach ($payload['ids'] as $id) {
             if (!is_int($id) && !(is_string($id) && ctype_digit($id))) {
-                return ['error' => ['code' => 'invalid_request', 'message' => 'ids must contain positive integers']];
+                return ApiError::invalidRequest('ids must contain positive integers')->toArray();
             }
             $normalized = (int)$id;
             if ($normalized <= 0) {
-                return ['error' => ['code' => 'invalid_request', 'message' => 'ids must contain positive integers']];
+                return ApiError::invalidRequest('ids must contain positive integers')->toArray();
             }
             $ids[] = $normalized;
         }
@@ -56,10 +61,10 @@ final class DashboardNotificationService
     public function delete(int $id): array
     {
         if ($id <= 0) {
-            return ['error' => ['code' => 'invalid_request', 'message' => 'notification id must be a positive integer']];
+            return ApiError::invalidRequest('notification id must be a positive integer')->toArray();
         }
         if (!$this->db->dashboardNotifications->delete($id)) {
-            return ['error' => ['code' => 'notification_not_found', 'message' => 'Notification not found']];
+            return ApiError::notificationNotFound()->toArray();
         }
 
         return [

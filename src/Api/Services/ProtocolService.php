@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Services;
 
+use Hub\Api\Http\ApiError;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\ProtocolRegistry;
@@ -23,7 +24,7 @@ class ProtocolService
         $protocol = (string)($params['protocol'] ?? '');
 
         if (!ProtocolRegistry::exists($protocol) || !ProtocolRegistry::supportsConfigCatalog($protocol)) {
-            return ['error' => ['code' => 'protocol_not_found', 'message' => 'Unsupported protocol']];
+            return ApiError::protocolNotFound()->toArray();
         }
 
         $catalog = array_map(
