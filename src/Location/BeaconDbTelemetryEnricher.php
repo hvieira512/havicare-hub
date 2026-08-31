@@ -157,6 +157,17 @@ final class BeaconDbTelemetryEnricher implements LocationTelemetryEnricherContra
     private function logFailure(array $telemetry, \Throwable $error): void
     {
         $imei = (string)($telemetry['device']['id'] ?? 'unknown');
+
+        // Não saber onde o dispositivo está é um resultado, não uma avaria: ver o
+        // `LocationProviderException::isNoMatch()`. Fica em `info` para as falhas a sério
+        // continuarem a dar nas vistas.
+        if ($error instanceof LocationProviderException && $error->isNoMatch()) {
+            \Hub\Log\Logger::channel('hub')->info(
+                "Location not matched IMEI={$imei} provider={$this->provider->name()}"
+            );
+            return;
+        }
+
         \Hub\Log\Logger::channel('hub')->warning(
             "Location resolution failed IMEI={$imei} provider={$this->provider->name()}: {$error->getMessage()}"
         );

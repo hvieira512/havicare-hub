@@ -19,6 +19,25 @@ class AuthService
     ) {
     }
 
+    /** Segundos que um bilhete de stream vale. Chega para abrir a ligação e mais nada. */
+    private const STREAM_TICKET_TTL_SECONDS = 30;
+
+    /**
+     * Um bilhete para o `EventSource`, que não deixa pôr cabeçalhos e obriga a credencial a
+     * viajar no URL. Ver a nota no `ApiTokenStore::issueStreamTicket()`.
+     */
+    public function streamTicket(?ApiAuthContext $auth): array
+    {
+        // Defensivo: esta rota exige autenticação, e por isso o kernel já rejeitou quem não
+        // a tem antes de chegar aqui. Fica na mesma, para nunca se emitir um bilhete sem
+        // saber a quem.
+        if ($auth === null) {
+            return ApiError::forbidden()->toArray();
+        }
+
+        return ['data' => $this->tokens->issueStreamTicket($auth, self::STREAM_TICKET_TTL_SECONDS)];
+    }
+
     public function login(array $payload, string $requestId = ''): array
     {
         $refreshToken = trim((string)($payload['refresh_token'] ?? ''));

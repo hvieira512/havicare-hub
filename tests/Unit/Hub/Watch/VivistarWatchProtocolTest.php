@@ -47,6 +47,11 @@ final class VivistarFakeConnection implements \Hub\ConnectionInterface
 {
     public int $resourceId = 1;
 
+    public function remoteAddress(): ?string
+    {
+        return null;
+    }
+
     public function send($data): static
     {
         return $this;

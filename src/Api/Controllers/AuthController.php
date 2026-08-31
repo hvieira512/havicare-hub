@@ -26,4 +26,11 @@ final class AuthController
 
         return $this->json->respond($result, isset($result['error']) ? 401 : 200);
     }
+
+    public function streamTicket(ServerRequestInterface $request): Response
+    {
+        $result = $this->service->streamTicket(RequestContext::auth($request));
+
+        return $this->json->respond($result, isset($result['error']) ? 403 : 200);
+    }
 }

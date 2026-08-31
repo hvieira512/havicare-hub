@@ -1216,6 +1216,53 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
+     * O bilhete abre um stream, e só um.
+     *
+     * O `EventSource` não deixa pôr cabeçalhos, e por isso a credencial de um stream viaja no
+     * URL -- onde fica escrita no registo de acessos de qualquer proxy pelo caminho e no
+     * histórico do browser. Enquanto o que ia ali era o token de acesso, era uma credencial
+     * de uma hora, boa para toda a API, a ficar guardada nesses sítios. O bilhete vale
+     * segundos e queima-se à primeira utilização.
+     */
+    public function testAStreamTicketOpensOneStreamAndIsThenSpent(): void
+    {
+        [$server] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $minted = $server(
+            (new ServerRequest('POST', '/api/auth/stream-ticket'))
+                ->withHeader('Authorization', 'Bearer ' . $token)
+        );
+        self::assertSame(200, $minted->getStatusCode());
+
+        $ticket = (string)(json_decode((string)$minted->getBody(), true)['data']['ticket'] ?? '');
+        self::assertNotSame('', $ticket);
+
+        $opened = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($ticket)
+        ));
+        self::assertSame(200, $opened->getStatusCode(), 'o bilhete devia abrir o stream');
+        $opened->getBody()->close();
+
+        $reused = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($ticket)
+        ));
+        self::assertSame(401, $reused->getStatusCode(), 'um bilhete gasto não abre nada');
+    }
+
+    /** Sem credencial nenhuma continua a não abrir: o bilhete não é uma porta lateral. */
+    public function testAStreamWithoutACredentialIsStillRejected(): void
+    {
+        [$server] = $this->makeServerWithDatabase();
+
+        $response = $server(new ServerRequest('GET', '/api/devices/861265061009822/stream'));
+
+        self::assertSame(401, $response->getStatusCode());
+    }
+
+    /**
      * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo.
      *
      * Isto derrubou a produção doze vezes em catorze dias: um radar publica cerca de vinte

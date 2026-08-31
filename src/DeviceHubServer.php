@@ -245,7 +245,13 @@ class DeviceHubServer
         if ($identity === null) {
             if (!$session->unidentifiedWarningLogged) {
                 $session->unidentifiedWarningLogged = true;
-                Logger::channel('hub')->warning("Connection id={$conn->resourceId} sent data before identifiable login");
+                // A origem vai junto de propósito: sem ela, um varredor de portas e um
+                // dispositivo cujo protocolo não estamos a saber ler dão exactamente a mesma
+                // linha, e é o segundo que é preciso ver.
+                $from = $conn->remoteAddress() ?? 'desconhecida';
+                Logger::channel('hub')->warning(
+                    "Connection id={$conn->resourceId} from={$from} sent data before identifiable login"
+                );
             }
             return;
         }

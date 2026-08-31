@@ -67,6 +67,11 @@ final class FakeHubConnection implements ConnectionInterface
         $this->resourceId = $resourceId;
     }
 
+    public function remoteAddress(): ?string
+    {
+        return null;
+    }
+
     public function send($data): static
     {
         $this->sent[] = $data;

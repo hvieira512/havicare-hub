@@ -16,6 +16,12 @@ class TcpDeviceConnection implements ConnectionInterface
         $this->resourceId = $resourceId;
     }
 
+    /** O React devolve isto como `tcp://1.2.3.4:5678`, ou `null` se a ligação já caiu. */
+    public function remoteAddress(): ?string
+    {
+        return $this->connection->getRemoteAddress();
+    }
+
     public function send(string $data): static
     {
         $this->connection->write($data);

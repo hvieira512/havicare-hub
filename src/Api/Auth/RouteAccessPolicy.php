@@ -8,6 +8,9 @@ final class RouteAccessPolicy
      * @var list<string>
      */
     private array $licenseClientAllowed = [
+        // O cliente de licença abre streams, e por isso tem de poder pedir o bilhete que os
+        // abre. O bilhete herda o âmbito de quem o pediu, e portanto não amplia nada.
+        'POST /api/auth/stream-ticket',
         'GET /api/devices',
         'GET /api/devices/{imei}',
         'PATCH /api/devices/{imei}/configurations',

@@ -3,6 +3,7 @@
 // objecto injectado, eram o mesmo objecto em produção -- mas só por o `app.js` injectar o
 // verdadeiro. Um teste que injectasse outro lia de um e escrevia no outro.
 import { setSelectedDetailRecent, state } from "../state.js";
+import { getStreamTicket } from "../api/auth.js";
 
 let onRenderSelection = () => {};
 let onCommandsUpdated = () => {};
@@ -11,6 +12,7 @@ let currentImei = "";
 let streamLive = false;
 let reconnectTimer = null;
 let reconnectAttempt = 0;
+let connectGeneration = 0;
 
 // O `EventSource` religa-se sozinho enquanto fica em `CONNECTING`. O `CLOSED` é terminal, e
 // é esse que estes atrasos cobrem. O tecto de meio minuto existe para um servidor em baixo
@@ -73,13 +75,25 @@ export function connectDeviceStream(imei) {
         return;
     }
 
+    // Cada tentativa leva o seu número. Pedir o bilhete é uma ida ao servidor, e no meio dela
+    // o utilizador pode trocar de dispositivo, esconder o separador ou disparar uma
+    // religação: quando a resposta chega, só abre o stream quem ainda for a tentativa actual.
+    connectGeneration += 1;
+    void openStream(imei, connectGeneration);
+}
+
+async function openStream(imei, generation) {
     const url = new URL(
         `/api/devices/${encodeURIComponent(imei)}/stream`,
         window.location.origin,
     );
-    const token = window.hubDashboardApiToken?.access_token || "";
-    if (token) {
-        url.searchParams.set("access_token", token);
+
+    const ticket = await streamTicket();
+    if (generation !== connectGeneration || currentImei !== imei) {
+        return;
+    }
+    if (ticket !== "") {
+        url.searchParams.set("ticket", ticket);
     }
 
     eventSource = new EventSource(url);
@@ -141,6 +155,25 @@ function scheduleReconnect() {
             connectDeviceStream(currentImei);
         }
     }, delay);
+}
+
+/**
+ * O bilhete que abre o stream, ou vazio quando não há autenticação a fazer.
+ *
+ * Uma falha aqui não trava a ligação: sem bilhete o pedido segue e o servidor responde 401,
+ * e o caminho de religação já sabe lidar com isso. Insistir aqui era duplicar essa lógica.
+ */
+async function streamTicket() {
+    if (
+        document.body.dataset.dashboardAuthRequired !== "true" &&
+        !window.hubDashboardApiToken?.access_token
+    ) {
+        return "";
+    }
+
+    const result = await getStreamTicket();
+
+    return String(result?.data?.ticket || "");
 }
 
 function handleStreamOpen() {

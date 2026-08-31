@@ -47,3 +47,6 @@ export {
 export {
     getCapabilities,
 } from "./capabilities.js";
+export {
+    getStreamTicket,
+} from "./auth.js";

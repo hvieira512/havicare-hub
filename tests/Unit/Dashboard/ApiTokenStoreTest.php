@@ -34,6 +34,65 @@ final class ApiTokenStoreTest extends TestCase
         self::assertInstanceOf(ApiAuthContext::class, $store->context($newPair['access_token']));
         self::assertNull($store->refreshAccessToken($pair['refresh_token'], 60, 60));
     }
+
+    /**
+     * O bilhete do stream serve uma ligação e mais nenhuma.
+     *
+     * É essa a razão de existir: como o `EventSource` não deixa pôr cabeçalhos, a credencial
+     * vai no URL, e um URL fica escrito no registo de qualquer proxy pelo caminho. Se o que
+     * lá vai já não abre nada depois da primeira utilização, ter escapado deixa de importar.
+     */
+    public function testAStreamTicketOpensExactlyOneStream(): void
+    {
+        $store = new ApiTokenStore(new ExpiringRedisClientForApiTokenStoreTest(), 'test:api-tokens');
+        $context = new ApiAuthContext(7, 'operador', ApiAuthContext::ROLE_LICENSE_CLIENT, 2103, 4, 9, 'hitcare');
+
+        $ticket = $store->issueStreamTicket($context, 30);
+        self::assertSame(30, $ticket['expires_in']);
+
+        $resolved = $store->consumeStreamTicket($ticket['ticket']);
+        self::assertInstanceOf(ApiAuthContext::class, $resolved);
+        self::assertSame('operador', $resolved->username);
+        self::assertSame(ApiAuthContext::ROLE_LICENSE_CLIENT, $resolved->role);
+        self::assertSame(2103, $resolved->licenseId);
+        self::assertSame('hitcare', $resolved->company);
+
+        self::assertNull(
+            $store->consumeStreamTicket($ticket['ticket']),
+            'o segundo uso do mesmo bilhete não pode abrir nada'
+        );
+    }
+
+    /** Um bilhete não é um token: não pode servir de portador para o resto da API. */
+    public function testAStreamTicketIsNotAcceptedAsABearerToken(): void
+    {
+        $store = new ApiTokenStore(new ExpiringRedisClientForApiTokenStoreTest(), 'test:api-tokens');
+        $ticket = $store->issueStreamTicket(new ApiAuthContext(1, 'admin', ApiAuthContext::ROLE_HUB_ADMIN), 30);
+
+        self::assertNull($store->context($ticket['ticket']));
+        self::assertFalse($store->validate($ticket['ticket']));
+    }
+
+    /** E o inverso: um token de acesso não se gasta como se fosse um bilhete. */
+    public function testAnAccessTokenIsNotAcceptedAsAStreamTicket(): void
+    {
+        $store = new ApiTokenStore(new ExpiringRedisClientForApiTokenStoreTest(), 'test:api-tokens');
+        $issued = $store->issue('admin', ApiAuthContext::ROLE_HUB_ADMIN, 60);
+
+        self::assertNull($store->consumeStreamTicket($issued['access_token']));
+        // E continua a valer como token de acesso: a tentativa não o pode ter queimado.
+        self::assertInstanceOf(ApiAuthContext::class, $store->context($issued['access_token']));
+    }
+
+    public function testAnExpiredStreamTicketOpensNothing(): void
+    {
+        $store = new ApiTokenStore(new ExpiringRedisClientForApiTokenStoreTest(), 'test:api-tokens');
+        $ticket = $store->issueStreamTicket(new ApiAuthContext(1, 'admin', ApiAuthContext::ROLE_HUB_ADMIN), 1);
+
+        sleep(2);
+
+        self::assertNull($store->consumeStreamTicket($ticket['ticket']));
+    }
 }
 
 final class ExpiringRedisClientForApiTokenStoreTest implements ClientInterface
