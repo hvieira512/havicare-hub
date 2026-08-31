@@ -23,18 +23,16 @@ final class BearerTokenResolver
         // de vir no URL. O bilhete existe para que o que ali vai valha segundos e uma ligação
         // só, em vez de ser o token de acesso de uma hora -- um URL fica escrito no registo
         // de qualquer proxy pelo caminho e no histórico do browser.
+        //
+        // O `access_token` também já era aceite aqui, e saiu: nada o punha num URL -- nem a
+        // dashboard, nem o simulador, nem os cenários --, e não estava documentado como
+        // parâmetro. Enquanto existisse, era o último caminho por onde uma credencial de uma
+        // hora, boa para a API toda, podia viajar num endereço. O bilhete é o único que fica.
         $ticket = trim((string)($params['ticket'] ?? ''));
-        if ($ticket !== '') {
-            return $this->tokens->consumeStreamTicket($ticket);
-        }
-
-        // O `access_token` no URL continua a servir para não partir quem já o usa, mas a
-        // dashboard deixou de o mandar. Não o use em código novo.
-        $queryToken = trim((string)($params['access_token'] ?? ''));
-        if ($queryToken === '') {
+        if ($ticket === '') {
             return null;
         }
 
-        return $this->tokens->context($queryToken);
+        return $this->tokens->consumeStreamTicket($ticket);
     }
 }

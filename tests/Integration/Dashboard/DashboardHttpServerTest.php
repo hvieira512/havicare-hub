@@ -1144,7 +1144,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $response = $server(new ServerRequest(
             'GET',
-            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
         ));
         self::assertSame(200, $response->getStatusCode());
 
@@ -1187,7 +1187,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $response = $server(new ServerRequest(
             'GET',
-            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
         ));
         self::assertSame(200, $response->getStatusCode());
         self::assertSame(1, $store->updates()->listenerCount());
@@ -1263,6 +1263,39 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
     }
 
     /**
+     * O token de acesso deixou de abrir seja o que for a partir de um URL.
+     *
+     * Era aceite em `?access_token=` por qualquer rota, e nada o punha lá -- nem a dashboard,
+     * nem o simulador, nem os cenários -- nem estava documentado como parâmetro. Enquanto
+     * existisse, era o último caminho por onde uma credencial de uma hora, boa para a API
+     * toda, podia viajar num endereço e acabar no registo de acessos de um proxy.
+     *
+     * O mesmo token continua a valer no cabeçalho, que é onde deve ir.
+     */
+    public function testAnAccessTokenInTheQueryStringNoLongerAuthenticates(): void
+    {
+        [$server] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $viaQuery = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+        ));
+        self::assertSame(401, $viaQuery->getStatusCode(), 'o URL deixou de ser um sítio para credenciais');
+
+        $viaQueryOnANormalRoute = $server(new ServerRequest(
+            'GET',
+            '/api/devices?access_token=' . rawurlencode($token)
+        ));
+        self::assertSame(401, $viaQueryOnANormalRoute->getStatusCode());
+
+        $viaHeader = $server(
+            (new ServerRequest('GET', '/api/devices'))->withHeader('Authorization', 'Bearer ' . $token)
+        );
+        self::assertSame(200, $viaHeader->getStatusCode(), 'no cabeçalho continua a valer');
+    }
+
+    /**
      * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo.
      *
      * Isto derrubou a produção doze vezes em catorze dias: um radar publica cerca de vinte
@@ -1278,7 +1311,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $response = $server(new ServerRequest(
             'GET',
-            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
         ));
         self::assertSame(200, $response->getStatusCode());
 
@@ -1371,7 +1404,7 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $streamResponse = $server(new ServerRequest(
             'GET',
-            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+            '/api/devices/861265061009822/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
         ));
         self::assertSame(200, $streamResponse->getStatusCode());
         self::assertSame('text/event-stream', $streamResponse->getHeaderLine('Content-Type'));
@@ -1386,13 +1419,16 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
 
         $otherStream = $server(new ServerRequest(
             'GET',
-            '/api/devices/861265061009833/stream?access_token=' . rawurlencode($token)
+            '/api/devices/861265061009833/stream?ticket=' . rawurlencode($this->streamTicket($server, $token))
         ));
         self::assertSame(404, $otherStream->getStatusCode(), (string)$otherStream->getBody());
 
         $log = $this->apiLogContents();
-        self::assertStringContainsString('"query":"access_token=********"', $log);
-        self::assertStringNotContainsString('"query":"access_token=' . $token . '"', $log);
+        // O bilhete viaja no URL, e o URL é o campo que aqui se regista. Já vem gasto quando
+        // a linha se escreve, mas uma credencial em claro num ficheiro de registo não se
+        // justifica por ser de curta duração.
+        self::assertStringContainsString('"query":"ticket=********"', $log);
+        self::assertDoesNotMatchRegularExpression('/"query":"ticket=[0-9a-f]{64}"/', $log);
     }
 
     public function testApiRejectsBasicAuthWhileDashboardIsPublic(): void
@@ -1578,6 +1614,26 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         }
 
         self::fail('SSE frame did not contain a data line.');
+    }
+
+    /**
+     * Um bilhete para abrir um stream.
+     *
+     * Emite-se um por ligação de propósito: o bilhete queima-se ao ser lido, e reaproveitar
+     * um entre dois streams era testar uma coisa que o servidor não permite.
+     */
+    private function streamTicket(callable $server, string $token): string
+    {
+        $response = $server(
+            (new ServerRequest('POST', '/api/auth/stream-ticket'))
+                ->withHeader('Authorization', 'Bearer ' . $token)
+        );
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+
+        $ticket = (string)(json_decode((string)$response->getBody(), true)['data']['ticket'] ?? '');
+        self::assertNotSame('', $ticket);
+
+        return $ticket;
     }
 
     private function loginToken(callable $server, string $username, string $password): string
