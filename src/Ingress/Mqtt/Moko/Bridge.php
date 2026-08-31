@@ -20,8 +20,14 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         'bracelet' => 'moko-w6b',
         'diaper_sensor' => 'monit-mecs-pro-ble',
     ];
-    // ponytail: uma pulseira aqui é sempre uma W6B, por isso um par W6 que se cale sai com
-    // o protocolo errado. Chave por modelo quando houver mais do que duas pulseiras.
+
+    /**
+     * As mensagens que trazem relatórios de scan, e não estado do próprio gateway.
+     *
+     * O 3070 é do MKGW3 (JSON); o 30a0 e o 30b2 são do MKGW4 (binário).
+     */
+    private const SCAN_MESSAGE_IDS = ['3070', '30a0', '30b2'];
+    // O modelo desempata as pulseiras: ver `relayedProtocol()`.
 
     /**
      * Quanto tempo um toque da W6 cala os que vierem depois. Um pouco mais do que os 30
@@ -141,7 +147,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $gateway = $this->enrich($gateway);
         $this->recordGateway($gateway, $decoded, $topic, $payload);
 
-        if (in_array((string)$decoded['messageId'], ['3070', '30a0', '30b2'], true) && is_array($decoded['data'])) {
+        if (in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true) && is_array($decoded['data'])) {
             foreach ($decoded['data'] as $observation) {
                 if (is_array($observation)) {
                     $this->handleObservation($gateway, $observation);
@@ -180,7 +186,17 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => $protocol, 'transport' => 'mqtt', 'online' => '1',
         ]);
-        $this->dashboardStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        // O histórico do gateway guarda as tramas do próprio gateway. Um relatório de scan
+        // descreve os dispositivos retransmitidos, e cada um desses já tem o seu histórico.
+        //
+        // Publicar continua a publicar tudo: quem integra pelo MQTT lê a série completa. O que
+        // não cabe é na lista da dashboard, que guarda 100 entradas -- em modo de reporte
+        // imediato chegam duas mensagens por segundo, e a janela caía para menos de um minuto.
+        // As tramas de estado, que trazem bateria e cobertura, eram despejadas em segundos e
+        // deixavam de aparecer de todo.
+        if (!in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true)) {
+            $this->dashboardStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
+        }
 
         foreach (($this->gatewayNormalizer ?? new GatewayNormalizer())->telemetry($decoded, $gateway) as $telemetry) {
             if (!$this->state->shouldPublish($deviceKey, (string)$telemetry['type'], $telemetry, $this->telemetryRefreshSeconds)) {
@@ -223,7 +239,67 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $w6 = ($this->w6Decoder ?? new W6Decoder())->decode($observation);
         if ($w6 !== null) {
             $this->handleW6Observation($gateway, $w6);
+            return;
         }
+
+        $this->recordUnclaimedSighting($gateway, $observation);
+    }
+
+    /**
+     * O sinal de um avistamento que nenhum decoder reclamou.
+     *
+     * O RSSI é medido pelo gateway e não vem no payload: existe na observação quer se saiba
+     * ler o que o dispositivo anunciou, quer não. Enquanto um avistamento só contou depois de
+     * um decoder o reclamar, cada frame que não sabíamos ler era uma amostra de proximidade
+     * deitada fora.
+     *
+     * A W6 é o caso que o mostra. Anuncia em seis slots e nós lemos dois -- o acelerómetro e
+     * os UID com o nosso namespace --, por isso o TLM e os UID de outra configuração caíam
+     * todos. Medido no gateway F1F7: a W6 aparecia 59 vezes em 60 segundos e rendia 10
+     * mensagens de proximidade, enquanto a W6B rendia 42 a partir de menos avistamentos.
+     *
+     * Só para dispositivos retransmitidos já registados e ligados a este gateway: um beacon
+     * qualquer que passe continua a não ser assunto nosso.
+     *
+     * @param array<string, mixed> $gateway @param array<string, mixed> $observation
+     */
+    private function recordUnclaimedSighting(array $gateway, array $observation): void
+    {
+        $mac = Topic::normalizeMac((string)($observation['mac'] ?? ''));
+        if ($mac === null || !is_numeric($observation['rssi'] ?? null)) {
+            return;
+        }
+
+        $known = $this->whitelist->resolve($mac);
+        $deviceType = (string)($known['deviceType'] ?? '');
+        if ($known === null || !isset(self::RELAYED_PROTOCOLS[$deviceType])) {
+            return;
+        }
+
+        $protocol = $this->relayedProtocol($known);
+        $device = $this->linkedDevice($gateway, $mac, $deviceType, $protocol);
+        if ($device === null) {
+            return;
+        }
+
+        $this->recordSignal($device, $gateway, $protocol, $observation['rssi']);
+    }
+
+    /**
+     * Como um dispositivo retransmitido reporta, quando não há observação de onde o ler.
+     *
+     * O tipo sozinho não chega: uma pulseira tanto é uma W6 como uma W6B, e o modelo é o que
+     * as separa.
+     *
+     * @param array<string, mixed> $device
+     */
+    private function relayedProtocol(array $device): string
+    {
+        if (strtoupper((string)($device['model'] ?? '')) === 'W6') {
+            return 'moko-w6';
+        }
+
+        return self::RELAYED_PROTOCOLS[(string)($device['deviceType'] ?? '')] ?? 'moko-gateway';
     }
 
     /**
@@ -456,7 +532,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->publishProximity(
                 $this->enrich($device),
                 $gateway,
-                self::RELAYED_PROTOCOLS[(string)($device['deviceType'] ?? '')] ?? 'moko-gateway',
+                $this->relayedProtocol($device),
                 ['state' => 'unknown', 'samples' => 0],
             );
         }
