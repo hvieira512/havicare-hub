@@ -32,13 +32,19 @@ ob_start();
         </div>
 
         <?= filter_group('Tipo', 'deviceTypeFilterCount', 'deviceTypeFilter', 'device-type-grid') ?>
-        <?php /* Os modelos vivem dentro do fornecedor a que pertencem, como as licenças
-               * dentro da empresa. Eram dois grupos, e o de baixo precisava de procura
-               * própria porque a lista de todos os modelos juntos era comprida; debaixo do
-               * fornecedor são poucos e a procura deixou de fazer falta. */ ?>
-        <?= filter_group('Fornecedor', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list') ?>
 
         <?= filter_group('Licença', 'deviceLicenseFilterCount', 'deviceLicenseFilter', 'filter-list') ?>
+
+        <?php /* "Modelo" e não "Fornecedor": o fornecedor é o agrupador, e o que se escolhe
+               * aqui é o modelo -- como no grupo acima, onde o cabeçalho diz "Licença" e a
+               * empresa é quem agrupa. Os `id` continuam a dizer `supplier` porque é o
+               * fornecedor que está no primeiro nível e é essa a chave do filtro.
+               *
+               * Os modelos vivem dentro do fornecedor a que pertencem. Eram dois grupos, e o
+               * de baixo precisava de procura própria porque a lista de todos os modelos
+               * juntos era comprida; debaixo do fornecedor são poucos e a procura deixou de
+               * fazer falta. */ ?>
+        <?= filter_group('Modelo', 'deviceSupplierFilterCount', 'deviceSupplierFilter', 'filter-list') ?>
     </aside>
 
     <section class="col-12 col-lg-8 p-3 device-list-column">
