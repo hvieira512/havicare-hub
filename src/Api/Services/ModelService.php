@@ -7,6 +7,8 @@ use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Http\ModelImageUrl;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Request\ModelWriteRequest;
+use Hub\Api\Request\RequestBinder;
 use Hub\Command\DeviceCommandCatalog;
 use Hub\Domain\DeviceProtocol;
 use Hub\Domain\DeviceMetadata;
@@ -25,16 +27,19 @@ class ModelService
     private CollectionQuery $query;
     private CollectionResponder $collection;
     private ModelImageUrl $imageUrl;
+    private RequestBinder $binder;
 
     public function __construct(
         private ApiDataAccess $db,
         ?CollectionQuery $query = null,
         ?CollectionResponder $collection = null,
         ?ModelImageUrl $imageUrl = null,
+        ?RequestBinder $binder = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
         $this->imageUrl = $imageUrl ?? new ModelImageUrl();
+        $this->binder = $binder ?? new RequestBinder();
     }
 
     public function list(string $query = '', string $baseUrl = ''): array
@@ -386,7 +391,10 @@ class ModelService
     }
 
     /**
-     * @return string|array<string, array<string, string>>|null
+     * O array é sempre um erro do `ApiError`, cuja forma passou a poder trazer o detalhe por
+     * campo além do código e da mensagem.
+     *
+     * @return string|array{error: array<string, mixed>}|null
      */
     public function storeModelImage(mixed $upload): string|array|null
     {
@@ -446,13 +454,18 @@ class ModelService
 
     private function modelFields(array $decoded, string $mode, ?int $modelId = null): array
     {
-        $supplierId = (int)($decoded['supplier_id'] ?? 0);
-        $internalModel = trim((string)($decoded['internalModel'] ?? $decoded['internal_model'] ?? ''));
-        $commercialName = trim((string)($decoded['commercialName'] ?? $decoded['commercial_name'] ?? ''));
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($decoded['deviceType'] ?? $decoded['device_type'] ?? 'watch'));
-        if ($supplierId <= 0 || $internalModel === '' || $commercialName === '') {
-            return ApiError::invalidRequest('supplier_id, internalModel, and commercialName are required')->toArray();
+        // O corpo chega em JSON ou em `multipart/form-data`, e por isso a conversão de
+        // escalares corre sempre: num corpo JSON não há strings onde se esperam inteiros e
+        // ela não toca em nada.
+        $request = $this->binder->bind(self::withCapabilityAliases($decoded), ModelWriteRequest::class, [], true);
+        if (is_array($request)) {
+            return $request;
         }
+
+        $supplierId = $request->supplierId;
+        $internalModel = trim($request->internalModel);
+        $commercialName = trim($request->commercialName);
+        $deviceType = DeviceMetadata::normalizeDeviceType($request->deviceType);
         $supplier = $this->db->suppliers->findById($supplierId);
         if ($supplier === null) {
             return ApiError::supplierNotFound()->toArray();
@@ -466,19 +479,8 @@ class ModelService
 
         $defaultFeatures = SupplierCapabilityTemplate::keysForSupplierDeviceType($supplierName, $deviceType);
         $defaultFeatureSet = array_flip($defaultFeatures);
-        $hasEnabledCapabilitiesSelection = array_key_exists('capabilitiesConfigured', $decoded)
-            || array_key_exists('capabilities', $decoded)
-            || array_key_exists('capabilities[]', $decoded)
-            || array_key_exists('enabledCapabilitiesConfigured', $decoded)
-            || array_key_exists('enabledCapabilities', $decoded)
-            || array_key_exists('enabledCapabilities[]', $decoded);
-        $enabledCapabilities = $this->featureValues(
-            $decoded['capabilities']
-            ?? $decoded['capabilities[]']
-            ?? $decoded['enabledCapabilities']
-            ?? $decoded['enabledCapabilities[]']
-            ?? null
-        );
+        $hasEnabledCapabilitiesSelection = $request->choseCapabilities();
+        $enabledCapabilities = $this->featureValues($request->capabilities);
         if (!$hasEnabledCapabilitiesSelection) {
             if ($mode === 'update' && $modelId !== null) {
                 $current = $this->db->models->findById($modelId);
@@ -500,14 +502,8 @@ class ModelService
             }
         }
 
-        $hasRequestableCapabilitiesSelection = array_key_exists('requestableCapabilitiesConfigured', $decoded)
-            || array_key_exists('requestableCapabilities', $decoded)
-            || array_key_exists('requestableCapabilities[]', $decoded);
-        $requestableCapabilities = $this->featureValues(
-            $decoded['requestableCapabilities']
-            ?? $decoded['requestableCapabilities[]']
-            ?? null
-        );
+        $hasRequestableCapabilitiesSelection = $request->choseRequestableCapabilities();
+        $requestableCapabilities = $this->featureValues($request->requestableCapabilities);
         if ($hasRequestableCapabilitiesSelection) {
             $enabledSet = array_fill_keys($enabledCapabilities, true);
             $requestableCatalog = array_fill_keys(
@@ -537,6 +533,34 @@ class ModelService
             'enabled_capabilities' => $capabilityIds,
             'requestable_capabilities' => $requestableCapabilityIds,
         ];
+    }
+
+    /**
+     * O `enabledCapabilities` é o nome antigo do `capabilities`, e continua a ser aceite.
+     *
+     * Fica aqui e não no `RequestBinder` porque é um sinónimo desta rota e de mais nenhuma.
+     * O binder trata do que é geral -- o `snake_case` e o sufixo `[]` de um formulário --, e
+     * um sinónimo de domínio no meio disso passava a valer para pedidos que nunca o tiveram.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private static function withCapabilityAliases(array $payload): array
+    {
+        foreach (
+            [
+            'enabledCapabilities' => 'capabilities',
+            'enabledCapabilities[]' => 'capabilities',
+            'enabledCapabilitiesConfigured' => 'capabilitiesConfigured',
+            ] as $alias => $canonical
+        ) {
+            if (array_key_exists($alias, $payload) && !array_key_exists($canonical, $payload)) {
+                $payload[$canonical] = $payload[$alias];
+            }
+            unset($payload[$alias]);
+        }
+
+        return $payload;
     }
 
     /**

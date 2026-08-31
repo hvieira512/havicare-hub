@@ -49,7 +49,7 @@ final class TenancyPaths
                 'post' => [
                     'tags' => ['API Users'],
                     'summary' => 'Create API user',
-                    'requestBody' => Requests::json('ApiUserWriteRequest'),
+                    'requestBody' => Requests::json('ApiUserCreateRequest'),
                     'responses' => Responses::map(
                         ['201' => Responses::json('API user created', 'IdCreateResponse')],
                         ...self::API_USER_WRITE_ERRORS,
@@ -61,7 +61,7 @@ final class TenancyPaths
                     'tags' => ['API Users'],
                     'summary' => 'Update API user',
                     'parameters' => [$id],
-                    'requestBody' => Requests::json('ApiUserWriteRequest'),
+                    'requestBody' => Requests::json('ApiUserUpdateRequest'),
                     'responses' => Responses::map(
                         ['200' => Responses::json('API user updated', 'StatusResponse')],
                         ...self::API_USER_WRITE_ERRORS,

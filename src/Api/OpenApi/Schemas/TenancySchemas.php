@@ -2,6 +2,9 @@
 
 namespace Hub\Api\OpenApi\Schemas;
 
+use Hub\Api\OpenApi\SchemaFromRequest;
+use Hub\Api\Request\ApiUserWriteRequest;
+
 /**
  * Utilizadores da API, empresas e licenças.
  */
@@ -31,17 +34,18 @@ final class TenancySchemas
                 ],
             ],
             'ApiUserListResponse' => CommonSchemas::collection('ApiUserItem'),
-            'ApiUserWriteRequest' => [
-                'type' => 'object',
-                'required' => ['username', 'role'],
-                'properties' => [
-                    'username' => ['type' => 'string', 'example' => 'tenant-1001'],
-                    'password' => ['type' => 'string', 'description' => 'Required on create; optional on update.'],
-                    'role' => ['type' => 'string', 'enum' => ['hub_admin', 'license_client'], 'example' => 'license_client'],
-                    'licenseRefId' => ['type' => 'integer', 'description' => 'Required for license_client; identifies one exact company/license row. Ignored for hub_admin.', 'example' => 1],
-                    'enabled' => ['type' => 'boolean', 'example' => true],
-                ],
-            ],
+            // Derivados do `ApiUserWriteRequest`, que é onde as regras vivem e correm. Este
+            // bloco era escrito à mão e já não dizia o mesmo que o serviço: declarava o
+            // `role` obrigatório, quando o serviço lhe dá `license_client` por omissão, e
+            // não mencionava o `licenseId` nem o `companyId`, que o serviço lê para
+            // encontrar a licença.
+            'ApiUserCreateRequest' => SchemaFromRequest::schema(
+                ApiUserWriteRequest::class,
+                [ApiUserWriteRequest::GROUP_CREATE],
+            ),
+            // O mesmo corpo sem o grupo `create`: a palavra-passe deixa de ser obrigatória,
+            // porque omiti-la a actualizar quer dizer "não mudar a palavra-passe".
+            'ApiUserUpdateRequest' => SchemaFromRequest::schema(ApiUserWriteRequest::class),
         ];
     }
 

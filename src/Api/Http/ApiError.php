@@ -86,9 +86,13 @@ final class ApiError
         'image_save_failed',
     ];
 
+    /**
+     * @param array<string, list<string>>|null $fields o erro campo a campo, quando o há
+     */
     private function __construct(
         public readonly string $code,
         public readonly string $message,
+        public readonly ?array $fields = null,
     ) {
     }
 
@@ -133,11 +137,52 @@ final class ApiError
     /**
      * A forma exacta que os serviços devolvem e que o `JsonResponder` serializa.
      *
-     * @return array{error: array{code: string, message: string}}
+     * O `fields` só aparece quando o erro tem detalhe por campo, para as respostas que
+     * sempre existiram não ganharem uma chave vazia.
+     *
+     * @return array{error: array{code: string, message: string, fields?: array<string, list<string>>}}
      */
     public function toArray(): array
     {
-        return ['error' => ['code' => $this->code, 'message' => $this->message]];
+        $error = ['code' => $this->code, 'message' => $this->message];
+        if ($this->fields !== null) {
+            $error['fields'] = $this->fields;
+        }
+
+        return ['error' => $error];
+    }
+
+    /**
+     * Um pedido recusado por um ou mais campos, cada um com as suas razões.
+     *
+     * **Muda a forma da resposta**, e é uma mudança que os clientes vêem: onde antes vinha
+     * `message` a nomear o primeiro campo que falhou -- `"username is required"` --, passa a
+     * vir uma mensagem genérica e o `fields` com todos. O `code` não muda, e continua a ser
+     * por ele que um cliente distingue o caso.
+     *
+     * @param array<string, list<string>> $fields
+     */
+    public static function invalidFields(array $fields): self
+    {
+        ksort($fields);
+
+        return new self('invalid_request', 'The request contains invalid fields', $fields);
+    }
+
+    /**
+     * Um erro com código próprio que também traz o detalhe por campo.
+     *
+     * É o que mantém o `invalid_role` a existir depois de a validação passar a ser por
+     * constraints: enquanto falha um campo só, o código é o que sempre foi e a `message` é a
+     * de sempre, e o `fields` vem por acréscimo para quem o quiser ler.
+     *
+     * @param array<string, list<string>> $fields
+     */
+    public static function withFields(string $code, string $message, array $fields): self
+    {
+        ksort($fields);
+
+        return new self($code, $message, $fields);
     }
 
     // Pedidos mal formados: a mensagem muda com o campo em falta, o código não.
