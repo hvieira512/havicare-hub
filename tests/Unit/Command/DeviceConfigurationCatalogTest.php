@@ -380,9 +380,6 @@ final class DeviceConfigurationCatalogTest extends TestCase
 
     public function testWonlexAdultHealthPayloadsUseDocumentedWireKeys(): void
     {
-        $binding = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'dnDevBindStatus', ['enabled' => true]);
-        self::assertSame(['status' => 1], $binding['payload']);
-
         $alarm = DeviceConfigurationCatalog::commandPayload('wonlex-json', 'alarmClock', [
             'items' => [['label' => 'Medicine', 'time' => '08:00', 'week' => '1111100', 'enabled' => true]],
         ]);

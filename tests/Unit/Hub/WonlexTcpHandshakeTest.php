@@ -95,7 +95,6 @@ final class WonlexTcpHandshakeTest extends TestCase
         self::assertIsArray($reply);
         self::assertSame('login', $reply['type']);
         self::assertSame('868705080300697', $reply['imei']);
-        self::assertSame(1, $reply['data']['bindStatus']);
         self::assertCount(1, $mqtt->statuses);
         self::assertCount(1, $mqtt->events);
         self::assertCount(1, $mqtt->raw);

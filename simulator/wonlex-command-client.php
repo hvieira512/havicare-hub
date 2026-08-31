@@ -282,7 +282,6 @@ function wonlexCommands(): array
         ['command' => 'SOSNumber', 'title' => 'Set SOS numbers', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['SOSNumber']],
         ['command' => 'dnUpSleep', 'title' => 'Send sleep data', 'kind' => 'data', 'risk' => 'normal', 'expectedReplyTypes' => ['dnUpSleep']],
         ['command' => 'dnMedicationPlan', 'title' => 'Set medication plan', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['dnMedicationPlan']],
-        ['command' => 'dnDevBindStatus', 'title' => 'Issue device binding status', 'kind' => 'config', 'risk' => 'normal', 'expectedReplyTypes' => ['dnDevBindStatus']],
         ['command' => 'findPhoneBillOrFlow', 'title' => 'Request phone bill or flow', 'kind' => 'request', 'risk' => 'normal', 'expectedReplyTypes' => []],
         ['command' => 'find', 'title' => 'Find device', 'kind' => 'control', 'risk' => 'normal', 'expectedReplyTypes' => ['find']],
         ['command' => 'reset', 'title' => 'Factory reset', 'kind' => 'control', 'risk' => 'high', 'expectedReplyTypes' => ['reset']],

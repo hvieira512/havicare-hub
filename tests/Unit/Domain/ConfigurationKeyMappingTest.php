@@ -38,10 +38,6 @@ final class ConfigurationKeyMappingTest extends TestCase
         // Mesmo caso: o `deviceConfig` é o envelope do bloco `configs` de sistema, e cada
         // definição dentro dele (`wonlexStepTarget`, `wonlexLowPower`, ...) tem a sua chave.
         'deviceConfig' => 'envelope json do comando; as sub-definições é que mapeiam',
-        // Vinculação do relógio. É um passo do handshake do `WonlexWatchProtocol`, não uma
-        // preferência do utilizador: quem a liga e desliga é o hub, não o separador das
-        // Capacidades.
-        'dnDevBindStatus' => 'passo do handshake da Wonlex, não é uma capacidade do utilizador',
     ];
 
     public function testEveryNativeConfigurationKeyMapsToAGenericCapabilityKey(): void

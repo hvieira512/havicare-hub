@@ -41,7 +41,6 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
                 'data' => [
                     'type' => 'login',
                     'imei' => $session->imei,
-                    'bindStatus' => (int)($state['bindStatus'] ?? 0),
                     'timestamp' => $timestamp,
                 ],
                 'timestamp' => $timestamp,
@@ -77,11 +76,6 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
         }
 
         $ident = $this->replyIdent($decoded['ident'] ?? null);
-        if ($type === 'upGetDevBindStatus') {
-            return [$this->downlink($session, 'dnDevBindStatus', [
-                'status' => (int)($state['bindStatus'] ?? 0),
-            ], $ident, $timestamp)];
-        }
         if ($type === 'upGetDevConfig') {
             return $this->configurationSyncResponses($session, $state['configurations'] ?? [], $ident, $timestamp);
         }
@@ -111,10 +105,7 @@ final class WonlexWatchProtocol extends AbstractWatchProtocol
     private function state(DeviceSession $session): array
     {
         if (!is_callable($this->stateProvider)) {
-            return [
-                'bindStatus' => $session->licenseId !== 0 && strtolower($session->company) !== 'null' ? 1 : 0,
-                'configurations' => [],
-            ];
+            return ['configurations' => []];
         }
 
         $state = ($this->stateProvider)($session);

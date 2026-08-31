@@ -42,7 +42,6 @@ final class WonlexConfigurationDefinitions
             $entry('familyNumber', 'familyNumber', 'Contactos familiares', 'contacts', ['contacts'], ['familyNumber'], 'contacts', 5, 10),
             $entry('SOSNumber', 'SOSNumber', 'Números SOS', 'list', ['numbers'], ['SOSNumber'], 'contacts', 10, 10),
             $entry('dnMedicationPlan', 'dnMedicationPlan', 'Plano de medicação', 'wonlexMedicationPlans', ['plans'], ['dnMedicationPlan'], 'health', 10),
-            $entry('dnDevBindStatus', 'dnDevBindStatus', 'Estado de vinculação', 'toggle', ['status'], ['dnDevBindStatus'], 'system', 20),
             $entry('resetCommand', 'reset', 'Reposição de fábrica', 'resetAction', [], ['reset'], 'system', 110, null, null, true),
             $entry('restartCommand', 'restart', 'Reiniciar dispositivo', 'resetAction', [], ['restart'], 'system', 120, null, null, true),
             $entry('powerOffCommand', 'powerOff', 'Desligar dispositivo', 'resetAction', [], ['powerOff'], 'system', 130, null, null, true),

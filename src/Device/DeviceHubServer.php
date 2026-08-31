@@ -593,12 +593,8 @@ class DeviceHubServer
 
     private function wonlexState(DeviceSession $session): array
     {
-        $configurations = $this->dashboardStore?->desiredConfigurations($session->imei) ?? [];
-        $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
-        $company = $this->currentCompany($session->imei, $session->company);
         $state = [
-            'bindStatus' => $licenseId !== 0 && strtolower($company) !== 'null' ? 1 : 0,
-            'configurations' => $configurations,
+            'configurations' => $this->dashboardStore?->desiredConfigurations($session->imei) ?? [],
         ];
         foreach ($this->dashboardStore?->recent($session->imei, 'telemetry') ?? [] as $event) {
             $type = (string)($event['type'] ?? '');

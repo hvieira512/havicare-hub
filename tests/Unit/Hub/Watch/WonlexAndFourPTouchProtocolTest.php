@@ -28,69 +28,12 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         self::assertSame('heartbeat', (new WonlexAdapter())->decodeIncoming($heartbeat->responses[0]->bytes)['type']);
     }
 
-    /**
-     * Um dispositivo precisa de empresa E de licença para contar como ligado. Só com a
-     * verificação da empresa, um `licenseId` comparado contra o tipo errado passava
-     * despercebido.
-     */
-    public function testWonlexLoginIsUnboundWhenACompanyHasNoLicense(): void
-    {
-        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
-        $session = new DeviceSession(
-            new WatchFakeConnection(),
-            'tcp',
-            true,
-            '868705080300697',
-            'wonlex-json',
-            'Wonlex',
-            'HW20PRO',
-            '',
-            'watch',
-            0,
-            'havicare'
-        );
-
-        $reply = $protocol->handleIncoming($session, $this->wonlexFrame(['type' => 'login', 'ident' => 100003]));
-
-        self::assertSame(
-            0,
-            (new WonlexAdapter())->decodeIncoming($reply->responses[0]->bytes)['data']['bindStatus']
-        );
-    }
-
-    public function testWonlexLoginUsesActualBindingState(): void
-    {
-        $protocol = new WonlexWatchProtocol(new WonlexAdapter(), new DeviceEventDecoder());
-        $unbound = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
-        $bound = new DeviceSession(
-            new WatchFakeConnection(),
-            'tcp',
-            true,
-            '868705080300697',
-            'wonlex-json',
-            'Wonlex',
-            'HW20PRO',
-            '',
-            'watch',
-            1001,
-            'hitcare'
-        );
-
-        $unboundReply = $protocol->handleIncoming($unbound, $this->wonlexFrame(['type' => 'login', 'ident' => 100001]));
-        $boundReply = $protocol->handleIncoming($bound, $this->wonlexFrame(['type' => 'login', 'ident' => 100002]));
-        $adapter = new WonlexAdapter();
-
-        self::assertSame(0, $adapter->decodeIncoming($unboundReply->responses[0]->bytes)['data']['bindStatus']);
-        self::assertSame(1, $adapter->decodeIncoming($boundReply->responses[0]->bytes)['data']['bindStatus']);
-    }
-
     public function testWonlexDeviceRequestsReceiveSpecificDownlinksWithSameIdent(): void
     {
         $protocol = new WonlexWatchProtocol(
             new WonlexAdapter(),
             new DeviceEventDecoder(),
             static fn(): array => [
-                'bindStatus' => 1,
                 'configurations' => [
                     ['command' => 'locationInterval', 'payload' => ['intervalTime' => 300]],
                     ['command' => 'deviceMeasuringFrequency', 'payload' => ['configs' => ['upHeartRate' => ['interval' => '60']]]],
@@ -106,12 +49,6 @@ final class WonlexAndFourPTouchProtocolTest extends TestCase
         );
         $session = new DeviceSession(new WatchFakeConnection(), 'tcp', true, '868705080300697', 'wonlex-json');
         $adapter = new WonlexAdapter();
-
-        $binding = $protocol->handleIncoming($session, $this->wonlexFrame([
-            'type' => 'upGetDevBindStatus', 'ident' => 123456, 'ref' => 'w:update',
-        ]));
-        self::assertSame('dnDevBindStatus', $adapter->decodeIncoming($binding->responses[0]->bytes)['type']);
-        self::assertSame(123456, $adapter->decodeIncoming($binding->responses[0]->bytes)['ident']);
 
         $config = $protocol->handleIncoming($session, $this->wonlexFrame([
             'type' => 'upGetDevConfig', 'ident' => 234567, 'ref' => 'w:update',

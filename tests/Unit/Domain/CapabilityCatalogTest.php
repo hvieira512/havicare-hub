@@ -110,7 +110,6 @@ final class CapabilityCatalogTest extends TestCase
         self::assertSame('Alerta de remoção do relógio', $definitions['remove_watch_alarm']['label']);
         self::assertSame('SMS de remoção do relógio', $definitions['remove_watch_sms_alert']['label']);
 
-        self::assertNull(CapabilityCatalog::mapConfigurationKey('dnDevBindStatus'));
         self::assertNull(CapabilityCatalog::mapConfigurationKey('deviceConfig'));
     }
 
