@@ -18,4 +18,41 @@
     <rule ref="PSR12">
         <exclude name="Generic.Files.LineLength"/>
     </rule>
+
+    <!--
+        Os 8 scripts do `simulator/` são pontos de entrada CLI: correm no topo do ficheiro e
+        alguns declaram uma classe de apoio a meio. Isso viola três regras de estrutura por
+        aquilo que são, não por estarem mal escritos, e eram elas que punham o `composer
+        style` a devolver 4 erros: o portão estava vermelho e ninguém reparava, porque
+        ninguém lia o código de saída.
+
+        É a mesma fronteira que o `phpstan.neon` já traça, e pela mesma razão. O que fica
+        de fora é só a estrutura: a indentação, as chavetas e os espaços continuam a ser
+        verificados nestes ficheiros como em todos os outros.
+    -->
+    <rule ref="PSR1.Files.SideEffects">
+        <exclude-pattern>simulator/*</exclude-pattern>
+        <!--
+            Os componentes do template são a mesma figura pelo outro lado: puxam os
+            auxiliares de que dependem e declaram a função que os desenha, no mesmo
+            ficheiro, porque é assim que um parcial se usa.
+        -->
+        <exclude-pattern>src/Dashboard/components/*</exclude-pattern>
+    </rule>
+    <rule ref="PSR1.Classes.ClassDeclaration">
+        <exclude-pattern>simulator/*</exclude-pattern>
+    </rule>
+    <rule ref="PSR12.Files.FileHeader">
+        <exclude-pattern>simulator/*</exclude-pattern>
+    </rule>
+
+    <!--
+        Um teste que declara o seu duplo ao lado do caso que o usa tem os dois à vista, e é
+        assim que 15 ficheiros de teste estão escritos. Exigir um ficheiro por classe aqui
+        espalhava cada duplo por um ficheiro só dele, longe do único teste que o usa, e era
+        o resto dos 15 erros que mantinham o `composer style` vermelho.
+    -->
+    <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
 </ruleset>

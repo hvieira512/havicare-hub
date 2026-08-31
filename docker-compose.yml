@@ -26,7 +26,8 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7-alpine
+    # A produção corre 8.2. O 7 aqui era mais velho do que aquilo que serve os clientes.
+    image: redis:8-alpine
     container_name: hitecosystem-redis
     ports:
       - "6379:6379"
@@ -37,6 +38,13 @@ services:
     restart: unless-stopped
 
   mysql:
+    # A produção corre MariaDB 10.11, não MySQL. Este serviço fica em MySQL porque o volume
+    # `mysql_data` já existe com dados escritos pelo MySQL e o MariaDB não os lê -- trocar a
+    # imagem aqui obriga a deitar fora a base local.
+    #
+    # A diferença de motor está coberta no CI (`.github/workflows/ci.yml`), que corre a suite
+    # de integração contra MariaDB 10.11. O esquema e as consultas não usam sintaxe exclusiva
+    # de nenhum dos dois, e é isso que o CI passa a provar a cada push em vez de se assumir.
     image: mysql:8.4
     container_name: hitecosystem-mysql
     environment:

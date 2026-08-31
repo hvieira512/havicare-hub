@@ -1,4 +1,6 @@
-FROM php:8.5-cli
+# A produção corre PHP 8.4. O contentor corria 8.5, e por isso o que passava aqui podia
+# falhar lá -- ou, pior, o contrário.
+FROM php:8.4-cli
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \

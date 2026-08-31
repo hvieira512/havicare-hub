@@ -822,7 +822,22 @@ npm run lint
 composer test
 ```
 
-`composer analyse` is intentionally an initial level-0 PHPStan gate over `src/` and `bin/`. Raise the level incrementally as legacy dynamic-array contracts acquire precise types.
+`composer analyse` runs PHPStan at level 4 over `src/` and `bin/`. Level 4 turns on the dead-code and impossible-condition rules, which is what catches an undeclared property or a branch that can never run; `phpstan.neon` documents each ignored identifier and why it is defensive style rather than a defect.
+
+`composer test` is the full gate and now runs everything CI runs, in the same order: `phpcs`, PHPStan, eslint, the unit suite, the integration suite, the frontend suite, and the end-to-end scenarios.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request to `main` and `dev`. It gates style, static analysis, and both PHP suites, plus the frontend lint and tests.
+
+Two deliberate choices there:
+
+- **The versions are production's, not the newest.** PHP 8.4 and MariaDB 10.11 are what the server runs. The PHP job also runs 8.5, which is what the dev container runs, so a difference between the two surfaces in CI instead of on the server.
+- **The integration job fails if it skips.** That suite ignores itself when MySQL is unreachable, and a green "skipped" is not a gate. The step greps for the skip and fails the build.
+
+The scenarios (`tests/scenarios/`) stay out of CI — they bring up the whole Compose stack including Mosquitto, which does not fit in the time budget of a push. Run them with `make test-scenarios`.
+
+The local Compose database stays on MySQL because the `mysql_data` volume already holds MySQL-written files that MariaDB will not read. The schema and every query in `src/` avoid syntax exclusive to either engine, and CI is what proves that on each push rather than leaving it assumed.
 
 ## Production deployment
 

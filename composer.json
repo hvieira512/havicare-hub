@@ -14,10 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Hub\\": [
-                "src/Hub/",
-                "src/"
-            ]
+            "Hub\\": "src/"
         }
     },
     "autoload-dev": {
@@ -41,8 +38,11 @@
         "style": "vendor/bin/phpcs src tests simulator bin",
         "style:fix": "vendor/bin/phpcbf src tests simulator bin",
         "test:scenarios": "tests/scenarios/run-all.sh",
+        "lint:frontend": "npm run lint",
         "test": [
+            "@style",
             "@analyse",
+            "@lint:frontend",
             "@test:unit",
             "@test:integration",
             "@test:frontend",

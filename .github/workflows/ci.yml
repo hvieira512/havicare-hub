@@ -1,0 +1,122 @@
+# O portão que faltava: o `composer test` existia e corria só quando alguém se lembrava.
+# Entre um commit mau e a produção não havia nada, porque o `make prod-update` faz
+# `git pull` e reinicia o serviço sem perguntar a ninguém.
+#
+# As versões aqui são as da produção, não as mais recentes: PHP 8.4 e MariaDB 10.11. O
+# compose local usava MySQL 8.4, e por isso a suite de integração nunca tinha corrido
+# contra o motor que serve os clientes.
+#
+# Os cenários (`tests/scenarios/`) ficam de fora: levantam a pilha inteira do compose com
+# mosquitto, e o que eles cobrem em ligação real não cabe no tempo de um push. Continuam a
+# correr à mão pelo `make test-scenarios`.
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  php:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.4 é a produção. 8.5 é o contentor de desenvolvimento -- as duas correm para a
+        # diferença aparecer aqui e não no servidor.
+        php: ['8.4', '8.5']
+
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root_pass
+          MARIADB_DATABASE: hitecosystem_hub
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, sockets, pcntl, pdo_mysql
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Code style
+        run: vendor/bin/phpcs src tests simulator bin
+
+      - name: Static analysis
+        run: php -d memory_limit=1G vendor/bin/phpstan analyse --no-progress
+
+      - name: Unit tests
+        run: vendor/bin/phpunit --testsuite unit
+
+      # O `ffmpeg` do apt traz AMR-NB, que é o que decide se o teste do áudio corre ou se
+      # ignora. Sem ele a suite continua verde, só que mais pequena.
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      # A suite ignora-se sozinha quando o MySQL ou o Redis não respondem, e um "skipped"
+      # verde não é um portão. Aqui exige-se a ligação antes de correr, em vez de se ler a
+      # saída do PHPUnit à procura da palavra: o teste do AMR-NB ignora-se por uma razão
+      # legítima, e um grep por "skipped" reprovava-o também.
+      - name: Assert services are reachable
+        run: |
+          php -r 'new PDO("mysql:host=127.0.0.1;port=3306", "root", "root_pass");' \
+            || { echo "::error::MariaDB não respondeu -- a suite de integração ignorar-se-ia em silêncio."; exit 1; }
+          php -r '$s=@fsockopen("127.0.0.1",6379,$e,$m,5); if(!$s){fwrite(STDERR,$m);exit(1);} fclose($s);' \
+            || { echo "::error::Redis não respondeu -- a suite de integração ignorar-se-ia em silêncio."; exit 1; }
+
+      - name: Integration tests
+        env:
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_PORT: 3306
+          TEST_DB_ADMIN_USER: root
+          TEST_DB_ADMIN_PASSWORD: root_pass
+          TEST_DB_CHARSET: utf8mb4
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+        run: vendor/bin/phpunit --testsuite integration
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
