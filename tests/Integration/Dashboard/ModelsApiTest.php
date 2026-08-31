@@ -318,6 +318,48 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
     }
 
+    /**
+     * O par fornecedor+modelo repetido é recusado com código próprio.
+     *
+     * A chave única `uq_models_supplier_internal_model` já o recusava na base, mas ninguém
+     * perguntava antes de inserir: a excepção do PDO subia até ao kernel e o cliente levava
+     * um 500 com `server_error` para uma recusa previsível. O actualizar sempre respondeu
+     * 409 pelo `existsForDifferentId()`; o criar não tinha equivalente.
+     */
+    public function testCreateRejectsADuplicateSupplierAndInternalModel(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $existing = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($existing);
+
+        $result = $api->create([
+            'supplier_id' => (int)$existing['supplier_id'],
+            'internalModel' => 'L08 Pro',
+            'commercialName' => 'Outro nome comercial qualquer',
+            'deviceType' => 'watch',
+        ]);
+
+        self::assertSame('model_exists', $result['error']['code'] ?? null);
+        self::assertSame(409, \Hub\Api\Http\ApiError::statusForCode((string)$result['error']['code']));
+    }
+
+    /** A comparação é a da chave única, que não distingue maiúsculas de minúsculas. */
+    public function testCreateRejectsADuplicateRegardlessOfCase(): void
+    {
+        [$api, $db] = $this->makeApi();
+        $existing = $db->models->find('Vivistar', 'L08 Pro');
+        self::assertIsArray($existing);
+
+        $result = $api->create([
+            'supplier_id' => (int)$existing['supplier_id'],
+            'internalModel' => 'l08 pro',
+            'commercialName' => 'Outro nome comercial qualquer',
+            'deviceType' => 'watch',
+        ]);
+
+        self::assertSame('model_exists', $result['error']['code'] ?? null);
+    }
+
     public function testUpdateWithoutExplicitCapabilitiesPreservesExistingCapabilities(): void
     {
         [$api, $db] = $this->makeApi();

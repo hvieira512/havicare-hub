@@ -14,13 +14,15 @@ final class CatalogPaths
 {
     /**
      * Os erros que o criar e o actualizar de um modelo partilham, porque partilham o
-     * `ModelService::modelFields()` e o `storeModelImage()` que os produzem.
+     * `ModelService::modelFields()` e o `storeModelImage()` que os produzem, mais o par
+     * fornecedor+modelo repetido que ambos recusam.
      *
      * @var list<string>
      */
     private const MODEL_WRITE_ERRORS = [
         'invalid_request',
         'supplier_not_found',
+        'model_exists',
         'unknown_protocol',
         'unsupported_capability',
         'invalid_requestable_capability',
@@ -130,7 +132,7 @@ final class CatalogPaths
                     'responses' => Responses::map(
                         ['200' => Responses::json('Model updated', 'StatusResponse')],
                         ...self::MODEL_WRITE_ERRORS,
-                        ...['model_not_found', 'model_exists'],
+                        ...['model_not_found'],
                     ),
                 ],
                 'delete' => [

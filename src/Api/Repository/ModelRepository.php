@@ -96,6 +96,16 @@ final class ModelRepository
         return $stmt->rowCount() > 0;
     }
 
+    /**
+     * O par que a chave única `uq_models_supplier_internal_model` protege.
+     *
+     * O criar não tem id para excluir da procura, e o `0` não é o de nenhuma linha.
+     */
+    public function exists(int $supplierId, string $internalModel): bool
+    {
+        return $this->existsForDifferentId(0, $supplierId, $internalModel);
+    }
+
     public function existsForDifferentId(int $id, int $supplierId, string $internalModel): bool
     {
         $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM models WHERE id != ? AND supplier_id = ? AND lower(internal_model) = lower(?)');
