@@ -24,11 +24,42 @@ export function isDeviceStreamLive() {
     return streamLive;
 }
 
+/**
+ * Um separador em segundo plano deixa de drenar o stream, e o servidor fica a encher buffer
+ * por ele -- foi assim que o processo em produção rebentou o limite de memória. O servidor
+ * passou a parar de escrever quando o cliente não drena; isto é o outro lado da mesma moeda:
+ * quem não está a ver não precisa de stream nenhum.
+ *
+ * Ao voltar, religa-se do zero, e a primeira coisa que o servidor manda é um `snapshot` --
+ * por isso não há buraco no histórico.
+ */
+function handleVisibilityChange() {
+    if (!currentImei) {
+        return;
+    }
+
+    if (document.hidden) {
+        closeDeviceStream();
+        return;
+    }
+
+    if (
+        document.body.dataset.dashboardAuthRequired === "true" &&
+        !window.hubDashboardApiToken?.access_token
+    ) {
+        return;
+    }
+
+    reconnectAttempt = 0;
+    connectDeviceStream(currentImei);
+}
+
 export function initDeviceStream(context) {
     state = context.state;
     onRenderSelection = context.renderSelection;
     onCommandsUpdated = context.onCommandsUpdated || (() => {});
     window.addEventListener("hub-dashboard-api-token-updated", handleTokenUpdated);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 }
 
 export function connectDeviceStream(imei) {

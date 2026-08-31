@@ -147,6 +147,53 @@ test("largar o dispositivo não deixa religação pendente", () => {
     assert.deepEqual(pending, [], "sem dispositivo escolhido não há nada a religar");
 });
 
+/** O `document.hidden` do jsdom é só de leitura, e por isso substitui-se a propriedade. */
+const setHidden = (hidden) => {
+    Object.defineProperty(document, "hidden", {
+        value: hidden,
+        configurable: true,
+    });
+    document.dispatchEvent(new window.Event("visibilitychange"));
+};
+
+test("esconder o separador fecha o stream", () => {
+    reset();
+    stream.connectDeviceStream("777");
+    FakeEventSource.instances[0].emit("open");
+    assert.equal(stream.isDeviceStreamLive(), true);
+
+    setHidden(true);
+
+    assert.equal(FakeEventSource.instances[0].closed, true, "o stream tem de fechar");
+    assert.equal(stream.isDeviceStreamLive(), false);
+    const pending = scheduled.filter((entry) => !entry.cancelled && !entry.done);
+    assert.deepEqual(pending, [], "esconder não é falhar: não se agenda religação");
+    setHidden(false);
+});
+
+test("voltar ao separador religa ao mesmo dispositivo", () => {
+    reset();
+    stream.connectDeviceStream("888");
+    FakeEventSource.instances[0].emit("open");
+    setHidden(true);
+    setHidden(false);
+
+    assert.equal(FakeEventSource.instances.length, 2, "abriu-se um stream novo");
+    assert.ok(
+        FakeEventSource.instances[1].url.includes("888"),
+        "religou-se ao mesmo dispositivo",
+    );
+});
+
+test("sem dispositivo escolhido a visibilidade não abre nada", () => {
+    reset();
+    setHidden(false);
+    assert.deepEqual(FakeEventSource.instances, []);
+    setHidden(true);
+    assert.deepEqual(FakeEventSource.instances, []);
+    setHidden(false);
+});
+
 test("sem credencial não se insiste", () => {
     reset();
     document.body.dataset.dashboardAuthRequired = "true";

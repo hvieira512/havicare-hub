@@ -56,8 +56,24 @@ final class DeviceController
         $stream = new ThroughStream();
         $lastPayload = null;
 
-        $send = function (string $event) use ($imei, $auth, $stream, &$lastPayload): void {
-            if (!$stream->isWritable()) {
+        // O cliente ainda não drenou o que já lhe foi escrito.
+        //
+        // Sem isto o processo morria, e morria em produção: um radar publica cerca de vinte
+        // mensagens por segundo, cada envio leva o `recent()` inteiro, e o `write()` aceita
+        // tudo o que lhe derem. Quando o cliente drena mais devagar do que o dispositivo
+        // produz -- um separador em segundo plano chega para isso --, o buffer do socket
+        // crescia sem tecto até rebentar o limite de memória do PHP, e levava com ele todas
+        // as ligações TCP e todas as subscrições MQTT do processo, para todos os clientes.
+        //
+        // O `write()` devolve `false` quando o consumidor pediu pausa. A partir daí não se
+        // escreve mais nada -- nem se lê o `recent()`, que é a parte cara -- até ao `drain`.
+        $blocked = false;
+        $stream->on('drain', static function () use (&$blocked): void {
+            $blocked = false;
+        });
+
+        $send = function (string $event) use ($imei, $auth, $stream, &$lastPayload, &$blocked): void {
+            if (!$stream->isWritable() || $blocked) {
                 return;
             }
 
@@ -70,12 +86,14 @@ final class DeviceController
             if ($payload === $lastPayload) {
                 // Nada mudou: mantém a ligação viva sem obrigar o cliente a redesenhar o
                 // mesmo histórico.
-                $stream->write(": keep-alive\n\n");
+                $blocked = $stream->write(": keep-alive\n\n") === false;
                 return;
             }
 
+            // O `false` do `write()` não quer dizer que o payload se perdeu: ficou aceite no
+            // buffer, e por isso o `lastPayload` acompanha-o na mesma.
             $lastPayload = $payload;
-            $stream->write("event: {$event}\ndata: {$payload}\n\n");
+            $blocked = $stream->write("event: {$event}\ndata: {$payload}\n\n") === false;
         };
 
         $loop->futureTick(static function () use ($send): void {

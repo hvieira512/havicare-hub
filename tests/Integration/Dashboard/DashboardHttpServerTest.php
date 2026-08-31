@@ -1215,6 +1215,80 @@ final class DashboardHttpServerTest extends MysqlDashboardTestCase
         self::assertSame(0, $store->updates()->listenerCount());
     }
 
+    /**
+     * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo.
+     *
+     * Isto derrubou a produção doze vezes em catorze dias: um radar publica cerca de vinte
+     * mensagens por segundo, cada envio leva o `recent()` inteiro, e escrevia-se sem olhar
+     * ao que o `write()` respondia. Com o cliente a drenar mais devagar do que o dispositivo
+     * produz, o buffer crescia até rebentar o limite de memória do PHP -- e o processo leva
+     * consigo as ligações TCP e as subscrições MQTT de toda a gente.
+     */
+    public function testAStreamStopsWritingWhileTheClientIsNotDrainingAndRecoversAfterwards(): void
+    {
+        [$server, , $store] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+
+        $response = $server(new ServerRequest(
+            'GET',
+            '/api/devices/861265061009822/stream?access_token=' . rawurlencode($token)
+        ));
+        self::assertSame(200, $response->getStatusCode());
+
+        $body = $response->getBody();
+        $writes = 0;
+        $body->on('data', static function () use (&$writes): void {
+            $writes++;
+        });
+
+        $loop = Loop::get();
+        $settle = static function (float $seconds) use ($loop): void {
+            $loop->addTimer($seconds, static function () use ($loop): void {
+                $loop->stop();
+            });
+            $loop->run();
+        };
+
+        // Deixa sair o snapshot inicial, que é o que o cliente recebe ao ligar-se.
+        $settle(0.1);
+        $afterSnapshot = $writes;
+        self::assertGreaterThan(0, $afterSnapshot, 'o snapshot inicial devia ter saído');
+
+        // O cliente pára de ler. É o que um separador em segundo plano faz.
+        $body->pause();
+
+        // A rajada tem de atravessar várias janelas de coalescência. Quarenta escritas de
+        // enfiada colapsam num envio só, e um envio só não distingue nada: o teste passava
+        // com e sem a correcção. Uma escrita por janela é que obriga o servidor a tentar
+        // enviar cinco vezes contra um cliente que não lê.
+        for ($round = 0; $round < 5; $round++) {
+            $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 60 + $round]);
+            // Um pouco acima do `DeviceController::STREAM_COALESCE_SECONDS`, que é 0.25.
+            $settle(0.3);
+        }
+
+        // Uma escrita descobre a pausa; a partir daí não se escreve mais nada.
+        self::assertSame(
+            $afterSnapshot + 1,
+            $writes,
+            'com o cliente em pausa só a escrita que descobre a pausa pode sair'
+        );
+
+        // E quando ele volta a ler, o stream volta a servir.
+        $body->resume();
+        $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 99]);
+        $settle(0.6);
+
+        self::assertGreaterThan(
+            $afterSnapshot + 1,
+            $writes,
+            'depois do drain o stream tem de voltar a escrever'
+        );
+
+        $body->close();
+        self::assertSame(0, $store->updates()->listenerCount());
+    }
+
     public function testTenantClientCanUseRecentRequestAndStreamRoutes(): void
     {
         [$server, $db, $store] = $this->makeServerWithDatabase();
