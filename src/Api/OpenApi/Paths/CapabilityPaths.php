@@ -39,10 +39,10 @@ final class CapabilityPaths
                     'tags' => ['Capabilities'],
                     'summary' => 'Get capability detail',
                     'parameters' => [Parameters::id('Capability ID')],
-                    'responses' => [
-                        '200' => Responses::json('Capability detail', 'CapabilityItem'),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Capability detail', 'CapabilityItem')],
+                        'capability_not_found',
+                    ),
                 ],
             ],
         ];
@@ -72,11 +72,11 @@ final class CapabilityPaths
                             'modelId' => ['type' => 'integer'],
                         ],
                     ]),
-                    'responses' => [
-                        '200' => Responses::json('Discovery draft', 'CapabilityDiscoveryRun'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Discovery draft', 'CapabilityDiscoveryRun')],
+                        'invalid_request',
+                        'model_not_found',
+                    ),
                 ],
             ],
             '/api/capability-discovery/{id}' => [
@@ -84,10 +84,10 @@ final class CapabilityPaths
                     'tags' => ['Discovery'],
                     'summary' => 'Get a discovery run',
                     'parameters' => [$runId],
-                    'responses' => [
-                        '200' => Responses::json('Discovery run', 'CapabilityDiscoveryRun'),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Discovery run', 'CapabilityDiscoveryRun')],
+                        'discovery_not_found',
+                    ),
                 ],
             ],
             '/api/capability-discovery/{id}/apply' => [
@@ -95,10 +95,13 @@ final class CapabilityPaths
                     'tags' => ['Discovery'],
                     'summary' => 'Apply a discovery draft to the model',
                     'parameters' => [$runId],
-                    'responses' => [
-                        '200' => Responses::json('Applied discovery run', 'CapabilityDiscoveryRun'),
-                        '404' => Responses::error(),
-                    ],
+                    // O `invalid_state` é a descoberta guardada sem o id do modelo a que
+                    // pertence: existe, e mesmo assim não há onde a aplicar.
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Applied discovery run', 'CapabilityDiscoveryRun')],
+                        'invalid_state',
+                        'discovery_not_found',
+                    ),
                 ],
             ],
         ];

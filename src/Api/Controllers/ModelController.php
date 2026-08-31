@@ -41,9 +41,17 @@ final class ModelController
         return $this->json->respond($result, $this->status->map($result));
     }
 
+    // O `statusMapper` estava injectado e só o `template()` o usava. Estas três respondiam
+    // sempre 200 -- também quando o corpo era um erro --, e por isso um modelo inexistente,
+    // um fornecedor inexistente ou um nome repetido chegavam ao cliente como sucesso. A
+    // dashboard não deu por isso porque olha para o `error` do corpo e só trata o 401 à
+    // parte; um cliente que olhe para o estado HTTP, que é o que a especificação lhe promete,
+    // via sempre sucesso.
     public function show(array $params, ServerRequestInterface $request): Response
     {
-        return $this->json->respond($this->service->show((int)$params['id'], RequestContext::baseUrl($request)));
+        $result = $this->service->show((int)$params['id'], RequestContext::baseUrl($request));
+
+        return $this->json->respond($result, $this->status->map($result));
     }
 
     /** O modelo chega em JSON ou em `multipart/form-data`, porque traz a imagem com ele. */
@@ -51,24 +59,31 @@ final class ModelController
     {
         $payload = RequestContext::formOrJsonBody($request);
         if ($payload === null) {
-            return $this->json->respond(ApiError::invalidJson()->toArray());
+            $invalid = ApiError::invalidJson()->toArray();
+
+            return $this->json->respond($invalid, $this->status->map($invalid));
         }
 
-        return $this->json->respond($this->service->create($payload, $request->getUploadedFiles()['image'] ?? null));
+        $result = $this->service->create($payload, $request->getUploadedFiles()['image'] ?? null);
+
+        return $this->json->respond($result, $this->status->map($result));
     }
 
     public function update(array $params, ServerRequestInterface $request): Response
     {
         $payload = RequestContext::formOrJsonBody($request);
         if ($payload === null) {
-            return $this->json->respond(ApiError::invalidJson()->toArray());
+            $invalid = ApiError::invalidJson()->toArray();
+
+            return $this->json->respond($invalid, $this->status->map($invalid));
         }
 
-        return $this->json->respond(
-            $this->service->update((int)$params['id'], $payload, $request->getUploadedFiles()['image'] ?? null)
-        );
+        $result = $this->service->update((int)$params['id'], $payload, $request->getUploadedFiles()['image'] ?? null);
+
+        return $this->json->respond($result, $this->status->map($result));
     }
 
+    /** O `delete` do serviço não devolve erros, e por isso não tem estado para mapear. */
     public function delete(array $params): Response
     {
         return $this->json->respond($this->service->delete((int)$params['id']));

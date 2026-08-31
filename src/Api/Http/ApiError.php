@@ -48,6 +48,41 @@ final class ApiError
         'duplicate' => 409,
     ];
 
+    /**
+     * Os códigos que respondem 400, que é o estado por omissão do mapa acima.
+     *
+     * Não é o mapa quem os serve -- o `statusForCode()` já lhes dá 400 sem os conhecer. Estão
+     * aqui para o conjunto de códigos ser *enumerável*: a especificação OpenAPI declara cada
+     * rota pelos códigos que ela devolve, e sem esta lista um código mal escrito caía no 400
+     * por omissão e a rota passava a prometer um estado que nunca envia -- exactamente o
+     * engano silencioso que o mapa acima veio acabar.
+     *
+     * @var list<string>
+     */
+    private const BAD_REQUEST_CODES = [
+        'invalid_request',
+        'invalid_config',
+        'invalid_link',
+        'invalid_state',
+        'unsupported_feature',
+        'unknown_protocol',
+        'device_already_associated',
+        'invalid_association',
+        'invalid_credentials',
+        'invalid_refresh_token',
+        'invalid_role',
+        'invalid_license',
+        'feature_not_requestable',
+        'unsupported_capability',
+        'invalid_requestable_capability',
+        'upload_failed',
+        'image_too_large',
+        'gd_missing',
+        'gd_jpeg_missing',
+        'invalid_image',
+        'image_save_failed',
+    ];
+
     private function __construct(
         public readonly string $code,
         public readonly string $message,
@@ -63,6 +98,33 @@ final class ApiError
     public static function statusForCode(string $code): int
     {
         return self::STATUS_BY_CODE[$code] ?? self::DEFAULT_STATUS;
+    }
+
+    /**
+     * Todos os códigos que a API sabe devolver.
+     *
+     * @return list<string>
+     */
+    public static function codes(): array
+    {
+        return [...array_keys(self::STATUS_BY_CODE), ...self::BAD_REQUEST_CODES];
+    }
+
+    /**
+     * Como o `statusForCode()`, mas recusa um código que não existe em vez de lhe dar 400.
+     *
+     * É o que a especificação usa. Ali um código enganado não pode cair no estado por
+     * omissão: ninguém o executa, e por isso o engano só apareceria num cliente gerado a
+     * partir de um documento que promete o estado errado. Aqui rebenta a montar o documento,
+     * que é a única altura em que alguém está a olhar.
+     */
+    public static function declaredStatus(string $code): int
+    {
+        if (!in_array($code, self::codes(), true)) {
+            throw new \InvalidArgumentException("Unknown API error code: {$code}");
+        }
+
+        return self::statusForCode($code);
     }
 
     /**
@@ -194,8 +256,9 @@ final class ApiError
     }
 
     /**
-     * O nome de empresa repetido responde 400 e não 409: o código nunca teve o sufixo que a
-     * inferência antiga procurava, e os clientes já contam com o 400.
+     * O nome de empresa repetido responde 409, como o `STATUS_BY_CODE` declara. Este bloco
+     * dizia 400, que era o estado que a inferência antiga lhe dava por engano; ficou para
+     * trás quando o mapa passou a decidir.
      */
     public static function duplicateCompany(): self
     {

@@ -12,6 +12,26 @@ use Hub\Domain\ProtocolRegistry;
  */
 final class CatalogPaths
 {
+    /**
+     * Os erros que o criar e o actualizar de um modelo partilham, porque partilham o
+     * `ModelService::modelFields()` e o `storeModelImage()` que os produzem.
+     *
+     * @var list<string>
+     */
+    private const MODEL_WRITE_ERRORS = [
+        'invalid_request',
+        'supplier_not_found',
+        'unknown_protocol',
+        'unsupported_capability',
+        'invalid_requestable_capability',
+        'upload_failed',
+        'image_too_large',
+        'gd_missing',
+        'gd_jpeg_missing',
+        'invalid_image',
+        'image_save_failed',
+    ];
+
     public static function paths(): array
     {
         return array_merge(
@@ -64,10 +84,10 @@ final class CatalogPaths
                     'tags' => ['Models'],
                     'summary' => 'Create model',
                     'requestBody' => Requests::multipartOrJson('ModelWriteRequest'),
-                    'responses' => [
-                        '200' => Responses::json('Model created', 'StatusResponse'),
-                        '400' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Model created', 'StatusResponse')],
+                        ...self::MODEL_WRITE_ERRORS,
+                    ),
                 ],
             ],
             '/api/models/template' => [
@@ -84,10 +104,12 @@ final class CatalogPaths
                         ],
                         Parameters::query('deviceType', ['type' => 'string', 'default' => 'watch', 'example' => 'watch']),
                     ],
-                    'responses' => [
-                        '200' => Responses::json('Supplier capability template', 'ModelTemplateResponse'),
-                        '400' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Supplier capability template', 'ModelTemplateResponse')],
+                        'invalid_request',
+                        'supplier_not_found',
+                        'unknown_protocol',
+                    ),
                 ],
             ],
             '/api/models/{id}' => [
@@ -95,21 +117,21 @@ final class CatalogPaths
                     'tags' => ['Models'],
                     'summary' => 'Get model detail',
                     'parameters' => [$id],
-                    'responses' => [
-                        '200' => Responses::json('Model detail', 'ModelItem'),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Model detail', 'ModelItem')],
+                        'model_not_found',
+                    ),
                 ],
                 'put' => [
                     'tags' => ['Models'],
                     'summary' => 'Update model',
                     'parameters' => [$id],
                     'requestBody' => Requests::multipartOrJson('ModelWriteRequest'),
-                    'responses' => [
-                        '200' => Responses::json('Model updated', 'StatusResponse'),
-                        '400' => Responses::error(),
-                        '409' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Model updated', 'StatusResponse')],
+                        ...self::MODEL_WRITE_ERRORS,
+                        ...['model_not_found', 'model_exists'],
+                    ),
                 ],
                 'delete' => [
                     'tags' => ['Models'],
@@ -166,13 +188,15 @@ final class CatalogPaths
                             'enum' => ProtocolRegistry::protocolsWithConfigCatalog(),
                         ]),
                     ],
-                    'responses' => [
-                        '200' => Responses::json(
-                            'Config catalog entries for the protocol',
-                            'ProtocolConfigCatalogResponse',
-                        ),
-                        '400' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        [
+                            '200' => Responses::json(
+                                'Config catalog entries for the protocol',
+                                'ProtocolConfigCatalogResponse',
+                            ),
+                        ],
+                        'protocol_not_found',
+                    ),
                 ],
             ],
             '/api/protocols' => [

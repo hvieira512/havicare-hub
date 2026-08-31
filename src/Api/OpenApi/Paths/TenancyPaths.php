@@ -11,6 +11,19 @@ use Hub\Api\OpenApi\Responses;
  */
 final class TenancyPaths
 {
+    /**
+     * Os erros que o criar e o actualizar de um utilizador partilham, porque partilham o
+     * `ApiUserService::fields()` que os produz, mais o nome repetido que ambos recusam.
+     *
+     * @var list<string>
+     */
+    private const API_USER_WRITE_ERRORS = [
+        'invalid_request',
+        'invalid_role',
+        'invalid_license',
+        'user_exists',
+    ];
+
     public static function paths(): array
     {
         return array_merge(self::apiUsers(), self::companies(), self::licenses());
@@ -37,11 +50,10 @@ final class TenancyPaths
                     'tags' => ['API Users'],
                     'summary' => 'Create API user',
                     'requestBody' => Requests::json('ApiUserWriteRequest'),
-                    'responses' => [
-                        '201' => Responses::json('API user created', 'IdCreateResponse'),
-                        '400' => Responses::error(),
-                        '409' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['201' => Responses::json('API user created', 'IdCreateResponse')],
+                        ...self::API_USER_WRITE_ERRORS,
+                    ),
                 ],
             ],
             '/api/users/{id}' => [
@@ -50,21 +62,20 @@ final class TenancyPaths
                     'summary' => 'Update API user',
                     'parameters' => [$id],
                     'requestBody' => Requests::json('ApiUserWriteRequest'),
-                    'responses' => [
-                        '200' => Responses::json('API user updated', 'StatusResponse'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
-                        '409' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('API user updated', 'StatusResponse')],
+                        ...self::API_USER_WRITE_ERRORS,
+                        ...['user_not_found'],
+                    ),
                 ],
                 'delete' => [
                     'tags' => ['API Users'],
                     'summary' => 'Delete API user',
                     'parameters' => [$id],
-                    'responses' => [
-                        '200' => Responses::json('API user deleted', 'StatusResponse'),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('API user deleted', 'StatusResponse')],
+                        'user_not_found',
+                    ),
                 ],
             ],
         ];
@@ -88,10 +99,14 @@ final class TenancyPaths
                     'tags' => ['Companies'],
                     'summary' => 'Create company',
                     'requestBody' => Requests::json('CompanyWriteRequest'),
-                    'responses' => [
-                        '200' => Responses::json('Company created', 'IdCreateResponse'),
-                        '400' => Responses::error(),
-                    ],
+                    // O 409 do nome repetido: o `duplicate` passou a 409 quando o
+                    // `STATUS_BY_CODE` deixou de o inferir do nome, e este bloco continuou a
+                    // prometer só 200 e 400. É o engano que o `Responses::map()` acaba.
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Company created', 'IdCreateResponse')],
+                        'invalid_request',
+                        'duplicate',
+                    ),
                 ],
             ],
             '/api/companies/{id}' => [
@@ -100,20 +115,20 @@ final class TenancyPaths
                     'summary' => 'Update company name',
                     'parameters' => [$id],
                     'requestBody' => Requests::json('CompanyWriteRequest'),
-                    'responses' => [
-                        '200' => Responses::json('Company updated', 'StatusResponse'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Company updated', 'StatusResponse')],
+                        'invalid_request',
+                        'company_not_found',
+                    ),
                 ],
                 'delete' => [
                     'tags' => ['Companies'],
                     'summary' => 'Delete company and its licenses',
                     'parameters' => [$id],
-                    'responses' => [
-                        '200' => Responses::json('Company deleted', 'StatusResponse'),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Company deleted', 'StatusResponse')],
+                        'company_not_found',
+                    ),
                 ],
             ],
         ];
@@ -139,10 +154,10 @@ final class TenancyPaths
                     'tags' => ['Licenses'],
                     'summary' => 'Create license',
                     'requestBody' => Requests::json('LicenseWriteRequest'),
-                    'responses' => [
-                        '200' => Responses::json('License created', 'IdCreateResponse'),
-                        '400' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('License created', 'IdCreateResponse')],
+                        'invalid_request',
+                    ),
                 ],
             ],
             '/api/licenses/{id}' => [
@@ -151,20 +166,21 @@ final class TenancyPaths
                     'summary' => 'Update license',
                     'parameters' => [$id],
                     'requestBody' => Requests::json('LicenseWriteRequest'),
-                    'responses' => [
-                        '200' => Responses::json('License updated', 'StatusResponse'),
-                        '400' => Responses::error(),
-                        '404' => Responses::error(),
-                    ],
+                    // Sem 400: o actualizar herda do que já lá está o que o pedido não
+                    // trouxer, e por isso não tem campo obrigatório para recusar.
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('License updated', 'StatusResponse')],
+                        'license_not_found',
+                    ),
                 ],
                 'delete' => [
                     'tags' => ['Licenses'],
                     'summary' => 'Delete license',
                     'parameters' => [$id],
-                    'responses' => [
-                        '200' => Responses::json('License deleted', 'StatusResponse'),
-                        '404' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('License deleted', 'StatusResponse')],
+                        'license_not_found',
+                    ),
                 ],
             ],
         ];

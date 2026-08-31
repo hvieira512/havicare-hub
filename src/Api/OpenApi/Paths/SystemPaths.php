@@ -33,6 +33,12 @@ final class SystemPaths
                         ],
                         'description' => 'Provide username and password for initial login, or refresh_token to issue a new token pair.',
                     ]),
+                    // A única rota cujos estados não saem do `Responses::map()`. O
+                    // `AuthController::login()` responde 401 a qualquer erro, e não o estado
+                    // que o código do erro declara -- um `invalid_request` por faltar a
+                    // password sai daqui como 401 e não como 400. Documenta-se o que a rota
+                    // faz, não o que faria se derivasse; mudar isso muda o que os clientes
+                    // recebem a autenticar-se, e é decisão à parte desta.
                     'responses' => [
                         '200' => Responses::json('Bearer and refresh tokens issued', 'AuthTokenResponse'),
                         '401' => Responses::error(),
@@ -68,10 +74,10 @@ final class SystemPaths
                     'tags' => ['Notifications'],
                     'summary' => 'Mark dashboard notifications as globally read',
                     'requestBody' => Requests::json('DashboardNotificationReadRequest'),
-                    'responses' => [
-                        '200' => Responses::json('Notifications marked read', 'DashboardNotificationReadResponse'),
-                        '400' => Responses::error(),
-                    ],
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Notifications marked read', 'DashboardNotificationReadResponse')],
+                        'invalid_request',
+                    ),
                 ],
             ],
             '/api/notifications/{id}' => [
@@ -81,10 +87,13 @@ final class SystemPaths
                     'parameters' => [
                         Parameters::pathSchema('id', ['type' => 'integer', 'minimum' => 1]),
                     ],
-                    'responses' => [
-                        '200' => Responses::json('Notification deleted', 'DashboardNotificationReadResponse'),
-                        '404' => Responses::error(),
-                    ],
+                    // O 400 é o id que não é um inteiro positivo, recusado antes de se ir
+                    // procurar a notificação.
+                    'responses' => Responses::map(
+                        ['200' => Responses::json('Notification deleted', 'DashboardNotificationReadResponse')],
+                        'invalid_request',
+                        'notification_not_found',
+                    ),
                 ],
             ],
         ];
