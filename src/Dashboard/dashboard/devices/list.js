@@ -36,12 +36,8 @@ import {
 import { connectDeviceStream, disconnectDeviceStream } from "./stream.js";
 
 /**
- * A coluna da esquerda: a lista de dispositivos, a sua paginação e busca, o modal de
- * escolher dispositivo, e o carregamento do que a lista precisa (modelos, fornecedores,
- * licenças, protocolos).
- *
- * Escolher uma linha é o que liga esta coluna à da direita, e por isso é daqui que se
- * chama o `detail.js`.
+ * A coluna da esquerda: a lista, a paginação, a busca e o modal de escolher dispositivo.
+ * Escolher uma linha é o que liga esta coluna à da direita, e daqui chama-se o `detail.js`.
  */
 let els;
 let ui;
@@ -168,11 +164,8 @@ async function ensureProtocolsLoaded(force = false) {
 }
 
 /**
- * O modal abre primeiro e enche-se quando a resposta chega: com o `show()` depois do
- * `await`, um `/api/devices` lento deixa o botão sem resposta e ainda clicável.
- *
- * O esqueleto só aparece quando não há nada para mostrar. Numa segunda abertura a lista
- * anterior fica à vista, marcada como ocupada, que diz mais do que caixas vazias.
+ * Abre primeiro e enche-se quando a resposta chega: com o `show()` depois do `await`, um
+ * pedido lento deixava o botão sem resposta. O esqueleto só aparece na primeira abertura.
  */
 async function openDeviceSelector() {
     ui.deviceSelectorModal?.show();
@@ -183,12 +176,8 @@ async function openDeviceSelector() {
 }
 
 /**
- * O esqueleto da lista e dos filtros. Cada linha é o cartão a sério -- as mesmas classes,
- * logo a mesma altura -- com barras no lugar do texto, para a lista não saltar quando os
- * dados chegam. São tantas quantas a página pode trazer, e a caixa corta as que não cabem.
- *
- * A `placeholder-wave` fica no contentor e não em cada linha, para ser uma passagem só
- * sobre a lista toda.
+ * O esqueleto da lista e dos filtros. Cada linha é o cartão a sério com barras no lugar do
+ * texto, para a lista não saltar quando os dados chegam.
  */
 function renderDeviceSelectorSkeleton() {
     const repeat = (count, markup) => Array.from({ length: count }, () => markup).join("");
@@ -239,9 +228,8 @@ function renderDeviceSelectorSummary() {
 }
 
 /**
- * Um dispositivo por linha, e a linha toda. Quem abre este modal quer reconhecer *um*
- * dispositivo, e reconhece-o pela foto, pelo estado e pelo IMEI -- esses três ficam à
- * esquerda, e a atribuição em campos de largura fixa à direita, na mesma abcissa.
+ * Um dispositivo por linha. A foto, o estado e o IMEI ficam à esquerda, e a atribuição em
+ * campos de largura fixa à direita, na mesma abcissa.
  */
 function renderDeviceCard(device) {
     return deviceCard(device, state.selectedImei === device.imei);
@@ -297,17 +285,9 @@ function filterOptionMarkup({ key, value, label, count, selected, partial = fals
 }
 
 /**
- * A árvore de fornecedores e modelos, com a forma da das empresas e licenças.
- *
- * Eram dois grupos separados, e o de baixo tinha uma caixa de procura própria porque a lista
- * de modelos de todos os fornecedores juntos ficava longa. Debaixo do fornecedor a que
- * pertencem são poucos de cada vez, e a procura deixa de fazer falta -- quem procura um
- * modelo sabe de que fornecedor é.
- *
- * A diferença para a das licenças é que aqui os dois níveis continuam a ser dois filtros
- * distintos, `supplier` e `model`: marcar o fornecedor filtra por fornecedor, marcar um
- * modelo filtra por modelo. Só o desenho é que é comum. Com o fornecedor marcado os modelos
- * dele mostram-se marcados, porque é isso que a lista mostra.
+ * A árvore de fornecedores e modelos, com a forma da das licenças. A diferença é que aqui os
+ * dois níveis continuam a ser dois filtros distintos, `supplier` e `model` -- só o desenho é
+ * que é comum.
  */
 function renderDeviceSupplierFilter() {
     const tree = state.summary.deviceFilterCounts?.supplierModels || { suppliers: [] };
@@ -361,11 +341,9 @@ function renderDeviceSupplierFilter() {
 }
 
 /**
- * A árvore de empresas e licenças. Marcar a empresa marca-a toda; marcar algumas licenças
- * deixa-a no traço do meio, que diz "esta empresa, mas não inteira".
- *
- * "Sem licença" é a primeira e é folha: é a única que não pertence a empresa nenhuma, e no
- * fim ficaria atrás de uma lista que pode crescer.
+ * A árvore de empresas e licenças. Marcar a empresa marca-a toda; marcar algumas deixa-a no
+ * traço do meio. O "sem licença" é a primeira e é folha, para não ficar atrás de uma lista
+ * que cresce.
  */
 function renderDeviceLicenseFilter() {
     const tree = state.summary.deviceFilterCounts?.license || { companies: [], none: 0 };
@@ -452,9 +430,8 @@ function renderDeviceFilterControls() {
 function renderDeviceFilterCounters() {
     const perGroup = {
         deviceType: state.deviceFilters.deviceType.length,
-        // O fornecedor e o modelo continuam a ser dois filtros, mas passaram a ser um só
-        // grupo no ecrã: a pastilha ao lado do título conta os dois, senão marcar um modelo
-        // estreitava a lista sem que nada o dissesse.
+        // Dois filtros num só grupo no ecrã: a pastilha conta os dois, senão marcar um
+        // modelo estreitava a lista sem que nada o dissesse.
         supplier:
             state.deviceFilters.supplier.length + state.deviceFilters.model.length,
         license: state.deviceFilters.license.length,
@@ -535,8 +512,7 @@ async function loadDevice(imei) {
     disconnectDeviceStream();
     setSelectedDetail(detail);
     resetDetailFiltersDraft();
-    // Os nomes das capacidades vêm do catálogo deste tipo de dispositivo, e carregam-se
-    // aqui porque este é o único sítio por onde entra um dispositivo novo: nos redesenhos
+    // Aqui porque é o único sítio por onde entra um dispositivo novo; nos redesenhos
     // seguintes a cache já está quente.
     await ensureCapabilityCatalog(detail.model?.deviceType || "watch");
     renderSelectionDetail();

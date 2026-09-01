@@ -38,13 +38,8 @@ export const state = {
         type: "all",
         q: "",
     },
-    // Listas e não valores: todos os filtros da listagem aceitam vários valores ao mesmo
-    // tempo. A licença guarda pares "empresa" ou "empresa:número", ou "none" para os
-    // dispositivos sem empresa nem licença -- as duas coisas são um filtro só, porque uma
-    // licença pertence a uma empresa e um dispositivo tem as duas ou nenhuma.
-    //
-    // O estado é o único de valor único: "ligados e desligados" é "todos", que já é a
-    // terceira opção, e por isso guarda-se como `null`, `true` ou `false`.
+    // Listas, porque os filtros aceitam vários valores. A licença guarda pares "empresa" ou
+    // "empresa:número", ou "none". O estado é o único de valor único.
     deviceFilters: {
         deviceType: [],
         supplier: [],
@@ -55,9 +50,7 @@ export const state = {
     deviceSearchQuery: "",
     selectedImei: null,
     selectedDetail: null,
-    // O catálogo de capacidades por tipo de dispositivo, com cache. Vive aqui e não no
-    // `settingsModal` porque a coluna de detalhe também o lê -- é dela que saem os nomes
-    // das capacidades nos cartões e na lista de eventos.
+    // Com cache, e aqui e não no `settingsModal` porque a coluna de detalhe também o lê.
     capabilityCatalogByType: {},
     deviceModal: {
         mode: "create",
@@ -132,24 +125,15 @@ export const state = {
     loadingCommands: new Set(),
     deviceListPage: 1,
     telemetryPage: 1,
-    // Doze e não dez: com os detalhes reduzidos ao que cada tipo declara, a maioria das
-    // linhas leva uma linha de texto, e cabem mais duas na mesma altura.
-    // O Redis guarda 100 entradas por lista, e as duas listas do painel juntas dão no máximo
-    // 200. A 12 por página isso são dezassete páginas -- mais botões do que cabem na coluna,
-    // e o paginador partia em duas linhas. A 15 são catorze páginas no pior caso, que ainda
-    // cabem numa linha só.
-    //
-    // Só se pode subir isto agora: a lista tem altura fixa e rola por dentro, portanto uma
-    // página maior já não estica o cartão. Antes, uma página maior era um cartão mais alto.
+    // O Redis guarda 100 entradas por lista, e as duas do painel dão 200 no pior caso. A 15
+    // são catorze páginas, que é o que o paginador consegue mostrar numa linha só.
     telemetryPageSize: 15,
     downlinkPage: 1,
     downlinkPageSize: 15,
 };
 
-// Selar é uma guarda contra gralhas, não uma tranca: com os módulos ES em modo estrito, um
-// `state.selectedDetial = x` passa a atirar em vez de criar caladamente uma chave nova que
-// mais ninguém lê. Não impede escrever num campo que já existe, nem toca nos objectos
-// aninhados -- o `state.deviceModal.imei` e companhia continuam a mudar como sempre.
+// Guarda contra gralhas, não uma tranca: um `state.selectedDetial = x` passa a atirar em vez
+// de criar uma chave nova que ninguém lê. Os objectos aninhados continuam a mudar.
 Object.seal(state);
 
 export function selectImei(imei) {
@@ -196,12 +180,8 @@ export function setSelectedDetail(detail) {
 }
 
 /**
- * Reler o registo do dispositivo não é reler o histórico.
- *
- * O `GET /api/devices/{imei}` devolve o estado de ligação, o modelo e a configuração, e não
- * devolve `recent` -- a telemetria, os eventos e os comandos chegam só pelo stream. Sem
- * guardar o `recent` de lado, cada releitura periódica limpava os painéis do detalhe até à
- * entrega seguinte. É por isso que isto vive aqui e não na raiz de composição.
+ * Reler o registo não é reler o histórico: o `GET /api/devices/{imei}` não devolve `recent`,
+ * e sem o guardar de lado cada releitura limpava os painéis do detalhe.
  */
 export function refreshSelectedDetail(detail) {
     const recent = state.selectedDetail?.recent ?? null;
@@ -215,10 +195,8 @@ export function setSelectedDetailRecent(recent) {
 }
 
 /**
- * A pré-visualização da imagem do modelo, com o revogar do URL anterior aqui dentro: um
- * object URL substituído sem ser revogado deixa o blob em memória até a página fechar, e o
- * par "revoga o velho, guarda o novo" esquece-se com facilidade se ficar em cada sítio que o
- * troca. Sem argumento, limpa.
+ * A pré-visualização da imagem do modelo. Revoga o URL anterior aqui dentro, senão o blob
+ * fica em memória até a página fechar. Sem argumento, limpa.
  */
 export function setModelPreviewObjectUrl(url = null) {
     if (state.modelPreviewObjectUrl) {
@@ -249,9 +227,8 @@ export function setDeviceFilters(filters) {
 }
 
 /**
- * O rascunho volta ao que está aplicado -- é o que aplicar, limpar e trocar de dispositivo
- * fazem. Cópia e não a mesma referência: partilhá-la fazia com que escrever no rascunho
- * aplicasse o filtro sem passar pelo botão.
+ * O rascunho volta ao que está aplicado. Cópia e não a mesma referência: partilhá-la fazia o
+ * filtro aplicar-se sem passar pelo botão.
  */
 export function resetDetailFiltersDraft() {
     state.detailFiltersDraft = { ...state.detailFilters };

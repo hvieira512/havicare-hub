@@ -150,13 +150,8 @@ const TELEMETRY_REQUEST_SYSTEM_FEATURES = new Set([
 ]);
 
 /**
- * Capacidades que existem, mas não como mosaico próprio: o `diaper_moisture_level` é o
- * índice 0-100 da humidade, e mostra-se como valor do cartão dos canais.
- */
-/**
- * Capacidades que o dispositivo tem mas que o mosaico de resumo não mostra: o resumo diz o
- * estado agora, e os dois agregados do radar são médias do último minuto. Continuam na
- * lista de eventos, onde a coluna do tempo lhes dá o sentido que um mosaico não dá.
+ * Capacidades sem mosaico próprio. O resumo diz o estado agora, e os agregados do radar são
+ * médias do último minuto -- continuam na lista de eventos, onde a hora lhes dá sentido.
  */
 const TELEMETRY_REQUEST_HIDDEN_FEATURES = new Set([
     "diaper_moisture_level",
@@ -525,21 +520,8 @@ function renderClientPager(prefix, totalRows, totalPages) {
 }
 
 /**
- * As duas listas de actividade são a mesma tabela de quatro colunas -- pastilha do ícone,
- * nome, valor e hora --, com substantivos diferentes. As larguras são fixas e iguais nas
- * duas (`main.css`, `.telemetry-table`), de propósito: lado a lado, têm de alinhar.
- *
- * Contrato de escape: `name`, `time` e os `*Title` entram como texto e saem escapados;
- * `value` e as duas segundas linhas entram como HTML já pronto, porque de um lado são texto
- * e do outro uma pastilha ou uma tira de pastilhas.
- */
-/**
- * As linhas abertas, por chave do registo e não por posição.
- *
- * Estas listas voltam a desenhar-se a cada mensagem do stream -- num radar é mais do que uma
- * vez por segundo --, e um índice não serve de memória: chega um evento novo, tudo desce uma
- * casa e a linha aberta passava a ser outra. A chave é a do evento, e por isso a linha que
- * está aberta continua aberta enquanto o histórico anda por baixo dela.
+ * As linhas abertas, por chave do registo e não por posição: a lista redesenha-se a cada
+ * mensagem do stream, e um índice apontaria para outra linha assim que chegasse um evento.
  */
 const openActivityRows = new Set();
 
@@ -547,11 +529,8 @@ const openActivityRows = new Set();
 const lastRenderedPage = new Map();
 
 function activityTable(rootEl, rows, emptyText, idPrefix, page = 1) {
-    // A lista rola por dentro: sem repor a posição, cada mensagem do stream e cada sondagem
-    // atiravam para o topo uma lista que estava a ser lida.
-    //
-    // Mudar de página é o contrário: aí quer-se o princípio da página nova, e não a altura a
-    // que se estava na anterior. Com páginas maiores do que a janela isto passou a notar-se.
+    // A lista rola por dentro e a posição repõe-se, senão cada mensagem do stream atirava
+    // para o topo uma lista que estava a ser lida. Mudar de página é o contrário.
     const mudouDePagina = lastRenderedPage.get(idPrefix) !== page;
     lastRenderedPage.set(idPrefix, page);
     const scrollTop = mudouDePagina ? 0 : rootEl.scrollTop;
@@ -563,12 +542,7 @@ function activityTable(rootEl, rows, emptyText, idPrefix, page = 1) {
     rootEl.scrollTop = scrollTop;
 }
 
-/**
- * Abre ou fecha a linha carregada, e guarda a decisão para o próximo desenho.
- *
- * Devolve `true` quando tratou do evento, para quem chama saber que não é um clique para
- * mais ninguém.
- */
+/** Abre ou fecha a linha carregada. Devolve `true` quando tratou do clique. */
 export function toggleActivityRow(event) {
     const row = event.target.closest("[data-row-toggle]");
     if (!row) {
@@ -599,17 +573,11 @@ export function toggleActivityRow(event) {
 }
 
 /**
- * Uma linha da lista de actividade, e -- quando há mais do que cabe -- a linha escondida que
- * a abre.
+ * Uma linha da lista de actividade, e a linha escondida que a abre.
  *
- * Todas as linhas medem o mesmo. Media-se 59px numas e 160px noutras, porque os detalhes de
- * um `minute_stats` são uma frase comprida que caía num contentor a embrulhar e ocupava seis
- * linhas. Com alturas assim uma página de doze linhas media 708px ou 1920px conforme os
- * tipos que lhe calhassem, e comparar duas páginas deixava de ser possível.
- *
- * Os detalhes cortam-se numa linha. O que fica de fora não se perde: a linha abre e mostra
- * tudo. Um `title` não servia -- o texto de um `minute_stats` é o conteúdo todo daquele
- * evento, e num telemóvel ou por teclado uma tooltip não existe.
+ * Todas medem o mesmo, e os detalhes cortam-se numa linha: sem isso a altura de uma página
+ * dependia dos tipos que lhe calhassem. O que fica de fora vê-se abrindo a linha, e não numa
+ * tooltip, que por teclado e em telemóvel não existe.
  */
 function activityRow({
     icon,
@@ -702,11 +670,8 @@ function telemetryActivityRow(payload) {
         // O que a linha aberta mostra. Só há o que abrir se houver detalhes: uma frequência
         // cardíaca é o valor e mais nada, e uma seta a dizer que há mais era uma mentira.
         expanded: detailText,
-        // O `seq` do `DeviceEventStore` é monótono por dispositivo e lista, e por isso serve
-        // de identidade estável enquanto o histórico anda. Sem ele, a hora e o tipo.
-        //
-        // O IMEI vai na chave porque o `seq` recomeça em cada dispositivo: sem ele, mudar de
-        // aparelho abria sozinha a linha que calhasse ter o mesmo número de ordem.
+        // O `seq` é monótono por dispositivo e lista. O IMEI vai na chave porque ele
+        // recomeça em cada aparelho.
         key: `t:${state.selectedImei}:${payload?.seq ?? `${at}:${type}`}`,
         time: whenShort(at) || "hora desconhecida",
         timeTitle: when(at),
@@ -723,9 +688,8 @@ function renderRequestCards(
         (count, group) => count + group.cards.length,
         0,
     );
-    // Tirado do histórico de eventos e não de uma capacidade, para aparecer exactamente
-    // quando o dispositivo pediu ajuda. Que modos de toque desenhar é um facto sobre o
-    // dispositivo, e por isso vem declarado pelo protocolo em vez de assumido aqui.
+    // Do histórico de eventos e não de uma capacidade, para aparecer quando o dispositivo
+    // pediu ajuda. Os modos de toque vêm declarados pelo protocolo.
     const helpCalls = helpCallSummaryCard(
         events,
         protocolHelpCallPressModes(state.selectedDetail?.model?.protocol || ""),
@@ -896,9 +860,8 @@ function renderConnectionTimeline(rows) {
     // secção fica escondida até haver o que desenhar.
     els.connectionSection.classList.toggle("d-none", events.length < 2);
 
-    // Redesenhar isto é deitar o gráfico abaixo e construir outro. Passa por aqui cada tecla
-    // da pesquisa, cada mensagem do stream e a sondagem dos 30 s: sem a série mudar, não há
-    // nada para fazer.
+    // Redesenhar é deitar o gráfico abaixo e construir outro, e isto passa por aqui a cada
+    // tecla e a cada mensagem do stream.
     const signature = events
         .map((event) => `${event.type}@${eventTime(event)}`)
         .join("|");
@@ -916,12 +879,8 @@ function renderConnectionTimeline(rows) {
 }
 
 /**
- * A série de ligações: uma linha do tempo com um ponto por evento, verde a ligar e vermelho
- * a desligar, e as duas pontas datadas por baixo.
- *
- * Era um gráfico de biblioteca com o eixo vertical escondido, o zoom desligado e um valor
- * fixo em y -- ou seja, um gráfico de pontos sobre um eixo de tempo. As cores saem das
- * variáveis do tema, para acompanhar o modo claro e o escuro.
+ * A série de ligações: um ponto por evento, verde a ligar e vermelho a desligar, com as duas
+ * pontas datadas. As cores saem das variáveis do tema, para seguir o modo claro e o escuro.
  */
 function connectionTimelineHtml(events) {
     const points = events

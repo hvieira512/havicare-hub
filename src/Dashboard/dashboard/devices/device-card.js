@@ -3,28 +3,11 @@ import { deviceLicenseHtml, onlineBadge } from "../widgets.js";
 import { deviceTypeLabel, normalizeDeviceType } from "../domain.js";
 
 /**
- * O cartão de um dispositivo: a marcação, o esqueleto que ocupa o seu lugar enquanto os
- * dados não chegam, e o nome da acção que ele emite.
+ * O cartão de um dispositivo: a marcação, o esqueleto e o nome da acção que emite. Estão
+ * juntos porque mudam juntos -- o esqueleto é o cartão com as mesmas classes.
  *
- * Está aqui e não a meio do `list.js` por causa da regra 4 do README. Um cartão estava
- * espalhado por quatro sítios -- a marcação numa função da lista, o estilo no CSS global, o
- * ouvinte no `wiring/`, e os dados no `state` --, e mudá-lo obrigava a abrir quatro
- * ficheiros sem que nada dissesse que os quatro pedaços eram a mesma coisa.
- *
- * O que se juntou foi o que se podia juntar sem pagar por isso:
- *
- * - A marcação e o esqueleto vêm para aqui, porque têm de mudar juntos: o esqueleto é o
- *   cartão com as mesmas classes e barras no lugar do texto, e é isso que impede a lista de
- *   saltar quando os dados chegam. Separados, um mudava sem o outro.
- * - O nome da acção passa a ser exportado, para o ouvinte delegado do `wiring/` não repetir
- *   a string que a marcação escreve.
- * - **O CSS fica onde está**, no bloco `.device-card*` do `assets/css/device.css`, marcado
- *   com um comentário que aponta para aqui. Sem passo de compilação, um ficheiro de estilo
- *   por widget é um pedido HTTP por widget -- foi por isso que a divisão do CSS parou em
- *   cinco ficheiros por área, e um ficheiro por cartão desfazia essa conta.
- *
- * O ouvinte continua delegado na raiz da lista, que é o padrão da casa: as opções são
- * redesenhadas a cada resposta, e um ouvinte por cartão obrigava a religá-los todos.
+ * O CSS fica no bloco `.device-card*` do `assets/css/device.css`, e o ouvinte fica delegado
+ * na raiz da lista: as opções redesenham-se a cada resposta.
  */
 
 /** O `data-action` que o cartão escreve, e que o ouvinte delegado procura. */
@@ -69,12 +52,8 @@ export function deviceCard(device, selected) {
 }
 
 /**
- * O esqueleto da lista: o cartão a sério, com as mesmas classes e portanto a mesma altura,
- * com barras no lugar do texto. São tantos quantos a página pode trazer, e a caixa corta os
- * que não cabem.
- *
- * A `placeholder-wave` fica no contentor e não em cada linha, para ser uma passagem só sobre
- * a lista toda.
+ * O cartão a sério com barras no lugar do texto, para a lista não saltar quando os dados
+ * chegam. A `placeholder-wave` fica no contentor, para ser uma passagem só.
  */
 export function deviceCardSkeletonList(pageSize) {
     const row = `

@@ -1,7 +1,3 @@
-// O `state` entrava aqui por injecção, e passou a entrar por import como em todos os outros
-// módulos. Enquanto as escritas passaram a ir pelos mutadores do módulo e a leitura ficou no
-// objecto injectado, eram o mesmo objecto em produção -- mas só por o `app.js` injectar o
-// verdadeiro. Um teste que injectasse outro lia de um e escrevia no outro.
 import { setSelectedDetailRecent, state } from "../state.js";
 import { getStreamTicket } from "../api/auth.js";
 
@@ -14,31 +10,22 @@ let reconnectTimer = null;
 let reconnectAttempt = 0;
 let connectGeneration = 0;
 
-// O `EventSource` religa-se sozinho enquanto fica em `CONNECTING`. O `CLOSED` é terminal, e
-// é esse que estes atrasos cobrem. O tecto de meio minuto existe para um servidor em baixo
-// não levar um pedido por segundo de cada dashboard aberta.
+// O `EventSource` religa-se sozinho em `CONNECTING`; estes atrasos cobrem o `CLOSED`, que é
+// terminal. O tecto evita que um servidor em baixo leve um pedido por segundo por dashboard.
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
 
 /**
- * Se o stream está a entregar.
- *
- * Importa saber porque este é o único caminho por onde o `recent` chega: o
- * `GET /api/devices/{imei}` devolve o dispositivo, o modelo e a configuração, e não a
- * telemetria, os eventos nem os comandos.
+ * Se o stream está a entregar. É o único caminho por onde o `recent` chega -- o
+ * `GET /api/devices/{imei}` não devolve telemetria, eventos nem comandos.
  */
 export function isDeviceStreamLive() {
     return streamLive;
 }
 
 /**
- * Um separador em segundo plano deixa de drenar o stream, e o servidor fica a encher buffer
- * por ele -- foi assim que o processo em produção rebentou o limite de memória. O servidor
- * passou a parar de escrever quando o cliente não drena; isto é o outro lado da mesma moeda:
- * quem não está a ver não precisa de stream nenhum.
- *
- * Ao voltar, religa-se do zero, e a primeira coisa que o servidor manda é um `snapshot` --
- * por isso não há buraco no histórico.
+ * Um separador em segundo plano não drena o stream e deixa o servidor a encher buffer. Ao
+ * voltar religa-se do zero, e o `snapshot` fecha o buraco no histórico.
  */
 function handleVisibilityChange() {
     if (!currentImei) {
@@ -75,9 +62,8 @@ export function connectDeviceStream(imei) {
         return;
     }
 
-    // Cada tentativa leva o seu número. Pedir o bilhete é uma ida ao servidor, e no meio dela
-    // o utilizador pode trocar de dispositivo, esconder o separador ou disparar uma
-    // religação: quando a resposta chega, só abre o stream quem ainda for a tentativa actual.
+    // Pedir o bilhete é uma ida ao servidor, e no meio dela pode trocar-se de dispositivo:
+    // só abre o stream quem ainda for a tentativa actual.
     connectGeneration += 1;
     void openStream(imei, connectGeneration);
 }
@@ -102,10 +88,6 @@ async function openStream(imei, generation) {
     eventSource.addEventListener("update", handleStreamUpdate);
     eventSource.onerror = function () {
         if (eventSource?.readyState === EventSource.CLOSED) {
-            // Antes desistia-se aqui, e o histórico do dispositivo ficava congelado até
-            // alguém trocar de dispositivo ou o token ser renovado: a sondagem de 30 em 30
-            // segundos preserva de propósito o `recent` que já tinha, e por isso não havia
-            // nada a ir buscar telemetria nova depois de o stream cair.
             closeDeviceStream();
             scheduleReconnect();
         }
@@ -131,10 +113,8 @@ function closeDeviceStream() {
 }
 
 /**
- * Volta a ligar com o atraso a crescer, e só enquanto houver dispositivo escolhido.
- *
- * Sem credencial não se tenta: o `hub-dashboard-api-token-updated` liga quando ela chegar, e
- * insistir aqui só produzia 401 em série.
+ * Volta a ligar com o atraso a crescer, e só com dispositivo escolhido. Sem credencial não
+ * se tenta -- o `hub-dashboard-api-token-updated` liga quando ela chegar.
  */
 function scheduleReconnect() {
     if (!currentImei || reconnectTimer !== null) {
@@ -158,10 +138,8 @@ function scheduleReconnect() {
 }
 
 /**
- * O bilhete que abre o stream, ou vazio quando não há autenticação a fazer.
- *
- * Uma falha aqui não trava a ligação: sem bilhete o pedido segue e o servidor responde 401,
- * e o caminho de religação já sabe lidar com isso. Insistir aqui era duplicar essa lógica.
+ * O bilhete que abre o stream, ou vazio quando não há autenticação. Uma falha aqui não trava
+ * a ligação: o pedido segue, o servidor responde 401, e a religação trata do resto.
  */
 async function streamTicket() {
     if (
@@ -200,15 +178,10 @@ function handleTokenUpdated() {
 }
 
 /**
- * Junta o que chegou ao que já cá estava.
+ * Junta o que chegou ao que já cá estava. O `snapshot` substitui; as actualizações trazem só
+ * o que é novo e empilham-se à frente, com a lista aparada ao limite do servidor.
  *
- * O `snapshot` traz o histórico todo e substitui. As actualizações trazem só o que entrou
- * desde a última -- é isso que faz um radar custar umas linhas em vez das duzentas entradas
- * de cada vez --, e por isso empilham-se à frente, que é onde as mais recentes vivem. A lista
- * apara-se ao limite que o servidor diz guardar, para o cliente não crescer sem fim.
- *
- * Os comandos vêm sempre por inteiro: mudam de estado, e uma entrada que muda não se manda
- * por diferenças.
+ * Os comandos vêm sempre por inteiro: mudam de estado, e isso não se manda por diferenças.
  */
 function mergeRecent(previous, data, isSnapshot) {
     const limit = Number(data.limit) > 0 ? Number(data.limit) : 100;

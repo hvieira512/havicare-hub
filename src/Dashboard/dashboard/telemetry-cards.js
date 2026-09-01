@@ -30,14 +30,8 @@ const COMMAND_FEATURE_RULES = [
 ];
 
 /**
- * O ícone e a cor de cada capacidade, numa tabela só: `[ícone, tom]`.
- *
- * Eram três tabelas paralelas -- tom, ícone, e outra vez o ícone dentro de cada
- * renderizador --, sem um único desacordo entre elas e sem nada que apanhasse o dia em que
- * houvesse. O nome vem do catálogo, pelo `capabilityLabel`, e não daqui.
- *
- * O tom fica no frontend de propósito: uma cor é uma escolha de apresentação, e o
- * vocabulário é o do CSS (`telemetry-card-tone-*`).
+ * O ícone e a cor de cada capacidade: `[ícone, tom]`. O nome vem do catálogo, pelo
+ * `capabilityLabel`; o tom fica aqui porque uma cor é escolha de apresentação.
  */
 const CARD_STYLE = {
     positions: ["fa-location-crosshairs", "info"],
@@ -82,10 +76,8 @@ const UPLINK_CARD_RENDERERS = {
     presence: (data) => ({
         value: presenceValue(data),
         details: presenceDetails(data),
-        // A única que devolve pastilhas em vez de texto. Quem desenha a linha precisa de
-        // saber a diferença: o texto corta-se numa linha com reticências, e as pastilhas não
-        // se cortam a meio -- já vêm limitadas pelo `PRESENCE_CHIP_LIMIT`, com um `+N` a
-        // dizer quantas ficaram de fora.
+        // A única que devolve pastilhas em vez de texto: o texto corta-se com reticências, e
+        // estas já vêm limitadas pelo `PRESENCE_CHIP_LIMIT`.
         detailsKind: "chips",
         detailsTitle: presenceDetailsTitle(data),
     }),
@@ -364,10 +356,8 @@ export function requestCardContent(type) {
 }
 
 /**
- * `meta` é o que se sabe sobre a leitura e não está dentro dela: por agora, quando chegou.
- *
- * O ícone vem da tabela e o renderizador só o escreve quando é diferente -- o da ligação,
- * que depende da interface, e os seis tipos de evento que não são capacidades.
+ * `meta` é o que se sabe sobre a leitura e não está dentro dela: por agora, quando chegou. O
+ * ícone vem da tabela, e o renderizador só o escreve quando é diferente.
  */
 export function uplinkCardContent(type, data, meta = {}) {
     const rendered = UPLINK_CARD_RENDERERS[type]?.(data, meta) || {
@@ -380,11 +370,7 @@ export function uplinkCardContent(type, data, meta = {}) {
 
 // Uma pulseira W6B diz que tipo de toque foi; um pager NCS não.
 
-/**
- * Quando o protocolo não declara os seus modos. Que modos um dispositivo consegue emitir é
- * um facto sobre o dispositivo, e vem do registry de protocolos no backend -- este cartão
- * desenha os que lhe derem.
- */
+/** Os modos que um dispositivo emite vêm do backend; este cartão desenha os que lhe derem. */
 function helpCallContent(data) {
     const base = ncsPagerContent("help_call");
     const pressType = PRESS_TYPE_LABEL[String(data?.pressType || "")];
@@ -541,10 +527,8 @@ function batteryDetails(data) {
 }
 
 /**
- * As coordenadas de uma leitura de localização, ou null quando não há posição.
- *
- * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos mais antigos do
- * histórico do Redis. O par 0,0 é a forma que os protocolos usam para dizer "sem fixo".
+ * Lê o `lat`/`lon` e não o `hasCoordinates`, que falta nos eventos antigos do Redis. O par
+ * 0,0 é como os protocolos dizem "sem fixo".
  */
 function locationCoordinates(data) {
     const lat = Number(data?.lat);
@@ -580,11 +564,8 @@ function locationAccuracy(data) {
 }
 
 /**
- * A prova de rádio que a leitura trazia, para quando não resultou em posição: é a
- * quantidade de evidência que explica porque é que um fixo resolve e o seguinte não.
- *
- * Sem antenas nem redes é outra falha, e não a mesma mais fraca: o aparelho reportou e não
- * viu nada, o que aponta para ele e não para a cobertura.
+ * A prova de rádio de uma leitura que não deu posição. Sem antenas nem redes é outra falha:
+ * o aparelho reportou e não viu nada, o que aponta para ele e não para a cobertura.
  */
 function locationRadioEvidence(data) {
     const cells = Array.isArray(data?.baseStations)
@@ -604,10 +585,8 @@ function locationRadioEvidence(data) {
 }
 
 /**
- * Com posição, como e com que precisão; sem posição, com que evidência se tentou.
- *
- * A idade vem do `meta` e não do payload, e é por isso que só aparece no mosaico: na lista
- * cronológica a hora do evento já tem coluna própria.
+ * Com posição, como e com que precisão; sem posição, com que evidência se tentou. A idade só
+ * aparece no mosaico -- na lista cronológica a hora já tem coluna.
  */
 function locationDetails(data, meta = {}) {
     const parts = locationCoordinates(data)
@@ -634,9 +613,8 @@ function presenceValue(data) {
 }
 
 /**
- * O ícone diz a categoria -- cama, cadeira, pessoa, aviso -- e o tom diz a gravidade:
- * verde é estar bem, azul repouso, amarelo suspeita, vermelho confirmação, cinzento não
- * saber. A etiqueta vive no `FIELD_VALUE_LABELS.posture` do `format.js`.
+ * O ícone diz a categoria e o tom a gravidade. A etiqueta vive no
+ * `FIELD_VALUE_LABELS.posture` do `format.js`.
  */
 const POSTURE_STYLE = {
     standing: { icon: "fa-person", tone: "success" },
@@ -659,9 +637,8 @@ const CHIP_CLASS =
     "badge rounded-pill fw-normal d-inline-flex align-items-center gap-1";
 
 /**
- * Uma postura como pastilha. A enumeração vem do payload e vai parar a um atributo `class`,
- * por isso tem de sair escapada -- o detalhe é injectado sem escapar, e um estado novo do
- * firmware não pode escrever atributos.
+ * Uma postura como pastilha. A enumeração vem do payload e vai parar a um `class`, por isso
+ * sai escapada: um estado novo do firmware não pode escrever atributos.
  */
 function postureChip(posture) {
     const style = POSTURE_STYLE[String(posture)] || POSTURE_STYLE.unknown;
@@ -829,9 +806,8 @@ export function renderRequestCardShell(
         )
         .sort((a, b) => eventTime(b) - eventTime(a));
 
-    // A mais recente que serve, quando "servir" é mais do que ter chegado: um relatório de
-    // localização sem posição apagaria o fixo bom de dois minutos antes. Quando nenhuma
-    // serve fica a última mesmo assim, porque a hora e a prova de rádio são o que há.
+    // A mais recente que serve: um relatório de localização sem posição apagaria o fixo bom
+    // de dois minutos antes. Sem nenhuma que sirva, fica a última.
     const usable = USABLE_PAYLOAD[type];
     const pickOfType = (wanted) => {
         const ofType = payloads.filter(
@@ -959,11 +935,8 @@ function detectionValue(data) {
 }
 
 /**
- * O grau é o que separa um aviso de um perigo, e vem do hub já em português.
- *
- * Escapado: isto é um `details`, e os `details` são injectados sem escapar pelo cartão e pela
- * linha da lista. O `detectionLevel` vem no payload do radar e chega à base de dados pelo
- * MQTT sem passar por ninguém -- sem o `html` aqui, um grau inventado escrevia marcação.
+ * O grau separa um aviso de um perigo, e vem do hub já em português. Escapado: os `details`
+ * são injectados sem escapar, e o `detectionLevel` vem do radar sem passar por ninguém.
  */
 function detectionDetails(data) {
     const level = String(data?.detectionLevel || "");
