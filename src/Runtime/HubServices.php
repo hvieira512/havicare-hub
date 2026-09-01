@@ -50,7 +50,10 @@ final class HubServices
     {
         $database = CliBootstrap::database($config);
         $dataAccess = ApiDataAccess::fromDatabase($database);
-        $redis = new RedisClient(self::redisParameters($config['redis']));
+        $redis = new RedisClient(
+            self::redisParameters($config['redis']),
+            self::redisOptions($config['redis']),
+        );
 
         $whitelistFile = trim((string)$config['hub']['whitelist_file']);
         $whitelist = new Whitelist($whitelistFile !== '' ? $whitelistFile : null, $dataAccess->whitelist);
@@ -115,5 +118,31 @@ final class HubServices
         }
 
         return $parameters;
+    }
+
+    /**
+     * O prefixo vai no cliente e não em cada store.
+     *
+     * Os seis espaços de chaves do hub -- `hub:dashboard`, `hub:api-tokens`, `hub:downlink`,
+     * `hub:moko` e os dois de localização -- recebem o prefixo por igual, e qualquer store
+     * que venha a existir recebe-o também sem ninguém se lembrar disso. Passá-lo aos
+     * construtores obrigava seis sítios a não esquecer, e o sétimo esquecia.
+     *
+     * Só o comandos de chave é que o hub usa -- não há `SCAN`, `KEYS`, `EVAL` nem pub/sub em
+     * Redis, e o `DeviceUpdateNotifier` anuncia dentro do processo --, e por isso o
+     * processador de prefixos do Predis cobre tudo o que aqui se faz.
+     *
+     * Vazio não se declara: um `prefix` a vazio é uma opção que o Predis passa a processar
+     * para nada acrescentar.
+     *
+     * @param array<string, mixed> $redisConfig a secção `redis` da configuração
+     *
+     * @return array<string, mixed>
+     */
+    public static function redisOptions(array $redisConfig): array
+    {
+        $prefix = trim((string)($redisConfig['prefix'] ?? ''));
+
+        return $prefix === '' ? [] : ['prefix' => $prefix];
     }
 }
