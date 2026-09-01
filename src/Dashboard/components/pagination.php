@@ -7,16 +7,11 @@ require_once __DIR__ . '/helpers.php';
 /**
  * O paginador partilhado por todas as listagens.
  *
- * `$spacing` existe porque o mesmo componente aparece com folgas opostas: por baixo de uma
- * lista quer margem em cima, por cima dela quer margem em baixo.
+ * `$spacing` porque o componente aparece com folgas opostas conforme esteja acima ou abaixo
+ * da lista. `$withSummary` porque o "1–12 de 100" só diz alguma coisa onde mais nada o diga --
+ * nos painéis do dispositivo o total já está numa pastilha ao lado do título.
  *
- * `$withSummary` porque o "1–12 de 100" só diz alguma coisa onde mais nada o diga. Nos dois
- * painéis do dispositivo e no modal de escolha o total já está numa pastilha ao lado do
- * título, e repeti-lo era escrever o mesmo número duas vezes no mesmo ecrã. Nas listas das
- * definições não há outra contagem, e por isso lá fica.
- *
- * Sem resumo o paginador centra-se, porque passa a ser a única coisa na linha; com resumo
- * mantém-se o par "texto à esquerda, controlos à direita".
+ * Sem resumo o paginador centra-se, por ser a única coisa na linha.
  */
 function pagination_component(
     string $idPrefix,

@@ -19,15 +19,10 @@ final class BearerTokenResolver
 
         parse_str((string)$request->getUri()->getQuery(), $params);
 
-        // O `EventSource` não deixa pôr cabeçalhos, e por isso a credencial de um stream tem
-        // de vir no URL. O bilhete existe para que o que ali vai valha segundos e uma ligação
-        // só, em vez de ser o token de acesso de uma hora -- um URL fica escrito no registo
-        // de qualquer proxy pelo caminho e no histórico do browser.
-        //
-        // O `access_token` também já era aceite aqui, e saiu: nada o punha num URL -- nem a
-        // dashboard, nem o simulador, nem os cenários --, e não estava documentado como
-        // parâmetro. Enquanto existisse, era o último caminho por onde uma credencial de uma
-        // hora, boa para a API toda, podia viajar num endereço. O bilhete é o único que fica.
+        // O `EventSource` não deixa pôr cabeçalhos, e a credencial de um stream tem de vir no
+        // URL -- onde fica no registo de qualquer proxy e no histórico do browser. O bilhete
+        // vale segundos e uma ligação só, e é o único parâmetro aceite: o token de acesso
+        // vale uma hora e serve a API toda.
         $ticket = trim((string)($params['ticket'] ?? ''));
         if ($ticket === '') {
             return null;

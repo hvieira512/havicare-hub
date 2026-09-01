@@ -5,12 +5,9 @@ namespace Hub\Domain;
 final class ProtocolRegistry
 {
     /**
-     * Os metadados canónicos de cada protocolo.
-     *
-     * O que a dashboard precisa para desenhar os campos -- etiquetas, comprimentos máximos
-     * e modos de toque -- vive no `Hub\Api\Http\ProtocolDashboardMeta`, e não aqui: são
-     * decisões sobre formulários, e esta camada não devia depender de quem os desenha. É o
-     * `ProtocolService` que junta as duas coisas na resposta, que não muda de forma.
+     * Os metadados canónicos de cada protocolo. O que a dashboard precisa para desenhar os
+     * campos vive no `Api\Http\ProtocolDashboardMeta`, porque são decisões sobre formulários
+     * e esta camada não deve depender de quem os desenha.
      *
      * @return array<string, array{
      *     label: string,

@@ -143,14 +143,10 @@ class Config
                 'host' => getenv('REDIS_HOST') ?: '127.0.0.1',
                 'port' => (int)(getenv('REDIS_PORT') ?: 6379),
                 'password' => getenv('REDIS_PASSWORD') ?: '',
-                // O que se antepõe a **todas** as chaves deste hub. Vazio em produção, que é
-                // o que mantém as chaves onde sempre estiveram.
-                //
-                // Existe para uma segunda instância poder correr contra o mesmo Redis sem
-                // pisar a primeira. As chaves do hub vivem sob `hub:`, e essa raiz já é
-                // partilhada com o reencaminhador -- que tem lá as suas `hub:forward:*` e
-                // `hub:crm:target:*` --, por isso separar por aqui é mais seguro do que
-                // inventar uma raiz nova para cada store.
+                // Antepõe-se a todas as chaves do hub, para uma segunda instância correr
+                // contra o mesmo Redis sem pisar a primeira. Vazio é produção. A raiz `hub:`
+                // já é partilhada com o reencaminhador, e por isso separar aqui é mais seguro
+                // do que inventar uma raiz por store.
                 'prefix' => getenv('REDIS_PREFIX') ?: '',
             ],
             'database' => [

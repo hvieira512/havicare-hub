@@ -7,17 +7,12 @@ namespace Hub\Api\Http;
 use Hub\Domain\Capability\Contacts\WonlexContactCodec;
 
 /**
- * O que a dashboard precisa de saber para desenhar os campos de cada protocolo.
+ * O que a dashboard precisa para desenhar os campos de cada protocolo: etiquetas,
+ * comprimentos máximos, `allowPartialRows` e os modos de toque.
  *
- * Isto vivia dentro do `ProtocolRegistry`, no `src/Domain/`: etiquetas em português,
- * comprimentos máximos de campo, `allowPartialRows` e os modos de toque de um botão de
- * ajuda -- ou seja, decisões sobre formulários a meio da camada que devia ser independente
- * de quem os desenha. O domínio passa a poder ser lido e testado sem decidir com que aspecto
- * fica um campo, e um segundo cliente, ou um segundo idioma, passa a ter um sítio só onde
- * mexer.
- *
- * A forma na resposta não muda: é o `ProtocolService` que junta isto ao `describe()` do
- * registo, e a chave `dashboard` sai como sempre saiu.
+ * Está aqui e não no `src/Domain/` porque são decisões sobre formulários, e um segundo
+ * cliente ou um segundo idioma tem assim um sítio só onde mexer. O `ProtocolService` junta
+ * isto ao `describe()` do registo, e a chave `dashboard` sai como sempre saiu.
  */
 final class ProtocolDashboardMeta
 {

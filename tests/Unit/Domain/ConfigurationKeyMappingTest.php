@@ -10,17 +10,11 @@ use Hub\Domain\ProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * As duas direcções da tradução de chaves vivem em ficheiros diferentes e não se conhecem.
+ * As duas direcções da tradução de chaves vivem em ficheiros diferentes e não se conhecem: o
+ * `DeviceConfigurationCatalog` declara as chaves nativas, e o `mapConfigurationKey()` traduz.
  *
- * O `DeviceConfigurationCatalog` diz que chaves nativas cada protocolo declara; o
- * `CapabilityCatalog::mapConfigurationKey()` traduz uma chave nativa para a chave genérica
- * -- e o `toNative()` de cada capacidade faz o caminho de volta. Nada verifica que as duas
- * listas falam da mesma coisa.
- *
- * A consequência de divergirem é silenciosa: o `keysForProtocol()` ignora as chaves que
- * `mapConfigurationKey()` não conhece, e o `DeviceCapabilityPresenter` procura a entrada de
- * configuração pela chave genérica. Uma chave nativa sem tradução compila, passa no PHPStan,
- * e simplesmente nunca chega à API como capacidade -- ninguém se queixa, a definição está lá.
+ * Divergirem falha em silêncio -- uma chave nativa sem tradução compila, passa no PHPStan, e
+ * nunca chega à API como capacidade.
  */
 final class ConfigurationKeyMappingTest extends TestCase
 {

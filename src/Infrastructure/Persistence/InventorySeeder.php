@@ -8,16 +8,14 @@ use PDO;
 
 /**
  * O inventário capturado do hub de produção: dispositivos, modelos, fornecedores, licenças e
- * as ligações aos gateways.
+ * ligações aos gateways.
  *
- * Vive fora do plano de migrações de propósito. O `DatabaseMigrator` corre também no modelo
- * de base de dados que os testes de integração clonam com dados e tudo, por isso uma
- * migração que insere inventário faz cada teste começar com vinte e seis dispositivos -- e um
- * teste que conta quatro encontra vinte e nove. O esquema é migração; os dados de arranque
- * são um passo que só o arranque chama.
+ * Fora do plano de migrações de propósito: o `DatabaseMigrator` corre também na base-modelo
+ * que os testes clonam, e uma migração que insere inventário fazia cada teste começar com
+ * vinte e seis dispositivos. O esquema é migração; os dados de arranque são um passo à parte.
  *
- * As imagens dos modelos vivem em `var/`, que está no gitignore, por isso viajam em
- * `database/seed-model-images` e são copiadas para o lugar aqui.
+ * As imagens dos modelos viajam em `database/seed-model-images` porque o `var/` está no
+ * gitignore, e são copiadas para o lugar aqui.
  */
 final class InventorySeeder
 {

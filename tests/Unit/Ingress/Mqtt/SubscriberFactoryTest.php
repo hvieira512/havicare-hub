@@ -100,16 +100,11 @@ final class SubscriberFactoryTest extends TestCase
     }
 
     /**
-     * O id de um subscritor não pode levar pid.
+     * O id de um subscritor não pode levar pid: com `cleanSession = false`, cada reinício
+     * abria uma sessão nova e deixava a anterior órfã a segurar a subscrição.
      *
-     * O ingress do radar levava, e era o único dos quatro. Como o `bind` liga sempre com
-     * `cleanSession = false`, cada reinício do hub abria uma sessão nova e deixava a
-     * anterior órfã no broker -- a segurar a subscrição de `radar/1001/#` e a encher fila
-     * de QoS 1 para um cliente que nunca voltava. O broker de produção não tem
-     * `persistence` nem `persistent_client_expiration`, por isso só as largava ao
-     * reiniciar. Havia ainda um segundo efeito: `qinglanst-radar-sub-` gasta 20 dos 23
-     * caracteres do id, sobravam três dígitos de pid, e dois pids diferentes chegaram a
-     * truncar para o mesmo id e a expulsar-se um ao outro.
+     * O id é truncado a 23 caracteres, e por isso dois pids diferentes chegaram a truncar
+     * para o mesmo id e a expulsar-se um ao outro.
      */
     public function testSubscriberClientIdsNeverCarryThePid(): void
     {
