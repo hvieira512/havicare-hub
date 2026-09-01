@@ -6,17 +6,11 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * O que a API recusa num corpo de escrita, e com que forma o diz.
+ * O que a API recusa num corpo de escrita, e com que forma o diz -- o estado, o `code`, a
+ * `message` e o `fields`, que é a parte que é contrato.
  *
- * Os serviços que passaram a validar por constraints não tinham teste ao nível da rota: os
- * testes novos exercitam o `RequestBinder` em isolamento, e os antigos chamavam os serviços
- * directamente. Entre os dois ficava por verificar exactamente o que um cliente vê -- o
- * estado HTTP, o `code`, a `message` e o `fields` -- que é a parte que é contrato.
- *
- * A regra que estes testes trancam é a da compatibilidade: **um campo a falhar responde
- * exactamente o que respondia antes**, e o `fields` vem por acréscimo. Só quando falham
- * vários é que a mensagem passa a ser genérica, e essa é situação que a API antiga não sabia
- * produzir -- devolvia um erro de cada vez.
+ * A regra trancada aqui: um campo a falhar responde o código e a mensagem de sempre, com o
+ * `fields` por acréscimo. Só com vários é que a mensagem passa a genérica.
  */
 final class ApiWriteValidationTest extends DashboardHttpTestCase
 {
@@ -98,11 +92,8 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
     }
 
     /**
-     * O criar de uma empresa sem nome passa a ser recusado.
-     *
-     * O serviço normalizava antes de verificar, e o `normalizeCompany()` nunca devolve vazio
-     * -- devolve `'null'`. O `if` era código morto: isto criava uma empresa chamada `null` e
-     * respondia sucesso.
+     * O `normalizeCompany()` nunca devolve vazio -- devolve `'null'` --, e por isso um nome
+     * em branco chegava a criar uma empresa chamada `null`.
      */
     public function testCreatingACompanyWithoutANameIsRejected(): void
     {
@@ -125,11 +116,8 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
     }
 
     /**
-     * O nome repetido responde 409, que é o que a especificação sempre prometeu.
-     *
-     * Prometia e nunca enviava: o `if ($id <= 0)` do serviço nunca disparava, porque o
-     * repositório devolve o id da linha que já existe em vez de zero. Criar duas vezes a
-     * mesma empresa respondia sucesso das duas.
+     * O repositório devolve o id da linha que já existe em vez de zero, e por isso o conflito
+     * tem de ser detectado por outra via que não um `$id <= 0`.
      */
     public function testCreatingACompanyThatAlreadyExistsIsAConflict(): void
     {
@@ -253,11 +241,8 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
     }
 
     /**
-     * O criar e o actualizar de um dispositivo, campo a campo.
-     *
-     * Escrito antes de o `DeviceService` passar a objecto de pedido, e de propósito: é a
-     * rota de escrita mais usada da API e a que tinha menos rede -- os testes de dispositivos
-     * chamam os serviços directamente e quase não exercitam esta validação.
+     * A rota de escrita mais usada da API, e a que tinha menos rede: os outros testes de
+     * dispositivos chamam os serviços directamente e não passam por esta validação.
      */
     public function testCreatingADeviceRequiresItsIdentityFields(): void
     {

@@ -7,11 +7,8 @@ use React\EventLoop\Loop;
 use Tests\Support\DashboardHttpTestCase;
 
 /**
- * O stream de eventos de um dispositivo: como se abre, o que empurra, e o que acontece quando
- * o cliente deixa de ler.
- *
- * Estes testes correm o loop de eventos a sério, e por isso vivem à parte dos outros: um
- * temporizador esquecido aqui aparece como lentidão algures noutro ficheiro.
+ * O stream de eventos de um dispositivo. Corre o event loop a sério, e por isso vive à parte:
+ * um temporizador esquecido aqui aparece como lentidão noutro ficheiro.
  */
 final class DashboardStreamTest extends DashboardHttpTestCase
 {
@@ -94,13 +91,8 @@ final class DashboardStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * O bilhete abre um stream, e só um.
-     *
-     * O `EventSource` não deixa pôr cabeçalhos, e por isso a credencial de um stream viaja no
-     * URL -- onde fica escrita no registo de acessos de qualquer proxy pelo caminho e no
-     * histórico do browser. Enquanto o que ia ali era o token de acesso, era uma credencial
-     * de uma hora, boa para toda a API, a ficar guardada nesses sítios. O bilhete vale
-     * segundos e queima-se à primeira utilização.
+     * O `EventSource` não deixa pôr cabeçalhos, e a credencial viaja no URL -- onde fica no
+     * registo de acessos de qualquer proxy. Daí o bilhete valer segundos e queimar-se.
      */
     public function testAStreamTicketOpensOneStreamAndIsThenSpent(): void
     {
@@ -141,14 +133,9 @@ final class DashboardStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * O token de acesso deixou de abrir seja o que for a partir de um URL.
-     *
-     * Era aceite em `?access_token=` por qualquer rota, e nada o punha lá -- nem a dashboard,
-     * nem o simulador, nem os cenários -- nem estava documentado como parâmetro. Enquanto
-     * existisse, era o último caminho por onde uma credencial de uma hora, boa para a API
-     * toda, podia viajar num endereço e acabar no registo de acessos de um proxy.
-     *
-     * O mesmo token continua a valer no cabeçalho, que é onde deve ir.
+     * O token de acesso não abre nada a partir de um URL: é uma credencial de uma hora e boa
+     * para a API toda, e num endereço acabaria no registo de acessos de um proxy. No
+     * cabeçalho continua a valer.
      */
     public function testAnAccessTokenInTheQueryStringNoLongerAuthenticates(): void
     {
@@ -174,13 +161,9 @@ final class DashboardStreamTest extends DashboardHttpTestCase
     }
 
     /**
-     * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo.
-     *
-     * Isto derrubou a produção doze vezes em catorze dias: um radar publica cerca de vinte
-     * mensagens por segundo, cada envio leva o `recent()` inteiro, e escrevia-se sem olhar
-     * ao que o `write()` respondia. Com o cliente a drenar mais devagar do que o dispositivo
-     * produz, o buffer crescia até rebentar o limite de memória do PHP -- e o processo leva
-     * consigo as ligações TCP e as subscrições MQTT de toda a gente.
+     * Um cliente que deixa de ler não pode obrigar o servidor a guardar-lhe tudo. Sem esta
+     * contrapressão o buffer crescia até rebentar o limite de memória do processo, e isso
+     * derrubou a produção doze vezes em catorze dias.
      */
     public function testAStreamStopsWritingWhileTheClientIsNotDrainingAndRecoversAfterwards(): void
     {
@@ -215,10 +198,8 @@ final class DashboardStreamTest extends DashboardHttpTestCase
         // O cliente pára de ler. É o que um separador em segundo plano faz.
         $body->pause();
 
-        // A rajada tem de atravessar várias janelas de coalescência. Quarenta escritas de
-        // enfiada colapsam num envio só, e um envio só não distingue nada: o teste passava
-        // com e sem a correcção. Uma escrita por janela é que obriga o servidor a tentar
-        // enviar cinco vezes contra um cliente que não lê.
+        // Uma escrita por janela de coalescência, e não quarenta de enfiada: essas colapsam
+        // num envio só, e o teste passava com e sem a correcção.
         for ($round = 0; $round < 5; $round++) {
             $store->append('861265061009822', 'telemetry', ['type' => 'heart_rate', 'value' => 60 + $round]);
             // Um pouco acima do `DeviceController::STREAM_COALESCE_SECONDS`, que é 0.25.

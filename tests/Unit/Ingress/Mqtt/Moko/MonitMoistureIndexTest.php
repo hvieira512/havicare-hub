@@ -9,20 +9,11 @@ use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O índice de humidade, publicado na sua própria capacidade `diaper_moisture_level`.
+ * O que se protege aqui não é a fórmula do índice, que é apresentação e pode ser afinada, mas
+ * duas propriedades:
  *
- * O que estes testes protegem não é a fórmula -- é um número de apresentação e pode ser
- * afinado -- mas as duas propriedades de que a app depende:
- *
- *   1. O índice NUNCA contradiz o estado. Uma fralda que precisa de muda não pode mostrar um
- *      número menor do que uma que está seca, porque as duas coisas aparecem lado a lado no
- *      mesmo ecrã.
- *   2. As fronteiras das bandas caem nos limiares que decidem o estado, em particular os 40
- *      nos 4 canais molhados, que é o valor que desenha a marca de alerta no ecrã.
- *
- * O preset entra explícito em cada chamada porque o parâmetro é obrigatório, de propósito:
- * uma ligação esquecida falha na análise estática em vez de decidir alarmes com limiares que
- * ninguém escolheu.
+ *   1. O índice nunca contradiz o estado -- os dois aparecem lado a lado no mesmo ecrã.
+ *   2. As fronteiras das bandas caem nos limiares que decidem o estado.
  */
 final class MonitMoistureIndexTest extends TestCase
 {
@@ -121,10 +112,8 @@ final class MonitMoistureIndexTest extends TestCase
 
     public function testAnAttentionSensorNeverReachesTheAlertIndex(): void
     {
-        // LEITURA REAL do sensor eec5000202f9, apanhada a 2026-08-14T10:27:16Z. Dez canais a
-        // rondar o 6, nenhum a chegar aos 12, portanto `attention` -- e a média dá 0.43,
-        // acima dos 0.40 do limiar. É o caso que obriga a banda a fechar nos 39, e nenhum
-        // dos vectores sintéticos o produz.
+        // Leitura real do sensor eec5000202f9. É o caso que obriga a banda do `attention` a
+        // fechar nos 39, e nenhum vector sintético o produz.
         $level = $this->level([1, 2, 5, 6, 7, 6, 6, 6, 6, 7]);
 
         self::assertSame(32, $level['index']);
@@ -178,10 +167,8 @@ final class MonitMoistureIndexTest extends TestCase
 
     public function testTheLevelIsItsOwnCapabilityAndNotAFieldOfTheVendorMessage(): void
     {
-        // A razão de ser da separação: os 10 canais capacitivos são do MONIT MECS-PRO, o nível
-        // não é de ninguém em particular. Um segundo medidor publica `index` sem ter
-        // `channels`, e quem consome o nível não pode ter de ler uma mensagem com forma de
-        // MONIT. Se alguém voltar a meter o índice na `diaper_moisture`, isto falha.
+        // Os canais são do MONIT, o nível não é de ninguém: se alguém voltar a meter o índice
+        // dentro da `diaper_moisture`, isto falha.
         $telemetry = $this->telemetry([12, 12, 12, 12]);
 
         self::assertSame(
@@ -195,10 +182,8 @@ final class MonitMoistureIndexTest extends TestCase
 
     public function testTheConditionMessageStaysFreeOfTheIndex(): void
     {
-        // Deliberado, e não um esquecimento. O hub tira a impressão digital do `data` de cada
-        // capacidade e suprime 60s o que não mudou. O `data` da `diaper_condition` é só o
-        // estado, que é estável -- por isso essa mensagem chega raramente. Meter lá um número
-        // que se mexe a cada leitura punha-a a republicar-se sem parar.
+        // Deliberado: o `data` da `diaper_condition` é só o estado, que é estável. Meter lá
+        // um número que se mexe a cada leitura punha-a a republicar-se sem parar.
         $result = (new MonitNormalizer())->normalize(
             $this->decoded([12, 12, 12, 12]),
             self::DEVICE,
