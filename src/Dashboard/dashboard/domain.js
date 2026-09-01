@@ -6,8 +6,36 @@
  * `window.hubDeviceTypes`. Estava escrita aqui e mais três vezes -- a lista dos tipos
  * também em PHP, os tipos retransmitidos no `DeviceService`, e o `sim` outra vez como um
  * `deviceType !== "watch"` dentro do `saveDevice`, que já tinha divergido desta.
+ *
+ * Falta a tabela e este módulo recusa carregar. Estava um `?? {}` aqui, e os dois lados do
+ * mesmo seam falhavam de maneiras opostas: o `DeviceTypeCatalog::all()` rebenta se o JSON
+ * não estiver lá, e aqui a ausência dava uma tabela vazia -- que não dá erro nenhum, dá um
+ * formulário sem tipos, uma dropdown vazia e um `normalizeDeviceType` que devolve sempre
+ * "watch". Lê-se como problema de dados quando é de fiação. O `index.php` escreve sempre a
+ * tabela antes de carregar o módulo, por isso a ausência é um engano e não um estado.
  */
-const DEVICE_TYPES = globalThis.window?.hubDeviceTypes ?? {};
+const DEVICE_TYPES = globalThis.window?.hubDeviceTypes;
+if (!DEVICE_TYPES || Object.keys(DEVICE_TYPES).length === 0) {
+    throw new Error(
+        "window.hubDeviceTypes está vazio ou não foi definido: o index.php serve-o a partir do DeviceTypeCatalog",
+    );
+}
+
+/**
+ * O tipo para onde tudo o que não se reconhece cai.
+ *
+ * O `normalizeDeviceType` tinha o `"watch"` escrito à mão, e a tabela passou a ser um ficheiro
+ * de configuração que qualquer pessoa edita ao acrescentar um tipo. Tirar de lá o `watch`
+ * passava a verificação acima -- a tabela não fica vazia -- e só rebentava mais à frente, no
+ * `linksToGateway` a ler `.gatewayLinks` de `undefined`. O `deviceTypeFields` promete ser
+ * "sempre utilizável", e isso só é verdade enquanto este tipo existir: é aqui que se verifica.
+ */
+const FALLBACK_DEVICE_TYPE = "watch";
+if (!(FALLBACK_DEVICE_TYPE in DEVICE_TYPES)) {
+    throw new Error(
+        `config/device-types.json tem de definir "${FALLBACK_DEVICE_TYPE}": é o tipo por omissão do normalizeDeviceType`,
+    );
+}
 
 export const deviceTypeOptions = Object.entries(DEVICE_TYPES).map(
     ([value, descriptor]) => ({ value, label: descriptor.label }),
@@ -28,7 +56,7 @@ export function linksToGateway(deviceType) {
 export function normalizeDeviceType(deviceType) {
     return deviceTypeOptions.some((option) => option.value === deviceType)
         ? deviceType
-        : "watch";
+        : FALLBACK_DEVICE_TYPE;
 }
 
 export function deviceTypeLabel(deviceType) {

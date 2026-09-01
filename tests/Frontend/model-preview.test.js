@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import "./support/browser-env.js";
 import {
     modelImageHtml,
     modelPreviewHtml,

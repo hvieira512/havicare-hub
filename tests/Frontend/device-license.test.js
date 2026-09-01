@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import "./support/browser-env.js";
 import { deviceLicenseHtml } from "../../src/Dashboard/dashboard/widgets.js";
 
 // Os casos vêm do inventário: 21 dispositivos com empresa e licença, 4 sem nenhuma das

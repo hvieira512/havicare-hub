@@ -68,9 +68,17 @@ final class DeviceTypeCatalog
         return (bool)(self::all()[$deviceType]['sim'] ?? false);
     }
 
-    /** O JSON tal e qual, para o `index.php` o servir sem o voltar a codificar. */
+    /**
+     * O JSON tal e qual, para o `index.php` o servir sem o voltar a codificar.
+     *
+     * Com `JSON_HEX_TAG` porque o destino é o meio de uma etiqueta `<script>`: um `</script>`
+     * dentro de uma etiqueta ou de uma ajuda fechava-a a meio, o `window.hubDeviceTypes`
+     * nunca chegava a ser atribuído, e o `domain.js` -- que agora rebenta quando a tabela não
+     * está lá -- levava consigo a página inteira. O ficheiro é nosso e não entrada de
+     * ninguém, mas o custo de o escapar é uma constante.
+     */
     public static function asJson(): string
     {
-        return json_encode(self::all(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}';
+        return json_encode(self::all(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?: '{}';
     }
 }

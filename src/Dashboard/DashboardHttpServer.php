@@ -74,7 +74,6 @@ final class DashboardHttpServer
             new DashboardNotificationService($this->db),
             new \Hub\Api\Http\JsonResponder(),
             new \Hub\Api\Http\HtmlResponder(),
-            new \Hub\Api\Http\ErrorStatusMapper(),
             new \Hub\Api\Auth\BearerTokenResolver($this->tokens),
             new \Hub\Api\Auth\RouteAccessPolicy(),
         );
