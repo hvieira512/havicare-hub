@@ -45,15 +45,9 @@ final class MessageNormalizer
     ];
 
     /**
-     * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes.
-     *
-     * As telemetrias vêm num mapa de capacidade para leitura, e não uma só, porque uma
-     * mensagem mede mais do que uma coisa: o `heartbreath` traz frequência cardíaca,
-     * respiratória e estado de sono. É a forma que o `Moko\W6bNormalizer` já usa, e que o
-     * `Moko\Bridge` já sabe percorrer com estrangulamento por capacidade.
-     *
-     * Os alarmes vêm em lista pelo mesmo motivo: uma apneia e uma taquicardia no mesmo
-     * minuto são dois alarmes, e um só campo perdia um deles sem deixar rasto.
+     * Uma mensagem do fabricante dá uma ou mais telemetrias, e zero ou mais alarmes: o
+     * `heartbreath` traz frequência cardíaca, respiratória e estado de sono, e uma apneia com
+     * uma taquicardia no mesmo minuto são dois alarmes.
      *
      * @param array{type: string, device_code: string, ...} $decoded
      * @param array{imei: string, supplier: string, model: string, deviceType: string, licenseId: int, company?: string} $device
@@ -79,15 +73,11 @@ final class MessageNormalizer
     {
         $people = $this->occupiedPeople($decoded['people']);
 
-        // Uma mensagem `position` responde a uma pergunta só: quem está na divisão, e como.
+        // A postura e o último evento são de cada pessoa e ficam dentro dela, senão era
+        // preciso escolher uma entre as presentes.
         //
-        // A postura e o último evento são de cada pessoa, tal como o x/y/z, e por isso ficam
-        // dentro dela: tirá-los para uma leitura do aparelho obrigava a escolher uma pessoa
-        // entre as presentes e a deitar fora a postura das outras.
-        //
-        // Isto não é o `location` canónico: esse é geográfico, com GPS e células. O radar
-        // dá coordenadas em decímetros relativas a si próprio, que só significam alguma
-        // coisa dentro da divisão onde está montado.
+        // Não é o `location` canónico: as coordenadas do radar são em decímetros relativos a
+        // si próprio, e só valem dentro da divisão onde está montado.
         $telemetry = [
             'presence' => $this->telemetry($topic, $device, 'presence', 'position', [
                 'count' => count($people),
@@ -213,13 +203,9 @@ final class MessageNormalizer
         $breathing = (int)($decoded['breathing'] ?? 0);
         $heartRate = (int)($decoded['heart_rate'] ?? 0);
 
-        // Três grandezas numa mensagem, três leituras. As formas da frequência cardíaca e
-        // da respiratória são as do `Hub\Device\FeatureNormalizer` -- `{bpm}` e
-        // `{breathsPerMinute}` --, as mesmas que um relógio produz, para partilharem os
-        // cartões em vez de terem os seus.
-        //
-        // Um zero não é uma leitura: é o radar a dizer que não mediu ninguém, e publicá-lo
-        // punha o cartão a dizer "0 bpm", que se lê como um coração parado.
+        // As formas são as do `FeatureNormalizer`, para o radar e o relógio partilharem os
+        // cartões. Um zero não é leitura: é o radar a dizer que não mediu ninguém, e "0 bpm"
+        // lê-se como um coração parado.
         $telemetry = [];
         if ($heartRate > 0) {
             $telemetry['heart_rate'] = $this->telemetry($topic, $device, 'heart_rate', 'heartbreath', [

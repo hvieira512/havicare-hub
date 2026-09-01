@@ -10,12 +10,8 @@ use Hub\Domain\ProtocolRegistry;
  * A capacidade de quem não tem uma escrita à mão -- interruptores, números, intervalos,
  * mensagens. O que é preciso saber sobre elas está no `DeviceConfigurationCatalog`.
  *
- * Era o ramo `else` de sete métodos do `CapabilityRegistry`, cada um a perguntar
- * `isset($this->contracts[$key])` antes de decidir se delegava ou se tratava do assunto ele
- * próprio. Mas não ter contrato próprio é o caso normal, não a excepção: as excepções são as
- * sete que o têm. Sendo isto um contrato como os outros, o registo devolve sempre alguém e
- * os sete ramos desaparecem -- com a tradução de fio da Vivistar e da Wonlex a vir junto,
- * que num registo nunca teve o que fazer.
+ * Não ter contrato próprio é o caso normal, e é por isto ser um contrato como os outros que o
+ * registo devolve sempre alguém.
  */
 final class GenericCapability implements CapabilityContract
 {
@@ -43,10 +39,8 @@ final class GenericCapability implements CapabilityContract
     }
 
     /**
-     * Todos. Uma capacidade sem contrato escrito à mão não declara restrição nenhuma, e o
-     * `supportsProtocol` do registo respondia `true` a qualquer coisa quando não achava
-     * contrato. A lista de protocolos conhecidos diz o mesmo sem ter de dizer "sim" a um
-     * protocolo que não existe.
+     * Todos. Uma capacidade sem contrato próprio não declara restrição, e a lista dos
+     * protocolos conhecidos diz isso sem ter de aceitar um protocolo que não existe.
      *
      * @return list<string>
      */

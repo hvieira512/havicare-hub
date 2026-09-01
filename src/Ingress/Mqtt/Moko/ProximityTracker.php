@@ -5,25 +5,16 @@ declare(strict_types=1);
 namespace Hub\Ingress\Mqtt\Moko;
 
 /**
- * Uma janela curta de leituras de sinal por par (dispositivo, gateway).
+ * Uma janela curta de leituras de sinal por par (dispositivo, gateway). O hub reporta o
+ * sinal; o cliente decide o que ele significa -- ver `docs/05-gateways-ble.md` §5.
  *
- * O hub reporta o sinal; o cliente decide o que ele significa. O que o hub lhe deve é uma
- * série sem buracos invisíveis e resumo bastante para um consumidor simples não ter de
- * construir um motor de janelas próprio.
+ * Três estatísticas e não uma, porque uma passagem a andar são uma ou duas leituras e a
+ * mediana não se mexe com isso -- é o máximo que a apanha. O ruído é assimétrico: corpos e
+ * paredes atenuam e quase nada amplifica, por isso uma leitura forte é de confiança e uma
+ * fraca não.
  *
- * Três estatísticas e não uma, porque uma só não serve as duas perguntas que uma porta faz.
- * Medido numa pulseira real a 0.67 amostras/s:
- *
- *  - Passar a andar por um gateway são uma ou duas leituras, e uma mediana não se mexe com
- *    isso -- precisa de umas três. O máximo é que apanha a passagem.
- *  - O ruído é assimétrico: num aparelho imóvel as leituras ficaram 5 dB acima da mediana e
- *    9 dB abaixo. Corpos e paredes atenuam, quase nada amplifica, por isso uma leitura forte
- *    é de confiança e uma fraca não é. A mediana é que julga presença sustentada e decide
- *    que alguma coisa saiu.
- *
- * A janela é pequena de propósito e vive em memória: existe para descrever os últimos
- * segundos, e depois de um reinício reenche-se em `windowSeconds`. O registo durável do
- * último avistamento, para a dashboard, vive no store da dashboard.
+ * A janela vive em memória e reenche-se em `windowSeconds` depois de um reinício. O registo
+ * durável do último avistamento fica no store da dashboard.
  */
 final class ProximityTracker
 {
@@ -74,11 +65,8 @@ final class ProximityTracker
     }
 
     /**
-     * Os pares que se calaram, esquecidos à medida que são reportados.
-     *
-     * A ausência não se empurra por MQTT: um cliente que não recebe nada não tem a que
-     * reagir, e por isso é o hub que tem de dar por ela. Reportado uma vez e largado, o que
-     * também quer dizer que um par que reapareça começa uma janela nova.
+     * Os pares que se calaram, esquecidos à medida que são reportados: um cliente que não
+     * recebe nada não tem a que reagir. Um par que reapareça começa uma janela nova.
      *
      * @return list<array{deviceKey: string, gatewayKey: string}>
      */
