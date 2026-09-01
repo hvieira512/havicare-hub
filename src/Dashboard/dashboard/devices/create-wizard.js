@@ -322,11 +322,9 @@ function renderIdentity(answers) {
 }
 
 /**
- * Os gateways da mesma empresa e licença: a autorização é por par, não global.
- *
- * A ausência escreve-se de duas maneiras conforme quem a escreveu -- a base de dados
- * guarda a empresa vazia como `null` e a licença como `0`, e o assistente diz "" e "0" --,
- * e sem as normalizar um gateway sem dono não aparece a um sensor sem dono.
+ * Os gateways da mesma empresa e licença: a autorização é por par, não global. A ausência
+ * escreve-se de duas maneiras, e sem as normalizar um gateway sem dono não aparecia a um
+ * sensor sem dono.
  */
 function eligibleGatewayList(answers) {
     const owner = answers.owner || {};

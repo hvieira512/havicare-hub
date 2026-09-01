@@ -14,17 +14,12 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * A sensibilidade do medidor de fraldas, pela via genérica das configurações.
+ * A sensibilidade do medidor de fraldas, pela via genérica das configurações. É uma
+ * `HubAppliedCapability`: o sensor é um beacon não-conectável, e sem essa marca cada
+ * alteração ficaria pendente à espera de um ack que nunca chega.
  *
- * Teve três endpoints próprios -- GET, PUT e DELETE em `/diaper-sensitivity` -- por não ser
- * uma capacidade: o pipeline não sabia exprimir uma configuração que não viaja, e sem isso
- * cada alteração ficaria "pendente" para sempre à espera de um ack que nunca chega. O
- * sensor é um beacon BLE não-conectável e nada lhe é enviado.
- *
- * Agora é a `DiaperSensitivityCapability`, marcada com `HubAppliedCapability`, e passa pelo
- * mesmo `PATCH /configurations` que as outras. O que estes testes prendem é o que isso tinha
- * de garantir: que grava, que se dá por aplicada sem comandos, que a ingestão a lê, e que
- * um par fora das gamas é recusado.
+ * Prende-se que grava, que se dá por aplicada sem comandos, que a ingestão a lê, e que um par
+ * fora das gamas é recusado.
  */
 final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
 {
@@ -118,10 +113,8 @@ final class DiaperSensitivityApiTest extends MysqlDashboardTestCase
         // O perfil é derivado dos dois valores e nunca guardado, para não poderem discordar.
         self::assertSame('high', $entry['value']['profile'] ?? null);
 
-        // `confirmed` e não `waiting_device`: o `stage` sem operações marca a linha `acked`,
-        // o `pendingStatus` le isso como `applied`, e o `show` apresenta-o como `confirmed`
-        // -- que é o mesmo estado de uma configuração que o dispositivo confirmou, e que a
-        // interface já desenha como "Aplicado". Não há vocabulário novo nenhum.
+        // `confirmed` e não `waiting_device`: sem operações a linha fica `acked`, e a
+        // interface desenha isso como "Aplicado". Não há vocabulário novo.
         $sync = $api->show(self::SENSOR)['configurationSync']['entries']['settings_system']['diaper_sensitivity'] ?? [];
         self::assertSame('confirmed', $sync['status'] ?? null);
         self::assertFalse($sync['hasUnconfirmedChanges'] ?? true, 'nao ha nada a aguardar');

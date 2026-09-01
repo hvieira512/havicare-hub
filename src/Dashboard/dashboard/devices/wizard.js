@@ -1,13 +1,9 @@
 /**
- * O motor do assistente. Sabe três coisas -- qual é a pergunta activa, que respostas já
- * há, e se pode avançar --, e o resto é desenhado por quem o usa.
+ * O motor do assistente: qual é a pergunta activa, que respostas há, e se pode avançar. A
+ * pergunta activa é a primeira sem resposta, o que faz a revelação progressiva cair por si.
  *
- * A pergunta activa é a primeira sem resposta, o que faz a revelação progressiva cair por
- * si: responder revela a seguinte, e limpar uma resposta faz voltar atrás.
- *
- * `clears` é a única coisa que não é derivável: responder ao tipo invalida o modelo, e
- * responder à empresa invalida a licença, porque a resposta anterior pode não existir no
- * conjunto novo. Declara-se, em vez de se espalhar por quem trata cada clique.
+ * O `clears` é a única coisa que não é derivável -- responder ao tipo invalida o modelo --, e
+ * declara-se em vez de se espalhar por quem trata cada clique.
  */
 
 export function createWizard({ questions, steps }) {
@@ -36,11 +32,8 @@ export function createWizard({ questions, steps }) {
     }
 
     /**
-     * A primeira pergunta sem resposta DENTRO do passo actual, ou null quando o passo está
-     * completo. Sem resposta e não "que trave": o que a omissão dispensa é o avanço.
-     *
-     * Limitada ao passo de propósito: derivar o passo da pergunta activa fazia a barra de
-     * progresso saltar sozinha, e avançar é uma acção deliberada.
+     * A primeira pergunta sem resposta dentro do passo actual. Limitada ao passo de
+     * propósito: derivar o passo da pergunta fazia a barra de progresso saltar sozinha.
      */
     function current() {
         return inStep(step).find((question) => !isAnswered(question)) ?? null;
@@ -88,14 +81,9 @@ export function createWizard({ questions, steps }) {
         answer: applyAnswer,
 
         /**
-         * Responde e, se essa era a última pergunta do passo, avança.
-         *
-         * "Última" é não ter nenhuma aberta, e não o passo estar completo: uma pergunta
-         * opcional não trava o passo mas continua a ser feita, e avançar por cima dela era
-         * saltá-la sem a mostrar.
-         *
-         * Avança ao responder e não sempre que o passo está completo: o "Anterior" leva a
-         * um passo completo por definição, e lá não se avança -- senão não havia recuo.
+         * Responde e, se não sobrar nenhuma aberta, avança. "Nenhuma aberta" e não "passo
+         * completo": uma pergunta opcional não trava o passo mas continua a ser feita, e o
+         * "Anterior" leva a um passo completo onde não se pode avançar.
          */
         answerAndAdvance(key, value) {
             applyAnswer(key, value);

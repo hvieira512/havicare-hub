@@ -17,10 +17,8 @@ import { resetModelForm } from "./form.js";
 import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
 
 /**
- * O catálogo: tipo de dispositivo, fornecedor, modelo. Três níveis porque a forma dos dados
- * tem três -- um fornecedor suporta *tipos* de dispositivo, e é por isso que existe a tabela
- * `supplier_device_types`. A MOKO aparece em gateways e em pulseiras, e isso não é
- * duplicação: são duas coisas diferentes de suportar.
+ * O catálogo: tipo de dispositivo, fornecedor, modelo. Três níveis porque um fornecedor
+ * suporta *tipos* -- a MOKO aparece em gateways e em pulseiras, e não é duplicação.
  */
 
 /** Um id de `collapse` que sobrevive a nomes com espaços e acentos. */
@@ -38,13 +36,8 @@ function plural(count, singular, pluralWord) {
 }
 
 /**
- * Os grupos que valem a pena desenhar. A API devolve um grupo por cada tipo que existe no
- * catálogo de capacidades, tenha ou não modelos, para quem monta selectores os ter todos;
- * aqui um tipo sem fornecedores é uma moldura vazia, e cai fora.
- *
- * Um par fornecedor×tipo registado mas ainda sem modelos também não aparece, porque a
- * resposta é construída a partir dos modelos. O formulário continua a oferecer o par a
- * partir dos filtros, que é o que importa para criar o primeiro.
+ * Os grupos que valem a pena desenhar: a API devolve um por cada tipo do catálogo, e aqui um
+ * tipo sem fornecedores é uma moldura vazia e cai fora.
  */
 function catalogGroups() {
     return (state.settingsModal.modelCatalog || [])
@@ -125,12 +118,8 @@ function typeCard(group) {
 }
 
 /**
- * A busca achata a árvore: agrupar durante uma busca esconde resultados dentro de grupos, e
- * um resultado que não se vê não é um resultado. Achatada, cada linha volta a dizer de quem
- * é e de que tipo, que é o que a árvore dizia pela posição.
- *
- * Filtra em memória porque o catálogo inteiro está em memória. O `/api/models?model=`
- * continua a existir para quem consome a API.
+ * A busca achata a árvore, senão um resultado ficava escondido dentro de um grupo fechado.
+ * Cada linha passa a dizer de quem é, que era o que a posição dizia.
  */
 function searchResults(query) {
     const needle = query.toLowerCase();
@@ -205,11 +194,10 @@ async function loadSettingsModelFilters() {
 }
 
 /**
- * O catálogo vem inteiro numa chamada -- tipos, fornecedores e modelos.
+ * O catálogo vem inteiro numa chamada.
  *
- * ponytail: sem paginação, de propósito. São dezasseis modelos; se um dia forem centenas, o
- * caminho é nascerem fechados e buscar os filhos ao abrir (`/api/models?supplier=`), e não
- * cortar um grupo ao meio entre duas páginas.
+ * ponytail: sem paginação. Com centenas de modelos, o caminho é nascerem fechados e buscar
+ * os filhos ao abrir, e não cortar um grupo entre duas páginas.
  */
 async function loadSettingsModelsSection() {
     const response = await apiGetCatalog();

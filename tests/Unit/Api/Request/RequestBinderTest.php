@@ -116,12 +116,8 @@ final class RequestBinderTest extends TestCase
     }
 
     /**
-     * O código próprio de um campo sobrevive enquanto for ele o único a falhar.
-     *
-     * A validação por constraints quer devolver `invalid_request` para tudo, e isso apagava
-     * o `invalid_role` que os clientes distinguem desde sempre. O serviço antigo só sabia
-     * devolver um erro de cada vez, e por isso "um campo falhou" é exactamente o caso que
-     * existia antes -- e nele a resposta é a de antes, com o `fields` por acréscimo.
+     * A validação por constraints quer devolver `invalid_request` para tudo, e isso apagava o
+     * `invalid_role` que os clientes distinguem.
      */
     public function testASingleFieldFailureKeepsItsOwnErrorCode(): void
     {
@@ -140,14 +136,8 @@ final class RequestBinderTest extends TestCase
     }
 
     /**
-     * A mensagem do campo sobrevive mesmo quando ele não tem código próprio.
-     *
-     * O `username` e o `password` não estão no `codeByField` -- nunca tiveram código só deles
-     * --, mas tinham mensagem: o serviço antigo respondia `username is required`, e é essa que
-     * a especificação promete e que um cliente mostra a quem preenche o formulário. Ficar pelo
-     * código mapeado deixava-os a responder "The request contains invalid fields", que não diz
-     * a ninguém o que corrigir -- e a mensagem certa está declarada na constraint, a dois
-     * passos dali.
+     * O `username` e o `password` não têm código próprio mas têm mensagem, e é essa que a
+     * especificação promete. A genérica não diz a ninguém o que corrigir.
      */
     public function testASingleFieldFailureKeepsItsMessageEvenWithoutItsOwnCode(): void
     {
@@ -166,12 +156,8 @@ final class RequestBinderTest extends TestCase
     }
 
     /**
-     * Vários campos com a mesma mensagem são um erro só, e não vários.
-     *
-     * A associação recusava `company` e `licenseId` com um texto só -- `company and licenseId
-     * are required` --, e o modelo faz o mesmo com três campos. Contar os campos em vez das
-     * mensagens mandava-os para a mensagem genérica, que é o contrário do que sempre
-     * disseram: o texto já cobria os dois.
+     * `company and licenseId are required` é uma mensagem só para dois campos: contar os
+     * campos em vez das mensagens mandava-a para a genérica.
      */
     public function testFieldsThatShareOneMessageKeepIt(): void
     {

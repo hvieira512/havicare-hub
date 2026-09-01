@@ -164,11 +164,8 @@ final class WhitelistRepository
 
     /**
      * Tira um dispositivo do registo e com ele as suas configurações, senão um IMEI registado
-     * outra vez herdava os valores do dono anterior.
-     *
-     * Sem `ON DELETE CASCADE` de propósito: o `DeviceEventStore` escreve configurações
-     * reportadas a partir do caminho de ingestão, e a chave estrangeira transformava uma
-     * mensagem em voo numa excepção no caminho quente do MQTT.
+     * outra vez herdava os valores do dono anterior. Sem `ON DELETE CASCADE`, que
+     * transformaria uma mensagem em voo numa excepção no caminho quente do MQTT.
      */
     public function unregister(string $imei): void
     {

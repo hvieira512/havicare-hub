@@ -96,10 +96,8 @@ final class BridgeMonitAlarmTest extends TestCase
 
     public function testTighteningTheSensitivityRaisesTheAlarmForTheSameReading(): void
     {
-        // Três canais molhados: no preset normal são 3 de 4 exigidos, portanto `attention`.
-        // Apertar para "mais alertas" (3 canais, delta 7) torna a MESMA leitura numa muda
-        // necessaria -- e o alarme tem de tocar, senao apertar a sensibilidade numa fralda
-        // já suja não produz nada.
+        // Três canais molhados são `attention` no preset normal. Apertar a sensibilidade
+        // torna a mesma leitura numa muda necessária, e o alarme tem de tocar.
         $mqtt = new RecordingHubMqttBridge();
         $sensitivity = new MutableDiaperSensitivity();
         $bridge = $this->bridge($mqtt, $sensitivity);

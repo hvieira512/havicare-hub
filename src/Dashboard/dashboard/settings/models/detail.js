@@ -25,14 +25,9 @@ import { getSettingsModelsRuntime, modelsCarousel } from "./shell.js";
 import { backToModelList } from "./list.js";
 
 /**
- * A ficha de um modelo: o terceiro slide do carrossel do catálogo.
- *
- * São duas metades no mesmo ecrã. Em cima a identidade -- nome comercial, modelo interno,
- * fornecedor, tipo --, que se grava por diferença. Em baixo as capacidades, que são
- * interruptores sobre o catálogo do tipo, limitados ao template do fornecedor.
- *
- * Gravam para o mesmo endpoint com corpos diferentes, e por isso são dois botões: mexer no
- * nome de um modelo não deve reescrever a lista das suas capacidades.
+ * A ficha de um modelo, em duas metades: em cima a identidade, em baixo as capacidades.
+ * Gravam para o mesmo endpoint com corpos diferentes, e são dois botões porque mexer no nome
+ * não deve reescrever a lista de capacidades.
  */
 
 async function openModelDetail(modelId) {
@@ -311,12 +306,8 @@ function capabilitySections(enabled) {
 }
 
 /**
- * Acerta no sítio o que um interruptor mexe -- o "Solicitável" da mesma linha e as três
- * contagens --, em vez de redesenhar a secção: redesenhá-la tirava o foco ao interruptor que
- * se acabou de premir e deixava a lista impossível de percorrer com o teclado.
- *
- * Sem template do fornecedor a linha desaparece ao desligar, e aí não há como acertar: quem
- * chama redesenha.
+ * Acerta no sítio em vez de redesenhar a secção, que tirava o foco ao interruptor acabado de
+ * premir. Sem template do fornecedor a linha desaparece ao desligar, e aí quem chama redesenha.
  */
 function syncCapabilitySwitches(feature) {
     const { els } = getSettingsModelsRuntime();

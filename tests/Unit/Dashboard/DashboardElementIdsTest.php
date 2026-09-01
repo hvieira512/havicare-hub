@@ -9,21 +9,11 @@ use PHPUnit\Framework\TestCase;
 /**
  * Prova que cada `els.qualquerCoisa` que o JavaScript lê existe mesmo na página.
  *
- * O `cacheElements()` do `dom.js` recolhe todos os elementos com `id` uma vez, no
- * `DOMContentLoaded`, e devolve-os num objecto simples. Um `id` que não exista dá
- * `undefined` -- não dá erro. E como quase todos os sítios que lêem daqui se protegem com
- * `?.` ou com um `if`, renomear um `id` num template PHP não parte nada de forma visível:
- * o ouvinte deixa de ser ligado e o botão passa a não fazer nada, em silêncio, até alguém
- * reparar.
+ * O `cacheElements()` devolve `undefined` para um `id` que não exista, e quase todos os
+ * leitores se protegem com `?.` -- renomear um `id` num template não parte nada de visível: o
+ * ouvinte deixa de ser ligado e o botão passa a não fazer nada, em silêncio.
  *
- * O acoplamento entre os `id` do PHP e o JavaScript é total e não vai deixar de o ser --
- * é o preço de não haver passo de compilação, e o passo de compilação custa mais. O que
- * este teste faz é tornar o acoplamento verificável: desenha a página a sério, com os
- * modais e com os auxiliares (`pagination_component`, `search_input`, ...) já executados,
- * e compara os `id` que dela saem com os nomes que o JavaScript procura.
- *
- * Uma falha aqui é uma de duas coisas: um `id` renomeado só de um lado, ou um `els.x` que
- * ficou para trás quando o elemento saiu da página.
+ * Uma falha aqui é um `id` renomeado só de um lado, ou um `els.x` que ficou para trás.
  */
 final class DashboardElementIdsTest extends TestCase
 {

@@ -83,11 +83,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O filtro de modelo compara por igualdade e não por semelhança.
-     *
-     * As opções vêm da própria lista de modelos existentes, logo o que chega é sempre um
-     * nome inteiro. Com `LIKE`, escolher "L08" trazia também um "L08 Pro Max" que ninguém
-     * marcou — e a procura por texto livre já cobre a correspondência parcial.
+     * Igualdade e não semelhança: com `LIKE`, escolher "L08" trazia também um "L08 Pro Max"
+     * que ninguém marcou. A correspondência parcial é da procura por texto livre.
      */
     public function testListModelFilterMatchesTheWholeNameAndNotAPrefix(): void
     {
@@ -111,12 +108,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * A empresa e a licença escolhem pares, e não duas listas cruzadas.
-     *
-     * Como duas condições independentes, escolher {alfa, beta} e {1001, 2002} trazia também
-     * um dispositivo da alfa com a licença 2002. As duas versões acertam nos casos simples e
-     * só divergem quando duas empresas partilham números de licença — que é exactamente o
-     * caso em que alguém está a usar este filtro a sério.
+     * Pares, e não duas listas cruzadas: {alfa, beta} com {1001, 2002} trazia um dispositivo
+     * da alfa com a licença 2002. Só divergem quando duas empresas partilham números.
      */
     public function testLicenseFilterMatchesCompanyAndLicensePairsAndNotTheirCrossProduct(): void
     {
@@ -150,10 +143,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O estado não está na base de dados: é presença em runtime, e entra na consulta como
-     * uma lista de IMEI. Entra na mesma cláusula que os outros filtros, e é isso que mantém
-     * a paginação e o total certos -- filtrá-lo depois de paginar dava uma página de dez a
-     * devolver um e um total a mentir.
+     * O estado é presença em runtime e entra na mesma cláusula que os outros filtros:
+     * filtrá-lo depois de paginar dava uma página de dez a devolver um.
      */
     public function testListFiltersByOnlineStateWithoutBreakingTheTotal(): void
     {
@@ -2905,11 +2896,8 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         ]);
         self::assertSame('ok', $created['status'] ?? null);
         $db->modelCapabilities->replaceForModelId((int)$model['id'], array_keys($features));
-        // O que se pode pedir a um modelo é uma decisão por modelo, guardada no
-        // `model_capabilities.is_requestable` e escrita pelo separador Capacidades. Este
-        // relógio anuncia sete leituras de saúde e não responde ao pedido de nenhuma, e é
-        // isso que aqui se declara -- antes vinha semeado por uma migração, que era o único
-        // sítio onde este facto existia.
+        // O que se pode pedir é decisão por modelo, no `model_capabilities.is_requestable`.
+        // Este relógio anuncia sete leituras e não responde ao pedido de nenhuma.
         $db->modelCapabilities->replaceTelemetryRequestabilityForModelId(
             (int)$model['id'],
             array_keys($requestableFeatures)

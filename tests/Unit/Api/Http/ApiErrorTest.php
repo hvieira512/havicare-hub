@@ -11,12 +11,9 @@ use PHPUnit\Framework\TestCase;
 final class ApiErrorTest extends TestCase
 {
     /**
-     * O contrato que vai no fio, construtor a construtor.
-     *
-     * É deliberadamente um detector de mudanças: estes códigos e mensagens estão na
-     * especificação OpenAPI e nos clientes, e alterar um é alterar a API pública. Se este
-     * teste falhar, ou a alteração é intencional -- e a versão da API tem de a acompanhar --
-     * ou foi um engano.
+     * O contrato que vai no fio, construtor a construtor. É um detector de mudanças: estes
+     * códigos e mensagens estão na especificação e nos clientes, e alterar um é alterar a API
+     * pública.
      *
      * @return array<string, array{callable(): ApiError, string, string, int}>
      */
@@ -87,17 +84,9 @@ final class ApiErrorTest extends TestCase
     }
 
     /**
-     * O conjunto enumerado e o conjunto que os construtores produzem são o mesmo conjunto.
-     *
-     * O `codes()` é o que a especificação OpenAPI usa para declarar cada rota, e até aqui
-     * nada o confrontava com a realidade. Um construtor novo cujo código ficasse de fora do
-     * mapa respondia 400 por omissão e nenhuma rota o podia declarar -- e um código no mapa
-     * que já não tivesse construtor ficava a prometer um estado que ninguém envia. Os dois
-     * enganos são silenciosos, e os dois morrem aqui.
-     *
-     * Vale-se do `errors()` acima, que é a lista dos construtores mantida à mão: se um
-     * construtor novo não entrar lá, este teste não o vê -- mas o `errors()` é um detector de
-     * mudanças que já obriga a passar por ele.
+     * O `codes()` é o que a especificação usa para declarar cada rota. Um construtor fora do
+     * mapa respondia 400 por omissão sem nenhuma rota o poder declarar, e um código no mapa
+     * sem construtor prometia um estado que ninguém envia -- os dois são silenciosos.
      */
     public function testTheDeclaredCodesAreExactlyTheOnesTheConstructorsProduce(): void
     {
@@ -122,14 +111,9 @@ final class ApiErrorTest extends TestCase
     }
 
     /**
-     * O estado não se infere da forma do nome: um código que não esteja declarado é um pedido
-     * mal formado, e não um 404 adivinhado a partir do sufixo.
-     *
-     * O `result()` é leniente de propósito. Um código não declarado que chegue aqui em
-     * execução já é um engano, e a resposta a um engano não é derrubar o pedido com uma
-     * excepção -- é o 400 que ele quase de certeza queria dizer. Quem não perdoa é o
-     * `declaredStatus()`, que serve a especificação e rebenta a montá-la, que é a altura em
-     * que alguém está a olhar.
+     * O estado não se infere da forma do nome. O `result()` é leniente de propósito -- a um
+     * engano em execução responde o 400 que ele quase de certeza queria dizer; quem não
+     * perdoa é o `declaredStatus()`, que rebenta a montar a especificação.
      */
     public function testAnUndeclaredCodeIsFourHundredInsteadOfInferredFromItsShape(): void
     {
