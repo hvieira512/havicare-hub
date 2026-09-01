@@ -13,19 +13,12 @@ use Hub\Device\Watch\WatchProtocolRegistry;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Um protocolo não é um conceito, é uma convenção espalhada por cinco registos.
+ * Um protocolo é uma convenção espalhada por cinco registos independentes -- o
+ * `AdapterRegistry`, o `WatchProtocolRegistry`, o `ProtocolRegistry`, o
+ * `DeviceConfigurationCatalog` e o `CapabilityRegistry` --, e nada os liga: um fornecedor
+ * registado em quatro dos cinco compila, passa no PHPStan e falha num caminho só.
  *
- * Trinta e três ficheiros nomeiam uma string de protocolo, e cinco registos independentes
- * enumeram os mesmos fornecedores: o `AdapterRegistry` (o codec da linha), o
- * `WatchProtocolRegistry` (a sessão e o handshake), o `ProtocolRegistry` (os metadados), o
- * `DeviceConfigurationCatalog` (as configurações) e o `CapabilityRegistry` (as capacidades).
- * Nada os liga. Um fornecedor registado em quatro dos cinco compila, passa no PHPStan, e
- * falha em produção num caminho de código só.
- *
- * Consolidar isso numa peça só é um trabalho grande e, com três fornecedores, ainda a
- * adivinhar a forma certa. Este teste é a alternativa barata: não remove o espalhamento,
- * torna-o verificável. Quando aparecer o quarto fornecedor, é isto que diz exactamente do
- * que um fornecedor é feito -- e aí a interface certa deixa de ser um palpite.
+ * Este teste não remove o espalhamento, torna-o verificável.
  */
 final class ProtocolRegistrationCompletenessTest extends TestCase
 {

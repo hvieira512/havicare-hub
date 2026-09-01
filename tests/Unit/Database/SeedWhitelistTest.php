@@ -7,20 +7,12 @@ namespace Tests\Unit\Database;
 use PHPUnit\Framework\TestCase;
 
 /**
- * O seed não pode escrever na base os sentinelas que só valem em memória.
+ * O seed não pode escrever na base os sentinelas que só valem em memória. O `0` e o texto
+ * `'null'` dizem "sem dono" enquanto o valor viaja, e o `WhitelistRepository` converte-os na
+ * fronteira -- na base, sem dono é `NULL`.
  *
- * O hub diz "sem licença" com um `0` e "sem empresa" com o texto `'null'` enquanto o valor
- * viaja -- é o que o ficheiro da whitelist escreve e o que a API aceita --, e converte os
- * dois na fronteira: o `WhitelistRepository` tem o `storedLicenseId()` e o `storedCompany()`
- * precisamente para eles não chegarem às colunas. Na base, sem dono é `NULL`.
- *
- * O seed saltava essa fronteira, e via-se: o filtro de licenças mostrava uma empresa chamada
- * "Sem empresa" com uma licença "Sem Licença" lá dentro, porque uma empresa cujo nome é o
- * texto `null` é, para todo o resto do sistema, uma empresa a sério. Só aparecia onde o seed
- * tinha corrido -- a produção, alimentada pelo código, nunca teve o problema.
- *
- * Lê-se o ficheiro como texto e não se corre nada: é uma leitura de conteúdo, e o que se
- * quer trancar é o que lá está escrito.
+ * Saltar essa fronteira via-se no filtro de licenças, com uma empresa chamada "Sem empresa"
+ * lá dentro: para o resto do sistema, uma empresa chamada `null` é uma empresa a sério.
  */
 final class SeedWhitelistTest extends TestCase
 {

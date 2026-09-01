@@ -5,20 +5,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * Guarda contra um grafo de módulos ES partido.
+ * Guarda contra um grafo de módulos ES partido: um nome que um módulo importa e nenhum
+ * exporta derruba a dashboard numa página branca, e o `node --check` não o apanha porque cada
+ * ficheiro é individualmente válido.
  *
- * A ligação resolve todos os imports do grafo antes de qualquer código correr, e por isso um
- * nome que um módulo importa e nenhum exporta derruba a dashboard inteira numa página branca
- * -- nenhum script executa. O `node --check` não o apanha, porque cada ficheiro é
- * individualmente válido.
- *
- * O ponto de entrada é o `main.js`, que é o que o `index.php` carrega. Verificar outro
- * qualquer deixava os módulos mais próximos da entrada sem guarda, que é onde uma página
- * branca dói mais.
- *
- * Os módulos são código de browser, e por isso avaliá-los em node falha em globais como o
- * `window`. Isso é esperado e ignorado: só um `SyntaxError` na ligação é que quer dizer um
- * import genuinamente partido.
+ * Avaliá-los em node falha em globais como o `window` -- isso é esperado e ignorado. Só um
+ * `SyntaxError` na ligação é um import genuinamente partido.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(here, "../../src/Dashboard/main.js");

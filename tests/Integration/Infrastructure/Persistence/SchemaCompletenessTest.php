@@ -7,22 +7,15 @@ namespace Tests\Integration\Infrastructure\Persistence;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * O `database/schema.sql` descreve a base de dados actual, sozinho.
+ * O `database/schema.sql` descreve a base de dados actual, sozinho. Corre **antes** das
+ * migrações e em todas as invocações, o que faz dos dois ficheiros uma descrição só com duas
+ * metades que têm de concordar. Divergindo, falham em silêncio nos dois sentidos:
  *
- * O `DatabaseMigrator` executa o `schema.sql` **antes** das migrações, em todas as
- * invocações, e depois corre só as que ainda não estão registadas. Isso torna os dois
- * ficheiros uma única descrição com duas metades que têm de concordar, e quando divergem
- * as consequências são silenciosas nos dois sentidos:
+ * - o `schema.sql` a declarar o que uma migração larga recria-o na execução seguinte;
+ * - o `schema.sql` a omitir o que uma migração acrescenta deixa uma base nova sem isso no dia
+ *   em que a migração for apagada.
  *
- * - O `schema.sql` a declarar algo que uma migração larga: a migração corre uma vez, e a
- *   execução seguinte recria o que ela apagou.
- * - O `schema.sql` a não declarar algo que uma migração acrescenta: uma base nova nasce sem
- *   a coluna e só a ganha porque a migração ainda existe. No dia em que essa migração for
- *   apagada, uma instalação nova fica sem ela.
- *
- * Por estrutura e não por dados: o catálogo de referência é semeado a partir do
- * `CapabilityCatalog` em código e o inventário tem um passo próprio, por isso nem um nem
- * outro pertence a esta comparação.
+ * Compara estrutura e não dados: o catálogo e o inventário têm passos próprios.
  */
 final class SchemaCompletenessTest extends MysqlDashboardTestCase
 {

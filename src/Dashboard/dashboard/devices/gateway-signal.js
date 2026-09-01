@@ -1,13 +1,9 @@
 import { ago, esc } from "../format.js";
 
 /**
- * O último sinal em que cada lado de uma ligação a um gateway foi ouvido.
- *
- * O RSSI pertence ao par (dispositivo, gateway) e não ao dispositivo, e por isso não é uma
- * capacidade própria: um dispositivo ouvido por três gateways tem três valores ao mesmo
- * tempo, e uma "leitura mais recente" era uma corrida entre eles. Viaja como
- * `source.rssiDbm` em cada uplink, e o hub guarda o último de cada par para os dois lados o
- * poderem desenhar.
+ * O último sinal de cada ligação a um gateway. O RSSI pertence ao par e não ao dispositivo --
+ * um sensor ouvido por três gateways tem três valores ao mesmo tempo --, e por isso viaja em
+ * `source.rssiDbm` em vez de ser capacidade própria.
  */
 
 /** A leitura que a linha traz, ou null quando esse par nunca foi ouvido. */
@@ -24,12 +20,8 @@ export function linkSignal(linked) {
 }
 
 /**
- * As bandas de intensidade de sinal, a mais forte primeiro.
- *
- * O `bars` e o `tone` mudam os dois entre bandas vizinhas, para o medidor nunca depender só
- * da cor: quem não separa os tons continua a contar as barras cheias, e o valor exacto está
- * na tooltip em texto. Os tons são as cores de estado do Bootstrap e não tons de gráfico,
- * porque isto reporta um estado e não uma série.
+ * As bandas de sinal, a mais forte primeiro. O `bars` e o `tone` mudam os dois entre bandas
+ * vizinhas, para o medidor nunca depender só da cor.
  */
 const SIGNAL_BANDS = [
     { atLeast: -60, label: "Excelente", bars: 4, tone: "success" },
