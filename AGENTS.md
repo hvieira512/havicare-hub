@@ -1,38 +1,20 @@
 # Instruções do projeto
 
-## Produção
+As instruções deste projeto vivem todas no [`CLAUDE.md`](CLAUDE.md). Este
+ficheiro existe só para os agentes que procuram por `AGENTS.md` e não devia
+guardar cópia nenhuma: teve uma, ficou para trás quando o servidor passou a ter
+duas instâncias do hub, e durante semanas mandou trabalhar diretamente em
+produção enquanto o `CLAUDE.md` já dizia o contrário.
 
-Quando o utilizador pedir para verificar, testar, atualizar ou entrar em produção, usar:
+Lê lá:
 
-- Alias SSH: `hub-prod` (configurado localmente em `~/.ssh/config`)
-- Diretório do projeto: `/opt/havicare-hub`
-- Serviço: `health-hub`
-- Comando habitual de atualização: `make prod-update`
+- **As duas instâncias** — o que separa a de desenvolvimento da de produção, e
+  o que nunca pode ser tocado sem intenção.
+- **Fluxo de trabalho** — o trabalho vai primeiro à instância de dev, e só
+  depois de confirmado ali é que se promove.
+- **Verificações que valem a pena** — isolamento das chaves do Redis, o broker
+  MQTT, e os sentinelas contra `NULL`.
+- **Segurança operacional** — o que um pedido para analisar produção autoriza,
+  e o que não autoriza.
 
-Comandos úteis:
-
-- Entrar no servidor: `ssh hub-prod`
-- Consultar o serviço: `service health-hub status`
-- Consultar os logs: `journalctl -u health-hub`
-- Reiniciar o serviço: `service health-hub restart`
-
-## Fluxo de publicação
-
-Quando o pedido incluir uma atualização de produção:
-
-1. Inspecionar as alterações existentes e preservar trabalho não relacionado.
-2. Implementar e testar localmente.
-3. Fazer commit e push quando o utilizador o pedir ou quando fizerem parte explícita do fluxo solicitado.
-4. Entrar no diretório `/opt/havicare-hub` em produção.
-5. Executar `make prod-update`.
-6. Verificar o estado e os logs do serviço `health-hub`.
-7. Testar a funcionalidade em produção com os dispositivos, API, Redis ou MQTT relevantes.
-8. Verificar que não existem regressões relevantes e comunicar os resultados concretos.
-
-## Segurança operacional
-
-- Não guardar passwords, tokens ou chaves neste ficheiro.
-- Um pedido para analisar produção autoriza verificações não destrutivas, mas não autoriza automaticamente publicação, reinício do serviço ou alterações de dados.
-- Só executar `make prod-update`, reiniciar serviços ou alterar dados quando isso estiver incluído no pedido do utilizador.
-- Antes de remover ou alterar dados em produção, resolver e confirmar exatamente os registos afetados.
-- Não substituir alterações locais ou remotas que não pertençam à tarefa atual.
+A documentação técnica do hub está em [`docs/README.md`](docs/README.md).

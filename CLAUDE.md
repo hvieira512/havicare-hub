@@ -1,5 +1,9 @@
 # Instruções do projeto
 
+A documentação técnica do hub está em [`docs/README.md`](docs/README.md) —
+como os dispositivos falam, como os dados são normalizados, e o contrato da API
+e do MQTT. Este ficheiro é só sobre operar o projeto.
+
 ## As duas instâncias
 
 O servidor `hub-prod` corre **duas** instâncias do hub, na mesma máquina e
