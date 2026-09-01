@@ -6,6 +6,8 @@ use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
 use Hub\Api\Http\CollectionResponder;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Request\LicenseWriteRequest;
+use Hub\Api\Request\RequestBinder;
 
 class LicenseService
 {
@@ -13,14 +15,17 @@ class LicenseService
 
     private CollectionQuery $query;
     private CollectionResponder $collection;
+    private RequestBinder $binder;
 
     public function __construct(
         private ApiDataAccess $db,
         ?CollectionQuery $query = null,
         ?CollectionResponder $collection = null,
+        ?RequestBinder $binder = null,
     ) {
         $this->query = $query ?? new CollectionQuery();
         $this->collection = $collection ?? new CollectionResponder();
+        $this->binder = $binder ?? new RequestBinder();
     }
 
     public function list(string $query = ''): array
@@ -42,32 +47,47 @@ class LicenseService
         return $this->collection->respond($items, $page, $limit, ['companyId' => $companyId], $available);
     }
 
+    /** O `licenseId` chega como texto tantas vezes como inteiro, e por isso converte-se. */
     public function create(array $payload): array
     {
-        $companyId = (int)($payload['companyId'] ?? 0);
-        $licenseId = (int)($payload['licenseId'] ?? 0);
-        $name = trim((string)($payload['name'] ?? ''));
-        if ($companyId <= 0) {
-            return ApiError::invalidRequest('companyId is required')->toArray();
+        $request = $this->binder->bind(
+            $payload,
+            LicenseWriteRequest::class,
+            [LicenseWriteRequest::GROUP_CREATE],
+            coerceStrings: true,
+        );
+        if (is_array($request)) {
+            return $request;
         }
-        if ($licenseId <= 0) {
-            return ApiError::invalidRequest('licenseId is required')->toArray();
-        }
-        $id = $this->db->licenses->create($companyId, $licenseId, $name);
+
+        $id = $this->db->licenses->create(
+            (int)$request->companyId,
+            (int)$request->licenseId,
+            trim($request->name ?? ''),
+        );
 
         return ['status' => 'ok', 'id' => $id];
     }
 
+    /** O que não vier no corpo fica como está: é o que o `?? $existing` fazia à mão. */
     public function update(int $id, array $payload): array
     {
         $existing = $this->db->licenses->findById($id);
         if ($existing === null) {
             return ApiError::licenseNotFound()->toArray();
         }
-        $companyId = (int)($payload['companyId'] ?? $existing['company_id']);
-        $licenseId = (int)($payload['licenseId'] ?? $existing['license_id']);
-        $name = trim((string)($payload['name'] ?? $existing['name']));
-        $this->db->licenses->update($id, $companyId, $licenseId, $name);
+
+        $request = $this->binder->bind($payload, LicenseWriteRequest::class, coerceStrings: true);
+        if (is_array($request)) {
+            return $request;
+        }
+
+        $this->db->licenses->update(
+            $id,
+            $request->companyId ?? (int)$existing['company_id'],
+            $request->licenseId ?? (int)$existing['license_id'],
+            trim($request->name ?? (string)$existing['name']),
+        );
 
         return ['status' => 'ok'];
     }

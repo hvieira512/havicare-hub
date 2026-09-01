@@ -4,6 +4,8 @@ namespace Hub\Api\OpenApi\Schemas;
 
 use Hub\Api\OpenApi\SchemaFromRequest;
 use Hub\Api\Request\ApiUserWriteRequest;
+use Hub\Api\Request\CompanyWriteRequest;
+use Hub\Api\Request\LicenseWriteRequest;
 
 /**
  * Utilizadores da API, empresas e licenças.
@@ -63,13 +65,7 @@ final class TenancySchemas
                 ],
             ],
             'CompanyListResponse' => CommonSchemas::collection('CompanyItem'),
-            'CompanyWriteRequest' => [
-                'type' => 'object',
-                'required' => ['name'],
-                'properties' => [
-                    'name' => ['type' => 'string', 'example' => 'hitcare'],
-                ],
-            ],
+            'CompanyWriteRequest' => SchemaFromRequest::schema(CompanyWriteRequest::class),
         ];
     }
 
@@ -89,15 +85,13 @@ final class TenancySchemas
                 ],
             ],
             'LicenseListResponse' => CommonSchemas::collection('LicenseItem'),
-            'LicenseWriteRequest' => [
-                'type' => 'object',
-                'required' => ['companyId', 'licenseId'],
-                'properties' => [
-                    'companyId' => ['type' => 'integer', 'example' => 1],
-                    'licenseId' => ['type' => 'integer', 'example' => 1001],
-                    'name' => ['type' => 'string', 'example' => 'gucc.dev'],
-                ],
-            ],
+            // O criar exige a empresa e a licença; o actualizar aceita a ausência de ambos
+            // como "fica como está", e é por isso que passam a ser dois esquemas e não um.
+            'LicenseCreateRequest' => SchemaFromRequest::schema(
+                LicenseWriteRequest::class,
+                [LicenseWriteRequest::GROUP_CREATE],
+            ),
+            'LicenseUpdateRequest' => SchemaFromRequest::schema(LicenseWriteRequest::class),
         ];
     }
 }
