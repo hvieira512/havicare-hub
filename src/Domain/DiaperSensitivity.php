@@ -5,28 +5,17 @@ declare(strict_types=1);
 namespace Hub\Domain;
 
 /**
- * Os dois limiares que decidem quando uma fralda conta como suja.
+ * Os dois limiares que decidem quando uma fralda conta como suja, com os presets e as gamas
+ * num só sítio.
  *
- * A app da MONIT expõe exactamente estes dois valores e três presets sobre eles.
- * Isto existe para que os presets, as gamas válidas e a graduação vivam num só
- * ficheiro em vez de espalhados pelo repositório, pelo controlador, pelo
- * normalizador e pelo JavaScript.
- *
- * NÃO HÁ DOWNLINK. O sensor é um beacon BLE não-conectável e nada lhe é enviado; o
- * que estes valores mudam é a regra com que o hub deriva o estado da fralda a
- * partir da mesma leitura física.
+ * Não há downlink: o sensor é um beacon não-conectável, e o que estes valores mudam é a regra
+ * com que o hub interpreta a mesma leitura física. Ver `docs/17-sensor-de-fralda.md` §3.
  */
 final class DiaperSensitivity
 {
     /**
-     * Os três presets da app da MONIT, nomeados pela sensibilidade que representam.
-     *
-     * A app deles chama-lhes "More/Normal/Fewer Diaper Alerts", pela consequência. O
-     * hub nomeia-os pela grandeza que se está a regular, como o `fall_sensitivity` dos
-     * relógios: baixa sensibilidade é que dá menos alertas, e ter as chaves a falar de
-     * contagem de alertas obrigava a inverter o eixo para as ler.
-     *
-     * Ordenados do menos sensível para o mais, que é a ordem em que aparecem no ecrã.
+     * Nomeados pela grandeza que se regula, como o `fall_sensitivity` dos relógios, e não
+     * pela consequência. Do menos sensível para o mais, que é a ordem no ecrã.
      *
      * @var array<string, array{pollutionRange: int, pollutionValue: int}>
      */
@@ -41,9 +30,8 @@ final class DiaperSensitivity
     public const VALUE_BOUNDS = [5, 25];
 
     /**
-     * A graduação que a app deles mostra ao lado de um valor personalizado, em
-     * [mínimo, máximo, etiqueta]. Viaja na resposta da API para que quem desenha o
-     * selector não tenha de manter uma segunda cópia destas fronteiras.
+     * A graduação, em [mínimo, máximo, etiqueta]. Viaja na resposta da API para o cliente não
+     * manter uma segunda cópia destas fronteiras.
      *
      * @var list<array{int, int, string}>
      */
@@ -57,11 +45,8 @@ final class DiaperSensitivity
     }
 
     /**
-     * O nome do perfil é derivado dos valores e nunca guardado.
-     *
-     * Guardar perfil E valores permitia que discordassem -- um perfil "normal" com
-     * os valores do "high". Com uma só fonte de verdade isso é impossível, e
-     * o "personalizado" sai de graça em vez de ser um quarto estado a manter.
+     * Derivado dos valores e nunca guardado: guardar os dois permitia que discordassem, e o
+     * "personalizado" sai de graça em vez de ser um quarto estado.
      */
     public static function profile(int $pollutionRange, int $pollutionValue): string
     {
@@ -75,19 +60,11 @@ final class DiaperSensitivity
     }
 
     /**
-     * O limiar que separa `clean` de `attention`, derivado do valor de molhado.
+     * O limiar que separa `clean` de `attention`. É do hub e não da MONIT, e é derivado para
+     * acompanhar o valor de molhado em vez de ficar absoluto.
      *
-     * Este terceiro limiar é NOSSO e não da MONIT: a app deles expõe dois valores e
-     * tem dois estados, e o `clean` é invenção do hub. Mantê-lo absoluto enquanto o
-     * valor de molhado varia produzia absurdos -- com `pollutionValue` a 25, um delta
-     * de 4 tirava a fralda de `clean` faltando-lhe 21 para contar como molhada.
-     *
-     * A divisão por 4 não é arbitrária: é o que mantém verdadeira a prova aritmética
-     * das bandas do índice de humidade. Com todos os deltas em `clean` limitados a
-     * `pollutionValue / 4`, cada termo da saturação fica em 0.25 ou abaixo, logo a
-     * média também, logo o índice não passa de 25 -- que é o tecto da banda `clean`.
-     * O `+1` está aqui porque a comparação é `< cleanMaxDelta` e não `<=`, e é ele
-     * que dá o 4 do preset normal.
+     * A divisão por 4 é o que mantém o índice de `clean` dentro da banda 0-25; o `+1` vem de
+     * a comparação ser `<`. Ver `docs/17-sensor-de-fralda.md` §2.
      */
     public static function cleanMaxDelta(int $pollutionValue): int
     {

@@ -5,13 +5,9 @@ namespace Hub\Api\Http;
 /**
  * Um erro da API: o código, a mensagem e o estado HTTP que lhe pertence.
  *
- * O estado era antes deduzido da forma do código -- um sufixo `_not_found`, um prefixo
- * `duplicate_` --, e por isso um código escrito à mão com um engano de uma letra respondia
- * 400 sem ninguém dar por ela. Aqui cada erro nasce de um construtor com nome: um engano
- * passa a ser um método que não existe, apanhado a compilar em vez de em produção.
- *
- * As mensagens ficam aqui e não nos serviços quando são sempre a mesma: é o texto que vai no
- * fio, e os clientes e a especificação OpenAPI dependem dele palavra por palavra.
+ * Cada erro nasce de um construtor com nome, para um engano ser um método que não existe. As
+ * mensagens ficam aqui porque vão no fio, e os clientes e a especificação dependem delas
+ * palavra por palavra.
  */
 final class ApiError
 {
@@ -19,13 +15,8 @@ final class ApiError
     private const DEFAULT_STATUS = 400;
 
     /**
-     * Todos os códigos que a API sabe devolver, e o estado de cada um.
-     *
-     * Está aqui **cada** código, e não só os que fogem ao 400. Os 400 viviam à parte, numa
-     * segunda lista que o mapa não servia -- o estado deles vinha do `DEFAULT_STATUS` -- e
-     * existia só para o conjunto ser enumerável. Eram duas listas dos mesmos códigos com a
-     * regra tácita de não se cruzarem, e nada a verificava. Uma lista só, e a pergunta «que
-     * estado tem este código?» tem um sítio onde se responde.
+     * Cada código que a API sabe devolver, e o estado de cada um. Estão aqui todos, incluindo
+     * os 400: é o único sítio onde se responde «que estado tem este código?».
      *
      * @var array<string, int>
      */
@@ -49,15 +40,11 @@ final class ApiError
         'gd_jpeg_missing' => 400,
         'invalid_image' => 400,
         'image_save_failed' => 400,
-        // A credencial recusada é 401 e não 400: o pedido está bem formado, o que falha é
-        // quem o faz. O `AuthController` respondia 401 a qualquer erro do login, incluindo a
-        // um pedido sem password nenhuma -- que é 400, e agora sai daqui como tal.
+        // 401 e não 400: o pedido está bem formado, o que falha é quem o faz.
         'invalid_credentials' => 401,
         'invalid_refresh_token' => 401,
-        // Os dois que o `ApiKernel` devolve antes de haver rota: a credencial que falta e a
-        // excepção que ninguém apanhou. Eram construídos à mão lá, e por isso ficavam de fora
-        // deste mapa -- e o que fica de fora daqui nenhuma rota pode declarar. A
-        // especificação prometia 401 numa operação em 48, a do login, e 500 em nenhuma.
+        // Os dois que o `ApiKernel` devolve antes de haver rota. Sem estarem aqui, nenhuma
+        // rota os podia declarar na especificação.
         'unauthorized' => 401,
         'forbidden' => 403,
         'association_not_found' => 404,
@@ -74,11 +61,7 @@ final class ApiError
         'device_exists' => 409,
         'model_exists' => 409,
         'user_exists' => 409,
-        // O nome de empresa repetido respondia 400 porque a regra antiga procurava o prefixo
-        // `duplicate_` e este código é `duplicate` seco, sem sufixo -- nunca casou. O 409 que
-        // o `TenancyPaths` documenta para o criar e o actualizar da empresa nunca chegou a
-        // sair. Aqui o estado passa a ser o que a especificação promete; o `code` na resposta
-        // não muda, porque é por ele que um cliente distingue o caso.
+        // O nome de empresa repetido, que o `TenancyPaths` documenta como 409.
         'duplicate' => 409,
         'server_error' => 500,
     ];
@@ -100,12 +83,8 @@ final class ApiError
     }
 
     /**
-     * Todos os códigos que a API sabe devolver.
-     *
-     * Não tem chamador em produção, e é de propósito: existe para o teste poder confrontar
-     * este mapa com os construtores que o alimentam. É a única forma de perguntar pelo
-     * *conjunto*, e sem ela um construtor novo cujo código ficasse de fora respondia 400 por
-     * omissão e nenhuma rota o podia declarar -- em silêncio, dos dois lados.
+     * Sem chamador em produção de propósito: existe para o teste confrontar este mapa com os
+     * construtores que o alimentam.
      *
      * @return list<string>
      */
@@ -115,12 +94,8 @@ final class ApiError
     }
 
     /**
-     * Como o `statusForCode()`, mas recusa um código que não existe em vez de lhe dar 400.
-     *
-     * É o que a especificação usa. Ali um código enganado não pode cair no estado por
-     * omissão: ninguém o executa, e por isso o engano só apareceria num cliente gerado a
-     * partir de um documento que promete o estado errado. Aqui rebenta a montar o documento,
-     * que é a única altura em que alguém está a olhar.
+     * Como o `statusForCode()`, mas recusa um código que não existe em vez de lhe dar 400. É
+     * o que a especificação usa: um engano rebenta a montar o documento, não num cliente.
      */
     public static function declaredStatus(string $code): int
     {
@@ -129,10 +104,8 @@ final class ApiError
     }
 
     /**
-     * A forma exacta que os serviços devolvem e que o `JsonResponder` serializa.
-     *
-     * O `fields` só aparece quando o erro tem detalhe por campo, para as respostas que
-     * sempre existiram não ganharem uma chave vazia.
+     * A forma que o `JsonResponder` serializa. O `fields` só aparece quando há detalhe por
+     * campo, para as outras respostas não ganharem uma chave vazia.
      *
      * @return array{error: array{code: string, message: string, fields?: array<string, list<string>>}}
      */
@@ -149,11 +122,6 @@ final class ApiError
     /**
      * Um pedido recusado por um ou mais campos, cada um com as suas razões.
      *
-     * **Muda a forma da resposta**, e é uma mudança que os clientes vêem: onde antes vinha
-     * `message` a nomear o primeiro campo que falhou -- `"username is required"` --, passa a
-     * vir uma mensagem genérica e o `fields` com todos. O `code` não muda, e continua a ser
-     * por ele que um cliente distingue o caso.
-     *
      * @param array<string, list<string>> $fields
      */
     public static function invalidFields(array $fields): self
@@ -164,11 +132,8 @@ final class ApiError
     }
 
     /**
-     * Um erro com código próprio que também traz o detalhe por campo.
-     *
-     * É o que mantém o `invalid_role` a existir depois de a validação passar a ser por
-     * constraints: enquanto falha um campo só, o código é o que sempre foi e a `message` é a
-     * de sempre, e o `fields` vem por acréscimo para quem o quiser ler.
+     * Um erro com código próprio que também traz o detalhe por campo. Com um campo só a
+     * falhar, o código e a mensagem são os de sempre e o `fields` vem por acréscimo.
      *
      * @param array<string, list<string>> $fields
      */
@@ -297,11 +262,6 @@ final class ApiError
         return new self('user_exists', 'Username already exists');
     }
 
-    /**
-     * O nome de empresa repetido responde 409, como o `STATUS_BY_CODE` declara. Este bloco
-     * dizia 400, que era o estado que a inferência antiga lhe dava por engano; ficou para
-     * trás quando o mapa passou a decidir.
-     */
     public static function duplicateCompany(): self
     {
         return new self('duplicate', 'Company with this name already exists');
@@ -326,12 +286,7 @@ final class ApiError
         return new self('not_found', 'Not found');
     }
 
-    /**
-     * A excepção que ninguém apanhou.
-     *
-     * Quem a devolve junta-lhe o `requestId`, que é o que liga esta resposta à linha de
-     * registo onde a excepção a sério ficou escrita.
-     */
+    /** Quem a devolve junta-lhe o `requestId`, que liga a resposta à linha do registo. */
     public static function serverError(): self
     {
         return new self('server_error', 'Internal server error');

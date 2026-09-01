@@ -70,11 +70,8 @@ class DeviceService
             $this->capabilityRegistry,
         );
         $this->associations = $associations ?? new DeviceAssociationService($this->store, $this->whitelist, $this->db, $this->hub);
-        // O valor por omissão continua a nascer aqui, e pela mesma razão de sempre: é uma
-        // projecção do mesmo registo e da mesma base de dados que este serviço já tem, e
-        // obrigar quem o constrói a montá-la era pedir-lhe que repetisse o que já lhe deu.
-        // O parâmetro é só a costura: deixa um teste trocar esta peça sem ter de montar as
-        // outras dez à volta dela.
+        // Nasce aqui porque é uma projecção do que este serviço já tem. O parâmetro existe
+        // para um teste poder trocar esta peça sozinha.
         $this->capabilities = $capabilities ?? new DeviceCapabilityPresenter($this->capabilityRegistry, $this->db);
         $this->configurationSync = $configurationSync ?? new ConfigurationSyncStatus();
         $this->directory = $directory ?? new DeviceDirectory($this->store, $this->whitelist, $this->db);
@@ -94,9 +91,7 @@ class DeviceService
         $params = $this->query->params($query);
         $page = $this->query->page($params);
         $limit = $this->query->limit($params, 5);
-        // Todos aceitam vários valores menos o estado, que é uma escolha de três: todos,
-        // ligados, desligados. Escolher "ligados e desligados" seria escolher todos, que já
-        // é a ausência do filtro.
+        // Todos aceitam vários valores menos o estado, que é uma escolha de três.
         $filters = [
             'deviceType' => $this->query->filterList($params, 'deviceType'),
             'supplier' => $this->query->filterList($params, 'supplier'),
@@ -106,11 +101,8 @@ class DeviceService
         ];
         $online = $this->query->onlineFilter($params);
 
-        // A empresa e a licença viajam como pares em `license`. Este endpoint é público e
-        // documentado, por isso os dois parâmetros soltos continuam a funcionar em vez de
-        // serem ignorados em silêncio: uma empresa com licença dá o par, uma empresa sozinha
-        // dá a empresa toda, e uma licença sozinha é uma condição independente -- não há par
-        // para formar sem empresa.
+        // A empresa e a licença viajam como pares em `license`. Os dois parâmetros soltos
+        // continuam a funcionar por o endpoint ser público e documentado.
         $legacyCompany = $this->query->filter($params, 'company');
         $legacyLicenseId = $this->query->filter($params, 'licenseId');
         if ($legacyCompany !== null && $legacyCompany !== 'all') {
@@ -123,9 +115,8 @@ class DeviceService
         $licenseScope = $auth !== null && !$auth->isAdmin() ? $auth->licenseId : null;
         $companyScope = $auth !== null && !$auth->isAdmin() ? $auth->company : null;
 
-        // A presença não está na base de dados, e por isso entra na consulta como uma lista
-        // de IMEI em vez de uma coluna -- na mesma cláusula que os outros filtros, para a
-        // paginação, o total e as contagens por opção continuarem certos.
+        // A presença não é uma coluna: entra como lista de IMEI, na mesma cláusula dos outros
+        // filtros, para a paginação e as contagens saírem certas.
         $onlineImeis = $online === null ? [] : $this->store->onlineDeviceImeis();
         $queryFilters = $filters;
         if ($online === true) {
@@ -239,11 +230,8 @@ class DeviceService
     }
 
     /**
-     * Acrescenta o último sinal em que cada ligação foi ouvida.
-     *
-     * Um avistamento é sempre guardado contra o dispositivo retransmitido, e por isso as duas
-     * colunas da ligação resolvem-no dos dois lados: a página de um sensor e a do seu gateway
-     * leem o mesmo registo em vez de cada uma precisar da sua consulta.
+     * O último sinal de cada ligação. O avistamento é guardado contra o dispositivo
+     * retransmitido, e as duas colunas resolvem-no dos dois lados.
      *
      * @param list<array<string, mixed>> $links
      * @return list<array<string, mixed>>
@@ -426,11 +414,9 @@ class DeviceService
             return ApiError::deviceExists()->toArray();
         }
         $deviceId = $this->directory->normalizeDeviceId($imei, $supplier, $model, $deviceType, $deviceId);
-        // O Redis vai primeiro e o inventário a seguir. É a ordem que importa: o Redis é uma
-        // projecção do inventário -- a listagem, o total e os filtros lêem-se todos do MySQL
-        // --, e por isso uma entrada lá a mais é invisível e o próximo registo reescreve-a.
-        // Pela ordem contrária, uma falha no meio deixava a linha de inventário que a
-        // dashboard nunca chegava a conhecer, e essa aparecia na lista para sempre.
+        // Redis primeiro, inventário a seguir: o Redis é uma projecção, e uma entrada a mais
+        // lá é invisível. Pela ordem contrária, uma falha a meio deixava na lista um
+        // dispositivo que a dashboard nunca conheceu.
         $this->store->registerDevice($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         try {
             $this->whitelist->register($imei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
@@ -481,9 +467,8 @@ class DeviceService
             return $request;
         }
 
-        // O `imei` ausente é o do endereço; o `imei` vazio é uma recusa. É por isso que o
-        // campo é anulável e o `NotBlank` dele só vale no grupo `create`: a criar não há
-        // endereço de onde o herdar.
+        // Ausente é o do endereço; vazio é uma recusa. Daí o campo ser anulável e o
+        // `NotBlank` só valer no grupo `create`.
         $newImei = trim($request->imei ?? $imei);
         $supplier = trim($request->supplier);
         $model = trim($request->model);
@@ -535,14 +520,9 @@ class DeviceService
         }
 
         $deviceId = $this->directory->normalizeDeviceId($newImei, $supplier, $model, $deviceType, $deviceId);
-        // A mesma regra do `create`, aplicada nos dois sentidos: a projecção ganha primeiro e
-        // perde por último, e dentro do inventário o registo novo entra antes de o antigo
-        // sair. Assim uma falha a meio deixa no máximo uma entrada a mais no Redis -- que a
-        // listagem, lida do MySQL, ignora -- e nunca um dispositivo apagado do inventário sem
-        // ter chegado a ser gravado com o IMEI novo.
-        //
-        // O `unregister()` que fecha esta troca é atómico: são três DELETE sem chave
-        // estrangeira a ligá-los, e o `WhitelistRepository` embrulha-os numa transacção.
+        // A regra do `create` nos dois sentidos: a projecção ganha primeiro e perde por
+        // último, e o registo novo entra antes de o antigo sair. Uma falha a meio deixa no
+        // máximo uma entrada a mais no Redis, nunca um dispositivo sem inventário.
         $this->store->registerDevice($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         $this->whitelist->register($newImei, $supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company);
         if ($newImei !== $imei) {
@@ -582,10 +562,8 @@ class DeviceService
             $metadata?->deviceType ?? 'watch',
             $imei
         );
-        // A remoção é a ordem inversa do registo, pela mesma razão: o inventário sai primeiro
-        // e a projecção a seguir. Se o Redis falhar aqui fica lá uma entrada órfã, que nada
-        // lista; se saísse primeiro, uma falha no SQL deixava um dispositivo no inventário
-        // sem projecção nenhuma -- de novo o dispositivo que a dashboard não conhece.
+        // Ordem inversa do registo: inventário primeiro, projecção a seguir. Uma falha no
+        // Redis deixa uma entrada órfã que nada lista.
         $this->whitelist->unregister($imei);
         $this->store->deleteDevice($imei);
 
@@ -602,16 +580,11 @@ class DeviceService
     }
 
     /**
-     * O histórico recente de um dispositivo.
+     * O histórico recente. O `$since` é o cursor do cliente, por lista: vazio devolve tudo,
+     * preenchido só o que entrou depois.
      *
-     * O `$since` é o cursor do cliente, por lista. Vazio devolve tudo -- é o instantâneo de
-     * quem acaba de ligar. Preenchido devolve só o que entrou depois, que é o que faz um
-     * radar a vinte mensagens por segundo custar umas linhas por actualização em vez do
-     * histórico inteiro de cada vez.
-     *
-     * Os comandos vão sempre por inteiro: ao contrário da telemetria e dos eventos, que só
-     * crescem, um comando muda de estado ao longo da vida, e uma entrada que muda não se
-     * pode mandar por diferenças sem dizer também o que desapareceu.
+     * Os comandos vão sempre por inteiro -- ao contrário da telemetria, que só cresce, um
+     * comando muda de estado, e isso não se manda por diferenças.
      *
      * @param array<string, int> $since
      */
@@ -764,9 +737,8 @@ class DeviceService
     }
 
     /**
-     * As confirmações de entrega ficam no `reported_payload` para a hora e a resposta nativa
-     * continuarem inspeccionáveis. Não são valores de configuração reportados, e não podem
-     * ser comparadas com o payload pretendido.
+     * As confirmações de entrega ficam no `reported_payload` para continuarem
+     * inspeccionáveis, mas não são valores reportados e não se comparam com o pretendido.
      *
      * @param list<array<string, mixed>> $configRows
      * @return list<array<string, mixed>>

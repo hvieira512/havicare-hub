@@ -151,10 +151,7 @@ final class WhitelistRepository
         $stmt->execute([$supplier, $model, $deviceType, $licenseId, $simNumber, $deviceId, $company, $imei]);
     }
 
-    /**
-     * A ausência é NULL na tabela e a sentinela em memória, porque o tópico MQTT é um caminho
-     * de texto: estes dois são a fronteira entre as duas formas.
-     */
+    /** A fronteira entre o `NULL` da tabela e a sentinela em memória. */
     private static function storedCompany(string $company): ?string
     {
         return $company === 'null' ? null : $company;
@@ -166,29 +163,17 @@ final class WhitelistRepository
     }
 
     /**
-     * Tira um dispositivo do registo, e com ele as suas configurações. Sem isto, um IMEI
-     * registado outra vez -- o mesmo aparelho a mudar de cliente, ou um número reaproveitado
-     * -- herdava os valores desejados do dono anterior.
+     * Tira um dispositivo do registo e com ele as suas configurações, senão um IMEI registado
+     * outra vez herdava os valores do dono anterior.
      *
-     * Feito aqui e não com uma chave estrangeira `ON DELETE CASCADE`, ao contrário da
-     * `gateway_device_links`: o `DeviceEventStore` escreve uma configuração reportada direto
-     * do caminho de ingestão sempre que chega um `device_config`, e uma chave estrangeira
-     * transformava uma mensagem em voo no instante da remoção -- ou nos segundos em que a
-     * cache de whitelist do worker ainda não expirou -- numa excepção no caminho quente do
-     * MQTT. Este é o único sítio por onde um dispositivo sai do registo.
-     *
-     * As operações não precisam de menção: já cascateiam a partir das alterações.
+     * Sem `ON DELETE CASCADE` de propósito: o `DeviceEventStore` escreve configurações
+     * reportadas a partir do caminho de ingestão, e a chave estrangeira transformava uma
+     * mensagem em voo numa excepção no caminho quente do MQTT.
      */
     public function unregister(string $imei): void
     {
-        // As três remoções são uma só operação. Precisamente por não haver chave estrangeira
-        // a cascatear -- a razão está acima --, nada repunha a coerência se a segunda ou a
-        // terceira falhasse: ficava um dispositivo sem configurações mas ainda no registo, e
-        // portanto ainda aceite pela ingestão, ou uma linha de whitelist já removida com as
-        // configurações órfãs a sobreviver-lhe.
-        //
-        // O `inTransaction()` existe porque uma transacção pode já estar aberta por quem
-        // chama, e o PDO não aninha: quem a abriu é que a fecha.
+        // As três remoções são uma só operação: sem cascata, nada repunha a coerência se a
+        // segunda falhasse. O PDO não aninha transacções, e quem a abriu é que a fecha.
         $ownsTransaction = !$this->pdo->inTransaction();
         if ($ownsTransaction) {
             $this->pdo->beginTransaction();
@@ -256,12 +241,8 @@ final class WhitelistRepository
     }
 
     /**
-     * A condição da listagem.
-     *
-     * As chaves não são uma forma fixa: `deviceType`, `supplier` e `model` aceitam uma lista
-     * ou um valor, `license` traz pares empresa-licença, e `imeiIn`/`imeiNotIn` trazem os
-     * dispositivos que o estado de ligação deixa passar -- essa é presença em runtime e não
-     * uma coluna, e entra aqui como lista para a paginação e as contagens continuarem certas.
+     * A condição da listagem. O `imeiIn`/`imeiNotIn` traz o estado de ligação, que é presença
+     * em runtime e não uma coluna, e entra como lista para a paginação sair certa.
      *
      * @param array<string, mixed> $filters
      * @return array{0: string, 1: array<int, mixed>}
@@ -316,11 +297,8 @@ final class WhitelistRepository
             $params[] = DeviceMetadata::normalizeLicenseId($legacyLicenseId);
         }
 
-        // A empresa e a licença são um filtro só, e o que ele escolhe são pares: cada par é
-        // uma condição, e os pares ligam-se por "ou". Um par sem licença é a empresa toda.
-        //
-        // Como duas condições independentes ligadas por "e", escolher {hitcare, haviCare} e
-        // {1001, 2002} trazia também um dispositivo da hitcare com a licença 2002.
+        // Pares, e não dois filtros independentes: {hitcare, haviCare} com {1001, 2002}
+        // trazia um dispositivo da hitcare com a licença 2002.
         $pairs = $this->licensePairs($filters);
         if ($pairs !== []) {
             $pairClauses = [];
@@ -387,10 +365,8 @@ final class WhitelistRepository
     }
 
     /**
-     * Os valores de um filtro que aceita vários, seja como lista ou como valor único.
-     *
-     * Aceita as duas formas para que um cliente que ainda envie `deviceType=watch` continue
-     * a funcionar, em vez de a listagem passar a ignorá-lo em silêncio.
+     * Lista ou valor único: um cliente que ainda envie `deviceType=watch` continua a
+     * funcionar em vez de ser ignorado em silêncio.
      *
      * @return list<string>
      */
@@ -418,11 +394,8 @@ final class WhitelistRepository
     }
 
     /**
-     * Os pares empresa-licença escolhidos.
-     *
-     * Cada entrada é `empresa`, `empresa:licença`, ou `none` para os dispositivos sem
-     * empresa nem licença. A empresa sozinha quer dizer "todas as licenças desta empresa",
-     * que é o que marcar a caixa da empresa faz.
+     * Cada entrada é `empresa`, `empresa:licença`, ou `none` para os que não têm dono. A
+     * empresa sozinha quer dizer todas as licenças dela.
      *
      * @return list<array{company: ?string, licenseId: ?int}>
      */
@@ -478,13 +451,8 @@ final class WhitelistRepository
     }
 
     /**
-     * As opções de um filtro, cada uma com quantos dispositivos tem.
-     *
-     * A contagem é o que diz o que se ganha ao marcar mais uma caixa, e sai por agrupamento
-     * na mesma consulta que já dava os valores distintos -- não custa um pedido a mais.
-     *
-     * O próprio filtro fica de fora da condição: marcar `hitcare` estreita a lista de modelos
-     * mas mantém `haviCare` à vista, que é o que a escolha múltipla precisa.
+     * As opções de um filtro, com a contagem de cada uma. O próprio filtro fica de fora da
+     * condição: marcar `hitcare` estreita os modelos mas mantém `haviCare` à vista.
      *
      * @param array<string, mixed> $filters
      * @return list<array{value: string, count: int}>
@@ -513,27 +481,8 @@ final class WhitelistRepository
     }
 
     /**
-     * A árvore de empresas e licenças, para o filtro que junta as duas.
-     *
-     * Vem em árvore e não em duas listas porque é assim que o domínio é: uma licença
-     * pertence a uma empresa, e um dispositivo tem as duas ou nenhuma. Os dispositivos sem
-     * empresa saem à parte, em `none`, e não como um nó com licenças por baixo -- não há
-     * licença fora de uma empresa para lá pôr.
-     *
-     * @param array<string, mixed> $filters
-     * @return array{companies: list<array{company: string, count: int, licenses: list<array{licenseId: int, count: int}>}>, none: int}
-     */
-    /**
-     * Os modelos agrupados pelo fornecedor a que pertencem, como a licença é agrupada pela
-     * empresa.
-     *
-     * A relação tem de sair do SQL e não de juntar as duas listas planas no cliente: o mesmo
-     * nome de modelo pode existir em dois fornecedores, e aí a contagem plana não diz de qual
-     * é. Aqui o par vem do `GROUP BY` e não há ambiguidade nenhuma.
-     *
-     * Os dois filtros ficam de fora do cálculo pela mesma razão que o da licença fica: a
-     * contagem ao lado de cada caixa é a de quantos aparecem se for essa a escolha, e com o
-     * próprio filtro aplicado seria sempre a do que já está à vista.
+     * Os modelos agrupados pelo fornecedor. O par sai do `GROUP BY` e não de juntar duas
+     * listas planas: o mesmo nome de modelo pode existir em dois fornecedores.
      *
      * @param array<string, mixed> $filters
      * @return array{suppliers: list<array{supplier: string, count: int, models: list<array{model: string, count: int}>}>}

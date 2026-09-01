@@ -12,29 +12,22 @@ use Hub\Device\RawPayload;
 
 final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 {
-    /**
-     * Como cada tipo de dispositivo retransmitido reporta. Necessário quando o sinal se cala,
-     * porque não sobra observação nenhuma de onde o ler.
-     */
+    /** Como cada tipo retransmitido reporta, para quando não há observação de onde o ler. */
     private const RELAYED_PROTOCOLS = [
         'bracelet' => 'moko-w6b',
         'diaper_sensor' => 'monit-mecs-pro-ble',
     ];
 
-    /**
-     * As mensagens que trazem relatórios de scan, e não estado do próprio gateway.
-     *
-     * O 3070 é do MKGW3 (JSON); o 30a0 e o 30b2 são do MKGW4 (binário).
-     */
+    /** Relatórios de scan, e não estado do gateway. 3070 é MKGW3; 30a0 e 30b2 são MKGW4. */
     private const SCAN_MESSAGE_IDS = ['3070', '30a0', '30b2'];
     // O modelo desempata as pulseiras: ver `relayedProtocol()`.
 
     /**
-     * Quanto tempo um toque da W6 cala os que vierem depois. Um pouco mais do que os 30
-     * segundos que o slot anuncia, para a frame repetida dar um alarme e não trinta.
+     * Um pouco mais do que os 30 segundos que o slot anuncia, para a frame repetida dar um
+     * alarme e não trinta.
      *
-     * ponytail: dois toques do mesmo modo dentro da mesma janela contam como um. A frame não
-     * traz contador, e por isso não há como distingui-los.
+     * ponytail: dois toques do mesmo modo na mesma janela contam como um -- a frame não traz
+     * contador.
      */
     private const W6_PRESS_WINDOW_SECONDS = 35;
 
@@ -86,10 +79,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     private readonly GatewayDeviceLinkLookup $links;
     private readonly ObservationStateStore $state;
 
-    /**
-     * Resolvido uma vez e guardado, ao contrário dos decoders sem estado acima: este leva a
-     * janela de amostras, e uma instância nova por avistamento via-a sempre vazia.
-     */
+    /** Guardado, ao contrário dos decoders acima: leva a janela de amostras. */
     private ?ProximityTracker $proximity = null;
 
     private function proximity(): ProximityTracker
@@ -185,14 +175,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             'deviceType' => $deviceType, 'licenseId' => $licenseId, 'company' => $company,
             'protocol' => $protocol, 'transport' => 'mqtt', 'online' => '1',
         ]);
-        // O histórico do gateway guarda as tramas do próprio gateway. Um relatório de scan
-        // descreve os dispositivos retransmitidos, e cada um desses já tem o seu histórico.
-        //
-        // Publicar continua a publicar tudo: quem integra pelo MQTT lê a série completa. O que
-        // não cabe é na lista da dashboard, que guarda 100 entradas -- em modo de reporte
-        // imediato chegam duas mensagens por segundo, e a janela caía para menos de um minuto.
-        // As tramas de estado, que trazem bateria e cobertura, eram despejadas em segundos e
-        // deixavam de aparecer de todo.
+        // Só as tramas do próprio gateway entram no histórico dele; os scans descrevem os
+        // dispositivos retransmitidos, que já têm o seu. No MQTT continua a sair tudo.
         if (!in_array((string)$decoded['messageId'], self::SCAN_MESSAGE_IDS, true)) {
             $this->dashboardStore?->append($deviceKey, 'raw', $raw + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
@@ -216,8 +200,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Um gateway retransmite todos os dispositivos BLE que vê, por isso cada observação é
-     * oferecida aos decoders por ordem e o primeiro que a reconhece fica com o payload.
+     * Cada observação é oferecida aos decoders por ordem; o primeiro que a reconhece fica
+     * com o payload.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $observation
      */
@@ -245,20 +229,10 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * O sinal de um avistamento que nenhum decoder reclamou.
+     * O sinal de um avistamento que nenhum decoder reclamou. O RSSI é medido pelo gateway e
+     * existe quer se saiba ler o anúncio, quer não -- descartá-lo perdia amostras.
      *
-     * O RSSI é medido pelo gateway e não vem no payload: existe na observação quer se saiba
-     * ler o que o dispositivo anunciou, quer não. Enquanto um avistamento só contou depois de
-     * um decoder o reclamar, cada frame que não sabíamos ler era uma amostra de proximidade
-     * deitada fora.
-     *
-     * A W6 é o caso que o mostra. Anuncia em seis slots e nós lemos dois -- o acelerómetro e
-     * os UID com o nosso namespace --, por isso o TLM e os UID de outra configuração caíam
-     * todos. Medido no gateway F1F7: a W6 aparecia 59 vezes em 60 segundos e rendia 10
-     * mensagens de proximidade, enquanto a W6B rendia 42 a partir de menos avistamentos.
-     *
-     * Só para dispositivos retransmitidos já registados e ligados a este gateway: um beacon
-     * qualquer que passe continua a não ser assunto nosso.
+     * Só para dispositivos já registados e ligados a este gateway.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $observation
      */
@@ -285,10 +259,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Como um dispositivo retransmitido reporta, quando não há observação de onde o ler.
-     *
-     * O tipo sozinho não chega: uma pulseira tanto é uma W6 como uma W6B, e o modelo é o que
-     * as separa.
+     * O tipo sozinho não chega: uma pulseira tanto é W6 como W6B, e é o modelo que as separa.
      *
      * @param array<string, mixed> $device
      */
@@ -335,8 +306,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Uma W6B premida anuncia durante 30 segundos, e por isso a mesma contagem de toques
-     * chega muitas vezes. Cada modo tem o seu contador, e só uma mudança é um toque novo.
+     * Uma W6B premida anuncia 30 segundos: cada modo tem contador, e só uma mudança é toque.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
      */
@@ -354,12 +324,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
                 $deviceKey . ':press:' . $decoded['alarm']['pressMode'],
                 (string)$decoded['alarm']['triggerCount'],
             );
-            // Não há toque nem quando o contador não se moveu nem no primeiro avistamento
-            // desta pulseira: o contador é cumulativo, e vê-lo pela primeira vez não diz
-            // nada sobre um toque ter acabado de acontecer. É o contrário da condição da
-            // fralda abaixo, onde uma primeira observação já em `change_required` TEM de dar
-            // alarme -- e é por isso que o store reporta os dois factos e cada chamador
-            // decide o que fazer com eles.
+            // O contador é cumulativo: vê-lo pela primeira vez não é um toque. É o contrário
+            // da fralda abaixo, onde a primeira observação já suja tem de dar alarme.
             $previousTriggerCount = $transition === null || $transition['previous'] === null
                 ? null
                 : (int)$transition['previous'];
@@ -397,10 +363,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Uma W6 premida põe o slot daquele modo a anunciar durante 30 segundos, e todos os
-     * gateways em alcance repetem a frame. Como não há contador cumulativo por onde ver o
-     * que é novo, o toque é estrangulado por tempo: o primeiro avistamento de um modo dá o
-     * alarme e os seguintes calam-se até a janela fechar.
+     * A W6 não tem contador cumulativo, e por isso o toque é estrangulado por tempo: o
+     * primeiro avistamento de um modo dá o alarme, os seguintes calam-se até a janela fechar.
      *
      * @param array<string, mixed> $gateway @param array<string, mixed> $decoded
      */
@@ -451,15 +415,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Reporta o sinal entre um dispositivo retransmitido e o gateway que o ouviu.
+     * O sinal entre um dispositivo retransmitido e o gateway que o ouviu.
      *
-     * Publicado por avistamento e não pelo `shouldPublish()`: esse throttle faz impressão
-     * digital dos dados de telemetria, e o sinal vive fora dela -- um avistamento cujo sinal
-     * mexeu mas cujas leituras não mexeram era descartado, e o cliente ficava com uma série
-     * com buracos que não podia ver.
-     *
-     * Também não vai para o histórico do dispositivo: a uns quarenta avistamentos por minuto
-     * e por par, soterrava a lista e a tabela de telemetria da dashboard.
+     * Publicado por avistamento, fora do `shouldPublish()`: esse compara os dados de
+     * telemetria, e o sinal mexe-se quando as leituras não mexem. Não entra no histórico do
+     * dispositivo, que a quarenta avistamentos por minuto ficaria só com isto.
      *
      * @param array<string, mixed> $device o dispositivo retransmitido, já autorizado
      * @param array<string, mixed> $gateway
@@ -513,11 +473,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
     }
 
     /**
-     * Diz ao cliente quando um par se calou.
-     *
-     * `unknown` não é `far`: fora de alcance, uma bateria descarregada, um gateway offline e
-     * um filtro apertado demais são indistinguíveis entre si e de não estar ninguém lá.
-     * Reportado uma vez por par, para o silêncio ficar silencioso depois disso.
+     * Diz ao cliente quando um par se calou. `unknown` não é `far`: fora de alcance, bateria
+     * descarregada e gateway offline são indistinguíveis. Reportado uma vez por par.
      */
     public function expireStaleProximity(): void
     {
@@ -571,14 +528,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $this->dashboardStore?->append($sensorKey, 'telemetry', $telemetry + ['deviceType' => $deviceType, 'licenseId' => $licenseId]);
         }
 
-        // A sensibilidade entra no VALOR guardado e não na chave. Mudar a configuração muda a
-        // condição derivada para a mesma leitura física, e essa mudança tem de contar como
-        // transição -- senão um cuidador que aperta a sensibilidade numa fralda já suja não
-        // recebe alarme nenhum.
-        //
-        // Na chave não servia: passar de `normal` para `low` e voltar a `normal` reencontrava
-        // a chave antiga com `change_required` lá dentro, não via transição, e engolia o
-        // alarme.
+        // A sensibilidade entra no valor guardado e não na chave: apertá-la numa fralda já
+        // suja tem de contar como transição e dar alarme.
         $transition = $this->state->transitionCondition(
             $sensorKey,
             $normalized['condition'] . '@' . $sensitivity['pollutionRange'] . '-' . $sensitivity['pollutionValue'],

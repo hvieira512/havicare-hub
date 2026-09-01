@@ -11,22 +11,11 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 /**
  * Transforma o corpo de um pedido no objecto que o descreve, ou no erro que o recusa.
  *
- * Duas coisas mudam em relação ao que os serviços faziam à mão.
+ * Os erros vêm todos de uma vez, e um valor do tipo errado é recusado em vez de convertido --
+ * um `(int)"abc"` dava `0`, que quer dizer alguma coisa nas regras de licença.
  *
- * A primeira é que os erros vêm todos de uma vez. O `trim((string)($payload['x'] ?? ''))`
- * seguido de um `return` ao primeiro campo em falta obrigava quem preenche um formulário com
- * três campos errados a três idas ao servidor para os descobrir.
- *
- * A segunda é que um valor do tipo errado passa a ser recusado em vez de convertido. O
- * `(int)($payload['licenseRefId'] ?? 0)` transformava `"abc"` em `0`, e o `0` quer dizer
- * alguma coisa nas regras de licença -- uma entrada inválida entrava como uma entrada válida.
- *
- * A construção do objecto é feita aqui, por reflexão sobre o construtor, e não pelo
- * `symfony/serializer`. O serializer fazia exactamente isto e trazia atrás o
- * `property-access`, o `property-info`, o `string` e o `type-info` -- seis pacotes para
- * converter um array num objecto, dois dos quais exigem PHP mais recente do que o
- * `composer.json` declara. O que ele fazia a mais aqui não se usava: não há grafos de
- * objectos nem formatos além de arrays já descodificados.
+ * A construção é por reflexão sobre o construtor, e não pelo `symfony/serializer`: esse
+ * trazia atrás seis pacotes para converter um array num objecto.
  */
 final class RequestBinder
 {
@@ -92,23 +81,8 @@ final class RequestBinder
     }
 
     /**
-     * O erro, com o código e a mensagem do campo quando só um campo falhou.
-     *
-     * O serviço antigo devolvia um erro de cada vez: um papel inválido tinha o seu
-     * `invalid_role`, e um `username` em falta tinha a mensagem `username is required`.
-     * Enquanto falha um campo só, esse contrato mantém-se inteiro -- o código e a mensagem
-     * são os de sempre, e o `fields` vem por acréscimo para quem o quiser ler. Nenhum cliente
-     * vê nada mudar.
-     *
-     * A mensagem preserva-se com ou sem código próprio. Ficar só pelos campos mapeados
-     * deixava o `username` e o `password` a responder "The request contains invalid fields"
-     * onde antes diziam qual era o campo -- e a mensagem antiga está ali ao lado, declarada
-     * na constraint. Quem a mostra a um utilizador passava a mostrar uma frase que não
-     * ajuda ninguém.
-     *
-     * Vários campos a falhar é situação que antes não existia -- não havia como dois códigos
-     * viajarem numa resposta -- e aí a mensagem genérica é a honesta, com o `fields` a dizer
-     * tudo.
+     * Com um campo só a falhar, o código e a mensagem da constraint são preservados, e o
+     * `fields` vem por acréscimo. Com vários, a mensagem genérica é a honesta.
      *
      * @param array<string, list<string>> $fieldErrors
      * @param array<string, string> $codeByField
@@ -116,11 +90,8 @@ final class RequestBinder
      */
     private static function error(array $fieldErrors, array $codeByField): array
     {
-        // Vários campos com a mesma mensagem são um erro só dito por vários sítios, e não
-        // vários erros. A associação de dispositivo recusava `company` e `licenseId` com um
-        // texto só -- `company and licenseId are required` --, e o modelo faz o mesmo com
-        // três campos. Contar os campos em vez das mensagens mandava esses casos para a
-        // mensagem genérica, que é precisamente o contrário do que eles sempre disseram.
+        // Contam-se as mensagens e não os campos: `company and licenseId are required` é um
+        // erro só dito por dois sítios.
         $messages = array_unique(array_merge(...array_values($fieldErrors)));
         if (count($messages) !== 1) {
             return ApiError::invalidFields($fieldErrors)->toArray();
@@ -136,19 +107,12 @@ final class RequestBinder
     }
 
     /**
-     * O valor convertido para o tipo declarado, ou `null` se não for convertível.
+     * O valor convertido para o tipo declarado, ou `null` se não for convertível. Devolve um
+     * array de um elemento porque um campo pode legitimamente valer `null`.
      *
-     * Devolve um array de um elemento e não o valor: um campo pode legitimamente valer
-     * `null`, e um `null` de retorno tem de querer dizer "recusado" e mais nada.
-     *
-     * A conversão de strings numéricas é opcional, e a rota é que decide.
-     *
-     * O `multipart/form-data` não tem tipos: o `supplier_id` chega como `"3"` e o `enabled`
-     * como `"1"`, e sem conversão um formulário válido era recusado. A associação de
-     * dispositivo não é um formulário e mesmo assim precisa dela, porque sempre aceitou o
-     * `licenseId` como texto -- é o que os clientes mandam e o que os testes de integração
-     * escrevem. Onde não se pede, um `"3"` num campo inteiro é um cliente com um erro, e vale
-     * mais dizer-lho do que adivinhar por ele.
+     * A conversão de strings numéricas é opcional e a rota é que decide: o
+     * `multipart/form-data` não tem tipos, e fora dele um `"3"` num campo inteiro é um erro
+     * do cliente que vale mais apontar do que adivinhar.
      *
      * @return array{0: mixed}|null
      */
@@ -203,13 +167,9 @@ final class RequestBinder
     }
 
     /**
-     * Aceita `license_ref_id` como `licenseRefId`, e `capabilities[]` como `capabilities`.
-     *
-     * As duas grafias sempre foram aceites, campo a campo, com um `?? $payload['snake_case']`
-     * escrito à mão em cada uma -- quinze deles espalhados pelos serviços. Aqui é a regra uma
-     * vez. O sufixo `[]` é como um formulário nomeia um campo repetido e não faz parte do
-     * nome do campo. A chave em camelCase ganha quando as duas vêm no mesmo corpo, porque é
-     * a que a especificação documenta.
+     * Aceita `license_ref_id` como `licenseRefId`, e `capabilities[]` como `capabilities`. O
+     * camelCase ganha quando as duas vêm no mesmo corpo, por ser o que a especificação
+     * documenta.
      *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
