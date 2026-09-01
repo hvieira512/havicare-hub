@@ -64,8 +64,15 @@ final class SchemaFromRequest
     {
         $type = $parameter->getType();
         $property = ['type' => self::jsonType($type instanceof \ReflectionNamedType ? $type->getName() : 'string')];
-        if ($type instanceof \ReflectionNamedType && $type->allowsNull()) {
+        // Um campo obrigatório não é anulável, por muito que o tipo em PHP o permita: o
+        // `?string $imei` é anulável para o actualizar o poder herdar do endereço, e anunciar
+        // `nullable` no criar -- onde ele é obrigatório -- dizia ao cliente que mandar `null`
+        // era uma das formas de o satisfazer.
+        if (!$required && $type instanceof \ReflectionNamedType && $type->allowsNull()) {
             $property['nullable'] = true;
+        }
+        foreach ($parameter->getAttributes(Example::class) as $attribute) {
+            $property['example'] = $attribute->newInstance()->value;
         }
 
         foreach ($constraints as $constraint) {

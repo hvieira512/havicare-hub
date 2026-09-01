@@ -5,6 +5,7 @@ namespace Hub\Api\OpenApi\Schemas;
 use Hub\Api\OpenApi\Responses;
 use Hub\Api\OpenApi\SchemaFromRequest;
 use Hub\Api\Request\DeviceAssociationRequest;
+use Hub\Api\Request\DeviceWriteRequest;
 
 /**
  * Os recursos de dispositivo: resumos, detalhe, ciclo de vida da configuração e telemetria.
@@ -72,19 +73,14 @@ final class DeviceSchemas
                     'capabilities' => Responses::ref('DeviceCapabilitiesMatrix'),
                 ],
             ],
-            'DeviceCreateRequest' => [
-                'type' => 'object',
-                'required' => ['imei', 'supplier', 'model'],
-                'properties' => [
-                    'imei' => ['type' => 'string', 'example' => '865028000000306'],
-                    'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
-                    'model' => ['type' => 'string', 'example' => 'HW20PRO'],
-                    'company' => ['type' => 'string', 'example' => 'hitcare'],
-                    'licenseId' => ['type' => 'integer', 'example' => 0],
-                    'simNumber' => ['type' => 'string', 'example' => '+351912345678'],
-                    'deviceId' => ['type' => 'string', 'example' => '8800000015'],
-                ],
-            ],
+            // O `imei` é obrigatório a criar e herdado do endereço a actualizar, e é a única
+            // diferença entre os dois: daí o grupo, e daí serem duas derivações do mesmo
+            // objecto. Escritos à mão, nenhum dos dois mencionava o `deviceType`, que o
+            // serviço lê desde sempre.
+            'DeviceCreateRequest' => SchemaFromRequest::schema(
+                DeviceWriteRequest::class,
+                [DeviceWriteRequest::GROUP_CREATE],
+            ),
             'DeviceCreateResponse' => [
                 'type' => 'object',
                 'required' => ['status', 'imei'],
@@ -93,19 +89,7 @@ final class DeviceSchemas
                     'imei' => ['type' => 'string', 'example' => '865028000000306'],
                 ],
             ],
-            'DeviceUpdateRequest' => [
-                'type' => 'object',
-                'required' => ['supplier', 'model'],
-                'properties' => [
-                    'imei' => ['type' => 'string', 'example' => '865028000000307'],
-                    'supplier' => ['type' => 'string', 'example' => 'Wonlex'],
-                    'model' => ['type' => 'string', 'example' => 'L08 Pro'],
-                    'company' => ['type' => 'string', 'example' => 'hitcare'],
-                    'licenseId' => ['type' => 'integer', 'example' => 0],
-                    'simNumber' => ['type' => 'string', 'example' => '+351912345678'],
-                    'deviceId' => ['type' => 'string', 'example' => '8800000015'],
-                ],
-            ],
+            'DeviceUpdateRequest' => SchemaFromRequest::schema(DeviceWriteRequest::class),
             'DeviceUpdateResponse' => [
                 'type' => 'object',
                 'required' => ['status', 'imei'],

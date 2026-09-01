@@ -9,6 +9,8 @@ use Hub\Api\Http\DeviceResponseCompactor;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Request\DeviceWriteRequest;
+use Hub\Api\Request\RequestBinder;
 use Hub\Domain\Capability\CapabilityCatalog;
 use Hub\Domain\Capability\CapabilityRegistry;
 use Hub\Dashboard\DashboardStoreContract;
@@ -32,6 +34,7 @@ class DeviceService
     private ConfigurationSyncStatus $configurationSync;
     private DeviceDirectory $directory;
     private DeviceFeatureRequestService $featureRequests;
+    private RequestBinder $binder;
 
     public function __construct(
         private DashboardStoreContract $store,
@@ -49,7 +52,9 @@ class DeviceService
         ?ConfigurationSyncStatus $configurationSync = null,
         ?DeviceDirectory $directory = null,
         ?DeviceFeatureRequestService $featureRequests = null,
+        ?RequestBinder $binder = null,
     ) {
+        $this->binder = $binder ?? new RequestBinder();
         $this->query = $query ?? new CollectionQuery();
         $this->presentation = $presentation ?? new DevicePresentation();
         $this->responseCompactor = $responseCompactor ?? new DeviceResponseCompactor();
@@ -395,18 +400,25 @@ class DeviceService
 
     public function create(array $payload): array
     {
-        $imei = trim((string)($payload['imei'] ?? ''));
-        $supplier = trim((string)($payload['supplier'] ?? ''));
-        $model = trim((string)($payload['model'] ?? ''));
-        $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $payload['deviceType'] ?? 'watch'));
-        $licenseId = $this->directory->normalizeLicenseId((string)($payload['licenseId'] ?? '0'), $deviceType);
-        $simNumber = trim((string)($payload['simNumber'] ?? ''));
-        $deviceId = trim((string)($payload['deviceId'] ?? $payload['device_id'] ?? ''));
-        $company = DeviceMetadata::normalizeCompany((string)($payload['company'] ?? 'null'));
-        if ($imei === '' || $supplier === '' || $model === '') {
-            return ApiError::invalidRequest('imei, supplier, and model are required')->toArray();
+        $request = $this->binder->bind(
+            $payload,
+            DeviceWriteRequest::class,
+            [DeviceWriteRequest::GROUP_CREATE],
+            coerceStrings: true,
+        );
+        if (is_array($request)) {
+            return $request;
         }
+
+        $imei = trim((string)$request->imei);
+        $supplier = trim($request->supplier);
+        $model = trim($request->model);
+        $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $request->deviceType));
+        $licenseId = $this->directory->normalizeLicenseId((string)$request->licenseId, $deviceType);
+        $simNumber = trim($request->simNumber);
+        $deviceId = trim($request->deviceId);
+        $company = DeviceMetadata::normalizeCompany($request->company);
         if ($modelRecord === null) {
             return ApiError::modelNotFoundForSupplier()->toArray();
         }
@@ -458,16 +470,30 @@ class DeviceService
             return ApiError::forbidden()->toArray();
         }
 
-        $newImei = trim((string)($payload['imei'] ?? $imei));
-        $supplier = trim((string)($payload['supplier'] ?? ''));
-        $model = trim((string)($payload['model'] ?? ''));
+        $request = $this->binder->bind($payload, DeviceWriteRequest::class, coerceStrings: true);
+        if (is_array($request)) {
+            Logger::channel('api')->warning('API device update rejected', [
+                'request_id' => $requestId,
+                'imei' => $imei,
+                'error_code' => $request['error']['code'] ?? 'invalid_request',
+                'reason' => 'missing_required_metadata_fields',
+            ]);
+            return $request;
+        }
+
+        // O `imei` ausente é o do endereço; o `imei` vazio é uma recusa. É por isso que o
+        // campo é anulável e o `NotBlank` dele só vale no grupo `create`: a criar não há
+        // endereço de onde o herdar.
+        $newImei = trim($request->imei ?? $imei);
+        $supplier = trim($request->supplier);
+        $model = trim($request->model);
         $modelRecord = $this->directory->modelForSupplierAndName($supplier, $model);
-        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $payload['deviceType'] ?? 'watch'));
-        $licenseId = $this->directory->normalizeLicenseId((string)($payload['licenseId'] ?? '0'), $deviceType);
-        $simNumber = trim((string)($payload['simNumber'] ?? ''));
-        $deviceId = trim((string)($payload['deviceId'] ?? $payload['device_id'] ?? ''));
-        $company = DeviceMetadata::normalizeCompany((string)($payload['company'] ?? 'null'));
-        if ($newImei === '' || $supplier === '' || $model === '') {
+        $deviceType = DeviceMetadata::normalizeDeviceType((string)($modelRecord['device_type'] ?? $request->deviceType));
+        $licenseId = $this->directory->normalizeLicenseId((string)$request->licenseId, $deviceType);
+        $simNumber = trim($request->simNumber);
+        $deviceId = trim($request->deviceId);
+        $company = DeviceMetadata::normalizeCompany($request->company);
+        if ($newImei === '') {
             Logger::channel('api')->warning('API device update rejected', [
                 'request_id' => $requestId,
                 'imei' => $imei,

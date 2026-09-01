@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Request;
 
+use Hub\Api\OpenApi\Example;
 use Hub\Domain\DeviceMetadata;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -29,6 +30,7 @@ final class CompanyWriteRequest
     public function __construct(
         #[Assert\NotBlank(message: 'name is required', normalizer: 'trim')]
         #[Assert\Length(max: 191, maxMessage: 'name must be 191 characters or fewer')]
+        #[Example('hitcare')]
         public string $name = '',
     ) {
     }

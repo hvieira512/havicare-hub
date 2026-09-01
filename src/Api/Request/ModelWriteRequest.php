@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Api\Request;
 
+use Hub\Api\OpenApi\Example;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -27,13 +28,17 @@ final class ModelWriteRequest
      */
     public function __construct(
         #[Assert\Positive(message: 'supplier_id, internalModel, and commercialName are required')]
+        #[Example(1)]
         public int $supplierId = 0,
         #[Assert\NotBlank(message: 'supplier_id, internalModel, and commercialName are required')]
         #[Assert\Length(max: 191, maxMessage: 'internalModel must be 191 characters or fewer')]
+        #[Example('HW20PRO')]
         public string $internalModel = '',
         #[Assert\NotBlank(message: 'supplier_id, internalModel, and commercialName are required')]
         #[Assert\Length(max: 191, maxMessage: 'commercialName must be 191 characters or fewer')]
+        #[Example('Wonlex HW20 Pro')]
         public string $commercialName = '',
+        #[Example('watch')]
         public string $deviceType = 'watch',
         public ?array $capabilities = null,
         public bool $capabilitiesConfigured = false,
