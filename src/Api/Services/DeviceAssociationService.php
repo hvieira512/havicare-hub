@@ -7,6 +7,8 @@ namespace Hub\Api\Services;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Http\ApiError;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Request\DeviceAssociationRequest;
+use Hub\Api\Request\RequestBinder;
 use Hub\Dashboard\DashboardStoreContract;
 use Hub\Domain\DeviceMetadata;
 use Hub\Device\DeviceHubServer;
@@ -14,12 +16,16 @@ use Hub\Registry\Whitelist;
 
 final class DeviceAssociationService
 {
+    private RequestBinder $binder;
+
     public function __construct(
         private DashboardStoreContract $store,
         private Whitelist $whitelist,
         private ApiDataAccess $db,
         private ?DeviceHubServer $hub = null,
+        ?RequestBinder $binder = null,
     ) {
+        $this->binder = $binder ?? new RequestBinder();
     }
 
     public function associate(string $imei, array $payload, ?ApiAuthContext $auth = null): array
@@ -29,11 +35,18 @@ final class DeviceAssociationService
             return ApiError::deviceNotFound()->toArray();
         }
 
-        $company = DeviceMetadata::normalizeCompany((string)($payload['company'] ?? ''));
-        $licenseId = DeviceMetadata::normalizeLicenseId((string)($payload['licenseId'] ?? ''));
-        if ($company === '' || $licenseId === 0) {
-            return ApiError::invalidRequest('company and licenseId are required')->toArray();
+        // O `coerceStrings` porque esta rota sempre aceitou o `licenseId` como texto: é o que
+        // os clientes mandam e o que os testes de integração escrevem.
+        $request = $this->binder->bind($payload, DeviceAssociationRequest::class, coerceStrings: true);
+        if (is_array($request)) {
+            return $request;
         }
+
+        // A normalização fica cá fora. O `normalizeCompany()` devolve `'null'` para o vazio,
+        // que é a forma como um dispositivo sem dono se escreve no inventário -- pô-la numa
+        // constraint fazia o `NotBlank` deixar de ver o vazio que tem de recusar.
+        $company = DeviceMetadata::normalizeCompany($request->company);
+        $licenseId = $request->licenseId;
 
         if ($auth !== null && !$auth->isAdmin()) {
             if (!$auth->canAccessTenant($company, $licenseId)) {

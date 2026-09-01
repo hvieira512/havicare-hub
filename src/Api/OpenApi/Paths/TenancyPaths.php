@@ -49,7 +49,7 @@ final class TenancyPaths
                 'post' => [
                     'tags' => ['API Users'],
                     'summary' => 'Create API user',
-                    'requestBody' => Requests::json('ApiUserWriteRequest'),
+                    'requestBody' => Requests::json('ApiUserCreateRequest'),
                     'responses' => Responses::map(
                         ['201' => Responses::json('API user created', 'IdCreateResponse')],
                         ...self::API_USER_WRITE_ERRORS,
@@ -61,7 +61,7 @@ final class TenancyPaths
                     'tags' => ['API Users'],
                     'summary' => 'Update API user',
                     'parameters' => [$id],
-                    'requestBody' => Requests::json('ApiUserWriteRequest'),
+                    'requestBody' => Requests::json('ApiUserUpdateRequest'),
                     'responses' => Responses::map(
                         ['200' => Responses::json('API user updated', 'StatusResponse')],
                         ...self::API_USER_WRITE_ERRORS,
@@ -153,7 +153,7 @@ final class TenancyPaths
                 'post' => [
                     'tags' => ['Licenses'],
                     'summary' => 'Create license',
-                    'requestBody' => Requests::json('LicenseWriteRequest'),
+                    'requestBody' => Requests::json('LicenseCreateRequest'),
                     'responses' => Responses::map(
                         ['200' => Responses::json('License created', 'IdCreateResponse')],
                         'invalid_request',
@@ -165,11 +165,14 @@ final class TenancyPaths
                     'tags' => ['Licenses'],
                     'summary' => 'Update license',
                     'parameters' => [$id],
-                    'requestBody' => Requests::json('LicenseWriteRequest'),
-                    // Sem 400: o actualizar herda do que já lá está o que o pedido não
-                    // trouxer, e por isso não tem campo obrigatório para recusar.
+                    'requestBody' => Requests::json('LicenseUpdateRequest'),
+                    // O actualizar continua a herdar do que já lá está o que o pedido não
+                    // trouxer, mas o que ele *trouxer* passa a ser validado: um `companyId` a
+                    // zero era escrito na mesma, e a chave estrangeira rebentava depois -- o
+                    // cliente levava um 500 no lugar da recusa que lhe pertencia.
                     'responses' => Responses::map(
                         ['200' => Responses::json('License updated', 'StatusResponse')],
+                        'invalid_request',
                         'license_not_found',
                     ),
                 ],

@@ -3,6 +3,8 @@
 namespace Hub\Api\OpenApi\Schemas;
 
 use Hub\Api\OpenApi\Responses;
+use Hub\Api\OpenApi\SchemaFromRequest;
+use Hub\Api\Request\ModelWriteRequest;
 
 /**
  * Fornecedores, modelos, hierarquias de tipos de dispositivo e catálogos de protocolos.
@@ -109,22 +111,13 @@ final class CatalogSchemas
                     'capabilities' => Responses::ref('ModelCapabilitiesMatrix'),
                 ],
             ],
-            'ModelWriteRequest' => [
-                'type' => 'object',
-                'required' => ['supplier_id', 'internalModel', 'commercialName'],
-                'properties' => [
-                    'supplier_id' => ['type' => 'integer', 'example' => 1],
-                    'internalModel' => ['type' => 'string', 'example' => 'HW20PRO'],
-                    'commercialName' => ['type' => 'string', 'example' => 'Wonlex HW20 Pro'],
-                    'deviceType' => ['type' => 'string', 'example' => 'watch'],
-                    'protocol' => ['type' => 'string', 'example' => 'wonlex-json'],
-                    'image' => ['type' => 'string', 'format' => 'binary'],
-                    'capabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
-                    'capabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'phonebook']],
-                    'requestableCapabilitiesConfigured' => ['type' => 'string', 'example' => '1'],
-                    'requestableCapabilities[]' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['heart_rate', 'blood_pressure']],
-                ],
-            ],
+            // Derivado do `ModelWriteRequest`. A imagem entra à mão porque não é um campo do
+            // corpo -- viaja como ficheiro no multipart e o `ModelController` lê-a do
+            // `getUploadedFiles()`, não do payload que o modelo descreve.
+            'ModelWriteRequest' => array_merge_recursive(
+                SchemaFromRequest::schema(ModelWriteRequest::class),
+                ['properties' => ['image' => ['type' => 'string', 'format' => 'binary']]],
+            ),
         ];
     }
 
