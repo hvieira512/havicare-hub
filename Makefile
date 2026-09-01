@@ -26,14 +26,14 @@ simulate-vivistar-tcp:
 	docker compose exec hub php simulator/simulate.php \
 		--server tcp://127.0.0.1:9000 \
 		--model $(or $(MODEL),VIVISTAR-CARE) \
-		--imei $(or $(IMEI),865028000000308) \
+		--imei $(or $(IMEI),861265061009822) \
 		--command $(or $(COMMAND),AP49)
 
 listen-vivistar-tcp:
 	docker compose exec hub php simulator/simulate.php \
 		--server tcp://127.0.0.1:9000 \
 		--model $(or $(MODEL),VIVISTAR-CARE) \
-		--imei $(or $(IMEI),865028000000308) \
+		--imei $(or $(IMEI),861265061009822) \
 		--listen
 
 hub:

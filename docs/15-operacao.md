@@ -54,8 +54,35 @@ identificador **estável**, sem número de processo, porque as sessões são
 persistentes. Dois clientes com o mesmo identificador expulsam-se do broker em
 ciclo — e o sintoma é ingestão a falhar de forma intermitente, sem erro óbvio.
 
+O identificador final é `{prefixo}-{sufixo}`, onde o sufixo identifica o
+subscritor (`sub`, `ncs-sub`, `moko-sub`). O prefixo é o que tem de ser único
+por hub, e é limitado a 14 caracteres — o identificador é truncado aos 23.
+
+**O prefixo dos tópicos MQTT.** Dois hubs que o partilhem publicam nos mesmos
+tópicos e escrevem por cima das mensagens retidas de `status` um do outro. Não
+se expulsam, porque os identificadores de cliente são distintos; o efeito é mais
+silencioso do que isso, e é ver-se o estado de um dispositivo a alternar entre
+duas versões conforme quem publicou por último.
+
 **O prefixo do Redis.** Vazio é produção. Uma instância de desenvolvimento sem
 prefixo escreveria por cima do estado da produção, sem dar erro nenhum.
+
+### Uma terceira instância: a máquina de quem desenvolve
+
+O ambiente local aponta frequentemente ao broker de produção, para ver os
+aparelhos reais. Quando o faz, passa a ser um terceiro hub no mesmo broker e
+precisa do seu próprio espaço:
+
+| | Tópicos | Id de cliente | Id de cliente do radar |
+|---|---|---|---|
+| Produção | `havicare-hub` | `health-mqtt` | `qinglanst-radar` |
+| Desenvolvimento | `havicare-hub-dev` | `health-mqtt-dev` | `qinglanst-radar-dev` |
+| Máquina local | `havicare-hub-{nome}` | `{nome}` | `{nome}-radar` |
+
+> **A produção não declara os identificadores dela**; usa os valores por omissão
+> do `src/Config.php`. Funciona, mas a identidade dela no broker está implícita
+> num literal de código — convém não mexer nesses valores sem os declarar
+> primeiro no `.env` da produção.
 
 ## 2. Publicar
 

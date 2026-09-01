@@ -24,8 +24,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 8.4 é a produção. 8.5 é o contentor de desenvolvimento -- as duas correm para a
-        # diferença aparecer aqui e não no servidor.
+        # 8.4 é a produção e o contentor de desenvolvimento. 8.5 é o que corre nas máquinas
+        # de quem desenvolve -- as duas correm para a diferença aparecer aqui e não no
+        # servidor. O `composer.json` declara `^8.4`, que é exatamente o que se testa.
         php: ['8.4', '8.5']
 
     services:

@@ -19,7 +19,7 @@ final class ConnectionRegistryTest extends TestCase
         $session = $registry->open($connection);
 
         self::assertFalse($session->authenticated);
-        self::assertSame('websocket', $session->transport);
+        self::assertSame('tcp', $session->transport);
         self::assertFalse($registry->isOnline('865028000000306'));
 
         $identity = new DeviceIdentity('865028000000306', 'wonlex-json', 'DEVICE-CLAIMED-MODEL');
