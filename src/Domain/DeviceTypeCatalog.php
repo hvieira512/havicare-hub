@@ -3,21 +3,12 @@
 namespace Hub\Domain;
 
 /**
- * O que cada tipo de dispositivo é, num sítio só.
- *
- * `identity` é o campo que identifica a unidade e o que se lhe escreve ao lado; `sim` diz se
- * há número de SIM; `gatewayLinks` diz se o aparelho é retransmitido por um gateway em vez
- * de falar por conta própria.
- *
- * Estava escrito quatro vezes: a lista dos tipos em PHP e outra vez em `domain.js`, os tipos
- * que um gateway retransmite em PHP e na mesma tabela do JS, e o `sim` na tabela do JS e
- * outra vez como um `deviceType !== "watch"` dentro do `saveDevice`. Acrescentar um tipo
- * obrigava a encontrar os quatro, e o `sim` já tinha divergido -- a tabela dizia uma coisa e
- * o guardar fazia outra.
+ * O que cada tipo de dispositivo é, num sítio só. `identity` é o campo que o identifica,
+ * `sim` diz se há número de SIM, e `gatewayLinks` se é retransmitido por um gateway.
  *
  * A tabela vive num JSON e não neste ficheiro porque os dois lados precisam dela: o PHP
- * serve-a ao browser em `window.hubDeviceTypes`, e os testes do frontend, que correm em node
- * sem PHP nenhum, lêem o mesmo ficheiro. Um artefacto, dois leitores, nenhuma cópia.
+ * serve-a em `window.hubDeviceTypes`, e os testes do frontend, que correm sem PHP, lêem o
+ * mesmo ficheiro.
  */
 final class DeviceTypeCatalog
 {
@@ -69,13 +60,8 @@ final class DeviceTypeCatalog
     }
 
     /**
-     * O JSON tal e qual, para o `index.php` o servir sem o voltar a codificar.
-     *
-     * Com `JSON_HEX_TAG` porque o destino é o meio de uma etiqueta `<script>`: um `</script>`
-     * dentro de uma etiqueta ou de uma ajuda fechava-a a meio, o `window.hubDeviceTypes`
-     * nunca chegava a ser atribuído, e o `domain.js` -- que agora rebenta quando a tabela não
-     * está lá -- levava consigo a página inteira. O ficheiro é nosso e não entrada de
-     * ninguém, mas o custo de o escapar é uma constante.
+     * O JSON tal e qual, para o `index.php` o servir sem o recodificar. Com `JSON_HEX_TAG`
+     * porque o destino é o meio de um `<script>`, e um `</script>` no conteúdo fechava-o.
      */
     public static function asJson(): string
     {

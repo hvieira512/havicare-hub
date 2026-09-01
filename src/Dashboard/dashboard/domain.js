@@ -1,18 +1,10 @@
 /**
- * O que cada tipo de dispositivo tem: o campo que o identifica, se leva SIM, e se é
- * retransmitido por um gateway em vez de falar por conta própria.
+ * O que cada tipo de dispositivo tem. A tabela vive no `DeviceTypeCatalog`, em PHP, e o
+ * `index.php` serve-a em `window.hubDeviceTypes`.
  *
- * A tabela vive no `DeviceTypeCatalog`, em PHP, e o `index.php` serve-a em
- * `window.hubDeviceTypes`. Estava escrita aqui e mais três vezes -- a lista dos tipos
- * também em PHP, os tipos retransmitidos no `DeviceService`, e o `sim` outra vez como um
- * `deviceType !== "watch"` dentro do `saveDevice`, que já tinha divergido desta.
- *
- * Falta a tabela e este módulo recusa carregar. Estava um `?? {}` aqui, e os dois lados do
- * mesmo seam falhavam de maneiras opostas: o `DeviceTypeCatalog::all()` rebenta se o JSON
- * não estiver lá, e aqui a ausência dava uma tabela vazia -- que não dá erro nenhum, dá um
- * formulário sem tipos, uma dropdown vazia e um `normalizeDeviceType` que devolve sempre
- * "watch". Lê-se como problema de dados quando é de fiação. O `index.php` escreve sempre a
- * tabela antes de carregar o módulo, por isso a ausência é um engano e não um estado.
+ * Faltando ela, este módulo recusa carregar. Um valor por omissão vazio não dava erro nenhum
+ * -- dava um formulário sem tipos e um `normalizeDeviceType` que devolvia sempre "watch",
+ * que se lê como problema de dados quando é de fiação.
  */
 const DEVICE_TYPES = globalThis.window?.hubDeviceTypes;
 if (!DEVICE_TYPES || Object.keys(DEVICE_TYPES).length === 0) {
@@ -22,13 +14,8 @@ if (!DEVICE_TYPES || Object.keys(DEVICE_TYPES).length === 0) {
 }
 
 /**
- * O tipo para onde tudo o que não se reconhece cai.
- *
- * O `normalizeDeviceType` tinha o `"watch"` escrito à mão, e a tabela passou a ser um ficheiro
- * de configuração que qualquer pessoa edita ao acrescentar um tipo. Tirar de lá o `watch`
- * passava a verificação acima -- a tabela não fica vazia -- e só rebentava mais à frente, no
- * `linksToGateway` a ler `.gatewayLinks` de `undefined`. O `deviceTypeFields` promete ser
- * "sempre utilizável", e isso só é verdade enquanto este tipo existir: é aqui que se verifica.
+ * O tipo para onde cai tudo o que não se reconhece. Verificado aqui porque tirá-lo da tabela
+ * passava a guarda acima e só rebentava mais à frente, com `undefined` a meio.
  */
 const FALLBACK_DEVICE_TYPE = "watch";
 if (!(FALLBACK_DEVICE_TYPE in DEVICE_TYPES)) {

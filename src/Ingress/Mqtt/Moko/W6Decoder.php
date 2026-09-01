@@ -7,9 +7,8 @@ namespace Hub\Ingress\Mqtt\Moko;
 /**
  * Reconhece uma MOKO W6 retransmitida por um gateway.
  *
- * A W6 tem botão como a W6B -- só mais duro --, mas o firmware que corre é o BXP Nordic, que
- * não tem frame de alarme. O que tem são seis slots de anúncio, cada um com um trigger
- * opcional, e é daí que sai tudo o que se segue:
+ * O firmware é o BXP Nordic, que não tem frame de alarme. Tem seis slots de anúncio, cada um
+ * com um trigger opcional:
  *
  *   SLOT1  3-axis Acc   sempre         -> presença, aceleração e bateria
  *   SLOT2  TLM          sempre
@@ -18,14 +17,11 @@ namespace Hub\Ingress\Mqtt\Moko;
  *   SLOT5  UID  ...0012 clique duplo   -> anuncia 30s
  *   SLOT6  UID  ...0013 clique triplo  -> anuncia 30s
  *
- * O toque não vem no payload: o que o identifica é *qual* slot apareceu. Não há contador
- * cumulativo como na W6B, e a frame repete-se durante os 30 segundos, por isso quem chama
- * tem de estrangular por tempo.
+ * O toque não vem no payload: identifica-o *qual* slot apareceu. Sem contador cumulativo e
+ * com a frame a repetir-se 30 segundos, quem chama tem de estrangular por tempo.
  *
- * ponytail: os Instance ID acima são uma convenção que a pulseira tem de ser configurada
- * para cumprir, e não algo que o dispositivo declare. Uma W6 configurada de outra maneira é
- * vista mas os toques dela não são lidos. Passar isto a configuração quando houver uma
- * segunda W6 com outra convenção.
+ * ponytail: os Instance ID são uma convenção que a pulseira tem de ser configurada para
+ * cumprir. Uma W6 configurada de outra maneira é vista, mas os toques dela não são lidos.
  */
 final class W6Decoder
 {
