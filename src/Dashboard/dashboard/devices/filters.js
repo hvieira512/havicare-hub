@@ -26,15 +26,11 @@ import {
  * a lista -- nenhum deles constrói marcação.
  */
 /**
- * Marcar ou desmarcar um valor de filtro.
+ * Marcar ou desmarcar um valor de filtro. Nada marcado quer dizer tudo, e por isso não há
+ * opção "Todos": desmarcar o último valor é o que a repõe.
  *
- * Nada marcado quer dizer tudo, e é por isso que não há opção "Todos" no topo de cada
- * grupo: desmarcar o último valor é o que a repõe.
- *
- * Marcar uma empresa marca-a inteira, e por isso apaga as licenças dela que estivessem
- * marcadas à parte -- ter as duas coisas na lista significaria a mesma empresa duas vezes
- * na condição. Marcar uma licença de uma empresa que estava inteira troca a empresa pelas
- * suas licenças, para que desmarcar uma só tire essa.
+ * Marcar uma empresa apaga as licenças dela marcadas à parte, senão a condição levava a mesma
+ * empresa duas vezes; marcar uma licença de uma empresa inteira troca-a pelas suas licenças.
  */
 async function toggleDeviceFilter(key, value) {
     const current = state.deviceFilters[key] || [];

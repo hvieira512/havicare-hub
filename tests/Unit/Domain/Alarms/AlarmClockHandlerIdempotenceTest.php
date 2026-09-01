@@ -9,19 +9,12 @@ use Hub\Domain\Capability\AlarmClock\Wonlex;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Descodificar duas vezes tem de dar o mesmo que descodificar uma.
+ * Descodificar duas vezes tem de dar o mesmo que descodificar uma: o
+ * `DeviceCapabilityPresenter` chama o `fromNative` sobre a linha guardada e outra vez quando
+ * o `responseEntry` embrulha o que já normalizou, e à segunda o que chega já é a lista
+ * pública.
  *
- * O `DeviceCapabilityPresenter` chama o `fromNative` duas vezes na mesma leitura: uma sobre a
- * linha guardada, e outra quando o `responseEntry` embrulha o que já normalizou. À segunda o
- * que chega já é a lista pública, sem o invólucro do fornecedor à volta.
- *
- * A Vivistar e a 4P-Touch aguentavam isso porque procuram os itens com um `?? $desired` no
- * fim; a Wonlex não tinha essa alternativa e devolvia lista vazia -- o alarme guardado de um
- * relógio Wonlex desaparecia da resposta da API. Ninguém tinha reparado porque a procura do
- * handler era feita pela chave nativa e não pelo protocolo, e a chave `alarmClock` da Wonlex
- * ia parar ao descodificador da 4P-Touch, que aguenta.
- *
- * É uma propriedade dos três e não de um, e por isso afirma-se sobre os três.
+ * É uma propriedade dos três handlers e não de um, e por isso afirma-se sobre os três.
  */
 final class AlarmClockHandlerIdempotenceTest extends TestCase
 {

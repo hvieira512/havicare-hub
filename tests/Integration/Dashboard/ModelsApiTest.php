@@ -37,11 +37,9 @@ final class ModelsApiTest extends MysqlDashboardTestCase
 
     public function testShowSeparatesSupportedFromRequestableTelemetry(): void
     {
-        // `requestableCapabilityKeys` é o que a capacidade permite pedir em geral; o
-        // `requestableCapabilities` é o que este modelo em concreto responde. A distinção
-        // existe porque um firmware pode anunciar uma leitura e ignorar o pedido dela, e
-        // quem sabe disso é quem tem o aparelho na mão -- por isso é uma decisão guardada
-        // por modelo e não uma constante no hub.
+        // O `requestableCapabilityKeys` é o que a capacidade permite pedir; o
+        // `requestableCapabilities` é o que este modelo responde. Um firmware pode anunciar
+        // uma leitura e ignorar o pedido dela, e isso é decisão por modelo.
         [$api, $db] = $this->makeApi();
         $model = $db->models->find('Wonlex', 'HW20PRO');
         self::assertIsArray($model);
@@ -319,12 +317,8 @@ final class ModelsApiTest extends MysqlDashboardTestCase
     }
 
     /**
-     * O par fornecedor+modelo repetido é recusado com código próprio.
-     *
-     * A chave única `uq_models_supplier_internal_model` já o recusava na base, mas ninguém
-     * perguntava antes de inserir: a excepção do PDO subia até ao kernel e o cliente levava
-     * um 500 com `server_error` para uma recusa previsível. O actualizar sempre respondeu
-     * 409 pelo `existsForDifferentId()`; o criar não tinha equivalente.
+     * A chave única já o recusava na base, mas sem ninguém perguntar antes a excepção do PDO
+     * subia até ao kernel e o cliente levava um 500 para uma recusa previsível.
      */
     public function testCreateRejectsADuplicateSupplierAndInternalModel(): void
     {

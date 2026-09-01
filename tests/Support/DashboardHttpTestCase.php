@@ -15,18 +15,12 @@ use Tests\Support\Doubles\InMemoryRedisClient;
 use Tests\Support\Doubles\IngressFixtures;
 
 /**
- * A cadeia HTTP da dashboard montada como em produção, e o registo de API a ser escrito para
- * um ficheiro que o teste possa ler.
- *
- * Isto vivia todo dentro do `DashboardHttpServerTest`, que tinha crescido para 1711 linhas a
- * cobrir a página, os recursos estáticos, a autenticação, o registo, o isolamento entre
- * clientes, o detalhe do dispositivo e o streaming -- sete assuntos num sítio que já não se
- * lia, lia-se percorrendo. As classes que o substituem partilham este andaime e cada uma
- * responde por um assunto.
+ * A cadeia HTTP da dashboard montada como em produção, com o registo de API a ser escrito
+ * para um ficheiro que o teste possa ler. As classes que a usam repartem um assunto cada.
  *
  * Sem `declare(strict_types=1)` de propósito: o `makeServerWithDatabase()` regista licenças
- * com o número em texto -- que é como ele chega pelo ficheiro da whitelist --, e a coerção é
- * parte do que estes testes exercitam.
+ * com o número em texto, como ele chega pelo ficheiro da whitelist, e a coerção é parte do
+ * que estes testes exercitam.
  */
 abstract class DashboardHttpTestCase extends MysqlDashboardTestCase
 {

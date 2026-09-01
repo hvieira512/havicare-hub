@@ -88,19 +88,12 @@ class OpenApiSpec
     }
 
     /**
-     * Os dois erros que qualquer rota devolve sem os declarar.
+     * Os dois erros que qualquer rota devolve sem os declarar: o `ApiKernel` responde 401
+     * antes de haver rota e 500 quando uma excepção sobe até ele.
      *
-     * O `ApiKernel` responde 401 antes de haver rota, sempre que falta a credencial, e 500
-     * quando uma excepção sobe até ele. Nenhum dos dois nasce numa definição de rota, e por
-     * isso nenhuma rota os prometia: o documento declarava 401 numa operação em 48 -- a do
-     * login, e por acaso, porque vem do `invalid_credentials` -- e 500 em nenhuma. Um cliente
-     * gerado a partir disto não tinha ramo para o caso mais comum de todos, o token expirado.
-     *
-     * Acrescentam-se aqui e não em cada rota porque a regra é do kernel e não delas: o 500
-     * vale para todas, e o 401 para todas as que não sejam públicas -- que é exactamente o
-     * que o `security: []` da operação marca.
-     *
-     * Não sobrepõe o que uma rota já declare: o `+` preserva a entrada existente.
+     * Acrescentam-se aqui porque a regra é do kernel: o 500 vale para todas, e o 401 para
+     * todas as que não sejam públicas -- o que o `security: []` da operação marca. O `+`
+     * preserva o que uma rota já declare.
      *
      * @param array<string, mixed> $paths
      * @return array<string, mixed>

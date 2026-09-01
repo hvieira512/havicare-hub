@@ -5,19 +5,13 @@ namespace Hub\Domain\Capability;
 use Hub\Domain\DiaperSensitivity;
 
 /**
- * A sensibilidade dos alertas de um medidor de fraldas.
+ * A sensibilidade dos alertas de um medidor de fraldas. O valor é
+ * `{pollutionRange, pollutionValue}` nos dois sentidos, e o `_meta` leva os presets, as gamas
+ * e a graduação.
  *
- * Forma pública:
- * - GET /api/devices/{imei}: o valor é `{pollutionRange, pollutionValue}`, e o `_meta`
- *   leva os presets, as gamas e a graduação que o selector precisa.
- * - PATCH /api/devices/{imei}/configurations: envia-se o mesmo par.
- *
- * `HubAppliedCapability` porque não há downlink: o sensor é um beacon BLE que só
- * transmite, e nada lhe é enviado. O que estes dois valores mudam é a regra com que o hub
- * deriva o estado da fralda a partir da mesma leitura física, e é o `Moko\Bridge` que os
- * lê no caminho da ingestão.
- *
- * Os limiares, os presets e a validação vivem todos no `DiaperSensitivity`.
+ * `HubAppliedCapability` porque não há downlink: o que estes valores mudam é a regra com que
+ * o `Moko\Bridge` interpreta a leitura. Os limiares e a validação estão no
+ * `DiaperSensitivity`.
  */
 final class DiaperSensitivityCapability implements
     CapabilityContract,
