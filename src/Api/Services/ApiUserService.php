@@ -16,12 +16,8 @@ class ApiUserService
     private const DEFAULT_COLLECTION_LIMIT = 20;
 
     /**
-     * Os campos cuja recusa tem código próprio na API, e sempre teve.
-     *
-     * A validação por constraints quer devolver `invalid_request` para tudo, e isso apagava
-     * o `invalid_role` que os clientes desta API distinguem desde sempre. Enquanto falha um
-     * campo só -- que era a única coisa que o serviço antigo sabia devolver --, o código é o
-     * de antes.
+     * Os campos cuja recusa tem código próprio na API. A validação por constraints quer
+     * devolver `invalid_request` para tudo, e isso apagava o `invalid_role`.
      *
      * @var array<string, string>
      */
@@ -150,15 +146,11 @@ class ApiUserService
     }
 
     /**
-     * A licença a que o utilizador fica preso, resolvida contra a base.
+     * A licença a que o utilizador fica preso, resolvida contra a base. Fica aqui e não numa
+     * constraint: isto é uma pergunta ao MySQL, e escondê-la numa regra sobre o corpo punha
+     * uma consulta onde ninguém a procura.
      *
-     * Isto não desceu para o `ApiUserWriteRequest` de propósito: o que sobra do `fields()`
-     * antigo depois de a forma do pedido sair dele não é uma regra sobre o corpo, é uma
-     * pergunta à base de dados. Uma constraint que consulta o MySQL para saber se um corpo é
-     * válido esconde uma consulta num sítio onde ninguém a procura.
-     *
-     * Um `hub_admin` não tem licença nenhuma, e por isso é aqui que os dois campos voltam a
-     * zero em vez de ficarem com o que o pedido trouxesse.
+     * Um `hub_admin` não tem licença, e é aqui que os dois campos voltam a zero.
      *
      * @return array{licenseId: int, licenseRefId: int|null}|array{error: array<string, mixed>}
      */

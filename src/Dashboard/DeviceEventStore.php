@@ -18,12 +18,9 @@ final class DeviceEventStore
 
     public function append(string $imei, string $list, array $payload): void
     {
-        // O número de ordem é o que permite ao stream mandar só o que é novo.
-        //
-        // O `recordedAt` não servia: tem resolução de um segundo e um radar publica vinte
-        // mensagens por segundo, portanto dezenas de entradas partilham o mesmo valor. O
-        // índice da lista também não, porque anda com cada `lpush`. Um contador por
-        // dispositivo e lista é monótono e não se repete.
+        // O número de ordem é o que permite ao stream mandar só o que é novo. O `recordedAt`
+        // não servia -- tem resolução de um segundo e um radar publica vinte por segundo --,
+        // e o índice da lista anda com cada `lpush`.
         $payload['seq'] = (int)$this->redis->incr($this->sequenceKey($imei, $list));
         $payload['recordedAt'] = gmdate('Y-m-d\\TH:i:s\\Z');
         $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -51,13 +48,9 @@ final class DeviceEventStore
     }
 
     /**
-     * As entradas mais recentes, da mais nova para a mais velha.
-     *
-     * Com `$sinceSeq` maior que zero devolve só o que entrou depois desse número de ordem --
-     * é assim que o stream manda um punhado de linhas em vez do histórico inteiro a cada
-     * actualização. As entradas gravadas antes de haver `seq` contam como anteriores a
-     * qualquer cursor, e por isso só aparecem no instantâneo inicial, que é onde o cliente
-     * as recebe de qualquer maneira.
+     * As entradas mais recentes, da mais nova para a mais velha. Com `$sinceSeq` maior que
+     * zero devolve só o que entrou depois; as gravadas antes de haver `seq` contam como
+     * anteriores a qualquer cursor e só aparecem no instantâneo inicial.
      */
     public function recent(string $imei, string $list, int $sinceSeq = 0): array
     {

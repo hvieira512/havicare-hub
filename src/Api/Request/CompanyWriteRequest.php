@@ -11,19 +11,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * O corpo do criar e do actualizar de uma empresa.
  *
- * A regra vive aqui e não no serviço, e é por isso que passa a existir de facto. No serviço
- * ela estava escrita depois da normalização:
+ * A regra vive aqui e não no serviço porque tem de olhar para o que o cliente escreveu, antes
+ * de o `normalizeCompany()` lhe dar um nome que ele não pediu -- esse nunca devolve vazio,
+ * devolve `'null'`, que é o nome dos dispositivos sem empresa.
  *
- *     $name = DeviceMetadata::normalizeCompany((string)($payload['name'] ?? ''));
- *     if ($name === '') { return ApiError::invalidRequest('name is required'); }
- *
- * e o `normalizeCompany()` nunca devolve vazio -- devolve `'null'`, que é o nome que os
- * dispositivos sem empresa usam. O `if` era código morto, e um `POST /api/companies` com o
- * corpo vazio criava uma empresa chamada `null` e respondia sucesso. Aqui a constraint olha
- * para o que o cliente escreveu, antes de a normalização lhe dar um nome que ele não pediu.
- *
- * O `normalizer: 'trim'` porque o serviço sempre aparou antes de comparar, e um nome só de
- * espaços é um nome em falta.
+ * O `normalizer: 'trim'` porque um nome só de espaços é um nome em falta.
  */
 final class CompanyWriteRequest
 {

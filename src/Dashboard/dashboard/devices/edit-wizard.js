@@ -7,14 +7,12 @@ import {
 } from "./classification-ui.js";
 
 /**
- * A classificação no modal de edição, com a mesma forma do assistente de adicionar: num
- * dispositivo já registado o tipo e o modelo são respostas dadas, por isso colapsam em
- * etiquetas e só se abrem quando se toca numa.
+ * A classificação no modal de edição: num dispositivo já registado o tipo e o modelo são
+ * respostas dadas, e colapsam em etiquetas.
  *
- * Não usa o motor do `wizard.js` de propósito. Num dispositivo que existe não há respostas
- * em falta -- o estado é só qual a pergunta aberta e em que passo se está --, e a verdade
- * sobre o tipo, o modelo e a licença vive nos elementos do formulário, que é de onde o
- * `saveDevice` a lê. Uma segunda cópia dentro de um motor eram duas que podiam discordar.
+ * Não usa o motor do `wizard.js` de propósito -- a verdade sobre o tipo, o modelo e a licença
+ * vive nos elementos do formulário, que é de onde o `saveDevice` a lê, e uma segunda cópia
+ * eram duas que podiam discordar.
  */
 
 const TRAIL_QUESTIONS = [
@@ -156,12 +154,9 @@ function renderFooter() {
 }
 
 /**
- * Traz os campos do aparelho de volta, se uma pergunta da classificação estava aberta.
- *
- * O `Guardar` está no rodapé e nunca desaparece: um botão que se esconde por se ter tocado
- * noutra coisa é a razão de se ficar a olhar para o rodapé à procura dele. Em troca, guardar
- * com uma pergunta aberta fecha-a primeiro -- senão a validação marcava campos escondidos e
- * o pedido falhava sem nada que se visse.
+ * Traz os campos do aparelho de volta, se uma pergunta estava aberta. O `Guardar` nunca
+ * desaparece, e por isso guardar com uma pergunta aberta fecha-a primeiro -- senão a
+ * validação marcava campos escondidos e o pedido falhava sem nada que se visse.
  */
 export function showDeviceFields() {
     if (step === 2) return;

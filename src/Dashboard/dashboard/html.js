@@ -2,18 +2,11 @@ import { esc } from "./format.js";
 
 /**
  * O `html` é uma template tag que escapa cada interpolação, e o `raw` é a única saída dessa
- * regra.
+ * regra. Escapar por omissão porque o que entra na marcação -- nomes de modelo, IMEI, texto
+ * de alarme -- chega à base de dados pelo MQTT e pelo TCP sem passar por ninguém.
  *
- * A convenção antiga era o contrário: a marcação escrevia-se à mão e cabia a quem a escreve
- * lembrar-se do `esc()` em cada `${}`. Um esquecimento num dos setenta sítios é XSS guardado,
- * e o que lá entra são nomes de modelo, fornecedores, IMEI, número do SIM e texto de alarme,
- * que chegam à base de dados pelo MQTT/TCP sem passar por ninguém.
- *
- * O `html` devolve texto e não um objecto embrulhado, de propósito: as funções que constroem
- * marcação continuam a devolver `string`, que é o que o resto do código -- e os testes -- já
- * assumem. A consequência é que compor dois construtores é sempre um `raw()` à vista, e essa
- * é a propriedade que se quer: cada injecção de confiança lê-se no sítio onde acontece, e
- * procurar por `raw(` lista-as todas.
+ * Devolve texto e não um objecto embrulhado, e por isso compor dois construtores é sempre um
+ * `raw()` à vista: procurar por `raw(` lista todas as injecções de confiança.
  */
 
 /** Um fragmento em que se confia: HTML já construído, que entra sem ser escapado. */

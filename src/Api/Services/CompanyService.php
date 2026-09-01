@@ -39,21 +39,9 @@ class CompanyService
     }
 
     /**
-     * O nome repetido responde 409, que é o que a especificação sempre prometeu.
-     *
-     * Prometia e nunca enviava. O serviço perguntava-o assim:
-     *
-     *     $id = $this->db->companies->create($name);
-     *     if ($id <= 0) { return ApiError::duplicateCompany()->toArray(); }
-     *
-     * e o `CompanyRepository::create()` nunca devolve zero para um nome repetido -- devolve o
-     * id da linha que já existe. O `if` era código morto, o `duplicateCompany()` tinha ali o
-     * seu único chamador e nunca era construído, e criar duas vezes a mesma empresa respondia
-     * sucesso com o mesmo id das duas.
-     *
-     * A pergunta passa a ser feita antes, a quem sabe responder. O `create()` do repositório
-     * fica como está: é idempotente de propósito para quem o chama por dentro, e há testes
-     * que contam com isso.
+     * O nome repetido responde 409. A pergunta é feita antes de chamar o repositório, porque
+     * o `create()` dele nunca devolve zero para um nome repetido -- devolve o id da linha que
+     * já existe, e é idempotente de propósito para quem o chama por dentro.
      */
     public function create(array $payload): array
     {

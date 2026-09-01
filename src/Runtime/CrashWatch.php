@@ -5,20 +5,12 @@ declare(strict_types=1);
 namespace Hub\Runtime;
 
 /**
- * Diz se o arranque anterior terminou de repente.
+ * Diz se o arranque anterior terminou de repente. O `Restart=always` levanta o processo em
+ * milissegundos, e sem isto uma queda só deixava rasto no `journalctl`, onde ninguém olha.
  *
- * O hub corre com `Restart=always`, e isso é o que se quer -- mas é também o que esconde o
- * problema: durante catorze dias o processo morreu doze vezes por falta de memória e ninguém
- * deu por isso, porque o systemd voltava a levantá-lo em milissegundos e a única prova ficava
- * no `journalctl`, onde ninguém estava a olhar.
- *
- * O mecanismo é o mais simples que funciona: escreve-se um ficheiro ao arrancar e apaga-se ao
- * desligar em condições. Se ao arrancar o ficheiro ainda lá estiver, o arranque anterior não
- * chegou a apagá-lo -- ou seja, não passou pelo `SIGTERM`. Um `make prod-update` desliga pelo
- * systemd, que manda `SIGTERM`, e por isso não conta como queda.
- *
- * Não tenta adivinhar a causa: para isso há o `journalctl`. O que faz é garantir que alguém
- * fica a saber que aconteceu.
+ * Escreve-se um ficheiro ao arrancar e apaga-se ao desligar em condições: encontrá-lo ao
+ * arrancar quer dizer que o anterior não passou pelo `SIGTERM`. Não adivinha a causa -- só
+ * garante que alguém fica a saber.
  */
 final class CrashWatch
 {

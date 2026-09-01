@@ -11,15 +11,9 @@ const {
 } = await import("../../src/Dashboard/dashboard/devices/detail.js");
 
 /**
- * Os dois paginadores do detalhe do dispositivo: a telemetria e os pedidos.
- *
- * Saem os dois do `renderPagination`, e o que se prende aqui é o que essa partilha tem de
- * respeitar -- que cada um leva o seu prefixo nas acções, porque é por esse nome que os
- * handlers do `app.js` estão registados: `telemetryPageGo`, e não `telemetryGo`. Uma troca
- * ingénua deixava os botões a não fazer nada, sem erro nenhum.
- *
- * O aspecto dos botões não é assunto destes testes: classes e ícones são do CSS e mudam sem
- * que nada se parta.
+ * Os dois paginadores do detalhe saem do mesmo `renderPagination`, e cada um tem de levar o
+ * seu prefixo nas acções -- é por esse nome que os handlers do `app.js` estão registados, e
+ * uma troca deixava os botões a não fazer nada sem erro nenhum.
  */
 function fakeElement() {
     return document.createElement("div");
@@ -31,12 +25,8 @@ beforeEach(() => {
 });
 
 /**
- * Quantas entradas fazem `pages` páginas, ao tamanho de página que estiver em vigor.
- *
- * Estava escrito 30 à mão, com "30 eventos a 12 por página dão três páginas" ao lado. Ao
- * subir o tamanho da página os números deixaram de bater certo e três testes partiram-se
- * sem que nada do que eles afirmam tivesse mudado. O tamanho da página é uma afinação, não
- * é o que estes testes prendem.
+ * Quantas entradas fazem `pages` páginas, ao tamanho em vigor. Calculado e não escrito à mão:
+ * o tamanho da página é uma afinação, e não é o que estes testes prendem.
  */
 function entriesForPages(pageSize, pages, extra = 6) {
     return pageSize * (pages - 1) + extra;
