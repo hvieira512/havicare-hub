@@ -76,6 +76,80 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame(MqttClient::QOS_AT_MOST_ONCE, $publisher->lastQualityOfService);
         self::assertFalse($publisher->lastRetain);
     }
+
+    public function testRawStaysAtQosZeroAndIsNotRetained(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishRaw('8800000015', ['direction' => 'uplink']);
+
+        self::assertSame(MqttClient::QOS_AT_MOST_ONCE, $publisher->lastQualityOfService);
+        self::assertFalse($publisher->lastRetain);
+    }
+
+    /**
+     * Um dispositivo com dono, que é o caso normal. Os outros testes usam os sentinelas, e
+     * com eles um erro na ordem dos dois primeiros segmentos não se via.
+     */
+    public function testATopicCarriesTheCompanyAndTheLicenceInThatOrder(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'havicare-hub');
+
+        $bridge->publishTelemetry(
+            '861265061009822',
+            ['type' => 'heart_rate'],
+            'watch',
+            1001,
+            'hitcare',
+        );
+
+        self::assertSame(
+            'havicare-hub/hitcare/1001/watch/861265061009822/telemetry',
+            $publisher->lastTopic,
+        );
+    }
+
+    /** O tipo de dispositivo é o quarto segmento, e não é sempre `watch`. */
+    public function testTheDeviceTypeIsItsOwnSegment(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'havicare-hub');
+
+        $bridge->publishTelemetry('eec5000202f9', [], 'diaper_sensor', 1001, 'hitcare');
+
+        self::assertSame(
+            'havicare-hub/hitcare/1001/diaper_sensor/eec5000202f9/telemetry',
+            $publisher->lastTopic,
+        );
+    }
+
+    /** Sem prefixo o tópico tem cinco segmentos, e não começa por barra. */
+    public function testAnEmptyPrefixLeavesFiveSegmentsWithoutALeadingSlash(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, '');
+
+        $bridge->publishTelemetry('861265061009822', [], 'watch', 1001, 'hitcare');
+
+        self::assertSame('hitcare/1001/watch/861265061009822/telemetry', $publisher->lastTopic);
+        self::assertCount(5, explode('/', (string)$publisher->lastTopic));
+    }
+
+    /**
+     * O `licenseId` é o único sítio do hub onde o número da licença é texto, e a conversão
+     * acontece aqui -- em memória, na base de dados e na API é sempre inteiro.
+     */
+    public function testTheLicenceIsTheOnlyPlaceAnIntegerBecomesText(): void
+    {
+        $bridge = new HubMqttBridge(new FakeMqttPublisher(), '');
+
+        self::assertSame(
+            'hitcare/0/watch/861265061009822/telemetry',
+            $bridge->deviceTopic('hitcare', 0, 'watch', '861265061009822', 'telemetry'),
+        );
+    }
 }
 
 final class FakeMqttPublisher extends MqttClient
