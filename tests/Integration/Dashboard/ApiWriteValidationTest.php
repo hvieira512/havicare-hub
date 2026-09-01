@@ -125,34 +125,62 @@ final class ApiWriteValidationTest extends DashboardHttpTestCase
     }
 
     /**
-     * O criar de uma empresa repetida é idempotente, e **não** responde 409.
+     * O nome repetido responde 409, que é o que a especificação sempre prometeu.
      *
-     * Isto documenta o que a API faz, não o que a especificação diz. O
-     * `CompanyRepository::create()` devolve o id da linha que já existe em vez de zero, e por
-     * isso o `if ($id <= 0) return duplicateCompany()` do serviço é o segundo `if` morto
-     * deste ficheiro -- o `ApiError::duplicateCompany()` tem esse único chamador e nunca
-     * chega a ser construído. O `TenancyPaths` declara `duplicate` para esta rota, e ela
-     * nunca o envia.
-     *
-     * Fica assim de propósito: passar a responder 409 é uma alteração de contrato para quem
-     * conta com a idempotência, e essa decisão não é de quem escreve o teste. O que o teste
-     * faz é impedir que a divergência volte a ser invisível.
+     * Prometia e nunca enviava: o `if ($id <= 0)` do serviço nunca disparava, porque o
+     * repositório devolve o id da linha que já existe em vez de zero. Criar duas vezes a
+     * mesma empresa respondia sucesso das duas.
      */
-    public function testCreatingACompanyThatAlreadyExistsIsIdempotent(): void
+    public function testCreatingACompanyThatAlreadyExistsIsAConflict(): void
     {
         [$server, $token] = $this->serverAndAdminToken();
 
-        $first = $this->write($server, 'POST', '/api/companies', $token, ['name' => 'hitcare']);
-        self::assertSame(200, $first['status'], json_encode($first['body']));
-        self::assertSame('ok', $first['body']['status'] ?? null);
+        $result = $this->write($server, 'POST', '/api/companies', $token, ['name' => 'hitcare']);
 
-        $again = $this->write($server, 'POST', '/api/companies', $token, ['name' => 'hitcare']);
-        self::assertSame(200, $again['status']);
-        self::assertSame(
-            $first['body']['id'] ?? null,
-            $again['body']['id'] ?? null,
-            'devolve o id da que já existe, em vez de criar outra'
-        );
+        self::assertSame(409, $result['status'], json_encode($result['body']));
+        self::assertSame('duplicate', $result['body']['error']['code'] ?? null);
+    }
+
+    /** O nome normaliza-se antes de se comparar: `HITCARE` é a mesma empresa que `hitcare`. */
+    public function testTheDuplicateCheckSeesThroughCasingAndSpacing(): void
+    {
+        [$server, $token] = $this->serverAndAdminToken();
+
+        foreach (['HITCARE', '  hitcare  '] as $name) {
+            $result = $this->write($server, 'POST', '/api/companies', $token, ['name' => $name]);
+            self::assertSame(409, $result['status'], $name . ': ' . json_encode($result['body']));
+        }
+    }
+
+    /**
+     * Renomear para um nome que já é de outra empresa é 409, e não 500.
+     *
+     * O `companies.name` é `UNIQUE`: a base recusava-o, mas só depois, com a excepção do PDO
+     * a subir até ao kernel e a sair como `server_error`.
+     */
+    public function testRenamingACompanyOntoAnotherIsAConflictAndNotACrash(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+        $id = (int)($db->companies->findByName('hitcare')['id'] ?? 0);
+        self::assertGreaterThan(0, $id);
+
+        $result = $this->write($server, 'PUT', "/api/companies/{$id}", $token, ['name' => 'otherCare']);
+
+        self::assertSame(409, $result['status'], json_encode($result['body']));
+        self::assertSame('duplicate', $result['body']['error']['code'] ?? null);
+    }
+
+    /** Renomear para o próprio nome não é conflito consigo mesma. */
+    public function testRenamingACompanyOntoItselfIsAllowed(): void
+    {
+        [$server, $db] = $this->makeServerWithDatabase();
+        $token = $this->loginToken($server, 'admin', 'secret');
+        $id = (int)($db->companies->findByName('hitcare')['id'] ?? 0);
+
+        $result = $this->write($server, 'PUT', "/api/companies/{$id}", $token, ['name' => 'hitcare']);
+
+        self::assertSame(200, $result['status'], json_encode($result['body']));
     }
 
     /** O criar de uma licença exige a empresa e o número, cada um com a sua mensagem. */

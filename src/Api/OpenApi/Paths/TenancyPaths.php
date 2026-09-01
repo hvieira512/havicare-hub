@@ -119,6 +119,7 @@ final class TenancyPaths
                         ['200' => Responses::json('Company updated', 'StatusResponse')],
                         'invalid_request',
                         'company_not_found',
+                        'duplicate',
                     ),
                 ],
                 'delete' => [
