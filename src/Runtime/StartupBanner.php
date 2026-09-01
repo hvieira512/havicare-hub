@@ -17,7 +17,7 @@ final class StartupBanner
     {
         $log = Logger::channel('hub');
 
-        $log->info('=== Hitecosystem Devices Hub ===');
+        $log->info('=== Havicare Hub ===');
         $log->info("Dashboard: http://{$config['dashboard']['host']}:{$config['dashboard']['port']}/dashboard");
         $log->info("TCP ingress: tcp://{$config['tcp_ingress']['host']}:{$config['tcp_ingress']['port']}");
         $log->info(sprintf(

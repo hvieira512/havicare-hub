@@ -78,7 +78,7 @@ ssl-setup:
 	mkdir -p config/ssl && openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 		-keyout config/ssl/privkey.pem \
 		-out config/ssl/fullchain.pem \
-		-subj "/C=PT/O=Hitecosystem/CN=localhost"
+		-subj "/C=PT/O=Havicare/CN=localhost"
 
 ps:
 	docker compose ps

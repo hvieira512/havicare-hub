@@ -56,7 +56,7 @@ if [ -z "$api_token" ]; then
 fi
 
 html="$(curl -s http://127.0.0.1:8081/dashboard)"
-if ! printf '%s' "$html" | grep -q 'Hitecosystem Hub de Dispositivos'; then
+if ! printf '%s' "$html" | grep -q 'Havicare Hub'; then
   scenario_fail "dashboard_failure" "dashboard HTML did not render expected page"
 fi
 
