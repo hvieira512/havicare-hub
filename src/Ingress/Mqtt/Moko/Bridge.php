@@ -167,7 +167,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $protocol = (string)($decoded['protocol'] ?? 'moko-gateway');
         $encoding = (string)($decoded['encoding'] ?? 'unknown');
         $raw = [
-            'schemaVersion' => 1,
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->device($gateway),
@@ -496,7 +495,6 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         $this->mqttBridge->publishTelemetry(
             (string)$device['imei'],
             [
-                'schemaVersion' => 2,
                 'type' => 'proximity',
                 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
                 'device' => $this->device($device),
@@ -592,7 +590,7 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             $stored = $transition['previous'];
             $previous = is_string($stored) ? explode('@', $stored, 2)[0] : null;
             $event = [
-                'schemaVersion' => 1, 'type' => 'change_required', 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
+                'type' => 'change_required', 'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
                 'device' => $this->device($sensor), 'data' => ['previousState' => $previous],
                 'source' => ['protocol' => 'monit-mecs-pro-ble', 'gatewayId' => (string)$gateway['imei']],
             ];

@@ -1,7 +1,8 @@
 # 08 — Contrato MQTT
 
-Esta é a referência de quem integra. Descreve o que o hub **publica**, e o único
-tópico que **subscreve** de fora.
+Esta é a referência de quem integra. Descreve o que o hub **publica** — o MQTT é
+uma superfície de leitura, e o caminho para enviar comandos é a
+[API REST](09-api.md).
 
 ## 1. Estrutura dos tópicos
 
@@ -53,7 +54,9 @@ licença é texto. Em memória, na base de dados e na API é sempre inteiro.
 Fundamento de cada opção:
 
 - **`events` a QoS 1**, porque a perda de um pedido de socorro é inaceitável e o
-  custo da entrega pelo menos uma vez é reduzido no volume destes eventos.
+  custo da entrega pelo menos uma vez é reduzido no volume destes eventos. Em
+  contrapartida, um consumidor tem de tolerar a **repetição**: a entrega pelo
+  menos uma vez significa que o mesmo alarme pode chegar duas vezes.
 - **`telemetry` a QoS 0**, porque cada medição é sucedida pela seguinte. Uma
   leitura perdida é substituída, e a garantia de entrega não compensa o custo.
 - **`status` retido**, por ser a única forma de um subscritor conhecer o estado
@@ -72,7 +75,6 @@ Em resumo:
 
 ```json
 {
-  "schemaVersion": 2,
   "type": "heart_rate",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" },
@@ -99,15 +101,17 @@ havicare-hub/hitcare/1001/watch/861265061009822/# um dispositivo, todos os canai
 
 ```json
 {
-  "schemaVersion": 1,
   "type": "device.connected",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" }
 }
 ```
 
-O `schemaVersion` deste canal é `1` e não `2`: eventos e telemetria pertencem a
-famílias de envelope distintas.
+Este canal transporta duas coisas diferentes: o **ciclo de vida** de um
+dispositivo, que descreve a ligação, e os **acontecimentos de domínio**, que
+descrevem o que aconteceu a uma pessoa. Os primeiros levam apenas `type`,
+`occurredAt` e `device`; os segundos acrescentam `data` e `source`, com a mesma
+forma da telemetria.
 
 ### Eventos de ciclo de vida
 
@@ -124,19 +128,36 @@ Os `dropped` levam `error.code`, que vale `device_offline` ou `queue_unavailable
 
 ### Eventos de domínio
 
-Publicados pelos dispositivos que os produzem: `help_call` (pulseira e NCS),
-`reset` (NCS), `change_required` (sensor de fralda), e os três agrupamentos do
-radar — `fall`, `vitals_alarm`, `presence_event`.
+| `type` | Origem |
+|---|---|
+| `alarm` | Relógio — SOS, queda, bateria fraca ou aviso de uso |
+| `help_call` | Pulseira e NCS |
+| `reset` | NCS |
+| `change_required` | Sensor de fralda |
+| `fall` · `vitals_alarm` · `presence_event` | Radar |
 
-Os alarmes dos relógios **não** são eventos: saem como telemetria com
-`type: "alarm"`. É uma inconsistência conhecida, registada nas notas de
-arquitetura.
+Um alarme de relógio leva em `data` o motivo, e vai acompanhado de uma
+`location` no canal `telemetry` com `data.reportKind: "alarm"` — a posição
+pertence à telemetria, e é esse campo que volta a ligar as duas metades do mesmo
+acontecimento:
+
+```json
+{
+  "type": "alarm",
+  "occurredAt": "2026-09-01T10:35:10Z",
+  "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" },
+  "data": { "code": "sos", "sos": true, "lowBattery": false, "fall": false, "wearingNotice": false },
+  "source": { "protocol": "vivistar-iw", "nativeType": "AP10" }
+}
+```
+
+O `code` só está presente quando **exatamente um** motivo está ativo; com mais
+do que um, valem os campos booleanos.
 
 ## 5. `status`
 
 ```json
 {
-  "schemaVersion": 1,
   "state": "online",
   "updatedAt": "2026-09-01T10:35:10Z",
   "device": { "id": "861265061009822", "supplier": "Vivistar", "model": "L08 Pro" }
@@ -164,7 +185,6 @@ A mensagem original, com contexto suficiente para a reconstruir:
 
 ```json
 {
-  "schemaVersion": 1,
   "direction": "uplink",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": { "id": "861265061009822" },
@@ -190,36 +210,14 @@ não interpreta. Este canal garante a preservação integral dos dados de origem
 
 ## 7. Tópicos subscritos
 
-### Downlink
+> **O MQTT é uma superfície de leitura.** O hub não aceita comandos por MQTT: o
+> caminho de comandos é a API REST, descrita em
+> [comandos e downlink](11-comandos-e-downlink.md). Os comandos enviados
+> continuam a ser **publicados** no canal `raw`, com `direction: "downlink"`,
+> para quem quiser observá-los.
 
-```text
-{prefixo}/+/+/watch/+/downlink
-```
-
-Recebido a QoS 1. Exatamente cinco segmentos, e o terceiro **tem de ser
-`watch`**.
-
-> **Não há downlink por MQTT para gateway, radar, NCS, pulseira ou sensor de
-> fralda.** Só relógios. Para os outros tipos, o caminho é a API REST. Está
-> registado nas notas de arquitetura.
-
-O corpo aceita três formas:
-
-```json
-"IWBP49#"
-{ "encoding": "text",   "payload": "IWBP49#" }
-{ "encoding": "base64", "payload": "SVdCUDQ5Iw==" }
-```
-
-Se o aparelho estiver ligado, o comando sai de imediato e publica-se
-`device.downlink.sent`. Se não estiver, fica em fila no Redis por
-`DOWNLINK_QUEUE_TTL_SECONDS` — **300 segundos** por omissão — e publica-se
-`device.downlink.queued`. Ver [comandos e downlink](11-comandos-e-downlink.md).
-
-### Ingestão
-
-Os outros tópicos que o hub subscreve não são contrato dele — são o que a
-firmware de cada fabricante já publica:
+Os tópicos que o hub subscreve não são contrato dele — são o que a firmware de
+cada fabricante já publica:
 
 | Origem | Filtro | Broker |
 |---|---|---|
@@ -237,13 +235,30 @@ As versões anteriores do contrato contêm as seguintes incorreções:
 | `blood_pressure` inclui `pulseBpm` | O campo não existe; o pulso é emitido como evento `heart_rate` autónomo |
 | `activity` não inclui `distanceKm` | O campo existe quando o dispositivo reporta quilómetros |
 | Doze capacidades de telemetria | São vinte — ver a [normalização](06-normalizacao.md) |
+| O envelope leva `schemaVersion` | O campo foi removido; ver abaixo |
+| Os alarmes dos relógios saem em `telemetry` | Saem em `events`, a QoS 1 |
+| O radar publica com o `uid` do tópico de origem | Publica com o IMEI canónico, como as restantes ingestões |
+| Existe um tópico de downlink por MQTT | Foi removido; os comandos entram pela API REST |
+
+### Sobre o `schemaVersion`
+
+O campo foi removido de todos os canais. Nunca chegou a ser um contrato de
+versão: era escrito e nunca lido, e o valor seguia o produtor da mensagem e não
+o canal — o `events` transportava `1` e `2` conforme o dispositivo. Versionar é
+assunto da API; aqui a estabilidade é mantida por não se partir o que já está
+publicado.
+
+> **Mensagens retidas.** O canal `status` é retido, pelo que um `status`
+> publicado antes desta alteração continua a ser entregue na forma antiga até o
+> dispositivo mudar de estado. Um consumidor não deve exigir a ausência do
+> campo, apenas deixar de depender dele.
 
 ## Implementação
 
 | Ficheiro | Responsabilidade |
 |---|---|
 | `src/Device/HubMqttBridge.php` | Compõe todos os tópicos e publica os quatro canais |
-| `src/Device/RawPayload.php` | As formas de `raw`, `status` e `events` |
-| `src/Device/DeviceEventPayloadBuilder.php` | A forma de `telemetry` |
-| `src/Device/HubDownlinkSubscriber.php` | O único tópico aceite de fora |
+| `src/Device/RawPayload.php` | As formas de `raw`, `status` e do ciclo de vida |
+| `src/Device/DeviceEventPayloadBuilder.php` | A forma de `telemetry` e dos alarmes |
+| `src/Device/DeviceHubServer.php` | A escolha do canal: `alarm` vai a `events`, o resto a `telemetry` |
 | `src/Mqtt/BrokerSettings.php` · `ConnectionFactory.php` | Ligação, TLS, identificadores de cliente |

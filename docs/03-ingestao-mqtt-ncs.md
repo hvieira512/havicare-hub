@@ -98,7 +98,6 @@ próxima mensagem. Só sai quando chega um `status/online`:
 
 ```json
 {
-  "schemaVersion": 1,
   "state": "online",
   "updatedAt": "2026-09-01T10:35:10Z",
   "device": { "id": "…", "supplier": "Voerka", "model": "W812" }

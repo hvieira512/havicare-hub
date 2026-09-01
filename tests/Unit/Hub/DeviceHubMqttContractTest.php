@@ -299,7 +299,7 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('device.connected', $mqtt->events[0][1]['type']);
         self::assertSame('Wonlex HW20 Pro', $mqtt->events[0][1]['device']['commercialName']);
         self::assertSame('heart_rate', $mqtt->telemetry[0][1]['type']);
-        self::assertSame(2, $mqtt->telemetry[0][1]['schemaVersion']);
+        self::assertArrayNotHasKey('schemaVersion', $mqtt->telemetry[0][1]);
         self::assertSame(['bpm' => 72], $mqtt->telemetry[0][1]['data']);
         self::assertSame('wonlex-json', $mqtt->telemetry[0][1]['source']['protocol']);
         self::assertSame('upHeartRate', $mqtt->telemetry[0][1]['source']['nativeType']);
@@ -513,6 +513,48 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertStringStartsWith('IWBP00,', $connection->sent[0]);
         self::assertStringEndsWith('#', $connection->sent[0]);
         self::assertSame('IWBP49#', $connection->sent[1]);
+    }
+
+    /**
+     * Um alarme de relógio é um acontecimento e sai por `events`, que vai a QoS 1 -- e não
+     * por `telemetry`, que vai a QoS 0. A `location` irmã do mesmo frame fica em
+     * `telemetry`, porque é uma posição, e traz `reportKind: "alarm"` para quem precisar de
+     * as voltar a juntar.
+     *
+     * Não havia teste nenhum a prender o canal de um alarme, e por isso a mudança passava a
+     * suite toda a verde sem provar nada.
+     */
+    public function testWatchAlarmIsPublishedAsAnEventAndTheSiblingLocationStaysTelemetry(): void
+    {
+        $mqtt = new ContractRecordingHubMqttBridge();
+        $hub = new DeviceHubServer($this->whitelist, $mqtt);
+        $connection = new ContractFakeConnection(21);
+
+        $hub->onOpen($connection);
+        $hub->onMessage($connection, 'IWAP00865028000000308#');
+        $hub->onMessage(
+            $connection,
+            'IWAP10080524A2232.9806N11404.9355E000.1061830323.8706000908000602,460,0,9520,3671,'
+            . '06,zh-cn,00,HOME|74-DE-2B-44-88-8C|97#'
+        );
+
+        $byType = static fn (array $published, string $type): array => array_values(array_filter(
+            $published,
+            static fn (array $entry): bool => ($entry[1]['type'] ?? null) === $type,
+        ));
+
+        $alarms = $byType($mqtt->events, 'alarm');
+        self::assertCount(1, $alarms);
+        self::assertSame('fall', $alarms[0][1]['data']['code']);
+        self::assertTrue($alarms[0][1]['data']['fall']);
+        self::assertSame('AP10', $alarms[0][1]['source']['nativeType']);
+        self::assertArrayNotHasKey('schemaVersion', $alarms[0][1]);
+
+        self::assertSame([], $byType($mqtt->telemetry, 'alarm'));
+
+        $locations = $byType($mqtt->telemetry, 'location');
+        self::assertCount(1, $locations);
+        self::assertSame('alarm', $locations[0][1]['data']['reportKind']);
     }
 
     public function testNonGpsLocationIsPublishedWithResolvedCoordinatesInsideData(): void

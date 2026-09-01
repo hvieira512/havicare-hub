@@ -38,7 +38,8 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(['breathsPerMinute' => 12], $result['telemetry']['breath_rate']['data']);
         self::assertSame(['state' => 'light_sleep'], $result['telemetry']['sleep_state']['data']);
 
-        self::assertSame('radar-topic-uid', $result['telemetry']['heart_rate']['device']['id']);
+        // O IMEI canónico da whitelist, e não o `uid` que veio no tópico de origem.
+        self::assertSame('canonical-radar-id', $result['telemetry']['heart_rate']['device']['id']);
         self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['heart_rate']['device']['commercialName']);
         self::assertSame('heartbreath', $result['telemetry']['heart_rate']['source']['nativeType']);
     }
@@ -115,7 +116,7 @@ final class MessageNormalizerTest extends TestCase
 
         $event = $result['events'][0];
         self::assertSame('fall', $event['type']);
-        self::assertSame('radar-topic-uid', $event['device']['id']);
+        self::assertSame('canonical-radar-id', $event['device']['id']);
         self::assertSame('position', $event['source']['nativeType']);
         self::assertSame('fall_confirmed', $event['data']['detectionType']);
     }
@@ -157,7 +158,11 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /** A telemetria e as detecções vão na mesma versão: é o mesmo protocolo. */
-    public function testDetectionsUseTheSameSchemaVersionAsTelemetry(): void
+    /**
+     * O envelope publicado em MQTT não leva versão de esquema. Versionar é assunto da API;
+     * no MQTT o contrato mantém-se por não se partir o que já está publicado.
+     */
+    public function testTheEnvelopeCarriesNoSchemaVersion(): void
     {
         $normalizer = new MessageNormalizer();
         $topic = Topic::parse('radar/1001/radar-topic-uid');
@@ -168,8 +173,8 @@ final class MessageNormalizerTest extends TestCase
             'people' => [$this->person(1, 'Fall Confirmation')],
         ], $topic, $this->device());
 
-        self::assertSame(2, $result['events'][0]['schemaVersion']);
-        self::assertSame(2, $result['telemetry']['presence']['schemaVersion']);
+        self::assertArrayNotHasKey('schemaVersion', $result['events'][0]);
+        self::assertArrayNotHasKey('schemaVersion', $result['telemetry']['presence']);
     }
 
     public function testPositionNormalizationDropsSentinelPersonIndex88(): void

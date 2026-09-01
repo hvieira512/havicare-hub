@@ -36,24 +36,29 @@ fielmente o que os dispositivos reportam.
 
 ## 1. Famílias de envelope
 
-Nem todas as mensagens publicadas são medições. Existem **duas** famílias de
-envelope, distinguidas pelo campo `schemaVersion`:
+Nem todas as mensagens publicadas são medições. Há três formas, e distinguem-se
+pelo campo que as identifica:
 
-| | `schemaVersion: 2` | `schemaVersion: 1` |
-|---|---|---|
-| Conteúdo | Telemetria: uma medição | Ciclo de vida: estado, eventos e mensagem original |
-| Canais | `telemetry` | `status`, `events`, `raw` |
-| Campo identificador | `type`, com o nome da capacidade | `type`, `state` ou `direction` |
-| Campo `data` | sempre presente | variável |
+| Forma | Canais | Identificador | Tem `data` |
+|---|---|---|---|
+| Medição ou acontecimento de domínio | `telemetry`, `events` | `type`, com o nome da capacidade | sim |
+| Ciclo de vida | `events` | `type`, começado por `device.` | não |
+| Estado | `status` | `state` | não |
+| Mensagem original | `raw` | `direction` | conforme a ingestão |
 
-A distinção é relevante para a integração: um envelope de `status` não contém
-`schemaVersion: 2`.
+O canal não determina a forma: o `events` transporta tanto um alarme, com `data`
+e `source`, como um `device.connected`, que só leva a identidade.
+
+> **O envelope não leva versão de esquema.** O campo `schemaVersion` existiu e
+> foi removido: nunca foi lido, e o valor seguia o produtor da mensagem em vez
+> do canal, o que o tornava enganador. Versionar é assunto da API; no MQTT o
+> contrato mantém-se por não se partir o que já está publicado — acrescentar
+> campos é seguro, mudar ou remover não é.
 
 ## 2. O envelope de telemetria
 
 ```json
 {
-  "schemaVersion": 2,
   "type": "heart_rate",
   "occurredAt": "2026-09-01T10:35:10Z",
   "device": {
@@ -70,7 +75,6 @@ A distinção é relevante para a integração: um envelope de `status` não con
 
 | Campo | Notas |
 |---|---|
-| `schemaVersion` | `2` na telemetria. Sobe quando um campo muda de significado |
 | `type` | O nome da capacidade. A secção 3 lista as vinte |
 | `occurredAt` | UTC, RFC 3339, **ao segundo**. É o relógio do **hub** no momento de publicar, não o do aparelho |
 | `device.id` | Identidade canónica — a mesma que vai no tópico |
@@ -158,7 +162,7 @@ leitura que não se consegue normalizar não produz evento nenhum.
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
 | `connectivity` | gateway | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm` |
-| `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [contrato do sensor](diaper-sensor-mqtt-contract.md) |
+| `diaper_moisture` · `diaper_moisture_level` · `diaper_condition` | sensor de fralda | ver o [capítulo 17](17-sensor-de-fralda.md) |
 
 ### Capacidade `sleep`
 
@@ -272,7 +276,7 @@ associa-as aos modelos cujo protocolo as suporta.
 |---|---|
 | `src/Device/FeatureNormalizer.php` | As vinte capacidades e as suas formas |
 | `src/Device/DeviceEventDecoder.php` | Tipo nativo → capacidades, por protocolo |
-| `src/Device/DeviceEventPayloadBuilder.php` | Monta o envelope `schemaVersion: 2` |
-| `src/Device/RawPayload.php` | Monta os envelopes `schemaVersion: 1` |
+| `src/Device/DeviceEventPayloadBuilder.php` | Monta o envelope das medições e dos alarmes |
+| `src/Device/RawPayload.php` | Monta os envelopes de `raw`, `status` e ciclo de vida |
 | `src/Domain/Capability/CapabilityCatalog.php` | O que cada tipo de aparelho declara ter |
 | `src/Ingress/Mqtt/*/…Normalizer.php` | O mesmo trabalho, do lado do MQTT |

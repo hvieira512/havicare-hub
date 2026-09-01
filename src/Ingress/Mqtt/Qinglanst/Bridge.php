@@ -127,17 +127,20 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        $dashboardKey = (string)$device['imei'];
-        $topicDeviceKey = $parsedTopic->deviceUid;
+        // Uma chave só, como em todas as outras ingestões: o IMEI canónico da whitelist
+        // manda no tópico MQTT e na dashboard. O `uid` que vem no tópico de origem serve
+        // para encontrar o dispositivo e mais nada -- publicar com ele fazia o mesmo radar
+        // aparecer com dois nomes conforme se olhasse para o broker ou para a interface.
+        $deviceKey = (string)$device['imei'];
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);
         $company = (string)($device['company'] ?? 'null');
         $nowMs = (int) floor(microtime(true) * 1000);
 
         $redisSeenDuration = 0;
-        if ($this->dashboardStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($dashboardKey, $nowMs)) {
+        if ($this->dashboardStore !== null && $this->dashboardWritePolicy->shouldUpdateSeen($deviceKey, $nowMs)) {
             $redisSeenStart = hrtime(true);
-            $this->dashboardStore->deviceSeen($dashboardKey, [
+            $this->dashboardStore->deviceSeen($deviceKey, [
                 'supplier' => (string)$device['supplier'],
                 'model' => (string)$device['model'],
                 'deviceType' => $deviceType,
@@ -163,15 +166,15 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
         // mesma mensagem mas mudam a ritmos diferentes.
         foreach ($normalized['telemetry'] as $capability => $telemetry) {
             $mqttTelemetryStart = hrtime(true);
-            $this->mqttBridge->publishTelemetry($topicDeviceKey, $telemetry, $deviceType, $licenseId, $company);
+            $this->mqttBridge->publishTelemetry($deviceKey, $telemetry, $deviceType, $licenseId, $company);
             $mqttTelemetryDuration += hrtime(true) - $mqttTelemetryStart;
 
             if (
                 $this->dashboardStore !== null
-                && $this->dashboardWritePolicy->shouldStoreTelemetry($dashboardKey, (string)$capability, $nowMs)
+                && $this->dashboardWritePolicy->shouldStoreTelemetry($deviceKey, (string)$capability, $nowMs)
             ) {
                 $redisTelemetryStart = hrtime(true);
-                $this->dashboardStore->append($dashboardKey, 'telemetry', array_merge($telemetry, [
+                $this->dashboardStore->append($deviceKey, 'telemetry', array_merge($telemetry, [
                     'deviceType' => $deviceType,
                     'licenseId' => $licenseId,
                 ]));
@@ -182,11 +185,11 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
 
         foreach ($normalized['events'] as $event) {
             $mqttEventStart = hrtime(true);
-            $this->mqttBridge->publishEvent($topicDeviceKey, $event, $deviceType, $licenseId, $company);
+            $this->mqttBridge->publishEvent($deviceKey, $event, $deviceType, $licenseId, $company);
             $mqttEventDuration += hrtime(true) - $mqttEventStart;
 
             $redisEventStart = hrtime(true);
-            $this->dashboardStore?->append($dashboardKey, 'events', array_merge($event, [
+            $this->dashboardStore?->append($deviceKey, 'events', array_merge($event, [
                 'deviceType' => $deviceType,
                 'licenseId' => $licenseId,
             ]));

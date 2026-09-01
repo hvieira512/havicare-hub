@@ -26,7 +26,6 @@ protocolos. O hub implementa-os uma vez e publica o resultado num envelope
 
 ```json
 {
-    "schemaVersion": 2,
     "type": "heart_rate",
     "occurredAt": "2026-09-01T10:35:10Z",
     "device": {

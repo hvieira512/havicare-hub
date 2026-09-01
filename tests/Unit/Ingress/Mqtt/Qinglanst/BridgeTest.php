@@ -44,14 +44,15 @@ final class BridgeTest extends TestCase
         $bridge->handleReceivedMessage('radar/2103/9D8A3204F853', '{}');
     }
 
-    public function testPublishesUsingUpstreamRadarUidInsteadOfCanonicalWhitelistKey(): void
+    public function testPublishesUsingCanonicalWhitelistKeyAndNotTheUpstreamRadarUid(): void
     {
         $mqttBridge = new RecordingHubMqttBridge();
         $bridge = new Bridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
-                // A chave canónica e o UID do tópico são diferentes de propósito: é o que
-                // este teste prende.
+                // A chave canónica e o UID do tópico são diferentes de propósito: o `uid`
+                // serve para encontrar o dispositivo, e é o IMEI canónico que manda no
+                // tópico publicado -- como em todas as outras ingestões.
                 'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
             ]),
             $mqttBridge,
@@ -81,7 +82,8 @@ final class BridgeTest extends TestCase
             ], JSON_THROW_ON_ERROR)
         );
 
-        self::assertSame('radar-topic-uid', $mqttBridge->lastTelemetry()['imei']);
+        self::assertSame('radar-canonical-1', $mqttBridge->lastTelemetry()['imei']);
+        self::assertSame('radar-canonical-1', $mqttBridge->lastTelemetry()['payload']['device']['id'] ?? null);
         self::assertSame('minute_stats', $mqttBridge->lastTelemetry()['payload']['type'] ?? null);
         self::assertSame('Qinglanst RD-V1 Pro', $mqttBridge->lastTelemetry()['payload']['device']['commercialName'] ?? null);
     }

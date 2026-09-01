@@ -13,7 +13,7 @@ final class RawPayloadTest extends TestCase
     {
         $payload = RawPayload::raw('865028000000308', 'Vivistar', 'VIVISTAR-CARE', 'tcp', 'vivistar-iw', 'IWAP49,72#', 'uplink', '1', 'Vivistar L08 Pro');
 
-        self::assertSame(1, $payload['schemaVersion']);
+        self::assertArrayNotHasKey('schemaVersion', $payload);
         self::assertSame('uplink', $payload['direction']);
         self::assertSame('865028000000308', $payload['device']['id']);
         self::assertSame('Vivistar', $payload['device']['supplier']);
@@ -61,7 +61,6 @@ final class RawPayloadTest extends TestCase
         $payload = RawPayload::status('868705080300697', 'Wonlex', 'HW20PRO', 'online', null, 'Wonlex HW20 Pro');
 
         self::assertSame([
-            'schemaVersion' => 1,
             'state' => 'online',
             'updatedAt' => $payload['updatedAt'],
             'device' => [
@@ -78,7 +77,6 @@ final class RawPayloadTest extends TestCase
         $payload = RawPayload::event('868705080300697', 'Wonlex', 'HW20PRO', 'device.connected', null, null, 'Wonlex HW20 Pro');
 
         self::assertSame([
-            'schemaVersion' => 1,
             'type' => 'device.connected',
             'occurredAt' => $payload['occurredAt'],
             'device' => [

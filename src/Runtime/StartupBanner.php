@@ -27,7 +27,7 @@ final class StartupBanner
             $config['hub']['downlink_queue_ttl_seconds'],
         ));
 
-        foreach (['status', 'events', 'raw', 'downlink'] as $channel) {
+        foreach (['status', 'events', 'raw', 'telemetry'] as $channel) {
             $label = $channel === 'events' ? 'event' : $channel;
             $log->info("MQTT {$label} topics: " . $mqttBridge->topic('{company}/{licenseId}/watch/{deviceKey}/' . $channel));
         }
@@ -43,7 +43,7 @@ final class StartupBanner
             ],
             'qinglanst' => [
                 'Qinglanst radar ingress',
-                '{company}/{licenseId}/radar/{deviceUid}/{telemetry|events}',
+                '{company}/{licenseId}/radar/{deviceKey}/{telemetry|events}',
             ],
         ];
 

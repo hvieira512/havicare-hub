@@ -1707,7 +1707,6 @@ final class DevicesApiTest extends MysqlDashboardTestCase
             'L08 Pro',
             'AP86',
             [
-                'schemaVersion' => 2,
                 'type' => 'device_config',
                 'data' => ['status' => 'ok'],
                 'source' => ['protocol' => 'vivistar-iw', 'nativeType' => 'AP86'],

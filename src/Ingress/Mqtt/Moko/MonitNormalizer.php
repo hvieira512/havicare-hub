@@ -38,7 +38,6 @@ final class MonitNormalizer
 
         $occurredAt = gmdate('Y-m-d\TH:i:s\Z');
         $common = [
-            'schemaVersion' => 2,
             'occurredAt' => $occurredAt,
             'device' => $this->device($device),
             'source' => array_filter([

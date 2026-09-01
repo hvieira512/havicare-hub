@@ -155,19 +155,17 @@ Há ainda um resumo periódico no log, a cada `QINGLANST_STATS_FLUSH_SECONDS`
 (300 s por omissão), com contagens, taxa e tempo por fase — e só quando houve
 mensagens, para não encher o journal de linhas a dizer que não aconteceu nada.
 
-## 5. A assimetria da chave do dispositivo
+## 5. A chave do dispositivo
 
-Nas restantes ingestões, a chave usada no tópico MQTT coincide com a chave usada
-na escrita para a dashboard. **Nesta não coincidem:**
+O `uid` que vem no tópico de origem serve para **encontrar** o radar na
+whitelist, e mais nada. A partir daí vale o **IMEI canónico**: é ele que vai no
+tópico publicado, no campo `device.id` e na escrita para a dashboard — como em
+todas as outras ingestões.
 
-- No MQTT, a republicação usa o **`uid` do tópico de origem**.
-- Na dashboard, a escrita usa o **IMEI da whitelist**.
-
-Na base de dados de exemplo os dois valores são iguais, mas essa igualdade não é
-imposta pelo código. Em caso de divergência, o mesmo radar é identificado de
-forma distinta no broker e na interface.
-
-Ver as [notas de arquitetura](99-notas-de-arquitetura.md).
+A whitelist resolve o radar pela coluna `device_id`, que é independente do
+`imei` e não é única. Publicar com o `uid` fazia com que um radar registado com
+os dois valores diferentes aparecesse com dois nomes, conforme se olhasse para o
+broker ou para a interface, e nada no código impedia esse registo.
 
 ## Implementação
 

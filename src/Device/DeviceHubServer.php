@@ -368,13 +368,27 @@ class DeviceHubServer
         try {
             $licenseId = $this->currentLicenseId($session->imei, $session->licenseId);
             $company = $this->currentCompany($session->imei, $session->company);
-            $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
+            $type = $event['type'] ?? null;
+
+            // Um alarme é um acontecimento e não uma medição, e por isso sai por `events`,
+            // que vai a QoS 1 -- tal como a queda que um radar deteta. Um SOS não pode ter
+            // menos garantia de entrega do que os passos que chegam no mesmo instante.
+            //
+            // A `location` irmã do mesmo frame continua em `telemetry`: é uma posição, e
+            // traz `reportKind: "alarm"` para quem precisar de as voltar a juntar.
+            $channel = $type === 'alarm' ? 'events' : 'telemetry';
+            if ($channel === 'events') {
+                $this->mqtt->publishEvent($session->imei, $event, $session->deviceType, $licenseId, $company);
+            } else {
+                $this->mqtt->publishTelemetry($session->imei, $event, $session->deviceType, $licenseId, $company);
+            }
+
             // O heartbeat continua a sair no MQTT, para quem o subscreve, mas não entra no
             // histórico do dashboard: a lista de cada dispositivo guarda cem eventos, e um
             // terço deles seriam keep-alives a repetir a bateria e os passos que já chegam
             // como eventos próprios no mesmo instante.
-            if (($event['type'] ?? null) !== 'heartbeat') {
-                $this->dashboardStore?->append($session->imei, 'telemetry', array_merge(
+            if ($type !== 'heartbeat') {
+                $this->dashboardStore?->append($session->imei, $channel, array_merge(
                     $event,
                     ['deviceType' => $session->deviceType, 'licenseId' => $licenseId]
                 ));

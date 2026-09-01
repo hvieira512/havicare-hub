@@ -76,7 +76,6 @@ function downlinkEls() {
 function telemetryEvent(index) {
     const minute = String(index % 60).padStart(2, "0");
     return {
-        schemaVersion: 2,
         type: "battery",
         occurredAt: `2026-08-25T10:${minute}:00Z`,
         device: { id: "868705080304889", supplier: "Wonlex", model: "HW20PRO" },

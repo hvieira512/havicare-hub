@@ -38,7 +38,6 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
 
         self::assertCount(1, $requests);
         self::assertIsArray($result);
-        self::assertSame(2, $result['schemaVersion']);
         self::assertSame('location', $result['type']);
         self::assertArrayNotHasKey('coordinates', $result);
         self::assertSame('cell_wifi', $result['data']['source']);
@@ -313,7 +312,6 @@ final class BeaconDbTelemetryEnricherTest extends TestCase
     private function nonGpsTelemetry(): array
     {
         return [
-            'schemaVersion' => 2,
             'type' => 'location',
             'occurredAt' => '2026-07-31T12:30:00Z',
             'device' => ['id' => '868705080304889'],

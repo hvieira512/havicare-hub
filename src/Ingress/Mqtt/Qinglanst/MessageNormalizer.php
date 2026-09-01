@@ -304,7 +304,6 @@ final class MessageNormalizer
     private function telemetry(Topic $topic, array $device, string $capability, string $nativeType, array $data): array
     {
         return [
-            'schemaVersion' => 2,
             'type' => $capability,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->deviceInfo($topic, $device),
@@ -321,7 +320,6 @@ final class MessageNormalizer
         return [
             'telemetry' => [
                 'position_minute_stats' => [
-                    'schemaVersion' => 2,
                     'type' => 'minute_stats',
                     'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
                     'device' => $this->deviceInfo($topic, $device),
@@ -351,7 +349,6 @@ final class MessageNormalizer
         $now = gmdate('Y-m-d\TH:i:s\Z');
 
         $telemetry = [
-            'schemaVersion' => 2,
             'type' => 'hbstatics',
             'occurredAt' => $now,
             'device' => $this->deviceInfo($topic, $device),
@@ -434,8 +431,6 @@ final class MessageNormalizer
             : RadarValueMapper::DETECTION_CATEGORY_EVENT;
 
         return [
-            // A mesma versão da telemetria: é o mesmo protocolo a emitir as duas.
-            'schemaVersion' => 2,
             'type' => self::DETECTION_CAPABILITY[$type] ?? 'vitals_alarm',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->deviceInfo($topic, $device),
@@ -456,7 +451,10 @@ final class MessageNormalizer
      */
     private function deviceInfo(Topic $topic, array $device): array
     {
-        $info = ['id' => $topic->deviceUid];
+        // O IMEI canónico da whitelist, e não o `uid` do tópico de origem: é o mesmo
+        // identificador que vai no tópico publicado e na dashboard, como nas outras
+        // ingestões.
+        $info = ['id' => (string)($device['imei'] ?? $topic->deviceUid)];
         if ((string)($device['supplier'] ?? '') !== '') {
             $info['supplier'] = (string)$device['supplier'];
         }

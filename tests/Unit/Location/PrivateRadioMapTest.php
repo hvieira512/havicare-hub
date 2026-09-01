@@ -112,7 +112,6 @@ final class PrivateRadioMapTest extends TestCase
     private function nonGpsTelemetry(): array
     {
         return [
-            'schemaVersion' => 2,
             'type' => 'location',
             'device' => ['id' => 'test-watch'],
             'data' => [

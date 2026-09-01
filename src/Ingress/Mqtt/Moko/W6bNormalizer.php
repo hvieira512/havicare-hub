@@ -28,7 +28,6 @@ final class W6bNormalizer
         ?int $previousTriggerCount = null,
     ): array {
         $common = [
-            'schemaVersion' => 2,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->device($device),
             'source' => array_filter([

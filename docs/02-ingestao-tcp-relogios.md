@@ -264,7 +264,13 @@ Vivistar um código numérico, a 4P Touch uma máscara de bits.
 
 Ambos são normalizados na capacidade `alarm`, com `sos`, `lowBattery`, `fall` e
 `wearingNotice` como valores booleanos e o código original preservado em
-`data.code`.
+`data.code`. O `code` só aparece quando **exatamente um** motivo está ativo.
+
+**O alarme sai no canal `events`, a QoS 1**, e não em `telemetry`. É um
+acontecimento e não uma medição, e a garantia de entrega é a mesma que a de uma
+queda detetada por um radar. A `location` que o mesmo frame produz continua em
+`telemetry`, com `data.reportKind: "alarm"` — é esse campo que volta a ligar as
+duas metades. Ver o [contrato MQTT](08-contrato-mqtt.md).
 
 ## Simulação
 

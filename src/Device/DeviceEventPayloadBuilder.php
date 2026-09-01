@@ -20,7 +20,6 @@ final class DeviceEventPayloadBuilder
         }
 
         $payload = [
-            'schemaVersion' => 2,
             'type' => $feature,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             'device' => $device,

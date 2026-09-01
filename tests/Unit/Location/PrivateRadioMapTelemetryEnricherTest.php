@@ -97,7 +97,6 @@ final class PrivateRadioMapTelemetryEnricherTest extends TestCase
     private function telemetry(): array
     {
         return [
-            'schemaVersion' => 2,
             'type' => 'location',
             'device' => ['id' => 'test-watch'],
             'data' => [

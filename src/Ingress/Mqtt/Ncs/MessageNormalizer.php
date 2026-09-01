@@ -49,7 +49,6 @@ final class MessageNormalizer
         );
 
         $eventPayload = [
-            'schemaVersion' => 1,
             'type' => $online ? 'device.connected' : 'device.disconnected',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $statusPayload['device'],
@@ -81,7 +80,6 @@ final class MessageNormalizer
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
         $event = [
-            'schemaVersion' => 1,
             'type' => $eventType,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->device($device),
@@ -102,7 +100,6 @@ final class MessageNormalizer
     private function rawPayload(Topic $topic, array $message, array $device): array
     {
         return [
-            'schemaVersion' => 1,
             'direction' => 'uplink',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => array_filter([

@@ -19,7 +19,6 @@ class RawPayload
         $decoded = self::decodedPayload($protocol, $raw);
 
         $payload = [
-            'schemaVersion' => 1,
             'direction' => $direction,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             'device' => self::device($imei, $supplier, $model, $commercialName),
@@ -46,7 +45,6 @@ class RawPayload
     public static function status(string $imei, string $supplier, string $model, string $state, ?array $error = null, string $commercialName = ''): array
     {
         $payload = [
-            'schemaVersion' => 1,
             'state' => $state,
             'updatedAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             'device' => self::device($imei, $supplier, $model, $commercialName),
@@ -69,7 +67,6 @@ class RawPayload
         string $commercialName = '',
     ): array {
         $payload = [
-            'schemaVersion' => 1,
             'type' => $type,
             'occurredAt' => gmdate('Y-m-d\\TH:i:s\\Z'),
             'device' => self::device($imei, $supplier, $model, $commercialName),

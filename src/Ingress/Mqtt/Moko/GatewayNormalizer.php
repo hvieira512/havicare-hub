@@ -14,7 +14,6 @@ final class GatewayNormalizer
         $messageId = (string)($message['messageId'] ?? '');
         $protocol = (string)($message['protocol'] ?? 'moko-mkgw3');
         $common = [
-            'schemaVersion' => 2,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => array_filter([
                 'id' => (string)$device['imei'],

@@ -25,7 +25,6 @@ final class W6Normalizer
     public function normalize(array $decoded, array $device, string $gatewayId): array
     {
         $common = [
-            'schemaVersion' => 2,
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->device($device),
             'source' => array_filter([
