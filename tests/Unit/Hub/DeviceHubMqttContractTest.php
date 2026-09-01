@@ -515,15 +515,6 @@ final class DeviceHubMqttContractTest extends TestCase
         self::assertSame('IWBP49#', $connection->sent[1]);
     }
 
-    /**
-     * Um alarme de relógio é um acontecimento e sai por `events`, que vai a QoS 1 -- e não
-     * por `telemetry`, que vai a QoS 0. A `location` irmã do mesmo frame fica em
-     * `telemetry`, porque é uma posição, e traz `reportKind: "alarm"` para quem precisar de
-     * as voltar a juntar.
-     *
-     * Não havia teste nenhum a prender o canal de um alarme, e por isso a mudança passava a
-     * suite toda a verde sem provar nada.
-     */
     public function testWatchAlarmIsPublishedAsAnEventAndTheSiblingLocationStaysTelemetry(): void
     {
         $mqtt = new ContractRecordingHubMqttBridge();

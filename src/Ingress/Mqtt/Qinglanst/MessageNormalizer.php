@@ -451,9 +451,7 @@ final class MessageNormalizer
      */
     private function deviceInfo(Topic $topic, array $device): array
     {
-        // O IMEI canónico da whitelist, e não o `uid` do tópico de origem: é o mesmo
-        // identificador que vai no tópico publicado e na dashboard, como nas outras
-        // ingestões.
+        // O IMEI canónico, o mesmo que vai no tópico publicado.
         $info = ['id' => (string)($device['imei'] ?? $topic->deviceUid)];
         if ((string)($device['supplier'] ?? '') !== '') {
             $info['supplier'] = (string)$device['supplier'];

@@ -38,7 +38,6 @@ final class MessageNormalizerTest extends TestCase
         self::assertSame(['breathsPerMinute' => 12], $result['telemetry']['breath_rate']['data']);
         self::assertSame(['state' => 'light_sleep'], $result['telemetry']['sleep_state']['data']);
 
-        // O IMEI canónico da whitelist, e não o `uid` que veio no tópico de origem.
         self::assertSame('canonical-radar-id', $result['telemetry']['heart_rate']['device']['id']);
         self::assertSame('Qinglanst RD-V1 Pro', $result['telemetry']['heart_rate']['device']['commercialName']);
         self::assertSame('heartbreath', $result['telemetry']['heart_rate']['source']['nativeType']);
@@ -158,10 +157,6 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /** A telemetria e as detecções vão na mesma versão: é o mesmo protocolo. */
-    /**
-     * O envelope publicado em MQTT não leva versão de esquema. Versionar é assunto da API;
-     * no MQTT o contrato mantém-se por não se partir o que já está publicado.
-     */
     public function testTheEnvelopeCarriesNoSchemaVersion(): void
     {
         $normalizer = new MessageNormalizer();

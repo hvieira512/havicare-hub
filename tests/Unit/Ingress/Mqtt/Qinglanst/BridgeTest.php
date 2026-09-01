@@ -50,9 +50,7 @@ final class BridgeTest extends TestCase
         $bridge = new Bridge(
             new FakeMqttSubscriber(),
             IngressFixtures::whitelist([
-                // A chave canónica e o UID do tópico são diferentes de propósito: o `uid`
-                // serve para encontrar o dispositivo, e é o IMEI canónico que manda no
-                // tópico publicado -- como em todas as outras ingestões.
+                // Chave canónica e UID do tópico diferentes de propósito.
                 'radar-canonical-1' => IngressFixtures::radar() + ['deviceId' => 'radar-topic-uid'],
             ]),
             $mqttBridge,

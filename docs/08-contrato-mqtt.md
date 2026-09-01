@@ -48,19 +48,32 @@ licença é texto. Em memória, na base de dados e na API é sempre inteiro.
 |---|---|---|---|
 | `telemetry` | Medições normalizadas | 0 | não |
 | `events` | Acontecimentos: alarmes, ligações, comandos | **1** | não |
-| `status` | O estado atual: online, offline, erro | 0 | **sim** |
+| `status` | O estado atual: online, offline, erro | **1** | **sim** |
 | `raw` | A mensagem original do aparelho | 0 | não |
 
-Fundamento de cada opção:
+A regra é uma só: **o que não se repete vai a QoS 1; o que a leitura seguinte
+substitui vai a QoS 0.**
 
-- **`events` a QoS 1**, porque a perda de um pedido de socorro é inaceitável e o
-  custo da entrega pelo menos uma vez é reduzido no volume destes eventos. Em
-  contrapartida, um consumidor tem de tolerar a **repetição**: a entrega pelo
-  menos uma vez significa que o mesmo alarme pode chegar duas vezes.
+- **`events` a QoS 1**, porque um pedido de socorro acontece uma vez e nada o
+  repete. Em contrapartida, um consumidor tem de tolerar a **repetição**: a
+  entrega pelo menos uma vez significa que o mesmo alarme pode chegar duas
+  vezes.
+- **`status` a QoS 1**, pela mesma razão e com uma consequência pior. Uma
+  transição de estado não é substituída pela leitura seguinte, e a mensagem é
+  **retida** — um `offline` que se perca entre o hub e o broker deixa lá
+  `online`, e o broker passa a servir esse valor a toda a gente que subscreva a
+  partir daí, até o aparelho mudar de estado outra vez. Não é uma leitura
+  perdida; é um facto errado a persistir.
 - **`telemetry` a QoS 0**, porque cada medição é sucedida pela seguinte. Uma
-  leitura perdida é substituída, e a garantia de entrega não compensa o custo.
+  leitura perdida é substituída, e a garantia de entrega não compensa o custo no
+  volume em que ela chega.
 - **`status` retido**, por ser a única forma de um subscritor conhecer o estado
   atual sem aguardar uma transição.
+
+> **O QoS do publicador é um teto, não um piso.** A qualidade efetiva de uma
+> entrega é o mínimo entre a com que a mensagem foi publicada e a com que o
+> consumidor subscreveu. Quem subscrever a QoS 0 recebe tudo a QoS 0, por muito
+> que o hub publique a 1.
 
 ### Implicações para a subscrição
 

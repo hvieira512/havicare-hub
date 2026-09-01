@@ -370,12 +370,8 @@ class DeviceHubServer
             $company = $this->currentCompany($session->imei, $session->company);
             $type = $event['type'] ?? null;
 
-            // Um alarme é um acontecimento e não uma medição, e por isso sai por `events`,
-            // que vai a QoS 1 -- tal como a queda que um radar deteta. Um SOS não pode ter
-            // menos garantia de entrega do que os passos que chegam no mesmo instante.
-            //
-            // A `location` irmã do mesmo frame continua em `telemetry`: é uma posição, e
-            // traz `reportKind: "alarm"` para quem precisar de as voltar a juntar.
+            // O alarme sai por `events`, a QoS 1. A `location` do mesmo frame fica em
+            // `telemetry`, com `reportKind: "alarm"` a ligar as duas.
             $channel = $type === 'alarm' ? 'events' : 'telemetry';
             if ($channel === 'events') {
                 $this->mqtt->publishEvent($session->imei, $event, $session->deviceType, $licenseId, $company);

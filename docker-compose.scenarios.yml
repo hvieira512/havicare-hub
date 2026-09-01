@@ -1,24 +1,10 @@
-# Sobreposição usada pelos cenários, e só por eles. O `tests/scenarios/lib/common.sh`
-# exporta `COMPOSE_PROJECT_NAME` e `COMPOSE_FILE` para a apanhar.
+# Sobreposição dos cenários, apanhada pelo `COMPOSE_FILE` em `tests/scenarios/lib/common.sh`.
+# Mantém-nos fora do ambiente de desenvolvimento: projeto, contentores e base de dados
+# próprios. Ver `docs/16-testes.md`.
 #
-# Existe porque os cenários precisam de um hub apontado ao mosquitto local e com a ingestão
-# do radar desligada -- e faziam isso por `--force-recreate` do contentor `havicare-hub`,
-# o mesmo que serve o desenvolvimento, sem nunca o reporem. Quem corresse um cenário ficava
-# com o hub local ligado ao broker errado e sem radares, silenciosamente: o hub arranca bem
-# e não há erro nenhum no log. Num projeto próprio o contentor de desenvolvimento não é
-# tocado, aconteça o que acontecer ao cenário -- incluindo um `Ctrl-C` a meio.
-#
-# As portas do anfitrião são retiradas em vez de deslocadas: os cenários falam com os
-# serviços de dentro da rede, por `docker compose exec`, e a única coisa lida de fora é a
-# dashboard. Sem isto, os dois projetos disputavam as mesmas portas e o segundo não
-# arrancava.
-#
-# A base de dados tem volume próprio pela mesma razão: os cenários criam utilizadores da
-# API e apagam linhas do mapa de rádio, e isso não pertence à base de quem desenvolve.
-#
-# O `container_name` é anulado em todos os serviços. Um nome fixo ignora o nome do projeto,
-# e os dois projetos disputavam-no -- o compose recusa arrancar com «container name is
-# already in use», que é o sintoma barulhento; o silencioso seria pior.
+# O `container_name` tem de ser anulado -- um nome fixo ignora o nome do projeto. As portas
+# do anfitrião são retiradas em vez de deslocadas, porque os cenários falam com os serviços
+# de dentro da rede; só a dashboard é lida de fora.
 
 services:
   mosquitto:

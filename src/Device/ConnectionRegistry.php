@@ -19,10 +19,7 @@ class ConnectionRegistry
 
     public function open(ConnectionInterface $connection): DeviceSession
     {
-        // Os dispositivos ligam-se por TCP e mais nada. O ramo alternativo rotulava a
-        // ligação como `websocket`, transporte que nunca teve implementação nenhuma -- e o
-        // rótulo não ficava aqui: viajava para o `debug.transport` do canal `raw` e para o
-        // estado do dispositivo na dashboard.
+        // TCP é o único transporte. O valor viaja para o `debug.transport` do canal `raw`.
         $session = new DeviceSession($connection, 'tcp');
 
         $this->connections->offsetSet($connection, $connection->resourceId);

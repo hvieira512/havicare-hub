@@ -42,6 +42,40 @@ final class HubMqttBridgeTest extends TestCase
         self::assertSame('prefix/null/0/watch/8800000015/events', $publisher->lastTopic);
         self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
     }
+
+    public function testStatusPublishesWithQosOneAndStaysRetained(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishStatus('8800000015', ['state' => 'offline']);
+
+        self::assertSame('prefix/null/0/watch/8800000015/status', $publisher->lastTopic);
+        self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
+        self::assertTrue($publisher->lastRetain);
+    }
+
+    public function testAnErrorStatusKeepsQosOneWithoutBeingRetained(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishStatus('8800000015', ['state' => 'error'], retain: false);
+
+        self::assertSame(MqttClient::QOS_AT_LEAST_ONCE, $publisher->lastQualityOfService);
+        self::assertFalse($publisher->lastRetain);
+    }
+
+    public function testTelemetryStaysAtQosZero(): void
+    {
+        $publisher = new FakeMqttPublisher();
+        $bridge = new HubMqttBridge($publisher, 'prefix');
+
+        $bridge->publishTelemetry('8800000015', ['type' => 'heart_rate']);
+
+        self::assertSame(MqttClient::QOS_AT_MOST_ONCE, $publisher->lastQualityOfService);
+        self::assertFalse($publisher->lastRetain);
+    }
 }
 
 final class FakeMqttPublisher extends MqttClient
@@ -50,6 +84,7 @@ final class FakeMqttPublisher extends MqttClient
     public int $disconnectCalls = 0;
     public ?string $lastTopic = null;
     public ?int $lastQualityOfService = null;
+    public ?bool $lastRetain = null;
 
     public function __construct(private bool $shouldFail = false)
     {
@@ -60,6 +95,7 @@ final class FakeMqttPublisher extends MqttClient
         $this->publishCalls++;
         $this->lastTopic = $topic;
         $this->lastQualityOfService = $qualityOfService;
+        $this->lastRetain = $retain;
 
         if ($this->shouldFail) {
             throw new \RuntimeException('socket closed');

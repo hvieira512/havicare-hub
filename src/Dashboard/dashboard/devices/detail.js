@@ -43,11 +43,7 @@ const DETAIL_ITEM_TYPES = {
 
 const NCS_EVENT_CARD_TYPES = ["help_call", "reset"];
 
-/**
- * Os alarmes que a lista de actividade mostra: o dos relógios, os do NCS e os
- * três do radar. Tudo o que chegar em `events` e não estiver aqui é descartado
- * em silêncio, e por isso um tipo novo tem de ser acrescentado nos dois sítios.
- */
+/** O que chegar em `events` e não estiver aqui é descartado em silêncio. */
 const ALARM_EVENT_TYPES = new Set([
     "alarm",
     "help_call",

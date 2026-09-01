@@ -89,26 +89,35 @@ retenção enche o disco do servidor que é suposto proteger.
 Registo das divergências já resolvidas, para não voltarem a ser reportadas como
 novas:
 
-| O quê                                                                                           | Estado                                              |
-| ----------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| O `StartupBanner` anunciava tópicos com quatro segmentos, forma que o hub já não produz         | corrigido                                           |
-| O `.env.example` documentava um par de variáveis de administrador de arranque que não existem   | corrigido                                           |
-| O `AGENTS.md` era uma cópia desatualizada do `CLAUDE.md` e mandava trabalhar direto em produção | corrigido                                           |
-| O `README.md` descrevia o hub como um encaminhador de bytes crus                                | reescrito                                           |
-| A documentação dava os tópicos do NCS com quatro segmentos                                      | corrigido no [capítulo 03](03-ingestao-mqtt-ncs.md) |
-| O contrato prometia `pulseBpm` em `blood_pressure`, que nunca foi emitido                       | corrigido no [capítulo 06](06-normalizacao.md)      |
-| O contrato documentava doze capacidades de telemetria; são vinte                                | corrigido no [capítulo 06](06-normalizacao.md)      |
-| O `README` dizia que a integração contínua procurava "skipped" na saída; faz o contrário        | corrigido no [capítulo 16](16-testes.md)            |
-| O `README` dizia que a dashboard aceitava `license_client`; nunca aceitou                       | corrigido no [capítulo 13](13-dashboard.md)         |
-| O `docs/` não era referenciado por nenhum ficheiro do repositório                               | corrigido                                           |
-| O `alarm` dos relógios era publicado e não existia no catálogo                                  | acrescentado, com migração                          |
-| A `proximity` era publicada para pulseiras e sensores e não existia no catálogo                 | acrescentada, com migração                          |
-| O NCS declarava `pager_call` e publicava `help_call`                                            | alinhado; a mensagem no MQTT não mudou              |
+| O quê                                                                                           | Estado                                                                   |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| O `StartupBanner` anunciava tópicos com quatro segmentos, forma que o hub já não produz         | corrigido                                                                |
+| O `.env.example` documentava um par de variáveis de administrador de arranque que não existem   | corrigido                                                                |
+| O `AGENTS.md` era uma cópia desatualizada do `CLAUDE.md` e mandava trabalhar direto em produção | corrigido                                                                |
+| O `README.md` descrevia o hub como um encaminhador de bytes crus                                | reescrito                                                                |
+| A documentação dava os tópicos do NCS com quatro segmentos                                      | corrigido no [capítulo 03](03-ingestao-mqtt-ncs.md)                      |
+| O contrato prometia `pulseBpm` em `blood_pressure`, que nunca foi emitido                       | corrigido no [capítulo 06](06-normalizacao.md)                           |
+| O contrato documentava doze capacidades de telemetria; são vinte                                | corrigido no [capítulo 06](06-normalizacao.md)                           |
+| O `README` dizia que a integração contínua procurava "skipped" na saída; faz o contrário        | corrigido no [capítulo 16](16-testes.md)                                 |
+| O `README` dizia que a dashboard aceitava `license_client`; nunca aceitou                       | corrigido no [capítulo 13](13-dashboard.md)                              |
+| O `docs/` não era referenciado por nenhum ficheiro do repositório                               | corrigido                                                                |
+| O `alarm` dos relógios era publicado e não existia no catálogo                                  | acrescentado, com migração                                               |
+| A `proximity` era publicada para pulseiras e sensores e não existia no catálogo                 | acrescentada, com migração                                               |
+| O NCS declarava `pager_call` e publicava `help_call`                                            | alinhado; a mensagem no MQTT não mudou                                   |
 | O radar publicava no MQTT com o `uid` do tópico e escrevia na dashboard com o IMEI              | passou a usar o IMEI nos dois — [capítulo 04](04-ingestao-mqtt-radar.md) |
-| Um SOS de relógio saía em `telemetry` a QoS 0; uma queda de radar em `events` a QoS 1           | os alarmes passaram a `events` — [capítulo 08](08-contrato-mqtt.md) |
-| O envelope MQTT levava um `schemaVersion` que ninguém lia e que seguia o produtor, não o canal  | removido — [capítulo 06](06-normalizacao.md)        |
-| O downlink por MQTT era uma segunda porta de comandos, só para relógios e sem registo           | removido; entra tudo pela [API](09-api.md)          |
-| O `ConnectionRegistry` rotulava um transporte `websocket` que não existe                        | corrigido                                           |
-| Os cenários recriavam o contentor de desenvolvimento e nunca o repunham                         | correm em projeto compose próprio — [capítulo 16](16-testes.md) |
-| O `composer.json` aceitava PHP 8.1, versão que nunca foi testada                                | passou a `^8.4`                                     |
-| O IMEI por omissão do simulador não existia no inventário semeado                               | corrigido no `Makefile`                             |
+| Um SOS de relógio saía em `telemetry` a QoS 0; uma queda de radar em `events` a QoS 1           | os alarmes passaram a `events` — [capítulo 08](08-contrato-mqtt.md)      |
+| O envelope MQTT levava um `schemaVersion` que ninguém lia e que seguia o produtor, não o canal  | removido — [capítulo 06](06-normalizacao.md)                             |
+| O downlink por MQTT era uma segunda porta de comandos, só para relógios e sem registo           | removido; entra tudo pela [API](09-api.md)                               |
+| O `ConnectionRegistry` rotulava um transporte `websocket` que não existe                        | corrigido                                                                |
+| Os cenários recriavam o contentor de desenvolvimento e nunca o repunham                         | correm em projeto compose próprio — [capítulo 16](16-testes.md)          |
+| O `composer.json` aceitava PHP 8.1, versão que nunca foi testada                                | passou a `^8.4`                                                          |
+| O IMEI por omissão do simulador não existia no inventário semeado                               | corrigido no `Makefile`                                                  |
+
+--
+
+## Coisas para fazer amanhã
+
+- Investigar novo gateway MOKO, parece uma coisa ligada à tomada.
+- Ver como fazer backups da base de dados de produção do hub
+- Fix ao Gateway W812 NCS, Chamada de Enfermeira, ir ao PC do quarto da D. Alice
+- Ver onde fica a lógica se existe deteção de fuga gateway <-> pulseira

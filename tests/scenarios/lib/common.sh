@@ -11,16 +11,8 @@ if [ -f "$ROOT_DIR/.env" ]; then
   set +a
 fi
 
-# Os cenários correm num projeto compose próprio, com contentores e volumes só deles.
-#
-# Antes recriavam o contentor `havicare-hub` -- o mesmo que serve o desenvolvimento -- com
-# o ambiente de teste, e nunca o repunham: quem corresse um cenário ficava com o hub local
-# ligado ao mosquitto do compose em vez do broker real, sem radares e sem gateways, e sem
-# um único erro no log a dizê-lo. Num projeto à parte isso deixa de ser possível, mesmo que
-# o cenário seja interrompido a meio.
-#
-# A porta da dashboard é a 8181 no anfitrião, e não a 8081, para os dois projetos poderem
-# correr ao mesmo tempo -- ver `docker-compose.scenarios.yml`.
+# Projeto compose próprio, para um cenário nunca tocar no ambiente de desenvolvimento.
+# A dashboard responde na 8181 -- ver `docker-compose.scenarios.yml`.
 export COMPOSE_PROJECT_NAME="havicare-scenarios"
 export COMPOSE_FILE="$ROOT_DIR/docker-compose.yml:$ROOT_DIR/docker-compose.scenarios.yml"
 DASHBOARD_BASE_URL="http://127.0.0.1:8181"
@@ -100,11 +92,6 @@ wait_for_dashboard() {
 }
 
 # Repõe o utilizador de administração e devolve um token de acesso.
-#
-# Os comandos entram pela API porque é o único caminho que existe: é o que a dashboard usa,
-# o que serve todos os tipos de dispositivo, e o único que regista o comando para depois se
-# poder acompanhar em `GET /api/commands/{id}`. O tópico MQTT de downlink -- que era uma
-# segunda porta, sem nada disso -- foi removido.
 scenario_api_token() {
   docker compose exec -T hub php -r '
 require "vendor/autoload.php";

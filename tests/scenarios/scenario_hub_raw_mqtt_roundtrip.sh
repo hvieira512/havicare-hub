@@ -56,14 +56,11 @@ if [ -z "$api_token" ]; then
   scenario_fail "auth_failure" "dashboard API login did not issue bearer token"
 fi
 
-# Um pedido de frequência cardíaca desce como `BPXL`. Entra pela API, que é o único caminho
-# de comandos: o tópico MQTT de downlink foi removido por ser uma segunda porta, paralela e
-# mais pobre -- não registava o comando, não o repetia e não correlacionava a resposta.
+# Um pedido de frequência cardíaca desce como `BPXL`.
 command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' \
   -d '{"feature":"heart_rate"}' "$DASHBOARD_BASE_URL/api/devices/$IMEI/requests")"
 printf '%s' "$command_response" > "$SCENARIO_DIR/api-command.json"
-# O dispositivo está ligado, portanto o comando desce logo e fica `waiting` -- entregue, à
-# espera da resposta dele. O `sentAt` é a prova de que saiu; `queued` seria o contrário.
+# Ligado, o comando desce logo e fica `waiting`. O `sentAt` é a prova de que saiu.
 if printf '%s' "$command_response" | grep -q '"status":"queued"'; then
   scenario_fail "command_failure" "API command was queued although the device was connected"
 fi
@@ -83,8 +80,7 @@ if ! grep -q '\[COMMAND\] BPXL' "$SCENARIO_DIR/device-listener.log"; then
   scenario_fail "routing_failure" "device listener did not receive the API command"
 fi
 
-# O identificador da transação é gerado pelo hub, e por isso a resposta só se prende pelo
-# prefixo.
+# O identificador da transação é gerado pelo hub: prende-se só o prefixo.
 for _ in $(seq 1 20); do
   capture_mqtt_log
   if grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,' "$MQTT_LOG_FILE"; then

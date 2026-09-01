@@ -10,8 +10,7 @@ use PhpMqtt\Client\MqttClient;
 /**
  * Reconectar a um broker que largou a ligação, com recuo.
  *
- * Esteve escrito duas vezes, linha por linha -- no `Ingress\Mqtt\Bridge` e no subscritor
- * de downlink, entretanto removido --, e as duas cópias tinham o mesmo defeito: repunham o recuo
+ * Esteve escrito duas vezes, e as duas cópias tinham o mesmo defeito: repunham o recuo
  * assim que o `connect` devolvia sucesso. Ligar não é o mesmo que ficar ligado. Um broker
  * que aceita e larga logo a seguir -- o que um `client_id` duplicado provoca, porque o
  * segundo cliente a chegar expulsa o primeiro -- devolvia sempre sucesso, e o recuo era

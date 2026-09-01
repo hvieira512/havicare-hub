@@ -127,10 +127,8 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
-        // Uma chave só, como em todas as outras ingestões: o IMEI canónico da whitelist
-        // manda no tópico MQTT e na dashboard. O `uid` que vem no tópico de origem serve
-        // para encontrar o dispositivo e mais nada -- publicar com ele fazia o mesmo radar
-        // aparecer com dois nomes conforme se olhasse para o broker ou para a interface.
+        // O `uid` do tópico serve para encontrar o dispositivo; a partir daqui vale o IMEI
+        // canónico, no MQTT e na dashboard.
         $deviceKey = (string)$device['imei'];
         $deviceType = (string)$device['deviceType'];
         $licenseId = DeviceMetadata::normalizeLicenseId($device['licenseId'] ?? 0);

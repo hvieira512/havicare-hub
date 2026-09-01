@@ -36,7 +36,14 @@ class HubMqttBridge
         int $licenseId = self::DEFAULT_LICENSE_ID,
         string $company = self::DEFAULT_COMPANY,
     ): void {
-        $this->publish($this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status')), $payload, $retain);
+        // QoS 1: a mensagem é retida, e um `offline` perdido deixa `online` no broker até
+        // à transição seguinte.
+        $this->publish(
+            $this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'status')),
+            $payload,
+            $retain,
+            MqttClient::QOS_AT_LEAST_ONCE,
+        );
     }
 
     public function publishEvent(string $imei, array $payload, string $deviceType = self::DEFAULT_DEVICE_TYPE, int $licenseId = self::DEFAULT_LICENSE_ID, string $company = self::DEFAULT_COMPANY): void
