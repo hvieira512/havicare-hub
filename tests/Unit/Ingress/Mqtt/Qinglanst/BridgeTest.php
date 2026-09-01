@@ -82,7 +82,7 @@ final class BridgeTest extends TestCase
 
         self::assertSame('radar-canonical-1', $mqttBridge->lastTelemetry()['imei']);
         self::assertSame('radar-canonical-1', $mqttBridge->lastTelemetry()['payload']['device']['id'] ?? null);
-        self::assertSame('minute_stats', $mqttBridge->lastTelemetry()['payload']['type'] ?? null);
+        self::assertSame('position_minute_stats', $mqttBridge->lastTelemetry()['payload']['type'] ?? null);
         self::assertSame('Qinglanst RD-V1 Pro', $mqttBridge->lastTelemetry()['payload']['device']['commercialName'] ?? null);
     }
 

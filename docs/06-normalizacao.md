@@ -158,7 +158,7 @@ leitura que não se consegue normalizar não produz evento nenhum.
 |---|---|---|
 | `presence` | radar | `count`, `people[]` |
 | `sleep_state` | radar | `state` |
-| `minute_stats` · `hbstatics` | radar | resumos por minuto |
+| `position_minute_stats` · `vitals_minute_stats` | radar | resumos por minuto |
 | `motion` | pulseira | `xMg`, `yMg`, `zMg`, `magnitudeMg` |
 | `proximity` | pulseira, sensor de fralda | `gatewayId`, `state`, `rssiDbm`, `rssiMaxDbm`, `rssiMedianDbm`, `rssiMinDbm`, `samples`, `windowSeconds` |
 | `connectivity` | gateway | `interface`, `networkType`, `signalQuality`, `signalStrengthDbm` |

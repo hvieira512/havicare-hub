@@ -34,10 +34,10 @@ function els() {
     };
 }
 
-// Um `minute_stats` de radar: os detalhes são a frase comprida que rebentava a altura.
+// Um resumo por minuto de radar: os detalhes são a frase comprida que rebentava a altura.
 function minuteStats(index) {
     return {
-        type: "minute_stats",
+        type: "position_minute_stats",
         occurredAt: `2026-08-31T10:${String(index % 60).padStart(2, "0")}:00Z`,
         seq: 1000 + index,
         device: { id: "414D74184CBF" },
@@ -49,7 +49,7 @@ function minuteStats(index) {
             multiplayer_time: 0,
             breathing_active: false,
         },
-        source: { protocol: "qinglanst-radar", nativeType: "minute_stats" },
+        source: { protocol: "qinglanst-radar", nativeType: "posstatics" },
     };
 }
 

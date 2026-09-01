@@ -205,7 +205,8 @@ const FIELD_VALUE_LABELS = {
     },
 };
 
-// O estado de sono é a mesma grandeza em dois campos: o do `heartbreath` e o do `hbstatics`.
+// O estado de sono é a mesma grandeza em dois campos: o do `sleep_state` e o do
+// `vitals_minute_stats`.
 FIELD_VALUE_LABELS.sleep_state_status = FIELD_VALUE_LABELS.sleep_state;
 
 export const fieldValue = (key, value) => {

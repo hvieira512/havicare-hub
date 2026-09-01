@@ -82,7 +82,7 @@ final class MessageNormalizerTest extends TestCase
         ], $topic, $this->device());
 
         $telemetry = $result['telemetry']['position_minute_stats'];
-        self::assertSame('minute_stats', $telemetry['type']);
+        self::assertSame('position_minute_stats', $telemetry['type']);
         self::assertSame('posstatics', $telemetry['source']['nativeType']);
         self::assertSame(42, $telemetry['data']['walking_distance']);
     }
@@ -368,6 +368,80 @@ final class MessageNormalizerTest extends TestCase
         $levels = array_column(array_column($result['events'], 'data'), 'detectionLevel');
 
         self::assertSame(['danger', 'warning'], $levels);
+    }
+
+    /**
+     * A chave do mapa de telemetria é a capacidade, e o `type` do envelope é o que sai no
+     * fio. Divergirem faz o catálogo declarar uma capacidade que ninguém recebe, e é uma
+     * falha calada: o `hbstatics` e o `minute_stats` -- nomes das mensagens do fabricante --
+     * saíam onde o catálogo promete `vitals_minute_stats` e `position_minute_stats`.
+     *
+     * @dataProvider everyMessageType
+     */
+    public function testTheEnvelopeTypeIsAlwaysTheCapabilityItIsFiledUnder(array $decoded): void
+    {
+        $result = (new MessageNormalizer())->normalize(
+            $decoded,
+            Topic::parse('radar/1001/radar-topic-uid'),
+            $this->device(),
+        );
+
+        foreach ($result['telemetry'] as $capability => $envelope) {
+            self::assertSame($capability, $envelope['type']);
+        }
+    }
+
+    /** @return array<string, array{array<string, mixed>}> */
+    public static function everyMessageType(): array
+    {
+        return [
+            'position' => [[
+                'type' => 'position',
+                'device_code' => 'radar-topic-uid',
+                'people' => [[
+                    'person_index' => 1,
+                    'x_position_dm' => 1,
+                    'y_position_dm' => 2,
+                    'z_position_cm' => 3,
+                    'time_left_s' => 4,
+                    'posture_state' => 'standing',
+                    'last_event' => 'no_event',
+                    'region_id' => 5,
+                ]],
+            ]],
+            'heartbreath' => [[
+                'type' => 'heartbreath',
+                'device_code' => 'radar-topic-uid',
+                'breathing' => 12,
+                'heart_rate' => 72,
+                'sleep_state' => 'light_sleep',
+            ]],
+            'posstatics' => [[
+                'type' => 'posstatics',
+                'device_code' => 'radar-topic-uid',
+                'version' => 2,
+                'people' => 1,
+                'walking_distance' => 10,
+                'walking_time' => 5,
+                'meditation_time' => 1,
+                'in_bed_time' => 2,
+                'standing_time' => 3,
+                'multiplayer_time' => 0,
+                'breathing_active' => true,
+            ]],
+            'hbstatics' => [[
+                'type' => 'hbstatics',
+                'device_code' => 'radar-topic-uid',
+                'real_time_breathing' => 12,
+                'real_time_heart_rate' => 66,
+                'avg_breathing_per_minute' => 13,
+                'avg_heart_rate_per_minute' => 70,
+                'breathing_status_per_minute' => 'normal',
+                'heart_rate_status_per_minute' => 'normal',
+                'vital_signs_status' => 'normal',
+                'sleep_state_status' => 'light_sleep',
+            ]],
+        ];
     }
 
     /**

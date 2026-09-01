@@ -103,8 +103,10 @@ alarme e não em telemetria.
 ### `posstatics` e `hbstatics` — estatísticas por minuto
 
 Resumos acumulados: distância percorrida, tempo de pé, na cama, em meditação, e
-médias de respiração e frequência cardíaca. Saem como `minute_stats` e
-`hbstatics`.
+médias de respiração e frequência cardíaca. Saem como `position_minute_stats` e
+`vitals_minute_stats`, que são os nomes que o catálogo de capacidades declara —
+o `posstatics` e o `hbstatics` são os nomes das mensagens do fabricante e ficam
+no `source.nativeType`, que é onde a identidade de protocolo pertence.
 
 ## 3. Alarmes
 

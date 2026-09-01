@@ -12,16 +12,14 @@ import { capabilityLabelByKey, normalizeDeviceType } from "./domain.js";
  * dados: é a única fonte, e um segundo mapa escrito à mão aqui discordaria dela.
  *
  * O que fica escrito aqui são os nomes que *não* são capacidades: eventos de protocolo como
- * `device.connected` ou `hbstatics`, que não são coisas que um modelo suporte ou não.
+ * `device.connected` ou `heartbreath`, que não são coisas que um modelo suporte ou não.
  */
 const PROTOCOL_EVENT_LABELS = {
     alarm: "Alarme",
     "device.connected": "Ligado",
     "device.disconnected": "Desligado",
     device_config: "Configuração",
-    hbstatics: "Estatísticas de sinais vitais por minuto",
     heartbreath: "Sinais vitais",
-    minute_stats: "Estatísticas de posições por minuto",
     position: "Posições",
     reset: "Cancelada",
     unknown: "Desconhecida",

@@ -312,12 +312,12 @@ final class MessageNormalizer
     {
         return [
             'telemetry' => [
-                'position_minute_stats' => [
-                    'type' => 'minute_stats',
-                    'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
-                    'device' => $this->deviceInfo($topic, $device),
-                    'source' => $this->source($topic, 'posstatics'),
-                    'data' => [
+                'position_minute_stats' => $this->telemetry(
+                    $topic,
+                    $device,
+                    'position_minute_stats',
+                    'posstatics',
+                    [
                         'version' => $decoded['version'],
                         'people' => $decoded['people'],
                         'walking_distance' => $decoded['walking_distance'],
@@ -328,7 +328,7 @@ final class MessageNormalizer
                         'multiplayer_time' => $decoded['multiplayer_time'],
                         'breathing_active' => $decoded['breathing_active'],
                     ],
-                ],
+                ),
             ],
             'events' => [],
         ];
@@ -339,24 +339,16 @@ final class MessageNormalizer
      */
     private function normalizeHbStatics(array $decoded, Topic $topic, array $device): array
     {
-        $now = gmdate('Y-m-d\TH:i:s\Z');
-
-        $telemetry = [
-            'type' => 'hbstatics',
-            'occurredAt' => $now,
-            'device' => $this->deviceInfo($topic, $device),
-            'source' => $this->source($topic, 'hbstatics'),
-            'data' => [
-                'real_time_breathing' => $decoded['real_time_breathing'],
-                'real_time_heart_rate' => $decoded['real_time_heart_rate'],
-                'avg_breathing_per_minute' => $decoded['avg_breathing_per_minute'],
-                'avg_heart_rate_per_minute' => $decoded['avg_heart_rate_per_minute'],
-                'breathing_status_per_minute' => $decoded['breathing_status_per_minute'],
-                'heart_rate_status_per_minute' => $decoded['heart_rate_status_per_minute'],
-                'vital_signs_status' => $decoded['vital_signs_status'],
-                'sleep_state_status' => $decoded['sleep_state_status'],
-            ],
-        ];
+        $telemetry = $this->telemetry($topic, $device, 'vitals_minute_stats', 'hbstatics', [
+            'real_time_breathing' => $decoded['real_time_breathing'],
+            'real_time_heart_rate' => $decoded['real_time_heart_rate'],
+            'avg_breathing_per_minute' => $decoded['avg_breathing_per_minute'],
+            'avg_heart_rate_per_minute' => $decoded['avg_heart_rate_per_minute'],
+            'breathing_status_per_minute' => $decoded['breathing_status_per_minute'],
+            'heart_rate_status_per_minute' => $decoded['heart_rate_status_per_minute'],
+            'vital_signs_status' => $decoded['vital_signs_status'],
+            'sleep_state_status' => $decoded['sleep_state_status'],
+        ]);
 
         $events = [];
 

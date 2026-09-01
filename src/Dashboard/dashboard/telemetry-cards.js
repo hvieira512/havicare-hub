@@ -104,17 +104,7 @@ const UPLINK_CARD_RENDERERS = {
         value: radarPositionMinuteStatsValue(data),
         details: radarPositionMinuteStatsDetails(data),
     }),
-    minute_stats: (data) => ({
-        icon: "fa-chart-column",
-        value: radarPositionMinuteStatsValue(data),
-        details: radarPositionMinuteStatsDetails(data),
-    }),
     vitals_minute_stats: (data) => ({
-        value: radarVitalsMinuteStatsValue(data),
-        details: radarVitalsMinuteStatsDetails(data),
-    }),
-    hbstatics: (data) => ({
-        icon: "fa-chart-line",
         value: radarVitalsMinuteStatsValue(data),
         details: radarVitalsMinuteStatsDetails(data),
     }),
@@ -884,11 +874,8 @@ function requestTelemetryTypes(type) {
     if (type === "vitals") {
         return ["vitals"];
     }
-    if (type === "position_minute_stats") {
-        return ["minute_stats"];
-    }
-    if (type === "vitals_minute_stats") {
-        return ["hbstatics"];
+    if (type === "position_minute_stats" || type === "vitals_minute_stats") {
+        return [type];
     }
     // O índice de humidade é uma capacidade à parte, mas não um cartão à parte: o cartão
     // dos canais mostra-o como valor.
