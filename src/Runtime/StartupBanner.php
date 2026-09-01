@@ -29,13 +29,13 @@ final class StartupBanner
 
         foreach (['status', 'events', 'raw', 'downlink'] as $channel) {
             $label = $channel === 'events' ? 'event' : $channel;
-            $log->info("MQTT {$label} topics: " . $mqttBridge->topic('{licenseId}/watch/{deviceKey}/' . $channel));
+            $log->info("MQTT {$label} topics: " . $mqttBridge->topic('{company}/{licenseId}/watch/{deviceKey}/' . $channel));
         }
 
         $descriptions = [
             'ncs' => [
                 'NCS ingress topics',
-                '{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}',
+                '{company}/{licenseId}/ncs/{deviceKey}/{raw|status|events|telemetry}',
             ],
             'moko' => [
                 'MOKO MKGW3 ingress topics',
