@@ -20,8 +20,10 @@ use Symfony\Component\Validator\Constraints as Assert;
  * fornecedor não repete o IMEI que já está no URL. Daí o grupo, e daí ser anulável: `null`
  * quer dizer "não veio", que é diferente de "veio vazio", e só o segundo é recusa.
  *
- * O `licenseId` aceita texto e inteiro porque sempre aceitou os dois -- é `"1001"` que os
- * clientes mandam e que os testes escrevem, e o serviço convertia-o com um `(string)`.
+ * O `licenseId` é inteiro. Os clientes mandam-no muitas vezes como texto, e continuam a
+ * poder: a conversão de strings numéricas faz-se ao ligar o corpo ao objecto, que é a borda,
+ * e não alargando o tipo declarado. O inteiro é a forma canónica com que o controlo de acesso
+ * por cliente o compara, e é o que a especificação passa a prometer.
  */
 final class DeviceWriteRequest
 {
@@ -44,8 +46,17 @@ final class DeviceWriteRequest
         /** Só vale quando o modelo não o disser: o catálogo é que manda no tipo. */
         #[Example('watch')]
         public string $deviceType = 'watch',
-        #[Example('1001')]
-        public int|string $licenseId = '0',
+        /**
+         * O número da licença é inteiro, e é essa a sua forma.
+         *
+         * Que os clientes o mandem como `"1001"` é tolerância da borda e não o tipo da coisa:
+         * a rota corre com conversão de strings numéricas ligada, e por isso `"1001"` e
+         * `1001` entram os dois -- mas `"mil e um"` passa a ser recusado em vez de virar zero,
+         * que é uma licença que existe e quer dizer "sem licença".
+         */
+        #[Assert\PositiveOrZero(message: 'licenseId must be zero or a positive integer')]
+        #[Example(1001)]
+        public int $licenseId = 0,
         #[Example('+351912345678')]
         public string $simNumber = '',
         #[Example('8800000015')]
