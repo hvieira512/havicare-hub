@@ -14,7 +14,7 @@ final class BeaconDbAsyncClient implements LocationProviderContract
     public function __construct(
         Browser $browser,
         private readonly string $endpoint = 'https://api.beacondb.net/v1/geolocate',
-        private readonly string $userAgent = 'HaviCare Devices Hub/1.0',
+        private readonly string $userAgent = 'Havicare Hub/1.0',
         float $timeoutSeconds = 5.0,
     ) {
         if (trim($this->endpoint) === '') {

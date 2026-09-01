@@ -5,7 +5,7 @@ name: havicare-hub
 services:
   mosquitto:
     image: eclipse-mosquitto:2
-    container_name: hitecosystem-mosquitto
+    container_name: havicare-mosquitto
     command: sh -lc "/mosquitto/config/bootstrap.sh && exec mosquitto -c /mosquitto/config/mosquitto.conf"
     ports:
       - "1883:1883"
@@ -28,7 +28,7 @@ services:
   redis:
     # A produção corre 8.2. O 7 aqui era mais velho do que aquilo que serve os clientes.
     image: redis:8-alpine
-    container_name: hitecosystem-redis
+    container_name: havicare-redis
     ports:
       - "6379:6379"
     networks:
@@ -46,9 +46,9 @@ services:
     # de integração contra MariaDB 10.11. O esquema e as consultas não usam sintaxe exclusiva
     # de nenhum dos dois, e é isso que o CI passa a provar a cada push em vez de se assumir.
     image: mysql:8.4
-    container_name: hitecosystem-mysql
+    container_name: havicare-mysql
     environment:
-      MYSQL_DATABASE: ${MYSQL_DB_NAME:-hitecosystem_hub}
+      MYSQL_DATABASE: ${MYSQL_DB_NAME:-havicare_hub}
       MYSQL_USER: ${MYSQL_DB_USER:-hub}
       MYSQL_PASSWORD: ${MYSQL_DB_PASSWORD:-hub_pass}
       MYSQL_ROOT_PASSWORD: ${HUB_DB_ROOT_PASSWORD:-root_pass}
@@ -98,7 +98,7 @@ services:
       DB_DRIVER: ${HUB_DB_DRIVER:-mysql}
       DB_HOST: ${HUB_DB_HOST:-mysql}
       DB_PORT: ${HUB_DB_PORT:-3306}
-      DB_NAME: ${HUB_DB_NAME:-hitecosystem_hub}
+      DB_NAME: ${HUB_DB_NAME:-havicare_hub}
       DB_USER: ${HUB_DB_USER:-hub}
       DB_PASSWORD: ${HUB_DB_PASSWORD:-hub_pass}
       DB_CHARSET: ${HUB_DB_CHARSET:-utf8mb4}
@@ -125,7 +125,7 @@ services:
       TCP_INGRESS_PORT: 9000
       LOCATION_RESOLUTION_ENABLED: ${LOCATION_RESOLUTION_ENABLED:-true}
       BEACONDB_ENDPOINT: ${BEACONDB_ENDPOINT:-https://api.beacondb.net/v1/geolocate}
-      BEACONDB_USER_AGENT: ${BEACONDB_USER_AGENT:-HaviCare Devices Hub/1.0}
+      BEACONDB_USER_AGENT: ${BEACONDB_USER_AGENT:-Havicare Hub/1.0}
       BEACONDB_TIMEOUT_SECONDS: ${BEACONDB_TIMEOUT_SECONDS:-2}
       BEACONDB_MAX_ACCURACY_METERS: ${BEACONDB_MAX_ACCURACY_METERS:-500}
       BEACONDB_CACHE_TTL_SECONDS: ${BEACONDB_CACHE_TTL_SECONDS:-86400}

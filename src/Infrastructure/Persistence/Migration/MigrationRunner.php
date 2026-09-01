@@ -8,7 +8,16 @@ use PDO;
 
 final class MigrationRunner
 {
-    private const LOCK_NAME = 'hitecosystem_devices_hub_migrations';
+    /**
+     * O `GET_LOCK` do MySQL tem âmbito de servidor e não de base de dados, e por isso este
+     * nome serializa as migrações de todas as instâncias que partilhem o servidor -- o que é
+     * mais do que se precisa, mas é o lado seguro.
+     *
+     * Ao renomeá-lo, as duas instâncias têm de ficar na mesma versão antes de alguém migrar as
+     * duas ao mesmo tempo: enquanto uma tiver o nome antigo e a outra o novo, os locks não se
+     * veem um ao outro.
+     */
+    private const LOCK_NAME = 'havicare_hub_migrations';
 
     /**
      * @param list<Migration> $migrations

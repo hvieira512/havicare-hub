@@ -33,7 +33,7 @@ jobs:
         image: mariadb:10.11
         env:
           MARIADB_ROOT_PASSWORD: root_pass
-          MARIADB_DATABASE: hitecosystem_hub
+          MARIADB_DATABASE: havicare_hub
         ports:
           - 3306:3306
         options: >-

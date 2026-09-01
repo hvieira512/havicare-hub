@@ -206,8 +206,8 @@ function probeUsage(): void
 Local normalized-location -> BeaconDB probe
 
 Usage:
-  php simulator/location-beacondb-probe.php --file telemetry.json --user-agent 'HaviCare location test (ops@example.com)'
-  php simulator/location-beacondb-probe.php --topic 'havicare-hub/+/+/watch/+/telemetry' --once --user-agent 'HaviCare location test (ops@example.com)'
+  php simulator/location-beacondb-probe.php --file telemetry.json --user-agent 'Havicare location test (ops@example.com)'
+  php simulator/location-beacondb-probe.php --topic 'havicare-hub/+/+/watch/+/telemetry' --once --user-agent 'Havicare location test (ops@example.com)'
 
 Options:
   --file PATH              Read one normalized schema-v2 telemetry payload.

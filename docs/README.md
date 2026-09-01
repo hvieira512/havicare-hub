@@ -90,7 +90,6 @@ com as instâncias de desenvolvimento e produção estão no
 | [`proximity-alarms.md`](proximity-alarms.md) | Sinal por gateway para alarmes de proximidade *(em inglês)* |
 | [`alarm_clock.md`](alarm_clock.md) | Contrato da capacidade `alarm_clock` *(em inglês)* |
 | [`model-capabilities.md`](model-capabilities.md) | Matriz de capacidades por modelo |
-| [`voerka-ncs.md`](voerka-ncs.md) | Contrato NCS *(em inglês; substituído pelo capítulo 03)* |
 
 ## Documentação dos fabricantes
 

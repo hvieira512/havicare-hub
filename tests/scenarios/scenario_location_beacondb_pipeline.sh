@@ -8,7 +8,7 @@ trap scenario_cleanup EXIT
 
 export LOCATION_RESOLUTION_ENABLED="true"
 export BEACONDB_ENDPOINT="http://127.0.0.1:8099"
-export BEACONDB_USER_AGENT="HaviCare local hub location enrichment test"
+export BEACONDB_USER_AGENT="Havicare local hub location enrichment test"
 export RADIO_MAP_ENABLED="true"
 export RADIO_MAP_HASH_KEY="scenario-private-radio-map-hmac-key"
 
@@ -20,7 +20,7 @@ docker compose exec -T hub php -r 'require "vendor/autoload.php"; $pdo=(new Hub\
 
 docker compose exec -T hub sh -lc "rm -f /tmp/beacondb-requests.log /tmp/beacondb-mock.log"
 docker compose exec -d hub sh -lc "php -S 127.0.0.1:8099 tests/scenarios/fixtures/beacondb-router.php >/tmp/beacondb-mock.log 2>&1"
-docker compose exec -d hub sh -lc "BEACONDB_USER_AGENT='HaviCare local location pipeline test' php simulator/location-beacondb-probe.php --host mosquitto --port 1883 --username '$MQTT_SMOKE_USERNAME' --password '$MQTT_SMOKE_PASSWORD' --topic '+/watch/+/telemetry' --count 3 --listen-timeout 15 --endpoint http://127.0.0.1:8099 > /tmp/location-probe.log 2>&1"
+docker compose exec -d hub sh -lc "BEACONDB_USER_AGENT='Havicare local location pipeline test' php simulator/location-beacondb-probe.php --host mosquitto --port 1883 --username '$MQTT_SMOKE_USERNAME' --password '$MQTT_SMOKE_PASSWORD' --topic '+/watch/+/telemetry' --count 3 --listen-timeout 15 --endpoint http://127.0.0.1:8099 > /tmp/location-probe.log 2>&1"
 
 for _ in $(seq 1 20); do
   if docker compose exec -T hub sh -lc "grep -q 'Listening on mqtt://' /tmp/location-probe.log 2>/dev/null"; then

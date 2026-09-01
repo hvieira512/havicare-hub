@@ -1,6 +1,6 @@
 {
-    "name": "hitecosystem/devices-hub",
-    "description": "Raw multi-transport device hub bridged to MQTT",
+    "name": "havicare/hub",
+    "description": "Plataforma de integração de dispositivos de saúde: ingestão multi-protocolo normalizada para MQTT e API REST",
     "type": "project",
     "license": "proprietary",
     "require": {

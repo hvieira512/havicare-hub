@@ -17,7 +17,7 @@ desenvolvimento antes de chegar à de produção.
 | Ramo | `dev` | `main` |
 | Dashboard | `:8091` | `:8081` |
 | Ingestão TCP | `127.0.0.1:8090` | `0.0.0.0:8080` |
-| Base de dados | `hitecosystem_hub_dev` | `hitecosystem_hub` |
+| Base de dados | `havicare_hub_dev` | `havicare_hub` |
 | Prefixo do Redis | `dev:` | *(vazio)* |
 | Tópicos MQTT | `havicare-hub-dev` | `havicare-hub` |
 | Id de cliente MQTT | `health-mqtt-dev` | `health-mqtt` |

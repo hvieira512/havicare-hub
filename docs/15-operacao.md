@@ -16,7 +16,7 @@ guarda estado.
 | Ramo | `dev` | `main` |
 | Dashboard | `:8091` | `:8081` |
 | Ingestão TCP | `127.0.0.1:8090` | `0.0.0.0:8080` |
-| Base de dados | `hitecosystem_hub_dev` | `hitecosystem_hub` |
+| Base de dados | `havicare_hub_dev` | `havicare_hub` |
 | Prefixo do Redis | `dev:` | *(vazio)* |
 | Tópicos MQTT | `havicare-hub-dev` | `havicare-hub` |
 | Id de cliente MQTT | `health-mqtt-dev` | `health-mqtt` |
@@ -41,8 +41,8 @@ flowchart TB
 
   P --> PB["havicare-hub/…"]
   V --> VB["havicare-hub-dev/…"]
-  P --> PD[("hitecosystem_hub")]
-  V --> VD[("hitecosystem_hub_dev")]
+  P --> PD[("havicare_hub")]
+  V --> VD[("havicare_hub_dev")]
   PB --> C["Clientes"]
   VB -.->|ninguém ouve| X["—"]
 ```

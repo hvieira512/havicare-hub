@@ -33,11 +33,10 @@ E um dispositivo ainda sem cliente atribuído:
 havicare-hub/null/0/watch/637507597567372/status
 ```
 
-> O documento [`voerka-ncs.md`](voerka-ncs.md) descreve os tópicos do NCS com
-> quatro segmentos, omitindo a empresa. Essa forma está incorreta: o
-> `Ncs\Bridge` publica pelos mesmos métodos das restantes ingestões, que
-> produzem sempre cinco segmentos. Ver o
-> [capítulo do NCS](03-ingestao-mqtt-ncs.md).
+> Documentação anterior a setembro de 2026 descreve os tópicos do NCS com quatro
+> segmentos, omitindo a empresa. Essa forma está incorreta: o `Ncs\Bridge`
+> publica pelos mesmos métodos das restantes ingestões, que produzem sempre
+> cinco segmentos. Ver o [capítulo do NCS](03-ingestao-mqtt-ncs.md).
 
 O `{licenca}` no tópico é o **único sítio** em todo o hub onde o número da
 licença é texto. Em memória, na base de dados e na API é sempre inteiro.

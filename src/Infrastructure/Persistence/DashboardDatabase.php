@@ -20,7 +20,7 @@ final class DashboardDatabase
             'mysql:host=%s;port=%d;dbname=%s;charset=%s',
             (string)($config['host'] ?? '127.0.0.1'),
             (int)($config['port'] ?? 3306),
-            (string)($config['name'] ?? 'hitecosystem_hub'),
+            (string)($config['name'] ?? 'havicare_hub'),
             $charset,
         );
         $this->pdo = new PDO($dsn, (string)($config['username'] ?? ''), (string)($config['password'] ?? ''), [

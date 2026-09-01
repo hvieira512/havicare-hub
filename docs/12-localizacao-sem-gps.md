@@ -203,11 +203,11 @@ Duas distinções na contabilização:
 
 ```bash
 # a partir de uma telemetria guardada
-BEACONDB_USER_AGENT='HaviCare location test (ops@example.com)' \
+BEACONDB_USER_AGENT='Havicare location test (ops@example.com)' \
   composer location:probe -- --file /caminho/para/location-telemetry.json
 
 # a partir do MQTT ao vivo
-BEACONDB_USER_AGENT='HaviCare location test (ops@example.com)' \
+BEACONDB_USER_AGENT='Havicare location test (ops@example.com)' \
   composer location:probe -- \
   --topic 'havicare-hub/+/+/watch/+/telemetry' \
   --host 127.0.0.1 --port 1883 --once

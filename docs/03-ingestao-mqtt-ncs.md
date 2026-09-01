@@ -86,10 +86,10 @@ Três canais, pelo mesmo `HubMqttBridge` de todos os outros dispositivos:
 {prefixo}/{empresa}/{licenca}/ncs/{dispositivo}/events
 ```
 
-> O documento [`voerka-ncs.md`](voerka-ncs.md) descreve estes tópicos com
-> **quatro** segmentos, omitindo a empresa (`{licenca}/ncs/{dispositivo}/…`).
-> Essa forma está incorreta: o `Ncs\Bridge` publica através dos mesmos métodos
-> das restantes ingestões, que produzem sempre cinco segmentos.
+> Documentação anterior a setembro de 2026 descreve estes tópicos com **quatro**
+> segmentos, omitindo a empresa (`{licenca}/ncs/{dispositivo}/…`). Essa forma
+> está incorreta: o `Ncs\Bridge` publica através dos mesmos métodos das
+> restantes ingestões, que produzem sempre cinco segmentos.
 
 ### `status`
 

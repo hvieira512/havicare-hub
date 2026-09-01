@@ -81,7 +81,7 @@ class Config
             'location_resolution' => [
                 'enabled' => $locationResolutionEnabled,
                 'endpoint' => getenv('BEACONDB_ENDPOINT') ?: 'https://api.beacondb.net/v1/geolocate',
-                'user_agent' => getenv('BEACONDB_USER_AGENT') ?: 'HaviCare Devices Hub/1.0',
+                'user_agent' => getenv('BEACONDB_USER_AGENT') ?: 'Havicare Hub/1.0',
                 'timeout_seconds' => max(0.1, (float)(getenv('BEACONDB_TIMEOUT_SECONDS') ?: 2.0)),
                 'max_accuracy_meters' => max(0.0, (float)(getenv('BEACONDB_MAX_ACCURACY_METERS') ?: 500.0)),
                 'cache_ttl_seconds' => $beaconDbCacheTtl,
@@ -157,7 +157,7 @@ class Config
                 'driver' => getenv('DB_DRIVER') ?: 'mysql',
                 'host' => getenv('DB_HOST') ?: '127.0.0.1',
                 'port' => (int)(getenv('DB_PORT') ?: 3306),
-                'name' => getenv('DB_NAME') ?: 'hitecosystem_hub',
+                'name' => getenv('DB_NAME') ?: 'havicare_hub',
                 'username' => getenv('DB_USER') ?: 'hub',
                 'password' => getenv('DB_PASSWORD') ?: 'hub_pass',
                 'charset' => getenv('DB_CHARSET') ?: 'utf8mb4',
