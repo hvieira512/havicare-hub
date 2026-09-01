@@ -154,22 +154,36 @@ SELECT s.id, t.device_type FROM suppliers s JOIN (
     UNION ALL SELECT 'MONIT', 'diaper_sensor'
 ) t ON t.name = s.name;
 
+-- Um dispositivo sem dono tem `NULL` nas duas colunas, e não o `0` e o `'null'`.
+--
+-- Esses dois são os sentinelas de memória: é como o hub diz "sem licença" e "sem empresa"
+-- enquanto o valor viaja, e é o que o ficheiro da whitelist escreve. Na base convertem-se,
+-- e o `WhitelistRepository` tem uma função para cada -- `storedLicenseId()` e
+-- `storedCompany()` -- precisamente para eles não chegarem aqui.
+--
+-- O seed saltava essa fronteira e gravava os sentinelas em cru. O resultado era visível: o
+-- filtro de licenças mostrava uma empresa chamada "Sem empresa" com uma licença "Sem
+-- Licença" lá dentro, em vez do "Sem licença" solto que a produção mostra -- porque uma
+-- empresa cujo nome é o texto `null` é, para todo o resto do sistema, uma empresa a sério.
 INSERT IGNORE INTO whitelist (imei, supplier, model, device_type, license_id, sim_number, device_id, company) VALUES
     ('351266770073676', '4P Touch', 'Y6M', 'watch', 1, '+351962621694', '6677007367', 'havicare'),
-    ('637507597567372', '4P Touch', 'D46', 'watch', 0, '+351962621781', '0759756737', 'null'),
+    ('637507597567372', '4P Touch', 'D46', 'watch', NULL, '+351962621781', '0759756737', NULL),
     ('861265061009822', 'Vivistar', 'L08 Pro', 'watch', 1, '+351962621789', '', 'havicare'),
     ('861265061009830', 'Vivistar', 'L08 Pro', 'watch', 1, '', '', 'havicare'),
     ('861265061274392', 'Vivistar', 'VL16P', 'watch', 1001, '+351962621844', '', 'hitcare'),
     ('861265061323462', 'Vivistar', 'VL16P', 'watch', 1001, '+351962621730', '6506132346', 'hitcare'),
-    ('861265061386014', 'Vivistar', 'VL17', 'watch', 0, '+351962621635', '', 'null'),
+    ('861265061386014', 'Vivistar', 'VL17', 'watch', NULL, '+351962621635', '', NULL),
     ('861265062542599', 'Vivistar', 'VL17', 'watch', 1, '', '', 'havicare'),
-    ('861265062542615', 'Vivistar', 'VL17', 'watch', 0, '+351962621803', '', 'null'),
+    ('861265062542615', 'Vivistar', 'VL17', 'watch', NULL, '+351962621803', '', NULL),
     ('861265062544868', 'Vivistar', 'VL16P', 'watch', 1, '+351962621463', '', 'havicare'),
     ('861728087056333', '4P Touch', 'Y6S', 'watch', 1, '', '2808705633', 'havicare'),
     ('861728087060467', '4P Touch', 'D44S', 'watch', 1, '', '2808706046', 'havicare'),
     ('861728087743062', '4P Touch', 'D41', 'watch', 1, '+351962621664', '2808774306', 'havicare'),
-    ('863737079757376', '4P Touch', 'D46', 'watch', 1001, '+351962621781', '3707975737', 'null'),
-    ('868160060298224', '4P Touch', 'D45 Pro', 'watch', 0, '', '6006029822', 'null'),
+    -- Tinha a licença 1001 e a empresa a `null`, que é combinação impossível: uma licença
+    -- não existe sem a empresa a que pertence. A 1001 é da hitcare, e é essa a leitura que
+    -- não deita fora informação -- a alternativa era largar a licença e deixá-lo sem dono.
+    ('863737079757376', '4P Touch', 'D46', 'watch', 1001, '+351962621781', '3707975737', 'hitcare'),
+    ('868160060298224', '4P Touch', 'D45 Pro', 'watch', NULL, '', '6006029822', NULL),
     ('868705080304889', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'),
     ('868705080304962', 'Wonlex', 'HW20PRO', 'watch', 1, '', '', 'havicare'),
     ('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 1001, '', 'bea6c3dd8e02', 'hitcare'),
