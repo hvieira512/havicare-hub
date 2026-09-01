@@ -15,21 +15,50 @@ namespace Hub\Api\Http;
  */
 final class ApiError
 {
-    /** Um erro sem estado declarado é um pedido mal formado. */
+    /** O estado de um código que nem sequer está declarado: não é dos nossos, é engano. */
     private const DEFAULT_STATUS = 400;
 
     /**
-     * Só os códigos que fogem ao 400. Um código novo que responda 404 ou 409 tem de entrar
-     * aqui -- é a lista que o `ErrorStatusMapper` consulta, e o silêncio dela é o 400.
+     * Todos os códigos que a API sabe devolver, e o estado de cada um.
+     *
+     * Está aqui **cada** código, e não só os que fogem ao 400. Os 400 viviam à parte, numa
+     * segunda lista que o mapa não servia -- o estado deles vinha do `DEFAULT_STATUS` -- e
+     * existia só para o conjunto ser enumerável. Eram duas listas dos mesmos códigos com a
+     * regra tácita de não se cruzarem, e nada a verificava. Uma lista só, e a pergunta «que
+     * estado tem este código?» tem um sítio onde se responde.
      *
      * @var array<string, int>
      */
     private const STATUS_BY_CODE = [
+        'invalid_request' => 400,
+        'invalid_config' => 400,
+        'invalid_link' => 400,
+        'invalid_state' => 400,
+        'unsupported_feature' => 400,
+        'unknown_protocol' => 400,
+        'device_already_associated' => 400,
+        'invalid_association' => 400,
+        'invalid_role' => 400,
+        'invalid_license' => 400,
+        'feature_not_requestable' => 400,
+        'unsupported_capability' => 400,
+        'invalid_requestable_capability' => 400,
+        'upload_failed' => 400,
+        'image_too_large' => 400,
+        'gd_missing' => 400,
+        'gd_jpeg_missing' => 400,
+        'invalid_image' => 400,
+        'image_save_failed' => 400,
         // A credencial recusada é 401 e não 400: o pedido está bem formado, o que falha é
         // quem o faz. O `AuthController` respondia 401 a qualquer erro do login, incluindo a
         // um pedido sem password nenhuma -- que é 400, e agora sai daqui como tal.
         'invalid_credentials' => 401,
         'invalid_refresh_token' => 401,
+        // Os dois que o `ApiKernel` devolve antes de haver rota: a credencial que falta e a
+        // excepção que ninguém apanhou. Eram construídos à mão lá, e por isso ficavam de fora
+        // deste mapa -- e o que fica de fora daqui nenhuma rota pode declarar. A
+        // especificação prometia 401 numa operação em 48, a do login, e 500 em nenhuma.
+        'unauthorized' => 401,
         'forbidden' => 403,
         'association_not_found' => 404,
         'capability_not_found' => 404,
@@ -51,50 +80,13 @@ final class ApiError
         // sair. Aqui o estado passa a ser o que a especificação promete; o `code` na resposta
         // não muda, porque é por ele que um cliente distingue o caso.
         'duplicate' => 409,
-    ];
-
-    /**
-     * Os códigos que respondem 400, que é o estado por omissão do mapa acima.
-     *
-     * Não é o mapa quem os serve -- o `statusForCode()` já lhes dá 400 sem os conhecer. Estão
-     * aqui para o conjunto de códigos ser *enumerável*: a especificação OpenAPI declara cada
-     * rota pelos códigos que ela devolve, e sem esta lista um código mal escrito caía no 400
-     * por omissão e a rota passava a prometer um estado que nunca envia -- exactamente o
-     * engano silencioso que o mapa acima veio acabar.
-     *
-     * @var list<string>
-     */
-    private const BAD_REQUEST_CODES = [
-        'invalid_request',
-        'invalid_config',
-        'invalid_link',
-        'invalid_state',
-        'unsupported_feature',
-        'unknown_protocol',
-        'device_already_associated',
-        'invalid_association',
-        'invalid_role',
-        'invalid_license',
-        'feature_not_requestable',
-        'unsupported_capability',
-        'invalid_requestable_capability',
-        'upload_failed',
-        'image_too_large',
-        'gd_missing',
-        'gd_jpeg_missing',
-        'invalid_image',
-        'image_save_failed',
+        'server_error' => 500,
     ];
 
     private function __construct(
         public readonly string $code,
         public readonly string $message,
     ) {
-    }
-
-    public function status(): int
-    {
-        return self::statusForCode($this->code);
     }
 
     /** O estado de um erro que já viaja como array, para quem ainda não tem o objecto. */
@@ -106,11 +98,16 @@ final class ApiError
     /**
      * Todos os códigos que a API sabe devolver.
      *
+     * Não tem chamador em produção, e é de propósito: existe para o teste poder confrontar
+     * este mapa com os construtores que o alimentam. É a única forma de perguntar pelo
+     * *conjunto*, e sem ela um construtor novo cujo código ficasse de fora respondia 400 por
+     * omissão e nenhuma rota o podia declarar -- em silêncio, dos dois lados.
+     *
      * @return list<string>
      */
     public static function codes(): array
     {
-        return [...array_keys(self::STATUS_BY_CODE), ...self::BAD_REQUEST_CODES];
+        return array_keys(self::STATUS_BY_CODE);
     }
 
     /**
@@ -123,11 +120,8 @@ final class ApiError
      */
     public static function declaredStatus(string $code): int
     {
-        if (!in_array($code, self::codes(), true)) {
-            throw new \InvalidArgumentException("Unknown API error code: {$code}");
-        }
-
-        return self::statusForCode($code);
+        return self::STATUS_BY_CODE[$code]
+            ?? throw new \InvalidArgumentException("Unknown API error code: {$code}");
     }
 
     /**
@@ -273,6 +267,29 @@ final class ApiError
     public static function forbidden(): self
     {
         return new self('forbidden', 'Forbidden');
+    }
+
+    /** Falta a credencial, ou não vale. Antes de qualquer rota, e por isso sem detalhe. */
+    public static function unauthorized(): self
+    {
+        return new self('unauthorized', 'Unauthorized');
+    }
+
+    /** Não há rota para este caminho. Distinto do `deviceNotFound()`, que é sobre a coisa. */
+    public static function routeNotFound(): self
+    {
+        return new self('not_found', 'Not found');
+    }
+
+    /**
+     * A excepção que ninguém apanhou.
+     *
+     * Quem a devolve junta-lhe o `requestId`, que é o que liga esta resposta à linha de
+     * registo onde a excepção a sério ficou escrita.
+     */
+    public static function serverError(): self
+    {
+        return new self('server_error', 'Internal server error');
     }
 
     public static function deviceAlreadyAssociated(): self

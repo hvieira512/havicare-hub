@@ -16,7 +16,7 @@ use Hub\Api\Controllers\SupplierController;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Auth\BearerTokenResolver;
 use Hub\Api\Auth\RouteAccessPolicy;
-use Hub\Api\Http\ErrorStatusMapper;
+use Hub\Api\Http\ApiError;
 use Hub\Api\Http\HtmlResponder;
 use Hub\Api\Http\JsonResponder;
 use Hub\Api\Http\Middleware\ApiLogContext;
@@ -73,7 +73,6 @@ final class ApiKernel
         private DashboardNotificationService $notifications,
         private JsonResponder $json,
         private HtmlResponder $html,
-        private ErrorStatusMapper $statusMapper,
         private BearerTokenResolver $bearerTokenResolver,
         private RouteAccessPolicy $routeAccessPolicy,
     ) {
@@ -103,7 +102,7 @@ final class ApiKernel
         $logContext?->describe($routePattern, $authContext, $authState);
 
         if (!$this->isPublicApiPath($path) && $authContext === null) {
-            return $this->json->respond(['error' => ['code' => 'unauthorized', 'message' => 'Unauthorized']], 401);
+            return $this->json->result(ApiError::unauthorized()->toArray());
         }
 
         if ($routePattern !== null) {
@@ -123,13 +122,10 @@ final class ApiKernel
                 'message' => $e->getMessage(),
             ]);
             $logContext?->describe($routePattern, $authContext, 'error');
-            return $this->json->respond([
-                'error' => [
-                    'code' => 'server_error',
-                    'message' => 'Internal server error',
-                    'requestId' => $requestId,
-                ],
-            ], 500);
+            $error = ApiError::serverError()->toArray();
+            $error['error']['requestId'] = $requestId;
+
+            return $this->json->result($error);
         }
     }
 
@@ -138,18 +134,17 @@ final class ApiKernel
      */
     private function apiRoutes(): array
     {
-        $auth = new AuthController($this->auth, $this->json, $this->statusMapper);
-        $devices = new DeviceController($this->devices, $this->json, $this->statusMapper);
-        $models = new ModelController($this->models, $this->json, $this->statusMapper);
-        $capabilities = new CapabilityController($this->capabilities, $this->json, $this->statusMapper);
-        $capabilityDiscovery = new CapabilityDiscoveryController($this->capabilityDiscovery, $this->json, $this->statusMapper);
-        // Sem `statusMapper`: a colecção é só de leitura e o `list` não devolve erros.
+        $auth = new AuthController($this->auth, $this->json);
+        $devices = new DeviceController($this->devices, $this->json);
+        $models = new ModelController($this->models, $this->json);
+        $capabilities = new CapabilityController($this->capabilities, $this->json);
+        $capabilityDiscovery = new CapabilityDiscoveryController($this->capabilityDiscovery, $this->json);
         $suppliers = new SupplierController($this->suppliers, $this->json);
-        $apiUsers = new ApiUserController($this->apiUsers, $this->json, $this->statusMapper);
-        $company = new CompanyController($this->company, $this->json, $this->statusMapper);
-        $licenses = new LicenseController($this->licenses, $this->json, $this->statusMapper);
-        $protocols = new ProtocolController($this->protocols, $this->json, $this->statusMapper);
-        $notifications = new DashboardNotificationController($this->notifications, $this->json, $this->statusMapper);
+        $apiUsers = new ApiUserController($this->apiUsers, $this->json);
+        $company = new CompanyController($this->company, $this->json);
+        $licenses = new LicenseController($this->licenses, $this->json);
+        $protocols = new ProtocolController($this->protocols, $this->json);
+        $notifications = new DashboardNotificationController($this->notifications, $this->json);
         $json = fn(array $payload, int $status = 200): Response => $this->json->respond($payload, $status);
         $html = fn(string $body): Response => $this->html->respond($body);
 
@@ -190,11 +185,11 @@ final class ApiKernel
     {
         $match = $match ?? $this->router->match(strtoupper($request->getMethod()), $request->getUri()->getPath());
         if ($match === null) {
-            return $this->json->respond(['error' => ['code' => 'not_found', 'message' => 'Not found']], 404);
+            return $this->json->result(ApiError::routeNotFound()->toArray());
         }
 
         if ($authContext !== null && !$this->routeAccessPolicy->allows($authContext, $match['route']->method(), $match['route']->pattern())) {
-            return $this->json->respond(['error' => ['code' => 'forbidden', 'message' => 'Forbidden']], 403);
+            return $this->json->result(ApiError::forbidden()->toArray());
         }
 
         if ($authContext !== null) {

@@ -68,6 +68,42 @@ final class OpenApiSpecRoutesTest extends TestCase
         }
     }
 
+    /**
+     * Os erros que o kernel devolve sem passar por rota nenhuma também se declaram.
+     *
+     * O 401 e o 500 nascem no `ApiKernel` -- a credencial que falta e a excepção que ninguém
+     * apanhou --, e por isso escapavam a toda a gente: as definições de rota só declaram o
+     * que os seus próprios serviços devolvem. O documento prometia 401 numa operação em 48,
+     * a do login, e 500 em nenhuma; quem gerasse um cliente a partir dele não tinha ramo
+     * para o token expirado, que é o erro mais comum de todos.
+     */
+    public function testEveryOperationDeclaresTheErrorsTheKernelCanReturn(): void
+    {
+        $missingUnauthorized = [];
+        $missingServerError = [];
+
+        foreach (OpenApiSpec::get()['paths'] as $path => $operations) {
+            foreach ($operations as $method => $operation) {
+                if (!is_array($operation) || !isset($operation['responses'])) {
+                    continue;
+                }
+
+                $where = strtoupper((string)$method) . ' ' . $path;
+                if (!isset($operation['responses']['500'])) {
+                    $missingServerError[] = $where;
+                }
+                // O `security: []` da operação é o que marca as públicas, e essas não podem
+                // responder 401 por falta de credencial porque não pedem nenhuma.
+                if (($operation['security'] ?? null) !== [] && !isset($operation['responses']['401'])) {
+                    $missingUnauthorized[] = $where;
+                }
+            }
+        }
+
+        self::assertSame([], $missingServerError, 'operações que podem responder 500 sem o dizer');
+        self::assertSame([], $missingUnauthorized, 'operações autenticadas que podem responder 401 sem o dizer');
+    }
+
     /** A lista de internas não pode ganhar rotas que já não existem. */
     public function testEveryInternalRouteStillExists(): void
     {

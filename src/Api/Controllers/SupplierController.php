@@ -17,6 +17,6 @@ final class SupplierController
 
     public function list(ServerRequestInterface $request): Response
     {
-        return $this->json->respond($this->service->list((string)$request->getUri()->getQuery()));
+        return $this->json->result($this->service->list((string)$request->getUri()->getQuery()));
     }
 }

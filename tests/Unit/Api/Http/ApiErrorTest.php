@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Api\Http;
 
 use Hub\Api\Http\ApiError;
-use Hub\Api\Http\ErrorStatusMapper;
+use Hub\Api\Http\JsonResponder;
 use PHPUnit\Framework\TestCase;
 
 final class ApiErrorTest extends TestCase
@@ -47,6 +47,9 @@ final class ApiErrorTest extends TestCase
             'userExists' => [fn(): ApiError => ApiError::userExists(), 'user_exists', 'Username already exists', 409],
             'duplicateCompany' => [fn(): ApiError => ApiError::duplicateCompany(), 'duplicate', 'Company with this name already exists', 409],
             'forbidden' => [fn(): ApiError => ApiError::forbidden(), 'forbidden', 'Forbidden', 403],
+            'unauthorized' => [fn(): ApiError => ApiError::unauthorized(), 'unauthorized', 'Unauthorized', 401],
+            'routeNotFound' => [fn(): ApiError => ApiError::routeNotFound(), 'not_found', 'Not found', 404],
+            'serverError' => [fn(): ApiError => ApiError::serverError(), 'server_error', 'Internal server error', 500],
             'deviceAlreadyAssociated' => [fn(): ApiError => ApiError::deviceAlreadyAssociated(), 'device_already_associated', 'Device is already associated', 400],
             'invalidAssociation' => [fn(): ApiError => ApiError::invalidAssociation(), 'invalid_association', 'company and licenseId do not match a registered license', 400],
             'invalidCredentials' => [fn(): ApiError => ApiError::invalidCredentials(), 'invalid_credentials', 'Invalid credentials', 401],
@@ -79,30 +82,69 @@ final class ApiErrorTest extends TestCase
         $error = $build();
 
         self::assertSame(['error' => ['code' => $code, 'message' => $message]], $error->toArray());
-        self::assertSame($status, $error->status());
-        self::assertSame($status, (new ErrorStatusMapper())->map($error->toArray()));
+        self::assertSame($status, ApiError::declaredStatus($code));
+        self::assertSame($status, (new JsonResponder())->result($error->toArray())->getStatusCode());
+    }
+
+    /**
+     * O conjunto enumerado e o conjunto que os construtores produzem são o mesmo conjunto.
+     *
+     * O `codes()` é o que a especificação OpenAPI usa para declarar cada rota, e até aqui
+     * nada o confrontava com a realidade. Um construtor novo cujo código ficasse de fora do
+     * mapa respondia 400 por omissão e nenhuma rota o podia declarar -- e um código no mapa
+     * que já não tivesse construtor ficava a prometer um estado que ninguém envia. Os dois
+     * enganos são silenciosos, e os dois morrem aqui.
+     *
+     * Vale-se do `errors()` acima, que é a lista dos construtores mantida à mão: se um
+     * construtor novo não entrar lá, este teste não o vê -- mas o `errors()` é um detector de
+     * mudanças que já obriga a passar por ele.
+     */
+    public function testTheDeclaredCodesAreExactlyTheOnesTheConstructorsProduce(): void
+    {
+        $fromConstructors = array_unique(array_map(
+            static fn(array $case): string => $case[1],
+            array_values(self::errors()),
+        ));
+        sort($fromConstructors);
+
+        $declared = ApiError::codes();
+        sort($declared);
+
+        self::assertSame($declared, array_values($fromConstructors));
     }
 
     public function testAResultWithoutAnErrorKeepsTheSuccessStatus(): void
     {
-        $mapper = new ErrorStatusMapper();
+        $json = new JsonResponder();
 
-        self::assertSame(200, $mapper->map(['status' => 'ok']));
-        self::assertSame(201, $mapper->map(['status' => 'ok'], 201));
+        self::assertSame(200, $json->result(['status' => 'ok'])->getStatusCode());
+        self::assertSame(201, $json->result(['status' => 'ok'], 201)->getStatusCode());
     }
 
     /**
-     * O mapeador continua a servir quem lhe entrega um array cru, e sem inferir nada pela
-     * forma do nome: um código que não esteja declarado é um pedido mal formado, e não um 404
-     * adivinhado a partir do sufixo.
+     * O estado não se infere da forma do nome: um código que não esteja declarado é um pedido
+     * mal formado, e não um 404 adivinhado a partir do sufixo.
+     *
+     * O `result()` é leniente de propósito. Um código não declarado que chegue aqui em
+     * execução já é um engano, e a resposta a um engano não é derrubar o pedido com uma
+     * excepção -- é o 400 que ele quase de certeza queria dizer. Quem não perdoa é o
+     * `declaredStatus()`, que serve a especificação e rebenta a montá-la, que é a altura em
+     * que alguém está a olhar.
      */
     public function testAnUndeclaredCodeIsFourHundredInsteadOfInferredFromItsShape(): void
     {
-        $mapper = new ErrorStatusMapper();
+        $json = new JsonResponder();
 
-        self::assertSame(404, $mapper->map(['error' => ['code' => 'company_not_found']], 201));
-        self::assertSame(400, $mapper->map(['error' => ['code' => 'widget_not_found']]));
-        self::assertSame(400, $mapper->map(['error' => ['code' => 'widget_exists']]));
-        self::assertSame(400, $mapper->map(['error' => ['code' => '']]));
+        self::assertSame(404, $json->result(['error' => ['code' => 'company_not_found']], 201)->getStatusCode());
+        self::assertSame(400, $json->result(['error' => ['code' => 'widget_not_found']])->getStatusCode());
+        self::assertSame(400, $json->result(['error' => ['code' => 'widget_exists']])->getStatusCode());
+        self::assertSame(400, $json->result(['error' => ['code' => '']])->getStatusCode());
+    }
+
+    public function testTheSpecRefusesACodeItDoesNotKnow(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        ApiError::declaredStatus('widget_not_found');
     }
 }
