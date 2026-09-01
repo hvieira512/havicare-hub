@@ -11,6 +11,21 @@ if [ -f "$ROOT_DIR/.env" ]; then
   set +a
 fi
 
+# Os cenários correm num projeto compose próprio, com contentores e volumes só deles.
+#
+# Antes recriavam o contentor `havicare-hub` -- o mesmo que serve o desenvolvimento -- com
+# o ambiente de teste, e nunca o repunham: quem corresse um cenário ficava com o hub local
+# ligado ao mosquitto do compose em vez do broker real, sem radares e sem gateways, e sem
+# um único erro no log a dizê-lo. Num projeto à parte isso deixa de ser possível, mesmo que
+# o cenário seja interrompido a meio.
+#
+# A porta da dashboard é a 8181 no anfitrião, e não a 8081, para os dois projetos poderem
+# correr ao mesmo tempo -- ver `docker-compose.scenarios.yml`.
+export COMPOSE_PROJECT_NAME="havicare-scenarios"
+export COMPOSE_FILE="$ROOT_DIR/docker-compose.yml:$ROOT_DIR/docker-compose.scenarios.yml"
+DASHBOARD_BASE_URL="http://127.0.0.1:8181"
+export DASHBOARD_BASE_URL
+
 # Um cenário fala sempre com o mosquitto do compose, aconteça o que acontecer ao `.env`.
 #
 # O nome que conta é o `HUB_MQTT_HOST`, e não o `MQTT_HOST`: é esse que o
@@ -72,6 +87,45 @@ scenario_pass() {
 scenario_cleanup() {
   docker compose exec -T hub sh -lc 'test -f /tmp/hub-vivistar-listener.pid && kill "$(cat /tmp/hub-vivistar-listener.pid)" 2>/dev/null || true' >/dev/null 2>&1 || true
   stop_mqtt_subscriber || true
+}
+
+wait_for_dashboard() {
+  for _ in $(seq 1 40); do
+    if curl -s -o /dev/null "$DASHBOARD_BASE_URL/api/devices"; then
+      return 0
+    fi
+    sleep 1
+  done
+  scenario_fail "dashboard_failure" "dashboard HTTP listener did not become ready"
+}
+
+# Repõe o utilizador de administração e devolve um token de acesso.
+#
+# Os comandos entram pela API porque é o único caminho que existe: é o que a dashboard usa,
+# o que serve todos os tipos de dispositivo, e o único que regista o comando para depois se
+# poder acompanhar em `GET /api/commands/{id}`. O tópico MQTT de downlink -- que era uma
+# segunda porta, sem nada disso -- foi removido.
+scenario_api_token() {
+  docker compose exec -T hub php -r '
+require "vendor/autoload.php";
+Hub\Bootstrap::loadEnv(getcwd());
+$config = Hub\Config::load()->all();
+$db = Hub\Api\Repository\ApiDataAccess::fromDatabase(
+    new Hub\Infrastructure\Persistence\DashboardDatabase($config["database"])
+);
+$existing = $db->apiUsers->findByUsername("admin");
+$hash = password_hash("secret", PASSWORD_DEFAULT);
+if (is_array($existing)) {
+    $db->apiUsers->update((int)$existing["id"], "admin", "hub_admin", 0, true, $hash);
+} else {
+    $db->apiUsers->create("admin", $hash, "hub_admin", 0, true);
+}
+' >/dev/null
+
+  curl -s -H 'Content-Type: application/json' \
+    -d '{"username":"admin","password":"secret"}' \
+    "$DASHBOARD_BASE_URL/api/auth/login" \
+    | php -r '$j=json_decode(stream_get_contents(STDIN), true); echo (string)($j["token"]["access_token"] ?? "");'
 }
 
 wait_for_mosquitto() {

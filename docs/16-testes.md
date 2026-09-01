@@ -37,15 +37,27 @@ JavaScript, impedindo a rutura silenciosa do contrato entre o PHP e o JS.
 
 | Cenário | Prova |
 |---|---|
-| `hub_raw_mqtt_roundtrip` | Um dispositivo TCP simulado chega ao MQTT |
-| `hub_downlink_queue` | Um comando para um aparelho offline fica em fila |
-| `hub_persistent_mqtt_downlink` | E é entregue quando ele volta |
+| `hub_raw_mqtt_roundtrip` | Um dispositivo TCP simulado chega ao MQTT, e um comando da API chega-lhe de volta |
+| `hub_downlink_queue` | Um comando para um aparelho offline fica em fila e é entregue quando ele volta |
 | `dashboard_api` | 401 sem token, login, listagem, pedido de medição |
 | `ncs_mqtt_ingress` | A ingestão Voerka |
 | `location_beacondb_pipeline` | A resolução de localização, com um servidor falso |
 
 Cada um tem 240 segundos e deixa os seus registos em `tests/artifacts/`, com
 retenção das 20 corridas mais recentes.
+
+### Correm num projeto compose à parte
+
+Os cenários precisam de um hub apontado ao mosquitto local e com a ingestão do
+radar desligada, para nunca tocarem no broker de produção. Fazem-no num projeto
+compose próprio — `havicare-scenarios`, com contentores, volume de base de dados
+e porta próprios, declarados em `docker-compose.scenarios.yml`.
+
+A separação não é cosmética. Enquanto os cenários recriavam o contentor de
+desenvolvimento, quem corresse um ficava com o hub local ligado ao broker errado
+até o recriar à mão — sem erro nenhum no log, porque o hub arranca perfeitamente
+assim. A dashboard dos cenários responde na porta **8181**, e a de
+desenvolvimento continua na 8081.
 
 ## Ferramentas
 
