@@ -12,7 +12,8 @@ trap scenario_cleanup EXIT
 IMEI="861265062542599"
 MODEL="VL17"
 DEVICE_TOPIC_PREFIX="havicare/1/watch/$IMEI"
-DOWNLINK="{\"encoding\":\"text\",\"payload\":\"IWBPXL,$IMEI,123456,1,2#\"}"
+
+export DASHBOARD_API_AUTH_REQUIRED="true"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto hub >/dev/null
 
@@ -49,7 +50,26 @@ if ! grep -q '"debug":{"protocol":"vivistar-iw","transport":"tcp","encoding":"te
   scenario_fail "contract_failure" "raw login did not include text debug payload"
 fi
 
-docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '$DEVICE_TOPIC_PREFIX/downlink' -f /tmp/hub-downlink.json"
+wait_for_dashboard
+api_token="$(scenario_api_token)"
+if [ -z "$api_token" ]; then
+  scenario_fail "auth_failure" "dashboard API login did not issue bearer token"
+fi
+
+# Um pedido de frequência cardíaca desce como `BPXL`. Entra pela API, que é o único caminho
+# de comandos: o tópico MQTT de downlink foi removido por ser uma segunda porta, paralela e
+# mais pobre -- não registava o comando, não o repetia e não correlacionava a resposta.
+command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' \
+  -d '{"feature":"heart_rate"}' "$DASHBOARD_BASE_URL/api/devices/$IMEI/requests")"
+printf '%s' "$command_response" > "$SCENARIO_DIR/api-command.json"
+# O dispositivo está ligado, portanto o comando desce logo e fica `waiting` -- entregue, à
+# espera da resposta dele. O `sentAt` é a prova de que saiu; `queued` seria o contrário.
+if printf '%s' "$command_response" | grep -q '"status":"queued"'; then
+  scenario_fail "command_failure" "API command was queued although the device was connected"
+fi
+if ! printf '%s' "$command_response" | grep -q '"sentAt"'; then
+  scenario_fail "command_failure" "online API command was not sent to the connected device"
+fi
 
 for _ in $(seq 1 20); do
   if docker compose exec -T hub sh -lc "grep -q '\\[COMMAND\\] BPXL' /tmp/hub-vivistar-listener.log"; then
@@ -60,20 +80,22 @@ done
 
 docker compose exec -T hub sh -lc 'cat /tmp/hub-vivistar-listener.log 2>/dev/null || true' > "$SCENARIO_DIR/device-listener.log" || true
 if ! grep -q '\[COMMAND\] BPXL' "$SCENARIO_DIR/device-listener.log"; then
-  scenario_fail "routing_failure" "device listener did not receive MQTT downlink"
+  scenario_fail "routing_failure" "device listener did not receive the API command"
 fi
 
+# O identificador da transação é gerado pelo hub, e por isso a resposta só se prende pelo
+# prefixo.
 for _ in $(seq 1 20); do
   capture_mqtt_log
-  if grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
+  if grep -q "^$DEVICE_TOPIC_PREFIX/raw " "$MQTT_LOG_FILE" && grep -q '"payload":"IWAPXL,' "$MQTT_LOG_FILE"; then
     break
   fi
   sleep 1
 done
 
 capture_mqtt_log
-if ! grep -q '"payload":"IWAPXL,123456#"' "$MQTT_LOG_FILE"; then
-  scenario_fail "routing_failure" "missing raw device reply after MQTT downlink"
+if ! grep -q '"payload":"IWAPXL,' "$MQTT_LOG_FILE"; then
+  scenario_fail "routing_failure" "missing raw device reply after the API command"
 fi
 
 scenario_pass

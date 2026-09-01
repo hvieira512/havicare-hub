@@ -5,7 +5,6 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Hub\Device\HubDownlinkSubscriber;
 use Hub\Device\HubTcpIngress;
 use Hub\Ingress\Mqtt\IngressRunner;
 use Hub\Ingress\Mqtt\Moko\Bridge as MokoBridge;
@@ -63,17 +62,6 @@ foreach ([SIGTERM, SIGINT] as $signal) {
 $subscribers = new SubscriberFactory($hubConnections);
 $runner = new IngressRunner($loop);
 $enabledIngresses = [];
-
-$runner->add('MQTT downlink', $subscribers->bind(
-    'sub',
-    $services->mqttBridge->downlinkTopicFilter(),
-    fn ($subscriber, $reconnect) => new HubDownlinkSubscriber(
-        $subscriber,
-        $services->hubServer,
-        trim((string)$config['mqtt']['topic_prefix'], '/'),
-        $reconnect,
-    ),
-));
 
 if ($config['ncs']['enabled']) {
     $ncsTopicFilter = trim((string)$config['ncs']['topic_filter']);

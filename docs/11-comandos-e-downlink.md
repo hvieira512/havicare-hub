@@ -14,7 +14,6 @@ originou.
 
 ```mermaid
 flowchart LR
-  A["MQTT<br/><small>tópico downlink</small>"] --> S
   B["API REST<br/><small>pedidos e configurações</small>"] --> S
   C["Repetição periódica<br/><small>a cada 10 s</small>"] --> S
   S["submitDownlink()"] --> D{"Está<br/>ligado?"}
@@ -23,6 +22,17 @@ flowchart LR
   F -->|sim| G["Guardar<br/><small>device.downlink.queued</small>"]
   F -->|não| H["Desistir<br/><small>device.downlink.dropped</small>"]
 ```
+
+**A API REST é o único caminho de entrada.** A dashboard usa-o, serve todos os
+tipos de dispositivo, e é o que faz o comando passar pelo registo — sem isso não
+haveria repetição, nem consulta em `GET /api/commands/{id}`, nem correlação da
+resposta.
+
+> Existiu um segundo caminho, por um tópico MQTT de downlink, e foi removido.
+> Aceitava apenas relógios, e o que entrava por lá não era registado: não era
+> repetido, não expirava por política, não aparecia na API e não se
+> correlacionava com a resposta do aparelho. Era uma porta mais pobre para o
+> mesmo sítio.
 
 O resultado é sempre um de três: `sent`, `queued` ou `dropped`. Os três são
 publicados como eventos, portanto quem integra sabe sempre o que aconteceu — não
@@ -150,8 +160,7 @@ Cada passo é publicado, em dois sítios:
 
 ## 7. Emissão de comandos
 
-**Pela API**, via recomendada e a única aplicável a todos os tipos de
-dispositivo:
+Pela API, e só por ela:
 
 ```http
 POST  /api/devices/{imei}/requests          { "feature": "heart_rate" }
@@ -159,13 +168,9 @@ PATCH /api/devices/{imei}/configurations    { "configurations": { … } }
 GET   /api/commands/{id}                    consulta do estado
 ```
 
-**Pelo MQTT**, só para relógios:
-
-```text
-{prefixo}/{empresa}/{licenca}/watch/{imei}/downlink
-```
-
-Ver o [contrato MQTT](08-contrato-mqtt.md) para as formas aceites do corpo.
+Um dispositivo desligado devolve `status: "queued"`; um ligado devolve
+`status: "waiting"`, com `sentAt` preenchido — entregue, à espera da resposta do
+aparelho.
 
 ## Implementação
 
@@ -173,7 +178,8 @@ Ver o [contrato MQTT](08-contrato-mqtt.md) para as formas aceites do corpo.
 |---|---|
 | `src/Device/DeviceHubServer.php` | `submitDownlink()`, `sendDownlink()`, `flushPendingDownlinks()` |
 | `src/Device/RedisPendingDownlinkQueue.php` | A fila e a chave de de-duplicação |
-| `src/Device/HubDownlinkSubscriber.php` | O tópico MQTT de entrada |
+| `src/Api/Services/DeviceFeatureRequestService.php` | O `POST /requests` |
+| `src/Api/Services/DeviceConfigurationUpdateService.php` | O `PATCH /configurations` |
 | `src/Command/DeviceCommandCatalog.php` | Construir os bytes, por protocolo |
 | `src/Dashboard/DeviceCommandStore.php` | Estado dos comandos e a correlação da resposta |
 | `src/Runtime/MaintenanceScheduler.php` | Repetir e expirar |

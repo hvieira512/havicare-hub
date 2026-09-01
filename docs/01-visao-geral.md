@@ -23,7 +23,6 @@ flowchart TB
       NCS["Ingestão NCS"]
       MOKO["Ingestão MOKO"]
       RAD["Ingestão radar<br/><small>broker próprio</small>"]
-      DOWN["HubDownlinkSubscriber"]
     end
 
     CORE["DeviceHubServer<br/><small>identidade · autorização · sessão</small>"]
@@ -44,7 +43,7 @@ flowchart TB
   BRK(["Broker MQTT"])
 
   TCP --> CORE
-  DOWN --> CORE
+  HTTP -->|comandos| CORE
   CORE --> NORM
   NCS --> NORM
   MOKO --> NORM
@@ -104,18 +103,17 @@ Implementada em `bin/server-hub.php`, por esta ordem:
 | 3 | `HubServices::boot()` — MySQL, Redis, whitelist, ponte MQTT, fila de downlink | fatal |
 | 4 | `CrashWatch` — um marcador persistente indica terminação anómala da execução anterior e gera notificação na dashboard | continua |
 | 5 | Registo dos sinais `SIGTERM` e `SIGINT` para terminação controlada | — |
-| 6 | Subscritor de downlink MQTT | — |
-| 7 | Ingestão NCS, condicionada a `NCS_ENABLED` | — |
-| 8 | Ingestão MOKO, condicionada a `MOKO_GATEWAY_ENABLED` | — |
-| 9 | Ingestão Qinglanst, condicionada a `QINGLANST_ENABLED`, em ligação e broker próprios | — |
-| 10 | Abertura do socket TCP | — |
-| 11 | Abertura do servidor HTTP da dashboard e da API | — |
-| 12 | Início das subscrições MQTT | **fatal** |
-| 13 | Agendamento dos ciclos MQTT, a cada 0,05 s | — |
-| 14 | Agendamento da manutenção, a cada 10 s | — |
-| 15 | Registo do resumo de arranque e entrada no event loop | — |
+| 6 | Ingestão NCS, condicionada a `NCS_ENABLED` | — |
+| 7 | Ingestão MOKO, condicionada a `MOKO_GATEWAY_ENABLED` | — |
+| 8 | Ingestão Qinglanst, condicionada a `QINGLANST_ENABLED`, em ligação e broker próprios | — |
+| 9 | Abertura do socket TCP | — |
+| 10 | Abertura do servidor HTTP da dashboard e da API | — |
+| 11 | Início das subscrições MQTT | **fatal** |
+| 12 | Agendamento dos ciclos MQTT, a cada 0,05 s | — |
+| 13 | Agendamento da manutenção, a cada 10 s | — |
+| 14 | Registo do resumo de arranque e entrada no event loop | — |
 
-O passo 12 é fatal por decisão: um processo em execução sem subscrições ativas
+O passo 11 é fatal por decisão: um processo em execução sem subscrições ativas
 apresenta-se operacional sem receber dados.
 
 ### Manutenção periódica

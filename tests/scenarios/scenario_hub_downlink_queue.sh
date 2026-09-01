@@ -12,7 +12,8 @@ trap scenario_cleanup EXIT
 IMEI="861265062544868"
 MODEL="VL16P"
 DEVICE_TOPIC_PREFIX="havicare/1/watch/$IMEI"
-DOWNLINK="{\"encoding\":\"text\",\"payload\":\"IWBPXL,$IMEI,654321,1,2#\"}"
+
+export DASHBOARD_API_AUTH_REQUIRED="true"
 
 docker compose up -d --force-recreate --remove-orphans mosquitto redis hub >/dev/null
 
@@ -30,7 +31,19 @@ if ! docker compose exec -T hub php -r '$s=@fsockopen("127.0.0.1", 9000, $e, $m,
   scenario_fail "routing_failure" "hub TCP listener did not become ready"
 fi
 
-docker compose exec -T mosquitto sh -lc "printf '%s' '$DOWNLINK' >/tmp/hub-downlink.json && mosquitto_pub -h 127.0.0.1 -p 1883 -u '$MQTT_PUBLISHER_USERNAME' -P '$MQTT_PUBLISHER_PASSWORD' -t '$DEVICE_TOPIC_PREFIX/downlink' -f /tmp/hub-downlink.json"
+wait_for_dashboard
+api_token="$(scenario_api_token)"
+if [ -z "$api_token" ]; then
+  scenario_fail "auth_failure" "dashboard API login did not issue bearer token"
+fi
+
+# O dispositivo ainda não se ligou: o comando tem de ficar em fila, não ser descartado.
+command_response="$(curl -s -H "Authorization: Bearer $api_token" -H 'Content-Type: application/json' \
+  -d '{"feature":"heart_rate"}' "$DASHBOARD_BASE_URL/api/devices/$IMEI/requests")"
+printf '%s' "$command_response" > "$SCENARIO_DIR/api-command.json"
+if ! printf '%s' "$command_response" | grep -q '"status":"queued"'; then
+  scenario_fail "command_failure" "offline API command was not queued"
+fi
 
 for _ in $(seq 1 20); do
   capture_mqtt_log

@@ -49,11 +49,6 @@ class HubMqttBridge
         $this->publish($this->topic($this->deviceTopic($company, $licenseId, $deviceType, $imei, 'telemetry')), $payload);
     }
 
-    public function downlinkTopicFilter(): string
-    {
-        return $this->topic('+/+/' . self::DEFAULT_DEVICE_TYPE . '/+/downlink');
-    }
-
     private function publish(string $topic, array $payload, bool $retain = false, int $qualityOfService = MqttClient::QOS_AT_MOST_ONCE): void
     {
         $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

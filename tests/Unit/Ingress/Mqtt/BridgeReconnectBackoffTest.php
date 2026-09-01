@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt;
 
-use Hub\Device\DeviceHubServer;
-use Hub\Device\HubDownlinkSubscriber;
 use Hub\Ingress\Mqtt\Bridge;
 use PhpMqtt\Client\MqttClient;
 use PHPUnit\Framework\TestCase;
@@ -52,33 +50,6 @@ final class BridgeReconnectBackoffTest extends TestCase
             $attempts,
             'uma ligação que morre à chegada não pode repor o recuo e reconectar a cada tick',
         );
-    }
-
-    /**
-     * O mesmo, no `HubDownlinkSubscriber`.
-     *
-     * A lógica de reconexão é uma só, no `ReconnectsOnLoopFailure`, e este teste existe para
-     * a segunda utilizadora não divergir em silêncio: escrita duas vezes, era ela que fazia
-     * 148 das 158 reconexões por minuto com o `Bridge` já corrigido.
-     */
-    public function testTheDownlinkSubscriberBacksOffTheSameWay(): void
-    {
-        $attempts = 0;
-        $subscriber = new HubDownlinkSubscriber(
-            new DeadOnArrivalSubscriber(),
-            $this->createMock(DeviceHubServer::class),
-            '',
-            static function () use (&$attempts): MqttClient {
-                $attempts++;
-                return new DeadOnArrivalSubscriber();
-            },
-        );
-
-        for ($i = 0; $i < 20; $i++) {
-            $subscriber->tick();
-        }
-
-        self::assertSame(1, $attempts);
     }
 }
 
