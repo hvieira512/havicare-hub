@@ -11,11 +11,8 @@ use PHPUnit\Framework\TestCase;
 final class MessageNormalizerTest extends TestCase
 {
     /**
-     * Uma mensagem `heartbreath` dá três leituras, cada uma com a sua capacidade.
-     *
-     * A frequência cardíaca e a respiratória usam as formas do `Hub\Device\FeatureNormalizer` --
-     * `{bpm}` e `{breathsPerMinute}` --, as mesmas de um relógio, e é isso que lhes dá os
-     * cartões que já existem em vez de um cartão feito à mão só para o radar.
+     * As formas são as do `FeatureNormalizer`, as mesmas de um relógio, e é isso que dá ao
+     * radar os cartões que já existem.
      */
     public function testHeartBreathBecomesThreeCanonicalReadings(): void
     {
@@ -44,11 +41,8 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Um zero não é uma leitura: é o radar a dizer que não mediu ninguém.
-     *
-     * Publicá-lo punha o cartão a dizer "0 bpm", que se lê como um coração parado. O
-     * `Undefined` do estado de sono é o mesmo caso -- é a ausência de medição, e o mapper
-     * devolve-o também quando o código não é nenhum dos conhecidos.
+     * Um zero não é leitura: é o radar a dizer que não mediu ninguém, e "0 bpm" lê-se como um
+     * coração parado. O `Undefined` do sono é o mesmo caso.
      */
     public function testAbsentMeasurementsDoNotBecomeReadings(): void
     {
@@ -242,11 +236,8 @@ final class MessageNormalizerTest extends TestCase
     }
 
     /**
-     * Cada pessoa mantém a sua postura.
-     *
-     * A postura é da pessoa, tal como a posição: numa divisão com três, uma pode estar de pé,
-     * outra caída e outra a andar. Uma leitura do aparelho com uma postura só obrigava a
-     * escolher entre elas e a deitar fora as outras.
+     * A postura é da pessoa, como a posição: numa divisão com três, uma leitura do aparelho
+     * com uma postura só obrigava a escolher entre elas.
      */
     public function testEveryPersonKeepsTheirOwnPosture(): void
     {

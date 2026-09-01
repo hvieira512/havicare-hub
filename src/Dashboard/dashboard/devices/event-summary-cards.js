@@ -3,20 +3,11 @@ import { ago, displayPersonIndex, eventTime, fieldLabel, rowPayload, when } from
 import { DETECTION_TYPE_LABEL, PRESS_TYPE_LABEL } from "../domain.js";
 
 /**
- * Os dois cartões que resumem o histórico de eventos de um dispositivo: a última chamada de
- * ajuda por modo de toque, e a última queda que o radar viu.
+ * Os dois cartões que resumem o histórico de eventos: a última chamada de ajuda por modo de
+ * toque, e a última queda que o radar viu.
  *
- * Saíram do `telemetry-cards.js` pela regra 4 do README. São widgets, não entradas de um
- * catálogo: o resto daquele ficheiro é um cartão por tipo de telemetria, com uma tabela a
- * mapear tipo em ícone e corpo, enquanto estes dois leem o histórico inteiro e resumem-no.
- * Estavam ali só por serem cartões.
- *
- * O que era partilhado subiu com eles em vez de vir atrás: o `displayPersonIndex` para o
- * `format.js` e as duas tabelas de nomes para o `domain.js`, que é onde o vocabulário vive.
- * O que era exclusivo destes cartões veio, e está aqui em baixo.
- *
- * O CSS destes cartões é utilitário do Bootstrap, e por isso não há bloco de estilo a
- * acompanhar -- ao contrário do `device-card.js`, que tem o seu no `assets/css/device.css`.
+ * Estão à parte do `telemetry-cards.js` porque são widgets e não entradas de um catálogo --
+ * aquele tem um cartão por tipo de telemetria, estes leem o histórico inteiro e resumem-no.
  */
 
 /** Os modos que se mostram quando o protocolo não diz quais são os seus. */
@@ -34,11 +25,8 @@ const HELP_CALL_PRESS_ICON = {
 const HELP_CALL_PRESS_MODES = ["single", "double", "triple", "long"];
 
 /**
- * A última chamada de ajuda por modo de toque.
- *
- * A pulseira só anuncia enquanto está em alarme, por isso `alarm_status` vem sempre a 1 e
- * não há como saber que uma chamada foi cancelada. O que se reporta é quando cada toque
- * aconteceu, que é um facto observável.
+ * A última chamada de ajuda por modo de toque. A pulseira só anuncia enquanto está em alarme,
+ * por isso não há como saber que uma chamada foi cancelada -- reporta-se quando aconteceu.
  */
 export function helpCallSummaryCard(events = [], pressModes = []) {
     const calls = (Array.isArray(events) ? events : [])

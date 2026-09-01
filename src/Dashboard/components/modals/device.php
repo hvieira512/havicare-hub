@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 ob_start();
 ?>
-<?php /* Quem rola é a coluna do conteúdo, não o corpo inteiro do modal.
-       *
-       * Com o corpo a rolar como um todo, a coluna das abas esticava até à altura do
-       * conteúdo -- 82px de botões dentro de 1164px de coluna -- e centrá-los punha-os a meio
-       * dessa altura, ou seja fora do ecrã em qualquer aparelho com configurações a sério.
-       * Rolando só o conteúdo, a coluna das abas mede o que o modal mede e o `align-self`
-       * centra-os onde se vêem. */ ?>
+<?php /* Quem rola é a coluna do conteúdo, e não o corpo inteiro: com o corpo a rolar, a
+       * coluna das abas esticava até à altura do conteúdo e o `align-self` centrava-as
+       * fora do ecrã. */ ?>
 <div class="device-modal-shell h-100">
     <div class="row g-4 h-100">
         <div class="col-12 col-lg-2 align-self-lg-center">
@@ -92,11 +88,8 @@ ob_start();
                                 </div>
 
                                 <div id="deviceFormError" class="small text-danger d-none"></div>
-                                <?php /* Só a saída da pergunta de classificação. Guardar e eliminar estão
-                                       * no rodapé do modal, ao lado do fechar: um sítio para as acções
-                                       * e não dois. O "Anterior" saiu -- voltar a uma pergunta faz-se
-                                       * na etiqueta dela, que diz qual, e não num botão que só diz que
-                                       * há um passo atrás. */ ?>
+                                <?php /* Só a saída da pergunta de classificação: guardar e eliminar
+                                       * estão no rodapé, ao lado do fechar. */ ?>
                                 <div class="d-flex justify-content-end gap-2">
                                     <button type="button" class="btn btn-outline-secondary d-none" id="deviceNextBtn"><?= icon('fa-arrow-left', 'me-2') ?>Manter o que estava</button>
                                 </div>
@@ -128,10 +121,7 @@ $header = '<div class="modal-device-identity" id="deviceModalIdentity">'
     . '<h5 class="modal-title mb-0" id="deviceModalLabel">Editar dispositivo</h5>'
     . '</div>';
 
-// `h-100` no conteúdo: a altura passa a ser a do ecrã e não a do separador aberto. O "Geral"
-// tem meia dúzia de campos e as "Configurações" trinta, e a caixa mudava de tamanho a cada
-// troca -- com o rato pousado onde o botão estava um instante antes.
-// `overflow-hidden` no corpo: o `modal-dialog-scrollable` põe-lhe `overflow-y: auto`, e é
-// esse rolamento que se transfere para a coluna do conteúdo. Os utilitários do Bootstrap são
-// `!important`, e por isso ganham à regra do componente sem precisar de CSS nosso.
+// `h-100` no conteúdo para a altura ser a do ecrã e não a do separador aberto, senão a caixa
+// mudava de tamanho a cada troca. `overflow-hidden` no corpo para o rolamento que o
+// `modal-dialog-scrollable` lhe põe se transferir para a coluna do conteúdo.
 render_modal('deviceModal', 'Editar dispositivo', $body, $footer, 'modal-xl modal-fullscreen-md-down modal-dialog-scrollable', $header, 'overflow-hidden', 'h-100');

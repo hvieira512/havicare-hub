@@ -8,22 +8,13 @@ use Hub\Api\OpenApi\Example;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * O corpo do criar e do actualizar de um dispositivo.
- *
- * O objecto descreve o que o cliente manda; o que se *deriva* disso continua no serviço, e é
- * bem mais do que parece: o tipo sai do modelo encontrado no catálogo, a licença normaliza-se
- * em função do tipo, e o `deviceId` em função dos quatro. Essa cadeia é domínio e não forma
- * de pedido, e descê-la para aqui não a tornava mais clara.
+ * O corpo do criar e do actualizar de um dispositivo. O que daqui se *deriva* -- o tipo a
+ * partir do modelo, a licença em função do tipo, o `deviceId` em função dos quatro -- é
+ * domínio e fica no serviço.
  *
  * O `imei` é o único campo cuja regra difere entre as duas rotas: a criar é obrigatório, a
- * actualizar vem do endereço quando o corpo não o traz -- um `PUT` que só queira mudar o
- * fornecedor não repete o IMEI que já está no URL. Daí o grupo, e daí ser anulável: `null`
- * quer dizer "não veio", que é diferente de "veio vazio", e só o segundo é recusa.
- *
- * O `licenseId` é inteiro. Os clientes mandam-no muitas vezes como texto, e continuam a
- * poder: a conversão de strings numéricas faz-se ao ligar o corpo ao objecto, que é a borda,
- * e não alargando o tipo declarado. O inteiro é a forma canónica com que o controlo de acesso
- * por cliente o compara, e é o que a especificação passa a prometer.
+ * actualizar vem do endereço. Daí o grupo, e daí ser anulável -- `null` é "não veio", que não
+ * é o mesmo que "veio vazio".
  */
 final class DeviceWriteRequest
 {
@@ -47,12 +38,8 @@ final class DeviceWriteRequest
         #[Example('watch')]
         public string $deviceType = 'watch',
         /**
-         * O número da licença é inteiro, e é essa a sua forma.
-         *
-         * Que os clientes o mandem como `"1001"` é tolerância da borda e não o tipo da coisa:
-         * a rota corre com conversão de strings numéricas ligada, e por isso `"1001"` e
-         * `1001` entram os dois -- mas `"mil e um"` passa a ser recusado em vez de virar zero,
-         * que é uma licença que existe e quer dizer "sem licença".
+         * Inteiro. Que os clientes o mandem como `"1001"` é tolerância da borda: `"mil e um"`
+         * é recusado em vez de virar zero, que quer dizer "sem licença".
          */
         #[Assert\PositiveOrZero(message: 'licenseId must be zero or a positive integer')]
         #[Example(1001)]

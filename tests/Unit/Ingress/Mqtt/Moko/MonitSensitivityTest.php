@@ -9,12 +9,9 @@ use Hub\Ingress\Mqtt\Moko\MonitNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * A sensibilidade por sensor: os dois limiares que a app da MONIT expõe.
- *
- * O `MonitMoistureIndexTest` cobre o preset normal em detalhe. O que este ficheiro protege é
- * o que sai da configuração: que os invariantes do ecrã sobrevivem a QUALQUER configuração
- * alcançável, e que uma configuração mais sensível nunca produz um estado menos grave para a
- * mesma leitura.
+ * A sensibilidade por sensor. O `MonitMoistureIndexTest` cobre o preset normal; aqui prende-se
+ * que os invariantes sobrevivem a qualquer configuração alcançável, e que uma configuração
+ * mais sensível nunca produz um estado menos grave para a mesma leitura.
  */
 final class MonitSensitivityTest extends TestCase
 {
@@ -167,10 +164,8 @@ final class MonitSensitivityTest extends TestCase
 
     public function testALowerThresholdIsNeverLessSevere(): void
     {
-        // Monotonia, que é o que faz os presets significarem o que dizem. Baixar o número de
-        // canais exigidos, ou o delta que conta como molhado, só pode manter ou agravar o
-        // estado da mesma leitura. Invertido, "mais alertas" dava menos alertas do que
-        // "normal" para alguma leitura -- e ninguém descobria olhando para um caso de cada vez.
+        // Monotonia: baixar os canais exigidos ou o delta de molhado só pode manter ou
+        // agravar o estado. Invertido, "mais alertas" dava menos do que "normal".
         [$rangeMin, $rangeMax] = DiaperSensitivity::RANGE_BOUNDS;
         [$valueMin, $valueMax] = DiaperSensitivity::VALUE_BOUNDS;
 

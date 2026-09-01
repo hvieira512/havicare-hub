@@ -17,14 +17,8 @@ final class OpenApiSpecRoutesTest extends TestCase
     private const ROUTES_DIR = __DIR__ . '/../../../src/Api/Routes';
 
     /**
-     * Rotas que existem e não se documentam, porque não são para ninguém de fora.
-     *
-     * O stream serve a dashboard e mais nada: é o `EventSource` de uma página que corre neste
-     * mesmo servidor. Documentá-lo convidava a que se dependesse dele, e ele não tem o
-     * compromisso de estabilidade que o resto da API tem -- a forma do que ali viaja mudou
-     * quando passou a mandar diferenças em vez do histórico todo, e há-de voltar a mudar.
-     *
-     * O bilhete existe apenas para abrir esse stream, e por isso segue-o.
+     * Rotas que existem e não se documentam. O stream serve a dashboard e não tem o
+     * compromisso de estabilidade do resto da API; o bilhete existe só para o abrir.
      *
      * @var list<string>
      */
@@ -69,13 +63,8 @@ final class OpenApiSpecRoutesTest extends TestCase
     }
 
     /**
-     * Os erros que o kernel devolve sem passar por rota nenhuma também se declaram.
-     *
-     * O 401 e o 500 nascem no `ApiKernel` -- a credencial que falta e a excepção que ninguém
-     * apanhou --, e por isso escapavam a toda a gente: as definições de rota só declaram o
-     * que os seus próprios serviços devolvem. O documento prometia 401 numa operação em 48,
-     * a do login, e 500 em nenhuma; quem gerasse um cliente a partir dele não tinha ramo
-     * para o token expirado, que é o erro mais comum de todos.
+     * O 401 e o 500 nascem no `ApiKernel` e não numa rota, e por isso escapavam às definições
+     * -- um cliente gerado a partir do documento ficava sem ramo para o token expirado.
      */
     public function testEveryOperationDeclaresTheErrorsTheKernelCanReturn(): void
     {

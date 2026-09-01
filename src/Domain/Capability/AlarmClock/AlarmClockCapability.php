@@ -62,16 +62,8 @@ final class AlarmClockCapability implements CapabilityContract
     }
 
     /**
-     * Havia dois: este, que procurava o handler pela chave nativa, e um
-     * `fromNativeForProtocol` que procurava pelo protocolo e caía neste quando não achava.
-     * Quem escolhia entre os dois era um `instanceof AlarmClockCapability` no registo.
-     *
-     * O índice por chave nativa não podia funcionar: a Wonlex e a 4P-Touch declaram as duas
-     * `alarmClock`, e num mapa com essa chave a segunda apagava a primeira -- os alarmes de
-     * um relógio Wonlex saíam pelo descodificador da 4P-Touch. O `fromNativeForProtocol` não
-     * era uma excepção à regra, era o penso para este índice.
-     *
-     * Fica um método só, e a regra é a mesma do `toNative`: quem manda é o protocolo.
+     * Quem manda é o protocolo, como no `toNative`. Indexar pela chave nativa não funciona: a
+     * Wonlex e a 4P Touch declaram as duas `alarmClock`, e uma apagava a outra.
      */
     public function fromNative(string $protocol, string $nativeKey, array $desired): mixed
     {
