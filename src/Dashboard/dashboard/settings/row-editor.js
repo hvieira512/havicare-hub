@@ -1,23 +1,13 @@
 /**
- * A edição em linha das listagens das definições.
+ * A edição em linha das listagens das definições: a vaga do que está aberto, a escolha entre
+ * a linha de ver e a de editar, a leitura dos `data-field` e o foco depois de repintar.
  *
- * Cada listagem tinha a sua cópia da mesma mecânica: uma variável de módulo com quem está
- * aberto, o render a escolher entre a linha de ver e a linha de editar, o `closest` até ao
- * invólucro para lhe ler os `data-field`, e o foco no primeiro campo depois de repintar. Eram
- * três cópias em dois ficheiros -- empresa, licença e utilizador da API --, e cada uma com o
- * seu nome de atributo (`data-company-editor`, `data-license-editor`, `data-api-user-editor`).
- * A quarta listagem trazia a quarta cópia.
- *
- * O que varia entre elas é o que cada uma desenha e o que grava. O resto vive aqui.
+ * O que varia entre listagens é o que cada uma desenha e o que grava.
  */
 
 /**
- * A linha aberta para edição, numa listagem onde só pode estar uma.
- *
- * O `kind` é o que permite a uma listagem ter mais do que um tipo de linha editável -- as
- * empresas têm a empresa e a licença -- sem precisar de um segundo estado: abrir uma fecha a
- * outra porque é a mesma vaga. Era isso que os `editingCompany = null` espalhados pelos
- * `editLicense` e companhia faziam à mão, e bastava esquecer um para os dois abrirem juntos.
+ * A linha aberta para edição, numa listagem onde só pode estar uma. O `kind` deixa uma
+ * listagem ter vários tipos de linha editável na mesma vaga -- abrir uma fecha a outra.
  *
  * O id vazio é o rascunho: a linha que ainda não existe.
  *
@@ -28,16 +18,11 @@ export function inlineEditor(render) {
 
     return {
         /**
-         * Abre a linha `id` do tipo `kind`.
+         * Abre a linha `id` do tipo `kind`. Sem `id` não faz nada em vez de abrir o
+         * rascunho, que se pede pelo nome com o `draft()`.
          *
-         * Sem `id` não faz nada, em vez de abrir o rascunho. Um botão de editar sem
-         * `data-id` -- um render parcial, um template novo -- abria a linha de criar em
-         * branco no topo da lista, e gravá-la criava um registo em vez de editar aquele em
-         * que se carregou. Quem quer o rascunho pede-o pelo nome, com o `draft()`.
-         *
-         * O `extra` vem primeiro no espalhamento: um `extra` que trouxesse `id` ou `kind`
-         * substituía a identidade já normalizada, e um id numérico deixava de casar com o
-         * `String()` do `at()` -- a linha não abria e não havia erro nenhum.
+         * O `extra` vem primeiro no espalhamento, senão podia substituir a identidade já
+         * normalizada e a linha deixava de abrir sem erro nenhum.
          */
         edit(kind, id, extra = {}) {
             if (id === null || id === undefined || String(id) === "") return;

@@ -17,15 +17,10 @@ use Hub\Domain\Capability\Medication\MedicationRemindersCapability;
 /**
  * O registo central dos contratos de capacidades.
  *
- * As capacidades complexas (`alarm_clock`, `sos_contacts`, `call_whitelist`, ...) implementam
- * o `CapabilityContract` e registam-se aqui. As simples -- interruptores, números, telefones
- * -- caem na `GenericCapability`, que também é um `CapabilityContract`.
- *
- * É por isso que este ficheiro encolheu para metade: sete métodos perguntavam
- * `isset($this->contracts[$key])` e tratavam eles próprios do caso em que a resposta era
- * não, e os cerca de 120 linhas dessa segunda metade eram tradução de fio da Vivistar e da
- * Wonlex a viver dentro de um registo. O `contract()` devolve sempre alguém, e um registo
- * volta a só registar e a delegar.
+ * As complexas (`alarm_clock`, `sos_contacts`, `call_whitelist`, ...) implementam o
+ * `CapabilityContract` e registam-se aqui. As simples -- interruptores, números, telefones --
+ * caem na `GenericCapability`, que também é um `CapabilityContract`, e por isso o
+ * `contract()` devolve sempre alguém.
  */
 final class CapabilityRegistry
 {
@@ -63,11 +58,8 @@ final class CapabilityRegistry
     }
 
     /**
-     * O contrato escrito à mão desta chave, ou `null` se não houver nenhum.
-     *
-     * Continua a devolver `null` de propósito: quem chama isto está mesmo a perguntar se a
-     * capacidade tem código próprio -- é uma pergunta legítima, ao contrário dos `isset` que
-     * os métodos de despacho faziam para decidir se delegavam.
+     * O contrato escrito à mão desta chave, ou `null`. Devolve `null` de propósito: quem
+     * chama está a perguntar se a capacidade tem código próprio.
      */
     public function get(string $genericKey): ?CapabilityContract
     {
@@ -129,10 +121,7 @@ final class CapabilityRegistry
 
     /**
      * O protocolo vem à frente e sem valor por omissão, como no `toNative` e no
-     * `responseEntry`. Era um `string $protocol = ''` no fim, e o `''` deixava chamar isto
-     * sem dizer de que fornecedor era o payload -- o que só funcionava porque um
-     * `instanceof AlarmClockCapability` aqui desviava esse caso para um segundo método.
-     * Descodificar sem saber o protocolo é adivinhar; agora não se pode pedir.
+     * `responseEntry`: descodificar sem saber de que fornecedor é o payload é adivinhar.
      */
     public function fromNative(string $protocol, string $genericKey, string $nativeKey, array $desired): mixed
     {

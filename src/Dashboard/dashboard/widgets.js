@@ -12,12 +12,8 @@ import {
  */
 
 /**
- * A atribuição de um dispositivo, num campo só. A licença pertence à empresa e um
- * dispositivo tem as duas ou nenhuma, por isso o valor tem duas formas e não quatro:
- * `empresa · número`, ou "Sem licença".
- *
- * `valueClass` existe porque o cartão da listagem precisa do seu corte de texto e o painel
- * de factos não: lá o valor herda a tipografia do `dd`.
+ * A atribuição de um dispositivo, num campo só. Duas formas e não quatro, porque as duas
+ * andam sempre juntas: `empresa · número`, ou "Sem licença".
  */
 export function deviceLicenseHtml(device, valueClass = "") {
     const company = String(device.company || "").trim();
@@ -31,12 +27,8 @@ export function deviceLicenseHtml(device, valueClass = "") {
 }
 
 /**
- * Uma etiqueta com o seu controlo, que é o bloco de que os formulários de configuração são
- * feitos. O controlo entra como HTML já pronto, e é por isso que passa pelo `raw()`: a
- * etiqueta e a ajuda entram como texto e saem escapadas por omissão.
- *
- * `cls` são as classes da coluna: os sítios que usam isto trazem vinte e sete valores
- * diferentes, e isso é dado, não uma variante.
+ * Uma etiqueta com o seu controlo. O controlo entra como HTML já pronto e passa pelo
+ * `raw()`; a etiqueta e a ajuda entram como texto e saem escapadas.
  */
 export function field(label, control, { help = "", cls = "", required = false } = {}) {
     const classAttribute = cls ? html` class="${cls}"` : "";
@@ -50,12 +42,8 @@ export function field(label, control, { help = "", cls = "", required = false } 
 }
 
 /**
- * Uma tira de pastilhas de secção, cada uma com a sua contagem. É o mesmo controlo nos dois
- * separadores do modal de definições -- num salta-se para a secção, no outro rola-se até ela
- * --, e estava desenhado de duas maneiras a dois separadores de distância.
- *
- * A pastilha acesa vem do estado e não de uma classe escrita no DOM: a tira é redesenhada, e
- * um realce escrito à mão não sobrevive a isso.
+ * Uma tira de pastilhas de secção, cada uma com a sua contagem. A pastilha acesa vem do
+ * estado e não do DOM, porque a tira é redesenhada.
  */
 export function sectionStrip(sections, action, activeKey = "") {
     return sections
@@ -148,14 +136,8 @@ export function deviceTypeIcon(deviceType) {
 }
 
 /**
- * O mosaico de tipos de dispositivo, o único controlo de tipo no painel.
- *
- * `multiple` separa o filtro, onde se marcam vários, da escolha de um tipo só num
- * formulário -- e é o que decide se saem os atributos do filtro ou só o `data-value` que
- * as acções de escolha única leem.
- *
- * As contagens são opcionais porque não existem sempre: ao criar um modelo ainda não há
- * nada para contar, e um mosaico a dizer "nenhum" debaixo do nome mentia sobre isso.
+ * O mosaico de tipos de dispositivo. O `multiple` separa o filtro da escolha única, e decide
+ * que atributos saem. As contagens são opcionais: ao criar um modelo não há o que contar.
  */
 export function renderDeviceTypeTiles(
     container,

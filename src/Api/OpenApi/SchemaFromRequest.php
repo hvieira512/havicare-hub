@@ -9,18 +9,12 @@ use Symfony\Component\Validator\Mapping\ClassMetadataInterface;
 use Symfony\Component\Validator\Validation;
 
 /**
- * O esquema OpenAPI de um pedido, lido do objecto que o descreve.
+ * O esquema OpenAPI de um pedido, derivado do objecto que o descreve, para a declaração ser
+ * uma só.
  *
- * É isto que acaba com a duplicação. Os esquemas de pedido eram escritos à mão no
- * `Schemas/*.php` e as regras viviam outra vez, noutra forma, no serviço que as aplicava --
- * e divergiam sem nada as confrontar: o `ApiUserWriteRequest` declarava o `role` obrigatório
- * quando o serviço lhe dava um valor por omissão, e não mencionava dois campos que o serviço
- * lia. Aqui a declaração é uma só, e o documento é derivado dela.
- *
- * Traduz o que as constraints deste projecto usam, e mais nada. Uma constraint que não esteja
- * na lista é ignorada em silêncio no esquema -- continua a validar em execução, só não fica
- * descrita. O `SchemaFromRequestTest` prende cada tradução para o silêncio não crescer sem
- * ninguém reparar.
+ * Traduz as constraints que este projecto usa, e mais nada: uma que não esteja na lista
+ * continua a validar em execução mas não fica descrita. O `SchemaFromRequestTest` prende cada
+ * tradução, para esse silêncio não crescer sem ninguém reparar.
  */
 final class SchemaFromRequest
 {
@@ -64,10 +58,8 @@ final class SchemaFromRequest
     {
         $type = $parameter->getType();
         $property = ['type' => self::jsonType($type instanceof \ReflectionNamedType ? $type->getName() : 'string')];
-        // Um campo obrigatório não é anulável, por muito que o tipo em PHP o permita: o
-        // `?string $imei` é anulável para o actualizar o poder herdar do endereço, e anunciar
-        // `nullable` no criar -- onde ele é obrigatório -- dizia ao cliente que mandar `null`
-        // era uma das formas de o satisfazer.
+        // Um campo obrigatório não é anulável, por muito que o tipo o permita: o `?string
+        // $imei` é anulável para o actualizar herdar do endereço, não para aceitar `null`.
         if (!$required && $type instanceof \ReflectionNamedType && $type->allowsNull()) {
             $property['nullable'] = true;
         }
@@ -127,16 +119,12 @@ final class SchemaFromRequest
     }
 
     /**
-     * Obrigatório é o campo cujo valor por omissão as próprias regras recusam.
+     * Obrigatório é o campo cujo valor por omissão as próprias regras recusam. Pergunta-se ao
+     * validador em vez de enumerar classes de constraint, senão cada regra nova teria de ser
+     * acrescentada aqui à mão e o esquema mentia até alguém reparar.
      *
-     * Perguntar ao validador em vez de enumerar classes de constraint. A versão anterior
-     * procurava `NotBlank` e `NotNull` e mais nada, e por isso o `licenseId` da associação --
-     * que é obrigatório porque o `Positive` recusa o `0` com que nasce -- saía documentado
-     * como opcional. Qualquer regra nova passava a ter de ser acrescentada aqui à mão, e o
-     * esquema mentia em silêncio até alguém reparar.
-     *
-     * Instanciar sem argumentos é o que isto exige de um objecto de pedido: todos os campos
-     * têm valor por omissão, porque é assim que um campo omitido se representa.
+     * Exige que o objecto de pedido instancie sem argumentos: é assim que um campo omitido se
+     * representa.
      *
      * @param class-string $requestClass
      * @param list<string> $groups

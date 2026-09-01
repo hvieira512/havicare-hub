@@ -9,11 +9,9 @@ import {
 import { deviceTypeIcon, modelPreviewHtml } from "../widgets.js";
 
 /**
- * O desenho da classificação de um dispositivo -- tipo, modelo e licença -- partilhado
- * pelo assistente de adicionar e pelo modal de editar.
- *
- * São construtores de HTML e nada mais: não guardam estado nem escutam eventos, e é por
- * isso que os dois modais podem ter fluxos diferentes sem duplicar a marcação.
+ * A classificação de um dispositivo -- tipo, modelo e licença -- partilhada pelo assistente
+ * de adicionar e pelo modal de editar. São construtores de HTML e nada mais: sem estado e
+ * sem ouvintes, para os dois modais poderem ter fluxos diferentes.
  */
 
 /**
@@ -39,12 +37,9 @@ function licenseKey(company, licenseId) {
 }
 
 /**
- * O dono de uma notificação, confirmado na árvore antes de pré-selecionar o assistente.
- *
- * Com empresa, procura o par exacto -- é o que a notificação passou a guardar. Sem ela,
- * procura só o número, e aí o mesmo número em duas empresas não tem como se desempatar:
- * devolve nada, porque por escolher é melhor do que escolhido mal sem ninguém reparar. É esse
- * caminho que serve as notificações gravadas antes de a empresa existir na tabela.
+ * O dono de uma notificação, confirmado na árvore antes de pré-selecionar o assistente. Sem
+ * empresa procura só o número, e um número repetido em duas empresas devolve nada: por
+ * escolher é melhor do que escolhido mal sem ninguém reparar.
  */
 export function ownerFromLicense(licenseId, tree = [], company = "") {
     const wanted = String(licenseId ?? "");
@@ -63,12 +58,8 @@ export function ownerFromLicense(licenseId, tree = [], company = "") {
 }
 
 /**
- * A árvore de licenças por onde se escolhe o dono de um dispositivo. A empresa é só o
- * cabeçalho do grupo: escolhe-se uma licença, e a empresa vem dela. O mesmo desenho dos
- * filtros do "Escolher dispositivo", mas de escolha única -- daí o `radiogroup`.
- *
- * "Sem licença" é a primeira e é folha: é a única que não pertence a empresa nenhuma, e no
- * fim ficaria atrás de uma lista que cresce com cada cliente novo.
+ * A árvore por onde se escolhe o dono de um dispositivo. A empresa é só o cabeçalho do
+ * grupo: escolhe-se uma licença, e a empresa vem dela. Escolha única, daí o `radiogroup`.
  */
 export function licensePickerHtml(tree, selected = null) {
     const chosen = selected

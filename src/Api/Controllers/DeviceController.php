@@ -52,30 +52,20 @@ final class DeviceController
         $loop = Loop::get();
         $stream = new ThroughStream();
 
-        // O cliente ainda não drenou o que já lhe foi escrito.
+        // Contrapressão: o `write()` devolve `false` quando o consumidor pediu pausa, e a
+        // partir daí não se escreve nem se lê o `recent()` até ao `drain`.
         //
-        // Sem isto o processo morria, e morria em produção: um radar publica cerca de vinte
-        // mensagens por segundo, cada envio leva o `recent()` inteiro, e o `write()` aceita
-        // tudo o que lhe derem. Quando o cliente drena mais devagar do que o dispositivo
-        // produz -- um separador em segundo plano chega para isso --, o buffer do socket
-        // crescia sem tecto até rebentar o limite de memória do PHP, e levava com ele todas
-        // as ligações TCP e todas as subscrições MQTT do processo, para todos os clientes.
-        //
-        // O `write()` devolve `false` quando o consumidor pediu pausa. A partir daí não se
-        // escreve mais nada -- nem se lê o `recent()`, que é a parte cara -- até ao `drain`.
+        // Sem isto, um cliente que drene mais devagar do que o radar produz fazia o buffer
+        // crescer até rebentar o limite de memória do processo -- e com ele todas as ligações
+        // TCP e todas as subscrições MQTT, para todos os clientes.
         $blocked = false;
         $stream->on('drain', static function () use (&$blocked): void {
             $blocked = false;
         });
 
-        // Onde é que este cliente já vai, por lista. O instantâneo parte do zero e leva o
-        // histórico todo; a partir daí cada actualização leva só o que entrou depois.
-        //
-        // É isto que tira a pressão de onde ela vinha: um radar publica cerca de vinte
-        // mensagens por segundo, e mandar as cem entradas de cada lista quatro vezes por
-        // segundo eram umas dezenas de KB por segundo por separador aberto. Com o cursor são
-        // as poucas linhas que mudaram. A contrapressão continua a ser a rede de segurança,
-        // mas passa a ser bem menos precisada.
+        // Onde é que este cliente já vai, por lista: o instantâneo leva o histórico todo, e
+        // as actualizações levam só o que entrou depois. Sem o cursor, um radar custava
+        // dezenas de KB por segundo e por separador aberto.
         $cursor = ['telemetry' => 0, 'events' => 0];
         $lastCommands = null;
 
