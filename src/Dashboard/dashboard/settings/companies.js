@@ -14,6 +14,7 @@ import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
+import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
 
 /**
  * O separador das licenças, com as licenças de cada empresa dentro dela.
@@ -32,10 +33,9 @@ let els;
 let currentCompanies = [];
 let currentLicenses = [];
 
-/** `null`, `"new"`, ou o id da empresa aberta para edição. */
-let editingCompany = null;
-/** `null`, `{ id }` para uma licença existente, ou `{ companyId }` para uma nova. */
-let editingLicense = null;
+// Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença que estivesse
+// aberta, e ao contrário, sem ninguém se lembrar de o fazer.
+const editor = inlineEditor(() => renderCompanySection());
 
 export function initSettingsCompanies(context) {
     els = context.els;
@@ -52,8 +52,7 @@ export async function loadSettingsCompanySection(companiesPage = 1) {
     currentLicenses = licenses ?? [];
     state.settingsModal.sectionLoaded.company = true;
     state.settingsModal.companyPagination = companyData.pagination || null;
-    editingCompany = null;
-    editingLicense = null;
+    editor.reset();
     renderCompanySection();
     renderPagination({
         pagination: state.settingsModal.companyPagination,
@@ -75,8 +74,7 @@ function reloadCompanies() {
 async function reloadLicenses() {
     invalidateLicenses();
     currentLicenses = (await ensureLicensesLoaded()) ?? [];
-    editingCompany = null;
-    editingLicense = null;
+    editor.reset();
     renderCompanySection();
 }
 
@@ -102,7 +100,7 @@ function licenseViewRow(license) {
  */
 function licenseEditorRow(license, companyId) {
     return html`
-        <div class="tree-row" data-license-editor data-id="${license?.id || ""}" data-company-id="${companyId}">
+        <div class="tree-row" data-editor="license" data-id="${license?.id || ""}" data-company-id="${companyId}">
             <div class="d-flex align-items-end gap-2 flex-wrap w-100">
                 <div style="width:8rem">
                     <label class="section-label d-block mb-1" for="licenseRowId">ID da licença</label>
@@ -113,7 +111,7 @@ function licenseEditorRow(license, companyId) {
                     <input type="text" class="form-control form-control-sm" id="licenseRowName" data-field="name" value="${license?.name || ""}" placeholder="gucc.dev">
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelLicenseEdit">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelEdit">Cancelar</button>
                     <button type="button" class="btn btn-primary btn-sm" data-action="saveLicenseRow">Guardar</button>
                 </div>
             </div>
@@ -135,13 +133,13 @@ function companyHeaderView(company, owned) {
 
 function companyHeaderEditor(company) {
     return html`
-        <div class="d-flex align-items-end gap-2 flex-wrap" data-company-editor data-id="${company?.id || ""}">
+        <div class="d-flex align-items-end gap-2 flex-wrap" data-editor="company" data-id="${company?.id || ""}">
             <div class="flex-grow-1" style="min-width:12rem">
                 <label class="section-label d-block mb-1" for="companyRowName">Nome da empresa</label>
                 <input type="text" class="form-control form-control-sm" id="companyRowName" data-field="name" value="${company?.name || ""}" placeholder="hitcare">
             </div>
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelCompanyEdit">Cancelar</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelEdit">Cancelar</button>
                 <button type="button" class="btn btn-primary btn-sm" data-action="saveCompanyRow">Guardar</button>
             </div>
         </div>`;
@@ -152,19 +150,19 @@ function companyCard(company) {
         (license) => String(license.company_id) === String(company.id),
     );
     const rows = owned
-        .map((license) => (String(editingLicense?.id) === String(license.id)
+        .map((license) => (editor.at("license", license.id)
             ? licenseEditorRow(license, company.id)
             : licenseViewRow(license)))
         .join("");
     // O rascunho de uma licença nova nasce no fim das da empresa em que se carregou no `+`.
-    const draft = !editingLicense?.id && String(editingLicense?.companyId) === String(company.id)
+    const draft = editor.at("license") && editor.open.companyId === String(company.id)
         ? licenseEditorRow(null, company.id)
         : "";
 
     return html`
         <div class="card mb-2">
         <div class="card-body p-3">
-        ${raw(String(editingCompany) === String(company.id)
+        ${raw(editor.at("company", company.id)
             ? companyHeaderEditor(company)
             : companyHeaderView(company, owned))}
         ${raw(rows)}${raw(draft)}
@@ -183,65 +181,33 @@ function renderCompanySection() {
     }
 
     els.companyListBody.innerHTML =
-        (editingCompany === "new"
+        (editor.at("company")
             ? html`<div class="card mb-2"><div class="card-body p-3">${raw(companyHeaderEditor(null))}</div></div>`
             : "") +
             companies.map(companyCard).join("");
 
-    els.companyListBody.querySelector("[data-field]")?.focus();
+    focusEditor(els.companyListBody);
 }
 
 /* ---------- abrir e fechar ---------- */
 
 export function newCompany() {
-    editingCompany = "new";
-    editingLicense = null;
-    renderCompanySection();
-}
-
-function editCompany(button) {
-    editingCompany = button.dataset.id || null;
-    editingLicense = null;
-    renderCompanySection();
-}
-
-export function cancelCompanyEdit() {
-    editingCompany = null;
-    renderCompanySection();
-}
-
-function editLicense(button) {
-    editingLicense = { id: button.dataset.id };
-    editingCompany = null;
-    renderCompanySection();
-}
-
-function newLicenseForCompany(button) {
-    editingLicense = { companyId: button.dataset.companyId };
-    editingCompany = null;
-    renderCompanySection();
-}
-
-export function cancelLicenseEdit() {
-    editingLicense = null;
-    renderCompanySection();
+    editor.draft("company");
 }
 
 /* ---------- gravar e apagar ---------- */
 
 async function saveCompanyRow(button) {
-    const editor = button.closest("[data-company-editor]");
-    if (!editor) return;
-    const id = editor.dataset.id || "";
-    const field = editor.querySelector("[data-field=\"name\"]");
-    const name = field.value.trim();
+    const row = editorOf(button, "company");
+    if (!row) return;
+    const name = row.value("name");
 
-    clearInvalid(editor);
+    clearInvalid(row.el);
     if (!name) {
-        markInvalid(field, "O nome é obrigatório");
+        markInvalid(row.field("name"), "O nome é obrigatório");
         return;
     }
-    const result = await (id ? apiUpdateCompany(id, name) : apiCreateCompany(name));
+    const result = await (row.id ? apiUpdateCompany(row.id, name) : apiCreateCompany(name));
     if (result.error) {
         toast("error", apiError(result));
         return;
@@ -266,22 +232,19 @@ async function deleteCompany(id) {
 }
 
 async function saveLicenseRow(button) {
-    const editor = button.closest("[data-license-editor]");
-    if (!editor) return;
-    const id = editor.dataset.id || "";
-    const licenseField = editor.querySelector("[data-field=\"licenseId\"]");
-    const licenseId = licenseField.value.trim();
-    const name = editor.querySelector("[data-field=\"name\"]").value.trim();
+    const row = editorOf(button, "license");
+    if (!row) return;
+    const licenseId = row.value("licenseId");
 
-    clearInvalid(editor);
+    clearInvalid(row.el);
     if (!licenseId) {
-        markInvalid(licenseField, "O ID da licença é obrigatório");
+        markInvalid(row.field("licenseId"), "O ID da licença é obrigatório");
         return;
     }
-    const result = await apiSaveLicense(id, {
-        companyId: Number(editor.dataset.companyId),
+    const result = await apiSaveLicense(row.id, {
+        companyId: Number(row.el.dataset.companyId),
         licenseId,
-        name,
+        name: row.value("name"),
     });
     if (result.error) {
         toast("error", apiError(result));
@@ -306,15 +269,14 @@ export function handleCompanyListClick(event) {
     const button = event.target.closest("button");
     if (!button) return;
     const actions = {
-        editCompany: () => editCompany(button),
-        cancelCompanyEdit: () => cancelCompanyEdit(),
+        editCompany: () => editor.edit("company", button.dataset.id),
+        editLicense: () => editor.edit("license", button.dataset.id),
+        newLicenseForCompany: () => editor.draft("license", { companyId: button.dataset.companyId }),
+        cancelEdit: () => editor.cancel(),
         saveCompanyRow: () => void saveCompanyRow(button),
-        deleteCompany: () => void deleteCompany(Number(button.dataset.id)),
-        editLicense: () => editLicense(button),
-        cancelLicenseEdit: () => cancelLicenseEdit(),
         saveLicenseRow: () => void saveLicenseRow(button),
+        deleteCompany: () => void deleteCompany(Number(button.dataset.id)),
         deleteLicense: () => void deleteLicense(Number(button.dataset.id)),
-        newLicenseForCompany: () => newLicenseForCompany(button),
     };
     actions[button.dataset.action]?.();
 }

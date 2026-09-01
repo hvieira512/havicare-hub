@@ -11,6 +11,7 @@ import { apiError, confirmDestructive, toast } from "../dialogs.js";
 import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
+import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
 
 /**
  * O separador dos utilizadores da API.
@@ -28,8 +29,7 @@ let els;
 let apiUserLicenses = [];
 let currentUsers = [];
 
-/** Quem está aberto para edição: `null`, `"new"` para o rascunho, ou o id de uma linha. */
-let editing = null;
+const editor = inlineEditor(() => renderApiUsersSection());
 
 export function initSettingsApiUsers(context) {
     els = context.els;
@@ -51,7 +51,7 @@ export async function loadSettingsApiUsersSection(page = 1) {
     apiUserLicenses = licenses ?? [];
     state.settingsModal.apiUsersPagination = response.pagination || null;
     state.settingsModal.sectionLoaded.apiUsers = true;
-    editing = null;
+    editor.reset();
     renderApiUsersSection();
     renderPagination({
         pagination: state.settingsModal.apiUsersPagination,
@@ -119,7 +119,7 @@ function editorRow(user) {
     return html`
         <tr class="d-block d-sm-table-row">
         <td class="border-0 p-0 pb-2 d-block d-sm-table-cell" colspan="5">
-        <div class="border rounded-3 p-3 d-flex flex-column gap-3 bg-body-tertiary" data-api-user-editor data-id="${user?.id || ""}">
+        <div class="border rounded-3 p-3 d-flex flex-column gap-3 bg-body-tertiary" data-editor="apiUser" data-id="${user?.id || ""}">
             <div class="row g-2 align-items-center">
                 <div class="col-12 col-md-3">
                     <label class="section-label d-block mb-1" for="apiUserRowUsername">Utilizador</label>
@@ -150,7 +150,7 @@ function editorRow(user) {
                 </div>
                 ${raw(isNew ? "" : html`<button type="button" class="btn btn-outline-secondary btn-sm" data-action="revealApiUserPassword">Redefinir password</button>`)}
                 <div class="ms-auto d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelApiUserEdit">Cancelar</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancelEdit">Cancelar</button>
                     <button type="button" class="btn btn-primary btn-sm" data-action="saveApiUserRow">Guardar</button>
                 </div>
             </div>
@@ -172,70 +172,57 @@ function renderApiUsersSection() {
     }
 
     els.apiUserListBody.innerHTML =
-        (editing === "new" ? editorRow(null) : "") +
+        (editor.at("apiUser") ? editorRow(null) : "") +
         users
-            .map((user) => (String(user.id) === String(editing) ? editorRow(user) : viewRow(user)))
+            .map((user) => (editor.at("apiUser", user.id) ? editorRow(user) : viewRow(user)))
             .join("");
 
-    els.apiUserListBody
-        .querySelector("[data-api-user-editor] input, [data-api-user-editor] select")
-        ?.focus();
+    focusEditor(els.apiUserListBody);
 }
 
 /** Abrir um rascunho no topo da lista: criar é uma linha nova, não um formulário à parte. */
 export function newApiUser() {
-    editing = "new";
-    renderApiUsersSection();
-}
-
-export function editApiUser(button) {
-    editing = button.dataset.id || null;
-    renderApiUsersSection();
-}
-
-export function cancelApiUserEdit() {
-    editing = null;
-    renderApiUsersSection();
+    editor.draft("apiUser");
 }
 
 /** O campo da password só aparece quando alguém pede para a mudar. */
-export function revealApiUserPassword(button) {
-    const editor = button.closest("[data-api-user-editor]");
-    editor?.querySelector("[data-password-field]")?.classList.remove("d-none");
+function revealApiUserPassword(button) {
+    const row = editorOf(button, "apiUser");
+    if (!row) return;
+    row.el.querySelector("[data-password-field]")?.classList.remove("d-none");
     button.classList.add("d-none");
-    editor?.querySelector("[data-field=\"password\"]")?.focus();
+    row.field("password")?.focus();
 }
 
 /** O perfil de admin manda em todas as licenças, por isso a escolha de uma não se aplica. */
-export function syncApiUserRowRole(select) {
-    const editor = select.closest("[data-api-user-editor]");
-    const license = editor?.querySelector("[data-field=\"licenseRefId\"]");
+function syncApiUserRowRole(select) {
+    const row = editorOf(select, "apiUser");
+    const license = row?.field("licenseRefId");
     if (!license) return;
     const isAdmin = select.value === "hub_admin";
     license.disabled = isAdmin;
     if (isAdmin) license.value = "";
 }
 
-export async function saveApiUserRow(button) {
-    const editor = button.closest("[data-api-user-editor]");
-    if (!editor) return;
+async function saveApiUserRow(button) {
+    const row = editorOf(button, "apiUser");
+    if (!row) return;
 
-    const field = (name) => editor.querySelector(`[data-field="${name}"]`);
-    const id = editor.dataset.id || "";
+    const { el, id, field } = row;
     const passwordEl = field("password");
     // Numa edição sem "Redefinir password" não se envia password nenhuma, em vez de enviar
     // uma vazia: o pedido diz o que se quer mudar, e não o que se quer que fique na mesma.
     const changingPassword = !id || !passwordEl.closest("[data-password-field]").classList.contains("d-none");
 
     const body = {
-        username: field("username").value.trim(),
+        username: row.value("username"),
         role: field("role").value,
-        licenseRefId: field("licenseRefId").value.trim(),
+        licenseRefId: row.value("licenseRefId"),
         enabled: field("enabled").checked,
     };
     if (changingPassword) body.password = passwordEl.value;
 
-    clearInvalid(editor);
+    clearInvalid(el);
     if (!body.username) {
         markInvalid(field("username"), "Utilizador é obrigatório");
     }
@@ -245,7 +232,7 @@ export async function saveApiUserRow(button) {
     if (body.role === "license_client" && !body.licenseRefId) {
         markInvalid(field("licenseRefId"), "Licença é obrigatória para clientes");
     }
-    if (editor.querySelector(".is-invalid")) return;
+    if (el.querySelector(".is-invalid")) return;
 
     const result = await apiSaveApiUser(id, body);
     if (result.error) {
@@ -257,7 +244,7 @@ export async function saveApiUserRow(button) {
     await loadSettingsApiUsersSection();
 }
 
-export async function toggleApiUser(button) {
+async function toggleApiUser(button) {
     const result = await apiSaveApiUser(button.dataset.id, {
         username: button.dataset.username || "",
         role: button.dataset.role || "license_client",
@@ -272,6 +259,7 @@ export async function toggleApiUser(button) {
     await loadSettingsApiUsersSection();
 }
 
+/** Exportado para o `destructive-confirm.test.js`, que tranca o cancelar não chegar à API. */
 export async function deleteApiUser(id) {
     const { isConfirmed } = await confirmDestructive("Apagar utilizador API?");
     if (!isConfirmed) return;
@@ -282,4 +270,25 @@ export async function deleteApiUser(id) {
     }
     state.settingsModal.sectionLoaded.apiUsers = false;
     await loadSettingsApiUsersSection();
+}
+
+/** Os cliques da lista, como no separador das empresas: o mapa vive ao lado das linhas. */
+export function handleApiUserListClick(event) {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    const actions = {
+        editApiUser: () => editor.edit("apiUser", button.dataset.id),
+        cancelEdit: () => editor.cancel(),
+        revealApiUserPassword: () => revealApiUserPassword(button),
+        saveApiUserRow: () => void saveApiUserRow(button),
+        toggleApiUser: () => toggleApiUser(button),
+        deleteApiUser: () => deleteApiUser(parseInt(button.dataset.id)),
+    };
+    actions[button.dataset.action]?.();
+}
+
+/** O perfil muda dentro da linha aberta, e a licença acompanha-o. */
+export function handleApiUserListChange(event) {
+    const select = event.target.closest("[data-field=\"role\"]");
+    if (select) syncApiUserRowRole(select);
 }

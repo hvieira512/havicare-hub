@@ -11,8 +11,6 @@ import { esc } from "../format.js";
 import { loadSettingsModal } from "../settings/index.js";
 import { handleSettingsPaginationClick } from "../settings/shell.js";
 import {
-    handleApiUserListChange,
-    handleApiUserListClick,
     handleCapabilityDeviceTypeClick,
     handleCapabilityGroupsChange,
     handleModelDeviceTypeClick,
@@ -27,6 +25,8 @@ import {
     loadSettingsCapabilitiesSection,
 } from "../settings/capabilities.js";
 import {
+    handleApiUserListChange,
+    handleApiUserListClick,
     loadSettingsApiUsersSection,
     newApiUser,
 } from "../settings/api-users.js";
