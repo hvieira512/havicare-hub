@@ -42,27 +42,59 @@ Comandos úteis:
 - Logs: `journalctl -u hub-dev` / `journalctl -u health-hub`
 - Reiniciar: `systemctl restart hub-dev` / `systemctl restart health-hub`
 
+## O teste vem primeiro
+
+Uma funcionalidade começa pelo teste que falha. Escreve-se o teste, confirma-se
+que **falha pela razão certa**, e só então se escreve o código que o faz passar.
+Um teste que passa à primeira não provou nada: ou o comportamento já estava
+coberto, ou o teste está a afirmar a coisa errada.
+
+Numa correção de defeito, o teste é o que reproduz o defeito antes de ele ser
+corrigido.
+
+Isto vale para comportamento — uma capacidade nova, uma mudança de contrato, uma
+correção. Não vale para alterações mecânicas como renomear, encurtar comentários
+ou corrigir texto.
+
+> Em setembro de 2026 os alarmes dos relógios mudaram de canal MQTT e não existia
+> um único teste a prender o canal em que um alarme saía. A alteração passava a
+> suite inteira a verde sem provar coisa nenhuma. É esse o caso que esta regra
+> existe para não voltar a acontecer.
+
+As quatro suites e o que cada uma cobre estão no [capítulo 16](docs/16-testes.md).
+
+## Trabalho em paralelo
+
+Vários agentes a modificar ficheiros ao mesmo tempo reescrevem-se uns aos outros.
+Quando se lança mais do que um agente que **altera** código, cada um corre no seu
+próprio worktree — `isolation: "worktree"`. Agentes que apenas leem, procuram ou
+analisam não precisam disso.
+
+O mesmo cuidado vale para quem os lança: enquanto um agente estiver a editar
+ficheiros, não se mexe nos mesmos em paralelo com ele.
+
 ## Fluxo de trabalho
 
 O trabalho vai primeiro à instância de desenvolvimento, e só depois de estar
 confirmado ali é que se leva à de produção.
 
 1. Inspecionar as alterações existentes e preservar trabalho não relacionado.
-2. Implementar e testar localmente.
-3. Fazer commit em `dev` e `push` quando o utilizador o pedir ou quando fizer
+2. Escrever o teste que falha, e confirmar que falha pela razão certa.
+3. Implementar até ele passar, e correr a suite completa localmente.
+4. Fazer commit em `dev` e `push` quando o utilizador o pedir ou quando fizer
    parte explícita do fluxo pedido.
-4. Atualizar a instância de dev: `cd /opt/havicare-hub-dev && git pull --ff-only`,
+5. Atualizar a instância de dev: `cd /opt/havicare-hub-dev && git pull --ff-only`,
    `composer install --no-dev --optimize-autoloader`, `php bin/migrate.php`,
    `systemctl restart hub-dev`.
-5. Verificar ali: estado do serviço, logs sem erros novos, e a funcionalidade
+6. Verificar ali: estado do serviço, logs sem erros novos, e a funcionalidade
    com os dispositivos, API, Redis ou MQTT relevantes.
-6. Só então promover para produção — `git push origin dev:main` — e correr
+7. Só então promover para produção — `git push origin dev:main` — e correr
    `make prod-update` em `/opt/havicare-hub`.
-7. Verificar o estado e os logs do `health-hub`, e repetir em produção as
+8. Verificar o estado e os logs do `health-hub`, e repetir em produção as
    verificações que se fizeram em dev.
-8. Confirmar que não há regressões e comunicar resultados concretos.
+9. Confirmar que não há regressões e comunicar resultados concretos.
 
-Se o pedido do utilizador for só "testar" ou "experimentar", parar no passo 5:
+Se o pedido do utilizador for só "testar" ou "experimentar", parar no passo 6:
 promover para `main` é publicação, e essa é decisão dele.
 
 ## Verificações que valem a pena
