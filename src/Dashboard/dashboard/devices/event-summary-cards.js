@@ -119,7 +119,7 @@ export function fallSummaryCard(events = []) {
     const occurredAt = latest.occurredAt || latest.recordedAt || "";
     const detectionType = String(latest?.data?.detectionType || "");
     const label = DETECTION_TYPE_LABEL[detectionType] || fieldLabel(detectionType);
-    const person = latest?.data?.details?.person_index;
+    const person = latest?.data?.details?.personIndex;
     const who =
         person === undefined || person === null
             ? ""

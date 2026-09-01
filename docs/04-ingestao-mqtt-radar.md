@@ -108,6 +108,19 @@ médias de respiração e frequência cardíaca. Saem como `position_minute_stat
 o `posstatics` e o `hbstatics` são os nomes das mensagens do fabricante e ficam
 no `source.nativeType`, que é onde a identidade de protocolo pertence.
 
+| Capacidade | `data` |
+|---|---|
+| `position_minute_stats` | `people`, `walkingDistance`, `walkingTimeS`, `meditationTimeS`, `inBedTimeS`, `standingTimeS`, `multiplayerTimeS`, `breathingActive`, `version` |
+| `vitals_minute_stats` | `realTimeBreathing`, `realTimeHeartRate`, `avgBreathing`, `avgHeartRate`, `breathingStatus`, `heartRateStatus`, `vitalSignsStatus`, `sleepState` |
+
+Os tempos são **segundos dentro da janela de um minuto**: nunca passam de 60, e
+os quatro estados de postura somam no máximo 60 entre si.
+
+> A unidade do `walkingDistance` não está confirmada. O documento do fabricante
+> não está no repositório e o valor observado em produção foi sempre zero, pelo
+> que o campo fica sem sufixo de unidade até alguém a poder confirmar. A
+> dashboard apresenta-o como metros, o que é uma suposição e não um facto.
+
 ## 3. Alarmes
 
 O radar reporta alguns acontecimentos por si; outros são derivados pelo hub a

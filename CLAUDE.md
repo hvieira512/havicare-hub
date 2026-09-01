@@ -42,6 +42,36 @@ Comandos úteis:
 - Logs: `journalctl -u hub-dev` / `journalctl -u health-hub`
 - Reiniciar: `systemctl restart hub-dev` / `systemctl restart health-hub`
 
+## Nomes no contrato MQTT
+
+Duas convenções, e confundi-las é fácil porque aparecem lado a lado na mesma
+mensagem.
+
+**O nome da capacidade — o `type` do envelope — é snake_case:** `heart_rate`,
+`blood_pressure`, `diaper_condition`, `position_minute_stats`. É o mesmo nome com
+que a capacidade é declarada no `CapabilityCatalog`, e os dois têm de coincidir:
+o catálogo a declarar um nome que o MQTT não publica é uma falha calada, porque
+quem integra subscreve à espera dele e nunca o recebe.
+
+**Os campos dentro do `data` são camelCase:** `systolicMmHg`, `breathsPerMinute`,
+`accuracyMeters`, `affectedChannelCount`, `gatewayId`, `rssiDbm`, `personIndex`.
+O envelope segue a mesma regra — `occurredAt`, `nativeType`, `commercialName`.
+
+**Onde há unidade, ela entra no nome:** `accuracyMeters`, `speedKmh`,
+`spo2Percent`, `timeLeftS`. Um número sem unidade obriga quem consome a
+adivinhar.
+
+**Os valores são enumerações inglesas**, em minúsculas com underscores —
+`lying_down`, `deep_sleep`, `hypopnea`, `danger`. As etiquetas do fabricante não
+saem no fio, e traduzir é trabalho de quem desenha a interface.
+
+> Ao verificar isto, ler o código de cada normalizador. Uma amostra do broker
+> depende de que aparelhos estão ligados naquele minuto, e uma tirada com os
+> relógios offline é uma amostra de radares.
+
+O detalhe está no [contrato MQTT](docs/08-contrato-mqtt.md) e na
+[normalização](docs/06-normalizacao.md).
+
 ## O teste vem primeiro
 
 Uma funcionalidade começa pelo teste que falha. Escreve-se o teste, confirma-se

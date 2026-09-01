@@ -165,11 +165,11 @@ test("o grau de um alarme é traduzido no ecrã, não no fio", () => {
  */
 test("os estados por minuto saem em português a partir da enumeração", () => {
     const details = uplinkCardContent("vitals_minute_stats", {
-        real_time_heart_rate: 70,
-        real_time_breathing: 13,
-        breathing_status_per_minute: "hypopnea",
-        heart_rate_status_per_minute: "normal",
-        vital_signs_status: "weak",
+        realTimeHeartRate: 70,
+        realTimeBreathing: 13,
+        breathingStatus: "hypopnea",
+        heartRateStatus: "normal",
+        vitalSignsStatus: "weak",
     }).details;
 
     assert.match(details, /Hipopneia/);

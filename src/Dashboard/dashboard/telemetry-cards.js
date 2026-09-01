@@ -684,7 +684,7 @@ function presenceDetailsTitle(data) {
 
 function radarPositionMinuteStatsValue(data) {
     const people = dataPointValue(data?.people);
-    const distance = dataPointValue(data?.walking_distance);
+    const distance = dataPointValue(data?.walkingDistance);
     if (people === "-" && distance === "-") {
         return "Sem leituras";
     }
@@ -694,18 +694,18 @@ function radarPositionMinuteStatsValue(data) {
 
 function radarPositionMinuteStatsDetails(data) {
     return compactDetails(data, [
-        "walking_time",
-        "meditation_time",
-        "in_bed_time",
-        "standing_time",
-        "multiplayer_time",
-        "breathing_active",
+        "walkingTimeS",
+        "meditationTimeS",
+        "inBedTimeS",
+        "standingTimeS",
+        "multiplayerTimeS",
+        "breathingActive",
     ]);
 }
 
 function radarVitalsMinuteStatsValue(data) {
-    const heartRate = dataPointValue(data?.avg_heart_rate_per_minute);
-    const breathing = dataPointValue(data?.avg_breathing_per_minute);
+    const heartRate = dataPointValue(data?.avgHeartRate);
+    const breathing = dataPointValue(data?.avgBreathing);
     if (heartRate === "-" && breathing === "-") {
         return "Sem leituras";
     }
@@ -715,9 +715,9 @@ function radarVitalsMinuteStatsValue(data) {
 
 function radarVitalsMinuteStatsDetails(data) {
     return compactDetails(data, [
-        "breathing_status_per_minute",
-        "heart_rate_status_per_minute",
-        "vital_signs_status",
+        "breathingStatus",
+        "heartRateStatus",
+        "vitalSignsStatus",
     ]);
 }
 

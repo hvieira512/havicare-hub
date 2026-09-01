@@ -84,7 +84,7 @@ final class MessageNormalizerTest extends TestCase
         $telemetry = $result['telemetry']['position_minute_stats'];
         self::assertSame('position_minute_stats', $telemetry['type']);
         self::assertSame('posstatics', $telemetry['source']['nativeType']);
-        self::assertSame(42, $telemetry['data']['walking_distance']);
+        self::assertSame(42, $telemetry['data']['walkingDistance']);
     }
 
     public function testPositionDetectionIncludesDeviceAndSourceMetadata(): void
@@ -232,7 +232,7 @@ final class MessageNormalizerTest extends TestCase
 
         self::assertSame('fall', $result['events'][0]['type']);
         self::assertSame('fall_confirmed', $result['events'][0]['data']['detectionType']);
-        self::assertSame(2, $result['events'][0]['data']['details']['person_index']);
+        self::assertSame(2, $result['events'][0]['data']['details']['personIndex']);
     }
 
     /**
@@ -337,10 +337,10 @@ final class MessageNormalizerTest extends TestCase
 
         $data = $result['telemetry']['vitals_minute_stats']['data'];
 
-        self::assertSame('hypopnea', $data['breathing_status_per_minute']);
-        self::assertSame('normal', $data['heart_rate_status_per_minute']);
-        self::assertSame('normal', $data['vital_signs_status']);
-        self::assertSame('light_sleep', $data['sleep_state_status']);
+        self::assertSame('hypopnea', $data['breathingStatus']);
+        self::assertSame('normal', $data['heartRateStatus']);
+        self::assertSame('normal', $data['vitalSignsStatus']);
+        self::assertSame('light_sleep', $data['sleepState']);
     }
 
     /**
@@ -389,6 +389,44 @@ final class MessageNormalizerTest extends TestCase
         foreach ($result['telemetry'] as $capability => $envelope) {
             self::assertSame($capability, $envelope['type']);
         }
+    }
+
+    /**
+     * O `type` de uma capacidade é snake_case; os campos dentro do `data` são camelCase. São
+     * dois vocabulários, e o radar era o único sítio do contrato onde o segundo escorregava
+     * para o primeiro.
+     *
+     * @dataProvider everyMessageType
+     */
+    public function testNoPublishedFieldIsSnakeCase(array $decoded): void
+    {
+        $result = (new MessageNormalizer())->normalize(
+            $decoded,
+            Topic::parse('radar/1001/radar-topic-uid'),
+            $this->device(),
+        );
+
+        $offenders = [];
+        $walk = static function (mixed $node) use (&$walk, &$offenders): void {
+            if (!is_array($node)) {
+                return;
+            }
+            foreach ($node as $key => $value) {
+                if (is_string($key) && str_contains($key, '_')) {
+                    $offenders[] = $key;
+                }
+                $walk($value);
+            }
+        };
+
+        foreach ($result['telemetry'] as $envelope) {
+            $walk($envelope['data']);
+        }
+        foreach ($result['events'] as $event) {
+            $walk($event['data']);
+        }
+
+        self::assertSame([], array_values(array_unique($offenders)));
     }
 
     /** @return array<string, array{array<string, mixed>}> */

@@ -139,7 +139,7 @@ final class MessageNormalizer
                     'fall_confirmed',
                     self::LEVEL_DANGER,
                     self::SOURCE_POSITION,
-                    ['person_index' => $person['person_index']]
+                    ['personIndex' => $person['person_index']]
                 );
             }
 
@@ -150,7 +150,7 @@ final class MessageNormalizer
                     'fall_confirmed',
                     self::LEVEL_WARNING,
                     self::SOURCE_POSITION,
-                    ['person_index' => $person['person_index']]
+                    ['personIndex' => $person['person_index']]
                 );
             }
 
@@ -161,7 +161,7 @@ final class MessageNormalizer
                     'room_entry',
                     self::LEVEL_INFO,
                     self::SOURCE_POSITION,
-                    ['person_index' => $person['person_index']]
+                    ['personIndex' => $person['person_index']]
                 );
             }
 
@@ -172,7 +172,7 @@ final class MessageNormalizer
                     'room_exit',
                     self::LEVEL_INFO,
                     self::SOURCE_POSITION,
-                    ['person_index' => $person['person_index']]
+                    ['personIndex' => $person['person_index']]
                 );
             }
 
@@ -183,7 +183,7 @@ final class MessageNormalizer
                     'area_entry',
                     self::LEVEL_INFO,
                     self::SOURCE_POSITION,
-                    ['person_index' => $person['person_index']]
+                    ['personIndex' => $person['person_index']]
                 );
             }
 
@@ -194,7 +194,7 @@ final class MessageNormalizer
                     'area_exit',
                     self::LEVEL_INFO,
                     self::SOURCE_POSITION,
-                    ['person_index' => $person['person_index']]
+                    ['personIndex' => $person['person_index']]
                 );
             }
         }
@@ -320,13 +320,16 @@ final class MessageNormalizer
                     [
                         'version' => $decoded['version'],
                         'people' => $decoded['people'],
-                        'walking_distance' => $decoded['walking_distance'],
-                        'walking_time' => $decoded['walking_time'],
-                        'meditation_time' => $decoded['meditation_time'],
-                        'in_bed_time' => $decoded['in_bed_time'],
-                        'standing_time' => $decoded['standing_time'],
-                        'multiplayer_time' => $decoded['multiplayer_time'],
-                        'breathing_active' => $decoded['breathing_active'],
+                        // A unidade da distância não está confirmada: o documento do
+                        // fabricante não está no repositório, e em produção o valor foi
+                        // sempre zero. Fica sem sufixo até alguém a poder confirmar.
+                        'walkingDistance' => $decoded['walking_distance'],
+                        'walkingTimeS' => $decoded['walking_time'],
+                        'meditationTimeS' => $decoded['meditation_time'],
+                        'inBedTimeS' => $decoded['in_bed_time'],
+                        'standingTimeS' => $decoded['standing_time'],
+                        'multiplayerTimeS' => $decoded['multiplayer_time'],
+                        'breathingActive' => $decoded['breathing_active'],
                     ],
                 ),
             ],
@@ -339,15 +342,17 @@ final class MessageNormalizer
      */
     private function normalizeHbStatics(array $decoded, Topic $topic, array $device): array
     {
+        // Sem `PerMinute` no nome de cada campo: a capacidade já se chama
+        // `vitals_minute_stats`, e nenhuma outra repete o próprio nome dentro dos campos.
         $telemetry = $this->telemetry($topic, $device, 'vitals_minute_stats', 'hbstatics', [
-            'real_time_breathing' => $decoded['real_time_breathing'],
-            'real_time_heart_rate' => $decoded['real_time_heart_rate'],
-            'avg_breathing_per_minute' => $decoded['avg_breathing_per_minute'],
-            'avg_heart_rate_per_minute' => $decoded['avg_heart_rate_per_minute'],
-            'breathing_status_per_minute' => $decoded['breathing_status_per_minute'],
-            'heart_rate_status_per_minute' => $decoded['heart_rate_status_per_minute'],
-            'vital_signs_status' => $decoded['vital_signs_status'],
-            'sleep_state_status' => $decoded['sleep_state_status'],
+            'realTimeBreathing' => $decoded['real_time_breathing'],
+            'realTimeHeartRate' => $decoded['real_time_heart_rate'],
+            'avgBreathing' => $decoded['avg_breathing_per_minute'],
+            'avgHeartRate' => $decoded['avg_heart_rate_per_minute'],
+            'breathingStatus' => $decoded['breathing_status_per_minute'],
+            'heartRateStatus' => $decoded['heart_rate_status_per_minute'],
+            'vitalSignsStatus' => $decoded['vital_signs_status'],
+            'sleepState' => $decoded['sleep_state_status'],
         ]);
 
         $events = [];
@@ -363,7 +368,7 @@ final class MessageNormalizer
                 'apnea',
                 self::LEVEL_DANGER,
                 self::SOURCE_HEARTBREATH,
-                ['breathing_status' => $breathingStatus]
+                ['breathingStatus' => $breathingStatus]
             );
         }
 
@@ -374,7 +379,7 @@ final class MessageNormalizer
                 'heart_rate_high',
                 self::LEVEL_WARNING,
                 self::SOURCE_HEARTBREATH,
-                ['heart_rate_status' => $heartStatus]
+                ['heartRateStatus' => $heartStatus]
             );
         }
 
@@ -385,7 +390,7 @@ final class MessageNormalizer
                 'heart_rate_low',
                 self::LEVEL_WARNING,
                 self::SOURCE_HEARTBREATH,
-                ['heart_rate_status' => $heartStatus]
+                ['heartRateStatus' => $heartStatus]
             );
         }
 
@@ -396,7 +401,7 @@ final class MessageNormalizer
                 'vitals_signal_lost',
                 self::LEVEL_WARNING,
                 self::SOURCE_HEARTBREATH,
-                ['vital_signs_status' => $vitalStatus]
+                ['vitalSignsStatus' => $vitalStatus]
             );
         }
 

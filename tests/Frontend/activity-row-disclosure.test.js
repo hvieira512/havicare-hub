@@ -42,12 +42,12 @@ function minuteStats(index) {
         seq: 1000 + index,
         device: { id: "414D74184CBF" },
         data: {
-            walking_time: 0,
-            meditation_time: 0,
-            in_bed_time: 0,
-            standing_time: 0,
-            multiplayer_time: 0,
-            breathing_active: false,
+            walkingTimeS: 0,
+            meditationTimeS: 0,
+            inBedTimeS: 0,
+            standingTimeS: 0,
+            multiplayerTimeS: 0,
+            breathingActive: false,
         },
         source: { protocol: "qinglanst-radar", nativeType: "posstatics" },
     };

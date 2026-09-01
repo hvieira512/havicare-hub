@@ -97,18 +97,20 @@ export const fieldLabel = (key) =>
         people: "Pessoas",
         breathing: "Respiração",
         sleep_state: "Estado do sono",
-        walking_distance: "Distância a andar",
-        walking_time: "Tempo a andar",
-        meditation_time: "Tempo em meditação",
-        in_bed_time: "Tempo na cama",
-        standing_time: "Tempo em pé",
-        multiplayer_time: "Tempo em atividade",
-        breathing_active: "Respiração ativa",
-        avg_breathing_per_minute: "Respiração média/min",
-        avg_heart_rate_per_minute: "FC média/min",
-        breathing_status_per_minute: "Estado respiratório/min",
-        heart_rate_status_per_minute: "Estado da FC/min",
-        vital_signs_status: "Estado dos sinais vitais",
+        walkingDistance: "Distância a andar",
+        walkingTimeS: "Tempo a andar",
+        meditationTimeS: "Tempo em meditação",
+        inBedTimeS: "Tempo na cama",
+        standingTimeS: "Tempo em pé",
+        multiplayerTimeS: "Tempo em atividade",
+        breathingActive: "Respiração ativa",
+        realTimeBreathing: "Respiração agora",
+        realTimeHeartRate: "FC agora",
+        avgBreathing: "Respiração média",
+        avgHeartRate: "FC média",
+        breathingStatus: "Estado respiratório",
+        heartRateStatus: "Estado da FC",
+        vitalSignsStatus: "Estado dos sinais vitais",
         ack: "ACK",
         settings: "Definições",
         intervalSeconds: "Intervalo (s)",
@@ -181,19 +183,19 @@ const FIELD_VALUE_LABELS = {
         leave_area: "Saiu da área",
         unknown: "Desconhecido",
     },
-    breathing_status_per_minute: {
+    breathingStatus: {
         normal: "Normal",
         hypopnea: "Hipopneia",
         hyperpnea: "Hiperpneia",
         apnea: "Apneia",
     },
-    heart_rate_status_per_minute: {
+    heartRateStatus: {
         normal: "Normal",
         low: "Baixa",
         high: "Alta",
         undefined: "Indefinida",
     },
-    vital_signs_status: {
+    vitalSignsStatus: {
         normal: "Normal",
         weak: "Fraco",
         undefined: "Indefinido",
@@ -205,9 +207,9 @@ const FIELD_VALUE_LABELS = {
     },
 };
 
-// O estado de sono é a mesma grandeza em dois campos: o do `sleep_state` e o do
-// `vitals_minute_stats`.
-FIELD_VALUE_LABELS.sleep_state_status = FIELD_VALUE_LABELS.sleep_state;
+// O estado de sono é a mesma grandeza em dois sítios: a capacidade `sleep_state`, cujo campo
+// é o `state`, e o `sleepState` do `vitals_minute_stats`.
+FIELD_VALUE_LABELS.sleepState = FIELD_VALUE_LABELS.sleep_state;
 
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";
