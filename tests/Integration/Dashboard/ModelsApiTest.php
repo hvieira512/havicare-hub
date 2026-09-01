@@ -254,14 +254,14 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         self::assertSame('ncs', $model['device_type'] ?? null);
     }
 
-    public function testBootstrapSeedsVoerkaW812PagerCallCapability(): void
+    public function testBootstrapSeedsVoerkaW812HelpCallCapability(): void
     {
         [, $db] = $this->makeApi();
         $model = $db->models->find('Voerka', 'W812');
 
         self::assertIsArray($model);
         self::assertSame(
-            ['pager_call'],
+            ['help_call'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$model['id'])
         );
     }

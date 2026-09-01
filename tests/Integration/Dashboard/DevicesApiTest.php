@@ -386,7 +386,7 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertArrayNotHasKey('sourceDeviceId', $device);
     }
 
-    public function testShowReturnsVoerkaPagerCallCapabilitySupportWithoutStoredConfiguration(): void
+    public function testShowReturnsVoerkaHelpCallCapabilitySupportWithoutStoredConfiguration(): void
     {
         [$api, $db, $store] = $this->makeApi();
         $db->whitelist->register('bea6c3dd8e02', 'Voerka', 'W812', 'ncs', 0, '', 'bea6c3dd8e02');
@@ -397,12 +397,12 @@ final class DevicesApiTest extends MysqlDashboardTestCase
         self::assertSame('Voerka', $response['model']['supplier'] ?? null);
         self::assertSame('W812', $response['model']['commercialName'] ?? null);
         self::assertSame('ncs', $response['model']['deviceType'] ?? null);
-        self::assertArrayHasKey('pager_call', $response['capabilities']['alarms'] ?? []);
+        self::assertArrayHasKey('help_call', $response['capabilities']['alarms'] ?? []);
         self::assertSame(
             [
                 'supported' => true,
             ],
-            $response['capabilities']['alarms']['pager_call'] ?? null
+            $response['capabilities']['alarms']['help_call'] ?? null
         );
     }
 

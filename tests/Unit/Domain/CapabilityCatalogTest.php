@@ -11,12 +11,12 @@ final class CapabilityCatalogTest extends TestCase
     public function testDefinitionsRemainStableAfterBeingSplitByDeviceType(): void
     {
         $expected = [
-            'watch' => [68, 'e7a6cb2efba6184bd788d8ed3d25180cc4508989d4b9751e426e1d8ce7b431b1'],
-            'ncs' => [1, 'bf0447cade6d4ed25110a537a4536f2d5ee9ac195e467d114a10b4ac6e9b2c0b'],
+            'watch' => [69, '5f3eddcbc4587b4023b658e19ef5e3facbf2345a0541392dca0c0eb20895624a'],
+            'ncs' => [1, 'ebaa7eb59bae21e06cca634f62cb572b11545e9bb576fedb1f5ca34b0e59b10e'],
             'radar' => [9, '8e53e4ec25c3f8b9cdf8f9b70187c8e9496138f6badc199993ac4b5d5c972891'],
             'gateway' => [3, '0da2bdcb67a191f32fdf9ae47f0e9b9339bd49dd026d4d41e616b52ed430c07a'],
-            'diaper_sensor' => [6, '2b270399764bbeb1a8254a86a08e006f4208c080a6b99173caa94cd602ed059d'],
-            'bracelet' => [3, '16ca71291d05ec6c08e98d889b0bed4453725b1e6481fa5d1d02f807f76c2e28'],
+            'diaper_sensor' => [7, 'ef9933274166c1dc96c6c8fba99f6548a63e2266f17cf04e5fda8ae6103e825e'],
+            'bracelet' => [4, '14ea62ddbe524d40dc80014858a53444d90f17c5e464089dac6da4d5809c9834'],
         ];
 
         // Um tipo de dispositivo acrescentado sem hash aqui ficava sem guarda, e foi assim

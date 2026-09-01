@@ -50,6 +50,12 @@ final class WatchCapabilityDefinitions
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'whitelist_enabled', 'label' => 'Lista branca ativa', 'sortOrder' => 35, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'monitor_number', 'label' => 'Número de monitorização', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'contacts', 'key' => 'sos_contacts', 'label' => 'Contactos SOS', 'sortOrder' => 50, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
+            // O alarme que o relógio dispara, e não um dos interruptores que o configuram: o
+            // `AP10` da Vivistar e os `AL*` da 4P Touch saem como telemetria `type: "alarm"`
+            // com `sos`, `lowBattery`, `fall` e `wearingNotice`. Faltava aqui, e por isso o
+            // catálogo declarava a `fall_detection` que liga a deteção sem declarar o alarme
+            // que ela produz -- metade do par.
+            ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'alarm', 'label' => 'Alarme do dispositivo', 'sortOrder' => 5, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'alarm_clock', 'label' => 'Alarmes', 'sortOrder' => 10, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'medication_reminders', 'label' => 'Lembretes de medicação', 'sortOrder' => 20, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],
             ['deviceType' => 'watch', 'section' => 'alarms', 'key' => 'low_battery_alert', 'label' => 'Alerta de bateria fraca', 'sortOrder' => 30, 'isTelemetry' => false, 'isConfigurable' => true, 'isRequestable' => false],

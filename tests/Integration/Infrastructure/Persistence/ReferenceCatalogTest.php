@@ -30,7 +30,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
 
         self::assertSame('Frequência cardíaca', $labels['watch:heart_rate'] ?? null);
         self::assertSame('Presença', $labels['radar:presence'] ?? null);
-        self::assertSame('Chamada de ajuda', $labels['ncs:pager_call'] ?? null);
+        self::assertSame('Chamada de ajuda', $labels['ncs:help_call'] ?? null);
     }
 
     public function testTheCatalogueHasNoCapabilityTheHubCannotServe(): void
@@ -56,7 +56,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             )->fetchAll(\PDO::FETCH_COLUMN))))
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity'],
+            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
             array_values(array_unique(array_map('strval', $pdo->query(
                 "SELECT capability_key FROM capabilities WHERE device_type = 'diaper_sensor' ORDER BY capability_key"
             )->fetchAll(\PDO::FETCH_COLUMN))))
@@ -94,7 +94,7 @@ final class ReferenceCatalogTest extends MysqlDashboardTestCase
             $db->modelCapabilities->enabledFeaturesForModelId((int)$mkgw4['id'])
         );
         self::assertSame(
-            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity'],
+            ['battery', 'change_required', 'diaper_condition', 'diaper_moisture', 'diaper_moisture_level', 'diaper_sensitivity', 'proximity'],
             $db->modelCapabilities->enabledFeaturesForModelId((int)$sensor['id'])
         );
     }

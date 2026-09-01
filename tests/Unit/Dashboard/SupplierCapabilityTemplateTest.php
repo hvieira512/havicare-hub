@@ -118,11 +118,12 @@ final class SupplierCapabilityTemplateTest extends TestCase
         );
     }
 
-    public function testVoerkaNcsTemplateReturnsPagerCall(): void
+    /** O nome é o que o normalizador publica, e não o `pager_call` que o catálogo teve. */
+    public function testVoerkaNcsTemplateReturnsHelpCall(): void
     {
         $actual = SupplierCapabilityTemplate::keysForSupplierDeviceType('Voerka', 'ncs');
 
-        self::assertSame(['pager_call'], $actual);
+        self::assertSame(['help_call'], $actual);
     }
 
     public function testMokoGatewayCapabilitiesAreModelSpecific(): void
@@ -137,12 +138,12 @@ final class SupplierCapabilityTemplateTest extends TestCase
         );
     }
 
-    public function testNcsCatalogPlacesPagerCallInAlarms(): void
+    public function testNcsCatalogPlacesHelpCallInAlarms(): void
     {
         $definitions = GenericModelCapabilityCatalog::definitionsForDeviceType('ncs');
         $match = array_values(array_filter(
             $definitions,
-            static fn(array $definition): bool => ($definition['key'] ?? '') === 'pager_call'
+            static fn(array $definition): bool => ($definition['key'] ?? '') === 'help_call'
         ));
 
         self::assertCount(1, $match);

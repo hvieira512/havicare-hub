@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hub\Infrastructure\Persistence;
 
+use Hub\Infrastructure\Persistence\Migration\CatalogAlarmProximityAndHelpCall;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 
 /**
@@ -27,7 +28,9 @@ final class DatabaseMigrationPlan
     /** @return list<Migration> */
     public function migrations(): array
     {
-        return [];
+        return [
+            new CatalogAlarmProximityAndHelpCall(),
+        ];
     }
 
     /** @return list<string> */

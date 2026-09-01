@@ -40,29 +40,29 @@ final class CapabilitiesApiTest extends MysqlDashboardTestCase
         self::assertSame($first['deviceType'], $response['deviceType'] ?? null);
     }
 
-    public function testListReturnsVoerkaNcsPagerCallCapability(): void
+    public function testListReturnsVoerkaNcsHelpCallCapability(): void
     {
         $api = $this->makeApi();
 
         $response = $api->list('deviceType=ncs');
         $keys = array_column($response['data'] ?? [], 'key');
 
-        self::assertContains('pager_call', $keys);
-        $pagerCall = null;
+        self::assertContains('help_call', $keys);
+        $helpCall = null;
         foreach ($response['data'] ?? [] as $entry) {
-            if (($entry['key'] ?? '') === 'pager_call') {
-                $pagerCall = $entry;
+            if (($entry['key'] ?? '') === 'help_call') {
+                $helpCall = $entry;
                 break;
             }
         }
 
-        self::assertIsArray($pagerCall);
-        self::assertSame('ncs', $pagerCall['deviceType'] ?? null);
-        self::assertSame('alarms', $pagerCall['section'] ?? null);
-        self::assertSame('Chamada de ajuda', $pagerCall['label'] ?? null);
-        self::assertTrue($pagerCall['isEvent'] ?? false);
-        self::assertFalse($pagerCall['isConfigurable'] ?? true);
-        self::assertFalse($pagerCall['isRequestable'] ?? true);
+        self::assertIsArray($helpCall);
+        self::assertSame('ncs', $helpCall['deviceType'] ?? null);
+        self::assertSame('alarms', $helpCall['section'] ?? null);
+        self::assertSame('Chamada de ajuda', $helpCall['label'] ?? null);
+        self::assertTrue($helpCall['isEvent'] ?? false);
+        self::assertFalse($helpCall['isConfigurable'] ?? true);
+        self::assertFalse($helpCall['isRequestable'] ?? true);
     }
 
     private function makeApi(): CapabilityService

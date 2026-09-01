@@ -14,6 +14,9 @@ final class DiaperSensorCapabilityDefinitions
             // `isRequestable` false como as outras -- o sensor é BLE e não aceita pedidos.
             ['deviceType' => 'diaper_sensor', 'section' => 'telemetry', 'key' => 'diaper_moisture_level', 'label' => 'Nível de humidade', 'sortOrder' => 25, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'diaper_sensor', 'section' => 'telemetry', 'key' => 'diaper_condition', 'label' => 'Estado da fralda', 'sortOrder' => 30, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
+            // Sai por avistamento, e não do sensor: é a força com que cada gateway o ouve.
+            // Mesma forma que na pulseira, porque é o mesmo caminho de código.
+            ['deviceType' => 'diaper_sensor', 'section' => 'telemetry', 'key' => 'proximity', 'label' => 'Proximidade', 'sortOrder' => 35, 'isTelemetry' => true, 'isConfigurable' => false, 'isRequestable' => false],
             ['deviceType' => 'diaper_sensor', 'section' => 'alarms', 'key' => 'change_required', 'label' => 'Mudança necessária', 'sortOrder' => 40, 'isTelemetry' => false, 'isConfigurable' => false, 'isRequestable' => false, 'isEvent' => true],
             // Configurável sem downlink: o sensor é um beacon BLE que só transmite, e o que
             // ela muda é a regra com que o hub deriva o estado da fralda.

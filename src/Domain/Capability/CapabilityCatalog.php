@@ -134,7 +134,9 @@ final class CapabilityCatalog
     {
         return match ($protocol) {
             'wonlex-json' => ['device_state'],
-            'voerka-ncs' => ['pager_call'],
+            // O `AP10` e os `AL*` saem como `alarm`; a Wonlex não tem equivalente.
+            'vivistar-iw', 'four-p-touch' => ['alarm'],
+            'voerka-ncs' => ['help_call'],
             'monit-mecs-pro-ble' => ['change_required'],
             'moko-w6b', 'moko-w6' => ['help_call'],
             'qinglanst-radar' => ['fall', 'vitals_alarm', 'presence_event'],
@@ -193,8 +195,10 @@ final class CapabilityCatalog
             ],
             'moko-mkgw3' => ['connectivity'],
             'moko-mkgw4' => ['connectivity', 'battery', 'location'],
-            'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition'],
-            'moko-w6b', 'moko-w6' => ['battery', 'motion'],
+            // A `proximity` é publicada por avistamento pelo mesmo caminho nos três: sem ela
+            // aqui, o catálogo declarava-a e a matriz do modelo dava-a por não suportada.
+            'monit-mecs-pro-ble' => ['battery', 'diaper_moisture', 'diaper_moisture_level', 'diaper_condition', 'proximity'],
+            'moko-w6b', 'moko-w6' => ['battery', 'motion', 'proximity'],
             default => [],
         };
     }
