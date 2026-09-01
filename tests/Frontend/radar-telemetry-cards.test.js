@@ -130,17 +130,51 @@ test("uma postura que o firmware invente não escreve atributos", () => {
 test("os alarmes dizem o que aconteceu, não só a categoria", () => {
     // "Queda" sozinho não distingue uma queda confirmada de alguém no chão.
     assert.equal(
-        uplinkCardContent("fall", { detectionType: "fall_confirmed", detectionLevel: "perigo" }).value,
+        uplinkCardContent("fall", { detectionType: "fall_confirmed", detectionLevel: "danger" }).value,
         "Queda confirmada",
-    );
-    assert.equal(
-        uplinkCardContent("vitals_alarm", { detectionType: "apnea", detectionLevel: "perigo" }).details,
-        "Perigo",
     );
     assert.equal(
         uplinkCardContent("presence_event", { detectionType: "room_exit", detectionLevel: "info" }).value,
         "Saiu da divisão",
     );
+});
+
+/**
+ * O grau vem do hub em enumeração inglesa, como todo o resto do envelope, e é aqui que se
+ * traduz. Saía já em português do lado do hub, o que deixava a tradução sem sítio.
+ */
+test("o grau de um alarme é traduzido no ecrã, não no fio", () => {
+    assert.equal(
+        uplinkCardContent("vitals_alarm", { detectionType: "apnea", detectionLevel: "danger" }).details,
+        "Perigo",
+    );
+    assert.equal(
+        uplinkCardContent("vitals_alarm", { detectionType: "heart_rate_high", detectionLevel: "warning" }).details,
+        "Aviso",
+    );
+    // O `info` não se mostra: é o grau de um acontecimento que não é alarme nenhum.
+    assert.equal(
+        uplinkCardContent("presence_event", { detectionType: "room_exit", detectionLevel: "info" }).details,
+        "",
+    );
+});
+
+/**
+ * Os quatro estados do `hbstatics` passaram a enumeração no hub, e por isso passam a precisar
+ * de tradução aqui -- como o `posture` e o `sleep_state` já precisavam.
+ */
+test("os estados por minuto saem em português a partir da enumeração", () => {
+    const details = uplinkCardContent("vitals_minute_stats", {
+        real_time_heart_rate: 70,
+        real_time_breathing: 13,
+        breathing_status_per_minute: "hypopnea",
+        heart_rate_status_per_minute: "normal",
+        vital_signs_status: "weak",
+    }).details;
+
+    assert.match(details, /Hipopneia/);
+    assert.match(details, /Normal/);
+    assert.match(details, /Fraco/);
 });
 
 /**

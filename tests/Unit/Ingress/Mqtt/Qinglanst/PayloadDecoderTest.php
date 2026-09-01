@@ -21,7 +21,7 @@ final class PayloadDecoderTest extends TestCase
         self::assertSame('heartbreath', $payload['type']);
         self::assertSame(18, $payload['breathing']);
         self::assertSame(76, $payload['heart_rate']);
-        self::assertSame('Deep Sleep', $payload['sleep_state']);
+        self::assertSame('deep_sleep', $payload['sleep_state']);
     }
 
     public function testDecodesPosStaticsPayloadWithRawNativeClass(): void
@@ -50,10 +50,10 @@ final class PayloadDecoderTest extends TestCase
 
         self::assertIsArray($payload);
         self::assertSame('hbstatics', $payload['type']);
-        self::assertSame('Apnea', $payload['breathing_status_per_minute']);
-        self::assertSame('Undefined', $payload['heart_rate_status_per_minute']);
-        self::assertSame('Weak', $payload['vital_signs_status']);
-        self::assertSame('Light Sleep', $payload['sleep_state_status']);
+        self::assertSame('apnea', $payload['breathing_status_per_minute']);
+        self::assertSame('undefined', $payload['heart_rate_status_per_minute']);
+        self::assertSame('weak', $payload['vital_signs_status']);
+        self::assertSame('light_sleep', $payload['sleep_state_status']);
     }
 
     public function testDecodesPositionPayload(): void
@@ -67,8 +67,25 @@ final class PayloadDecoderTest extends TestCase
         self::assertIsArray($payload);
         self::assertSame('position', $payload['type']);
         self::assertSame(-1, $payload['people'][0]['x_position_dm']);
-        self::assertSame('Fall Confirmation', $payload['people'][0]['posture_state']);
-        self::assertSame('Enter Room', $payload['people'][0]['last_event']);
+        self::assertSame('fall_confirmation', $payload['people'][0]['posture_state']);
+        self::assertSame('enter_room', $payload['people'][0]['last_event']);
+    }
+
+    /**
+     * Um código que a tabela não conheça sai na enumeração de reserva, e não em branco: o
+     * firmware pode acrescentar estados, e o que ele disse não se deita fora.
+     */
+    public function testAnUnknownCodeFallsBackWithoutLosingTheReading(): void
+    {
+        $decoder = new PayloadDecoder();
+
+        $payload = $decoder->decode('position', base64_encode($this->bytes([
+            0x01, 0x00, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x7F, 0x7F, 0x00,
+        ])), 'radar-uid-1');
+
+        self::assertIsArray($payload);
+        self::assertSame('unknown', $payload['people'][0]['posture_state']);
+        self::assertSame('unknown', $payload['people'][0]['last_event']);
     }
 
     /**

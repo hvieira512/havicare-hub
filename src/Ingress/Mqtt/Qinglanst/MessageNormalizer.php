@@ -4,22 +4,29 @@ namespace Hub\Ingress\Mqtt\Qinglanst;
 
 final class MessageNormalizer
 {
-    private const DETECTION_TYPE_MAP = [
-        'fall_confirmed' => RadarValueMapper::DETECTION_TYPE_FALL_CONFIRMED,
-        'heart_rate_high_critical' => RadarValueMapper::DETECTION_TYPE_HEART_RATE_HIGH_CRITICAL,
-        'heart_rate_high' => RadarValueMapper::DETECTION_TYPE_HEART_RATE_HIGH,
-        'heart_rate_low_critical' => RadarValueMapper::DETECTION_TYPE_HEART_RATE_LOW_CRITICAL,
-        'heart_rate_low' => RadarValueMapper::DETECTION_TYPE_HEART_RATE_LOW,
-        'apnea' => RadarValueMapper::DETECTION_TYPE_APNEA,
-        'breathing_high' => RadarValueMapper::DETECTION_TYPE_BREATHING_HIGH,
-        'breathing_low' => RadarValueMapper::DETECTION_TYPE_BREATHING_LOW,
-        'vitals_signal_lost' => RadarValueMapper::DETECTION_TYPE_VITALS_SIGNAL_LOST,
-        'room_entry' => RadarValueMapper::DETECTION_TYPE_ROOM_ENTRY,
-        'room_exit' => RadarValueMapper::DETECTION_TYPE_ROOM_EXIT,
-        'area_entry' => RadarValueMapper::DETECTION_TYPE_AREA_ENTRY,
-        'area_exit' => RadarValueMapper::DETECTION_TYPE_AREA_EXIT,
-        'sitting_confirmed' => RadarValueMapper::DETECTION_TYPE_SITTING_CONFIRMED,
-        'on_floor' => RadarValueMapper::DETECTION_TYPE_ON_FLOOR,
+    private const LEVEL_INFO = 'info';
+    private const LEVEL_WARNING = 'warning';
+    private const LEVEL_DANGER = 'danger';
+
+    private const SOURCE_POSITION = 'position';
+    private const SOURCE_HEARTBREATH = 'heartbreath';
+
+    /**
+     * As detecções que contam como alarme e não como acontecimento. As restantes -- entradas
+     * e saídas de divisão ou de área -- descrevem movimento e não perigo.
+     */
+    private const ALARM_DETECTION_TYPES = [
+        'fall_confirmed',
+        'heart_rate_high_critical',
+        'heart_rate_high',
+        'heart_rate_low_critical',
+        'heart_rate_low',
+        'apnea',
+        'breathing_high',
+        'breathing_low',
+        'vitals_signal_lost',
+        'sitting_confirmed',
+        'on_floor',
     ];
 
     /**
@@ -89,8 +96,8 @@ final class MessageNormalizer
                         'zPositionCm' => $person['z_position_cm'],
                         'timeLeftS' => $person['time_left_s'],
                         'regionId' => $person['region_id'],
-                        'posture' => RadarValueMapper::toEnum((string)($person['posture_state'] ?? '')),
-                        'lastEvent' => RadarValueMapper::toEnum((string)($person['last_event'] ?? '')),
+                        'posture' => (string)($person['posture_state'] ?? 'unknown'),
+                        'lastEvent' => (string)($person['last_event'] ?? 'unknown'),
                     ];
                 }, $people),
             ]),
@@ -125,68 +132,68 @@ final class MessageNormalizer
             $posture = (string)($person['posture_state'] ?? '');
             $eventCode = (string)($person['last_event'] ?? '');
 
-            if ($posture === 'Fall Confirmation') {
+            if ($posture === 'fall_confirmation') {
                 return $this->detectionEvent(
                     $topic,
                     $device,
                     'fall_confirmed',
-                    RadarValueMapper::DETECTION_LEVEL_DANGER,
-                    RadarValueMapper::DETECTION_SOURCE_POSITION,
+                    self::LEVEL_DANGER,
+                    self::SOURCE_POSITION,
                     ['person_index' => $person['person_index']]
                 );
             }
 
-            if ($posture === 'Suspected Fall') {
+            if ($posture === 'suspected_fall') {
                 return $this->detectionEvent(
                     $topic,
                     $device,
                     'fall_confirmed',
-                    RadarValueMapper::DETECTION_LEVEL_WARNING,
-                    RadarValueMapper::DETECTION_SOURCE_POSITION,
+                    self::LEVEL_WARNING,
+                    self::SOURCE_POSITION,
                     ['person_index' => $person['person_index']]
                 );
             }
 
-            if ($eventCode === 'Enter Room') {
+            if ($eventCode === 'enter_room') {
                 return $this->detectionEvent(
                     $topic,
                     $device,
                     'room_entry',
-                    RadarValueMapper::DETECTION_LEVEL_INFO,
-                    RadarValueMapper::DETECTION_SOURCE_POSITION,
+                    self::LEVEL_INFO,
+                    self::SOURCE_POSITION,
                     ['person_index' => $person['person_index']]
                 );
             }
 
-            if ($eventCode === 'Leave Room') {
+            if ($eventCode === 'leave_room') {
                 return $this->detectionEvent(
                     $topic,
                     $device,
                     'room_exit',
-                    RadarValueMapper::DETECTION_LEVEL_INFO,
-                    RadarValueMapper::DETECTION_SOURCE_POSITION,
+                    self::LEVEL_INFO,
+                    self::SOURCE_POSITION,
                     ['person_index' => $person['person_index']]
                 );
             }
 
-            if ($eventCode === 'Enter Area') {
+            if ($eventCode === 'enter_area') {
                 return $this->detectionEvent(
                     $topic,
                     $device,
                     'area_entry',
-                    RadarValueMapper::DETECTION_LEVEL_INFO,
-                    RadarValueMapper::DETECTION_SOURCE_POSITION,
+                    self::LEVEL_INFO,
+                    self::SOURCE_POSITION,
                     ['person_index' => $person['person_index']]
                 );
             }
 
-            if ($eventCode === 'Leave Area') {
+            if ($eventCode === 'leave_area') {
                 return $this->detectionEvent(
                     $topic,
                     $device,
                     'area_exit',
-                    RadarValueMapper::DETECTION_LEVEL_INFO,
-                    RadarValueMapper::DETECTION_SOURCE_POSITION,
+                    self::LEVEL_INFO,
+                    self::SOURCE_POSITION,
                     ['person_index' => $person['person_index']]
                 );
             }
@@ -218,10 +225,10 @@ final class MessageNormalizer
             ]);
         }
 
-        $sleepState = (string)($decoded['sleep_state'] ?? 'Undefined');
-        if ($sleepState !== 'Undefined') {
+        $sleepState = (string)($decoded['sleep_state'] ?? 'undefined');
+        if ($sleepState !== 'undefined') {
             $telemetry['sleep_state'] = $this->telemetry($topic, $device, 'sleep_state', 'heartbreath', [
-                'state' => RadarValueMapper::toEnum($sleepState),
+                'state' => $sleepState,
             ]);
         }
 
@@ -232,8 +239,8 @@ final class MessageNormalizer
                 $topic,
                 $device,
                 'heart_rate_high_critical',
-                RadarValueMapper::DETECTION_LEVEL_DANGER,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_DANGER,
+                self::SOURCE_HEARTBREATH,
                 ['heart_rate' => $heartRate]
             );
         } elseif ($heartRate > 120) {
@@ -241,8 +248,8 @@ final class MessageNormalizer
                 $topic,
                 $device,
                 'heart_rate_high',
-                RadarValueMapper::DETECTION_LEVEL_WARNING,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_WARNING,
+                self::SOURCE_HEARTBREATH,
                 ['heart_rate' => $heartRate]
             );
         }
@@ -252,8 +259,8 @@ final class MessageNormalizer
                 $topic,
                 $device,
                 'heart_rate_low_critical',
-                RadarValueMapper::DETECTION_LEVEL_DANGER,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_DANGER,
+                self::SOURCE_HEARTBREATH,
                 ['heart_rate' => $heartRate]
             );
         } elseif ($heartRate > 0 && $heartRate < 40) {
@@ -261,8 +268,8 @@ final class MessageNormalizer
                 $topic,
                 $device,
                 'heart_rate_low',
-                RadarValueMapper::DETECTION_LEVEL_WARNING,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_WARNING,
+                self::SOURCE_HEARTBREATH,
                 ['heart_rate' => $heartRate]
             );
         }
@@ -272,8 +279,8 @@ final class MessageNormalizer
                 $topic,
                 $device,
                 'vitals_signal_lost',
-                RadarValueMapper::DETECTION_LEVEL_DANGER,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_DANGER,
+                self::SOURCE_HEARTBREATH,
                 ['breathing' => $breathing, 'heart_rate' => $heartRate]
             );
         }
@@ -357,46 +364,46 @@ final class MessageNormalizer
         $heartStatus = (string)($decoded['heart_rate_status_per_minute'] ?? '');
         $vitalStatus = (string)($decoded['vital_signs_status'] ?? '');
 
-        if ($breathingStatus === 'Apnea') {
+        if ($breathingStatus === 'apnea') {
             $events[] = $this->detectionEvent(
                 $topic,
                 $device,
                 'apnea',
-                RadarValueMapper::DETECTION_LEVEL_DANGER,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_DANGER,
+                self::SOURCE_HEARTBREATH,
                 ['breathing_status' => $breathingStatus]
             );
         }
 
-        if ($heartStatus === 'High') {
+        if ($heartStatus === 'high') {
             $events[] = $this->detectionEvent(
                 $topic,
                 $device,
                 'heart_rate_high',
-                RadarValueMapper::DETECTION_LEVEL_WARNING,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_WARNING,
+                self::SOURCE_HEARTBREATH,
                 ['heart_rate_status' => $heartStatus]
             );
         }
 
-        if ($heartStatus === 'Low') {
+        if ($heartStatus === 'low') {
             $events[] = $this->detectionEvent(
                 $topic,
                 $device,
                 'heart_rate_low',
-                RadarValueMapper::DETECTION_LEVEL_WARNING,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_WARNING,
+                self::SOURCE_HEARTBREATH,
                 ['heart_rate_status' => $heartStatus]
             );
         }
 
-        if ($vitalStatus === 'Weak') {
+        if ($vitalStatus === 'weak') {
             $events[] = $this->detectionEvent(
                 $topic,
                 $device,
                 'vitals_signal_lost',
-                RadarValueMapper::DETECTION_LEVEL_WARNING,
-                RadarValueMapper::DETECTION_SOURCE_HEARTBREATH,
+                self::LEVEL_WARNING,
+                self::SOURCE_HEARTBREATH,
                 ['vital_signs_status' => $vitalStatus]
             );
         }
@@ -408,24 +415,18 @@ final class MessageNormalizer
      * @param array<string, mixed> $data
      * @return array
      */
-    private function detectionEvent(Topic $topic, array $device, string $type, int $level, int $source, array $data): array
+    private function detectionEvent(Topic $topic, array $device, string $type, string $level, string $source, array $data): array
     {
-        $typeCode = self::DETECTION_TYPE_MAP[$type] ?? RadarValueMapper::UNKNOWN_CODE;
-        $alarmTypes = RadarValueMapper::detectionAlarmTypeCodes();
-        $category = in_array($typeCode, $alarmTypes, true)
-            ? RadarValueMapper::DETECTION_CATEGORY_ALARM
-            : RadarValueMapper::DETECTION_CATEGORY_EVENT;
-
         return [
             'type' => self::DETECTION_CAPABILITY[$type] ?? 'vitals_alarm',
             'occurredAt' => gmdate('Y-m-d\TH:i:s\Z'),
             'device' => $this->deviceInfo($topic, $device),
-            'source' => $this->source($topic, RadarValueMapper::decodeDetectionSource($source)),
+            'source' => $this->source($topic, $source),
             'data' => [
                 'detectionType' => $type,
-                'detectionCategory' => RadarValueMapper::decodeDetectionCategory($category),
-                'detectionLevel' => RadarValueMapper::decodeDetectionLevel($level),
-                'detectionSource' => RadarValueMapper::decodeDetectionSource($source),
+                'detectionCategory' => in_array($type, self::ALARM_DETECTION_TYPES, true) ? 'alarm' : 'event',
+                'detectionLevel' => $level,
+                'detectionSource' => $source,
                 'details' => $data,
             ],
         ];

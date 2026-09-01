@@ -935,10 +935,15 @@ function detectionValue(data) {
 }
 
 /**
- * O grau separa um aviso de um perigo, e vem do hub já em português. Escapado: os `details`
- * são injectados sem escapar, e o `detectionLevel` vem do radar sem passar por ninguém.
+ * O grau separa um aviso de um perigo. O `info` não se mostra: é o grau de um acontecimento
+ * que não é alarme nenhum.
+ *
+ * Escapado: os `details` são injectados sem escapar, e o `detectionLevel` vem do radar sem
+ * passar por ninguém.
  */
 function detectionDetails(data) {
     const level = String(data?.detectionLevel || "");
-    return level === "" || level === "info" ? "" : html`${titleize(level)}`;
+    return level === "" || level === "info"
+        ? ""
+        : html`${fieldValue("detectionLevel", level)}`;
 }

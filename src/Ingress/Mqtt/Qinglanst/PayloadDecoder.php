@@ -5,6 +5,61 @@ namespace Hub\Ingress\Mqtt\Qinglanst;
 final class PayloadDecoder
 {
     /**
+     * Os códigos do documento do fabricante, já na enumeração que sai no MQTT. Traduzir para
+     * o idioma de quem lê é trabalho de quem desenha o ecrã.
+     */
+    private const POSTURE = [
+        0 => 'initialization',
+        1 => 'walking',
+        2 => 'suspected_fall',
+        3 => 'squatting',
+        4 => 'standing',
+        5 => 'fall_confirmation',
+        6 => 'lying_down',
+        7 => 'suspected_sitting_on_ground',
+        8 => 'confirmed_sitting_on_ground',
+        9 => 'sitting_up_bed',
+        10 => 'suspected_sitting_up_bed',
+        11 => 'confirmed_sitting_up_bed',
+    ];
+
+    private const LAST_EVENT = [
+        0 => 'no_event',
+        1 => 'enter_room',
+        2 => 'leave_room',
+        3 => 'enter_area',
+        4 => 'leave_area',
+    ];
+
+    private const SLEEP_STATE = [
+        0 => 'undefined',
+        1 => 'light_sleep',
+        2 => 'deep_sleep',
+        3 => 'awake',
+    ];
+
+    private const BREATHING_STATUS = [
+        0 => 'normal',
+        1 => 'hypopnea',
+        2 => 'hyperpnea',
+        3 => 'apnea',
+    ];
+
+    private const HEART_STATUS = [
+        0 => 'normal',
+        1 => 'low',
+        2 => 'high',
+        3 => 'undefined',
+    ];
+
+    private const VITAL_STATUS = [
+        0 => 'normal',
+        1 => 'undefined',
+        2 => 'undefined',
+        3 => 'weak',
+    ];
+
+    /**
      * @return array{type: string, device_code: string, ...}|null
      */
     public function decode(string $messageType, string $base64, ?string $deviceCode): ?array
@@ -54,8 +109,8 @@ final class PayloadDecoder
                 'y_position_dm' => $y,
                 'z_position_cm' => ord($raw[$offset + 3]),
                 'time_left_s' => ord($raw[$offset + 12]),
-                'posture_state' => RadarValueMapper::decodePostureState($postureCode),
-                'last_event' => RadarValueMapper::decodeLastEvent($eventCode),
+                'posture_state' => self::POSTURE[$postureCode] ?? 'unknown',
+                'last_event' => self::LAST_EVENT[$eventCode] ?? 'unknown',
                 'region_id' => ord($raw[$offset + 15]),
             ];
         }
@@ -80,7 +135,7 @@ final class PayloadDecoder
             'device_code' => $deviceCode,
             'breathing' => ord($raw[1]),
             'heart_rate' => ord($raw[2]),
-            'sleep_state' => RadarValueMapper::decodeSleepState($sleepStateBits),
+            'sleep_state' => self::SLEEP_STATE[$sleepStateBits] ?? 'undefined',
         ];
     }
 
@@ -121,10 +176,10 @@ final class PayloadDecoder
             'real_time_heart_rate' => ord($raw[2]),
             'avg_breathing_per_minute' => ord($raw[5]),
             'avg_heart_rate_per_minute' => ord($raw[6]),
-            'breathing_status_per_minute' => RadarValueMapper::decodeBreathingStatus($statusByte & 0b00000011),
-            'heart_rate_status_per_minute' => RadarValueMapper::decodeHeartStatus(($statusByte & 0b00001100) >> 2),
-            'vital_signs_status' => RadarValueMapper::decodeVitalStatus(($statusByte & 0b00110000) >> 4),
-            'sleep_state_status' => RadarValueMapper::decodeSleepState(($statusByte & 0b11000000) >> 6),
+            'breathing_status_per_minute' => self::BREATHING_STATUS[$statusByte & 0b00000011] ?? 'normal',
+            'heart_rate_status_per_minute' => self::HEART_STATUS[($statusByte & 0b00001100) >> 2] ?? 'normal',
+            'vital_signs_status' => self::VITAL_STATUS[($statusByte & 0b00110000) >> 4] ?? 'normal',
+            'sleep_state_status' => self::SLEEP_STATE[($statusByte & 0b11000000) >> 6] ?? 'undefined',
         ];
     }
 }

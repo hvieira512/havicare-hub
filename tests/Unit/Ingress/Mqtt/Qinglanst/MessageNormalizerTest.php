@@ -24,7 +24,7 @@ final class MessageNormalizerTest extends TestCase
             'device_code' => 'radar-topic-uid',
             'breathing' => 12,
             'heart_rate' => 72,
-            'sleep_state' => 'Light Sleep',
+            'sleep_state' => 'light_sleep',
         ], $topic, $this->device());
 
         self::assertSame(
@@ -54,7 +54,7 @@ final class MessageNormalizerTest extends TestCase
             'device_code' => 'radar-topic-uid',
             'breathing' => 0,
             'heart_rate' => 0,
-            'sleep_state' => 'Undefined',
+            'sleep_state' => 'undefined',
         ], $topic, $this->device());
 
         self::assertSame([], $result['telemetry']);
@@ -101,8 +101,8 @@ final class MessageNormalizerTest extends TestCase
                 'y_position_dm' => 2,
                 'z_position_cm' => 3,
                 'time_left_s' => 4,
-                'posture_state' => 'Fall Confirmation',
-                'last_event' => 'No Event',
+                'posture_state' => 'fall_confirmation',
+                'last_event' => 'no_event',
                 'region_id' => 5,
             ]],
         ], $topic, $this->device());
@@ -131,10 +131,10 @@ final class MessageNormalizerTest extends TestCase
             'real_time_heart_rate' => 0,
             'avg_breathing_per_minute' => 0,
             'avg_heart_rate_per_minute' => 30,
-            'breathing_status_per_minute' => 'Apnea',
-            'heart_rate_status_per_minute' => 'Normal',
-            'vital_signs_status' => 'Normal',
-            'sleep_state_status' => 'Undefined',
+            'breathing_status_per_minute' => 'apnea',
+            'heart_rate_status_per_minute' => 'normal',
+            'vital_signs_status' => 'normal',
+            'sleep_state_status' => 'undefined',
         ], $topic, $this->device());
 
         self::assertSame('vitals_alarm', $vitals['events'][0]['type']);
@@ -143,7 +143,7 @@ final class MessageNormalizerTest extends TestCase
         $presence = $normalizer->normalize([
             'type' => 'position',
             'device_code' => 'radar-topic-uid',
-            'people' => [$this->person(1, 'Walking', 'Leave Room')],
+            'people' => [$this->person(1, 'walking', 'leave_room')],
         ], $topic, $this->device());
 
         self::assertSame('presence_event', $presence['events'][0]['type']);
@@ -159,7 +159,7 @@ final class MessageNormalizerTest extends TestCase
         $result = $normalizer->normalize([
             'type' => 'position',
             'device_code' => 'radar-topic-uid',
-            'people' => [$this->person(1, 'Fall Confirmation')],
+            'people' => [$this->person(1, 'fall_confirmation')],
         ], $topic, $this->device());
 
         self::assertArrayNotHasKey('schemaVersion', $result['events'][0]);
@@ -181,7 +181,7 @@ final class MessageNormalizerTest extends TestCase
                 'z_position_cm' => 0,
                 'time_left_s' => 0,
                 'posture_state' => 'Unknown',
-                'last_event' => 'No Event',
+                'last_event' => 'no_event',
                 'region_id' => 0,
             ]],
         ], $topic, $this->device());
@@ -207,7 +207,7 @@ final class MessageNormalizerTest extends TestCase
                     'z_position_cm' => 0,
                     'time_left_s' => 0,
                     'posture_state' => 'Unknown',
-                    'last_event' => 'No Event',
+                    'last_event' => 'no_event',
                     'region_id' => 0,
                 ],
                 [
@@ -216,8 +216,8 @@ final class MessageNormalizerTest extends TestCase
                     'y_position_dm' => 5,
                     'z_position_cm' => 6,
                     'time_left_s' => 7,
-                    'posture_state' => 'Fall Confirmation',
-                    'last_event' => 'Leave Room',
+                    'posture_state' => 'fall_confirmation',
+                    'last_event' => 'leave_room',
                     'region_id' => 8,
                 ],
             ],
@@ -248,9 +248,9 @@ final class MessageNormalizerTest extends TestCase
             'type' => 'position',
             'device_code' => 'radar-topic-uid',
             'people' => [
-                $this->person(1, 'Standing'),
-                $this->person(2, 'Fall Confirmation'),
-                $this->person(3, 'Walking'),
+                $this->person(1, 'standing'),
+                $this->person(2, 'fall_confirmation'),
+                $this->person(3, 'walking'),
             ],
         ], $topic, $this->device());
 
@@ -270,7 +270,7 @@ final class MessageNormalizerTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function person(int $index, string $posture, string $lastEvent = 'No Event'): array
+    private function person(int $index, string $posture, string $lastEvent = 'no_event'): array
     {
         return [
             'person_index' => $index,
@@ -301,16 +301,73 @@ final class MessageNormalizerTest extends TestCase
             'real_time_heart_rate' => 0,
             'avg_breathing_per_minute' => 0,
             'avg_heart_rate_per_minute' => 30,
-            'breathing_status_per_minute' => 'Apnea',
-            'heart_rate_status_per_minute' => 'Low',
-            'vital_signs_status' => 'Weak',
-            'sleep_state_status' => 'Undefined',
+            'breathing_status_per_minute' => 'apnea',
+            'heart_rate_status_per_minute' => 'low',
+            'vital_signs_status' => 'weak',
+            'sleep_state_status' => 'undefined',
         ], $topic, $this->device());
 
         self::assertSame(
             ['apnea', 'heart_rate_low', 'vitals_signal_lost'],
             array_column(array_column($result['events'], 'data'), 'detectionType'),
         );
+    }
+
+    /**
+     * Um vocabulário só no payload: os quatro estados do `hbstatics` saem em enumeração,
+     * como o `posture` e o `sleep_state` já saíam.
+     */
+    public function testTheMinuteStatsCarryEnumsAndNotVendorLabels(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'hbstatics',
+            'device_code' => 'radar-topic-uid',
+            'real_time_breathing' => 12,
+            'real_time_heart_rate' => 66,
+            'avg_breathing_per_minute' => 13,
+            'avg_heart_rate_per_minute' => 70,
+            'breathing_status_per_minute' => 'hypopnea',
+            'heart_rate_status_per_minute' => 'normal',
+            'vital_signs_status' => 'normal',
+            'sleep_state_status' => 'light_sleep',
+        ], $topic, $this->device());
+
+        $data = $result['telemetry']['vitals_minute_stats']['data'];
+
+        self::assertSame('hypopnea', $data['breathing_status_per_minute']);
+        self::assertSame('normal', $data['heart_rate_status_per_minute']);
+        self::assertSame('normal', $data['vital_signs_status']);
+        self::assertSame('light_sleep', $data['sleep_state_status']);
+    }
+
+    /**
+     * O grau de um alarme é uma enumeração inglesa, como todo o resto do envelope. Saía
+     * `aviso` e `perigo`, que punha português no fio e deixava a tradução sem sítio.
+     */
+    public function testTheDetectionLevelIsAnEnglishEnum(): void
+    {
+        $normalizer = new MessageNormalizer();
+        $topic = Topic::parse('radar/1001/radar-topic-uid');
+
+        $result = $normalizer->normalize([
+            'type' => 'hbstatics',
+            'device_code' => 'radar-topic-uid',
+            'real_time_breathing' => 0,
+            'real_time_heart_rate' => 0,
+            'avg_breathing_per_minute' => 0,
+            'avg_heart_rate_per_minute' => 30,
+            'breathing_status_per_minute' => 'apnea',
+            'heart_rate_status_per_minute' => 'high',
+            'vital_signs_status' => 'normal',
+            'sleep_state_status' => 'undefined',
+        ], $topic, $this->device());
+
+        $levels = array_column(array_column($result['events'], 'data'), 'detectionLevel');
+
+        self::assertSame(['danger', 'warning'], $levels);
     }
 
     /**

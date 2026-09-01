@@ -90,7 +90,7 @@ Produz até três telemetrias, **nas mesmas formas que um relógio produz**:
 |---|---|
 | `heart_rate` | `{ "bpm": 74 }` |
 | `breath_rate` | `{ "breathsPerMinute": 16 }` |
-| `sleep_state` | `{ "state": "…" }` |
+| `sleep_state` | `{ "state": "deep_sleep" }` — `awake` · `light_sleep` · `deep_sleep` |
 
 A uniformidade é intencional: a apresentação de uma frequência cardíaca é
 independente da origem da medição.
@@ -111,13 +111,13 @@ médias de respiração e frequência cardíaca. Saem como `minute_stats` e
 O radar reporta alguns acontecimentos por si; outros são derivados pelo hub a
 partir dos valores.
 
-| Limiar | Evento | Nível |
+| Limiar | Evento | `detectionLevel` |
 |---|---|---|
-| frequência cardíaca > 160 | `heart_rate_high_critical` | perigo |
-| frequência cardíaca > 120 | `heart_rate_high` | aviso |
-| frequência cardíaca < 20 *(e > 0)* | `heart_rate_low_critical` | perigo |
-| frequência cardíaca < 40 *(e > 0)* | `heart_rate_low` | aviso |
-| respiração **e** frequência a zero | `vitals_signal_lost` | perigo |
+| frequência cardíaca > 160 | `heart_rate_high_critical` | `danger` |
+| frequência cardíaca > 120 | `heart_rate_high` | `warning` |
+| frequência cardíaca < 20 *(e > 0)* | `heart_rate_low_critical` | `danger` |
+| frequência cardíaca < 40 *(e > 0)* | `heart_rate_low` | `warning` |
+| respiração **e** frequência a zero | `vitals_signal_lost` | `danger` |
 
 Os quinze tipos de deteção agrupam-se em **três** capacidades, e o tipo
 específico viaja dentro do evento:
@@ -133,6 +133,20 @@ proporcional às funcionalidades do equipamento.
 
 Cada evento leva `detectionType`, `detectionCategory`, `detectionLevel` e
 `detectionSource`.
+
+| Campo | Valores |
+|---|---|
+| `detectionCategory` | `alarm` · `event` |
+| `detectionLevel` | `info` · `warning` · `danger` |
+| `detectionSource` | `position` · `heartbreath` |
+
+**Todos os valores publicados são enumerações em inglês, em minúsculas com
+underscores** — `lying_down`, `deep_sleep`, `hypopnea`. As etiquetas do documento
+do fabricante não saem no fio: traduzir para o idioma de quem lê é trabalho de
+quem desenha a interface.
+
+Um estado que o firmware acrescente numa versão nova sai na mesma forma, derivada
+da etiqueta, em vez de se perder num `unknown`.
 
 > A publicação de um `fall_confirmed` constitui o relato de uma deteção do
 > equipamento, e não o levantamento de um alarme. A decisão sobre a resposta

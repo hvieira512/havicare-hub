@@ -181,7 +181,32 @@ const FIELD_VALUE_LABELS = {
         leave_area: "Saiu da área",
         unknown: "Desconhecido",
     },
+    breathing_status_per_minute: {
+        normal: "Normal",
+        hypopnea: "Hipopneia",
+        hyperpnea: "Hiperpneia",
+        apnea: "Apneia",
+    },
+    heart_rate_status_per_minute: {
+        normal: "Normal",
+        low: "Baixa",
+        high: "Alta",
+        undefined: "Indefinida",
+    },
+    vital_signs_status: {
+        normal: "Normal",
+        weak: "Fraco",
+        undefined: "Indefinido",
+    },
+    detectionLevel: {
+        info: "Informação",
+        warning: "Aviso",
+        danger: "Perigo",
+    },
 };
+
+// O estado de sono é a mesma grandeza em dois campos: o do `heartbreath` e o do `hbstatics`.
+FIELD_VALUE_LABELS.sleep_state_status = FIELD_VALUE_LABELS.sleep_state;
 
 export const fieldValue = (key, value) => {
     if (value === undefined || value === null || value === "") return "-";

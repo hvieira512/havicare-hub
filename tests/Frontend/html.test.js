@@ -99,8 +99,9 @@ test("o grau de uma detecção não consegue escrever marcação no cartão", ()
     );
 
     assert.equal(root.querySelector("img"), null);
-    // O `titleize` capitaliza-o, mas o que interessa é que fica texto e não uma tag.
-    assert.match(root.textContent, /"><Img Src=X Onerror=Alert\(1\)>/);
+    // Um grau que a tabela não conheça passa intacto, e o que interessa é que fica texto e
+    // não uma tag.
+    assert.match(root.textContent, /"><img src=x onerror=alert\(1\)>/);
 });
 
 test("o valor e o título de um cartão saem escapados", () => {
