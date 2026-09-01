@@ -32,6 +32,12 @@ export function applyTheme(theme) {
     const resolved = theme === DARK ? DARK : LIGHT;
     document.documentElement.setAttribute("data-bs-theme", resolved);
 
+    // O SweetAlert veste-se pelo seu próprio atributo. Vai no `<body>` e não no `<html>`
+    // porque a folha do SweetAlert põe os valores base no `:root` e entra depois desta: o
+    // que está mais perto do diálogo é que ganha. O sufixo é explícito porque o
+    // `bootstrap-5` sozinho segue o sistema operativo, e aqui quem manda é o botão.
+    document.body?.setAttribute("data-swal2-theme", `bootstrap-5-${resolved}`);
+
     const button = document.getElementById("dashboardThemeBtn");
     if (!button) {
         return resolved;

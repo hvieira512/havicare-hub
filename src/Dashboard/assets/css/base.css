@@ -131,6 +131,24 @@
     --bs-border-color-translucent: rgba(255, 255, 255, .1);
 }
 
+/* ===== o SweetAlert =====
+   O tema `bootstrap-5` do próprio SweetAlert dá-lhe a forma -- os raios, os espaços e os
+   botões do Bootstrap. As cores é que não: traz as do Bootstrap de fábrica, e o azul
+   `#0d6efd` não é o navy da casa. Estas seis linhas são a paleta, e seguem o tema porque
+   pedem os tokens que já viram no escuro.
+
+   O selector leva o `body` à frente para ganhar ao ficheiro do tema, que declara o mesmo no
+   mesmo sítio; o atributo é posto pelo `theme.js`. */
+body[data-swal2-theme] {
+    --swal2-background: var(--bs-body-bg);
+    --swal2-color: var(--bs-body-color);
+    --swal2-border: 1px solid var(--bs-border-color);
+    --swal2-toast-border: 1px solid var(--bs-border-color);
+    --swal2-confirm-button-background-color: var(--brand);
+    --swal2-confirm-button-color: var(--brand-on);
+    --swal2-action-button-focus-box-shadow: 0 0 0 .25rem rgba(var(--brand-rgb), .25);
+}
+
 /* ===== a escala tipográfica =====
    Dezanove tamanhos de letra, quase todos medidos a régua sobre uma maqueta: 12,48px, 12,5px,
    12,8px e 13px viviam em quatro regras vizinhas, e não há olho que os separe. O que a

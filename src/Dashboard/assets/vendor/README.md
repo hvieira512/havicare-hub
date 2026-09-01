@@ -9,7 +9,7 @@ ficheiros estão no repositório.
 |---|---|---|
 | `bootstrap/` | 5.3.3 | `cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/` |
 | `fontawesome/` | 6.5.2 | `cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/` |
-| `sweetalert2/` | 11.26.25 | `cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/` |
+| `sweetalert2/` | 11.26.25 | `cdn.jsdelivr.net/npm/sweetalert2@11.26.25/` (`dist/` e `themes/`) |
 | `swagger-ui/` | 5.32.14 | `cdn.jsdelivr.net/npm/swagger-ui-dist@5.32.14/` |
 
 Do Font Awesome vem só o `fa-solid-900.woff2`: a página usa `fa-solid` e mais nada, e o
@@ -34,6 +34,7 @@ curl -o bootstrap/bootstrap.bundle.min.js  https://cdn.jsdelivr.net/npm/bootstra
 curl -o fontawesome/css/all.min.css        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css
 curl -o fontawesome/webfonts/fa-solid-900.woff2 https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2
 curl -o sweetalert2/sweetalert2.all.min.js "https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/dist/sweetalert2.all.min.js"
+curl -o sweetalert2/bootstrap-5.min.css    "https://cdn.jsdelivr.net/npm/sweetalert2@11.26.25/themes/bootstrap-5.min.css"
 curl -o swagger-ui/swagger-ui.css          "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.32.14/swagger-ui.css"
 curl -o swagger-ui/swagger-ui-bundle.js    "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.32.14/swagger-ui-bundle.js"
 ```

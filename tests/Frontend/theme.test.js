@@ -22,6 +22,7 @@ function mountButton() {
 function reset() {
     localStorage.clear();
     document.documentElement.removeAttribute("data-bs-theme");
+    document.body.removeAttribute("data-swal2-theme");
     document.body.innerHTML = "";
 }
 
@@ -53,6 +54,16 @@ test("aplicar o tema escreve-o no elemento raiz", () => {
 
     applyTheme(LIGHT);
     assert.equal(document.documentElement.getAttribute("data-bs-theme"), LIGHT);
+});
+
+test("o tema também é escrito no atributo que o SweetAlert lê", () => {
+    reset();
+
+    applyTheme(DARK);
+    assert.equal(document.body.getAttribute("data-swal2-theme"), "bootstrap-5-dark");
+
+    applyTheme(LIGHT);
+    assert.equal(document.body.getAttribute("data-swal2-theme"), "bootstrap-5-light");
 });
 
 test("o ícone do botão diz para onde se vai, não onde se está", () => {

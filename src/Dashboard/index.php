@@ -39,6 +39,7 @@ require_once __DIR__ . '/components/modal.php';
     </script>
     <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="/assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <link href="/assets/vendor/sweetalert2/bootstrap-5.min.css" rel="stylesheet">
     <!-- A ordem é a da folha única de onde estes saíram: sem build, a cascata é a ordem
          destas etiquetas, e várias regras contam com vir depois das que anulam. O
          `main.css` fica no fim porque ficou com a cauda do ficheiro original. -->
