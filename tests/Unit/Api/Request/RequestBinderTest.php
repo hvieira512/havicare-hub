@@ -139,6 +139,32 @@ final class RequestBinderTest extends TestCase
     }
 
     /**
+     * A mensagem do campo sobrevive mesmo quando ele não tem código próprio.
+     *
+     * O `username` e o `password` não estão no `codeByField` -- nunca tiveram código só deles
+     * --, mas tinham mensagem: o serviço antigo respondia `username is required`, e é essa que
+     * a especificação promete e que um cliente mostra a quem preenche o formulário. Ficar pelo
+     * código mapeado deixava-os a responder "The request contains invalid fields", que não diz
+     * a ninguém o que corrigir -- e a mensagem certa está declarada na constraint, a dois
+     * passos dali.
+     */
+    public function testASingleFieldFailureKeepsItsMessageEvenWithoutItsOwnCode(): void
+    {
+        $result = $this->binder->bind(
+            ['role' => 'hub_admin'],
+            ApiUserWriteRequest::class,
+            [],
+            false,
+            ['role' => 'invalid_role']
+        );
+
+        self::assertIsArray($result);
+        self::assertSame('invalid_request', $result['error']['code'], 'o código genérico, como sempre foi');
+        self::assertSame('username is required', $result['error']['message'], 'mas a mensagem é a de antes');
+        self::assertSame(['username is required'], $result['error']['fields']['username']);
+    }
+
+    /**
      * Com vários campos a falhar não há como dois códigos viajarem numa resposta, e por isso
      * é o `invalid_request` a cobrir todos. É situação que antes não existia.
      */

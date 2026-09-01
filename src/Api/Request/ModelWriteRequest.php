@@ -29,10 +29,10 @@ final class ModelWriteRequest
         #[Assert\Positive(message: 'supplier_id, internalModel, and commercialName are required')]
         public int $supplierId = 0,
         #[Assert\NotBlank(message: 'supplier_id, internalModel, and commercialName are required')]
-        #[Assert\Length(max: 191)]
+        #[Assert\Length(max: 191, maxMessage: 'internalModel must be 191 characters or fewer')]
         public string $internalModel = '',
         #[Assert\NotBlank(message: 'supplier_id, internalModel, and commercialName are required')]
-        #[Assert\Length(max: 191)]
+        #[Assert\Length(max: 191, maxMessage: 'commercialName must be 191 characters or fewer')]
         public string $commercialName = '',
         public string $deviceType = 'watch',
         public ?array $capabilities = null,

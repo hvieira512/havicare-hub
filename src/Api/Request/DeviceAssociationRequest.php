@@ -22,7 +22,7 @@ final class DeviceAssociationRequest
 {
     public function __construct(
         #[Assert\NotBlank(message: 'company and licenseId are required')]
-        #[Assert\Length(max: 191)]
+        #[Assert\Length(max: 191, maxMessage: 'company must be 191 characters or fewer')]
         public string $company = '',
         #[Assert\Positive(message: 'company and licenseId are required')]
         public int $licenseId = 0,

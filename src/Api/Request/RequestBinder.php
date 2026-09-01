@@ -92,13 +92,23 @@ final class RequestBinder
     }
 
     /**
-     * O erro, com o código próprio do campo quando só um campo falhou.
+     * O erro, com o código e a mensagem do campo quando só um campo falhou.
      *
-     * O serviço antigo devolvia um erro de cada vez, e por isso um papel inválido tinha o seu
-     * `invalid_role` e um cliente distinguia-o. Enquanto falha um campo só, esse contrato
-     * mantém-se exactamente como era. Vários campos a falhar é situação que antes não
-     * existia -- não havia como dois códigos viajarem numa resposta -- e aí é o
-     * `invalid_request` com o `fields` a dizer tudo.
+     * O serviço antigo devolvia um erro de cada vez: um papel inválido tinha o seu
+     * `invalid_role`, e um `username` em falta tinha a mensagem `username is required`.
+     * Enquanto falha um campo só, esse contrato mantém-se inteiro -- o código e a mensagem
+     * são os de sempre, e o `fields` vem por acréscimo para quem o quiser ler. Nenhum cliente
+     * vê nada mudar.
+     *
+     * A mensagem preserva-se com ou sem código próprio. Ficar só pelos campos mapeados
+     * deixava o `username` e o `password` a responder "The request contains invalid fields"
+     * onde antes diziam qual era o campo -- e a mensagem antiga está ali ao lado, declarada
+     * na constraint. Quem a mostra a um utilizador passava a mostrar uma frase que não
+     * ajuda ninguém.
+     *
+     * Vários campos a falhar é situação que antes não existia -- não havia como dois códigos
+     * viajarem numa resposta -- e aí a mensagem genérica é a honesta, com o `fields` a dizer
+     * tudo.
      *
      * @param array<string, list<string>> $fieldErrors
      * @param array<string, string> $codeByField
@@ -108,10 +118,12 @@ final class RequestBinder
     {
         if (count($fieldErrors) === 1) {
             $field = array_key_first($fieldErrors);
-            $code = $codeByField[$field] ?? null;
-            if ($code !== null) {
-                return ApiError::withFields($code, $fieldErrors[$field][0], $fieldErrors)->toArray();
-            }
+
+            return ApiError::withFields(
+                $codeByField[$field] ?? 'invalid_request',
+                $fieldErrors[$field][0],
+                $fieldErrors,
+            )->toArray();
         }
 
         return ApiError::invalidFields($fieldErrors)->toArray();

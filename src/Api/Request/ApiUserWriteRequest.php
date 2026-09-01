@@ -26,7 +26,7 @@ final class ApiUserWriteRequest
 
     public function __construct(
         #[Assert\NotBlank(message: 'username is required')]
-        #[Assert\Length(max: 191)]
+        #[Assert\Length(max: 191, maxMessage: 'username must be 191 characters or fewer')]
         public string $username = '',
         #[Assert\NotBlank(message: 'password is required', groups: [self::GROUP_CREATE])]
         public string $password = '',
@@ -38,9 +38,9 @@ final class ApiUserWriteRequest
         /** A linha exacta de empresa+licença. Obrigatório para o `license_client`. */
         #[Assert\Positive(message: 'licenseRefId must be a positive integer')]
         public ?int $licenseRefId = null,
-        #[Assert\PositiveOrZero]
+        #[Assert\PositiveOrZero(message: 'licenseId must be zero or a positive integer')]
         public int $licenseId = 0,
-        #[Assert\PositiveOrZero]
+        #[Assert\PositiveOrZero(message: 'companyId must be zero or a positive integer')]
         public int $companyId = 0,
         public bool $enabled = true,
     ) {
