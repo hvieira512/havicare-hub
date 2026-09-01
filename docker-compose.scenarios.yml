@@ -6,23 +6,31 @@
 # do anfitrião são retiradas em vez de deslocadas, porque os cenários falam com os serviços
 # de dentro da rede; só a dashboard é lida de fora.
 
+# O `restart` também é anulado: o compose base tem `unless-stopped`, que é o que se quer para
+# quem desenvolve e é errado aqui -- uma pilha de testes não se levanta sozinha depois de a
+# máquina reiniciar, nem fica a ocupar meio giga à espera da corrida seguinte.
+
 services:
   mosquitto:
     container_name: !reset null
+    restart: !override "no"
     ports: !reset []
 
   redis:
     container_name: !reset null
+    restart: !override "no"
     ports: !reset []
 
   mysql:
     container_name: !reset null
+    restart: !override "no"
     ports: !reset []
     volumes: !override
       - scenario_mysql_data:/var/lib/mysql
 
   hub:
     container_name: !reset null
+    restart: !override "no"
     ports: !override
       - "8181:8081"
 

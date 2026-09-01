@@ -59,6 +59,12 @@ até o recriar à mão — sem erro nenhum no log, porque o hub arranca perfeita
 assim. A dashboard dos cenários responde na porta **8181**, e a de
 desenvolvimento continua na 8081.
 
+A pilha é desmontada no fim, tenham os cenários passado ou não. A política de
+reinício do compose base é anulada — uma pilha de testes não se levanta sozinha
+depois de a máquina reiniciar — e o `run-all.sh` faz `docker compose down` num
+`trap`. O volume `scenario_mysql_data` é que fica: é o que evita migrar e semear
+a base de dados de raiz a cada corrida.
+
 ## Ferramentas
 
 | | Configuração |
