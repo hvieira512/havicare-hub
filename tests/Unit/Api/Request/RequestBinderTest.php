@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Api\Request;
 
 use Hub\Api\Request\ApiUserWriteRequest;
+use Hub\Api\Request\DeviceAssociationRequest;
 use Hub\Api\Request\RequestBinder;
 use PHPUnit\Framework\TestCase;
 
@@ -162,6 +163,24 @@ final class RequestBinderTest extends TestCase
         self::assertSame('invalid_request', $result['error']['code'], 'o código genérico, como sempre foi');
         self::assertSame('username is required', $result['error']['message'], 'mas a mensagem é a de antes');
         self::assertSame(['username is required'], $result['error']['fields']['username']);
+    }
+
+    /**
+     * Vários campos com a mesma mensagem são um erro só, e não vários.
+     *
+     * A associação recusava `company` e `licenseId` com um texto só -- `company and licenseId
+     * are required` --, e o modelo faz o mesmo com três campos. Contar os campos em vez das
+     * mensagens mandava-os para a mensagem genérica, que é o contrário do que sempre
+     * disseram: o texto já cobria os dois.
+     */
+    public function testFieldsThatShareOneMessageKeepIt(): void
+    {
+        $result = $this->binder->bind([], DeviceAssociationRequest::class);
+
+        self::assertIsArray($result);
+        self::assertSame('invalid_request', $result['error']['code']);
+        self::assertSame('company and licenseId are required', $result['error']['message']);
+        self::assertSame(['company', 'licenseId'], array_keys($result['error']['fields']));
     }
 
     /**

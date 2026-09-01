@@ -116,17 +116,23 @@ final class RequestBinder
      */
     private static function error(array $fieldErrors, array $codeByField): array
     {
-        if (count($fieldErrors) === 1) {
-            $field = array_key_first($fieldErrors);
-
-            return ApiError::withFields(
-                $codeByField[$field] ?? 'invalid_request',
-                $fieldErrors[$field][0],
-                $fieldErrors,
-            )->toArray();
+        // Vários campos com a mesma mensagem são um erro só dito por vários sítios, e não
+        // vários erros. A associação de dispositivo recusava `company` e `licenseId` com um
+        // texto só -- `company and licenseId are required` --, e o modelo faz o mesmo com
+        // três campos. Contar os campos em vez das mensagens mandava esses casos para a
+        // mensagem genérica, que é precisamente o contrário do que eles sempre disseram.
+        $messages = array_unique(array_merge(...array_values($fieldErrors)));
+        if (count($messages) !== 1) {
+            return ApiError::invalidFields($fieldErrors)->toArray();
         }
 
-        return ApiError::invalidFields($fieldErrors)->toArray();
+        // O código próprio só se aplica quando há um campo só a falhar: com mais do que um
+        // não há como escolher entre os deles, e o genérico é o honesto.
+        $code = count($fieldErrors) === 1
+            ? ($codeByField[array_key_first($fieldErrors)] ?? 'invalid_request')
+            : 'invalid_request';
+
+        return ApiError::withFields($code, reset($messages), $fieldErrors)->toArray();
     }
 
     /**
