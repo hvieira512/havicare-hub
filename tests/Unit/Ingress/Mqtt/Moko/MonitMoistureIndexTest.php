@@ -126,23 +126,23 @@ final class MonitMoistureIndexTest extends TestCase
         // O caso extremo de atenção: todos os canais um ponto abaixo de molhado. Tem de dar o
         // topo da banda e não mais, e tem de ser distinguível de uma atenção moderada -- se
         // fosse cortado em vez de reescalado, os dois davam o mesmo número.
-        $quaseMolhada = $this->level(array_fill(0, 10, 11))['index'];
-        $moderada = $this->level([1, 2, 5, 6, 7, 6, 6, 6, 6, 7])['index'];
+        $almostWet = $this->level(array_fill(0, 10, 11))['index'];
+        $moderate = $this->level([1, 2, 5, 6, 7, 6, 6, 6, 6, 7])['index'];
 
-        self::assertSame(39, $quaseMolhada);
-        self::assertGreaterThan($moderada, $quaseMolhada);
+        self::assertSame(39, $almostWet);
+        self::assertGreaterThan($moderate, $almostWet);
     }
 
     public function testEveryBandIsOrderedAgainstTheOthers(): void
     {
         // A propriedade global: por muito húmida que uma `attention` esteja, nunca lê mais do
         // que a `change_required` mais seca, nem menos do que a `clean` mais húmida.
-        $secoNoLimite = $this->level(array_fill(0, 10, 3))['index'];
-        $atencaoNoLimite = $this->level(array_fill(0, 10, 11))['index'];
-        $mudaMaisSeca = $this->level([12, 12, 12, 12])['index'];
+        $dryAtLimit = $this->level(array_fill(0, 10, 3))['index'];
+        $attentionAtLimit = $this->level(array_fill(0, 10, 11))['index'];
+        $driestChangeRequired = $this->level([12, 12, 12, 12])['index'];
 
-        self::assertLessThan($atencaoNoLimite, $secoNoLimite);
-        self::assertLessThan($mudaMaisSeca, $atencaoNoLimite);
+        self::assertLessThan($attentionAtLimit, $dryAtLimit);
+        self::assertLessThan($driestChangeRequired, $attentionAtLimit);
     }
 
     public function testAWetterSensorNeverReadsLowerThanADrierOne(): void
@@ -150,19 +150,19 @@ final class MonitMoistureIndexTest extends TestCase
         // A propriedade que obriga ao clamp. Um único canal a meio caminho dá-lhe `attention`
         // com uma saturação média baixíssima (5), enquanto um seco no limite dá 25. Sem o
         // limite inferior da banda o ecrã mostrava "5 · Verificar" ao lado de "25 · Limpa".
-        $atencaoNumCanal = $this->level([6])['index'];
-        $secoNoLimite = $this->level(array_fill(0, 10, 3))['index'];
+        $attentionOnOneChannel = $this->level([6])['index'];
+        $dryAtLimit = $this->level(array_fill(0, 10, 3))['index'];
 
-        self::assertGreaterThanOrEqual($secoNoLimite, $atencaoNumCanal);
+        self::assertGreaterThanOrEqual($dryAtLimit, $attentionOnOneChannel);
     }
 
     public function testTheIndexRisesWithinTheChangeRequiredBand(): void
     {
-        $quatroCanais = $this->level([12, 12, 12, 12])['index'];
-        $seteCanais = $this->level(array_fill(0, 7, 12))['index'];
+        $fourChannels = $this->level([12, 12, 12, 12])['index'];
+        $sevenChannels = $this->level(array_fill(0, 7, 12))['index'];
 
-        self::assertSame(70, $seteCanais);
-        self::assertGreaterThan($quatroCanais, $seteCanais);
+        self::assertSame(70, $sevenChannels);
+        self::assertGreaterThan($fourChannels, $sevenChannels);
     }
 
     public function testTheLevelIsItsOwnCapabilityAndNotAFieldOfTheVendorMessage(): void

@@ -70,9 +70,9 @@ final class SeedWhitelistTest extends TestCase
     {
         $offenders = [];
         foreach (self::whitelistRows() as $row) {
-            $semLicenca = strtoupper($row['licenseId']) === 'NULL';
-            $semEmpresa = strtoupper($row['company']) === 'NULL';
-            if ($semLicenca !== $semEmpresa) {
+            $withoutLicense = strtoupper($row['licenseId']) === 'NULL';
+            $withoutCompany = strtoupper($row['company']) === 'NULL';
+            if ($withoutLicense !== $withoutCompany) {
                 $offenders[] = "{$row['imei']} (licenca={$row['licenseId']} empresa={$row['company']})";
             }
         }

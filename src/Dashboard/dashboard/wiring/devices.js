@@ -166,9 +166,9 @@ function bindDetail() {
     // As duas listas abrem a linha carregada, ao rato e ao teclado. O ouvinte fica na lista
     // e não em cada linha: elas voltam a desenhar-se a cada mensagem do stream, e prender
     // ouvintes a linhas que se deitam fora a cada segundo era prendê-los ao lixo.
-    for (const lista of [els.telemetryList, els.downlinkRequests]) {
-        lista?.addEventListener("click", toggleActivityRow);
-        lista?.addEventListener("keydown", toggleActivityRow);
+    for (const list of [els.telemetryList, els.downlinkRequests]) {
+        list?.addEventListener("click", toggleActivityRow);
+        list?.addEventListener("keydown", toggleActivityRow);
     }
     els.telemetryPager.addEventListener("click", handleTelemetryPagerClick);
     els.downlinkPager?.addEventListener("click", handleDownlinkPagerClick);

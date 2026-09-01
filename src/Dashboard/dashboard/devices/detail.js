@@ -531,9 +531,9 @@ const lastRenderedPage = new Map();
 function activityTable(rootEl, rows, emptyText, idPrefix, page = 1) {
     // A lista rola por dentro e a posição repõe-se, senão cada mensagem do stream atirava
     // para o topo uma lista que estava a ser lida. Mudar de página é o contrário.
-    const mudouDePagina = lastRenderedPage.get(idPrefix) !== page;
+    const pageChanged = lastRenderedPage.get(idPrefix) !== page;
     lastRenderedPage.set(idPrefix, page);
-    const scrollTop = mudouDePagina ? 0 : rootEl.scrollTop;
+    const scrollTop = pageChanged ? 0 : rootEl.scrollTop;
     rootEl.innerHTML = rows.length
         ? html`<table class="table table-sm align-middle mb-0 telemetry-table">
             <tbody>${raw(rows.map((row, index) => activityRow(row, `${idPrefix}${index}`)).join(""))}</tbody>

@@ -90,10 +90,10 @@ test("os detalhes em texto cortam-se numa linha, em vez de embrulharem", () => {
 
     renderTelemetryList([minuteStats(0)]);
 
-    const detalhes = view.telemetryList.querySelector(".telemetry-row-details");
-    assert.ok(detalhes, "a linha tem de trazer detalhes");
-    assert.ok(detalhes.classList.contains("text-truncate"), "o texto corta-se");
-    assert.ok(!detalhes.classList.contains("flex-wrap"), "e não embrulha");
+    const details = view.telemetryList.querySelector(".telemetry-row-details");
+    assert.ok(details, "a linha tem de trazer detalhes");
+    assert.ok(details.classList.contains("text-truncate"), "o texto corta-se");
+    assert.ok(!details.classList.contains("flex-wrap"), "e não embrulha");
 });
 
 test("as pastilhas não se cortam a meio: ficam numa linha e o que sobra esconde-se", () => {
@@ -102,10 +102,10 @@ test("as pastilhas não se cortam a meio: ficam numa linha e o que sobra esconde
 
     renderTelemetryList([presence(0)]);
 
-    const detalhes = view.telemetryList.querySelector(".telemetry-row-details");
-    assert.ok(detalhes.classList.contains("d-flex"));
-    assert.ok(detalhes.classList.contains("overflow-hidden"));
-    assert.ok(!detalhes.classList.contains("text-truncate"), "cortar texto partia uma pastilha ao meio");
+    const details = view.telemetryList.querySelector(".telemetry-row-details");
+    assert.ok(details.classList.contains("d-flex"));
+    assert.ok(details.classList.contains("overflow-hidden"));
+    assert.ok(!details.classList.contains("text-truncate"), "cortar texto partia uma pastilha ao meio");
 });
 
 test("só abre quem tem mais do que mostra", () => {
@@ -114,12 +114,12 @@ test("só abre quem tem mais do que mostra", () => {
 
     renderTelemetryList([minuteStats(0), heartRate(1)]);
 
-    const abriveis = view.telemetryList.querySelectorAll("[data-row-toggle]");
-    assert.equal(abriveis.length, 1, "a frequência cardíaca é o valor e mais nada");
-    assert.equal(abriveis[0].getAttribute("role"), "button");
-    assert.equal(abriveis[0].getAttribute("tabindex"), "0");
-    assert.equal(abriveis[0].getAttribute("aria-expanded"), "false");
-    assert.ok(abriveis[0].getAttribute("aria-controls"));
+    const expandable = view.telemetryList.querySelectorAll("[data-row-toggle]");
+    assert.equal(expandable.length, 1, "a frequência cardíaca é o valor e mais nada");
+    assert.equal(expandable[0].getAttribute("role"), "button");
+    assert.equal(expandable[0].getAttribute("tabindex"), "0");
+    assert.equal(expandable[0].getAttribute("aria-expanded"), "false");
+    assert.ok(expandable[0].getAttribute("aria-controls"));
 });
 
 test("a gaveta traz o texto inteiro, que na linha estava cortado", () => {
@@ -128,11 +128,11 @@ test("a gaveta traz o texto inteiro, que na linha estava cortado", () => {
 
     renderTelemetryList([minuteStats(0)]);
 
-    const linha = view.telemetryList.querySelector("[data-row-toggle]");
-    const painel = view.telemetryList.querySelector(`#${linha.getAttribute("aria-controls")}`);
+    const row = view.telemetryList.querySelector("[data-row-toggle]");
+    const panel = view.telemetryList.querySelector(`#${row.getAttribute("aria-controls")}`);
 
-    assert.ok(painel.classList.contains("d-none"), "começa fechada");
-    assert.match(painel.textContent, /Respiração ativa/, "e traz o fim da frase, que a linha não mostra");
+    assert.ok(panel.classList.contains("d-none"), "começa fechada");
+    assert.match(panel.textContent, /Respiração ativa/, "e traz o fim da frase, que a linha não mostra");
 });
 
 test("carregar abre, e voltar a carregar fecha", () => {
@@ -140,16 +140,16 @@ test("carregar abre, e voltar a carregar fecha", () => {
     initDeviceDetailView({ els: view });
     renderTelemetryList([minuteStats(0)]);
 
-    const linha = view.telemetryList.querySelector("[data-row-toggle]");
-    const painel = view.telemetryList.querySelector(`#${linha.getAttribute("aria-controls")}`);
+    const row = view.telemetryList.querySelector("[data-row-toggle]");
+    const panel = view.telemetryList.querySelector(`#${row.getAttribute("aria-controls")}`);
 
-    assert.equal(toggleActivityRow({ target: linha, type: "click" }), true);
-    assert.equal(linha.getAttribute("aria-expanded"), "true");
-    assert.equal(painel.classList.contains("d-none"), false);
+    assert.equal(toggleActivityRow({ target: row, type: "click" }), true);
+    assert.equal(row.getAttribute("aria-expanded"), "true");
+    assert.equal(panel.classList.contains("d-none"), false);
 
-    toggleActivityRow({ target: linha, type: "click" });
-    assert.equal(linha.getAttribute("aria-expanded"), "false");
-    assert.equal(painel.classList.contains("d-none"), true);
+    toggleActivityRow({ target: row, type: "click" });
+    assert.equal(row.getAttribute("aria-expanded"), "false");
+    assert.equal(panel.classList.contains("d-none"), true);
 });
 
 test("um clique fora de uma linha abrível não é assunto nosso", () => {
@@ -168,18 +168,18 @@ test("a linha aberta continua aberta quando chega um evento novo", () => {
     initDeviceDetailView({ els: view });
     renderTelemetryList([minuteStats(0), heartRate(1)]);
 
-    const linha = view.telemetryList.querySelector("[data-row-toggle]");
-    const chave = linha.dataset.rowKey;
-    toggleActivityRow({ target: linha, type: "click" });
+    const row = view.telemetryList.querySelector("[data-row-toggle]");
+    const key = row.dataset.rowKey;
+    toggleActivityRow({ target: row, type: "click" });
 
     // Chega um evento mais recente: tudo desce uma casa e a lista volta a desenhar-se.
     renderTelemetryList([presence(2), minuteStats(0), heartRate(1)]);
 
-    const aberta = view.telemetryList.querySelector("[aria-expanded='true']");
-    assert.ok(aberta, "alguma linha tem de continuar aberta");
-    assert.equal(aberta.dataset.rowKey, chave, "e tem de ser a mesma, não a que ficou naquela posição");
-    const painel = view.telemetryList.querySelector(`#${aberta.getAttribute("aria-controls")}`);
-    assert.equal(painel.classList.contains("d-none"), false);
+    const expanded = view.telemetryList.querySelector("[aria-expanded='true']");
+    assert.ok(expanded, "alguma linha tem de continuar aberta");
+    assert.equal(expanded.dataset.rowKey, key, "e tem de ser a mesma, não a que ficou naquela posição");
+    const panel = view.telemetryList.querySelector(`#${expanded.getAttribute("aria-controls")}`);
+    assert.equal(panel.classList.contains("d-none"), false);
 });
 
 test("a chave leva o IMEI: mudar de aparelho não abre a linha do mesmo número de ordem", () => {
@@ -187,8 +187,8 @@ test("a chave leva o IMEI: mudar de aparelho não abre a linha do mesmo número 
     initDeviceDetailView({ els: view });
     renderTelemetryList([minuteStats(0)]);
 
-    const linha = view.telemetryList.querySelector("[data-row-toggle]");
-    toggleActivityRow({ target: linha, type: "click" });
+    const row = view.telemetryList.querySelector("[data-row-toggle]");
+    toggleActivityRow({ target: row, type: "click" });
 
     state.selectedImei = "OUTRO-APARELHO";
     renderTelemetryList([minuteStats(0)]);

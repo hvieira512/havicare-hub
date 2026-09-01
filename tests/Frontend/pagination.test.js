@@ -69,11 +69,11 @@ test("a actual está marcada, e as setas travam nas pontas", () => {
     assert.equal(controls.querySelector("[data-action='telemetryPrev']").disabled, false);
     assert.equal(controls.querySelector("[data-action='telemetryNext']").disabled, false);
 
-    const primeira = render({ total: 167, total_pages: 14, page: 1, limit: 12 }).controls;
-    assert.equal(primeira.querySelector("[data-action='telemetryPrev']").disabled, true);
+    const first = render({ total: 167, total_pages: 14, page: 1, limit: 12 }).controls;
+    assert.equal(first.querySelector("[data-action='telemetryPrev']").disabled, true);
 
-    const ultima = render({ total: 167, total_pages: 14, page: 14, limit: 12 }).controls;
-    assert.equal(ultima.querySelector("[data-action='telemetryNext']").disabled, true);
+    const last = render({ total: 167, total_pages: 14, page: 14, limit: 12 }).controls;
+    assert.equal(last.querySelector("[data-action='telemetryNext']").disabled, true);
 });
 
 test("todos os botões de página levam as mesmas classes, para medirem o mesmo", () => {
