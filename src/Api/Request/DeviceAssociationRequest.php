@@ -10,14 +10,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * O corpo que prende um dispositivo a uma empresa e a uma licença.
  *
- * As duas mensagens são a mesma de propósito. O serviço recusava os dois campos com um texto
- * só -- `company and licenseId are required` --, e é esse texto que os clientes conhecem e
- * que a especificação promete. Agora aparece por campo em vez de uma vez, mas palavra por
- * palavra o mesmo.
+ * As duas mensagens são a mesma de propósito: `company and licenseId are required` é o texto
+ * que os clientes conhecem e que a especificação promete.
  *
- * O `licenseId` é inteiro aqui e a rota manda convertê-lo a partir de texto: sempre foi
- * aceite como `"1001"` -- é o que os clientes mandam e o que os testes escrevem -- e o
- * inteiro é a forma canónica com que o controlo de acesso por cliente o compara.
+ * O `licenseId` é inteiro, e a rota converte-o a partir de texto porque `"1001"` é o que os
+ * clientes mandam.
  */
 final class DeviceAssociationRequest
 {

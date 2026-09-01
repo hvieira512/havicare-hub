@@ -1,13 +1,10 @@
 /**
- * A ligação dos ouvintes da coluna dos dispositivos: a lista, os filtros, o modal, o painel
- * de configuração e a coluna de detalhe.
+ * Os ouvintes da coluna dos dispositivos: a lista, os filtros, o modal, o painel de
+ * configuração e o detalhe.
  *
- * Isto continua a ser raiz de composição, não uma funcionalidade: pode conhecer toda a gente
- * e importar de onde precisar. O que não muda é a regra da casa -- uma funcionalidade nunca
- * importa outra --, e é justamente por isso que estes ouvintes vivem aqui: quase todos
- * atravessam duas ou três funcionalidades, e pô-los dentro de uma delas obrigava-a a importar
- * as outras. O `app.js` tinha 567 linhas por causa disto; o que se ganhou foi dividi-lo por
- * área, não mudar quem conhece quem.
+ * É raiz de composição e não uma funcionalidade, e por isso pode importar de onde precisar.
+ * Vivem aqui porque quase todos atravessam duas ou três funcionalidades, e pô-los dentro de
+ * uma obrigava-a a importar as outras.
  */
 import { state } from "../state.js";
 import { syncPhoneControl } from "../phone.js";

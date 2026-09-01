@@ -1,13 +1,10 @@
 /**
- * A raiz de composição da dashboard: cacheia os elementos, cria os modais do Bootstrap,
- * entrega o `els` a cada funcionalidade pelo seu `init`, manda ligar os ouvintes e repõe o
- * que ficou guardado da sessão anterior.
+ * A raiz de composição da dashboard: cacheia os elementos, cria os modais, entrega o `els` a
+ * cada funcionalidade pelo seu `init`, liga os ouvintes e repõe o que ficou da sessão.
  *
- * Continua a ser o único sítio que conhece toda a gente, e uma funcionalidade continua a
- * nunca importar outra -- é essa regra que mantém o grafo de módulos sem ciclos. O que mudou
- * foi só o tamanho: os cerca de noventa ouvintes que viviam aqui passaram para o `wiring/`,
- * que é raiz de composição na mesma, dividida por área. Não se moveu acoplamento nenhum para
- * dentro das funcionalidades, porque era isso que a regra proibia.
+ * É o único sítio que conhece toda a gente, e uma funcionalidade nunca importa outra -- é essa
+ * regra que mantém o grafo de módulos sem ciclos. Os ouvintes vivem no `wiring/`, que é raiz
+ * de composição na mesma, dividida por área.
  */
 import { getDevice as apiGetDevice } from "./api/index.js";
 import { refreshSelectedDetail, setDeviceFilters, state } from "./state.js";

@@ -10,16 +10,11 @@ use Tests\Support\Doubles\IngressFixtures;
 use Tests\Support\Doubles\RecordingHubMqttBridge;
 
 /**
- * O sinal de um avistamento que nenhum decoder soube ler.
+ * O sinal de um avistamento que nenhum decoder soube ler. O RSSI é medido pelo gateway e
+ * existe quer se saiba interpretar o anúncio, quer não.
  *
- * O RSSI é medido pelo gateway e não vem no payload, por isso existe quer se saiba
- * interpretar o anúncio, quer não. Enquanto um avistamento só contou depois de um decoder o
- * reclamar, cada frame que não sabíamos ler era uma amostra de proximidade deitada fora.
- *
- * A W6 é o caso que o expôs: anuncia em seis slots e o decoder lê dois -- o acelerómetro e os
- * UID com o nosso namespace --, por isso o TLM caía sempre. Medido no gateway F1F7, a W6
- * aparecia 59 vezes em 60 segundos e rendia 10 mensagens de proximidade; a W6B rendia 42 a
- * partir de menos avistamentos.
+ * A W6 é o caso que o expôs: anuncia em seis slots e o decoder lê dois, e por isso rendia
+ * um quarto das mensagens de proximidade da W6B a partir de mais avistamentos.
  */
 final class BridgeUnclaimedSightingTest extends TestCase
 {
