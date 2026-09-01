@@ -3,23 +3,15 @@
 namespace Hub\Domain\Capability\Definition;
 
 /**
- * As capacidades do radar nomeiam o que se mede, e não as mensagens do fabricante -- como no
- * relógio, na pulseira, na fralda e no gateway.
+ * As capacidades do radar nomeiam o que se mede, e não as mensagens do fabricante. A
+ * frequência cardíaca e a respiratória partilham chaves e formas com as do relógio, e por
+ * isso reaproveitam os mesmos cartões.
  *
- * A frequência cardíaca e a respiratória são as mesmas do relógio, com as mesmas chaves e as
- * mesmas formas (`FeatureNormalizer::heartRate` dá `{bpm}`), e por isso reaproveitam os
- * cartões que já existem em vez de terem os seus.
+ * O `sleep_state` não é o `sleep` do relógio -- aquele é um relatório, este é o estado num
+ * instante -- e o `presence` não é o `location`, que é geográfico.
  *
- * O `sleep_state` não é o `sleep` do relógio: aquele é um relatório com segmentos e duração,
- * este é o estado no instante em que se mede. O `presence` também não é o `location`, que é
- * geográfico -- o radar dá x/y/z em decímetros relativos a si próprio.
- *
- * A postura não é capacidade nenhuma: é de cada pessoa, tal como a posição, e vive dentro do
- * `presence` ao lado dela. Uma divisão com duas pessoas tem duas posturas, e não há leitura
- * do aparelho que as represente sem escolher uma e deitar a outra fora.
- *
- * Os dois envelopes por minuto são agregados e não leituras: misturar uma média de sessenta
- * segundos com uma leitura de um instante na mesma série não ajuda ninguém.
+ * A postura não é capacidade: é de cada pessoa, e vive dentro do `presence` ao lado da
+ * posição. Os dois envelopes por minuto são agregados e não leituras.
  */
 final class RadarCapabilityDefinitions
 {

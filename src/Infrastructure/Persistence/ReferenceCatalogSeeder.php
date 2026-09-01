@@ -50,13 +50,9 @@ final class ReferenceCatalogSeeder
     }
 
     /**
-     * Só o catálogo de capacidades, para uma migração o poder trazer a dia sem repor o resto.
-     *
-     * O `seedReferenceData` acima faz-lhe companhia com fornecedores, modelos e empresas, e
-     * numa base que já existe isso fazia voltar o que alguém tinha apagado no separador
-     * Catálogo -- que é a razão de ele só correr numa base vazia. As `capabilities` não têm
-     * esse problema: a API não as deixa criar nem apagar, e por isso o código é sempre a
-     * fonte de verdade.
+     * Só o catálogo de capacidades, para uma migração o trazer a dia sem repor o resto -- que
+     * numa base existente faria voltar o que alguém apagou no separador Catálogo. As
+     * `capabilities` não têm esse risco: a API não as deixa criar nem apagar.
      */
     public function syncCapabilityCatalog(PDO $pdo): void
     {
@@ -149,15 +145,11 @@ final class ReferenceCatalogSeeder
     }
 
     /**
-     * Dá a cada modelo as capacidades que o protocolo dele suporta e que ainda não tem.
+     * Dá a cada modelo as capacidades que o protocolo suporta e que ainda não tem. Lacuna a
+     * lacuna e não modelo a modelo, senão uma capacidade nova nunca chegava aos já semeados.
      *
-     * Preenche lacuna a lacuna e não modelo a modelo: saltar os modelos que já têm linhas
-     * deixava uma capacidade acrescentada ao catálogo nunca chegar aos modelos já semeados,
-     * e a API recusava-se a configurar o que o aparelho claramente suporta.
-     *
-     * Só insere o que falta. Uma capacidade desligada à mão fica com a linha dela e continua
-     * desligada, porque o `setEnabledCapabilities` põe `enabled = 0` em vez de apagar a
-     * linha, e o `INSERT IGNORE` não lhe toca. Isto preenche buracos; não liga nada.
+     * Só insere o que falta: uma desligada à mão tem `enabled = 0` e não uma linha ausente,
+     * e o `INSERT IGNORE` não lhe toca. Preenche buracos, não liga nada.
      */
     private function seedModelCapabilities(PDO $pdo): void
     {

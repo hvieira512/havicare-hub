@@ -10,13 +10,9 @@ use PDO;
 use Tests\Support\MysqlDashboardTestCase;
 
 /**
- * A sensibilidade por sensor, guardada em MySQL.
- *
- * MySQL e a fonte de verdade precisamente por causa dos reinicios: o worker de ingestao
- * le isto no caminho quente com uma cache curta, e ao reiniciar a cache nasce vazia e
- * reenche na primeira observacao. O que estes testes protegem e o contrato de que a
- * ingestao depende -- que ha sempre um par utilizavel para devolver, e que uma alteracao
- * pela API e vista dentro do TTL sem reiniciar nada.
+ * A sensibilidade por sensor, guardada em MySQL. O contrato de que a ingestão depende: há
+ * sempre um par utilizável para devolver, e uma alteração pela API é vista dentro do TTL da
+ * cache sem reiniciar nada.
  */
 final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 {
@@ -66,15 +62,9 @@ final class DiaperSensitivityRepositoryTest extends MysqlDashboardTestCase
 
     public function testTheCacheHoldsForItsTtlAndTheDatabaseIsTheSourceOfTruth(): void
     {
-        // Duas metades do mesmo contrato, com a escrita feita por FORA do repositorio --
-        // que e o caso real da API num processo a escrever e da ingestao noutro a ler.
-        //
-        // Uma instância com TTL longo não vê a escrita, e é essa a latência que o TTL de 5s
-        // define em producao. Uma instancia nova ve-a, e e por isso que um reinicio do
-        // `health-hub` não perde nada: a cache nasce vazia e reenche da base de dados.
-        //
-        // Nao se testa aqui um TTL de zero: a comparacao e `<=`, como no repositorio dos
-        // links, portanto zero ainda guarda em cache o resto do segundo em curso.
+        // A escrita é feita por fora do repositório, que é o caso real: a API escreve num
+        // processo e a ingestão lê noutro. Uma instância com TTL longo não vê a escrita --
+        // essa é a latência que o TTL define -- e uma instância nova vê-a.
         $pdo = $this->pdoWithSensor();
         $cached = new DiaperSensitivityRepository($pdo, 3600);
 

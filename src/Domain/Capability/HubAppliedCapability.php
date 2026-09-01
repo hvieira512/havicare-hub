@@ -3,22 +3,15 @@
 namespace Hub\Domain\Capability;
 
 /**
- * Contrato opcional para capacidades que o hub aplica sozinho.
+ * Contrato opcional para capacidades que o hub aplica sozinho, sem downlink -- a
+ * sensibilidade de um medidor de fraldas não tem para onde ir, e o que muda com ela é a
+ * regra com que o hub interpreta a leitura.
  *
- * A configuração de um dispositivo viaja: vira um ou mais comandos nativos, sai num
- * downlink, e espera confirmação. Nem toda: a sensibilidade dos alertas de um medidor de
- * fraldas não tem para onde ir -- o sensor é um beacon BLE que só transmite --, e o que
- * muda com ela é a regra com que o hub deriva o estado da fralda da mesma leitura.
+ * É da capacidade e do protocolo, e não do tipo de dispositivo: um medidor com downlink
+ * teria configurações que viajam.
  *
- * Não é uma propriedade do tipo de dispositivo. Um relógio pode perfeitamente ter um
- * limiar que o hub decide a partir da telemetria que já recebe, e um medidor de fraldas
- * com downlink teria configurações que viajam. É desta capacidade, com este protocolo, e
- * é por isso que vive aqui e não numa tabela de tipos.
- *
- * Marcar uma capacidade com esta interface muda uma coisa no
- * `DeviceConfigurationUpdateService`: o valor desejado é guardado e dado por aplicado,
- * sem comandos para entregar. O resto do ciclo de vida -- revisão, histórico, o estado
- * que a interface mostra -- é o mesmo das outras.
+ * Marcá-la muda uma coisa no `DeviceConfigurationUpdateService`: o valor é guardado e dado
+ * por aplicado, sem comandos. O resto do ciclo de vida é o das outras.
  */
 interface HubAppliedCapability
 {

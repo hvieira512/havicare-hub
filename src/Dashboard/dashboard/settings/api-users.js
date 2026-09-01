@@ -14,16 +14,11 @@ import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
 
 /**
- * O separador dos utilizadores da API.
+ * O separador dos utilizadores da API. A edição acontece na própria linha: a linha que se
+ * toca é a que se transforma, e nada se mexe de sítio.
  *
- * A edição acontece na própria linha. Antes havia um formulário só, escondido no topo do
- * painel e partilhado pelo criar e pelo editar: carregar no lápis da quinta linha abria-o
- * acima da dobra, sem rolar e sem marcar a linha de onde se veio, e o clique parecia não ter
- * feito nada. Agora a linha que se toca é a que se transforma -- nada se mexe de sítio, e o
- * que se está a editar é aquilo onde se está a olhar.
- *
- * As licenças vêm com a lista e ficam aqui porque só este ecrã as usa, como opções do select
- * -- e um cliente sem licença não pode ser gravado.
+ * As licenças vêm com a lista porque só este ecrã as usa, e um cliente sem licença não pode
+ * ser gravado.
  */
 let els;
 let apiUserLicenses = [];
@@ -103,12 +98,9 @@ function viewRow(user) {
 }
 
 /**
- * A linha aberta para edição.
- *
- * A password é o caso que obrigava a explicar o ecrã: no criar, o campo vazio quer dizer
- * "põe esta"; no editar, queria dizer "não lhe toques" -- a mesma caixa vazia com dois
- * sentidos opostos e nada escrito que os separasse. Aqui, editar não mostra campo nenhum:
- * mostra uma acção, e o campo só existe depois de alguém a pedir.
+ * A linha aberta para edição. Editar não mostra campo de password nenhum: mostra uma acção, e
+ * o campo só existe depois de alguém a pedir -- uma caixa vazia queria dizer "põe esta" ao
+ * criar e "não lhe toques" ao editar.
  */
 function editorRow(user) {
     const isNew = user === null;

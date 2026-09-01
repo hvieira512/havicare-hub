@@ -4,26 +4,20 @@ import { fourPTouchAlarmRow, wonlexMedicationPlanRow } from "./inputs.js";
 import { syncTakePillsCustomVisibility } from "./take-pills-audio.js";
 
 /**
- * Acrescentar e remover as linhas repetíveis de uma secção de configuração: contactos,
- * listas telefónicas, alarmes, planos de medicação, lembretes.
+ * Acrescentar e remover as linhas repetíveis de uma secção de configuração.
  *
  * Um contrato só para as sete listas: `data-repeat-list="<tipo>"` no contentor,
- * `data-repeat-row="<tipo>"` em cada linha, e o limite opcional em `data-repeat-limit`.
- * O que difere de tipo para tipo é só o que está na tabela abaixo.
- *
- * Nada disto toca no estado dos módulos da dashboard, e é isso que o torna testável à parte.
+ * `data-repeat-row="<tipo>"` em cada linha, e o limite opcional em `data-repeat-limit`. Não
+ * toca no estado dos módulos da dashboard, o que o torna testável à parte.
  */
 
 /**
  * Como nasce e como morre a linha de cada tipo.
  *
- * `render` desenha-a de novo, que é o que é preciso quando a linha traz `id` próprios -- um
- * clone repetia-os, e clicar num dia da linha nova mexia na primeira. Sem `render`, clona-se
- * a última e limpa-se, que é o que preserva o que a marcação trouxe da secção (os
- * comprimentos máximos da lista telefónica, por exemplo).
+ * `render` desenha-a de novo, preciso quando a linha traz `id` próprios -- um clone
+ * repetia-os. Sem ele, clona-se a última e limpa-se, o que preserva o que a marcação trouxe.
  *
- * `keepLast` diz se a última linha se limpa em vez de se apagar: uma lista que fica sem
- * linha nenhuma fica também sem molde de onde clonar a seguinte.
+ * `keepLast` limpa a última em vez de a apagar: sem linha nenhuma não há molde para clonar.
  */
 const REPEAT_ROW_KINDS = {
     contacts: { keepLast: true, template: createContactRow },

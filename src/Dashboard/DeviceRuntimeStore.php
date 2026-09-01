@@ -91,13 +91,8 @@ final class DeviceRuntimeStore
 
     /**
      * A última vez que um gateway ouviu um dispositivo retransmitido, e com que força.
-     *
-     * Sempre indexado pelo dispositivo retransmitido e não pelo gateway, para os dois lados
-     * de uma ligação lerem o mesmo registo: a página de um sensor pede os seus gateways, a
-     * de um gateway pede cada um dos seus sensores.
-     *
-     * A intensidade de sinal pertence ao par e não a nenhum dos dispositivos, e é por isso
-     * que vive aqui e não no hash do dispositivo nem como capacidade própria.
+     * Indexado pelo dispositivo, para os dois lados da ligação lerem o mesmo registo. O sinal
+     * pertence ao par e não a nenhum deles, e por isso não vive no hash do dispositivo.
      */
     public function recordGatewaySighting(string $deviceKey, string $gatewayKey, ?int $rssiDbm): void
     {
@@ -198,17 +193,9 @@ final class DeviceRuntimeStore
     }
 
     /**
-     * Os dispositivos que estão ligados, para se poder filtrar por estado.
-     *
-     * O conjunto ordenado por última vez visto dá os candidatos, e é ele que torna isto
-     * barato: são os que foram vistos e ainda não expiraram, e não a frota toda. Não leva
-     * janela de tempo porque não precisa -- quem tira um dispositivo do conjunto é o próprio
-     * `expireStaleDevices`, no mesmo momento em que lhe põe a bandeira a zero.
-     *
-     * E quem decide é essa bandeira, e não a pertença ao conjunto: é a mesma que a pastilha
-     * do painel lê. O conjunto é actualizado a cada avistamento, e um ponto de entrada que
-     * registasse o avistamento sem declarar o estado punha aqui um dispositivo que o painel
-     * desenha como desligado. Filtro e pastilha respondem sempre o mesmo.
+     * Os dispositivos ligados. Os candidatos vêm do conjunto ordenado por última vez visto,
+     * que é o que torna isto barato, mas quem decide é a bandeira de estado -- a mesma que a
+     * pastilha do painel lê, para o filtro e a pastilha nunca discordarem.
      *
      * @return list<string>
      */

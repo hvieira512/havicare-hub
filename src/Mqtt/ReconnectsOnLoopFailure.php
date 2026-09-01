@@ -10,20 +10,13 @@ use PhpMqtt\Client\MqttClient;
 /**
  * Reconectar a um broker que largou a ligação, com recuo.
  *
- * Esteve escrito duas vezes, e as duas cópias tinham o mesmo defeito: repunham o recuo
- * assim que o `connect` devolvia sucesso. Ligar não é o mesmo que ficar ligado. Um broker
- * que aceita e larga logo a seguir -- o que um `client_id` duplicado provoca, porque o
- * segundo cliente a chegar expulsa o primeiro -- devolvia sempre sucesso, e o recuo era
- * reposto antes de alguma vez crescer.
+ * O recuo só volta ao princípio quando a ligação anterior chegou a **durar**: ligar não é o
+ * mesmo que ficar ligado, e um broker que aceita e larga logo a seguir devolvia sucesso na
+ * mesma. Reposto a cada tentativa, o recuo nunca crescia e dava mais de uma reconexão por
+ * segundo -- e o `connect` é bloqueante no mesmo event loop que serve o HTTP, por isso cada
+ * tentativa parava a dashboard.
  *
- * O resultado era mais de uma reconexão por segundo, e isso não é ruído no log: o
- * `IngressRunner` agenda estes ticks no mesmo event loop que serve o HTTP, e o `connect` é
- * bloqueante. Cada tentativa parava a dashboard. Media-se em pedidos de 88 a 400 ms com
- * `duration_ms: 0` registado pelo próprio hub -- tempo à espera do loop, não a trabalhar.
- *
- * O recuo só volta ao princípio quando a ligação anterior chegou a durar. Recuar não custa
- * mensagens: as sessões são persistentes (`cleanSession = false`) e as subscrições são
- * QoS 1, por isso o broker guarda o que chega enquanto estamos fora e reentrega ao voltar.
+ * Recuar não custa mensagens: as sessões são persistentes e o broker reentrega ao voltar.
  */
 trait ReconnectsOnLoopFailure
 {
