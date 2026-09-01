@@ -184,7 +184,7 @@ final class DashboardHttpServer
         return new Response(200, $headers, $this->assetContents($path));
     }
 
-    // O ficheiro não muda debaixo do processo: em produção o `make prod-update` reinicia-o e
+    // O ficheiro não muda debaixo do processo: em produção o `make update` reinicia-o e
     // em desenvolvimento o vigia reinicia-o.
     private function assetContents(string $path): string
     {

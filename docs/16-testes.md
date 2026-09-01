@@ -99,7 +99,7 @@ não inclui o codec — que essa abordagem reprovaria igualmente.
 
 **Os cenários estão excluídos da integração contínua.** Requerem a pilha Docker
 completa, cuja duração excede o tempo aceitável para um push. São executados
-manualmente com `make test-scenarios`.
+manualmente com `composer test:scenarios`.
 
 ## Motores de base de dados
 

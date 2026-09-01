@@ -1,5 +1,5 @@
 # O portão que faltava: o `composer test` existia e corria só quando alguém se lembrava.
-# Entre um commit mau e a produção não havia nada, porque o `make prod-update` faz
+# Entre um commit mau e a produção não havia nada, porque o `make update` no servidor faz
 # `git pull` e reinicia o serviço sem perguntar a ninguém.
 #
 # As versões aqui são as da produção, não as mais recentes: PHP 8.4 e MariaDB 10.11. O
@@ -8,7 +8,7 @@
 #
 # Os cenários (`tests/scenarios/`) ficam de fora: levantam a pilha inteira do compose com
 # mosquitto, e o que eles cobrem em ligação real não cabe no tempo de um push. Continuam a
-# correr à mão pelo `make test-scenarios`.
+# correr à mão pelo `composer test:scenarios`.
 name: CI
 
 on:

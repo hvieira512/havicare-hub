@@ -1,4 +1,4 @@
-.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub analyse lint test-frontend test-unit test-integration test-scenarios test-all clean-test-artifacts ssl-setup ps dev-hub dev require-instance update restart status journal
+.PHONY: up down build rebuild logs shell ps simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs dev-dashboard smoke-hub clean-test-artifacts ssl-setup require-instance update restart status journal
 
 # O diretório é a instância: o serviço sai dele, para não haver escolha que se possa fazer
 # mal. `/opt/havicare-hub` é a produção e `/opt/havicare-hub-dev` a de desenvolvimento.
@@ -60,25 +60,9 @@ mqtt-logs:
 smoke-hub:
 	tests/scenarios/scenario_hub_raw_mqtt_roundtrip.sh
 
-test-unit:
-	vendor/bin/phpunit --testsuite unit
-
-test-integration:
-	vendor/bin/phpunit --testsuite integration
-
-analyse:
-	composer analyse
-
-lint:
-	npm run lint
-
-test-frontend:
-	npm test
-
-test-scenarios:
-	tests/scenarios/run-all.sh
-
-test-all: analyse lint test-frontend test-unit test-integration test-scenarios
+# Os testes correm-se pelo `composer`, que é onde estão declarados: `composer test` é o
+# portão completo, e os passos avulsos são `composer test:unit`, `test:integration`,
+# `test:frontend`, `test:scenarios`, `analyse` e `style`. Ver `docs/16-testes.md`.
 
 clean-test-artifacts:
 	tests/scenarios/cleanup-artifacts.sh
@@ -92,15 +76,13 @@ ssl-setup:
 ps:
 	docker compose ps
 
-dev-hub: hub
-
+# Levanta o hub com recarregamento a cada alteração na dashboard. Para o contentor normal
+# primeiro, porque os dois disputam a mesma porta.
 dev-dashboard:
 	docker compose stop hub 2>/dev/null; \
-	docker compose run --rm --service-ports --name havicare-hub-dev \
+	docker compose run --rm --service-ports --name havicare-hub-watch \
 		-e WATCH_DIRS="/app/src/Dashboard /app/config/whitelist.json" \
 		hub bin/dev.sh php bin/server-hub.php
-
-dev: up
 
 # Fora dos dois diretórios do servidor não há instância nenhuma, e parar é melhor do que
 # adivinhar -- sem isto, um alvo destes numa cópia local reiniciava um serviço à sorte.

@@ -253,7 +253,7 @@ regra nova, a resposta é uma capacidade nova em PHP.
 ```bash
 npx eslint src/Dashboard/dashboard tests/Frontend --max-warnings 0
 npm test                       # 198 testes em tests/Frontend/
-make test-unit                 # inclui os testes que lêem estes ficheiros como texto
+composer test:unit             # inclui os testes que lêem estes ficheiros como texto
 ```
 
 Dois valem por si:
