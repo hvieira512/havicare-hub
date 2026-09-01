@@ -1,6 +1,15 @@
-.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub analyse lint test-frontend test-unit test-integration test-scenarios test-all clean-test-artifacts ssl-setup ps dev-hub dev prod-update prod-restart prod-status prod-logs
+.PHONY: up down build rebuild logs shell simulate simulate-vivistar-tcp listen-vivistar-tcp hub hub-logs mqtt mqtt-logs smoke-hub analyse lint test-frontend test-unit test-integration test-scenarios test-all clean-test-artifacts ssl-setup ps dev-hub dev require-instance update restart status journal
 
-HEALTH_HUB_SERVICE ?= health-hub
+# O diretório é a instância: o serviço sai dele, para não haver escolha que se possa fazer
+# mal. `/opt/havicare-hub` é a produção e `/opt/havicare-hub-dev` a de desenvolvimento.
+PROD_DIR ?= /opt/havicare-hub
+DEV_DIR ?= /opt/havicare-hub-dev
+
+ifeq ($(CURDIR),$(PROD_DIR))
+  HUB_SERVICE = havicare-hub
+else ifeq ($(CURDIR),$(DEV_DIR))
+  HUB_SERVICE = havicare-hub-dev
+endif
 
 up:
 	docker compose up -d
@@ -93,18 +102,23 @@ dev-dashboard:
 
 dev: up
 
-prod-update:
+# Fora dos dois diretórios do servidor não há instância nenhuma, e parar é melhor do que
+# adivinhar -- sem isto, um alvo destes numa cópia local reiniciava um serviço à sorte.
+require-instance:
+	@test -n "$(HUB_SERVICE)" || { echo "$(CURDIR) não é $(PROD_DIR) nem $(DEV_DIR): não há serviço para mexer"; exit 1; }
+
+update: require-instance
 	git pull --ff-only
 	composer install --no-dev --optimize-autoloader
 	php bin/migrate.php
-	systemctl restart $(HEALTH_HUB_SERVICE)
-	systemctl status $(HEALTH_HUB_SERVICE) --no-pager
+	systemctl restart $(HUB_SERVICE)
+	systemctl status $(HUB_SERVICE) --no-pager
 
-prod-restart:
-	systemctl restart $(HEALTH_HUB_SERVICE)
+restart: require-instance
+	systemctl restart $(HUB_SERVICE)
 
-prod-status:
-	systemctl status $(HEALTH_HUB_SERVICE) --no-pager
+status: require-instance
+	systemctl status $(HUB_SERVICE) --no-pager
 
-prod-logs:
-	journalctl -u $(HEALTH_HUB_SERVICE) -f
+journal: require-instance
+	journalctl -u $(HUB_SERVICE) -f

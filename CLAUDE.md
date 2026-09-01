@@ -13,7 +13,7 @@ desenvolvimento antes de chegar à de produção.
 | | desenvolvimento | produção |
 |---|---|---|
 | Diretório | `/opt/havicare-hub-dev` | `/opt/havicare-hub` |
-| Serviço | `hub-dev` | `health-hub` |
+| Serviço | `havicare-hub-dev` | `havicare-hub` |
 | Ramo | `dev` | `main` |
 | Dashboard | `:8091` | `:8081` |
 | Ingestão TCP | `127.0.0.1:8090` | `0.0.0.0:8080` |
@@ -38,9 +38,13 @@ identificador de cliente MQTT: os subscritores de ingestão usam identificador
 Comandos úteis:
 
 - Entrar no servidor: `ssh hub-prod`
-- Estado: `systemctl status hub-dev` / `systemctl status health-hub`
-- Logs: `journalctl -u hub-dev` / `journalctl -u health-hub`
-- Reiniciar: `systemctl restart hub-dev` / `systemctl restart health-hub`
+- Estado: `systemctl status havicare-hub-dev` / `systemctl status havicare-hub`
+- Logs: `journalctl -u havicare-hub-dev` / `journalctl -u havicare-hub`
+- Reiniciar: `systemctl restart havicare-hub-dev` / `systemctl restart havicare-hub`
+
+Os alvos do servidor — `make update`, `restart`, `status` e `journal` — tiram a
+instância do diretório em que correm, e não há nenhum que se possa escolher mal.
+Fora dos dois diretórios recusam-se a correr.
 
 ## Nomes no contrato MQTT
 
@@ -113,14 +117,12 @@ confirmado ali é que se leva à de produção.
 3. Implementar até ele passar, e correr a suite completa localmente.
 4. Fazer commit em `dev` e `push` quando o utilizador o pedir ou quando fizer
    parte explícita do fluxo pedido.
-5. Atualizar a instância de dev: `cd /opt/havicare-hub-dev && git pull --ff-only`,
-   `composer install --no-dev --optimize-autoloader`, `php bin/migrate.php`,
-   `systemctl restart hub-dev`.
+5. Atualizar a instância de dev: `cd /opt/havicare-hub-dev && make update`.
 6. Verificar ali: estado do serviço, logs sem erros novos, e a funcionalidade
    com os dispositivos, API, Redis ou MQTT relevantes.
 7. Só então promover para produção — `git push origin dev:main` — e correr
-   `make prod-update` em `/opt/havicare-hub`.
-8. Verificar o estado e os logs do `health-hub`, e repetir em produção as
+   `make update` em `/opt/havicare-hub`.
+8. Verificar o estado e os logs do `havicare-hub`, e repetir em produção as
    verificações que se fizeram em dev.
 9. Confirmar que não há regressões e comunicar resultados concretos.
 
@@ -148,7 +150,7 @@ promover para `main` é publicação, e essa é decisão dele.
 - Um pedido para analisar produção autoriza verificações não destrutivas, mas
   não autoriza automaticamente publicação, reinício do serviço ou alterações de
   dados.
-- Só executar `make prod-update`, promover para `main`, reiniciar serviços ou
+- Só executar `make update` no servidor, promover para `main`, reiniciar serviços ou
   alterar dados quando isso estiver incluído no pedido do utilizador. Mexer na
   instância de dev é menos grave, mas continua a ser uma máquina de produção.
 - Antes de remover ou alterar dados, resolver e confirmar exatamente os

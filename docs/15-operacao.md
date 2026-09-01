@@ -12,7 +12,7 @@ guarda estado.
 | | desenvolvimento | produção |
 |---|---|---|
 | Diretório | `/opt/havicare-hub-dev` | `/opt/havicare-hub` |
-| Serviço | `hub-dev` | `health-hub` |
+| Serviço | `havicare-hub-dev` | `havicare-hub` |
 | Ramo | `dev` | `main` |
 | Dashboard | `:8091` | `:8081` |
 | Ingestão TCP | `127.0.0.1:8090` | `0.0.0.0:8080` |
@@ -35,8 +35,8 @@ flowchart TB
   D -.->|MQTT, tópicos de ingestão| V
 
   subgraph maq["hub-prod"]
-    P["health-hub<br/><small>main · :8081</small>"]
-    V["hub-dev<br/><small>dev · :8091</small>"]
+    P["havicare-hub<br/><small>main · :8081</small>"]
+    V["havicare-hub-dev<br/><small>dev · :8091</small>"]
   end
 
   P --> PB["havicare-hub/…"]
@@ -89,24 +89,25 @@ precisa do seu próprio espaço:
 O trabalho vai primeiro à instância de desenvolvimento:
 
 ```bash
-cd /opt/havicare-hub-dev
-git pull --ff-only
-composer install --no-dev --optimize-autoloader
-php bin/migrate.php
-systemctl restart hub-dev
+cd /opt/havicare-hub-dev && make update
 ```
 
 E só depois de confirmado ali é que se promove:
 
 ```bash
 git push origin dev:main
-cd /opt/havicare-hub && make prod-update
+cd /opt/havicare-hub && make update
 ```
 
-O alvo `make prod-update` executa `git pull --ff-only`, instala as dependências
-de produção, aplica as migrações e **só então** reinicia o serviço. A ordem é
-determinada pela verificação de esquema: o hub recusa arrancar com a base de
-dados desatualizada.
+É o mesmo alvo nos dois sítios. Executa `git pull --ff-only`, instala as
+dependências de produção, aplica as migrações e **só então** reinicia o serviço.
+A ordem é determinada pela verificação de esquema: o hub recusa arrancar com a
+base de dados desatualizada.
+
+O serviço que ele reinicia sai do diretório em que corre, e não de um alvo que
+se escolha — o diretório já identifica a instância, e uma escolha a mais é uma
+escolha que se pode fazer mal. Fora dos dois diretórios do servidor, o alvo
+recusa-se a correr em vez de adivinhar.
 
 > **Ao mudar de ramo em produção, `git fetch` primeiro.** A `main` local do
 > servidor já esteve centenas de commits atrasada, e um `checkout` sozinho leva
@@ -115,10 +116,8 @@ dados desatualizada.
 ## 3. Ver o estado
 
 ```bash
-systemctl status hub-dev      # ou health-hub
-journalctl -u hub-dev -f
-make prod-status              # produção
-make prod-logs
+make status    # o serviço da instância em que se está
+make journal   # e o journal dela, a seguir
 ```
 
 O arranque regista um resumo com as portas, a configuração da fila de downlink e
@@ -229,7 +228,7 @@ comandos para equipamento em serviço.
 | Ficheiro | Responsabilidade |
 |---|---|
 | [`CLAUDE.md`](../CLAUDE.md) | As regras de trabalho e de segurança operacional |
-| `Makefile` | `prod-update`, `prod-status`, `prod-logs`, e os alvos locais |
+| `Makefile` | `update`, `restart`, `status`, `journal`, e os alvos locais |
 | `bin/migrate.php` | O passo explícito de esquema |
 | `bin/dev.sh` | O vigia de ficheiros do contentor |
 | `src/Runtime/StartupBanner.php` | O resumo de arranque |
