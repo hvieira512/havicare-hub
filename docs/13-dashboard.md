@@ -66,8 +66,10 @@ sujos do hub — e o seletor de tema.
 | Licenças | Empresas, com as licenças lá dentro |
 | Utilizadores API | Contas e papéis |
 
-O desenho das caixas de adicionar e editar — e porque são caixas diferentes —
-está em [`device-modals.md`](device-modals.md).
+Registar e editar são caixas **separadas**, e não a mesma a mudar de forma: um
+registo pede a identidade e pouco mais, ao passo que a edição dá acesso às
+configurações do aparelho. O desenho de cada uma está em
+[`src/Dashboard/README.md`](../src/Dashboard/README.md).
 
 ## 4. Tempo real
 

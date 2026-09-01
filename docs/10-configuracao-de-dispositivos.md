@@ -194,6 +194,43 @@ A resposta traz as chaves alteradas, cada uma com as `operations[]` que foram
 criadas para as entregar — incluindo o `nativeKey` de cada uma, que é onde a
 identidade de protocolo aparece, e só ali.
 
+### Uma capacidade a fundo: `alarm_clock`
+
+Serve de exemplo do padrão que todas seguem. A resposta do
+`GET /api/devices/{imei}` traz a capacidade em dois sítios com papéis distintos:
+
+| Onde | O que é |
+|---|---|
+| `capabilities.alarms.alarm_clock` | O que o **modelo** suporta, presente mesmo sem configuração guardada |
+| `configurations.alarm_clock` | O que está **guardado** para aquele dispositivo |
+
+O `_meta` da capacidade descreve o que a interface pode oferecer, e é ele que
+absorve as diferenças entre fabricantes:
+
+```json
+{
+  "value": [ { "time": "08:10", "enabled": true } ],
+  "_meta": {
+    "limit": 3,
+    "recurrence": { "options": ["once", "daily", "custom"] },
+    "days": { "options": [1, 2, 3, 4, 5, 6, 7] },
+    "type": { "options": [1, 2, 3] },
+    "label": { "supported": true },
+    "url": { "supported": true, "schemes": ["http", "https"] }
+  }
+}
+```
+
+| Fabricante | Particularidade |
+|---|---|
+| Vivistar | O `type` é obrigatório no `PATCH` |
+| 4P Touch | O `type` não é suportado, e enviá-lo é recusado |
+| Wonlex | Aceita `label` e um `url` de áudio, e só `daily` ou `custom` — o protocolo dele é uma máscara semanal |
+
+**Nada disto se lê no código do cliente.** O que estiver ausente do `_meta` não
+é suportado naquele dispositivo, e o `limit` diz quantas entradas cabem. Um
+`items` vazio é válido e apaga os alarmes guardados.
+
 ## 5. Descoberta de capacidades
 
 Um modelo novo chega sem se saber o que suporta. Em vez de o adivinhar, o hub
@@ -218,7 +255,8 @@ interpretar os canais de humidade.
 configuração apesar de não aceitar downlink. Quem decide se algo viaja é cada
 capacidade, não o protocolo inteiro.
 
-O detalhe completo está em [`diaper-sensitivity.md`](diaper-sensitivity.md).
+Os dois parâmetros, os três perfis e a forma como entram na derivação do estado
+estão no [capítulo do sensor de fralda](17-sensor-de-fralda.md).
 
 ## Implementação
 
@@ -232,4 +270,4 @@ O detalhe completo está em [`diaper-sensitivity.md`](diaper-sensitivity.md).
 | `src/Api/Services/DeviceConfigurationUpdateService.php` | O `PATCH`: validar, traduzir, criar operações |
 | `src/Api/Repository/DeviceConfigurationLifecycleRepository.php` | As três tabelas e a derivação do estado |
 | `src/Api/Services/ConfigurationSyncStatus.php` | Desejado contra reportado |
-| [`alarm_clock.md`](alarm_clock.md) | O contrato de uma capacidade, a fundo *(em inglês)* |
+| `src/Domain/Capability/AlarmClock/*.php` | A capacidade `alarm_clock`, por fabricante |

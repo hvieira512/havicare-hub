@@ -15,7 +15,7 @@ use Tests\Support\Doubles\RecordingHubMqttBridge;
 /**
  * Signal reporting for a relayed device: one message per sighting per gateway.
  *
- * O contrato que estes testes prendem está em `docs/proximity-alarms.md`: o hub reporta o
+ * O contrato que estes testes prendem está em `docs/05-gateways-ble.md` §5: o hub reporta o
  * sinal e diz quando ele se calou; os limiares e os alarmes são do cliente.
  */
 final class BridgeProximityTest extends TestCase

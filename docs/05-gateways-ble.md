@@ -130,10 +130,8 @@ A humidade de cada canal é `leitura − linha de base`, com o mínimo em zero. 
 sensor traz a sua própria referência, o que faz com que a mesma fralda molhada
 dê o mesmo número em pessoas diferentes.
 
-O contrato completo do que sai daqui está em
-[`diaper-sensor-mqtt-contract.md`](diaper-sensor-mqtt-contract.md), e a
-parametrização da sensibilidade em
-[`diaper-sensitivity.md`](diaper-sensitivity.md).
+O contrato completo do que sai daqui, a derivação do estado e a parametrização
+da sensibilidade estão no [capítulo do sensor de fralda](17-sensor-de-fralda.md).
 
 ### Pulseira W6B
 
@@ -250,8 +248,23 @@ Quando um par gateway–dispositivo se cala mais de 30 segundos, sai **uma vez**
 um `state: "unknown"` com `samples: 0`. O silêncio é informação, e sem isto a
 última medição ficava a parecer atual para sempre.
 
-O raciocínio completo por trás dos limiares está em
-[`proximity-alarms.md`](proximity-alarms.md).
+### Porque não sai o sinal em bruto
+
+Um sinal de rádio em bruto não é utilizável como limiar. Uma pulseira **parada
+em cima de uma secretária**, durante sessenta segundos, produziu quarenta
+amostras entre −79 e −64 dBm — quinze decibéis de amplitude sem que nada se
+mexesse. Aplicado a um limiar simples, isso dá **dezoito** mudanças de zona por
+minuto num aparelho imóvel.
+
+A janela e a mediana existem para remover essa oscilação. Ficam do lado do hub
+porque a correção é sobre o sinal, e sobre o sinal o hub é a única camada com
+todas as amostras.
+
+**A divisão de responsabilidade é deliberada.** O hub normaliza e publica
+fielmente o sinal entre cada dispositivo e cada gateway que o ouve. O alarme —
+os limiares, o que conta como «à porta», quem é avisado — pertence a quem
+integra. O hub não tem opinião sobre perigo, e as janelas e contagens são
+argumentos do `ProximityTracker`, não configuração exposta.
 
 **Avistamentos não reclamados:** quando nenhum descodificador sabe ler uma
 trama, mas o MAC pertence a um dispositivo registado e ligado ao gateway, o RSSI

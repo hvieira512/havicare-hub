@@ -8,6 +8,11 @@ Cada capítulo descreve o âmbito da camada, a sua implementação e os ficheiro
 [notas de arquitetura](99-notas-de-arquitetura.md), separadas da descrição do
 sistema implementado.
 
+A documentação técnica vive **inteiramente** nestes capítulos. Não há documentos
+temáticos avulsos: o que for preciso acrescentar entra no capítulo que cobre o
+assunto, para não existirem duas versões da mesma matéria a discordar uma da
+outra.
+
 ---
 
 ## Percursos de leitura
@@ -22,8 +27,9 @@ da [normalização](06-normalizacao.md).
 de tópicos e as garantias de entrega, [normalização](06-normalizacao.md) para o
 formato de cada medição e [multi-inquilino](07-multi-inquilino.md) para a
 composição dos dois primeiros segmentos do tópico. O
-[contrato do medidor de fraldas](diaper-sensor-mqtt-contract.md) constitui uma
-especificação completa de referência.
+[sensor de fralda](17-sensor-de-fralda.md) constitui a especificação completa de
+uma ingestão, do anúncio ao contrato público, e serve de referência para as
+restantes.
 
 **Integração pela API REST.** [Referência da API](09-api.md) para rotas,
 autenticação e modelo de erros, e
@@ -68,6 +74,7 @@ com as instâncias de desenvolvimento e produção estão no
 | [11 — Comandos e downlink](11-comandos-e-downlink.md) | Entrega de comandos a dispositivos intermitentes |
 | [12 — Localização sem GPS](12-localizacao-sem-gps.md) | Mapa de rádio privado, cache e BeaconDB |
 | [13 — Dashboard](13-dashboard.md) | Funcionalidades e relação com a API |
+| [17 — Sensor de fralda](17-sensor-de-fralda.md) | Capacidades, derivação do estado, sensibilidade e contrato congelado |
 
 ### Infraestrutura
 
@@ -79,17 +86,6 @@ com as instâncias de desenvolvimento e produção estão no
 | [99 — Notas de arquitetura](99-notas-de-arquitetura.md) | Questões em aberto e decisões pendentes |
 
 ---
-
-## Especificações detalhadas
-
-| Documento | Assunto |
-|---|---|
-| [`diaper-sensor-mqtt-contract.md`](diaper-sensor-mqtt-contract.md) | Contrato MQTT do medidor de fraldas MONIT |
-| [`diaper-sensitivity.md`](diaper-sensitivity.md) | Parametrização da sensibilidade por sensor |
-| [`device-modals.md`](device-modals.md) | Interfaces de registo e edição de dispositivo |
-| [`proximity-alarms.md`](proximity-alarms.md) | Sinal por gateway para alarmes de proximidade *(em inglês)* |
-| [`alarm_clock.md`](alarm_clock.md) | Contrato da capacidade `alarm_clock` *(em inglês)* |
-| [`model-capabilities.md`](model-capabilities.md) | Matriz de capacidades por modelo |
 
 ## Documentação dos fabricantes
 
