@@ -33,8 +33,8 @@ SELECT c.id, 1, 'hc.dev' FROM companies c WHERE c.name = 'havicare'
 ON DUPLICATE KEY UPDATE name = 'hc.dev';
 
 INSERT INTO licenses (company_id, license_id, name)
-SELECT c.id, 22, 'hc.simplificado' FROM companies c WHERE c.name = 'havicare'
-ON DUPLICATE KEY UPDATE name = 'hc.simplificado';
+SELECT c.id, 22, 'hc2.dev' FROM companies c WHERE c.name = 'havicare'
+ON DUPLICATE KEY UPDATE name = 'hc2.dev';
 
 INSERT INTO licenses (company_id, license_id, name)
 SELECT c.id, 1001, 'gucc.dev' FROM companies c WHERE c.name = 'hitcare'
