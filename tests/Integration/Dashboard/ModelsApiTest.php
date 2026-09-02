@@ -5,6 +5,7 @@ namespace Tests\Integration\Dashboard;
 use GuzzleHttp\Psr7\ServerRequest;
 use Hub\Api\Repository\ApiDataAccess;
 use Hub\Api\Services\ModelService;
+use Hub\Domain\DeviceProtocol;
 use Hub\Domain\SupplierCapabilityTemplate;
 use Psr\Http\Message\ServerRequestInterface;
 use Tests\Support\MysqlDashboardTestCase;
@@ -458,6 +459,18 @@ final class ModelsApiTest extends MysqlDashboardTestCase
         $reloaded = $db->models->find('Vivistar', 'L08 Pro');
         self::assertIsArray($reloaded);
         self::assertSame('L08 Pro Renomeado', $reloaded['commercial_name']);
+    }
+
+    public function testTheMkgwMiniPlugGatewayIsInTheCatalogAsAMokoGateway(): void
+    {
+        [, $db] = $this->makeApi();
+
+        $model = $db->models->find('MOKO', 'MKGW-mini 03-20D');
+
+        self::assertIsArray($model);
+        self::assertSame('gateway', (string)$model['device_type']);
+        // Fala o JSON do MKGW3, e por isso não tem protocolo próprio.
+        self::assertSame('moko-mkgw3', DeviceProtocol::forModel('MOKO', (string)$model['internal_model']));
     }
 
     private function makeApi(): array

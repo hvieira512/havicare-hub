@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hub\Infrastructure\Persistence;
 
 use Hub\Infrastructure\Persistence\Migration\CatalogAlarmProximityAndHelpCall;
+use Hub\Infrastructure\Persistence\Migration\CatalogMkgwMiniModel;
 use Hub\Infrastructure\Persistence\Migration\Migration;
 
 /**
@@ -25,6 +26,7 @@ final class DatabaseMigrationPlan
     {
         return [
             new CatalogAlarmProximityAndHelpCall(),
+            new CatalogMkgwMiniModel(),
         ];
     }
 

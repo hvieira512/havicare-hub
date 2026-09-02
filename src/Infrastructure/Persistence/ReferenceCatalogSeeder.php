@@ -20,6 +20,7 @@ final class ReferenceCatalogSeeder
         ['Qinglanst', 'RD-V1', 'RD-V1', 'radar', ''],
         ['MOKO', 'MKGW3', 'MOKOSmart MKGW3', 'gateway', ''],
         ['MOKO', 'MKGW4', 'MOKOSmart MKGW4', 'gateway', ''],
+        ['MOKO', 'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway', ''],
         ['MONIT', 'MECS-PRO', 'MONIT MECS Pro', 'diaper_sensor', ''],
         ['MOKO', 'W6B', 'MOKO W6B', 'bracelet', ''],
         ['MOKO', 'W6', 'MOKO W6', 'bracelet', ''],

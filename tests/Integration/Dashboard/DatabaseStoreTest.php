@@ -15,7 +15,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         $catalog = $db->genericCapabilities->all('watch');
         self::assertNotEmpty($catalog);
         self::assertSame('watch', $catalog[0]['device_type'] ?? null);
-        self::assertSame(10, count($db->models->all()));
+        self::assertSame(11, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
@@ -27,7 +27,7 @@ final class DatabaseStoreTest extends MysqlDashboardTestCase
         self::assertSame($expected, $actual);
 
         $db = ApiDataAccess::fromDatabase($database);
-        self::assertSame(10, count($db->models->all()));
+        self::assertSame(11, count($db->models->all()));
         $model = $db->models->find('Vivistar', 'L08 PRO');
         self::assertIsArray($model);
         self::assertSame('L08 Pro', $model['commercial_name'] ?? null);
