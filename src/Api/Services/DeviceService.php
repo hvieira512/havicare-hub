@@ -4,13 +4,11 @@ namespace Hub\Api\Services;
 
 use Hub\Api\Http\ApiError;
 use Hub\Api\Http\CollectionQuery;
-use Hub\Api\Http\DeviceColumns;
 use Hub\Api\Http\DevicePresentation;
 use Hub\Api\Http\DeviceResponseCompactor;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
-use Hub\Api\Repository\WhitelistRepository;
 use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Domain\Capability\CapabilityCatalog;
@@ -101,10 +99,6 @@ class DeviceService
             'license' => $this->query->filterList($params, 'license'),
             'q' => $this->query->filter($params, 'q', ''),
         ];
-        // Uma caixa de procura por coluna, ao lado do `q` que procura em todas.
-        foreach (array_keys(DeviceColumns::TEXT_FILTERS) as $field) {
-            $filters[$field] = $this->query->filter($params, $field, '');
-        }
         $online = $this->query->onlineFilter($params);
 
         // A empresa e a licença viajam como pares em `license`. Os dois parâmetros soltos
@@ -131,9 +125,7 @@ class DeviceService
             $queryFilters['imeiNotIn'] = $onlineImeis;
         }
 
-        $sort = $this->query->sort($params, array_keys(WhitelistRepository::SORTABLE_COLUMNS), 'imei');
-
-        $result = $this->db->whitelist->listPage($queryFilters, $page, $limit, $licenseScope, $companyScope, $sort);
+        $result = $this->db->whitelist->listPage($queryFilters, $page, $limit, $licenseScope, $companyScope);
         $runtimeStates = $this->store->runtimeStates(array_map(
             static fn (array $device): string => (string)($device['imei'] ?? ''),
             $result['items']
@@ -168,9 +160,6 @@ class DeviceService
                 'available' => $result['available'],
                 'counts' => $result['counts'],
             ],
-            // O que se ordena, filtra e edita, dito à máquina que consome em vez de escrito
-            // outra vez em cada cliente. As opções são as mesmas do `filters`, por coluna.
-            'columns' => DeviceColumns::describe($result['available'], $result['counts']),
             // O total e quantos deles estão ligados, sem filtro nenhum aplicado: é o que o
             // cabeçalho do modal mostra, e não muda quando se filtra.
             'summary' => $this->deviceSummary($licenseScope, $companyScope),

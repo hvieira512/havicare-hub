@@ -41,51 +41,7 @@ final class DeviceSchemas
                     'lastSeenAt' => ['type' => 'string', 'nullable' => true, 'example' => '2026-06-15T10:00:00Z'],
                 ],
             ],
-            // A listagem de dispositivos é a única que se descreve a si própria, e por isso
-            // o `columns` entra aqui e não no envelope partilhado por todas as colecções.
-            'DeviceListResponse' => array_replace_recursive(
-                CommonSchemas::collection('DeviceSummary'),
-                ['properties' => ['columns' => [
-                    'type' => 'array',
-                    'description' => 'What each column supports: sorting, filtering and editing.',
-                    'items' => Responses::ref('CollectionColumn'),
-                ]]],
-            ),
-            'CollectionColumn' => [
-                'type' => 'object',
-                'description' => 'One column of a listing, and what may be done with it.'
-                    . ' Carries no labels: translating is the caller\'s job.',
-                'properties' => [
-                    'field' => ['type' => 'string', 'example' => 'company'],
-                    'sortable' => ['type' => 'boolean'],
-                    'editable' => ['type' => 'boolean'],
-                    'filter' => [
-                        'type' => 'object',
-                        'nullable' => true,
-                        'description' => 'How this column is filtered, or null when it is not.',
-                        'properties' => [
-                            'type' => ['type' => 'string', 'enum' => ['text', 'select']],
-                            'param' => [
-                                'type' => 'string',
-                                'description' => 'The query parameter that filters this column.',
-                                'example' => 'deviceType',
-                            ],
-                            'multiple' => ['type' => 'boolean', 'description' => 'Select filters only.'],
-                            'options' => [
-                                'type' => 'array',
-                                'description' => 'Select filters only. Count is null when unknown.',
-                                'items' => [
-                                    'type' => 'object',
-                                    'properties' => [
-                                        'value' => ['type' => 'string'],
-                                        'count' => ['type' => 'integer', 'nullable' => true],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
+            'DeviceListResponse' => CommonSchemas::collection('DeviceSummary'),
             'DeviceDetail' => [
                 'type' => 'object',
                 'properties' => [

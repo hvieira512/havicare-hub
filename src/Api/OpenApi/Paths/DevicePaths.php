@@ -5,7 +5,6 @@ namespace Hub\Api\OpenApi\Paths;
 use Hub\Api\OpenApi\Parameters;
 use Hub\Api\OpenApi\Requests;
 use Hub\Api\OpenApi\Responses;
-use Hub\Api\Http\DeviceColumns;
 
 /**
  * Registo, configuração, ligações, telemetria e comandos de dispositivos.
@@ -38,19 +37,7 @@ final class DevicePaths
                         Parameters::stringQuery('company'),
                         Parameters::stringQuery('licenseId'),
                         Parameters::query('q', ['type' => 'string', 'default' => '']),
-                        // Não é um `enum`: com várias colunas por vírgula o conjunto de
-                        // valores válidos é combinatório. Que colunas se ordenam viaja no
-                        // `columns` da resposta, que sai da allowlist do repositório.
-                        [
-                            'name' => 'sort',
-                            'in' => 'query',
-                            'required' => false,
-                            'description' => 'Sort columns, comma separated, in precedence order.'
-                                . ' A leading "-" sorts descending, as in "-company,model".'
-                                . ' The sortable columns are announced in the response `columns`.',
-                            'schema' => ['type' => 'string', 'default' => 'imei', 'example' => '-company,model'],
-                        ],
-                    ], self::textFilterParameters()),
+                    ]),
                     'responses' => [
                         '200' => Responses::json('Paginated device collection', 'DeviceListResponse'),
                     ],
@@ -223,19 +210,5 @@ final class DevicePaths
                 ],
             ],
         ];
-    }
-
-    /**
-     * As colunas que se filtram por texto, uma a uma. Distintas do `q`, que procura em
-     * várias ao mesmo tempo. Saem da constante para não divergirem do que o servidor aceita.
-     *
-     * @return list<array<string, mixed>>
-     */
-    private static function textFilterParameters(): array
-    {
-        return array_map(
-            static fn(string $field): array => Parameters::query($field, ['type' => 'string', 'default' => '']),
-            array_keys(DeviceColumns::TEXT_FILTERS),
-        );
     }
 }

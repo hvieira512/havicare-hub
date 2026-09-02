@@ -2,7 +2,6 @@
 
 namespace Hub\Api\Repository;
 
-use Hub\Api\Http\DeviceColumns;
 use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
@@ -59,21 +58,15 @@ final class WhitelistRepository
      * @param array<string, mixed> $filters
      * @return array{items: array<int, array<string, mixed>>, total: int, available: array<string, mixed>, counts: array<string, mixed>}
      */
-    public function listPage(
-        array $filters,
-        int $page,
-        int $limit,
-        ?int $licenseScope = null,
-        ?string $companyScope = null,
-        ?array $sort = null
-    ): array {
+    public function listPage(array $filters, int $page, int $limit, ?int $licenseScope = null, ?string $companyScope = null): array
+    {
         $page = max(1, $page);
         $limit = max(1, $limit);
         $offset = ($page - 1) * $limit;
 
         [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope, $companyScope);
 
-        $stmt = $this->pdo->prepare($this->deviceSelectSql() . $whereSql . $this->orderBySql($sort) . ' LIMIT ? OFFSET ?');
+        $stmt = $this->pdo->prepare($this->deviceSelectSql() . $whereSql . ' ORDER BY w.imei LIMIT ? OFFSET ?');
         $bindIndex = 1;
         foreach ($params as $param) {
             $stmt->bindValue($bindIndex++, $param);
@@ -219,57 +212,6 @@ final class WhitelistRepository
         return $stmt->rowCount() > 0;
     }
 
-    /** As colunas por que a listagem se deixa ordenar, e a expressão SQL de cada uma. */
-    public const SORTABLE_COLUMNS = [
-        'imei' => 'w.imei',
-        'supplier' => 'w.supplier',
-        'model' => 'w.model',
-        'deviceType' => 'w.device_type',
-        'licenseId' => 'w.license_id',
-        'company' => 'w.company',
-        'licenseName' => 'l.name',
-    ];
-
-    /**
-     * A cláusula de ordenação, de uma ou de várias colunas.
-     *
-     * @param list<array{column?: string, descending?: bool}>|array{column?: string, descending?: bool}|null $sort
-     */
-    private function orderBySql(?array $sort): string
-    {
-        // Aceita um par solto além da lista: as duas formas circularam enquanto a
-        // multi-ordenação não existia, e há chamadores que ainda passam a antiga.
-        $entries = $sort === null || $sort === [] ? [] : (isset($sort['column']) ? [$sort] : $sort);
-
-        $pieces = [];
-        $used = [];
-        foreach ($entries as $entry) {
-            $column = self::SORTABLE_COLUMNS[$entry['column'] ?? ''] ?? null;
-            if ($column === null || isset($used[$column])) {
-                continue;
-            }
-            $used[$column] = true;
-            $direction = ($entry['descending'] ?? false) ? ' DESC' : '';
-
-            // Um dispositivo sem dono tem `NULL` na empresa e na licença, e o MariaDB põe
-            // `NULL` à frente em ascendente. A falta de valor vai para o fim nos dois
-            // sentidos, como no `sortRows` da dashboard: não ter empresa não é ser a
-            // primeira delas.
-            if ($column !== 'w.imei') {
-                $pieces[] = $column . ' IS NULL';
-            }
-            $pieces[] = $column . $direction;
-        }
-
-        // O IMEI fecha sempre. Sem ele, ordenar por colunas com valores repetidos deixa a
-        // ordem por decidir, e percorrer as páginas repete umas linhas e perde outras.
-        if (!isset($used['w.imei'])) {
-            $pieces[] = 'w.imei';
-        }
-
-        return ' ORDER BY ' . implode(', ', $pieces);
-    }
-
     private function deviceSelectSql(): string
     {
         return '
@@ -399,20 +341,6 @@ final class WhitelistRepository
                     $params[] = $imei;
                 }
             }
-        }
-
-        // O filtro de uma coluna só, que é o que uma caixa de procura num cabeçalho quer
-        // dizer -- distinto do `q`, que procura em cinco colunas ao mesmo tempo.
-        foreach (DeviceColumns::TEXT_FILTERS as $field => $column) {
-            $needle = trim((string)($filters[$field] ?? ''));
-            if ($needle === '') {
-                continue;
-            }
-
-            // Um `%` escrito por quem procura é texto e não curinga: sem isto, escrevê-lo
-            // devolvia a lista inteira em vez de nada.
-            $clauses[] = 'LOWER(' . $column . ') LIKE LOWER(?) ESCAPE \'\\\\\'';
-            $params[] = '%' . addcslashes($needle, '%_\\') . '%';
         }
 
         $query = trim((string)($filters['q'] ?? ''));
