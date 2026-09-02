@@ -12,6 +12,7 @@ import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
+import { nextSort, sortRows } from "../sorting.js";
 
 /**
  * O separador dos utilizadores da API. A edição acontece na própria linha: a linha que se
@@ -23,11 +24,59 @@ import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
 let els;
 let apiUserLicenses = [];
 let currentUsers = [];
+let apiUserSort = null;
 
 const editor = inlineEditor(() => renderApiUsersSection());
 
 export function initSettingsApiUsers(context) {
     els = context.els;
+}
+
+/** O âmbito e o estado ordenam-se pelo que se lê, e não pelo identificador guardado. */
+function apiUserSortValue(user, column) {
+    if (column === "role") return apiRoleLabel(user.role);
+    // "Todas as licenças" primeiro, que é o mesmo texto por que a coluna se lê.
+    if (column === "scope") {
+        return user.role === "hub_admin"
+            ? "Todas as licenças"
+            : user.company_name && user.license_id
+                ? `${user.company_name} / ${user.license_id}`
+                : "Sem licença válida";
+    }
+    if (column === "enabled") return Number(user.enabled) === 1 ? 0 : 1;
+
+    return user[column];
+}
+
+/** Carregar num cabeçalho: ascendente, descendente, e depois a ordem em que vieram. */
+export function handleApiUserSortClick(event) {
+    const header = event.target.closest("[data-sort]");
+    if (!header || !els.apiUserListBody?.closest("table")?.contains(header)) {
+        return false;
+    }
+    if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") {
+        return false;
+    }
+    if (event.type === "keydown") {
+        event.preventDefault();
+    }
+
+    apiUserSort = nextSort(apiUserSort, header.dataset.sort);
+    renderApiUsersSection();
+    return true;
+}
+
+/** A seta e o `aria-sort` de cada cabeçalho, a partir do estado actual. */
+function renderApiUserSortMarks() {
+    const headers = els.apiUserListBody?.closest("table")?.querySelectorAll("[data-sort]") || [];
+    for (const header of headers) {
+        const active = apiUserSort?.column === header.dataset.sort;
+        header.setAttribute("aria-sort", active ? (apiUserSort.descending ? "descending" : "ascending") : "none");
+        const mark = header.querySelector(".sort-mark");
+        if (mark) {
+            mark.textContent = active ? (apiUserSort.descending ? "▼" : "▲") : "";
+        }
+    }
 }
 
 /** O perfil de um utilizador da API, por palavras. Só a aba de utilizadores o mostra. */
@@ -165,10 +214,11 @@ function renderApiUsersSection() {
 
     els.apiUserListBody.innerHTML =
         (editor.at("apiUser") ? editorRow(null) : "") +
-        users
+        sortRows(users, apiUserSort, apiUserSortValue)
             .map((user) => (editor.at("apiUser", user.id) ? editorRow(user) : viewRow(user)))
             .join("");
 
+    renderApiUserSortMarks();
     focusEditor(els.apiUserListBody);
 }
 

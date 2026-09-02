@@ -7,6 +7,7 @@ require_once __DIR__ . '/components/helpers.php';
 // Fornecido pelo `DashboardHttpServer::page()`, que faz `require` deste ficheiro. Declarado
 // aqui para o template dizer o seu próprio contrato em vez de assumir quem o chama.
 $dashboardApiAuthRequired = $dashboardApiAuthRequired ?? true;
+require_once __DIR__ . '/components/listing.php';
 require_once __DIR__ . '/components/pagination.php';
 require_once __DIR__ . '/components/modal.php';
 

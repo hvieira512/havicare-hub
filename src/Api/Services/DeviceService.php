@@ -9,6 +9,7 @@ use Hub\Api\Http\DeviceResponseCompactor;
 use Hub\Command\DeviceConfigurationCatalog;
 use Hub\Api\Auth\ApiAuthContext;
 use Hub\Api\Repository\ApiDataAccess;
+use Hub\Api\Repository\WhitelistRepository;
 use Hub\Api\Request\DeviceWriteRequest;
 use Hub\Api\Request\RequestBinder;
 use Hub\Domain\Capability\CapabilityCatalog;
@@ -125,7 +126,9 @@ class DeviceService
             $queryFilters['imeiNotIn'] = $onlineImeis;
         }
 
-        $result = $this->db->whitelist->listPage($queryFilters, $page, $limit, $licenseScope, $companyScope);
+        $sort = $this->query->sort($params, array_keys(WhitelistRepository::SORTABLE_COLUMNS), 'imei');
+
+        $result = $this->db->whitelist->listPage($queryFilters, $page, $limit, $licenseScope, $companyScope, $sort);
         $runtimeStates = $this->store->runtimeStates(array_map(
             static fn (array $device): string => (string)($device['imei'] ?? ''),
             $result['items']

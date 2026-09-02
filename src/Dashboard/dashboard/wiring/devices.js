@@ -29,6 +29,7 @@ import {
 import {
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
+    handleDeviceListSortChange,
     handleDevicePaginationClick,
     openDeviceSelector,
     selectDevice,
@@ -139,6 +140,7 @@ function bindDeviceForm() {
 function bindListAndFilters() {
     els.deviceListLimit.addEventListener("change", handleDeviceListLimitChange);
     els.deviceListSearch.addEventListener("input", handleDeviceListSearchInput);
+    els.deviceListSort?.addEventListener("change", handleDeviceListSortChange);
     // Um ouvinte por coluna e não um por controlo: as opções são redesenhadas a cada
     // resposta, e ligar o ouvinte a cada botão obrigava a religá-los todos de cada vez.
     for (const root of [

@@ -15,6 +15,7 @@ import { clearInvalid, markInvalid } from "../validation.js";
 import { setSettingsNavCount } from "./shell.js";
 import { renderPagination } from "../pagination.js";
 import { editorOf, focusEditor, inlineEditor } from "./row-editor.js";
+import { sortRows } from "../sorting.js";
 
 /**
  * O separador das licenças, com as licenças de cada empresa dentro dela.
@@ -33,12 +34,24 @@ let els;
 let currentCompanies = [];
 let currentLicenses = [];
 
+// A ordenação das licenças dentro de cada empresa. Vazio é a ordem em que a API as devolve.
+let licenseSort = null;
+
 // Uma vaga só para os dois tipos de linha: abrir uma empresa fecha a licença que estivesse
 // aberta, e ao contrário, sem ninguém se lembrar de o fazer.
 const editor = inlineEditor(() => renderCompanySection());
 
 export function initSettingsCompanies(context) {
     els = context.els;
+}
+
+/** O `-` à frente pede descendente, como no `sort` da API. Vazio volta à ordem de origem. */
+export function handleLicenseSortChange() {
+    const value = els.licenseSort?.value || "";
+    licenseSort = value
+        ? { column: value.replace(/^-/, ""), descending: value.startsWith("-") }
+        : null;
+    renderCompanySection();
 }
 
 export async function loadSettingsCompanySection(companiesPage = 1) {
@@ -149,7 +162,11 @@ function companyCard(company) {
     const owned = currentLicenses.filter(
         (license) => String(license.company_id) === String(company.id),
     );
-    const rows = owned
+    // Ordena dentro da empresa: as empresas ficam onde estavam, e são as licenças de cada
+    // uma que se reorganizam. O `license_id` é número e ordena por valor, não por texto.
+    const rows = sortRows(owned, licenseSort, (license, column) => (
+        column === "license_id" ? Number(license.license_id) : license[column]
+    ))
         .map((license) => (editor.at("license", license.id)
             ? licenseEditorRow(license, company.id)
             : licenseViewRow(license)))

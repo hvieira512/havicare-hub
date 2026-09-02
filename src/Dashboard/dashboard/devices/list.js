@@ -13,6 +13,7 @@ import {
     resetDeviceListPage,
     selectImei,
     setDeviceListPage,
+    setDeviceSort,
     setDeviceTypeSuppliersModels,
     setSelectedDetail,
 } from "../state.js";
@@ -79,6 +80,7 @@ async function fetchSummary() {
             license: state.deviceFilters.license,
             online: online === null ? null : online ? "online" : "offline",
             q: state.deviceSearchQuery,
+            sort: state.deviceSort,
         }),
         ensureLicensesLoaded(),
     ]);
@@ -209,6 +211,9 @@ function renderDeviceSelector() {
     }
     if (els.deviceListSearch) {
         els.deviceListSearch.value = state.deviceSearchQuery;
+    }
+    if (els.deviceListSort) {
+        els.deviceListSort.value = state.deviceSort || "imei";
     }
     renderDeviceFilterControls();
     renderDeviceSelectorSummary();
@@ -459,6 +464,15 @@ function renderDeviceFilterCounters() {
     els.clearDeviceFiltersBtn.classList.toggle("d-none", activeGroups === 0);
 }
 
+function handleDeviceListSortChange() {
+    const next = els.deviceListSort?.value || "";
+    if (state.deviceSort === next) {
+        return;
+    }
+    setDeviceSort(next);
+    void loadSummary();
+}
+
 function handleDeviceListLimitChange() {
     const nextLimit = parseInt(els.deviceListLimit.value || "20", 10) || 20;
     if (state.deviceListPageSize === nextLimit) {
@@ -525,6 +539,7 @@ export {
     ensureProtocolsLoaded,
     handleDeviceListLimitChange,
     handleDeviceListSearchInput,
+    handleDeviceListSortChange,
     handleDevicePaginationClick,
     isDeviceSelectorOpen,
     loadDevice,

@@ -66,6 +66,37 @@ final class CollectionQuery
     }
 
     /**
+     * A coluna por que se ordena e o sentido, com `-coluna` a pedir descendente.
+     *
+     * O valor acaba num `ORDER BY`, onde não pode entrar como parâmetro ligado. A allowlist
+     * é por isso a fronteira, e o que não estiver nela não é limpo -- é ignorado.
+     *
+     * @param array<string, mixed> $params
+     * @param list<string> $allowed
+     * @return array{column: string, descending: bool}
+     */
+    public function sort(array $params, array $allowed, string $default): array
+    {
+        $fallback = ['column' => $default, 'descending' => false];
+        $raw = $params['sort'] ?? null;
+        if (!is_string($raw)) {
+            return $fallback;
+        }
+
+        $raw = trim($raw);
+        $descending = str_starts_with($raw, '-');
+        $wanted = strtolower(ltrim($raw, '-'));
+
+        foreach ($allowed as $column) {
+            if (strtolower($column) === $wanted) {
+                return ['column' => $column, 'descending' => $descending];
+            }
+        }
+
+        return $fallback;
+    }
+
+    /**
      * O estado de ligação: `online`, `offline`, ou nada quando não se filtra.
      *
      * É o único filtro de valor único desta listagem, porque escolher os dois é o mesmo que

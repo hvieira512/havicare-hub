@@ -58,15 +58,21 @@ final class WhitelistRepository
      * @param array<string, mixed> $filters
      * @return array{items: array<int, array<string, mixed>>, total: int, available: array<string, mixed>, counts: array<string, mixed>}
      */
-    public function listPage(array $filters, int $page, int $limit, ?int $licenseScope = null, ?string $companyScope = null): array
-    {
+    public function listPage(
+        array $filters,
+        int $page,
+        int $limit,
+        ?int $licenseScope = null,
+        ?string $companyScope = null,
+        ?array $sort = null
+    ): array {
         $page = max(1, $page);
         $limit = max(1, $limit);
         $offset = ($page - 1) * $limit;
 
         [$whereSql, $params] = $this->buildWhereClause($filters, $licenseScope, $companyScope);
 
-        $stmt = $this->pdo->prepare($this->deviceSelectSql() . $whereSql . ' ORDER BY w.imei LIMIT ? OFFSET ?');
+        $stmt = $this->pdo->prepare($this->deviceSelectSql() . $whereSql . $this->orderBySql($sort) . ' LIMIT ? OFFSET ?');
         $bindIndex = 1;
         foreach ($params as $param) {
             $stmt->bindValue($bindIndex++, $param);
@@ -210,6 +216,38 @@ final class WhitelistRepository
         $stmt->execute([$company, $licenseId, $imei]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    /** As colunas por que a listagem se deixa ordenar, e a expressão SQL de cada uma. */
+    public const SORTABLE_COLUMNS = [
+        'imei' => 'w.imei',
+        'supplier' => 'w.supplier',
+        'model' => 'w.model',
+        'deviceType' => 'w.device_type',
+        'licenseId' => 'w.license_id',
+        'company' => 'w.company',
+        'licenseName' => 'l.name',
+    ];
+
+    /**
+     * @param array{column?: string, descending?: bool}|null $sort
+     */
+    private function orderBySql(?array $sort): string
+    {
+        $column = self::SORTABLE_COLUMNS[$sort['column'] ?? 'imei'] ?? 'w.imei';
+        $direction = ($sort['descending'] ?? false) ? ' DESC' : '';
+
+        if ($column === 'w.imei') {
+            return ' ORDER BY w.imei' . $direction;
+        }
+
+        // Um dispositivo sem dono tem `NULL` na empresa e na licença, e o MariaDB põe `NULL`
+        // à frente em ascendente. A falta de valor vai para o fim nos dois sentidos, como no
+        // `sortRows` da dashboard: não ter empresa não é ser a primeira delas.
+        //
+        // O IMEI fecha sempre. Sem ele, ordenar por uma coluna com valores repetidos deixa a
+        // ordem por decidir, e percorrer as páginas repete umas linhas e perde outras.
+        return ' ORDER BY ' . $column . ' IS NULL, ' . $column . $direction . ', w.imei';
     }
 
     private function deviceSelectSql(): string

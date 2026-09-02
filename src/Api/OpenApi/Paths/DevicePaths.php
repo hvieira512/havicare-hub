@@ -5,6 +5,7 @@ namespace Hub\Api\OpenApi\Paths;
 use Hub\Api\OpenApi\Parameters;
 use Hub\Api\OpenApi\Requests;
 use Hub\Api\OpenApi\Responses;
+use Hub\Api\Repository\WhitelistRepository;
 
 /**
  * Registo, configuração, ligações, telemetria e comandos de dispositivos.
@@ -37,6 +38,13 @@ final class DevicePaths
                         Parameters::stringQuery('company'),
                         Parameters::stringQuery('licenseId'),
                         Parameters::query('q', ['type' => 'string', 'default' => '']),
+                        // As colunas saem da allowlist do repositório, com o `-` a pedir
+                        // descendente. Documentar a lista à mão deixava-a divergir.
+                        Parameters::query('sort', [
+                            'type' => 'string',
+                            'default' => 'imei',
+                            'enum' => self::sortValues(),
+                        ]),
                     ]),
                     'responses' => [
                         '200' => Responses::json('Paginated device collection', 'DeviceListResponse'),
@@ -210,5 +218,21 @@ final class DevicePaths
                 ],
             ],
         ];
+    }
+
+    /**
+     * Cada coluna ordenável nos dois sentidos, ascendente e com o `-` à frente.
+     *
+     * @return list<string>
+     */
+    private static function sortValues(): array
+    {
+        $values = [];
+        foreach (array_keys(WhitelistRepository::SORTABLE_COLUMNS) as $column) {
+            $values[] = $column;
+            $values[] = '-' . $column;
+        }
+
+        return $values;
     }
 }

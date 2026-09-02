@@ -199,6 +199,24 @@ body[data-swal2-theme] {
     --bs-btn-disabled-border-color: var(--brand);
 }
 
+/* ===== o cabeçalho de uma tabela de listagem =====
+   No telemóvel as células empilham e cada uma leva a sua etiqueta ao lado do valor, por isso
+   o cabeçalho nomearia colunas que ali não existem.
+
+   Isto é CSS próprio porque o Bootstrap não gera utilitário para `table-header-group` -- só
+   `d-*-table`, `d-*-table-row` e `d-*-table-cell`. O `d-sm-table-header-group` que aqui
+   estava não existia, e por isso o `d-none` ganhava sempre: o cabeçalho nunca apareceu em
+   ecrã nenhum. */
+.table-head-wide {
+    display: none;
+}
+
+@media (min-width: 576px) {
+    .table-head-wide {
+        display: table-header-group;
+    }
+}
+
 /* ===== a base do telemóvel =====
    As únicas coisas desta página que os utilitários do Bootstrap não sabem fazer: não há
    `fs-sm-*` nem tamanho de botão por breakpoint. Todo o resto está na marcação, onde se vê

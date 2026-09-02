@@ -51,15 +51,6 @@ function filter_group(string $title, string $counterId, string $contentId, strin
         . '</div>';
 }
 
-/** A caixa de pesquisa, com a lupa colada a esquerda. */
-function search_input(string $id, string $placeholder, string $wrapperClass = ''): string
-{
-    return '<div class="input-group input-group-sm' . ($wrapperClass !== '' ? ' ' . h($wrapperClass) : '') . '">'
-        . '<span class="input-group-text">' . icon('fa-magnifying-glass') . '</span>'
-        . '<input id="' . h($id) . '" type="search" class="form-control" placeholder="' . h($placeholder) . '">'
-        . '</div>';
-}
-
 /**
  * O botao que abre o painel de filtros, com a contagem do que esta aplicado.
  *
@@ -75,48 +66,6 @@ function filter_toggle_button(string $targetId, string $countId, string $extraCl
         . icon('fa-sliders') . 'Filtros'
         . '<span id="' . h($countId) . '" class="count-chip count-chip-strong d-none"></span>'
         . '</button>';
-}
-
-/** O selector de quantas linhas por pagina. */
-function page_size_select(string $id): string
-{
-    $options = '';
-    foreach ([5, 10, 15, 20, 30, 50] as $size) {
-        $options .= '<option value="' . $size . '">' . $size . '</option>';
-    }
-
-    return '<label for="' . h($id) . '" class="section-label mb-0">Por página</label>'
-        . '<select id="' . h($id) . '" class="form-select form-select-sm w-auto">' . $options . '</select>';
-}
-
-/**
- * A casca de uma tabela de listagem: o corpo fica vazio para o JavaScript o preencher.
- *
- * Uma coluna sem título passa como cadeia vazia -- é o caso da miniatura e da coluna de
- * acções, que não têm cabeçalho para mostrar.
- *
- * @param list<string> $headers
- */
-function data_table(
-    array $headers,
-    string $tbodyId,
-    string $tableClass = '',
-    string $wrapperClass = ''
-): string {
-    $cells = '';
-    foreach ($headers as $header) {
-        $cells .= '<th>' . h($header) . '</th>';
-    }
-
-    // Em telefone as células empilham (`d-block d-sm-table-cell` em cada linha) e cada uma
-    // leva a etiqueta do campo ao lado do valor, por isso o cabeçalho nomearia colunas que
-    // ali não existem.
-    return '<div class="table-responsive' . ($wrapperClass !== '' ? ' ' . h($wrapperClass) : '') . '">'
-        . '<table class="table table-sm align-middle' . ($tableClass !== '' ? ' ' . h($tableClass) : '') . '">'
-        . '<thead class="d-none d-sm-table-header-group"><tr>' . $cells . '</tr></thead>'
-        . '<tbody id="' . h($tbodyId) . '"></tbody>'
-        . '</table>'
-        . '</div>';
 }
 
 /**

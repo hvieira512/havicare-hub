@@ -53,6 +53,7 @@ ob_start();
         <div class="d-flex justify-content-between align-items-center gap-2 mt-3 flex-wrap">
             <?= pagination_component('deviceListPagination') ?>
             <div class="d-flex align-items-center gap-2 ms-auto">
+                <?= sort_select('deviceListSort') ?>
                 <?= page_size_select('deviceListLimit') ?>
             </div>
         </div>

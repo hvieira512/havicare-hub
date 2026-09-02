@@ -182,6 +182,16 @@ ob_start();
                         . ' data-action="newCompany">'
                         . icon('fa-plus', 'me-1') . 'Nova empresa</button>'
                     ) ?>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <label for="licenseSort" class="section-label mb-0">Ordenar licenças</label>
+                        <select id="licenseSort" class="form-select form-select-sm w-auto">
+                            <option value="">Como vêm</option>
+                            <option value="license_id">ID (menor primeiro)</option>
+                            <option value="-license_id">ID (maior primeiro)</option>
+                            <option value="name">Nome (A→Z)</option>
+                            <option value="-name">Nome (Z→A)</option>
+                        </select>
+                    </div>
                     <div id="companyListBody" class="mb-4"></div>
                     <?= pagination_component('settingsCompanyPagination') ?>
                 </div>
@@ -195,7 +205,7 @@ ob_start();
                         . ' data-action="newApiUser">'
                         . icon('fa-plus', 'me-1') . 'Novo utilizador</button>'
                     ) ?>
-                    <?= data_table(['Utilizador', 'Perfil', 'Âmbito', 'Estado', ''], 'apiUserListBody') ?>
+                    <?= data_table([['Utilizador', 'username'], ['Perfil', 'role'], ['Âmbito', 'scope'], ['Estado', 'enabled'], ''], 'apiUserListBody') ?>
                     <?= pagination_component('settingsApiUsersPagination') ?>
                 </div>
             </div>
