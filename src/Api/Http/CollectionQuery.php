@@ -66,34 +66,44 @@ final class CollectionQuery
     }
 
     /**
-     * A coluna por que se ordena e o sentido, com `-coluna` a pedir descendente.
+     * As colunas por que se ordena e o sentido de cada uma, separadas por vírgula e pela
+     * ordem em que foram escritas -- `-company,model` ordena por empresa descendente e
+     * desempata por modelo. O `-` à frente pede descendente.
      *
      * O valor acaba num `ORDER BY`, onde não pode entrar como parâmetro ligado. A allowlist
-     * é por isso a fronteira, e o que não estiver nela não é limpo -- é ignorado.
+     * é por isso a fronteira, e o que não estiver nela não é limpo -- cai fora. Uma coluna
+     * má no meio de boas leva só a si própria, para um engano não deitar o resto abaixo.
      *
      * @param array<string, mixed> $params
      * @param list<string> $allowed
-     * @return array{column: string, descending: bool}
+     * @return non-empty-list<array{column: string, descending: bool}>
      */
     public function sort(array $params, array $allowed, string $default): array
     {
-        $fallback = ['column' => $default, 'descending' => false];
+        $fallback = [['column' => $default, 'descending' => false]];
         $raw = $params['sort'] ?? null;
         if (!is_string($raw)) {
             return $fallback;
         }
 
-        $raw = trim($raw);
-        $descending = str_starts_with($raw, '-');
-        $wanted = strtolower(ltrim($raw, '-'));
+        $resolved = [];
+        $seen = [];
+        foreach (explode(',', $raw) as $piece) {
+            $piece = trim($piece);
+            $descending = str_starts_with($piece, '-');
+            $wanted = strtolower(ltrim($piece, '-'));
 
-        foreach ($allowed as $column) {
-            if (strtolower($column) === $wanted) {
-                return ['column' => $column, 'descending' => $descending];
+            foreach ($allowed as $column) {
+                if (strtolower($column) !== $wanted || isset($seen[$column])) {
+                    continue;
+                }
+                $seen[$column] = true;
+                $resolved[] = ['column' => $column, 'descending' => $descending];
+                break;
             }
         }
 
-        return $fallback;
+        return $resolved === [] ? $fallback : $resolved;
     }
 
     /**

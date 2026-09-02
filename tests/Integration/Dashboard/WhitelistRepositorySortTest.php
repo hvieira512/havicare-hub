@@ -84,6 +84,48 @@ final class WhitelistRepositorySortTest extends MysqlDashboardTestCase
         );
     }
 
+    /** Ordenar por duas colunas: a segunda desempata dentro da primeira. */
+    public function testASecondColumnBreaksTiesInsideTheFirst(): void
+    {
+        $db = ApiDataAccess::fromDatabase($this->createDashboardDatabase());
+        $db->whitelist->register('100000000000031', 'Vivistar', 'L08 Pro', 'watch', 1001, '', '', 'hitcare');
+        $db->whitelist->register('100000000000032', 'Wonlex', 'HW20PRO', 'watch', 1001, '', '', 'hitcare');
+        $db->whitelist->register('100000000000033', 'Qinglanst', 'RD-V1', 'radar', 1001, '', '', 'havicare');
+
+        $result = $db->whitelist->listPage([], 1, 10, null, null, [
+            ['column' => 'company', 'descending' => false],
+            ['column' => 'supplier', 'descending' => true],
+        ]);
+
+        self::assertSame(
+            [['havicare', 'Qinglanst'], ['hitcare', 'Wonlex'], ['hitcare', 'Vivistar']],
+            array_map(static fn(array $row): array => [$row['company'], $row['supplier']], $result['items']),
+        );
+    }
+
+    /**
+     * O mesmo defeito das páginas, agora com duas colunas: se nenhuma delas desempatar até
+     * ao fim, a ordem continua por decidir e as páginas voltam a repetir-se.
+     */
+    public function testWalkingPagesSortedByTwoColumnsAlsoReturnsEachDeviceOnce(): void
+    {
+        $repository = $this->repositoryWithDevices();
+        $sort = [
+            ['column' => 'company', 'descending' => false],
+            ['column' => 'supplier', 'descending' => false],
+        ];
+
+        $seen = [];
+        for ($page = 1; $page <= 4; $page++) {
+            foreach ($this->imeisOfPage($repository, $page, 3, $sort) as $imei) {
+                $seen[] = $imei;
+            }
+        }
+
+        self::assertCount(12, $seen);
+        self::assertSame(array_values(array_unique($seen)), $seen);
+    }
+
     /** As páginas de uma lista ordenada não podem mudar entre duas leituras iguais. */
     public function testTheSamePageReadTwiceGivesTheSameRows(): void
     {

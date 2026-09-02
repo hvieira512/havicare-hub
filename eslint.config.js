@@ -25,6 +25,7 @@ export default [
                 ...globals.node,
                 bootstrap: "readonly",
                 Swal: "readonly",
+                Tabulator: "readonly",
             },
         },
         rules: {

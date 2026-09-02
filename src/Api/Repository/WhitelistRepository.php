@@ -2,6 +2,7 @@
 
 namespace Hub\Api\Repository;
 
+use Hub\Api\Http\DeviceColumns;
 use Hub\Domain\DeviceMetadata;
 use Hub\Infrastructure\Persistence\TimestampFormatter;
 use PDO;
@@ -230,24 +231,43 @@ final class WhitelistRepository
     ];
 
     /**
-     * @param array{column?: string, descending?: bool}|null $sort
+     * A cláusula de ordenação, de uma ou de várias colunas.
+     *
+     * @param list<array{column?: string, descending?: bool}>|array{column?: string, descending?: bool}|null $sort
      */
     private function orderBySql(?array $sort): string
     {
-        $column = self::SORTABLE_COLUMNS[$sort['column'] ?? 'imei'] ?? 'w.imei';
-        $direction = ($sort['descending'] ?? false) ? ' DESC' : '';
+        // Aceita um par solto além da lista: as duas formas circularam enquanto a
+        // multi-ordenação não existia, e há chamadores que ainda passam a antiga.
+        $entries = $sort === null || $sort === [] ? [] : (isset($sort['column']) ? [$sort] : $sort);
 
-        if ($column === 'w.imei') {
-            return ' ORDER BY w.imei' . $direction;
+        $pieces = [];
+        $used = [];
+        foreach ($entries as $entry) {
+            $column = self::SORTABLE_COLUMNS[$entry['column'] ?? ''] ?? null;
+            if ($column === null || isset($used[$column])) {
+                continue;
+            }
+            $used[$column] = true;
+            $direction = ($entry['descending'] ?? false) ? ' DESC' : '';
+
+            // Um dispositivo sem dono tem `NULL` na empresa e na licença, e o MariaDB põe
+            // `NULL` à frente em ascendente. A falta de valor vai para o fim nos dois
+            // sentidos, como no `sortRows` da dashboard: não ter empresa não é ser a
+            // primeira delas.
+            if ($column !== 'w.imei') {
+                $pieces[] = $column . ' IS NULL';
+            }
+            $pieces[] = $column . $direction;
         }
 
-        // Um dispositivo sem dono tem `NULL` na empresa e na licença, e o MariaDB põe `NULL`
-        // à frente em ascendente. A falta de valor vai para o fim nos dois sentidos, como no
-        // `sortRows` da dashboard: não ter empresa não é ser a primeira delas.
-        //
-        // O IMEI fecha sempre. Sem ele, ordenar por uma coluna com valores repetidos deixa a
+        // O IMEI fecha sempre. Sem ele, ordenar por colunas com valores repetidos deixa a
         // ordem por decidir, e percorrer as páginas repete umas linhas e perde outras.
-        return ' ORDER BY ' . $column . ' IS NULL, ' . $column . $direction . ', w.imei';
+        if (!isset($used['w.imei'])) {
+            $pieces[] = 'w.imei';
+        }
+
+        return ' ORDER BY ' . implode(', ', $pieces);
     }
 
     private function deviceSelectSql(): string
@@ -379,6 +399,20 @@ final class WhitelistRepository
                     $params[] = $imei;
                 }
             }
+        }
+
+        // O filtro de uma coluna só, que é o que uma caixa de procura num cabeçalho quer
+        // dizer -- distinto do `q`, que procura em cinco colunas ao mesmo tempo.
+        foreach (DeviceColumns::TEXT_FILTERS as $field => $column) {
+            $needle = trim((string)($filters[$field] ?? ''));
+            if ($needle === '') {
+                continue;
+            }
+
+            // Um `%` escrito por quem procura é texto e não curinga: sem isto, escrevê-lo
+            // devolvia a lista inteira em vez de nada.
+            $clauses[] = 'LOWER(' . $column . ') LIKE LOWER(?) ESCAPE \'\\\\\'';
+            $params[] = '%' . addcslashes($needle, '%_\\') . '%';
         }
 
         $query = trim((string)($filters['q'] ?? ''));

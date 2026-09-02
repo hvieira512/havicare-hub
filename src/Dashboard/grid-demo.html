@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Grelha de dispositivos · demonstração</title>
+
+<link rel="stylesheet" href="/assets/vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="/assets/vendor/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="/assets/vendor/tabulator/tabulator_bootstrap5.min.css">
+<link rel="stylesheet" href="/assets/css/base.css">
+
+<style>
+/* Só o que o tema do Tabulator não sabe da paleta da casa. As variáveis são as do
+   `base.css`, para o claro e o escuro seguirem a dashboard sem duas listas de cores. */
+body { min-height: 100vh; }
+
+.demo-shell { max-width: 1500px; }
+
+.tabulator {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+
+.tabulator .tabulator-header,
+.tabulator .tabulator-header .tabulator-col,
+.tabulator .tabulator-footer {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+.tabulator-row,
+.tabulator-row.tabulator-row-even {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+.tabulator-row:hover { background: var(--bs-tertiary-bg) !important; }
+
+.tabulator .tabulator-header .tabulator-col .tabulator-header-filter input,
+.tabulator .tabulator-header .tabulator-col .tabulator-header-filter select {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color);
+    border-radius: .25rem;
+}
+
+.tabulator-menu, .tabulator-edit-list {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+.tabulator-edit-list .tabulator-edit-list-item.active,
+.tabulator-edit-list .tabulator-edit-list-item:hover {
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-body-color);
+}
+
+#grid { height: 62vh; }
+
+.request-log {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .78rem;
+    max-height: 9rem;
+    overflow-y: auto;
+}
+</style>
+</head>
+<body class="bg-body">
+
+<div class="demo-shell mx-auto p-3 p-lg-4 d-flex flex-column gap-3">
+
+    <header class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+        <div>
+            <h1 class="h4 mb-1">Grelha de dispositivos</h1>
+            <p class="text-secondary mb-0 small">
+                Página de demonstração. As colunas, os filtros e as opções vêm todos do
+                <code>columns</code> que o <code>GET /api/devices</code> devolve — não estão
+                escritos aqui. Ordenar, filtrar e paginar acontecem no servidor.
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" data-bs-auto-close="outside" id="columnsBtn" disabled>
+                    <i class="fa-solid fa-table-columns me-1"></i>Colunas
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end p-2" id="columnsMenu"></ul>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" id="themeBtn" title="Alternar tema">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="alert alert-danger d-none" id="error" role="alert"></div>
+
+    <form class="card card-body flex-row flex-wrap align-items-end gap-2" id="login">
+        <div>
+            <label class="form-label small mb-1" for="username">Utilizador</label>
+            <input class="form-control form-control-sm" id="username" autocomplete="username" required>
+        </div>
+        <div>
+            <label class="form-label small mb-1" for="password">Password</label>
+            <input class="form-control form-control-sm" id="password" type="password"
+                   autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary btn-sm" type="submit">Entrar</button>
+        <p class="text-secondary small mb-0 ms-auto">
+            A sessão da dashboard vive no separador dela, e por isso esta página entra por si.
+        </p>
+    </form>
+
+    <div id="gridPanel" class="d-none d-flex flex-column gap-2">
+        <div class="d-flex flex-wrap gap-3 small text-secondary">
+            <span><i class="fa-solid fa-arrow-down-a-z me-1"></i>Shift+clique num segundo cabeçalho ordena por duas colunas</span>
+            <span><i class="fa-solid fa-pen me-1"></i>Duplo clique numa célula edita e grava na API</span>
+            <span><i class="fa-solid fa-arrows-left-right me-1"></i>Arrasta o cabeçalho para mover, a borda para redimensionar</span>
+        </div>
+        <div id="grid" class="border rounded"></div>
+        <details>
+            <summary class="small text-secondary">Pedidos que a grelha fez ao servidor</summary>
+            <pre class="request-log text-secondary mt-2 mb-0" id="log"></pre>
+        </details>
+    </div>
+
+</div>
+
+<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="/assets/vendor/tabulator/tabulator.min.js"></script>
+<script type="module">
+import { createDeviceGrid, columnToggleItems } from "/dashboard/grid.js";
+
+const els = {
+    login: document.getElementById("login"),
+    username: document.getElementById("username"),
+    password: document.getElementById("password"),
+    panel: document.getElementById("gridPanel"),
+    error: document.getElementById("error"),
+    log: document.getElementById("log"),
+    columnsBtn: document.getElementById("columnsBtn"),
+    columnsMenu: document.getElementById("columnsMenu"),
+    themeBtn: document.getElementById("themeBtn"),
+};
+
+let token = "";
+
+function showError(message) {
+    els.error.textContent = message;
+    els.error.classList.remove("d-none");
+}
+
+function logLine(text) {
+    els.log.textContent = `${text}\n${els.log.textContent}`.split("\n").slice(0, 40).join("\n");
+}
+
+async function api(path, options = {}) {
+    const response = await fetch(path, {
+        ...options,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...options.headers },
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(body?.error?.message || `${response.status} ${response.statusText}`);
+    }
+    return body;
+}
+
+const query = (params) => new URLSearchParams(
+    Object.entries(params).flatMap(([key, value]) => (
+        Array.isArray(value) ? value.map((entry) => [key, entry]) : [[key, String(value)]]
+    )),
+).toString();
+
+async function start() {
+    els.error.classList.add("d-none");
+
+    // O primeiro pedido serve para duas coisas: traz a primeira página e traz o descritor
+    // de colunas com que a grelha inteira é construída.
+    const first = await api("/api/devices?" + query({ page: 1, limit: 15 }));
+    logLine(`GET /api/devices?page=1&limit=15 → ${first.columns.length} colunas descritas`);
+
+    const table = createDeviceGrid({
+        element: "#grid",
+        columns: first.columns,
+        load: async (params) => {
+            const search = query(params);
+            logLine(`GET /api/devices?${search}`);
+            return api("/api/devices?" + search);
+        },
+        // A linha inteira, e não o campo sozinho: o `PUT` substitui o registo, e mandar só
+        // o campo apagava os outros. Um `PATCH` por campo é conversa a seguir.
+        save: async (row, field) => {
+            logLine(`PUT /api/devices/${row.imei} (campo: ${field})`);
+            await api(`/api/devices/${encodeURIComponent(row.imei)}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                    imei: row.imei,
+                    supplier: row.supplier,
+                    model: row.model,
+                    deviceType: row.deviceType,
+                    licenseId: Number(row.licenseId) || 0,
+                    simNumber: row.simNumber || "",
+                    deviceId: row.deviceId || "",
+                    company: row.company || "null",
+                }),
+            });
+        },
+        onError: (error) => showError(`Não foi possível gravar: ${error.message}`),
+    });
+
+    table.on("tableBuilt", () => {
+        els.columnsBtn.disabled = false;
+        els.columnsMenu.innerHTML = "";
+        for (const item of columnToggleItems(table)) {
+            const li = document.createElement("li");
+            li.innerHTML = `<label class="dropdown-item d-flex gap-2 align-items-center mb-0">
+                <input type="checkbox" class="form-check-input mt-0" ${item.visible ? "checked" : ""}>
+                <span></span></label>`;
+            li.querySelector("span").textContent = item.title;
+            li.querySelector("input").addEventListener("change", item.toggle);
+            els.columnsMenu.appendChild(li);
+        }
+    });
+
+    els.login.classList.add("d-none");
+    els.panel.classList.remove("d-none");
+}
+
+els.login.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    try {
+        const session = await (await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: els.username.value, password: els.password.value }),
+        })).json();
+        token = session?.token?.access_token || "";
+        if (!token) {
+            showError(session?.error?.message || "Credenciais recusadas.");
+            return;
+        }
+        await start();
+    } catch (error) {
+        showError(error.message);
+    }
+});
+
+els.themeBtn.addEventListener("click", () => {
+    const dark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+    document.documentElement.setAttribute("data-bs-theme", dark ? "light" : "dark");
+    els.themeBtn.querySelector("i").className = dark ? "fa-solid fa-moon" : "fa-solid fa-sun";
+});
+
+document.documentElement.setAttribute("data-bs-theme", "dark");
+els.themeBtn.querySelector("i").className = "fa-solid fa-sun";
+
+// Uma instância com `DASHBOARD_API_AUTH_REQUIRED=false` responde sem token nenhum. Tenta-se
+// primeiro, e o formulário só aparece a quem levar 401.
+start().catch(() => els.username.focus());
+</script>
+</body>
+</html>

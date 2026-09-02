@@ -157,6 +157,7 @@ final class DashboardHttpServer
         $mime = match ($ext) {
             'js' => 'application/javascript',
             'css' => 'text/css',
+            'html' => 'text/html; charset=utf-8',
             'png' => 'image/png',
             'jpg', 'jpeg' => 'image/jpeg',
             'svg' => 'image/svg+xml',
@@ -198,13 +199,19 @@ final class DashboardHttpServer
             return null;
         }
 
+        // Rotas nomeadas, uma a uma. O `html` fica fora das extensões públicas de propósito:
+        // acrescentá-lo serviria qualquer ficheiro HTML de dentro de `assets/`, e o que se
+        // quer é publicar esta página e mais nenhuma.
         $routes = [
             '/main.css' => [__DIR__, 'main.css'],
             '/main.js' => [__DIR__, 'main.js'],
+            '/grid-demo' => [__DIR__, 'grid-demo.html'],
         ];
         if (isset($routes[$requestPath])) {
+            // Uma rota nomeada é um ficheiro escrito aqui, e não um caminho que alguém
+            // escolheu: a lista de extensões públicas não se lhe aplica.
             [$root, $relativePath] = $routes[$requestPath];
-            return $this->assetWithinRoot($root, $relativePath);
+            return $this->assetWithinRoot($root, $relativePath, checkExtension: false);
         }
 
         foreach (['/assets/' => __DIR__ . '/assets', '/dashboard/' => __DIR__ . '/dashboard'] as $prefix => $root) {
@@ -216,7 +223,7 @@ final class DashboardHttpServer
         return null;
     }
 
-    private function assetWithinRoot(string $root, string $relativePath): ?string
+    private function assetWithinRoot(string $root, string $relativePath, bool $checkExtension = true): ?string
     {
         if ($relativePath === '' || str_contains($relativePath, '..')) {
             return null;
@@ -231,6 +238,10 @@ final class DashboardHttpServer
         $rootPrefix = rtrim($realRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         if (!str_starts_with($realPath, $rootPrefix)) {
             return null;
+        }
+
+        if (!$checkExtension) {
+            return $realPath;
         }
 
         $extension = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
