@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Ingress\Mqtt\Moko;
 
+use Hub\Dashboard\DashboardStoreContract;
 use Hub\Device\HubMqttBridge;
 use Hub\Ingress\Mqtt\Moko\ArrayObservationStateStore;
 use Hub\Ingress\Mqtt\Moko\Bridge;
@@ -15,6 +16,9 @@ use Tests\Support\Doubles\FakeMqttSubscriber;
 
 final class BridgeTest extends TestCase
 {
+    /** O MKGW-mini que apareceu no broker sem estar registado. */
+    private const STRANGER_GATEWAY = '00e04c006b46';
+
     private const ADV_DATA = '0201041aff5900021535c80410418015dc8200410418415dc8200202f9c3';
     private const MKGW4_HEARTBEAT = 'ef3004c5e390f30bce00400000046a759cd8010007464444204c54450200011203000210740400060002000200000500010006000f38363130373630383232333235313107000400000998';
 
@@ -114,6 +118,54 @@ final class BridgeTest extends TestCase
 
         self::assertSame(['device.connected', 'device.disconnected'], array_column($mqtt->events, 'type'));
         self::assertSame(['online', 'offline'], array_column(array_column($mqtt->statuses, 'payload'), 'state'));
+    }
+
+    /**
+     * O assistente de registo tira do protocolo o fornecedor, o tipo de dispositivo e a lista
+     * de modelos. Com uma chave que o `ProtocolRegistry` não conhece não tira nada, e o
+     * formulário abre vazio.
+     */
+    public function testAnUnregisteredJsonGatewayIsReportedAsMkgw3(): void
+    {
+        $this->assertRejectedProtocol(
+            'moko-mkgw3',
+            json_encode([
+                'msg_id' => 3004,
+                'device_info' => ['mac' => self::STRANGER_GATEWAY],
+                'data' => ['timestamp' => 1788346865, 'timezone' => 0, 'wifi_rssi' => -47],
+            ], JSON_THROW_ON_ERROR)
+        );
+    }
+
+    public function testAnUnregisteredBinaryGatewayIsReportedAsMkgw4(): void
+    {
+        // O heartbeat capturado traz o MAC do gateway lá dentro, e o tópico tem de o repetir.
+        $this->assertRejectedProtocol('moko-mkgw4', (string)hex2bin(self::MKGW4_HEARTBEAT), 'c5e390f30bce');
+    }
+
+    /** Um payload que nenhum descodificador lê não inventa família nenhuma. */
+    public function testAnUnregisteredGatewayWithAnUnreadablePayloadReportsNoProtocol(): void
+    {
+        $this->assertRejectedProtocol('', 'nem json nem binario');
+    }
+
+    private function assertRejectedProtocol(string $expected, string $payload, string $mac = self::STRANGER_GATEWAY): void
+    {
+        $dashboardStore = $this->createMock(DashboardStoreContract::class);
+        $dashboardStore->expects(self::once())
+            ->method('recordRejectedDevice')
+            ->with($mac, $expected, '', $mac, 'device_not_authorized');
+
+        $bridge = new Bridge(
+            new FakeMqttSubscriber(),
+            IngressFixtures::whitelist(),
+            new RecordingHubMqttBridge(),
+            IngressFixtures::links(),
+            new ArrayObservationStateStore(),
+            dashboardStore: $dashboardStore,
+        );
+
+        $bridge->handleReceivedMessage('havicare-hub/null/0/gw/' . $mac . '/raw', $payload);
     }
 
     private function bridge(RecordingHubMqttBridge $mqtt, bool $linked, ?callable $clock = null, int $idleTimeout = 180): Bridge

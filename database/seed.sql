@@ -89,6 +89,12 @@ ON DUPLICATE KEY UPDATE commercial_name = 'MOKOSmart MKGW4', device_type = 'gate
     image_path = '/model-images/3bbccf9f4d8e4830480adf834cdfd278.jpg';
 
 INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
+SELECT s.id, 'MKGW-mini 03-20D', 'MOKOSmart MKGW-mini 03-20D', 'gateway', '/model-images/a8b0f419d117411508270b342869add0.jpg'
+FROM suppliers s WHERE s.name = 'MOKO'
+ON DUPLICATE KEY UPDATE commercial_name = 'MOKOSmart MKGW-mini 03-20D', device_type = 'gateway',
+    image_path = '/model-images/a8b0f419d117411508270b342869add0.jpg';
+
+INSERT INTO models (supplier_id, internal_model, commercial_name, device_type, image_path)
 SELECT s.id, 'W6B', 'MOKO W6B', 'bracelet', '/model-images/78888c5376784c64ca05b691c4686ecd.jpg'
 FROM suppliers s WHERE s.name = 'MOKO'
 ON DUPLICATE KEY UPDATE commercial_name = 'MOKO W6B', device_type = 'bracelet',

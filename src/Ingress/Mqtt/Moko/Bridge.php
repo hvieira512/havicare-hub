@@ -122,14 +122,22 @@ final class Bridge extends \Hub\Ingress\Mqtt\Bridge
             return;
         }
 
+        $decoded = ($this->messageDecoder ?? new MokoMessageDecoder())->decode($payload);
+
         $gateway = $this->whitelist->resolve($parsedTopic->gatewayMac);
         if ($gateway === null || ($gateway['deviceType'] ?? '') !== 'gateway') {
-            $this->recordUnauthorizedDevice($parsedTopic->gatewayMac, 'moko-gateway', ident: $parsedTopic->gatewayMac);
+            // O assistente de registo tira do protocolo o fornecedor, o tipo e os modelos
+            // possíveis, e o modelo exacto não se deduz: no fio um MKGW3 e um MKGW-mini
+            // são iguais.
+            $this->recordUnauthorizedDevice(
+                $parsedTopic->gatewayMac,
+                (string)($decoded['protocol'] ?? ''),
+                ident: $parsedTopic->gatewayMac
+            );
             Logger::channel('hub')->warning("Ignoring unregistered MOKO gateway mac={$parsedTopic->gatewayMac}");
             return;
         }
 
-        $decoded = ($this->messageDecoder ?? new MokoMessageDecoder())->decode($payload);
         if ($decoded === null || $decoded['gatewayMac'] !== $parsedTopic->gatewayMac) {
             Logger::channel('hub')->warning("Ignoring invalid MOKO gateway payload or gateway MAC mismatch on {$topic}");
             return;
